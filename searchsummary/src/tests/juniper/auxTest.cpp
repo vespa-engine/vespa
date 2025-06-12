@@ -1,6 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "auxTest.h"
+#include "testenv.h"
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
+#include <map>
 #include <cctype>
 #include <vespa/fastos/file.h>
 #include <vespa/juniper/juniper_separators.h>
@@ -19,43 +22,9 @@ bool                 color_highlight = false;
 bool                 verbose = false;
 const unsigned char* connectors = reinterpret_cast<const unsigned char*>("-'");
 
+SummaryConfig* _sumconf = nullptr;
+
 using juniper::SpecialTokenRegistry;
-
-AuxTest::AuxTest() : Test("Auxiliary"), test_methods_(), _sumconf(0) {
-    init();
-}
-
-AuxTest::~AuxTest() {
-    DeleteSummaryConfig(_sumconf);
-}
-
-void AuxTest::init() {
-    test_methods_["TestExample"] = &AuxTest::TestExample;
-    test_methods_["TestPropertyMap"] = &AuxTest::TestPropertyMap;
-    test_methods_["TestRerase"] = &AuxTest::TestRerase;
-    test_methods_["TestUTF811"] = &AuxTest::TestUTF811;
-    test_methods_["TestUTF812"] = &AuxTest::TestUTF812;
-    test_methods_["TestDoubleWidth"] = &AuxTest::TestDoubleWidth;
-    test_methods_["TestPartialUTF8"] = &AuxTest::TestPartialUTF8;
-    test_methods_["TestLargeBlockChinese"] = &AuxTest::TestLargeBlockChinese;
-    test_methods_["TestUTF8context"] = &AuxTest::TestUTF8context;
-    test_methods_["TestJapanese"] = &AuxTest::TestJapanese;
-    test_methods_["TestStartHits"] = &AuxTest::TestStartHits;
-    test_methods_["TestEndHit"] = &AuxTest::TestEndHit;
-    test_methods_["TestJuniperStack"] = &AuxTest::TestJuniperStack;
-    test_methods_["TestSpecialTokenRegistry"] = &AuxTest::TestSpecialTokenRegistry;
-    test_methods_["TestWhiteSpacePreserved"] = &AuxTest::TestWhiteSpacePreserved;
-}
-
-// needed closures
-
-void AuxTest::TestUTF811() {
-    TestUTF8(11);
-}
-
-void AuxTest::TestUTF812() {
-    TestUTF8(12);
-}
 
 int countBrokenUTF8(const char* data, uint32_t len) {
     int broken = 0;
@@ -94,7 +63,7 @@ int countBrokenUTF8(const char* data, uint32_t len) {
     return broken;
 }
 
-void AuxTest::TestDoubleWidth() {
+TEST(AuxTest, testDoubleWidth) {
     char input[17] = "[\x1f\xef\xbd\x93\xef\xbd\x8f\xef\xbd\x8e\xef\xbd\x99\x1f]";
 
     juniper::PropertyMap myprops;
@@ -110,23 +79,23 @@ void AuxTest::TestDoubleWidth() {
     juniper::QueryParser q("\xef\xbd\x93\xef\xbd\x8f\xef\xbd\x8e\xef\xbd\x99");
     juniper::QueryHandle qh(q, nullptr);
     auto                 res = juniper::Analyse(myConfig, qh, input, 17, 0);
-    _test(static_cast<bool>(res));
+    EXPECT_TRUE(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
     (void)sum;
     // this should work
-    // _test(sum->Length() != 0);
+    // EXPECT_TRUE(sum->Length() != 0);
 }
 
-void AuxTest::TestPartialUTF8() {
+TEST(AuxTest, testPartialUTF8) {
     const int inputSize = 5769; // NB: update this if input is changed
     char      input[inputSize];
     {
-        FastOS_File file((GetSourceDirectory() + "partialutf8.input.utf8").c_str());
-        _test(file.OpenReadOnly());
-        _test(file.getSize() == inputSize);
-        _test(file.Read(input, inputSize));
-        _test(countBrokenUTF8(input, inputSize) == 0);
+        FastOS_File file(TEST_PATH("partialutf8.input.utf8").c_str());
+        EXPECT_TRUE(file.OpenReadOnly());
+        EXPECT_TRUE(file.getSize() == inputSize);
+        EXPECT_TRUE(file.Read(input, inputSize));
+        EXPECT_TRUE(countBrokenUTF8(input, inputSize) == 0);
     }
 
     juniper::PropertyMap myprops;
@@ -143,24 +112,24 @@ void AuxTest::TestPartialUTF8() {
     juniper::QueryParser q("ipod");
     juniper::QueryHandle qh(q, nullptr);
     auto                 res = juniper::Analyse(myConfig, qh, input, inputSize, 0);
-    _test(static_cast<bool>(res));
+    EXPECT_TRUE(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
-    _test(sum->Length() != 0);
+    EXPECT_TRUE(sum->Length() != 0);
 
     // check for partial/broken utf-8
-    _test(countBrokenUTF8(sum->Text(), sum->Length()) == 0);
+    EXPECT_TRUE(countBrokenUTF8(sum->Text(), sum->Length()) == 0);
 }
 
-void AuxTest::TestLargeBlockChinese() {
+TEST(AuxTest, testLargeBlockChinese) {
     const int inputSize = 10410; // NB: update this if input is changed
     char      input[inputSize];
     {
-        FastOS_File file((GetSourceDirectory() + "largeblockchinese.input.utf8").c_str());
-        _test(file.OpenReadOnly());
-        _test(file.getSize() == inputSize);
-        _test(file.Read(input, inputSize));
-        _test(countBrokenUTF8(input, inputSize) == 0);
+        FastOS_File file(TEST_PATH("largeblockchinese.input.utf8").c_str());
+        EXPECT_TRUE(file.OpenReadOnly());
+        EXPECT_TRUE(file.getSize() == inputSize);
+        EXPECT_TRUE(file.Read(input, inputSize));
+        EXPECT_TRUE(countBrokenUTF8(input, inputSize) == 0);
     }
 
     juniper::PropertyMap myprops;
@@ -179,19 +148,19 @@ void AuxTest::TestLargeBlockChinese() {
     juniper::QueryParser q("希望");
     juniper::QueryHandle qh(q, nullptr);
     auto                 res = juniper::Analyse(myConfig, qh, input, inputSize, 0);
-    _test(static_cast<bool>(res));
+    EXPECT_TRUE(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
-    _test(sum->Length() != 0);
+    EXPECT_TRUE(sum->Length() != 0);
 
     // check that the entire block of chinese data is not returned in the summary
-    _test(sum->Length() < 100);
+    EXPECT_TRUE(sum->Length() < 100);
 
     // check for partial/broken utf-8
-    _test(countBrokenUTF8(sum->Text(), sum->Length()) == 0);
+    EXPECT_TRUE(countBrokenUTF8(sum->Text(), sum->Length()) == 0);
 }
 
-void AuxTest::TestExample() {
+TEST(AuxTest, testExample) {
     juniper::QueryParser q("AND(consume,sleep,tree)");
     juniper::QueryHandle qh(q, nullptr);
 
@@ -201,24 +170,24 @@ void AuxTest::TestExample() {
                           "the last token here is split across lines consumed";
     int         content_len = strlen(content);
     auto        res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0);
-    _test(static_cast<bool>(res));
+    EXPECT_TRUE(static_cast<bool>(res));
 
     res->Scan();
     Matcher& m = *res->_matcher;
-    _test(m.TotalMatchCnt(0) == 2 && m.ExactMatchCnt(0) == 0);
+    EXPECT_TRUE(m.TotalMatchCnt(0) == 2 && m.ExactMatchCnt(0) == 0);
 }
 
-void AuxTest::TestPropertyMap() {
+TEST(AuxTest, testPropertyMap) {
     juniper::PropertyMap map;
     IJuniperProperties*  props = &map;
     map.set("foo", "bar").set("one", "two");
-    _test(props->GetProperty("bogus") == nullptr);
-    _test(strcmp(props->GetProperty("bogus", "default"), "default") == 0);
-    _test(strcmp(props->GetProperty("foo"), "bar") == 0);
-    _test(strcmp(props->GetProperty("one", "default"), "two") == 0);
+    EXPECT_TRUE(props->GetProperty("bogus") == nullptr);
+    EXPECT_TRUE(strcmp(props->GetProperty("bogus", "default"), "default") == 0);
+    EXPECT_TRUE(strcmp(props->GetProperty("foo"), "bar") == 0);
+    EXPECT_TRUE(strcmp(props->GetProperty("one", "default"), "two") == 0);
 }
 
-void AuxTest::TestRerase() {
+TEST(AuxTest, testRerase) {
     std::list<int> ls;
 
     for (int i = 0; i < 10; i++) ls.push_back(i);
@@ -234,7 +203,7 @@ void AuxTest::TestRerase() {
 
     std::string s;
     for (std::list<int>::iterator it = ls.begin(); it != ls.end(); ++it) s += ('0' + *it);
-    _test(s == std::string("01234789"));
+    EXPECT_TRUE(s == std::string("01234789"));
 }
 
 // Debug dump with positions for reference
@@ -272,7 +241,7 @@ const char* char_from_u8(const char* p) {
 
 } // namespace
 
-void AuxTest::TestUTF8(unsigned int size) {
+void TestUTF8(unsigned int size) {
     const char* s = char_from_u8(u8"\u00e5pent s\u00f8k\u00e6\u00f8\u00e5\u00e6\u00f8\u00e5\u00e6\u00f8\u00e5");
     const unsigned char* p = (const unsigned char*)s;
 
@@ -283,33 +252,33 @@ void AuxTest::TestUTF8(unsigned int size) {
         moved = Fast_UnicodeUtil::UTF8move((const unsigned char*)s, size, p, +1);
         LOG(spam, "forw. moved %d, pos %d", moved, i);
         if (i == 0 || i == 8)
-            _test(moved == 2);
+            EXPECT_TRUE(moved == 2);
         else if (i >= (int)size)
-            _test(moved == -1);
+            EXPECT_TRUE(moved == -1);
         else
-            _test(moved == 1);
+            EXPECT_TRUE(moved == 1);
 
         // backward tests
         p = (const unsigned char*)(s + i);
         moved = Fast_UnicodeUtil::UTF8move((const unsigned char*)s, size, p, -1);
         LOG(spam, "backw.moved %d, pos %d", moved, i);
         if (i == 10 || i == 9 || i == 2)
-            _test(moved == 2);
+            EXPECT_TRUE(moved == 2);
         else if (i == 0 || i > (int)size)
-            _test(moved == -1);
+            EXPECT_TRUE(moved == -1);
         else
-            _test(moved == 1);
+            EXPECT_TRUE(moved == 1);
 
         // move-to-start tests:
         p = (const unsigned char*)(s + i);
         moved = Fast_UnicodeUtil::UTF8move((const unsigned char*)s, size, p, 0);
         LOG(spam, "to-start.moved %d, pos %d", moved, i);
         if (i == 9 || i == 1)
-            _test(moved == 1);
+            EXPECT_TRUE(moved == 1);
         else if (i >= (int)size)
-            _test(moved == -1);
+            EXPECT_TRUE(moved == -1);
         else
-            _test(moved == 0);
+            EXPECT_TRUE(moved == 0);
     }
 
     // Assumption about equality of UCS4 IsWordChar and isalnum for
@@ -319,12 +288,39 @@ void AuxTest::TestUTF8(unsigned int size) {
         ucs4_t               u = Fast_UnicodeUtil::GetUTF8Char(pc);
         bool                 utf8res = Fast_UnicodeUtil::IsWordChar(u);
         bool                 asciires = std::isalnum(c);
-        _test(utf8res == asciires);
+        EXPECT_TRUE(utf8res == asciires);
         if (utf8res != asciires) fprintf(stderr, ":%c:%d != :%c:%d\n", u, utf8res, c, asciires);
     }
 }
 
-void AuxTest::TestUTF8context() {
+TEST(AuxTest, testUTF811) {
+    SCOPED_TRACE("11");
+    TestUTF8(11);
+}
+
+TEST(AuxTest, testUTF812) {
+    SCOPED_TRACE("12");
+    TestUTF8(12);
+}
+
+void test_summary(Matcher& m, const char* content, size_t content_len, int size, int matches,
+                           int surround, size_t& charsize) {
+    SummaryDesc* sum = m.CreateSummaryDesc(size, size, matches, surround);
+    EXPECT_TRUE(sum != nullptr);
+    if (!sum) {
+        // No summary generated!
+        return;
+    }
+    std::string res = BuildSummary(content, content_len, sum, _sumconf, charsize);
+
+    if ((verbose || ::testing::Test::HasFailure()) && debug_level > 0) {
+        printf("\nRequested size: %d, matches: %d, surround: %d, Summary size %lu :%s:\n", size, matches, surround,
+               static_cast<unsigned long>(res.size()), res.c_str());
+    }
+    DeleteSummaryDesc(sum);
+}
+
+TEST(AuxTest, testUTF8context) {
     const char*          iso_cont = char_from_u8(u8"AND(m\u00b5ss,fast,s\u00f8kemotor,\u00e5relang)");
     juniper::QueryParser q(iso_cont);
     juniper::QueryHandle qh(q, nullptr);
@@ -344,16 +340,16 @@ void AuxTest::TestUTF8context() {
     s.append(char_from_u8(u8"Hvis bare UTF8-kodingen virker som den skal for tegn som tar mer enn \u00e9n byte."));
 
     auto res = juniper::Analyse(*juniper::TestConfig, qh, s.c_str(), s.size(), 0);
-    _test(static_cast<bool>(res));
+    EXPECT_TRUE(static_cast<bool>(res));
 
     size_t   charsize;
     Matcher& m = *res->_matcher;
 
     res->Scan();
-    _test(m.TotalMatchCnt(0) == 1 && m.ExactMatchCnt(0) == 1);
-    _test(m.TotalMatchCnt(1) == 1 && m.ExactMatchCnt(2) == 1);
-    _test(m.TotalMatchCnt(2) == 2 && m.ExactMatchCnt(2) == 1);
-    _test(m.TotalMatchCnt(3) == 1 && m.ExactMatchCnt(2) == 1);
+    EXPECT_TRUE(m.TotalMatchCnt(0) == 1 && m.ExactMatchCnt(0) == 1);
+    EXPECT_TRUE(m.TotalMatchCnt(1) == 1 && m.ExactMatchCnt(2) == 1);
+    EXPECT_TRUE(m.TotalMatchCnt(2) == 2 && m.ExactMatchCnt(2) == 1);
+    EXPECT_TRUE(m.TotalMatchCnt(3) == 1 && m.ExactMatchCnt(2) == 1);
 
     char separators[3];
     separators[0] = juniper::separators::unit_separator;
@@ -373,18 +369,19 @@ void AuxTest::TestUTF8context() {
     // Summary som er stort nok til � ta hele teksten
     test_summary(m, s.c_str(), s.size(), 800, 100, 300, charsize);
     // fprintf(stderr, "charsize %d s.size %d\n", charsize, s.size());
-    _test(charsize == s.size() - 3 - 11); // Subtract eliminated separators and dual bytes
+    EXPECT_TRUE(charsize == s.size() - 3 - 11); // Subtract eliminated separators and dual bytes
 
     // "Syke" settinger for summary:
     test_summary(m, s.c_str(), s.size(), 10000, 0, 1000, charsize);
     // fprintf(stderr, "charsize %d s.size %d\n", charsize, s.size());
-    _test(charsize == s.size() - 3 - 11); // Subtract eliminated separators and dual bytes
+    EXPECT_TRUE(charsize == s.size() - 3 - 11); // Subtract eliminated separators and dual bytes
 
-    if (GetNumFailed() > 0 && debug_level > 0) {
+    if (::testing::Test::HasFailure() && debug_level > 0) {
         fprintf(stderr, "Characters in original text: %ld\n", s.size());
         test_dump(s.c_str(), s.size());
         m.dump_statistics();
     }
+    DeleteSummaryConfig(_sumconf);
 }
 
 struct TermTextPair {
@@ -421,7 +418,7 @@ static TermTextPair testjap[] = {
      ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; "},
     {nullptr, nullptr}};
 
-void AuxTest::TestJapanese() {
+TEST(AuxTest, testJapanese) {
     for (int i = 0; testjap[i].term != nullptr; i++) {
         const char*          qstr = testjap[i].term;
         juniper::QueryParser q(qstr);
@@ -430,7 +427,7 @@ void AuxTest::TestJapanese() {
         const char* content = testjap[i].text;
         int         content_len = strlen(content);
         auto        res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0);
-        _test(static_cast<bool>(res));
+        EXPECT_TRUE(static_cast<bool>(res));
 
         size_t   charsize;
         Matcher& m = *res->_matcher;
@@ -442,38 +439,38 @@ void AuxTest::TestJapanese() {
             _sumconf = CreateSummaryConfig("<hit>", "</hit>", "...", "", connectors);
 
         SummaryDesc* sumdesc = m.CreateSummaryDesc(256, 256, 4, 80);
-        _test(sumdesc != nullptr);
+        EXPECT_TRUE(sumdesc != nullptr);
         if (!sumdesc) return;
         std::string sum = BuildSummary(content, content_len, sumdesc, _sumconf, charsize);
 
         switch (i) {
         case 0:
             // Matching a multibyte sequence
-            _test(m.TotalMatchCnt(0) == 1 && m.ExactMatchCnt(0) == 1);
+            EXPECT_TRUE(m.TotalMatchCnt(0) == 1 && m.ExactMatchCnt(0) == 1);
             // printf("total %d exact %d\n", m.TotalMatchCnt(0),m.ExactMatchCnt(0));
             break;
         case 1:
             // Matching short word in loong multibyte sequence
-            _test(m.TotalMatchCnt(0) == 1 && m.ExactMatchCnt(0) == 1);
-            _test(sum.size() <= 400);
+            EXPECT_TRUE(m.TotalMatchCnt(0) == 1 && m.ExactMatchCnt(0) == 1);
+            EXPECT_TRUE(sum.size() <= 400);
             break;
         case 2:
             // Matching word in between multibyte separators
-            _test(m.TotalMatchCnt(0) == 1 && m.ExactMatchCnt(0) == 1);
+            EXPECT_TRUE(m.TotalMatchCnt(0) == 1 && m.ExactMatchCnt(0) == 1);
             break;
         case 3:
             // Check that result is the complete string (markup excluded)
-            _test(sum.size() - 11 == charsize);
+            EXPECT_TRUE(sum.size() - 11 == charsize);
             // printf("sz %d charsz %d :%s:\n", sum.size(), charsize, sum.c_str());
             break;
         case 4:
             // Check that result is the complete string (markup excluded)
-            _test(sum.size() - 11 == charsize);
+            EXPECT_TRUE(sum.size() - 11 == charsize);
             // printf("sz %d charsz %d :%s:\n", sum.size(), charsize, sum.c_str());
             break;
         case 5:
             // Check that we get no noise at the start or end of this
-            _test(sum.size() == 103 && charsize == 86);
+            EXPECT_TRUE(sum.size() == 103 && charsize == 86);
             // printf("sz %d charsz %d :%s:\n", sum.size(), charsize, sum.c_str());
             break;
         default: break;
@@ -483,24 +480,7 @@ void AuxTest::TestJapanese() {
     }
 }
 
-void AuxTest::test_summary(Matcher& m, const char* content, size_t content_len, int size, int matches,
-                           int surround, size_t& charsize) {
-    SummaryDesc* sum = m.CreateSummaryDesc(size, size, matches, surround);
-    _test(sum != nullptr);
-    if (!sum) {
-        // No summary generated!
-        return;
-    }
-    std::string res = BuildSummary(content, content_len, sum, _sumconf, charsize);
-
-    if ((verbose || GetNumFailed() > 0) && debug_level > 0) {
-        printf("\nRequested size: %d, matches: %d, surround: %d, Summary size %lu :%s:\n", size, matches, surround,
-               static_cast<unsigned long>(res.size()), res.c_str());
-    }
-    DeleteSummaryDesc(sum);
-}
-
-void AuxTest::TestStartHits() {
+TEST(AuxTest, testStartHits) {
     juniper::QueryParser q("elvis");
     juniper::QueryHandle qh(q, "dynlength.120");
 
@@ -510,14 +490,14 @@ void AuxTest::TestStartHits() {
                           "the end must be much longer than this to trigger the case";
     int         content_len = strlen(content);
     auto        res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0);
-    _test(static_cast<bool>(res));
+    EXPECT_TRUE(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
     (void)sum;
-    // TODO: ReEnable    _test(sum->Length() != 0);
+    // TODO: ReEnable    EXPECT_TRUE(sum->Length() != 0);
 }
 
-void AuxTest::TestEndHit() {
+TEST(AuxTest, testEndHit) {
     juniper::QueryParser q("match");
     juniper::QueryHandle qh(q, "dynlength.120");
 
@@ -529,13 +509,13 @@ void AuxTest::TestEndHit() {
     size_t      content_len = strlen(content) - 55;
 
     auto res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0);
-    _test(static_cast<bool>(res));
+    EXPECT_TRUE(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
-    _test(sum->Length() != 0);
+    EXPECT_TRUE(sum->Length() != 0);
 }
 
-void AuxTest::TestJuniperStack() {
+TEST(AuxTest, testJuniperStack) {
     // Stack simplification tests
     QueryExpr* q = new QueryNode(1, 0, 0);
     QueryExpr* q1 = new QueryNode(1, 0, 0);
@@ -547,18 +527,18 @@ void AuxTest::TestJuniperStack() {
 
     std::string s;
     q->Dump(s);
-    _test(strcmp(s.c_str(), "Hepp:100") == 0);
+    EXPECT_TRUE(strcmp(s.c_str(), "Hepp:100") == 0);
     delete q;
 
-    if (GetNumFailed() > 0) fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
+    if (::testing::Test::HasFailure()) fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
 
     q = new QueryNode(2, 0, 0);
     q->_arity = 0;
     SimplifyStack(q);
     std::string s1;
-    _test(q == nullptr);
+    EXPECT_TRUE(q == nullptr);
 
-    if (GetNumFailed() > 0) fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
+    if (::testing::Test::HasFailure()) fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
 }
 
 class TokenProcessor : public ITokenProcessor {
@@ -583,9 +563,10 @@ public:
     const std::vector<std::string>& getTokens() const { return _tokens; }
 };
 
-bool AuxTest::assertChar(ucs4_t act, char exp) {
+bool assertChar(ucs4_t act, char exp) {
     // LOG(info, "assertChar(%d(%c), %c)", act, (char)act, exp);
-    return _test((char)act == exp);
+    EXPECT_TRUE((char)act == exp);
+    return ((char)act == exp);
 }
 
 using QueryNodeUP = std::unique_ptr<QueryNode>;
@@ -622,156 +603,156 @@ Ctx::Ctx(const std::string& text_, QB& qb_)
 }
 Ctx::~Ctx() = default;
 
-void AuxTest::TestSpecialTokenRegistry() {
+TEST(AuxTest, testSpecialTokenRegistry) {
     {
         using CharStream = SpecialTokenRegistry::CharStream;
         ucs4_t buf[16];
         {
             std::string text = " c+-";
             CharStream  cs(text.c_str(), text.c_str() + text.size(), buf, buf + 16);
-            _test(!cs.isStartWordChar());
-            _test(cs.hasMoreChars());
-            _test(assertChar(cs.getNextChar(), ' '));
-            _test(cs.hasMoreChars());
+            EXPECT_TRUE(!cs.isStartWordChar());
+            EXPECT_TRUE(cs.hasMoreChars());
+            EXPECT_TRUE(assertChar(cs.getNextChar(), ' '));
+            EXPECT_TRUE(cs.hasMoreChars());
             cs.reset();
-            _test(cs.hasMoreChars());
-            _test(assertChar(cs.getNextChar(), ' '));
-            _test(assertChar(cs.getNextChar(), 'c'));
-            _test(cs.hasMoreChars());
+            EXPECT_TRUE(cs.hasMoreChars());
+            EXPECT_TRUE(assertChar(cs.getNextChar(), ' '));
+            EXPECT_TRUE(assertChar(cs.getNextChar(), 'c'));
+            EXPECT_TRUE(cs.hasMoreChars());
             cs.reset();
-            _test(cs.hasMoreChars());
-            _test(assertChar(cs.getNextChar(), ' '));
-            _test(assertChar(cs.getNextChar(), 'c'));
-            _test(assertChar(cs.getNextChar(), '+'));
-            _test(cs.hasMoreChars());
+            EXPECT_TRUE(cs.hasMoreChars());
+            EXPECT_TRUE(assertChar(cs.getNextChar(), ' '));
+            EXPECT_TRUE(assertChar(cs.getNextChar(), 'c'));
+            EXPECT_TRUE(assertChar(cs.getNextChar(), '+'));
+            EXPECT_TRUE(cs.hasMoreChars());
             cs.reset();
-            _test(cs.hasMoreChars());
-            _test(assertChar(cs.getNextChar(), ' '));
-            _test(assertChar(cs.getNextChar(), 'c'));
-            _test(assertChar(cs.getNextChar(), '+'));
-            _test(assertChar(cs.getNextChar(), '-'));
-            _test(!cs.hasMoreChars());
+            EXPECT_TRUE(cs.hasMoreChars());
+            EXPECT_TRUE(assertChar(cs.getNextChar(), ' '));
+            EXPECT_TRUE(assertChar(cs.getNextChar(), 'c'));
+            EXPECT_TRUE(assertChar(cs.getNextChar(), '+'));
+            EXPECT_TRUE(assertChar(cs.getNextChar(), '-'));
+            EXPECT_TRUE(!cs.hasMoreChars());
             cs.reset();
-            _test(cs.hasMoreChars());
-            _test(assertChar(cs.getNextChar(), ' '));
-            _test(cs.hasMoreChars());
-            _test(assertChar(cs.getNextChar(), 'c'));
-            _test(cs.hasMoreChars());
-            _test(assertChar(cs.getNextChar(), '+'));
-            _test(cs.hasMoreChars());
-            _test(assertChar(cs.getNextChar(), '-'));
-            _test(!cs.hasMoreChars());
+            EXPECT_TRUE(cs.hasMoreChars());
+            EXPECT_TRUE(assertChar(cs.getNextChar(), ' '));
+            EXPECT_TRUE(cs.hasMoreChars());
+            EXPECT_TRUE(assertChar(cs.getNextChar(), 'c'));
+            EXPECT_TRUE(cs.hasMoreChars());
+            EXPECT_TRUE(assertChar(cs.getNextChar(), '+'));
+            EXPECT_TRUE(cs.hasMoreChars());
+            EXPECT_TRUE(assertChar(cs.getNextChar(), '-'));
+            EXPECT_TRUE(!cs.hasMoreChars());
         }
         { // test reset with increase to next char
             std::string text = " c+-";
             CharStream  cs(text.c_str(), text.c_str() + text.size(), buf, buf + 16);
-            _test(cs.resetAndInc());
-            _test(cs.isStartWordChar());
-            _test(cs.hasMoreChars());
-            _test(assertChar(cs.getNextChar(), 'c'));
-            _test(assertChar(cs.getNextChar(), '+'));
-            _test(assertChar(cs.getNextChar(), '-'));
-            _test(!cs.hasMoreChars());
+            EXPECT_TRUE(cs.resetAndInc());
+            EXPECT_TRUE(cs.isStartWordChar());
+            EXPECT_TRUE(cs.hasMoreChars());
+            EXPECT_TRUE(assertChar(cs.getNextChar(), 'c'));
+            EXPECT_TRUE(assertChar(cs.getNextChar(), '+'));
+            EXPECT_TRUE(assertChar(cs.getNextChar(), '-'));
+            EXPECT_TRUE(!cs.hasMoreChars());
             cs.reset();
-            _test(cs.hasMoreChars());
-            _test(assertChar(cs.getNextChar(), 'c'));
-            _test(assertChar(cs.getNextChar(), '+'));
-            _test(assertChar(cs.getNextChar(), '-'));
-            _test(!cs.hasMoreChars());
-            _test(cs.resetAndInc());
-            _test(!cs.isStartWordChar());
-            _test(cs.hasMoreChars());
-            _test(assertChar(cs.getNextChar(), '+'));
-            _test(assertChar(cs.getNextChar(), '-'));
-            _test(!cs.hasMoreChars());
-            _test(cs.resetAndInc());
-            _test(!cs.isStartWordChar());
-            _test(cs.hasMoreChars());
-            _test(assertChar(cs.getNextChar(), '-'));
-            _test(!cs.hasMoreChars());
-            _test(!cs.resetAndInc());
-            _test(!cs.hasMoreChars());
+            EXPECT_TRUE(cs.hasMoreChars());
+            EXPECT_TRUE(assertChar(cs.getNextChar(), 'c'));
+            EXPECT_TRUE(assertChar(cs.getNextChar(), '+'));
+            EXPECT_TRUE(assertChar(cs.getNextChar(), '-'));
+            EXPECT_TRUE(!cs.hasMoreChars());
+            EXPECT_TRUE(cs.resetAndInc());
+            EXPECT_TRUE(!cs.isStartWordChar());
+            EXPECT_TRUE(cs.hasMoreChars());
+            EXPECT_TRUE(assertChar(cs.getNextChar(), '+'));
+            EXPECT_TRUE(assertChar(cs.getNextChar(), '-'));
+            EXPECT_TRUE(!cs.hasMoreChars());
+            EXPECT_TRUE(cs.resetAndInc());
+            EXPECT_TRUE(!cs.isStartWordChar());
+            EXPECT_TRUE(cs.hasMoreChars());
+            EXPECT_TRUE(assertChar(cs.getNextChar(), '-'));
+            EXPECT_TRUE(!cs.hasMoreChars());
+            EXPECT_TRUE(!cs.resetAndInc());
+            EXPECT_TRUE(!cs.hasMoreChars());
         }
         { // test lower case
             std::string text = "C";
             CharStream  cs(text.c_str(), text.c_str() + text.size(), buf, buf + 16);
-            _test(assertChar(cs.getNextChar(), 'c'));
+            EXPECT_TRUE(assertChar(cs.getNextChar(), 'c'));
         }
     }
     { // test tokenizer with special token registry
 
         { // only special token registered
             Ctx c("foo", QB(2).add("c++").add("foo", false));
-            _test(c.str.getSpecialTokens().size() == 1);
+            EXPECT_TRUE(c.str.getSpecialTokens().size() == 1);
         }
         { // various matches
             std::string annotation = "\357\277\271dvdplusminus\357\277\272dvd+-\357\277\273";
             std::string text = "c++ !my C++ text ?.net dvd+- stuff " + annotation;
             Ctx         c(text, QB(3).add("c++").add(".net").add("dvd+-", false));
-            _test(c.str.getSpecialTokens().size() == 2);
-            _test(c.tp.getTokens().size() == 9);
-            _test(c.tp.getTokens()[0] == "c++");
-            _test(c.tp.getTokens()[1] == "my");
-            _test(c.tp.getTokens()[2] == "C++");
-            _test(c.tp.getTokens()[3] == "text");
-            _test(c.tp.getTokens()[4] == ".net");
-            _test(c.tp.getTokens()[5] == "dvd");
-            _test(c.tp.getTokens()[6] == "stuff");
-            _test(c.tp.getTokens()[7] == annotation);
-            _test(c.tp.getTokens()[8] == "");
+            EXPECT_TRUE(c.str.getSpecialTokens().size() == 2);
+            EXPECT_TRUE(c.tp.getTokens().size() == 9);
+            EXPECT_TRUE(c.tp.getTokens()[0] == "c++");
+            EXPECT_TRUE(c.tp.getTokens()[1] == "my");
+            EXPECT_TRUE(c.tp.getTokens()[2] == "C++");
+            EXPECT_TRUE(c.tp.getTokens()[3] == "text");
+            EXPECT_TRUE(c.tp.getTokens()[4] == ".net");
+            EXPECT_TRUE(c.tp.getTokens()[5] == "dvd");
+            EXPECT_TRUE(c.tp.getTokens()[6] == "stuff");
+            EXPECT_TRUE(c.tp.getTokens()[7] == annotation);
+            EXPECT_TRUE(c.tp.getTokens()[8] == "");
         }
         { // cannot start inside a word
             Ctx c("foo ac++", QB(1).add("c++"));
-            _test(c.tp.getTokens().size() == 3);
-            _test(c.tp.getTokens()[0] == "foo");
-            _test(c.tp.getTokens()[1] == "ac");
-            _test(c.tp.getTokens()[2] == "");
+            EXPECT_TRUE(c.tp.getTokens().size() == 3);
+            EXPECT_TRUE(c.tp.getTokens()[0] == "foo");
+            EXPECT_TRUE(c.tp.getTokens()[1] == "ac");
+            EXPECT_TRUE(c.tp.getTokens()[2] == "");
         }
         { // can end inside a word (TODO: can be fixed if it is a problem)
             Ctx c("++ca foo", QB(1).add("++c"));
-            _test(c.tp.getTokens().size() == 4);
-            _test(c.tp.getTokens()[0] == "++c");
-            _test(c.tp.getTokens()[1] == "a");
-            _test(c.tp.getTokens()[2] == "foo");
-            _test(c.tp.getTokens()[3] == "");
+            EXPECT_TRUE(c.tp.getTokens().size() == 4);
+            EXPECT_TRUE(c.tp.getTokens()[0] == "++c");
+            EXPECT_TRUE(c.tp.getTokens()[1] == "a");
+            EXPECT_TRUE(c.tp.getTokens()[2] == "foo");
+            EXPECT_TRUE(c.tp.getTokens()[3] == "");
         }
         { // many scans but only match at the end
             Ctx c("a+b- a+b+c- a+b+c+", QB(1).add("a+b+c+"));
-            _test(c.tp.getTokens().size() == 7);
-            _test(c.tp.getTokens()[0] == "a");
-            _test(c.tp.getTokens()[1] == "b");
-            _test(c.tp.getTokens()[2] == "a");
-            _test(c.tp.getTokens()[3] == "b");
-            _test(c.tp.getTokens()[4] == "c");
-            _test(c.tp.getTokens()[5] == "a+b+c+");
-            _test(c.tp.getTokens()[6] == "");
+            EXPECT_TRUE(c.tp.getTokens().size() == 7);
+            EXPECT_TRUE(c.tp.getTokens()[0] == "a");
+            EXPECT_TRUE(c.tp.getTokens()[1] == "b");
+            EXPECT_TRUE(c.tp.getTokens()[2] == "a");
+            EXPECT_TRUE(c.tp.getTokens()[3] == "b");
+            EXPECT_TRUE(c.tp.getTokens()[4] == "c");
+            EXPECT_TRUE(c.tp.getTokens()[5] == "a+b+c+");
+            EXPECT_TRUE(c.tp.getTokens()[6] == "");
         }
         { // two special tokens (one being a substring of the other)
             Ctx c("c+c+c-", QB(2).add("c+c+c+").add("+c+"));
-            _test(c.tp.getTokens().size() == 4);
-            _test(c.tp.getTokens()[0] == "c");
-            _test(c.tp.getTokens()[1] == "+c+");
-            _test(c.tp.getTokens()[2] == "c");
-            _test(c.tp.getTokens()[3] == "");
+            EXPECT_TRUE(c.tp.getTokens().size() == 4);
+            EXPECT_TRUE(c.tp.getTokens()[0] == "c");
+            EXPECT_TRUE(c.tp.getTokens()[1] == "+c+");
+            EXPECT_TRUE(c.tp.getTokens()[2] == "c");
+            EXPECT_TRUE(c.tp.getTokens()[3] == "");
         }
         { // cjk
             Ctx c("fish: \xE9\xB1\xBC!", QB(1).add("\xE9\xB1\xBC!"));
-            _test(c.tp.getTokens().size() == 3);
-            _test(c.tp.getTokens()[0] == "fish");
-            _test(c.tp.getTokens()[1] == "\xE9\xB1\xBC!");
-            _test(c.tp.getTokens()[2] == "");
+            EXPECT_TRUE(c.tp.getTokens().size() == 3);
+            EXPECT_TRUE(c.tp.getTokens()[0] == "fish");
+            EXPECT_TRUE(c.tp.getTokens()[1] == "\xE9\xB1\xBC!");
+            EXPECT_TRUE(c.tp.getTokens()[2] == "");
         }
         { // special token with non-word first
             Ctx c("+++c ..net", QB(2).add("++c").add(".net"));
-            _test(c.tp.getTokens().size() == 3);
-            _test(c.tp.getTokens()[0] == "++c");
-            _test(c.tp.getTokens()[1] == ".net");
-            _test(c.tp.getTokens()[2] == "");
+            EXPECT_TRUE(c.tp.getTokens().size() == 3);
+            EXPECT_TRUE(c.tp.getTokens()[0] == "++c");
+            EXPECT_TRUE(c.tp.getTokens()[1] == ".net");
+            EXPECT_TRUE(c.tp.getTokens()[2] == "");
         }
     }
 }
 
-void AuxTest::TestWhiteSpacePreserved() {
+TEST(AuxTest, testWhiteSpacePreserved) {
     std::string input = "\x1f"
                         "best"
                         "\x1f"
@@ -798,40 +779,16 @@ void AuxTest::TestWhiteSpacePreserved() {
     juniper::QueryParser q("best");
     juniper::QueryHandle qh(q, nullptr);
     auto                 res = juniper::Analyse(myConfig, qh, input.c_str(), input.size(), 0);
-    _test(static_cast<bool>(res));
+    EXPECT_TRUE(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
     std::string       expected = "<hi>best</hi>  of  \nmetallica";
     std::string       actual(sum->Text(), sum->Length());
-    _test(actual == expected);
+    EXPECT_TRUE(actual == expected);
 }
 
-void AuxTest::Run(MethodContainer::iterator& itr) {
-    try {
-        (this->*itr->second)();
-    } catch (...) { _fail("Got unknown exception in test method " + itr->first); }
-}
-
-void AuxTest::Run(const char* method) {
-    MethodContainer::iterator pos(test_methods_.find(method));
-    if (pos != test_methods_.end()) {
-        Run(pos);
-    } else {
-        std::cerr << "ERROR: No test method named \"" << method << "\"" << std::endl;
-        _fail("No such method");
-    }
-}
-
-void AuxTest::Run() {
-    for (MethodContainer::iterator itr(test_methods_.begin()); itr != test_methods_.end(); ++itr) Run(itr);
-}
-
-void AuxTest::Run(int argc, char* argv[]) {
-    for (int i = 1; i < argc; ++i) {
-        if (strcmp(argv[i], "-m") == 0 && argc > i + 1) {
-            Run(argv[++i]);
-            return;
-        }
-    }
-    Run();
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    juniper::TestEnv te(argc, argv, TEST_PATH("testclient.rc").c_str());
+    return RUN_ALL_TESTS();
 }
