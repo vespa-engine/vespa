@@ -113,7 +113,6 @@ public final class ClusterSpec {
         private Optional<DockerImage> dockerImageRepo = Optional.empty();
         private Version vespaVersion;
         private boolean exclusive = false;
-        private boolean provisionForApplication = false;
         private Optional<Id> combinedId = Optional.empty();
         private ZoneEndpoint zoneEndpoint = ZoneEndpoint.defaultEndpoint;
         private boolean stateful;
@@ -145,11 +144,6 @@ public final class ClusterSpec {
 
         public Builder exclusive(boolean exclusive) {
             this.exclusive = exclusive;
-            return this;
-        }
-
-        public Builder provisionForApplication(boolean provisionForApplication) {
-            this.provisionForApplication = provisionForApplication;
             return this;
         }
 
