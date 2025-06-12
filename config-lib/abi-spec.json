@@ -343,7 +343,7 @@
       "public java.util.Optional modelId()",
       "public java.util.Optional url()",
       "public java.util.Optional path()",
-      "public java.util.Optional secretName()",
+      "public java.util.Optional secretRef()",
       "public java.nio.file.Path value()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
