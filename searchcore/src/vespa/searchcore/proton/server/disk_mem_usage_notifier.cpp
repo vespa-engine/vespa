@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "disk_mem_usage_notifier.h"
-#include "disk_mem_usage_filter.h"
+#include "resource_usage_write_filter.h"
 #include "i_disk_mem_usage_listener.h"
 #include <vespa/vespalib/util/hw_info.h>
 
@@ -46,7 +46,7 @@ DiskMemUsageNotifier::get_relative_transient_disk_usage(const Guard&) const
     return  static_cast<double>(_transient_usage.disk()) / _hwInfo.disk().sizeBytes();
 }
 
-DiskMemUsageNotifier::DiskMemUsageNotifier(DiskMemUsageFilter& filter)
+DiskMemUsageNotifier::DiskMemUsageNotifier(ResourceUsageWriteFilter& filter)
     : _lock(),
       _hwInfo(filter.get_hw_info()),
       _memoryStats(),

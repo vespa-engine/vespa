@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "disk_mem_usage_filter.h"
 #include "disk_mem_usage_notifier.h"
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
 
@@ -16,7 +15,7 @@ class ITransientResourceUsageProvider;
  * Class to sample disk and memory usage used for filtering write operations.
  */
 class DiskMemUsageSampler {
-    DiskMemUsageFilter     _filter;
+    ResourceUsageWriteFilter& _filter;
     DiskMemUsageNotifier   _notifier;
     std::filesystem::path  _path;
     vespalib::duration     _sampleInterval;
@@ -52,13 +51,13 @@ public:
         { }
     };
 
-    DiskMemUsageSampler(const std::string &path_in, const vespalib::HwInfo &config);
+    DiskMemUsageSampler(const std::string &path_in, ResourceUsageWriteFilter& filter);
     ~DiskMemUsageSampler();
     void close();
 
     void setConfig(const Config &config, IScheduledExecutor & executor);
 
-    const DiskMemUsageFilter& writeFilter() const noexcept { return _filter; }
+    const ResourceUsageWriteFilter& writeFilter() const noexcept { return _filter; }
     IDiskMemUsageNotifier& notifier() noexcept { return _notifier; }
     const DiskMemUsageNotifier& real_notifier() noexcept { return _notifier; }
     void add_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider);

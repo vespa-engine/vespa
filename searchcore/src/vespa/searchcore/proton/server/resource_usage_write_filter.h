@@ -16,7 +16,7 @@ namespace proton {
  * If resource limit is reached then further writes are denied
  * in order to prevent entering an unrecoverable state.
  */
-class DiskMemUsageFilter : public IResourceWriteFilter {
+class ResourceUsageWriteFilter : public IResourceWriteFilter {
 public:
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
@@ -33,8 +33,8 @@ private:
 
     void recalc_state(const Guard& guard);
 public:
-    DiskMemUsageFilter(const vespalib::HwInfo& hwInfo);
-    ~DiskMemUsageFilter() override;
+    ResourceUsageWriteFilter(const vespalib::HwInfo& hwInfo);
+    ~ResourceUsageWriteFilter() override;
     bool acceptWriteOperation() const override;
     State getAcceptState() const override;
     const vespalib::HwInfo& get_hw_info() const noexcept { return _hwInfo; }
