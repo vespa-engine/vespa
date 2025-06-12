@@ -9,6 +9,7 @@ vespa_add_executable(slobrok_configure_test_app TEST
     configure.cpp
     DEPENDS
     vespa_slobrok_slobrokserver
+    GTest::gtest
 )
 vespa_add_test(
     NAME slobrok_configure_test_app
