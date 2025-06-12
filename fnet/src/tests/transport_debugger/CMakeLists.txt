@@ -4,5 +4,6 @@ vespa_add_executable(fnet_transport_debugger_test_app TEST
     transport_debugger_test.cpp
     DEPENDS
     vespa_fnet
+    GTest::gtest
 )
 vespa_add_test(NAME fnet_transport_debugger_test_app COMMAND fnet_transport_debugger_test_app)

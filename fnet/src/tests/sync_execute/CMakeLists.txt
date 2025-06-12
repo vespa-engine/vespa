@@ -4,5 +4,6 @@ vespa_add_executable(fnet_sync_execute_test_app TEST
     sync_execute.cpp
     DEPENDS
     vespa_fnet
+    GTest::gtest
 )
 vespa_add_test(NAME fnet_sync_execute_test_app COMMAND fnet_sync_execute_test_app)

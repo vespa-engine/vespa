@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/task.h>
 
@@ -17,7 +17,7 @@ public:
 };
 
 
-TEST("slow event loop") {
+TEST(SlowEventLoopTest, slow_event_loop) {
   vespalib::steady_time t(vespalib::duration::zero());
 
   FNET_Scheduler scheduler(&t);
@@ -38,7 +38,8 @@ TEST("slow event loop") {
       t += 1ms;
   }
 
-  if (!EXPECT_TRUE(cnt > 4700 && cnt < 4800)) {
+  if (bool ok = cnt > 4700 && cnt < 4800; !ok) {
+      EXPECT_TRUE(ok);
       fprintf(stderr, "cnt=%d\n", cnt);
   }
 
@@ -56,9 +57,10 @@ TEST("slow event loop") {
       t += 10s;
   }
 
-  if (!EXPECT_TRUE(cnt2 > 15 && cnt2 < 25)) {
+  if (bool ok = cnt2 > 15 && cnt2 < 25; !ok) {
+      EXPECT_TRUE(ok);
       fprintf(stderr, "cnt2=%d\n", cnt2);
   }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

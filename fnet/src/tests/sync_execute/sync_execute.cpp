@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fnet/transport.h>
@@ -12,7 +12,7 @@ struct DoIt : public FNET_IExecutable {
     }
 };
 
-TEST("sync execute") {
+TEST(SyncExecuteTest, sync_execute) {
     DoIt exe1;
     DoIt exe2;
     DoIt exe3;
@@ -40,4 +40,4 @@ TEST("sync execute") {
     ASSERT_TRUE(exe5.gate.getCount() == 1u);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
