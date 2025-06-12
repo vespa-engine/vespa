@@ -17,6 +17,7 @@ vespa_add_library(eval_eval OBJECT
     feature_name_extractor.cpp
     function.cpp
     gbdt.cpp
+    inline_operation.cpp
     int8float.cpp
     interpreted_function.cpp
     key_gen.cpp

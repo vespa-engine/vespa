@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "int8float.h"
 #include "operation.h"
 #include <vespa/vespalib/util/typify.h>
 #include <cblas.h>
@@ -172,6 +173,11 @@ struct DotProduct<double,double> {
     static double apply(const double * lhs, const double * rhs, size_t count) {
         return cblas_ddot(count, lhs, 1, rhs, 1);
     }
+};
+
+template <>
+struct DotProduct<Int8Float, Int8Float> {
+    static double apply(const Int8Float *lhs, const Int8Float *rhs, size_t count);
 };
 
 //-----------------------------------------------------------------------------
