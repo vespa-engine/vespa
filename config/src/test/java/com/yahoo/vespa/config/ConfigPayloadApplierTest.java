@@ -70,7 +70,7 @@ public class ConfigPayloadApplierTest {
         var config = configBuilder.build();
 
         assertNull(config.myModel());
-        assertEquals(Optional.of("mySecret"), config.myModelReference().secretName());
+        assertEquals(Optional.of("mySecret"), config.myModelReference().secretRef());
         assertFalse(config.myModelReference().isResolved());
     }
 

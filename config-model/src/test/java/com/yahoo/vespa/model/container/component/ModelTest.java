@@ -58,8 +58,8 @@ public class ModelTest {
         var dummyUrl = "https://vespa.ai/some-model.onxx";
         var xml = """
                 <component id="bert-embedder" type="hugging-face-embedder">
-                  <transformer-model url="%s" secret-name="myTransformerSecret" />
-                  <tokenizer-model url="%s" secret-name="myTokenizerSecret"/>
+                  <transformer-model url="%s" secret-ref="myTransformerSecret" />
+                  <tokenizer-model url="%s" secret-ref="myTokenizerSecret"/>
                 </component>
                 """.formatted(dummyUrl, dummyUrl);
 
@@ -67,11 +67,11 @@ public class ModelTest {
         var element = XML.getDocument(xml).getDocumentElement();
 
         var model = Model.fromXml(state, element, "transformer-model", Set.of()).get();
-        assertEquals(Optional.of("myTransformerSecret"), model.modelReference().secretName());
+        assertEquals(Optional.of("myTransformerSecret"), model.modelReference().secretRef());
         assertEquals(Optional.of(UrlReference.valueOf(dummyUrl)), model.modelReference().url());
 
         var tokenizer = Model.fromXml(state, element, "tokenizer-model", Set.of()).get();
-        assertEquals(Optional.of("myTokenizerSecret"), tokenizer.modelReference().secretName());
+        assertEquals(Optional.of("myTokenizerSecret"), tokenizer.modelReference().secretRef());
         assertEquals(Optional.of(UrlReference.valueOf(dummyUrl)), tokenizer.modelReference().url());
 
     }

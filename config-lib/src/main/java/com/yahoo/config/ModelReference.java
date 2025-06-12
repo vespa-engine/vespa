@@ -24,16 +24,16 @@ public class ModelReference {
 
     // If unresolved URL and requires authentication
     // Refers to a container secret as defined in services.xml '<secrets>'
-    private final Optional<String> secretName;
+    private final Optional<String> secretRef;
 
     private ModelReference(Optional<String> modelId,
                            Optional<UrlReference> url,
-                           Optional<String> secretName,
+                           Optional<String> secretRef,
                            Optional<FileReference> path,
                            Path resolved) {
         this.modelId = modelId;
         this.url = url;
-        this.secretName = secretName;
+        this.secretRef = secretRef;
         this.path = path;
         this.resolved = resolved;
     }
@@ -50,8 +50,8 @@ public class ModelReference {
     /** Returns the path specified for this model, or null if it is resolved. */
     public Optional<FileReference> path() { return path; }
 
-    /** Returns the secret name specified for this model, or null if it is resolved. */
-    public Optional<String> secretName() { return secretName; }
+    /** Returns the secret reference specified for this model, or null if it is resolved. */
+    public Optional<String> secretRef() { return secretRef; }
 
     /** Returns the path to the file containing this model, or null if this is unresolved. */
     public Path value() { return resolved; }
@@ -61,7 +61,7 @@ public class ModelReference {
         if ( ! (o instanceof ModelReference other)) return false;
         if ( ! Objects.equals(this.modelId, other.modelId)) return false;
         if ( ! Objects.equals(this.url, other.url)) return false;
-        if ( ! Objects.equals(this.secretName, other.secretName)) return false;
+        if ( ! Objects.equals(this.secretRef, other.secretRef)) return false;
         if ( ! Objects.equals(this.path, other.path)) return false;
         if ( ! Objects.equals(this.resolved, other.resolved)) return false;
         return true;
@@ -69,7 +69,7 @@ public class ModelReference {
 
     @Override
     public int hashCode() {
-        return Objects.hash(modelId, url, secretName, path, resolved);
+        return Objects.hash(modelId, url, secretRef, path, resolved);
     }
 
     /** Returns this on the format accepted by valueOf */
@@ -78,13 +78,13 @@ public class ModelReference {
         if (resolved != null) return resolved.toString();
         return modelId.orElse("\"\"") + " " +
                url.map(UrlReference::value).orElse("\"\"") + " " +
-               secretName.orElse("\"\"") + " " +
+               secretRef.orElse("\"\"") + " " +
                path.map(FileReference::value).orElse("\"\"");
     }
 
     /**
      * Creates a model reference which is either a single string with no spaces if resolved, or if unresolved
-     * a found-part string on the form <code>modelId url secretName path</code>, where
+     * a found-part string on the form <code>modelId url secretRef path</code>, where
      * each of the elements is either a value not containing space, or empty represented by "".
      */
     public static ModelReference valueOf(String s) {
@@ -125,11 +125,11 @@ public class ModelReference {
     /** Creates an unresolved reference with an optional secret. */
     public static ModelReference unresolved(Optional<String> modelId,
                                             Optional<UrlReference> url,
-                                            Optional<String> secretName,
+                                            Optional<String> secretRef,
                                             Optional<FileReference> path) {
         if (modelId.isEmpty() && url.isEmpty() && path.isEmpty())
             throw new IllegalArgumentException("A model reference must have either a model id, url or path");
-        return new ModelReference(modelId, url, secretName, path, null);
+        return new ModelReference(modelId, url, secretRef, path, null);
     }
 
     /** Creates a resolved reference. */

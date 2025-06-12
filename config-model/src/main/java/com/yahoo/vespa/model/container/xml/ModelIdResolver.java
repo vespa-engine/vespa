@@ -120,17 +120,17 @@ public class ModelIdResolver {
     }
 
     public static ModelReference resolveToModelReference(
-            String paramName, Optional<String> id, Optional<String> url, Optional<String> secretName, Optional<String> path, Set<String> requiredTags, DeployState state) {
-        if (id.isEmpty()) return createModelReference(Optional.empty(), url, secretName, path, state);
+            String paramName, Optional<String> id, Optional<String> url, Optional<String> secretRef, Optional<String> path, Set<String> requiredTags, DeployState state) {
+        if (id.isEmpty()) return createModelReference(Optional.empty(), url, secretRef, path, state);
         else if (state.isHosted())
             return createModelReference(id, Optional.of(modelIdToUrl(paramName, id.get(), requiredTags)), Optional.empty(), Optional.empty(), state);
         else if (url.isEmpty() && path.isEmpty()) throw onlyModelIdInHostedException(paramName);
-        else return createModelReference(id, url, secretName, path, state);
+        else return createModelReference(id, url, secretRef, path, state);
     }
 
-    private static ModelReference createModelReference(Optional<String> id, Optional<String> url, Optional<String> secretName, Optional<String> path, DeployState state) {
+    private static ModelReference createModelReference(Optional<String> id, Optional<String> url, Optional<String> secretRef, Optional<String> path, DeployState state) {
         var fileRef = path.map(p -> state.getFileRegistry().addFile(p));
-        return ModelReference.unresolved(id, url.map(UrlReference::valueOf), secretName, fileRef);
+        return ModelReference.unresolved(id, url.map(UrlReference::valueOf), secretRef, fileRef);
     }
 
     private static IllegalArgumentException onlyModelIdInHostedException(String paramName) {
