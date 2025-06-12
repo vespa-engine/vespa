@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/messagebus/network/rpcservice.h>
@@ -26,10 +26,9 @@ testNullAddress(RPCNetwork &network, const string &pattern)
 {
     RPCService service(network.getMirror(), pattern);
     RPCServiceAddress::UP obj = service.make_address();
-    if ( ! EXPECT_FALSE(obj)) {
-        return false;
-    }
-    return true;
+    bool has_obj(obj);
+    EXPECT_FALSE(has_obj);
+    return !has_obj;
 }
 
 bool
@@ -38,19 +37,18 @@ testAddress(RPCNetwork &network, const string &pattern,
 {
     RPCService service(network.getMirror(), pattern);
     RPCServiceAddress::UP obj = service.make_address();
-    if (!EXPECT_TRUE(obj)) {
+    bool has_obj(obj);
+    EXPECT_TRUE(has_obj);
+    if (!has_obj) {
         return false;
     }
-    if (!EXPECT_EQUAL(expectedSpec, obj->getConnectionSpec())) {
-        return false;
-    }
-    if (!EXPECT_EQUAL(expectedSession, obj->getSessionName())) {
-        return false;
-    }
-    return true;
+    EXPECT_EQ(expectedSpec, obj->getConnectionSpec());
+    EXPECT_EQ(expectedSession, obj->getSessionName());
+    return ((expectedSpec == obj->getConnectionSpec()) &&
+            (expectedSession == obj->getSessionName()));
 }
 
-TEST("testAddrServiceAddress")
+TEST(ServiceAddressTest, testAddrServiceAddress)
 {
     Slobrok slobrok;
     RPCNetwork network(RPCNetworkParams(slobrok.config())
@@ -71,7 +69,7 @@ TEST("testAddrServiceAddress")
     network.shutdown();
 }
 
-TEST("testNameServiceAddress")
+TEST(ServiceAddressTest, testNameServiceAddress)
 {
     Slobrok slobrok;
     RPCNetwork network(RPCNetworkParams(slobrok.config())
@@ -89,4 +87,4 @@ TEST("testNameServiceAddress")
     network.shutdown();
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

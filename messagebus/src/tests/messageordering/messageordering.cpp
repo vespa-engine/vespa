@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
@@ -136,7 +136,7 @@ VerifyReplyReceptor::waitUntilDone(int waitForCount) const
     }
 }
 
-TEST("messageordering_test") {
+TEST(MessageOrderingTest, messageordering_test) {
 
     Slobrok     slobrok;
     TestServer  srcNet(Identity("test/src"), getRouting(), slobrok);
@@ -151,7 +151,7 @@ TEST("messageordering_test") {
     SourceSession::UP      ss = srcNet.mb.createSourceSession(src, ssp);
     DestinationSession::UP ds = dstNet.mb.createDestinationSession("session", true, dst);
     dst.setDestinationSession(*ds);
-    ASSERT_EQUAL(400s, ssp.getTimeout());
+    ASSERT_EQ(400s, ssp.getTimeout());
 
     // wait for slobrok registration
     ASSERT_TRUE(srcNet.waitSlobrok("test/dst/session"));
@@ -167,12 +167,12 @@ TEST("messageordering_test") {
         auto msg = std::make_unique<SimpleMessage>(str, true, commonMessageId);
         msg->getTrace().setLevel(9);
         //LOG(debug, "Sending message %p for %d", msg.get(), i);
-        ASSERT_EQUAL(uint32_t(ErrorCode::NONE),
+        ASSERT_EQ(uint32_t(ErrorCode::NONE),
                      ss->send(std::move(msg), "test").getError().getCode());
     }
     src.waitUntilDone(messageCount);
 
-    ASSERT_EQUAL(std::string(), src.getFailure());
+    ASSERT_EQ(std::string(), src.getFailure());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

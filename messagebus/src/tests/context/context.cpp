@@ -9,7 +9,7 @@
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <thread>
 
 using namespace mbus;
@@ -36,7 +36,7 @@ RoutingSpec getRouting() {
                   .addRoute(RouteSpec("test").addHop("test")));
 }
 
-TEST("context_test") {
+TEST(ContextTest, context_test) {
 
     Slobrok     slobrok;
     TestServer  src(Identity(""), getRouting(), slobrok);
@@ -71,22 +71,22 @@ TEST("context_test") {
         }
         std::this_thread::sleep_for(10ms);
     }
-    EXPECT_EQUAL(queue.size(), 3u);
+    EXPECT_EQ(queue.size(), 3u);
     {
         Reply::UP reply = Reply::UP((Reply*)queue.dequeue().release());
         ASSERT_TRUE(reply);
-        EXPECT_EQUAL(reply->getContext().value.UINT64, 10u);
+        EXPECT_EQ(reply->getContext().value.UINT64, 10u);
     }
     {
         Reply::UP reply = Reply::UP((Reply*)queue.dequeue().release());
         ASSERT_TRUE(reply);
-        EXPECT_EQUAL(reply->getContext().value.UINT64, 20u);
+        EXPECT_EQ(reply->getContext().value.UINT64, 20u);
     }
     {
         Reply::UP reply = Reply::UP((Reply*)queue.dequeue().release());
         ASSERT_TRUE(reply);
-        EXPECT_EQUAL(reply->getContext().value.UINT64, 30u);
+        EXPECT_EQ(reply->getContext().value.UINT64, 30u);
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

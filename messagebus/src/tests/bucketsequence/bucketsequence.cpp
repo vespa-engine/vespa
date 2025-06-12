@@ -7,7 +7,7 @@
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace mbus;
 
@@ -17,7 +17,7 @@ public:
     bool hasBucketSequence() const override { return true; }
 };
 
-TEST("bucketsequence_test") {
+TEST(BucketSequenceTest, bucketsequence_test) {
     Slobrok slobrok;
     TestServer server(MessageBusParams()
                       .addProtocol(std::make_shared<SimpleProtocol>())
@@ -32,9 +32,9 @@ TEST("bucketsequence_test") {
     ASSERT_TRUE(session->send(std::move(msg)).isAccepted());
     Reply::UP reply = receptor.getReply();
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::SEQUENCE_ERROR, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::SEQUENCE_ERROR, reply->getError(0).getCode());
 
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

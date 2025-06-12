@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/messagebus/network/rpcserviceaddress.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace mbus;
 
-TEST("rpcserviceaddress_test") {
+TEST(RpcServiceAddressTest, rpcserviceaddress_test) {
     {
         EXPECT_TRUE(RPCServiceAddress("", "bar").isMalformed());
         EXPECT_TRUE(RPCServiceAddress("foo", "bar").isMalformed());
@@ -35,4 +35,4 @@ TEST("rpcserviceaddress_test") {
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

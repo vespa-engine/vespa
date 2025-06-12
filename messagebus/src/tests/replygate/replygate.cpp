@@ -5,7 +5,7 @@
 #include <vespa/messagebus/replygate.h>
 #include <vespa/messagebus/routablequeue.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace mbus;
 
@@ -55,7 +55,7 @@ struct MySender : public IMessageHandler {
 };
 }
 
-TEST("replygate_test") {
+TEST(ReplyGateTest, replygate_test) {
     {
         RoutableQueue q;
         MySender      sender;
@@ -87,4 +87,4 @@ TEST("replygate_test") {
     EXPECT_TRUE(MyReply::dtorCnt == 2);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

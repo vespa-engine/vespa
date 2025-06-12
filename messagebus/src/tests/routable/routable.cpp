@@ -8,12 +8,12 @@
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/error.h>
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace mbus;
 using namespace std::chrono_literals;
 
-TEST("routable_test") {
+TEST(RoutableTest, routable_test) {
 
     {
         // Test message swap state.
@@ -32,13 +32,13 @@ TEST("routable_test") {
         bar.setTimeRemaining(4ms);
 
         foo.swapState(bar);
-        EXPECT_EQUAL(barRoute.toString(), foo.getRoute().toString());
-        EXPECT_EQUAL(fooRoute.toString(), bar.getRoute().toString());
-        EXPECT_EQUAL(3u, foo.getRetry());
-        EXPECT_EQUAL(1u, bar.getRetry());
+        EXPECT_EQ(barRoute.toString(), foo.getRoute().toString());
+        EXPECT_EQ(fooRoute.toString(), bar.getRoute().toString());
+        EXPECT_EQ(3u, foo.getRetry());
+        EXPECT_EQ(1u, bar.getRetry());
         EXPECT_TRUE(foo.getTimeReceived() >= bar.getTimeReceived());
-        EXPECT_EQUAL(4ms, foo.getTimeRemaining());
-        EXPECT_EQUAL(2ms, bar.getTimeRemaining());
+        EXPECT_EQ(4ms, foo.getTimeRemaining());
+        EXPECT_EQ(2ms, bar.getTimeRemaining());
     }
     {
         // Test reply swap state.
@@ -54,12 +54,12 @@ TEST("routable_test") {
         bar.addError(Error(ErrorCode::ERROR_LIMIT, "err"));
 
         foo.swapState(bar);
-        EXPECT_EQUAL("bar", static_cast<SimpleMessage&>(*foo.getMessage()).getValue());
-        EXPECT_EQUAL("foo", static_cast<SimpleMessage&>(*bar.getMessage()).getValue());
-        EXPECT_EQUAL(2.0, foo.getRetryDelay());
-        EXPECT_EQUAL(1.0, bar.getRetryDelay());
-        EXPECT_EQUAL(1u, foo.getNumErrors());
-        EXPECT_EQUAL(2u, bar.getNumErrors());
+        EXPECT_EQ("bar", static_cast<SimpleMessage&>(*foo.getMessage()).getValue());
+        EXPECT_EQ("foo", static_cast<SimpleMessage&>(*bar.getMessage()).getValue());
+        EXPECT_EQ(2.0, foo.getRetryDelay());
+        EXPECT_EQ(1.0, bar.getRetryDelay());
+        EXPECT_EQ(1u, foo.getNumErrors());
+        EXPECT_EQ(2u, bar.getNumErrors());
     }
     {
         // Test message discard logic.
@@ -86,4 +86,4 @@ TEST("routable_test") {
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
