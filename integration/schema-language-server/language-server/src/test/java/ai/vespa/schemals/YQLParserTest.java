@@ -37,7 +37,7 @@ public class YQLParserTest {
             var parseResult = parseString(input);
             String testMessage = "For input: " + input + Utils.constructDiagnosticMessage(parseResult.diagnostics(), 1);
             assertEquals(expectedErrors, Utils.countErrors(parseResult.diagnostics()), testMessage);
-    
+
             if (expectedErrors == 0) {
                 assertTrue(parseResult.CST().isPresent(), "Expected that a YQLNode was present in the input: " + input);
 
@@ -111,6 +111,9 @@ public class YQLParserTest {
             "all(group(1) each(output(avg(rating))))",
             "all( group(predefined(rating, bucket[-inf, 0>, bucket[0, inf>)) each(output(count())) )",
             "all( group(predefined(rating, bucket[-inf, 0>, bucket[0, inf>)) order(max(rating)) max(1) each( max(100) each(output(summary(name_only)))) )",
+            "all(group(a) # comment\n each(output(count())))",
+            "all(group(a) // comment\n each(output(count())))",
+            "all(group(a) /** comment **/ each(output(count())))",
         };
 
         for (int i = 0; i < groupingQueries.length; i++) {
