@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/left_right_heap.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <stdlib.h>
 #include <algorithm>
 #include <vector>
+#include <cassert>
 
 using namespace vespalib;
 
@@ -63,19 +64,19 @@ struct Input {
         for (size_t i = 0; i < n; ++i) {
             data.push_back(random());
         }
-        ASSERT_EQUAL(n, data.size());
+        assert(n == data.size());
     }
 };
 
 
 template <typename Heap, typename Value = int, typename Cmp = CmpInt>
-struct Setup {
-    using IUP = Setup<Heap, int_up, CmpIntUp>;
+struct MySetup {
+    using IUP = MySetup<Heap, int_up, CmpIntUp>;
     Input &input;
     std::vector<Value> data;
     Cmp cmp;
     size_t limit;
-    Setup(Input &i) : input(i), data(), cmp(), limit(0) {}
+    MySetup(Input &i) : input(i), data(), cmp(), limit(0) {}
 
     static void dumpData(Value *begin, Value *end) {
         int n = 10;
@@ -105,30 +106,22 @@ struct Setup {
             size_t child1 = (2 * i) + 1;
             size_t child2 = (2 * i) + 2;
             if (child1 < len) {
-                if(!EXPECT_LESS_EQUAL(peek_at(begin, end, i),
-                                      peek_at(begin, end, child1)))
-                {
-                    dumpData(begin, end);
-                    TEST_FATAL("forced unwind (see previous failure)");
-                }
+                ASSERT_LE(peek_at(begin, end, i),
+                          peek_at(begin, end, child1)) << (dumpData(begin, end), "");
             }
             if (child2 < len) {
-                if (!EXPECT_LESS_EQUAL(peek_at(begin, end, i),
-                                       peek_at(begin, end, child2)))
-                {
-                    dumpData(begin, end);
-                    TEST_FATAL("forced unwind (see previous failure)");
-                }
+                ASSERT_LE(peek_at(begin, end, i),
+                          peek_at(begin, end, child2)) << (dumpData(begin, end), "");
             }
         }
     }
 
     void push() {
         if (IsRight<Heap>::VALUE) {
-            ASSERT_GREATER(limit, 0u);
+            ASSERT_GT(limit, 0u);
             Heap::push(&data[--limit], &data[data.size()], cmp);
         } else {
-            ASSERT_LESS(limit, data.size());
+            ASSERT_LT(limit, data.size());
             Heap::push(&data[0], &data[++limit], cmp);
         }
     }
@@ -156,11 +149,11 @@ struct Setup {
     }
     int pop() {
         if (IsRight<Heap>::VALUE) {
-            ASSERT_LESS(limit, data.size());
+            assert(limit < data.size());
             Heap::pop(&data[limit++], &data[data.size()], cmp);
             return unwrap(data[limit - 1]);
         } else {
-            ASSERT_GREATER(limit, 0u);
+            assert(limit > 0u);
             Heap::pop(&data[0], &data[limit--], cmp);
             return unwrap(data[limit]);
         }
@@ -186,23 +179,23 @@ struct Setup {
     void testBasic() {
         init();
         push(100);
-        EXPECT_EQUAL(100, unwrap(front()));
+        EXPECT_EQ(100, unwrap(front()));
         adjust();
-        EXPECT_EQUAL(100, unwrap(front()));
+        EXPECT_EQ(100, unwrap(front()));
         push(50);
-        EXPECT_EQUAL(50, unwrap(front()));
+        EXPECT_EQ(50, unwrap(front()));
         adjust();
-        EXPECT_EQUAL(50, unwrap(front()));
+        EXPECT_EQ(50, unwrap(front()));
         push(200);
         push(175);
-        EXPECT_EQUAL(50, unwrap(front()));
+        EXPECT_EQ(50, unwrap(front()));
         front() = wrap<Value>(150);
         adjust();
-        EXPECT_EQUAL(100, unwrap(front()));
-        EXPECT_EQUAL(100, pop());
-        EXPECT_EQUAL(150, pop());
-        EXPECT_EQUAL(175, pop());
-        EXPECT_EQUAL(200, pop());
+        EXPECT_EQ(100, unwrap(front()));
+        EXPECT_EQ(100, pop());
+        EXPECT_EQ(150, pop());
+        EXPECT_EQ(175, pop());
+        EXPECT_EQ(200, pop());
     }
     void testSort() {
         init();
@@ -223,7 +216,8 @@ struct Setup {
         } else {
             std::sort(ref.begin(), ref.end(), std::greater<int>());
         }
-        if (!EXPECT_TRUE(data == ref)) {
+        EXPECT_TRUE(data == ref);
+        if (!(data == ref)) {
             if (data.size() == ref.size()) {
                 for (size_t i = 0; i < ref.size(); ++i) {
                     if (unwrap(data[i]) != ref[i]) {
@@ -234,7 +228,7 @@ struct Setup {
             } else {
                 fprintf(stderr, "sizes differ: %zu, %zu\n", data.size(), ref.size());
             }
-            TEST_FATAL("forced unwind (see previous failure)");
+            FAIL() << "forced unwind (see previous failure)";
         }
     }
     void test() {
@@ -243,7 +237,7 @@ struct Setup {
     }
 };
 
-TEST("require correct heap tags") {
+TEST(LeftRightHeapTest, require_correct_heap_tags) {
     LeftHeap::require_left_heap();
     RightHeap::require_right_heap();
     LeftArrayHeap::require_left_heap();
@@ -251,20 +245,56 @@ TEST("require correct heap tags") {
     LeftStdHeap::require_left_heap();
 }
 
-TEST_FF("verify left heap invariants and sorting", Input, Setup<LeftHeap>(f1)) { f2.test(); }
-TEST_FF("verify right heap invariants and sorting", Input, Setup<RightHeap>(f1)) { f2.test(); }
-TEST_FF("verify left array heap invariants and sorting", Input, Setup<LeftArrayHeap>(f1)) { f2.test(); }
-TEST_FF("verify right array heap invariants and sorting", Input, Setup<RightArrayHeap>(f1)) { f2.test(); }
-TEST_FF("verify left std heap invariants and sorting", Input, Setup<LeftStdHeap>(f1)) { f2.test(); }
-
-TEST_FF("verify [move only] left heap invariants and sorting", Input, Setup<LeftHeap>::IUP(f1)) { f2.test(); }
-TEST_FF("verify [move only] right heap invariants and sorting", Input, Setup<RightHeap>::IUP(f1)) { f2.test(); }
-TEST_FF("verify [move only] left array heap invariants and sorting", Input, Setup<LeftArrayHeap>::IUP(f1)) { f2.test(); }
-TEST_FF("verify [move only] right array heap invariants and sorting", Input, Setup<RightArrayHeap>::IUP(f1)) { f2.test(); }
-TEST_FF("verify [move only] left std heap invariants and sorting", Input, Setup<LeftStdHeap>::IUP(f1)) { f2.test(); }
-
-TEST_MAIN() {
-    // Would be nice to have access to arguments.....
-    _G_InputSize = 1000; // strtoul(_argv[1], NULL, 0);
-    TEST_RUN_ALL();
+TEST(LeftRightHeapTest, verify_left_heap_invariants_and_sorting) {
+    Input f1;
+    MySetup<LeftHeap> f2(f1);
+    f2.test();
 }
+TEST(LeftRightHeapTest, verify_right_heap_invariants_and_sorting) {
+    Input f1;
+    MySetup<RightHeap> f2(f1);
+    f2.test();
+}
+TEST(LeftRightHeapTest, verify_left_array_heap_invariants_and_sorting) {
+    Input f1;
+    MySetup<LeftArrayHeap> f2(f1);
+    f2.test();
+}
+TEST(LeftRightHeapTest, verify_right_array_heap_invariants_and_sorting) {
+    Input f1;
+    MySetup<RightArrayHeap> f2(f1);
+    f2.test();
+}
+TEST(LeftRightHeapTest, verify_left_std_heap_invariants_and_sorting) {
+    Input f1;
+    MySetup<LeftStdHeap> f2(f1);
+    f2.test();
+}
+
+TEST(LeftRightHeapTest, verify_move_only_left_heap_invariants_and_sorting) {
+    Input f1;
+    MySetup<LeftHeap>::IUP f2(f1);
+    f2.test();
+}
+TEST(LeftRightHeapTest, verify_move_only_right_heap_invariants_and_sorting) {
+    Input f1;
+    MySetup<RightHeap>::IUP f2(f1);
+    f2.test();
+}
+TEST(LeftRightHeapTest, verify_move_only_left_array_heap_invariants_and_sorting) {
+    Input f1;
+    MySetup<LeftArrayHeap>::IUP f2(f1);
+    f2.test();
+}
+TEST(LeftRightHeapTest, verify_move_only_right_array_heap_invariants_and_sorting) {
+    Input f1;
+    MySetup<RightArrayHeap>::IUP f2(f1);
+    f2.test();
+}
+TEST(LeftRightHeapTest, verify_move_only_left_std_heap_invariants_and_sorting) {
+    Input f1;
+    MySetup<LeftStdHeap>::IUP f2(f1);
+    f2.test();
+}
+
+GTEST_MAIN_RUN_ALL_TESTS()

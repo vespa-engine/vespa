@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_exception_classes_test_app TEST
     exception_classes_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_exception_classes_test_app COMMAND vespalib_exception_classes_test_app)
 vespa_add_executable(vespalib_silenceuncaught_test_app TEST
@@ -11,6 +12,7 @@ vespa_add_executable(vespalib_silenceuncaught_test_app TEST
     silenceuncaught_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_silenceuncaught_test_app COMMAND vespalib_silenceuncaught_test_app)
 vespa_add_executable(vespalib_caught_uncaught_app TEST

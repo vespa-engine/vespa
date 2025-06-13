@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/traits.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <concepts>
@@ -28,29 +28,29 @@ struct Child2 : Base {
 
 VESPA_CAN_SKIP_DESTRUCTION(Child2);
 
-TEST("require that copy ctor detection works") {
-    EXPECT_EQUAL(std::copy_constructible<Simple>, true);
-    EXPECT_EQUAL(std::copy_constructible<Hard>, false);
-    EXPECT_EQUAL(std::copy_constructible<ArrayQueue<Simple> >, true);
-    EXPECT_EQUAL(std::copy_constructible<ArrayQueue<Hard> >, false);
-    EXPECT_EQUAL(std::copy_constructible<std::unique_ptr<Hard> >, false);
+TEST(TraitsTest, require_that_copy_ctor_detection_works) {
+    EXPECT_EQ(std::copy_constructible<Simple>, true);
+    EXPECT_EQ(std::copy_constructible<Hard>, false);
+    EXPECT_EQ(std::copy_constructible<ArrayQueue<Simple> >, true);
+    EXPECT_EQ(std::copy_constructible<ArrayQueue<Hard> >, false);
+    EXPECT_EQ(std::copy_constructible<std::unique_ptr<Hard> >, false);
 }
 
-TEST("require that can_skip_destruction works") {
-    EXPECT_EQUAL(can_skip_destruction<Simple>, true);
-    EXPECT_EQUAL(can_skip_destruction<Hard>, false);
-    EXPECT_EQUAL(can_skip_destruction<Child1>, false);
-    EXPECT_EQUAL(can_skip_destruction<Child2>, true);
+TEST(TraitsTest, require_that_can_skip_destruction_works) {
+    EXPECT_EQ(can_skip_destruction<Simple>, true);
+    EXPECT_EQ(can_skip_destruction<Hard>, false);
+    EXPECT_EQ(can_skip_destruction<Child1>, false);
+    EXPECT_EQ(can_skip_destruction<Child2>, true);
 }
 
 struct NoType {};
 struct TypeType { using type = NoType; };
 struct NoTypeType { static constexpr int type = 3; };
 
-TEST("require that type type member can be detected") {
+TEST(TraitsTest, require_that_type_type_member_can_be_detected) {
     EXPECT_FALSE(has_type_type<NoType>);
     EXPECT_TRUE(has_type_type<TypeType>);
     EXPECT_FALSE(has_type_type<NoTypeType>);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

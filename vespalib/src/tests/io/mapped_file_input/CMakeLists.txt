@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_mapped_file_input_test_app TEST
     mapped_file_input_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_mapped_file_input_test_app COMMAND vespalib_mapped_file_input_test_app)

@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_thread_test_app TEST
     thread_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_thread_test_app COMMAND vespalib_thread_test_app)

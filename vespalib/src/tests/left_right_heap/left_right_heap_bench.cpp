@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/left_right_heap.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/inline.h>
+#include <cassert>
 
 using vespalib::RightArrayHeap;
 using vespalib::RightHeap;
@@ -67,7 +69,7 @@ struct Data16 {
                 data[i] = random();
             }
         }
-        ASSERT_EQUAL(size, data.size());
+        ASSERT_EQ(size, data.size());
     }
 };
 
@@ -98,8 +100,8 @@ Data32p::init(bool inv) {
             data[i] = i;
         }
     }
-    ASSERT_EQUAL(size, values.size());
-    ASSERT_EQUAL(size, data.size());
+    ASSERT_EQ(size, values.size());
+    ASSERT_EQ(size, data.size());
     cmp = MyCmp(&values[0]);
 }
 
@@ -220,7 +222,7 @@ struct BenchmarkHD : Benchmark {
         for (size_t i = 0; i < loop; ++i) {
             D d(cnt * 2);
             d.init(false);
-            ASSERT_LESS((heapSize + cnt), d.data.size());
+            assert((heapSize + cnt) < d.data.size());
             Loops<H>::push(&d.data[0], &d.data[heapSize], d.cmp);
             t.start(); Loops<H>::fiddle(&d.data[0], &d.data[heapSize], d.cmp, &d.data[cnt], &d.data[cnt * 2], adjust); t.stop();
         }
@@ -252,7 +254,10 @@ struct BenchmarkHD : Benchmark {
 
 //-----------------------------------------------------------------------------
 
-TEST_FFF("benchmark std heap with direct uint16_t values", Timer, Timer, Data16(5000)) {
+TEST(LeftRightHeapBenchTest, benchmark_std_heap_with_direct_uint16_t_values) {
+    Timer f1;
+    Timer f2;
+    Data16 f3(5000);
     std::greater<int> cmp;
     for (size_t l = 0; l < 1000; ++l) {
         f3.init(false);
@@ -264,7 +269,10 @@ TEST_FFF("benchmark std heap with direct uint16_t values", Timer, Timer, Data16(
             f1.minTime + f2.minTime, f1.minTime, f2.minTime);
 }
 
-TEST_FFF("benchmark std heap with indirect uint32_t values", Timer, Timer, Data32p(5000)) {
+TEST(LeftRightHeapBenchTest, benchmark_std_heap_with_indirect_uint32_t_values) {
+    Timer f1;
+    Timer f2;
+    Data32p f3(5000);
     for (size_t l = 0; l < 1000; ++l) {
         f3.init(false);
         MyInvCmp cmp(&f3.values[0]);
@@ -281,24 +289,24 @@ TEST_FFF("benchmark std heap with indirect uint32_t values", Timer, Timer, Data3
 struct BenchmarkFactory {
     enum DataType {
         DATA_16  = 0,
-        DATA_32p = 1,
-        DATA_CNT = 2
+        DATA_32p = 1
     };
+    static constexpr int DATA_CNT = 2;
     enum HeapType {
         HEAP_LEFT               = 0,
         HEAP_RIGHT              = 1,
         HEAP_ARRAY_LEFT         = 2,
         HEAP_ARRAY_RIGHT        = 3,
-        HEAP_STD_LEFT           = 4,
-        HEAP_CNT                = 5,
+        HEAP_STD_LEFT           = 4
     };
+    static constexpr int HEAP_CNT = 5;
     template <typename H>
     static Benchmark::UP create(DataType d) {
         switch (d) {
         case DATA_16:  return Benchmark::UP(new BenchmarkHD<H, Data16>());
         case DATA_32p: return Benchmark::UP(new BenchmarkHD<H, Data32p>());
-        default:       TEST_FATAL("undefined data type requested"); return Benchmark::UP();
         }
+        abort();
     }
     static Benchmark::UP create(HeapType h, DataType d) {
         switch(h) {
@@ -307,8 +315,8 @@ struct BenchmarkFactory {
         case HEAP_ARRAY_LEFT:         return create<LeftArrayHeap>(d);
         case HEAP_ARRAY_RIGHT:        return create<RightArrayHeap>(d);
         case HEAP_STD_LEFT:           return create<LeftStdHeap>(d);
-        default:                      TEST_FATAL("undefined heap type requested"); return Benchmark::UP();
         }
+        abort();
     }
 };
 
@@ -336,7 +344,7 @@ void findFiddleLimit(Benchmark &a, Benchmark &b, size_t min, size_t max, bool ad
     }
 }
 
-TEST("find fiddle limits") {
+TEST(LeftRightHeapBenchTest, find_fiddle_limits) {
     { // WAND future heap usecase
         Benchmark::UP b = BenchmarkFactory::create(BenchmarkFactory::HEAP_ARRAY_LEFT, BenchmarkFactory::DATA_32p);
         Benchmark::UP a = BenchmarkFactory::create(BenchmarkFactory::HEAP_LEFT, BenchmarkFactory::DATA_32p);
@@ -349,7 +357,7 @@ TEST("find fiddle limits") {
     }
 }
 
-TEST("benchmark") {
+TEST(LeftRightHeapBenchTest, benchmark) {
     for (int d = 0; d < BenchmarkFactory::DATA_CNT; ++d) {
         for (int h = 0; h < BenchmarkFactory::HEAP_CNT; ++h) {
             Benchmark::UP benchmark = BenchmarkFactory::create(BenchmarkFactory::HeapType(h), BenchmarkFactory::DataType(d));
@@ -363,4 +371,4 @@ TEST("benchmark") {
 
 //-----------------------------------------------------------------------------
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
