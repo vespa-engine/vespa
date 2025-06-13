@@ -55,7 +55,7 @@ public:
             bucketdb::IBucketDBHandler &bucketDBHandler,
             IReplayConfig &replay_config,
             FeedConfigStore &config_store,
-            const ReplayThrottlingPolicy &replay_throttling_policy,
+            std::shared_ptr<vespalib::SharedOperationThrottler> shared_operation_throttler,
             IIncSerialNum &inc_serial_num);
 
     ~ReplayTransactionLogState() override;

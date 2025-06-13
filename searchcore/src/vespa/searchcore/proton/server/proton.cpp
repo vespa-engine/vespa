@@ -16,6 +16,7 @@
 #include "proton_config_snapshot.h"
 #include "proton_disk_layout.h"
 #include "proton_thread_pools_explorer.h"
+#include "replay_throttling_policy.h"
 #include "resource_usage_explorer.h"
 #include "resource_usage_write_filter.h"
 #include "searchhandlerproxy.h"
@@ -54,6 +55,7 @@
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/shared_operation_throttler.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fastos/file.h>
 #ifdef __linux__
@@ -188,6 +190,19 @@ make_posting_list_cache(const ProtonConfig& cfg)
     return std::make_shared<PostingListCache>(params);
 }
 
+ReplayThrottlingPolicy
+make_replay_throttling_policy(const ProtonConfig::ReplayThrottlingPolicy& cfg) {
+    if (cfg.type == ProtonConfig::ReplayThrottlingPolicy::Type::UNLIMITED) {
+        return ReplayThrottlingPolicy({});
+    }
+    vespalib::SharedOperationThrottler::DynamicThrottleParams params;
+    params.min_window_size = cfg.minWindowSize;
+    params.max_window_size = cfg.maxWindowSize;
+    params.window_size_increment = cfg.windowSizeIncrement;
+    // TODO resource usage limiting
+    return ReplayThrottlingPolicy(params);
+}
+
 } // namespace <unnamed>
 
 Proton::ProtonFileHeaderContext::ProtonFileHeaderContext(const std::string &creator)
@@ -299,7 +314,8 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _nodeUpLock(),
       _nodeUp(),
       _posting_list_cache(),
-      _lid_space_compaction_job_token_source(std::make_shared<MaintenanceJobTokenSource>())
+      _lid_space_compaction_job_token_source(std::make_shared<MaintenanceJobTokenSource>()),
+      _shared_replay_throttler(vespalib::SharedOperationThrottler::make_unlimited_throttler())
 { }
 
 BootstrapConfig::SP
@@ -380,6 +396,11 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
             SharedThreadingServiceConfig::make(protonConfig, hwInfo.cpu()), _transport, *_persistenceEngine);
     _scheduler = std::make_unique<ScheduledForwardExecutor>(_transport, _shared_service->shared());
     _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, hwInfo), *_scheduler);
+    auto replay_throttle_policy = make_replay_throttling_policy(protonConfig.replayThrottlingPolicy);
+    if (replay_throttle_policy.get_params()) {
+        // Must happen before creating/initializing any document DBs
+        _shared_replay_throttler = vespalib::SharedOperationThrottler::make_dynamic_throttler(*replay_throttle_policy.get_params());
+    } // else: unlimited throttler already set by default
 
     std::string fileConfigId;
     _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_shared_service->shared_raw());
@@ -1115,6 +1136,12 @@ std::shared_ptr<MaintenanceJobTokenSource>
 Proton::get_lid_space_compaction_job_token_source()
 {
     return _lid_space_compaction_job_token_source;
+}
+
+std::shared_ptr<vespalib::SharedOperationThrottler>
+Proton::shared_replay_throttler() const
+{
+    return _shared_replay_throttler;
 }
 
 storage::spi::PersistenceProvider &

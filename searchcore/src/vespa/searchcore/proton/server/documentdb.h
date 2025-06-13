@@ -126,7 +126,6 @@ private:
     ClusterStateHandler                              _clusterStateHandler;
     BucketHandler                                    _bucketHandler;
     index::IndexConfig                               _indexCfg;
-    std::unique_ptr<ReplayThrottlingPolicy>          _replay_throttling_policy;
     ConfigStore::UP                                  _config_store;
     MetricsWireService                              &_metricsWireService;
     DocumentDBTaggedMetrics                          _metrics;
