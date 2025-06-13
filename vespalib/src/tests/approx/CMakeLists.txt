@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_approx_test_app TEST
     approx_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_approx_test_app COMMAND vespalib_approx_test_app)

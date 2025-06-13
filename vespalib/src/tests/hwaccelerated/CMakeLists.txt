@@ -5,6 +5,7 @@ vespa_add_executable(vespalib_hwaccelerated_test_app TEST
     DEPENDS
     vespalib
     vespa_hwaccelerated
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_hwaccelerated_test_app COMMAND vespalib_hwaccelerated_test_app)
 

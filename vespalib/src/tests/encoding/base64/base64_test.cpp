@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vector>
 
 using namespace vespalib;
 
-TEST("base64_test") {
+TEST(Base64Test, base64_test) {
 
         // Basic test without padding
     std::string source = "No need to pad this string.";
@@ -14,8 +14,8 @@ TEST("base64_test") {
     std::string expected = "Tm8gbmVlZCB0byBwYWQgdGhpcyBzdHJpbmcu";
     std::string decoded = Base64::decode(encoded);
 
-    EXPECT_EQUAL(expected, encoded);
-    EXPECT_EQUAL(source, decoded);
+    EXPECT_EQ(expected, encoded);
+    EXPECT_EQ(source, decoded);
 
     EXPECT_TRUE(static_cast<uint32_t>(
             Base64::getMaximumEncodeLength(source.size())) >= encoded.size());
@@ -28,8 +28,8 @@ TEST("base64_test") {
     expected = "VGhpcyBzdHJpbmcgd2lsbCBuZWVkIHRvIGJlIHBhZGRlZC4=";
     decoded = Base64::decode(encoded);
 
-    EXPECT_EQUAL(expected, encoded);
-    EXPECT_EQUAL(source, decoded);
+    EXPECT_EQ(expected, encoded);
+    EXPECT_EQ(source, decoded);
 
     EXPECT_TRUE(static_cast<uint32_t>(
             Base64::getMaximumEncodeLength(source.size())) >= encoded.size());
@@ -44,7 +44,7 @@ TEST("base64_test") {
             // getMaximumEncodeLength() or getMaximumDecodeLength().
         encoded = Base64::encode(source);
         decoded = Base64::decode(encoded);
-        EXPECT_EQUAL(source, decoded);
+        EXPECT_EQ(source, decoded);
     }
 
         // Check that -1 is returned on too little space when encoding
@@ -52,12 +52,12 @@ TEST("base64_test") {
     std::vector<char> buffer(100, '\0');
     uint32_t minSizeNeeded = 81;
     for (uint32_t i=0; i<minSizeNeeded; ++i) {
-        EXPECT_EQUAL(-1, Base64::encode(source.c_str(), source.size(),
+        EXPECT_EQ(-1, Base64::encode(source.c_str(), source.size(),
                                       &buffer[0], i));
     }
-    EXPECT_EQUAL(80, Base64::encode(source.c_str(), source.size(),
+    EXPECT_EQ(80, Base64::encode(source.c_str(), source.size(),
                                   &buffer[0], minSizeNeeded));
-    EXPECT_EQUAL(Base64::encode(source), std::string(&buffer[0], 80));
+    EXPECT_EQ(Base64::encode(source), std::string(&buffer[0], 80));
     EXPECT_TRUE(minSizeNeeded <= static_cast<uint32_t>(
                 Base64::getMaximumEncodeLength(source.size())));
 
@@ -67,12 +67,12 @@ TEST("base64_test") {
     encoded = Base64::encode(source);
     minSizeNeeded = 60;
     for (uint32_t i=0; i<minSizeNeeded; ++i) {
-        EXPECT_EQUAL(-1, Base64::decode(encoded.c_str(), encoded.size(),
+        EXPECT_EQ(-1, Base64::decode(encoded.c_str(), encoded.size(),
                                       &buffer[0], i));
     }
-    EXPECT_EQUAL(60, Base64::decode(encoded.c_str(), encoded.size(),
+    EXPECT_EQ(60, Base64::decode(encoded.c_str(), encoded.size(),
                                   &buffer[0], minSizeNeeded));
-    EXPECT_EQUAL(source, std::string(&buffer[0], 60));
+    EXPECT_EQ(source, std::string(&buffer[0], 60));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

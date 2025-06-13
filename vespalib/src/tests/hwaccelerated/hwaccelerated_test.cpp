@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <vespa/log/log.h>
 LOG_SETUP("hwaccelerated_test");
@@ -28,7 +28,7 @@ void verifyEuclideanDistance(const hwaccelerated::IAccelerated & accel, size_t t
             sum += d * d;
         }
         P hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
-        EXPECT_APPROX(sum, hwComputedSum, sum*approxFactor);
+        EXPECT_NEAR(sum, hwComputedSum, sum*approxFactor);
     }
 }
 
@@ -39,10 +39,10 @@ verifyEuclideanDistance(const hwaccelerated::IAccelerated & accelerator, size_t 
     verifyEuclideanDistance<double, double>(accelerator, testLength, 0.0);
 }
 
-TEST("test euclidean distance") {
+TEST(HWAcceleratedTest, test_euclidean_distance) {
     constexpr size_t TEST_LENGTH = 140000; // must be longer than 64k
-    TEST_DO(verifyEuclideanDistance(*hwaccelerated::IAccelerated::create_platform_baseline_accelerator(), TEST_LENGTH));
-    TEST_DO(verifyEuclideanDistance(hwaccelerated::IAccelerated::getAccelerator(), TEST_LENGTH));
+    GTEST_DO(verifyEuclideanDistance(*hwaccelerated::IAccelerated::create_platform_baseline_accelerator(), TEST_LENGTH));
+    GTEST_DO(verifyEuclideanDistance(hwaccelerated::IAccelerated::getAccelerator(), TEST_LENGTH));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

@@ -5,6 +5,7 @@ vespa_add_executable(vespalib_assert_test_app TEST
     assert_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_assert_test_app COMMAND vespalib_assert_test_app)
 

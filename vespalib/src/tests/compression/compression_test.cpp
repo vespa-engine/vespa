@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 #include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/data/databuffer.h>
@@ -26,54 +26,52 @@ static std::string _G_compressableText("AAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBCCCCCCCC
                                             "AAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDDDDDDDDDDDDDDEEEEEEEEEEEEEEE"
                                             "XYZABCDEFGHIJGJMNOPQRSTUVW");
 
-TEST("requireThatLZ4CompressFine") {
+TEST(CompressionTest, requireThatLZ4CompressFine) {
     CompressionConfig cfg(CompressionConfig::Type::LZ4);
     ConstBufferRef ref(_G_compressableText.c_str(), _G_compressableText.size());
     DataBuffer compressed;
-    EXPECT_EQUAL(CompressionConfig::Type::LZ4, compress(cfg, ref, compressed, false));
-    EXPECT_EQUAL(66u, compressed.getDataLen());
+    EXPECT_EQ(CompressionConfig::Type::LZ4, compress(cfg, ref, compressed, false));
+    EXPECT_EQ(66u, compressed.getDataLen());
 }
 
-TEST("requireThatZStdCompressFine") {
+TEST(CompressionTest, requireThatZStdCompressFine) {
     CompressionConfig cfg(CompressionConfig::Type::ZSTD);
     ConstBufferRef ref(_G_compressableText.c_str(), _G_compressableText.size());
     DataBuffer compressed;
-    EXPECT_EQUAL(CompressionConfig::Type::ZSTD, compress(cfg, ref, compressed, false));
-    EXPECT_EQUAL(64u, compressed.getDataLen());
+    EXPECT_EQ(CompressionConfig::Type::ZSTD, compress(cfg, ref, compressed, false));
+    EXPECT_EQ(64u, compressed.getDataLen());
 }
 
-TEST("require that no compression/decompression works") {
+TEST(CompressionTest, require_that_no_compression_decompression_works) {
     CompressionConfig cfg(CompressionConfig::Type::NONE);
     Compress compress(cfg, _G_compressableText.c_str(), _G_compressableText.size());
-    EXPECT_EQUAL(CompressionConfig::Type::NONE, compress.type());
-    EXPECT_EQUAL(1072u, compress.size());
+    EXPECT_EQ(CompressionConfig::Type::NONE, compress.type());
+    EXPECT_EQ(1072u, compress.size());
     Decompress decompress(compress.type(), _G_compressableText.size(), compress.data(), compress.size());
-    EXPECT_EQUAL(_G_compressableText, std::string(decompress.data(), decompress.size()));
+    EXPECT_EQ(_G_compressableText, std::string(decompress.data(), decompress.size()));
 }
 
-TEST("require that lz4 compression/decompression works") {
+TEST(CompressionTest, require_that_lz4_compression_decompression_works) {
     CompressionConfig cfg(CompressionConfig::Type::LZ4);
     Compress compress(cfg, _G_compressableText.c_str(), _G_compressableText.size());
-    EXPECT_EQUAL(CompressionConfig::Type::LZ4, compress.type());
-    EXPECT_EQUAL(66u, compress.size());
+    EXPECT_EQ(CompressionConfig::Type::LZ4, compress.type());
+    EXPECT_EQ(66u, compress.size());
     Decompress decompress(compress.type(), _G_compressableText.size(), compress.data(), compress.size());
-    EXPECT_EQUAL(_G_compressableText, std::string(decompress.data(), decompress.size()));
+    EXPECT_EQ(_G_compressableText, std::string(decompress.data(), decompress.size()));
 }
 
-TEST("requiret that zstd compression/decompression works") {
+TEST(CompressionTest, requiret_that_zstd_compression_decompression_works) {
     CompressionConfig cfg(CompressionConfig::Type::ZSTD);
     Compress compress(cfg, _G_compressableText.c_str(), _G_compressableText.size());
-    EXPECT_EQUAL(CompressionConfig::Type::ZSTD, compress.type());
-    EXPECT_EQUAL(64u, compress.size());
+    EXPECT_EQ(CompressionConfig::Type::ZSTD, compress.type());
+    EXPECT_EQ(64u, compress.size());
     Decompress decompress(compress.type(), _G_compressableText.size(), compress.data(), compress.size());
-    EXPECT_EQUAL(_G_compressableText, std::string(decompress.data(), decompress.size()));
+    EXPECT_EQ(_G_compressableText, std::string(decompress.data(), decompress.size()));
 }
 
-TEST("require that CompressionConfig is Atomic") {
-    EXPECT_EQUAL(8u, sizeof(CompressionConfig));
+TEST(CompressionTest, require_that_CompressionConfig_is_Atomic) {
+    EXPECT_EQ(8u, sizeof(CompressionConfig));
     EXPECT_TRUE(std::atomic<CompressionConfig>::is_always_lock_free);
 }
 
-TEST_MAIN() {
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()

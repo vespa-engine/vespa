@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_base64_test_app TEST
     base64_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_base64_test_app COMMAND vespalib_base64_test_app)

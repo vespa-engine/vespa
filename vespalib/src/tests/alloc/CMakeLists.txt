@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_alloc_test_app TEST
     alloc_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_alloc_test_app NO_VALGRIND COMMAND vespalib_alloc_test_app)
 vespa_add_executable(vespalib_allocate_and_core_app

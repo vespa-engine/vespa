@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_latch_test_app TEST
     latch_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_latch_test_app COMMAND vespalib_latch_test_app)

@@ -4,6 +4,10 @@
 
 #include <gtest/gtest.h>
 
+// placeholder for old TEST_DO macro
+// consider expanding to use SCOPED_TRACE etc
+#define GTEST_DO(x) x
+
 /**
  * Macro for creating a main function that runs all gtests.
  */

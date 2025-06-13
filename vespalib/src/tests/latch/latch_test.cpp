@@ -1,43 +1,59 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/latch.h>
 
 using namespace vespalib;
+using vespalib::test::Nexus;
 
-TEST("require that write then read works") {
+TEST(LatchTest, require_that_write_then_read_works) {
     Latch<int> latch;
     EXPECT_TRUE(!latch.has_value());
     latch.write(42);
     EXPECT_TRUE(latch.has_value());
-    EXPECT_EQUAL(latch.read(), 42);
+    EXPECT_EQ(latch.read(), 42);
     EXPECT_TRUE(!latch.has_value());
 }
 
-TEST_MT_FFF("require that read waits for write", 2, Latch<int>(), Gate(), TimeBomb(60)) {
-    if (thread_id == 0) {
-        EXPECT_TRUE(!f2.await(10ms));
-        f1.write(123);
-        EXPECT_TRUE(f2.await(60s));
-    } else {
-        EXPECT_EQUAL(f1.read(), 123);
-        f2.countDown();
-    }
+TEST(LatchTest, require_that_read_waits_for_write) {
+    size_t num_threads = 2;
+    Latch<int> f1;
+    Gate f2;
+    TimeBomb f3(60);
+    auto task = [&](Nexus &ctx){
+                    if (ctx.thread_id() == 0) {
+                        EXPECT_TRUE(!f2.await(10ms));
+                        f1.write(123);
+                        EXPECT_TRUE(f2.await(60s));
+                    } else {
+                        EXPECT_EQ(f1.read(), 123);
+                        f2.countDown();
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MT_FFF("require that write waits for read", 2, Latch<int>(), Gate(), TimeBomb(60)) {
-    if (thread_id == 0) {
-        f1.write(123);
-        f1.write(456);
-        f2.countDown();
-    } else {
-        EXPECT_TRUE(!f2.await(10ms));
-        EXPECT_EQUAL(f1.read(), 123);
-        EXPECT_TRUE(f2.await(60s));
-        EXPECT_EQUAL(f1.read(), 456);
-    }
+TEST(LatchTest, require_that_write_waits_for_read) {
+    size_t num_threads = 2;
+    Latch<int> f1;
+    Gate f2;
+    TimeBomb f3(60);
+    auto task = [&](Nexus &ctx){
+                    if (ctx.thread_id() == 0) {
+                        f1.write(123);
+                        f1.write(456);
+                        f2.countDown();
+                    } else {
+                        EXPECT_TRUE(!f2.await(10ms));
+                        EXPECT_EQ(f1.read(), 123);
+                        EXPECT_TRUE(f2.await(60s));
+                        EXPECT_EQ(f1.read(), 456);
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
 struct MyInt {
@@ -49,10 +65,10 @@ struct MyInt {
     MyInt &operator=(MyInt &&rhs) = delete;
 };
 
-TEST("require that un-assignable non-default-constructable move-only objects can be used") {
+TEST(LatchTest, require_that_un_assignable_non_default_constructable_move_only_objects_can_be_used) {
     Latch<MyInt> latch;
     latch.write(MyInt(1337));
-    EXPECT_EQUAL(latch.read().value, 1337);
+    EXPECT_EQ(latch.read().value, 1337);
 }
 
 struct MyObj {
@@ -76,7 +92,7 @@ struct MyObj {
 };
 int MyObj::total = 0;
 
-TEST("require that latched objects are appropriately destructed") {
+TEST(LatchTest, require_that_latched_objects_are_appropriately_destructed) {
     int with_state = 0;
     int total_sample = 0;
     {
@@ -89,12 +105,12 @@ TEST("require that latched objects are appropriately destructed") {
         EXPECT_TRUE(!latch1.has_value());
         EXPECT_TRUE(!latch2.has_value());
         EXPECT_TRUE(latch3.has_value());
-        EXPECT_EQUAL(with_state, 0);
-        EXPECT_GREATER_EQUAL(MyObj::total, 1);
+        EXPECT_EQ(with_state, 0);
+        EXPECT_GE(MyObj::total, 1);
         total_sample = MyObj::total;
     }
-    EXPECT_EQUAL(MyObj::total, total_sample + 1);
-    EXPECT_EQUAL(with_state, 1);
+    EXPECT_EQ(MyObj::total, total_sample + 1);
+    EXPECT_EQ(with_state, 1);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

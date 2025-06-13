@@ -3,7 +3,6 @@
 #include "searchiteratorverifier.h"
 #include "initrange.h"
 #include <vespa/vespalib/gtest/gtest.h>
-#define TEST_DO(x) x
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/truesearch.h>
 #include <vespa/searchlib/queryeval/termwise_search.h>
@@ -120,27 +119,27 @@ SearchIteratorVerifier::~SearchIteratorVerifier() = default;
 
 void
 SearchIteratorVerifier::verify() const {
-    TEST_DO(verifyTermwise());
-    TEST_DO(verifyInitRange());
+    GTEST_DO(verifyTermwise());
+    GTEST_DO(verifyInitRange());
 }
 
 void
 SearchIteratorVerifier::verifyTermwise() const {
-    TEST_DO(verify_and_hits_into(*create(false), _docIds));
-    TEST_DO(verify_and_hits_into(*create(true), _docIds));
-    TEST_DO(verify_or_hits_into(*create(false), _docIds));
-    TEST_DO(verify_or_hits_into(*create(true), _docIds));
-    TEST_DO(verify_get_hits(*create(false), _docIds));
-    TEST_DO(verify_get_hits(*create(true), _docIds));
-    TEST_DO(verify(false));
-    TEST_DO(verify(true));
+    GTEST_DO(verify_and_hits_into(*create(false), _docIds));
+    GTEST_DO(verify_and_hits_into(*create(true), _docIds));
+    GTEST_DO(verify_or_hits_into(*create(false), _docIds));
+    GTEST_DO(verify_or_hits_into(*create(true), _docIds));
+    GTEST_DO(verify_get_hits(*create(false), _docIds));
+    GTEST_DO(verify_get_hits(*create(true), _docIds));
+    GTEST_DO(verify(false));
+    GTEST_DO(verify(true));
 }
 
 void
 SearchIteratorVerifier::verifyInitRange() const {
     InitRangeVerifier initRangeTest;
-    TEST_DO(initRangeTest.verify(*create(false)));
-    TEST_DO(initRangeTest.verify(*create(true)));
+    GTEST_DO(initRangeTest.verify(*create(false)));
+    GTEST_DO(initRangeTest.verify(*create(true)));
 }
 
 void
@@ -160,12 +159,12 @@ SearchIteratorVerifier::verify_get_hits(bool strict) const {
 void
 SearchIteratorVerifier::verify(bool strict) const {
     SearchIterator::UP iterator = create(strict);
-    TEST_DO(verify(*iterator, strict, _docIds));
-    TEST_DO(verifyTermwise(std::move(iterator), strict, _docIds));
-    TEST_DO(verifyAnd(strict));
-    TEST_DO(verifyOr(strict));
-    TEST_DO(verifyAndNot(strict));
-    TEST_DO(verify_get_hits(strict));
+    GTEST_DO(verify(*iterator, strict, _docIds));
+    GTEST_DO(verifyTermwise(std::move(iterator), strict, _docIds));
+    GTEST_DO(verifyAnd(strict));
+    GTEST_DO(verifyOr(strict));
+    GTEST_DO(verifyAndNot(strict));
+    GTEST_DO(verify_get_hits(strict));
 }
 
 void
@@ -175,8 +174,8 @@ SearchIteratorVerifier::verifyAnd(bool strict) const {
     children.push_back(create(strict));
     children.push_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, false));
     auto search = AndSearch::create(std::move(children), strict, UnpackInfo());
-    TEST_DO(verify(*search, strict, _expectedAnd));
-    TEST_DO(verifyTermwise(std::move(search), strict, _expectedAnd));
+    GTEST_DO(verify(*search, strict, _expectedAnd));
+    GTEST_DO(verifyTermwise(std::move(search), strict, _expectedAnd));
 }
 
 void
@@ -188,8 +187,8 @@ SearchIteratorVerifier::verifyAndNot(bool strict) const {
             children.push_back(create(strict));
             children.push_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, notStrictness));
             auto search = AndNotSearch::create(std::move(children), strict);
-            TEST_DO(verify(*search, strict, _expectedAndNotPositive));
-            TEST_DO(verifyTermwise(std::move(search), strict, _expectedAndNotPositive));
+            GTEST_DO(verify(*search, strict, _expectedAndNotPositive));
+            GTEST_DO(verifyTermwise(std::move(search), strict, _expectedAndNotPositive));
         }
     }
     {
@@ -197,8 +196,8 @@ SearchIteratorVerifier::verifyAndNot(bool strict) const {
         children.push_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, true));
         children.push_back(create(strict));
         auto search = AndNotSearch::create(std::move(children), strict);
-        TEST_DO(verify(*search, strict, _expectedAndNotNegative));
-        TEST_DO(verifyTermwise(std::move(search), strict, _expectedAndNotNegative));
+        GTEST_DO(verify(*search, strict, _expectedAndNotNegative));
+        GTEST_DO(verifyTermwise(std::move(search), strict, _expectedAndNotNegative));
     }
 }
 
@@ -210,15 +209,15 @@ SearchIteratorVerifier::verifyOr(bool strict) const {
     children.push_back(create(strict));
     children.push_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, strict));
     SearchIterator::UP search(OrSearch::create(std::move(children), strict, UnpackInfo()));
-    TEST_DO(verify(*search, strict, _expectedOr));
-    TEST_DO(verifyTermwise(std::move(search), strict, _expectedOr));
+    GTEST_DO(verify(*search, strict, _expectedOr));
+    GTEST_DO(verifyTermwise(std::move(search), strict, _expectedOr));
 }
 
 
 void
 SearchIteratorVerifier::verifyTermwise(SearchIterator::UP iterator, bool strict, const DocIds & docIds) {
     SearchIterator::UP termwise = make_termwise(std::move(iterator), strict);
-    TEST_DO(verify(*termwise, strict, docIds));
+    GTEST_DO(verify(*termwise, strict, docIds));
 }
 
 void
@@ -259,16 +258,16 @@ SearchIteratorVerifier::verify_get_hits(SearchIterator & iterator, const DocIds 
 void
 SearchIteratorVerifier::verify(SearchIterator & iterator, bool strict, const DocIds & docIds)
 {
-    TEST_DO(verify(iterator, Ranges({{1, getDocIdLimit()}}), strict, docIds));
-    TEST_DO(verify(iterator, Ranges({{1, getDocIdLimit()}}), strict, docIds));
+    GTEST_DO(verify(iterator, Ranges({{1, getDocIdLimit()}}), strict, docIds));
+    GTEST_DO(verify(iterator, Ranges({{1, getDocIdLimit()}}), strict, docIds));
     for (uint32_t rangeWidth : { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 100, 202 }) {
         Ranges ranges;
         for (uint32_t sum(1); sum < getDocIdLimit(); sum += rangeWidth) {
             ranges.emplace_back(sum, std::min(sum+rangeWidth, getDocIdLimit()));
         }
-        TEST_DO(verify(iterator, ranges, strict, docIds));
+        GTEST_DO(verify(iterator, ranges, strict, docIds));
         std::reverse(ranges.begin(), ranges.end());
-        TEST_DO(verify(iterator, ranges, strict, docIds));
+        GTEST_DO(verify(iterator, ranges, strict, docIds));
     }
 }
 

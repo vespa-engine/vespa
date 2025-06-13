@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 #include <vespa/vespalib/util/polymorphicarrays.h>
 #include <cassert>
@@ -65,49 +65,49 @@ template <typename T>
 void
 verifyArray(IArrayT<A> & array)
 {
-    EXPECT_EQUAL(0u, array.size());
+    EXPECT_EQ(0u, array.size());
     for (size_t i(0); i < 10; i++) {
         array.push_back(T(i));
     }
-    EXPECT_EQUAL(10u, array.size());
+    EXPECT_EQ(10u, array.size());
     for (size_t i(0); i < 10; i++) {
-        EXPECT_EQUAL(T(i), array[i]);
+        EXPECT_EQ(T(i), array[i]);
     }
     IArrayT<A>::UP copy(array.clone());
     array.clear();
-    EXPECT_EQUAL(0u, array.size());
+    EXPECT_EQ(0u, array.size());
 
     for (size_t i(0); i < copy->size(); i++) {
         array.push_back((*copy)[i]);
     }
 
     array.resize(19);
-    EXPECT_EQUAL(19u, array.size());
+    EXPECT_EQ(19u, array.size());
     for (size_t i(0); i < 10; i++) {
-        EXPECT_EQUAL(T(i), array[i]);
+        EXPECT_EQ(T(i), array[i]);
     }
     for (size_t i(10); i < array.size(); i++) {
-        EXPECT_EQUAL(T(11), array[i]);
+        EXPECT_EQ(T(11), array[i]);
     }
     array.resize(13);
-    EXPECT_EQUAL(13u, array.size());
+    EXPECT_EQ(13u, array.size());
     for (size_t i(0); i < 10; i++) {
-        EXPECT_EQUAL(T(i), array[i]);
+        EXPECT_EQ(T(i), array[i]);
     }
     for (size_t i(10); i < array.size(); i++) {
-        EXPECT_EQUAL(T(11), array[i]);
+        EXPECT_EQ(T(11), array[i]);
     }
     dynamic_cast<T &>(array[1]) = T(17);
-    EXPECT_EQUAL(T(0), array[0]);
-    EXPECT_EQUAL(T(17), array[1]);
-    EXPECT_EQUAL(T(2), array[2]);
+    EXPECT_EQ(T(0), array[0]);
+    EXPECT_EQ(T(17), array[1]);
+    EXPECT_EQ(T(2), array[2]);
 }
 
 
-TEST("require that primitive arrays conforms") {
+TEST(PolymorphicArrayTest, require_that_primitive_arrays_conforms) {
     PrimitiveArrayT<Primitive, A> a;
     verifyArray<Primitive>(a); 
-    EXPECT_EQUAL(7u, a[7].value());
+    EXPECT_EQ(7u, a[7].value());
 }
 
 class Factory : public ComplexArrayT<A>::Factory
@@ -117,9 +117,9 @@ public:
     Factory * clone() const override { return new Factory(*this); }
 };
 
-TEST("require that complex arrays conforms") {
+TEST(PolymorphicArrayTest, require_that_complex_arrays_conforms) {
     ComplexArrayT<A> a(Factory::UP(new Factory()));
     verifyArray<Complex>(a); 
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

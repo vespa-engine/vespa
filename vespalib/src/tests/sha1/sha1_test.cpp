@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "rfc_sha1.h"
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 #include <vespa/vespalib/util/sha1.h>
 #include <string>
+#include <cassert>
 
 using namespace vespalib;
 
@@ -68,37 +69,39 @@ struct Data {
         Sha1 sha;
         uint32_t ofs = 0;
         for (auto chunk: chunks) {
-            ASSERT_LESS_EQUAL(ofs + chunk, max());
+            assert(ofs + chunk <= max());
             sha.process(buf + ofs, chunk);
             ofs += chunk;
         }
-        ASSERT_EQUAL(ofs, max());
+        assert(ofs == max());
         sha.get_digest(result.buf);
         return result;
     }
 };
 
-TEST("require that reference implementation passes SHA1 smoke test") {
-    EXPECT_EQUAL("0xA9993E364706816ABA3E25717850C26C9CD0D89D", rfc_digest("abc", 3).as_string());
+TEST(Sha1Test, require_that_reference_implementation_passes_SHA1_smoke_test) {
+    EXPECT_EQ("0xA9993E364706816ABA3E25717850C26C9CD0D89D", rfc_digest("abc", 3).as_string());
 }
 
-TEST("require that production implementation passes SHA1 smoke test") {
-    EXPECT_EQUAL("0xA9993E364706816ABA3E25717850C26C9CD0D89D", digest("abc", 3).as_string());
+TEST(Sha1Test, require_that_production_implementation_passes_SHA1_smoke_test) {
+    EXPECT_EQ("0xA9993E364706816ABA3E25717850C26C9CD0D89D", digest("abc", 3).as_string());
 }
 
-TEST_F("require that random data hashes to the same as reference implementation", Data()) {
+TEST(Sha1Test, require_that_random_data_hashes_to_the_same_as_reference_implementation) {
+    Data f1;
     for (size_t size = 0; size <= f1.max(); ++size) {
-        EXPECT_EQUAL(rfc_digest(f1.buf, size), digest(f1.buf, size));
+        EXPECT_EQ(rfc_digest(f1.buf, size), digest(f1.buf, size));
     }
 }
 
-TEST_F("require that incremental and all-in-one hashing produces the same result", Data()) {
-    EXPECT_EQUAL(digest(f1.buf, f1.max()),
+TEST(Sha1Test, require_that_incremental_and_all_in_one_hashing_produces_the_same_result) {
+    Data f1;
+    EXPECT_EQ(digest(f1.buf, f1.max()),
                  f1.inc_digest({ 1000, 1000, 1000, 1000, 1000 }));
-    EXPECT_EQUAL(digest(f1.buf, f1.max()),
+    EXPECT_EQ(digest(f1.buf, f1.max()),
                  f1.inc_digest({ 10, 10, 10, 10, 10, 10, 4, 64, 64, 64, 128, 75, 75, 2500, 1966 }));
-    EXPECT_EQUAL(digest(f1.buf, f1.max()),
+    EXPECT_EQ(digest(f1.buf, f1.max()),
                  f1.inc_digest({ 64, 64, 128, 256, 10, 10, 10, 10, 10, 10, 10, 100, 4318 }));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

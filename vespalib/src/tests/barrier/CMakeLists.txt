@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_barrier_test_app TEST
     barrier_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_barrier_test_app COMMAND vespalib_barrier_test_app)

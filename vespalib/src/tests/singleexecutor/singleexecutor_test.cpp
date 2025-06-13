@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/vespalib/util/singleexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
@@ -12,7 +12,7 @@ using namespace vespalib;
 
 VESPA_THREAD_STACK_TAG(sequenced_executor)
 
-TEST("test that all tasks are executed") {
+TEST(SingleExecutorTest, test_that_all_tasks_are_executed) {
 
     std::atomic<uint64_t> counter(0);
     SingleExecutor executor(sequenced_executor, 10, true, 1, 100ms);
@@ -21,17 +21,17 @@ TEST("test that all tasks are executed") {
         executor.execute(makeLambdaTask([&counter] {counter++;}));
     }
     executor.sync();
-    EXPECT_EQUAL(10u, counter);
+    EXPECT_EQ(10u, counter);
 
     counter = 0;
     for (uint64_t i(0); i < 10000; i++) {
         executor.execute(makeLambdaTask([&counter] {counter++;}));
     }
     executor.sync();
-    EXPECT_EQUAL(10000u, counter);
+    EXPECT_EQ(10000u, counter);
 }
 
-TEST("test that executor can overflow") {
+TEST(SingleExecutorTest, test_that_executor_can_overflow) {
     constexpr size_t NUM_TASKS = 1000;
     std::atomic<uint64_t> counter(0);
     vespalib::Gate gate;
@@ -40,17 +40,17 @@ TEST("test that executor can overflow") {
 
     for(size_t i(0); i < NUM_TASKS; i++) {
         executor.execute(makeLambdaTask([&counter, i] {
-            EXPECT_EQUAL(i, counter);
+            EXPECT_EQ(i, counter);
             counter++;
         }));
     }
-    EXPECT_EQUAL(0u, counter);
+    EXPECT_EQ(0u, counter);
     ExecutorStats stats = executor.getStats();
-    EXPECT_EQUAL(NUM_TASKS + 1, stats.acceptedTasks);
-    EXPECT_EQUAL(NUM_TASKS, stats.queueSize.max());
+    EXPECT_EQ(NUM_TASKS + 1, stats.acceptedTasks);
+    EXPECT_EQ(NUM_TASKS, stats.queueSize.max());
     gate.countDown();
     executor.sync();
-    EXPECT_EQUAL(NUM_TASKS, counter);
+    EXPECT_EQ(NUM_TASKS, counter);
 }
 
 void verifyResizeTaskLimit(bool up) {
@@ -62,12 +62,12 @@ void verifyResizeTaskLimit(bool up) {
     const uint32_t INITIAL_2inN = roundUp2inN(INITIAL);
     double waterMarkRatio = 0.5;
     SingleExecutor executor(sequenced_executor, INITIAL, true, INITIAL*waterMarkRatio, 10ms);
-    EXPECT_EQUAL(INITIAL_2inN, executor.getTaskLimit());
-    EXPECT_EQUAL(uint32_t(INITIAL_2inN*waterMarkRatio), executor.get_watermark());
+    EXPECT_EQ(INITIAL_2inN, executor.getTaskLimit());
+    EXPECT_EQ(uint32_t(INITIAL_2inN*waterMarkRatio), executor.get_watermark());
 
     uint32_t targetTaskLimit = up ? 40 : 5;
     uint32_t roundedTaskLimit = roundUp2inN(targetTaskLimit);
-    EXPECT_NOT_EQUAL(INITIAL_2inN, roundedTaskLimit);
+    EXPECT_NE(INITIAL_2inN, roundedTaskLimit);
 
     for (uint64_t i(0); i < INITIAL; i++) {
         executor.execute(makeLambdaTask([&lock, &cond, &started, &allowed] {
@@ -79,18 +79,18 @@ void verifyResizeTaskLimit(bool up) {
         }));
     }
     while (started < 1);
-    EXPECT_EQUAL(1u, started);
+    EXPECT_EQ(1u, started);
     executor.setTaskLimit(targetTaskLimit);
-    EXPECT_EQUAL(INITIAL_2inN, executor.getTaskLimit());
-    EXPECT_EQUAL(INITIAL_2inN*waterMarkRatio, static_cast<double>(executor.get_watermark()));
+    EXPECT_EQ(INITIAL_2inN, executor.getTaskLimit());
+    EXPECT_EQ(INITIAL_2inN*waterMarkRatio, static_cast<double>(executor.get_watermark()));
     allowed = 5;
     while (started < 6);
-    EXPECT_EQUAL(6u, started);
-    EXPECT_EQUAL(INITIAL_2inN, executor.getTaskLimit());
+    EXPECT_EQ(6u, started);
+    EXPECT_EQ(INITIAL_2inN, executor.getTaskLimit());
     allowed = INITIAL;
     while (started < INITIAL);
-    EXPECT_EQUAL(INITIAL, started);
-    EXPECT_EQUAL(INITIAL_2inN, executor.getTaskLimit());
+    EXPECT_EQ(INITIAL, started);
+    EXPECT_EQ(INITIAL_2inN, executor.getTaskLimit());
     executor.execute(makeLambdaTask([&lock, &cond, &started, &allowed] {
         started++;
         std::unique_lock guard(lock);
@@ -99,17 +99,17 @@ void verifyResizeTaskLimit(bool up) {
         }
     }));
     while (started < INITIAL + 1);
-    EXPECT_EQUAL(INITIAL + 1, started);
-    EXPECT_EQUAL(roundedTaskLimit, executor.getTaskLimit());
-    EXPECT_EQUAL(roundedTaskLimit*waterMarkRatio, static_cast<double>(executor.get_watermark()));
+    EXPECT_EQ(INITIAL + 1, started);
+    EXPECT_EQ(roundedTaskLimit, executor.getTaskLimit());
+    EXPECT_EQ(roundedTaskLimit*waterMarkRatio, static_cast<double>(executor.get_watermark()));
     allowed = INITIAL + 1;
 }
 
-TEST("test that resizing up and down works") {
-    TEST_DO(verifyResizeTaskLimit(true));
-    TEST_DO(verifyResizeTaskLimit(false));
+TEST(SingleExecutorTest, test_that_resizing_up_and_down_works) {
+    GTEST_DO(verifyResizeTaskLimit(true));
+    GTEST_DO(verifyResizeTaskLimit(false));
 
 
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

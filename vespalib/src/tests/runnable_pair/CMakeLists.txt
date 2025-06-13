@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_runnable_pair_test_app TEST
     runnable_pair_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_runnable_pair_test_app COMMAND vespalib_runnable_pair_test_app)

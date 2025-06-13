@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_state_server_test_app TEST
     state_server_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_state_server_test_app NO_VALGRIND NO_VALGRIND COMMAND vespalib_state_server_test_app ENVIRONMENT "VESPA_HOME=.")
