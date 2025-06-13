@@ -15,7 +15,6 @@ vespa_define_module(
     ${VESPA_URING_LIB}
 
     APPS
-    src/apps/make_fixture_macros
     src/apps/vespa-detect-hostname
     src/apps/vespa-drop-file-from-cache
     src/apps/vespa-probe-io-uring
@@ -101,7 +100,6 @@ vespa_define_module(
     src/tests/io/mapped_file_input
     src/tests/latch
     src/tests/left_right_heap
-    src/tests/make_fixture_macros
     src/tests/memory
     src/tests/memorydatastore
     src/tests/metrics
@@ -158,14 +156,6 @@ vespa_define_module(
     src/tests/stllike
     src/tests/stringfmt
     src/tests/sync
-    src/tests/testapp-debug
-    src/tests/testapp-generic
-    src/tests/testapp-main
-    src/tests/testapp-state
-    src/tests/testkit-mt
-    src/tests/testkit-subset
-    src/tests/testkit-testhook
-    src/tests/testkit-time_bomb
     src/tests/text/lowercase
     src/tests/text/stringtokenizer
     src/tests/text/utf8
@@ -175,12 +165,6 @@ vespa_define_module(
     src/tests/trace
     src/tests/traits
     src/tests/true
-    src/tests/tutorial
-    src/tests/tutorial/checks
-    src/tests/tutorial/fixtures
-    src/tests/tutorial/minimal
-    src/tests/tutorial/simple
-    src/tests/tutorial/threads
     src/tests/unwind_message
     src/tests/util
     src/tests/util/generationhandler_stress

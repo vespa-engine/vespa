@@ -1,9 +1,0 @@
-.depend
-Makefile
-debug_test
-diff.out
-lhs.out
-rhs.out
-testapp-debug_test
-vespalib_debug_test_app
-vespalib_testapp-debug_test_app
