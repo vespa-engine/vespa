@@ -139,6 +139,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addSimpleComponent("com.yahoo.container.core.documentapi.DocumentAccessProvider");
         addSimpleComponent("com.yahoo.container.jdisc.SecretsProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MicrometerMetricReporter");
+        addSimpleComponent("ai.vespa.embedding.support.ModelPathHelperImpl");
         addSimpleComponent(DOCUMENT_TYPE_MANAGER_CLASS);
 
         addMetricsHandlers();
