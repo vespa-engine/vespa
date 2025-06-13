@@ -17,6 +17,21 @@ Avx3DlAccelerator::dotProduct(const double* af, const double* bf, size_t sz) con
 
 size_t
 Avx3DlAccelerator::populationCount(const uint64_t* a, size_t sz) const noexcept {
+    // Empirical measurements show that firing up the whole pile of massively compiler-unrolled
+    // AVX512 VPOPCNT machinery for short vectors is actually determinental to performance.
+    // We therefore specialize the code generation for short vectors.
+    // This sequence of apparent identical function calls may look odd, but for each distinct
+    // branch `helper::populationCount` is inline and the compiler knows the max loop trip count.
+    // It can therefore specialize the implementations.
+    // Empirically on GCC 14.2, each increasing trip count uses less and less POPCNT and more
+    // and more VPOPCNT, culminating with the arbitrary trip count implementation.
+    if (sz <= 8) [[unlikely]] {
+        return helper::populationCount(a, sz);
+    } else if (sz <= 16) [[unlikely]] {
+        return helper::populationCount(a, sz);
+    } else if (sz <= 32) [[unlikely]] {
+        return helper::populationCount(a, sz);
+    }
     return helper::populationCount(a, sz);
 }
 
