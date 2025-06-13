@@ -2,6 +2,7 @@
 package ai.vespa.embedding.huggingface;
 
 import ai.vespa.embedding.PoolingStrategy;
+import ai.vespa.embedding.support.ModelPathHelper;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
@@ -44,7 +45,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     private final String prependDocument;
 
     @Inject
-    public HuggingFaceEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, HuggingFaceEmbedderConfig config) {
+    public HuggingFaceEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, HuggingFaceEmbedderConfig config, ModelPathHelper modelHelper) {
         this.runtime = runtime;
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
@@ -52,7 +53,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         normalize = config.normalize();
         prependQuery = config.prependQuery();
         prependDocument = config.prependDocument();
-        var tokenizerPath = Paths.get(config.tokenizerPath().toString());
+        var tokenizerPath = Paths.get(modelHelper.getModelPathResolvingIfNecessary(config.tokenizerPathReference()));
         var builder = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
                 .addDefaultModel(tokenizerPath)
@@ -75,7 +76,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
             optionsBuilder.setGpuDevice(config.transformerGpuDevice());
 
         var onnxOpts = optionsBuilder.build();
-        evaluator = onnx.evaluatorOf(config.transformerModel().toString(), onnxOpts);
+        evaluator = onnx.evaluatorOf(modelHelper.getModelPathResolvingIfNecessary(config.transformerModelReference()), onnxOpts);
         tokenTypeIdsName = detectTokenTypeIds(config, evaluator);
         validateModel();
     }
