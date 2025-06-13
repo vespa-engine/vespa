@@ -68,7 +68,7 @@ public class UrlDownloader {
     }
 
     public File waitFor(UrlReference urlReference, Duration timeout) {
-        return waitFor(urlReference, new DownloadOptions(Optional.empty()), timeout);
+        return waitFor(urlReference, DownloadOptions.defaultOptions(), timeout);
     }
 
     public File waitFor(UrlReference urlReference, DownloadOptions downloadOptions, Duration timeout) {
