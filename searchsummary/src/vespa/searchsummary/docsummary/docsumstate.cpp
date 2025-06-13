@@ -73,6 +73,10 @@ GetDocsumsState::get_summary_features()
 {
     if (!_summaryFeatures) {
         _callback.fillSummaryFeatures(*this);
+        if (!_summaryFeatures) {
+            // No summary features have been specified in rank profile
+            _summaryFeatures = std::make_shared<FeatureSet>(std::vector<std::string>(), 0);
+        }
     }
     return *_summaryFeatures;
 }

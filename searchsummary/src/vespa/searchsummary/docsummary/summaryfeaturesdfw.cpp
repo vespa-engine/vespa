@@ -29,6 +29,10 @@ SummaryFeaturesDFW::insertField(uint32_t docid, GetDocsumsState& state, vespalib
         }
     }
     const FeatureSet::StringVector &names = state._summaryFeatures->getNames();
+    if (names.empty()) {
+        // No summary features have been specified in rank profile
+        return;
+    }
     const FeatureSet::Value *values = state._summaryFeatures->getFeaturesByDocId(docid);
     if (values == nullptr) { return; }
 
