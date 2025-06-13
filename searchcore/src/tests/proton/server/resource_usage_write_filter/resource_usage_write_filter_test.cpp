@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcore/proton/server/disk_mem_usage_filter.h>
+#include <vespa/searchcore/proton/server/resource_usage_write_filter.h>
 #include <vespa/searchcore/proton/server/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/server/resource_usage_state.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -11,14 +11,14 @@ using vespalib::HwInfo;
 
 namespace fs = std::filesystem;
 
-struct DiskMemUsageFilterTest : public ::testing::Test
+struct ResourceUsageWriteFilterTest : public ::testing::Test
 {
-    DiskMemUsageFilter _filter;
+    ResourceUsageWriteFilter _filter;
     DiskMemUsageNotifier _notifier;
-    using State = DiskMemUsageFilter::State;
+    using State = ResourceUsageWriteFilter::State;
     using Config = DiskMemUsageNotifier::Config;
 
-    DiskMemUsageFilterTest()
+    ResourceUsageWriteFilterTest()
         : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(1000), HwInfo::Cpu(0))),
           _notifier(_filter)
     {
@@ -49,12 +49,12 @@ struct DiskMemUsageFilterTest : public ::testing::Test
     }
 };
 
-TEST_F(DiskMemUsageFilterTest, default_filter_allows_write)
+TEST_F(ResourceUsageWriteFilterTest, default_filter_allows_write)
 {
     testWrite("");
 }
 
-TEST_F(DiskMemUsageFilterTest, stats_are_wired_through)
+TEST_F(ResourceUsageWriteFilterTest, stats_are_wired_through)
 {
     EXPECT_EQ(297u, _notifier.getMemoryStats().getVirt());
     triggerMemoryLimit();
@@ -69,7 +69,7 @@ assertResourceUsage(double usage, double limit, double utilization, const Resour
     EXPECT_DOUBLE_EQ(utilization, state.utilization());
 }
 
-TEST_F(DiskMemUsageFilterTest, reconfig_with_identical_config_is_noop)
+TEST_F(ResourceUsageWriteFilterTest, reconfig_with_identical_config_is_noop)
 {
     EXPECT_TRUE(_notifier.setConfig(Config(1.0, 0.8)));
     assertResourceUsage(0.2, 0.8, 0.25, _notifier.usageState().diskState());
@@ -77,7 +77,7 @@ TEST_F(DiskMemUsageFilterTest, reconfig_with_identical_config_is_noop)
     assertResourceUsage(0.2, 0.8, 0.25, _notifier.usageState().diskState());
 }
 
-TEST_F(DiskMemUsageFilterTest, disk_limit_can_be_reached)
+TEST_F(ResourceUsageWriteFilterTest, disk_limit_can_be_reached)
 {
     EXPECT_TRUE(_notifier.setConfig(Config(1.0, 0.8)));
     assertResourceUsage(0.2, 0.8, 0.25, _notifier.usageState().diskState());
@@ -90,7 +90,7 @@ TEST_F(DiskMemUsageFilterTest, disk_limit_can_be_reached)
     assertResourceUsage(0.9, 0.8, 1.125, _notifier.usageState().diskState());
 }
 
-TEST_F(DiskMemUsageFilterTest, memory_limit_can_be_reached)
+TEST_F(ResourceUsageWriteFilterTest, memory_limit_can_be_reached)
 {
     EXPECT_TRUE(_notifier.setConfig(Config(0.8, 1.0)));
     assertResourceUsage(0.3, 0.8, 0.375, _notifier.usageState().memoryState());
@@ -105,7 +105,7 @@ TEST_F(DiskMemUsageFilterTest, memory_limit_can_be_reached)
     assertResourceUsage(0.9, 0.8, 1.125, _notifier.usageState().memoryState());
 }
 
-TEST_F(DiskMemUsageFilterTest, both_disk_limit_and_memory_limit_can_be_reached)
+TEST_F(ResourceUsageWriteFilterTest, both_disk_limit_and_memory_limit_can_be_reached)
 {
     EXPECT_TRUE(_notifier.setConfig(Config(0.8, 0.8)));
     triggerMemoryLimit();
@@ -124,7 +124,7 @@ TEST_F(DiskMemUsageFilterTest, both_disk_limit_and_memory_limit_can_be_reached)
               "capacity: 100, used: 90, diskUsed: 0.9, diskLimit: 0.8}}");
 }
 
-TEST_F(DiskMemUsageFilterTest, transient_and_non_transient_disk_usage_tracked_in_usage_state_and_metrics)
+TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_disk_usage_tracked_in_usage_state_and_metrics)
 {
     _notifier.set_resource_usage({15, 0}, _notifier.getMemoryStats(), _notifier.getDiskUsedSize());
     EXPECT_DOUBLE_EQ(0.15, _notifier.usageState().transient_disk_usage());
@@ -133,7 +133,7 @@ TEST_F(DiskMemUsageFilterTest, transient_and_non_transient_disk_usage_tracked_in
     EXPECT_DOUBLE_EQ(0.05, _notifier.get_metrics().non_transient_disk_usage());
 }
 
-TEST_F(DiskMemUsageFilterTest, transient_and_non_transient_memory_usage_tracked_in_usage_state_and_metrics)
+TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_memory_usage_tracked_in_usage_state_and_metrics)
 {
     _notifier.set_resource_usage({0, 100}, _notifier.getMemoryStats(), _notifier.getDiskUsedSize());
     EXPECT_DOUBLE_EQ(0.1, _notifier.usageState().transient_memory_usage());

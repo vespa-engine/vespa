@@ -115,11 +115,11 @@ vespa_define_module(
     src/tests/proton/reprocessing/document_reprocessing_handler
     src/tests/proton/reprocessing/reprocessing_runner
     src/tests/proton/server
-    src/tests/proton/server/disk_mem_usage_filter
     src/tests/proton/server/disk_mem_usage_metrics
     src/tests/proton/server/disk_mem_usage_sampler
     src/tests/proton/server/initialize_threads_calculator
     src/tests/proton/server/memoryflush
+    src/tests/proton/server/resource_usage_write_filter
     src/tests/proton/server/shared_threading_service
     src/tests/proton/summaryengine
     src/tests/proton/verify_ranksetup

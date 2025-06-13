@@ -16,7 +16,7 @@
 
 namespace proton {
 
-class DiskMemUsageFilter;
+class ResourceUsageWriteFilter;
 
 /**
  * Class to notify disk and memory usage based on sampled disk and memory usage.
@@ -57,7 +57,7 @@ private:
     DiskMemUsageState            _dmstate;
     mutable DiskMemUsageMetrics  _disk_mem_usage_metrics;
     std::vector<IDiskMemUsageListener *> _listeners;
-    DiskMemUsageFilter&          _filter;
+    ResourceUsageWriteFilter&    _filter;
 
     void recalcState(const Guard &guard); // called with _lock held
     double getMemoryUsedRatio(const Guard &guard) const;
@@ -67,7 +67,7 @@ private:
     void notifyDiskMemUsage(const Guard &guard, DiskMemUsageState state);
 
 public:
-    DiskMemUsageNotifier(DiskMemUsageFilter& filter);
+    DiskMemUsageNotifier(ResourceUsageWriteFilter& filter);
     ~DiskMemUsageNotifier() override;
     void set_resource_usage(const TransientResourceUsage& transient_usage, vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes);
     [[nodiscard]] bool setConfig(Config config);

@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "disk_mem_usage_filter.h"
+#include "resource_usage_write_filter.h"
 #include "i_disk_mem_usage_listener.h"
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".proton.server.disk_mem_usage_filter");
+LOG_SETUP(".proton.server.resource_usage_write_filter");
 
 using vespalib::HwInfo;
 using vespalib::ProcessMemoryStats;
@@ -95,7 +95,7 @@ makeUnblockingMessage(double memoryUsed,
 
 }
 
-DiskMemUsageFilter::DiskMemUsageFilter(const HwInfo& hwInfo)
+ResourceUsageWriteFilter::ResourceUsageWriteFilter(const HwInfo& hwInfo)
     : _lock(),
       _hwInfo(hwInfo),
       _acceptWrite(true),
@@ -105,10 +105,10 @@ DiskMemUsageFilter::DiskMemUsageFilter(const HwInfo& hwInfo)
       _dmstate()
 { }
 
-DiskMemUsageFilter::~DiskMemUsageFilter() = default;
+ResourceUsageWriteFilter::~ResourceUsageWriteFilter() = default;
 
 void
-DiskMemUsageFilter::recalc_state(const Guard& guard)
+ResourceUsageWriteFilter::recalc_state(const Guard& guard)
 {
     (void) guard;
     bool hasMessage = false;
@@ -149,21 +149,21 @@ DiskMemUsageFilter::recalc_state(const Guard& guard)
 }
 
 bool
-DiskMemUsageFilter::acceptWriteOperation() const
+ResourceUsageWriteFilter::acceptWriteOperation() const
 {
     return _acceptWrite;
 }
 
-DiskMemUsageFilter::State
-DiskMemUsageFilter::getAcceptState() const
+ResourceUsageWriteFilter::State
+ResourceUsageWriteFilter::getAcceptState() const
 {
     Guard guard(_lock);
     return _state;
 }
 
 void
-DiskMemUsageFilter::notify_disk_mem_usage(const DiskMemUsageState& state, const ProcessMemoryStats& memoryStats,
-                                          uint64_t diskUsedSizeBytes)
+ResourceUsageWriteFilter::notify_disk_mem_usage(const DiskMemUsageState& state, const ProcessMemoryStats& memoryStats,
+                                            uint64_t diskUsedSizeBytes)
 {
     std::lock_guard guard(_lock);
     _dmstate = state;

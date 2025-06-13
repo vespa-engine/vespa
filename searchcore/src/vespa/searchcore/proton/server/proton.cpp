@@ -17,6 +17,7 @@
 #include "proton_disk_layout.h"
 #include "proton_thread_pools_explorer.h"
 #include "resource_usage_explorer.h"
+#include "resource_usage_write_filter.h"
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
 
@@ -327,7 +328,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 
     setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
-    _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir, hwInfo);
+    _write_filter = std::make_unique<ResourceUsageWriteFilter>(hwInfo);
+    _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir, *_write_filter);
     _posting_list_cache = make_posting_list_cache(protonConfig);
 
     _tls = std::make_unique<TLS>(_configUri.createWithNewId(protonConfig.tlsconfigid), _fileHeaderContext);

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "disk_mem_usage_sampler.h"
+#include "resource_usage_write_filter.h"
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -11,8 +12,8 @@ using vespalib::makeLambdaTask;
 
 namespace proton {
 
-DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, const vespalib::HwInfo &hwInfo)
-    : _filter(hwInfo),
+DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, ResourceUsageWriteFilter& filter)
+    : _filter(filter),
       _notifier(_filter),
       _path(path_in),
       _sampleInterval(60s),

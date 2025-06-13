@@ -51,6 +51,7 @@ class MatchEngine;
 class MetricsEngine;
 class PersistenceEngine;
 class PrepareRestartHandler;
+class ResourceUsageWriteFilter;
 class SummaryEngine;
 class ScheduledForwardExecutor;
 
@@ -96,6 +97,7 @@ private:
     ProtonFileHeaderContext                _fileHeaderContext;
     std::shared_ptr<search::attribute::Interlock> _attribute_interlock;
     std::unique_ptr<TLS>                   _tls;
+    std::unique_ptr<ResourceUsageWriteFilter> _write_filter;
     std::unique_ptr<DiskMemUsageSampler>   _diskMemUsageSampler;
     std::unique_ptr<PersistenceEngine>     _persistenceEngine;
     DocumentDBMap                          _documentDBMap;
