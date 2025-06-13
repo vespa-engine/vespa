@@ -57,7 +57,8 @@ GenericConfig = element config {
 ModelReference =
     attribute model-id { xsd:string }? &
     attribute path { xsd:string }? &
-    attribute url { xsd:string }?
+    attribute url { xsd:string }? &
+    attribute secret-ref { xsd:string }?
 
 ComponentSpec =
     ( attribute id { xsd:Name | JavaId } | attribute idref { xsd:Name } | attribute ident { xsd:Name } )
