@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_valgrind_test_app TEST
     valgrind_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_valgrind_test_app_testInitializedUser COMMAND vespalib_valgrind_test_app testInitializedUser NO_VALGRIND)
 vespa_add_test(NAME vespalib_valgrind_test_app_testInitializedSystemCall COMMAND vespalib_valgrind_test_app testInitializedSystemCall NO_VALGRIND)

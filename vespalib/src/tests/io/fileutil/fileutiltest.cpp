@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 #include <filesystem>
 #include <iostream>
@@ -39,43 +39,43 @@ std::string normalizeOpenError(const std::string str)
     return tmp1;
 }
 
-TEST("require that vespalib::File::open works")
+TEST(FileUtilTest, require_that_vespalib__File__open_works)
 {
         // Opening non-existing file for reading should fail.
     try{
         std::filesystem::remove(std::filesystem::path("myfile")); // Just in case
         File f("myfile");
         f.open(File::READONLY);
-        TEST_FATAL("Opening non-existing file for reading should fail.");
+        FAIL() << "Opening non-existing file for reading should fail.";
     } catch (IoException& e) {
         //std::cerr << e.what() << "\n";
-        EXPECT_EQUAL(IoException::NOT_FOUND, e.getType());
+        EXPECT_EQ(IoException::NOT_FOUND, e.getType());
     }
         // Opening non-existing file for writing without CREATE flag fails
     try{
         File f("myfile");
         f.open(0);
-        TEST_FATAL("Opening non-existing file without CREATE flag should fail.");
+        FAIL() << "Opening non-existing file without CREATE flag should fail.";
     } catch (IoException& e) {
         //std::cerr << e.what() << "\n";
-        EXPECT_EQUAL(IoException::NOT_FOUND, e.getType());
+        EXPECT_EQ(IoException::NOT_FOUND, e.getType());
     }
         // Opening file in non-existing subdir should fail.
     try{
         std::filesystem::remove_all(std::filesystem::path("mydir")); // Just in case
         File f("mydir/myfile");
         f.open(File::CREATE);
-        TEST_FATAL("Opening non-existing file for reading should fail.");
+        FAIL() << "Opening non-existing file for reading should fail.";
     } catch (IoException& e) {
         //std::cerr << e.what() << "\n";
-        EXPECT_EQUAL(IoException::NOT_FOUND, e.getType());
+        EXPECT_EQ(IoException::NOT_FOUND, e.getType());
     }
         // Opening file for reading in non-existing subdir should not create
         // subdir.
     try{
         File f("mydir/myfile");
         f.open(File::READONLY, true);
-        TEST_FATAL("Read only parameter doesn't work with auto-generate");
+        FAIL() << "Read only parameter doesn't work with auto-generate";
     } catch (IllegalArgumentException& e) {
     }
         // Opening file in non-existing subdir without auto-generating
@@ -83,10 +83,10 @@ TEST("require that vespalib::File::open works")
     try{
         File f("mydir/myfile");
         f.open(File::CREATE, false);
-        TEST_FATAL("Need to autogenerate directories for this to work");
+        FAIL() << "Need to autogenerate directories for this to work";
     } catch (IoException& e) {
         //std::cerr << e.what() << "\n";
-        EXPECT_EQUAL(IoException::NOT_FOUND, e.getType());
+        EXPECT_EQ(IoException::NOT_FOUND, e.getType());
         ASSERT_TRUE(!fileExists("mydir"));
     }
         // Opening file in non-existing subdir works with auto-generate
@@ -113,10 +113,10 @@ TEST("require that vespalib::File::open works")
     try{
         File f("mydir");
         f.open(File::CREATE, false);
-        TEST_FATAL("Can't open directory for reading");
+        FAIL() << "Can't open directory for reading";
     } catch (IoException& e) {
         //std::cerr << e.what() << "\n";
-        EXPECT_EQUAL(IoException::ILLEGAL_PATH, e.getType());
+        EXPECT_EQ(IoException::ILLEGAL_PATH, e.getType());
     }
         // Test reopening file in same object
     {
@@ -127,13 +127,13 @@ TEST("require that vespalib::File::open works")
         f.open(File::CREATE, false);
         std::vector<char> vec(10);
         size_t read = f.read(&vec[0], 10, 0);
-        EXPECT_EQUAL(1u, read);
-        EXPECT_EQUAL('a', vec[0]);
+        EXPECT_EQ(1u, read);
+        EXPECT_EQ('a', vec[0]);
         f.write("b", 1, 0);
     }
 }
 
-TEST("require that vespalib::File::isOpen works")
+TEST(FileUtilTest, require_that_vespalib__File__isOpen_works)
 {
     File f("myfile");
     ASSERT_TRUE(!f.isOpen());
@@ -143,27 +143,27 @@ TEST("require that vespalib::File::isOpen works")
     ASSERT_TRUE(!f.isOpen());
 }
 
-TEST("require that vespalib::File::resize works")
+TEST(FileUtilTest, require_that_vespalib__File__resize_works)
 {
     std::filesystem::remove(std::filesystem::path("myfile"));
     File f("myfile");
     f.open(File::CREATE, false);
     f.write("foobar", 6, 0);
-    EXPECT_EQUAL(6, f.getFileSize());
+    EXPECT_EQ(6, f.getFileSize());
     f.resize(10);
-    EXPECT_EQUAL(10, f.getFileSize());
+    EXPECT_EQ(10, f.getFileSize());
     std::vector<char> vec(20, ' ');
     size_t read = f.read(&vec[0], 20, 0);
-    EXPECT_EQUAL(10u, read);
-    EXPECT_EQUAL(std::string("foobar"), std::string(&vec[0], 6));
+    EXPECT_EQ(10u, read);
+    EXPECT_EQ(std::string("foobar"), std::string(&vec[0], 6));
     f.resize(3);
-    EXPECT_EQUAL(3, f.getFileSize());
+    EXPECT_EQ(3, f.getFileSize());
     read = f.read(&vec[0], 20, 0);
-    EXPECT_EQUAL(3u, read);
-    EXPECT_EQUAL(std::string("foo"), std::string(&vec[0], 3));
+    EXPECT_EQ(3u, read);
+    EXPECT_EQ(std::string("foo"), std::string(&vec[0], 3));
 }
 
-TEST("require that we can read all data written to file")
+TEST(FileUtilTest, require_that_we_can_read_all_data_written_to_file)
 {
     // Write text into a file.
     std::filesystem::remove(std::filesystem::path("myfile"));
@@ -178,7 +178,7 @@ TEST("require that we can read all data written to file")
     file.open(File::READONLY);
     std::string content = file.readAll();
     file.close();
-    ASSERT_EQUAL(content, text);
+    ASSERT_EQ(content, text);
 
     // Write lots of text into file.
     off_t offset = 0;
@@ -192,24 +192,24 @@ TEST("require that we can read all data written to file")
     file.open(File::READONLY);
     content = file.readAll();
     file.close();
-    ASSERT_EQUAL(offset, static_cast<off_t>(content.size()));
+    ASSERT_EQ(offset, static_cast<off_t>(content.size()));
 
     std::string chunk;
     for (offset = 0; offset < 10000; offset += text.size()) {
         chunk.assign(content.data() + offset, text.size());
-        ASSERT_EQUAL(text, chunk);
+        ASSERT_EQ(text, chunk);
     }
 }
 
-TEST("require that vespalib::dirname works")
+TEST(FileUtilTest, require_that_vespalib__dirname_works)
 {
-    ASSERT_EQUAL("mydir", dirname("mydir/foo"));
-    ASSERT_EQUAL(".", dirname("notFound"));
-    ASSERT_EQUAL("/", dirname("/notFound"));
-    ASSERT_EQUAL("here/there", dirname("here/there/everywhere"));
+    ASSERT_EQ("mydir", dirname("mydir/foo"));
+    ASSERT_EQ(".", dirname("notFound"));
+    ASSERT_EQ("/", dirname("/notFound"));
+    ASSERT_EQ("here/there", dirname("here/there/everywhere"));
 }
 
-TEST("require that vespalib::getOpenErrorString works")
+TEST(FileUtilTest, require_that_vespalib__getOpenErrorString_works)
 {
     std::string_view dirName = "mydir";
     std::filesystem::remove_all(std::filesystem::path(dirName));
@@ -224,16 +224,16 @@ TEST("require that vespalib::getOpenErrorString works")
     std::string expErr1 = "error=x fileStat[name=mydir/foo mode=x uid=x gid=x size=x mtime=x] dirStat[name=mydir mode=x uid=x gid=x size=x mtime=x]";
     std::cerr << "getOpenErrorString(1, \"mydir/foo\") is " << err1 <<
         ", normalized to " << normErr1 << std::endl;
-    EXPECT_EQUAL(expErr1, normErr1);
+    EXPECT_EQ(expErr1, normErr1);
     std::string err2 = getOpenErrorString(1, "notFound");
     std::string normErr2 =  normalizeOpenError(err2);
     std::string expErr2 = "error=x fileStat[name=notFound errno=x] dirStat[name=. mode=x uid=x gid=x size=x mtime=x]";
     std::cerr << "getOpenErrorString(1, \"notFound\") is " << err2 <<
         ", normalized to " << normErr2 << std::endl;
-    EXPECT_EQUAL(expErr2, normErr2);
+    EXPECT_EQ(expErr2, normErr2);
     std::filesystem::remove_all(std::filesystem::path(dirName));
 }
 
 } // vespalib
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

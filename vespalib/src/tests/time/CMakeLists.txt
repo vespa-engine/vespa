@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_time_box_test_app TEST
     time_box_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_time_box_test_app COMMAND vespalib_time_box_test_app)

@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_left_right_heap_test_app TEST
     left_right_heap_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_left_right_heap_test_app COMMAND vespalib_left_right_heap_test_app COST 30)
 vespa_add_executable(vespalib_left_right_heap_bench_app
@@ -11,5 +12,6 @@ vespa_add_executable(vespalib_left_right_heap_bench_app
     left_right_heap_bench.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_left_right_heap_bench_app COMMAND vespalib_left_right_heap_bench_app BENCHMARK)

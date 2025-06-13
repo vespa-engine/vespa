@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/valgrind.h>
+#include <cstring>
 
 using namespace vespalib;
 
@@ -34,7 +34,7 @@ void testInitializedSystemCall()
     Valgrind::testSystemCall(buf, sizeof(buf));
 }
 
-TEST_MAIN() {
+int main(int, char **argv) {
     if (strcmp(argv[1], "testInitializedUser") == 0) {
         testInitializedUser();
     } else if (strcmp(argv[1], "testInitializedSystemCall") == 0) {
@@ -46,4 +46,5 @@ TEST_MAIN() {
     } else {
         testInitializedUser();
     }
+    return 0;
 }

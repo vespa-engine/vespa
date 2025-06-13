@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/time/time_box.h>
 #include <thread>
 
-TEST("require that long-lived timebox returns falling time left numbers") {
+TEST(TimeBoxTest, require_that_long_lived_timebox_returns_falling_time_left_numbers) {
     vespalib::TimeBox box(3600);
     double last_timeLeft = box.timeLeft();
     for (int i = 0; i < 10; i++) {
@@ -15,14 +15,14 @@ TEST("require that long-lived timebox returns falling time left numbers") {
     }
 }
 
-TEST("require that short-lived timebox times out") {
+TEST(TimeBoxTest, require_that_short_lived_timebox_times_out) {
     vespalib::TimeBox box(0.125);
     std::this_thread::sleep_for(std::chrono::milliseconds(150));
     EXPECT_FALSE(box.hasTimeLeft());
-    EXPECT_EQUAL(box.timeLeft(), 0.0);
+    EXPECT_EQ(box.timeLeft(), 0.0);
 }
 
-TEST("require that short-lived timebox always returns at least minimum time") {
+TEST(TimeBoxTest, require_that_short_lived_timebox_always_returns_at_least_minimum_time) {
     vespalib::TimeBox box(0.250, 0.125);
     for (int i = 0; i < 10; i++) {
         double timeLeft = box.timeLeft();
@@ -31,7 +31,7 @@ TEST("require that short-lived timebox always returns at least minimum time") {
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
     }
     EXPECT_FALSE(box.hasTimeLeft());
-    EXPECT_EQUAL(box.timeLeft(), 0.125);
+    EXPECT_EQ(box.timeLeft(), 0.125);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

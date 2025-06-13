@@ -163,7 +163,6 @@ vespa_define_module(
     src/tests/time_tracer
     src/tests/trace
     src/tests/traits
-    src/tests/true
     src/tests/unwind_message
     src/tests/util
     src/tests/util/generationhandler_stress

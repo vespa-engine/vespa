@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using vespalib::make_string;
 using vespalib::make_string_short::fmt;
 
-TEST("test that make_string formats as one can expect.")
+TEST(FmtTest, test_that_make_string_formats_as_one_can_expect)
 {
     int i=7;
     int j=0x666;
@@ -40,8 +40,8 @@ TEST("test that make_string formats as one can expect.")
     EXPECT_TRUE(tst == make_string("%s", p));
 }
 
-TEST("require that short form make string can be used") {
-    EXPECT_EQUAL(fmt("format: %d", 123), std::string("format: 123"));
+TEST(FmtTest, require_that_short_form_make_string_can_be_used) {
+    EXPECT_EQ(fmt("format: %d", 123), std::string("format: 123"));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
