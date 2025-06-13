@@ -28,7 +28,8 @@ benchmark_fn(Fn f, size_t sz, size_t count) {
         sumOfSums += sum;
     }
     duration elapsed = steady_clock::now() - start;
-    printf("sum=%f of N=%zu and vector length=%zu took %" PRId64 "\n", sumOfSums, count, sz, count_ms(elapsed));
+    printf("sum=%f of N=%zu and vector length=%zu took %.1f ms\n", sumOfSums, count, sz,
+           std::chrono::duration<double, std::milli>(elapsed).count());
 }
 
 void
