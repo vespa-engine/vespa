@@ -176,6 +176,7 @@ public class CliClient {
         cliArgs.doomSeconds().ifPresent(doom -> builder.setCircuitBreaker(new GracePeriodCircuitBreaker(Duration.ofSeconds(10),
                                                                                                         Duration.ofSeconds(doom))));
         cliArgs.proxy().ifPresent(builder::setProxy);
+        cliArgs.initialInflightFactor().ifPresent(builder::setInitialInflightFactor);
         return builder.build();
     }
 
