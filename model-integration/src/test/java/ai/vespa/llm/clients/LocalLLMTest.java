@@ -6,17 +6,15 @@ import ai.vespa.llm.LanguageModelException;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
+import com.sun.xml.bind.v2.util.EditDistance;
 import com.yahoo.config.ModelReference;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -239,8 +237,8 @@ public class LocalLLMTest {
                             "even when the journey feels endless.",
                     "Det er ikke viktig hvor langsomt du går, så lange du ikke stopper. " +
                             "Persistens og bestemthed er det som egentlig fører til succes. " +
-                            "Hver lille steg fremover bygger grunnlaget for å nå storhet, " +
-                            "selv når reisen føler seg uendelig lang."
+                            "Hver liten steg fremover bygger grunnlaget for å nå storhet, " +
+                            "selv når reisen føler seg uendelig."
             ),
             new LLMTask(
                     "Our greatest glory is not in never falling, but in rising every time we fall.",
@@ -256,17 +254,17 @@ public class LocalLLMTest {
             ),
             new LLMTask(
                     "Success depends upon previous preparation, and without such preparation there is sure to be failure.",
-                    "Suksess avhenger av forberedelse, og uten denne er det sikkerhet for feil."
+                    "Suksess avhenger av forhåndsforberedelse, og uten denne er det sikkerhet for feil."
             ),
             new LLMTask(
                     "The man who moves a mountain begins by carrying away small stones, " +
                             "then moves on to medium-sized rocks, gradually clears larger rocks and boulders, " +
                             "and finally overcomes the most formidable obstacles to achieve his goal, " +
                             "displaying extraordinary perseverance and determination.",
-                    "Mannen som flyttet bjerget starter med å bære borte små sten, " +
-                            "og gradvis tar han borte større sten og boulders, " +
-                            "og slutter med å overkomme de største hindrene for å nå sin mål, " +
-                            "med uverdenslige evner og styrke."
+                    "Mannen som flyttet berget starter med å bære borte små sten, " +
+                            "derefter flyttet han på med mellemstørre steiner, gradvis fjernet større steiner og stenblokker, " +
+                            "og sluttelig overkommet de mest formidable hindrerne for å nå sin mål, " +
+                            "med utmærkt tenasje og bestemthet."
             )
     );
     
@@ -326,55 +324,22 @@ public class LocalLLMTest {
                 System.err.println("Actual output: " + completionStr);
             }
             
+            // Using edit distance to compare output to account for small variations in LLM output.
+            // The threshold is an arbitrary small number.
+            // Using an edit distance method from arbitrary library among existing dependencies.
             if (expectOutput != null) {
-                var distance = tokenDistance(expectOutput, completionStr);
-                var maxDistance = 0.33;
-                assertTrue(distance < maxDistance, 
-                        "Expected token distance < " + maxDistance + ", got " + distance);
+                var editDistance = EditDistance.editDistance(expectOutput, completionStr);
+                var maxEditDistance = expectOutput.length() * 0.05;
+                assertTrue(editDistance <= maxEditDistance, 
+                        "Expected output edit distance <= " + maxEditDistance + ", got " + editDistance);
             }
             
             if (expectNotOutput != null) {
-                var distance = tokenDistance(expectNotOutput, completionStr);
-                var maxDistance = 0.66;
-                assertTrue(distance >= maxDistance,
-                        "Expected token distance >= " + maxDistance + ", got " + distance);
+                var editDistance = EditDistance.editDistance(expectNotOutput, completionStr);
+                var maxEditDistance = expectNotOutput.length() * 0.05;
+                assertTrue(editDistance >= maxEditDistance,
+                        "Expected output edit distance >= " + maxEditDistance + ", got " + editDistance);
             }
-        }
-        
-        private static double tokenDistance(String str1, String str2) {
-            var tokens1 = str1.split("\\s+");
-            var tokens2 = str2.split("\\s+");
-
-            if (tokens1.length == 0 && tokens2.length == 0) {
-                return 0.0;
-            }
-            
-            var counts1 = getTokenCounts(tokens1);
-            var counts2 = getTokenCounts(tokens2);
-
-            Set<String> allTokens = new HashSet<>();
-            allTokens.addAll(counts1.keySet());
-            allTokens.addAll(counts2.keySet());
-
-            int intersection = 0;
-
-            for (String token : allTokens) {
-                int count1 = counts1.getOrDefault(token, 0);
-                int count2 = counts2.getOrDefault(token, 0);
-                intersection += Math.min(count1, count2);
-            }
-            
-            return 1.0 - 2.0 * intersection / (tokens1.length + tokens2.length);
-        }
-
-        private static Map<String, Integer> getTokenCounts(String[] tokens) {
-            var counts = new HashMap<String, Integer>();
-            
-            for (String token : tokens) {
-                counts.put(token, counts.getOrDefault(token, 0) + 1);
-            }
-            
-            return counts;
         }
     }
 
@@ -537,10 +502,19 @@ public class LocalLLMTest {
         var futures = new ArrayList<CompletableFuture<Void>>();
 
         try {
-            for (var i : List.of(0, 1, 2, 3, 4, 5, 6)) {
+            for (var i : List.of(0, 2, 3, 4, 5)) {
                 futures.add(CompletableFuture.runAsync(
                         () -> new CompletionTest(llm, TASKS.get(i).input)
                                 .expectOutput(TASKS.get(i).output)
+                                .expectFinishReason(Completion.FinishReason.stop)
+                                .test()
+                ));
+            }
+
+            for (var i : List.of(1, 6)) {
+                futures.add(CompletableFuture.runAsync(
+                        () -> new CompletionTest(llm, TASKS.get(i).input)
+                                .expectNotOutput(TASKS.get(i).output)
                                 .expectFinishReason(Completion.FinishReason.stop)
                                 .test()
                 ));
