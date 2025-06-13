@@ -64,7 +64,7 @@ public:
                                       IBucketDBHandler &bucketDBHandler,
                                       IReplayConfig &replay_config,
                                       FeedConfigStore &config_store,
-                                      std::shared_ptr<vespalib::SharedOperationThrottler> shared_operation_throttler,
+                                      std::shared_ptr<vespalib::SharedOperationThrottler> shared_replay_throttler,
                                       IIncSerialNum &inc_serial_num)
         : _feed_view_ptr(feed_view_ptr),
           _bucketDBHandler(bucketDBHandler),
@@ -72,7 +72,7 @@ public:
           _config_store(config_store),
           _inc_serial_num(inc_serial_num),
           _commitTimeTracker(5ms),
-          _throttler(std::move(shared_operation_throttler)),
+          _throttler(std::move(shared_replay_throttler)),
           _replay_feed_token_factory(std::make_unique<feedtoken::ReplayFeedTokenFactory>(true))
     { }
 
@@ -191,13 +191,13 @@ ReplayTransactionLogState::ReplayTransactionLogState(
         IBucketDBHandler &bucketDBHandler,
         IReplayConfig &replay_config,
         FeedConfigStore &config_store,
-        std::shared_ptr<vespalib::SharedOperationThrottler> shared_operation_throttler,
+        std::shared_ptr<vespalib::SharedOperationThrottler> shared_replay_throttler,
         IIncSerialNum& inc_serial_num)
     : FeedState(REPLAY_TRANSACTION_LOG),
       _doc_type_name(name),
       _packet_handler(std::make_unique<TransactionLogReplayPacketHandler>(
             feed_view_ptr, bucketDBHandler, replay_config, config_store,
-            std::move(shared_operation_throttler), inc_serial_num))
+            std::move(shared_replay_throttler), inc_serial_num))
 { }
 
 ReplayTransactionLogState::~ReplayTransactionLogState() = default;
