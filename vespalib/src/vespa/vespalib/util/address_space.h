@@ -19,18 +19,18 @@ private:
     size_t _limit;
 
 public:
-    AddressSpace();
-    AddressSpace(size_t used_, size_t dead_, size_t limit_);
-    size_t used() const { return _used; }
-    size_t dead() const { return _dead; }
-    size_t limit() const  { return _limit; }
-    double usage() const {
+    AddressSpace() noexcept;
+    AddressSpace(size_t used_, size_t dead_, size_t limit_) noexcept;
+    size_t used() const noexcept { return _used; }
+    size_t dead() const noexcept { return _dead; }
+    size_t limit() const noexcept { return _limit; }
+    double usage() const noexcept {
         if (_limit > 0) {
             return (double)(_used - _dead) / (double)_limit;
         }
         return 0;
     }
-    bool operator==(const AddressSpace &rhs) const {
+    bool operator==(const AddressSpace &rhs) const noexcept {
         return _used == rhs._used && _dead == rhs._dead && _limit == rhs._limit;
     }
 };

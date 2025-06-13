@@ -18,6 +18,10 @@ class AddressSpaceUsageStats
     std::string _component_name;
     std::string _subDbName;
 
+    bool keep(const vespalib::AddressSpace& usage,
+              const std::string& attributeName,
+              const std::string& component_name,
+              const std::string& subDbName);
 public:
     explicit AddressSpaceUsageStats(const vespalib::AddressSpace &usage);
     ~AddressSpaceUsageStats();
@@ -26,12 +30,12 @@ public:
                const std::string &component_name,
                const std::string &subDbName);
 
-    const vespalib::AddressSpace &getUsage() const { return _usage; }
-    const std::string &getAttributeName() const { return _attributeName; }
-    const std::string &get_component_name() const { return _component_name; }
-    const std::string &getSubDbName() const { return _subDbName; }
+    const vespalib::AddressSpace &getUsage() const noexcept { return _usage; }
+    const std::string &getAttributeName() const noexcept { return _attributeName; }
+    const std::string &get_component_name() const noexcept { return _component_name; }
+    const std::string &getSubDbName() const noexcept { return _subDbName; }
 
-    bool operator==(const AddressSpaceUsageStats& rhs) const {
+    bool operator==(const AddressSpaceUsageStats& rhs) const noexcept {
         return (_usage == rhs._usage) &&
                 (_attributeName == rhs._attributeName) &&
                 (_component_name == rhs._component_name) &&
