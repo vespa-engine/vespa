@@ -15,13 +15,37 @@ AddressSpaceUsageStats::AddressSpaceUsageStats(const vespalib::AddressSpace & us
 
 AddressSpaceUsageStats::~AddressSpaceUsageStats() = default;
 
+bool
+AddressSpaceUsageStats::keep(const vespalib::AddressSpace& usage,
+                             const std::string& attributeName,
+                             const std::string& component_name,
+                             const std::string& subDbName)
+{
+    if (_attributeName.empty()) {
+        return true;
+    }
+    // Prefer the highest usage, then lowest subdb name, lowest attribute name, lowest component name
+    auto old_usage = _usage.usage();
+    auto new_usage = usage.usage();
+    if (new_usage != old_usage) {
+        return new_usage > old_usage;
+    }
+    if (subDbName != _subDbName) {
+        return subDbName < _subDbName;
+    }
+    if (attributeName != _attributeName) {
+        return attributeName < _attributeName;
+    }
+    return component_name < _component_name;
+}
+
 void
 AddressSpaceUsageStats::merge(const vespalib::AddressSpace &usage,
                               const std::string &attributeName,
                               const std::string &component_name,
                               const std::string &subDbName)
 {
-    if (attributeName.empty() || usage.usage() > _usage.usage()) {
+    if (keep(usage, attributeName, component_name, subDbName)) {
         _usage = usage;
         _attributeName = attributeName;
         _component_name = component_name;
