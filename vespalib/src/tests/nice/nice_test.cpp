@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/util/nice.h>
 #include <vespa/vespalib/test/thread_meets.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <unistd.h>
 #include <functional>
 #include <thread>
@@ -40,11 +40,11 @@ std::thread run_with_init(std::function<void()> my_fun, Runnable::init_fun_t ini
                        });
 }
 
-TEST("require that initial nice value is 0") {
-    EXPECT_EQUAL(nice(0), 0);
+TEST(NiceTest, require_that_initial_nice_value_is_0) {
+    EXPECT_EQ(nice(0), 0);
 }
 
-TEST("require that nice value is tracked per thread") {
+TEST(NiceTest, require_that_nice_value_is_tracked_per_thread) {
     ThreadMeets::Nop barrier(5);
     std::vector<std::thread> threads;
     for (int i = 0; i < 5; ++i) {
@@ -52,7 +52,7 @@ TEST("require that nice value is tracked per thread") {
                                         {
                                             [[maybe_unused]] auto nice_result = nice(i);
                                             (*my_barrier)();
-                                            EXPECT_EQUAL(nice(0), i);
+                                            EXPECT_EQ(nice(0), i);
                                         }));
     }
     for (auto &thread: threads) {
@@ -63,36 +63,36 @@ TEST("require that nice value is tracked per thread") {
 void verify_max_nice_value() {
     int now = nice(0);
     now = nice(19 - now);
-    EXPECT_EQUAL(now, 19);
+    EXPECT_EQ(now, 19);
     now = nice(1);
-    EXPECT_EQUAL(now, 19);
+    EXPECT_EQ(now, 19);
 }
 
-TEST("require that max nice value is 19") {
+TEST(NiceTest, require_that_max_nice_value_is_19) {
     auto thread = run_with_init([]{ verify_max_nice_value(); });
     thread.join();
 }
 
-TEST("require that nice value can be set with init function") {
+TEST(NiceTest, require_that_nice_value_can_be_set_with_init_function) {
     for (int i = 0; i <= 19; ++i) {
         auto thread = run_with_init([i]()
                                     {
-                                        EXPECT_EQUAL(nice(0), i);
+                                        EXPECT_EQ(nice(0), i);
                                     }, be_nice(my_init_fun, how_nice(0, i)));
         thread.join();
     }
 }
 
-TEST("require that niceness can be nested and will act on a limited nice value range") {
-    auto thread1 = run_with_init([]{ EXPECT_EQUAL(nice(0), 7); },
+TEST(NiceTest, require_that_niceness_can_be_nested_and_will_act_on_a_limited_nice_value_range) {
+    auto thread1 = run_with_init([]{ EXPECT_EQ(nice(0), 7); },
                                  be_nice(be_nice(my_init_fun, how_nice(3, 7)), how_nice(0, 3)));
-    auto thread2 = run_with_init([]{ EXPECT_EQUAL(nice(0), 15); },
+    auto thread2 = run_with_init([]{ EXPECT_EQ(nice(0), 15); },
                                  be_nice(be_nice(my_init_fun, how_nice(10, 15)), how_nice(0, 10)));
-    auto thread3 = run_with_init([]{ EXPECT_EQUAL(nice(0), 19); },
+    auto thread3 = run_with_init([]{ EXPECT_EQ(nice(0), 19); },
                                  be_nice(be_nice(my_init_fun, how_nice(10, 19)), how_nice(0, 10)));
     thread1.join();
     thread2.join();
     thread3.join();
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

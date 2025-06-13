@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_priority_queue_test_app TEST
     priority_queue_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_priority_queue_test_app COMMAND vespalib_priority_queue_test_app)

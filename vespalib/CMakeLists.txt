@@ -81,7 +81,6 @@ vespa_define_module(
     src/tests/executor
     src/tests/executor_idle_tracking
     src/tests/explore_modern_cpp
-    src/tests/false
     src/tests/fastlib/io
     src/tests/fastlib/text
     src/tests/fastos

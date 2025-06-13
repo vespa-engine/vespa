@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_drop_file_from_cache_test_app TEST
     drop_file_from_cache_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_drop_file_from_cache_test_app COMMAND vespalib_drop_file_from_cache_test_app)

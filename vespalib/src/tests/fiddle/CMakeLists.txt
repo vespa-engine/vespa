@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_fiddle_test_app TEST
     fiddle_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_fiddle_test_app COMMAND vespalib_fiddle_test_app)

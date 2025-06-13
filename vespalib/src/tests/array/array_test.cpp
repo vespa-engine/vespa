@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 #include <vespa/vespalib/util/array.hpp>
@@ -80,31 +80,31 @@ testArray(const T & a, const T & b)
 {
     Array<T> array;
 
-    ASSERT_EQUAL(sizeof(array), 32u);
-    ASSERT_EQUAL(array.size(), 0u);
-    ASSERT_EQUAL(array.capacity(), 0u);
+    ASSERT_EQ(sizeof(array), 32u);
+    ASSERT_EQ(array.size(), 0u);
+    ASSERT_EQ(array.capacity(), 0u);
     for(size_t i(0); i < 5; i++) {
         array.push_back(a);
         array.push_back(b);
         for (size_t j(0); j <= i; j++) {
-            ASSERT_EQUAL(array[j*2 + 0], a);
-            ASSERT_EQUAL(array[j*2 + 1], b);
+            ASSERT_EQ(array[j*2 + 0], a);
+            ASSERT_EQ(array[j*2 + 1], b);
         }
     }
-    ASSERT_EQUAL(array.size(), 10u);
-    ASSERT_EQUAL(array.capacity(), 16u);
+    ASSERT_EQ(array.size(), 10u);
+    ASSERT_EQ(array.capacity(), 16u);
     for (size_t i(array.size()), m(array.capacity()); i < m; i+=2) {
         array.push_back(a);
         array.push_back(b);
         for (size_t j(0); j <= (i/2); j++) {
-            ASSERT_EQUAL(array[j*2 + 0], a);
-            ASSERT_EQUAL(array[j*2 + 1], b);
+            ASSERT_EQ(array[j*2 + 0], a);
+            ASSERT_EQ(array[j*2 + 1], b);
         }
     }
-    ASSERT_EQUAL(array.size(), array.capacity());
+    ASSERT_EQ(array.size(), array.capacity());
 }
 
-TEST("test basic array functionality")
+TEST(ArrayTest, test_basic_array_functionality)
 {
     testArray<int>(7, 9);
     testArray<std::string>("7", "9");
@@ -125,157 +125,157 @@ TEST("test basic array functionality")
     EXPECT_FALSE(a == b);
     std::atomic<size_t> counter(0);
     testArray(Clever(&counter),  Clever(&counter));
-    EXPECT_EQUAL(0ul, counter);
+    EXPECT_EQ(0ul, counter);
 }
 
-TEST("test that organic growth is by 2 in N and reserve resize are exact")
+TEST(ArrayTest, test_that_organic_growth_is_by_2_in_N_and_reserve_resize_are_exact)
 {
     Array<char> c(256);
-    EXPECT_EQUAL(256u, c.size());
-    EXPECT_EQUAL(256u, c.capacity());
+    EXPECT_EQ(256u, c.size());
+    EXPECT_EQ(256u, c.capacity());
     c.reserve(258);
-    EXPECT_EQUAL(256u, c.size());
-    EXPECT_EQUAL(258u, c.capacity());
+    EXPECT_EQ(256u, c.size());
+    EXPECT_EQ(258u, c.capacity());
     c.resize(258);
-    EXPECT_EQUAL(258u, c.size());
-    EXPECT_EQUAL(258u, c.capacity());
+    EXPECT_EQ(258u, c.size());
+    EXPECT_EQ(258u, c.capacity());
     c.resize(511);
-    EXPECT_EQUAL(511u, c.size());
-    EXPECT_EQUAL(511u, c.capacity());
+    EXPECT_EQ(511u, c.size());
+    EXPECT_EQ(511u, c.capacity());
     c.push_back('j');
-    EXPECT_EQUAL(512u, c.size());
-    EXPECT_EQUAL(512u, c.capacity());
+    EXPECT_EQ(512u, c.size());
+    EXPECT_EQ(512u, c.capacity());
     c.push_back('j');
-    EXPECT_EQUAL(513u, c.size());
-    EXPECT_EQUAL(1_Ki, c.capacity());
+    EXPECT_EQ(513u, c.size());
+    EXPECT_EQ(1_Ki, c.capacity());
     for(size_t i(513); i < 1024; i++) {
         c.push_back('a');
     }
-    EXPECT_EQUAL(1_Ki, c.size());
-    EXPECT_EQUAL(1_Ki, c.capacity());
+    EXPECT_EQ(1_Ki, c.size());
+    EXPECT_EQ(1_Ki, c.capacity());
     c.reserve(1025);
-    EXPECT_EQUAL(1_Ki, c.size());
-    EXPECT_EQUAL(1025u, c.capacity());
+    EXPECT_EQ(1_Ki, c.size());
+    EXPECT_EQ(1025u, c.capacity());
     c.push_back('b');   // Within, no growth
-    EXPECT_EQUAL(1025u, c.size());
-    EXPECT_EQUAL(1025u, c.capacity());
+    EXPECT_EQ(1025u, c.size());
+    EXPECT_EQ(1025u, c.capacity());
     c.push_back('b');   // Above, grow.
-    EXPECT_EQUAL(1026u, c.size());
-    EXPECT_EQUAL(2048u, c.capacity());
+    EXPECT_EQ(1026u, c.size());
+    EXPECT_EQ(2048u, c.capacity());
 }
 
 std::atomic<size_t> Clever::_global = 0;
 
-TEST("test complicated")
+TEST(ArrayTest, test_complicated)
 {
     std::atomic<size_t> counter(0);
     {
-        EXPECT_EQUAL(0ul, Clever::getGlobal());
+        EXPECT_EQ(0ul, Clever::getGlobal());
         Clever c(&counter);
-        EXPECT_EQUAL(1ul, counter);
-        EXPECT_EQUAL(0ul, Clever::getGlobal());
+        EXPECT_EQ(1ul, counter);
+        EXPECT_EQ(0ul, Clever::getGlobal());
         {
             Array<Clever> h;
-            EXPECT_EQUAL(0ul, h.size());
+            EXPECT_EQ(0ul, h.size());
             h.resize(1);
-            EXPECT_EQUAL(1ul, Clever::getGlobal());
+            EXPECT_EQ(1ul, Clever::getGlobal());
             h[0] = c;
-            EXPECT_EQUAL(0ul, Clever::getGlobal());
+            EXPECT_EQ(0ul, Clever::getGlobal());
             h.resize(10000);
-            EXPECT_EQUAL(9999ul, Clever::getGlobal());
+            EXPECT_EQ(9999ul, Clever::getGlobal());
             for (size_t i(0); i < 10000; i++) {
                 h[i] = c;
-                EXPECT_EQUAL(2+i, counter);
+                EXPECT_EQ(2+i, counter);
             }
-            EXPECT_EQUAL(10001ul, counter);
-            EXPECT_EQUAL(0ul, Clever::getGlobal());
+            EXPECT_EQ(10001ul, counter);
+            EXPECT_EQ(0ul, Clever::getGlobal());
             for (size_t i(0); i < 10000; i++) {
                 h[i] = c;
-                EXPECT_EQUAL(10001ul, counter);
+                EXPECT_EQ(10001ul, counter);
             }
-            EXPECT_EQUAL(10001ul, counter);
+            EXPECT_EQ(10001ul, counter);
             h.clear();
-            EXPECT_EQUAL(1ul, counter);
+            EXPECT_EQ(1ul, counter);
             for (size_t i(0); i < 10000; i++) {
                 h.push_back(c);
-                EXPECT_EQUAL(2+i, counter);
+                EXPECT_EQ(2+i, counter);
             }
-            EXPECT_EQUAL(10001ul, counter);
+            EXPECT_EQ(10001ul, counter);
             h.pop_back();
-            EXPECT_EQUAL(10000ul, counter);
+            EXPECT_EQ(10000ul, counter);
         }
-        EXPECT_EQUAL(0ul, Clever::getGlobal());
-        EXPECT_EQUAL(1ul, counter);
+        EXPECT_EQ(0ul, Clever::getGlobal());
+        EXPECT_EQ(1ul, counter);
     }
-    EXPECT_EQUAL(0ul, Clever::getGlobal());
-    EXPECT_EQUAL(0ul, counter);
+    EXPECT_EQ(0ul, Clever::getGlobal());
+    EXPECT_EQ(0ul, counter);
 }
 
 template<class T>
 void
 testBeginEnd(T & v)
 {
-    EXPECT_EQUAL(0u, v.end() - v.begin());
-    EXPECT_EQUAL(0u, v.rend() - v.rbegin());
+    EXPECT_EQ(0u, v.end() - v.begin());
+    EXPECT_EQ(0u, v.rend() - v.rbegin());
     v.push_back(1);
     v.push_back(2);
     v.push_back(3);
 
-    EXPECT_EQUAL(1u, *(v.begin()));
-    EXPECT_EQUAL(3u, *(v.end() - 1));
+    EXPECT_EQ(1u, *(v.begin()));
+    EXPECT_EQ(3u, *(v.end() - 1));
 
     auto i(v.begin());
-    EXPECT_EQUAL(1u, *i);
-    EXPECT_EQUAL(2u, *(i+1));
-    EXPECT_EQUAL(1u, *i++);
-    EXPECT_EQUAL(2u, *i);
-    EXPECT_EQUAL(3u, *++i);
-    EXPECT_EQUAL(3u, *i);
-    EXPECT_EQUAL(3u, *i--);
-    EXPECT_EQUAL(2u, *i);
-    EXPECT_EQUAL(1u, *--i);
+    EXPECT_EQ(1u, *i);
+    EXPECT_EQ(2u, *(i+1));
+    EXPECT_EQ(1u, *i++);
+    EXPECT_EQ(2u, *i);
+    EXPECT_EQ(3u, *++i);
+    EXPECT_EQ(3u, *i);
+    EXPECT_EQ(3u, *i--);
+    EXPECT_EQ(2u, *i);
+    EXPECT_EQ(1u, *--i);
 
     typename T::const_iterator ic(v.begin());
-    EXPECT_EQUAL(1u, *ic);
-    EXPECT_EQUAL(2u, *(ic+1));
-    EXPECT_EQUAL(1u, *ic++);
-    EXPECT_EQUAL(2u, *ic);
-    EXPECT_EQUAL(3u, *++ic);
-    EXPECT_EQUAL(3u, *ic);
-    EXPECT_EQUAL(3u, *ic--);
-    EXPECT_EQUAL(2u, *ic);
-    EXPECT_EQUAL(1u, *--ic);
+    EXPECT_EQ(1u, *ic);
+    EXPECT_EQ(2u, *(ic+1));
+    EXPECT_EQ(1u, *ic++);
+    EXPECT_EQ(2u, *ic);
+    EXPECT_EQ(3u, *++ic);
+    EXPECT_EQ(3u, *ic);
+    EXPECT_EQ(3u, *ic--);
+    EXPECT_EQ(2u, *ic);
+    EXPECT_EQ(1u, *--ic);
 
-    EXPECT_EQUAL(3u, *(v.rbegin()));
-    EXPECT_EQUAL(1u, *(v.rend() - 1));
+    EXPECT_EQ(3u, *(v.rbegin()));
+    EXPECT_EQ(1u, *(v.rend() - 1));
 
     auto r(v.rbegin());
-    EXPECT_EQUAL(3u, *r);
-    EXPECT_EQUAL(2u, *(r+1));
-    EXPECT_EQUAL(3u, *r++);
-    EXPECT_EQUAL(2u, *r);
-    EXPECT_EQUAL(1u, *++r);
-    EXPECT_EQUAL(1u, *r);
-    EXPECT_EQUAL(1u, *r--);
-    EXPECT_EQUAL(2u, *r);
-    EXPECT_EQUAL(3u, *--r);
+    EXPECT_EQ(3u, *r);
+    EXPECT_EQ(2u, *(r+1));
+    EXPECT_EQ(3u, *r++);
+    EXPECT_EQ(2u, *r);
+    EXPECT_EQ(1u, *++r);
+    EXPECT_EQ(1u, *r);
+    EXPECT_EQ(1u, *r--);
+    EXPECT_EQ(2u, *r);
+    EXPECT_EQ(3u, *--r);
 
     typename T::const_reverse_iterator rc(v.rbegin());
-    EXPECT_EQUAL(3u, *rc);
-    EXPECT_EQUAL(2u, *(rc+1));
-    EXPECT_EQUAL(3u, *rc++);
-    EXPECT_EQUAL(2u, *rc);
-    EXPECT_EQUAL(1u, *++rc);
-    EXPECT_EQUAL(1u, *rc);
-    EXPECT_EQUAL(1u, *rc--);
-    EXPECT_EQUAL(2u, *rc);
-    EXPECT_EQUAL(3u, *--rc);
+    EXPECT_EQ(3u, *rc);
+    EXPECT_EQ(2u, *(rc+1));
+    EXPECT_EQ(3u, *rc++);
+    EXPECT_EQ(2u, *rc);
+    EXPECT_EQ(1u, *++rc);
+    EXPECT_EQ(1u, *rc);
+    EXPECT_EQ(1u, *rc--);
+    EXPECT_EQ(2u, *rc);
+    EXPECT_EQ(3u, *--rc);
 
-    EXPECT_EQUAL(3u, v.end() - v.begin());
-    EXPECT_EQUAL(3u, v.rend() - v.rbegin());
+    EXPECT_EQ(3u, v.end() - v.begin());
+    EXPECT_EQ(3u, v.rend() - v.rbegin());
 }
 
-TEST("test begin end")
+TEST(ArrayTest, test_begin_end)
 {
     std::vector<size_t> v;
     Array<size_t> a;
@@ -283,49 +283,49 @@ TEST("test begin end")
     testBeginEnd(a);
 }
 
-TEST("test move constructor")
+TEST(ArrayTest, test_move_constructor)
 {
     Array<size_t> orig;
     orig.push_back(42);
-    EXPECT_EQUAL(1u, orig.size());
-    EXPECT_EQUAL(42u, orig[0]);
+    EXPECT_EQ(1u, orig.size());
+    EXPECT_EQ(42u, orig[0]);
     {
         Array<size_t> copy(orig);
-        EXPECT_EQUAL(1u, orig.size());
-        EXPECT_EQUAL(42u, orig[0]);
-        EXPECT_EQUAL(1u, copy.size());
-        EXPECT_EQUAL(42u, copy[0]);
+        EXPECT_EQ(1u, orig.size());
+        EXPECT_EQ(42u, orig[0]);
+        EXPECT_EQ(1u, copy.size());
+        EXPECT_EQ(42u, copy[0]);
     }
     ++orig[0];
     {
         Array<size_t> copy(std::move(orig));
-        EXPECT_EQUAL(0u, orig.size());
-        EXPECT_EQUAL(1u, copy.size());
-        EXPECT_EQUAL(43u, copy[0]);
+        EXPECT_EQ(0u, orig.size());
+        EXPECT_EQ(1u, copy.size());
+        EXPECT_EQ(43u, copy[0]);
     }
 }
 
-TEST("test move assignment")
+TEST(ArrayTest, test_move_assignment)
 {
     Array<size_t> orig;
     orig.push_back(44);
-    EXPECT_EQUAL(1u, orig.size());
-    EXPECT_EQUAL(44u, orig[0]);
+    EXPECT_EQ(1u, orig.size());
+    EXPECT_EQ(44u, orig[0]);
     {
         Array<size_t> copy;
         copy = orig;
-        EXPECT_EQUAL(1u, orig.size());
-        EXPECT_EQUAL(44u, orig[0]);
-        EXPECT_EQUAL(1u, copy.size());
-        EXPECT_EQUAL(44u, copy[0]);
+        EXPECT_EQ(1u, orig.size());
+        EXPECT_EQ(44u, orig[0]);
+        EXPECT_EQ(1u, copy.size());
+        EXPECT_EQ(44u, copy[0]);
     }
     ++orig[0];
     {
         Array<size_t> copy;
         copy = std::move(orig);
-        EXPECT_EQUAL(0u, orig.size());
-        EXPECT_EQUAL(1u, copy.size());
-        EXPECT_EQUAL(45u, copy[0]);
+        EXPECT_EQ(0u, orig.size());
+        EXPECT_EQ(1u, copy.size());
+        EXPECT_EQ(45u, copy[0]);
     }
 }
 
@@ -333,8 +333,8 @@ struct UnreserveFixture {
     Array<int> arr;
     UnreserveFixture() : arr(page_ints() + 1, 7, alloc::Alloc::allocMMap(0))
     {
-        EXPECT_EQUAL(page_ints() + 1, arr.size());
-        EXPECT_EQUAL(2 * page_ints(), arr.capacity());
+        EXPECT_EQ(page_ints() + 1, arr.size());
+        EXPECT_EQ(2 * page_ints(), arr.capacity());
     }
 
     static size_t page_ints() {
@@ -342,24 +342,27 @@ struct UnreserveFixture {
     }
 };
 
-TEST_F("require that try_unreserve() fails if wanted capacity >= current capacity", UnreserveFixture)
+TEST(ArrayTest, require_that_try_unreserve_fails_if_wanted_capacity_ge_current_capacity)
 {
+    UnreserveFixture f;
     EXPECT_FALSE(f.arr.try_unreserve(2 * UnreserveFixture::page_ints()));
 }
 
-TEST_F("require that try_unreserve() fails if wanted capacity < current size", UnreserveFixture)
+TEST(ArrayTest, require_that_try_unreserve_fails_if_wanted_capacity_lt_current_size)
 {
-  EXPECT_FALSE(f.arr.try_unreserve(UnreserveFixture::page_ints()));
+    UnreserveFixture f;
+    EXPECT_FALSE(f.arr.try_unreserve(UnreserveFixture::page_ints()));
 }
 
-TEST_F("require that try_unreserve() succeedes if mmap can be shrinked", UnreserveFixture)
+TEST(ArrayTest, require_that_try_unreserve_succeedes_if_mmap_can_be_shrinked)
 {
+    UnreserveFixture f;
     int *oldPtr = &f.arr[0];
     f.arr.resize(512);
     EXPECT_TRUE(f.arr.try_unreserve(UnreserveFixture::page_ints() - 1));
-    EXPECT_EQUAL(UnreserveFixture::page_ints(), f.arr.capacity());
+    EXPECT_EQ(UnreserveFixture::page_ints(), f.arr.capacity());
     int *newPtr = &f.arr[0];
-    EXPECT_EQUAL(oldPtr, newPtr);
+    EXPECT_EQ(oldPtr, newPtr);
 }
 
 struct Fixture {
@@ -382,26 +385,29 @@ Fixture::Fixture()
 
 Fixture::~Fixture() = default;
 
-TEST_F("require that memory allocator can be set", Fixture)
+TEST(ArrayTest, require_that_memory_allocator_can_be_set)
 {
+    Fixture f;
     f.arr.resize(1);
-    EXPECT_EQUAL(AllocStats(1, 0), f.stats);
+    EXPECT_EQ(AllocStats(1, 0), f.stats);
 }
 
-TEST_F("require that memory allocator is preserved across reset", Fixture)
+TEST(ArrayTest, require_that_memory_allocator_is_preserved_across_reset)
 {
+    Fixture f;
     f.arr.resize(1);
     f.arr.reset();
     f.arr.resize(1);
-    EXPECT_EQUAL(AllocStats(2, 1), f.stats);
+    EXPECT_EQ(AllocStats(2, 1), f.stats);
 }
 
-TEST_F("require that created array uses same memory allocator", Fixture)
+TEST(ArrayTest, require_that_created_array_uses_same_memory_allocator)
 {
+    Fixture f;
     auto arr2 = f.arr.create();
-    EXPECT_EQUAL(AllocStats(0, 0), f.stats);
+    EXPECT_EQ(AllocStats(0, 0), f.stats);
     arr2.resize(1);
-    EXPECT_EQUAL(AllocStats(1, 0), f.stats);
+    EXPECT_EQ(AllocStats(1, 0), f.stats);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

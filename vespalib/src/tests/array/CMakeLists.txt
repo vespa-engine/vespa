@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_array_test_app TEST
     array_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_array_test_app COMMAND vespalib_array_test_app)
 vespa_add_executable(vespalib_sort_benchmark_app

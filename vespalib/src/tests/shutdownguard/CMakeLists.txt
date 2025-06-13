@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_shutdownguard_test_app TEST
     shutdownguard_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_shutdownguard_test_app NO_VALGRIND COMMAND vespalib_shutdownguard_test_app)

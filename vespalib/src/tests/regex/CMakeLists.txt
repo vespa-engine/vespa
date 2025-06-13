@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_regex_test_app TEST
     regex.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_regex_test_app COMMAND vespalib_regex_test_app)

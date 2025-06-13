@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_memory_test_app TEST
     memory_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_memory_test_app COMMAND vespalib_memory_test_app)

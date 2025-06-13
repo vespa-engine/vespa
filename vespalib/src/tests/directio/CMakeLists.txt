@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_directio_test_app TEST
     directio.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_directio_test_app COMMAND vespalib_directio_test_app)
