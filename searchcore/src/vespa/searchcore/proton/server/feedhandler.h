@@ -190,7 +190,7 @@ public:
                          SerialNum oldestFlushedSerial,
                          SerialNum newestFlushedSerial,
                          ConfigStore &config_store,
-                         std::shared_ptr<vespalib::SharedOperationThrottler> shared_operation_throttler);
+                         std::shared_ptr<vespalib::SharedOperationThrottler> shared_replay_throttler);
 
     /**
      * Called when a flush is done and allows pruning of the transaction log.
