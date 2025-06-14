@@ -11,6 +11,15 @@
 ![GitHub License](https://img.shields.io/github/license/vespa-engine/vespa)
 ![Maven metadata URL](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Fcom%2Fyahoo%2Fvespa%2Fparent%2Fmaven-metadata.xml)
 
+<!-- Keep these links. Translations will automatically update with the README. -->
+[Deutsch](https://www.readme-i18n.com/vespa-engine/vespa?lang=de) | 
+[Español](https://www.readme-i18n.com/vespa-engine/vespa?lang=es) | 
+[français](https://www.readme-i18n.com/vespa-engine/vespa?lang=fr) | 
+[日本語](https://www.readme-i18n.com/vespa-engine/vespa?lang=ja) | 
+[한국어](https://www.readme-i18n.com/vespa-engine/vespa?lang=ko) | 
+[Português](https://www.readme-i18n.com/vespa-engine/vespa?lang=pt) | 
+[Русский](https://www.readme-i18n.com/vespa-engine/vespa?lang=ru) | 
+[中文](https://www.readme-i18n.com/vespa-engine/vespa?lang=zh)
 
 
 Search, make inferences in and organize vectors, tensors, text and structured data, at serving time and any scale.
