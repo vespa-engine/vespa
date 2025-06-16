@@ -53,7 +53,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         normalize = config.normalize();
         prependQuery = config.prependQuery();
         prependDocument = config.prependDocument();
-        var tokenizerPath = Paths.get(modelHelper.getModelPathResolvingIfNecessary(config.tokenizerPathReference()));
+        var tokenizerPath = modelHelper.getModelPathResolvingIfNecessary(config.tokenizerPathReference());
         var builder = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
                 .addDefaultModel(tokenizerPath)
@@ -76,7 +76,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
             optionsBuilder.setGpuDevice(config.transformerGpuDevice());
 
         var onnxOpts = optionsBuilder.build();
-        evaluator = onnx.evaluatorOf(modelHelper.getModelPathResolvingIfNecessary(config.transformerModelReference()), onnxOpts);
+        evaluator = onnx.evaluatorOf(modelHelper.getModelPathResolvingIfNecessary(config.transformerModelReference()).toString(), onnxOpts);
         tokenTypeIdsName = detectTokenTypeIds(config, evaluator);
         validateModel();
     }

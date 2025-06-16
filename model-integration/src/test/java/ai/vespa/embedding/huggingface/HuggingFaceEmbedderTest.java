@@ -17,6 +17,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.Tensors;
 import org.junit.Test;
 
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -253,10 +254,10 @@ public class HuggingFaceEmbedderTest {
         Set<String> invokedPaths = new HashSet<>();
 
         @Override
-        public String getModelPathResolvingIfNecessary(ModelReference modelReference) {
+        public Path getModelPathResolvingIfNecessary(ModelReference modelReference) {
             invokedPaths.add(modelReference.toString());
 
-            return modelReference.toString();
+            return modelReference.value();
         }
     }
 }

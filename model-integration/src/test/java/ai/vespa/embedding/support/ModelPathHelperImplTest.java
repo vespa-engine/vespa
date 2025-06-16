@@ -31,9 +31,9 @@ class ModelPathHelperImplTest {
 
     @Test
     void return_resolved_model_path_if_model_is_resolved() {
-        String actualPath = modelPathHelper.getModelPathResolvingIfNecessary(ModelReference.resolved(Path.of("resolved/model/path")));
+        Path actualPath = modelPathHelper.getModelPathResolvingIfNecessary(ModelReference.resolved(Path.of("resolved/model/path")));
 
-        assertEquals("resolved/model/path", actualPath);
+        assertEquals("resolved/model/path", actualPath.toString());
     }
 
     @Test
@@ -44,9 +44,9 @@ class ModelPathHelperImplTest {
                 Optional.empty(),
                 Optional.empty());
 
-        String actualPath = modelPathHelper.getModelPathResolvingIfNecessary(unresolved);
+        Path actualPath = modelPathHelper.getModelPathResolvingIfNecessary(unresolved);
 
-        assertEquals("downloaded/public/model/path", actualPath);
+        assertEquals("downloaded/public/model/path", actualPath.toString());
     }
 
     @Test
@@ -57,9 +57,9 @@ class ModelPathHelperImplTest {
                 Optional.of(SECRET_REF),
                 Optional.empty());
 
-        String actualPath = modelPathHelper.getModelPathResolvingIfNecessary(unresolved);
+        Path actualPath = modelPathHelper.getModelPathResolvingIfNecessary(unresolved);
 
-        assertEquals("downloaded/private/model/path", actualPath);
+        assertEquals("downloaded/private/model/path", actualPath.toString());
     }
 
     static class MockSecrets implements Secrets {

@@ -45,12 +45,12 @@ public class ModelPathHelperImpl implements ModelPathHelper {
         };
 
 
-    public String getModelPathResolvingIfNecessary(ModelReference modelReference) {
+    public Path getModelPathResolvingIfNecessary(ModelReference modelReference) {
         if (isModelDownloadRequired(modelReference)) {
             return resolveModelAndReturnPath(modelReference);
         }
 
-        return modelReference.value().toString();
+        return modelReference.value();
     }
 
     private boolean isModelDownloadRequired(ModelReference modelReference) {
@@ -58,7 +58,7 @@ public class ModelPathHelperImpl implements ModelPathHelper {
                 modelReference.url().isPresent();
     }
 
-    private String resolveModelAndReturnPath(ModelReference modelReference) {
+    private Path resolveModelAndReturnPath(ModelReference modelReference) {
         var modelUrl = modelReference.url().orElseThrow();
 
         var secretRef = modelReference.secretRef();
@@ -68,7 +68,7 @@ public class ModelPathHelperImpl implements ModelPathHelper {
             downloadOptions = DownloadOptions.ofAuthToken(secret.current());
         }
 
-        return modelAcquirer.acquire(modelUrl, downloadOptions).toString();
+        return modelAcquirer.acquire(modelUrl, downloadOptions);
     }
 
     @FunctionalInterface

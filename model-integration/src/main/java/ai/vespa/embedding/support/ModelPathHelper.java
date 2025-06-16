@@ -2,7 +2,9 @@ package ai.vespa.embedding.support;
 
 import com.yahoo.config.ModelReference;
 
+import java.nio.file.Path;
+
 public interface ModelPathHelper {
 
-    String getModelPathResolvingIfNecessary(ModelReference modelReference);
+    Path getModelPathResolvingIfNecessary(ModelReference modelReference);
 }
