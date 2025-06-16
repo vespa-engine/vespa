@@ -12,7 +12,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import de.kherud.llama.LlamaModel;
 import de.kherud.llama.ModelParameters;
-import de.kherud.llama.Pair;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,24 +52,24 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
     private final int maxPromptTokens;
     private final ContextOverflowPolicy.Enum contextOverflowPolicy;
     private final int contextSizePerRequest;
-
+ 
     @Inject
     public LocalLLM(LlmLocalClientConfig config) {
-
+        
         // Only used if GPU is not used
         var defaultThreadCount = Math.max(Runtime.getRuntime().availableProcessors() - 2, 1);
         var modelFile = config.model().toFile().getAbsolutePath();
         var modelParams = new ModelParameters()
-                .setModel(modelFile)
-                .enableContBatching()
-                .setParallel(config.parallelRequests())
-                .setThreads(config.threads() <= 0 ? defaultThreadCount : config.threads())
-                .setCtxSize(config.contextSize())
-                .setGpuLayers(config.useGpu() ? config.gpuLayers() : 0);
-
+                .setModelFilePath(modelFile)
+                .setContinuousBatching(true)
+                .setNParallel(config.parallelRequests())
+                .setNThreads(config.threads() <= 0 ? defaultThreadCount : config.threads())
+                .setNCtx(config.contextSize())
+                .setNGpuLayers(config.useGpu() ? config.gpuLayers() : 0);
+        
         if (config.seed() != -1)
-            modelParams.setSeed(config.seed());
-
+            modelParams.setSeed(config.seed());    
+        
         // Load model
         long startLoad = System.nanoTime();
         model = new LlamaModel(modelParams);
@@ -85,11 +84,11 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                 config.maxQueueSize() > 0 ? new ArrayBlockingQueue<>(config.maxQueueSize()) : new SynchronousQueue<>(),
                 new ThreadPoolExecutor.AbortPolicy()
         );
-
-        // Starting all threads manually because we are using `executor.getQueue().offer(...)` to add tasks
+        
+        // Staring all threads manually because we are using `executor.getQueue().offer(...)` to add tasks 
         // instead of higher-level methods like `executor.submit(...)` that automatically start threads when needed.
         executor.prestartAllCoreThreads();
-
+        
         // Setting other config parameters
         maxQueueWait = config.maxQueueWait();
         maxEnqueueWait = config.maxEnqueueWait();
@@ -99,14 +98,14 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         logger.fine(() -> String.format("Context size per request: %d", contextSizePerRequest));
         contextOverflowPolicy = config.contextOverflowPolicy();
     }
-
+    
     @Override
     public void deconstruct() {
         model.close();
         executor.shutdownNow();
         scheduler.shutdownNow();
     }
-
+    
     private de.kherud.llama.InferenceParameters setInferenceParameters(Prompt prompt, InferenceParameters options) {
         var inferParams = new de.kherud.llama.InferenceParameters(prompt.asString().stripLeading());
 
@@ -118,29 +117,24 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         options.ifPresent(InferenceParameters.OPTION_TOP_P, (v) -> inferParams.setTopP(Integer.parseInt(v)));
         options.ifPresent(InferenceParameters.OPTION_N_PREDICT, (v) -> inferParams.setNPredict(Integer.parseInt(v)));
         options.ifPresent(InferenceParameters.OPTION_REPEAT_PENALTY, (v) -> inferParams.setRepeatPenalty(Float.parseFloat(v)));
-        options.ifPresent(InferenceParameters.OPTION_PRESENCE_PENALTY, (v) -> inferParams.setPresencePenalty(Float.parseFloat(v)));
         options.ifPresent(InferenceParameters.OPTION_SEED, (v) -> inferParams.setSeed(Integer.parseInt(v)));
         options.ifPresent(InferenceParameters.OPTION_JSON_SCHEMA, (v) -> {
             var grammar = JsonSchemaToGrammar.convert(v);
             inferParams.setGrammar(grammar);
         });
-
+        
         inferParams.setUseChatTemplate(true);
-        Pair<String, String> msg = new Pair<>("user", prompt.asString().stripLeading());
-        inferParams.setMessages("", List.of(msg));
-        String applied = model.applyTemplate(inferParams);
-        inferParams.setPrompt(applied);
         return inferParams;
-    }
-
+    } 
+    
 
     @Override
     public List<Completion> complete(Prompt prompt, InferenceParameters options) {
         StringBuilder result = new StringBuilder();
-        var future = completeWithOffer(prompt, options,
+        var future = completeWithOffer(prompt, options, 
                 completion -> result.append(completion.text()), maxEnqueueWait);
         Completion.FinishReason reason;
-
+    
         try {
             reason = future.get();
         } catch (InterruptedException e) {
@@ -155,7 +149,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                 throw new LanguageModelException(500, "Error while generating completion.", cause);
             }
         }
-
+        
         List<Completion> completions = new ArrayList<>();
         completions.add(new Completion(result.toString(), reason));
         return completions;
@@ -165,7 +159,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
             Prompt prompt, InferenceParameters options, Consumer<Completion> consumer) {
         return completeWithOffer(prompt, options, consumer, 0);
     }
-
+    
     /**
      * Completes the given prompt, mostly asynchronously with or without a blocking wait.
      * It is used by both `complete()` and `completeAsync()` with different `offerTimeout` values.
@@ -176,20 +170,20 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
     private CompletableFuture<Completion.FinishReason> completeWithOffer(
             Prompt prompt, InferenceParameters options, Consumer<Completion> consumer, long offerTimeout) {
         var completionFuture = new CompletableFuture<Completion.FinishReason>();
-
+        
         var promptStr = prompt.asString().stripLeading();
         var promptTokens = model.encode(promptStr);
-
+        
         // Truncate prompt
         if (maxPromptTokens > 0 && promptTokens.length > maxPromptTokens) {
             promptTokens = Arrays.copyOfRange(promptTokens, 0, maxPromptTokens + 1);
             promptStr = model.decode(promptTokens);
             prompt = StringPrompt.from(promptStr);
         }
-
+        
         var numPromptTokens = promptTokens.length;
         var numRequestTokens = numPromptTokens + maxTokens;
-        logger.fine(() -> String.format("Prompt tokens: %d, max tokens: %d, request tokens: %d",
+        logger.fine(() -> String.format("Prompt tokens: %d, max tokens: %d, request tokens: %d", 
                 numPromptTokens, maxTokens, numRequestTokens));
 
         // Do something when context size is too small for this request
@@ -226,12 +220,12 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                 completionFuture.completeExceptionally(new LanguageModelException(500, errorMessage, e));
             }
         }, null);
-
+        
         try {
-            var accepted = offerTimeout > 0
-                    ? executor.getQueue().offer(future, offerTimeout, TimeUnit.MILLISECONDS)
+            var accepted = offerTimeout > 0 
+                    ? executor.getQueue().offer(future, offerTimeout, TimeUnit.MILLISECONDS) 
                     : executor.getQueue().offer(future);
-
+                
             if (!accepted) {
                 String errorMessage = rejectedExecutionErrorMessage(
                         "Rejected completion due to timeout waiting to add the request to the executor queue");
@@ -245,7 +239,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
             completionFuture.completeExceptionally(new LanguageModelException(500, errorMessage));
             return completionFuture;
         }
-
+        
         if (maxQueueWait > 0) {
             scheduler.schedule(
                     () -> {
@@ -259,7 +253,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                     }, maxQueueWait, TimeUnit.MILLISECONDS
             );
         }
-
+        
         return completionFuture;
     }
 
