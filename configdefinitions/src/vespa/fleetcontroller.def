@@ -218,4 +218,4 @@ include_distribution_config_in_cluster_state_bundle bool default=true
 ## any existing error aggregates on the cluster controller. It does not affect whether
 ## the distributors actually report back error information, only the controller-side
 ## aggregation of this information.
-aggregate_content_node_error_reports_from_distributors bool default=false
+aggregate_content_node_error_reports_from_distributors bool default=true
