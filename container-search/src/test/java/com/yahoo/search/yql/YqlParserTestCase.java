@@ -1294,6 +1294,62 @@ public class YqlParserTestCase {
         parser.parse(Parsable.fromQueryModel(query.getModel()));
     }
 
+    @Test
+    public void testParseYqlComment() {
+        assertParse("select foo from bar where // false \n true", "TRUE");
+        assertParse("select foo from bar where # false \n true", "TRUE");
+    }
+
+    @Test
+    public void testParseGroupingComment() {
+        assertParse("select foo from bar where true" +
+                "| all(\n" +
+                " group(a) each(output(count())) // get count of each 'a'\n" +
+                " )",
+                "TRUE");
+        assertEquals("[[]all(group(a) each(output(count())))]",
+                toString(parser.getGroupingSteps()));
+
+        assertParse(
+                """
+                select foo from bar where true | all(
+                    # get count of each 'a':
+                    group(a) each( output(
+                        count() as(num) # call it 'num'
+                                         )
+                                 )
+                    )
+                """,
+                "TRUE");
+        assertEquals("[[]all(group(a) each(output(count() as(num))))]",
+                toString(parser.getGroupingSteps()));
+    }
+
+    @Test
+    public void testParseMultilineComment() {
+        assertParse("select foo from bar where /* false */ true" +
+                "| all(\n" +
+                "/* Grouping \n" +
+                " expression */\n" +
+                "group(a) /* foo */ each(output(count())))",
+                "TRUE");
+        assertEquals("[[]all(group(a) each(output(count())))]",
+                toString(parser.getGroupingSteps()));
+
+        assertParse("select foo from bar where true" +
+                "| all(\n" +
+                "group(a) /* each(output(count())) */)",
+                "TRUE");
+        assertEquals("[[]all(group(a))]",
+                toString(parser.getGroupingSteps()));
+    }
+
+    @Test
+    public void testYqlCommentContainsGrouping() {
+        assertParse("select foo from bar where true /* | all(group(a)) */", "TRUE");
+        assertEquals("[]", toString(parser.getGroupingSteps()));
+    }
+
     private static void assertNumericInItem(String field, long[] values, QueryTree query) {
         var exp = buildNumericInItem(field, values);
         assertEquals(exp, query.getRoot());
