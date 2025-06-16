@@ -251,8 +251,6 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         var model = ModelReference.valueOf(modelStringValue);
         if (model.isResolved())
             return model;
-        if (isClientside() && model.url().isPresent() && model.secretRef().isPresent())
-            return model; // Postpone resolve to component - secret store not available during deserialization!
         if (isClientside() && model.url().isPresent()) // url has priority
             return ModelReference.resolved(Path.of(resolveUrl(model.url().get().value()).value()));
         if (isClientside() && model.path().isPresent())

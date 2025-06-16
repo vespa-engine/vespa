@@ -13,8 +13,6 @@ import java.time.Duration;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 /**
@@ -32,7 +30,6 @@ public class ConfigPayloadApplierTest {
         inputConfig.myUrl(new UrlReference("myUrl.txt"));
         inputConfig.myModel(ModelReference.unresolved(Optional.empty(),
                                                       Optional.of(new UrlReference("myUrl.txt")),
-                                                      Optional.empty(),
                                                       Optional.of(new FileReference("myPath.txt"))));
         applier.applyPayload(ConfigPayload.fromInstance(inputConfig.build()));
         var config = configBuilder.build();
@@ -50,28 +47,11 @@ public class ConfigPayloadApplierTest {
         var inputConfig = new ResolvedTypesConfig.Builder();
         inputConfig.myPath(new FileReference("myPath.txt"));
         inputConfig.myUrl(new UrlReference("myUrl.txt"));
-        inputConfig.myModel(ModelReference.valueOf("my-id myUrl.txt \"\" \"\""));
+        inputConfig.myModel(ModelReference.valueOf("my-id myUrl.txt \"\""));
         applier.applyPayload(ConfigPayload.fromInstance(inputConfig.build()));
         var config = configBuilder.build();
 
         assertEndsWith("resolvedUrl/myUrl.txt", config.myModel().toString());
-    }
-
-    @Test
-    public void testModelWithAuthenticatedUrlSkipsResolve() {
-        var configBuilder = new ResolvedTypesConfig.Builder();
-        var applier = new ConfigPayloadApplier<>(configBuilder, new MockAcquirer(), new MockDownloader());
-
-        var inputConfig = new ResolvedTypesConfig.Builder();
-        inputConfig.myPath(new FileReference("myPath.txt"));
-        inputConfig.myUrl(new UrlReference("myUrl.txt"));
-        inputConfig.myModel(ModelReference.valueOf("my-id myUrl.txt mySecret \"\""));
-        applier.applyPayload(ConfigPayload.fromInstance(inputConfig.build()));
-        var config = configBuilder.build();
-
-        assertNull(config.myModel());
-        assertEquals(Optional.of("mySecret"), config.myModelReference().secretRef());
-        assertFalse(config.myModelReference().isResolved());
     }
 
     @Test
@@ -82,7 +62,7 @@ public class ConfigPayloadApplierTest {
         var inputConfig = new ResolvedTypesConfig.Builder();
         inputConfig.myPath(new FileReference("myPath.txt"));
         inputConfig.myUrl(new UrlReference("myUrl.txt"));
-        inputConfig.myModel(ModelReference.valueOf("my-id \"\" \"\" myPath.txt"));
+        inputConfig.myModel(ModelReference.valueOf("my-id \"\" myPath.txt"));
         applier.applyPayload(ConfigPayload.fromInstance(inputConfig.build()));
         var config = configBuilder.build();
 

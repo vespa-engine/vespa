@@ -173,7 +173,7 @@ public class UserConfiguredFiles implements Serializable {
 
         if (isModelType) {
             var model = ModelReference.valueOf(builder.getValue());
-            var modelWithReference = ModelReference.unresolved(model.modelId(), model.url(), Optional.empty(), Optional.of(reference));
+            var modelWithReference = ModelReference.unresolved(model.modelId(), model.url(), Optional.of(reference));
             builder.setValue(modelWithReference.toString());
         }
         else {
