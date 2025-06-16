@@ -343,6 +343,7 @@
       "public java.util.Optional modelId()",
       "public java.util.Optional url()",
       "public java.util.Optional path()",
+      "public java.util.Optional secretRef()",
       "public java.nio.file.Path value()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -352,6 +353,7 @@
       "public static com.yahoo.config.ModelReference unresolved(com.yahoo.config.UrlReference)",
       "public static com.yahoo.config.ModelReference unresolved(com.yahoo.config.FileReference)",
       "public static com.yahoo.config.ModelReference unresolved(java.util.Optional, java.util.Optional, java.util.Optional)",
+      "public static com.yahoo.config.ModelReference unresolved(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public static com.yahoo.config.ModelReference resolved(java.nio.file.Path)"
     ],
     "fields" : [ ]

@@ -44,6 +44,12 @@ public class ModelReference {
     /** Returns the path specified for this model, or null if it is resolved. */
     public Optional<FileReference> path() { return path; }
 
+    /** Returns the secret reference specified for this model, or null if it is resolved. */
+    public Optional<String> secretRef() {
+        // TODO return secret reference
+        return Optional.empty();
+    }
+
     /** Returns the path to the file containing this model, or null if this is unresolved. */
     public Path value() { return resolved; }
 
@@ -110,6 +116,16 @@ public class ModelReference {
         if (modelId.isEmpty() && url.isEmpty() && path.isEmpty())
             throw new IllegalArgumentException("A model reference must have either a model id, url or path");
         return new ModelReference(modelId, url, path, null);
+    }
+
+    /** Creates an unresolved reference with an optional secret. */
+    public static ModelReference unresolved(Optional<String> modelId,
+                                            Optional<UrlReference> url,
+                                            Optional<String> secretRef,
+                                            Optional<FileReference> path) {
+        if (modelId.isEmpty() && url.isEmpty() && path.isEmpty())
+            throw new IllegalArgumentException("A model reference must have either a model id, url or path");
+        return new ModelReference(modelId, url, path, null); // TODO add secret reference
     }
 
     /** Creates a resolved reference. */
