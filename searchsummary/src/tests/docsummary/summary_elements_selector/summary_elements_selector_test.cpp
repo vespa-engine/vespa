@@ -45,12 +45,15 @@ private:
     std::string   _field_name;
     ElementVector _matching_elements;
     std::unique_ptr<Value>  _feature;
+    bool                    _summary_features_present;
 
 public:
-    StateCallback(const std::string& field_name, const ElementVector& matching_elements, std::unique_ptr<Value> feature)
+    StateCallback(const std::string& field_name, const ElementVector& matching_elements, std::unique_ptr<Value> feature,
+                  bool summary_features_present)
         : _field_name(field_name),
           _matching_elements(matching_elements),
-          _feature(std::move(feature))
+          _feature(std::move(feature)),
+          _summary_features_present(summary_features_present)
     {
     }
     ~StateCallback() override;
@@ -72,8 +75,8 @@ StateCallback::fillSummaryFeatures(GetDocsumsState& state)
         encode_value(*_feature, buf);
         dst->set_data(vespalib::Memory(buf.peek(), buf.size()));
         state._summaryFeatures = feature_set;
-    } else {
-        state._summaryFeatures = std::make_shared<FeatureSet>(std::vector<std::string>{}, 1);
+    } else if (_summary_features_present) {
+        state._summaryFeatures = std::make_shared<FeatureSet>(std::vector<std::string>{"notme"}, 1);
     }
 }
 
@@ -131,10 +134,11 @@ public:
     ~SummaryElementsSelectorTest() override;
     StandaloneElementIds get_selected_elements(const SummaryElementsSelector& selector, const std::string& field_name,
                                                const std::vector<uint32_t>& element_ids,
-                                               std::unique_ptr<Value> feature) noexcept;
+                                               std::unique_ptr<Value> feature,
+                                               bool summary_features_present) noexcept;
     StandaloneElementIds get_all() noexcept;
     StandaloneElementIds get_by_match(const std::string& field_name, const std::vector<uint32_t>& element_ids) noexcept;
-    StandaloneElementIds get_by_summary_feature(std::unique_ptr<Value> feature) noexcept;
+    StandaloneElementIds get_by_summary_feature(std::unique_ptr<Value> feature, bool summary_features_present) noexcept;
 };
 
 SummaryElementsSelectorTest::~SummaryElementsSelectorTest() = default;
@@ -143,9 +147,10 @@ StandaloneElementIds
 SummaryElementsSelectorTest::get_selected_elements(const SummaryElementsSelector& selector,
                                                    const std::string& field_name,
                                                    const std::vector<uint32_t>& element_ids,
-                                                   std::unique_ptr<Value> feature) noexcept
+                                                   std::unique_ptr<Value> feature,
+                                                   bool summary_features_present) noexcept
 {
-    StateCallback callback(field_name, element_ids, std::move(feature));
+    StateCallback callback(field_name, element_ids, std::move(feature), summary_features_present);
     GetDocsumsState state(callback);
     auto matching_elements_fields = std::make_shared<MatchingElementsFields>();
     selector.maybe_apply_to(*matching_elements_fields);
@@ -156,21 +161,21 @@ SummaryElementsSelectorTest::get_selected_elements(const SummaryElementsSelector
 StandaloneElementIds
 SummaryElementsSelectorTest::get_all() noexcept
 {
-    return get_selected_elements(SummaryElementsSelector::select_all(), "field", {}, {});
+    return get_selected_elements(SummaryElementsSelector::select_all(), "field", {}, {}, true);
 }
 
 StandaloneElementIds
 SummaryElementsSelectorTest::get_by_match(const std::string& field_name, const std::vector<uint32_t>& element_ids) noexcept
 {
     return get_selected_elements(SummaryElementsSelector::select_by_match("field", {"field.sub"}),
-                                 field_name, element_ids, {});
+                                 field_name, element_ids, {}, true);
 }
 
 StandaloneElementIds
-SummaryElementsSelectorTest::get_by_summary_feature(std::unique_ptr<Value> feature) noexcept
+SummaryElementsSelectorTest::get_by_summary_feature(std::unique_ptr<Value> feature, bool summary_features_present) noexcept
 {
     return get_selected_elements(SummaryElementsSelector::select_by_summary_feature(elementwise_bm25),
-                                 "nofield", {}, std::move(feature));
+                                 "nofield", {}, std::move(feature), summary_features_present);
 }
 
 TEST_F(SummaryElementsSelectorTest, all)
@@ -189,9 +194,10 @@ TEST_F(SummaryElementsSelectorTest, by_match)
 
 TEST_F(SummaryElementsSelectorTest, by_summary_feature)
 {
-    EXPECT_EQ(StandaloneElementIds::none(), get_by_summary_feature({}));
-    EXPECT_EQ(StandaloneElementIds({1,2,3}), get_by_summary_feature(make_feature({1, 2, 3})));
-    EXPECT_EQ(StandaloneElementIds({4, 9}), get_by_summary_feature(make_feature({4, 9})));
+    EXPECT_EQ(StandaloneElementIds::none(), get_by_summary_feature({}, true));
+    EXPECT_EQ(StandaloneElementIds::none(), get_by_summary_feature({}, false));
+    EXPECT_EQ(StandaloneElementIds({1,2,3}), get_by_summary_feature(make_feature({1, 2, 3}), true));
+    EXPECT_EQ(StandaloneElementIds({4, 9}), get_by_summary_feature(make_feature({4, 9}), true));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
