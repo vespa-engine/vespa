@@ -30,7 +30,7 @@ class Model {
     private final ApplicationFile file;
     private final ModelReference ref;
 
-    private Model(DeployState ds, String paramName, String modelId, URI url, String secretRef, Path file, Set<String> requiredTags) {
+    private Model(DeployState ds, String paramName, String modelId, URI url, Path file, Set<String> requiredTags) {
         this.paramName = Objects.requireNonNull(paramName);
         if (modelId == null && url == null && file == null)
             throw new IllegalArgumentException("At least one of 'model-id', 'url' or 'path' must be specified");
@@ -38,12 +38,12 @@ class Model {
         this.url = url;
         this.file = file != null ? ds.getApplicationPackage().getFile(file) : null;
         this.ref = ModelIdResolver.resolveToModelReference(
-                paramName, Optional.ofNullable(modelId), Optional.ofNullable(url).map(URI::toString), Optional.ofNullable(secretRef),
+                paramName, Optional.ofNullable(modelId), Optional.ofNullable(url).map(URI::toString),
                 Optional.ofNullable(file).map(Path::toString), requiredTags, ds);
     }
 
-    static Model fromParams(DeployState ds, String paramName, String modelId, URI url, String secretRef, Path file, Set<String> requiredTags) {
-        return new Model(ds, paramName, modelId, url, secretRef, file, requiredTags);
+    static Model fromParams(DeployState ds, String paramName, String modelId, URI url, Path file, Set<String> requiredTags) {
+        return new Model(ds, paramName, modelId, url, file, requiredTags);
     }
 
     static Optional<Model> fromXml(DeployState ds, Element parent, String name, Set<String> requiredTags) {
@@ -53,9 +53,8 @@ class Model {
     static Model fromXml(DeployState ds, Element model, Set<String> requiredTags) {
         var modelId = XmlHelper.getOptionalAttribute(model, "model-id").orElse(null);
         var url = XmlHelper.getOptionalAttribute(model, "url").map(Model::parseUrl).orElse(null);
-        var secretRef = XmlHelper.getOptionalAttribute(model, "secret-ref").orElse(null);
         var path = XmlHelper.getOptionalAttribute(model, "path").map(Path::fromString).orElse(null);
-        return new Model(ds, model.getTagName(), modelId, url, secretRef, path, requiredTags);
+        return new Model(ds, model.getTagName(), modelId, url, path, requiredTags);
     }
 
     private static URI parseUrl(String url) {
@@ -76,7 +75,7 @@ class Model {
                 .orElseGet(() -> {
                     var modelId = onnxModel.modelId().orElse(null);
                     if (ds.isHosted() && modelId != null) {
-                        return fromParams(ds, onnxModel.name(), modelId + "-vocab", null, null, null, requiredTags);
+                        return fromParams(ds, onnxModel.name(), modelId + "-vocab", null, null, requiredTags);
                     }
                     throw new IllegalArgumentException("'%s' must be specified".formatted(paramName));
                 });

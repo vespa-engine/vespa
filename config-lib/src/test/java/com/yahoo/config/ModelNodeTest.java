@@ -22,9 +22,8 @@ public class ModelNodeTest {
     void testUnresolvedReference() {
         var reference = ModelReference.unresolved(Optional.of("myModelId"),
                                                   Optional.of(new UrlReference("https://host:my/path")),
-                                                  Optional.empty(),
                                                   Optional.of(new FileReference("foo.txt")));
-        assertEquals("myModelId https://host:my/path \"\" foo.txt", reference.toString());
+        assertEquals("myModelId https://host:my/path foo.txt", reference.toString());
         assertEquals(reference, ModelReference.valueOf(reference.toString()));
     }
 

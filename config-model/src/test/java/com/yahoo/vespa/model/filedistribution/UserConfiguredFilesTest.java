@@ -138,7 +138,6 @@ public class UserConfiguredFilesTest {
     void require_that_simple_model_field_with_path_and_url_is_modified() {
         var originalValue = ModelReference.unresolved(Optional.empty(),
                                                       Optional.of(new UrlReference("myUrl")),
-                                                      Optional.empty(),
                                                       Optional.of(new FileReference("myModel.onnx")));
         def.addModelDef("modelVal");
         builder.setField("modelVal", originalValue.toString());
@@ -159,7 +158,6 @@ public class UserConfiguredFilesTest {
         userConfiguredFiles().register(producer);
         var expected = ModelReference.unresolved(originalValue.modelId(),
                                                  originalValue.url(),
-                                                 Optional.empty(),
                                                  Optional.of(new FileReference("myModelHash")));
         assertEquals(expected, ModelReference.valueOf(builder.getObject("modelVal").getValue()));
     }
