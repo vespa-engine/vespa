@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_input_reader_test_app TEST
     input_reader_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_input_reader_test_app COMMAND vespalib_input_reader_test_app)

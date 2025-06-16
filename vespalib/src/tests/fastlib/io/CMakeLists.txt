@@ -4,5 +4,6 @@ vespa_add_executable(fastlib_bufferedfiletest_app TEST
     bufferedfiletest.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME fastlib_bufferedfiletest_app COMMAND fastlib_bufferedfiletest_app)

@@ -5,6 +5,7 @@ vespa_add_executable(vespalib_metrics_test_app TEST
     mock_tick.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_metrics_test_app COMMAND vespalib_metrics_test_app)
 
@@ -13,5 +14,6 @@ vespa_add_executable(vespalib_stablestore_test_app TEST
     stable_store_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_stablestore_test_app COMMAND vespalib_stablestore_test_app)

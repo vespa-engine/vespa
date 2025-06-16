@@ -5,7 +5,7 @@
 LOG_SETUP("vector_map_test");
 
 #include <vespa/vespalib/stllike/vector_map.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using vespalib::vector_map;
 
@@ -13,11 +13,11 @@ using namespace vespalib;
 
 namespace {
 
-TEST("verify size of underlying storage") {
-    EXPECT_EQUAL(8u, sizeof(vector_map<uint32_t, uint32_t>::value_type));
-    EXPECT_EQUAL(16u, sizeof(vector_map<uint32_t, void *>::value_type));
+TEST(VectorMapTest, verify_size_of_underlying_storage) {
+    EXPECT_EQ(8u, sizeof(vector_map<uint32_t, uint32_t>::value_type));
+    EXPECT_EQ(16u, sizeof(vector_map<uint32_t, void *>::value_type));
 }
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

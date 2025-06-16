@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_external_data_value_test_app TEST
     external_data_value_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_external_data_value_test_app COMMAND vespalib_external_data_value_test_app)

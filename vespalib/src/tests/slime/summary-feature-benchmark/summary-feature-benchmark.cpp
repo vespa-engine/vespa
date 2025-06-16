@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -43,7 +44,8 @@ struct FeatureFixture {
     }
 };
 
-TEST_F("slime -> json speed", FeatureFixture()) {
+TEST(SummaryFeatureBenchmarkTest, slime_to_json_speed) {
+    FeatureFixture f1;
     size_t size = 0;
     double minTime = 1000000.0;
     MyBuffer buffer;
@@ -59,7 +61,8 @@ TEST_F("slime -> json speed", FeatureFixture()) {
     fprintf(stderr, "time: %g ms (size: %zu bytes)\n", minTime, size);
 }
 
-TEST_F("slime -> binary speed", FeatureFixture()) {
+TEST(SummaryFeatureBenchmarkTest, slime_to_binary_speed) {
+    FeatureFixture f1;
     size_t size = 0;
     double minTime = 1000000.0;
     MyBuffer buffer;
@@ -75,4 +78,4 @@ TEST_F("slime -> binary speed", FeatureFixture()) {
     fprintf(stderr, "time: %g ms (size: %zu bytes)\n", minTime, size);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/strfmt.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace vespalib::slime::convenience;
@@ -51,7 +51,9 @@ struct DstFixture {
 DstFixture::DstFixture() { }
 DstFixture::~DstFixture() { }
 
-TEST_FF("inject into slime", SrcFixture(), DstFixture()) {
+TEST(SlimeInjectTest, inject_into_slime) {
+    SrcFixture f1;
+    DstFixture f2;
     EXPECT_TRUE(f1.empty.get().valid()); // explicit nix
 
     inject(f1.empty.get(), SlimeInserter(f2.slime1));
@@ -64,18 +66,20 @@ TEST_FF("inject into slime", SrcFixture(), DstFixture()) {
     inject(f1.array_value.get(), SlimeInserter(f2.slime8));
     inject(f1.object_value.get(), SlimeInserter(f2.slime9));
 
-    EXPECT_EQUAL(f1.empty.get().toString(), f2.slime1.get().toString());
-    EXPECT_EQUAL(f1.nix_value.get().toString(), f2.slime2.get().toString());
-    EXPECT_EQUAL(f1.bool_value.get().toString(), f2.slime3.get().toString());
-    EXPECT_EQUAL(f1.long_value.get().toString(), f2.slime4.get().toString());
-    EXPECT_EQUAL(f1.double_value.get().toString(), f2.slime5.get().toString());
-    EXPECT_EQUAL(f1.string_value.get().toString(), f2.slime6.get().toString());
-    EXPECT_EQUAL(f1.data_value.get().toString(), f2.slime7.get().toString());
-    EXPECT_EQUAL(f1.array_value.get().toString(), f2.slime8.get().toString());
-    EXPECT_EQUAL(f1.object_value.get(), f2.slime9.get());
+    EXPECT_EQ(f1.empty.get().toString(), f2.slime1.get().toString());
+    EXPECT_EQ(f1.nix_value.get().toString(), f2.slime2.get().toString());
+    EXPECT_EQ(f1.bool_value.get().toString(), f2.slime3.get().toString());
+    EXPECT_EQ(f1.long_value.get().toString(), f2.slime4.get().toString());
+    EXPECT_EQ(f1.double_value.get().toString(), f2.slime5.get().toString());
+    EXPECT_EQ(f1.string_value.get().toString(), f2.slime6.get().toString());
+    EXPECT_EQ(f1.data_value.get().toString(), f2.slime7.get().toString());
+    EXPECT_EQ(f1.array_value.get().toString(), f2.slime8.get().toString());
+    EXPECT_EQ(f1.object_value.get(), f2.slime9.get());
 }
 
-TEST_FF("inject into array", SrcFixture(), DstFixture()) {
+TEST(SlimeInjectTest, inject_into_array) {
+    SrcFixture f1;
+    DstFixture f2;
     f2.slime1.setArray();
     inject(f1.empty.get(), ArrayInserter(f2.slime1.get()));
     inject(f1.nix_value.get(), ArrayInserter(f2.slime1.get()));
@@ -87,18 +91,20 @@ TEST_FF("inject into array", SrcFixture(), DstFixture()) {
     inject(f1.array_value.get(), ArrayInserter(f2.slime1.get()));
     inject(f1.object_value.get(), ArrayInserter(f2.slime1.get()));
 
-    EXPECT_EQUAL(f1.empty.get().toString(), f2.slime1.get()[0].toString());
-    EXPECT_EQUAL(f1.nix_value.get().toString(), f2.slime1.get()[1].toString());
-    EXPECT_EQUAL(f1.bool_value.get().toString(), f2.slime1.get()[2].toString());
-    EXPECT_EQUAL(f1.long_value.get().toString(), f2.slime1.get()[3].toString());
-    EXPECT_EQUAL(f1.double_value.get().toString(), f2.slime1.get()[4].toString());
-    EXPECT_EQUAL(f1.string_value.get().toString(), f2.slime1.get()[5].toString());
-    EXPECT_EQUAL(f1.data_value.get().toString(), f2.slime1.get()[6].toString());
-    EXPECT_EQUAL(f1.array_value.get().toString(), f2.slime1.get()[7].toString());
-    EXPECT_EQUAL(f1.object_value.get(), f2.slime1.get()[8]);
+    EXPECT_EQ(f1.empty.get().toString(), f2.slime1.get()[0].toString());
+    EXPECT_EQ(f1.nix_value.get().toString(), f2.slime1.get()[1].toString());
+    EXPECT_EQ(f1.bool_value.get().toString(), f2.slime1.get()[2].toString());
+    EXPECT_EQ(f1.long_value.get().toString(), f2.slime1.get()[3].toString());
+    EXPECT_EQ(f1.double_value.get().toString(), f2.slime1.get()[4].toString());
+    EXPECT_EQ(f1.string_value.get().toString(), f2.slime1.get()[5].toString());
+    EXPECT_EQ(f1.data_value.get().toString(), f2.slime1.get()[6].toString());
+    EXPECT_EQ(f1.array_value.get().toString(), f2.slime1.get()[7].toString());
+    EXPECT_EQ(f1.object_value.get(), f2.slime1.get()[8]);
 }
 
-TEST_FF("inject into object", SrcFixture(), DstFixture()) {
+TEST(SlimeInjectTest, inject_into_object) {
+    SrcFixture f1;
+    DstFixture f2;
     f2.slime1.setObject();
     inject(f1.empty.get(), ObjectInserter(f2.slime1.get(), "a"));
     inject(f1.nix_value.get(), ObjectInserter(f2.slime1.get(), "b"));
@@ -110,29 +116,31 @@ TEST_FF("inject into object", SrcFixture(), DstFixture()) {
     inject(f1.array_value.get(), ObjectInserter(f2.slime1.get(), "h"));
     inject(f1.object_value.get(), ObjectInserter(f2.slime1.get(), "i"));
 
-    EXPECT_EQUAL(f1.empty.get().toString(), f2.slime1.get()["a"].toString());
-    EXPECT_EQUAL(f1.nix_value.get().toString(), f2.slime1.get()["b"].toString());
-    EXPECT_EQUAL(f1.bool_value.get().toString(), f2.slime1.get()["c"].toString());
-    EXPECT_EQUAL(f1.long_value.get().toString(), f2.slime1.get()["d"].toString());
-    EXPECT_EQUAL(f1.double_value.get().toString(), f2.slime1.get()["e"].toString());
-    EXPECT_EQUAL(f1.string_value.get().toString(), f2.slime1.get()["f"].toString());
-    EXPECT_EQUAL(f1.data_value.get().toString(), f2.slime1.get()["g"].toString());
-    EXPECT_EQUAL(f1.array_value.get().toString(), f2.slime1.get()["h"].toString());
-    EXPECT_EQUAL(f1.object_value.get(), f2.slime1.get()["i"]);    
+    EXPECT_EQ(f1.empty.get().toString(), f2.slime1.get()["a"].toString());
+    EXPECT_EQ(f1.nix_value.get().toString(), f2.slime1.get()["b"].toString());
+    EXPECT_EQ(f1.bool_value.get().toString(), f2.slime1.get()["c"].toString());
+    EXPECT_EQ(f1.long_value.get().toString(), f2.slime1.get()["d"].toString());
+    EXPECT_EQ(f1.double_value.get().toString(), f2.slime1.get()["e"].toString());
+    EXPECT_EQ(f1.string_value.get().toString(), f2.slime1.get()["f"].toString());
+    EXPECT_EQ(f1.data_value.get().toString(), f2.slime1.get()["g"].toString());
+    EXPECT_EQ(f1.array_value.get().toString(), f2.slime1.get()["h"].toString());
+    EXPECT_EQ(f1.object_value.get(), f2.slime1.get()["i"]);    
 }
 
-TEST_FF("invalid injection is ignored", SrcFixture(), DstFixture()) {
+TEST(SlimeInjectTest, invalid_injection_is_ignored) {
+    SrcFixture f1;
+    DstFixture f2;
     inject(f1.array_value.get(), SlimeInserter(f2.slime1));
-    EXPECT_EQUAL(3u, f2.slime1.get().entries());
+    EXPECT_EQ(3u, f2.slime1.get().entries());
     inject(f1.long_value.get(), ArrayInserter(f2.slime1.get()));
-    EXPECT_EQUAL(4u, f2.slime1.get().entries());
+    EXPECT_EQ(4u, f2.slime1.get().entries());
     inject(f1.double_value.get(), ArrayInserter(f2.slime1.get()));
-    EXPECT_EQUAL(5u, f2.slime1.get().entries());
+    EXPECT_EQ(5u, f2.slime1.get().entries());
     inject(f1.nix_value.get()["bogus"], ArrayInserter(f2.slime1.get()));
-    EXPECT_EQUAL(5u, f2.slime1.get().entries());
+    EXPECT_EQ(5u, f2.slime1.get().entries());
 }
 
-TEST("recursive array inject") {
+TEST(SlimeInjectTest, recursive_array_inject) {
     Slime expect;
     {
         Cursor &arr = expect.setArray();
@@ -154,10 +162,10 @@ TEST("recursive array inject") {
         arr.addLong(3);
     }
     inject(data.get(), ArrayInserter(data.get()));
-    EXPECT_EQUAL(expect.toString(), data.toString());
+    EXPECT_EQ(expect.toString(), data.toString());
 }
 
-TEST("recursive object inject") {
+TEST(SlimeInjectTest, recursive_object_inject) {
     Slime expect;
     {
         Cursor &obj = expect.setObject();
@@ -179,7 +187,7 @@ TEST("recursive object inject") {
         obj.setLong("c", 3);
     }
     inject(data.get(), ObjectInserter(data.get(), "d"));
-    EXPECT_EQUAL(expect, data);
+    EXPECT_EQ(expect, data);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/input.h>
 #include <vespa/vespalib/data/memory_input.h>
@@ -80,93 +81,106 @@ bool check_valid(const std::string &json) {
     return (vespalib::slime::JsonFormat::decode(json, slime) > 0);
 }
 
-TEST_F("encode empty", Slime) {
-    EXPECT_EQUAL("null", make_json(f, true));
-    EXPECT_EQUAL("null\n", make_json(f, false));
+TEST(SlimeJsonFormatTest, encode_empty) {
+    Slime f;
+    EXPECT_EQ("null", make_json(f, true));
+    EXPECT_EQ("null\n", make_json(f, false));
 }
 
-TEST_F("encode nix", Slime) {
+TEST(SlimeJsonFormatTest, encode_nix) {
+    Slime f;
     f.setNix();
-    EXPECT_EQUAL("null", make_json(f, true));
-    EXPECT_EQUAL("null\n", make_json(f, false));
+    EXPECT_EQ("null", make_json(f, true));
+    EXPECT_EQ("null\n", make_json(f, false));
 }
 
-TEST_F("encode true", Slime) {
+TEST(SlimeJsonFormatTest, encode_true) {
+    Slime f;
     f.setBool(true);
-    EXPECT_EQUAL("true", make_json(f, true));
-    EXPECT_EQUAL("true\n", make_json(f, false));
+    EXPECT_EQ("true", make_json(f, true));
+    EXPECT_EQ("true\n", make_json(f, false));
 }
 
-TEST_F("encode false", Slime) {
+TEST(SlimeJsonFormatTest, encode_false) {
+    Slime f;
     f.setBool(false);
-    EXPECT_EQUAL("false", make_json(f, true));
-    EXPECT_EQUAL("false\n", make_json(f, false));
+    EXPECT_EQ("false", make_json(f, true));
+    EXPECT_EQ("false\n", make_json(f, false));
 }
 
-TEST_F("encode long", Slime) {
+TEST(SlimeJsonFormatTest, encode_long) {
+    Slime f;
     f.setLong(12345);
-    EXPECT_EQUAL("12345", make_json(f, true));
-    EXPECT_EQUAL("12345\n", make_json(f, false));
+    EXPECT_EQ("12345", make_json(f, true));
+    EXPECT_EQ("12345\n", make_json(f, false));
 }
 
-TEST_F("encode double", Slime) {
+TEST(SlimeJsonFormatTest, encode_double) {
+    Slime f;
     f.setDouble(0.5);
-    EXPECT_EQUAL("0.5", make_json(f, true));
-    EXPECT_EQUAL("0.5\n", make_json(f, false));
+    EXPECT_EQ("0.5", make_json(f, true));
+    EXPECT_EQ("0.5\n", make_json(f, false));
 }
 
-TEST_F("encode double nan", Slime) {
+TEST(SlimeJsonFormatTest, encode_double_nan) {
+    Slime f;
     f.setDouble(std::numeric_limits<double>::quiet_NaN());
-    EXPECT_EQUAL("null", make_json(f, true));
-    EXPECT_EQUAL("null\n", make_json(f, false));
+    EXPECT_EQ("null", make_json(f, true));
+    EXPECT_EQ("null\n", make_json(f, false));
 }
 
-TEST_F("encode double inf", Slime) {
+TEST(SlimeJsonFormatTest, encode_double_inf) {
+    Slime f;
     f.setDouble(std::numeric_limits<double>::infinity());
-    EXPECT_EQUAL("null", make_json(f, true));
-    EXPECT_EQUAL("null\n", make_json(f, false));
+    EXPECT_EQ("null", make_json(f, true));
+    EXPECT_EQ("null\n", make_json(f, false));
 }
 
-TEST_F("encode string", Slime) {
+TEST(SlimeJsonFormatTest, encode_string) {
+    Slime f;
     f.setString("foo");
-    EXPECT_EQUAL("\"foo\"", make_json(f, true));
-    EXPECT_EQUAL("\"foo\"\n", make_json(f, false));
+    EXPECT_EQ("\"foo\"", make_json(f, true));
+    EXPECT_EQ("\"foo\"\n", make_json(f, false));
 }
 
-TEST_F("encode data", Slime) {
+TEST(SlimeJsonFormatTest, encode_data) {
+    Slime f;
     char buf[8];
     for (int i = 0; i < 8; ++i) {
         buf[i] = ((i * 2) << 4) | (i * 2 + 1);
     }
     f.setData(Memory(buf, 8));
-    EXPECT_EQUAL("\"0x0123456789ABCDEF\"", make_json(f, true));
-    EXPECT_EQUAL("\"0x0123456789ABCDEF\"\n", make_json(f, false));
+    EXPECT_EQ("\"0x0123456789ABCDEF\"", make_json(f, true));
+    EXPECT_EQ("\"0x0123456789ABCDEF\"\n", make_json(f, false));
 }
 
-TEST_F("encode empty array", Slime) {
+TEST(SlimeJsonFormatTest, encode_empty_array) {
+    Slime f;
     Cursor &c = f.setArray();
     (void)c;
-    EXPECT_EQUAL("[]", make_json(f, true));
-    EXPECT_EQUAL("[\n"
+    EXPECT_EQ("[]", make_json(f, true));
+    EXPECT_EQ("[\n"
                  "]\n", make_json(f, false));
 }
 
-TEST_F("encode empty object", Slime) {
+TEST(SlimeJsonFormatTest, encode_empty_object) {
+    Slime f;
     Cursor &c = f.setObject();
     (void)c;
-    EXPECT_EQUAL("{}", make_json(f, true));
-    EXPECT_EQUAL("{\n"
+    EXPECT_EQ("{}", make_json(f, true));
+    EXPECT_EQ("{\n"
                  "}\n", make_json(f, false));
 }
 
-TEST_F("encode array", Slime) {
+TEST(SlimeJsonFormatTest, encode_array) {
+    Slime f;
     Cursor &c = f.setArray();
     c.addLong(123);
     c.addDouble(0.5);
     c.addString("foo");
     c.addBool(true);
-    EXPECT_EQUAL("[123,0.5,\"foo\",true]", make_json(f, true));
-    EXPECT_EQUAL("[\n"
+    EXPECT_EQ("[123,0.5,\"foo\",true]", make_json(f, true));
+    EXPECT_EQ("[\n"
                  "    123,\n"
                  "    0.5,\n"
                  "    \"foo\",\n"
@@ -174,7 +188,8 @@ TEST_F("encode array", Slime) {
                  "]\n", make_json(f, false));
 }
 
-TEST_F("encode object", Slime) {
+TEST(SlimeJsonFormatTest, encode_object) {
+    Slime f;
     Cursor &c = f.setObject();
     c.setLong("a", 10);
     EXPECT_TRUE(c.valid());
@@ -191,13 +206,14 @@ TEST_F("encode object", Slime) {
                  "}\n" == make_json(f, false)));
 }
 
-TEST_F("encode nesting", Slime) {
+TEST(SlimeJsonFormatTest, encode_nesting) {
+    Slime f;
     Cursor &c = f.setObject().setObject("a").setArray("b").addArray();
     c.addLong(1);
     c.addLong(2);
     c.addLong(3);
-    EXPECT_EQUAL("{\"a\":{\"b\":[[1,2,3]]}}", make_json(f, true));
-    EXPECT_EQUAL("{\n"
+    EXPECT_EQ("{\"a\":{\"b\":[[1,2,3]]}}", make_json(f, true));
+    EXPECT_EQ("{\n"
                  "    \"a\": {\n"
                  "        \"b\": [\n"
                  "            [\n"
@@ -210,166 +226,175 @@ TEST_F("encode nesting", Slime) {
                  "}\n", make_json(f, false));
 }
 
-TEST_F("decode null", Slime) {
+TEST(SlimeJsonFormatTest, decode_null) {
+    Slime f;
     EXPECT_TRUE(parse_json("null", f));
-    EXPECT_EQUAL(vespalib::slime::NIX::ID, f.get().type().getId());
+    EXPECT_EQ(vespalib::slime::NIX::ID, f.get().type().getId());
 }
 
-TEST_F("decode true", Slime) {
+TEST(SlimeJsonFormatTest, decode_true) {
+    Slime f;
     EXPECT_TRUE(parse_json("true", f));
-    EXPECT_EQUAL(vespalib::slime::BOOL::ID, f.get().type().getId());
-    EXPECT_EQUAL(true, f.get().asBool());
+    EXPECT_EQ(vespalib::slime::BOOL::ID, f.get().type().getId());
+    EXPECT_EQ(true, f.get().asBool());
 }
 
-TEST_F("decode false", Slime) {
+TEST(SlimeJsonFormatTest, decode_false) {
+    Slime f;
     EXPECT_TRUE(parse_json("false", f));
-    EXPECT_EQUAL(vespalib::slime::BOOL::ID, f.get().type().getId());
-    EXPECT_EQUAL(false, f.get().asBool());
+    EXPECT_EQ(vespalib::slime::BOOL::ID, f.get().type().getId());
+    EXPECT_EQ(false, f.get().asBool());
 }
 
-TEST("decode number") {
-    EXPECT_EQUAL(0.0,  json_double("0"));
-    EXPECT_EQUAL(1.0,  json_double("1"));
-    EXPECT_EQUAL(2.0,  json_double("2"));
-    EXPECT_EQUAL(3.0,  json_double("3"));
-    EXPECT_EQUAL(4.0,  json_double("4"));
-    EXPECT_EQUAL(5.0,  json_double("5"));
-    EXPECT_EQUAL(6.0,  json_double("6"));
-    EXPECT_EQUAL(7.0,  json_double("7"));
-    EXPECT_EQUAL(8.0,  json_double("8"));
-    EXPECT_EQUAL(9.0,  json_double("9"));
-    EXPECT_EQUAL(-9.0, json_double("-9"));
-    EXPECT_EQUAL(5.5,  json_double("5.5"));
-    EXPECT_EQUAL(5e7,  json_double("5e7"));
+TEST(SlimeJsonFormatTest, decode_number) {
+    EXPECT_EQ(0.0,  json_double("0"));
+    EXPECT_EQ(1.0,  json_double("1"));
+    EXPECT_EQ(2.0,  json_double("2"));
+    EXPECT_EQ(3.0,  json_double("3"));
+    EXPECT_EQ(4.0,  json_double("4"));
+    EXPECT_EQ(5.0,  json_double("5"));
+    EXPECT_EQ(6.0,  json_double("6"));
+    EXPECT_EQ(7.0,  json_double("7"));
+    EXPECT_EQ(8.0,  json_double("8"));
+    EXPECT_EQ(9.0,  json_double("9"));
+    EXPECT_EQ(-9.0, json_double("-9"));
+    EXPECT_EQ(5.5,  json_double("5.5"));
+    EXPECT_EQ(5e7,  json_double("5e7"));
 
-    EXPECT_EQUAL(5L,   json_long("5"));
-    EXPECT_EQUAL(5L,   json_long("5.5"));
-    EXPECT_EQUAL(50000000L, json_long("5e7"));
-    EXPECT_EQUAL(9223372036854775807L, json_long("9223372036854775807"));
+    EXPECT_EQ(5L,   json_long("5"));
+    EXPECT_EQ(5L,   json_long("5.5"));
+    EXPECT_EQ(50000000L, json_long("5e7"));
+    EXPECT_EQ(9223372036854775807L, json_long("9223372036854775807"));
 }
 
-TEST("decode string") {
-    EXPECT_EQUAL(std::string("foo"), json_string("foo"));
-    EXPECT_EQUAL(std::string("\""), json_string("\\\""));
-    EXPECT_EQUAL(std::string("\b"), json_string("\\b"));
-    EXPECT_EQUAL(std::string("\f"), json_string("\\f"));
-    EXPECT_EQUAL(std::string("\n"), json_string("\\n"));
-    EXPECT_EQUAL(std::string("\r"), json_string("\\r"));
-    EXPECT_EQUAL(std::string("\t"), json_string("\\t"));
+TEST(SlimeJsonFormatTest, decode_string) {
+    EXPECT_EQ(std::string("foo"), json_string("foo"));
+    EXPECT_EQ(std::string("\""), json_string("\\\""));
+    EXPECT_EQ(std::string("\b"), json_string("\\b"));
+    EXPECT_EQ(std::string("\f"), json_string("\\f"));
+    EXPECT_EQ(std::string("\n"), json_string("\\n"));
+    EXPECT_EQ(std::string("\r"), json_string("\\r"));
+    EXPECT_EQ(std::string("\t"), json_string("\\t"));
 
-    EXPECT_EQUAL(std::string("A"), json_string("\\u0041"));
-    EXPECT_EQUAL(std::string("\x0f"), json_string("\\u000f"));
-    EXPECT_EQUAL(std::string("\x18"), json_string("\\u0018"));
-    EXPECT_EQUAL(std::string("\x29"), json_string("\\u0029"));
-    EXPECT_EQUAL(std::string("\x3a"), json_string("\\u003a"));
-    EXPECT_EQUAL(std::string("\x4b"), json_string("\\u004b"));
-    EXPECT_EQUAL(std::string("\x5c"), json_string("\\u005c"));
-    EXPECT_EQUAL(std::string("\x6d"), json_string("\\u006d"));
-    EXPECT_EQUAL(std::string("\x7e"), json_string("\\u007e"));
+    EXPECT_EQ(std::string("A"), json_string("\\u0041"));
+    EXPECT_EQ(std::string("\x0f"), json_string("\\u000f"));
+    EXPECT_EQ(std::string("\x18"), json_string("\\u0018"));
+    EXPECT_EQ(std::string("\x29"), json_string("\\u0029"));
+    EXPECT_EQ(std::string("\x3a"), json_string("\\u003a"));
+    EXPECT_EQ(std::string("\x4b"), json_string("\\u004b"));
+    EXPECT_EQ(std::string("\x5c"), json_string("\\u005c"));
+    EXPECT_EQ(std::string("\x6d"), json_string("\\u006d"));
+    EXPECT_EQ(std::string("\x7e"), json_string("\\u007e"));
 
-    EXPECT_EQUAL(std::string("\x7f"), json_string("\\u007f"));
-    EXPECT_EQUAL(std::string("\xc2\x80"), json_string("\\u0080"));
-    EXPECT_EQUAL(std::string("\xdf\xbf"), json_string("\\u07ff"));
-    EXPECT_EQUAL(std::string("\xe0\xa0\x80"), json_string("\\u0800"));
-    EXPECT_EQUAL(std::string("\xed\x9f\xbf"), json_string("\\ud7ff"));
-    EXPECT_EQUAL(std::string("\xee\x80\x80"), json_string("\\ue000"));
-    EXPECT_EQUAL(std::string("\xef\xbf\xbf"), json_string("\\uffff"));
-    EXPECT_EQUAL(std::string("\xf0\x90\x80\x80"), json_string("\\ud800\\udc00"));
-    EXPECT_EQUAL(std::string("\xf4\x8f\xbf\xbf"), json_string("\\udbff\\udfff"));
+    EXPECT_EQ(std::string("\x7f"), json_string("\\u007f"));
+    EXPECT_EQ(std::string("\xc2\x80"), json_string("\\u0080"));
+    EXPECT_EQ(std::string("\xdf\xbf"), json_string("\\u07ff"));
+    EXPECT_EQ(std::string("\xe0\xa0\x80"), json_string("\\u0800"));
+    EXPECT_EQ(std::string("\xed\x9f\xbf"), json_string("\\ud7ff"));
+    EXPECT_EQ(std::string("\xee\x80\x80"), json_string("\\ue000"));
+    EXPECT_EQ(std::string("\xef\xbf\xbf"), json_string("\\uffff"));
+    EXPECT_EQ(std::string("\xf0\x90\x80\x80"), json_string("\\ud800\\udc00"));
+    EXPECT_EQ(std::string("\xf4\x8f\xbf\xbf"), json_string("\\udbff\\udfff"));
 }
 
-TEST_F("decode data", Slime) {
+TEST(SlimeJsonFormatTest, decode_data) {
+    Slime f;
     EXPECT_TRUE(parse_json("x", f));
-    EXPECT_EQUAL(vespalib::slime::DATA::ID, f.get().type().getId());
+    EXPECT_EQ(vespalib::slime::DATA::ID, f.get().type().getId());
     Memory m = f.get().asData();
-    EXPECT_EQUAL(0u, m.size);
+    EXPECT_EQ(0u, m.size);
 
     EXPECT_TRUE(parse_json("x0000", f));
-    EXPECT_EQUAL(vespalib::slime::DATA::ID, f.get().type().getId());
+    EXPECT_EQ(vespalib::slime::DATA::ID, f.get().type().getId());
     m = f.get().asData();
-    EXPECT_EQUAL(2u, m.size);
-    EXPECT_EQUAL(0, m.data[0]);
-    EXPECT_EQUAL(0, m.data[1]);
+    EXPECT_EQ(2u, m.size);
+    EXPECT_EQ(0, m.data[0]);
+    EXPECT_EQ(0, m.data[1]);
 
     EXPECT_TRUE(parse_json("x1234567890abcdefABCDEF", f));
-    EXPECT_EQUAL(vespalib::slime::DATA::ID, f.get().type().getId());
+    EXPECT_EQ(vespalib::slime::DATA::ID, f.get().type().getId());
     m = f.get().asData();
-    EXPECT_EQUAL(11u, m.size);
-    EXPECT_EQUAL((char)0x12, m.data[0]);
-    EXPECT_EQUAL((char)0x34, m.data[1]);
-    EXPECT_EQUAL((char)0x56, m.data[2]);
-    EXPECT_EQUAL((char)0x78, m.data[3]);
-    EXPECT_EQUAL((char)0x90, m.data[4]);
-    EXPECT_EQUAL((char)0xAB, m.data[5]);
-    EXPECT_EQUAL((char)0xCD, m.data[6]);
-    EXPECT_EQUAL((char)0xEF, m.data[7]);
-    EXPECT_EQUAL((char)0xAB, m.data[8]);
-    EXPECT_EQUAL((char)0xCD, m.data[9]);
-    EXPECT_EQUAL((char)0xEF, m.data[10]);
+    EXPECT_EQ(11u, m.size);
+    EXPECT_EQ((char)0x12, m.data[0]);
+    EXPECT_EQ((char)0x34, m.data[1]);
+    EXPECT_EQ((char)0x56, m.data[2]);
+    EXPECT_EQ((char)0x78, m.data[3]);
+    EXPECT_EQ((char)0x90, m.data[4]);
+    EXPECT_EQ((char)0xAB, m.data[5]);
+    EXPECT_EQ((char)0xCD, m.data[6]);
+    EXPECT_EQ((char)0xEF, m.data[7]);
+    EXPECT_EQ((char)0xAB, m.data[8]);
+    EXPECT_EQ((char)0xCD, m.data[9]);
+    EXPECT_EQ((char)0xEF, m.data[10]);
 }
 
-TEST_F("decode empty array", Slime) {
+TEST(SlimeJsonFormatTest, decode_empty_array) {
+    Slime f;
     EXPECT_TRUE(parse_json("[]", f));
-    EXPECT_EQUAL(vespalib::slime::ARRAY::ID, f.get().type().getId());
-    EXPECT_EQUAL(0u, f.get().children());
+    EXPECT_EQ(vespalib::slime::ARRAY::ID, f.get().type().getId());
+    EXPECT_EQ(0u, f.get().children());
 }
 
-TEST_F("decode empty object", Slime) {
+TEST(SlimeJsonFormatTest, decode_empty_object) {
+    Slime f;
     EXPECT_TRUE(parse_json("{}", f));
-    EXPECT_EQUAL(vespalib::slime::OBJECT::ID, f.get().type().getId());
-    EXPECT_EQUAL(0u, f.get().children());
+    EXPECT_EQ(vespalib::slime::OBJECT::ID, f.get().type().getId());
+    EXPECT_EQ(0u, f.get().children());
 }
 
-TEST_F("decode array", Slime) {
+TEST(SlimeJsonFormatTest, decode_array) {
+    Slime f;
     EXPECT_TRUE(parse_json("[123,0.5,\"foo\",true]", f));
-    EXPECT_EQUAL(vespalib::slime::ARRAY::ID, f.get().type().getId());
-    EXPECT_EQUAL(4u, f.get().children());
-    EXPECT_EQUAL(123.0, f.get()[0].asDouble());
-    EXPECT_EQUAL(0.5, f.get()[1].asDouble());
-    EXPECT_EQUAL(std::string("foo"), f.get()[2].asString().make_string());
-    EXPECT_EQUAL(true, f.get()[3].asBool());
+    EXPECT_EQ(vespalib::slime::ARRAY::ID, f.get().type().getId());
+    EXPECT_EQ(4u, f.get().children());
+    EXPECT_EQ(123.0, f.get()[0].asDouble());
+    EXPECT_EQ(0.5, f.get()[1].asDouble());
+    EXPECT_EQ(std::string("foo"), f.get()[2].asString().make_string());
+    EXPECT_EQ(true, f.get()[3].asBool());
 }
 
-TEST_F("decode object", Slime) {
+TEST(SlimeJsonFormatTest, decode_object) {
+    Slime f;
     EXPECT_TRUE(parse_json("{\"a\":123,\"b\":0.5,\"c\":\"foo\",\"d\":true,\"e\":xff0011}", f));
-    EXPECT_EQUAL(vespalib::slime::OBJECT::ID, f.get().type().getId());
-    EXPECT_EQUAL(5u, f.get().children());
-    EXPECT_EQUAL(123.0, f.get()["a"].asDouble());
-    EXPECT_EQUAL(0.5, f.get()["b"].asDouble());
-    EXPECT_EQUAL(std::string("foo"), f.get()["c"].asString().make_string());
-    EXPECT_EQUAL(true, f.get()["d"].asBool());
+    EXPECT_EQ(vespalib::slime::OBJECT::ID, f.get().type().getId());
+    EXPECT_EQ(5u, f.get().children());
+    EXPECT_EQ(123.0, f.get()["a"].asDouble());
+    EXPECT_EQ(0.5, f.get()["b"].asDouble());
+    EXPECT_EQ(std::string("foo"), f.get()["c"].asString().make_string());
+    EXPECT_EQ(true, f.get()["d"].asBool());
     Memory m = f.get()["e"].asData();
-    EXPECT_EQUAL(3u, m.size);
-    EXPECT_EQUAL((char)255, m.data[0]);
-    EXPECT_EQUAL((char)0,   m.data[1]);
-    EXPECT_EQUAL((char)17,  m.data[2]);
+    EXPECT_EQ(3u, m.size);
+    EXPECT_EQ((char)255, m.data[0]);
+    EXPECT_EQ((char)0,   m.data[1]);
+    EXPECT_EQ((char)17,  m.data[2]);
 }
 
-TEST_F("decode nesting", Slime) {
+TEST(SlimeJsonFormatTest, decode_nesting) {
+    Slime f;
     EXPECT_TRUE(parse_json("{\"a\":{\"b\":[[1,2,3]],\"c\":[[4]]}}", f));
-    EXPECT_EQUAL(1.0, f.get()["a"]["b"][0][0].asDouble());
-    EXPECT_EQUAL(2.0, f.get()["a"]["b"][0][1].asDouble());
-    EXPECT_EQUAL(3.0, f.get()["a"]["b"][0][2].asDouble());
-    EXPECT_EQUAL(4.0, f.get()["a"]["c"][0][0].asDouble());
+    EXPECT_EQ(1.0, f.get()["a"]["b"][0][0].asDouble());
+    EXPECT_EQ(2.0, f.get()["a"]["b"][0][1].asDouble());
+    EXPECT_EQ(3.0, f.get()["a"]["b"][0][2].asDouble());
+    EXPECT_EQ(4.0, f.get()["a"]["c"][0][0].asDouble());
 }
 
-TEST("decode whitespace") {
-    EXPECT_EQUAL(std::string("true"), normalize("\n\r\t true"));
-    EXPECT_EQUAL(std::string("true"), normalize(" true "));
-    EXPECT_EQUAL(std::string("false"), normalize(" false "));
-    EXPECT_EQUAL(std::string("null"), normalize(" null "));
-    EXPECT_EQUAL(std::string("\"foo\""), normalize(" \"foo\" "));
-    EXPECT_EQUAL(std::string("{}"), normalize(" { } "));
-    EXPECT_EQUAL(std::string("[]"), normalize(" [ ] "));
-    EXPECT_EQUAL(std::string("5"), normalize(" 5 "));
-    EXPECT_EQUAL(std::string("[1]"), normalize(" [ 1 ] "));
-    EXPECT_EQUAL(std::string("[1,2,3]"), normalize(" [ 1 , 2 , 3 ] "));
-    EXPECT_EQUAL(std::string("{\"a\":1}"), normalize(" { \"a\" : 1 } "));
-    EXPECT_EQUAL(normalize("{\"a\":{\"b\":[[1,2,3]],\"c\":[[4]]}}"),
+TEST(SlimeJsonFormatTest, decode_whitespace) {
+    EXPECT_EQ(std::string("true"), normalize("\n\r\t true"));
+    EXPECT_EQ(std::string("true"), normalize(" true "));
+    EXPECT_EQ(std::string("false"), normalize(" false "));
+    EXPECT_EQ(std::string("null"), normalize(" null "));
+    EXPECT_EQ(std::string("\"foo\""), normalize(" \"foo\" "));
+    EXPECT_EQ(std::string("{}"), normalize(" { } "));
+    EXPECT_EQ(std::string("[]"), normalize(" [ ] "));
+    EXPECT_EQ(std::string("5"), normalize(" 5 "));
+    EXPECT_EQ(std::string("[1]"), normalize(" [ 1 ] "));
+    EXPECT_EQ(std::string("[1,2,3]"), normalize(" [ 1 , 2 , 3 ] "));
+    EXPECT_EQ(std::string("{\"a\":1}"), normalize(" { \"a\" : 1 } "));
+    EXPECT_EQ(normalize("{\"a\":{\"b\":[[1,2,3]],\"c\":[[4]]}}"),
                  normalize(" { \"a\" : { \"b\" : [ [ 1 , 2 , 3 ] ] , \"c\" : [ [ 4 ] ] } } "));
 }
 
-TEST("decode invalid input") {
+TEST(SlimeJsonFormatTest, decode_invalid_input) {
     EXPECT_TRUE(!check_valid(""));
     EXPECT_TRUE(!check_valid("["));
     EXPECT_TRUE(!check_valid("{"));
@@ -389,13 +414,14 @@ TEST("decode invalid input") {
     EXPECT_TRUE(!check_valid("{\"foo"));
 }
 
-TEST("decode simplified form") {
-    EXPECT_EQUAL(std::string("\"foo\""), normalize("'foo'"));
-    EXPECT_EQUAL(normalize("{\"a\":123,\"b\":0.5,\"c\":\"foo\",\"d\":true}"), normalize("{a:123,b:0.5,c:'foo',d:true}"));
-    EXPECT_EQUAL(normalize("{\"a\":{\"b\":[[1,2,3]],\"c\":[[4]]}}"), normalize("{a:{b:[[1,2,3]],c:[[4]]}}"));
+TEST(SlimeJsonFormatTest, decode_simplified_form) {
+    EXPECT_EQ(std::string("\"foo\""), normalize("'foo'"));
+    EXPECT_EQ(normalize("{\"a\":123,\"b\":0.5,\"c\":\"foo\",\"d\":true}"), normalize("{a:123,b:0.5,c:'foo',d:true}"));
+    EXPECT_EQ(normalize("{\"a\":{\"b\":[[1,2,3]],\"c\":[[4]]}}"), normalize("{a:{b:[[1,2,3]],c:[[4]]}}"));
 }
 
-TEST_F("decode bytes not null-terminated", Slime) {
+TEST(SlimeJsonFormatTest, decode_bytes_not_null_terminated) {
+    Slime f;
     std::ifstream file(TEST_PATH("large_json.txt"));
     ASSERT_TRUE(file.is_open());
     std::stringstream buf;
@@ -405,19 +431,19 @@ TEST_F("decode bytes not null-terminated", Slime) {
     EXPECT_TRUE(parse_json_bytes(mem, f));
 }
 
-TEST("require that multiple adjacent values can be decoded from a single input") {
+TEST(SlimeJsonFormatTest, require_that_multiple_adjacent_values_can_be_decoded_from_a_single_input) {
     std::string data("true{}false[]null\"foo\"'bar'1.5null");
     MemoryInput input(data);
-    EXPECT_EQUAL(std::string("true"), normalize(input));
-    EXPECT_EQUAL(std::string("{}"), normalize(input));
-    EXPECT_EQUAL(std::string("false"), normalize(input));
-    EXPECT_EQUAL(std::string("[]"), normalize(input));
-    EXPECT_EQUAL(std::string("null"), normalize(input));
-    EXPECT_EQUAL(std::string("\"foo\""), normalize(input));
-    EXPECT_EQUAL(std::string("\"bar\""), normalize(input));
-    EXPECT_EQUAL(std::string("1.5"), normalize(input));
-    EXPECT_EQUAL(std::string("null"), normalize(input));
-    EXPECT_EQUAL(input.obtain().size, 0u);
+    EXPECT_EQ(std::string("true"), normalize(input));
+    EXPECT_EQ(std::string("{}"), normalize(input));
+    EXPECT_EQ(std::string("false"), normalize(input));
+    EXPECT_EQ(std::string("[]"), normalize(input));
+    EXPECT_EQ(std::string("null"), normalize(input));
+    EXPECT_EQ(std::string("\"foo\""), normalize(input));
+    EXPECT_EQ(std::string("\"bar\""), normalize(input));
+    EXPECT_EQ(std::string("1.5"), normalize(input));
+    EXPECT_EQ(std::string("null"), normalize(input));
+    EXPECT_EQ(input.obtain().size, 0u);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

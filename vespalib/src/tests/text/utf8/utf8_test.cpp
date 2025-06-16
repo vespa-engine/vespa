@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -14,7 +15,7 @@ LOG_SETUP("utf8_test");
 
 using namespace vespalib;
 
-TEST("utf8_test") {
+TEST(Utf8Test, utf8_test) {
 
     for (uint32_t h = 0; h < 0x1100; h++) {
         std::string data;
@@ -35,7 +36,7 @@ TEST("utf8_test") {
             EXPECT_TRUE(r.hasMore());
             unsigned int codepoint = (h << 8) | i;
             unsigned int got = r.getChar(12345678);
-            EXPECT_EQUAL(codepoint, got);
+            EXPECT_EQ(codepoint, got);
         }
         EXPECT_TRUE(! r.hasMore());
 
@@ -45,9 +46,9 @@ TEST("utf8_test") {
         for (uint32_t i = 0; i < 256; i++) {
             unsigned int codepoint = (h << 8) | i;
             unsigned int got = Fast_UnicodeUtil::GetUTF8Char(p);
-            EXPECT_EQUAL(codepoint, got);
+            EXPECT_EQ(codepoint, got);
         }
-        EXPECT_EQUAL(p, e);
+        EXPECT_EQ(p, e);
 #endif
     }
 
@@ -65,7 +66,7 @@ TEST("utf8_test") {
             if (i < 0xD800 || i >= 0xE000) {
                 ASSERT_TRUE(r.hasMore());
                 uint32_t got = r.getChar(12345678);
-                EXPECT_EQUAL(i, got);
+                EXPECT_EQ(i, got);
             }
             i += j;
             j++;
@@ -74,4 +75,4 @@ TEST("utf8_test") {
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

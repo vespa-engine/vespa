@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_lowercase_test_app TEST
     lowercase_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_lowercase_test_app COMMAND vespalib_lowercase_test_app)

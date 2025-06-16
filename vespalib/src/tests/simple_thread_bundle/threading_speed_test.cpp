@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/box.h>
@@ -33,7 +33,7 @@ struct Worker : Runnable {
     }
 };
 
-TEST("estimate cost of thread bundle fork/join") {
+TEST(ThreadingSpeedTest, estimate_cost_of_thread_bundle_fork_join) {
     std::vector<SimpleThreadBundle::Strategy> strategy_value
         = make_box(SimpleThreadBundle::USE_SIGNAL_LIST,
                    SimpleThreadBundle::USE_SIGNAL_TREE,
@@ -76,4 +76,4 @@ TEST("estimate cost of thread bundle fork/join") {
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

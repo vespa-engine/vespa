@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_smart_buffer_test_app TEST
     smart_buffer_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_smart_buffer_test_app COMMAND vespalib_smart_buffer_test_app)

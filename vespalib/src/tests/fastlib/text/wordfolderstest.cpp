@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastlib/text/normwordfolder.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
-TEST("NormalizeWordFolderConstruction") {
+TEST(WoldFolderTest, NormalizeWordFolderConstruction) {
     Fast_NormalizeWordFolder::Setup(
             Fast_NormalizeWordFolder::DO_ACCENT_REMOVAL
             | Fast_NormalizeWordFolder::DO_KATAKANA_TO_HIRAGANA
@@ -13,7 +13,7 @@ TEST("NormalizeWordFolderConstruction") {
             | Fast_NormalizeWordFolder::DO_MULTICHAR_EXPANSION);
 }
 
-TEST("TokenizeAnnotatedUCS4Buffer") {
+TEST(WoldFolderTest, TokenizeAnnotatedUCS4Buffer) {
     auto nwf = std::make_unique<Fast_NormalizeWordFolder>();
     const char *testinput = "This is a "
                             "\xEF\xBF\xB9" "café" "\xEF\xBF\xBA" "café blåbær" "\xEF\xBF\xBB"
@@ -38,9 +38,9 @@ TEST("TokenizeAnnotatedUCS4Buffer") {
 
     int tokencounter = 0;
     while ((teststart = nwf->UCS4Tokenize(teststart, testend, destbuf, destbufend, origstart, tokenlen)) < testend) {
-        EXPECT_EQUAL(0, Fast_UnicodeUtil::utf8cmp(correct[tokencounter++], destbuf));
+        EXPECT_EQ(0, Fast_UnicodeUtil::utf8cmp(correct[tokencounter++], destbuf));
     }
 
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

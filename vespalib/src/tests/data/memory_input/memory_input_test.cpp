@@ -1,20 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/data/memory_input.h>
 
 using namespace vespalib;
 
-TEST("require that MemoryInput wrapper works as expected") {
+TEST(MemoryInputTest, require_that_MemoryInput_wrapper_works_as_expected) {
     const char *data = "1234567890";
     Memory memory(data);
-    EXPECT_EQUAL(memory.size, 10u);
+    EXPECT_EQ(memory.size, 10u);
     MemoryInput input(memory);
-    EXPECT_EQUAL(input.obtain(), memory);
+    EXPECT_EQ(input.obtain(), memory);
     input.evict(5);
-    EXPECT_EQUAL(input.obtain(), Memory(data + 5));    
-    EXPECT_EQUAL(input.obtain(), Memory(data + 5));    
+    EXPECT_EQ(input.obtain(), Memory(data + 5));    
+    EXPECT_EQ(input.obtain(), Memory(data + 5));    
     input.evict(5);
-    EXPECT_EQUAL(input.obtain(), Memory());
+    EXPECT_EQ(input.obtain(), Memory());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
