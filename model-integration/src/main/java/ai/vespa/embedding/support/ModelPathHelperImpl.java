@@ -18,21 +18,21 @@ public class ModelPathHelperImpl implements ModelPathHelper {
     public static final Duration MODEL_DOWNLOAD_TIMEOUT = Duration.ofMinutes(60);
 
     private final Secrets secrets;
-    private final ModelAcquirer modelAcquirer;
+    private final ModelResolverFunction modelResolverFunction;
 
     @Inject
     public ModelPathHelperImpl(Secrets secrets) {
         this.secrets = secrets;
-        this.modelAcquirer = defaultModelAcquirer;
+        this.modelResolverFunction = defaultModelResolverFunction;
     }
 
     // For test purposes
-    ModelPathHelperImpl(Secrets secrets, ModelAcquirer modelAcquirer) {
+    ModelPathHelperImpl(Secrets secrets, ModelResolverFunction modelResolverFunction) {
         this.secrets = secrets;
-        this.modelAcquirer = modelAcquirer;
+        this.modelResolverFunction = modelResolverFunction;
     }
 
-    private ModelAcquirer defaultModelAcquirer =
+    private ModelResolverFunction defaultModelResolverFunction =
          (urlReference, downloadOptions) -> {
             UrlDownloader urlDownloader = new UrlDownloader();
             File file = urlDownloader.waitFor(
@@ -68,11 +68,11 @@ public class ModelPathHelperImpl implements ModelPathHelper {
             downloadOptions = DownloadOptions.ofAuthToken(secret.current());
         }
 
-        return modelAcquirer.acquire(modelUrl, downloadOptions);
+        return modelResolverFunction.apply(modelUrl, downloadOptions);
     }
 
     @FunctionalInterface
-    interface ModelAcquirer {
-        Path acquire(UrlReference urlReference, DownloadOptions downloadOptions);
+    interface ModelResolverFunction {
+        Path apply(UrlReference urlReference, DownloadOptions downloadOptions);
     }
 }
