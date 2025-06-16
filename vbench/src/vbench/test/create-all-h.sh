@@ -1,6 +1,6 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
-#!/bin/sh
+#!/bin/bash
 cd $(dirname $0)
 out="all.h"
 exec > $out

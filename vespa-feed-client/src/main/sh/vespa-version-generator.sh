@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # Extracts the current version number (V_TAG_COMPONENT) from vtag.map and outputs this into a Java class.
