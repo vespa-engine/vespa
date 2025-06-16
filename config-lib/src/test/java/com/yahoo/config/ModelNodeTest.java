@@ -24,7 +24,17 @@ public class ModelNodeTest {
                                                   Optional.of(new UrlReference("https://host:my/path")),
                                                   Optional.empty(),
                                                   Optional.of(new FileReference("foo.txt")));
-        assertEquals("myModelId https://host:my/path \"\" foo.txt", reference.toString());
+        assertEquals("myModelId https://host:my/path foo.txt", reference.toString()); // Old 3-entries format
+        assertEquals(reference, ModelReference.valueOf(reference.toString()));
+    }
+
+    @Test
+    void testUnresolvedReferenceWithSecret() {
+        var reference = ModelReference.unresolved(Optional.of("myModelId"),
+                Optional.of(new UrlReference("https://host:my/path")),
+                Optional.of("mySecret"),
+                Optional.of(new FileReference("foo.txt")));
+        assertEquals("myModelId https://host:my/path mySecret foo.txt", reference.toString()); // New 4-entries format
         assertEquals(reference, ModelReference.valueOf(reference.toString()));
     }
 

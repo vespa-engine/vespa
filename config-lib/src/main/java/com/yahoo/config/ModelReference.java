@@ -78,19 +78,23 @@ public class ModelReference {
         if (resolved != null) return resolved.toString();
         return modelId.orElse("\"\"") + " " +
                url.map(UrlReference::value).orElse("\"\"") + " " +
-               secretRef.orElse("\"\"") + " " +
+               secretRef.map("%s "::formatted).orElse("") + // TODO remove conditional after all nodes upgraded
                path.map(FileReference::value).orElse("\"\"");
     }
 
     /**
      * Creates a model reference which is either a single string with no spaces if resolved, or if unresolved
-     * a found-part string on the form <code>modelId url secretRef path</code>, where
+     * a four-part string on the form <code>modelId url secretRef path</code>, where
      * each of the elements is either a value not containing space, or empty represented by "".
      */
     public static ModelReference valueOf(String s) {
         String[] parts = s.split(" ");
         if (parts.length == 1)
             return resolved(Path.of(s));
+        else if (parts.length == 3) // TODO remove variant after all nodes upgraded
+            return unresolved(parts[0].equals("\"\"") ? Optional.empty() : Optional.of(parts[0]),
+                    parts[1].equals("\"\"") ? Optional.empty() : Optional.of(new UrlReference(parts[1])),
+                    parts[2].equals("\"\"") ? Optional.empty() : Optional.of(new FileReference(parts[2])));
         else if (parts.length == 4)
             return unresolved(parts[0].equals("\"\"") ? Optional.empty() : Optional.of(parts[0]),
                               parts[1].equals("\"\"") ? Optional.empty() : Optional.of(new UrlReference(parts[1])),
