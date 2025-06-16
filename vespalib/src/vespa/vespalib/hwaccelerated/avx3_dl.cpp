@@ -25,14 +25,15 @@ Avx3DlAccelerator::populationCount(const uint64_t* a, size_t sz) const noexcept 
     // It can therefore specialize the implementations.
     // Empirically on GCC 14.2, each increasing trip count uses less and less POPCNT and more
     // and more VPOPCNT, culminating with the arbitrary trip count implementation.
-    if (sz <= 8) [[unlikely]] {
+    if (sz <= 8) {
         return helper::populationCount(a, sz);
-    } else if (sz <= 16) [[unlikely]] {
+    } else if (sz <= 16) {
         return helper::populationCount(a, sz);
-    } else if (sz <= 32) [[unlikely]] {
+    } else if (sz <= 32) {
+        return helper::populationCount(a, sz);
+    } else {
         return helper::populationCount(a, sz);
     }
-    return helper::populationCount(a, sz);
 }
 
 double
