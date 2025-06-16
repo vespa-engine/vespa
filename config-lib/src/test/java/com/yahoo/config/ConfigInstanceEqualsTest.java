@@ -128,6 +128,7 @@ public class ConfigInstanceEqualsTest {
                 urlVal(new UrlReference("http://docs.vespa.ai")).
                 modelVal(ModelReference.unresolved(Optional.of("my-model-id"),
                                                    Optional.of(new UrlReference("http://docs.vespa.ai")),
+                                                   Optional.empty(),
                                                    Optional.empty())).
                 boolarr(false).
                 longarr(9223372036854775807L).
@@ -141,6 +142,7 @@ public class ConfigInstanceEqualsTest {
                 urlArr(new UrlReference("http://docs.vespa.ai")).
                 modelArr(ModelReference.unresolved(Optional.empty(),
                                                    Optional.of(new UrlReference("http://docs.vespa.ai")),
+                                                   Optional.empty(),
                                                    Optional.of(FileReference.mockFileReferenceForUnitTesting(new File("pom.xml"))))).
 
                 basicStruct(new BasicStruct.Builder().
