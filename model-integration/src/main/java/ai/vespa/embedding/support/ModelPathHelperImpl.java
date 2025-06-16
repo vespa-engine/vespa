@@ -50,7 +50,7 @@ public class ModelPathHelperImpl implements ModelPathHelper {
             return resolveModelAndReturnPath(modelReference);
         }
 
-        return modelReference.toString();
+        return modelReference.value().toString();
     }
 
     private boolean isModelDownloadRequired(ModelReference modelReference) {
@@ -65,7 +65,7 @@ public class ModelPathHelperImpl implements ModelPathHelper {
         var downloadOptions = DownloadOptions.defaultOptions();
         if (secretRef.isPresent()) {
             Secret secret = secrets.get(secretRef.get());
-            downloadOptions = DownloadOptions.withAuthToken(secret.current());
+            downloadOptions = DownloadOptions.ofAuthToken(secret.current());
         }
 
         return modelAcquirer.acquire(modelUrl, downloadOptions).toString();

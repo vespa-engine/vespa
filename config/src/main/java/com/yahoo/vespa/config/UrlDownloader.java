@@ -99,7 +99,7 @@ public class UrlDownloader {
             return new DownloadOptions(Optional.empty());
         }
 
-        public static DownloadOptions withAuthToken(String authToken ) {
+        public static DownloadOptions ofAuthToken(String authToken ) {
             return new DownloadOptions(Optional.ofNullable(authToken));
         }
     }
