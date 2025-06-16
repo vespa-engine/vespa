@@ -906,7 +906,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 "ai.vespa.embedding.EmbedderRuntime", null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
 
         cluster.addSimpleComponent(
-                "ai.vespa.embedding.support.ModelPathHelperImpl", null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
+                "ai.vespa.embedding.ModelPathHelperImpl", null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
     }
 
     private void addProcessing(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
