@@ -1,4 +1,4 @@
-package ai.vespa.embedding.support;
+package ai.vespa.embedding;
 
 import com.yahoo.config.ModelReference;
 

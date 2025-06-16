@@ -2,7 +2,7 @@
 package ai.vespa.embedding.huggingface;
 
 
-import ai.vespa.embedding.support.ModelPathHelper;
+import ai.vespa.embedding.ModelPathHelper;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;

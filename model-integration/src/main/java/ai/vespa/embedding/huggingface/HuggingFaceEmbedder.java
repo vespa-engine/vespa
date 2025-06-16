@@ -2,7 +2,7 @@
 package ai.vespa.embedding.huggingface;
 
 import ai.vespa.embedding.PoolingStrategy;
-import ai.vespa.embedding.support.ModelPathHelper;
+import ai.vespa.embedding.ModelPathHelper;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
@@ -18,7 +18,6 @@ import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.Tensors;
 
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;

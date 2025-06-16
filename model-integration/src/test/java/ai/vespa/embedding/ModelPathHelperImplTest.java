@@ -1,10 +1,9 @@
-package ai.vespa.embedding.support;
+package ai.vespa.embedding;
 
 import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
-import com.yahoo.vespa.config.UrlDownloader;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
