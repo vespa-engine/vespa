@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_slime_test_app TEST
     slime_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_slime_test_app COMMAND vespalib_slime_test_app)
 vespa_add_executable(vespalib_slime_inject_test_app TEST
@@ -11,6 +12,7 @@ vespa_add_executable(vespalib_slime_inject_test_app TEST
     slime_inject_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_slime_inject_test_app COMMAND vespalib_slime_inject_test_app)
 vespa_add_executable(vespalib_slime_binary_format_test_app TEST
@@ -19,6 +21,7 @@ vespa_add_executable(vespalib_slime_binary_format_test_app TEST
     type_traits.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_slime_binary_format_test_app COMMAND vespalib_slime_binary_format_test_app)
 vespa_add_executable(vespalib_slime_json_format_test_app TEST
@@ -26,6 +29,7 @@ vespa_add_executable(vespalib_slime_json_format_test_app TEST
     slime_json_format_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_slime_json_format_test_app COMMAND vespalib_slime_json_format_test_app)
 vespa_add_executable(vespalib_json_slime_benchmark_app

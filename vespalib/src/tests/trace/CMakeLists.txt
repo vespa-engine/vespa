@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_trace_test_app TEST
     trace.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_trace_test_app COMMAND vespalib_trace_test_app)
 
@@ -12,5 +13,6 @@ vespa_add_executable(vespalib_trace_serialization_test_app TEST
     trace_serialization.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_trace_serialization_test_app COMMAND vespalib_trace_serialization_test_app)

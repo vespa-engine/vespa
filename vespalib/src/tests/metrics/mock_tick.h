@@ -5,7 +5,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <vespa/vespalib/metrics/clock.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <cassert>
 
 namespace vespalib::metrics {
 
@@ -66,7 +66,7 @@ public:
     TimeStamp give(TimeStamp next_value) {
         TimeStamp prev_value = pop(_prev);
         push(_next, next_value);
-        EXPECT_EQUAL(peek(_prev).count(), next_value.count());
+        assert(peek(_prev).count() == next_value.count());
         return prev_value;
     }
     bool alive() const override { return _alive; }

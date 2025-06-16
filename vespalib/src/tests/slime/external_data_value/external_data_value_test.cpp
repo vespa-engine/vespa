@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
 using namespace vespalib::slime::convenience;
@@ -20,67 +20,67 @@ struct MyMem : ExternalMemory {
 
 void verify_data(const Inspector &pos, Memory expect) {
     EXPECT_TRUE(pos.valid());
-    EXPECT_EQUAL(vespalib::slime::DATA::ID, pos.type().getId());
-    EXPECT_EQUAL(pos.asString(), Memory());
-    EXPECT_EQUAL(pos.asData(), expect);
+    EXPECT_EQ(vespalib::slime::DATA::ID, pos.type().getId());
+    EXPECT_EQ(pos.asString(), Memory());
+    EXPECT_EQ(pos.asData(), expect);
 }
 
-TEST("require that external memory can be used for data values") {
+TEST(ExternalDataTest, require_that_external_memory_can_be_used_for_data_values) {
     Slime slime;
-    TEST_DO(verify_data(slime.setData(MyMem::create("foo")), Memory("foo")));
-    TEST_DO(verify_data(slime.get(), Memory("foo")));
+    GTEST_DO(verify_data(slime.setData(MyMem::create("foo")), Memory("foo")));
+    GTEST_DO(verify_data(slime.get(), Memory("foo")));
 }
 
-TEST("require that nullptr external memory gives empty data value") {
+TEST(ExternalDataTest, require_that_nullptr_external_memory_gives_empty_data_value) {
     Slime slime;
-    TEST_DO(verify_data(slime.setData(ExternalMemory::UP(nullptr)), Memory("")));
-    TEST_DO(verify_data(slime.get(), Memory("")));
+    GTEST_DO(verify_data(slime.setData(ExternalMemory::UP(nullptr)), Memory("")));
+    GTEST_DO(verify_data(slime.get(), Memory("")));
 }
 
-TEST("require that external memory can be used with array data values") {
+TEST(ExternalDataTest, require_that_external_memory_can_be_used_with_array_data_values) {
     Slime slime;
-    TEST_DO(verify_data(slime.setArray().addData(MyMem::create("foo")), Memory("foo")));
-    TEST_DO(verify_data(slime.get()[0], Memory("foo")));
+    GTEST_DO(verify_data(slime.setArray().addData(MyMem::create("foo")), Memory("foo")));
+    GTEST_DO(verify_data(slime.get()[0], Memory("foo")));
 }
 
-TEST("require that external memory can be used with object data values (name)") {
+TEST(ExternalDataTest, require_that_external_memory_can_be_used_with_object_data_values__name) {
     Slime slime;
-    TEST_DO(verify_data(slime.setObject().setData("field", MyMem::create("foo")), Memory("foo")));
-    TEST_DO(verify_data(slime.get()["field"], Memory("foo")));
+    GTEST_DO(verify_data(slime.setObject().setData("field", MyMem::create("foo")), Memory("foo")));
+    GTEST_DO(verify_data(slime.get()["field"], Memory("foo")));
 }
 
-TEST("require that external memory can be used with object data values (symbol)") {
+TEST(ExternalDataTest, require_that_external_memory_can_be_used_with_object_data_values__symbol) {
     Slime slime;
-    TEST_DO(verify_data(slime.setObject().setData(Symbol(5), MyMem::create("foo")), Memory("foo")));
-    TEST_DO(verify_data(slime.get()[Symbol(5)], Memory("foo")));
+    GTEST_DO(verify_data(slime.setObject().setData(Symbol(5), MyMem::create("foo")), Memory("foo")));
+    GTEST_DO(verify_data(slime.get()[Symbol(5)], Memory("foo")));
 }
 
-TEST("require that external memory can be used with slime inserter") {
+TEST(ExternalDataTest, require_that_external_memory_can_be_used_with_slime_inserter) {
     Slime slime;
     SlimeInserter inserter(slime);
-    TEST_DO(verify_data(inserter.insertData(MyMem::create("foo")), Memory("foo")));
-    TEST_DO(verify_data(slime.get(), Memory("foo")));
+    GTEST_DO(verify_data(inserter.insertData(MyMem::create("foo")), Memory("foo")));
+    GTEST_DO(verify_data(slime.get(), Memory("foo")));
 }
 
-TEST("require that external memory can be used with array inserter") {
+TEST(ExternalDataTest, require_that_external_memory_can_be_used_with_array_inserter) {
     Slime slime;
     ArrayInserter inserter(slime.setArray());
-    TEST_DO(verify_data(inserter.insertData(MyMem::create("foo")), Memory("foo")));
-    TEST_DO(verify_data(slime.get()[0], Memory("foo")));
+    GTEST_DO(verify_data(inserter.insertData(MyMem::create("foo")), Memory("foo")));
+    GTEST_DO(verify_data(slime.get()[0], Memory("foo")));
 }
 
-TEST("require that external memory can be used with object inserter") {
+TEST(ExternalDataTest, require_that_external_memory_can_be_used_with_object_inserter) {
     Slime slime;
     ObjectInserter inserter(slime.setObject(), "field");
-    TEST_DO(verify_data(inserter.insertData(MyMem::create("foo")), Memory("foo")));
-    TEST_DO(verify_data(slime.get()["field"], Memory("foo")));
+    GTEST_DO(verify_data(inserter.insertData(MyMem::create("foo")), Memory("foo")));
+    GTEST_DO(verify_data(slime.get()["field"], Memory("foo")));
 }
 
-TEST("require that external memory can be used with object symbol inserter") {
+TEST(ExternalDataTest, require_that_external_memory_can_be_used_with_object_symbol_inserter) {
     Slime slime;
     ObjectSymbolInserter inserter(slime.setObject(), Symbol(5));
-    TEST_DO(verify_data(inserter.insertData(MyMem::create("foo")), Memory("foo")));
-    TEST_DO(verify_data(slime.get()[Symbol(5)], Memory("foo")));
+    GTEST_DO(verify_data(inserter.insertData(MyMem::create("foo")), Memory("foo")));
+    GTEST_DO(verify_data(slime.get()[Symbol(5)], Memory("foo")));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/simple_buffer.h>
@@ -19,7 +19,7 @@ using vespalib::slime::Inspector;
 
 Slime parse(const std::string &json) {
     Slime slime;
-    ASSERT_TRUE(vespalib::slime::JsonFormat::decode(json, slime));
+    EXPECT_TRUE(vespalib::slime::JsonFormat::decode(json, slime));
     return slime;
 }
 
@@ -122,52 +122,52 @@ void verify(const Inspector &a, const Inspector &b, Hook c, bool expect) {
     Hook my_hook = dump_mismatches(c);
     bool result = vespalib::slime::are_equal(a, b, my_hook);
     fprintf(stderr, "<--- cmp\n");
-    EXPECT_EQUAL(result, expect);
+    EXPECT_EQ(result, expect);
 }
 
-TEST("strict compare (used by == operator)") {
+TEST(SlimeAreEqualTest, strict_compare__used_by_eq_operator) {
     auto allow_nothing = [](const auto &, const auto &, const auto &)noexcept{ return false; }; 
-    TEST_DO(verify(    full_obj(),     full_obj(), allow_nothing,  true));
-    TEST_DO(verify(    full_obj(),   subset_obj(), allow_nothing, false));
-    TEST_DO(verify(  subset_obj(),     full_obj(), allow_nothing, false));
-    TEST_DO(verify(    full_obj(), wildcard_obj(), allow_nothing, false));
-    TEST_DO(verify(wildcard_obj(),     full_obj(), allow_nothing, false));
+    GTEST_DO(verify(    full_obj(),     full_obj(), allow_nothing,  true));
+    GTEST_DO(verify(    full_obj(),   subset_obj(), allow_nothing, false));
+    GTEST_DO(verify(  subset_obj(),     full_obj(), allow_nothing, false));
+    GTEST_DO(verify(    full_obj(), wildcard_obj(), allow_nothing, false));
+    GTEST_DO(verify(wildcard_obj(),     full_obj(), allow_nothing, false));
 }
 
-TEST("subset compare") {
+TEST(SlimeAreEqualTest, subset_compare) {
     auto allow_subset_ab = [](const auto &, const auto &a, const auto &)noexcept{ return !a.valid(); };
     auto allow_subset_ba = [](const auto &, const auto &, const auto &b)noexcept{ return !b.valid(); };
-    TEST_DO(verify(  subset_obj(),     full_obj(), allow_subset_ab,  true));
-    TEST_DO(verify(    full_obj(),   subset_obj(), allow_subset_ab, false));
-    TEST_DO(verify(    full_obj(),   subset_obj(), allow_subset_ba,  true));
-    TEST_DO(verify(  subset_obj(),     full_obj(), allow_subset_ba, false));
+    GTEST_DO(verify(  subset_obj(),     full_obj(), allow_subset_ab,  true));
+    GTEST_DO(verify(    full_obj(),   subset_obj(), allow_subset_ab, false));
+    GTEST_DO(verify(    full_obj(),   subset_obj(), allow_subset_ba,  true));
+    GTEST_DO(verify(  subset_obj(),     full_obj(), allow_subset_ba, false));
 }
 
-TEST("wildcard compare") {
+TEST(SlimeAreEqualTest, wildcard_compare) {
     auto allow_wildcard_a = [](const auto &, const auto &a, const auto &)noexcept
                             { return a.valid() && a.type().getId() == NIX::ID; };
     auto allow_wildcard_b = [](const auto &, const auto &, const auto &b)noexcept
                             { return b.valid() && b.type().getId() == NIX::ID; };
-    TEST_DO(verify(wildcard_obj(),     full_obj(), allow_wildcard_a, false));
-    TEST_DO(verify(wildcard_obj(),   subset_obj(), allow_wildcard_a,  true));
-    TEST_DO(verify(  subset_obj(), wildcard_obj(), allow_wildcard_a, false));
-    TEST_DO(verify(    full_obj(), wildcard_obj(), allow_wildcard_b, false));
-    TEST_DO(verify(  subset_obj(), wildcard_obj(), allow_wildcard_b,  true));
-    TEST_DO(verify(wildcard_obj(),   subset_obj(), allow_wildcard_b, false));
+    GTEST_DO(verify(wildcard_obj(),     full_obj(), allow_wildcard_a, false));
+    GTEST_DO(verify(wildcard_obj(),   subset_obj(), allow_wildcard_a,  true));
+    GTEST_DO(verify(  subset_obj(), wildcard_obj(), allow_wildcard_a, false));
+    GTEST_DO(verify(    full_obj(), wildcard_obj(), allow_wildcard_b, false));
+    GTEST_DO(verify(  subset_obj(), wildcard_obj(), allow_wildcard_b,  true));
+    GTEST_DO(verify(wildcard_obj(),   subset_obj(), allow_wildcard_b, false));
 }
 
-TEST("leaf nodes") {
+TEST(SlimeAreEqualTest, leaf_nodes) {
     auto allow_nothing = [](const auto &, const auto &, const auto &)noexcept{ return false; }; 
     const Inspector &root = leaf_cmp_obj();
-    EXPECT_EQUAL(root["ref"].entries(),  6u);
-    EXPECT_EQUAL(root["same"].entries(), 6u);
-    EXPECT_EQUAL(root["err1"].entries(), 5u); // invalid nix at end
-    EXPECT_EQUAL(root["err2"].entries(), 6u);
+    EXPECT_EQ(root["ref"].entries(),  6u);
+    EXPECT_EQ(root["same"].entries(), 6u);
+    EXPECT_EQ(root["err1"].entries(), 5u); // invalid nix at end
+    EXPECT_EQ(root["err2"].entries(), 6u);
     for (size_t i = 0; i < 6; ++i) {
-        TEST_DO(verify(root["ref"][i], root["same"][i], allow_nothing, true));
-        TEST_DO(verify(root["ref"][i], root["err1"][i], allow_nothing, false));
-        TEST_DO(verify(root["ref"][i], root["err2"][i], allow_nothing, false));
+        GTEST_DO(verify(root["ref"][i], root["same"][i], allow_nothing, true));
+        GTEST_DO(verify(root["ref"][i], root["err1"][i], allow_nothing, false));
+        GTEST_DO(verify(root["ref"][i], root["err2"][i], allow_nothing, false));
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_zcurve_test_app TEST
     zcurve_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_zcurve_test_app COMMAND vespalib_zcurve_test_app)
 vespa_add_executable(vespalib_zcurve_ranges_test_app TEST
@@ -11,5 +12,6 @@ vespa_add_executable(vespalib_zcurve_ranges_test_app TEST
     zcurve_ranges_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_zcurve_ranges_test_app COMMAND vespalib_zcurve_ranges_test_app)

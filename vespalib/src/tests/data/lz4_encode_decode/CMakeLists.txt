@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_lz4_encode_decode_test_app TEST
     lz4_encode_decode_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_lz4_encode_decode_test_app COMMAND vespalib_lz4_encode_decode_test_app)

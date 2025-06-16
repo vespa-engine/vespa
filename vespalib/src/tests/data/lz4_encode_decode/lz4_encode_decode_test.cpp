@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/data/lz4_output_encoder.h>
 #include <vespa/vespalib/data/lz4_input_decoder.h>
 #include <vespa/vespalib/data/simple_buffer.h>
@@ -12,14 +12,14 @@ using vespalib::test::ChunkedInput;
 void transfer(Input &input, Output &output) {
     for (Memory src = input.obtain(); src.size > 0; src = input.obtain()) {
         auto dst = output.reserve(src.size);
-        ASSERT_GREATER_EQUAL(dst.size, src.size);
+        ASSERT_GE(dst.size, src.size);
         memcpy(dst.data, src.data, src.size);
         output.commit(src.size);
         input.evict(src.size);
     }
 }
 
-TEST("require that lz4 encode-decode works") {
+TEST(Lz4EncodeDecodeTest, require_that_lz4_encode_decode_works) {
     SimpleBuffer data;
     for (size_t i = 0; i < 100; ++i) {
         data.add((i % 7) + (i * 5) + (i >> 3));
@@ -38,10 +38,10 @@ TEST("require that lz4 encode-decode works") {
         Lz4InputDecoder input_decoder(chunked_input, 10);
         transfer(input_decoder, decoded);
         EXPECT_TRUE(!input_decoder.failed());
-        EXPECT_EQUAL(input_decoder.reason(), std::string());
+        EXPECT_EQ(input_decoder.reason(), std::string());
     }
-    EXPECT_NOT_EQUAL(data.get(), encoded.get());
-    EXPECT_EQUAL(data.get(), decoded.get());
+    EXPECT_NE(data.get(), encoded.get());
+    EXPECT_EQ(data.get(), decoded.get());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

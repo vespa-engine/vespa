@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/box.h>
@@ -7,9 +8,11 @@
 #include <vespa/vespalib/util/gate.h>
 #include <thread>
 #include <forward_list>
+#include <cassert>
 
 using namespace vespalib;
 using namespace vespalib::fixed_thread_bundle;
+using vespalib::test::Nexus;
 
 struct Cnt : Runnable {
     size_t x;
@@ -21,20 +24,18 @@ struct State {
     std::vector<Cnt> cnts;
     State(size_t n) : cnts(n) {}
     std::vector<Runnable*> getTargets(size_t n) {
-        ASSERT_LESS_EQUAL(n, cnts.size());
+        assert(n <= cnts.size());
         std::vector<Runnable*> targets;
         for (size_t i = 0; i < n; ++i) {
             targets.push_back(&cnts[i]);
         }
         return targets;
     }
-    bool check(const std::vector<size_t> &expect) {
-        bool status = true;
-        ASSERT_LESS_EQUAL(expect.size(), cnts.size());
+    void check(const std::vector<size_t> &expect) {
+        ASSERT_LE(expect.size(), cnts.size());
         for (size_t i = 0; i < expect.size(); ++i) {
-            status &= EXPECT_EQUAL(expect[i], cnts[i].x);
+            ASSERT_EQ(expect[i], cnts[i].x);
         }
-        return status;
     }
 };
 
@@ -49,94 +50,120 @@ struct Blocker : Runnable {
 
 Blocker::~Blocker() = default;
 
-TEST_MT_FF("require that signals can be counted and cancelled", 2, Signal, size_t(16000)) {
-    if (thread_id == 0) {
-        for (size_t i = 0; i < f2; ++i) {
-            f1.send();
-            if (i % 128 == 0) { std::this_thread::sleep_for(1ms); }
-        }
-        TEST_BARRIER();
-        f1.cancel();
-    } else {
-        size_t localGen = 0;
-        size_t diffSum = 0;
-        while (localGen < f2) {
-            size_t diff = f1.wait(localGen);
-            EXPECT_GREATER(diff, 0u);
-            diffSum += diff;
-        }
-        EXPECT_EQUAL(f2, localGen);
-        EXPECT_EQUAL(f2, diffSum);
-        TEST_BARRIER();
-        EXPECT_EQUAL(0u, f1.wait(localGen));
-        EXPECT_EQUAL(f2 + 1, localGen);
-    }
+TEST(SimpleThreadBundleTest, require_that_signals_can_be_counted_and_cancelled) {
+    size_t num_threads = 2;
+    Signal f1;
+    size_t f2 = 16000;
+    auto task = [&](Nexus &ctx){
+                    if (ctx.thread_id() == 0) {
+                        for (size_t i = 0; i < f2; ++i) {
+                            f1.send();
+                            if (i % 128 == 0) { std::this_thread::sleep_for(1ms); }
+                        }
+                        ctx.barrier();
+                        f1.cancel();
+                    } else {
+                        size_t localGen = 0;
+                        size_t diffSum = 0;
+                        while (localGen < f2) {
+                            size_t diff = f1.wait(localGen);
+                            EXPECT_GT(diff, 0u);
+                            diffSum += diff;
+                        }
+                        EXPECT_EQ(f2, localGen);
+                        EXPECT_EQ(f2, diffSum);
+                        ctx.barrier();
+                        EXPECT_EQ(0u, f1.wait(localGen));
+                        EXPECT_EQ(f2 + 1, localGen);
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
-TEST("require that bundles of size 0 cannot be created") {
-    EXPECT_EXCEPTION(SimpleThreadBundle(0), IllegalArgumentException, "");
+TEST(SimpleThreadBundleTest, require_that_bundles_of_size_0_cannot_be_created) {
+    VESPA_EXPECT_EXCEPTION(SimpleThreadBundle(0), IllegalArgumentException, "");
 }
 
-TEST_FF("require that bundles with no internal threads work", SimpleThreadBundle(1), State(1)) {
+TEST(SimpleThreadBundleTest, require_that_bundles_with_no_internal_threads_work) {
+    SimpleThreadBundle f1(1);
+    State f2(1);
     f1.run(f2.getTargets(1));
     f2.check(Box<size_t>().add(1));
 }
 
-TEST_FF("require that bundles can be run without targets", SimpleThreadBundle(1), State(1)) {
+TEST(SimpleThreadBundleTest, require_that_bundles_can_be_run_without_targets) {
+    SimpleThreadBundle f1(1);
+    State f2(1);
     f1.run(f2.getTargets(0));
     f2.check(Box<size_t>().add(0));
 }
 
-TEST_FF("require that having too many targets fails", SimpleThreadBundle(1), State(2)) {
-    EXPECT_EXCEPTION(f1.run(f2.getTargets(2)), IllegalArgumentException, "");
+TEST(SimpleThreadBundleTest, require_that_having_too_many_targets_fails) {
+    SimpleThreadBundle f1(1);
+    State f2(2);
+    VESPA_EXPECT_EXCEPTION(f1.run(f2.getTargets(2)), IllegalArgumentException, "");
     f2.check(Box<size_t>().add(0).add(0));
 }
 
-TEST_F("require that ThreadBundle::trivial works the same as SimpleThreadBundle(1)", State(2)) {
+TEST(SimpleThreadBundleTest, require_that_ThreadBundle__trivial_works_the_same_as_SimpleThreadBundle_1) {
+    State f(2);
     ThreadBundle &bundle = ThreadBundle::trivial();
-    EXPECT_EQUAL(bundle.size(), 1u);
+    EXPECT_EQ(bundle.size(), 1u);
     bundle.run(f.getTargets(0));
     f.check({0,0});
     bundle.run(f.getTargets(1));
     f.check({1,0});
-    EXPECT_EXCEPTION(bundle.run(f.getTargets(2)), IllegalArgumentException, "");
+    VESPA_EXPECT_EXCEPTION(bundle.run(f.getTargets(2)), IllegalArgumentException, "");
     f.check({1,0});
 }
 
-TEST_FF("require that bundles with multiple internal threads work", SimpleThreadBundle(3), State(3)) {
+TEST(SimpleThreadBundleTest, require_that_bundles_with_multiple_internal_threads_work) {
+    SimpleThreadBundle f1(3);
+    State f2(3);
     f1.run(f2.getTargets(3));
     f2.check(Box<size_t>().add(1).add(1).add(1));
 }
 
-TEST_FF("require that bundles can be used multiple times", SimpleThreadBundle(3), State(3)) {
+TEST(SimpleThreadBundleTest, require_that_bundles_can_be_used_multiple_times) {
+    SimpleThreadBundle f1(3);
+    State f2(3);
     f1.run(f2.getTargets(3));
     f1.run(f2.getTargets(3));
     f1.run(f2.getTargets(3));
     f2.check(Box<size_t>().add(3).add(3).add(3));
 }
 
-TEST_FF("require that bundles can be used with fewer than maximum threads", SimpleThreadBundle(3), State(3)) {
+TEST(SimpleThreadBundleTest, require_that_bundles_can_be_used_with_fewer_than_maximum_threads) {
+    SimpleThreadBundle f1(3);
+    State f2(3);
     f1.run(f2.getTargets(3));
     f1.run(f2.getTargets(2));
     f1.run(f2.getTargets(1));
     f2.check(Box<size_t>().add(3).add(2).add(1));
 }
 
-TEST_MT_FFF("require that bundle run waits for all targets", 2, SimpleThreadBundle(4), State(3), Blocker) {
-    if (thread_id == 0) {
-        std::vector<Runnable*> targets = f2.getTargets(3);
-        targets.push_back(&f3);
-        f1.run(targets);
-        f2.check(Box<size_t>().add(1).add(1).add(1));
-        f3.done.countDown();
-    } else {
-        EXPECT_FALSE(f3.done.await(20ms));
-        f3.start.countDown();
-        EXPECT_TRUE(f3.done.await(10s));
-    }
+TEST(SimpleThreadBundleTest, require_that_bundle_run_waits_for_all_targets) {
+    size_t num_threads = 2;
+    SimpleThreadBundle f1(4);
+    State f2(3);
+    Blocker f3;
+    auto task = [&](Nexus &ctx){
+                    if (ctx.thread_id() == 0) {
+                        std::vector<Runnable*> targets = f2.getTargets(3);
+                        targets.push_back(&f3);
+                        f1.run(targets);
+                        f2.check(Box<size_t>().add(1).add(1).add(1));
+                        f3.done.countDown();
+                    } else {
+                        EXPECT_FALSE(f3.done.await(20ms));
+                        f3.start.countDown();
+                        EXPECT_TRUE(f3.done.await(10s));
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
-TEST("require that all strategies work with variable number of threads and targets") {
+TEST(SimpleThreadBundleTest, require_that_all_strategies_work_with_variable_number_of_threads_and_targets) {
     std::vector<SimpleThreadBundle::Strategy> strategies
         = make_box(SimpleThreadBundle::USE_SIGNAL_LIST,
                    SimpleThreadBundle::USE_SIGNAL_TREE,
@@ -152,51 +179,57 @@ TEST("require that all strategies work with variable number of threads and targe
             for (size_t e = 0; e < t; ++e) {
                 expect.push_back(t - e);
             }
-            if (!state.check(expect)) {
-                fprintf(stderr, "s:%zu, t:%zu\n", s, t);
-            }
+            ASSERT_NO_FATAL_FAILURE(state.check(expect)) << "s: " << s << ", t: " << t;
         }
     }
 }
 
-TEST_F("require that bundle pool gives out bundles", SimpleThreadBundle::Pool(5)) {
+TEST(SimpleThreadBundleTest, require_that_bundle_pool_gives_out_bundles) {
+    SimpleThreadBundle::Pool f1(5);
     auto b1 = f1.getBundle();
     auto b2 = f1.getBundle();
-    EXPECT_EQUAL(5u, b1.bundle().size());
-    EXPECT_EQUAL(5u, b2.bundle().size());
+    EXPECT_EQ(5u, b1.bundle().size());
+    EXPECT_EQ(5u, b2.bundle().size());
     EXPECT_FALSE(&b1.bundle() == &b2.bundle());
 }
 
-TEST_F("require that bundles do not need to be put back on the pool", SimpleThreadBundle::Pool(5)) {
+TEST(SimpleThreadBundleTest, require_that_bundles_do_not_need_to_be_put_back_on_the_pool) {
+    SimpleThreadBundle::Pool f1(5);
     SimpleThreadBundle::UP b1 = f1.obtain();
     ASSERT_TRUE(b1.get() != nullptr);
-    EXPECT_EQUAL(5u, b1->size());
+    EXPECT_EQ(5u, b1->size());
 }
 
-TEST_F("require that bundle pool reuses bundles", SimpleThreadBundle::Pool(5)) {
+TEST(SimpleThreadBundleTest, require_that_bundle_pool_reuses_bundles) {
+    SimpleThreadBundle::Pool f1(5);
     SimpleThreadBundle *ptr;
     {
         ptr = &f1.getBundle().bundle();
     }
     auto bundle = f1.getBundle();
-    EXPECT_EQUAL(ptr, &bundle.bundle());
+    EXPECT_EQ(ptr, &bundle.bundle());
 }
 
-TEST_MT_FF("require that bundle pool works with multiple threads", 32, SimpleThreadBundle::Pool(3),
-           std::vector<SimpleThreadBundle*>(num_threads, nullptr))
-{
-    SimpleThreadBundle::Pool::Guard bundle = f1.getBundle();
-    EXPECT_EQUAL(3u, bundle.bundle().size());
-    f2[thread_id] = &bundle.bundle();
-    TEST_BARRIER();
-    if (thread_id == 0) {
-        for (size_t i = 0; i < num_threads; ++i) {
-            for (size_t j = 0; j < num_threads; ++j) {
-                EXPECT_EQUAL((f2[i] == f2[j]), (i == j));
-            }
-        }
-    }
-    TEST_BARRIER();
+TEST(SimpleThreadBundleTest, require_that_bundle_pool_works_with_multiple_threads) {
+    size_t num_threads = 32;
+    SimpleThreadBundle::Pool f1(3);
+    std::vector<SimpleThreadBundle*> f2(num_threads, nullptr);
+    auto task = [&](Nexus &ctx){
+                    auto thread_id = ctx.thread_id();
+                    SimpleThreadBundle::Pool::Guard bundle = f1.getBundle();
+                    EXPECT_EQ(3u, bundle.bundle().size());
+                    f2[thread_id] = &bundle.bundle();
+                    ctx.barrier();
+                    if (thread_id == 0) {
+                        for (size_t i = 0; i < num_threads; ++i) {
+                            for (size_t j = 0; j < num_threads; ++j) {
+                                EXPECT_EQ((f2[i] == f2[j]), (i == j));
+                            }
+                        }
+                    }
+                    ctx.barrier();
+                };
+    Nexus::run(num_threads, task);
 }
 
 struct Filler {
@@ -213,7 +246,7 @@ struct Proxy : Filler, Runnable {
 
 struct AlmostRunnable : Runnable {};
 
-TEST("require that Proxy needs fixup to become Runnable") {
+TEST(SimpleThreadBundleTest, require_that_Proxy_needs_fixup_to_become_Runnable) {
     Cnt cnt;
     Proxy proxy(cnt);
     Runnable &runnable = proxy;
@@ -222,7 +255,9 @@ TEST("require that Proxy needs fixup to become Runnable") {
     EXPECT_TRUE(proxy_ptr != runnable_ptr);
 }
 
-TEST_FF("require that various versions of run can be used to invoke targets", SimpleThreadBundle(5), State(5)) {
+TEST(SimpleThreadBundleTest, require_that_various_versions_of_run_can_be_used_to_invoke_targets) {
+    SimpleThreadBundle f1(5);
+    State f2(5);
     EXPECT_TRUE(thread_bundle::direct_dispatch_array<std::vector<Runnable*>>);
     EXPECT_TRUE(thread_bundle::direct_dispatch_array<SmallVector<Runnable*>>);
     EXPECT_TRUE(thread_bundle::direct_dispatch_array<std::initializer_list<Runnable*>>);
@@ -268,4 +303,4 @@ TEST_FF("require that various versions of run can be used to invoke targets", Si
     f2.check({10,10,10,10,10});
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

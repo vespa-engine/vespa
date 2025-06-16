@@ -3,7 +3,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace vespalib::slime::convenience;
@@ -69,12 +69,12 @@ void verify_cmpr_ulong(uint64_t value, SimpleBuffer expect) {
         OutputWriter out(buf2, 32);
         write_cmpr_ulong(out, value);
     }
-    EXPECT_EQUAL(MemCmp(expect.get()), MemCmp(buf1.get()));
-    EXPECT_EQUAL(MemCmp(expect.get()), MemCmp(buf2.get()));
+    EXPECT_EQ(MemCmp(expect.get()), MemCmp(buf1.get()));
+    EXPECT_EQ(MemCmp(expect.get()), MemCmp(buf2.get()));
     {
         InputReader input(expect);
-        EXPECT_EQUAL(value, read_cmpr_ulong(input));
-        EXPECT_EQUAL(input.get_offset(), buf1.get().size);
+        EXPECT_EQ(value, read_cmpr_ulong(input));
+        EXPECT_EQ(input.get_offset(), buf1.get().size);
         EXPECT_TRUE(!input.failed());
     }
 }
@@ -89,8 +89,8 @@ void verifyMultiEncode(const Slime & slime, const SimpleBuffer &expect) {
         Slime s;
         EXPECT_TRUE(BinaryFormat::decode(buffers[i - 1].get(), s));
         BinaryFormat::encode(s, buffers[i]);
-        EXPECT_EQUAL(expect.get().size, buffers[i].get().size);
-        EXPECT_EQUAL(slime, s);
+        EXPECT_EQ(expect.get().size, buffers[i].get().size);
+        EXPECT_EQ(slime, s);
     }
 }
 
@@ -175,79 +175,79 @@ void verifyBasic(const typename TypeTraits<T>::PassType &value) {
         encodeBasic<T>(out, value);
     }
     BinaryFormat::encode(slime, actual);
-    EXPECT_EQUAL(MemCmp(expect.get()), MemCmp(actual.get()));
-    TEST_DO(verifyMultiEncode(slime, expect));
+    EXPECT_EQ(MemCmp(expect.get()), MemCmp(actual.get()));
+    GTEST_DO(verifyMultiEncode(slime, expect));
 }
 
 //-----------------------------------------------------------------------------
 
-TEST("testZigZagConversion") {
-    EXPECT_EQUAL(0UL, encode_zigzag(0L));
-    EXPECT_EQUAL(0L, decode_zigzag(encode_zigzag(0L)));
+TEST(SlimeBinaryFormatTest, testZigZagConversion) {
+    EXPECT_EQ(0UL, encode_zigzag(0L));
+    EXPECT_EQ(0L, decode_zigzag(encode_zigzag(0L)));
 
-    EXPECT_EQUAL(1UL, encode_zigzag(-1L));
-    EXPECT_EQUAL(-1L, decode_zigzag(encode_zigzag(-1L)));
+    EXPECT_EQ(1UL, encode_zigzag(-1L));
+    EXPECT_EQ(-1L, decode_zigzag(encode_zigzag(-1L)));
 
-    EXPECT_EQUAL(2UL, encode_zigzag(1L));
-    EXPECT_EQUAL(1L, decode_zigzag(encode_zigzag(1L)));
+    EXPECT_EQ(2UL, encode_zigzag(1L));
+    EXPECT_EQ(1L, decode_zigzag(encode_zigzag(1L)));
 
-    EXPECT_EQUAL(3UL, encode_zigzag(-2L));
-    EXPECT_EQUAL(-2L, decode_zigzag(encode_zigzag(-2L)));
+    EXPECT_EQ(3UL, encode_zigzag(-2L));
+    EXPECT_EQ(-2L, decode_zigzag(encode_zigzag(-2L)));
 
-    EXPECT_EQUAL(4UL, encode_zigzag(2L));
-    EXPECT_EQUAL(2L, decode_zigzag(encode_zigzag(2L)));
+    EXPECT_EQ(4UL, encode_zigzag(2L));
+    EXPECT_EQ(2L, decode_zigzag(encode_zigzag(2L)));
 
-    EXPECT_EQUAL(1999UL, encode_zigzag(-1000L));
-    EXPECT_EQUAL(-1000L, decode_zigzag(encode_zigzag(-1000L)));
+    EXPECT_EQ(1999UL, encode_zigzag(-1000L));
+    EXPECT_EQ(-1000L, decode_zigzag(encode_zigzag(-1000L)));
 
-    EXPECT_EQUAL(2000UL, encode_zigzag(1000L));
-    EXPECT_EQUAL(1000L, decode_zigzag(encode_zigzag(1000L)));
+    EXPECT_EQ(2000UL, encode_zigzag(1000L));
+    EXPECT_EQ(1000L, decode_zigzag(encode_zigzag(1000L)));
 
-    EXPECT_EQUAL(0xffffffffffffffffUL,
+    EXPECT_EQ(0xffffffffffffffffUL,
                encode_zigzag(0x8000000000000000L));
-    EXPECT_EQUAL(int64_t(0x8000000000000000L),
+    EXPECT_EQ(int64_t(0x8000000000000000L),
                decode_zigzag(encode_zigzag(0x8000000000000000L)));
 
-    EXPECT_EQUAL(0xfffffffffffffffeUL,
+    EXPECT_EQ(0xfffffffffffffffeUL,
                encode_zigzag(0x7fffffffffffffffL));
-    EXPECT_EQUAL(0x7fffffffffffffffL,
+    EXPECT_EQ(0x7fffffffffffffffL,
                decode_zigzag(encode_zigzag(0x7fffffffffffffffL)));
 }
 
-TEST("testDoubleConversion") {
-    EXPECT_EQUAL(0UL, encode_double(0.0));
-    EXPECT_EQUAL(0.0, decode_double(encode_double(0.0)));
+TEST(SlimeBinaryFormatTest, testDoubleConversion) {
+    EXPECT_EQ(0UL, encode_double(0.0));
+    EXPECT_EQ(0.0, decode_double(encode_double(0.0)));
 
-    EXPECT_EQUAL(0x8000000000000000UL, encode_double(-0.0));
-    EXPECT_EQUAL(-0.0, decode_double(encode_double(-0.0)));
+    EXPECT_EQ(0x8000000000000000UL, encode_double(-0.0));
+    EXPECT_EQ(-0.0, decode_double(encode_double(-0.0)));
 
-    EXPECT_EQUAL(0x3ff0000000000000UL, encode_double(1.0));
-    EXPECT_EQUAL(1.0, decode_double(encode_double(1.0)));
+    EXPECT_EQ(0x3ff0000000000000UL, encode_double(1.0));
+    EXPECT_EQ(1.0, decode_double(encode_double(1.0)));
 
-    EXPECT_EQUAL(0xbff0000000000000UL, encode_double(-1.0));
-    EXPECT_EQUAL(-1.0, decode_double(encode_double(-1.0)));
+    EXPECT_EQ(0xbff0000000000000UL, encode_double(-1.0));
+    EXPECT_EQ(-1.0, decode_double(encode_double(-1.0)));
 
-    EXPECT_EQUAL(0x4000000000000000UL, encode_double(2.0));
-    EXPECT_EQUAL(2.0, decode_double(encode_double(2.0)));
+    EXPECT_EQ(0x4000000000000000UL, encode_double(2.0));
+    EXPECT_EQ(2.0, decode_double(encode_double(2.0)));
 
-    EXPECT_EQUAL(0xc000000000000000UL, encode_double(-2.0));
-    EXPECT_EQUAL(-2.0, decode_double(encode_double(-2.0)));
+    EXPECT_EQ(0xc000000000000000UL, encode_double(-2.0));
+    EXPECT_EQ(-2.0, decode_double(encode_double(-2.0)));
 }
 
-TEST("testTypeAndMetaMangling") {
+TEST(SlimeBinaryFormatTest, testTypeAndMetaMangling) {
     for (uint32_t type = 0; type < TYPE_LIMIT; ++type) {
         for (uint32_t meta = 0; meta < META_LIMIT; ++meta) {
             char mangled = encode_type_and_meta(type, meta);
-            EXPECT_EQUAL(type, decode_type(mangled));
-            EXPECT_EQUAL(meta, decode_meta(mangled));
+            EXPECT_EQ(type, decode_type(mangled));
+            EXPECT_EQ(meta, decode_meta(mangled));
         }
     }
 }
 
-TEST("testCmprUlong") {
+TEST(SlimeBinaryFormatTest, testCmprUlong) {
     // check min/max values for different byte counts
     for (uint32_t n = 1; n <= MAX_CMPR_SIZE; ++n) {
-        TEST_STATE(vespalib::make_string("n = %d", n).c_str());
+        SCOPED_TRACE(vespalib::make_string("n = %d", n));
         uint64_t min = (n == 1) ? 0x00
                        : (1ULL << ((n - 1) * 7));
         uint64_t max = (n == MAX_CMPR_SIZE) ? 0xffffffffffffffff
@@ -271,12 +271,12 @@ TEST("testCmprUlong") {
                 }
             }
         }
-        TEST_DO(verify_cmpr_ulong(min, expect_min));
-        TEST_DO(verify_cmpr_ulong(max, expect_max));
+        GTEST_DO(verify_cmpr_ulong(min, expect_min));
+        GTEST_DO(verify_cmpr_ulong(max, expect_max));
     }
     // check byte order and data preservation
     for (int mul = 1; mul <= 15; ++mul) { // 8(i) * 15(mul) = 120 <= 127 = 0x7f
-        TEST_STATE(vespalib::make_string("mul = %d", mul).c_str());
+        SCOPED_TRACE(vespalib::make_string("mul = %d", mul));
         SimpleBuffer expect;
         uint64_t value = 0;
         for (uint32_t i = 0; i < MAX_CMPR_SIZE - 1; ++i) {
@@ -287,11 +287,11 @@ TEST("testCmprUlong") {
                 expect.add(i * mul);
             }
         }
-        TEST_DO(verify_cmpr_ulong(value, expect));
+        GTEST_DO(verify_cmpr_ulong(value, expect));
     }
 }
 
-TEST("testTypeAndSize") {
+TEST(SlimeBinaryFormatTest, testTypeAndSize) {
     for (uint32_t type = 0; type < TYPE_LIMIT; ++type) {
         for (uint32_t size = 0; size < 500; ++size) {
             SimpleBuffer expect;
@@ -309,15 +309,15 @@ TEST("testTypeAndSize") {
                 OutputWriter actual_out(actual, 32);
                 write_type_and_size(actual_out, type, size);
             }
-            EXPECT_EQUAL(MemCmp(expect.get()), MemCmp(actual.get()));
+            EXPECT_EQ(MemCmp(expect.get()), MemCmp(actual.get()));
             {
                 InputReader input(expect);
                 char byte = input.read();
                 uint32_t decodedType = decode_type(byte);
                 uint64_t decodedSize = read_size(input, decode_meta(byte));
-                EXPECT_EQUAL(type, decodedType);
-                EXPECT_EQUAL(size, decodedSize);
-                EXPECT_EQUAL(input.get_offset(), actual.get().size);
+                EXPECT_EQ(type, decodedType);
+                EXPECT_EQ(size, decodedSize);
+                EXPECT_EQ(input.get_offset(), actual.get().size);
                 EXPECT_TRUE(!input.failed());
             }
         }
@@ -342,19 +342,19 @@ uint64_t build_bits(uint32_t type, uint32_t n, uint32_t pre, bool hi,
 
 } // namespace <unnamed>
 
-TEST("testTypeAndBytes") {
+TEST(SlimeBinaryFormatTest, testTypeAndBytes) {
     for (uint32_t type = 0; type < TYPE_LIMIT; ++type) {
-        TEST_STATE(vespalib::make_string("type = %d",
-                                              type).c_str());
+        SCOPED_TRACE(vespalib::make_string("type = %d",
+                                           type));
         for (uint32_t n = 0; n <= MAX_NUM_SIZE; ++n) {
-            TEST_STATE(vespalib::make_string("n = %d",
-                                                  n).c_str());
+            SCOPED_TRACE(vespalib::make_string("n = %d",
+                                               n));
             for (uint32_t pre = 0; (pre == 0) || (pre < n); ++pre) {
-                TEST_STATE(vespalib::make_string("pre = %d",
-                                                      pre).c_str());
+                SCOPED_TRACE(vespalib::make_string("pre = %d",
+                                                   pre));
                 for (int hi = 0; hi < 2; ++hi) {
-                    TEST_STATE(vespalib::make_string("hi = %d",
-                                                          hi).c_str());
+                    SCOPED_TRACE(vespalib::make_string("hi = %d",
+                                                       hi));
                     SimpleBuffer expect;
                     SimpleBuffer actual;
                     uint64_t bits = build_bits(type, n, pre,
@@ -367,7 +367,7 @@ TEST("testTypeAndBytes") {
                             write_type_and_bytes<false>(out, type, bits);
                         }
                     }
-                    EXPECT_EQUAL(MemCmp(expect.get()), MemCmp(actual.get()));
+                    EXPECT_EQ(MemCmp(expect.get()), MemCmp(actual.get()));
                     {
                         InputReader input(expect);
                         uint32_t size = decode_meta(input.read());
@@ -377,8 +377,8 @@ TEST("testTypeAndBytes") {
                         } else {
                             decodedBits = read_bytes<false>(input, size);
                         }
-                        EXPECT_EQUAL(bits, decodedBits);
-                        EXPECT_EQUAL(input.get_offset(), actual.get().size);
+                        EXPECT_EQ(bits, decodedBits);
+                        EXPECT_EQ(input.get_offset(), actual.get().size);
                         EXPECT_TRUE(!input.failed());
                     }
                 }
@@ -387,7 +387,7 @@ TEST("testTypeAndBytes") {
     }
 }
 
-TEST("testEmpty") {
+TEST(SlimeBinaryFormatTest, testEmpty) {
     Slime slime;
     SimpleBuffer expect;
     SimpleBuffer actual;
@@ -397,44 +397,44 @@ TEST("testEmpty") {
         out.write(0);       // nix
     }
     BinaryFormat::encode(slime, actual);
-    EXPECT_EQUAL(MemCmp(expect.get()), MemCmp(actual.get()));
-    TEST_DO(verifyMultiEncode(slime, expect));
+    EXPECT_EQ(MemCmp(expect.get()), MemCmp(actual.get()));
+    GTEST_DO(verifyMultiEncode(slime, expect));
 }
 
-TEST("testBasic") {
-    TEST_DO(verifyBasic<BOOL>(false));
-    TEST_DO(verifyBasic<BOOL>(true));
+TEST(SlimeBinaryFormatTest, testBasic) {
+    GTEST_DO(verifyBasic<BOOL>(false));
+    GTEST_DO(verifyBasic<BOOL>(true));
 
-    TEST_DO(verifyBasic<LONG>(0));
-    TEST_DO(verifyBasic<LONG>(123));
-    TEST_DO(verifyBasic<LONG>(-123));
-    TEST_DO(verifyBasic<LONG>(123456));
-    TEST_DO(verifyBasic<LONG>(-123456));
-    TEST_DO(verifyBasic<LONG>(123456789));
-    TEST_DO(verifyBasic<LONG>(-123456789));
+    GTEST_DO(verifyBasic<LONG>(0));
+    GTEST_DO(verifyBasic<LONG>(123));
+    GTEST_DO(verifyBasic<LONG>(-123));
+    GTEST_DO(verifyBasic<LONG>(123456));
+    GTEST_DO(verifyBasic<LONG>(-123456));
+    GTEST_DO(verifyBasic<LONG>(123456789));
+    GTEST_DO(verifyBasic<LONG>(-123456789));
 
-    TEST_DO(verifyBasic<DOUBLE>(0.0));
-    TEST_DO(verifyBasic<DOUBLE>(2.5));
-    TEST_DO(verifyBasic<DOUBLE>(-2.5));
-    TEST_DO(verifyBasic<DOUBLE>(-1000.0));
-    TEST_DO(verifyBasic<DOUBLE>(1000.0));
-    TEST_DO(verifyBasic<DOUBLE>(1.0e32));
-    TEST_DO(verifyBasic<DOUBLE>(-1.0e32));
-    TEST_DO(verifyBasic<DOUBLE>(1.0e-32));
-    TEST_DO(verifyBasic<DOUBLE>(-1.0e-32));
+    GTEST_DO(verifyBasic<DOUBLE>(0.0));
+    GTEST_DO(verifyBasic<DOUBLE>(2.5));
+    GTEST_DO(verifyBasic<DOUBLE>(-2.5));
+    GTEST_DO(verifyBasic<DOUBLE>(-1000.0));
+    GTEST_DO(verifyBasic<DOUBLE>(1000.0));
+    GTEST_DO(verifyBasic<DOUBLE>(1.0e32));
+    GTEST_DO(verifyBasic<DOUBLE>(-1.0e32));
+    GTEST_DO(verifyBasic<DOUBLE>(1.0e-32));
+    GTEST_DO(verifyBasic<DOUBLE>(-1.0e-32));
 
-    TEST_DO(verifyBasic<STRING>(Memory("foo")));
-    TEST_DO(verifyBasic<STRING>(Memory("bar")));
-    EXPECT_EQUAL(500u, std::string(500, 'x').size());
-    TEST_DO(verifyBasic<STRING>(Memory(std::string(500, 'x'))));
+    GTEST_DO(verifyBasic<STRING>(Memory("foo")));
+    GTEST_DO(verifyBasic<STRING>(Memory("bar")));
+    EXPECT_EQ(500u, std::string(500, 'x').size());
+    GTEST_DO(verifyBasic<STRING>(Memory(std::string(500, 'x'))));
 
-    TEST_DO(verifyBasic<DATA>(Memory("foo")));
-    TEST_DO(verifyBasic<DATA>(Memory("bar")));
-    EXPECT_EQUAL(500u, std::string(500, 'x').size());
-    TEST_DO(verifyBasic<DATA>(Memory(std::string(500, 'x'))));
+    GTEST_DO(verifyBasic<DATA>(Memory("foo")));
+    GTEST_DO(verifyBasic<DATA>(Memory("bar")));
+    EXPECT_EQ(500u, std::string(500, 'x').size());
+    GTEST_DO(verifyBasic<DATA>(Memory(std::string(500, 'x'))));
 }
 
-TEST("testArray") {
+TEST(SlimeBinaryFormatTest, testArray) {
     Slime slime;
     SimpleBuffer expect;
     SimpleBuffer actual;
@@ -457,11 +457,11 @@ TEST("testArray") {
         encodeBasic<DATA>(out, Memory("data"));
     }
     BinaryFormat::encode(slime, actual);
-    EXPECT_EQUAL(MemCmp(expect.get()), MemCmp(actual.get()));
-    TEST_DO(verifyMultiEncode(slime, expect));
+    EXPECT_EQ(MemCmp(expect.get()), MemCmp(actual.get()));
+    GTEST_DO(verifyMultiEncode(slime, expect));
 }
 
-TEST("testObject") {
+TEST(SlimeBinaryFormatTest, testObject) {
     Slime slime;
     SimpleBuffer expect;
     SimpleBuffer actual;
@@ -502,11 +502,11 @@ TEST("testObject") {
         encodeBasic<DATA>(out, Memory("data"));
     }
     BinaryFormat::encode(slime, actual);
-    EXPECT_EQUAL(expect.get().size, actual.get().size);
-    TEST_DO(verifyMultiEncode(slime, expect));
+    EXPECT_EQ(expect.get().size, actual.get().size);
+    GTEST_DO(verifyMultiEncode(slime, expect));
 }
 
-TEST("testNesting") {
+TEST(SlimeBinaryFormatTest, testNesting) {
     SimpleBuffer expect;
     SimpleBuffer actual;
     Slime slime;
@@ -544,11 +544,11 @@ TEST("testNesting") {
         encodeBasic<LONG>(out, 42);
     }
     BinaryFormat::encode(slime, actual);
-    EXPECT_EQUAL(expect.get().size, actual.get().size);
-    TEST_DO(verifyMultiEncode(slime, expect));
+    EXPECT_EQ(expect.get().size, actual.get().size);
+    GTEST_DO(verifyMultiEncode(slime, expect));
 }
 
-TEST("testSymbolReuse") {
+TEST(SlimeBinaryFormatTest, testSymbolReuse) {
     SimpleBuffer expect;
     SimpleBuffer actual;
     Slime slime;
@@ -587,11 +587,11 @@ TEST("testSymbolReuse") {
         encodeBasic<LONG>(out, 200);
     }
     BinaryFormat::encode(slime, actual);
-    EXPECT_EQUAL(expect.get().size, actual.get().size);
-    TEST_DO(verifyMultiEncode(slime, expect));
+    EXPECT_EQ(expect.get().size, actual.get().size);
+    GTEST_DO(verifyMultiEncode(slime, expect));
 }
 
-TEST("testOptionalDecodeOrder") {
+TEST(SlimeBinaryFormatTest, testOptionalDecodeOrder) {
     SimpleBuffer data;
     {
         OutputWriter out(data, 32);
@@ -622,13 +622,13 @@ TEST("testOptionalDecodeOrder") {
     EXPECT_TRUE(BinaryFormat::decode(data.get(), slime));
     Cursor &c = slime.get();
     EXPECT_TRUE(slime.get().valid());
-    EXPECT_EQUAL(OBJECT::ID, slime.get().type().getId());
-    EXPECT_EQUAL(5u, c.children());
-    EXPECT_EQUAL(true, c["b"].asBool());
-    EXPECT_EQUAL(5, c["c"].asLong());
-    EXPECT_EQUAL(3.5, c["d"].asDouble());
-    EXPECT_EQUAL(std::string("string"), c["e"].asString().make_string());
-    EXPECT_EQUAL(std::string("data"), c["f"].asData().make_string());
+    EXPECT_EQ(OBJECT::ID, slime.get().type().getId());
+    EXPECT_EQ(5u, c.children());
+    EXPECT_EQ(true, c["b"].asBool());
+    EXPECT_EQ(5, c["c"].asLong());
+    EXPECT_EQ(3.5, c["d"].asDouble());
+    EXPECT_EQ(std::string("string"), c["e"].asString().make_string());
+    EXPECT_EQ(std::string("data"), c["f"].asData().make_string());
     EXPECT_TRUE(!c[5].valid()); // not ARRAY
 }
 
@@ -638,7 +638,7 @@ Slime from_json(const std::string &json) {
     return slime;
 }
 
-TEST("require that decode_into remaps symbols correctly") {
+TEST(SlimeBinaryFormatTest, require_that_decode_into_remaps_symbols_correctly) {
     Slime expect = from_json("{a:1,b:2,c:{b:10,x:20,c:30}}");
     Slime actual = from_json("{a:1,b:2}");
     Slime inner = from_json("{b:10,x:20,c:30}");
@@ -646,11 +646,11 @@ TEST("require that decode_into remaps symbols correctly") {
     SimpleBuffer buf;
     BinaryFormat::encode(inner, buf);
     BinaryFormat::decode_into(buf.get(), actual, ObjectInserter(actual.get(), "c"));
-    EXPECT_EQUAL(expect, actual);
-    EXPECT_EQUAL(actual.symbols(), 4u);
+    EXPECT_EQ(expect, actual);
+    EXPECT_EQ(actual.symbols(), 4u);
 }
 
-TEST("require that decode_into without symbol names work") {
+TEST(SlimeBinaryFormatTest, require_that_decode_into_without_symbol_names_work) {
     Slime slime;
     Slime inner = from_json("{}");
 
@@ -660,15 +660,15 @@ TEST("require that decode_into without symbol names work") {
     SimpleBuffer buf;
     BinaryFormat::encode(inner, buf);
     BinaryFormat::decode_into(buf.get(), slime, SlimeInserter(slime));
-    EXPECT_EQUAL(slime.symbols(), 0u);
-    EXPECT_EQUAL(slime.get()[my_sym].asLong(), 100);
+    EXPECT_EQ(slime.symbols(), 0u);
+    EXPECT_EQ(slime.get()[my_sym].asLong(), 100);
 }
 
-TEST("require that decode failure results in 0 return value") {
+TEST(SlimeBinaryFormatTest, require_that_decode_failure_results_in_0_return_value) {
     SimpleBuffer buf;
     buf.add(char(0)); // empty symbol table, but no value
     Slime slime;
-    EXPECT_EQUAL(BinaryFormat::decode(buf.get(), slime), 0u);
+    EXPECT_EQ(BinaryFormat::decode(buf.get(), slime), 0u);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <algorithm>
 #include <limits>
@@ -22,32 +22,32 @@ testEncoding(void)
     int32_t x = 0;
     int32_t y = 0;
     int64_t z = ZCurve::encode(x, y);
-    ASSERT_TRUE(z == 0);
+    EXPECT_TRUE(z == 0);
 
     x = std::numeric_limits<int32_t>::min();
     y = std::numeric_limits<int32_t>::min();
     z = ZCurve::encode(x, y);
-    ASSERT_TRUE(static_cast<int64_t>(UINT64_C(0xc000000000000000)) == z);
+    EXPECT_TRUE(static_cast<int64_t>(UINT64_C(0xc000000000000000)) == z);
 
     x = std::numeric_limits<int32_t>::min();
     y = std::numeric_limits<int32_t>::max();
     z = ZCurve::encode(x, y);
-    ASSERT_TRUE(static_cast<int64_t>(UINT64_C(0x6aaaaaaaaaaaaaaa)) == z);
+    EXPECT_TRUE(static_cast<int64_t>(UINT64_C(0x6aaaaaaaaaaaaaaa)) == z);
 
     x = std::numeric_limits<int32_t>::max();
     y = std::numeric_limits<int32_t>::max();
     z = ZCurve::encode(x, y);
-    ASSERT_TRUE(static_cast<int64_t>(UINT64_C(0x3fffffffffffffff)) == z);
+    EXPECT_TRUE(static_cast<int64_t>(UINT64_C(0x3fffffffffffffff)) == z);
 
     x = -1;
     y = -1;
     z = ZCurve::encode(x, y);
-    ASSERT_TRUE(static_cast<int64_t>(UINT64_C(0xffffffffffffffff)) ==  z);
+    EXPECT_TRUE(static_cast<int64_t>(UINT64_C(0xffffffffffffffff)) ==  z);
 
     x = std::numeric_limits<int32_t>::max() / 2;
     y = std::numeric_limits<int32_t>::min() / 2;
     z = ZCurve::encode(x, y);
-    ASSERT_TRUE(static_cast<int64_t>(UINT64_C(0xa555555555555555)) == z);
+    EXPECT_TRUE(static_cast<int64_t>(UINT64_C(0xa555555555555555)) == z);
 }
 
 
@@ -62,43 +62,43 @@ testDecoding(void)
     dx = 0;
     dy = 0;
     ZCurve::decode(z, &dx, &dy);
-    ASSERT_TRUE(dx == x);
-    ASSERT_TRUE(dy == y);
+    EXPECT_TRUE(dx == x);
+    EXPECT_TRUE(dy == y);
 
     x = std::numeric_limits<int32_t>::max();
     y = std::numeric_limits<int32_t>::max();
     z = ZCurve::encode(x, y);
     ZCurve::decode(z, &dx, &dy);
-    ASSERT_TRUE(dx == x);
-    ASSERT_TRUE(dy == y);
+    EXPECT_TRUE(dx == x);
+    EXPECT_TRUE(dy == y);
 
     x = std::numeric_limits<int32_t>::min();
     y = std::numeric_limits<int32_t>::min();
     z = ZCurve::encode(x, y);
     ZCurve::decode(z, &dx, &dy);
-    ASSERT_TRUE(dx == x);
-    ASSERT_TRUE(dy == y);
+    EXPECT_TRUE(dx == x);
+    EXPECT_TRUE(dy == y);
 
     x = std::numeric_limits<int32_t>::min();
     y = std::numeric_limits<int32_t>::max();
     z = ZCurve::encode(x, y);
     ZCurve::decode(z, &dx, &dy);
-    ASSERT_TRUE(dx == x);
-    ASSERT_TRUE(dy == y);
+    EXPECT_TRUE(dx == x);
+    EXPECT_TRUE(dy == y);
 
     x = -18;
     y = 1333;
     z = ZCurve::encode(x, y);
     ZCurve::decode(z, &dx, &dy);
-    ASSERT_TRUE(dx == x);
-    ASSERT_TRUE(dy == y);
+    EXPECT_TRUE(dx == x);
+    EXPECT_TRUE(dy == y);
 
     x = 0;
     y = 0;
     z = ZCurve::encode(x, y);
     ZCurve::decode(z, &dx, &dy);
-    ASSERT_TRUE(dx == x);
-    ASSERT_TRUE(dy == y);
+    EXPECT_TRUE(dx == x);
+    EXPECT_TRUE(dy == y);
 }
 
 
@@ -159,8 +159,8 @@ bm()
             int32_t checkx = 0;
             int32_t checky = 0;
             ZCurve::decodeSlow(enc, &checkx, &checky);
-            ASSERT_TRUE(checkx == x);
-            ASSERT_TRUE(checky == 0);
+            EXPECT_TRUE(checkx == x);
+            EXPECT_TRUE(checky == 0);
         }
     } while (x != BMLIMIT);
     int32_t y = 0;
@@ -172,8 +172,8 @@ bm()
             int32_t checkx = 0;
             int32_t checky = 0;
             ZCurve::decodeSlow(enc, &checkx, &checky);
-            ASSERT_TRUE(checkx == 0);
-            ASSERT_TRUE(checky == y);
+            EXPECT_TRUE(checkx == 0);
+            EXPECT_TRUE(checky == y);
         }
     } while (y != BMLIMIT);
     double after = ftime();
@@ -200,8 +200,8 @@ bm2(void)
             int32_t checkx = 0;
             int32_t checky = 0;
             ZCurve::decode(enc, &checkx, &checky);
-            ASSERT_TRUE(checkx == x);
-            ASSERT_TRUE(checky == 0);
+            EXPECT_TRUE(checkx == x);
+            EXPECT_TRUE(checky == 0);
         }
     } while (x != BMLIMIT);
     int32_t y = 0;
@@ -213,8 +213,8 @@ bm2(void)
             int32_t checkx = 0;
             int32_t checky = 0;
             ZCurve::decode(enc, &checkx, &checky);
-            ASSERT_TRUE(checkx == 0);
-            ASSERT_TRUE(checky == y);
+            EXPECT_TRUE(checkx == 0);
+            EXPECT_TRUE(checky == y);
         }
     } while (y != BMLIMIT);
     double after = ftime();
@@ -241,8 +241,8 @@ bm3()
             int32_t checkx = 0;
             int32_t checky = 0;
             ZCurve::decode(enc, &checkx, &checky);
-            ASSERT_TRUE(checkx == x);
-            ASSERT_TRUE(checky == 0);
+            EXPECT_TRUE(checkx == x);
+            EXPECT_TRUE(checky == 0);
         }
     } while (x != BMLIMIT);
     int32_t y = 0;
@@ -254,8 +254,8 @@ bm3()
             int32_t checkx = 0;
             int32_t checky = 0;
             ZCurve::decode(enc, &checkx, &checky);
-            ASSERT_TRUE(checkx == 0);
-            ASSERT_TRUE(checky == y);
+            EXPECT_TRUE(checkx == 0);
+            EXPECT_TRUE(checky == y);
         }
     } while (y != BMLIMIT);
     double after = ftime();
@@ -278,14 +278,14 @@ bmcheck()
         int64_t enc = ZCurve::encodeSlow(x, 0);
         int64_t enc2 = ZCurve::encode(x, 0);
         int64_t enc3 = encodexy3(x, 0);
-        ASSERT_TRUE(enc == enc2);
-        ASSERT_TRUE(enc == enc3);
+        EXPECT_TRUE(enc == enc2);
+        EXPECT_TRUE(enc == enc3);
         res += enc;
         int32_t checkx = 0;
         int32_t checky = 0;
         ZCurve::decode(enc, &checkx, &checky);
-        ASSERT_TRUE(checkx == x);
-        ASSERT_TRUE(checky == 0);
+        EXPECT_TRUE(checkx == x);
+        EXPECT_TRUE(checky == 0);
     } while (x != BMLIMIT);
     int32_t y = 0;
     do {
@@ -293,14 +293,14 @@ bmcheck()
         int64_t enc = ZCurve::encodeSlow(0, y);
         int64_t enc2 = ZCurve::encode(0, y);
         int64_t enc3 = encodexy3(0, y);
-        ASSERT_TRUE(enc == enc2);
-        ASSERT_TRUE(enc == enc3);
+        EXPECT_TRUE(enc == enc2);
+        EXPECT_TRUE(enc == enc3);
         res += enc;
         int32_t checkx = 0;
         int32_t checky = 0;
         ZCurve::decode(enc, &checkx, &checky);
-        ASSERT_TRUE(checkx == 0);
-        ASSERT_TRUE(checky == y);
+        EXPECT_TRUE(checkx == 0);
+        EXPECT_TRUE(checky == y);
     } while (y != BMLIMIT);
     double after = ftime();
     LOG(info,
@@ -309,7 +309,8 @@ bmcheck()
     return res;
 }
 
-TEST_MAIN() {
+int my_argc = 0;
+TEST(ZCurveTest, test_zcurve) {
     for (int32_t x = 0; x < 4; x++) {
         for (int32_t y = 0; y < 4; y++) {
             int64_t enc = 0;
@@ -320,19 +321,19 @@ TEST_MAIN() {
             enc = ZCurve::encodeSlow(x, y);
             enc2 = ZCurve::encode(x, y);
             enc3 = encodexy3(x, y);
-            ASSERT_TRUE(enc == enc2);
-            ASSERT_TRUE(enc == enc3);
+            EXPECT_TRUE(enc == enc2);
+            EXPECT_TRUE(enc == enc3);
             // printf("x=%u, y=%u, enc=%" PRId64 "\n", x, y, enc);
             checkx = 0;
             checky = 0;
             ZCurve::decodeSlow(enc, &checkx, &checky);
-            ASSERT_TRUE(x == checkx);
-            ASSERT_TRUE(y == checky);
+            EXPECT_TRUE(x == checkx);
+            EXPECT_TRUE(y == checky);
         }
     }
     testEncoding();
     testDecoding();
-    if (argc >= 2) {
+    if (my_argc >= 2) {
         int64_t enc1 = bm<true>();
         int64_t enc1b = bm<false>();
         int64_t enc2 = bm2<true>();
@@ -340,11 +341,17 @@ TEST_MAIN() {
         int64_t enc3 = bm3<true>();
         int64_t enc3b = bm3<false>();
         int64_t enc4 = bmcheck();
-        ASSERT_TRUE(enc1 == enc1b);
-        ASSERT_TRUE(enc1 == enc2);
-        ASSERT_TRUE(enc1 == enc2b);
-        ASSERT_TRUE(enc1 == enc3);
-        ASSERT_TRUE(enc1 == enc3b);
-        ASSERT_TRUE(enc1 == enc4);
+        EXPECT_TRUE(enc1 == enc1b);
+        EXPECT_TRUE(enc1 == enc2);
+        EXPECT_TRUE(enc1 == enc2b);
+        EXPECT_TRUE(enc1 == enc3);
+        EXPECT_TRUE(enc1 == enc3b);
+        EXPECT_TRUE(enc1 == enc4);
     }
+}
+
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    my_argc = argc;
+    return RUN_ALL_TESTS();
 }

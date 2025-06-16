@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_summary-feature-benchmark_app
     summary-feature-benchmark.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_summary-feature-benchmark_app COMMAND vespalib_summary-feature-benchmark_app BENCHMARK)

@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_objectdump_test_app TEST
     objectdump.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_objectdump_test_app COMMAND vespalib_objectdump_test_app)

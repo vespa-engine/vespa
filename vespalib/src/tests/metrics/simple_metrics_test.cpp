@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/metrics/simple_metrics.h>
@@ -14,7 +14,7 @@
 using namespace vespalib;
 using namespace vespalib::metrics;
 
-TEST("require that simple metrics gauge merge works")
+TEST(SimpleMetricsTest, require_that_simple_metrics_gauge_merge_works)
 {
     std::pair<MetricId, Point> id(MetricId(42), Point(17));
     Gauge::Measurement a1(id, 0.0);
@@ -29,46 +29,46 @@ TEST("require that simple metrics gauge merge works")
     b.merge(b3);
     c.merge(c2);
 
-    EXPECT_EQUAL(a.observedCount, 1u);
-    EXPECT_EQUAL(a.sumValue, 0.0);
-    EXPECT_EQUAL(a.minValue, 0.0);
-    EXPECT_EQUAL(a.maxValue, 0.0);
-    EXPECT_EQUAL(a.lastValue, 0.0);
+    EXPECT_EQ(a.observedCount, 1u);
+    EXPECT_EQ(a.sumValue, 0.0);
+    EXPECT_EQ(a.minValue, 0.0);
+    EXPECT_EQ(a.maxValue, 0.0);
+    EXPECT_EQ(a.lastValue, 0.0);
 
-    EXPECT_EQUAL(b.observedCount, 3u);
-    EXPECT_EQUAL(b.sumValue, 24.0);
-    EXPECT_EQUAL(b.minValue, 7.0);
-    EXPECT_EQUAL(b.maxValue, 9.0);
-    EXPECT_EQUAL(b.lastValue, 8.0);
+    EXPECT_EQ(b.observedCount, 3u);
+    EXPECT_EQ(b.sumValue, 24.0);
+    EXPECT_EQ(b.minValue, 7.0);
+    EXPECT_EQ(b.maxValue, 9.0);
+    EXPECT_EQ(b.lastValue, 8.0);
 
-    EXPECT_EQUAL(c.observedCount, 2u);
-    EXPECT_EQUAL(c.sumValue, 11.0);
-    EXPECT_EQUAL(c.minValue, 1.0);
-    EXPECT_EQUAL(c.maxValue, 10.0);
-    EXPECT_EQUAL(c.lastValue, 1.0);
+    EXPECT_EQ(c.observedCount, 2u);
+    EXPECT_EQ(c.sumValue, 11.0);
+    EXPECT_EQ(c.minValue, 1.0);
+    EXPECT_EQ(c.maxValue, 10.0);
+    EXPECT_EQ(c.lastValue, 1.0);
 
     a.minValue = 8;
 
     a.merge(b);
-    EXPECT_EQUAL(a.observedCount, 4u);
-    EXPECT_EQUAL(a.sumValue, 24.0);
-    EXPECT_EQUAL(a.minValue, 7.0);
-    EXPECT_EQUAL(a.maxValue, 9.0);
-    EXPECT_EQUAL(a.lastValue, 8.0);
+    EXPECT_EQ(a.observedCount, 4u);
+    EXPECT_EQ(a.sumValue, 24.0);
+    EXPECT_EQ(a.minValue, 7.0);
+    EXPECT_EQ(a.maxValue, 9.0);
+    EXPECT_EQ(a.lastValue, 8.0);
 
     a.merge(b);
-    EXPECT_EQUAL(a.observedCount, 7u);
-    EXPECT_EQUAL(a.sumValue, 48.0);
-    EXPECT_EQUAL(a.minValue, 7.0);
-    EXPECT_EQUAL(a.maxValue, 9.0);
-    EXPECT_EQUAL(a.lastValue, 8.0);
+    EXPECT_EQ(a.observedCount, 7u);
+    EXPECT_EQ(a.sumValue, 48.0);
+    EXPECT_EQ(a.minValue, 7.0);
+    EXPECT_EQ(a.maxValue, 9.0);
+    EXPECT_EQ(a.lastValue, 8.0);
 
     a.merge(c);
-    EXPECT_EQUAL(a.observedCount, 9u);
-    EXPECT_EQUAL(a.sumValue, 59.0);
-    EXPECT_EQUAL(a.minValue, 1.0);
-    EXPECT_EQUAL(a.maxValue, 10.0);
-    EXPECT_EQUAL(a.lastValue, 1.0);
+    EXPECT_EQ(a.observedCount, 9u);
+    EXPECT_EQ(a.sumValue, 59.0);
+    EXPECT_EQ(a.minValue, 1.0);
+    EXPECT_EQ(a.maxValue, 10.0);
+    EXPECT_EQ(a.lastValue, 1.0);
 }
 
 bool compare_json(const std::string &a, const std::string &b)
@@ -133,11 +133,11 @@ bar_max 43 4500
 bar_max{chain="vespa",documenttype="blogpost",thread="1"} 14 4500
 bar_max{chain="vespa",documenttype="blogpost",thread="2"} 11 4500
 )";
-    EXPECT_EQUAL(expect, actual);
+    EXPECT_EQ(expect, actual);
 }
 
 
-TEST("use simple_metrics_collector")
+TEST(SimpleMetricsTest, use_simple_metrics_collector)
 {
     using namespace vespalib::metrics;
     SimpleManagerConfig cf;
@@ -155,22 +155,22 @@ TEST("use simple_metrics_collector")
     myGauge.sample(43.0);
     myGauge.sample(42.0);
 
-    EXPECT_EQUAL(1.0, ticker->give(TimeStamp(2.0)).count());
+    EXPECT_EQ(1.0, ticker->give(TimeStamp(2.0)).count());
 
     Snapshot snap1 = manager->snapshot();
-    EXPECT_EQUAL(1.0, snap1.startTime());
-    EXPECT_EQUAL(2.0, snap1.endTime());
+    EXPECT_EQ(1.0, snap1.startTime());
+    EXPECT_EQ(2.0, snap1.endTime());
 
-    EXPECT_EQUAL(1u, snap1.counters().size());
-    EXPECT_EQUAL("foo", snap1.counters()[0].name());
-    EXPECT_EQUAL(17u, snap1.counters()[0].count());
+    EXPECT_EQ(1u, snap1.counters().size());
+    EXPECT_EQ("foo", snap1.counters()[0].name());
+    EXPECT_EQ(17u, snap1.counters()[0].count());
 
-    EXPECT_EQUAL(1u, snap1.gauges().size());
-    EXPECT_EQUAL("bar", snap1.gauges()[0].name());
-    EXPECT_EQUAL(4u, snap1.gauges()[0].observedCount());
-    EXPECT_EQUAL(41.0, snap1.gauges()[0].minValue());
-    EXPECT_EQUAL(43.0, snap1.gauges()[0].maxValue());
-    EXPECT_EQUAL(42.0, snap1.gauges()[0].lastValue());
+    EXPECT_EQ(1u, snap1.gauges().size());
+    EXPECT_EQ("bar", snap1.gauges()[0].name());
+    EXPECT_EQ(4u, snap1.gauges()[0].observedCount());
+    EXPECT_EQ(41.0, snap1.gauges()[0].minValue());
+    EXPECT_EQ(43.0, snap1.gauges()[0].maxValue());
+    EXPECT_EQ(42.0, snap1.gauges()[0].lastValue());
 
     Point one = manager->pointBuilder()
             .bind("chain", "default")
@@ -181,30 +181,30 @@ TEST("use simple_metrics_collector")
       .bind("documenttype", "blogpost");
     b2.bind("thread", "1");
     Point two = b2.build();
-    EXPECT_EQUAL(one.id(), 1u);
-    EXPECT_EQUAL(two.id(), 2u);
+    EXPECT_EQ(one.id(), 1u);
+    EXPECT_EQ(two.id(), 2u);
 
     Point anotherOne = manager->pointBuilder()
             .bind("chain", "default")
             .bind("documenttype", "music")
             .bind("thread", "0");
-    EXPECT_EQUAL(anotherOne.id(), 1u);
+    EXPECT_EQ(anotherOne.id(), 1u);
 
     Point three = manager->pointBuilder(two).bind("thread", "2");
-    EXPECT_EQUAL(three.id(), 3u);
+    EXPECT_EQ(three.id(), 3u);
 
     myCounter.add(3, one);
     myCounter.add(one);
     myGauge.sample(14.0, two);
     myGauge.sample(11.0, three);
 
-    EXPECT_EQUAL(2.0, ticker->give(TimeStamp(4.5)).count());
+    EXPECT_EQ(2.0, ticker->give(TimeStamp(4.5)).count());
 
     Snapshot snap2 = manager->snapshot();
-    EXPECT_EQUAL(1.0, snap2.startTime());
-    EXPECT_EQUAL(4.5, snap2.endTime());
-    EXPECT_EQUAL(2u, snap2.counters().size());
-    EXPECT_EQUAL(3u, snap2.gauges().size());
+    EXPECT_EQ(1.0, snap2.startTime());
+    EXPECT_EQ(4.5, snap2.endTime());
+    EXPECT_EQ(2u, snap2.counters().size());
+    EXPECT_EQ(3u, snap2.gauges().size());
 
     JsonFormatter fmt2(snap2);
     check_json(fmt2.asString());
@@ -217,26 +217,26 @@ TEST("use simple_metrics_collector")
         ticker->give(TimeStamp(i));
     }
     Snapshot snap3 = manager->snapshot();
-    EXPECT_EQUAL(5.0, snap3.startTime());
-    EXPECT_EQUAL(10.0, snap3.endTime());
-    EXPECT_EQUAL(2u, snap3.counters().size());
-    EXPECT_EQUAL(0u, snap3.counters()[0].count());
-    EXPECT_EQUAL(0u, snap3.counters()[1].count());
-    EXPECT_EQUAL(3u, snap3.gauges().size());
-    EXPECT_EQUAL(0u, snap3.gauges()[0].observedCount());
-    EXPECT_EQUAL(0u, snap3.gauges()[1].observedCount());
-    EXPECT_EQUAL(0u, snap3.gauges()[2].observedCount());
+    EXPECT_EQ(5.0, snap3.startTime());
+    EXPECT_EQ(10.0, snap3.endTime());
+    EXPECT_EQ(2u, snap3.counters().size());
+    EXPECT_EQ(0u, snap3.counters()[0].count());
+    EXPECT_EQ(0u, snap3.counters()[1].count());
+    EXPECT_EQ(3u, snap3.gauges().size());
+    EXPECT_EQ(0u, snap3.gauges()[0].observedCount());
+    EXPECT_EQ(0u, snap3.gauges()[1].observedCount());
+    EXPECT_EQ(0u, snap3.gauges()[2].observedCount());
 
     Snapshot snap4 = manager->totalSnapshot();
-    EXPECT_EQUAL(1.0,    snap4.startTime());
-    EXPECT_EQUAL(10.0,   snap4.endTime());
-    EXPECT_EQUAL(2u,     snap4.counters().size());
-    EXPECT_NOT_EQUAL(0u, snap4.counters()[0].count());
-    EXPECT_NOT_EQUAL(0u, snap4.counters()[1].count());
-    EXPECT_EQUAL(3u,     snap4.gauges().size());
-    EXPECT_NOT_EQUAL(0u, snap4.gauges()[0].observedCount());
-    EXPECT_NOT_EQUAL(0u, snap4.gauges()[1].observedCount());
-    EXPECT_NOT_EQUAL(0u, snap4.gauges()[2].observedCount());
+    EXPECT_EQ(1.0,    snap4.startTime());
+    EXPECT_EQ(10.0,   snap4.endTime());
+    EXPECT_EQ(2u,     snap4.counters().size());
+    EXPECT_NE(0u, snap4.counters()[0].count());
+    EXPECT_NE(0u, snap4.counters()[1].count());
+    EXPECT_EQ(3u,     snap4.gauges().size());
+    EXPECT_NE(0u, snap4.gauges()[0].observedCount());
+    EXPECT_NE(0u, snap4.gauges()[1].observedCount());
+    EXPECT_NE(0u, snap4.gauges()[2].observedCount());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

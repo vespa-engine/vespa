@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_slime_are_equal_test_app TEST
     slime_are_equal_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_slime_are_equal_test_app COMMAND vespalib_slime_are_equal_test_app)

@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_simple_thread_bundle_test_app TEST
     simple_thread_bundle_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_simple_thread_bundle_test_app COMMAND vespalib_simple_thread_bundle_test_app)
 vespa_add_executable(vespalib_threading_speed_test_app
@@ -11,5 +12,6 @@ vespa_add_executable(vespalib_threading_speed_test_app
     threading_speed_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 #vespa_add_test(NAME vespalib_threading_speed_test_app COMMAND vespalib_threading_speed_test_app)

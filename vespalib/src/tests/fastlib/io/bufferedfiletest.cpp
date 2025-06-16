@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -17,7 +17,7 @@ void remove_testfiles()
 
 }
 
-TEST("main") {
+TEST(BufferedFileTest, main) {
     int value = 0;
 
     remove_testfiles();
@@ -30,7 +30,7 @@ TEST("main") {
     bufFile.addNum(1,10,' ');
     ASSERT_TRUE(bufFile.CheckedWrite("\n",1));
     ASSERT_TRUE(bufFile.Close());
-    ASSERT_EQUAL(11u, fs::file_size(fs::path("testfile1")));
+    ASSERT_EQ(11u, fs::file_size(fs::path("testfile1")));
     printf (" -- SUCCESS\n\n");
 
     // test 2
@@ -40,7 +40,7 @@ TEST("main") {
     memset(buf,0xff,8192);
     ASSERT_TRUE(bufFile.CheckedWrite(buf,4095)); // write almost 4K
     ASSERT_TRUE(bufFile.Close());
-    ASSERT_EQUAL(4095u, fs::file_size(fs::path("testfile2")));
+    ASSERT_EQ(4095u, fs::file_size(fs::path("testfile2")));
     printf (" -- SUCCESS\n\n");
 
     // test 3
@@ -48,7 +48,7 @@ TEST("main") {
     bufFile.WriteOpen("testfile3");
     ASSERT_TRUE(bufFile.CheckedWrite(buf,4096));  // write exactly 4K
     ASSERT_TRUE(bufFile.Close());
-    ASSERT_EQUAL(4096u, fs::file_size(fs::path("testfile3")));
+    ASSERT_EQ(4096u, fs::file_size(fs::path("testfile3")));
     printf (" -- SUCCESS\n\n");
 
     // test 4
@@ -56,7 +56,7 @@ TEST("main") {
     bufFile.WriteOpen("testfile4");
     ASSERT_TRUE(bufFile.CheckedWrite(buf,4097));   // write a bit over 4K
     ASSERT_TRUE(bufFile.Close());
-    ASSERT_EQUAL(4097u, fs::file_size(fs::path("testfile4")));
+    ASSERT_EQ(4097u, fs::file_size(fs::path("testfile4")));
     printf (" -- SUCCESS\n\n");
 
     // test 5
@@ -70,7 +70,7 @@ TEST("main") {
         ASSERT_TRUE(bufFile.CheckedWrite("\n",1));
     }
     ASSERT_TRUE(bufFile.Close());
-    ASSERT_EQUAL(610000u, fs::file_size(fs::path("testfile5")));
+    ASSERT_EQ(610000u, fs::file_size(fs::path("testfile5")));
     printf (" -- SUCCESS\n\n");
 
     remove_testfiles();
@@ -79,4 +79,4 @@ TEST("main") {
     printf (" -- SUCCESS\n\n");
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
