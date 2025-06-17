@@ -207,7 +207,7 @@ consider_fallback VESPA_USE_NO_VESPAMALLOC  "vespa-rpc-invoke vespa-get-config v
 
 
 fixlimits () {
-    max_processes_limit=409600
+    max_processes_limit=102400
     if ! varhasvalue file_descriptor_limit; then
         file_descriptor_limit=262144
     fi
