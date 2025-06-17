@@ -44,9 +44,9 @@ public class IndexingParser {
 
     private String defaultFieldName;
     private Linguistics linguistics;
-    private Map<String, Chunker> chunkers;
-    private Map<String, Embedder> embedders;
-    private Map<String, FieldGenerator> generators;
+    private Components<Chunker> chunkers;
+    private Components<Embedder> embedders;
+    private Components<FieldGenerator> generators;
     private AnnotatorConfig globalAnnotatorConfig = new AnnotatorConfig();
 
     public IndexingParser(String str) {
@@ -63,18 +63,18 @@ public class IndexingParser {
         return this;
     }
 
+    public IndexingParser setChunkers(Map<String, Chunker> chunkers) {
+        this.chunkers = new Components.Map<Chunker>(chunkers, Chunker.FailingChunker.factory());
+        return this;
+    }
+
     public IndexingParser setEmbedders(Map<String, Embedder> embedders) {
-        this.embedders = embedders;
+        this.embedders = new Components.Map<Embedder>(embedders, Embedder.FailingEmbedder.factory());
         return this;
     }
 
     public IndexingParser setGenerators(Map<String, FieldGenerator> generators) {
-        this.generators = generators;
-        return this;
-    }
-
-    public IndexingParser setChunkers(Map<String, Chunker> chunkers) {
-        this.chunkers = chunkers;
+        this.generators = new Components.Map<FieldGenerator>(generators, FieldGenerator.FailingFieldGenerator.factory());
         return this;
     }
 

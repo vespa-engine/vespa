@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -17,8 +19,8 @@ public class SelectedComponent<TYPE> {
     private final TYPE component;
     private final List<String> arguments;
 
-    public SelectedComponent(String name, Map<String, TYPE> components, String selectedId, boolean noIdIsAllowed,
-                             List<String> arguments, Function<String, TYPE> failingComponentFactory) {
+    public SelectedComponent(String name, Components<TYPE> components, String selectedId, boolean noIdIsAllowed,
+                             List<String> arguments) {
         this.id = selectedId;
         this.arguments = List.copyOf(arguments);
 
@@ -29,19 +31,19 @@ public class SelectedComponent<TYPE> {
         }
         else if (! selectedIdProvided && ! noIdIsAllowed) {
             throw new IllegalArgumentException("A " + name + " id must be specified. "+
-                                            "Valid " + name + "s are " + validComponents(components));
+                                               "Valid " + name + "s are " + validComponents(components));
         }
-        else if (components.size() == 1 && ! selectedIdProvided) {
-            this.component = components.entrySet().stream().findFirst().get().getValue();
+        else if (components.singleSelected().isPresent() && ! selectedIdProvided) {
+            this.component = components.singleSelected().get();
         }
-        else if (components.size() > 1 && ! selectedIdProvided) {
-            this.component = failingComponentFactory.apply("Multiple " + name + "s are provided but no " + name +
-                                                           " id is given. " + "Valid " + name + "s are " +
-                                                           validComponents(components));
+        else if (! components.singleSelected().isPresent() && ! selectedIdProvided) {
+            this.component = components.failingComponent("Multiple " + name + "s are provided but no " + name +
+                                                         " id is given. " + "Valid " + name + "s are " +
+                                                         validComponents(components));
         }
-        else if ( ! components.containsKey(selectedId)) {
-            this.component = failingComponentFactory.apply("Can't find " + name + " '" + selectedId + "'. " +
-                                                           "Valid " + name + "s are " + validComponents(components));
+        else if ( ! components.contains(selectedId)) {
+            this.component = components.failingComponent("Can't find " + name + " '" + selectedId + "'. " +
+                                                         "Valid " + name + "s are " + validComponents(components));
         } else  {
             this.component = components.get(selectedId);
         }
@@ -60,9 +62,8 @@ public class SelectedComponent<TYPE> {
         return sb.toString();
     }
 
-    private String validComponents(Map<String, TYPE> components) {
-        List<String> componentIds = new ArrayList<>();
-        components.forEach((key, value) -> componentIds.add(key));
+    private String validComponents(Components<TYPE> components) {
+        List<String> componentIds = new ArrayList<>(components.ids());
         componentIds.sort(null);
         return String.join(", ", componentIds);
     }

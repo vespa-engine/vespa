@@ -8,6 +8,7 @@ import com.yahoo.language.Language;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -81,6 +82,10 @@ public interface FieldGenerator {
         @Override
         public int hashCode() {
             return getClass().getName().hashCode();
+        }
+
+        public static Function<String, FieldGenerator> factory() {
+            return FailingFieldGenerator::new;
         }
 
     }

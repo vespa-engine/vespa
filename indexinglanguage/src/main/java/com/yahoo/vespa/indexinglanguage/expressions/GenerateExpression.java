@@ -33,12 +33,12 @@ public class GenerateExpression extends Expression {
     private DataType targetType;
     
     public GenerateExpression(Linguistics linguistics,
-                              Map<String, FieldGenerator> generators,
+                              Components<FieldGenerator> generators,
                               String generatorId,
                               List<String> generatorArguments) {
         this.linguistics = linguistics;
         this.generator = new SelectedComponent<>("generator", generators, generatorId, true,
-                                                 generatorArguments, FieldGenerator.FailingFieldGenerator::new);
+                                                 generatorArguments);
     }
 
     @Override

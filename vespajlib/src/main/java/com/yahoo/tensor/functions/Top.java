@@ -12,6 +12,7 @@ import java.util.Objects;
 /**
  * Pick the top N cells in a mapped tensor, using cell_order and
  * filter_subspaces as primitives.
+ *
  * @author arnej
  */
 public class Top<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYPE> {
@@ -69,4 +70,5 @@ public class Top<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYPE
     public int hashCode() {
         return Objects.hash("top_n", n, input);
     }
+
 }

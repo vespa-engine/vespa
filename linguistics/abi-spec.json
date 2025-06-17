@@ -374,7 +374,8 @@
       "public void <init>(java.lang.String)",
       "public java.util.List chunk(java.lang.String, com.yahoo.language.process.Chunker$Context)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public static java.util.function.Function factory()"
     ],
     "fields" : [ ]
   },
@@ -426,7 +427,8 @@
       "public java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
       "public com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public static java.util.function.Function factory()"
     ],
     "fields" : [ ]
   },
@@ -491,7 +493,8 @@
       "public void <init>(java.lang.String)",
       "public com.yahoo.document.datatypes.FieldValue generate(ai.vespa.llm.completion.Prompt, com.yahoo.language.process.FieldGenerator$Context)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public static java.util.function.Function factory()"
     ],
     "fields" : [ ]
   },

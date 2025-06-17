@@ -33,10 +33,8 @@ public class ChunkExpression extends Expression  {
     /** The destination the chunks will be written to on the form [schema name].[field name] */
     private String destination;
 
-    public ChunkExpression(Map<String, Chunker> chunkers, String chunkerId,
-                           List<String> chunkerArguments) {
-        chunker = new SelectedComponent<>("chunker", chunkers, chunkerId, false,
-                                          chunkerArguments, Chunker.FailingChunker::new);
+    public ChunkExpression(Components<Chunker> chunkers, String chunkerId, List<String> chunkerArguments) {
+        chunker = new SelectedComponent<>("chunker", chunkers, chunkerId, false, chunkerArguments);
     }
 
     @Override

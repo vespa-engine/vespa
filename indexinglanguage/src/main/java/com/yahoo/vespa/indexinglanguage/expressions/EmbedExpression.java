@@ -35,11 +35,10 @@ public class EmbedExpression extends Expression  {
     /** The destination the embedding will be written to on the form [schema name].[field name] */
     private String destination;
 
-    public EmbedExpression(Linguistics linguistics, Map<String, Embedder> embedders, String embedderId, List<String> embedderArguments) {
+    public EmbedExpression(Linguistics linguistics, Components<Embedder> embedders, String embedderId, List<String> embedderArguments) {
         this.linguistics = linguistics;
         this.requestedEmbedderId = embedderId;
-        embedder = new SelectedComponent<>("embedder", embedders, embedderId, true, embedderArguments,
-                                           Embedder.FailingEmbedder::new);
+        embedder = new SelectedComponent<>("embedder", embedders, embedderId, true, embedderArguments);
     }
 
     /** @return the requested embedder id. This will diverge from the selected embedder's id when executed in config-model */
