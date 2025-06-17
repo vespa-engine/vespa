@@ -3,3 +3,5 @@
 
 Base library for generated cloud config classes.
 
+In a multi-version config server there will be just one version of this library, so any
+changes to the API or serialized data must be backwards compatible.
