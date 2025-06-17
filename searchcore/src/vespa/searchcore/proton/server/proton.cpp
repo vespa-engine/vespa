@@ -393,7 +393,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     LOG(debug, "Start proton server with root at %s and cwd at %s",
         protonConfig.basedir.c_str(), std::filesystem::current_path().string().c_str());
 
-    _persistenceEngine = std::make_unique<PersistenceEngine>(*this, _diskMemUsageSampler->writeFilter(),
+    _persistenceEngine = std::make_unique<PersistenceEngine>(*this, *_write_filter,
                                                              _diskMemUsageSampler->notifier(),
                                                              protonConfig.visit.defaultserializedsize,
                                                              protonConfig.visit.ignoremaxbytes);
@@ -812,7 +812,7 @@ Proton::ping(std::unique_ptr<MonitorRequest>, MonitorClient &)
         ret.activeDocs = 0;
         ret.targetActiveDocs = 0; // TODO vekterli hmm... or target anyway ...
     }
-    ret.is_blocking_writes = !_diskMemUsageSampler->writeFilter().acceptWriteOperation();
+    ret.is_blocking_writes = !_write_filter->acceptWriteOperation();
     return reply;
 }
 
@@ -864,7 +864,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
             metrics.transactionLog.update(tls->getDomainStats());
         }
 
-        const auto &usage_filter = _diskMemUsageSampler->writeFilter();
+        const auto &usage_filter = *_write_filter;
         const auto &usage_notifier = _diskMemUsageSampler->real_notifier();
         auto dm_metrics = usage_notifier.get_metrics();
         metrics.resourceUsage.disk.set(dm_metrics.non_transient_disk_usage());
