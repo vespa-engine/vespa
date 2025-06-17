@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/portal/http_request.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -18,119 +18,119 @@ void verify_simple_req(const HttpRequest &req) {
     EXPECT_TRUE(!req.need_more_data());
     EXPECT_TRUE(req.valid());
     EXPECT_TRUE(req.is_get());
-    EXPECT_EQUAL(req.get_uri(), "/my/path");
-    EXPECT_EQUAL(req.get_header("host"), "my.host.com:80");
-    EXPECT_EQUAL(req.get_header("customheader"), "CustomValue");
-    EXPECT_EQUAL(req.get_header("non-existing-header"), "");
+    EXPECT_EQ(req.get_uri(), "/my/path");
+    EXPECT_EQ(req.get_header("host"), "my.host.com:80");
+    EXPECT_EQ(req.get_header("customheader"), "CustomValue");
+    EXPECT_EQ(req.get_header("non-existing-header"), "");
 }
 
 HttpRequest make_request(const std::string &req) {
     HttpRequest result;
-    ASSERT_EQUAL(result.handle_data(req.data(), req.size()), req.size());
-    ASSERT_TRUE(result.valid());
+    EXPECT_EQ(result.handle_data(req.data(), req.size()), req.size());
+    EXPECT_TRUE(result.valid());
     return result;
 }
 
 void verify_invalid_request(const std::string &req) {
     HttpRequest result;
-    EXPECT_EQUAL(result.handle_data(req.data(), req.size()), req.size());
+    EXPECT_EQ(result.handle_data(req.data(), req.size()), req.size());
     EXPECT_TRUE(!result.need_more_data());
     EXPECT_TRUE(!result.valid());
 }
 
-TEST("require that request can be parsed in one go") {
+TEST(HttpRequestTest, require_that_request_can_be_parsed_in_one_go) {
     HttpRequest req;
-    EXPECT_EQUAL(req.handle_data(simple_req.data(), simple_req_size), simple_req_size);
-    TEST_DO(verify_simple_req(req));
+    EXPECT_EQ(req.handle_data(simple_req.data(), simple_req_size), simple_req_size);
+    GTEST_DO(verify_simple_req(req));
 }
 
-TEST("require that trailing data is not consumed") {
+TEST(HttpRequestTest, require_that_trailing_data_is_not_consumed) {
     HttpRequest req;
-    EXPECT_EQUAL(req.handle_data(simple_req.data(), simple_req.size()), simple_req_size);
-    TEST_DO(verify_simple_req(req));
+    EXPECT_EQ(req.handle_data(simple_req.data(), simple_req.size()), simple_req_size);
+    GTEST_DO(verify_simple_req(req));
 }
 
-TEST("require that request can be parsed incrementally") {
+TEST(HttpRequestTest, require_that_request_can_be_parsed_incrementally) {
     HttpRequest req;
     size_t chunk = 7;
     size_t done = 0;
     while (done < simple_req_size) {
         size_t expect = std::min(simple_req_size - done, chunk);
-        EXPECT_EQUAL(req.handle_data(simple_req.data() + done, chunk), expect);
+        EXPECT_EQ(req.handle_data(simple_req.data() + done, chunk), expect);
         done += expect;
     }
-    EXPECT_EQUAL(done, simple_req_size);
-    TEST_DO(verify_simple_req(req));
+    EXPECT_EQ(done, simple_req_size);
+    GTEST_DO(verify_simple_req(req));
 }
 
-TEST("require that header continuation is replaced by single space") {
+TEST(HttpRequestTest, require_that_header_continuation_is_replaced_by_single_space) {
     auto req = make_request("GET /my/path HTTP/1.1\r\n"
                             "test: one\r\n"
                             " two\r\n"
                             "\tthree\r\n"
                             "\r\n");
-    EXPECT_EQUAL(req.get_header("test"), "one two three");
+    EXPECT_EQ(req.get_header("test"), "one two three");
 }
 
-TEST("require that duplicate headers are combined as list") {
+TEST(HttpRequestTest, require_that_duplicate_headers_are_combined_as_list) {
     auto req = make_request("GET /my/path HTTP/1.1\r\n"
                             "test: one\r\n"
                             "test: two\r\n"
                             "test: three\r\n"
                             "\r\n");
-    EXPECT_EQUAL(req.get_header("test"), "one,two,three");
+    EXPECT_EQ(req.get_header("test"), "one,two,three");
 }
 
-TEST("require that leading and trailing whitespaces are stripped") {
+TEST(HttpRequestTest, require_that_leading_and_trailing_whitespaces_are_stripped) {
     auto req = make_request("GET /my/path HTTP/1.1\r\n"
                             "test:   one  \r\n"
                             "        , two  \r\n"
                             "test:   three   \r\n"
                             "\r\n");
-    EXPECT_EQUAL(req.get_header("test"), "one , two,three");
+    EXPECT_EQ(req.get_header("test"), "one , two,three");
 }
 
-TEST("require that non-GET requests are detected") {
+TEST(HttpRequestTest, require_that_non_GET_requests_are_detected) {
     auto req = make_request("POST /my/path HTTP/1.1\r\n"
                             "\r\n");
     EXPECT_TRUE(!req.is_get());
 }
 
-TEST("require that request line must contain all relevant parts") {
-    TEST_DO(verify_invalid_request("/my/path HTTP/1.1\r\n"));
-    TEST_DO(verify_invalid_request("GET HTTP/1.1\r\n"));
-    TEST_DO(verify_invalid_request("GET /my/path\r\n"));
+TEST(HttpRequestTest, require_that_request_line_must_contain_all_relevant_parts) {
+    GTEST_DO(verify_invalid_request("/my/path HTTP/1.1\r\n"));
+    GTEST_DO(verify_invalid_request("GET HTTP/1.1\r\n"));
+    GTEST_DO(verify_invalid_request("GET /my/path\r\n"));
 }
 
-TEST("require that first header line cannot be a continuation") {
-    TEST_DO(verify_invalid_request("GET /my/path HTTP/1.1\r\n"
+TEST(HttpRequestTest, require_that_first_header_line_cannot_be_a_continuation) {
+    GTEST_DO(verify_invalid_request("GET /my/path HTTP/1.1\r\n"
                                    " two\r\n"));
 }
 
-TEST("require that header name is not allowed to be empty") {
-    TEST_DO(verify_invalid_request("GET /my/path HTTP/1.1\r\n"
+TEST(HttpRequestTest, require_that_header_name_is_not_allowed_to_be_empty) {
+    GTEST_DO(verify_invalid_request("GET /my/path HTTP/1.1\r\n"
                                    ": value\r\n"));
 }
 
-TEST("require that header line must contain separator") {
-    TEST_DO(verify_invalid_request("GET /my/path HTTP/1.1\r\n"
+TEST(HttpRequestTest, require_that_header_line_must_contain_separator) {
+    GTEST_DO(verify_invalid_request("GET /my/path HTTP/1.1\r\n"
                                    "ok-header: ok-value\r\n"
                                    "missing separator\r\n"));
 }
 
-TEST("require that uri parameters can be parsed") {
+TEST(HttpRequestTest, require_that_uri_parameters_can_be_parsed) {
     auto req = make_request("GET /my/path?foo=bar&baz HTTP/1.1\r\n\r\n");
-    EXPECT_EQUAL(req.get_uri(), "/my/path?foo=bar&baz");
-    EXPECT_EQUAL(req.get_path(), "/my/path");
+    EXPECT_EQ(req.get_uri(), "/my/path?foo=bar&baz");
+    EXPECT_EQ(req.get_path(), "/my/path");
     EXPECT_TRUE(req.has_param("foo"));
     EXPECT_TRUE(!req.has_param("bar"));
     EXPECT_TRUE(req.has_param("baz"));
-    EXPECT_EQUAL(req.get_param("foo"), "bar");
-    EXPECT_EQUAL(req.get_param("bar"), "");
-    EXPECT_EQUAL(req.get_param("baz"), "");
+    EXPECT_EQ(req.get_param("foo"), "bar");
+    EXPECT_EQ(req.get_param("bar"), "");
+    EXPECT_EQ(req.get_param("baz"), "");
 }
 
-TEST("require that byte values in uri segments (path, key, value) are dequoted as expected") {
+TEST(HttpRequestTest, require_that_byte_values_in_uri_segments__path_key_value__are_dequoted_as_expected) {
     std::string str = "0123456789aBcDeF";
     for (size_t a = 0; a < 16; ++a) {
         for (size_t b = 0; b < 16; ++b) {
@@ -144,32 +144,32 @@ TEST("require that byte values in uri segments (path, key, value) are dequoted a
                     input.c_str(), input.c_str(), input.c_str());
             auto req = make_request(vespalib::make_string("GET %s HTTP/1.1\r\n\r\n",
                             uri.c_str()));
-            EXPECT_EQUAL(req.get_uri(), uri);
-            EXPECT_EQUAL(req.get_path(), expect);
+            EXPECT_EQ(req.get_uri(), uri);
+            EXPECT_EQ(req.get_path(), expect);
             EXPECT_TRUE(req.has_param(expect));
-            EXPECT_EQUAL(req.get_param(expect), expect);
+            EXPECT_EQ(req.get_param(expect), expect);
             EXPECT_TRUE(req.has_param("extra"));
-            EXPECT_EQUAL(req.get_param("extra"), "yes");
+            EXPECT_EQ(req.get_param("extra"), "yes");
         }
     }
 }
 
-TEST("require that percent character becomes plain if not followed by exactly 2 hex digits") {
+TEST(HttpRequestTest, require_that_percent_character_becomes_plain_if_not_followed_by_exactly_2_hex_digits) {
     auto req = make_request("GET %/5%5:%@5%5G%`5%5g%5?% HTTP/1.1\r\n\r\n");
-    EXPECT_EQUAL(req.get_path(), "%/5%5:%@5%5G%`5%5g%5");
+    EXPECT_EQ(req.get_path(), "%/5%5:%@5%5G%`5%5g%5");
     EXPECT_TRUE(req.has_param("%"));
 }
 
-TEST("require that last character of uri segments (path, key, value) can be quoted") {
+TEST(HttpRequestTest, require_that_last_character_of_uri_segments__path_key_value__can_be_quoted) {
     auto req = make_request("GET /%41?%42=%43 HTTP/1.1\r\n\r\n");
-    EXPECT_EQUAL(req.get_path(), "/A");
-    EXPECT_EQUAL(req.get_param("B"), "C");
+    EXPECT_EQ(req.get_path(), "/A");
+    EXPECT_EQ(req.get_param("B"), "C");
 }
 
-TEST("require that additional query and key/value separators are not special") {
+TEST(HttpRequestTest, require_that_additional_query_and_key_value_separators_are_not_special) {
     auto req = make_request("GET /?" "?== HTTP/1.1\r\n\r\n");
-    EXPECT_EQUAL(req.get_path(), "/");
-    EXPECT_EQUAL(req.get_param("?"), "=");
+    EXPECT_EQ(req.get_path(), "/");
+    EXPECT_EQ(req.get_param("?"), "=");
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

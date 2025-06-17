@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
@@ -20,6 +21,7 @@
 
 using namespace vespalib;
 using namespace vespalib::test;
+using vespalib::test::Nexus;
 
 struct SocketPair {
     SocketHandle client;
@@ -59,7 +61,7 @@ void drain(CryptoSocket &socket, SmartBuffer &buffer) {
             buffer.commit(res);
         }
     } while (res > 0);
-    ASSERT_EQUAL(res, 0);
+    ASSERT_EQ(res, 0);
 }
 
 void write(CryptoSocket &socket, SmartBuffer &buffer) {
@@ -90,7 +92,7 @@ void half_close(CryptoSocket &socket) {
 std::string read_bytes(CryptoSocket &socket, SmartBuffer &read_buffer, size_t wanted_bytes) {
     SingleFdSelector selector(socket.get_fd());
     while (read_buffer.obtain().size < wanted_bytes) {
-        ASSERT_TRUE(selector.wait_readable());
+        EXPECT_TRUE(selector.wait_readable());
         read(socket, read_buffer);
         drain(socket, read_buffer);
     }
@@ -103,7 +105,7 @@ std::string read_bytes(CryptoSocket &socket, SmartBuffer &read_buffer, size_t wa
 //-----------------------------------------------------------------------------
 
 void read_EOF(CryptoSocket &socket, SmartBuffer &read_buffer) {
-    ASSERT_EQUAL(read_buffer.obtain().size, 0u);
+    ASSERT_EQ(read_buffer.obtain().size, 0u);
     SingleFdSelector selector(socket.get_fd());
     ASSERT_TRUE(selector.wait_readable());
     size_t chunk_size = std::max(size_t(4_Ki), socket.min_read_buffer_size());
@@ -113,7 +115,7 @@ void read_EOF(CryptoSocket &socket, SmartBuffer &read_buffer) {
         ASSERT_TRUE(selector.wait_readable());
         res = socket.read(chunk.data, chunk.size);
     }
-    ASSERT_EQUAL(res, 0);
+    ASSERT_EQ(res, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -141,22 +143,22 @@ void write_EOF(CryptoSocket &socket) {
         ASSERT_TRUE(selector.wait_writable());
         res = socket.half_close();
     }
-    ASSERT_EQUAL(res, 0);
+    ASSERT_EQ(res, 0);
 }
 
 //-----------------------------------------------------------------------------
 
 void verify_graceful_shutdown(CryptoSocket &socket, SmartBuffer &read_buffer, bool is_server) {
     if(is_server) {
-        TEST_DO(write_EOF(socket));
-        TEST_DO(read_EOF(socket, read_buffer));
-        TEST_DO(read_EOF(socket, read_buffer));
-        TEST_DO(read_EOF(socket, read_buffer));
+        GTEST_DO(write_EOF(socket));
+        GTEST_DO(read_EOF(socket, read_buffer));
+        GTEST_DO(read_EOF(socket, read_buffer));
+        GTEST_DO(read_EOF(socket, read_buffer));
     } else {
-        TEST_DO(read_EOF(socket, read_buffer));
-        TEST_DO(read_EOF(socket, read_buffer));
-        TEST_DO(read_EOF(socket, read_buffer));
-        TEST_DO(write_EOF(socket));
+        GTEST_DO(read_EOF(socket, read_buffer));
+        GTEST_DO(read_EOF(socket, read_buffer));
+        GTEST_DO(read_EOF(socket, read_buffer));
+        GTEST_DO(write_EOF(socket));
     }
 }
 
@@ -168,11 +170,11 @@ void verify_socket_io(CryptoSocket &socket, SmartBuffer &read_buffer, bool is_se
     if(is_server) {
         std::string read = read_bytes(socket, read_buffer, client_message.size());
         write_bytes(socket, server_message);
-        EXPECT_EQUAL(client_message, read);
+        EXPECT_EQ(client_message, read);
     } else {
         write_bytes(socket, client_message);
         std::string read = read_bytes(socket, read_buffer, server_message.size());
-        EXPECT_EQUAL(server_message, read);
+        EXPECT_EQ(server_message, read);
     }
 }
 
@@ -203,43 +205,44 @@ void verify_handshake(CryptoSocket &socket) {
 
 //-----------------------------------------------------------------------------
 
-void verify_crypto_socket(SocketPair &sockets, CryptoEngine &engine, bool is_server) {
-    SocketHandle &my_handle = is_server ? sockets.server : sockets.client;
-    my_handle.set_blocking(false);
-    SmartBuffer read_buffer(4_Ki);
-    CryptoSocket::UP my_socket = is_server
-                                 ? engine.create_server_crypto_socket(std::move(my_handle))
-                                 : engine.create_client_crypto_socket(std::move(my_handle), make_local_spec());
-    TEST_DO(verify_handshake(*my_socket));
-    drain(*my_socket, read_buffer);
-    TEST_DO(verify_socket_io(*my_socket, read_buffer, is_server));
-    TEST_DO(verify_graceful_shutdown(*my_socket, read_buffer, is_server));
+using MyParams = std::tuple<std::string, std::function<std::unique_ptr<CryptoEngine>()>>;
+struct CryptoSocketFixture : ::testing::TestWithParam<MyParams> {};
+
+TEST_P(CryptoSocketFixture, verify_async_crypto_socket) {
+    size_t num_threads = 2;
+    SocketPair sockets;
+    auto [name, factory] = GetParam();
+    auto engine = factory();
+    TimeBomb time_bomb(60);
+    auto task = [&](Nexus &ctx){
+                    bool is_server = (ctx.thread_id() == 0);
+                    SocketHandle &my_handle = is_server ? sockets.server : sockets.client;
+                    my_handle.set_blocking(false);
+                    SmartBuffer read_buffer(4_Ki);
+                    CryptoSocket::UP my_socket = is_server
+                        ? engine->create_server_crypto_socket(std::move(my_handle))
+                        : engine->create_client_crypto_socket(std::move(my_handle), make_local_spec());
+                    GTEST_DO(verify_handshake(*my_socket));
+                    drain(*my_socket, read_buffer);
+                    GTEST_DO(verify_socket_io(*my_socket, read_buffer, is_server));
+                    GTEST_DO(verify_graceful_shutdown(*my_socket, read_buffer, is_server));
+                };
+    Nexus::run(num_threads, task);
 }
 
-//-----------------------------------------------------------------------------
+INSTANTIATE_TEST_SUITE_P(
+    CryptoSocketTest,
+    CryptoSocketFixture,
+    ::testing::Values(
+        MyParams{"NullCryptoEngine",
+                 [](){ return std::make_unique<NullCryptoEngine>(); }},
+        MyParams{"TlsCryptoEngine",
+                 [](){ return std::make_unique<TlsCryptoEngine>(make_tls_options_for_testing()); }},
+        MyParams{"MaybeTlsCryptoEngine__false",
+                 [](){ return std::make_unique<MaybeTlsCryptoEngine>(std::make_shared<TlsCryptoEngine>(make_tls_options_for_testing()), false); }},
+        MyParams{"MaybeTlsCryptoEngine__true",
+                 [](){ return std::make_unique<MaybeTlsCryptoEngine>(std::make_shared<TlsCryptoEngine>(make_tls_options_for_testing()), true); }}),
+        [](const testing::TestParamInfo<MyParams>& my_info) { return std::get<0>(my_info.param); }
+);
 
-TEST_MT_FFF("require that encrypted async socket io works with NullCryptoEngine",
-            2, SocketPair(), NullCryptoEngine(), TimeBomb(60))
-{
-    TEST_DO(verify_crypto_socket(f1, f2, (thread_id == 0)));
-}
-
-TEST_MT_FFF("require that encrypted async socket io works with TlsCryptoEngine",
-            2, SocketPair(), TlsCryptoEngine(make_tls_options_for_testing()), TimeBomb(60))
-{
-    TEST_DO(verify_crypto_socket(f1, f2, (thread_id == 0)));
-}
-
-TEST_MT_FFF("require that encrypted async socket io works with MaybeTlsCryptoEngine(true)",
-            2, SocketPair(), MaybeTlsCryptoEngine(std::make_shared<TlsCryptoEngine>(make_tls_options_for_testing()), true), TimeBomb(60))
-{
-    TEST_DO(verify_crypto_socket(f1, f2, (thread_id == 0)));
-}
-
-TEST_MT_FFF("require that encrypted async socket io works with MaybeTlsCryptoEngine(false)",
-            2, SocketPair(), MaybeTlsCryptoEngine(std::make_shared<TlsCryptoEngine>(make_tls_options_for_testing()), false), TimeBomb(60))
-{
-    TEST_DO(verify_crypto_socket(f1, f2, (thread_id == 0)));
-}
-
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

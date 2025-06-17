@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_threadstackexecutor_test_app TEST
     threadstackexecutor_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_threadstackexecutor_test_app COMMAND vespalib_threadstackexecutor_test_app)
 vespa_add_executable(vespalib_executor_test_app TEST
@@ -11,6 +12,7 @@ vespa_add_executable(vespalib_executor_test_app TEST
     executor_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_executor_test_app COMMAND vespalib_executor_test_app)
 vespa_add_executable(vespalib_stress_test_app
@@ -25,6 +27,7 @@ vespa_add_executable(vespalib_blockingthreadstackexecutor_test_app TEST
     blockingthreadstackexecutor_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_blockingthreadstackexecutor_test_app COMMAND vespalib_blockingthreadstackexecutor_test_app)
 vespa_add_executable(vespalib_blocking_executor_stress_test_app TEST
@@ -32,5 +35,6 @@ vespa_add_executable(vespalib_blocking_executor_stress_test_app TEST
     blocking_executor_stress.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_blocking_executor_stress_test_app COMMAND vespalib_blocking_executor_stress_test_app)

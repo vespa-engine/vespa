@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_handle_manager_test_app TEST
     handle_manager_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_handle_manager_test_app COMMAND vespalib_handle_manager_test_app)
