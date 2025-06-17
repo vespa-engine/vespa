@@ -4,5 +4,6 @@ vespa_add_executable(eval_llvm_stress_test_app TEST
     llvm_stress_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_llvm_stress_test_app NO_VALGRIND COMMAND eval_llvm_stress_test_app)

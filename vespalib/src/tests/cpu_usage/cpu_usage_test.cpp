@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/test/thread_meets.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <sys/resource.h>
 #include <thread>
@@ -55,64 +56,71 @@ std::vector<duration> sample(const std::vector<Sampler*> &list) {
 
 //-----------------------------------------------------------------------------
 
-void verify_sampling(size_t thread_id, size_t num_threads, std::vector<Sampler*> &samplers, bool force_mock) {
-    if (thread_id == 0) {
-        TEST_BARRIER(); // #1
-        auto t0 = steady_clock::now();
-        std::vector<duration> pre_usage = sample(samplers);
-        auto pre_total = cpu_usage::total_cpu_usage();
-        TEST_BARRIER(); // #2
-        TEST_BARRIER(); // #3
-        auto t1 = steady_clock::now();
-        std::vector<duration> post_usage = sample(samplers);
-        auto post_total = cpu_usage::total_cpu_usage();
-        TEST_BARRIER(); // #4
-        double wall = to_s(t1 - t0);
-        std::vector<double> util(4, 0.0);
-        for (size_t i = 0; i < 4; ++i) {
-            util[i] = to_s(post_usage[i] - pre_usage[i]) / wall;
-        }
-        double total_util = to_s(post_total - pre_total) / wall;
-        EXPECT_GREATER(util[3], util[0]);
-        // NB: cannot expect total_util to be greater than util[3]
-        // here due to mock utils being 'as expected' while valgrind
-        // will cut all utils in about half.
-        EXPECT_GREATER(total_util, util[0]);
-        fprintf(stderr, "utils: { %.3f, %.3f, %.3f, %.3f }\n", util[0], util[1], util[2], util[3]);
-        fprintf(stderr, "total util: %.3f\n", total_util);
-    } else {
-        int idx = (thread_id - 1);
-        double target_util = double(thread_id - 1) / (num_threads - 2);
-        auto sampler = cpu_usage::create_thread_sampler(force_mock, target_util);
-        samplers[idx] = sampler.get();
-        TEST_BARRIER(); // #1
-        TEST_BARRIER(); // #2
-        for (size_t i = 0; i < loop_cnt; ++i) {
-            be_busy(std::chrono::milliseconds(idx));
-        }
-        TEST_BARRIER(); // #3
-        TEST_BARRIER(); // #4
-    }
+struct CpuSamplingTest : ::testing::TestWithParam<bool> {};
+
+TEST_P(CpuSamplingTest, verify_sampling) {
+    size_t num_threads = 5;
+    bool force_mock = GetParam();
+    std::vector<Sampler*> samplers(num_threads - 1, nullptr);
+    auto task = [&](Nexus &ctx){
+                    auto thread_id = ctx.thread_id();
+                    if (thread_id == 0) {
+                        ctx.barrier(); // #1
+                        auto t0 = steady_clock::now();
+                        std::vector<duration> pre_usage = sample(samplers);
+                        auto pre_total = cpu_usage::total_cpu_usage();
+                        ctx.barrier(); // #2
+                        ctx.barrier(); // #3
+                        auto t1 = steady_clock::now();
+                        std::vector<duration> post_usage = sample(samplers);
+                        auto post_total = cpu_usage::total_cpu_usage();
+                        ctx.barrier(); // #4
+                        double wall = to_s(t1 - t0);
+                        std::vector<double> util(4, 0.0);
+                        for (size_t i = 0; i < 4; ++i) {
+                            util[i] = to_s(post_usage[i] - pre_usage[i]) / wall;
+                        }
+                        double total_util = to_s(post_total - pre_total) / wall;
+                        EXPECT_GT(util[3], util[0]);
+                        // NB: cannot expect total_util to be greater than util[3]
+                        // here due to mock utils being 'as expected' while valgrind
+                        // will cut all utils in about half.
+                        EXPECT_GT(total_util, util[0]);
+                        fprintf(stderr, "utils: { %.3f, %.3f, %.3f, %.3f }\n", util[0], util[1], util[2], util[3]);
+                        fprintf(stderr, "total util: %.3f\n", total_util);
+                    } else {
+                        int idx = (thread_id - 1);
+                        double target_util = double(thread_id - 1) / (num_threads - 2);
+                        auto sampler = cpu_usage::create_thread_sampler(force_mock, target_util);
+                        samplers[idx] = sampler.get();
+                        ctx.barrier(); // #1
+                        ctx.barrier(); // #2
+                        for (size_t i = 0; i < loop_cnt; ++i) {
+                            be_busy(std::chrono::milliseconds(idx));
+                        }
+                        ctx.barrier(); // #3
+                        ctx.barrier(); // #4
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
+
+INSTANTIATE_TEST_SUITE_P(, CpuSamplingTest,
+                         ::testing::Values(true, false),
+                         [](const ::testing::TestParamInfo<bool> &pi) {
+                             return pi.param ? "force_mock" : "no_mock";
+                         });
 
 //-----------------------------------------------------------------------------
 
-TEST_MT_F("require that dummy thread-based CPU usage sampling with known expected util works", 5, std::vector<Sampler*>(4, nullptr)) {
-    TEST_DO(verify_sampling(thread_id, num_threads, f1, true));
-}
-
-TEST_MT_F("require that external thread-based CPU usage sampling works", 5, std::vector<Sampler*>(4, nullptr)) {
-    TEST_DO(verify_sampling(thread_id, num_threads, f1, false));
-}
-
-TEST("measure thread CPU clock overhead") {
+TEST(CpuUsageTest, measure_thread_CPU_clock_overhead) {
     auto sampler = cpu_usage::create_thread_sampler();
     duration d;
     double min_time_us = BenchmarkTimer::benchmark([&d, &sampler]() noexcept { d = sampler->sample(); }, budget) * 1000000.0;
     fprintf(stderr, "approx overhead per sample (thread CPU clock): %f us\n", min_time_us);
 }
 
-TEST("measure total cpu usage overhead") {
+TEST(CpuUsageTest, measure_total_cpu_usage_overhead) {
     duration d;
     double min_time_us = BenchmarkTimer::benchmark([&d]() noexcept { d = cpu_usage::total_cpu_usage(); }, budget) * 1000000.0;
     fprintf(stderr, "approx overhead per RUsage sample: %f us\n", min_time_us);
@@ -127,29 +135,29 @@ void verify_category(CpuUsage::Category cat, size_t idx, const std::string &name
     case CpuUsage::Category::WRITE:
     case CpuUsage::Category::COMPACT:
     case CpuUsage::Category::OTHER:
-        EXPECT_EQUAL(CpuUsage::index_of(cat), idx);
-        EXPECT_EQUAL(CpuUsage::name_of(cat), name);
+        EXPECT_EQ(CpuUsage::index_of(cat), idx);
+        EXPECT_EQ(CpuUsage::name_of(cat), name);
     }
 }
 
-TEST("require that CPU categories are as expected") {
-    TEST_DO(verify_category(CpuUsage::Category::SETUP,   0u, "setup"));
-    TEST_DO(verify_category(CpuUsage::Category::READ,    1u, "read"));
-    TEST_DO(verify_category(CpuUsage::Category::WRITE,   2u, "write"));
-    TEST_DO(verify_category(CpuUsage::Category::COMPACT, 3u, "compact"));
-    TEST_DO(verify_category(CpuUsage::Category::OTHER,   4u, "other"));
-    EXPECT_EQUAL(CpuUsage::num_categories, 5u);
+TEST(CpuUsageTest, require_that_CPU_categories_are_as_expected) {
+    GTEST_DO(verify_category(CpuUsage::Category::SETUP,   0u, "setup"));
+    GTEST_DO(verify_category(CpuUsage::Category::READ,    1u, "read"));
+    GTEST_DO(verify_category(CpuUsage::Category::WRITE,   2u, "write"));
+    GTEST_DO(verify_category(CpuUsage::Category::COMPACT, 3u, "compact"));
+    GTEST_DO(verify_category(CpuUsage::Category::OTHER,   4u, "other"));
+    EXPECT_EQ(CpuUsage::num_categories, 5u);
 }
 
-TEST("require that empty sample is zero") {
+TEST(CpuUsageTest, require_that_empty_sample_is_zero) {
     CpuUsage::Sample sample;
-    EXPECT_EQUAL(sample.size(), CpuUsage::num_categories);
+    EXPECT_EQ(sample.size(), CpuUsage::num_categories);
     for (uint32_t i = 0; i < sample.size(); ++i) {
-        EXPECT_EQUAL(sample[i].count(), 0);
+        EXPECT_EQ(sample[i].count(), 0);
     }
 }
 
-TEST("require that cpu samples can be manipulated and inspected") {
+TEST(CpuUsageTest, require_that_cpu_samples_can_be_manipulated_and_inspected) {
     CpuUsage::Sample a;
     CpuUsage::Sample b;
     const CpuUsage::Sample &c = a;
@@ -163,13 +171,13 @@ TEST("require that cpu samples can be manipulated and inspected") {
     }
     a.merge(b);
     for (uint32_t i = 0; i < c.size(); ++i) {
-        EXPECT_EQUAL(c[i], 11ms * (i + 1));
+        EXPECT_EQ(c[i], 11ms * (i + 1));
     }
-    EXPECT_EQUAL(c[CpuUsage::Category::SETUP],    11ms);
-    EXPECT_EQUAL(c[CpuUsage::Category::READ],     22ms);
-    EXPECT_EQUAL(c[CpuUsage::Category::WRITE],    33ms);
-    EXPECT_EQUAL(c[CpuUsage::Category::COMPACT],  44ms);
-    EXPECT_EQUAL(c[CpuUsage::Category::OTHER],    55ms);
+    EXPECT_EQ(c[CpuUsage::Category::SETUP],    11ms);
+    EXPECT_EQ(c[CpuUsage::Category::READ],     22ms);
+    EXPECT_EQ(c[CpuUsage::Category::WRITE],    33ms);
+    EXPECT_EQ(c[CpuUsage::Category::COMPACT],  44ms);
+    EXPECT_EQ(c[CpuUsage::Category::OTHER],    55ms);
 }
 
 //-----------------------------------------------------------------------------
@@ -249,7 +257,7 @@ struct CpuUsage::Test {
             for (auto &simple: simple_list) {
                 my_usage.remove_thread(std::move(simple));
             }
-            ASSERT_EQUAL(count_threads(), 0u);
+            EXPECT_EQ(count_threads(), 0u);
         }
     };
     struct TrackerImpl {
@@ -261,83 +269,92 @@ struct CpuUsage::Test {
     };
 };
 
-TEST_F("require that CpuUsage sample calls sample on thread trackers", CpuUsage::Test::Fixture()) {
+TEST(CpuUsageTest, require_that_CpuUsage_sample_calls_sample_on_thread_trackers) {
+    CpuUsage::Test::Fixture f1;
     CpuUsage::Sample sample;
     sample[CpuUsage::Category::READ] = 10ms;
     f1.add_simple(sample);
     f1.add_simple(sample);
     f1.add_simple(sample);
-    EXPECT_EQUAL(f1.count_threads(), 3u);
+    EXPECT_EQ(f1.count_threads(), 3u);
     auto result = f1.sample();
-    EXPECT_EQUAL(result.second[CpuUsage::Category::READ], duration(30ms));
-    EXPECT_EQUAL(f1.count_simple_samples(), 3u);
+    EXPECT_EQ(result.second[CpuUsage::Category::READ], duration(30ms));
+    EXPECT_EQ(f1.count_simple_samples(), 3u);
     result = f1.sample();
-    EXPECT_EQUAL(result.second[CpuUsage::Category::READ], duration(60ms));
-    EXPECT_EQUAL(f1.count_simple_samples(), 6u);
+    EXPECT_EQ(result.second[CpuUsage::Category::READ], duration(60ms));
+    EXPECT_EQ(f1.count_simple_samples(), 6u);
 }
 
-TEST_F("require that threads added and removed between CpuUsage sample calls are tracked", CpuUsage::Test::Fixture()) {
+TEST(CpuUsageTest, require_that_threads_added_and_removed_between_CpuUsage_sample_calls_are_tracked) {
+    CpuUsage::Test::Fixture f1;
     CpuUsage::Sample sample;
     sample[CpuUsage::Category::READ] = 10ms;
     auto result = f1.sample();
-    EXPECT_EQUAL(result.second[CpuUsage::Category::READ], duration(0ms));
+    EXPECT_EQ(result.second[CpuUsage::Category::READ], duration(0ms));
     f1.add_remove_simple(sample);
     f1.add_remove_simple(sample);
     f1.add_remove_simple(sample);
-    EXPECT_EQUAL(f1.count_threads(), 0u);
+    EXPECT_EQ(f1.count_threads(), 0u);
     result = f1.sample();
-    EXPECT_EQUAL(result.second[CpuUsage::Category::READ], duration(30ms));
+    EXPECT_EQ(result.second[CpuUsage::Category::READ], duration(30ms));
     result = f1.sample();
-    EXPECT_EQUAL(result.second[CpuUsage::Category::READ], duration(30ms));
+    EXPECT_EQ(result.second[CpuUsage::Category::READ], duration(30ms));
 }
 
-TEST_MT_FF("require that sample conflicts are resolved correctly", 5, CpuUsage::Test::Fixture(), std::vector<CpuUsage::TimedSample>(num_threads - 1)) {
-    if (thread_id == 0) {
-        CpuUsage::Sample s1;
-        s1[CpuUsage::Category::SETUP] = 10ms;
-        CpuUsage::Sample s2;
-        s2[CpuUsage::Category::READ] = 20ms;
-        CpuUsage::Sample s3;
-        s3[CpuUsage::Category::WRITE] = 30ms;
-        CpuUsage::Sample s4;
-        s4[CpuUsage::Category::COMPACT] = 40ms;
-        f1.add_blocking();
-        f1.add_simple(s1); // should be sampled
-        EXPECT_TRUE(!f1.is_sampling());
-        EXPECT_EQUAL(f1.count_conflicts(), 0u);
-        TEST_BARRIER(); // #1
-        f1.blocking->sync_entry();
-        EXPECT_TRUE(f1.is_sampling());
-        while (f1.count_conflicts() < (num_threads - 2)) {
-            // wait for appropriate number of conflicts
-            std::this_thread::sleep_for(1ms);
-        }
-        f1.add_simple(s2); // should NOT be sampled (pending add)
-        f1.add_remove_simple(s3); // should be sampled (pending remove);
-        EXPECT_EQUAL(f1.count_threads(), 2u);
-        EXPECT_TRUE(f1.is_sampling());
-        EXPECT_EQUAL(f1.count_conflicts(), (num_threads - 2));
-        f1.blocking->swap_sample(s4);
-        TEST_BARRIER(); // #2
-        EXPECT_TRUE(!f1.is_sampling());
-        EXPECT_EQUAL(f1.count_conflicts(), 0u);
-        EXPECT_EQUAL(f1.count_threads(), 3u);
-        EXPECT_EQUAL(f2[0].second[CpuUsage::Category::SETUP],   duration(10ms));
-        EXPECT_EQUAL(f2[0].second[CpuUsage::Category::READ],    duration(0ms));
-        EXPECT_EQUAL(f2[0].second[CpuUsage::Category::WRITE],   duration(30ms));
-        EXPECT_EQUAL(f2[0].second[CpuUsage::Category::COMPACT], duration(40ms));
-        for (size_t i = 1; i < (num_threads - 1); ++i) {
-            EXPECT_EQUAL(f2[i].first, f2[0].first);
-            EXPECT_EQUAL(f2[i].second[CpuUsage::Category::SETUP],   f2[0].second[CpuUsage::Category::SETUP]);
-            EXPECT_EQUAL(f2[i].second[CpuUsage::Category::READ],    f2[0].second[CpuUsage::Category::READ]);
-            EXPECT_EQUAL(f2[i].second[CpuUsage::Category::WRITE],   f2[0].second[CpuUsage::Category::WRITE]);
-            EXPECT_EQUAL(f2[i].second[CpuUsage::Category::COMPACT], f2[0].second[CpuUsage::Category::COMPACT]);
-        }
-    } else {
-        TEST_BARRIER(); // #1
-        f2[thread_id - 1] = f1.sample();
-        TEST_BARRIER(); // #2
-    }
+TEST(CpuUsageTest, require_that_sample_conflicts_are_resolved_correctly) {
+    size_t num_threads = 5;
+    CpuUsage::Test::Fixture f1;
+    std::vector<CpuUsage::TimedSample> f2(num_threads - 1);
+    auto task = [&](Nexus &ctx){
+                    auto thread_id = ctx.thread_id();
+                    if (thread_id == 0) {
+                        CpuUsage::Sample s1;
+                        s1[CpuUsage::Category::SETUP] = 10ms;
+                        CpuUsage::Sample s2;
+                        s2[CpuUsage::Category::READ] = 20ms;
+                        CpuUsage::Sample s3;
+                        s3[CpuUsage::Category::WRITE] = 30ms;
+                        CpuUsage::Sample s4;
+                        s4[CpuUsage::Category::COMPACT] = 40ms;
+                        f1.add_blocking();
+                        f1.add_simple(s1); // should be sampled
+                        EXPECT_TRUE(!f1.is_sampling());
+                        EXPECT_EQ(f1.count_conflicts(), 0u);
+                        ctx.barrier(); // #1
+                        f1.blocking->sync_entry();
+                        EXPECT_TRUE(f1.is_sampling());
+                        while (f1.count_conflicts() < (num_threads - 2)) {
+                            // wait for appropriate number of conflicts
+                            std::this_thread::sleep_for(1ms);
+                        }
+                        f1.add_simple(s2); // should NOT be sampled (pending add)
+                        f1.add_remove_simple(s3); // should be sampled (pending remove);
+                        EXPECT_EQ(f1.count_threads(), 2u);
+                        EXPECT_TRUE(f1.is_sampling());
+                        EXPECT_EQ(f1.count_conflicts(), (num_threads - 2));
+                        f1.blocking->swap_sample(s4);
+                        ctx.barrier(); // #2
+                        EXPECT_TRUE(!f1.is_sampling());
+                        EXPECT_EQ(f1.count_conflicts(), 0u);
+                        EXPECT_EQ(f1.count_threads(), 3u);
+                        EXPECT_EQ(f2[0].second[CpuUsage::Category::SETUP],   duration(10ms));
+                        EXPECT_EQ(f2[0].second[CpuUsage::Category::READ],    duration(0ms));
+                        EXPECT_EQ(f2[0].second[CpuUsage::Category::WRITE],   duration(30ms));
+                        EXPECT_EQ(f2[0].second[CpuUsage::Category::COMPACT], duration(40ms));
+                        for (size_t i = 1; i < (num_threads - 1); ++i) {
+                            EXPECT_EQ(f2[i].first, f2[0].first);
+                            EXPECT_EQ(f2[i].second[CpuUsage::Category::SETUP],   f2[0].second[CpuUsage::Category::SETUP]);
+                            EXPECT_EQ(f2[i].second[CpuUsage::Category::READ],    f2[0].second[CpuUsage::Category::READ]);
+                            EXPECT_EQ(f2[i].second[CpuUsage::Category::WRITE],   f2[0].second[CpuUsage::Category::WRITE]);
+                            EXPECT_EQ(f2[i].second[CpuUsage::Category::COMPACT], f2[0].second[CpuUsage::Category::COMPACT]);
+                        }
+                    } else {
+                        ctx.barrier(); // #1
+                        f2[thread_id - 1] = f1.sample();
+                        ctx.barrier(); // #2
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
 //-----------------------------------------------------------------------------
@@ -348,7 +365,7 @@ struct DummySampler : public cpu_usage::ThreadSampler {
     duration sample() const noexcept override { return ref; }
 };
 
-TEST("require that thread tracker implementation can track cpu use") {
+TEST(CpuUsageTest, require_that_thread_tracker_implementation_can_track_cpu_use) {
     duration t = duration::zero();
     CpuUsage::Test::TrackerImpl tracker(std::make_unique<DummySampler>(t));
     t += 10ms;
@@ -357,30 +374,30 @@ TEST("require that thread tracker implementation can track cpu use") {
     tracker.set_category(CpuUsage::Category::READ);
     t += 10ms;
     auto sample = tracker.sample();
-    EXPECT_EQUAL(sample[CpuUsage::Category::SETUP], duration(15ms));
-    EXPECT_EQUAL(sample[CpuUsage::Category::READ],  duration(10ms));
-    EXPECT_EQUAL(sample[CpuUsage::Category::WRITE], duration(0ms));
+    EXPECT_EQ(sample[CpuUsage::Category::SETUP], duration(15ms));
+    EXPECT_EQ(sample[CpuUsage::Category::READ],  duration(10ms));
+    EXPECT_EQ(sample[CpuUsage::Category::WRITE], duration(0ms));
     t += 15ms;
     tracker.set_category(CpuUsage::Category::WRITE);
     t += 10ms;
     sample = tracker.sample();
-    EXPECT_EQUAL(sample[CpuUsage::Category::SETUP], duration(0ms));
-    EXPECT_EQUAL(sample[CpuUsage::Category::READ],  duration(15ms));
-    EXPECT_EQUAL(sample[CpuUsage::Category::WRITE], duration(10ms));
+    EXPECT_EQ(sample[CpuUsage::Category::SETUP], duration(0ms));
+    EXPECT_EQ(sample[CpuUsage::Category::READ],  duration(15ms));
+    EXPECT_EQ(sample[CpuUsage::Category::WRITE], duration(10ms));
 }
 
-TEST("require that thread tracker implementation reports previous CPU category") {
+TEST(CpuUsageTest, require_that_thread_tracker_implementation_reports_previous_CPU_category) {
     duration t = duration::zero();
     CpuUsage::Test::TrackerImpl tracker(std::make_unique<DummySampler>(t));
-    EXPECT_EQUAL(CpuUsage::index_of(CpuUsage::Category::OTHER),
+    EXPECT_EQ(CpuUsage::index_of(CpuUsage::Category::OTHER),
                  CpuUsage::index_of(tracker.set_category(CpuUsage::Category::SETUP)));
-    EXPECT_EQUAL(CpuUsage::index_of(CpuUsage::Category::SETUP),
+    EXPECT_EQ(CpuUsage::index_of(CpuUsage::Category::SETUP),
                  CpuUsage::index_of(tracker.set_category(CpuUsage::Category::READ)));
-    EXPECT_EQUAL(CpuUsage::index_of(CpuUsage::Category::READ),
+    EXPECT_EQ(CpuUsage::index_of(CpuUsage::Category::READ),
                  CpuUsage::index_of(tracker.set_category(CpuUsage::Category::READ)));
 }
 
-TEST("require that thread tracker implementation does not track OTHER cpu use") {
+TEST(CpuUsageTest, require_that_thread_tracker_implementation_does_not_track_OTHER_cpu_use) {
     duration t = duration::zero();
     CpuUsage::Test::TrackerImpl tracker(std::make_unique<DummySampler>(t));
     t += 10ms;
@@ -390,8 +407,8 @@ TEST("require that thread tracker implementation does not track OTHER cpu use") 
     tracker.set_category(CpuUsage::Category::OTHER);
     t += 15ms;
     auto sample = tracker.sample();
-    EXPECT_EQUAL(sample[CpuUsage::Category::READ],  duration(0ms));
-    EXPECT_EQUAL(sample[CpuUsage::Category::OTHER], duration(0ms));
+    EXPECT_EQ(sample[CpuUsage::Category::READ],  duration(0ms));
+    EXPECT_EQ(sample[CpuUsage::Category::OTHER], duration(0ms));
 }
 
 //-----------------------------------------------------------------------------
@@ -448,26 +465,30 @@ void do_external_work(CpuUsage::Category cat, const EndTime &end_time) {
     }
 }
 
-TEST_MT_F("use top-level API to sample CPU usage", 5, EndTime(verbose ? 10s : 100ms)) {
-    switch (thread_id) {
-    case 0: return do_sample_cpu_usage(f1);
-    case 1: return do_full_work(CpuUsage::Category::WRITE, f1);
-    case 2: return do_some_work(CpuUsage::Category::READ, f1);
-    case 3: return do_nested_work(CpuUsage::Category::OTHER, CpuUsage::Category::READ, f1);
-    case 4: return do_external_work(CpuUsage::Category::COMPACT, f1);
-    default: TEST_FATAL("missing thread id case");
-    }
+TEST(CpuUsageTest, use_top_level_API_to_sample_CPU_usage) {
+    size_t num_threads = 5;
+    EndTime f1(verbose ? 10s : 100ms);
+    auto task = [&](Nexus &ctx){
+                    switch (ctx.thread_id()) {
+                    case 0: return do_sample_cpu_usage(f1);
+                    case 1: return do_full_work(CpuUsage::Category::WRITE, f1);
+                    case 2: return do_some_work(CpuUsage::Category::READ, f1);
+                    case 3: return do_nested_work(CpuUsage::Category::OTHER, CpuUsage::Category::READ, f1);
+                    case 4: return do_external_work(CpuUsage::Category::COMPACT, f1);
+                    default: FAIL() << "missing thread id case";
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
 //-----------------------------------------------------------------------------
 
-int main(int argc, char **argv) {
-    TEST_MASTER.init(__FILE__);
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
     if ((argc == 2) && (argv[1] == std::string("verbose"))) {
         verbose = true;
         loop_cnt = 1000;
         budget = 5.0;
     }
-    TEST_RUN_ALL();
-    return (TEST_MASTER.fini() ? 0 : 1);
+    return RUN_ALL_TESTS();
 }

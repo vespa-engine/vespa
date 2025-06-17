@@ -4,11 +4,14 @@
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/classname.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
 #include <array>
 
 using namespace vespalib;
 using namespace vespalib::atomic;
+using vespalib::test::Nexus;
 
 bool verbose = false;
 double budget = 0.25;
@@ -66,30 +69,31 @@ template <typename T> void  basic_usage() {
 
 //-----------------------------------------------------------------------------
 
-template <typename T> size_t thread_safety_loop(T &lock, MyState &state, size_t thread_id, size_t thread_limit) {
+template <typename T> size_t thread_safety_loop(Nexus &ctx, T &lock, MyState &state, size_t thread_limit) {
+    auto thread_id = ctx.thread_id();
     size_t loop_cnt = (thread_safety_work / thread_limit);
-    TEST_BARRIER();
+    ctx.barrier();
     auto t0 = steady_clock::now();
-    TEST_BARRIER();
+    ctx.barrier();
     if (thread_id < thread_limit) {
         for (size_t i = 0; i < loop_cnt; ++i) {
             std::lock_guard guard(lock);
             state.update();
         }
     }
-    TEST_BARRIER();
+    ctx.barrier();
     auto t1 = steady_clock::now();
     if (thread_id == 0) {
         auto t2 = steady_clock::now();
         size_t total_ms = count_ms(t2 - t0);
         fprintf(stderr, "---> thread_safety_loop with %zu threads used %zu ms\n", thread_limit, total_ms);
     }
-    TEST_BARRIER();
+    ctx.barrier();
     if (verbose && (thread_id < thread_limit)) {
         size_t local_ms = count_ms(t1 - t0);
         fprintf(stderr, "    -- thread %zu used %zu ms\n", thread_id, local_ms);
     }
-    TEST_BARRIER();
+    ctx.barrier();
     return (loop_cnt * thread_limit);
 }
 
@@ -125,53 +129,60 @@ template <typename T> void estimate_cost(const char *name) {
 
 //-----------------------------------------------------------------------------
 
-TEST("require that locks can be used with lock_guard and unique_lock") {
-    TEST_DO(basic_usage<DummyLock>());
-    TEST_DO(basic_usage<SpinLock>());
+TEST(SpinLockTest, require_that_locks_can_be_used_with_lock_guard_and_unique_lock) {
+    GTEST_DO(basic_usage<DummyLock>());
+    GTEST_DO(basic_usage<SpinLock>());
 }
 
-TEST_MT_FF("report whether DummyLock is thread safe", 24, DummyLock(), MyState()) {
-    size_t expect = thread_safety_loop(f1, f2, thread_id, 24);
-    if (thread_id == 0) {
-        f2.report(expect, "DummyLock");
-    }
+//-----------------------------------------------------------------------------
+
+template <typename T>
+class TypedLockTest : public ::testing::Test {};
+
+TYPED_TEST_SUITE_P(TypedLockTest);
+
+TYPED_TEST_P(TypedLockTest, thread_safety) {
+    using LockType = TypeParam;
+    bool is_dummy = std::same_as<LockType,DummyLock>;
+    size_t num_threads = 24;
+    LockType f1;
+    MyState f2;
+    auto task = [&](Nexus &ctx){
+                    size_t expect = thread_safety_loop(ctx, f1, f2, 24);
+                    if (!is_dummy) {
+                        expect += thread_safety_loop(ctx, f1, f2, 12);
+                        expect += thread_safety_loop(ctx, f1, f2, 6);
+                        expect += thread_safety_loop(ctx, f1, f2, 3);
+                    }
+                    if (ctx.thread_id() == 0) {
+                        f2.report(expect, getClassName(f1).c_str());
+                        if (!is_dummy) {
+                            EXPECT_TRUE(f2.check(expect));
+                        }
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MT_FF("require that SpinLock is thread safe", 24, SpinLock(), MyState()) {
-    size_t expect = thread_safety_loop(f1, f2, thread_id, 24);
-    expect += thread_safety_loop(f1, f2, thread_id, 12);
-    expect += thread_safety_loop(f1, f2, thread_id, 6);
-    expect += thread_safety_loop(f1, f2, thread_id, 3);
-    if (thread_id == 0) {
-        f2.report(expect, "SpinLock");
-        EXPECT_TRUE(f2.check(expect));
-    }
-}
+REGISTER_TYPED_TEST_SUITE_P(TypedLockTest, thread_safety);
 
-TEST_MT_FF("require that std::mutex is thread safe", 24, std::mutex(), MyState()) {
-    size_t expect = thread_safety_loop(f1, f2, thread_id, 24);
-    expect += thread_safety_loop(f1, f2, thread_id, 12);
-    expect += thread_safety_loop(f1, f2, thread_id, 6);
-    expect += thread_safety_loop(f1, f2, thread_id, 3);
-    if (thread_id == 0) {
-        f2.report(expect, "std::mutex");
-        EXPECT_TRUE(f2.check(expect));
-    }
-}
+using LockTypes = ::testing::Types<DummyLock,SpinLock,std::mutex>;
+INSTANTIATE_TYPED_TEST_SUITE_P(MyLocks, TypedLockTest, LockTypes);
 
-TEST("estimate single-threaded lock/unlock cost") {
+//-----------------------------------------------------------------------------
+
+TEST(SpinLockTest, estimate_single_threaded_lock_unlock_cost) {
     estimate_cost<DummyLock>("DummyLock");
     estimate_cost<SpinLock>("SpinLock");
     estimate_cost<std::mutex>("std::mutex");
 }
 
-int main(int argc, char **argv) {
-    TEST_MASTER.init(__FILE__);
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
     if ((argc == 2) && (argv[1] == std::string("verbose"))) {
         verbose = true;
         budget = 10.0;
         thread_safety_work = 32000000;
     }
-    TEST_RUN_ALL();
-    return (TEST_MASTER.fini() ? 0 : 1);
+    return RUN_ALL_TESTS();
 }

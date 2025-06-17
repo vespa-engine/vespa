@@ -2,7 +2,6 @@
 
 #include "rfc_sha1.h"
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 #include <vespa/vespalib/util/sha1.h>
 #include <string>
 #include <cassert>

@@ -9,7 +9,6 @@
 #include <vespa/vespalib/data/slime/basic_value.h>
 #include <type_traits>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("slime_test");

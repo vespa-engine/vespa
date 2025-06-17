@@ -2,7 +2,6 @@
 
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using search::attribute::Config;
 using search::attribute::BasicType;

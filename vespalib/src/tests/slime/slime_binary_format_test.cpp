@@ -4,7 +4,6 @@
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace vespalib::slime::convenience;
 using namespace vespalib::slime::binary_format;
