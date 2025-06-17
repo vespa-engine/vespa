@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/socket_utils.h>
@@ -9,9 +10,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
+#include <cassert>
 
 using namespace vespalib;
 using namespace vespalib::portal;
+using vespalib::test::Nexus;
 
 struct SocketPair {
     SocketHandle main;
@@ -22,7 +25,7 @@ struct SocketPair {
         main.reset(sockets[0]);
         other.reset(sockets[1]);
         // make main socket both readable and writable
-        ASSERT_EQUAL(other.write("x", 1), 1);
+        assert(other.write("x", 1) == 1);
     }
     ~SocketPair();
 };
@@ -63,8 +66,8 @@ struct HandlerBase : Reactor::EventHandler {
         size_t write_sample = write_cnt;
         wait_tick();
         wait_tick();
-        EXPECT_EQUAL((read_sample != read_cnt), read);
-        EXPECT_EQUAL((write_sample != write_cnt), write);
+        EXPECT_EQ((read_sample != read_cnt), read);
+        EXPECT_EQ((write_sample != write_cnt), write);
     }
     ~HandlerBase();
 };
@@ -120,61 +123,75 @@ WaitingHandler::~WaitingHandler() = default;
 
 //-----------------------------------------------------------------------------
 
-TEST_FF("require that reactor can produce async io events", Reactor(tick), TimeBomb(60)) {
+TEST(ReactorTest, require_that_reactor_can_produce_async_io_events) {
+    Reactor f1(tick);
+    TimeBomb f2(60);
     for (bool read: {true, false}) {
         for (bool write: {true, false}) {
             {
                 SimpleHandler handler(f1, read, write);
-                TEST_DO(handler.verify(read, write));
+                GTEST_DO(handler.verify(read, write));
             }
         }
     }
 }
 
-TEST_FF("require that reactor token can be used to change active io events", Reactor(tick), TimeBomb(60)) {
+TEST(ReactorTest, require_that_reactor_token_can_be_used_to_change_active_io_events) {
+    Reactor f1(tick);
+    TimeBomb f2(60);
     SimpleHandler handler(f1, false, false);
-    TEST_DO(handler.verify(false, false));
+    GTEST_DO(handler.verify(false, false));
     for (int i = 0; i < 2; ++i) {
         for (bool read: {true, false}) {
             for (bool write: {true, false}) {
                 handler.token->update(read, write);
                 wait_tick(); // avoid stale events
-                TEST_DO(handler.verify(read, write));
+                GTEST_DO(handler.verify(read, write));
             }
         }
     }
 }
 
-TEST_FF("require that deleting reactor token disables io events", Reactor(tick), TimeBomb(60)) {
+TEST(ReactorTest, require_that_deleting_reactor_token_disables_io_events) {
+    Reactor f1(tick);
+    TimeBomb f2(60);
     SimpleHandler handler(f1, true, true);
-    TEST_DO(handler.verify(true, true));
+    GTEST_DO(handler.verify(true, true));
     handler.token.reset();
-    TEST_DO(handler.verify(false, false));
+    GTEST_DO(handler.verify(false, false));
 }
 
-TEST_FF("require that reactor token can be destroyed during io event handling", Reactor(tick), TimeBomb(60)) {
+TEST(ReactorTest, require_that_reactor_token_can_be_destroyed_during_io_event_handling) {
+    Reactor f1(tick);
+    TimeBomb f2(60);
     DeletingHandler handler(f1);
     handler.allow_delete.countDown();
     handler.token_deleted.await();
-    TEST_DO(handler.verify(false, false));
-    EXPECT_EQUAL(handler.read_cnt, 1u);
-    EXPECT_EQUAL(handler.write_cnt, 1u);
+    GTEST_DO(handler.verify(false, false));
+    EXPECT_EQ(handler.read_cnt, 1u);
+    EXPECT_EQ(handler.write_cnt, 1u);
 }
 
-TEST_MT_FFFF("require that reactor token destruction waits for io event handling", 2,
-             Reactor(), WaitingHandler(f1), Gate(), TimeBomb(60))
-{
-    if (thread_id == 0) {
-        f2.enter_callback.await();
-        TEST_BARRIER(); // #1
-        EXPECT_TRUE(!f3.await(20ms));
-        f2.exit_callback.countDown();
-        EXPECT_TRUE(f3.await(60s));
-    } else {
-        TEST_BARRIER(); // #1
-        f2.token.reset();
-        f3.countDown();
-    }
+TEST(ReactorTest, require_that_reactor_token_destruction_waits_for_io_event_handling) {
+    size_t num_threads = 2;
+    Reactor f1;
+    WaitingHandler f2(f1);
+    Gate f3;
+    TimeBomb f4(60);
+    auto task = [&](Nexus &ctx){
+                    if (ctx.thread_id() == 0) {
+                        f2.enter_callback.await();
+                        ctx.barrier(); // #1
+                        EXPECT_TRUE(!f3.await(20ms));
+                        f2.exit_callback.countDown();
+                        EXPECT_TRUE(f3.await(60s));
+                    } else {
+                        ctx.barrier(); // #1
+                        f2.token.reset();
+                        f3.countDown();
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

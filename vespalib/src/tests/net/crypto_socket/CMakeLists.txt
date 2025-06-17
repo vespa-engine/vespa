@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_crypto_socket_test_app TEST
     crypto_socket_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_crypto_socket_test_app COMMAND vespalib_crypto_socket_test_app)

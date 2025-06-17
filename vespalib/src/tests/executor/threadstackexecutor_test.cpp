@@ -1,13 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
-
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <atomic>
 #include <thread>
+#include <cassert>
 
 using namespace vespalib;
+using vespalib::test::Nexus;
 
 using Task = Executor::Task;
 
@@ -43,6 +45,7 @@ struct MyState {
     {
         MyTask::resetStats();
     }
+    ~MyState();
     MyState &execute(uint32_t cnt) {
         for (uint32_t i = 0; i < cnt; ++i) {
             executor.execute(std::make_unique<MyTask>(gate, latch));
@@ -70,54 +73,62 @@ struct MyState {
                    uint32_t expect_running,
                    uint32_t expect_deleted)
     {
-        ASSERT_TRUE(!checked);
+        EXPECT_FALSE(checked);
         checked = true;
         ExecutorStats stats = executor.getStats();
-        EXPECT_EQUAL(expect_running + expect_deleted, MyTask::runCnt);
-        EXPECT_EQUAL(expect_rejected + expect_deleted, MyTask::deleteCnt);
-        EXPECT_EQUAL(expect_queue + expect_running + expect_deleted,stats.acceptedTasks);
-        EXPECT_EQUAL(expect_rejected, stats.rejectedTasks);
+        EXPECT_EQ(expect_running + expect_deleted, MyTask::runCnt);
+        EXPECT_EQ(expect_rejected + expect_deleted, MyTask::deleteCnt);
+        EXPECT_EQ(expect_queue + expect_running + expect_deleted,stats.acceptedTasks);
+        EXPECT_EQ(expect_rejected, stats.rejectedTasks);
         EXPECT_TRUE(stats.wakeupCount <= (NUM_THREADS + stats.acceptedTasks));
         EXPECT_TRUE(!(gate.getCount() == 1) || (expect_deleted == 0));
         if (expect_deleted == 0) {
-            EXPECT_EQUAL(expect_queue + expect_running, stats.queueSize.max());
+            EXPECT_EQ(expect_queue + expect_running, stats.queueSize.max());
         }
         stats = executor.getStats();
-        EXPECT_EQUAL(expect_queue + expect_running, stats.queueSize.max());
-        EXPECT_EQUAL(0u, stats.acceptedTasks);
-        EXPECT_EQUAL(0u, stats.rejectedTasks);
-        EXPECT_EQUAL(0u, stats.wakeupCount);
+        EXPECT_EQ(expect_queue + expect_running, stats.queueSize.max());
+        EXPECT_EQ(0u, stats.acceptedTasks);
+        EXPECT_EQ(0u, stats.rejectedTasks);
+        EXPECT_EQ(0u, stats.wakeupCount);
         return *this;
     }
 };
+MyState::~MyState() = default;
 
 
-TEST_F("requireThatTasksAreRunAndDeleted", MyState()) {
-    TEST_DO(f1.open().execute(5).sync().check(0, 0, 0, 5));
+TEST(ThreadStackExecutorTest, requireThatTasksAreRunAndDeleted) {
+    MyState f1;
+    GTEST_DO(f1.open().execute(5).sync().check(0, 0, 0, 5));
 }
 
-TEST_F("requireThatTasksRunConcurrently", MyState()) {
-    TEST_DO(f1.execute(10).wait().check(0, 0, 10, 0).open());
+TEST(ThreadStackExecutorTest, requireThatTasksRunConcurrently) {
+    MyState f1;
+    GTEST_DO(f1.execute(10).wait().check(0, 0, 10, 0).open());
 }
 
-TEST_F("requireThatThreadCountIsRespected", MyState()) {
-    TEST_DO(f1.execute(20).wait().check(0, 10, 10, 0).open());
+TEST(ThreadStackExecutorTest, requireThatThreadCountIsRespected) {
+    MyState f1;
+    GTEST_DO(f1.execute(20).wait().check(0, 10, 10, 0).open());
 }
 
-TEST_F("requireThatExtraTasksAreDropped", MyState()) {
-    TEST_DO(f1.execute(40).wait().check(20, 10, 10, 0).open());
+TEST(ThreadStackExecutorTest, requireThatExtraTasksAreDropped) {
+    MyState f1;
+    GTEST_DO(f1.execute(40).wait().check(20, 10, 10, 0).open());
 }
 
-TEST_F("requireThatActiveWorkersDrainInputQueue", MyState()) {
-    TEST_DO(f1.execute(20).wait().open().sync().check(0, 0, 0, 20));
+TEST(ThreadStackExecutorTest, requireThatActiveWorkersDrainInputQueue) {
+    MyState f1;
+    GTEST_DO(f1.execute(20).wait().open().sync().check(0, 0, 0, 20));
 }
 
-TEST_F("requireThatPendingTasksAreRunAfterShutdown", MyState()) {
-    TEST_DO(f1.execute(20).wait().shutdown().open().sync().check(0, 0, 0, 20));
+TEST(ThreadStackExecutorTest, requireThatPendingTasksAreRunAfterShutdown) {
+    MyState f1;
+    GTEST_DO(f1.execute(20).wait().shutdown().open().sync().check(0, 0, 0, 20));
 }
 
-TEST_F("requireThatNewTasksAreDroppedAfterShutdown", MyState()) {
-    TEST_DO(f1.open().shutdown().execute(5).sync().check(5, 0, 0, 0));
+TEST(ThreadStackExecutorTest, requireThatNewTasksAreDroppedAfterShutdown) {
+    MyState f1;
+    GTEST_DO(f1.open().shutdown().execute(5).sync().check(5, 0, 0, 0));
 }
 
 
@@ -136,29 +147,37 @@ struct WaitState {
     {
         for (auto &gate: block_task) {
             auto result = executor.execute(std::make_unique<WaitTask>(gate));
-            ASSERT_TRUE(result.get() == nullptr);
+            assert(result.get() == nullptr);
         }
     }
+    ~WaitState();
     void wait(size_t count) {
         executor.wait_for_task_count(count);
         wait_done[count].countDown();
     }
 };
+WaitState::~WaitState() = default;
 
-TEST_MT_F("require that threads can wait for a specific task count", 7, WaitState(num_threads)) {
-    if (thread_id == 0) {
-        for (size_t next_done = (num_threads - 2); next_done-- > 0;) {
-            if (next_done < f1.block_task.size()) {
-                f1.block_task[f1.block_task.size() - 1 - next_done].countDown();
-            }
-            EXPECT_TRUE(f1.wait_done[next_done].await(25s));
-            for (size_t i = 0; i < next_done; ++i) {
-                EXPECT_TRUE(!f1.wait_done[i].await(20ms));
-            }
-        }
-    } else {
-        f1.wait(thread_id - 1);
-    }
+TEST(ThreadStackExecutorTest, require_that_threads_can_wait_for_a_specific_task_count) {
+    size_t num_threads = 7;
+    WaitState f1(num_threads);
+    auto task = [&](Nexus &ctx){
+                    auto thread_id = ctx.thread_id();
+                    if (thread_id == 0) {
+                        for (size_t next_done = (num_threads - 2); next_done-- > 0;) {
+                            if (next_done < f1.block_task.size()) {
+                                f1.block_task[f1.block_task.size() - 1 - next_done].countDown();
+                            }
+                            EXPECT_TRUE(f1.wait_done[next_done].await(25s));
+                            for (size_t i = 0; i < next_done; ++i) {
+                                EXPECT_TRUE(!f1.wait_done[i].await(20ms));
+                            }
+                        }
+                    } else {
+                        f1.wait(thread_id - 1);
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
 std::string get_worker_stack_trace(ThreadStackExecutor &executor) {
@@ -175,43 +194,41 @@ std::string get_worker_stack_trace(ThreadStackExecutor &executor) {
 
 VESPA_THREAD_STACK_TAG(my_stack_tag);
 
-TEST_F("require that executor has appropriate default thread stack tag", ThreadStackExecutor(1)) {
+TEST(ThreadStackExecutorTest, require_that_executor_has_appropriate_default_thread_stack_tag) {
+    ThreadStackExecutor f1(1);
     std::string trace = get_worker_stack_trace(f1);
-    if (!EXPECT_TRUE(trace.find("unnamed_nonblocking_executor") != std::string::npos)) {
-        fprintf(stderr, "%s\n", trace.c_str());
-    }
+    EXPECT_TRUE(trace.find("unnamed_nonblocking_executor") != std::string::npos) << trace;
 }
 
-TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(1, my_stack_tag)) {
+TEST(ThreadStackExecutorTest, require_that_executor_thread_stack_tag_can_be_set) {
+    ThreadStackExecutor f1(1, my_stack_tag);
     std::string trace = get_worker_stack_trace(f1);
-    if (!EXPECT_TRUE(trace.find("my_stack_tag") != std::string::npos)) {
-        fprintf(stderr, "%s\n", trace.c_str());
-    }
+    EXPECT_TRUE(trace.find("my_stack_tag") != std::string::npos) << trace;
 }
 
-TEST("require that stats can be accumulated") {
+TEST(ThreadStackExecutorTest, require_that_stats_can_be_accumulated) {
     EXPECT_TRUE(std::atomic<duration>::is_always_lock_free);
     ExecutorStats stats(ExecutorStats::QueueSizeT(1) ,2,3,7);
     stats.setUtil(3, 0.8);
-    EXPECT_EQUAL(1u, stats.queueSize.max());
-    EXPECT_EQUAL(2u, stats.acceptedTasks);
-    EXPECT_EQUAL(3u, stats.rejectedTasks);
-    EXPECT_EQUAL(7u, stats.wakeupCount);
-    EXPECT_EQUAL(3u, stats.getThreadCount());
-    EXPECT_EQUAL(0.2, stats.getUtil());
+    EXPECT_EQ(1u, stats.queueSize.max());
+    EXPECT_EQ(2u, stats.acceptedTasks);
+    EXPECT_EQ(3u, stats.rejectedTasks);
+    EXPECT_EQ(7u, stats.wakeupCount);
+    EXPECT_EQ(3u, stats.getThreadCount());
+    EXPECT_NEAR(0.2, stats.getUtil(), 1e-9);
     stats.aggregate(ExecutorStats(ExecutorStats::QueueSizeT(7),8,9,11).setUtil(7,0.5));
-    EXPECT_EQUAL(2u, stats.queueSize.count());
-    EXPECT_EQUAL(8u, stats.queueSize.total());
-    EXPECT_EQUAL(8u, stats.queueSize.max());
-    EXPECT_EQUAL(8u, stats.queueSize.min());
-    EXPECT_EQUAL(8u, stats.queueSize.max());
-    EXPECT_EQUAL(4.0, stats.queueSize.average());
+    EXPECT_EQ(2u, stats.queueSize.count());
+    EXPECT_EQ(8u, stats.queueSize.total());
+    EXPECT_EQ(8u, stats.queueSize.max());
+    EXPECT_EQ(8u, stats.queueSize.min());
+    EXPECT_EQ(8u, stats.queueSize.max());
+    EXPECT_NEAR(4.0, stats.queueSize.average(), 1e-9);
 
-    EXPECT_EQUAL(10u, stats.getThreadCount());
-    EXPECT_EQUAL(10u, stats.acceptedTasks);
-    EXPECT_EQUAL(12u, stats.rejectedTasks);
-    EXPECT_EQUAL(18u, stats.wakeupCount);
-    EXPECT_EQUAL(0.41, stats.getUtil());
+    EXPECT_EQ(10u, stats.getThreadCount());
+    EXPECT_EQ(10u, stats.acceptedTasks);
+    EXPECT_EQ(12u, stats.rejectedTasks);
+    EXPECT_EQ(18u, stats.wakeupCount);
+    EXPECT_NEAR(0.41, stats.getUtil(), 1e-9);
 }
 
 ExecutorStats make_stats(uint32_t thread_count, double idle) {
@@ -220,26 +237,26 @@ ExecutorStats make_stats(uint32_t thread_count, double idle) {
     return stats;
 }
 
-TEST("executor stats saturation is the max of the utilization of aggregated executor stats") {
+TEST(ThreadStackExecutorTest, executor_stats_saturation_is_the_max_of_the_utilization_of_aggregated_executor_stats) {
     ExecutorStats aggr;
     auto s1 = make_stats(1, 0.9);
-    EXPECT_EQUAL(0.1, s1.getUtil());
-    EXPECT_EQUAL(0.1, s1.get_saturation());
+    EXPECT_NEAR(0.1, s1.getUtil(), 1e-9);
+    EXPECT_NEAR(0.1, s1.get_saturation(), 1e-9);
 
-    EXPECT_EQUAL(0.0, aggr.get_saturation());
+    EXPECT_EQ(0.0, aggr.get_saturation());
     aggr.aggregate(s1);
-    EXPECT_EQUAL(0.1, aggr.get_saturation());
+    EXPECT_NEAR(0.1, aggr.get_saturation(), 1e-9);
     aggr.aggregate(make_stats(1, 0.7));
-    EXPECT_EQUAL(0.3, aggr.get_saturation());
+    EXPECT_NEAR(0.3, aggr.get_saturation(), 1e-9);
     aggr.aggregate(make_stats(1, 0.8));
-    EXPECT_EQUAL(0.3, aggr.get_saturation());
+    EXPECT_NEAR(0.3, aggr.get_saturation(), 1e-9);
 }
 
-TEST("Test that utilization is computed") {
+TEST(ThreadStackExecutorTest, Test_that_utilization_is_computed) {
     ThreadStackExecutor executor(1);
     std::this_thread::sleep_for(1s);
     auto stats = executor.getStats();
-    EXPECT_GREATER(0.50, stats.getUtil());
+    EXPECT_GT(0.50, stats.getUtil());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

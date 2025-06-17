@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_portal_http_request_test_app TEST
     http_request_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_portal_http_request_test_app COMMAND vespalib_portal_http_request_test_app)

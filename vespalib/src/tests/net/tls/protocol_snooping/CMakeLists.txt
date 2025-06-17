@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_net_tls_protocol_snooping_test_app TEST
     protocol_snooping_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_net_tls_protocol_snooping_test_app COMMAND vespalib_net_tls_protocol_snooping_test_app)
 

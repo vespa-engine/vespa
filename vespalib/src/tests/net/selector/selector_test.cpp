@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/net/selector.h>
@@ -10,6 +11,7 @@
 #include <fcntl.h>
 
 using namespace vespalib;
+using vespalib::test::Nexus;
 
 struct SocketPair {
     SocketHandle a;
@@ -50,6 +52,7 @@ struct Fixture {
             selector.add(ctx.fd, ctx, read_enabled, write_enabled);
         }
     }
+    ~Fixture();
     void update(size_t idx, bool read, bool write) {
         Context &ctx = contexts[idx];
         selector.update(ctx.fd, ctx, read, write);
@@ -87,11 +90,11 @@ struct Fixture {
         return *this;
     }
     void verify(bool expect_wakeup, std::vector<std::pair<bool,bool> > expect_events) {
-        EXPECT_EQUAL(expect_wakeup, wakeup);
-        ASSERT_EQUAL(expect_events.size(), contexts.size());
+        EXPECT_EQ(expect_wakeup, wakeup);
+        ASSERT_EQ(expect_events.size(), contexts.size());
         for (size_t i = 0; i < expect_events.size(); ++i) {
-            EXPECT_EQUAL(expect_events[i].first, contexts[i].can_read);
-            EXPECT_EQUAL(expect_events[i].second, contexts[i].can_write);
+            EXPECT_EQ(expect_events[i].first, contexts[i].can_read);
+            EXPECT_EQ(expect_events[i].second, contexts[i].can_write);
         }
     }
     // selector callbacks
@@ -101,157 +104,191 @@ struct Fixture {
         ctx.can_write = write;
     }
 };
+Fixture::~Fixture() = default;
 
 constexpr std::pair<bool,bool> none = std::make_pair(false, false);
 constexpr std::pair<bool,bool> in   = std::make_pair(true,  false);
 constexpr std::pair<bool,bool> out  = std::make_pair(false, true);
 constexpr std::pair<bool,bool> both = std::make_pair(true,  true);
 
-TEST_F("require that basic events trigger correctly", Fixture(1, true, true)) {
-    TEST_DO(f1.reset().poll().verify(false, {out}));
+TEST(SelectorTest, require_that_basic_events_trigger_correctly) {
+    Fixture f1(1, true, true);
+    GTEST_DO(f1.reset().poll().verify(false, {out}));
     EXPECT_TRUE(f1.write(0, "test"));
-    TEST_DO(f1.reset().poll().verify(false, {both}));
+    GTEST_DO(f1.reset().poll().verify(false, {both}));
     f1.update(0, true, false);
-    TEST_DO(f1.reset().poll().verify(false, {in}));
+    GTEST_DO(f1.reset().poll().verify(false, {in}));
     f1.update(0, false, true);
-    TEST_DO(f1.reset().poll().verify(false, {out}));
+    GTEST_DO(f1.reset().poll().verify(false, {out}));
     f1.update(0, false, false);
-    TEST_DO(f1.reset().poll(10).verify(false, {none}));
+    GTEST_DO(f1.reset().poll(10).verify(false, {none}));
     f1.update(0, true, true);
     f1.selector.wakeup();
-    TEST_DO(f1.reset().poll().verify(true, {both}));
-    TEST_DO(f1.reset().poll().verify(false, {both}));
+    GTEST_DO(f1.reset().poll().verify(true, {both}));
+    GTEST_DO(f1.reset().poll().verify(false, {both}));
 }
 
-TEST_FFF("require that sources can be added with some events disabled",
-         Fixture(1, true, false), Fixture(1, false, true), Fixture(1, false, false))
-{
+TEST(SelectorTest, require_that_sources_can_be_added_with_some_events_disabled) {
+    Fixture f1(1, true, false);
+    Fixture f2(1, false, true);
+    Fixture f3(1, false, false);
     EXPECT_TRUE(f1.write(0, "test"));
     EXPECT_TRUE(f2.write(0, "test"));
     EXPECT_TRUE(f3.write(0, "test"));
-    TEST_DO(f1.reset().poll().verify(false, {in}));
-    TEST_DO(f2.reset().poll().verify(false, {out}));
-    TEST_DO(f3.reset().poll(10).verify(false, {none}));
+    GTEST_DO(f1.reset().poll().verify(false, {in}));
+    GTEST_DO(f2.reset().poll().verify(false, {out}));
+    GTEST_DO(f3.reset().poll(10).verify(false, {none}));
     f1.update(0, true, true);
     f2.update(0, true, true);
     f3.update(0, true, true);
-    TEST_DO(f1.reset().poll().verify(false, {both}));
-    TEST_DO(f2.reset().poll().verify(false, {both}));
-    TEST_DO(f3.reset().poll().verify(false, {both}));
+    GTEST_DO(f1.reset().poll().verify(false, {both}));
+    GTEST_DO(f2.reset().poll().verify(false, {both}));
+    GTEST_DO(f3.reset().poll().verify(false, {both}));
 }
 
-TEST_F("require that multiple sources can be selected on", Fixture(5, true, false)) {
-    TEST_DO(f1.reset().poll(10).verify(false, {none, none, none, none, none}));
+TEST(SelectorTest, require_that_multiple_sources_can_be_selected_on) {
+    Fixture f1(5, true, false);
+    GTEST_DO(f1.reset().poll(10).verify(false, {none, none, none, none, none}));
     EXPECT_TRUE(f1.write(1, "test"));
     EXPECT_TRUE(f1.write(3, "test"));
-    TEST_DO(f1.reset().poll().verify(false, {none, in, none, in, none}));
+    GTEST_DO(f1.reset().poll().verify(false, {none, in, none, in, none}));
     EXPECT_TRUE(f1.read(1, strlen("test")));
     EXPECT_TRUE(f1.read(3, strlen("te")));
-    TEST_DO(f1.reset().poll().verify(false, {none, none, none, in, none}));
+    GTEST_DO(f1.reset().poll().verify(false, {none, none, none, in, none}));
     EXPECT_TRUE(f1.read(3, strlen("st")));
-    TEST_DO(f1.reset().poll(10).verify(false, {none, none, none, none, none}));
+    GTEST_DO(f1.reset().poll(10).verify(false, {none, none, none, none, none}));
 }
 
-TEST_F("require that removed sources no longer produce events", Fixture(2, true, true)) {
-    TEST_DO(f1.reset().poll().verify(false, {out, out}));
+TEST(SelectorTest, require_that_removed_sources_no_longer_produce_events) {
+    Fixture f1(2, true, true);
+    GTEST_DO(f1.reset().poll().verify(false, {out, out}));
     EXPECT_TRUE(f1.write(0, "test"));
     EXPECT_TRUE(f1.write(1, "test"));
-    TEST_DO(f1.reset().poll().verify(false, {both, both}));
+    GTEST_DO(f1.reset().poll().verify(false, {both, both}));
     f1.selector.remove(f1.contexts[0].fd);
-    TEST_DO(f1.reset().poll().verify(false, {none, both}));
+    GTEST_DO(f1.reset().poll().verify(false, {none, both}));
 }
 
-TEST_F("require that filling the output buffer disables write events", Fixture(1, true, true)) {
+TEST(SelectorTest, require_that_filling_the_output_buffer_disables_write_events) {
+    Fixture f1(1, true, true);
     EXPECT_TRUE(f1.write(0, "test"));
-    TEST_DO(f1.reset().poll().verify(false, {both}));
+    GTEST_DO(f1.reset().poll().verify(false, {both}));
     size_t buffer_size = 0;
     while (f1.write_self(0, "x")) {
         ++buffer_size;
     }
     EXPECT_TRUE((errno == EWOULDBLOCK) || (errno == EAGAIN));
     fprintf(stderr, "buffer size: %zu\n", buffer_size);
-    TEST_DO(f1.reset().poll().verify(false, {in}));
+    GTEST_DO(f1.reset().poll().verify(false, {in}));
 }
 
-TEST_MT_FF("require that selector can be woken while waiting for events", 2, Fixture(0, true, false), TimeBomb(60)) {
-    if (thread_id == 0) {
-        TEST_DO(f1.reset().poll().verify(true, {}));
-    } else {
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        f1.selector.wakeup();
-    }
+TEST(SelectorTest, require_that_selector_can_be_woken_while_waiting_for_events) {
+    size_t num_threads = 2;
+    Fixture f1(0, true, false);
+    TimeBomb f2(60);
+    auto task = [&](Nexus &ctx){
+                    if (ctx.thread_id() == 0) {
+                        GTEST_DO(f1.reset().poll().verify(true, {}));
+                    } else {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                        f1.selector.wakeup();
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MT_FF("require that selection criteria can be changed while waiting for events", 2, Fixture(1, true, false), TimeBomb(60)) {
-    if (thread_id == 0) {
-        TEST_DO(f1.reset().poll().verify(false, {out}));
-    } else {
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        f1.update(0, true, true);
-    }
+TEST(SelectorTest, require_that_selection_criteria_can_be_changed_while_waiting_for_events) {
+    size_t num_threads = 2;
+    Fixture f1(1, true, false);
+    TimeBomb f2(60);
+    auto task = [&](Nexus &ctx){
+                    if (ctx.thread_id() == 0) {
+                        GTEST_DO(f1.reset().poll().verify(false, {out}));
+                    } else {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                        f1.update(0, true, true);
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MT_FF("require that selection sources can be added while waiting for events", 2, Fixture(0, true, false), TimeBomb(60)) {
-    if (thread_id == 0) {
-        TEST_DO(f1.reset().poll().verify(false, {}));
-        TEST_BARRIER();
-    } else {
-        SocketPair pair = SocketPair::create();
-        Context ctx(pair.a.get());
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        f1.selector.add(ctx.fd, ctx, true, true);
-        TEST_BARRIER();
-        EXPECT_TRUE(ctx.can_write);
-    }
+TEST(SelectorTest, require_that_selection_sources_can_be_added_while_waiting_for_events) {
+    size_t num_threads = 2;
+    Fixture f1(0, true, false);
+    TimeBomb f2(60);
+    auto task = [&](Nexus &n){
+                    if (n.thread_id() == 0) {
+                        GTEST_DO(f1.reset().poll().verify(false, {}));
+                        n.barrier();
+                    } else {
+                        SocketPair pair = SocketPair::create();
+                        Context ctx(pair.a.get());
+                        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                        f1.selector.add(ctx.fd, ctx, true, true);
+                        n.barrier();
+                        EXPECT_TRUE(ctx.can_write);
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MT_FFF("require that single fd selector can wait for read events while handling wakeups correctly",
-            2, SocketPair(SocketPair::create()), SingleFdSelector(f1.a.get()), TimeBomb(60))
-{
-    if (thread_id == 0) {
-        EXPECT_EQUAL(f2.wait_readable(), false); // wakeup only
-        TEST_BARRIER(); // #1
-        EXPECT_EQUAL(f2.wait_readable(), true); // read only
-        TEST_BARRIER(); // #2
-        TEST_BARRIER(); // #3
-        EXPECT_EQUAL(f2.wait_readable(), true); // read and wakeup
-    } else {
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        f2.wakeup();
-        TEST_BARRIER(); // #1
-        std::string msg("test");
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        ASSERT_EQUAL(f1.b.write(msg.data(), msg.size()), ssize_t(msg.size()));
-        TEST_BARRIER(); // #2
-        f2.wakeup();
-        TEST_BARRIER(); // #3
-    }
+TEST(SelectorTest, require_that_single_fd_selector_can_wait_for_read_events_while_handling_wakeups_correctly) {
+    size_t num_threads = 2;
+    SocketPair f1(SocketPair::create());
+    SingleFdSelector f2(f1.a.get());
+    TimeBomb f3(60);
+    auto task = [&](Nexus &ctx){
+                    if (ctx.thread_id() == 0) {
+                        EXPECT_EQ(f2.wait_readable(), false); // wakeup only
+                        ctx.barrier(); // #1
+                        EXPECT_EQ(f2.wait_readable(), true); // read only
+                        ctx.barrier(); // #2
+                        ctx.barrier(); // #3
+                        EXPECT_EQ(f2.wait_readable(), true); // read and wakeup
+                    } else {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                        f2.wakeup();
+                        ctx.barrier(); // #1
+                        std::string msg("test");
+                        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                        ASSERT_EQ(f1.b.write(msg.data(), msg.size()), ssize_t(msg.size()));
+                        ctx.barrier(); // #2
+                        f2.wakeup();
+                        ctx.barrier(); // #3
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MT_FFF("require that single fd selector can wait for write events while handling wakeups correctly",
-            2, SocketPair(SocketPair::create()), SingleFdSelector(f1.a.get()), TimeBomb(60))
-{
-    if (thread_id == 0) {
-        EXPECT_EQUAL(f2.wait_writable(), true); // write only
-        TEST_BARRIER(); // #1
-        TEST_BARRIER(); // #2
-        EXPECT_EQUAL(f2.wait_writable(), true); // write and wakeup
-        size_t buffer_size = 0;
-        while (f1.a.write("x", 1) == 1) {
-            ++buffer_size;
-        }
-        EXPECT_TRUE((errno == EWOULDBLOCK) || (errno == EAGAIN));
-        fprintf(stderr, "buffer size: %zu\n", buffer_size);
-        TEST_BARRIER(); // #3
-        EXPECT_EQUAL(f2.wait_readable(), false); // wakeup only
-    } else {
-        TEST_BARRIER(); // #1
-        f2.wakeup();
-        TEST_BARRIER(); // #2
-        TEST_BARRIER(); // #3
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        f2.wakeup();
-    }
+TEST(SelectorTest, require_that_single_fd_selector_can_wait_for_write_events_while_handling_wakeups_correctly) {
+    size_t num_threads = 2;
+    SocketPair f1(SocketPair::create());
+    SingleFdSelector f2(f1.a.get());
+    TimeBomb f3(60);
+    auto task = [&](Nexus &ctx){
+                    if (ctx.thread_id() == 0) {
+                        EXPECT_EQ(f2.wait_writable(), true); // write only
+                        ctx.barrier(); // #1
+                        ctx.barrier(); // #2
+                        EXPECT_EQ(f2.wait_writable(), true); // write and wakeup
+                        size_t buffer_size = 0;
+                        while (f1.a.write("x", 1) == 1) {
+                            ++buffer_size;
+                        }
+                        EXPECT_TRUE((errno == EWOULDBLOCK) || (errno == EAGAIN));
+                        fprintf(stderr, "buffer size: %zu\n", buffer_size);
+                        ctx.barrier(); // #3
+                        EXPECT_EQ(f2.wait_readable(), false); // wakeup only
+                    } else {
+                        ctx.barrier(); // #1
+                        f2.wakeup();
+                        ctx.barrier(); // #2
+                        ctx.barrier(); // #3
+                        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                        f2.wakeup();
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

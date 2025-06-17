@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/socket_spec.h>
@@ -105,32 +105,34 @@ struct ResolveFixture {
         set_ip_addr("d", "127.0.4.1");
         set_ip_addr("e", "127.0.5.1");
     }
+    ~ResolveFixture();
     std::string resolve(const std::string &spec) {
         SocketAddress result;
         auto handler = std::make_shared<ResultSetter>(result);
         async_resolver->resolve_async(spec, handler);
         async_resolver->wait_for_pending_resolves();
-        ASSERT_TRUE(handler->done);
+        EXPECT_TRUE(handler->done);
         return result.spec();
     }
 };
+ResolveFixture::~ResolveFixture() = default;
 
 //-----------------------------------------------------------------------------
 
-TEST("require that async resolver internal duration type is appropriate") {
+TEST(AsyncResolverTest, require_that_async_resolver_internal_duration_type_is_appropriate) {
     AsyncResolver::seconds my_secs = std::chrono::milliseconds(500);
-    EXPECT_EQUAL(my_secs.count(), 0.5);
+    EXPECT_EQ(my_secs.count(), 0.5);
 }
 
-TEST("require that default async resolver is tuned as expected") {
+TEST(AsyncResolverTest, require_that_default_async_resolver_is_tuned_as_expected) {
     AsyncResolver::Params params;
-    EXPECT_EQUAL(params.max_cache_size, 10000u);
-    EXPECT_EQUAL(params.max_result_age.count(), 60.0);
-    EXPECT_EQUAL(params.max_resolve_time.count(), 1.0);
-    EXPECT_EQUAL(params.num_threads, 4u);    
+    EXPECT_EQ(params.max_cache_size, 10000u);
+    EXPECT_EQ(params.max_result_age.count(), 60.0);
+    EXPECT_EQ(params.max_resolve_time.count(), 1.0);
+    EXPECT_EQ(params.num_threads, 4u);    
 }
 
-TEST("require that shared async resolver is shared") {
+TEST(AsyncResolverTest, require_that_shared_async_resolver_is_shared) {
     auto resolver1 = AsyncResolver::get_shared();
     auto resolver2 = AsyncResolver::get_shared();
     EXPECT_TRUE(resolver1.get() != nullptr);
@@ -138,7 +140,7 @@ TEST("require that shared async resolver is shared") {
     EXPECT_TRUE(resolver1.get() == resolver2.get());
 }
 
-TEST("require that shared async resolver can resolve connect spec") {
+TEST(AsyncResolverTest, require_that_shared_async_resolver_can_resolve_connect_spec) {
     std::string spec("tcp/localhost:123");
     SocketAddress result;
     auto resolver = AsyncResolver::get_shared();
@@ -148,125 +150,135 @@ TEST("require that shared async resolver can resolve connect spec") {
     std::string resolved = result.spec();
     fprintf(stderr, "resolver(spec:%s) -> '%s'\n", spec.c_str(), resolved.c_str());
     EXPECT_TRUE(handler->done);
-    EXPECT_NOT_EQUAL(resolved, spec);
-    EXPECT_EQUAL(resolved, SocketSpec(spec).client_address().spec());
-    EXPECT_EQUAL(resolved, SocketAddress::select_remote(123, "localhost").spec());
+    EXPECT_NE(resolved, spec);
+    EXPECT_EQ(resolved, SocketSpec(spec).client_address().spec());
+    EXPECT_EQ(resolved, SocketAddress::select_remote(123, "localhost").spec());
 }
 
-TEST("require that steady clock is steady clock") {
+TEST(AsyncResolverTest, require_that_steady_clock_is_steady_clock) {
     AsyncResolver::SteadyClock clock;
     auto past = std::chrono::steady_clock::now();
     for (size_t i = 0; i < 10; ++i) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         auto now = ((i % 2) == 0) ? clock.now() : std::chrono::steady_clock::now();
-        EXPECT_GREATER_EQUAL(now.time_since_epoch().count(), past.time_since_epoch().count());
+        EXPECT_GE(now.time_since_epoch().count(), past.time_since_epoch().count());
         past = now;
     }
 }
 
-TEST("require that simple host resolver can resolve host name") {
+TEST(AsyncResolverTest, require_that_simple_host_resolver_can_resolve_host_name) {
     std::string host_name("localhost");
     AsyncResolver::SimpleHostResolver resolver;
     auto resolved = resolver.ip_address(host_name);
     fprintf(stderr, "resolver(host_name:%s) -> '%s'\n", host_name.c_str(), resolved.c_str());
-    EXPECT_NOT_EQUAL(resolved, host_name);
-    EXPECT_EQUAL(resolved, SocketSpec("tcp/localhost:123").client_address().ip_address());
-    EXPECT_EQUAL(resolved, SocketAddress::select_remote(123, "localhost").ip_address());
+    EXPECT_NE(resolved, host_name);
+    EXPECT_EQ(resolved, SocketSpec("tcp/localhost:123").client_address().ip_address());
+    EXPECT_EQ(resolved, SocketAddress::select_remote(123, "localhost").ip_address());
 }
 
-TEST_F("require that alternative host name resolution works", ResolveFixture()) {
+TEST(AsyncResolverTest, require_that_alternative_host_name_resolution_works) {
+    ResolveFixture f1;
     f1.set_ip_addr("host_name", "127.0.0.7");
-    EXPECT_EQUAL(f1.resolve("tcp/host_name:123"), "tcp/127.0.0.7:123");
+    EXPECT_EQ(f1.resolve("tcp/host_name:123"), "tcp/127.0.0.7:123");
 }
 
-TEST_F("require that async resolver can be used to resolve connect specs without host names", ResolveFixture()) {
-    EXPECT_EQUAL(f1.resolve("this is bogus"), "invalid");
-    EXPECT_EQUAL(f1.resolve("tcp/123"), SocketSpec("tcp/123").client_address().spec());
-    EXPECT_EQUAL(f1.resolve("ipc/file:my_socket"), "ipc/file:my_socket");
-    EXPECT_EQUAL(f1.resolve("ipc/name:my_socket"), "ipc/name:my_socket");
-    EXPECT_EQUAL(f1.get_total_cnt(), 0u);
+TEST(AsyncResolverTest, require_that_async_resolver_can_be_used_to_resolve_connect_specs_without_host_names) {
+    ResolveFixture f1;
+    EXPECT_EQ(f1.resolve("this is bogus"), "invalid");
+    EXPECT_EQ(f1.resolve("tcp/123"), SocketSpec("tcp/123").client_address().spec());
+    EXPECT_EQ(f1.resolve("ipc/file:my_socket"), "ipc/file:my_socket");
+    EXPECT_EQ(f1.resolve("ipc/name:my_socket"), "ipc/name:my_socket");
+    EXPECT_EQ(f1.get_total_cnt(), 0u);
 }
 
-TEST_F("require that resolved hosts are cached", ResolveFixture()) {
-    EXPECT_EQUAL(f1.resolve("tcp/localhost:123"), "tcp/127.0.0.1:123");
-    EXPECT_EQUAL(f1.resolve("tcp/localhost:456"), "tcp/127.0.0.1:456");
-    EXPECT_EQUAL(f1.get_cnt("localhost"), 1u);
-    EXPECT_EQUAL(f1.get_total_cnt(), 1u);
+TEST(AsyncResolverTest, require_that_resolved_hosts_are_cached) {
+    ResolveFixture f1;
+    EXPECT_EQ(f1.resolve("tcp/localhost:123"), "tcp/127.0.0.1:123");
+    EXPECT_EQ(f1.resolve("tcp/localhost:456"), "tcp/127.0.0.1:456");
+    EXPECT_EQ(f1.get_cnt("localhost"), 1u);
+    EXPECT_EQ(f1.get_total_cnt(), 1u);
 }
 
-TEST_F("require that host names resolving to themselves (ip addresses) are not cached", ResolveFixture()) {
-    EXPECT_EQUAL(f1.resolve("tcp/127.0.0.1:123"), "tcp/127.0.0.1:123");
-    EXPECT_EQUAL(f1.resolve("tcp/127.0.0.1:456"), "tcp/127.0.0.1:456");
-    EXPECT_EQUAL(f1.get_cnt("127.0.0.1"), 2u);
-    EXPECT_EQUAL(f1.get_total_cnt(), 2u);
+TEST(AsyncResolverTest, require_that_host_names_resolving_to_themselves__ip_addresses__are_not_cached) {
+    ResolveFixture f1;
+    EXPECT_EQ(f1.resolve("tcp/127.0.0.1:123"), "tcp/127.0.0.1:123");
+    EXPECT_EQ(f1.resolve("tcp/127.0.0.1:456"), "tcp/127.0.0.1:456");
+    EXPECT_EQ(f1.get_cnt("127.0.0.1"), 2u);
+    EXPECT_EQ(f1.get_total_cnt(), 2u);
 }
 
-TEST_F("require that cached results expire at the right time", ResolveFixture()) {
-    EXPECT_EQUAL(f1.resolve("tcp/localhost:123"), "tcp/127.0.0.1:123");
+TEST(AsyncResolverTest, require_that_cached_results_expire_at_the_right_time) {
+    ResolveFixture f1;
+    EXPECT_EQ(f1.resolve("tcp/localhost:123"), "tcp/127.0.0.1:123");
     f1.set_ip_addr("localhost", "127.0.0.2");
     f1.set_now(59.5);
-    EXPECT_EQUAL(f1.resolve("tcp/localhost:123"), "tcp/127.0.0.1:123");
+    EXPECT_EQ(f1.resolve("tcp/localhost:123"), "tcp/127.0.0.1:123");
     f1.set_now(60.0);
-    EXPECT_EQUAL(f1.resolve("tcp/localhost:123"), "tcp/127.0.0.2:123");
-    EXPECT_EQUAL(f1.get_cnt("localhost"), 2u);
-    EXPECT_EQUAL(f1.get_total_cnt(), 2u);
+    EXPECT_EQ(f1.resolve("tcp/localhost:123"), "tcp/127.0.0.2:123");
+    EXPECT_EQ(f1.get_cnt("localhost"), 2u);
+    EXPECT_EQ(f1.get_total_cnt(), 2u);
 }
 
-TEST_F("require that max cache size is honored", ResolveFixture(3)) {
-    EXPECT_EQUAL(f1.resolve("tcp/a:123"), "tcp/127.0.1.1:123");
-    EXPECT_EQUAL(f1.resolve("tcp/b:123"), "tcp/127.0.2.1:123");
-    EXPECT_EQUAL(f1.resolve("tcp/c:123"), "tcp/127.0.3.1:123");
-    EXPECT_EQUAL(f1.resolve("tcp/d:123"), "tcp/127.0.4.1:123");
-    EXPECT_EQUAL(f1.get_total_cnt(), 4u);
-    EXPECT_EQUAL(f1.resolve("tcp/b:123"), "tcp/127.0.2.1:123");
-    EXPECT_EQUAL(f1.get_total_cnt(), 4u);
-    EXPECT_EQUAL(f1.resolve("tcp/a:123"), "tcp/127.0.1.1:123");
-    EXPECT_EQUAL(f1.get_total_cnt(), 5u);
-    EXPECT_EQUAL(f1.resolve("tcp/b:123"), "tcp/127.0.2.1:123");
-    EXPECT_EQUAL(f1.get_total_cnt(), 6u);
+TEST(AsyncResolverTest, require_that_max_cache_size_is_honored) {
+    ResolveFixture f1(3);
+    EXPECT_EQ(f1.resolve("tcp/a:123"), "tcp/127.0.1.1:123");
+    EXPECT_EQ(f1.resolve("tcp/b:123"), "tcp/127.0.2.1:123");
+    EXPECT_EQ(f1.resolve("tcp/c:123"), "tcp/127.0.3.1:123");
+    EXPECT_EQ(f1.resolve("tcp/d:123"), "tcp/127.0.4.1:123");
+    EXPECT_EQ(f1.get_total_cnt(), 4u);
+    EXPECT_EQ(f1.resolve("tcp/b:123"), "tcp/127.0.2.1:123");
+    EXPECT_EQ(f1.get_total_cnt(), 4u);
+    EXPECT_EQ(f1.resolve("tcp/a:123"), "tcp/127.0.1.1:123");
+    EXPECT_EQ(f1.get_total_cnt(), 5u);
+    EXPECT_EQ(f1.resolve("tcp/b:123"), "tcp/127.0.2.1:123");
+    EXPECT_EQ(f1.get_total_cnt(), 6u);
 }
 
-TEST_F("require that missing ip address gives invalid address", ResolveFixture()) {
+TEST(AsyncResolverTest, require_that_missing_ip_address_gives_invalid_address) {
+    ResolveFixture f1;
     f1.set_ip_addr("localhost", "");
-    EXPECT_EQUAL(f1.resolve("tcp/localhost:123"), "invalid");
-    EXPECT_EQUAL(f1.get_cnt("localhost"), 1u);
-    EXPECT_EQUAL(f1.get_total_cnt(), 1u);
+    EXPECT_EQ(f1.resolve("tcp/localhost:123"), "invalid");
+    EXPECT_EQ(f1.get_cnt("localhost"), 1u);
+    EXPECT_EQ(f1.get_total_cnt(), 1u);
 }
 
-TEST_F("require that empty lookup results are cached", ResolveFixture()) {
+TEST(AsyncResolverTest, require_that_empty_lookup_results_are_cached) {
+    ResolveFixture f1;
     f1.set_ip_addr("localhost", "");
-    EXPECT_EQUAL(f1.resolve("tcp/localhost:123"), "invalid");
+    EXPECT_EQ(f1.resolve("tcp/localhost:123"), "invalid");
     f1.set_ip_addr("localhost", "127.0.0.1");
     f1.set_now(59.5);
-    EXPECT_EQUAL(f1.resolve("tcp/localhost:123"), "invalid");
+    EXPECT_EQ(f1.resolve("tcp/localhost:123"), "invalid");
     f1.set_now(60.0);
-    EXPECT_EQUAL(f1.resolve("tcp/localhost:123"), "tcp/127.0.0.1:123");
-    EXPECT_EQUAL(f1.get_cnt("localhost"), 2u);
-    EXPECT_EQUAL(f1.get_total_cnt(), 2u);
+    EXPECT_EQ(f1.resolve("tcp/localhost:123"), "tcp/127.0.0.1:123");
+    EXPECT_EQ(f1.get_cnt("localhost"), 2u);
+    EXPECT_EQ(f1.get_total_cnt(), 2u);
 }
 
-TEST_F("require that multiple cache entries can be evicted at the same time", ResolveFixture()) {
-    EXPECT_EQUAL(f1.resolve("tcp/a:123"), "tcp/127.0.1.1:123");
+TEST(AsyncResolverTest, require_that_multiple_cache_entries_can_be_evicted_at_the_same_time) {
+    ResolveFixture f1;
+    EXPECT_EQ(f1.resolve("tcp/a:123"), "tcp/127.0.1.1:123");
     f1.set_now(10.0);
-    EXPECT_EQUAL(f1.resolve("tcp/b:123"), "tcp/127.0.2.1:123");
+    EXPECT_EQ(f1.resolve("tcp/b:123"), "tcp/127.0.2.1:123");
     f1.set_now(20.0);
-    EXPECT_EQUAL(f1.resolve("tcp/c:123"), "tcp/127.0.3.1:123");
+    EXPECT_EQ(f1.resolve("tcp/c:123"), "tcp/127.0.3.1:123");
     f1.set_now(30.0);
-    EXPECT_EQUAL(f1.resolve("tcp/d:123"), "tcp/127.0.4.1:123");
+    EXPECT_EQ(f1.resolve("tcp/d:123"), "tcp/127.0.4.1:123");
     f1.set_now(40.0);
-    EXPECT_EQUAL(f1.resolve("tcp/e:123"), "tcp/127.0.5.1:123");
-    EXPECT_EQUAL(f1.get_total_cnt(), 5u);
+    EXPECT_EQ(f1.resolve("tcp/e:123"), "tcp/127.0.5.1:123");
+    EXPECT_EQ(f1.get_total_cnt(), 5u);
     f1.set_now(85.0); // c too old, d still good
-    EXPECT_EQUAL(f1.resolve("tcp/c:123"), "tcp/127.0.3.1:123");
-    EXPECT_EQUAL(f1.get_total_cnt(), 6u);
-    EXPECT_EQUAL(f1.resolve("tcp/d:123"), "tcp/127.0.4.1:123");
-    EXPECT_EQUAL(f1.get_total_cnt(), 6u);
+    EXPECT_EQ(f1.resolve("tcp/c:123"), "tcp/127.0.3.1:123");
+    EXPECT_EQ(f1.get_total_cnt(), 6u);
+    EXPECT_EQ(f1.resolve("tcp/d:123"), "tcp/127.0.4.1:123");
+    EXPECT_EQ(f1.get_total_cnt(), 6u);
     f1.set_now(0.0); // a has already been evicted from cache
-    EXPECT_EQUAL(f1.resolve("tcp/a:123"), "tcp/127.0.1.1:123");
-    EXPECT_EQUAL(f1.get_total_cnt(), 7u);
+    EXPECT_EQ(f1.resolve("tcp/a:123"), "tcp/127.0.1.1:123");
+    EXPECT_EQ(f1.get_total_cnt(), 7u);
 }
 
-TEST_F("require that slow host lookups trigger warning (manual log inspection)", TimeBomb(60)) {
+TEST(AsyncResolverTest, require_that_slow_host_lookups_trigger_warning__manual_log_inspection) {
+    TimeBomb f1(60);
     auto my_clock = std::make_shared<MyClock>();
     auto host_resolver = std::make_shared<BlockingHostResolver>(1);
     AsyncResolver::Params params;
@@ -283,10 +295,11 @@ TEST_F("require that slow host lookups trigger warning (manual log inspection)",
     host_resolver->release_callers();
     resolver->wait_for_pending_resolves();
     EXPECT_TRUE(handler->done);
-    EXPECT_EQUAL(result.spec(), "tcp/127.0.0.7:123");
+    EXPECT_EQ(result.spec(), "tcp/127.0.0.7:123");
 }
 
-TEST_F("require that discarding result handlers will avoid pending work (but complete started work)", TimeBomb(60)) {
+TEST(AsyncResolverTest, require_that_discarding_result_handlers_will_avoid_pending_work__but_complete_started_work) {
+    TimeBomb f1(60);
     auto host_resolver = std::make_shared<BlockingHostResolver>(2);
     AsyncResolver::Params params;
     params.resolver = host_resolver;
@@ -307,12 +320,13 @@ TEST_F("require that discarding result handlers will avoid pending work (but com
     handler3.reset();
     host_resolver->release_callers();
     resolver->wait_for_pending_resolves();
-    EXPECT_EQUAL(result1.spec(), "tcp/127.0.0.7:123");
-    EXPECT_EQUAL(result2.spec(), "tcp/127.0.0.7:123");
-    EXPECT_EQUAL(result3.spec(), "invalid");
+    EXPECT_EQ(result1.spec(), "tcp/127.0.0.7:123");
+    EXPECT_EQ(result2.spec(), "tcp/127.0.0.7:123");
+    EXPECT_EQ(result3.spec(), "invalid");
 }
 
-TEST_F("require that cache races can be provoked", TimeBomb(60)) {
+TEST(AsyncResolverTest, require_that_cache_races_can_be_provoked) {
+    TimeBomb f1(60);
     auto host_resolver = std::make_shared<BlockingHostResolver>(2);
     AsyncResolver::Params params;
     params.resolver = host_resolver;
@@ -327,8 +341,8 @@ TEST_F("require that cache races can be provoked", TimeBomb(60)) {
     host_resolver->wait_for_callers();
     host_resolver->release_callers();
     resolver->wait_for_pending_resolves();
-    EXPECT_EQUAL(result1.spec(), "tcp/127.0.0.7:123");
-    EXPECT_EQUAL(result2.spec(), "tcp/127.0.0.7:123");
+    EXPECT_EQ(result1.spec(), "tcp/127.0.0.7:123");
+    EXPECT_EQ(result2.spec(), "tcp/127.0.0.7:123");
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
