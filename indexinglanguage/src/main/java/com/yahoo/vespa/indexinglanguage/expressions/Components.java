@@ -1,9 +1,18 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+/**
+ * A collection of components of a given type, of which one will be selected by the appropriate ranking expression.
+ *
+ * @author bratseth
+ */
 public abstract class Components<TYPE> {
 
     private final Function<String, TYPE> failingComponentFactory;
@@ -109,6 +118,82 @@ public abstract class Components<TYPE> {
         @Override
         public TYPE get(String componentId) {
             return failingComponent("Components can not be created in this environment");
+        }
+
+    }
+
+    /** A collection of components of a single type, of which one is selected. */
+    public static class Selected<TYPE> {
+
+        private final String id;
+        private final TYPE component;
+        private final List<String> arguments;
+
+        public Selected(String name, Components<TYPE> components, String selectedId, boolean noIdIsAllowed,
+                        List<String> arguments) {
+            this.id = selectedId;
+            this.arguments = List.copyOf(arguments);
+
+            boolean selectedIdProvided = selectedId != null && !selectedId.isEmpty();
+
+            if (components.isEmpty()) {
+                throw new IllegalStateException("No " + name + "s provided");  // should never happen
+            }
+            else if (! selectedIdProvided && ! noIdIsAllowed) {
+                throw new IllegalArgumentException("A " + name + " id must be specified. "+
+                                                   "Valid " + name + "s are " + validComponents(components));
+            }
+            else if (components.singleSelected().isPresent() && ! selectedIdProvided) {
+                this.component = components.singleSelected().get();
+            }
+            else if (! components.singleSelected().isPresent() && ! selectedIdProvided) {
+                this.component = components.failingComponent("Multiple " + name + "s are provided but no " + name +
+                                                             " id is given. " + "Valid " + name + "s are " +
+                                                             validComponents(components));
+            }
+            else if ( ! components.contains(selectedId)) {
+                this.component = components.failingComponent("Can't find " + name + " '" + selectedId + "'. " +
+                                                             "Valid " + name + "s are " + validComponents(components));
+            } else  {
+                this.component = components.get(selectedId);
+            }
+        }
+
+        public String id() { return id; }
+        public TYPE component() { return component; }
+        public List<String> arguments() { return arguments; }
+
+        public String argumentsString() {
+            var sb = new StringBuilder();
+            if (id != null && !id.isEmpty())
+                sb.append(" ").append(id);
+
+            arguments.forEach(arg -> sb.append(" ").append(arg));
+            return sb.toString();
+        }
+
+        private String validComponents(Components<TYPE> components) {
+            List<String> componentIds = new ArrayList<>(components.ids());
+            componentIds.sort(null);
+            return String.join(", ", componentIds);
+        }
+
+        @Override
+        public String toString() {
+            return "selected " + component;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if ( ! (o instanceof Components.Selected<?> other)) return false;
+            if ( ! Objects.equals(this.id, other.id)) return false;
+            if ( ! Objects.equals(this.arguments, other.arguments)) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(Selected.class, id, arguments);
         }
 
     }

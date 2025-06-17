@@ -28,13 +28,13 @@ import java.util.Objects;
  */
 public class ChunkExpression extends Expression  {
 
-    private final SelectedComponent<Chunker> chunker;
+    private final Components.Selected<Chunker> chunker;
 
     /** The destination the chunks will be written to on the form [schema name].[field name] */
     private String destination;
 
     public ChunkExpression(Components<Chunker> chunkers, String chunkerId, List<String> chunkerArguments) {
-        chunker = new SelectedComponent<>("chunker", chunkers, chunkerId, false, chunkerArguments);
+        chunker = new Components.Selected<>("chunker", chunkers, chunkerId, false, chunkerArguments);
     }
 
     @Override
