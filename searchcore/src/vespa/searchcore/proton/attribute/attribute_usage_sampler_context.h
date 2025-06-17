@@ -26,7 +26,7 @@ class AttributeUsageSamplerContext
     AttributeUsageFilter &_filter;
 
 public:
-    AttributeUsageSamplerContext(AttributeUsageFilter& filter);
+    AttributeUsageSamplerContext(const std::string& document_type, AttributeUsageFilter& filter);
     ~AttributeUsageSamplerContext();
     void merge(const search::AddressSpaceUsage &usage,
                const std::string &attributeName,

@@ -5,8 +5,8 @@
 
 namespace proton {
 
-AttributeUsageSamplerContext::AttributeUsageSamplerContext(AttributeUsageFilter& filter)
-    : _usage(),
+AttributeUsageSamplerContext::AttributeUsageSamplerContext(const std::string& document_type, AttributeUsageFilter& filter)
+    : _usage(document_type),
       _lock(),
       _filter(filter)
 {

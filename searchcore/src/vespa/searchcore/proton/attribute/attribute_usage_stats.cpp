@@ -2,18 +2,28 @@
 
 #include "attribute_usage_stats.h"
 #include <vespa/searchlib/attribute/address_space_components.h>
-#include <iostream>
+#include <ostream>
 
 using search::AddressSpaceComponents;
 
 namespace proton {
 
 AttributeUsageStats::AttributeUsageStats()
-    : _max_usage(vespalib::AddressSpace())
+    : AttributeUsageStats("")
 {
 }
 
+AttributeUsageStats::AttributeUsageStats(const std::string& document_type_in)
+    : _max_usage(vespalib::AddressSpace()),
+      _document_type(document_type_in)
+{
+}
+
+AttributeUsageStats::AttributeUsageStats(const AttributeUsageStats&) = default;
+
 AttributeUsageStats::~AttributeUsageStats() = default;
+
+AttributeUsageStats& AttributeUsageStats::operator=(const AttributeUsageStats&) = default;
 
 void
 AttributeUsageStats::merge(const search::AddressSpaceUsage &usage,
@@ -28,7 +38,7 @@ AttributeUsageStats::merge(const search::AddressSpaceUsage &usage,
 std::ostream&
 operator<<(std::ostream& out, const AttributeUsageStats& rhs)
 {
-    out << "{max_address_space_usage=" << rhs.max_address_space_usage() << "}";
+    out << "{doctype=" << rhs.document_type() << ", max_address_space_usage=" << rhs.max_address_space_usage() << "}";
     return out;
 }
 

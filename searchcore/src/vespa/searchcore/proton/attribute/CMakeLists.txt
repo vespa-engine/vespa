@@ -19,6 +19,7 @@ vespa_add_library(searchcore_attribute STATIC
     attribute_transient_memory_calculator.cpp
     attribute_type_matcher.cpp
     attribute_usage_filter.cpp
+    attribute_usage_notifier.cpp
     attribute_usage_sampler_context.cpp
     attribute_usage_sampler_functor.cpp
     attribute_usage_stats.cpp

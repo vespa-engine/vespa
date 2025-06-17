@@ -21,6 +21,7 @@ class SampleAttributeUsageJob : public IMaintenanceJob
     IAttributeManagerSP   _readyAttributeManager;
     IAttributeManagerSP   _notReadyAttributeManager;
     AttributeUsageFilter &_attributeUsageFilter;
+    const std::string     _document_type;
 
 public:
     SampleAttributeUsageJob(IAttributeManagerSP readyAttributeManager,

@@ -18,7 +18,8 @@ SampleAttributeUsageJob(IAttributeManagerSP readyAttributeManager,
     : IMaintenanceJob("sample_attribute_usage." + docTypeName, vespalib::duration::zero(), interval),
       _readyAttributeManager(std::move(readyAttributeManager)),
       _notReadyAttributeManager(std::move(notReadyAttributeManager)),
-      _attributeUsageFilter(attributeUsageFilter)
+      _attributeUsageFilter(attributeUsageFilter),
+      _document_type(docTypeName)
 {
 }
 
@@ -27,7 +28,7 @@ SampleAttributeUsageJob::~SampleAttributeUsageJob() = default;
 bool
 SampleAttributeUsageJob::run()
 {
-    auto context = std::make_shared<AttributeUsageSamplerContext> (_attributeUsageFilter);
+    auto context = std::make_shared<AttributeUsageSamplerContext>(_document_type, _attributeUsageFilter);
     _readyAttributeManager->asyncForEachAttribute(std::make_shared<AttributeUsageSamplerFunctor>(context, "ready"));
     _notReadyAttributeManager->asyncForEachAttribute(std::make_shared<AttributeUsageSamplerFunctor>(context, "notready"));
     return true;

@@ -27,6 +27,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/metrics/updatehook.h>
+#include <vespa/searchcore/proton/attribute/attribute_usage_notifier.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
@@ -279,6 +280,7 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _tls(),
       _diskMemUsageSampler(),
       _persistenceEngine(),
+      _attribute_usage_notifier(),
       _documentDBMap(),
       _matchEngine(),
       _summaryEngine(),
@@ -392,6 +394,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                              _diskMemUsageSampler->notifier(),
                                                              protonConfig.visit.defaultserializedsize,
                                                              protonConfig.visit.ignoremaxbytes);
+    auto resource_usage_tracker = _persistenceEngine->get_resource_usage_tracker().shared_from_this();
+    _attribute_usage_notifier = std::make_shared<AttributeUsageNotifier>(resource_usage_tracker);
     _shared_service = std::make_unique<SharedThreadingService>(
             SharedThreadingServiceConfig::make(protonConfig, hwInfo.cpu()), _transport, *_persistenceEngine);
     _scheduler = std::make_unique<ScheduledForwardExecutor>(_transport, _shared_service->shared());
@@ -734,7 +738,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
         // TODO: Fix race with new cluster state setting.
         _persistenceEngine->putHandler(persistenceWGuard, bucketSpace, docTypeName, persistenceHandler);
         ret->set_attribute_usage_listener(
-                _persistenceEngine->get_resource_usage_tracker().make_attribute_usage_listener(docTypeName.getName()));
+                _attribute_usage_notifier->make_attribute_usage_listener(docTypeName.getName()));
     }
     auto searchHandler = std::make_shared<SearchHandlerProxy>(ret);
     _summaryEngine->putSearchHandler(docTypeName, searchHandler);
