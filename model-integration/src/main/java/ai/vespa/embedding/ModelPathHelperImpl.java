@@ -27,7 +27,7 @@ import java.time.Duration;
  * <p>
  * The actual download is performed by the config-proxy, which retrieves the model and stores it on the file system of the host.
  * The returned path points to the downloaded file in the host's local file system.
- * The RPC timeout for this operation is controlled by {@value #MODEL_DOWNLOAD_TIMEOUT}, and matches
+ * The RPC timeout for this operation is controlled by `MODEL_DOWNLOAD_TIMEOUT` (60 minutes), and matches
  * the timeout used during the config deserialization phase when acquiring model configuration.
  * <p>
  * Downloading supports optional bearer token authentication. The token is retrieved from a secret
