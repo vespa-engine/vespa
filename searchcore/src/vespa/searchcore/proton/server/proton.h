@@ -43,6 +43,7 @@ namespace storage::spi { struct PersistenceProvider; }
 
 namespace proton {
 
+class AttributeUsageNotifier;
 class DiskMemUsageSampler;
 class FlushEngine;
 class IDocumentDBReferenceRegistry;
@@ -100,6 +101,7 @@ private:
     std::unique_ptr<ResourceUsageWriteFilter> _write_filter;
     std::unique_ptr<DiskMemUsageSampler>   _diskMemUsageSampler;
     std::unique_ptr<PersistenceEngine>     _persistenceEngine;
+    std::shared_ptr<AttributeUsageNotifier> _attribute_usage_notifier;
     DocumentDBMap                          _documentDBMap;
     std::unique_ptr<MatchEngine>           _matchEngine;
     std::unique_ptr<SummaryEngine>         _summaryEngine;

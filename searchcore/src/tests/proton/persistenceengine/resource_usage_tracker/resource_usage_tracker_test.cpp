@@ -3,7 +3,6 @@
 #include <vespa/persistence/spi/resource_usage.h>
 #include <vespa/persistence/spi/resource_usage_listener.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_stats.h>
-#include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/persistenceengine/resource_usage_tracker.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
@@ -112,53 +111,7 @@ TEST_F(ResourceUsageTrackerTest, register_guard_handles_deleted_tracker)
 
 namespace {
 
-struct NamedAttribute
-{
-    std::string subdb;
-    std::string attribute;
-
-    NamedAttribute(const std::string& subdb_in, const std::string& attribute_in)
-        : subdb(subdb_in),
-          attribute(attribute_in)
-    {
-    }
-};
-
-NamedAttribute ready_a1("0.ready", "a1");
-NamedAttribute notready_a1("2.notready", "a1");
-NamedAttribute ready_a2("0.ready", "a2");
-
 constexpr size_t usage_limit = 1024;
-
-struct AttributeUsageStatsBuilder
-{
-    AttributeUsageStats stats;
-
-    AttributeUsageStatsBuilder()
-        : stats()
-    {
-    }
-
-    ~AttributeUsageStatsBuilder();
-
-    AttributeUsageStatsBuilder& reset() { stats = AttributeUsageStats(); return *this; }
-    AttributeUsageStatsBuilder& merge(const NamedAttribute& named_attribute, size_t used_address_space);
-
-    AttributeUsageStats build() { return stats; }
-
-};
-
-AttributeUsageStatsBuilder::~AttributeUsageStatsBuilder() = default;
-
-AttributeUsageStatsBuilder&
-AttributeUsageStatsBuilder::merge(const NamedAttribute& named_attribute, size_t used_address_space)
-{
-    vespalib::AddressSpace address_space_usage(used_address_space, 0, usage_limit);
-    search::AddressSpaceUsage as_usage;
-    as_usage.set("comp", address_space_usage);
-    stats.merge(as_usage, named_attribute.attribute, named_attribute.subdb);
-    return *this;
-}
 
 double rel_usage(size_t usage) noexcept {
     return (double) usage / (double) usage_limit;
@@ -170,58 +123,43 @@ ResourceUsage make_resource_usage(const std::string& attr_name, size_t used_addr
     return ResourceUsage(0.0, 0.0, address_space_usage);
 }
 
+AttributeUsageStats make_stats(const std::string& document_type, const std::string& subdb,
+                               const std::string& attribute,
+                               size_t used_address_space)
+{
+    AttributeUsageStats stats(document_type);
+    if (!document_type.empty()) {
+        search::AddressSpaceUsage usage;
+        usage.set("comp", vespalib::AddressSpace(used_address_space, 0, usage_limit));
+        stats.merge(usage, attribute, subdb);
+    }
+    return stats;
 }
 
-TEST_F(ResourceUsageTrackerTest, aggregates_attribute_usage)
+}
+
+TEST_F(ResourceUsageTrackerTest, attribute_usage_is_sent_to_listener)
 {
     notify(0.0, 0.0);
     auto register_guard = _tracker->set_listener(*_listener);
-    auto aul1 = _tracker->make_attribute_usage_listener("doctype1");
-    auto aul2 = _tracker->make_attribute_usage_listener("doctype2");
-    AttributeUsageStatsBuilder b1;
-    AttributeUsageStatsBuilder b2;
-    b1.merge(ready_a1, 10).merge(ready_a2, 5);
-    b2.merge(ready_a1, 15);
-    aul1->notify_attribute_usage(b1.build());
-    aul2->notify_attribute_usage(b2.build());
+    _tracker->notify_attribute_usage(make_stats("doctype2", "0.ready", "a1", 15));
     EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1.comp", 15), get_usage());
-    b1.merge(notready_a1, 16);
-    aul1->notify_attribute_usage(b1.build());
+    EXPECT_EQ(2, get_update_count());
+    _tracker->notify_attribute_usage(make_stats("doctype1", "2.notready", "a1", 16));
     EXPECT_EQ(make_resource_usage("doctype1.2.notready.a1.comp", 16), get_usage());
-    b1.reset().merge(ready_a1, 10).merge(ready_a2, 5);
-    aul1->notify_attribute_usage(b1.build());
+    EXPECT_EQ(3, get_update_count());
+    _tracker->notify_attribute_usage(make_stats("doctype2", "0.ready", "a1", 15));
     EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1.comp", 15), get_usage());
-    aul2.reset();
+    EXPECT_EQ(4, get_update_count());
+    _tracker->notify_attribute_usage(make_stats("doctype1", "0.ready", "a1", 10));
     EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1.comp", 10), get_usage());
-    aul1.reset();
+    EXPECT_EQ(5, get_update_count());
+    _tracker->notify_attribute_usage(make_stats("", "", "", 10));
     EXPECT_EQ(make_resource_usage("", 0), get_usage());
-    aul2 = _tracker->make_attribute_usage_listener("doctype2");
-    aul2->notify_attribute_usage(b2.build());
+    EXPECT_EQ(6, get_update_count());
+    _tracker->notify_attribute_usage(make_stats("doctype2", "0.ready", "a1", 15));
     EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1.comp", 15), get_usage());
-}
-
-TEST_F(ResourceUsageTrackerTest, can_skip_scan_when_aggregating_attributes)
-{
-    notify(0.0, 0.0);
-    auto register_guard = _tracker->set_listener(*_listener);
-    auto aul1 = _tracker->make_attribute_usage_listener("doctype1");
-    auto aul2 = _tracker->make_attribute_usage_listener("doctype2");
-    AttributeUsageStatsBuilder b1;
-    AttributeUsageStatsBuilder b2;
-    b1.merge(ready_a1, 20).merge(ready_a2, 5);
-    b2.merge(ready_a1, 15);
-    aul1->notify_attribute_usage(b1.build());
-    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1.comp", 20), get_usage());
-    EXPECT_EQ(2u, get_update_count());
-    aul1->notify_attribute_usage(b1.build());
-    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1.comp", 20), get_usage());
-    EXPECT_EQ(2u, get_update_count()); // usage for doctype1 has not changed
-    aul2->notify_attribute_usage(b2.build());
-    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1.comp", 20), get_usage());
-    EXPECT_EQ(2u, get_update_count()); // usage for doctype2 is less than usage for doctype1
-    aul2.reset();
-    aul1.reset();
-    EXPECT_EQ(4u, get_update_count()); // never skip scan when removing document type
+    EXPECT_EQ(7, get_update_count());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -18,13 +18,17 @@ class AddressSpaceUsageStats
     std::string _component_name;
     std::string _subDbName;
 
-    bool keep(const vespalib::AddressSpace& usage,
-              const std::string& attributeName,
-              const std::string& component_name,
-              const std::string& subDbName);
+    bool less_usage_than(const vespalib::AddressSpace& usage,
+                         const std::string& attributeName,
+                         const std::string& component_name,
+                         const std::string& subDbName) const noexcept;
 public:
     explicit AddressSpaceUsageStats(const vespalib::AddressSpace &usage);
+    AddressSpaceUsageStats(const AddressSpaceUsageStats&);
+    AddressSpaceUsageStats(AddressSpaceUsageStats&&) noexcept = default;
     ~AddressSpaceUsageStats();
+    AddressSpaceUsageStats& operator=(const AddressSpaceUsageStats&);
+    AddressSpaceUsageStats& operator=(AddressSpaceUsageStats&&) noexcept = default;
     void merge(const vespalib::AddressSpace &usage,
                const std::string &attributeName,
                const std::string &component_name,
