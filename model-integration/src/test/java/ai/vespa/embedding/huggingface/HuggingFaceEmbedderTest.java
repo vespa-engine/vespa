@@ -2,6 +2,7 @@
 package ai.vespa.embedding.huggingface;
 
 
+import ai.vespa.embedding.ModelPathHelper;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
@@ -21,6 +22,10 @@ import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.UnpackBitsNode;
+
+import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 
 public class HuggingFaceEmbedderTest {
 
@@ -182,7 +187,15 @@ public class HuggingFaceEmbedderTest {
         builder.tokenizerPath(ModelReference.valueOf(vocabPath));
         builder.transformerModel(ModelReference.valueOf(modelPath));
         builder.transformerGpuDevice(-1);
-        return new HuggingFaceEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build());
+        var mockModelPathHelper = new MockModelPathHelper();
+        HuggingFaceEmbedder huggingFaceEmbedder = new HuggingFaceEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build(), mockModelPathHelper);
+
+        assertTrue(mockModelPathHelper.invokedPaths.containsAll(Set.of(
+                "src/test/models/onnx/transformer/real_tokenizer.json",
+                "src/test/models/onnx/transformer/embedding_model.onnx"
+        )));
+
+        return huggingFaceEmbedder;
     }
 
     private static HuggingFaceEmbedder getNormalizedEmbedder() {
@@ -194,7 +207,15 @@ public class HuggingFaceEmbedderTest {
         builder.transformerModel(ModelReference.valueOf(modelPath));
         builder.transformerGpuDevice(-1);
         builder.normalize(true);
-        return new HuggingFaceEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build());
+        var mockModelPathHelper = new MockModelPathHelper();
+        HuggingFaceEmbedder huggingFaceEmbedder = new HuggingFaceEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build(), mockModelPathHelper);
+
+        assertTrue(mockModelPathHelper.invokedPaths.containsAll(Set.of(
+                "src/test/models/onnx/transformer/real_tokenizer.json",
+                "src/test/models/onnx/transformer/embedding_model.onnx"
+        )));
+
+        return huggingFaceEmbedder;
     }
 
     private static HuggingFaceEmbedder getNormalizePrefixdEmbedder() {
@@ -208,7 +229,15 @@ public class HuggingFaceEmbedderTest {
         builder.normalize(true);
         builder.prependQuery("Represent this text:");
         builder.prependDocument("This is a document:");
-        return new HuggingFaceEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build());
+        var mockModelPathHelper = new MockModelPathHelper();
+        HuggingFaceEmbedder huggingFaceEmbedder = new HuggingFaceEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build(), mockModelPathHelper);
+
+        assertTrue(mockModelPathHelper.invokedPaths.containsAll(Set.of(
+                "src/test/models/onnx/transformer/real_tokenizer.json",
+                "src/test/models/onnx/transformer/embedding_model.onnx"
+        )));
+
+        return huggingFaceEmbedder;
     }
 
     public static Tensor expandBitTensor(Tensor packed) {
@@ -218,4 +247,14 @@ public class HuggingFaceEmbedderTest {
         return unpacker.evaluate(context).asTensor();
     }
 
+    static class MockModelPathHelper implements ModelPathHelper {
+        Set<String> invokedPaths = new HashSet<>();
+
+        @Override
+        public Path getModelPathResolvingIfNecessary(ModelReference modelReference) {
+            invokedPaths.add(modelReference.toString());
+
+            return modelReference.value();
+        }
+    }
 }

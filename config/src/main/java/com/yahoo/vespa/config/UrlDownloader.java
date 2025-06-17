@@ -12,6 +12,7 @@ import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.FINE;
@@ -66,24 +67,40 @@ public class UrlDownloader {
         return target != null && target.isValid();
     }
 
-   public File waitFor(UrlReference urlReference, Duration timeout) {
-        if (! isValid())
-            connect();
-
-       Request request = new Request("url.waitFor");
-       request.parameters().add(new StringValue(urlReference.value()));
-
-       double rpcTimeout = timeout.toSeconds();
-       log.log(FINE, () -> "InvokeSync waitFor " + urlReference + " with " + rpcTimeout + " seconds timeout");
-       target.invokeSync(request, rpcTimeout);
-
-       if (request.checkReturnTypes("s")) {
-           return new File(request.returnValues().get(0).asString());
-       } else if (! request.isError()) {
-           throw new RuntimeException("Invalid response: " + request.returnValues());
-       } else {
-           throw new RuntimeException("Wait for " + urlReference + " failed: " + request.errorMessage() + " (" + request.errorCode() + ")");
-       }
+    public File waitFor(UrlReference urlReference, Duration timeout) {
+        return waitFor(urlReference, DownloadOptions.defaultOptions(), timeout);
     }
 
+    public File waitFor(UrlReference urlReference, DownloadOptions downloadOptions, Duration timeout) {
+        if (!isValid())
+            connect();
+
+        Request request = new Request("url.waitFor");
+        request.parameters().add(new StringValue(urlReference.value()));
+        downloadOptions.authToken()
+                .ifPresent(token -> request.parameters().add(new StringValue(token)));
+
+        double rpcTimeout = timeout.toSeconds();
+        log.log(FINE, () -> "InvokeSync waitFor " + urlReference + " with " + rpcTimeout + " seconds timeout");
+        target.invokeSync(request, rpcTimeout);
+
+        if (request.checkReturnTypes("s")) {
+            return new File(request.returnValues().get(0).asString());
+        } else if (!request.isError()) {
+            throw new RuntimeException("Invalid response: " + request.returnValues());
+        } else {
+            throw new RuntimeException("Wait for " + urlReference + " failed: " + request.errorMessage() + " (" + request.errorCode() + ")");
+        }
+    }
+
+    public record DownloadOptions(Optional<String> authToken) {
+
+        public static DownloadOptions defaultOptions() {
+            return new DownloadOptions(Optional.empty());
+        }
+
+        public static DownloadOptions ofAuthToken(String authToken ) {
+            return new DownloadOptions(Optional.ofNullable(authToken));
+        }
+    }
 }
