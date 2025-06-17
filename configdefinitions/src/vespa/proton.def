@@ -518,6 +518,21 @@ replay_throttling_policy.min_window_size int default=100
 replay_throttling_policy.max_window_size int default=10000
 replay_throttling_policy.window_size_increment int default=20
 
+## Iff nonzero, sets a soft limit for the amount of memory that can be concurrently
+## used during transaction log replaying. The limit is soft in that it must always
+## be possible to schedule at least one operation, even if this operation exceeds
+## the configured limit. For an operation to be replayed it must fit into the active
+## window size of the dynamic throttling policy _and_ not cause the max replay memory
+## usage limit to be violated.
+##
+## Note that memory usage is only an estimate; the usage of any given operation uses
+## the serialized operation size as a proxy of the true memory cost of said operation.
+##
+## A positive number specifies max memory usage in bytes.
+## A negative number specifies memory usage as a percentage of total memory.
+## A value of zero implies no enforced memory limit.
+replay_throttling_policy.memory_usage_soft_limit_bytes long default=0
+
 ## Everything below are deprecated and ignored. Will go away at any time.
 
 ## Deprecated and ignored, will soon go away
@@ -550,7 +565,7 @@ index.cache.size long default=0 restart
 
 ## Configure a shared disk index posting list cache across all document dbs.
 ##
-## Is default turned off (maxbytes == 0).
+## Is by default turned off (maxbytes == 0).
 ## The cache will not be used if search.io == MMAP.
 ## A positive number specifies the max size of the cache in bytes.
 ## A negative number specifies the max size of the cache as a percentage of total memory.

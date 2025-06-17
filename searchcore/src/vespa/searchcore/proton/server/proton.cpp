@@ -191,7 +191,7 @@ make_posting_list_cache(const ProtonConfig& cfg)
 }
 
 ReplayThrottlingPolicy
-make_replay_throttling_policy(const ProtonConfig::ReplayThrottlingPolicy& cfg) {
+make_replay_throttling_policy(const ProtonConfig::ReplayThrottlingPolicy& cfg, const vespalib::HwInfo& hw_info) {
     if (cfg.type == ProtonConfig::ReplayThrottlingPolicy::Type::UNLIMITED) {
         return ReplayThrottlingPolicy({});
     }
@@ -199,7 +199,10 @@ make_replay_throttling_policy(const ProtonConfig::ReplayThrottlingPolicy& cfg) {
     params.min_window_size = cfg.minWindowSize;
     params.max_window_size = cfg.maxWindowSize;
     params.window_size_increment = cfg.windowSizeIncrement;
-    // TODO resource usage limiting
+    // TODO factor out this kind of absolute vs. relative calculation; dupe of DocumentStore configuration
+    params.resource_usage_soft_limit = (cfg.memoryUsageSoftLimitBytes < 0)
+            ? (hw_info.memory().sizeBytes() * std::min(INT64_C(50), -cfg.memoryUsageSoftLimitBytes)) / 100L
+            : cfg.memoryUsageSoftLimitBytes;
     return ReplayThrottlingPolicy(params);
 }
 
@@ -396,7 +399,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
             SharedThreadingServiceConfig::make(protonConfig, hwInfo.cpu()), _transport, *_persistenceEngine);
     _scheduler = std::make_unique<ScheduledForwardExecutor>(_transport, _shared_service->shared());
     _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, hwInfo), *_scheduler);
-    auto replay_throttle_policy = make_replay_throttling_policy(protonConfig.replayThrottlingPolicy);
+    auto replay_throttle_policy = make_replay_throttling_policy(protonConfig.replayThrottlingPolicy, _hw_info);
     if (replay_throttle_policy.get_params()) {
         // Must happen before creating/initializing any document DBs
         _shared_replay_throttler = vespalib::SharedOperationThrottler::make_dynamic_throttler(*replay_throttle_policy.get_params());
