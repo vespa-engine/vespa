@@ -357,6 +357,14 @@ public class Flags {
             "Takes effect immediately"
     );
 
+    public static final UnboundBooleanFlag USE_NEW_PREPARE_FOR_RESTART_METHOD = defineFeatureFlag(
+            "use-new-prepare-for-restart-method", false,
+            List.of("hmusum"), "2025-06-17", "2025-09-01",
+            "Whether Azure hosts should be provsioned with IPv6 addresses",
+            "Takes effect at next tick",
+            HOSTNAME
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
