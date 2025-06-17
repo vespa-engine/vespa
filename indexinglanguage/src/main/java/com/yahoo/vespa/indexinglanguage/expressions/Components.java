@@ -21,34 +21,22 @@ public abstract class Components<TYPE> {
         this.failingComponentFactory = failingComponentFactory;
     }
 
-    /**
-     * Returns all the known instance id's in this.
-     */
+    /** Returns all the known instance id's in this. */
     public abstract Set<String> ids();
 
-    /**
-     * Returns whether this is empty.
-     */
+    /** Returns whether this is empty. */
     public abstract boolean isEmpty();
 
-    /**
-     * Returns the single component selected by this without supplying an id, or empty if an id is required.
-     */
+    /** Returns the single component selected by this without supplying an id, or empty if an id is required. */
     public abstract Optional<TYPE> singleSelected();
 
-    /**
-     * Returns whether this contains the given id.
-     */
+    /** Returns whether this contains the given id. */
     public abstract boolean contains(String componentId);
 
-    /**
-     * Returns the component with this id, or null if it does not exist.
-     */
+    /** Returns the component with this id, or null if it does not exist. */
     public abstract TYPE get(String componentId);
 
-    /**
-     * Returns a component instance which will fail with the given message if used.
-     */
+    /** Returns a component instance which will fail with the given message if used. */
     public TYPE failingComponent(String message) {
         return failingComponentFactory.apply(message);
     }
