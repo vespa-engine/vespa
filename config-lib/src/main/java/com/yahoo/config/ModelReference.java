@@ -72,13 +72,16 @@ public class ModelReference {
         return Objects.hash(modelId, url, secretRef, path, resolved);
     }
 
-    /** Returns this on the format accepted by valueOf */
+    /**
+     * Returns this on the format accepted by valueOf
+     * NB! Any changes to this format must be reflected in valueOf below and must be backwards compatible
+     */
     @Override
     public String toString() {
         if (resolved != null) return resolved.toString();
         return modelId.orElse("\"\"") + " " +
                url.map(UrlReference::value).orElse("\"\"") + " " +
-               secretRef.map("%s "::formatted).orElse("") + // TODO remove conditional after all nodes upgraded
+               secretRef.map("%s "::formatted).orElse("") + // TODO remove conditional after 8.566
                path.map(FileReference::value).orElse("\"\"");
     }
 
@@ -86,12 +89,13 @@ public class ModelReference {
      * Creates a model reference which is either a single string with no spaces if resolved, or if unresolved
      * a four-part string on the form <code>modelId url secretRef path</code>, where
      * each of the elements is either a value not containing space, or empty represented by "".
+     * NB! Any changes to this format must be reflected in toString above and must be backwards compatible
      */
     public static ModelReference valueOf(String s) {
         String[] parts = s.split(" ");
         if (parts.length == 1)
             return resolved(Path.of(s));
-        else if (parts.length == 3) // TODO remove variant after all nodes upgraded
+        else if (parts.length == 3) // TODO remove variant after 8.566
             return unresolved(parts[0].equals("\"\"") ? Optional.empty() : Optional.of(parts[0]),
                     parts[1].equals("\"\"") ? Optional.empty() : Optional.of(new UrlReference(parts[1])),
                     parts[2].equals("\"\"") ? Optional.empty() : Optional.of(new FileReference(parts[2])));
