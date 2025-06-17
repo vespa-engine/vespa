@@ -18,10 +18,10 @@ class AddressSpaceUsageStats
     std::string _component_name;
     std::string _subDbName;
 
-    bool less_usage(const vespalib::AddressSpace& usage,
-                    const std::string& attributeName,
-                    const std::string& component_name,
-                    const std::string& subDbName) const noexcept;
+    bool less_usage_than(const vespalib::AddressSpace& usage,
+                         const std::string& attributeName,
+                         const std::string& component_name,
+                         const std::string& subDbName) const noexcept;
 public:
     explicit AddressSpaceUsageStats(const vespalib::AddressSpace &usage);
     AddressSpaceUsageStats(const AddressSpaceUsageStats&);

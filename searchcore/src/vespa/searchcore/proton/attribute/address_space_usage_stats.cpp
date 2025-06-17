@@ -20,10 +20,10 @@ AddressSpaceUsageStats::~AddressSpaceUsageStats() = default;
 AddressSpaceUsageStats& AddressSpaceUsageStats::operator=(const AddressSpaceUsageStats&) = default;
 
 bool
-AddressSpaceUsageStats::less_usage(const vespalib::AddressSpace& usage,
-                                   const std::string& attributeName,
-                                   const std::string& component_name,
-                                   const std::string& subDbName) const noexcept
+AddressSpaceUsageStats::less_usage_than(const vespalib::AddressSpace& usage,
+                                        const std::string& attributeName,
+                                        const std::string& component_name,
+                                        const std::string& subDbName) const noexcept
 {
     if (_attributeName.empty()) {
         return true;
@@ -49,7 +49,7 @@ AddressSpaceUsageStats::merge(const vespalib::AddressSpace &usage,
                               const std::string &component_name,
                               const std::string &subDbName)
 {
-    if (less_usage(usage, attributeName, component_name, subDbName)) {
+    if (less_usage_than(usage, attributeName, component_name, subDbName)) {
         _usage = usage;
         _attributeName = attributeName;
         _component_name = component_name;

@@ -19,7 +19,7 @@ public:
     }
 
     void sample(const AttributeUsageStats& usage) noexcept {
-        if (_max == nullptr || _max->less_usage(usage)) {
+        if (_max == nullptr || _max->less_usage_than(usage)) {
             _max = &usage;
         }
     }
@@ -111,7 +111,7 @@ AttributeUsageNotifier::notify_attribute_usage(const AttributeUsageStats& attrib
     }
     old_usage = attribute_usage;
     if (attribute_usage.document_type() == _max_attribute_usage.document_type() ||
-        _max_attribute_usage.less_usage(attribute_usage)) {
+        _max_attribute_usage.less_usage_than(attribute_usage)) {
         if (scan_attribute_usage(guard)) {
             if (_tracker) {
                 _tracker->notify_attribute_usage(_max_attribute_usage);

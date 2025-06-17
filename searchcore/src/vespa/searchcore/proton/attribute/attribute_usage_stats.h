@@ -36,7 +36,7 @@ public:
                (_document_type == rhs._document_type);
     }
 
-    bool less_usage(const AttributeUsageStats& new_stats) const noexcept {
+    bool less_usage_than(const AttributeUsageStats& new_stats) const noexcept {
         // Prefer the highest usage, then lowest document type
         auto old_usage = max_address_space_usage().getUsage().usage();
         auto new_usage = new_stats.max_address_space_usage().getUsage().usage();
