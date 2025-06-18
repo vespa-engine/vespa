@@ -28,14 +28,9 @@ import (
 )
 
 const (
-	applicationFlag = "application"
-	instanceFlag    = "instance"
-	clusterFlag     = "cluster"
-	zoneFlag        = "zone"
-	targetFlag      = "target"
-	colorFlag       = "color"
-	quietFlag       = "quiet"
-	debugModeFlag   = "debug"
+	colorFlag     = "color"
+	quietFlag     = "quiet"
+	debugModeFlag = "debug"
 
 	anyTarget = iota
 	localTargetOnly

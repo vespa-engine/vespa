@@ -10,6 +10,14 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
+const (
+	applicationFlag = "application"
+	instanceFlag    = "instance"
+	clusterFlag     = "cluster"
+	zoneFlag        = "zone"
+	targetFlag      = "target"
+)
+
 // TargetFlags represents the set of flags used for targeting commands.
 // This provides a reusable way to add target-related flags to commands that need them.
 type TargetFlags struct {
