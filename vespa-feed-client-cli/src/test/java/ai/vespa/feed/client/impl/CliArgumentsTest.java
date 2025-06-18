@@ -45,7 +45,8 @@ class CliArgumentsTest {
                 "--show-errors",
                 "--show-all",
                 "--max-failure-seconds", "30",
-                "--proxy", "https://myproxy:1234"});
+                "--proxy", "https://myproxy:1234",
+                "--initial-inflight-factor", "64"});
         assertEquals(URI.create("https://vespa.ai:4443/"), args.endpoint());
         assertEquals(Paths.get("feed.json"), args.inputFile().get());
         assertEquals(10, args.connections().getAsInt());
@@ -70,6 +71,7 @@ class CliArgumentsTest {
         assertFalse(args.showProgress());
         assertEquals(Compression.gzip, args.compression());
         assertEquals(URI.create("https://myproxy:1234"), args.proxy().orElse(null));
+        assertEquals(64, args.initialInflightFactor().getAsInt());
     }
 
     @Test

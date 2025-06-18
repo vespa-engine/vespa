@@ -152,6 +152,14 @@ public interface FeedClientBuilder {
 
     enum Compression { auto, none, gzip }
 
+    /**
+     * Sets the initial inflight factor for this client.
+     *
+     * This determines the initial targetInflight,
+     * which is {@code minInflight * initialInflightFactor}.
+     */
+    FeedClientBuilder setInitialInflightFactor(int factor);
+
     /** Constructs instance of {@link FeedClient} from builder configuration */
     FeedClient build();
 
