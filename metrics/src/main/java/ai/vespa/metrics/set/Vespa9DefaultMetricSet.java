@@ -149,6 +149,8 @@ public class Vespa9DefaultMetricSet {
                 .metric(ClusterControllerMetrics.MAINTENANCE_COUNT.max())
                 .metric(ClusterControllerMetrics.UP_COUNT.max())
                 .metric(ClusterControllerMetrics.IS_MASTER.max())
+                .metric(ClusterControllerMetrics.STORED_DOCUMENT_COUNT.max())
+                .metric(ClusterControllerMetrics.STORED_DOCUMENT_BYTES.max())
                 .metric(ClusterControllerMetrics.RESOURCE_USAGE_NODES_ABOVE_LIMIT.max())
                 .metric(ClusterControllerMetrics.RESOURCE_USAGE_MAX_MEMORY_UTILIZATION.max())
                 .metric(ClusterControllerMetrics.RESOURCE_USAGE_MAX_DISK_UTILIZATION.max())
