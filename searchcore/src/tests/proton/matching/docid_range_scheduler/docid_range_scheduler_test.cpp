@@ -4,7 +4,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/testkit/time_bomb.h>
-#include <latch>
 
 using namespace proton::matching;
 using vespalib::TimeBomb;
@@ -201,9 +200,8 @@ TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_enables_thread
 {
     constexpr size_t num_threads = 3;
     AdaptiveDocidRangeScheduler f1(num_threads, 1, 28);
-    std::latch latch(num_threads);
     TimeBomb f2(60);
-    auto task = [&f1,&latch](Nexus& ctx) {
+    auto task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         DocidRange range = f1.first_range(thread_id);
         if (thread_id == 0) {
@@ -215,7 +213,7 @@ TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_enables_thread
         }
         EXPECT_EQ(f1.total_size(thread_id), 9u);
         verify_range("before barrier", f1.share_range(thread_id, range), range);
-        latch.arrive_and_wait();
+        ctx.barrier();
         if (thread_id == 0) {
             verify_range("after barrier0", f1.next_range(thread_id), DocidRange(25,28));
         } else if (thread_id == 1) {

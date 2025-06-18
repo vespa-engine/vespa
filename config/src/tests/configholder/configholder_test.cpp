@@ -2,7 +2,6 @@
 #include <vespa/config/common/configholder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
-#include <barrier>
 #include <thread>
 
 using namespace config;
@@ -72,21 +71,20 @@ TEST(ConfigHolderTest, Require_that_negative_time_does_not_mean_forever)
 TEST(ConfigHolderTest, Require_that_wait_is_interrupted_on_close) {
     constexpr size_t num_threads = 2;
     ConfigHolder f;
-    std::barrier barrier(num_threads);
-    auto task = [&f,&barrier](Nexus& ctx) {
+    auto task = [&f](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             vespalib::Timer timer;
-            barrier.arrive_and_wait();
+            ctx.barrier();
             f.wait_for(1000ms);
             EXPECT_LT(timer.elapsed(), ONE_MINUTE);
             EXPECT_GT(timer.elapsed(), 400ms);
-            barrier.arrive_and_wait();
+            ctx.barrier();
         } else {
-            barrier.arrive_and_wait();
+            ctx.barrier();
             std::this_thread::sleep_for(500ms);
             f.close();
-            barrier.arrive_and_wait();
+            ctx.barrier();
         }
     };
     Nexus::run(num_threads, task);

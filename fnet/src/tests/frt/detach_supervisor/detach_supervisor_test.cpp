@@ -11,7 +11,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
-#include <barrier>
 #include <cassert>
 #include <thread>
 
@@ -133,69 +132,68 @@ TEST(DetachSupervisorTest, require_that_supervisor_can_be_detached_from_transpor
     uint32_t f3(0);
     uint32_t f4(0);
     uint32_t f5(0);
-    std::barrier barrier(num_threads);
-    auto task = [&f1,&f2,&f3,&f4,&f5,&barrier](Nexus& ctx) {
+    auto task = [&f1,&f2,&f3,&f4,&f5](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {        // server 1 (talks to client 1)
             auto self = std::make_unique<RpcFixture>(f1);
             ASSERT_NO_FATAL_FAILURE(self->listen());
             f2 = self->port();
-            barrier.arrive_and_wait(); // #1
+            ctx.barrier(); // #1
             vespalib::ref_counted<FRT_Target> target;
             ASSERT_NO_FATAL_FAILURE(self->meta_connect(f4, target));
             auto client_target = self->connect(f3);
-            barrier.arrive_and_wait(); // #2
-            barrier.arrive_and_wait(); // #3
+            ctx.barrier(); // #2
+            ctx.barrier(); // #3
             std::this_thread::sleep_for(50ms);
             self.reset();   // <--- detach supervisor for server 1
-            barrier.arrive_and_wait(); // #4
+            ctx.barrier(); // #4
             EXPECT_EQ(RpcFixture::verify_rpc(target.get()), 0); // outgoing 2way target should be closed
             EXPECT_EQ(RpcFixture::verify_rpc(client_target.get()), 1); // pure client target should not be closed
-            barrier.arrive_and_wait(); // #5
+            ctx.barrier(); // #5
         } else if (thread_id == 1) { // server 2 (talks to client 2)
             auto self = std::make_unique<RpcFixture>(f1);
             ASSERT_NO_FATAL_FAILURE(self->listen());
             f3 = self->port();
-            barrier.arrive_and_wait(); // #1
+            ctx.barrier(); // #1
             vespalib::ref_counted<FRT_Target> target;
             ASSERT_NO_FATAL_FAILURE(self->meta_connect(f5, target));
-            barrier.arrive_and_wait(); // #2
-            barrier.arrive_and_wait(); // #3
-            barrier.arrive_and_wait(); // #4
-            barrier.arrive_and_wait(); // #5
+            ctx.barrier(); // #2
+            ctx.barrier(); // #3
+            ctx.barrier(); // #4
+            ctx.barrier(); // #5
         } else if (thread_id == 2) { // client 1 (talks to server 1)
             auto self = std::make_unique<RpcFixture>(f1);
             ASSERT_NO_FATAL_FAILURE(self->listen());
             f4 = self->port();
-            barrier.arrive_and_wait(); // #1
+            ctx.barrier(); // #1
             auto target = self->connect(f2);
-            barrier.arrive_and_wait(); // #2
+            ctx.barrier(); // #2
             ASSERT_TRUE(self->back_conn.load() != nullptr);
             EXPECT_EQ(self->verify_rpc(target.get(), f2), 3);
-            barrier.arrive_and_wait(); // #3
+            ctx.barrier(); // #3
             auto until = steady_clock::now() + 120s;
             while ((self->verify_rpc(target.get(), f2) > 0) &&
                    (steady_clock::now() < until))
             {
                 // wait until peer is fully detached
             }
-            barrier.arrive_and_wait(); // #4
+            ctx.barrier(); // #4
             EXPECT_EQ(self->verify_rpc(target.get(), f2), 0);
-            barrier.arrive_and_wait(); // #5
+            ctx.barrier(); // #5
         } else {                     // client 2 (talks to server 2)
             ASSERT_EQ(thread_id, 3u);
             auto self = std::make_unique<RpcFixture>(f1);
             ASSERT_NO_FATAL_FAILURE(self->listen());
             f5 = self->port();
-            barrier.arrive_and_wait(); // #1
+            ctx.barrier(); // #1
             auto target = self->connect(f3);
-            barrier.arrive_and_wait(); // #2
+            ctx.barrier(); // #2
             ASSERT_TRUE(self->back_conn.load() != nullptr);
             EXPECT_EQ(self->verify_rpc(target.get(), f3), 3);
-            barrier.arrive_and_wait(); // #3
-            barrier.arrive_and_wait(); // #4
+            ctx.barrier(); // #3
+            ctx.barrier(); // #4
             EXPECT_EQ(self->verify_rpc(target.get(), f3), 3);
-            barrier.arrive_and_wait(); // #5
+            ctx.barrier(); // #5
         }
     };
     Nexus::run(num_threads, task);

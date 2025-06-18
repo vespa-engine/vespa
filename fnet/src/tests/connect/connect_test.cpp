@@ -14,7 +14,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cassert>
-#include <latch>
 
 using namespace vespalib;
 using vespalib::test::Nexus;
@@ -163,17 +162,16 @@ TEST(ConnectTest, require_that_normal_connect_works)
     TransportFixture f2;
     ConnCheck f3;
     TimeBomb f4(60);
-    std::latch latch(num_threads);
-    auto task = [&f1,&f2,&f3,&latch](Nexus& ctx) {
+    auto task = [&f1,&f2,&f3](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             SocketHandle socket = f1.accept();
             EXPECT_TRUE(socket.valid());
-            latch.arrive_and_wait();
+            ctx.barrier();
         } else {
             std::string spec = make_string("tcp/localhost:%d", f1.address().port());
             FNET_Connection *conn = f2.connect(spec);
-            latch.arrive_and_wait();
+            ctx.barrier();
             conn->Owner()->Close(conn);
             f2.conn_lost.await();
             EXPECT_TRUE(!f3.await(short_time));
@@ -232,13 +230,12 @@ TEST(ConnectTest, require_that_async_close_during_async_do_handshake_work_works)
     TransportFixture f3(f2);
     ConnCheck f4;
     TimeBomb f5(60);
-    std::latch latch(num_threads);
-    auto task = [&f1,&f2,&f3,&f4,&latch](Nexus& ctx) {
+    auto task = [&f1,&f2,&f3,&f4](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             SocketHandle socket = f1.accept();
             EXPECT_TRUE(socket.valid());
-            latch.arrive_and_wait(); // #1
+            ctx.barrier(); // #1
         } else {
             std::string spec = make_string("tcp/localhost:%d", f1.address().port());
             FNET_Connection *conn = f3.connect(spec);
@@ -246,7 +243,7 @@ TEST(ConnectTest, require_that_async_close_during_async_do_handshake_work_works)
             conn->Owner()->Close(conn, false);
             conn = nullptr; // ref given away
             f3.conn_lost.await();
-            latch.arrive_and_wait(); // #1
+            ctx.barrier(); // #1
             // verify that pending work keeps relevant objects alive
             EXPECT_TRUE(!f4.await(short_time));
             EXPECT_TRUE(!f2->handshake_socket_deleted.await(short_time));

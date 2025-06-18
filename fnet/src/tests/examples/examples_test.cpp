@@ -8,7 +8,6 @@
 #include <vespa/vespalib/util/time.h>
 #include <atomic>
 #include <csignal>
-#include <latch>
 #include <thread>
 
 // reserved in vespa/factory/doc/port-ranges.txt
@@ -82,17 +81,16 @@ TEST(ExamplesTest, timeout) {
 TEST(ExamplesTest, ping) {
     constexpr size_t num_threads = 2;
     pid_t f1(-1);
-    std::latch latch(num_threads);
-    auto task = [&f1,&latch](Nexus& ctx) {
+    auto task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             Process proc(fmt("exec ../../examples/ping/fnet_pingserver_app tcp/%d",
                              PORT0), true);
             f1 = proc.pid();
-            latch.arrive_and_wait();
+            ctx.barrier();
             consume_result(proc);
         } else {
-            latch.arrive_and_wait();
+            ctx.barrier();
             EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/ping/fnet_pingclient_app tcp/localhost:%d",
                                            PORT0)));
             kill(f1, SIGTERM);
@@ -104,18 +102,17 @@ TEST(ExamplesTest, ping) {
 TEST(ExamplesTest, ping_times_out) {
     constexpr size_t num_threads = 2;
     pid_t f1(-1);
-    std::latch latch(num_threads);
-    auto task = [&f1,&latch](Nexus& ctx) {
+    auto task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
                              PORT0), true);
             f1 = proc.pid();
-            latch.arrive_and_wait();
+            ctx.barrier();
             consume_result(proc);
         } else {
             float timeout_s = 0.1;
-            latch.arrive_and_wait();
+            ctx.barrier();
             EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/ping/fnet_pingclient_app tcp/localhost:%d %f",
                                            PORT0, timeout_s)));
             kill(f1, SIGTERM);
@@ -127,17 +124,16 @@ TEST(ExamplesTest, ping_times_out) {
 TEST(ExamplesTest, rpc_client_server) {
     constexpr size_t num_threads = 2;
     pid_t f1(-1);
-    std::latch latch(num_threads);
-    auto task = [&f1,&latch](Nexus &ctx) {
+    auto task = [&f1](Nexus &ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
                              PORT0), true);
             f1 = proc.pid();
-            latch.arrive_and_wait();
+            ctx.barrier();
             consume_result(proc);
         } else {
-            latch.arrive_and_wait();
+            ctx.barrier();
             EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/fnet_rpc_client_app tcp/localhost:%d",
                                            PORT0)));
             kill(f1, SIGTERM);
@@ -149,17 +145,16 @@ TEST(ExamplesTest, rpc_client_server) {
 TEST(ExamplesTest, rpc_echo_client) {
     constexpr size_t num_threads = 2;
     pid_t f1(-1);
-    std::latch latch(num_threads);
-    auto task = [&f1,&latch](Nexus &ctx) {
+    auto task = [&f1](Nexus &ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
                              PORT0), true);
             f1 = proc.pid();
-            latch.arrive_and_wait();
+            ctx.barrier();
             consume_result(proc);
         } else {
-            latch.arrive_and_wait();
+            ctx.barrier();
             EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/fnet_echo_client_app tcp/localhost:%d",
                                            PORT0)));
             kill(f1, SIGTERM);
@@ -171,17 +166,16 @@ TEST(ExamplesTest, rpc_echo_client) {
 TEST(ExamplesTest, rpc_info) {
     constexpr size_t num_threads = 2;
     pid_t f1(-1);
-    std::latch latch(num_threads);
-    auto task = [&f1,&latch](Nexus& ctx) {
+    auto task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
                              PORT0), true);
             f1 = proc.pid();
-            latch.arrive_and_wait();
+            ctx.barrier();
             consume_result(proc);
         } else {
-            latch.arrive_and_wait();
+            ctx.barrier();
             EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/vespa-rpc-info tcp/localhost:%d",
                                            PORT0)));
             EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/vespa-rpc-info tcp/localhost:%d verbose",
@@ -195,17 +189,16 @@ TEST(ExamplesTest, rpc_info) {
 TEST(ExamplesTest, rpc_invoke) {
     constexpr size_t num_threads = 2;
     pid_t f1(-1);
-    std::latch latch(num_threads);
-    auto task = [&f1,&latch](Nexus& ctx) {
+    auto task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
                              PORT0), true);
             f1 = proc.pid();
-            latch.arrive_and_wait();
+            ctx.barrier();
             consume_result(proc);
         } else {
-            latch.arrive_and_wait();
+            ctx.barrier();
             EXPECT_TRUE(
                     run_with_retry(fmt("exec ../../examples/frt/rpc/vespa-rpc-invoke-bin tcp/localhost:%d frt.rpc.echo "
                                        "b:1 h:2 i:4 l:8 f:0.5 d:0.25 s:foo",
@@ -219,17 +212,16 @@ TEST(ExamplesTest, rpc_invoke) {
 TEST(ExamplesTest, rpc_callback_client_server) {
     constexpr size_t num_threads = 2;
     pid_t f1(-1);
-    std::latch latch(num_threads);
-    auto task = [&f1,&latch](Nexus& ctx) {
+    auto task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_callback_server_app tcp/%d",
                              PORT0), true);
             f1 = proc.pid();
-            latch.arrive_and_wait();
+            ctx.barrier();
             consume_result(proc);
         } else {
-            latch.arrive_and_wait();
+            ctx.barrier();
             EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/fnet_rpc_callback_client_app tcp/localhost:%d",
                                            PORT0)));
             kill(f1, SIGTERM);
