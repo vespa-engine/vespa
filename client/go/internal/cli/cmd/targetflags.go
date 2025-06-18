@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -210,6 +211,17 @@ func (cf *TargetFlags) GetTargetWithOptions(opts targetOptions) (vespa.Target, e
 		return nil, errHint(fmt.Errorf("invalid target: %s", targetType), "Valid targets are 'local', 'cloud', 'hosted' or an URL")
 	}
 
+	// Perform version compatibility check (same as original cli.target() method)
+	if target != nil && err == nil {
+		if checkErr := target.CompatibleWith(cf.cli.version); checkErr != nil {
+			var authError vespa.AuthError
+			if errors.As(checkErr, &authError) {
+				return nil, checkErr
+			}
+			cf.cli.printWarning(checkErr, "This version of CLI may not work as expected", "Try 'vespa version' to check for a new version")
+		}
+	}
+
 	return target, err
 }
 
@@ -228,7 +240,7 @@ func (cf *TargetFlags) createCloudTarget(targetType string, opts targetOptions, 
 	for key, value := range configOverrides {
 		if value != "" {
 			originalValues[key], _ = cf.cli.config.get(key)
-			cf.cli.config.set(key, value)
+			_ = cf.cli.config.set(key, value)
 		}
 	}
 
@@ -238,10 +250,10 @@ func (cf *TargetFlags) createCloudTarget(targetType string, opts targetOptions, 
 	// Restore original values
 	for key, originalValue := range originalValues {
 		if originalValue != "" {
-			cf.cli.config.set(key, originalValue)
+			_ = cf.cli.config.set(key, originalValue)
 		} else {
 			// If there was no original value, unset it
-			cf.cli.config.unset(key)
+			_ = cf.cli.config.unset(key)
 		}
 	}
 

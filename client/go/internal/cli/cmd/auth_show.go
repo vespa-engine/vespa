@@ -46,7 +46,7 @@ type userV1 struct {
 }
 
 func doAuthShow(cli *CLI, targetFlags *TargetFlags, args []string) error {
-	target, err := cli.target(targetOptions{supportedType: cloudTargetOnly})
+	target, err := targetFlags.GetTargetWithOptions(targetOptions{supportedType: cloudTargetOnly})
 	if err != nil {
 		return err
 	}
