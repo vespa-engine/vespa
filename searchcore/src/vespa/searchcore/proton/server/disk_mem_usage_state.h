@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "resource_usage_state.h"
+#include "resource_usage_with_limit.h"
 #include <algorithm>
 
 namespace proton {
@@ -13,15 +13,15 @@ namespace proton {
  */
 class DiskMemUsageState
 {
-    ResourceUsageState _diskState;
-    ResourceUsageState _memoryState;
+    ResourceUsageWithLimit _diskState;
+    ResourceUsageWithLimit _memoryState;
     double _transient_disk_usage;
     double _transient_memory_usage;
 
 public:
     DiskMemUsageState() = default;
-    DiskMemUsageState(const ResourceUsageState &diskState_,
-                      const ResourceUsageState &memoryState_,
+    DiskMemUsageState(const ResourceUsageWithLimit &diskState_,
+                      const ResourceUsageWithLimit &memoryState_,
                       double transient_disk_usage_ = 0,
                       double transient_memory_usage_ = 0)
         : _diskState(diskState_),
@@ -39,8 +39,8 @@ public:
     bool operator!=(const DiskMemUsageState &rhs) const {
         return ! ((*this) == rhs);
     }
-    const ResourceUsageState &diskState() const noexcept { return _diskState; }
-    const ResourceUsageState &memoryState() const noexcept { return _memoryState; }
+    const ResourceUsageWithLimit &diskState() const noexcept { return _diskState; }
+    const ResourceUsageWithLimit &memoryState() const noexcept { return _memoryState; }
     double transient_disk_usage() const noexcept { return _transient_disk_usage; }
     double transient_memory_usage() const noexcept { return _transient_memory_usage; }
     double non_transient_disk_usage() const { return std::max(0.0, _diskState.usage() - _transient_disk_usage); }

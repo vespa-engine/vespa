@@ -375,7 +375,8 @@ public:
           _docType(docType),
           _engineOwner(),
           _writeFilter(),
-          _disk_mem_usage_notifier(DiskMemUsageState({ 0.8, 0.5 }, { 0.8, 0.4 }))
+          _disk_mem_usage_notifier(DiskMemUsageState(ResourceUsageWithLimit{ 0.5 , 0.8 },
+                                                     ResourceUsageWithLimit{ 0.4, 0.8 }))
     {
         clear();
     }

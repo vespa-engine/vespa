@@ -12,8 +12,8 @@ DiskMemUsageNotifier::recalcState(const Guard &guard)
 {
     double memoryUsed = getMemoryUsedRatio(guard);
     double diskUsed = getDiskUsedRatio(guard);
-    DiskMemUsageState dmstate(ResourceUsageState(_config._diskLimit, diskUsed),
-                              ResourceUsageState(_config._memoryLimit, memoryUsed),
+    DiskMemUsageState dmstate(ResourceUsageWithLimit(diskUsed, _config._diskLimit),
+                              ResourceUsageWithLimit(memoryUsed, _config._memoryLimit),
                               get_relative_transient_disk_usage(guard),
                               get_relative_transient_memory_usage(guard));
     notifyDiskMemUsage(guard, dmstate);

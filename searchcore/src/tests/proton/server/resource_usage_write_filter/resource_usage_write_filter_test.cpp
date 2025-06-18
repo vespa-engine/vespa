@@ -2,7 +2,7 @@
 
 #include <vespa/searchcore/proton/server/resource_usage_write_filter.h>
 #include <vespa/searchcore/proton/server/disk_mem_usage_notifier.h>
-#include <vespa/searchcore/proton/server/resource_usage_state.h>
+#include <vespa/searchcore/proton/server/resource_usage_with_limit.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/hw_info.h>
@@ -99,7 +99,7 @@ TEST_F(ResourceUsageWriteFilterTest, stats_are_wired_through)
 }
 
 void
-assertResourceUsage(double usage, double limit, double utilization, const ResourceUsageState &state)
+assertResourceUsage(double usage, double limit, double utilization, const ResourceUsageWithLimit &state)
 {
     EXPECT_EQ(usage, state.usage());
     EXPECT_EQ(limit, state.limit());
