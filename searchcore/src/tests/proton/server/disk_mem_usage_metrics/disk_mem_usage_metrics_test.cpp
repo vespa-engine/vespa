@@ -7,7 +7,7 @@
 
 using proton::DiskMemUsageMetrics;
 using proton::DiskMemUsageState;
-using proton::ResourceUsageState;
+using proton::ResourceUsageWithLimit;
 
 bool
 expect_metrics(double disk_usage, double disk_utilization, double transient_disk, double non_transient_disk,
@@ -34,20 +34,20 @@ TEST(DiskMemUsageMetricsTest, default_value_is_zero)
 
 TEST(DiskMemUsageMetricsTest, merging_uses_max)
 {
-    DiskMemUsageMetrics dm_metrics({ResourceUsageState(0.5, 0.4),
-                                    ResourceUsageState(0.5, 0.3), 0.1, 0.05});
+    DiskMemUsageMetrics dm_metrics({ResourceUsageWithLimit(0.4, 0.5),
+                                    ResourceUsageWithLimit(0.3, 0.5), 0.1, 0.05});
     EXPECT_TRUE(expect_metrics(0.4, 0.8, 0.1, 0.3,
                                0.3, 0.6, 0.05, 0.25, dm_metrics));
-    dm_metrics.merge({ResourceUsageState(0.4, 0.4),
-                      ResourceUsageState(0.3, 0.3), 0.1, 0.05});
+    dm_metrics.merge({ResourceUsageWithLimit(0.4, 0.4),
+                      ResourceUsageWithLimit(0.3, 0.3), 0.1, 0.05});
     EXPECT_TRUE(expect_metrics(0.4, 1.0, 0.1, 0.3,
                                0.3, 1.0, 0.05, 0.25, dm_metrics));
-    dm_metrics.merge({ResourceUsageState(0.5, 0.45),
-                      ResourceUsageState(0.5, 0.35), 0.1, 0.05});
+    dm_metrics.merge({ResourceUsageWithLimit(0.45, 0.5),
+                      ResourceUsageWithLimit(0.35, 0.5), 0.1, 0.05});
     EXPECT_TRUE(expect_metrics(0.45, 1.0, 0.1, 0.35,
                                0.35, 1.0, 0.05, 0.3, dm_metrics));
-    dm_metrics.merge({ResourceUsageState(0.5, 0.4),
-                      ResourceUsageState(0.5, 0.3), 0.15, 0.1});
+    dm_metrics.merge({ResourceUsageWithLimit(0.4, 0.5),
+                      ResourceUsageWithLimit(0.3, 0.5), 0.15, 0.1});
     EXPECT_TRUE(expect_metrics(0.45, 1.0, 0.15, 0.35,
                                0.35, 1.0, 0.10, 0.3, dm_metrics));
 }

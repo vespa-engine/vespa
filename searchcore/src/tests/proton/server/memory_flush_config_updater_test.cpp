@@ -34,19 +34,19 @@ getDefaultConfig()
     return getConfig(4, 1, 20);
 }
 
-ResourceUsageState
+ResourceUsageWithLimit
 aboveLimit()
 {
     // The high watermark limit is 0.63 (0.7 * 0.9 (factor)).
-    return ResourceUsageState(0.7, 0.64);
+    return ResourceUsageWithLimit(0.64, 0.7);
 }
 
-ResourceUsageState
+ResourceUsageWithLimit
 belowLimit()
 {
     // The high watermark limit is 0.63 (0.7 * 0.9 (factor)).
     // This is still over the low watermark limit of 0.56 (0.7 * 0.8 (factor)).
-    return ResourceUsageState(0.7, 0.62);
+    return ResourceUsageWithLimit(0.62, 0.7);
 }
 
 const HwInfo::Memory defaultMemory(8_Gi);
@@ -74,7 +74,7 @@ struct Fixture
         EXPECT_NEAR(expGlobalDiskBloatFactor, strategy->getConfig().globalDiskBloatFactor, 0.00001);
         EXPECT_NEAR(expDiskBloatFactor, strategy->getConfig().diskBloatFactor, 0.00001);
     }
-    void notifyDiskMemUsage(const ResourceUsageState &diskState, const ResourceUsageState &memoryState) {
+    void notifyDiskMemUsage(const ResourceUsageWithLimit &diskState, const ResourceUsageWithLimit &memoryState) {
         updater.notifyDiskMemUsage(DiskMemUsageState(diskState, memoryState));
     }
     void set_node_retired_or_maintenance(bool value) {
@@ -206,9 +206,9 @@ TEST(MemoryFlushConfigUpdaterTest, Use_conservative_settings_when_above_high_wat
 {
     Fixture f;
     // The high watermark limit is 0.63 (0.7 * 0.9 (factor)).
-    f.notifyDiskMemUsage(ResourceUsageState(0.7, 0.62), belowLimit());
+    f.notifyDiskMemUsage(ResourceUsageWithLimit(0.62, 0.7), belowLimit());
     f.assertStrategyConfig("1st notify", 4, 1, 20);
-    f.notifyDiskMemUsage(ResourceUsageState(0.7, 0.64), belowLimit());
+    f.notifyDiskMemUsage(ResourceUsageWithLimit(0.64, 0.7), belowLimit());
     f.assertStrategyConfig("2nd notify", 4, 1, 12);
 }
 
@@ -216,39 +216,39 @@ TEST(MemoryFlushConfigUpdaterTest, Use_conservative_settings_when_above_high_wat
 {
     Fixture f;
     // The high watermark limit is 0.54 (0.6 * 0.9 (factor)).
-    f.notifyDiskMemUsage(belowLimit(), ResourceUsageState(0.6, 0.53));
+    f.notifyDiskMemUsage(belowLimit(), ResourceUsageWithLimit(0.53, 0.6));
     f.assertStrategyConfig("1st notify", 4, 1, 20);
-    f.notifyDiskMemUsage(belowLimit(), ResourceUsageState(0.6, 0.55));
+    f.notifyDiskMemUsage(belowLimit(), ResourceUsageWithLimit(0.55, 0.6));
     f.assertStrategyConfig("2nd notify", 2, 0, 20);
 }
 
 TEST(MemoryFlushConfigUpdaterTest, require_that_we_must_go_below_low_watermark_for_disk_usage_before_using_normal_tls_size_value_again)
 {
     Fixture f;
-    f.notifyDiskMemUsage(ResourceUsageState(0.7, 0.8), belowLimit());
+    f.notifyDiskMemUsage(ResourceUsageWithLimit(0.8, 0.7), belowLimit());
     f.assertStrategyConfig("1st notify", 4, 1, 12);
-    f.notifyDiskMemUsage(ResourceUsageState(0.7, 0.7), belowLimit());
+    f.notifyDiskMemUsage(ResourceUsageWithLimit(0.7, 0.7), belowLimit());
     f.assertStrategyConfig("2nd notify", 4, 1, 12);
-    f.notifyDiskMemUsage(ResourceUsageState(0.7, 0.56), belowLimit());
+    f.notifyDiskMemUsage(ResourceUsageWithLimit(0.56, 0.7), belowLimit());
     f.assertStrategyConfig("3rd notify", 4, 1, 12);
-    f.notifyDiskMemUsage(ResourceUsageState(0.7, 0.55), belowLimit());
+    f.notifyDiskMemUsage(ResourceUsageWithLimit(0.55, 0.7), belowLimit());
     f.assertStrategyConfig("4th notify", 4, 1, 20);
-    f.notifyDiskMemUsage(ResourceUsageState(0.7, 0.6), belowLimit());
+    f.notifyDiskMemUsage(ResourceUsageWithLimit(0.6, 0.7), belowLimit());
     f.assertStrategyConfig("5th notify", 4, 1, 20);
 }
 
 TEST(MemoryFlushConfigUpdaterTest, require_that_we_must_go_below_low_watermark_for_memory_usage_before_using_normal_max_memory_value_again)
 {
     Fixture f;
-    f.notifyDiskMemUsage(belowLimit(), ResourceUsageState(0.7, 0.8));
+    f.notifyDiskMemUsage(belowLimit(), ResourceUsageWithLimit(0.8, 0.7));
     f.assertStrategyConfig("1st notify", 2, 0, 20);
-    f.notifyDiskMemUsage(belowLimit(), ResourceUsageState(0.7, 0.7));
+    f.notifyDiskMemUsage(belowLimit(), ResourceUsageWithLimit(0.7, 0.7));
     f.assertStrategyConfig("2nd notify", 2, 0, 20);
-    f.notifyDiskMemUsage(belowLimit(), ResourceUsageState(0.7, 0.56));
+    f.notifyDiskMemUsage(belowLimit(), ResourceUsageWithLimit(0.56, 0.7));
     f.assertStrategyConfig("3rd notify", 2, 0, 20);
-    f.notifyDiskMemUsage(belowLimit(), ResourceUsageState(0.7, 0.55));
+    f.notifyDiskMemUsage(belowLimit(), ResourceUsageWithLimit(0.55, 0.7));
     f.assertStrategyConfig("4th notify", 4, 1, 20);
-    f.notifyDiskMemUsage(belowLimit(), ResourceUsageState(0.7, 0.6));
+    f.notifyDiskMemUsage(belowLimit(), ResourceUsageWithLimit(0.6, 0.7));
     f.assertStrategyConfig("5th notify", 4, 1, 20);
 }
 
@@ -256,7 +256,7 @@ TEST(MemoryFlushConfigUpdaterTest, require_that_more_disk_bloat_is_allowed_while
 {
     Fixture f;
     constexpr double DEFAULT_DISK_BLOAT = 0.25;
-    f.notifyDiskMemUsage(ResourceUsageState(0.7, 0.3), belowLimit());
+    f.notifyDiskMemUsage(ResourceUsageWithLimit(0.3, 0.7), belowLimit());
     f.assertStrategyDiskConfig("1st notify", DEFAULT_DISK_BLOAT, DEFAULT_DISK_BLOAT);
     f.set_node_retired_or_maintenance(true);
     f.assertStrategyDiskConfig("2nd notify", (0.8 - ((0.3/0.7)*(1 - DEFAULT_DISK_BLOAT))) / 0.8, 1.0);

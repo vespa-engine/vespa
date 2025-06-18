@@ -123,7 +123,7 @@ TEST_F(JobTest, held_lids_are_not_considered_free_with_one_move)
 TEST_F(JobTest, resource_starvation_blocks_lid_space_compaction)
 {
     setupOneDocumentToCompact();
-    _diskMemUsageNotifier.notify({{100, 0}, {100, 101}});
+    _diskMemUsageNotifier.notify({ResourceUsageWithLimit{0, 100}, ResourceUsageWithLimit{101, 100}});
     EXPECT_TRUE(run()); // scan
     assertNoWorkDone();
 }
@@ -131,10 +131,10 @@ TEST_F(JobTest, resource_starvation_blocks_lid_space_compaction)
 TEST_F(JobTest, ending_resource_starvation_resumes_lid_space_compaction)
 {
     setupOneDocumentToCompact();
-    _diskMemUsageNotifier.notify({{100, 0}, {100, 101}});
+    _diskMemUsageNotifier.notify({ResourceUsageWithLimit{0, 100}, ResourceUsageWithLimit{101, 100}});
     EXPECT_TRUE(run()); // scan
     assertNoWorkDone();
-    _diskMemUsageNotifier.notify({{100, 0}, {100, 0}});
+    _diskMemUsageNotifier.notify({ResourceUsageWithLimit{0, 100}, ResourceUsageWithLimit{0, 100}});
     assertOneDocumentCompacted();
 }
 
@@ -142,7 +142,7 @@ TEST_F(JobTest, resource_limit_factor_adjusts_limit)
 {
     init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, 1.05);
     setupOneDocumentToCompact();
-    _diskMemUsageNotifier.notify({{100, 0}, {100, 101}});
+    _diskMemUsageNotifier.notify({ResourceUsageWithLimit{0, 100}, ResourceUsageWithLimit{101, 100}});
     EXPECT_FALSE(run()); // scan
     assertOneDocumentCompacted();
 }

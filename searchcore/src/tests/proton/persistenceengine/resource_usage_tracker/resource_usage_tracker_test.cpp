@@ -16,6 +16,7 @@ using proton::test::DiskMemUsageNotifier;
 using proton::AttributeUsageStats;
 using proton::DiskMemUsageState;
 using proton::ResourceUsageTracker;
+using proton::ResourceUsageWithLimit;
 
 namespace {
 
@@ -48,7 +49,7 @@ protected:
 public:
     ResourceUsageTrackerTest()
         : testing::Test(),
-          _notifier(DiskMemUsageState({ 0.8, 0.5 }, { 0.8, 0.4 })),
+          _notifier(DiskMemUsageState(ResourceUsageWithLimit{ 0.5, 0.8 }, ResourceUsageWithLimit{ 0.4, 0.8 })),
           _tracker(std::make_shared<ResourceUsageTracker>(_notifier)),
           _listener(std::make_unique<MyResourceUsageListener>())
     {
@@ -58,7 +59,8 @@ public:
 
     void notify(double disk_usage, double memory_usage, double transient_disk_usage = 0.0, double transient_memory_usage = 0.0)
     {
-        _notifier.notify(DiskMemUsageState({ 0.8, disk_usage }, { 0.8, memory_usage },
+        _notifier.notify(DiskMemUsageState(ResourceUsageWithLimit{ disk_usage, 0.8 },
+                                           ResourceUsageWithLimit{ memory_usage, 0.8 },
                                            transient_disk_usage, transient_memory_usage));
     }
 

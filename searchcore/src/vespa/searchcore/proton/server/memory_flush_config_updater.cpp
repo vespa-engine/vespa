@@ -12,7 +12,7 @@ namespace proton {
 namespace {
 
 bool
-shouldUseConservativeMode(const ResourceUsageState &resourceState,
+shouldUseConservativeMode(const ResourceUsageWithLimit &resourceState,
                           bool currentlyUseConservativeMode,
                           double high_watermark_factor,
                           double lowWatermarkFactor)

@@ -646,22 +646,22 @@ struct ResourceLimitControllerFixture_1_2 : public ResourceLimitControllerFixtur
 
 TEST_F(ResourceLimitControllerFixture, require_that_bucket_move_stops_when_disk_limit_is_reached)
 {
-    testJobStopping(DiskMemUsageState(ResourceUsageState(0.7, 0.8), ResourceUsageState()));
+    testJobStopping(DiskMemUsageState(ResourceUsageWithLimit(0.8, 0.7), ResourceUsageWithLimit()));
 }
 
 TEST_F(ResourceLimitControllerFixture, require_that_bucket_move_stops_when_memory_limit_is_reached)
 {
-    testJobStopping(DiskMemUsageState(ResourceUsageState(), ResourceUsageState(0.7, 0.8)));
+    testJobStopping(DiskMemUsageState(ResourceUsageWithLimit(), ResourceUsageWithLimit(0.8, 0.7)));
 }
 
 TEST_F(ResourceLimitControllerFixture_1_2, require_that_bucket_move_uses_resource_limit_factor_for_disk_resource_limit)
 {
-    testJobNotStopping(DiskMemUsageState(ResourceUsageState(0.7, 0.8), ResourceUsageState()));
+    testJobNotStopping(DiskMemUsageState(ResourceUsageWithLimit(0.8, 0.7), ResourceUsageWithLimit()));
 }
 
 TEST_F(ResourceLimitControllerFixture_1_2, require_that_bucket_move_uses_resource_limit_factor_for_memory_resource_limit)
 {
-    testJobNotStopping(DiskMemUsageState(ResourceUsageState(), ResourceUsageState(0.7, 0.8)));
+    testJobNotStopping(DiskMemUsageState(ResourceUsageWithLimit(), ResourceUsageWithLimit(0.8, 0.7)));
 }
 
 
