@@ -295,20 +295,11 @@ func (c *CLI) configureOutput(cmd *cobra.Command, args []string) error {
 
 func (c *CLI) configureFlags() map[string]*pflag.Flag {
 	var (
-		target      string
-		application string
-		instance    string
-		cluster     string
-		zone        string
-		color       string
-		quiet       bool
-		debugMode   bool
+		color     string
+		quiet     bool
+		debugMode bool
 	)
-	c.cmd.PersistentFlags().StringVarP(&target, targetFlag, "t", "local", `The target platform to use. Must be "local", "cloud", "hosted" or an URL`)
-	c.cmd.PersistentFlags().StringVarP(&application, applicationFlag, "a", "", `The application to use (cloud only). Format "tenant.application.instance" - instance is optional`)
-	c.cmd.PersistentFlags().StringVarP(&instance, instanceFlag, "i", "", "The instance of the application to use (cloud only)")
-	c.cmd.PersistentFlags().StringVarP(&cluster, clusterFlag, "C", "", "The container cluster to use. This is only required for applications with multiple clusters")
-	c.cmd.PersistentFlags().StringVarP(&zone, zoneFlag, "z", "", "The zone to use. This defaults to a dev zone (cloud only)")
+	// Only add truly global flags here.
 	c.cmd.PersistentFlags().StringVarP(&color, colorFlag, "c", "auto", `Whether to use colors in output. Must be "auto", "never", or "always"`)
 	c.cmd.PersistentFlags().BoolVarP(&quiet, quietFlag, "q", false, "Print only errors")
 	c.cmd.PersistentFlags().BoolVar(&debugMode, debugModeFlag, false, `Print debugging output`)
@@ -318,6 +309,16 @@ func (c *CLI) configureFlags() map[string]*pflag.Flag {
 	c.cmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
 		flags[flag.Name] = flag
 	})
+
+	// Add cloud interaction flags to the config system's known flags, even though they're not global anymore.
+	// This allows the config system to recognize them as valid configuration options.
+	targetFlags := TargetFlags{}
+	tempCmd := &cobra.Command{}
+	targetFlags.AddFlags(tempCmd)
+	tempCmd.Flags().VisitAll(func(flag *pflag.Flag) {
+		flags[flag.Name] = flag
+	})
+
 	return flags
 }
 

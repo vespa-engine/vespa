@@ -60,6 +60,7 @@ type feedOptions struct {
 
 func newFeedCmd(cli *CLI) *cobra.Command {
 	var options feedOptions
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "feed json-file [json-file]...",
 		Short: "Feed multiple document operations to Vespa",
@@ -112,7 +113,7 @@ $ cat docs.jsonl | vespa feed -`,
 				pprof.StartCPUProfile(f)
 				defer pprof.StopCPUProfile()
 			}
-			err := feed(args, options, cli, cmd)
+			err := feed(args, options, cli, cmd, targetFlags)
 			if options.memprofile != "" {
 				f, err := os.Create(options.memprofile)
 				if err != nil {
@@ -124,15 +125,16 @@ $ cat docs.jsonl | vespa feed -`,
 			return err
 		},
 	}
+	targetFlags.AddFlags(cmd)
 	addFeedFlags(cli, cmd, &options)
 	return cmd
 }
 
-func createServices(n int, timeout time.Duration, cli *CLI, waiter *Waiter) ([]httputil.Client, string, error) {
+func createServices(n int, timeout time.Duration, cli *CLI, waiter *Waiter, targetFlags *TargetFlags) ([]httputil.Client, string, error) {
 	if n < 1 {
 		return nil, "", fmt.Errorf("need at least one client")
 	}
-	target, err := cli.target(targetOptions{})
+	target, err := targetFlags.GetTarget(anyTarget)
 	if err != nil {
 		return nil, "", err
 	}
@@ -143,7 +145,7 @@ func createServices(n int, timeout time.Duration, cli *CLI, waiter *Waiter) ([]h
 	baseURL := ""
 
 	for range n {
-		service, err := waiter.ServiceWithAuthMethod(target, cli.config.cluster(), authMethod)
+		service, err := waiter.ServiceWithAuthMethod(target, targetFlags.Cluster(), authMethod)
 		if err != nil {
 			return nil, "", err
 		}
@@ -237,10 +239,10 @@ func enqueueAndWait(files []string, dispatcher *document.Dispatcher, options fee
 	return fmt.Errorf("at least one file to feed from must specified")
 }
 
-func feed(files []string, options feedOptions, cli *CLI, cmd *cobra.Command) error {
+func feed(files []string, options feedOptions, cli *CLI, cmd *cobra.Command, targetFlags *TargetFlags) error {
 	timeout := time.Duration(options.timeoutSecs) * time.Second
 	waiter := cli.waiter(time.Duration(options.waitSecs)*time.Second, cmd)
-	clients, baseURL, err := createServices(options.connections, timeout, cli, waiter)
+	clients, baseURL, err := createServices(options.connections, timeout, cli, waiter, targetFlags)
 	if err != nil {
 		return err
 	}

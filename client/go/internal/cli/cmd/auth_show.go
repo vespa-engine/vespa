@@ -14,6 +14,7 @@ import (
 )
 
 func newAuthShowCmd(cli *CLI) *cobra.Command {
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "show",
 		Short: "Show authenticated user",
@@ -24,13 +25,11 @@ func newAuthShowCmd(cli *CLI) *cobra.Command {
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if _, err := cli.config.application(); err != nil {
-				cmd.Flag("application").Value.Set("none.none")
-				cmd.Flag("application").Changed = true
-			}
-			return doAuthShow(cli, args)
+			return doAuthShow(cli, targetFlags, args)
 		},
 	}
+	targetFlags.AddApplicationFlag(cmd)
+	targetFlags.AddTargetFlag(cmd)
 	return cmd
 }
 
@@ -46,7 +45,7 @@ type userV1 struct {
 	} `json:"tenants"`
 }
 
-func doAuthShow(cli *CLI, args []string) error {
+func doAuthShow(cli *CLI, targetFlags *TargetFlags, args []string) error {
 	target, err := cli.target(targetOptions{supportedType: cloudTargetOnly})
 	if err != nil {
 		return err

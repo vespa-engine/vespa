@@ -29,6 +29,7 @@ $ vespa application show -a <tenant>.<application>`,
 
 func newApplicationListCmd(cli *CLI) *cobra.Command {
 	var listAllApplications bool
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List all application for a given tenant",
@@ -37,7 +38,7 @@ The applications are listed without any extra information. In the format <tenant
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.target(targetOptions{noCertificate: true, supportedType: cloudTargetOnly})
+			target, err := targetFlags.GetTargetWithOptions(targetOptions{noCertificate: true, supportedType: cloudTargetOnly})
 			if err != nil {
 				return err
 			}
@@ -72,6 +73,7 @@ The applications are listed without any extra information. In the format <tenant
 		},
 	}
 	cmd.PersistentFlags().BoolVarP(&listAllApplications, "list-all-applications", "A", false, "List all applications, not just the active ones")
+	targetFlags.AddFlags(cmd)
 	return cmd
 }
 
@@ -91,6 +93,7 @@ func activeApplication(id vespa.ApplicationID, target vespa.Target) bool {
 func newApplicationShowCmd(cli *CLI) *cobra.Command {
 	var format string
 	var listAllInstances bool
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:               "show",
 		Short:             "Show information about a given application",
@@ -100,7 +103,7 @@ func newApplicationShowCmd(cli *CLI) *cobra.Command {
 		Example: `$ vespa application show -a <tenant>.<application>
 $ vespa application show -a <tenant>.<application> --format plain`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.target(targetOptions{noCertificate: true, supportedType: cloudTargetOnly})
+			target, err := targetFlags.GetTargetWithOptions(targetOptions{noCertificate: true, supportedType: cloudTargetOnly})
 			if err != nil {
 				return err
 			}
@@ -136,5 +139,6 @@ $ vespa application show -a <tenant>.<application> --format plain`,
 	}
 	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable) or 'plain'")
 	cmd.PersistentFlags().BoolVarP(&listAllInstances, "list-all-instances", "A", false, "List all instances, not just the active ones")
+	targetFlags.AddFlags(cmd)
 	return cmd
 }
