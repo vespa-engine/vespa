@@ -208,6 +208,7 @@ public class ModelContextImpl implements ModelContext {
         private final int maxDistributorDocumentOperationSizeMib;
         private final Sidecars sidecarsForTest;
         private final boolean useTriton;
+        private final long searchCoreTransactionLogReplaySoftMemoryLimit;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.useNonPublicEndpointForTest = Flags.USE_NON_PUBLIC_ENDPOINT_FOR_TEST.bindTo(source).with(appId).with(version).value();
@@ -252,6 +253,7 @@ public class ModelContextImpl implements ModelContext {
             this.maxDistributorDocumentOperationSizeMib = Flags.MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB.bindTo(source).with(appId).with(version).value();
             this.sidecarsForTest = Flags.SIDECARS_FOR_TEST.bindTo(source).with(appId).with(version).value();
             this.useTriton = Flags.USE_TRITON.bindTo(source).with(appId).with(version).value();
+            this.searchCoreTransactionLogReplaySoftMemoryLimit = Flags.SEARCH_CORE_TRANSACTION_LOG_REPLAY_SOFT_MEMORY_LIMIT.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
@@ -296,6 +298,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
         @Override public Object sidecarsForTest() { return sidecarsForTest; }
         @Override public boolean useTriton() { return useTriton; }
+        @Override public long searchCoreTransactionLogReplaySoftMemoryLimit() { return searchCoreTransactionLogReplaySoftMemoryLimit; }
     }
 
     public static class Properties implements ModelContext.Properties {

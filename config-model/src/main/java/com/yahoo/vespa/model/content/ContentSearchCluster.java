@@ -65,6 +65,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final double defaultFeedConcurrency;
     private final double defaultFeedNiceness;
     private final boolean forwardIssuesToQrs;
+    private final long transactionLogReplaySoftMemoryLimit;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final double fractionOfMemoryReserved;
@@ -148,6 +149,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
         this.defaultFeedNiceness = featureFlags.feedNiceness();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
+        this.transactionLogReplaySoftMemoryLimit = featureFlags.searchCoreTransactionLogReplaySoftMemoryLimit();
     }
 
     public void setVisibilityDelay(double delay) {
@@ -331,6 +333,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         builder.flush.memory.each.diskbloatfactor(DEFAULT_DISK_BLOAT);
         builder.summary.log.chunk.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
         builder.summary.log.compact.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
+        builder.replay_throttling_policy.memory_usage_soft_limit_bytes(transactionLogReplaySoftMemoryLimit);
         builder.forward_issues(forwardIssuesToQrs);
 
         int numDocumentDbs = builder.documentdb.size();

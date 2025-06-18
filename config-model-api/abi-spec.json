@@ -1338,7 +1338,8 @@
       "public int maxContentNodeMaintenanceOpConcurrency()",
       "public int maxDistributorDocumentOperationSizeMib()",
       "public java.lang.Object sidecarsForTest()",
-      "public boolean useTriton()"
+      "public boolean useTriton()",
+      "public long searchCoreTransactionLogReplaySoftMemoryLimit()"
     ],
     "fields" : [ ]
   },

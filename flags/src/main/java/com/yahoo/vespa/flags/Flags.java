@@ -365,6 +365,18 @@ public class Flags {
             HOSTNAME
     );
 
+    public static final UnboundLongFlag SEARCH_CORE_TRANSACTION_LOG_REPLAY_SOFT_MEMORY_LIMIT = defineLongFlag(
+            "search-core-transaction-log-replay-soft-memory-limit", 0,
+            List.of("vekterli"), "2025-06-18", "2025-11-01",
+            "Iff nonzero, sets a soft limit for the amount of memory that can be concurrently " +
+            "used during transaction log replaying. The limit is soft in that it must always " +
+            "be possible to schedule at least one operation, even if this operation exceeds " +
+            "the configured limit. A positive number specifies max memory usage in bytes. " +
+            "A negative number specifies memory usage as a percentage of total memory. A value " +
+            "of 0 implies no enforced memory limit.",
+            "Takes effect at next restart of the vespa-proton-bin process",
+            INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
