@@ -16,8 +16,8 @@ func newCurlCmd(cli *CLI) *cobra.Command {
 	var (
 		waitSecs   int
 		dryRun     bool
-		targetFlags TargetFlags
 	)
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "curl [curl-options] path",
 		Short: "Access Vespa directly using curl",
@@ -34,7 +34,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 		SilenceUsage:      true,
 		Args:              cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.target(targetOptions{})
+			target, err := cli.targetWithFlags(targetOptions{}, targetFlags)
 			if err != nil {
 				return err
 			}
