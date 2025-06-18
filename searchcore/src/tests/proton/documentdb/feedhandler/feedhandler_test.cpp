@@ -24,7 +24,6 @@
 #include <vespa/searchcore/proton/feedoperation/putoperation.h>
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
-#include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/server/configstore.h>
 #include <vespa/searchcore/proton/test/port_numbers.h>
 #include <vespa/document/util/feed_reject_helper.h>
@@ -133,24 +132,6 @@ struct MyOwner : public IFeedHandlerOwner
     bool getAllowPrune() const override { return _allowPrune; }
 };
 
-
-struct MyResourceWriteFilter : public IResourceWriteFilter
-{
-    bool _acceptWriteOperation;
-    std::string _message;
-    MyResourceWriteFilter()
-        : _acceptWriteOperation(true),
-          _message()
-    {}
-    ~MyResourceWriteFilter() override;
-
-    bool acceptWriteOperation() const override { return _acceptWriteOperation; }
-    State getAcceptState() const override {
-        return IResourceWriteFilter::State(acceptWriteOperation(), _message);
-    }
-};
-
-MyResourceWriteFilter::~MyResourceWriteFilter() = default;
 
 struct MyReplayConfig : public IReplayConfig {
     void replayConfig(SerialNum) override {}
@@ -428,7 +409,6 @@ struct FeedHandlerFixture
     std::string             tlsSpec;
     SchemaContext                schema;
     MyOwner                      owner;
-    MyResourceWriteFilter        writeFilter;
     DDBState                     _state;
     MyReplayConfig               replayConfig;
     MyFeedView                   feedView;
@@ -449,7 +429,7 @@ struct FeedHandlerFixture
           _bucketDB(),
           _bucketDBHandler(_bucketDB),
           handler(_service.write(), tlsSpec, schema.getDocType(), owner,
-                  writeFilter, replayConfig, tls, &tls_writer)
+                  replayConfig, tls, &tls_writer)
     {
         _state.enterLoadState();
         _state.enterReplayTransactionLogState();
@@ -652,55 +632,6 @@ TEST_F(FeedHandlerTest, require_that_partial_update_for_non_existing_document_is
     EXPECT_EQ(0u, f.feedView.update_serial);
     EXPECT_EQ(1u, f.feedView.metaStore._allocated.size());
     EXPECT_EQ(1, f.tls_writer.store_count);
-}
-
-TEST_F(FeedHandlerTest, require_that_put_is_rejected_if_resource_limit_is_reached)
-{
-    FeedHandlerFixture f;
-    f.writeFilter._acceptWriteOperation = false;
-    f.writeFilter._message = "Attribute resource limit reached";
-
-    DocumentContext docCtx("id:test:searchdocument::foo", f.schema.builder);
-    auto op = std::make_unique<PutOperation>(docCtx.bucketId, Timestamp(10), std::move(docCtx.doc));
-    FeedTokenContext token;
-    f.handler.performOperation(std::move(token.token), std::move(op));
-    EXPECT_EQ(0, f.feedView.put_count);
-    EXPECT_EQ(Result::ErrorType::RESOURCE_EXHAUSTED, token.getResult()->getErrorCode());
-    EXPECT_EQ("Put operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Attribute resource limit reached'",
-                 token.getResult()->getErrorMessage());
-}
-
-TEST_F(FeedHandlerTest, require_that_update_is_rejected_if_resource_limit_is_reached)
-{
-    FeedHandlerFixture f;
-    f.writeFilter._acceptWriteOperation = false;
-    f.writeFilter._message = "Attribute resource limit reached";
-
-    UpdateContext updCtx("id:test:searchdocument::foo", f.schema.builder);
-    updCtx.addFieldUpdate("tensor");
-    auto op = std::make_unique<UpdateOperation>(updCtx.bucketId, Timestamp(10), updCtx.update);
-    FeedTokenContext token;
-    f.handler.performOperation(std::move(token.token), std::move(op));
-    EXPECT_EQ(0, f.feedView.update_count);
-    EXPECT_TRUE(dynamic_cast<const UpdateResult *>(token.getResult()));
-    EXPECT_EQ(Result::ErrorType::RESOURCE_EXHAUSTED, token.getResult()->getErrorCode());
-    EXPECT_EQ("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Attribute resource limit reached'",
-                 token.getResult()->getErrorMessage());
-}
-
-TEST_F(FeedHandlerTest, require_that_remove_is_NOT_rejected_if_resource_limit_is_reached)
-{
-    FeedHandlerFixture f;
-    f.writeFilter._acceptWriteOperation = false;
-    f.writeFilter._message = "Attribute resource limit reached";
-
-    DocumentContext docCtx("id:test:searchdocument::foo", f.schema.builder);
-    auto op = std::make_unique<RemoveOperationWithDocId>(docCtx.bucketId, Timestamp(10), docCtx.doc->getId());
-    FeedTokenContext token;
-    f.handler.performOperation(std::move(token.token), std::move(op));
-    EXPECT_EQ(1, f.feedView.remove_count);
-    EXPECT_EQ(Result::ErrorType::NONE, token.getResult()->getErrorCode());
-    EXPECT_EQ("", token.getResult()->getErrorMessage());
 }
 
 namespace {

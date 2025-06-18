@@ -21,14 +21,18 @@ class AttributeUsageNotifier : public std::enable_shared_from_this<AttributeUsag
     vespalib::hash_map<std::string, AttributeUsageStats> _attribute_usage;
     AttributeUsageStats                                  _max_attribute_usage;
     std::shared_ptr<IAttributeUsageListener>             _tracker;
+    std::shared_ptr<IAttributeUsageListener>             _filter;
+    bool                                                 _closed;
 
     bool scan_attribute_usage(std::lock_guard<std::mutex>&);
     void notify_attribute_usage(const AttributeUsageStats& attribute_usage);
+    void notify_attribute_usage(); // Called with _lock held
 public:
-    AttributeUsageNotifier(std::shared_ptr<IAttributeUsageListener> tracker);
+    AttributeUsageNotifier(std::shared_ptr<IAttributeUsageListener> tracker, std::shared_ptr<IAttributeUsageListener> filter);
     ~AttributeUsageNotifier();
     void remove_document_type(const std::string& document_type);
     std::unique_ptr<IAttributeUsageListener> make_attribute_usage_listener(const std::string& document_type);
+    void close();
 };
 
 }

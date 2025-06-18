@@ -3,6 +3,9 @@
 #pragma once
 
 #include "disk_mem_usage_state.h"
+#include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
+#include <vespa/searchcore/proton/attribute/attribute_usage_stats.h>
+#include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
@@ -16,7 +19,8 @@ namespace proton {
  * If resource limit is reached then further writes are denied
  * in order to prevent entering an unrecoverable state.
  */
-class ResourceUsageWriteFilter : public IResourceWriteFilter {
+class ResourceUsageWriteFilter : public IResourceWriteFilter,
+                                 public IAttributeUsageListener {
 public:
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
@@ -30,6 +34,8 @@ private:
     uint64_t                     _diskUsedSizeBytes;
     State                        _state;
     DiskMemUsageState            _dmstate;
+    AttributeUsageStats          _attribute_usage;
+    AttributeUsageFilterConfig   _attribute_usage_filter_config;
 
     void recalc_state(const Guard& guard);
 public:
@@ -40,6 +46,8 @@ public:
     const vespalib::HwInfo& get_hw_info() const noexcept { return _hwInfo; }
     void notify_disk_mem_usage(const DiskMemUsageState& state, const vespalib::ProcessMemoryStats& memoryStats,
                                uint64_t diskUsedSizeBytes);
+    void set_config(AttributeUsageFilterConfig attribute_usage_filter_config);
+    void notify_attribute_usage(const AttributeUsageStats& attribute_usage) override;
 };
 
 

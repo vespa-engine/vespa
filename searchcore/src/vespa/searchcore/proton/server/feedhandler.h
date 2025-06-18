@@ -31,7 +31,6 @@ class FeedState;
 class IDocumentDBOwner;
 struct IFeedHandlerOwner;
 class IFeedView;
-struct IResourceWriteFilter;
 class IReplayConfig;
 class JoinBucketsOperation;
 class PutOperation;
@@ -69,7 +68,6 @@ private:
     IThreadingService                     &_writeService;
     DocTypeName                            _docTypeName;
     IFeedHandlerOwner                     &_owner;
-    const IResourceWriteFilter            &_writeFilter;
     IReplayConfig                         &_replayConfig;
     TransactionLogManager                  _tlsMgr;
     const TlsWriterFactory                &_tlsWriterfactory;
@@ -105,7 +103,6 @@ private:
      */
     void doHandleOperation(FeedToken token, FeedOperationUP op);
 
-    bool considerWriteOperationForRejection(FeedToken & token, const FeedOperation &op);
     bool considerUpdateOperationForRejection(FeedToken &token, UpdateOperation &op);
 
     /**
@@ -155,7 +152,6 @@ public:
                 const std::string &tlsSpec,
                 const DocTypeName &docTypeName,
                 IFeedHandlerOwner &owner,
-                const IResourceWriteFilter &writerFilter,
                 IReplayConfig &replayConfig,
                 const TlsWriterFactory & writer,
                 TlsWriter * tlsWriter = nullptr);
