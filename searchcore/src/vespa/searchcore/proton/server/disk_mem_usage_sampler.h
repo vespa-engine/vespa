@@ -57,7 +57,6 @@ public:
 
     void setConfig(const Config &config, IScheduledExecutor & executor);
 
-    const ResourceUsageWriteFilter& writeFilter() const noexcept { return _filter; }
     IDiskMemUsageNotifier& notifier() noexcept { return _notifier; }
     const DiskMemUsageNotifier& real_notifier() noexcept { return _notifier; }
     void add_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider);
