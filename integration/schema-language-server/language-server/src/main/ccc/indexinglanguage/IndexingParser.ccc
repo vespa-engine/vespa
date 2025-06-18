@@ -2,14 +2,6 @@ PARSER_CLASS=IndexingParser;
 PARSER_PACKAGE=ai.vespa.schemals.parser.indexinglanguage;
 FAULT_TOLERANT=true;
 SMART_NODE_CREATION=false; // Will create a tree node for every rule
-/* Legacy JavaCC options
-options {
-    CACHE_TOKENS = false;
-    DEBUG_PARSER = false;
-    ERROR_REPORTING = true;
-    USER_CHAR_STREAM = true;
-}
-*/
 
 // --------------------------------------------------------------------------------
 //
@@ -42,12 +34,12 @@ INJECT IndexingParser:
  *
  * Ported to CongoCC by Magnus Eide-Fredriksen
  */
-    private String defaultFieldName;
-    private Linguistics linguistics;
-    private Map<String, Chunker> chunkers;
-    private Map<String, Embedder> embedders;
-    private Map<String, FieldGenerator> generators;    
-    private AnnotatorConfig globalAnnotatorConfig;
+    private String defaultFieldName = "default";
+    private Linguistics linguistics = new com.yahoo.language.simple.SimpleLinguistics();
+    private Components<Chunker> chunkers = new Components.Ignored(Chunker.FailingChunker.factory());
+    private Components<Embedder> embedders = new Components.Ignored(Embedder.FailingEmbedder.factory());
+    private Components<FieldGenerator> generators = new Components.Ignored(FieldGenerator.FailingFieldGenerator.factory());
+    private AnnotatorConfig globalAnnotatorConfig = new com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig();
 
     private PrintStream logger = new PrintStream(
         new OutputStream() {
@@ -60,9 +52,6 @@ INJECT IndexingParser:
     public IndexingParser(PrintStream logger, String inputSource, CharSequence content) {
         this(inputSource, content);
         this.logger = logger;
-        this.chunkers = new HashMap<String, Chunker>();
-        this.embedders = new HashMap<String, Embedder>();
-        this.generators = new HashMap<String, FieldGenerator>();
     }
 
     public IndexingParser setDefaultFieldName(String fieldName) {
@@ -76,17 +65,17 @@ INJECT IndexingParser:
     }
 
     public IndexingParser setEmbedders(Map<String, Embedder> embedders) {
-        this.embedders = embedders;
+        this.embedders = new Components.Map<Embedder>(embedders, Embedder.FailingEmbedder.factory());
         return this;
     }
     
     public IndexingParser setGenerators(Map<String, FieldGenerator> generators) {
-        this.generators = generators;
+        this.generators = new Components.Map<FieldGenerator>(generators, FieldGenerator.FailingFieldGenerator.factory());
         return this;
     }
 
     public IndexingParser setChunkers(Map<String, Chunker> chunkers) {
-        this.chunkers = chunkers;
+        this.chunkers = new Components.Map<Chunker>(chunkers, Chunker.FailingChunker.factory());
         return this;
     }
 
@@ -458,8 +447,7 @@ Expression chunkExp() :
       <CHUNK> [ SCAN((identifierStr)+) => (chunkerId = identifierStr()) ] arguments = arguments()
     )
     {
-        // return new ChunkExpression(chunkers, chunkerId, arguments);
-        return null;
+        return new ChunkExpression(chunkers, chunkerId, arguments);
     }
 ;
 
@@ -485,8 +473,7 @@ Expression embedExp() :
       <EMBED> [ SCAN((identifierStr)+) => (embedderId = identifierStr()) ] arguments = arguments()
     )
     {
-        // return new EmbedExpression(linguistics, embedders, embedderId, arguments);
-        return null;
+        return new EmbedExpression(linguistics, embedders, embedderId, arguments);
     }
 ;
 

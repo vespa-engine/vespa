@@ -24,7 +24,7 @@ import java.util.Objects;
 public class GenerateExpression extends Expression {
 
     private final Linguistics linguistics;
-    private final SelectedComponent<FieldGenerator> generator;
+    private final Components.Selected<FieldGenerator> generator;
 
     /** The destination the generated value will be written to in the form [schema name].[field name] */
     private String destination;
@@ -33,12 +33,12 @@ public class GenerateExpression extends Expression {
     private DataType targetType;
     
     public GenerateExpression(Linguistics linguistics,
-                              Map<String, FieldGenerator> generators,
+                              Components<FieldGenerator> generators,
                               String generatorId,
                               List<String> generatorArguments) {
         this.linguistics = linguistics;
-        this.generator = new SelectedComponent<>("generator", generators, generatorId, true,
-                                                 generatorArguments, FieldGenerator.FailingFieldGenerator::new);
+        this.generator = new Components.Selected<>("generator", generators, generatorId, true,
+                                                   generatorArguments);
     }
 
     @Override

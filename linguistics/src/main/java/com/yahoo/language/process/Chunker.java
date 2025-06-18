@@ -5,6 +5,7 @@ import com.yahoo.collections.LazyMap;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * A chunker converts splits a text string into multiple smaller strings (chunks).
@@ -95,6 +96,9 @@ public interface Chunker {
             return getClass().getName().hashCode();
         }
 
+        public static Function<String, Chunker> factory() {
+            return FailingChunker::new;
+        }
     }
 
 }

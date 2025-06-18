@@ -7,6 +7,7 @@ import com.yahoo.tensor.TensorType;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * An embedder converts a text string to a tensor
@@ -141,6 +142,10 @@ public interface Embedder {
         @Override
         public int hashCode() {
             return getClass().getName().hashCode();
+        }
+
+        public static Function<String, Embedder> factory() {
+            return FailingEmbedder::new;
         }
 
     }
