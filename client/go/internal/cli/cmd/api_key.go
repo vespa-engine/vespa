@@ -56,6 +56,7 @@ See https://docs.vespa.ai/en/cloud/security/guide.html for more details about de
 	}
 	cmd.Flags().BoolVarP(&overwriteKey, "force", "f", false, "Force overwrite of existing developer key")
 	targetFlags.AddApplicationFlag(cmd)
+	targetFlags.AddTargetFlag(cmd)
 	return cmd
 }
 
