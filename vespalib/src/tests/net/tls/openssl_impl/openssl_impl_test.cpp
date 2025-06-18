@@ -14,7 +14,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <stdexcept>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace vespalib;
 using namespace vespalib::crypto;

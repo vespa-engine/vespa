@@ -7,7 +7,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <regex>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace search::features;
 using namespace search::fef::test;

@@ -2,7 +2,6 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>

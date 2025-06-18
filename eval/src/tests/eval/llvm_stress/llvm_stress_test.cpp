@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -12,6 +13,7 @@
 using vespalib::make_string_short::fmt;
 using namespace vespalib;
 using namespace vespalib::eval;
+using vespalib::test::Nexus;
 
 //-----------------------------------------------------------------------------
 // This test will stress llvm compilation by performing multiple
@@ -99,31 +101,36 @@ std::string make_expr(size_t size, Rnd &rnd) {
 
 //-----------------------------------------------------------------------------
 
-TEST_MT_F("stress test llvm compilation", 64, Done(budget)) {
-    size_t my_seed = 5489u + (123 * thread_id);
-    Rnd rnd(my_seed);
-    const auto &done = f1;
-    auto my_expr = make_expr(expr_size, rnd);
-    if ((thread_id == 0) && (my_expr.size() < 128)) {
-        fprintf(stderr, "example expression: %s\n", my_expr.c_str());
-    }
-    auto my_fun = Function::parse(my_expr);
-    ASSERT_TRUE(!my_fun->has_error());
-    while (!done()) {
-        CompiledFunction arr_cf(*my_fun, PassParams::ARRAY);
-        CompiledFunction lazy_cf(*my_fun, PassParams::LAZY);
-        std::thread([my_fun]{ CompiledFunction my_arr_cf(*my_fun, PassParams::ARRAY); }).join();
-        std::thread([my_fun]{ CompiledFunction my_lazy_cf(*my_fun, PassParams::LAZY); }).join();
-    }
+TEST(LLVMStressTest, stress_test_llvm_compilation) {
+    size_t num_threads = 64;
+    Done f1(budget);
+    auto task = [&](Nexus &ctx){
+                    auto thread_id = ctx.thread_id();
+                    size_t my_seed = 5489u + (123 * thread_id);
+                    Rnd rnd(my_seed);
+                    const auto &done = f1;
+                    auto my_expr = make_expr(expr_size, rnd);
+                    if ((thread_id == 0) && (my_expr.size() < 128)) {
+                        fprintf(stderr, "example expression: %s\n", my_expr.c_str());
+                    }
+                    auto my_fun = Function::parse(my_expr);
+                    ASSERT_TRUE(!my_fun->has_error());
+                    while (!done()) {
+                        CompiledFunction arr_cf(*my_fun, PassParams::ARRAY);
+                        CompiledFunction lazy_cf(*my_fun, PassParams::LAZY);
+                        std::thread([my_fun]{ CompiledFunction my_arr_cf(*my_fun, PassParams::ARRAY); }).join();
+                        std::thread([my_fun]{ CompiledFunction my_lazy_cf(*my_fun, PassParams::LAZY); }).join();
+                    }
+                };
+    Nexus::run(num_threads, task);
 }
 
 //-----------------------------------------------------------------------------
 
-int main(int argc, char **argv) {
-    TEST_MASTER.init(__FILE__);
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
     Opts opts(argc, argv);
     budget = 1s * opts.get_int("seconds to run", 1);
     expr_size = opts.get_int("expression size", 16);
-    TEST_RUN_ALL();
-    return (TEST_MASTER.fini() ? 0 : 1);
+    return RUN_ALL_TESTS();
 }

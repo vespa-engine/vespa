@@ -13,7 +13,6 @@
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <algorithm>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace search;
 

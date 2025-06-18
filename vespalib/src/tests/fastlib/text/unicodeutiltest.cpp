@@ -2,7 +2,6 @@
 
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 TEST(UnicodeUtilTest, GetUTF8Char_WrongInput) {
     const char *testdata = "ab\xF8";

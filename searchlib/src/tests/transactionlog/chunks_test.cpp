@@ -3,7 +3,6 @@
 #include <vespa/searchlib/transactionlog/chunks.h>
 #include <atomic>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("translog_chunks_test");

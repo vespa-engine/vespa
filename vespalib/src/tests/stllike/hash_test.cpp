@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <atomic>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace vespalib;
 using std::make_pair;

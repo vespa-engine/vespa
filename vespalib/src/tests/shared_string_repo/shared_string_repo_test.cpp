@@ -6,7 +6,9 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
+#include <format>
 #include <vector>
 #include <map>
 #include <xxhash.h>
@@ -16,6 +18,7 @@ using make_string_short::fmt;
 using Handle = SharedStringRepo::Handle;
 using Handles = SharedStringRepo::Handles;
 using Stats = SharedStringRepo::Stats;
+using vespalib::test::Nexus;
 
 bool verbose = false;
 double budget = 0.10;
@@ -122,7 +125,7 @@ using Vote = vespalib::test::ThreadMeets::Vote;
 
 template <typename T>
 void verify_equal(const std::vector<T> &a, const std::vector<T> &b) {
-    ASSERT_EQUAL(a.size(), b.size());
+    ASSERT_EQ(a.size(), b.size());
     for (size_t i = 0; i < a.size(); ++i) {
         EXPECT_TRUE(a[i] == b[i]);
     }
@@ -238,24 +241,24 @@ void verify_not_eq(const Handle &a, const Handle &b) {
     EXPECT_FALSE(a.id() == b.id());
     EXPECT_TRUE(a != b);
     EXPECT_TRUE(a.id() != b.id());
-    EXPECT_NOT_EQUAL((a < b), (b < a));
-    EXPECT_NOT_EQUAL((a.id() < b.id()), (b.id() < a.id()));
+    EXPECT_NE((a < b), (b < a));
+    EXPECT_NE((a.id() < b.id()), (b.id() < a.id()));
 }
 
 //-----------------------------------------------------------------------------
 
-TEST("require that empty stats object has expected values") {
+TEST(SharedStringRepoTest, require_that_empty_stats_object_has_expected_values) {
     Stats empty;
-    EXPECT_EQUAL(empty.active_entries, 0u);
-    EXPECT_EQUAL(empty.total_entries, 0u);
-    EXPECT_EQUAL(empty.max_part_usage, 0u);
-    EXPECT_EQUAL(empty.memory_usage.allocatedBytes(), 0u);
-    EXPECT_EQUAL(empty.memory_usage.usedBytes(), 0u);
-    EXPECT_EQUAL(empty.memory_usage.deadBytes(), 0u);
-    EXPECT_EQUAL(empty.memory_usage.allocatedBytesOnHold(), 0u);
+    EXPECT_EQ(empty.active_entries, 0u);
+    EXPECT_EQ(empty.total_entries, 0u);
+    EXPECT_EQ(empty.max_part_usage, 0u);
+    EXPECT_EQ(empty.memory_usage.allocatedBytes(), 0u);
+    EXPECT_EQ(empty.memory_usage.usedBytes(), 0u);
+    EXPECT_EQ(empty.memory_usage.deadBytes(), 0u);
+    EXPECT_EQ(empty.memory_usage.allocatedBytesOnHold(), 0u);
 }
 
-TEST("require that stats can be merged") {
+TEST(SharedStringRepoTest, require_that_stats_can_be_merged) {
     Stats a;
     Stats b;
     a.active_entries = 1;
@@ -269,28 +272,28 @@ TEST("require that stats can be merged") {
     b.memory_usage.incAllocatedBytes(20);
     b.memory_usage.incUsedBytes(10);
     a.merge(b);
-    EXPECT_EQUAL(a.active_entries, 4u);
-    EXPECT_EQUAL(a.total_entries, 30u);
-    EXPECT_EQUAL(a.max_part_usage, 100u);
-    EXPECT_EQUAL(a.memory_usage.allocatedBytes(), 30u);
-    EXPECT_EQUAL(a.memory_usage.usedBytes(), 15u);
-    EXPECT_EQUAL(a.memory_usage.deadBytes(), 0u);
-    EXPECT_EQUAL(a.memory_usage.allocatedBytesOnHold(), 0u);
+    EXPECT_EQ(a.active_entries, 4u);
+    EXPECT_EQ(a.total_entries, 30u);
+    EXPECT_EQ(a.max_part_usage, 100u);
+    EXPECT_EQ(a.memory_usage.allocatedBytes(), 30u);
+    EXPECT_EQ(a.memory_usage.usedBytes(), 15u);
+    EXPECT_EQ(a.memory_usage.deadBytes(), 0u);
+    EXPECT_EQ(a.memory_usage.allocatedBytesOnHold(), 0u);
 }
 
-TEST("require that id_space_usage is sane") {
+TEST(SharedStringRepoTest, require_that_id_space_usage_is_sane) {
     Stats stats;
     stats.max_part_usage = 0;
-    EXPECT_EQUAL(stats.id_space_usage(), 0.0);
+    EXPECT_EQ(stats.id_space_usage(), 0.0);
     stats.max_part_usage = Stats::part_limit() / 4;
-    EXPECT_EQUAL(stats.id_space_usage(), 0.25);
+    EXPECT_FLOAT_EQ(stats.id_space_usage(), 0.25);
     stats.max_part_usage = Stats::part_limit() / 2;
-    EXPECT_EQUAL(stats.id_space_usage(), 0.5);
+    EXPECT_FLOAT_EQ(stats.id_space_usage(), 0.5);
     stats.max_part_usage = Stats::part_limit();
-    EXPECT_EQUAL(stats.id_space_usage(), 1.0);
+    EXPECT_EQ(stats.id_space_usage(), 1.0);
 }
 
-TEST("require that initial stats are as expected") {
+TEST(SharedStringRepoTest, require_that_initial_stats_are_as_expected) {
     size_t num_parts = 256;
     size_t part_size = 128;
     size_t hash_node_size = 12;
@@ -300,17 +303,17 @@ TEST("require that initial stats are as expected") {
     size_t initial_hash_allocated = 32;
     size_t part_limit = (uint32_t(-1) - 10000001) / num_parts;
     auto stats = SharedStringRepo::stats();
-    EXPECT_EQUAL(stats.active_entries, 0u);
-    EXPECT_EQUAL(stats.total_entries, num_parts * initial_entries);
-    EXPECT_EQUAL(stats.max_part_usage, 0u);
-    EXPECT_EQUAL(stats.id_space_usage(), 0.0);
-    EXPECT_EQUAL(stats.memory_usage.allocatedBytes(),
+    EXPECT_EQ(stats.active_entries, 0u);
+    EXPECT_EQ(stats.total_entries, num_parts * initial_entries);
+    EXPECT_EQ(stats.max_part_usage, 0u);
+    EXPECT_EQ(stats.id_space_usage(), 0.0);
+    EXPECT_EQ(stats.memory_usage.allocatedBytes(),
                  num_parts * (part_size + hash_node_size * initial_hash_allocated + entry_size * initial_entries));
-    EXPECT_EQUAL(stats.memory_usage.usedBytes(),
+    EXPECT_EQ(stats.memory_usage.usedBytes(),
                  num_parts * (part_size + hash_node_size * initial_hash_used + entry_size * initial_entries));
-    EXPECT_EQUAL(stats.memory_usage.deadBytes(), 0u);
-    EXPECT_EQUAL(stats.memory_usage.allocatedBytesOnHold(), 0u);
-    EXPECT_EQUAL(Stats::part_limit(), part_limit);
+    EXPECT_EQ(stats.memory_usage.deadBytes(), 0u);
+    EXPECT_EQ(stats.memory_usage.allocatedBytesOnHold(), 0u);
+    EXPECT_EQ(Stats::part_limit(), part_limit);
     if (verbose) {
         fprintf(stderr, "max entries per part: %zu\n", Stats::part_limit());
         fprintf(stderr, "initial memory usage: %zu\n", stats.memory_usage.allocatedBytes());
@@ -319,7 +322,7 @@ TEST("require that initial stats are as expected") {
 
 //-----------------------------------------------------------------------------
 
-TEST("require that basic handle usage works") {
+TEST(SharedStringRepoTest, require_that_basic_handle_usage_works) {
     Handle empty;
     Handle foo("foo");
     Handle bar("bar");
@@ -327,71 +330,71 @@ TEST("require that basic handle usage works") {
     Handle foo2("foo");
     Handle bar2("bar");
 
-    EXPECT_EQUAL(active_enums(), 2u);
+    EXPECT_EQ(active_enums(), 2u);
 
-    TEST_DO(verify_eq(empty, empty2));
-    TEST_DO(verify_eq(foo, foo2));
-    TEST_DO(verify_eq(bar, bar2));
+    GTEST_DO(verify_eq(empty, empty2));
+    GTEST_DO(verify_eq(foo, foo2));
+    GTEST_DO(verify_eq(bar, bar2));
 
-    TEST_DO(verify_not_eq(empty, foo));
-    TEST_DO(verify_not_eq(empty, bar));
-    TEST_DO(verify_not_eq(foo, bar));
+    GTEST_DO(verify_not_eq(empty, foo));
+    GTEST_DO(verify_not_eq(empty, bar));
+    GTEST_DO(verify_not_eq(foo, bar));
 
-    EXPECT_EQUAL(empty.id().hash(), 0u);
-    EXPECT_EQUAL(empty.id().value(), 0u);
+    EXPECT_EQ(empty.id().hash(), 0u);
+    EXPECT_EQ(empty.id().value(), 0u);
     EXPECT_TRUE(empty.id() == string_id());
     EXPECT_TRUE(empty2.id() == string_id());
-    EXPECT_EQUAL(empty.as_string(), std::string(""));
-    EXPECT_EQUAL(empty2.as_string(), std::string(""));
-    EXPECT_EQUAL(foo.as_string(), std::string("foo"));
-    EXPECT_EQUAL(bar.as_string(), std::string("bar"));
-    EXPECT_EQUAL(foo2.as_string(), std::string("foo"));
-    EXPECT_EQUAL(bar2.as_string(), std::string("bar"));
+    EXPECT_EQ(empty.as_string(), std::string(""));
+    EXPECT_EQ(empty2.as_string(), std::string(""));
+    EXPECT_EQ(foo.as_string(), std::string("foo"));
+    EXPECT_EQ(bar.as_string(), std::string("bar"));
+    EXPECT_EQ(foo2.as_string(), std::string("foo"));
+    EXPECT_EQ(bar2.as_string(), std::string("bar"));
 }
 
-TEST("require that handles can be copied") {
+TEST(SharedStringRepoTest, require_that_handles_can_be_copied) {
     size_t before = active_enums();
     Handle a("copied");
-    EXPECT_EQUAL(active_enums(), before + 1);
+    EXPECT_EQ(active_enums(), before + 1);
     Handle b(a);
     Handle c;
     c = b;
-    EXPECT_EQUAL(active_enums(), before + 1);
+    EXPECT_EQ(active_enums(), before + 1);
     EXPECT_TRUE(a.id() == b.id());
     EXPECT_TRUE(b.id() == c.id());
-    EXPECT_EQUAL(c.as_string(), std::string("copied"));
+    EXPECT_EQ(c.as_string(), std::string("copied"));
 }
 
-TEST("require that handles can be moved") {
+TEST(SharedStringRepoTest, require_that_handles_can_be_moved) {
     size_t before = active_enums();
     Handle a("moved");
-    EXPECT_EQUAL(active_enums(), before + 1);
+    EXPECT_EQ(active_enums(), before + 1);
     Handle b(std::move(a));
     Handle c;
     c = std::move(b);
-    EXPECT_EQUAL(active_enums(), before + 1);
+    EXPECT_EQ(active_enums(), before + 1);
     EXPECT_TRUE(a.id() == string_id());
     EXPECT_TRUE(b.id() == string_id());
-    EXPECT_EQUAL(c.as_string(), std::string("moved"));
+    EXPECT_EQ(c.as_string(), std::string("moved"));
 }
 
-TEST("require that handle/string can be obtained from string_id") {
+TEST(SharedStringRepoTest, require_that_handle_string_can_be_obtained_from_string_id) {
     size_t before = active_enums();
     Handle a("str");
-    EXPECT_EQUAL(active_enums(), before + 1);
+    EXPECT_EQ(active_enums(), before + 1);
     Handle b = Handle::handle_from_id(a.id());
-    EXPECT_EQUAL(active_enums(), before + 1);
-    EXPECT_EQUAL(Handle::string_from_id(b.id()), std::string("str"));
+    EXPECT_EQ(active_enums(), before + 1);
+    EXPECT_EQ(Handle::string_from_id(b.id()), std::string("str"));
 }
 
 void verifySelfAssignment(Handle & a, const Handle &b) {
     a = b;
 }
 
-TEST("require that handle can be self-assigned") {
+TEST(SharedStringRepoTest, require_that_handle_can_be_self_assigned) {
     Handle a("foo");
     verifySelfAssignment(a, a);
-    EXPECT_EQUAL(a.as_string(), std::string("foo"));
+    EXPECT_EQ(a.as_string(), std::string("foo"));
 }
 
 //-----------------------------------------------------------------------------
@@ -399,43 +402,43 @@ TEST("require that handle can be self-assigned") {
 void verify_direct(const std::string &str, size_t value) {
     size_t before = active_enums();
     Handle handle(str);
-    EXPECT_EQUAL(handle.id().hash(), value + 1);
-    EXPECT_EQUAL(handle.id().value(), value + 1);
-    EXPECT_EQUAL(active_enums(), before);
-    EXPECT_EQUAL(handle.as_string(), str);
+    EXPECT_EQ(handle.id().hash(), value + 1);
+    EXPECT_EQ(handle.id().value(), value + 1);
+    EXPECT_EQ(active_enums(), before);
+    EXPECT_EQ(handle.as_string(), str);
 }
 
 void verify_not_direct(const std::string &str) {
     size_t before = active_enums();
     Handle handle(str);
-    EXPECT_EQUAL(handle.id().hash(), handle.id().value());
-    EXPECT_EQUAL(active_enums(), before + 1);
-    EXPECT_EQUAL(handle.as_string(), str);
+    EXPECT_EQ(handle.id().hash(), handle.id().value());
+    EXPECT_EQ(active_enums(), before + 1);
+    EXPECT_EQ(handle.as_string(), str);
 }
 
-TEST("require that direct handles work as expected") {
-    TEST_DO(verify_direct("", -1));
-    TEST_DO(verify_direct("0", 0));
-    TEST_DO(verify_direct("1", 1));
-    TEST_DO(verify_direct("123", 123));
-    TEST_DO(verify_direct("456", 456));
-    TEST_DO(verify_direct("789", 789));
-    TEST_DO(verify_direct("9999999", 9999999));
-    TEST_DO(verify_not_direct(" "));
-    TEST_DO(verify_not_direct(" 5"));
-    TEST_DO(verify_not_direct("5 "));
-    TEST_DO(verify_not_direct("10000000"));
-    TEST_DO(verify_not_direct("00"));
-    TEST_DO(verify_not_direct("01"));
-    TEST_DO(verify_not_direct("001"));
-    TEST_DO(verify_not_direct("-0"));
-    TEST_DO(verify_not_direct("-1"));
-    TEST_DO(verify_not_direct("a1"));
+TEST(SharedStringRepoTest, require_that_direct_handles_work_as_expected) {
+    GTEST_DO(verify_direct("", -1));
+    GTEST_DO(verify_direct("0", 0));
+    GTEST_DO(verify_direct("1", 1));
+    GTEST_DO(verify_direct("123", 123));
+    GTEST_DO(verify_direct("456", 456));
+    GTEST_DO(verify_direct("789", 789));
+    GTEST_DO(verify_direct("9999999", 9999999));
+    GTEST_DO(verify_not_direct(" "));
+    GTEST_DO(verify_not_direct(" 5"));
+    GTEST_DO(verify_not_direct("5 "));
+    GTEST_DO(verify_not_direct("10000000"));
+    GTEST_DO(verify_not_direct("00"));
+    GTEST_DO(verify_not_direct("01"));
+    GTEST_DO(verify_not_direct("001"));
+    GTEST_DO(verify_not_direct("-0"));
+    GTEST_DO(verify_not_direct("-1"));
+    GTEST_DO(verify_not_direct("a1"));
 }
 
 //-----------------------------------------------------------------------------
 
-TEST("require that basic multi-handle usage works") {
+TEST(SharedStringRepoTest, require_that_basic_multi_handle_usage_works) {
     size_t before = active_enums();
     Handles a;
     a.reserve(4);
@@ -447,13 +450,13 @@ TEST("require that basic multi-handle usage works") {
     a.push_back(bar.id());
     Handles b(std::move(a));
     if (will_reclaim()) {
-        EXPECT_EQUAL(before, 0u);
-        EXPECT_EQUAL(active_enums(), 2u);
+        EXPECT_EQ(before, 0u);
+        EXPECT_EQ(active_enums(), 2u);
     } else {
-        EXPECT_EQUAL(active_enums(), before);
+        EXPECT_EQ(active_enums(), before);
     }
-    EXPECT_EQUAL(a.view().size(), 0u);
-    EXPECT_EQUAL(b.view().size(), 4u);
+    EXPECT_EQ(a.view().size(), 0u);
+    EXPECT_EQ(b.view().size(), 4u);
     EXPECT_TRUE(b.view()[0] == foo.id());
     EXPECT_TRUE(b.view()[1] == bar.id());
     EXPECT_TRUE(b.view()[2] == foo.id());
@@ -465,84 +468,64 @@ TEST("require that basic multi-handle usage works") {
 void verify_same_enum(int64_t num, const std::string &str) {
     Handle n = Handle::handle_from_number(num);
     Handle s(str);
-    EXPECT_EQUAL(n.id().value(), s.id().value());
+    EXPECT_EQ(n.id().value(), s.id().value());
 }
 
-TEST("require that numeric label resolving works as expected") {
-    TEST_DO(verify_same_enum(-123, "-123"););
-    TEST_DO(verify_same_enum(-1, "-1"););
-    TEST_DO(verify_same_enum(0, "0"););
-    TEST_DO(verify_same_enum(123, "123"););
-    TEST_DO(verify_same_enum(9999999, "9999999"););
-    TEST_DO(verify_same_enum(10000000, "10000000"););
-    TEST_DO(verify_same_enum(999999999999, "999999999999"););
+TEST(SharedStringRepoTest, require_that_numeric_label_resolving_works_as_expected) {
+    GTEST_DO(verify_same_enum(-123, "-123"););
+    GTEST_DO(verify_same_enum(-1, "-1"););
+    GTEST_DO(verify_same_enum(0, "0"););
+    GTEST_DO(verify_same_enum(123, "123"););
+    GTEST_DO(verify_same_enum(9999999, "9999999"););
+    GTEST_DO(verify_same_enum(10000000, "10000000"););
+    GTEST_DO(verify_same_enum(999999999999, "999999999999"););
 }
 
 //-----------------------------------------------------------------------------
 
-#if 0
-// needs a lot of memory or tweaking of PART_LIMIT
-TEST("allocate handles until we run out") {
-    size_t cnt = 0;
-    std::vector<Handle> handles;
-    for (;;) {
-        auto stats = SharedStringRepo::stats();
-        size_t min_free = Stats::part_limit() - stats.max_part_usage;
-        fprintf(stderr, "cnt: %zu, used: %zu/%zu, min free: %zu, usage: %g\n",
-                cnt, stats.active_entries, stats.total_entries, min_free,
-                stats.id_space_usage());
-        size_t n = std::max(size_t(1), min_free);
-        for (size_t i = 0; i < n; ++i) {
-            handles.emplace_back(fmt("my_id_%zu", cnt++));
-        }
-    }
-}
-#endif
+struct SharedStringRepoBenchmarkTest : ::testing::TestWithParam<size_t> {};
 
-//-----------------------------------------------------------------------------
-
-TEST_MT_F("test shared string repo operations with 1 threads", 1, Fixture(num_threads)) {
-    f1.benchmark(thread_id == 0);
+TEST_P(SharedStringRepoBenchmarkTest, benchmark_with_threads) {
+    size_t num_threads = GetParam();
+    Fixture f1(num_threads);
+    auto task = [&](Nexus &ctx){
+                    f1.benchmark(ctx.thread_id() == 0);
+                };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MT_F("test shared string repo operations with 2 threads", 2, Fixture(num_threads)) {
-    f1.benchmark(thread_id == 0);
-}
-
-TEST_MT_F("test shared string repo operations with 4 threads", 4, Fixture(num_threads)) {
-    f1.benchmark(thread_id == 0);
-}
-
-TEST_MT_F("test shared string repo operations with 8 threads", 8, Fixture(num_threads)) {
-    f1.benchmark(thread_id == 0);
-}
-
-TEST_MT_F("test shared string repo operations with 16 threads", 16, Fixture(num_threads)) {
-    f1.benchmark(thread_id == 0);
-}
-
-TEST_MT_F("test shared string repo operations with 32 threads", 32, Fixture(num_threads)) {
-    f1.benchmark(thread_id == 0);
-}
-
-TEST_MT_F("test shared string repo operations with 64 threads", 64, Fixture(num_threads)) {
-    f1.benchmark(thread_id == 0);
-}
+INSTANTIATE_TEST_SUITE_P(, SharedStringRepoBenchmarkTest,
+                         ::testing::Values(1, 2, 4, 8, 16, 32, 64),
+                         [](const ::testing::TestParamInfo<size_t> &pi) {
+                             return std::format("{}", pi.param);
+                         });
 
 //-----------------------------------------------------------------------------
 
 #if 0
 // verify leak-detection and reporting
-TEST("leak some handles on purpose") {
+TEST(SharedStringRepoTest, leak_some_handles_on_purpose) {
     new Handle("leaked string");
     new Handle("also leaked");
     new Handle("even more leak");
 }
 #endif
 
-TEST("require that no handles have leaked during testing") {
+//-----------------------------------------------------------------------------
+
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    if ((argc == 2) && (argv[1] == std::string("verbose"))) {
+        verbose = true;
+        budget = 30.0;
+        work_size = 128000;
+    }
+    auto res = RUN_ALL_TESTS();
     if (will_reclaim()) {
-        EXPECT_EQUAL(active_enums(), 0u);
+        if (active_enums() != 0u) {
+            fprintf(stderr, "test failed: enum leak detected\n");
+            res = 1;
+        }
     } else {
         auto stats = SharedStringRepo::stats();
         fprintf(stderr, "enum stats after testing (no reclaim):\n");
@@ -550,17 +533,5 @@ TEST("require that no handles have leaked during testing") {
         fprintf(stderr, "  id space usage: %g\n", stats.id_space_usage());
         fprintf(stderr, "  memory usage:   %zu\n", stats.memory_usage.usedBytes());
     }
-}
-
-//-----------------------------------------------------------------------------
-
-int main(int argc, char **argv) {
-    TEST_MASTER.init(__FILE__);
-    if ((argc == 2) && (argv[1] == std::string("verbose"))) {
-        verbose = true;
-        budget = 30.0;
-        work_size = 128000;
-    }
-    TEST_RUN_ALL();
-    return (TEST_MASTER.fini() ? 0 : 1);
+    return res;
 }

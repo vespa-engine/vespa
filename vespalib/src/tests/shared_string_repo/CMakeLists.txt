@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_shared_string_repo_test_app TEST
     shared_string_repo_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(
   NAME vespalib_shared_string_repo_test_app
