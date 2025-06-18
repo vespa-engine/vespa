@@ -15,7 +15,7 @@ class IAttributeUsageListener;
 
 /**
  * Class used to populate per document type feed block metrics. Note that
- * any document type blocking on attribute address space usgae will cause
+ * any document type blocking on attribute address space usage will cause
  * feed to be blocked for all document types.
  */
 class AttributeUsageFilter : public IResourceWriteFilter {
