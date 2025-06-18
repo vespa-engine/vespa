@@ -3,13 +3,46 @@
 #include <vespa/searchcore/proton/server/resource_usage_write_filter.h>
 #include <vespa/searchcore/proton/server/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/server/resource_usage_state.h>
+#include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/hw_info.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using namespace proton;
+using search::AddressSpaceUsage;
+using search::AddressSpaceComponents;
 using vespalib::HwInfo;
 
 namespace fs = std::filesystem;
+
+namespace {
+
+vespalib::AddressSpace enumStoreOverLoad(30_Gi, 0, 32_Gi);
+
+vespalib::AddressSpace multiValueOverLoad(127_Mi, 0, 128_Mi);
+
+
+class MyAttributeStats : public AttributeUsageStats
+{
+public:
+    MyAttributeStats()
+        : AttributeUsageStats("test")
+    {
+    }
+    void triggerEnumStoreLimit() {
+        AddressSpaceUsage usage;
+        usage.set(AddressSpaceComponents::enum_store, enumStoreOverLoad);
+        merge(usage, "enumeratedName", "ready");
+    }
+
+    void triggerMultiValueLimit() {
+        AddressSpaceUsage usage;
+        usage.set(AddressSpaceComponents::multi_value, multiValueOverLoad);
+        merge(usage, "multiValueName", "ready");
+    }
+};
+
+}
 
 struct ResourceUsageWriteFilterTest : public ::testing::Test
 {
@@ -46,6 +79,10 @@ struct ResourceUsageWriteFilterTest : public ::testing::Test
     void triggerMemoryLimit()
     {
         _notifier.set_resource_usage(TransientResourceUsage(), vespalib::ProcessMemoryStats(897, 898, 900), _notifier.getDiskUsedSize());
+    }
+
+    void notify_attribute_usage(const AttributeUsageStats& usage) {
+        _filter.notify_attribute_usage(usage);
     }
 };
 
@@ -140,6 +177,42 @@ TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_memory_usage_tr
     EXPECT_DOUBLE_EQ(0.1, _notifier.get_metrics().transient_memory_usage());
     EXPECT_DOUBLE_EQ(0.2, _notifier.usageState().non_transient_memory_usage());
     EXPECT_DOUBLE_EQ(0.2, _notifier.get_metrics().non_transient_memory_usage());
+}
+
+TEST_F(ResourceUsageWriteFilterTest, check_that_enum_store_limit_can_be_reached)
+{
+    _filter.set_config(AttributeUsageFilterConfig(0.8));
+    MyAttributeStats stats;
+    stats.triggerEnumStoreLimit();
+    notify_attribute_usage(stats);
+    testWrite("addressSpaceLimitReached: { "
+              "action: \""
+              "add more content nodes"
+              "\", "
+              "reason: \""
+              "max address space in attribute vector components used (0.9375) > limit (0.8)"
+              "\", "
+              "addressSpace: { used: 32212254720, dead: 0, limit: 34359738368}, "
+              "document_type: \"test\", "
+              "attributeName: \"enumeratedName\", componentName: \"enum-store\", subdb: \"ready\"}");
+}
+
+TEST_F(ResourceUsageWriteFilterTest, Check_that_multivalue_limit_can_be_reached)
+{
+    _filter.set_config(AttributeUsageFilterConfig(0.8));
+    MyAttributeStats stats;
+    stats.triggerMultiValueLimit();
+    notify_attribute_usage(stats);
+    testWrite("addressSpaceLimitReached: { "
+              "action: \""
+              "add more content nodes"
+              "\", "
+              "reason: \""
+              "max address space in attribute vector components used (0.992188) > limit (0.8)"
+              "\", "
+              "addressSpace: { used: 133169152, dead: 0, limit: 134217728}, "
+              "document_type: \"test\", "
+              "attributeName: \"multiValueName\", componentName: \"multi-value\", subdb: \"ready\"}");
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

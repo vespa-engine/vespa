@@ -349,7 +349,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 
     setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
-    _write_filter = std::make_unique<ResourceUsageWriteFilter>(hwInfo);
+    _write_filter = std::make_shared<ResourceUsageWriteFilter>(hwInfo);
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir, *_write_filter);
     _posting_list_cache = make_posting_list_cache(protonConfig);
 
@@ -398,7 +398,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                              protonConfig.visit.defaultserializedsize,
                                                              protonConfig.visit.ignoremaxbytes);
     auto resource_usage_tracker = _persistenceEngine->get_resource_usage_tracker().shared_from_this();
-    _attribute_usage_notifier = std::make_shared<AttributeUsageNotifier>(resource_usage_tracker);
+    _attribute_usage_notifier = std::make_shared<AttributeUsageNotifier>(resource_usage_tracker, _write_filter);
     _shared_service = std::make_unique<SharedThreadingService>(
             SharedThreadingServiceConfig::make(protonConfig, hwInfo.cpu()), _transport, *_persistenceEngine);
     _scheduler = std::make_unique<ScheduledForwardExecutor>(_transport, _shared_service->shared());
@@ -468,6 +468,7 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
                             protonConfig.search.memory.limiter.minhits);
     const std::shared_ptr<const DocumentTypeRepo> repo = configSnapshot->getDocumentTypeRepoSP();
 
+    _write_filter->set_config(AttributeUsageFilterConfig(protonConfig.writefilter.attribute.addressSpaceLimit));
     _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, configSnapshot->getHwInfo()), *_scheduler);
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setConfig(protonConfig.flush.memory);
@@ -534,6 +535,9 @@ Proton::~Proton()
     _sessionPruneHandle.reset();
     if (_diskMemUsageSampler) {
         _diskMemUsageSampler->close();
+    }
+    if (_attribute_usage_notifier) {
+        _attribute_usage_notifier->close();
     }
     _scheduler.reset();
     _executor.shutdown();

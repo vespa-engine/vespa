@@ -98,7 +98,7 @@ private:
     ProtonFileHeaderContext                _fileHeaderContext;
     std::shared_ptr<search::attribute::Interlock> _attribute_interlock;
     std::unique_ptr<TLS>                   _tls;
-    std::unique_ptr<ResourceUsageWriteFilter> _write_filter;
+    std::shared_ptr<ResourceUsageWriteFilter> _write_filter;
     std::unique_ptr<DiskMemUsageSampler>   _diskMemUsageSampler;
     std::unique_ptr<PersistenceEngine>     _persistenceEngine;
     std::shared_ptr<AttributeUsageNotifier> _attribute_usage_notifier;

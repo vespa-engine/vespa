@@ -14,10 +14,9 @@ namespace proton {
 class IAttributeUsageListener;
 
 /**
- * Class to filter write operations based on sampled information about
- * attribute resource usage (e.g. enum store and multivalue mapping).
- * If resource limit is reached then further writes are denied in
- * order to prevent entering an unrecoverable state.
+ * Class used to populate per document type feed block metrics. Note that
+ * any document type blocking on attribute address space usage will cause
+ * feed to be blocked for all document types.
  */
 class AttributeUsageFilter : public IResourceWriteFilter {
 public:
@@ -27,10 +26,9 @@ public:
     using Config = AttributeUsageFilterConfig;
 
 private:
-    mutable Mutex       _lock; // protect _attributeStats, _config, _state
+    mutable Mutex       _lock; // protect _attributeStats, _config
     AttributeUsageStats _attributeStats;
     Config              _config;
-    State               _state;
     std::atomic<bool>   _acceptWrite;
     std::unique_ptr<IAttributeUsageListener> _listener;
 
@@ -45,6 +43,5 @@ public:
     bool acceptWriteOperation() const override;
     State getAcceptState() const override;
 };
-
 
 } // namespace proton

@@ -49,13 +49,15 @@ class AttributeUsageNotifierTest : public ::testing::Test
 {
 protected:
     std::shared_ptr<MyAttributeUsageListener> _listener;
+    std::shared_ptr<MyAttributeUsageListener> _filter;
     std::shared_ptr<AttributeUsageNotifier>   _notifier;
 
 public:
     AttributeUsageNotifierTest()
         : testing::Test(),
           _listener(std::make_shared<MyAttributeUsageListener>()),
-          _notifier(std::make_shared<AttributeUsageNotifier>(_listener))
+          _filter(std::make_shared<MyAttributeUsageListener>()),
+          _notifier(std::make_shared<AttributeUsageNotifier>(_listener, _filter))
     {
     }
 

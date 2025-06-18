@@ -61,11 +61,14 @@ AttributeUsageNotifier::AttributeUsageListener::notify_attribute_usage(const Att
     _notifier->notify_attribute_usage(attribute_usage);
 }
 
-AttributeUsageNotifier::AttributeUsageNotifier(std::shared_ptr<IAttributeUsageListener> tracker)
+AttributeUsageNotifier::AttributeUsageNotifier(std::shared_ptr<IAttributeUsageListener> tracker,
+                                               std::shared_ptr<IAttributeUsageListener> filter)
   : _lock(),
     _attribute_usage(),
     _max_attribute_usage(),
-    _tracker(std::move(tracker))
+    _tracker(std::move(tracker)),
+    _filter(std::move(filter)),
+    _closed(false)
 {
 }
 
@@ -95,9 +98,7 @@ AttributeUsageNotifier::remove_document_type(const std::string& document_type)
         return;
     }
     if (scan_attribute_usage(guard)) {
-        if (_tracker) {
-            _tracker->notify_attribute_usage(_max_attribute_usage);
-        }
+        notify_attribute_usage();
     }
 }
 
@@ -113,9 +114,20 @@ AttributeUsageNotifier::notify_attribute_usage(const AttributeUsageStats& attrib
     if (attribute_usage.document_type() == _max_attribute_usage.document_type() ||
         _max_attribute_usage.less_usage_than(attribute_usage)) {
         if (scan_attribute_usage(guard)) {
-            if (_tracker) {
-                _tracker->notify_attribute_usage(_max_attribute_usage);
-            }
+            notify_attribute_usage();
+        }
+    }
+}
+
+void
+AttributeUsageNotifier::notify_attribute_usage()
+{
+    if (!_closed) {
+        if (_tracker) {
+            _tracker->notify_attribute_usage(_max_attribute_usage);
+        }
+        if (_filter) {
+            _filter->notify_attribute_usage(_max_attribute_usage);
         }
     }
 }
@@ -124,6 +136,13 @@ std::unique_ptr<IAttributeUsageListener>
 AttributeUsageNotifier::make_attribute_usage_listener(const std::string &document_type)
 {
     return std::make_unique<AttributeUsageListener>(shared_from_this(), document_type);
+}
+
+void
+AttributeUsageNotifier::close()
+{
+    std::lock_guard guard(_lock);
+    _closed = true;
 }
 
 }

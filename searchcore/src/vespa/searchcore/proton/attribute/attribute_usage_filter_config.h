@@ -20,7 +20,7 @@ struct AttributeUsageFilterConfig
         : _address_space_limit(1.0)
     {}
 
-    AttributeUsageFilterConfig(double address_space_limit) noexcept
+    explicit AttributeUsageFilterConfig(double address_space_limit) noexcept
         : _address_space_limit(address_space_limit)
     {}
 

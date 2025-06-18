@@ -4,6 +4,7 @@
 #include "i_disk_mem_usage_listener.h"
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
+#include <iomanip>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -74,6 +75,34 @@ makeDiskLimitMessage(std::ostream &os,
     os << "}";
 }
 
+void make_attribute_address_space_message(std::ostream& os, const AttributeUsageStats& usage)
+{
+    auto& max = usage.max_address_space_usage();
+    auto& as = max.getUsage();
+    os << "{ used: " <<
+       as.used() << ", dead: " <<
+       as.dead() << ", limit: " <<
+       as.limit() << "}, " <<
+       "document_type: " << std::quoted(usage.document_type()) << ", " <<
+       "attributeName: \"" << max.getAttributeName() << "\", " <<
+       "componentName: \"" << max.get_component_name() << "\", " <<
+       "subdb: \"" << max.getSubDbName() << "\"}";
+}
+
+void make_attribute_address_space_error_message(std::ostream& os, double used, double limit,
+                                                const AttributeUsageStats& usage)
+{
+    os << "addressSpaceLimitReached: { "
+          "action: \""
+          "add more content nodes"
+          "\", "
+          "reason: \""
+          "max address space in attribute vector components used (" << used << ") > "
+                                                                               "limit (" << limit << ")"
+                                                                                                     "\", addressSpace: ";
+    make_attribute_address_space_message(os, usage);
+}
+
 std::string
 makeUnblockingMessage(double memoryUsed,
                       double memoryLimit,
@@ -96,13 +125,17 @@ makeUnblockingMessage(double memoryUsed,
 }
 
 ResourceUsageWriteFilter::ResourceUsageWriteFilter(const HwInfo& hwInfo)
-    : _lock(),
+    : IResourceWriteFilter(),
+      IAttributeUsageListener(),
+      _lock(),
       _hwInfo(hwInfo),
       _acceptWrite(true),
       _memoryStats(),
       _diskUsedSizeBytes(0),
       _state(),
-      _dmstate()
+      _dmstate(),
+      _attribute_usage(),
+      _attribute_usage_filter_config()
 { }
 
 ResourceUsageWriteFilter::~ResourceUsageWriteFilter() = default;
@@ -124,6 +157,18 @@ ResourceUsageWriteFilter::recalc_state(const Guard& guard)
         }
         hasMessage = true;
         makeDiskLimitMessage(message, _dmstate.diskState().usage(), _dmstate.diskState().limit(), _hwInfo, _diskUsedSizeBytes);
+    }
+    {
+        const auto &max_usage = _attribute_usage.max_address_space_usage();
+        double used = max_usage.getUsage().usage();
+        if (used > _attribute_usage_filter_config._address_space_limit) {
+            if (hasMessage) {
+                message << ", ";
+            }
+            hasMessage = true;
+            make_attribute_address_space_error_message(message, used,
+                                                       _attribute_usage_filter_config._address_space_limit, _attribute_usage);
+        }
     }
     if (hasMessage) {
         if (_acceptWrite) {
@@ -169,6 +214,22 @@ ResourceUsageWriteFilter::notify_disk_mem_usage(const DiskMemUsageState& state, 
     _dmstate = state;
     _memoryStats = memoryStats;
     _diskUsedSizeBytes = diskUsedSizeBytes;
+    recalc_state(guard);
+}
+
+void
+ResourceUsageWriteFilter::set_config(AttributeUsageFilterConfig attribute_usage_filter_config)
+{
+    Guard guard(_lock);
+    _attribute_usage_filter_config = attribute_usage_filter_config;
+    recalc_state(guard);
+}
+
+void
+ResourceUsageWriteFilter::notify_attribute_usage(const AttributeUsageStats& attribute_usage)
+{
+    Guard guard(_lock);
+    _attribute_usage = attribute_usage;
     recalc_state(guard);
 }
 

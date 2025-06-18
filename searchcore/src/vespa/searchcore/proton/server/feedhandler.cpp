@@ -397,7 +397,6 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
                          const std::string &tlsSpec,
                          const DocTypeName &docTypeName,
                          IFeedHandlerOwner &owner,
-                         const IResourceWriteFilter &writeFilter,
                          IReplayConfig &replayConfig,
                          const TlsWriterFactory & tlsWriterFactory,
                          TlsWriter * tlsWriter)
@@ -410,7 +409,6 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _writeService(writeService),
       _docTypeName(docTypeName),
       _owner(owner),
-      _writeFilter(writeFilter),
       _replayConfig(replayConfig),
       _tlsMgr(writeService.transport(), tlsSpec, docTypeName.getName()),
       _tlsWriterfactory(tlsWriterFactory),
@@ -603,64 +601,6 @@ feedOperationRejected(FeedToken & token, const std::string &opType, const std::s
     }
 }
 
-void
-notifyFeedOperationRejected(FeedToken & token, const FeedOperation &op,
-                            const DocTypeName & docTypeName, const std::string &rejectMessage)
-{
-    if ((op.getType() == FeedOperation::UPDATE_42) || (op.getType() == FeedOperation::UPDATE)) {
-        std::string docId = (static_cast<const UpdateOperation &>(op)).getUpdate()->getId().toString();
-        feedOperationRejected<UpdateResult>(token, "Update", docId, docTypeName, rejectMessage);
-    } else if (op.getType() == FeedOperation::PUT) {
-        std::string docId = (static_cast<const PutOperation &>(op)).getDocument()->getId().toString();
-        feedOperationRejected<Result>(token, "Put", docId, docTypeName, rejectMessage);
-    } else {
-        feedOperationRejected<Result>(token, "Feed", "", docTypeName, rejectMessage);
-    }
-}
-
-/**
- * Tells wether an operation should be blocked when resourcelimits have been reached.
- * It looks at the operation type and also the content if it is an 'update' operation.
- */
-class FeedRejectHelper {
-public:
-    static bool isRejectableFeedOperation(const FeedOperation & op);
-    static bool mustReject(const UpdateOperation & updateOperation);
-};
-
-bool
-FeedRejectHelper::mustReject(const UpdateOperation & updateOperation) {
-    if (updateOperation.getUpdate()) {
-        return document::FeedRejectHelper::mustReject(*updateOperation.getUpdate());
-    }
-    return false;
-}
-
-bool
-FeedRejectHelper::isRejectableFeedOperation(const FeedOperation & op)
-{
-    FeedOperation::Type type = op.getType();
-    if (type == FeedOperation::PUT) {
-        return true;
-    } else if (type == FeedOperation::UPDATE_42 || type == FeedOperation::UPDATE) {
-        return mustReject(dynamic_cast<const UpdateOperation &>(op));
-    }
-    return false;
-}
-
-}
-
-bool
-FeedHandler::considerWriteOperationForRejection(FeedToken & token, const FeedOperation &op)
-{
-    if (!_writeFilter.acceptWriteOperation() && FeedRejectHelper::isRejectableFeedOperation(op)) {
-        IResourceWriteFilter::State state = _writeFilter.getAcceptState();
-        if (!state.acceptWriteOperation()) {
-            notifyFeedOperationRejected(token, op, _docTypeName, state.message());
-            return true;
-        }
-    }
-    return false;
 }
 
 bool
@@ -708,9 +648,6 @@ FeedHandler::considerUpdateOperationForRejection(FeedToken &token, UpdateOperati
 void
 FeedHandler::performOperation(FeedToken token, FeedOperation::UP op)
 {
-    if (considerWriteOperationForRejection(token, *op)) {
-        return;
-    }
     switch(op->getType()) {
     case FeedOperation::PUT:
         performPut(std::move(token), static_cast<PutOperation &>(*op));
