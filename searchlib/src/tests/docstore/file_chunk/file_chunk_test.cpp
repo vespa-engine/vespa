@@ -5,7 +5,7 @@
 #include <vespa/searchlib/docstore/writeablefilechunk.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>

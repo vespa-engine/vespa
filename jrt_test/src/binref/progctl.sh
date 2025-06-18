@@ -1,1 +1,1 @@
-../../../vespalib/src/vespa/vespalib/testkit/progctl.sh
+../../../vespalib/src/vespa/vespalib/test/progctl.sh

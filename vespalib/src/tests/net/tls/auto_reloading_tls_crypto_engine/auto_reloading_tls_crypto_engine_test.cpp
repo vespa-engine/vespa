@@ -7,8 +7,8 @@
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/net/tls/impl/openssl_tls_context_impl.h>
-#include <vespa/vespalib/testkit/test_path.h>
-#include <vespa/vespalib/testkit/time_bomb.h>
+#include <vespa/vespalib/test/test_path.h>
+#include <vespa/vespalib/test/time_bomb.h>
 #include <openssl/ssl.h>
 #include <filesystem>
 #include <fstream>

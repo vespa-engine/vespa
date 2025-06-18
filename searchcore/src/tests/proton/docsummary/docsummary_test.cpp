@@ -68,7 +68,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/geo/zcurve.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/config-summary.h>

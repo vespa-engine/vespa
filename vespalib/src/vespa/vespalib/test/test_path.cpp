@@ -3,7 +3,7 @@
 #include "test_path.h"
 #include <cstdlib>
 
-namespace vespalib::testkit {
+namespace vespalib::test {
 
 namespace {
 

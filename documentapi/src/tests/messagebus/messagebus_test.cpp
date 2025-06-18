@@ -7,7 +7,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 
 using document::DocumentTypeRepo;
 using document::readDocumenttypesConfig;

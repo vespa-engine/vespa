@@ -4,7 +4,7 @@
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
 #include <vespa/vespalib/test/make_tls_options_for_testing.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 
 vespalib::CryptoEngine::SP my_crypto_engine() {
     const char *env_str = getenv("CRYPTOENGINE");

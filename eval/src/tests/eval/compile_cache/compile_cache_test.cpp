@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/time_bomb.h>
+#include <vespa/vespalib/test/time_bomb.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/eval/eval/key_gen.h>
 #include <vespa/eval/eval/test/eval_spec.h>

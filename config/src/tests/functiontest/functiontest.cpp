@@ -6,7 +6,7 @@
 #include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <fstream>
 #include <cinttypes>
 

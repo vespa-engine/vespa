@@ -7,7 +7,7 @@
 #include "queryparser.h"
 #include "fakerewriter.h"
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <map>
 
 /**

@@ -3,7 +3,7 @@
 #include <vespa/searchcore/proton/matching/docid_range_scheduler.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
-#include <vespa/vespalib/testkit/time_bomb.h>
+#include <vespa/vespalib/test/time_bomb.h>
 
 using namespace proton::matching;
 using vespalib::TimeBomb;

@@ -24,7 +24,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <functional>
 #include <optional>

@@ -11,7 +11,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <chrono>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 
 namespace storage::distributor {
 

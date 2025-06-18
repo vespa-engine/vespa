@@ -11,7 +11,7 @@
 #include <vespa/config/common/sourcefactory.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <fstream>
 
 #include <vespa/log/log.h>

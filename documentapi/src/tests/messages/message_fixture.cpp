@@ -5,7 +5,7 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <cassert>

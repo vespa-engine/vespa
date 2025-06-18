@@ -18,7 +18,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <iomanip>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <gmock/gmock.h>
 
 using config::ConfigGetter;

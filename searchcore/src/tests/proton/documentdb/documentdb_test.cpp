@@ -38,7 +38,7 @@
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <filesystem>
 #include <iostream>
 

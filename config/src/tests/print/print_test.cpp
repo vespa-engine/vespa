@@ -7,7 +7,7 @@
 #include <vespa/config/print/istreamconfigreader.hpp>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <sys/stat.h>
 

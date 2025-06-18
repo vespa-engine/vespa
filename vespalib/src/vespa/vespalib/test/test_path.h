@@ -4,9 +4,9 @@
 
 #include <string>
 
-#define TEST_PATH(local_file) vespalib::testkit::test_path(local_file)
+#define TEST_PATH(local_file) vespalib::test::test_path(local_file)
 
-namespace vespalib::testkit {
+namespace vespalib::test {
 
 /*
  * Return the path to a test file.
