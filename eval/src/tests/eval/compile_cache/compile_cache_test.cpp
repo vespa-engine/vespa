@@ -11,7 +11,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/test/nexus.h>
-#include <barrier>
 #include <set>
 
 using namespace vespalib;
@@ -395,30 +394,29 @@ TEST(CompileCacheTest, require_that_deadlock_is_avoided_with_blocking_executor)
     constexpr size_t num_threads = 8;
     std::shared_ptr<Executor> f1;
     TimeBomb f2(300);
-    std::barrier barrier(num_threads);
-    auto task = [&barrier,&f1](Nexus& ctx) {
+    auto task = [&f1](Nexus& ctx) {
         size_t loop = 16;
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             auto t0 = steady_clock::now();
             f1 = std::make_shared<BlockingThreadStackExecutor>(2, 3);
             auto binding = CompileCache::bind(f1);
-            barrier.arrive_and_wait(); // #1
+            ctx.barrier(); // #1
             for (size_t i = 0; i < num_threads; ++i) {
                 f1->execute(std::make_unique<MyCompileTask>(i * loop, loop));
             }
-            barrier.arrive_and_wait(); // #2
+            ctx.barrier(); // #2
             auto t1 = steady_clock::now();
             fprintf(stderr, "deadlock test took %" PRIu64 " ms\n", count_ms(t1 - t0));
 
         } else {
-            barrier.arrive_and_wait(); // #1
+            ctx.barrier(); // #1
             size_t seed = (10000 + (thread_id * loop));
             for (size_t i = 0; i < loop; ++i) {
                 // use custom constant to make a unique function that needs compilation
                 auto token = CompileCache::compile(*Function::parse(fmt("%zu", seed + i)), PassParams::SEPARATE);
             }
-            barrier.arrive_and_wait(); // #2
+            ctx.barrier(); // #2
         }
     };
     Nexus::run(num_threads, task);

@@ -12,7 +12,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
 #include <barrier>
-#include <latch>
 
 #include <vespa/log/log.h>
 LOG_SETUP("failover");
@@ -230,8 +229,7 @@ TEST(FailoverTest, require_that_any_node_can_be_down_when_subscribing)
     constexpr size_t num_threads = 4;
     ThreeServersFixture f1;
     NetworkFixture f2(f1.specs);
-    std::latch latch(num_threads);
-    auto task = [&f2,&latch](Nexus& ctx) {
+    auto task = [&f2](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             ConfigCheckFixture ccf(f2);
@@ -241,10 +239,10 @@ TEST(FailoverTest, require_that_any_node_can_be_down_when_subscribing)
             ccf.verifySubscribeFailover(1);
             ccf.verifySubscribeFailover(2);
             f2.stopAll();
-            latch.arrive_and_wait();
+            ctx.barrier();
         } else {
             f2.run(thread_id - 1);
-            latch.arrive_and_wait();
+            ctx.barrier();
         }
     };
     Nexus::run(num_threads, task);

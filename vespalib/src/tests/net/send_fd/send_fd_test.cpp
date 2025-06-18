@@ -12,7 +12,6 @@
 #include <vespa/vespalib/test/socket_options_verifier.h>
 #include <chrono>
 #include <functional>
-#include <latch>
 #include <optional>
 #include <thread>
 #include <unistd.h>
@@ -114,14 +113,10 @@ void recv_fd(SocketHandle &socket, std::optional<SocketHandle>& result) {
 
 namespace {
 
-class WaitLatch {
-    std::latch& _latch;
-public:
-    explicit WaitLatch(std::latch& latch) noexcept
-        : _latch(latch)
-    {
-    }
-    ~WaitLatch() { _latch.arrive_and_wait(); }
+struct BarrierGuard {
+    Nexus &ctx;
+    explicit BarrierGuard(Nexus &ctx_in) noexcept : ctx(ctx_in) {}
+    ~BarrierGuard() { ctx.barrier(); }
 };
 
 }
@@ -131,24 +126,23 @@ TEST(SendFdTest, require_that_an_open_socket_handle_can_be_passed_over_a_unix_do
     constexpr size_t num_threads = 3;
     ServerSocket f1("tcp/0");
     ServerSocket f2("ipc/file:my_socket");
-    std::latch latch(num_threads);
     TimeBomb f3(60);
-    auto task = [&f1,&f2,&latch](Nexus& ctx) {
+    auto task = [&f1,&f2](Nexus& ctx) {
                     auto thread_id = ctx.thread_id();
                     if (thread_id == 0) {        // server
                         SocketHandle socket = accept(f1);
-                        WaitLatch wait(latch);
+                        BarrierGuard guard(ctx);
                         SCOPED_TRACE("verify socket io server side");
                         verify_socket_io(true, socket);  // server side
                     } else if (thread_id == 1) { // proxy
                         SocketHandle server_socket = connect(f1);
                         SocketHandle client_socket = accept(f2);
-                        WaitLatch wait(latch);
+                        BarrierGuard guard(ctx);
                         ASSERT_NO_FATAL_FAILURE(send_fd(client_socket, std::move(server_socket)));
                     } else {                     // client
                         SocketHandle proxy_socket = connect(f2);
                         std::optional<SocketHandle> socket;
-                        WaitLatch wait(latch);
+                        BarrierGuard guard(ctx);
                         ASSERT_NO_FATAL_FAILURE(recv_fd(proxy_socket, socket));
                         ASSERT_TRUE(socket.has_value());
                         SCOPED_TRACE("verify socket io client side");

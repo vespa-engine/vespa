@@ -11,7 +11,6 @@
 #include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
-#include <latch>
 #include <thread>
 
 using namespace config;
@@ -596,8 +595,7 @@ TEST(SubscriberTest, requireThatConfigSubscriberWaitsUntilNextConfigSucceeds)
     constexpr size_t num_threads = 2;
     MyManager f1;
     APIFixture f2(f1);
-    std::latch latch(num_threads);
-    auto task = [&f1, &f2, &latch](Nexus& ctx) {
+    auto task = [&f1, &f2](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             ConfigSubscriber s(std::make_shared<APIFixture>(f2));
@@ -606,11 +604,11 @@ TEST(SubscriberTest, requireThatConfigSubscriberWaitsUntilNextConfigSucceeds)
             ASSERT_TRUE(s.nextConfigNow());
             f1.updateGeneration(0, 2);
             ASSERT_FALSE(s.nextConfig(1000ms));
-            latch.arrive_and_wait();
+            ctx.barrier();
             ASSERT_TRUE(s.nextConfig(2000ms));
             verifyConfig("foo2", h1->getConfig()); // First update is skipped
         } else {
-            latch.arrive_and_wait();
+            ctx.barrier();
             std::this_thread::sleep_for(1000ms);
             f1.updateValue(0, createFooValue("foo2"), 3);
         }

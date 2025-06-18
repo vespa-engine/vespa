@@ -4,7 +4,6 @@
 #include <vespa/fnet/transport.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <thread>
-#include <barrier>
 #include <chrono>
 #include <mutex>
 #include <map>
@@ -69,10 +68,9 @@ TEST(ThreadSelectionTest, require_that_selection_is_thread_sensitive)
 {
     Fixture f1(8);
     size_t num_threads = 256;
-    std::barrier barrier(num_threads);
     auto task = [&](Nexus &ctx){
                     f1.count_selected_thread(nullptr, 0);
-                    barrier.arrive_and_wait(); // #1
+                    ctx.barrier(); // #1
                     if (ctx.thread_id() == 0) {
                         std::vector<size_t> counts = f1.get_counts();
                         EXPECT_EQ(f1.counts.size(), 8u);

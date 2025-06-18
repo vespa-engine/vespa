@@ -7,7 +7,6 @@
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <barrier>
 
 using namespace proton::matching;
 using namespace vespalib;
@@ -246,8 +245,7 @@ TEST(DocidRangeSchedulerBench, benchmark_different_combinations_of_schedulers_an
     SchedulerList f2(num_threads);
     WorkList f3;
     RangeChecker f4(num_threads, my_docid_limit);
-    std::barrier barrier(num_threads);
-    auto task = [&f1,&f2,&f3,&f4,&barrier](Nexus& ctx) {
+    auto task = [&f1,&f2,&f3,&f4](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             fprintf(stderr, "Benchmarking with %zu threads:\n", num_threads);
@@ -262,14 +260,14 @@ TEST(DocidRangeSchedulerBench, benchmark_different_combinations_of_schedulers_an
                 BenchmarkTimer timer(1.0);
                 for (size_t i = 0; i < 5; ++i) {
                     WorkTracker tracker;
-                    barrier.arrive_and_wait();
+                    ctx.barrier();
                     if (thread_id == 0) {
                         f1 = f2.factory_list[scheduler]->create(my_docid_limit);
                     }
-                    barrier.arrive_and_wait();
+                    ctx.barrier();
                     timer.before();
                     worker(*f1, *f3.work_list[work], thread_id, tracker);
-                    barrier.arrive_and_wait();
+                    ctx.barrier();
                     timer.after();
                     if (thread_id == 0) {
                         fprintf(stderr, ".");
