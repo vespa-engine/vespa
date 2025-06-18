@@ -110,7 +110,7 @@ public abstract class Components<TYPE> {
 
     }
 
-    /** A collection of components of a single type, of which one is selected. */
+    /** Selected component of a specific type. */
     public static class Selected<TYPE> {
 
         private final String id;
