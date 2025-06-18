@@ -3,7 +3,7 @@
 #include "time_bomb.h"
 #include <cstdint>
 #include <vespa/log/log.h>
-LOG_SETUP(".vespalib.testkit.time_bomb");
+LOG_SETUP(".vespalib.test.time_bomb");
 
 namespace vespalib {
 

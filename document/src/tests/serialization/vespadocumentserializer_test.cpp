@@ -45,7 +45,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <filesystem>
 

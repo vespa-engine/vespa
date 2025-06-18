@@ -5,7 +5,7 @@
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/test/peer_policy_utils.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <gmock/gmock.h>
 #include <filesystem>

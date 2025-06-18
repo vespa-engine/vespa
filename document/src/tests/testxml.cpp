@@ -11,7 +11,7 @@
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 
 using vespalib::StringTokenizer;
 

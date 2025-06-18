@@ -25,7 +25,7 @@
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <fcntl.h>
 
 using vespalib::Identifiable;

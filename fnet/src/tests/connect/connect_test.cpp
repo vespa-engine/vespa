@@ -10,7 +10,7 @@
 #include <vespa/vespalib/net/server_socket.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/test/nexus.h>
-#include <vespa/vespalib/testkit/time_bomb.h>
+#include <vespa/vespalib/test/time_bomb.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cassert>

@@ -34,7 +34,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/test/test_data.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <filesystem>

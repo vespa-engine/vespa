@@ -7,7 +7,7 @@
 #include <vespa/vespalib/util/count_down_latch.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/testkit/time_bomb.h>
+#include <vespa/vespalib/test/time_bomb.h>
 #include <thread>
 
 using vespalib::Executor;

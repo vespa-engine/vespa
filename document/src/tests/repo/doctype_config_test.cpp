@@ -14,7 +14,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/identifiable.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <set>
 #include <string>

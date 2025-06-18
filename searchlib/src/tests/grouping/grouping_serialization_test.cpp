@@ -9,7 +9,7 @@
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <fstream>
 #include <vespa/log/log.h>
 LOG_SETUP("grouping_serialization_test");

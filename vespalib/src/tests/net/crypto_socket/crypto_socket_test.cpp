@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
-#include <vespa/vespalib/testkit/time_bomb.h>
+#include <vespa/vespalib/test/time_bomb.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>

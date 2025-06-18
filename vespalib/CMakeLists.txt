@@ -203,7 +203,6 @@ vespa_define_module(
     src/vespa/vespalib/regex
     src/vespa/vespalib/stllike
     src/vespa/vespalib/test
-    src/vespa/vespalib/testkit
     src/vespa/vespalib/text
     src/vespa/vespalib/time
     src/vespa/vespalib/trace

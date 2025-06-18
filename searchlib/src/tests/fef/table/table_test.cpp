@@ -4,7 +4,7 @@
 #include <vespa/searchlib/fef/functiontablefactory.h>
 #include <vespa/searchlib/fef/tablemanager.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <fstream>
 #include <iostream>
 

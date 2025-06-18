@@ -5,7 +5,7 @@
 #include "config-bar.h"
 #include <vespa/config/helper/legacysubscriber.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <fstream>
 
 using namespace config;

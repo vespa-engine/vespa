@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
-#include <vespa/vespalib/testkit/time_bomb.h>
+#include <vespa/vespalib/test/time_bomb.h>
 #include <vespa/vespalib/portal/handle_manager.h>
 #include <atomic>
 

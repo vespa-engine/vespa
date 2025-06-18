@@ -7,7 +7,7 @@
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/hexdump.h>
-#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/test/test_path.h>
 #include <vector>
 #include <fstream>
 #include <iostream>
