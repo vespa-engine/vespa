@@ -80,7 +80,7 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
     EXPECT_GT(notifier().getMemoryStats().getAnonymousRss(), 0);
 #else
     // Anonymous resident memory used by current process is not sampled.
-    EXPECT_EQ(filter().getMemoryStats().getAnonymousRss(), 0);
+    EXPECT_EQ(notifier().getMemoryStats().getAnonymousRss(), 0);
 #endif
     EXPECT_GT(notifier().getDiskUsedSize(), 0);
     EXPECT_EQ(150, notifier().get_transient_resource_usage().memory());
