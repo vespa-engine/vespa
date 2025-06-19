@@ -79,20 +79,6 @@ func (opts *Options) AddJvmArgsFromString(args string) {
 }
 
 func (opts *Options) ConfigureCpuCount(cnt int) {
-	if cnt <= 0 {
-		out, err := osutil.BackTicksForwardStderr.Run("nproc", "--all")
-		if err != nil {
-			trace.Trace("failed nproc:", err)
-		} else {
-			cnt, err = strconv.Atoi(strings.TrimSpace(out))
-			if err != nil {
-				trace.Trace("bad nproc output:", strings.TrimSpace(out))
-				cnt = 0
-			} else {
-				trace.Trace("CpuCount: using", cnt, "from nproc --all")
-			}
-		}
-	}
 	if cnt > 0 {
 		opts.AddOption(fmt.Sprintf("-XX:ActiveProcessorCount=%d", cnt))
 	}
