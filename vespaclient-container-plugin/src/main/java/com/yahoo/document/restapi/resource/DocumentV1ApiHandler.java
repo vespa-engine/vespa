@@ -253,7 +253,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                             .formatted(cfg.maxThrottledBytes()));
         var maxHeapSize = Runtime.getRuntime().maxMemory();
         return (maxHeapSize == Long.MAX_VALUE || maxHeapSize == 0)
-                ? 0 : (long)Math.ceil(cfg.maxThrottledBytes() * maxHeapSize);
+                ? 0 : (long)Math.ceil(Math.abs(cfg.maxThrottledBytes()) * maxHeapSize);
     }
 
     // ------------------------------------------------ Requests -------------------------------------------------
