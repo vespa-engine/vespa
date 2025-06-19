@@ -118,7 +118,7 @@ public class DocumentV1ApiTest {
     final DocumentOperationExecutorConfig executorConfig = new DocumentOperationExecutorConfig.Builder()
             .maxThrottled(2)
             .maxThrottledAge(1.0)
-            .maxThrottledBytesPercent(10*1024d / Runtime.getRuntime().maxMemory())
+            .maxThrottledBytes(0)
             .resendDelayMillis(1 << 30)
             .build();
     final DocumentmanagerConfig docConfig = Deriver.getDocumentManagerConfig("src/test/cfg/music.sd")
@@ -155,6 +155,8 @@ public class DocumentV1ApiTest {
                 clock, Duration.ofMillis(1), metric, metrics, access, docConfig,
                 new DocumentOperationExecutorConfig.Builder(executorConfig)
                         .maxThrottled(0)
+                        .maxThrottledBytes(0)
+                        .maxThrottledAge(0)
                         .build(),
                 clusterConfig, bucketConfig);
     }
@@ -297,7 +299,7 @@ public class DocumentV1ApiTest {
     @Disabled
     public void testOverLoadByMaxThrottledBytesPercent() {
         var executorCfg = new DocumentOperationExecutorConfig.Builder()
-                .maxThrottledBytesPercent(10*1024d / Runtime.getRuntime().maxMemory())
+                .maxThrottledBytes(10*1024d)
                 .maxThrottledAge(120d)
                 .maxThrottled(10)
                 .build();
@@ -311,7 +313,6 @@ public class DocumentV1ApiTest {
         var doc = "{\"fields\": {\"artist\": \"" + "a".repeat(10000) + "\"}}";
         // First request should be accepted and queued
         var response1 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, doc);
-
         // Second request with large document should be rejected due to bytes limit
         var response2 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, doc);
 
@@ -1230,6 +1231,8 @@ public class DocumentV1ApiTest {
         int writers = 4;
         DocumentOperationExecutorConfig executorConfig = new DocumentOperationExecutorConfig.Builder()
                 .maxThrottled(writers + 12) // Tests verifies behaviour when requestes are queued
+                .maxThrottledBytes(0)
+                .maxThrottledAge(0)
                 .build();
         handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig,
                                            executorConfig, clusterConfig, bucketConfig);

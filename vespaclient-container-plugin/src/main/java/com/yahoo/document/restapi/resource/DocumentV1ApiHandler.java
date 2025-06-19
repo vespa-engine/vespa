@@ -228,16 +228,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         this.metrics = new DocumentApiMetrics(metricReceiver, "documentV1");
         this.maxThrottled = executorConfig.maxThrottled();
         this.maxThrottledAgeNS = (long) (executorConfig.maxThrottledAge() * 1_000_000_000.0);
-
-        // Calculate maxThrottledTotalBytes based on max heap size and configured percentage
-        var throttledTotalBytesPercent = executorConfig.maxThrottledBytesPercent();
-        if (throttledTotalBytesPercent < 0 || throttledTotalBytesPercent > 1.0)
-            throw new IllegalArgumentException(
-                    "maxThrottledTotalBytesPercent must be between 0 and 1, but was %.2f"
-                            .formatted(throttledTotalBytesPercent));
-        var maxHeapSize = Runtime.getRuntime().maxMemory();
-        this.maxThrottledTotalBytes = (maxHeapSize == Long.MAX_VALUE || maxHeapSize == 0)
-                ? Long.MAX_VALUE : (long)(throttledTotalBytesPercent * maxHeapSize);
+        this.maxThrottledTotalBytes = calculateMaxThrottledTotalBytes(executorConfig);
 
         log.info("Operation queue: max-items=%d, max-age=%d ms, max-bytes=%s".formatted(
                 maxThrottled, Duration.ofNanos(maxThrottledAgeNS).toMillis(), BytesQuantity.ofBytes(maxThrottledTotalBytes).asPrettyString()));
@@ -250,6 +241,19 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         this.dispatcher.scheduleWithFixedDelay(this::dispatchEnqueued, resendDelayMS, resendDelayMS, MILLISECONDS);
         this.visitDispatcher.scheduleWithFixedDelay(this::dispatchVisitEnqueued, resendDelayMS, resendDelayMS, MILLISECONDS);
         this.metricUtil = new HandlerMetricContextUtil(this.metric, this.getClass().getName());
+    }
+
+    private static long calculateMaxThrottledTotalBytes(DocumentOperationExecutorConfig cfg) {
+        if (cfg.maxThrottledBytes() == 0) return 0; // No limit on total bytes.
+        if (cfg.maxThrottledBytes() > 0) return (long) cfg.maxThrottledBytes(); // Absolute value in bytes.
+        // Calculate maxThrottledTotalBytes based on max heap size and configured percentage
+        if (cfg.maxThrottledBytes() < -1)
+            throw new IllegalArgumentException(
+                    "maxThrottledTotalBytesPercent must be between 0 and -1, but was %.2f"
+                            .formatted(cfg.maxThrottledBytes()));
+        var maxHeapSize = Runtime.getRuntime().maxMemory();
+        return (maxHeapSize == Long.MAX_VALUE || maxHeapSize == 0)
+                ? 0 : (long)Math.ceil(cfg.maxThrottledBytes() * maxHeapSize);
     }
 
     // ------------------------------------------------ Requests -------------------------------------------------
@@ -654,7 +658,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         if (numQueued > 1) {
             long ageNS = qAgeNS(request);
             sampleQueuedAge(Duration.ofNanos(ageNS).getSeconds());
-            if (ageNS > maxThrottledAgeNS) {
+            if (maxThrottledAgeNS != 0 && ageNS > maxThrottledAgeNS) {
                 enqueued.decrementAndGet();
                 overload(request, "Rejecting execution due to overload: "
                         + maxThrottledAgeNS / 1_000_000_000.0 + " seconds worth of work enqueued", handler);
@@ -664,7 +668,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         // Allow single request in queue to exceed maxThrottledTotalBytes, as it may be a very large document.
         var bytesQueued = operationBytesQueued.addAndGet(operationSize);
-        if (bytesQueued != operationSize && bytesQueued > maxThrottledTotalBytes) {
+        if (maxThrottledTotalBytes != 0 && bytesQueued != operationSize && bytesQueued > maxThrottledTotalBytes) {
             var count = enqueued.decrementAndGet();
             sampleQueuedOperations(count);
             var bytes = operationBytesQueued.addAndGet(-operationSize);
@@ -677,6 +681,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                     BytesQuantity.ofBytes(bytesQueued).asPrettyString(),
                                     BytesQuantity.ofBytes(maxThrottledTotalBytes).asPrettyString()),
                     handler);
+            return;
         }
 
         operations.offer(new Operation(request, handler, operationSize, operationParser));
