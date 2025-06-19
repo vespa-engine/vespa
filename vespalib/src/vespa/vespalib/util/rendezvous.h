@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <condition_variable>
 #include <vector>
+#include <atomic>
 
 namespace vespalib {
 
@@ -30,6 +31,7 @@ private:
     size_t                  _gen;
     std::vector<IN *>       _in;
     std::vector<OUT *>      _out;
+    std::atomic<bool>       _destroyed;
 
     /**
      * Function called to perform the actual inter-thread state
@@ -77,6 +79,14 @@ public:
      **/
     Rendezvous(size_t n);
     virtual ~Rendezvous();
+
+    /**
+     * Destroy this Rendezvous. This will cause any calls to the
+     * rendezvous function to fail with an exception. This function
+     * can be used to avoid barrier deadlocks caused by early thread
+     * unwinding.
+     **/
+    void destroy();
 
     /**
      * @return number of participants

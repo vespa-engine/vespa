@@ -6,9 +6,20 @@
 
 namespace vespalib {
 
+namespace {
+
+void throw_if(std::atomic<bool> &destroyed) {
+    if (destroyed.load(std::memory_order_relaxed)) [[unlikely]] {
+        throw IllegalStateException("trying to use destroyed rendezvous");
+    }
+}
+
+} // unnamed
+
 template <typename IN, typename OUT, bool external_id>
 void
 Rendezvous<IN, OUT, external_id>::meet_self(IN &input, OUT &output) {
+    throw_if(_destroyed);
     _in[0] = &input;
     _out[0] = &output;
     mingle();
@@ -18,6 +29,7 @@ template <typename IN, typename OUT, bool external_id>
 void
 Rendezvous<IN, OUT, external_id>::meet_others(IN &input, OUT &output, size_t my_id, std::unique_lock<std::mutex> guard)
 {
+    throw_if(_destroyed);
     if (external_id) {
         assert(_in[my_id] == nullptr);
         assert(_out[my_id] == nullptr);
@@ -39,6 +51,7 @@ Rendezvous<IN, OUT, external_id>::meet_others(IN &input, OUT &output, size_t my_
             _cond.wait(guard);
         }
     }
+    throw_if(_destroyed);
 }
 
 template <typename IN, typename OUT, bool external_id>
@@ -49,7 +62,8 @@ Rendezvous<IN, OUT, external_id>::Rendezvous(size_t n)
       _next(0),
       _gen(0),
       _in(n, nullptr),
-      _out(n, nullptr)
+      _out(n, nullptr),
+      _destroyed(false)
 {
     if (n == 0) {
         throw IllegalArgumentException("size must be greater than 0");
@@ -58,6 +72,17 @@ Rendezvous<IN, OUT, external_id>::Rendezvous(size_t n)
 
 template <typename IN, typename OUT, bool external_id>
 Rendezvous<IN, OUT, external_id>::~Rendezvous() = default;
+
+template <typename IN, typename OUT, bool external_id>
+void
+Rendezvous<IN, OUT, external_id>::destroy() {
+    std::unique_lock guard(_lock);
+    if (!_destroyed.load(std::memory_order_relaxed)) [[likely]] {
+        _destroyed.store(true, std::memory_order_relaxed);
+        ++_gen;
+        _cond.notify_all();
+    }
+}
 
 template <typename IN, typename OUT, bool external_id>
 OUT
