@@ -2,6 +2,7 @@
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/buffer.h>
+#include <cstdlib>
 #include <string>
 
 using vespalib::Array;
