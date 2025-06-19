@@ -10,9 +10,7 @@ vespa_add_library(searchcore_server STATIC
     clusterstatehandler.cpp
     combiningfeedview.cpp
     ddbstate.cpp
-    disk_mem_usage_forwarder.cpp
     disk_mem_usage_metrics.cpp
-    disk_mem_usage_notifier.cpp
     disk_mem_usage_sampler.cpp
     docstorevalidator.cpp
     document_db_config_owner.cpp
@@ -96,6 +94,8 @@ vespa_add_library(searchcore_server STATIC
     removedonecontext.cpp
     replaypacketdispatcher.cpp
     resource_usage_explorer.cpp
+    resource_usage_forwarder.cpp
+    resource_usage_notifier.cpp
     resource_usage_write_filter.cpp
     rpc_hooks.cpp
     sample_attribute_usage_job.cpp

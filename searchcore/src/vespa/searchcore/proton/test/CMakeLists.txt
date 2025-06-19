@@ -7,7 +7,6 @@ vespa_add_library(searchcore_test STATIC
     buckethandler.cpp
     bucketstatecalculator.cpp
     clusterstatehandler.cpp
-    disk_mem_usage_notifier.cpp
     documentdb_config_builder.cpp
     dummy_document_sub_db.cpp
     dummy_feed_view.cpp
@@ -16,10 +15,11 @@ vespa_add_library(searchcore_test STATIC
     mock_gid_to_lid_change_handler.cpp
     mock_index_manager.cpp
     mock_shared_threading_service.cpp
-    userdocumentsbuilder.cpp
+    resource_usage_notifier.cpp
     resulthandler.cpp
     threading_service_observer.cpp
     transport_helper.cpp
+    userdocumentsbuilder.cpp
     DEPENDS
     searchcore_server
     searchcorespi

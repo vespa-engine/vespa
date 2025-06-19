@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "resource_usage_explorer.h"
-#include "disk_mem_usage_notifier.h"
+#include "resource_usage_notifier.h"
 #include <vespa/searchcore/proton/persistenceengine/resource_usage_tracker.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/hw_info.h>
@@ -27,7 +27,7 @@ convertMemoryStatsToSlime(const vespalib::ProcessMemoryStats &stats, Cursor &obj
     object.setLong("anonymousRss", stats.getAnonymousRss());
 }
 
-ResourceUsageExplorer::ResourceUsageExplorer(const DiskMemUsageNotifier& usage_notifier,
+ResourceUsageExplorer::ResourceUsageExplorer(const ResourceUsageNotifier& usage_notifier,
                                              const ResourceUsageTracker& usage_tracker)
     : _usage_notifier(usage_notifier),
       _usage_tracker(usage_tracker)
@@ -38,7 +38,7 @@ void
 ResourceUsageExplorer::get_state(const vespalib::slime::Inserter &inserter, bool full) const
 {
     Cursor &object = inserter.insertObject();
-    DiskMemUsageState usageState = _usage_notifier.usageState();
+    ResourceUsageState usageState = _usage_notifier.usageState();
     AttributeResourceUsage attr_usage = _usage_tracker.get_resource_usage().get_attribute_address_space_usage();
     if (full) {
         Cursor &disk = object.setObject("disk");

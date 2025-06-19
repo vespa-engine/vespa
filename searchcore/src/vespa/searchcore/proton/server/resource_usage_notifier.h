@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "i_disk_mem_usage_notifier.h"
-#include "disk_mem_usage_state.h"
+#include "i_resource_usage_notifier.h"
+#include "resource_usage_state.h"
 #include "disk_mem_usage_metrics.h"
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
@@ -19,10 +19,10 @@ namespace proton {
 class ResourceUsageWriteFilter;
 
 /**
- * Class to notify disk and memory usage based on sampled disk and memory usage.
+ * Class to notify resource usage based on sampled disk and memory usage.
  * The notification includes the configured limits.
  */
-class DiskMemUsageNotifier : public IDiskMemUsageNotifier {
+class ResourceUsageNotifier : public IResourceUsageNotifier {
 public:
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
@@ -54,9 +54,9 @@ private:
     uint64_t                     _diskUsedSizeBytes;
     TransientResourceUsage       _transient_usage;
     Config                       _config;
-    DiskMemUsageState            _dmstate;
+    ResourceUsageState            _dmstate;
     mutable DiskMemUsageMetrics  _disk_mem_usage_metrics;
-    std::vector<IDiskMemUsageListener *> _listeners;
+    std::vector<IResourceUsageListener *> _listeners;
     ResourceUsageWriteFilter&    _filter;
 
     void recalcState(const Guard &guard); // called with _lock held
@@ -64,11 +64,11 @@ private:
     double getDiskUsedRatio(const Guard &guard) const;
     double get_relative_transient_memory_usage(const Guard& guard) const;
     double get_relative_transient_disk_usage(const Guard& guard) const;
-    void notifyDiskMemUsage(const Guard &guard, DiskMemUsageState state);
+    void notifyDiskMemUsage(const Guard &guard, ResourceUsageState state);
 
 public:
-    DiskMemUsageNotifier(ResourceUsageWriteFilter& filter);
-    ~DiskMemUsageNotifier() override;
+    ResourceUsageNotifier(ResourceUsageWriteFilter& filter);
+    ~ResourceUsageNotifier() override;
     void set_resource_usage(const TransientResourceUsage& transient_usage, vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes);
     [[nodiscard]] bool setConfig(Config config);
     vespalib::ProcessMemoryStats getMemoryStats() const;
@@ -76,10 +76,10 @@ public:
     TransientResourceUsage get_transient_resource_usage() const;
     Config getConfig() const;
     const vespalib::HwInfo &getHwInfo() const noexcept { return _hwInfo; }
-    DiskMemUsageState usageState() const;
+    ResourceUsageState usageState() const;
     DiskMemUsageMetrics get_metrics() const;
-    void addDiskMemUsageListener(IDiskMemUsageListener *listener) override;
-    void removeDiskMemUsageListener(IDiskMemUsageListener *listener) override;
+    void add_resource_usage_listener(IResourceUsageListener *listener) override;
+    void remove_resource_usage_listener(IResourceUsageListener *listener) override;
 };
 
 

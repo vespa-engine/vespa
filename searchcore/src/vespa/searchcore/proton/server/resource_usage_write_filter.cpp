@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "resource_usage_write_filter.h"
-#include "i_disk_mem_usage_listener.h"
+#include "i_resource_usage_listener.h"
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
 #include <iomanip>
@@ -207,8 +207,8 @@ ResourceUsageWriteFilter::getAcceptState() const
 }
 
 void
-ResourceUsageWriteFilter::notify_disk_mem_usage(const DiskMemUsageState& state, const ProcessMemoryStats& memoryStats,
-                                            uint64_t diskUsedSizeBytes)
+ResourceUsageWriteFilter::notify_resource_usage(const ResourceUsageState& state, const vespalib::ProcessMemoryStats &memoryStats,
+                                                uint64_t diskUsedSizeBytes)
 {
     std::lock_guard guard(_lock);
     _dmstate = state;

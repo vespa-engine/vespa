@@ -4,7 +4,7 @@
 #include <vespa/persistence/spi/resource_usage_listener.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_stats.h>
 #include <vespa/searchcore/proton/persistenceengine/resource_usage_tracker.h>
-#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
+#include <vespa/searchcore/proton/test/resource_usage_notifier.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
@@ -12,9 +12,9 @@
 
 using storage::spi::AttributeResourceUsage;
 using storage::spi::ResourceUsage;
-using proton::test::DiskMemUsageNotifier;
+using proton::test::ResourceUsageNotifier;
 using proton::AttributeUsageStats;
-using proton::DiskMemUsageState;
+using proton::ResourceUsageState;
 using proton::ResourceUsageTracker;
 using proton::ResourceUsageWithLimit;
 
@@ -42,14 +42,14 @@ struct MyResourceUsageListener : public storage::spi::ResourceUsageListener
 class ResourceUsageTrackerTest : public ::testing::Test
 {
 protected:
-    DiskMemUsageNotifier                     _notifier;
+    ResourceUsageNotifier                     _notifier;
     std::shared_ptr<ResourceUsageTracker>    _tracker;
     std::unique_ptr<MyResourceUsageListener> _listener;
 
 public:
     ResourceUsageTrackerTest()
         : testing::Test(),
-          _notifier(DiskMemUsageState(ResourceUsageWithLimit{ 0.5, 0.8 }, ResourceUsageWithLimit{ 0.4, 0.8 })),
+          _notifier(ResourceUsageState(ResourceUsageWithLimit{0.5, 0.8 }, ResourceUsageWithLimit{0.4, 0.8 })),
           _tracker(std::make_shared<ResourceUsageTracker>(_notifier)),
           _listener(std::make_unique<MyResourceUsageListener>())
     {
@@ -59,9 +59,9 @@ public:
 
     void notify(double disk_usage, double memory_usage, double transient_disk_usage = 0.0, double transient_memory_usage = 0.0)
     {
-        _notifier.notify(DiskMemUsageState(ResourceUsageWithLimit{ disk_usage, 0.8 },
-                                           ResourceUsageWithLimit{ memory_usage, 0.8 },
-                                           transient_disk_usage, transient_memory_usage));
+        _notifier.notify(ResourceUsageState(ResourceUsageWithLimit{disk_usage, 0.8 },
+                                            ResourceUsageWithLimit{ memory_usage, 0.8 },
+                                            transient_disk_usage, transient_memory_usage));
     }
 
     ResourceUsage get_usage() { return _listener->get_usage(); }

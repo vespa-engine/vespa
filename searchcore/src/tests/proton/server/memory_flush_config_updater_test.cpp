@@ -75,7 +75,7 @@ struct Fixture
         EXPECT_NEAR(expDiskBloatFactor, strategy->getConfig().diskBloatFactor, 0.00001);
     }
     void notifyDiskMemUsage(const ResourceUsageWithLimit &diskState, const ResourceUsageWithLimit &memoryState) {
-        updater.notifyDiskMemUsage(DiskMemUsageState(diskState, memoryState));
+        updater.notify_resource_usage(ResourceUsageState(diskState, memoryState));
     }
     void set_node_retired_or_maintenance(bool value) {
         updater.set_node_retired_or_maintenance(value);
@@ -161,7 +161,7 @@ TEST(MemoryFlushConfigUpdaterTest, require_that_we_cap_configured_limits_based_o
 TEST(MemoryFlushConfigUpdaterTest, require_that_strategy_is_updated_with_normal_values_if_no_limits_are_reached)
 {
     Fixture f;
-    f.updater.notifyDiskMemUsage(DiskMemUsageState());
+    f.updater.notify_resource_usage(ResourceUsageState());
     f.assertStrategyConfig(4, 1, 20);
 }
 

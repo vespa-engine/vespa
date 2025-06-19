@@ -216,7 +216,7 @@ PersistenceEngine::getHandlerSnapshot(const WriteGuard &, document::BucketSpace 
     return _handlers.getHandlerSnapshot(bucketSpace);
 }
 
-PersistenceEngine::PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter, IDiskMemUsageNotifier& disk_mem_usage_notifier,
+PersistenceEngine::PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter, IResourceUsageNotifier& resource_usage_notifier,
                                      ssize_t defaultSerializedSize, bool ignoreMaxBytes)
     : AbstractPersistenceProvider(),
       _defaultSerializedSize(defaultSerializedSize),
@@ -230,7 +230,7 @@ PersistenceEngine::PersistenceEngine(IPersistenceEngineOwner &owner, const IReso
       _clusterStates(),
       _extraModifiedBuckets(),
       _rwMutex(),
-      _resource_usage_tracker(std::make_shared<ResourceUsageTracker>(disk_mem_usage_notifier))
+      _resource_usage_tracker(std::make_shared<ResourceUsageTracker>(resource_usage_notifier))
 {
 }
 

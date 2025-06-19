@@ -373,7 +373,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
         auto memoryFlush = std::make_shared<MemoryFlush>(
                 MemoryFlushConfigUpdater::convertConfig(flush.memory, hwInfo.memory()), vespalib::system_clock::now());
         _memoryFlushConfigUpdater = std::make_unique<MemoryFlushConfigUpdater>(memoryFlush, flush.memory, hwInfo.memory());
-        _diskMemUsageSampler->notifier().addDiskMemUsageListener(_memoryFlushConfigUpdater.get());
+        _diskMemUsageSampler->notifier().add_resource_usage_listener(_memoryFlushConfigUpdater.get());
         strategy = memoryFlush;
         break;
     }
@@ -530,7 +530,7 @@ Proton::~Proton()
         _metricsEngine->removeExternalMetrics(_rpcHooks->proto_rpc_adapter_metrics());
     }
     if (_memoryFlushConfigUpdater) {
-        _diskMemUsageSampler->notifier().removeDiskMemUsageListener(_memoryFlushConfigUpdater.get());
+        _diskMemUsageSampler->notifier().remove_resource_usage_listener(_memoryFlushConfigUpdater.get());
     }
     _sessionPruneHandle.reset();
     if (_diskMemUsageSampler) {
@@ -752,7 +752,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
     _matchEngine->putSearchHandler(docTypeName, searchHandler);
     auto flushHandler = std::make_shared<FlushHandlerProxy>(ret);
     _flushEngine->putFlushHandler(docTypeName, flushHandler);
-    _diskMemUsageSampler->notifier().addDiskMemUsageListener(ret->diskMemUsageListener());
+    _diskMemUsageSampler->notifier().add_resource_usage_listener(ret->diskMemUsageListener());
     _diskMemUsageSampler->add_transient_usage_provider(ret->transient_usage_provider());
     return ret;
 }
@@ -790,7 +790,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
     _flushEngine->removeFlushHandler(docTypeName);
     _metricsEngine->removeMetricsHook(old->getMetricsUpdateHook());
     _metricsEngine->removeDocumentDBMetrics(old->getMetrics());
-    _diskMemUsageSampler->notifier().removeDiskMemUsageListener(old->diskMemUsageListener());
+    _diskMemUsageSampler->notifier().remove_resource_usage_listener(old->diskMemUsageListener());
     _diskMemUsageSampler->remove_transient_usage_provider(old->transient_usage_provider());
     // Caller should have removed & drained relevant timer tasks
     old->close();

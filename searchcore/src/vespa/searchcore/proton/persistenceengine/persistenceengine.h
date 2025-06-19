@@ -14,7 +14,7 @@
 namespace proton {
 
 class IPersistenceEngineOwner;
-class IDiskMemUsageNotifier;
+class IResourceUsageNotifier;
 
 class PersistenceEngine : public storage::spi::AbstractPersistenceProvider,
                           public storage::spi::BucketExecutor {
@@ -94,7 +94,7 @@ private:
 public:
     using UP = std::unique_ptr<PersistenceEngine>;
 
-    PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter, IDiskMemUsageNotifier &disk_mem_usage_notifier,
+    PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter, IResourceUsageNotifier &resource_usage_notifier,
                       ssize_t defaultSerializedSize, bool ignoreMaxBytes);
     ~PersistenceEngine() override;
 
