@@ -22,6 +22,8 @@ namespace storage {
 
 const uint32_t FileStorTestFixture::MSG_WAIT_TIME;
 
+FileStorTestFixture::~FileStorTestFixture() = default;
+
 void
 FileStorTestFixture::setupPersistenceThreads(uint32_t threads)
 {

@@ -16,6 +16,7 @@ private:
         vespalib::Regex regex;
         RE() = default;
         RE(const RE& other) : pattern(other.pattern) { compile(); }
+        ~RE();
         RE& operator= (const RE& other) {
             pattern = other.pattern;
             compile();
