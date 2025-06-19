@@ -4,7 +4,7 @@
 #include "i_document_scan_iterator.h"
 #include "i_lid_space_compaction_handler.h"
 #include "i_operation_storer.h"
-#include "i_disk_mem_usage_notifier.h"
+#include "i_resource_usage_notifier.h"
 #include "iclusterstatechangednotifier.h"
 #include "maintenance_job_token_source.h"
 #include "remove_operations_rate_tracker.h"
@@ -128,7 +128,7 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                              IOperationStorer &opStorer,
                              IThreadService & master,
                              BucketExecutor & bucketExecutor,
-                             IDiskMemUsageNotifier &diskMemUsageNotifier,
+                             IResourceUsageNotifier &resource_usage_notifier,
                              const BlockableMaintenanceJobConfig &blockableConfig,
                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
                              bool node_retired_or_maintenance,
@@ -136,14 +136,14 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                              std::shared_ptr<MaintenanceJobTokenSource> maintenance_job_token_source)
     : BlockableMaintenanceJob("lid_space_compaction." + handler->getName(),
                               config.getDelay(), config.getInterval(), blockableConfig),
-      IDiskMemUsageListener(),
+      IResourceUsageListener(),
       IClusterStateChangedHandler(),
       std::enable_shared_from_this<CompactionJob>(),
       _cfg(config),
       _handler(std::move(handler)),
       _opStorer(opStorer),
       _scanItr(),
-      _diskMemUsageNotifier(diskMemUsageNotifier),
+      _resource_usage_notifier(resource_usage_notifier),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _ops_rate_tracker(std::make_shared<RemoveOperationsRateTracker>(config.get_remove_batch_block_rate(),
                                                                       config.get_remove_block_rate())),
@@ -155,7 +155,7 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
       _bucketSpace(bucketSpace)
 {
     _token_source = std::move(maintenance_job_token_source);
-    _diskMemUsageNotifier.addDiskMemUsageListener(this);
+    _resource_usage_notifier.add_resource_usage_listener(this);
     _clusterStateChangedNotifier.addClusterStateChangedHandler(this);
     if (node_retired_or_maintenance) {
         setBlocked(BlockedReason::CLUSTER_STATE);
@@ -165,7 +165,7 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
 
 CompactionJob::~CompactionJob() {
     _clusterStateChangedNotifier.removeClusterStateChangedHandler(this);
-    _diskMemUsageNotifier.removeDiskMemUsageListener(this);
+    _resource_usage_notifier.remove_resource_usage_listener(this);
 }
 
 std::shared_ptr<CompactionJob>
@@ -175,7 +175,7 @@ CompactionJob::create(const DocumentDBLidSpaceCompactionConfig &config,
                       IOperationStorer &opStorer,
                       IThreadService & master,
                       BucketExecutor & bucketExecutor,
-                      IDiskMemUsageNotifier &diskMemUsageNotifier,
+                      IResourceUsageNotifier &resource_usage_notifier,
                       const BlockableMaintenanceJobConfig &blockableConfig,
                       IClusterStateChangedNotifier &clusterStateChangedNotifier,
                       bool node_retired_or_maintenance,
@@ -184,7 +184,7 @@ CompactionJob::create(const DocumentDBLidSpaceCompactionConfig &config,
 {
     return std::shared_ptr<CompactionJob>(
             new CompactionJob(config, std::move(dbRetainer), std::move(handler), opStorer, master, bucketExecutor,
-                              diskMemUsageNotifier, blockableConfig, clusterStateChangedNotifier,
+                              resource_usage_notifier, blockableConfig, clusterStateChangedNotifier,
                               node_retired_or_maintenance, bucketSpace, maintenance_job_token_source),
             [&master](auto job) {
                 auto failed = master.execute(makeLambdaTask([job]() { delete job; }));
@@ -305,7 +305,7 @@ CompactionJob::compactLidSpace(const LidUsageStats &stats)
 }
 
 void
-CompactionJob::notifyDiskMemUsage(DiskMemUsageState state)
+CompactionJob::notify_resource_usage(const ResourceUsageState& state)
 {
     // Called by master write thread
     internalNotifyDiskMemUsage(state);

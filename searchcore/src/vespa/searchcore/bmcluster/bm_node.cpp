@@ -24,7 +24,7 @@
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/persistencehandlerproxy.h>
-#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
+#include <vespa/searchcore/proton/test/resource_usage_notifier.h>
 #include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -427,7 +427,7 @@ class MyBmNode : public BmNode
     std::shared_ptr<DocumentDB>                _document_db;
     MyPersistenceEngineOwner                   _persistence_owner;
     MyResourceWriteFilter                      _write_filter;
-    proton::test::DiskMemUsageNotifier         _disk_mem_usage_notifier;
+    proton::test::ResourceUsageNotifier        _resource_usage_notifier;
     std::shared_ptr<proton::PersistenceEngine> _persistence_engine;
     ServiceLayerConfigSet                      _service_layer_config;
     DistributorConfigSet                       _distributor_config;
@@ -491,7 +491,7 @@ MyBmNode::MyBmNode(const std::string& base_dir, int base_port, uint32_t node_idx
       _document_db(),
       _persistence_owner(),
       _write_filter(),
-      _disk_mem_usage_notifier(),
+      _resource_usage_notifier(),
       _persistence_engine(),
       _service_layer_config(_base_dir, _node_idx, "bm-servicelayer", cluster.get_distribution(), *_document_types, _slobrok_port, _service_layer_mbus_port, _service_layer_rpc_port, _service_layer_status_port, params),
       _distributor_config(_base_dir, _node_idx, "bm-distributor", cluster.get_distribution(), *_document_types, _slobrok_port, _distributor_mbus_port, _distributor_rpc_port, _distributor_status_port, params),
@@ -506,7 +506,7 @@ MyBmNode::MyBmNode(const std::string& base_dir, int base_port, uint32_t node_idx
       _bucket_spaces_stats_provider(nullptr),
       _lock()
 {
-    _persistence_engine = std::make_unique<proton::PersistenceEngine>(_persistence_owner, _write_filter, _disk_mem_usage_notifier, -1, false);
+    _persistence_engine = std::make_unique<proton::PersistenceEngine>(_persistence_owner, _write_filter, _resource_usage_notifier, -1, false);
     create_document_db(params);
     auto proxy = std::make_shared<proton::PersistenceHandlerProxy>(_document_db);
     _persistence_engine->putHandler(_persistence_engine->getWLock(), _bucket_space, _doc_type_name, proxy);

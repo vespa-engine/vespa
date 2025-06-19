@@ -12,7 +12,7 @@
 #include <vespa/searchcore/proton/server/i_maintenance_job.h>
 #include <vespa/searchcore/proton/test/buckethandler.h>
 #include <vespa/searchcore/proton/test/clusterstatehandler.h>
-#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
+#include <vespa/searchcore/proton/test/resource_usage_notifier.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/document/test/make_bucket_space.h>
 

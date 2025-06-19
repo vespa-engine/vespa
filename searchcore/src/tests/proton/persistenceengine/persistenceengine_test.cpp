@@ -14,7 +14,7 @@
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/server/ibucketfreezer.h>
-#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
+#include <vespa/searchcore/proton/test/resource_usage_notifier.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -401,12 +401,12 @@ struct SimpleResourceWriteFilter : public IResourceWriteFilter
 struct SimpleFixture {
     SimplePersistenceEngineOwner _owner;
     SimpleResourceWriteFilter _writeFilter;
-    test::DiskMemUsageNotifier _disk_mem_usage_notifier;
+    test::ResourceUsageNotifier _resource_usage_notifier;
     PersistenceEngine engine;
     HandlerSet hset;
     explicit SimpleFixture(BucketSpace bucketSpace2)
         : _owner(),
-          engine(_owner, _writeFilter, _disk_mem_usage_notifier, -1, false),
+          engine(_owner, _writeFilter, _resource_usage_notifier, -1, false),
           hset()
     {
         engine.putHandler(engine.getWLock(), makeBucketSpace(), DocTypeName(doc1->getType()), hset.phandler1);

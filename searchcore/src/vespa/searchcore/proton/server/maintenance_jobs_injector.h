@@ -15,7 +15,7 @@ class AttributeUsageFilter;
 class IBucketModifiedHandler;
 class IBucketStateChangedNotifier;
 class IClusterStateChangedNotifier;
-class IDiskMemUsageNotifier;
+class IResourceUsageNotifier;
 class IPruneRemovedDocumentsHandler;
 class MaintenanceJobTokenSource;
 struct IAttributeManager;
@@ -43,7 +43,7 @@ struct MaintenanceJobsInjector
                            IClusterStateChangedNotifier & clusterStateChangedNotifier,
                            IBucketStateChangedNotifier & bucketStateChangedNotifier,
                            const std::shared_ptr<IBucketStateCalculator> &calc,
-                           IDiskMemUsageNotifier &diskMemUsageNotifier,
+                           IResourceUsageNotifier &resource_usage_notifier,
                            DocumentDBJobTrackers &jobTrackers,
                            IAttributeManagerSP readyAttributeManager,
                            IAttributeManagerSP notReadyAttributeManager,

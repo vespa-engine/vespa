@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "blockable_maintenance_job.h"
-#include "disk_mem_usage_state.h"
+#include "resource_usage_state.h"
 #include "imaintenancejobrunner.h"
 #include "document_db_maintenance_config.h"
 #include "maintenance_job_token_source.h"
@@ -16,7 +16,7 @@ BlockableMaintenanceJob::updateBlocked(const LockGuard &)
 }
 
 void
-BlockableMaintenanceJob::internalNotifyDiskMemUsage(const DiskMemUsageState &state)
+BlockableMaintenanceJob::internalNotifyDiskMemUsage(const ResourceUsageState &state)
 {
     bool resourcesOK = !state.aboveDiskLimit(_resourceLimitFactor) && !state.aboveMemoryLimit(_resourceLimitFactor);
     if (resourcesOK) {

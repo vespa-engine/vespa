@@ -2,8 +2,8 @@
 
 #include "resource_usage_tracker.h"
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
-#include <vespa/searchcore/proton/server/disk_mem_usage_state.h>
-#include <vespa/searchcore/proton/server/i_disk_mem_usage_notifier.h>
+#include <vespa/searchcore/proton/server/resource_usage_state.h>
+#include <vespa/searchcore/proton/server/i_resource_usage_notifier.h>
 #include <vespa/persistence/spi/i_resource_usage_listener.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -35,22 +35,22 @@ ResourceUsageTracker::ListenerGuard::~ListenerGuard()
     }
 }
 
-ResourceUsageTracker::ResourceUsageTracker(IDiskMemUsageNotifier& disk_mem_usage_notifier)
+ResourceUsageTracker::ResourceUsageTracker(IResourceUsageNotifier& resource_usage_notifier)
     : std::enable_shared_from_this<ResourceUsageTracker>(),
-      IDiskMemUsageListener(),
+      IResourceUsageListener(),
       _lock(),
       _resource_usage(),
       _listener(nullptr),
-      _disk_mem_usage_notifier(disk_mem_usage_notifier),
+      _resource_usage_notifier(resource_usage_notifier),
       _attribute_usage(),
       _attribute_address_space_max_document_type()
 {
-    _disk_mem_usage_notifier.addDiskMemUsageListener(this);
+    _resource_usage_notifier.add_resource_usage_listener(this);
 }
 
 ResourceUsageTracker::~ResourceUsageTracker()
 {
-    _disk_mem_usage_notifier.removeDiskMemUsageListener(this);
+    _resource_usage_notifier.remove_resource_usage_listener(this);
 }
 
 storage::spi::ResourceUsage
@@ -61,7 +61,7 @@ ResourceUsageTracker::get_resource_usage() const
 }
 
 void
-ResourceUsageTracker::notifyDiskMemUsage(DiskMemUsageState state)
+ResourceUsageTracker::notify_resource_usage(const ResourceUsageState& state)
 {
     std::lock_guard guard(_lock);
     // The transient resource usage is subtracted from the total resource usage

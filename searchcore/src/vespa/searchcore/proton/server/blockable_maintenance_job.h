@@ -9,7 +9,7 @@
 namespace proton {
 
 class BlockableMaintenanceJobConfig;
-class DiskMemUsageState;
+class ResourceUsageState;
 class IMaintenanceJobRunner;
 struct IMoveOperationLimiter;
 class MaintenanceJobTokenSource;
@@ -37,7 +37,7 @@ protected:
 private:
     void updateBlocked(const LockGuard &guard);
 protected:
-    void internalNotifyDiskMemUsage(const DiskMemUsageState &state);
+    void internalNotifyDiskMemUsage(const ResourceUsageState &state);
 
 public:
     BlockableMaintenanceJob(const std::string &name,

@@ -113,7 +113,7 @@ MemoryFlushConfigUpdater::setConfig(const ProtonConfig::Flush::Memory &newConfig
 }
 
 void
-MemoryFlushConfigUpdater::notifyDiskMemUsage(DiskMemUsageState newState)
+MemoryFlushConfigUpdater::notify_resource_usage(const ResourceUsageState& newState)
 {
     LockGuard guard(_mutex);
     _currState = newState;

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "disk_mem_usage_state.h"
+#include "resource_usage_state.h"
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_stats.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
@@ -33,7 +33,7 @@ private:
     vespalib::ProcessMemoryStats _memoryStats;
     uint64_t                     _diskUsedSizeBytes;
     State                        _state;
-    DiskMemUsageState            _dmstate;
+    ResourceUsageState           _usage_state;
     AttributeUsageStats          _attribute_usage;
     AttributeUsageFilterConfig   _attribute_usage_filter_config;
 
@@ -44,7 +44,7 @@ public:
     bool acceptWriteOperation() const override;
     State getAcceptState() const override;
     const vespalib::HwInfo& get_hw_info() const noexcept { return _hwInfo; }
-    void notify_disk_mem_usage(const DiskMemUsageState& state, const vespalib::ProcessMemoryStats& memoryStats,
+    void notify_resource_usage(const ResourceUsageState& state, const vespalib::ProcessMemoryStats &memoryStats,
                                uint64_t diskUsedSizeBytes);
     void set_config(AttributeUsageFilterConfig attribute_usage_filter_config);
     void notify_attribute_usage(const AttributeUsageStats& attribute_usage) override;

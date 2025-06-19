@@ -15,7 +15,7 @@
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/persistencehandlerproxy.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
-#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
+#include <vespa/searchcore/proton/test/resource_usage_notifier.h>
 #include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
 #include <vespa/searchcore/proton/test/port_numbers.h>
 #include <vespa/searchlib/attribute/interlock.h>
@@ -309,11 +309,11 @@ class MyPersistenceEngine : public DocDBRepoHolder,
 public:
     MyPersistenceEngine(MyPersistenceEngineOwner &owner,
                         MyResourceWriteFilter &writeFilter,
-                        IDiskMemUsageNotifier& disk_mem_usage_notifier,
+                        IResourceUsageNotifier& resource_usage_notifier,
                         DocumentDBRepo::UP docDbRepo,
                         const std::string &docType = "")
         : DocDBRepoHolder(std::move(docDbRepo)),
-          PersistenceEngine(owner, writeFilter, disk_mem_usage_notifier, -1, false)
+          PersistenceEngine(owner, writeFilter, resource_usage_notifier, -1, false)
     {
         addHandlers(docType);
     }
@@ -363,7 +363,7 @@ private:
     std::string        _docType;
     MyPersistenceEngineOwner _engineOwner;
     MyResourceWriteFilter    _writeFilter;
-    test::DiskMemUsageNotifier   _disk_mem_usage_notifier;
+    test::ResourceUsageNotifier   _resource_usage_notifier;
 public:
     MyPersistenceFactory(const std::string &baseDir, int tlsListenPort,
                          SchemaConfigFactory::SP schemaFactory,
@@ -375,8 +375,8 @@ public:
           _docType(docType),
           _engineOwner(),
           _writeFilter(),
-          _disk_mem_usage_notifier(DiskMemUsageState(ResourceUsageWithLimit{ 0.5 , 0.8 },
-                                                     ResourceUsageWithLimit{ 0.4, 0.8 }))
+          _resource_usage_notifier(ResourceUsageState(ResourceUsageWithLimit{0.5 , 0.8 },
+                                                      ResourceUsageWithLimit{ 0.4, 0.8 }))
     {
         clear();
     }
@@ -387,7 +387,7 @@ public:
                                                          const DocumenttypesConfig &typesCfg) override {
         ConfigFactory cfgFactory(repo, std::make_shared<DocumenttypesConfig>(typesCfg), _schemaFactory);
         _docDbRepo = std::make_unique<DocumentDBRepo>(cfgFactory, _docDbFactory);
-        auto engine = std::make_unique<MyPersistenceEngine>(_engineOwner,_writeFilter, _disk_mem_usage_notifier, std::move(_docDbRepo), _docType);
+        auto engine = std::make_unique<MyPersistenceEngine>(_engineOwner, _writeFilter, _resource_usage_notifier, std::move(_docDbRepo), _docType);
         assert( ! _docDbRepo); // Repo should be handed over
         return engine;
     }
