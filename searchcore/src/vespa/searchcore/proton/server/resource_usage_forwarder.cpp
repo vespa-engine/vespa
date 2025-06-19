@@ -1,32 +1,32 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "disk_mem_usage_forwarder.h"
+#include "resource_usage_forwarder.h"
 #include <vespa/vespalib/util/lambdatask.h>
 
 using vespalib::makeLambdaTask;
 
 namespace proton {
 
-DiskMemUsageForwarder::DiskMemUsageForwarder(searchcorespi::index::IThreadService &executor)
-    : IDiskMemUsageNotifier(),
-      IDiskMemUsageListener(),
+ResourceUsageForwarder::ResourceUsageForwarder(searchcorespi::index::IThreadService &executor)
+    : IResourceUsageNotifier(),
+      IResourceUsageListener(),
       _executor(executor),
       _listeners(),
       _state()
 { }
 
-DiskMemUsageForwarder::~DiskMemUsageForwarder() = default;
+ResourceUsageForwarder::~ResourceUsageForwarder() = default;
 
 void
-DiskMemUsageForwarder::addDiskMemUsageListener(IDiskMemUsageListener *listener)
+ResourceUsageForwarder::add_resource_usage_listener(IResourceUsageListener *listener)
 {
     std::lock_guard guard(_lock);
     _listeners.push_back(listener);
-    listener->notifyDiskMemUsage(_state);
+    listener->notify_resource_usage(_state);
 }
 
 void
-DiskMemUsageForwarder::removeDiskMemUsageListener(IDiskMemUsageListener *listener)
+ResourceUsageForwarder::remove_resource_usage_listener(IResourceUsageListener *listener)
 {
     std::lock_guard guard(_lock);
     for (auto itr = _listeners.begin(); itr != _listeners.end(); ++itr) {
@@ -38,20 +38,20 @@ DiskMemUsageForwarder::removeDiskMemUsageListener(IDiskMemUsageListener *listene
 }
 
 void
-DiskMemUsageForwarder::notifyDiskMemUsage(DiskMemUsageState state)
+ResourceUsageForwarder::notify_resource_usage(const ResourceUsageState& state)
 {
     _executor.execute(makeLambdaTask([this, state]() { forward(state); }));
 }
 
 
 void
-DiskMemUsageForwarder::forward(DiskMemUsageState state)
+ResourceUsageForwarder::forward(ResourceUsageState state)
 {
     std::lock_guard guard(_lock);
     if (_state != state) {
         _state = state;
         for (const auto &listener : _listeners) {
-            listener->notifyDiskMemUsage(state);
+            listener->notify_resource_usage(state);
         }
     }
 }

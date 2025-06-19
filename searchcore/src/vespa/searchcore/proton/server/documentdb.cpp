@@ -202,7 +202,7 @@ DocumentDB::DocumentDB(const std::string &baseDir,
       _owner(owner),
       _bucketExecutor(shared_service.bucket_executor()),
       _state(),
-      _dmUsageForwarder(_writeService.master()),
+      _resource_usage_forwarder(_writeService.master()),
       _writeFilter(),
       _transient_usage_provider(std::make_shared<DocumentDBResourceUsageProvider>(*this)),
       _feedHandler(std::make_unique<FeedHandler>(_writeService, tlsSpec, docTypeName, *this, *this, tlsWriterFactory)),
@@ -948,7 +948,7 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config)
             _clusterStateHandler, // IClusterStateChangedNotifier
             _bucketHandler, // IBucketStateChangedNotifier
             _calc, // IBucketStateCalculator::SP
-            _dmUsageForwarder,
+            _resource_usage_forwarder,
             _jobTrackers,
             _subDBs.getReadySubDB()->getAttributeManager(),
             _subDBs.getNotReadySubDB()->getAttributeManager(),

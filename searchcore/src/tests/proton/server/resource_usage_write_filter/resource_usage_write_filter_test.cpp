@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/server/resource_usage_write_filter.h>
-#include <vespa/searchcore/proton/server/disk_mem_usage_notifier.h>
+#include <vespa/searchcore/proton/server/resource_usage_notifier.h>
 #include <vespa/searchcore/proton/server/resource_usage_with_limit.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -47,9 +47,9 @@ public:
 struct ResourceUsageWriteFilterTest : public ::testing::Test
 {
     ResourceUsageWriteFilter _filter;
-    DiskMemUsageNotifier _notifier;
+    ResourceUsageNotifier _notifier;
     using State = ResourceUsageWriteFilter::State;
-    using Config = DiskMemUsageNotifier::Config;
+    using Config = ResourceUsageNotifier::Config;
 
     ResourceUsageWriteFilterTest()
         : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(1000), HwInfo::Cpu(0))),

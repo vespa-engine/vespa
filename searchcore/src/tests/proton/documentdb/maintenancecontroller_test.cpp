@@ -30,7 +30,7 @@
 #include <vespa/searchcore/proton/server/maintenancecontroller.h>
 #include <vespa/searchcore/proton/test/buckethandler.h>
 #include <vespa/searchcore/proton/test/clusterstatehandler.h>
-#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
+#include <vespa/searchcore/proton/test/resource_usage_notifier.h>
 #include <vespa/searchcore/proton/test/mock_attribute_manager.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
@@ -552,7 +552,7 @@ public:
     std::shared_ptr<proton::IAttributeManager> _readyAttributeManager;
     std::shared_ptr<proton::IAttributeManager> _notReadyAttributeManager;
     AttributeUsageFilter               _attributeUsageFilter;
-    test::DiskMemUsageNotifier         _diskMemUsageNotifier;
+    test::ResourceUsageNotifier        _resource_usage_notifier;
     BucketCreateNotifier               _bucketCreateNotifier;
     MonitoredRefCount                  _refCount;
     Transport                          _transport;
@@ -718,7 +718,7 @@ MaintenanceControllerTest::injectMaintenanceJobs()
     if (_injectDefaultJobs) {
         MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _bucketExecutor, _fh, _fh,
                                             _bucketCreateNotifier, makeBucketSpace(), _fh, _fh,
-                                            _bmc, _clusterStateHandler, _bucketHandler, _calc, _diskMemUsageNotifier,
+                                            _bmc, _clusterStateHandler, _bucketHandler, _calc, _resource_usage_notifier,
                                             _jobTrackers, _readyAttributeManager, _notReadyAttributeManager,
                                             _attributeUsageFilter, _lid_space_compaction_job_token_source);
     }

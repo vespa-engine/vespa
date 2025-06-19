@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "i_disk_mem_usage_listener.h"
+#include "i_resource_usage_listener.h"
 #include "memoryflush.h"
 #include <vespa/config-proton.h>
 #include <vespa/vespalib/util/hw_info.h>
@@ -14,7 +14,7 @@ namespace proton {
  * Class that listens to changes in disk and memory usage and
  * updates the config used by memory flush strategy accordingly if we reach one of the resource limits.
  */
-class MemoryFlushConfigUpdater : public IDiskMemUsageListener
+class MemoryFlushConfigUpdater : public IResourceUsageListener
 {
 private:
     using Mutex = std::mutex;
@@ -25,7 +25,7 @@ private:
     MemoryFlush::SP             _flushStrategy;
     ProtonConfig::Flush::Memory _currConfig;
     vespalib::HwInfo::Memory    _memory;
-    DiskMemUsageState           _currState;
+    ResourceUsageState          _currState;
     bool                        _useConservativeDiskMode;
     bool                        _useConservativeMemoryMode;
     bool                        _node_retired_or_maintenance;
@@ -44,7 +44,7 @@ public:
                              const vespalib::HwInfo::Memory &memory);
     void setConfig(const ProtonConfig::Flush::Memory &newConfig);
     void set_node_retired_or_maintenance(bool value);
-    void notifyDiskMemUsage(DiskMemUsageState newState) override;
+    void notify_resource_usage(const ResourceUsageState& newState) override;
 
     static MemoryFlush::Config convertConfig(const ProtonConfig::Flush::Memory &config,
                                              const vespalib::HwInfo::Memory &memory);

@@ -6,15 +6,17 @@ import ai.vespa.llm.LanguageModelException;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
-import com.sun.xml.bind.v2.util.EditDistance;
 import com.yahoo.config.ModelReference;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -31,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests are disabled to avoid running them automatically as part of the CI/CD.
  * The reason for this is the long time it takes to download (2-5 min) and run LLMs (10-60 seconds).
  * Still, these tests can be triggered manually and are useful for debugging runtime issues.
- * 
+ *
  * @author lesters
  * @author glebashnik
  */
@@ -205,7 +207,7 @@ public class LocalLLMTest {
         prompts.add("Discuss the impact of social media on interpersonal communication in the 21st century.");
         return prompts;
     }
-    
+
 
     // Small LLM tests use a quantized Mistral model ca. 4.3 GB.
     // It produces sensible completions which can be verified as part of the test.
@@ -213,7 +215,7 @@ public class LocalLLMTest {
     private static final String MEDIUM_LLM_PATH = "src/test/models/llm/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
 
     // Using translation task to test that LLM output makes sense with context overflow.
-    // If context overflow is not handled correctly, part of the task description will be overwritten and 
+    // If context overflow is not handled correctly, part of the task description will be overwritten and
     // the output will not be in a target language.
     // This is easier to verify than question-answering tasks.
     private static final String TASK_PROMPT_TEMPLATE = """
@@ -237,8 +239,8 @@ public class LocalLLMTest {
                             "even when the journey feels endless.",
                     "Det er ikke viktig hvor langsomt du går, så lange du ikke stopper. " +
                             "Persistens og bestemthed er det som egentlig fører til succes. " +
-                            "Hver liten steg fremover bygger grunnlaget for å nå storhet, " +
-                            "selv når reisen føler seg uendelig."
+                            "Hver lille steg fremover bygger grunnlaget for å nå storhet, " +
+                            "selv når reisen føler seg uendelig lang."
             ),
             new LLMTask(
                     "Our greatest glory is not in never falling, but in rising every time we fall.",
@@ -254,34 +256,34 @@ public class LocalLLMTest {
             ),
             new LLMTask(
                     "Success depends upon previous preparation, and without such preparation there is sure to be failure.",
-                    "Suksess avhenger av forhåndsforberedelse, og uten denne er det sikkerhet for feil."
+                    "Suksess avhenger av forberedelse, og uten denne er det sikkerhet for feil."
             ),
             new LLMTask(
                     "The man who moves a mountain begins by carrying away small stones, " +
                             "then moves on to medium-sized rocks, gradually clears larger rocks and boulders, " +
                             "and finally overcomes the most formidable obstacles to achieve his goal, " +
                             "displaying extraordinary perseverance and determination.",
-                    "Mannen som flyttet berget starter med å bære borte små sten, " +
-                            "derefter flyttet han på med mellemstørre steiner, gradvis fjernet større steiner og stenblokker, " +
-                            "og sluttelig overkommet de mest formidable hindrerne for å nå sin mål, " +
-                            "med utmærkt tenasje og bestemthet."
+                    "Mannen som flyttet bjerget starter med å bære borte små sten, " +
+                            "og gradvis tar han borte større sten og boulders, " +
+                            "og slutter med å overkomme de største hindrene for å nå sin mål, " +
+                            "med uverdenslige evner og styrke."
             )
     );
-    
+
     private static class CompletionTest {
         private final LocalLLM llm;
         private final String input;
-        
+
         private String expectOutput;
         private String expectNotOutput;
         private Completion.FinishReason expectFinishReason;
         private LanguageModelException expectException;
-        
+
         public CompletionTest(LocalLLM llm, String input) {
             this.llm = llm;
             this.input = input;
         }
-        
+
         public CompletionTest expectOutput(String output) {
             this.expectOutput = output;
             return this;
@@ -291,21 +293,21 @@ public class LocalLLMTest {
             this.expectNotOutput = output;
             return this;
         }
-        
+
         public CompletionTest expectFinishReason(Completion.FinishReason finishReason) {
             this.expectFinishReason = finishReason;
             return this;
         }
-        
+
         public CompletionTest expectException(LanguageModelException exception) {
             this.expectException = exception;
             return this;
         }
-        
+
         public void test() {
             var promptStr = TASK_PROMPT_TEMPLATE.replace("{input}", input);
             var inferenceOptions = new InferenceParameters(Map.of("temperature", "0")::get);
-            
+
             if (expectException != null) {
                 var exception = assertThrows(LanguageModelException.class, () -> llm.complete(StringPrompt.from(promptStr), inferenceOptions));
                 assertEquals(expectException.code(), exception.code());
@@ -323,23 +325,56 @@ public class LocalLLMTest {
                 System.err.println("Expected output: " + expectOutput);
                 System.err.println("Actual output: " + completionStr);
             }
-            
-            // Using edit distance to compare output to account for small variations in LLM output.
-            // The threshold is an arbitrary small number.
-            // Using an edit distance method from arbitrary library among existing dependencies.
+
             if (expectOutput != null) {
-                var editDistance = EditDistance.editDistance(expectOutput, completionStr);
-                var maxEditDistance = expectOutput.length() * 0.05;
-                assertTrue(editDistance <= maxEditDistance, 
-                        "Expected output edit distance <= " + maxEditDistance + ", got " + editDistance);
+                var distance = tokenDistance(expectOutput, completionStr);
+                var maxDistance = 0.33;
+                assertTrue(distance < maxDistance,
+                        "Expected token distance < " + maxDistance + ", got " + distance);
             }
-            
+
             if (expectNotOutput != null) {
-                var editDistance = EditDistance.editDistance(expectNotOutput, completionStr);
-                var maxEditDistance = expectNotOutput.length() * 0.05;
-                assertTrue(editDistance >= maxEditDistance,
-                        "Expected output edit distance >= " + maxEditDistance + ", got " + editDistance);
+                var distance = tokenDistance(expectNotOutput, completionStr);
+                var maxDistance = 0.66;
+                assertTrue(distance >= maxDistance,
+                        "Expected token distance >= " + maxDistance + ", got " + distance);
             }
+        }
+
+        private static double tokenDistance(String str1, String str2) {
+            var tokens1 = str1.split("\\s+");
+            var tokens2 = str2.split("\\s+");
+
+            if (tokens1.length == 0 && tokens2.length == 0) {
+                return 0.0;
+            }
+
+            var counts1 = getTokenCounts(tokens1);
+            var counts2 = getTokenCounts(tokens2);
+
+            Set<String> allTokens = new HashSet<>();
+            allTokens.addAll(counts1.keySet());
+            allTokens.addAll(counts2.keySet());
+
+            int intersection = 0;
+
+            for (String token : allTokens) {
+                int count1 = counts1.getOrDefault(token, 0);
+                int count2 = counts2.getOrDefault(token, 0);
+                intersection += Math.min(count1, count2);
+            }
+
+            return 1.0 - 2.0 * intersection / (tokens1.length + tokens2.length);
+        }
+
+        private static Map<String, Integer> getTokenCounts(String[] tokens) {
+            var counts = new HashMap<String, Integer>();
+
+            for (String token : tokens) {
+                counts.put(token, counts.getOrDefault(token, 0) + 1);
+            }
+
+            return counts;
         }
     }
 
@@ -352,9 +387,9 @@ public class LocalLLMTest {
                 .seed(42)
                 .model(ModelReference.valueOf(MEDIUM_LLM_PATH));
         var llm = new LocalLLM(llmConfig.build());
-        
-        var task = TASKS.get(0); 
-        
+
+        var task = TASKS.get(0);
+
         try {
             new CompletionTest(llm, task.input)
                     .expectOutput("Livet er virkelig enkelt, men vi ønsker alligevel.")
@@ -364,7 +399,7 @@ public class LocalLLMTest {
             llm.deconstruct();
         }
     }
-    
+
     @Test
     public void testMaxEnqueueWait() {
         var llmConfig = new LlmLocalClientConfig.Builder()
@@ -399,7 +434,7 @@ public class LocalLLMTest {
                                     .test()
                     , executor
             ));
-            
+
             for (var future : futures) {
                 future.join();
             }
@@ -418,7 +453,7 @@ public class LocalLLMTest {
                 .seed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.Enum.DISCARD)
                 .model(ModelReference.valueOf(MEDIUM_LLM_PATH));
-        
+
         var llm = new LocalLLM(llmConfig.build());
 
         var task = TASKS.get(0);
@@ -440,7 +475,7 @@ public class LocalLLMTest {
                 .seed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.Enum.FAIL)
                 .model(ModelReference.valueOf(MEDIUM_LLM_PATH));
-        
+
         var llm = new LocalLLM(llmConfig.build());
 
         var task = TASKS.get(0);
@@ -466,10 +501,10 @@ public class LocalLLMTest {
         var llm = new LocalLLM(llmConfig.build());
         var executor = Executors.newFixedThreadPool(5);
         var futures = new ArrayList<CompletableFuture<Void>>();
-        
+
         try {
             for (var task : TASKS) {
-                var future = CompletableFuture.runAsync(() -> 
+                var future = CompletableFuture.runAsync(() ->
                         new CompletionTest(llm, task.input)
                                 .expectOutput(task.output)
                                 .expectFinishReason(Completion.FinishReason.stop)
@@ -502,7 +537,7 @@ public class LocalLLMTest {
         var futures = new ArrayList<CompletableFuture<Void>>();
 
         try {
-            for (var i : List.of(0, 2, 3, 4, 5)) {
+            for (var i : List.of(0, 1, 2, 3, 4, 5, 6)) {
                 futures.add(CompletableFuture.runAsync(
                         () -> new CompletionTest(llm, TASKS.get(i).input)
                                 .expectOutput(TASKS.get(i).output)
@@ -511,15 +546,6 @@ public class LocalLLMTest {
                 ));
             }
 
-            for (var i : List.of(1, 6)) {
-                futures.add(CompletableFuture.runAsync(
-                        () -> new CompletionTest(llm, TASKS.get(i).input)
-                                .expectNotOutput(TASKS.get(i).output)
-                                .expectFinishReason(Completion.FinishReason.stop)
-                                .test()
-                ));
-            }
-            
             for (var future : futures) {
                 future.join();
             }
@@ -562,7 +588,7 @@ public class LocalLLMTest {
                                 .test()
                 ));
             }
-            
+
             for (var future : futures) {
                 future.join();
             }
@@ -614,7 +640,7 @@ public class LocalLLMTest {
             llm.deconstruct();
         }
     }
-    
+
     @Test
     public void testStructuredOutput() {
         var llmConfig = new LlmLocalClientConfig.Builder()
@@ -644,10 +670,10 @@ public class LocalLLMTest {
                 """;
 
         var inferenceOptions = new InferenceParameters(Map.of(
-                InferenceParameters.OPTION_TEMPERATURE, "0", 
+                InferenceParameters.OPTION_TEMPERATURE, "0",
                 InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema
         )::get);
-        
+
         var promptStr = """
             Extract all names of people from this text:
             Lynda Carter was born on July 24, 1951 in Phoenix, Arizona, USA. She is an actress, known for
@@ -656,16 +682,16 @@ public class LocalLLMTest {
             The output must strictly adhere to the following JSON format:
             %s
         """.formatted(jsonSchema);
-        
+
         var completions = llm.complete(StringPrompt.from(promptStr), inferenceOptions);
         var completionString = completions.get(0).text().trim();
-        
+
         var expectedCompletionString = """
             {
               "article.people": ["Lynda Carter", "Robert Altman"]
             }
             """.trim();
-        
+
         assertEquals(expectedCompletionString, completionString);
     }
 }

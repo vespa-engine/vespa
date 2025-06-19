@@ -4,7 +4,7 @@
 
 #include "blockable_maintenance_job.h"
 #include "documentbucketmover.h"
-#include "i_disk_mem_usage_listener.h"
+#include "i_resource_usage_listener.h"
 #include "ibucketstatechangedhandler.h"
 #include "iclusterstatechangedhandler.h"
 #include "maintenancedocumentsubdb.h"
@@ -21,7 +21,7 @@ namespace proton {
 class BlockableMaintenanceJobConfig;
 class IBucketStateChangedNotifier;
 class IClusterStateChangedNotifier;
-class IDiskMemUsageNotifier;
+class IResourceUsageNotifier;
 class IBucketModifiedHandler;
 
 namespace bucketdb { class IBucketCreateNotifier; }
@@ -40,7 +40,7 @@ class BucketMoveJob final : public BlockableMaintenanceJob,
                             public IClusterStateChangedHandler,
                             public bucketdb::IBucketCreateListener,
                             public IBucketStateChangedHandler,
-                            public IDiskMemUsageListener,
+                            public IResourceUsageListener,
                             public std::enable_shared_from_this<BucketMoveJob>
 {
 private:
@@ -76,7 +76,7 @@ private:
     bucketdb::IBucketCreateNotifier   &_bucketCreateNotifier;
     IClusterStateChangedNotifier      &_clusterStateChangedNotifier;
     IBucketStateChangedNotifier       &_bucketStateChangedNotifier;
-    IDiskMemUsageNotifier             &_diskMemUsageNotifier;
+    IResourceUsageNotifier            &_resource_usage_notifier;
 
     class BucketStateWrapper {
     private:
@@ -100,7 +100,7 @@ private:
                   bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                   IClusterStateChangedNotifier &clusterStateChangedNotifier,
                   IBucketStateChangedNotifier &bucketStateChangedNotifier,
-                  IDiskMemUsageNotifier &diskMemUsageNotifier,
+                  IResourceUsageNotifier &resource_usage_notifier,
                   const BlockableMaintenanceJobConfig &blockableConfig,
                   const std::string &docTypeName,
                   document::BucketSpace bucketSpace);
@@ -135,7 +135,7 @@ public:
            bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
            IClusterStateChangedNotifier &clusterStateChangedNotifier,
            IBucketStateChangedNotifier &bucketStateChangedNotifier,
-           IDiskMemUsageNotifier &diskMemUsageNotifier,
+           IResourceUsageNotifier &resource_usage_notifier,
            const BlockableMaintenanceJobConfig &blockableConfig,
            const std::string &docTypeName,
            document::BucketSpace bucketSpace);
@@ -149,7 +149,7 @@ public:
     bool run() override;
     void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override;
     void notifyBucketStateChanged(const BucketId &bucketId, ActiveState newState) override;
-    void notifyDiskMemUsage(DiskMemUsageState state) override;
+    void notify_resource_usage(const ResourceUsageState& state) override;
     void notifyCreateBucket(const bucketdb::Guard & guard, const BucketId &bucket) override;
     void updateMetrics(DocumentDBTaggedMetrics & metrics) const override;
 };

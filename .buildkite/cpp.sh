@@ -6,5 +6,7 @@ set -euo pipefail
 # shellcheck disable=1091
 source /etc/profile.d/enable-gcc-toolset.sh
 
+PATH=/opt/vespa-deps/bin:$PATH
+
 cd "$SOURCE_DIR"
 make -j "$NUM_CPP_THREADS"

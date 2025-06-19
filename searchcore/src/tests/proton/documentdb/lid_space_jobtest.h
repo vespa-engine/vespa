@@ -11,7 +11,7 @@ namespace storage::spi::dummy { class DummyBucketExecutor; }
 struct JobTestBase : public ::testing::Test {
     vespalib::MonitoredRefCount _refCount;
     proton::test::ClusterStateHandler _clusterStateHandler;
-    proton::test::DiskMemUsageNotifier _diskMemUsageNotifier;
+    proton::test::ResourceUsageNotifier _resource_usage_notifier;
     std::unique_ptr<storage::spi::dummy::DummyBucketExecutor> _bucketExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor> _singleExecutor;
     std::unique_ptr<searchcorespi::index::ISyncableThreadService> _master;

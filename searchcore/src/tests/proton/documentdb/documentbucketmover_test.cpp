@@ -36,7 +36,7 @@ struct ControllerFixtureBase : public ::testing::Test
     MySubDb                         _ready;
     MySubDb                         _notReady;
     BucketCreateNotifier            _bucketCreateNotifier;
-    test::DiskMemUsageNotifier      _diskMemUsageNotifier;
+    test::ResourceUsageNotifier     _resource_usage_notifier;
     MonitoredRefCount               _refCount;
     ThreadStackExecutor             _singleExecutor;
     SyncableExecutorThreadService   _master;
@@ -121,7 +121,7 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _ready(_builder.getRepo(), _bucketDB, 1, SubDbType::READY),
       _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY),
       _bucketCreateNotifier(),
-      _diskMemUsageNotifier(),
+      _resource_usage_notifier(),
       _refCount(),
       _singleExecutor(1),
       _master(_singleExecutor),
@@ -130,7 +130,7 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _metrics("test", 1),
       _bmj(BucketMoveJob::create(_calc, RetainGuard(_refCount), _moveHandler, _modifiedHandler, _master, _bucketExecutor, _ready._subDb,
                                  _notReady._subDb, _bucketCreateNotifier, _clusterStateHandler, _bucketHandler,
-                                 _diskMemUsageNotifier, blockableConfig, "test", makeBucketSpace())),
+                                 _resource_usage_notifier, blockableConfig, "test", makeBucketSpace())),
       _runner(*_bmj)
 {
 }
@@ -597,7 +597,7 @@ struct ResourceLimitControllerFixture : public ControllerFixture
         ControllerFixture(BlockableMaintenanceJobConfig(resourceLimitFactor, MAX_OUTSTANDING_OPS))
     {}
 
-    void testJobStopping(DiskMemUsageState blockingUsageState) {
+    void testJobStopping(ResourceUsageState blockingUsageState) {
         // Bucket 1 should be moved
         addReady(_ready.bucket(2));
         _bmj->recompute();
@@ -608,20 +608,20 @@ struct ResourceLimitControllerFixture : public ControllerFixture
         EXPECT_EQ(1u, docsMoved().size());
         EXPECT_EQ(0u, bucketsModified().size());
         // Notify that we've over limit
-        _diskMemUsageNotifier.notify(blockingUsageState);
+        _resource_usage_notifier.notify(blockingUsageState);
         EXPECT_TRUE(_bmj->run());
         sync();
         EXPECT_EQ(1u, docsMoved().size());
         EXPECT_EQ(0u, bucketsModified().size());
         // Notify that we've under limit
-        _diskMemUsageNotifier.notify(DiskMemUsageState());
+        _resource_usage_notifier.notify(ResourceUsageState());
         EXPECT_FALSE(_bmj->run());
         sync();
         EXPECT_EQ(2u, docsMoved().size());
         EXPECT_EQ(0u, bucketsModified().size());
     }
 
-    void testJobNotStopping(DiskMemUsageState blockingUsageState) {
+    void testJobNotStopping(ResourceUsageState blockingUsageState) {
         // Bucket 1 should be moved
         addReady(_ready.bucket(2));
         _bmj->recompute();
@@ -632,7 +632,7 @@ struct ResourceLimitControllerFixture : public ControllerFixture
         EXPECT_EQ(1u, docsMoved().size());
         EXPECT_EQ(0u, bucketsModified().size());
         // Notify that we've over limit, but not over adjusted limit
-        _diskMemUsageNotifier.notify(blockingUsageState);
+        _resource_usage_notifier.notify(blockingUsageState);
         EXPECT_FALSE(_bmj->run());
         sync();
         EXPECT_EQ(2u, docsMoved().size());
@@ -646,22 +646,22 @@ struct ResourceLimitControllerFixture_1_2 : public ResourceLimitControllerFixtur
 
 TEST_F(ResourceLimitControllerFixture, require_that_bucket_move_stops_when_disk_limit_is_reached)
 {
-    testJobStopping(DiskMemUsageState(ResourceUsageWithLimit(0.8, 0.7), ResourceUsageWithLimit()));
+    testJobStopping(ResourceUsageState(ResourceUsageWithLimit(0.8, 0.7), ResourceUsageWithLimit()));
 }
 
 TEST_F(ResourceLimitControllerFixture, require_that_bucket_move_stops_when_memory_limit_is_reached)
 {
-    testJobStopping(DiskMemUsageState(ResourceUsageWithLimit(), ResourceUsageWithLimit(0.8, 0.7)));
+    testJobStopping(ResourceUsageState(ResourceUsageWithLimit(), ResourceUsageWithLimit(0.8, 0.7)));
 }
 
 TEST_F(ResourceLimitControllerFixture_1_2, require_that_bucket_move_uses_resource_limit_factor_for_disk_resource_limit)
 {
-    testJobNotStopping(DiskMemUsageState(ResourceUsageWithLimit(0.8, 0.7), ResourceUsageWithLimit()));
+    testJobNotStopping(ResourceUsageState(ResourceUsageWithLimit(0.8, 0.7), ResourceUsageWithLimit()));
 }
 
 TEST_F(ResourceLimitControllerFixture_1_2, require_that_bucket_move_uses_resource_limit_factor_for_memory_resource_limit)
 {
-    testJobNotStopping(DiskMemUsageState(ResourceUsageWithLimit(), ResourceUsageWithLimit(0.8, 0.7)));
+    testJobNotStopping(ResourceUsageState(ResourceUsageWithLimit(), ResourceUsageWithLimit(0.8, 0.7)));
 }
 
 
