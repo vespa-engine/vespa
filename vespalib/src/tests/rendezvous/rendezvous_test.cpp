@@ -136,6 +136,21 @@ struct Any : Rendezvous<bool, bool> {
 
 Any::~Any() = default;
 
+struct MaybeThrow : Rendezvous<bool, bool> {
+    bool do_throw;
+    struct Ball {};
+    MaybeThrow(size_t n, bool do_throw_in)
+      : Rendezvous<bool, bool>(n), do_throw(do_throw_in) {}
+    ~MaybeThrow() override;
+    void mingle() override {
+        if (do_throw) {
+            throw(Ball{});
+        }
+    }
+    void meet() { this->rendezvous(true); }
+};
+MaybeThrow::~MaybeThrow() = default;
+
 TEST(RendezvousTest, require_that_creating_an_empty_rendezvous_will_fail) {
     VESPA_EXPECT_EXCEPTION(Add<false>(0), IllegalArgumentException, "");
     VESPA_EXPECT_EXCEPTION(Add<true>(0), IllegalArgumentException, "");
@@ -315,6 +330,89 @@ TEST(RendezvousTest, require_that_participation_id_is_unstable_when_not_explicit
                     EXPECT_TRUE(id_mismatch);
                 };
     Nexus::run(num_threads, task);
+}
+
+TEST(RendezvousTest, require_that_rendezvous_can_be_destroyed) {
+    for (size_t num_threads = 1; num_threads <= 7; ++num_threads) {
+        MaybeThrow barrier(num_threads, false);
+        auto task = [&](Nexus &ctx){
+                        barrier.meet();
+                        if (ctx.thread_id() == (num_threads / 2)) {
+                            std::this_thread::sleep_for(10ms);
+                            barrier.destroy();
+                        } else {
+                            // destroyed while waiting (unless alone)
+                            VESPA_EXPECT_EXCEPTION(barrier.meet(), IllegalStateException, "trying to use destroyed rendezvous");
+                        }
+                        ctx.barrier();
+                        // destroyed before waiting
+                        VESPA_EXPECT_EXCEPTION(barrier.meet(), IllegalStateException, "trying to use destroyed rendezvous");
+                        VESPA_EXPECT_EXCEPTION(barrier.meet(), IllegalStateException, "trying to use destroyed rendezvous");
+                        VESPA_EXPECT_EXCEPTION(barrier.meet(), IllegalStateException, "trying to use destroyed rendezvous");
+                    };
+        Nexus::run(num_threads, task);
+    }
+}
+
+TEST(RendezvousTest, require_that_rendezvous_can_be_externally_destroyed) {
+    for (size_t my_threads = 1; my_threads <= 7; ++my_threads) {
+        size_t num_threads = my_threads + 1;
+        MaybeThrow barrier(my_threads, false);
+        std::vector<size_t> ok_cnt(my_threads, 0);
+        auto task = [&](Nexus &ctx){
+                        auto thread_id = ctx.thread_id();
+                        if (thread_id == my_threads) { // the external thread
+                            std::this_thread::sleep_for(20ms);
+                            barrier.destroy();
+                        } else { // the barrier buddies
+                            bool ok = true;
+                            while (ok) {
+                                try {
+                                    barrier.meet();
+                                    ++ok_cnt[thread_id];
+                                    if (my_threads == 1) {
+                                        // this trick is done to make the test run faster with valgrind
+                                        std::this_thread::sleep_for(1ns);
+                                    }
+                                } catch (IllegalStateException &) {
+                                    ok = false;
+                                }
+                            }
+                            VESPA_EXPECT_EXCEPTION(barrier.meet(), IllegalStateException, "trying to use destroyed rendezvous");
+                            VESPA_EXPECT_EXCEPTION(barrier.meet(), IllegalStateException, "trying to use destroyed rendezvous");
+                            VESPA_EXPECT_EXCEPTION(barrier.meet(), IllegalStateException, "trying to use destroyed rendezvous");
+                        }
+                    };
+        Nexus::run(num_threads, task);
+        fprintf(stderr, "barrier was destroyed after %zu iterations\n", ok_cnt[0]);
+        for (size_t i = 1; i < my_threads; ++i) {
+            EXPECT_EQ(ok_cnt[i], ok_cnt[0]);
+        }
+    }
+}
+
+TEST(RendezvousTest, require_that_rendezvous_can_be_implicitly_destroyed) {
+    for (size_t num_threads = 1; num_threads <= 7; ++num_threads) {
+        std::atomic<int> balls = 0;
+        std::atomic<int> errors = 0;
+        MaybeThrow barrier(num_threads, true);
+        auto task = [&](Nexus &){
+                        try {
+                            barrier.meet();
+                        } catch (MaybeThrow::Ball &) {
+                            ++balls;
+                            barrier.destroy();
+                        } catch (IllegalStateException &) {
+                            ++errors;
+                        }
+                        VESPA_EXPECT_EXCEPTION(barrier.meet(), IllegalStateException, "trying to use destroyed rendezvous");
+                        VESPA_EXPECT_EXCEPTION(barrier.meet(), IllegalStateException, "trying to use destroyed rendezvous");
+                        VESPA_EXPECT_EXCEPTION(barrier.meet(), IllegalStateException, "trying to use destroyed rendezvous");
+                    };
+        Nexus::run(num_threads, task);
+        EXPECT_EQ(balls, 1);
+        EXPECT_EQ(errors, num_threads - 1);
+    }
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

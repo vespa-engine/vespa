@@ -4,6 +4,8 @@
 
 namespace vespalib::test {
 
-Nexus::~Nexus() = default;
+Nexus::~Nexus() {
+    _vote.destroy();
+}
 
 }

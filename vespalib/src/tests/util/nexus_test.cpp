@@ -3,8 +3,11 @@
 #include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <format>
 
-using namespace vespalib::test;
+using vespalib::test::Nexus;
+using vespalib::IllegalStateException;
 
 TEST(NexusTest, run_void_tasks) {
     std::atomic<size_t> value = 0;
@@ -82,4 +85,39 @@ TEST(NexusTest, example_multi_threaded_unit_test) {
     Nexus::run(2, work);
     EXPECT_EQ(a, 5);
     EXPECT_EQ(b, 7);
+}
+
+TEST(NexusTest, exception_is_captured_and_propagated) {
+    size_t num_threads = 10;
+    auto task = [&](Nexus &) {
+                    throw(std::runtime_error(std::format("failed")));
+                };
+    // we use the same exception for all threads because it is very
+    // hard to force one of the threads to fail first.
+    VESPA_EXPECT_EXCEPTION(Nexus::run(num_threads, task), std::runtime_error, "failed");
+}
+
+TEST(NexusTest, return_unwinding_destroys_nexus_barrier) {
+    size_t num_threads = 10;
+    auto task = [&](Nexus &ctx) {
+                    if (ctx.thread_id() == 3) {
+                        // unwind like 'ASSERT_EQ(2, 3)' would
+                        return;
+                    }
+                    ctx.barrier();
+                };
+    VESPA_EXPECT_EXCEPTION(Nexus::run(num_threads, task), IllegalStateException, "trying to use destroyed rendezvous");
+}
+
+TEST(NexusTest, exception_unwinding_destroys_nexus_barrier_and_happens_before_barrier_exception) {
+    size_t num_threads = 10;
+    auto task = [&](Nexus &ctx) {
+                    if (ctx.thread_id() == 3) {
+                        throw(std::runtime_error("failed"));
+                    }
+                    ctx.barrier();
+                };
+    // this time the unwinding exception is always propagated since it
+    // is captured before the barrier is destroyed.
+    VESPA_EXPECT_EXCEPTION(Nexus::run(num_threads, task), std::runtime_error, "failed");
 }
