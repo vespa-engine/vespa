@@ -6,6 +6,8 @@ set -euo pipefail
 # shellcheck disable=1091
 source /etc/profile.d/enable-gcc-toolset.sh
 
+PATH=/opt/vespa-deps/bin:$PATH
+
 cd "$SOURCE_DIR"
 
 read -ra MVN_EXTRA_OPTS <<< "$VESPA_MAVEN_EXTRA_OPTS"

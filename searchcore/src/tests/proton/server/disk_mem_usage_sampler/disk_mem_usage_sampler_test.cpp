@@ -57,7 +57,7 @@ struct DiskMemUsageSamplerTest : public ::testing::Test {
     }
     ~DiskMemUsageSamplerTest();
     const ResourceUsageWriteFilter& filter() const { return *write_filter; }
-    const DiskMemUsageNotifier& notifier() const { return sampler->real_notifier(); }
+    const ResourceUsageNotifier& notifier() const { return sampler->real_notifier(); }
 };
 
 DiskMemUsageSamplerTest::~DiskMemUsageSamplerTest() {

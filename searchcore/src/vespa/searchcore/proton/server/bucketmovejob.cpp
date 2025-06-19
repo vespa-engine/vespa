@@ -4,7 +4,7 @@
 #include "imaintenancejobrunner.h"
 #include "ibucketstatechangednotifier.h"
 #include "iclusterstatechangednotifier.h"
-#include "i_disk_mem_usage_notifier.h"
+#include "i_resource_usage_notifier.h"
 #include "ibucketmodifiedhandler.h"
 #include "document_db_maintenance_config.h"
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
@@ -65,7 +65,7 @@ BucketMoveJob::BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc,
                              bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
                              IBucketStateChangedNotifier &bucketStateChangedNotifier,
-                             IDiskMemUsageNotifier &diskMemUsageNotifier,
+                             IResourceUsageNotifier &resource_usage_notifier,
                              const BlockableMaintenanceJobConfig &blockableConfig,
                              const std::string &docTypeName,
                              document::BucketSpace bucketSpace)
@@ -73,7 +73,7 @@ BucketMoveJob::BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc,
       IClusterStateChangedHandler(),
       bucketdb::IBucketCreateListener(),
       IBucketStateChangedHandler(),
-      IDiskMemUsageListener(),
+      IResourceUsageListener(),
       std::enable_shared_from_this<BucketMoveJob>(),
       _calc(std::move(calc)),
       _dbRetainer(std::move(dbRetainer)),
@@ -92,7 +92,7 @@ BucketMoveJob::BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc,
       _bucketCreateNotifier(bucketCreateNotifier),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _bucketStateChangedNotifier(bucketStateChangedNotifier),
-      _diskMemUsageNotifier(diskMemUsageNotifier)
+      _resource_usage_notifier(resource_usage_notifier)
 {
     _movers.reserve(std::min(100u, blockableConfig.getMaxOutstandingMoveOps()));
     if (blockedDueToClusterState(_calc)) {
@@ -102,7 +102,7 @@ BucketMoveJob::BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc,
     _bucketCreateNotifier.addListener(this);
     _clusterStateChangedNotifier.addClusterStateChangedHandler(this);
     _bucketStateChangedNotifier.addBucketStateChangedHandler(this);
-    _diskMemUsageNotifier.addDiskMemUsageListener(this);
+    _resource_usage_notifier.add_resource_usage_listener(this);
     recompute(_ready.meta_store()->getBucketDB().takeGuard());
 }
 
@@ -111,7 +111,7 @@ BucketMoveJob::~BucketMoveJob()
     _bucketCreateNotifier.removeListener(this);
     _clusterStateChangedNotifier.removeClusterStateChangedHandler(this);
     _bucketStateChangedNotifier.removeBucketStateChangedHandler(this);
-    _diskMemUsageNotifier.removeDiskMemUsageListener(this);
+    _resource_usage_notifier.remove_resource_usage_listener(this);
 }
 
 std::shared_ptr<BucketMoveJob>
@@ -126,14 +126,14 @@ BucketMoveJob::create(std::shared_ptr<IBucketStateCalculator> calc,
                       bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                       IClusterStateChangedNotifier &clusterStateChangedNotifier,
                       IBucketStateChangedNotifier &bucketStateChangedNotifier,
-                      IDiskMemUsageNotifier &diskMemUsageNotifier,
+                      IResourceUsageNotifier &resource_usage_notifier,
                       const BlockableMaintenanceJobConfig &blockableConfig,
                       const std::string &docTypeName,
                       document::BucketSpace bucketSpace)
 {
     return {new BucketMoveJob(std::move(calc), std::move(dbRetainer), moveHandler, modifiedHandler, master, bucketExecutor, ready, notReady,
                               bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
-                              diskMemUsageNotifier, blockableConfig, docTypeName, bucketSpace),
+                              resource_usage_notifier, blockableConfig, docTypeName, bucketSpace),
             [&master](auto job) {
                 auto failed = master.execute(makeLambdaTask([job]() { delete job; }));
                 assert(!failed);
@@ -446,7 +446,7 @@ BucketMoveJob::notifyBucketStateChanged(const BucketId &bucketId, BucketInfo::Ac
 }
 
 void
-BucketMoveJob::notifyDiskMemUsage(DiskMemUsageState state)
+BucketMoveJob::notify_resource_usage(const ResourceUsageState& state)
 {
     // Called by master write thread
     internalNotifyDiskMemUsage(state);

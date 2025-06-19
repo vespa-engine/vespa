@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "resource_usage_write_filter.h"
-#include "i_disk_mem_usage_listener.h"
+#include "i_resource_usage_listener.h"
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
 #include <iomanip>
@@ -133,7 +133,7 @@ ResourceUsageWriteFilter::ResourceUsageWriteFilter(const HwInfo& hwInfo)
       _memoryStats(),
       _diskUsedSizeBytes(0),
       _state(),
-      _dmstate(),
+      _usage_state(),
       _attribute_usage(),
       _attribute_usage_filter_config()
 { }
@@ -146,17 +146,17 @@ ResourceUsageWriteFilter::recalc_state(const Guard& guard)
     (void) guard;
     bool hasMessage = false;
     std::ostringstream message;
-    if (_dmstate.aboveMemoryLimit(1.0)) {
+    if (_usage_state.aboveMemoryLimit(1.0)) {
         hasMessage = true;
-        makeMemoryLimitMessage(message, _dmstate.memoryState().usage(),
-                               _dmstate.memoryState().limit(), _memoryStats, _hwInfo.memory().sizeBytes());
+        makeMemoryLimitMessage(message, _usage_state.memoryState().usage(),
+                               _usage_state.memoryState().limit(), _memoryStats, _hwInfo.memory().sizeBytes());
     }
-    if (_dmstate.aboveDiskLimit(1.0)) {
+    if (_usage_state.aboveDiskLimit(1.0)) {
         if (hasMessage) {
             message << ", ";
         }
         hasMessage = true;
-        makeDiskLimitMessage(message, _dmstate.diskState().usage(), _dmstate.diskState().limit(), _hwInfo, _diskUsedSizeBytes);
+        makeDiskLimitMessage(message, _usage_state.diskState().usage(), _usage_state.diskState().limit(), _hwInfo, _diskUsedSizeBytes);
     }
     {
         const auto &max_usage = _attribute_usage.max_address_space_usage();
@@ -178,12 +178,12 @@ ResourceUsageWriteFilter::recalc_state(const Guard& guard)
         _acceptWrite = false;
     } else {
         if (!_acceptWrite) {
-            std::string unblockMsg = makeUnblockingMessage(_dmstate.memoryState().usage(),
-                                                           _dmstate.memoryState().limit(),
+            std::string unblockMsg = makeUnblockingMessage(_usage_state.memoryState().usage(),
+                                                           _usage_state.memoryState().limit(),
                                                            _memoryStats,
                                                            _hwInfo,
-                                                           _dmstate.diskState().usage(),
-                                                           _dmstate.diskState().limit(),
+                                                           _usage_state.diskState().usage(),
+                                                           _usage_state.diskState().limit(),
                                                            _diskUsedSizeBytes);
             LOG(info, "Write operations are now un-blocked: '%s'", unblockMsg.c_str());
         }
@@ -207,11 +207,11 @@ ResourceUsageWriteFilter::getAcceptState() const
 }
 
 void
-ResourceUsageWriteFilter::notify_disk_mem_usage(const DiskMemUsageState& state, const ProcessMemoryStats& memoryStats,
-                                            uint64_t diskUsedSizeBytes)
+ResourceUsageWriteFilter::notify_resource_usage(const ResourceUsageState& state, const vespalib::ProcessMemoryStats &memoryStats,
+                                                uint64_t diskUsedSizeBytes)
 {
     std::lock_guard guard(_lock);
-    _dmstate = state;
+    _usage_state = state;
     _memoryStats = memoryStats;
     _diskUsedSizeBytes = diskUsedSizeBytes;
     recalc_state(guard);

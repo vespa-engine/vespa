@@ -4,7 +4,7 @@
 
 namespace proton {
 
-class DiskMemUsageState;
+class ResourceUsageState;
 
 /**
  * Class containing disk and memory usage in a form suitable for
@@ -23,8 +23,8 @@ class DiskMemUsageMetrics
 
 public:
     DiskMemUsageMetrics() noexcept;
-    DiskMemUsageMetrics(const DiskMemUsageState& usage) noexcept;
-    void merge(const DiskMemUsageState& usage) noexcept;
+    DiskMemUsageMetrics(const ResourceUsageState& usage) noexcept;
+    void merge(const ResourceUsageState& usage) noexcept;
     double total_disk_usage() const noexcept { return _total_disk_usage; }
     double total_disk_utilization() const noexcept { return _total_disk_utilization; }
     double transient_disk_usage() const noexcept { return _transient_disk_usage; }

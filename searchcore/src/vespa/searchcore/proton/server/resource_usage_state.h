@@ -8,10 +8,10 @@
 namespace proton {
 
 /**
- * Class used to describe state of disk and memory usage relative to configured limits.
+ * Class used to describe state of resource usage relative to configured limits.
  * In addition relative transient disk and memory usage are tracked.
  */
-class DiskMemUsageState
+class ResourceUsageState
 {
     ResourceUsageWithLimit _diskState;
     ResourceUsageWithLimit _memoryState;
@@ -19,24 +19,24 @@ class DiskMemUsageState
     double _transient_memory_usage;
 
 public:
-    DiskMemUsageState() = default;
-    DiskMemUsageState(const ResourceUsageWithLimit &diskState_,
-                      const ResourceUsageWithLimit &memoryState_,
-                      double transient_disk_usage_ = 0,
-                      double transient_memory_usage_ = 0)
+    ResourceUsageState() = default;
+    ResourceUsageState(const ResourceUsageWithLimit &diskState_,
+                       const ResourceUsageWithLimit &memoryState_,
+                       double transient_disk_usage_ = 0,
+                       double transient_memory_usage_ = 0)
         : _diskState(diskState_),
           _memoryState(memoryState_),
           _transient_disk_usage(transient_disk_usage_),
           _transient_memory_usage(transient_memory_usage_)
     {
     }
-    bool operator==(const DiskMemUsageState &rhs) const {
+    bool operator==(const ResourceUsageState &rhs) const {
         return ((_diskState == rhs._diskState) &&
                 (_memoryState == rhs._memoryState) &&
                 (_transient_disk_usage == rhs._transient_disk_usage) &&
                 (_transient_memory_usage == rhs._transient_memory_usage));
     }
-    bool operator!=(const DiskMemUsageState &rhs) const {
+    bool operator!=(const ResourceUsageState &rhs) const {
         return ! ((*this) == rhs);
     }
     const ResourceUsageWithLimit &diskState() const noexcept { return _diskState; }

@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/server/disk_mem_usage_metrics.h>
-#include <vespa/searchcore/proton/server/disk_mem_usage_state.h>
+#include <vespa/searchcore/proton/server/resource_usage_state.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 
 using proton::DiskMemUsageMetrics;
-using proton::DiskMemUsageState;
+using proton::ResourceUsageState;
 using proton::ResourceUsageWithLimit;
 
 bool

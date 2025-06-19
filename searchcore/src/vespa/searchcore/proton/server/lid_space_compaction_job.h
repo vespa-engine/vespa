@@ -4,7 +4,7 @@
 
 #include "blockable_maintenance_job.h"
 #include "document_db_maintenance_config.h"
-#include "i_disk_mem_usage_listener.h"
+#include "i_resource_usage_listener.h"
 #include "iclusterstatechangedhandler.h"
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
@@ -16,7 +16,7 @@ namespace searchcorespi::index { struct IThreadService; }
 namespace vespalib { class IDestructorCallback; }
 namespace proton {
     class MoveOperation;
-    class IDiskMemUsageNotifier;
+    class IResourceUsageNotifier;
     class IClusterStateChangedNotifier;
     struct IOperationStorer;
     struct ILidSpaceCompactionHandler;
@@ -31,7 +31,7 @@ namespace proton::lidspace {
  * is locked for changes while the document is moved.
  */
 class CompactionJob : public BlockableMaintenanceJob,
-                      public IDiskMemUsageListener,
+                      public IResourceUsageListener,
                       public IClusterStateChangedHandler,
                       public std::enable_shared_from_this<CompactionJob>
 {
@@ -43,7 +43,7 @@ private:
     std::shared_ptr<ILidSpaceCompactionHandler>   _handler;
     IOperationStorer                             &_opStorer;
     std::unique_ptr<IDocumentScanIterator>        _scanItr;
-    IDiskMemUsageNotifier                        &_diskMemUsageNotifier;
+    IResourceUsageNotifier                       &_resource_usage_notifier;
     IClusterStateChangedNotifier                 &_clusterStateChangedNotifier;
     std::shared_ptr<RemoveOperationsRateTracker>  _ops_rate_tracker;
     bool                                          _is_disabled;
@@ -73,7 +73,7 @@ private:
                   IOperationStorer &opStorer,
                   IThreadService & master,
                   BucketExecutor & bucketExecutor,
-                  IDiskMemUsageNotifier &diskMemUsageNotifier,
+                  IResourceUsageNotifier &resource_usage_notifier,
                   const BlockableMaintenanceJobConfig &blockableConfig,
                   IClusterStateChangedNotifier &clusterStateChangedNotifier,
                   bool nodeRetired,
@@ -87,14 +87,14 @@ public:
            IOperationStorer &opStorer,
            IThreadService & master,
            BucketExecutor & bucketExecutor,
-           IDiskMemUsageNotifier &diskMemUsageNotifier,
+           IResourceUsageNotifier &resource_usage_notifier,
            const BlockableMaintenanceJobConfig &blockableConfig,
            IClusterStateChangedNotifier &clusterStateChangedNotifier,
            bool nodeRetired,
            document::BucketSpace bucketSpace,
            std::shared_ptr<MaintenanceJobTokenSource> maintenance_job_token_source);
     ~CompactionJob() override;
-    void notifyDiskMemUsage(DiskMemUsageState state) override;
+    void notify_resource_usage(const ResourceUsageState& state) override;
     void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override;
     bool run() override;
 };

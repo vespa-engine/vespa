@@ -5,7 +5,7 @@
 #include "clusterstatehandler.h"
 #include "configstore.h"
 #include "ddbstate.h"
-#include "disk_mem_usage_forwarder.h"
+#include "resource_usage_forwarder.h"
 #include "document_db_config_owner.h"
 #include "documentdb_metrics_updater.h"
 #include "documentsubdbcollection.h"
@@ -135,7 +135,7 @@ private:
     IDocumentDBOwner                                &_owner;
     storage::spi::BucketExecutor                    &_bucketExecutor;
     DDBState                                         _state;
-    DiskMemUsageForwarder                            _dmUsageForwarder;
+    ResourceUsageForwarder                           _resource_usage_forwarder;
     AttributeUsageFilter                             _writeFilter;
     std::shared_ptr<ITransientResourceUsageProvider> _transient_usage_provider;
     std::unique_ptr<FeedHandler>                     _feedHandler;
@@ -421,7 +421,7 @@ public:
     void enterReprocessState();
     void enterOnlineState();
     void waitForOnlineState();
-    IDiskMemUsageListener *diskMemUsageListener() { return &_dmUsageForwarder; }
+    IResourceUsageListener *resource_usage_forwarder() noexcept { return &_resource_usage_forwarder; }
     std::shared_ptr<const ITransientResourceUsageProvider> transient_usage_provider();
     ExecutorThreadingService & getWriteService() { return _writeService; }
 

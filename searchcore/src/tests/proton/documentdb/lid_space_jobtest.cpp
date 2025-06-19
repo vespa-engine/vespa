@@ -32,7 +32,7 @@ struct MyCountJobRunner : public IMaintenanceJobRunner {
 JobTestBase::JobTestBase()
     : _refCount(),
       _clusterStateHandler(),
-      _diskMemUsageNotifier(),
+      _resource_usage_notifier(),
       _handler(),
       _storer(),
       _maintenance_job_token_source(std::make_shared<MaintenanceJobTokenSource>()),
@@ -59,7 +59,7 @@ JobTestBase::init(uint32_t allowedLidBloat,
     _master = std::make_unique<proton::SyncableExecutorThreadService> (*_singleExecutor);
     _bucketExecutor = std::make_unique<storage::spi::dummy::DummyBucketExecutor>(4);
     _job = lidspace::CompactionJob::create(compactCfg, RetainGuard(_refCount), _handler, _storer, *_master, *_bucketExecutor,
-                                           _diskMemUsageNotifier, blockableCfg, _clusterStateHandler, node_retired_or_maintenance,
+                                           _resource_usage_notifier, blockableCfg, _clusterStateHandler, node_retired_or_maintenance,
                                            document::BucketSpace::placeHolder(), _maintenance_job_token_source);
 }
 
