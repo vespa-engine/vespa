@@ -3,4 +3,6 @@
 
 set -euo pipefail
 
+PATH=/opt/vespa-deps/bin:$PATH
+
 ctest --output-junit "$LOG_DIR/vespa-cpptest-results.xml" --output-on-failure -j "$NUM_CPU_LIMIT"
