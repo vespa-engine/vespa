@@ -15,22 +15,27 @@ namespace vespalib {
 template <std::integral R, std::integral T0, std::integral T1>
 [[nodiscard]] inline constexpr bool
 add_would_overflow(T0 lhs, T1 rhs) noexcept {
-    return __builtin_add_overflow_p(lhs, rhs, R{});
+    R res;
+    // Use the non-predicate (no `_p` suffix) builtins, since Clang does not
+    // have the predicate versions of these (at the time of writing).
+    return __builtin_add_overflow(lhs, rhs, &res);
 }
 
 // Well-defined underflow checking for subtraction of two integers
 template <std::integral R, std::integral T0, std::integral T1>
 [[nodiscard]] inline constexpr bool
 sub_would_underflow(T0 lhs, T1 rhs) noexcept {
+    R res;
     // The intrinsic calls this overflow, but we'll refer to it as underflow
-    return __builtin_sub_overflow_p(lhs, rhs, R{});
+    return __builtin_sub_overflow(lhs, rhs, &res);
 }
 
 // Well-defined overflow checking for multiplication of two integers
 template <std::integral R, std::integral T0, std::integral T1>
 [[nodiscard]] inline constexpr bool
 mul_would_overflow(T0 lhs, T1 rhs) noexcept {
-    return __builtin_mul_overflow_p(lhs, rhs, R{});
+    R res;
+    return __builtin_mul_overflow(lhs, rhs, &res);
 }
 
 }
