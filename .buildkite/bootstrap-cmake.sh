@@ -6,6 +6,8 @@ set -euo pipefail
 # shellcheck disable=1091
 source /etc/profile.d/enable-gcc-toolset.sh
 
+PATH=/opt/vespa-deps/bin:$PATH
+
 VESPA_CMAKE_SANITIZERS_OPTION=""
 VESPA_CMAKE_CCACHE_OPTION=""
 if [[ $VESPA_USE_SANITIZER != null ]]; then
