@@ -5,7 +5,6 @@ package jvm
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/defaults"
