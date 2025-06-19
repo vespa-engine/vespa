@@ -233,7 +233,9 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         log.info("Operation queue: max-items=%d, max-age=%d ms, max-bytes=%s".formatted(
                 maxThrottled, Duration.ofNanos(maxThrottledAgeNS).toMillis(), BytesQuantity.ofBytes(maxThrottledTotalBytes).asPrettyString()));
         this.access = access;
-        this.asyncSession = access.createAsyncSession(new AsyncParameters());
+        var asyncParameters = new AsyncParameters();
+        asyncParameters.setThrottlePolicy(new InstrumentedThrottlePolicy(metric));
+        this.asyncSession = access.createAsyncSession(asyncParameters);
         this.clusters = parseClusters(clusterListConfig, bucketSpacesConfig);
         long resendDelayMS = SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(executorConfig.resendDelayMillis())).toMillis();
 

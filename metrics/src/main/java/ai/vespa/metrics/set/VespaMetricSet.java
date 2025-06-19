@@ -173,6 +173,7 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.HTTPAPI_QUEUED_OPERATIONS.last());
         addMetric(metrics, ContainerMetrics.HTTPAPI_QUEUED_BYTES.last());
         addMetric(metrics, ContainerMetrics.HTTPAPI_QUEUED_AGE.last());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_MBUS_WINDOW_SIZE.last());
 
         addMetric(metrics, ContainerMetrics.MEM_HEAP_TOTAL.average());
         addMetric(metrics, ContainerMetrics.MEM_HEAP_FREE.average());

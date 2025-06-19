@@ -106,6 +106,7 @@ public enum ContainerMetrics implements VespaMetrics {
     HTTPAPI_QUEUED_OPERATIONS("httpapi_queued_operations", Unit.OPERATION, "Document operations queued for execution in /document/v1 API handler"),
     HTTPAPI_QUEUED_BYTES("httpapi_queued_bytes", Unit.BYTE, "Total operation bytes queued for execution in /document/v1 API handler"),
     HTTPAPI_QUEUED_AGE("httpapi_queued_age", Unit.SECOND, "Age in seconds of the oldest operation in the queue for /document/v1 API handler"),
+    HTTPAPI_MBUS_WINDOW_SIZE("httpapi_mbus_window_size", Unit.SECOND, "The window size of Messagebus's dynamic throttle policy for /document/v1 API handler"),
 
     MEM_HEAP_TOTAL("mem.heap.total", Unit.BYTE, "Total available heap memory"),
     MEM_HEAP_FREE("mem.heap.free", Unit.BYTE, "Free heap memory"),
