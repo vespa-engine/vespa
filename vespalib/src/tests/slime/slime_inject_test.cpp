@@ -31,7 +31,10 @@ struct SrcFixture {
         obj.setLong("b", 2);
         obj.setLong("c", 3);
     }
+    ~SrcFixture();
 };
+
+SrcFixture::~SrcFixture() = default;
 
 struct DstFixture {
     Slime slime1;
