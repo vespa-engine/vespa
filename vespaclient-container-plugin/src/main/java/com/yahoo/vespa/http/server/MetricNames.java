@@ -26,6 +26,9 @@ public final class MetricNames {
     public static final String FAILED_UNKNOWN = ContainerMetrics.HTTPAPI_FAILED_UNKNOWN.baseName();
     public static final String FAILED_TIMEOUT = ContainerMetrics.HTTPAPI_FAILED_TIMEOUT.baseName();
     public static final String FAILED_INSUFFICIENT_STORAGE = ContainerMetrics.HTTPAPI_FAILED_INSUFFICIENT_STORAGE.baseName();
+    public static final String QUEUED_OPERATIONS = ContainerMetrics.HTTPAPI_QUEUED_OPERATIONS.baseName();
+    public static final String QUEUE_BYTES = ContainerMetrics.HTTPAPI_QUEUED_BYTES.baseName();
+    public static final String QUEUE_AGE = ContainerMetrics.HTTPAPI_QUEUED_AGE.baseName();
 
     private MetricNames() { }
 
