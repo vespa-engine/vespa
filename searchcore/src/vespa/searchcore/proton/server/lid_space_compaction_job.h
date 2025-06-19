@@ -43,7 +43,7 @@ private:
     std::shared_ptr<ILidSpaceCompactionHandler>   _handler;
     IOperationStorer                             &_opStorer;
     std::unique_ptr<IDocumentScanIterator>        _scanItr;
-    IResourceUsageNotifier                        &_diskMemUsageNotifier;
+    IResourceUsageNotifier                       &_resource_usage_notifier;
     IClusterStateChangedNotifier                 &_clusterStateChangedNotifier;
     std::shared_ptr<RemoveOperationsRateTracker>  _ops_rate_tracker;
     bool                                          _is_disabled;
@@ -73,7 +73,7 @@ private:
                   IOperationStorer &opStorer,
                   IThreadService & master,
                   BucketExecutor & bucketExecutor,
-                  IResourceUsageNotifier &diskMemUsageNotifier,
+                  IResourceUsageNotifier &resource_usage_notifier,
                   const BlockableMaintenanceJobConfig &blockableConfig,
                   IClusterStateChangedNotifier &clusterStateChangedNotifier,
                   bool nodeRetired,

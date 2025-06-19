@@ -128,7 +128,7 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                              IOperationStorer &opStorer,
                              IThreadService & master,
                              BucketExecutor & bucketExecutor,
-                             IResourceUsageNotifier &diskMemUsageNotifier,
+                             IResourceUsageNotifier &resource_usage_notifier,
                              const BlockableMaintenanceJobConfig &blockableConfig,
                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
                              bool node_retired_or_maintenance,
@@ -143,7 +143,7 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
       _handler(std::move(handler)),
       _opStorer(opStorer),
       _scanItr(),
-      _diskMemUsageNotifier(diskMemUsageNotifier),
+      _resource_usage_notifier(resource_usage_notifier),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _ops_rate_tracker(std::make_shared<RemoveOperationsRateTracker>(config.get_remove_batch_block_rate(),
                                                                       config.get_remove_block_rate())),
@@ -155,7 +155,7 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
       _bucketSpace(bucketSpace)
 {
     _token_source = std::move(maintenance_job_token_source);
-    _diskMemUsageNotifier.add_resource_usage_listener(this);
+    _resource_usage_notifier.add_resource_usage_listener(this);
     _clusterStateChangedNotifier.addClusterStateChangedHandler(this);
     if (node_retired_or_maintenance) {
         setBlocked(BlockedReason::CLUSTER_STATE);
@@ -165,7 +165,7 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
 
 CompactionJob::~CompactionJob() {
     _clusterStateChangedNotifier.removeClusterStateChangedHandler(this);
-    _diskMemUsageNotifier.remove_resource_usage_listener(this);
+    _resource_usage_notifier.remove_resource_usage_listener(this);
 }
 
 std::shared_ptr<CompactionJob>

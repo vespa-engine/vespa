@@ -25,7 +25,7 @@ private:
     MemoryFlush::SP             _flushStrategy;
     ProtonConfig::Flush::Memory _currConfig;
     vespalib::HwInfo::Memory    _memory;
-    ResourceUsageState           _currState;
+    ResourceUsageState          _currState;
     bool                        _useConservativeDiskMode;
     bool                        _useConservativeMemoryMode;
     bool                        _node_retired_or_maintenance;

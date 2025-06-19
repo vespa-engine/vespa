@@ -92,7 +92,7 @@ BucketMoveJob::BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc,
       _bucketCreateNotifier(bucketCreateNotifier),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _bucketStateChangedNotifier(bucketStateChangedNotifier),
-      _diskMemUsageNotifier(diskMemUsageNotifier)
+      _resource_usage_notifier(diskMemUsageNotifier)
 {
     _movers.reserve(std::min(100u, blockableConfig.getMaxOutstandingMoveOps()));
     if (blockedDueToClusterState(_calc)) {
@@ -102,7 +102,7 @@ BucketMoveJob::BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc,
     _bucketCreateNotifier.addListener(this);
     _clusterStateChangedNotifier.addClusterStateChangedHandler(this);
     _bucketStateChangedNotifier.addBucketStateChangedHandler(this);
-    _diskMemUsageNotifier.add_resource_usage_listener(this);
+    _resource_usage_notifier.add_resource_usage_listener(this);
     recompute(_ready.meta_store()->getBucketDB().takeGuard());
 }
 
@@ -111,7 +111,7 @@ BucketMoveJob::~BucketMoveJob()
     _bucketCreateNotifier.removeListener(this);
     _clusterStateChangedNotifier.removeClusterStateChangedHandler(this);
     _bucketStateChangedNotifier.removeBucketStateChangedHandler(this);
-    _diskMemUsageNotifier.remove_resource_usage_listener(this);
+    _resource_usage_notifier.remove_resource_usage_listener(this);
 }
 
 std::shared_ptr<BucketMoveJob>

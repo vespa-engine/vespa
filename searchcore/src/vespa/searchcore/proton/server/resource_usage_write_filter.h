@@ -33,7 +33,7 @@ private:
     vespalib::ProcessMemoryStats _memoryStats;
     uint64_t                     _diskUsedSizeBytes;
     State                        _state;
-    ResourceUsageState            _dmstate;
+    ResourceUsageState           _usage_state;
     AttributeUsageStats          _attribute_usage;
     AttributeUsageFilterConfig   _attribute_usage_filter_config;
 

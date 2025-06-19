@@ -53,7 +53,7 @@ ResourceUsageNotifier::ResourceUsageNotifier(ResourceUsageWriteFilter& filter)
       _diskUsedSizeBytes(),
       _transient_usage(),
       _config(),
-      _dmstate(),
+      _usage_state(),
       _disk_mem_usage_metrics(),
       _listeners(),
       _filter(filter)
@@ -112,7 +112,7 @@ ResourceUsageState
 ResourceUsageNotifier::usageState() const
 {
     Guard guard(_lock);
-    return _dmstate;
+    return _usage_state;
 }
 
 DiskMemUsageMetrics
@@ -120,7 +120,7 @@ ResourceUsageNotifier::get_metrics() const
 {
     Guard guard(_lock);
     DiskMemUsageMetrics result(_disk_mem_usage_metrics);
-    _disk_mem_usage_metrics = DiskMemUsageMetrics(_dmstate);
+    _disk_mem_usage_metrics = DiskMemUsageMetrics(_usage_state);
     return result;
 }
 
@@ -129,7 +129,7 @@ ResourceUsageNotifier::add_resource_usage_listener(IResourceUsageListener *liste
 {
     Guard guard(_lock);
     _listeners.push_back(listener);
-    listener->notify_resource_usage(_dmstate);
+    listener->notify_resource_usage(_usage_state);
 }
 
 void
@@ -148,11 +148,11 @@ void
 ResourceUsageNotifier::notifyDiskMemUsage(const Guard &guard, ResourceUsageState state)
 {
     (void) guard;
-    _dmstate = state;
+    _usage_state = state;
     _disk_mem_usage_metrics.merge(state);
-    _filter.notify_resource_usage(_dmstate, _memoryStats, _diskUsedSizeBytes);
+    _filter.notify_resource_usage(_usage_state, _memoryStats, _diskUsedSizeBytes);
     for (const auto &listener : _listeners) {
-        listener->notify_resource_usage(_dmstate);
+        listener->notify_resource_usage(_usage_state);
     }
 }
 

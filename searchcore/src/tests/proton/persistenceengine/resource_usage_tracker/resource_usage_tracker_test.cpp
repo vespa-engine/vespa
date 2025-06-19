@@ -42,7 +42,7 @@ struct MyResourceUsageListener : public storage::spi::ResourceUsageListener
 class ResourceUsageTrackerTest : public ::testing::Test
 {
 protected:
-    ResourceUsageNotifier                     _notifier;
+    ResourceUsageNotifier                    _notifier;
     std::shared_ptr<ResourceUsageTracker>    _tracker;
     std::unique_ptr<MyResourceUsageListener> _listener;
 

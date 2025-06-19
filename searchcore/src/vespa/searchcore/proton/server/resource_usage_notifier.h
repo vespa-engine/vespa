@@ -54,7 +54,7 @@ private:
     uint64_t                     _diskUsedSizeBytes;
     TransientResourceUsage       _transient_usage;
     Config                       _config;
-    ResourceUsageState            _dmstate;
+    ResourceUsageState           _usage_state;
     mutable DiskMemUsageMetrics  _disk_mem_usage_metrics;
     std::vector<IResourceUsageListener *> _listeners;
     ResourceUsageWriteFilter&    _filter;

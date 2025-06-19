@@ -76,7 +76,7 @@ private:
     bucketdb::IBucketCreateNotifier   &_bucketCreateNotifier;
     IClusterStateChangedNotifier      &_clusterStateChangedNotifier;
     IBucketStateChangedNotifier       &_bucketStateChangedNotifier;
-    IResourceUsageNotifier             &_diskMemUsageNotifier;
+    IResourceUsageNotifier            &_resource_usage_notifier;
 
     class BucketStateWrapper {
     private:
