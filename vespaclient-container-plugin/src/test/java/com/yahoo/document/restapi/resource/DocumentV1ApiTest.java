@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.restapi.resource;
 
+import ai.vespa.json.Json;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.document.BucketId;
@@ -57,9 +58,10 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -89,14 +91,16 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.PATCH;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 
 /**
  * @author jonmv
+ * @author bjorncs
  */
 public class DocumentV1ApiTest {
 
@@ -114,6 +118,7 @@ public class DocumentV1ApiTest {
     final DocumentOperationExecutorConfig executorConfig = new DocumentOperationExecutorConfig.Builder()
             .maxThrottled(2)
             .maxThrottledAge(1.0)
+            .maxThrottledBytes(0)
             .resendDelayMillis(1 << 30)
             .build();
     final DocumentmanagerConfig docConfig = Deriver.getDocumentManagerConfig("src/test/cfg/music.sd")
@@ -138,7 +143,7 @@ public class DocumentV1ApiTest {
     DocumentV1ApiHandler handler;
     DocumentV1ApiHandler handlerNoQueue;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         clock = new ManualClock();
         access = new MockDocumentAccess(docConfig);
@@ -150,11 +155,13 @@ public class DocumentV1ApiTest {
                 clock, Duration.ofMillis(1), metric, metrics, access, docConfig,
                 new DocumentOperationExecutorConfig.Builder(executorConfig)
                         .maxThrottled(0)
+                        .maxThrottledBytes(0)
+                        .maxThrottledAge(0)
                         .build(),
                 clusterConfig, bucketConfig);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         handler.destroy();
     }
@@ -236,7 +243,7 @@ public class DocumentV1ApiTest {
     }
 
     @Test
-    public void testOverLoadBySize() {
+    public void testOverLoadByQueueLength() {
         RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
         // OVERLOAD is a 429
         access.session.expect((id, parameters) -> new Result(Result.ResultType.TRANSIENT_ERROR, Result.toError(Result.ResultType.TRANSIENT_ERROR)));
@@ -285,6 +292,52 @@ public class DocumentV1ApiTest {
                 "  \"message\": \"[FATAL_ERROR @ localhost]: FATAL_ERROR\"" +
                 "}", response1.readAll());
         assertEquals(500, response1.getStatus());
+        driver.close();
+    }
+
+    @Test
+    @Disabled
+    public void testOverLoadByMaxThrottledBytesPercent() {
+        var executorCfg = new DocumentOperationExecutorConfig.Builder()
+                .maxThrottledBytes(10*1024d)
+                .maxThrottledAge(120d)
+                .maxThrottled(10)
+                .build();
+        var handler = new DocumentV1ApiHandler(
+                clock, Duration.ofMillis(1), metric, metrics, access, docConfig, executorCfg, clusterConfig, bucketConfig);
+        access.session.expect(
+                (id, parameters) -> new Result(Result.ResultType.TRANSIENT_ERROR, Result.toError(Result.ResultType.TRANSIENT_ERROR)));
+        var driver = new RequestHandlerTestDriver(handler);
+
+        // Create a large document that will exceed the maxThrottledBytesPercent limit
+        var doc = "{\"fields\": {\"artist\": \"" + "a".repeat(10000) + "\"}}";
+        // First request should be accepted and queued
+        var response1 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, doc);
+        // Second request with large document should be rejected due to bytes limit
+        var response2 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, doc);
+
+        // Verify the metrics for queued operations
+        assertEquals(10026L, metric.metrics().get("httpapi_queued_bytes").get(Map.of()).longValue());
+        assertEquals(1L, metric.metrics().get("httpapi_queued_operations").get(Map.of()).longValue());
+        assertEquals(0L, metric.metrics().get("httpapi_queued_age").get(Map.of()).longValue());
+
+        // Verify the response contains the expected error message about exceeding the queue limit
+        assertEquals(429, response2.getStatus());
+        var json2 = Json.of(response2.readAll());
+        assertTrue(json2.has("message"), () -> json2.toJson(false));
+        var message = json2.f("message").asString();
+        assertEquals(
+                "Rejecting execution due to overload: estimated size of operation is 10026 bytes," +
+                        " total size of queue 20052 bytes would exceed queue limit of 10 kB",
+                message);
+
+        // Complete request 1 prior to graceful shutdown of handler
+        access.session.expect(
+                (id, parameters) -> new Result(Result.ResultType.FATAL_ERROR, Result.toError(Result.ResultType.FATAL_ERROR)));
+        handler.dispatchEnqueued();
+        assertEquals("[FATAL_ERROR @ localhost]: FATAL_ERROR", Json.of(response1.readAll()).f("message").asString());
+        assertEquals(500, response1.getStatus());
+
         driver.close();
     }
 
@@ -903,8 +956,9 @@ public class DocumentV1ApiTest {
                                       "}");
         Inspector responseRoot = SlimeUtils.jsonToSlime(response.readAll()).get();
         assertEquals("/document/v1/space/music/number/1/two", responseRoot.field("pathId").asString());
-        assertTrue(responseRoot.field("message").asString(),
-                   responseRoot.field("message").asString().startsWith("failed parsing document: Unexpected character ('┻' (code 9531 / 0x253b)): was expecting double-quote to start field name"));
+        assertTrue(
+                responseRoot.field("message").asString().startsWith("failed parsing document: Unexpected character ('┻' (code 9531 / 0x253b)): was expecting double-quote to start field name"),
+                responseRoot.field("message").asString());
         assertEquals(400, response.getStatus());
 
         // PUT on a unknown document type is a 400
@@ -1177,6 +1231,8 @@ public class DocumentV1ApiTest {
         int writers = 4;
         DocumentOperationExecutorConfig executorConfig = new DocumentOperationExecutorConfig.Builder()
                 .maxThrottled(writers + 12) // Tests verifies behaviour when requestes are queued
+                .maxThrottledBytes(0)
+                .maxThrottledAge(0)
                 .build();
         handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig,
                                            executorConfig, clusterConfig, bucketConfig);

@@ -103,6 +103,10 @@ public enum ContainerMetrics implements VespaMetrics {
     HTTPAPI_FAILED_UNKNOWN("httpapi_failed_unknown", Unit.OPERATION, "Document operations failed by unknown cause"),
     HTTPAPI_FAILED_TIMEOUT("httpapi_failed_timeout", Unit.OPERATION, "Document operations failed by timeout"),
     HTTPAPI_FAILED_INSUFFICIENT_STORAGE("httpapi_failed_insufficient_storage", Unit.OPERATION, "Document operations failed by insufficient storage"),
+    HTTPAPI_QUEUED_OPERATIONS("httpapi_queued_operations", Unit.OPERATION, "Document operations queued for execution in /document/v1 API handler"),
+    HTTPAPI_QUEUED_BYTES("httpapi_queued_bytes", Unit.BYTE, "Total operation bytes queued for execution in /document/v1 API handler"),
+    HTTPAPI_QUEUED_AGE("httpapi_queued_age", Unit.SECOND, "Age in seconds of the oldest operation in the queue for /document/v1 API handler"),
+    HTTPAPI_MBUS_WINDOW_SIZE("httpapi_mbus_window_size", Unit.SECOND, "The window size of Messagebus's dynamic throttle policy for /document/v1 API handler"),
 
     MEM_HEAP_TOTAL("mem.heap.total", Unit.BYTE, "Total available heap memory"),
     MEM_HEAP_FREE("mem.heap.free", Unit.BYTE, "Free heap memory"),

@@ -25,7 +25,6 @@ import java.util.Set;
 
 import static ai.vespa.metrics.Suffix.average;
 import static ai.vespa.metrics.Suffix.count;
-import static ai.vespa.metrics.Suffix.last;
 import static ai.vespa.metrics.Suffix.max;
 import static ai.vespa.metrics.Suffix.min;
 import static ai.vespa.metrics.Suffix.ninety_five_percentile;
@@ -160,6 +159,10 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.HTTPAPI_FAILED_UNKNOWN.rate());
         addMetric(metrics, ContainerMetrics.HTTPAPI_FAILED_INSUFFICIENT_STORAGE.rate());
         addMetric(metrics, ContainerMetrics.HTTPAPI_FAILED_TIMEOUT.rate());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_QUEUED_OPERATIONS.last());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_QUEUED_BYTES.last());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_QUEUED_AGE.last());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_MBUS_WINDOW_SIZE.last());
 
         addMetric(metrics, ContainerMetrics.MEM_HEAP_TOTAL.average());
         addMetric(metrics, ContainerMetrics.MEM_HEAP_FREE.average());

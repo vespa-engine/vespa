@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.restapi.resource;
 
+import ai.vespa.utils.BytesQuantity;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -107,6 +108,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -189,13 +191,15 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     private final DocumentOperationParser parser;
     private final long maxThrottled;
     private final long maxThrottledAgeNS;
+    private final long maxThrottledTotalBytes;
     private final DocumentAccess access;
     private final AsyncSession asyncSession;
     private final Map<String, StorageCluster> clusters;
-    private final Deque<Operation> operations;
+    private final Deque<Operation> operations = new ConcurrentLinkedDeque<>();
     private final Deque<BooleanSupplier> visitOperations = new ConcurrentLinkedDeque<>();
     private final AtomicLong enqueued = new AtomicLong();
     private final AtomicLong outstanding = new AtomicLong();
+    private final AtomicLong operationBytesQueued = new AtomicLong();
     private final Map<VisitorControlHandler, VisitorSession> visits = new ConcurrentHashMap<>();
     private final ScheduledExecutorService dispatcher = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory("document-api-handler-"));
     private final ScheduledExecutorService visitDispatcher = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory("document-api-handler-visit-"));
@@ -223,18 +227,35 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         this.metric = metric;
         this.metrics = new DocumentApiMetrics(metricReceiver, "documentV1");
         this.maxThrottled = executorConfig.maxThrottled();
-        log.info("maxThrottled=" + maxThrottled);
         this.maxThrottledAgeNS = (long) (executorConfig.maxThrottledAge() * 1_000_000_000.0);
+        this.maxThrottledTotalBytes = calculateMaxThrottledTotalBytes(executorConfig);
+
+        log.info("Operation queue: max-items=%d, max-age=%d ms, max-bytes=%s".formatted(
+                maxThrottled, Duration.ofNanos(maxThrottledAgeNS).toMillis(), BytesQuantity.ofBytes(maxThrottledTotalBytes).asPrettyString()));
         this.access = access;
-        this.asyncSession = access.createAsyncSession(new AsyncParameters());
+        var asyncParameters = new AsyncParameters();
+        asyncParameters.setThrottlePolicy(new InstrumentedThrottlePolicy(metric));
+        this.asyncSession = access.createAsyncSession(asyncParameters);
         this.clusters = parseClusters(clusterListConfig, bucketSpacesConfig);
-        this.operations = new ConcurrentLinkedDeque<>();
         long resendDelayMS = SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(executorConfig.resendDelayMillis())).toMillis();
 
         // TODO: Here it would be better to have dedicated threads with different wait depending on blocked or empty.
         this.dispatcher.scheduleWithFixedDelay(this::dispatchEnqueued, resendDelayMS, resendDelayMS, MILLISECONDS);
         this.visitDispatcher.scheduleWithFixedDelay(this::dispatchVisitEnqueued, resendDelayMS, resendDelayMS, MILLISECONDS);
         this.metricUtil = new HandlerMetricContextUtil(this.metric, this.getClass().getName());
+    }
+
+    private static long calculateMaxThrottledTotalBytes(DocumentOperationExecutorConfig cfg) {
+        if (cfg.maxThrottledBytes() == 0) return 0; // No limit on total bytes.
+        if (cfg.maxThrottledBytes() > 0) return (long) cfg.maxThrottledBytes(); // Absolute value in bytes.
+        // Calculate maxThrottledTotalBytes based on max heap size and configured percentage
+        if (cfg.maxThrottledBytes() < -1)
+            throw new IllegalArgumentException(
+                    "maxThrottledTotalBytesPercent must be between 0 and -1, but was %.2f"
+                            .formatted(cfg.maxThrottledBytes()));
+        var maxHeapSize = Runtime.getRuntime().maxMemory();
+        return (maxHeapSize == Long.MAX_VALUE || maxHeapSize == 0)
+                ? 0 : (long)Math.ceil(Math.abs(cfg.maxThrottledBytes()) * maxHeapSize);
     }
 
     // ------------------------------------------------ Requests -------------------------------------------------
@@ -304,6 +325,11 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         if ( ! visitOperations.isEmpty())
             log.log(WARNING, "Failed to empty visitor operations queue before shutdown timeout — " + visitOperations.size() + " operations left");
+
+        // Check in case 'operations' and 'operationBytesQueued' are not consistent
+        var operationBytesQueued = this.operationBytesQueued.get();
+        if (operationBytesQueued > 0)
+            log.log(WARNING, "Failed to empty request queue before shutdown timeout — %d bytes left in queue".formatted(operationBytesQueued));
 
         try {
             while (outstanding.get() > 0 && clock.instant().isBefore(doom))
@@ -380,7 +406,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel getDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         disallow(request, DRY_RUN);
-        enqueueAndDispatch(request, handler, () -> {
+        enqueueAndDispatch(request, handler, 0, () -> {
             boolean streamed = getProperty(request, STREAM, booleanParser).orElse(false);
             VisitorParameters parameters = parseGetParameters(request, path, streamed);
             return () -> {
@@ -393,7 +419,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel postDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         disallow(request, DRY_RUN);
-        enqueueAndDispatch(request, handler, () -> {
+        enqueueAndDispatch(request, handler, 0, () -> {
             StorageCluster destination = resolveCluster(Optional.of(requireProperty(request, DESTINATION_CLUSTER)), clusters);
             VisitorParameters parameters = parseParameters(request, path);
             parameters.setRemoteDataHandler("[Content:cluster=" + destination.name() + "]"); // Bypass indexing.
@@ -408,8 +434,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel putDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         disallow(request, DRY_RUN);
-        return new ForwardingContentChannel(in -> {
-            enqueueAndDispatch(request, handler, () -> {
+        return new ForwardingContentChannel((bytesRead, in) -> {
+            enqueueAndDispatch(request, handler, bytesRead, () -> {
                 StorageCluster cluster = resolveCluster(Optional.of(requireProperty(request, CLUSTER)), clusters);
                 VisitorParameters parameters = parseParameters(request, path);
                 parameters.setFieldSet(DocIdOnly.NAME);
@@ -427,7 +453,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel deleteDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         disallow(request, DRY_RUN);
-        enqueueAndDispatch(request, handler, () -> {
+        enqueueAndDispatch(request, handler, 0, () -> {
             VisitorParameters parameters = parseParameters(request, path);
             parameters.setFieldSet(DocIdOnly.NAME);
             TestAndSetCondition condition = new TestAndSetCondition(requireProperty(request, SELECTION));
@@ -443,7 +469,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     private ContentChannel getDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
         ResponseHandler handler = new MeasuringResponseHandler(request, rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.GET, clock.instant());
         disallow(request, DRY_RUN);
-        enqueueAndDispatch(request, handler, () -> {
+        enqueueAndDispatch(request, handler, 0, () -> {
             DocumentOperationParameters rawParameters = parametersFromRequest(request, CLUSTER, FIELD_SET);
             if (rawParameters.fieldSet().isEmpty())
                 rawParameters = rawParameters.withFieldSet(path.documentType().orElseThrow() + ":[document]");
@@ -471,8 +497,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             return ignoredContent;
         }
 
-        return new ForwardingContentChannel(in -> {
-            enqueueAndDispatch(request, handler, () -> {
+        return new ForwardingContentChannel((bytesRead, in) -> {
+            enqueueAndDispatch(request, handler, bytesRead, () -> {
                 ParsedDocumentOperation parsed = parser.parsePut(in, path.id().toString());
                 DocumentPut put = (DocumentPut)parsed.operation();
                 getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(put::setCondition);
@@ -496,8 +522,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             return ignoredContent;
         }
 
-        return new ForwardingContentChannel(in -> {
-            enqueueAndDispatch(request, handler, () -> {
+        return new ForwardingContentChannel((bytesRead, in) -> {
+            enqueueAndDispatch(request, handler, bytesRead, () -> {
                 ParsedDocumentOperation parsed = parser.parseUpdate(in, path.id().toString());
                 DocumentUpdate update = (DocumentUpdate)parsed.operation();
                 getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(update::setCondition);
@@ -521,7 +547,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             return ignoredContent;
         }
 
-        enqueueAndDispatch(request, handler, () -> {
+        enqueueAndDispatch(request, handler, 0, () -> {
             DocumentRemove remove = new DocumentRemove(path.id());
             getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(remove::setCondition);
             DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
@@ -571,7 +597,10 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             return false;
 
         if (operation.dispatch()) {
-            enqueued.decrementAndGet();
+            var count = enqueued.decrementAndGet();
+            sampleQueuedOperations(count);
+            var bytes = operationBytesQueued.addAndGet(-operation.operationSize);
+            sampleQueuedBytes(bytes);
             return true;
         }
         operations.push(operation);
@@ -612,9 +641,9 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
      * Enqueues the given request and operation, or responds with "overload" if the queue is full,
      * and then attempts to dispatch an enqueued operation from the head of the queue.
      */
-    private void enqueueAndDispatch(HttpRequest request, ResponseHandler handler, Supplier<BooleanSupplier> operationParser) {
+    private void enqueueAndDispatch(HttpRequest request, ResponseHandler handler, long operationSize, Supplier<BooleanSupplier> operationParser) {
         if (maxThrottled == 0) {
-            var operation = new Operation(request, handler, operationParser);
+            var operation = new Operation(request, handler, operationSize, operationParser);
             if (!operation.dispatch()) {
                 overload(request, "Rejecting execution due to overload: "
                         + (long)asyncSession.getCurrentWindowSize() + " requests already enqueued", handler);
@@ -630,14 +659,34 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
         if (numQueued > 1) {
             long ageNS = qAgeNS(request);
-            if (ageNS > maxThrottledAgeNS) {
+            sampleQueuedAge(Duration.ofNanos(ageNS).getSeconds());
+            if (maxThrottledAgeNS != 0 && ageNS > maxThrottledAgeNS) {
                 enqueued.decrementAndGet();
                 overload(request, "Rejecting execution due to overload: "
                         + maxThrottledAgeNS / 1_000_000_000.0 + " seconds worth of work enqueued", handler);
                 return;
             }
         }
-        operations.offer(new Operation(request, handler, operationParser));
+
+        // Allow single request in queue to exceed maxThrottledTotalBytes, as it may be a very large document.
+        var bytesQueued = operationBytesQueued.addAndGet(operationSize);
+        if (maxThrottledTotalBytes != 0 && bytesQueued != operationSize && bytesQueued > maxThrottledTotalBytes) {
+            var count = enqueued.decrementAndGet();
+            sampleQueuedOperations(count);
+            var bytes = operationBytesQueued.addAndGet(-operationSize);
+            sampleQueuedBytes(bytes);
+            overload(request,
+                    ("Rejecting execution due to overload: estimated size of operation is %s, " +
+                            "total size of queue %s would exceed queue limit of %s")
+                            .formatted(
+                                    BytesQuantity.ofBytes(operationSize).asPrettyString(),
+                                    BytesQuantity.ofBytes(bytesQueued).asPrettyString(),
+                                    BytesQuantity.ofBytes(maxThrottledTotalBytes).asPrettyString()),
+                    handler);
+            return;
+        }
+
+        operations.offer(new Operation(request, handler, operationSize, operationParser));
         dispatchFirst();
     }
 
@@ -992,12 +1041,14 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         private final Lock lock = new ReentrantLock();
         private final HttpRequest request;
         private final ResponseHandler handler;
+        final long operationSize; // Estimated size of the operation in bytes, used for throttling.
         private BooleanSupplier operation; // The operation to attempt until it returns success.
         private Supplier<BooleanSupplier> parser; // The unparsed operation—getting this will parse it.
 
-        Operation(HttpRequest request, ResponseHandler handler, Supplier<BooleanSupplier> parser) {
+        Operation(HttpRequest request, ResponseHandler handler, long operationSize, Supplier<BooleanSupplier> parser) {
             this.request = request;
             this.handler = handler;
+            this.operationSize = operationSize;
             this.parser = parser;
         }
 
@@ -1056,10 +1107,11 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     static class ForwardingContentChannel implements ContentChannel {
 
         private final ReadableContentChannel delegate = new ReadableContentChannel();
-        private final Consumer<InputStream> reader;
+        private final BiConsumer<Long, InputStream> reader;
+        private final AtomicLong bytesRead = new AtomicLong(0);
         private volatile boolean errorReported = false;
 
-        public ForwardingContentChannel(Consumer<InputStream> reader) {
+        public ForwardingContentChannel(BiConsumer<Long, InputStream> reader) {
             this.reader = reader;
         }
 
@@ -1067,6 +1119,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         @Override
         public void write(ByteBuffer buf, CompletionHandler handler) {
             try {
+                bytesRead.addAndGet(buf.remaining());
                 delegate.write(buf, logException);
                 handler.completed();
             }
@@ -1081,7 +1134,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             try {
                 delegate.close(logException);
                 if (!errorReported) {
-                    reader.accept(new UnsafeContentInputStream(delegate));
+                    reader.accept(bytesRead.get(), new UnsafeContentInputStream(delegate));
                 }
                 handler.completed();
             }
@@ -1208,6 +1261,9 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
     }
 
+    private void sampleQueuedOperations(long v) { setMetric(MetricNames.QUEUED_OPERATIONS, v);}
+    private void sampleQueuedBytes(long v) { setMetric(MetricNames.QUEUE_BYTES, v); }
+    private void sampleQueuedAge(long v) { setMetric(MetricNames.QUEUE_AGE, v); }
     private void sampleLatency(double latency) { setMetric(MetricNames.LATENCY, latency); }
     private void incrementMetricNumOperations() { incrementMetric(MetricNames.NUM_OPERATIONS); }
     private void incrementMetricNumPuts() { incrementMetric(MetricNames.NUM_PUTS); }

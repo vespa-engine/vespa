@@ -4,8 +4,15 @@ package=com.yahoo.document.restapi
 # Duration for which resender thread sleeps after an operation is throttled
 resendDelayMillis     int default=10
 
-# Bound on number of document operations to keep in retry queue — further operations are rejected
-maxThrottled          int default=0
+# Bound on number of document operations to keep in queue — further operations are rejected.
+# Set to 0 to disable queue and dispatch directly to documentapi instead.
+maxThrottled          int default=1024
 
-# Max age in seconds of message in throttled Q.
+# Max age in seconds for operations in queue.
 maxThrottledAge       double default=3.0
+
+# Maximum total bytes of document operations to keep in queue.
+# - If 0>, the the number of bytes as an absolute value.
+# - If 0, allow infinite number of bytes (in other words disables the size restriction).
+# - If <0, the number of bytes as a ratio of the JVM's maximum heap size (e.g. -0.5 for 50% of max heap).
+maxThrottledBytes double default=-0.30
