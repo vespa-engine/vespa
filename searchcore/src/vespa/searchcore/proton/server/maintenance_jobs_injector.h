@@ -43,7 +43,7 @@ struct MaintenanceJobsInjector
                            IClusterStateChangedNotifier & clusterStateChangedNotifier,
                            IBucketStateChangedNotifier & bucketStateChangedNotifier,
                            const std::shared_ptr<IBucketStateCalculator> &calc,
-                           IResourceUsageNotifier &diskMemUsageNotifier,
+                           IResourceUsageNotifier &resource_usage_notifier,
                            DocumentDBJobTrackers &jobTrackers,
                            IAttributeManagerSP readyAttributeManager,
                            IAttributeManagerSP notReadyAttributeManager,

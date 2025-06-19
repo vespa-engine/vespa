@@ -421,7 +421,7 @@ public:
     void enterReprocessState();
     void enterOnlineState();
     void waitForOnlineState();
-    IResourceUsageListener *diskMemUsageListener() { return &_resource_usage_forwarder; }
+    IResourceUsageListener *resource_usage_forwarder() noexcept { return &_resource_usage_forwarder; }
     std::shared_ptr<const ITransientResourceUsageProvider> transient_usage_provider();
     ExecutorThreadingService & getWriteService() { return _writeService; }
 

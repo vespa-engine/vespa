@@ -29,7 +29,7 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                              ILidSpaceCompactionHandler::Vector lscHandlers,
                              IOperationStorer &opStorer,
                              std::shared_ptr<IJobTracker> tracker,
-                             IResourceUsageNotifier &diskMemUsageNotifier,
+                             IResourceUsageNotifier &resource_usage_notifier,
                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
                              const std::shared_ptr<IBucketStateCalculator> &calc,
                              document::BucketSpace bucketSpace,
@@ -38,7 +38,7 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
     for (auto &lidHandler : lscHandlers) {
         auto job = lidspace::CompactionJob::create(config.getLidSpaceCompactionConfig(), controller.retainDB(),
                                                    std::move(lidHandler), opStorer, controller.masterThread(),
-                                                   bucketExecutor, diskMemUsageNotifier,config.getBlockableJobConfig(),
+                                                   bucketExecutor, resource_usage_notifier, config.getBlockableJobConfig(),
                                                    clusterStateChangedNotifier, calc && calc->node_retired_or_maintenance(), bucketSpace,
                                                    maintenance_job_token_source);
         controller.registerJob(trackJob(tracker, std::move(job)));
@@ -58,12 +58,12 @@ injectBucketMoveJob(MaintenanceController &controller,
                     IBucketStateChangedNotifier &bucketStateChangedNotifier,
                     std::shared_ptr<IBucketStateCalculator> calc,
                     DocumentDBJobTrackers &jobTrackers,
-                    IResourceUsageNotifier &diskMemUsageNotifier)
+                    IResourceUsageNotifier &resource_usage_notifier)
 {
     auto bmj = BucketMoveJob::create(std::move(calc), controller.retainDB(), moveHandler, bucketModifiedHandler, controller.masterThread(),
                                      bucketExecutor, controller.getReadySubDB(), controller.getNotReadySubDB(),
                                      bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
-                                     diskMemUsageNotifier, config.getBlockableJobConfig(), docTypeName, bucketSpace);
+                                     resource_usage_notifier, config.getBlockableJobConfig(), docTypeName, bucketSpace);
     controller.registerJob(trackJob(jobTrackers.getBucketMove(), std::move(bmj)));
 }
 
@@ -83,7 +83,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     IClusterStateChangedNotifier &clusterStateChangedNotifier,
                                     IBucketStateChangedNotifier &bucketStateChangedNotifier,
                                     const std::shared_ptr<IBucketStateCalculator> &calc,
-                                    IResourceUsageNotifier &diskMemUsageNotifier,
+                                    IResourceUsageNotifier &resource_usage_notifier,
                                     DocumentDBJobTrackers &jobTrackers,
                                     IAttributeManagerSP readyAttributeManager,
                                     IAttributeManagerSP notReadyAttributeManager,
@@ -116,13 +116,13 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
         lidSpaceCompactionHandlers.push_back(std::make_shared<LidSpaceCompactionHandler>(controller.getRemSubDB(), docTypeName));
         lidSpaceCompactionHandlers.push_back(std::make_shared<LidSpaceCompactionHandler>(controller.getNotReadySubDB(), docTypeName));
         injectLidSpaceCompactionJobs(controller, config, bucketExecutor, std::move(lidSpaceCompactionHandlers),
-                                     opStorer, jobTrackers.getLidSpaceCompact(), diskMemUsageNotifier,
+                                     opStorer, jobTrackers.getLidSpaceCompact(), resource_usage_notifier,
                                      clusterStateChangedNotifier, calc, bucketSpace, std::move(lid_space_compaction_job_token_source));
     }
 
     injectBucketMoveJob(controller, config, bucketExecutor, bucketCreateNotifier, docTypeName, bucketSpace,
                         moveHandler, bucketModifiedHandler, clusterStateChangedNotifier, bucketStateChangedNotifier,
-                        calc, jobTrackers, diskMemUsageNotifier);
+                        calc, jobTrackers, resource_usage_notifier);
 
     controller.registerJob(
             std::make_unique<SampleAttributeUsageJob>(std::move(readyAttributeManager),

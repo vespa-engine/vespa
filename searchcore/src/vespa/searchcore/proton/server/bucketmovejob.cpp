@@ -65,7 +65,7 @@ BucketMoveJob::BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc,
                              bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
                              IBucketStateChangedNotifier &bucketStateChangedNotifier,
-                             IResourceUsageNotifier &diskMemUsageNotifier,
+                             IResourceUsageNotifier &resource_usage_notifier,
                              const BlockableMaintenanceJobConfig &blockableConfig,
                              const std::string &docTypeName,
                              document::BucketSpace bucketSpace)
@@ -92,7 +92,7 @@ BucketMoveJob::BucketMoveJob(std::shared_ptr<IBucketStateCalculator> calc,
       _bucketCreateNotifier(bucketCreateNotifier),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _bucketStateChangedNotifier(bucketStateChangedNotifier),
-      _resource_usage_notifier(diskMemUsageNotifier)
+      _resource_usage_notifier(resource_usage_notifier)
 {
     _movers.reserve(std::min(100u, blockableConfig.getMaxOutstandingMoveOps()));
     if (blockedDueToClusterState(_calc)) {
@@ -126,14 +126,14 @@ BucketMoveJob::create(std::shared_ptr<IBucketStateCalculator> calc,
                       bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                       IClusterStateChangedNotifier &clusterStateChangedNotifier,
                       IBucketStateChangedNotifier &bucketStateChangedNotifier,
-                      IResourceUsageNotifier &diskMemUsageNotifier,
+                      IResourceUsageNotifier &resource_usage_notifier,
                       const BlockableMaintenanceJobConfig &blockableConfig,
                       const std::string &docTypeName,
                       document::BucketSpace bucketSpace)
 {
     return {new BucketMoveJob(std::move(calc), std::move(dbRetainer), moveHandler, modifiedHandler, master, bucketExecutor, ready, notReady,
                               bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
-                              diskMemUsageNotifier, blockableConfig, docTypeName, bucketSpace),
+                              resource_usage_notifier, blockableConfig, docTypeName, bucketSpace),
             [&master](auto job) {
                 auto failed = master.execute(makeLambdaTask([job]() { delete job; }));
                 assert(!failed);

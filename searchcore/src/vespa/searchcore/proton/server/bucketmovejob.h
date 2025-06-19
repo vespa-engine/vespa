@@ -100,7 +100,7 @@ private:
                   bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                   IClusterStateChangedNotifier &clusterStateChangedNotifier,
                   IBucketStateChangedNotifier &bucketStateChangedNotifier,
-                  IResourceUsageNotifier &diskMemUsageNotifier,
+                  IResourceUsageNotifier &resource_usage_notifier,
                   const BlockableMaintenanceJobConfig &blockableConfig,
                   const std::string &docTypeName,
                   document::BucketSpace bucketSpace);
@@ -135,7 +135,7 @@ public:
            bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
            IClusterStateChangedNotifier &clusterStateChangedNotifier,
            IBucketStateChangedNotifier &bucketStateChangedNotifier,
-           IResourceUsageNotifier &diskMemUsageNotifier,
+           IResourceUsageNotifier &resource_usage_notifier,
            const BlockableMaintenanceJobConfig &blockableConfig,
            const std::string &docTypeName,
            document::BucketSpace bucketSpace);

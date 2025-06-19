@@ -87,7 +87,7 @@ public:
            IOperationStorer &opStorer,
            IThreadService & master,
            BucketExecutor & bucketExecutor,
-           IResourceUsageNotifier &diskMemUsageNotifier,
+           IResourceUsageNotifier &resource_usage_notifier,
            const BlockableMaintenanceJobConfig &blockableConfig,
            IClusterStateChangedNotifier &clusterStateChangedNotifier,
            bool nodeRetired,
