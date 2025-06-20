@@ -549,6 +549,17 @@ public class Field extends QueryChain {
     }
 
     /**
+     * Equals query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#boolean
+     *
+     * @param t the t
+     * @return the query
+     */
+    public Query eq(boolean t) {
+        return common("=", annotation, t);
+    }
+
+    /**
      * Nearest neighbor query.
      * https://docs.vespa.ai/en/reference/query-language-reference.html#nearestneighbor
      *

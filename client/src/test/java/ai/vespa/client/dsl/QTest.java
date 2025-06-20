@@ -98,6 +98,28 @@ class QTest {
     }
 
     @Test
+    void boolean_operation_using_eq() {
+        String q = Q.select("*")
+                    .from("sd1")
+                    .where("f1").eq(true)
+                    .and("f2").eq(false)
+                    .build();
+
+        assertEquals(q, "yql=select * from sd1 where f1 = true and f2 = false");
+    }
+
+    @Test
+    void boolean_operation_using_is() {
+        String q = Q.select("*")
+                    .from("sd1")
+                    .where("f1").isTrue()
+                    .and("f2").isFalse()
+                    .build();
+
+        assertEquals(q, "yql=select * from sd1 where f1 = true and f2 = false");
+    }
+
+    @Test
     void long_numeric_operations() {
         String q = Q.select("*")
                 .from("sd1")
