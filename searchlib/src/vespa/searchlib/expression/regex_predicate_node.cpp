@@ -11,6 +11,8 @@ using vespalib::Serializer;
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, expression, RegexPredicateNode, FilterPredicateNode);
 
+RegexPredicateNode::RE::~RE() = default;
+
 void RegexPredicateNode::RE::compile() {
     regex = Regex::from_pattern(pattern, Regex::Options::None);
 }

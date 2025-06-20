@@ -18,6 +18,7 @@ struct EqualState {
     bool failed;
     explicit EqualState(Hook hook_in)
       : path(), hook(std::move(hook_in)), failed(false) {}
+    ~EqualState();
     void mismatch(const Inspector &a, const Inspector &b) {
         if (!failed && !hook(path, a, b)) {
             failed = true;
@@ -25,6 +26,8 @@ struct EqualState {
     }
     void check_equal(const Inspector &a, const Inspector &b);
 };
+
+EqualState::~EqualState() = default;
 
 struct EqualObject : ObjectTraverser {
     EqualState &state;

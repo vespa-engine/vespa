@@ -24,6 +24,7 @@ public:
     using DocumentIndex = uint32_t;
     using PutTimestamp = uint64_t;
 
+    ~FileStorTestFixture() override;
     void SetUp() override;
     void TearDown() override;
     void setupPersistenceThreads(uint32_t threads);

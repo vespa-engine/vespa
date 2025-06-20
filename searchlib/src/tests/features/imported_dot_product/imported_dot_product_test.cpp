@@ -36,6 +36,7 @@ struct FixtureBase : ImportedAttributeFixture {
         DotProductBlueprint bp;
         _factory.addPrototype(bp.createInstance());
     }
+    ~FixtureBase() override;
 
     // Both array and wset attributes can have integer "key" types, so we let specific
     // sub-fixtures implement the mappings.
@@ -95,6 +96,8 @@ struct FixtureBase : ImportedAttributeFixture {
                                   expected, vector, doc_id, shared_param);
     }
 };
+
+FixtureBase::~FixtureBase() = default;
 
 struct ArrayFixture : FixtureBase {
 
