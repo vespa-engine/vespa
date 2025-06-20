@@ -350,7 +350,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
     _write_filter = std::make_shared<ResourceUsageWriteFilter>(hwInfo);
-    _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir, *_write_filter);
+    _resource_usage_notifier = std::make_shared<ResourceUsageNotifier>(*_write_filter);
+    _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir, *_write_filter, *_resource_usage_notifier);
     _posting_list_cache = make_posting_list_cache(protonConfig);
 
     _tls = std::make_unique<TLS>(_configUri.createWithNewId(protonConfig.tlsconfigid), _fileHeaderContext);
@@ -373,7 +374,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
         auto memoryFlush = std::make_shared<MemoryFlush>(
                 MemoryFlushConfigUpdater::convertConfig(flush.memory, hwInfo.memory()), vespalib::system_clock::now());
         _memoryFlushConfigUpdater = std::make_unique<MemoryFlushConfigUpdater>(memoryFlush, flush.memory, hwInfo.memory());
-        _diskMemUsageSampler->notifier().add_resource_usage_listener(_memoryFlushConfigUpdater.get());
+        _resource_usage_notifier->add_resource_usage_listener(_memoryFlushConfigUpdater.get());
         strategy = memoryFlush;
         break;
     }
@@ -394,11 +395,11 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
         protonConfig.basedir.c_str(), std::filesystem::current_path().string().c_str());
 
     _persistenceEngine = std::make_unique<PersistenceEngine>(*this, *_write_filter,
-                                                             _diskMemUsageSampler->notifier(),
+                                                             *_resource_usage_notifier,
                                                              protonConfig.visit.defaultserializedsize,
                                                              protonConfig.visit.ignoremaxbytes);
     auto resource_usage_tracker = _persistenceEngine->get_resource_usage_tracker().shared_from_this();
-    _attribute_usage_notifier = std::make_shared<AttributeUsageNotifier>(resource_usage_tracker, _write_filter);
+    _attribute_usage_notifier = std::make_shared<AttributeUsageNotifier>(_resource_usage_notifier);
     _shared_service = std::make_unique<SharedThreadingService>(
             SharedThreadingServiceConfig::make(protonConfig, hwInfo.cpu()), _transport, *_persistenceEngine);
     _scheduler = std::make_unique<ScheduledForwardExecutor>(_transport, _shared_service->shared());
@@ -530,7 +531,7 @@ Proton::~Proton()
         _metricsEngine->removeExternalMetrics(_rpcHooks->proto_rpc_adapter_metrics());
     }
     if (_memoryFlushConfigUpdater) {
-        _diskMemUsageSampler->notifier().remove_resource_usage_listener(_memoryFlushConfigUpdater.get());
+        _resource_usage_notifier->remove_resource_usage_listener(_memoryFlushConfigUpdater.get());
     }
     _sessionPruneHandle.reset();
     if (_diskMemUsageSampler) {
@@ -752,7 +753,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
     _matchEngine->putSearchHandler(docTypeName, searchHandler);
     auto flushHandler = std::make_shared<FlushHandlerProxy>(ret);
     _flushEngine->putFlushHandler(docTypeName, flushHandler);
-    _diskMemUsageSampler->notifier().add_resource_usage_listener(ret->resource_usage_forwarder());
+    _resource_usage_notifier->add_resource_usage_listener(ret->resource_usage_forwarder());
     _diskMemUsageSampler->add_transient_usage_provider(ret->transient_usage_provider());
     return ret;
 }
@@ -790,7 +791,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
     _flushEngine->removeFlushHandler(docTypeName);
     _metricsEngine->removeMetricsHook(old->getMetricsUpdateHook());
     _metricsEngine->removeDocumentDBMetrics(old->getMetrics());
-    _diskMemUsageSampler->notifier().remove_resource_usage_listener(old->resource_usage_forwarder());
+    _resource_usage_notifier->remove_resource_usage_listener(old->resource_usage_forwarder());
     _diskMemUsageSampler->remove_transient_usage_provider(old->transient_usage_provider());
     // Caller should have removed & drained relevant timer tasks
     old->close();
@@ -869,8 +870,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         }
 
         const auto &usage_filter = *_write_filter;
-        const auto &usage_notifier = _diskMemUsageSampler->real_notifier();
-        auto dm_metrics = usage_notifier.get_metrics();
+        auto dm_metrics = _resource_usage_notifier->get_metrics();
         metrics.resourceUsage.disk.set(dm_metrics.non_transient_disk_usage());
         metrics.resourceUsage.disk_usage.total.set(dm_metrics.total_disk_usage());
         metrics.resourceUsage.disk_usage.total_util.set(dm_metrics.total_disk_utilization());
@@ -1109,7 +1109,7 @@ Proton::get_child(std::string_view name) const
     } else if (name == TLS_NAME && _tls) {
         return std::make_unique<search::transactionlog::TransLogServerExplorer>(_tls->getTransLogServer());
     } else if (name == RESOURCE_USAGE && _diskMemUsageSampler && _persistenceEngine) {
-        return std::make_unique<ResourceUsageExplorer>(_diskMemUsageSampler->real_notifier(),
+        return std::make_unique<ResourceUsageExplorer>(*_resource_usage_notifier,
                                                        _persistenceEngine->get_resource_usage_tracker());
     } else if (name == THREAD_POOLS) {
         return std::make_unique<ProtonThreadPoolsExplorer>((_shared_service) ? &_shared_service->shared() : nullptr,

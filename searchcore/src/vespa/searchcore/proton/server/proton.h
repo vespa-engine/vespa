@@ -52,6 +52,7 @@ class MatchEngine;
 class MetricsEngine;
 class PersistenceEngine;
 class PrepareRestartHandler;
+class ResourceUsageNotifier;
 class ResourceUsageWriteFilter;
 class SummaryEngine;
 class ScheduledForwardExecutor;
@@ -99,6 +100,7 @@ private:
     std::shared_ptr<search::attribute::Interlock> _attribute_interlock;
     std::unique_ptr<TLS>                   _tls;
     std::shared_ptr<ResourceUsageWriteFilter> _write_filter;
+    std::shared_ptr<ResourceUsageNotifier> _resource_usage_notifier;
     std::unique_ptr<DiskMemUsageSampler>   _diskMemUsageSampler;
     std::unique_ptr<PersistenceEngine>     _persistenceEngine;
     std::shared_ptr<AttributeUsageNotifier> _attribute_usage_notifier;

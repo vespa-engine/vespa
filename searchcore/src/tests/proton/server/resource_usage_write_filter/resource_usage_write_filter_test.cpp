@@ -82,7 +82,7 @@ struct ResourceUsageWriteFilterTest : public ::testing::Test
     }
 
     void notify_attribute_usage(const AttributeUsageStats& usage) {
-        _filter.notify_attribute_usage(usage);
+        _notifier.notify_attribute_usage(usage);
     }
 };
 

@@ -16,11 +16,11 @@ class ITransientResourceUsageProvider;
  */
 class DiskMemUsageSampler {
     ResourceUsageWriteFilter& _filter;
-    ResourceUsageNotifier   _notifier;
-    std::filesystem::path  _path;
-    vespalib::duration     _sampleInterval;
-    vespalib::steady_time  _lastSampleTime;
-    std::mutex             _lock;
+    ResourceUsageNotifier&    _notifier;
+    std::filesystem::path     _path;
+    vespalib::duration        _sampleInterval;
+    vespalib::steady_time     _lastSampleTime;
+    std::mutex                _lock;
     std::vector<std::shared_ptr<const ITransientResourceUsageProvider>> _transient_usage_providers;
     std::unique_ptr<vespalib::IDestructorCallback> _periodicHandle;
 
@@ -51,14 +51,13 @@ public:
         { }
     };
 
-    DiskMemUsageSampler(const std::string &path_in, ResourceUsageWriteFilter& filter);
+    DiskMemUsageSampler(const std::string &path_in, ResourceUsageWriteFilter& filter,
+                        ResourceUsageNotifier& resource_usage_notifier);
     ~DiskMemUsageSampler();
     void close();
 
     void setConfig(const Config &config, IScheduledExecutor & executor);
 
-    IResourceUsageNotifier& notifier() noexcept { return _notifier; }
-    const ResourceUsageNotifier& real_notifier() noexcept { return _notifier; }
     void add_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider);
     void remove_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider);
 };

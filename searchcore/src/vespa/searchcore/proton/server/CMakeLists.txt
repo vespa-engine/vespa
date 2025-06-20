@@ -96,6 +96,7 @@ vespa_add_library(searchcore_server STATIC
     resource_usage_explorer.cpp
     resource_usage_forwarder.cpp
     resource_usage_notifier.cpp
+    resource_usage_state.cpp
     resource_usage_write_filter.cpp
     rpc_hooks.cpp
     sample_attribute_usage_job.cpp
