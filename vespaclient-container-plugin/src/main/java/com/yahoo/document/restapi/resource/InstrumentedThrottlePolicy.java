@@ -23,7 +23,11 @@ class InstrumentedThrottlePolicy extends DynamicThrottlePolicy {
     private final AtomicInteger previousMaxPending = new AtomicInteger(Integer.MIN_VALUE);
     private final Metric metric;
 
-    @Inject InstrumentedThrottlePolicy(Metric metric) { this.metric = metric; }
+    @Inject
+    InstrumentedThrottlePolicy(Metric metric) {
+        setResizeRate(2); // Increase the window size update rate by lowering resize rate...  ¯\_(ツ)_/¯
+        this.metric = metric;
+    }
 
     @Override
     public boolean canSend(Message message, int pendingCount) {
