@@ -558,6 +558,7 @@ TOKEN :
 | < TERMWISE_LIMIT: "termwise-limit" >
 | < POST_FILTER_THRESHOLD: "post-filter-threshold" >
 | < APPROXIMATE_THRESHOLD: "approximate-threshold" >
+| < ACORN_ONE_THRESHOLD: "acorn-one-threshold" >
 | < TARGET_HITS_MAX_ADJUSTMENT_FACTOR: "target-hits-max-adjustment-factor" >
 | < KEEP_RANK_COUNT: "keep-rank-count" >
 | < RANK_SCORE_DROP_LIMIT: "rank-score-drop-limit" >
@@ -2204,6 +2205,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
        | termwiseLimit(profile)
        | postFilterThreshold(profile)
        | approximateThreshold(profile)
+       | acornOneThreshold(profile)
        | targetHitsMaxAdjustmentFactor(profile)
        | rankProperties(profile)
        | secondPhase(profile)
@@ -2807,6 +2809,19 @@ void approximateThreshold(ParsedRankProfile profile) :
 ;
 
 /**
+ * This rule consumes an acorn-one-threshold statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void acornOneThreshold(ParsedRankProfile profile) :
+{
+    double threshold;
+}
+
+    (<ACORN_ONE_THRESHOLD> <COLON> threshold = floatValue()) { profile.setAcornOneThreshold(threshold); }
+;
+
+/**
  * This rule consumes a target-hits-max-adjustment-factor statement for a rank profile.
  *
  * @param profile the rank profile to modify
@@ -3269,6 +3284,7 @@ String identifierWithDashStr :
     ( identifier = identifierStr { return identifier; } )
     |
     ( <IDENTIFIER_WITH_DASH>
+    | <ACORN_ONE_THRESHOLD>
     | <ADJUST_TARGET>
     | <ALLOW_DROP_ALL>
     | <APPROXIMATE_THRESHOLD>

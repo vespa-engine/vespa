@@ -144,6 +144,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructSnippet("termwise-limit", "termwise-limit: $0"),
             CompletionUtils.constructSnippet("post-filter-threshold", "post-filter-threshold: $0"),
             CompletionUtils.constructSnippet("approximate-threshold", "approximate-threshold: $0"),
+            CompletionUtils.constructSnippet("acorn-one-threshold", "acorn-one-threshold: $0"),
             CompletionUtils.constructSnippet("target-hits-max-adjustment-factor", "target-hits-max-adjustment-factor: $0"),
             CompletionUtils.constructSnippet("filter-threshold", "filter-threshold: $0"),
 
