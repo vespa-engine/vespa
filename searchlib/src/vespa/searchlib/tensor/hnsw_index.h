@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 #pragma once
 
 #include "hnsw_index_config.h"
@@ -227,7 +226,7 @@ protected:
     template <class BestNeighbors>
     void search_layer_acorn(const BoundDistanceFunction &df, uint32_t neighbors_to_find, BestNeighbors& best_neighbors,
                             uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter = nullptr) const;
-    std::vector<Neighbor> top_k_by_docid(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter *filter,
+    std::vector<Neighbor> top_k_by_docid(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter *filter, bool low_hit_ratio,
                                          uint32_t explore_k, const vespalib::Doom& doom, double distance_threshold) const;
 
     internal::PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
@@ -270,12 +269,12 @@ public:
     std::vector<Neighbor> find_top_k(uint32_t k, const BoundDistanceFunction &df, uint32_t explore_k,
                                      const vespalib::Doom& doom, double distance_threshold) const override;
 
-    std::vector<Neighbor> find_top_k_with_filter(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter,
+    std::vector<Neighbor> find_top_k_with_filter(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter, bool low_hit_ratio,
                                                  uint32_t explore_k, const vespalib::Doom& doom, double distance_threshold) const override;
 
     DistanceFunctionFactory &distance_function_factory() const override { return *_distance_ff; }
 
-    SearchBestNeighbors top_k_candidates(const BoundDistanceFunction &df, uint32_t k, const GlobalFilter *filter,
+    SearchBestNeighbors top_k_candidates(const BoundDistanceFunction &df, uint32_t k, const GlobalFilter *filter, bool low_hit_ratio,
                                          const vespalib::Doom& doom) const;
 
     uint32_t get_entry_nodeid() const { return _graph.get_entry_node().nodeid; }
