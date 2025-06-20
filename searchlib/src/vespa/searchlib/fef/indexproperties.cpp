@@ -429,6 +429,22 @@ GlobalFilterUpperLimit::lookup(const Properties &props, double defaultValue)
     return lookupDouble(props, NAME, defaultValue);
 }
 
+const std::string AcornOneLowerLimit::NAME("vespa.matching.acorn_one.lower_limit");
+
+const double AcornOneLowerLimit::DEFAULT_VALUE(0.00);
+
+double
+AcornOneLowerLimit::lookup(const Properties &props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+double
+AcornOneLowerLimit::lookup(const Properties &props, double defaultValue)
+{
+    return lookupDouble(props, NAME, defaultValue);
+}
+
 const std::string WeakAndStopWordAdjustLimit::NAME("vespa.matching.weakand.stop_word_adjust_limit");
 const double WeakAndStopWordAdjustLimit::DEFAULT_VALUE(1.0);
 double WeakAndStopWordAdjustLimit::lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }

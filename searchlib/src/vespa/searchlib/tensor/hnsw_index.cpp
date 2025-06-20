@@ -987,10 +987,10 @@ struct NeighborsByDocId {
 
 template <HnswIndexType type>
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex<type>::top_k_by_docid(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter *filter,
+HnswIndex<type>::top_k_by_docid(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter *filter, bool low_hit_ratio,
                                 uint32_t explore_k, const vespalib::Doom& doom, double distance_threshold) const
 {
-    SearchBestNeighbors candidates = top_k_candidates(df, std::max(k, explore_k), filter, doom);
+    SearchBestNeighbors candidates = top_k_candidates(df, std::max(k, explore_k), filter, low_hit_ratio, doom);
     auto result = candidates.get_neighbors(k, distance_threshold);
     std::sort(result.begin(), result.end(), NeighborsByDocId());
     return result;
@@ -1001,20 +1001,20 @@ std::vector<NearestNeighborIndex::Neighbor>
 HnswIndex<type>::find_top_k(uint32_t k, const BoundDistanceFunction &df, uint32_t explore_k,
                             const vespalib::Doom& doom, double distance_threshold) const
 {
-    return top_k_by_docid(k, df, nullptr, explore_k, doom, distance_threshold);
+    return top_k_by_docid(k, df, nullptr, 0.0, explore_k, doom, distance_threshold);
 }
 
 template <HnswIndexType type>
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex<type>::find_top_k_with_filter(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter,
+HnswIndex<type>::find_top_k_with_filter(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter, bool low_hit_ratio,
                                         uint32_t explore_k, const vespalib::Doom& doom, double distance_threshold) const
 {
-    return top_k_by_docid(k, df, &filter, explore_k, doom, distance_threshold);
+    return top_k_by_docid(k, df, &filter, low_hit_ratio, explore_k, doom, distance_threshold);
 }
 
 template <HnswIndexType type>
 typename HnswIndex<type>::SearchBestNeighbors
-HnswIndex<type>::top_k_candidates(const BoundDistanceFunction &df, uint32_t k, const GlobalFilter *filter, const vespalib::Doom& doom) const
+HnswIndex<type>::top_k_candidates(const BoundDistanceFunction &df, uint32_t k, const GlobalFilter *filter, bool low_hit_ratio, const vespalib::Doom& doom) const
 {
     SearchBestNeighbors best_neighbors;
     auto entry = _graph.get_entry_node();
@@ -1032,7 +1032,11 @@ HnswIndex<type>::top_k_candidates(const BoundDistanceFunction &df, uint32_t k, c
         --search_level;
     }
     best_neighbors.push(entry_point);
-    search_layer(df, k, best_neighbors, 0, &doom, filter);
+    if (filter && filter->is_active() && low_hit_ratio) {
+        search_layer_acorn(df, k, best_neighbors, 0, &doom, filter);
+    } else {
+        search_layer(df, k, best_neighbors, 0, &doom, filter);
+    }
     return best_neighbors;
 }
 
