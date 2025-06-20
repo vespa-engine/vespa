@@ -142,6 +142,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructBasic("termwise-limit"),
             CompletionUtils.constructBasic("post-filter-threshold"),
             CompletionUtils.constructBasic("approximate-threshold"),
+            CompletionUtils.constructBasic("acorn-one-threshold"),
             CompletionUtils.constructBasic("target-hits-max-adjustment-factor"),
             CompletionUtils.constructBasic("filter-threshold"),
             FixedKeywordBodies.RANK.getColonSnippet(true),
