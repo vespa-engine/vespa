@@ -11,7 +11,6 @@
 #include "vector_bundle.h"
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
-#include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/util/doom.h>
@@ -81,42 +80,6 @@ struct PairDist {
 bool operator< (const PairDist &a, const PairDist &b) {
     return (a.distance < b.distance);
 }
-
-template <HnswIndexType type>
-class GlobalFilterWrapper;
-
-template <>
-class GlobalFilterWrapper<HnswIndexType::SINGLE> {
-    const GlobalFilter *_filter;
-public:
-    explicit GlobalFilterWrapper(const GlobalFilter *filter)
-        : _filter(filter)
-    {
-    }
-
-    [[nodiscard]] bool check(uint32_t docid) const noexcept { return !_filter || _filter->check(docid); }
-
-    void clamp_nodeid_limit(uint32_t& nodeid_limit) {
-        if (_filter) {
-            nodeid_limit = std::min(nodeid_limit, _filter->size());
-        }
-    }
-};
-
-template <>
-class GlobalFilterWrapper<HnswIndexType::MULTI> {
-    const GlobalFilter *_filter;
-    uint32_t            _docid_limit;
-public:
-    explicit GlobalFilterWrapper(const GlobalFilter *filter)
-        : _filter(filter),
-          _docid_limit(filter ? filter->size() : 0u)
-    {
-    }
-
-    [[nodiscard]] bool check(uint32_t docid) const noexcept { return !_filter || (docid < _docid_limit && _filter->check(docid)); }
-    static void clamp_nodeid_limit(uint32_t&) { }
-};
 
 }
 
@@ -401,7 +364,7 @@ HnswIndex<type>::search_layer_helper(const BoundDistanceFunction &df, uint32_t n
                                      uint32_t estimated_visited_nodes) const
 {
     NearestPriQ candidates;
-    GlobalFilterWrapper<type> filter_wrapper(filter);
+    internal::GlobalFilterWrapper<type> filter_wrapper(filter);
     filter_wrapper.clamp_nodeid_limit(nodeid_limit);
     VisitedTracker visited(nodeid_limit, estimated_visited_nodes);
     if (doom != nullptr && doom->soft_doom()) {
@@ -460,6 +423,132 @@ HnswIndex<type>::search_layer_helper(const BoundDistanceFunction &df, uint32_t n
     }
 }
 
+
+template <HnswIndexType type>
+template <class VisitedTracker, class BestNeighbors>
+void
+HnswIndex<type>::search_layer_acorn_helper(const BoundDistanceFunction &df, uint32_t neighbors_to_find,
+                                           BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter,
+                                           uint32_t nodeid_limit, const vespalib::Doom* const doom,
+                                           uint32_t estimated_visited_nodes) const
+{
+    assert(filter);
+    NearestPriQ candidates;
+    internal::GlobalFilterWrapper<type> filter_wrapper(filter);
+    filter_wrapper.clamp_nodeid_limit(nodeid_limit);
+    VisitedTracker visited(nodeid_limit, estimated_visited_nodes);
+    if (doom != nullptr && doom->soft_doom()) {
+        while (!best_neighbors.empty()) {
+            best_neighbors.pop();
+        }
+        return;
+    }
+    for (const auto &entry : best_neighbors.peek()) {
+        if (entry.nodeid >= nodeid_limit) {
+            continue;
+        }
+        candidates.push(entry);
+        visited.mark(entry.nodeid);
+        if (!filter_wrapper.check(entry.docid)) {
+            assert(best_neighbors.peek().size() == 1);
+            best_neighbors.pop();
+        }
+    }
+    double limit_dist = std::numeric_limits<double>::max();
+
+    std::deque<uint32_t> neighborhood;
+    while (!candidates.empty()) {
+        auto cand = candidates.top();
+        if (cand.distance > limit_dist) {
+            break;
+        }
+        candidates.pop();
+
+        neighborhood.clear();
+        exploreNeighborhood(neighborhood, cand, visited, level, filter_wrapper, nodeid_limit);
+
+        for (uint32_t neighbor_nodeid : neighborhood) {
+            auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
+            auto neighbor_ref = neighbor_node.levels_ref().load_acquire();
+            if (! neighbor_ref.valid()) {
+                continue;
+            }
+            uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
+            uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
+            double dist_to_input = calc_distance(df, neighbor_docid, neighbor_subspace);
+            if (dist_to_input < limit_dist) {
+                candidates.emplace(neighbor_nodeid, neighbor_ref, dist_to_input);
+
+                // exploreNeighborhood only returns nodes that pass the filter, no need to check that here
+                best_neighbors.emplace(neighbor_nodeid, neighbor_docid, neighbor_ref, dist_to_input);
+                while (best_neighbors.size() > neighbors_to_find) {
+                    best_neighbors.pop();
+                    limit_dist = best_neighbors.top().distance;
+                }
+            }
+        }
+        if (doom != nullptr && doom->soft_doom()) {
+            break;
+        }
+    }
+}
+
+template <HnswIndexType type>
+template <class VisitedTracker>
+void
+HnswIndex<type>::exploreNeighborhood(std::deque<uint32_t> &neighborhood, HnswTraversalCandidate &cand, VisitedTracker &visited,
+                                     uint32_t level, const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit) const {
+    std::deque<uint32_t> todo;
+    todo.push_back(cand.nodeid);
+
+    uint32_t max_neighbors_to_find = max_links_for_level(level);
+    uint32_t max_depth = 2;
+
+    std::deque<uint32_t> todoNextDepth;
+    uint32_t currentDepth = 1;
+    bool oneMore = false;
+
+    while (!todo.empty() && neighborhood.size() <= max_neighbors_to_find && currentDepth <= max_depth) {
+        uint32_t nodeid = todo.front();
+        todo.pop_front();
+        auto& node = _graph.acquire_node(nodeid);
+        auto ref = node.levels_ref().load_acquire();
+
+        for (uint32_t neighbor_nodeid : _graph.get_link_array(ref, level)) {
+            if (neighbor_nodeid >= nodeid_limit) {
+                continue;
+            }
+            todoNextDepth.push_back(neighbor_nodeid);
+
+            auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
+            auto neighbor_ref = neighbor_node.levels_ref().load_acquire();
+            if (!neighbor_ref.valid() || !visited.try_mark(neighbor_nodeid)) {
+                continue;
+            }
+
+            uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
+            if (filter_wrapper.check(neighbor_docid)) {
+                neighborhood.push_back(neighbor_nodeid);
+
+                if (neighborhood.size() >= max_neighbors_to_find) {
+                    return;
+                }
+            }
+        }
+
+        if (todo.empty()) {
+            todo = std::move(todoNextDepth);
+            todoNextDepth = std::deque<uint32_t>();
+
+            if (!oneMore && currentDepth == max_depth && neighborhood.size() < max_neighbors_to_find / 4) {
+                oneMore = true;
+            } else {
+                ++currentDepth;
+            }
+        }
+    }
+}
+
 template <HnswIndexType type>
 template <class BestNeighbors>
 void
@@ -472,6 +561,21 @@ HnswIndex<type>::search_layer(const BoundDistanceFunction &df, uint32_t neighbor
         search_layer_helper<BitVectorVisitedTracker>(df, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, doom, estimated_visited_nodes);
     } else {
         search_layer_helper<HashSetVisitedTracker>(df, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, doom, estimated_visited_nodes);
+    }
+}
+
+template <HnswIndexType type>
+template <class BestNeighbors>
+void
+HnswIndex<type>::search_layer_acorn(const BoundDistanceFunction &df, uint32_t neighbors_to_find, BestNeighbors& best_neighbors,
+                                    uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter) const
+{
+    uint32_t nodeid_limit = _graph.nodes_size.load(std::memory_order_acquire);
+    uint32_t estimated_visited_nodes = estimate_visited_nodes(level, nodeid_limit, neighbors_to_find, filter);
+    if (estimated_visited_nodes >= nodeid_limit / 128) {
+        search_layer_acorn_helper<BitVectorVisitedTracker>(df, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, doom, estimated_visited_nodes);
+    } else {
+        search_layer_acorn_helper<HashSetVisitedTracker>(df, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, doom, estimated_visited_nodes);
     }
 }
 
