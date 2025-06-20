@@ -324,7 +324,7 @@ public:
     }
     std::vector<Neighbor> find_top_k_with_filter(uint32_t k,
                                                  const search::tensor::BoundDistanceFunction &df,
-                                                 const GlobalFilter& filter, uint32_t explore_k,
+                                                 const GlobalFilter& filter, bool low_hit_ratio, uint32_t explore_k,
                                                  const vespalib::Doom& doom,
                                                  double distance_threshold) const override
     {
@@ -332,6 +332,7 @@ public:
         (void) df;
         (void) explore_k;
         (void) filter;
+        (void) low_hit_ratio;
         (void) doom;
         (void) distance_threshold;
         return {};
@@ -1452,7 +1453,7 @@ public:
             std::make_unique<DistanceCalculator>(this->as_dense_tensor(),
                                                  create_query_tensor(vec_2d(17, 42))),
             3, approximate, 5, 100100.25,
-            global_filter_lower_limit, 1.0, target_hits_max_adjustment_factor, vespalib::Doom::never());
+            global_filter_lower_limit, 1.0, 0.0, target_hits_max_adjustment_factor, vespalib::Doom::never());
         EXPECT_EQ(11u, bp->getState().estimate().estHits);
         EXPECT_EQ(100100.25 * 100100.25, bp->get_distance_threshold());
         return bp;

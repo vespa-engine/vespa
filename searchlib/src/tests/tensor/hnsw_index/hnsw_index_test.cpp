@@ -273,7 +273,7 @@ public:
         vespalib::eval::TypedCells qv_cells(qv_ref);
         auto df = index->distance_function_factory().for_query_vector(qv_cells);
         auto got_by_docid = (global_filter->is_active()) ?
-                            index->find_top_k_with_filter(k, *df, *global_filter, explore_k, _doom->get_doom(), 10000.0) :
+                            index->find_top_k_with_filter(k, *df, *global_filter, false, explore_k, _doom->get_doom(), 10000.0) :
                             index->find_top_k(k, *df, explore_k, _doom->get_doom(), 10000.0);
         std::vector<uint32_t> act;
         act.reserve(got_by_docid.size());
@@ -286,7 +286,7 @@ public:
         uint32_t k = 3;
         auto qv = vectors.get_vector(docid, 0);
         auto df = index->distance_function_factory().for_query_vector(qv);
-        auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active(), _doom->get_doom()).peek();
+        auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active(), false, _doom->get_doom()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         size_t idx = 0;
         for (const auto & hit : rv) {
@@ -310,13 +310,13 @@ public:
         auto qv = vectors.get_vector(docid, 0);
         auto df = index->distance_function_factory().for_query_vector(qv);
         uint32_t k = 3;
-        auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active(), _doom->get_doom()).peek();
+        auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active(), false, _doom->get_doom()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         EXPECT_EQ(rv.size(), 3);
         EXPECT_LE(rv[0].distance, rv[1].distance);
         double thr = (rv[0].distance + rv[1].distance) * 0.5;
         auto got_by_docid = (global_filter->is_active())
-            ? index->find_top_k_with_filter(k, *df, *global_filter, k, _doom->get_doom(), thr)
+            ? index->find_top_k_with_filter(k, *df, *global_filter, false, k, _doom->get_doom(), thr)
             : index->find_top_k(k, *df, k, _doom->get_doom(), thr);
         EXPECT_EQ(got_by_docid.size(), 1);
         EXPECT_EQ(got_by_docid[0].docid, index->get_docid(rv[0].nodeid));
