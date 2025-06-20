@@ -549,6 +549,17 @@ public class Field extends QueryChain {
     }
 
     /**
+     * Equals query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#boolean
+     *
+     * @param t the t
+     * @return the query
+     */
+    public Query eq(boolean t) {
+        return common("=", annotation, t);
+    }
+
+    /**
      * Nearest neighbor query.
      * https://docs.vespa.ai/en/reference/query-language-reference.html#nearestneighbor
      *
@@ -656,10 +667,15 @@ public class Field extends QueryChain {
                 return Text.format("%s contains (%sfuzzy(%s))", fieldName, annotation, values.get(0));
             default:
                 Object value = values.get(0);
-                valuesStr = value instanceof Long ? value + "L" : value.toString();
-                return hasAnnotation
-                       ? Text.format("%s %s ([%s]%s)", fieldName, relation, annotation, valuesStr)
-                       : Text.format("%s %s %s", fieldName, relation, valuesStr);
+                if (value instanceof Boolean && fieldName.isEmpty()) { // where true/false
+                    return value.toString();
+                }
+                else {
+                    valuesStr = value instanceof Long ? value + "L" : value.toString();
+                    return hasAnnotation
+                                   ? Text.format("%s %s ([%s]%s)", fieldName, relation, annotation, valuesStr)
+                                   : Text.format("%s %s %s", fieldName, relation, valuesStr);
+                }
         }
     }
 

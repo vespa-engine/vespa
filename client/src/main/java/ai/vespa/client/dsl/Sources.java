@@ -52,6 +52,12 @@ public class Sources {
         return whereReturnEndQuery(rank);
     }
 
+    public Query where(boolean t) {
+        Field f = new Field(this, "");
+        f.eq(t);
+        return whereReturnQuery(f);
+    }
+
     private Query whereReturnQuery(QueryChain qc) {
         return new Query(this, qc);
     }
