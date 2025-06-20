@@ -157,8 +157,8 @@ ResourceUsageWriteFilter::recalc_state(const Guard& guard)
         makeDiskLimitMessage(message, _usage_state.diskState().usage(), _usage_state.diskState().limit(), _hwInfo, _diskUsedSizeBytes);
     }
     {
-        auto& attribute_usage = _usage_state.attribute_usage();
-        const auto &max_usage = attribute_usage.max_address_space_usage();
+        const auto& attribute_usage = _usage_state.attribute_usage();
+        const auto& max_usage = attribute_usage.max_address_space_usage();
         double used = max_usage.getUsage().usage();
         if (used > _attribute_usage_filter_config._address_space_limit) {
             if (hasMessage) {

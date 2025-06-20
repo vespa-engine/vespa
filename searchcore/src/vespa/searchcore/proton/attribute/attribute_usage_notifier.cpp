@@ -65,7 +65,7 @@ AttributeUsageNotifier::AttributeUsageNotifier(std::shared_ptr<IAttributeUsageLi
   : _lock(),
     _attribute_usage(),
     _max_attribute_usage(),
-    _resource_usage_notifier(resource_usage_notifier),
+    _resource_usage_notifier(std::move(resource_usage_notifier)),
     _closed(false)
 {
 }
