@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/require.h>
 #include <optional>
 #include <variant>
+#include <exception>
 
 namespace vespalib::test {
 
@@ -48,7 +49,14 @@ public:
         constexpr bool is_void = std::same_as<result_t, void>;
         using stored_t = std::conditional_t<is_void, std::monostate, result_t>;
         std::mutex lock;
+        std::exception_ptr error;
         std::optional<stored_t> result;
+        auto handle_error = [&](std::exception_ptr my_error) noexcept {
+            std::lock_guard guard(lock);
+            if (!error) {
+                error = my_error;
+            }
+        };
         auto handle_result = [&](Nexus &ctx, stored_t thread_result) noexcept {
             if constexpr (std::same_as<std::decay_t<decltype(merge)>,select_thread_0>) {
                 if (ctx.thread_id() == 0) {
@@ -66,10 +74,14 @@ public:
         };
         auto thread_main = [&](size_t thread_id) noexcept {
             Nexus ctx(vote, thread_id);
-            if constexpr (is_void) {
-                entry(ctx);
-            } else {
-                handle_result(ctx, entry(ctx));
+            try {
+                if constexpr (is_void) {
+                    entry(ctx);
+                } else {
+                    handle_result(ctx, entry(ctx));
+                }
+            } catch (...) {
+                handle_error(std::current_exception());
             }
         };
         for (size_t i = 1; i < num_threads; ++i) {
@@ -77,6 +89,9 @@ public:
         }
         thread_main(0);
         pool.join();
+        if (error) {
+            std::rethrow_exception(error);
+        }
         if constexpr (!is_void) {
             return std::move(result).value();
         }
