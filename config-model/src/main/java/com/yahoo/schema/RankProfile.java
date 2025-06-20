@@ -105,6 +105,7 @@ public class RankProfile implements Cloneable {
     private Double termwiseLimit = null;
     private Double postFilterThreshold = null;
     private Double approximateThreshold = null;
+    private Double acornOneThreshold = null;
     private Double targetHitsMaxAdjustmentFactor = null;
     private Double weakandStopwordLimit = null;
     private Boolean weakandAllowDropAll = null;
@@ -791,6 +792,7 @@ public class RankProfile implements Cloneable {
     public void setTermwiseLimit(double termwiseLimit) { this.termwiseLimit = termwiseLimit; }
     public void setPostFilterThreshold(double threshold) { this.postFilterThreshold = threshold; }
     public void setApproximateThreshold(double threshold) { this.approximateThreshold = threshold; }
+    public void setAcornOneThreshold(double threshold) { this.acornOneThreshold = threshold; }
     public void setTargetHitsMaxAdjustmentFactor(double factor) { this.targetHitsMaxAdjustmentFactor = factor; }
     public void setWeakandStopwordLimit(double limit) { this.weakandStopwordLimit = limit; }
     public void setWeakandAdjustTarget(double target) { this.weakandAdjustTarget = target; }
@@ -815,6 +817,13 @@ public class RankProfile implements Cloneable {
             return OptionalDouble.of(approximateThreshold);
         }
         return uniquelyInherited(RankProfile::getApproximateThreshold, OptionalDouble::isPresent, "approximate-threshold").orElse(OptionalDouble.empty());
+    }
+
+    public OptionalDouble getAcornOneThreshold() {
+        if (acornOneThreshold != null) {
+            return OptionalDouble.of(acornOneThreshold);
+        }
+        return uniquelyInherited(RankProfile::getAcornOneThreshold, OptionalDouble::isPresent, "acorn-one-threshold").orElse(OptionalDouble.empty());
     }
 
     public OptionalDouble getTargetHitsMaxAdjustmentFactor() {
