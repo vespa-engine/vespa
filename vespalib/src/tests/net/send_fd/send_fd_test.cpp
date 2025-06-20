@@ -9,6 +9,7 @@
 #include <vespa/vespalib/net/socket.h>
 #include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/defer.h>
 #include <vespa/vespalib/test/socket_options_verifier.h>
 #include <chrono>
 #include <functional>
@@ -111,16 +112,6 @@ void recv_fd(SocketHandle &socket, std::optional<SocketHandle>& result) {
 
 //-----------------------------------------------------------------------------
 
-namespace {
-
-struct BarrierGuard {
-    Nexus &ctx;
-    explicit BarrierGuard(Nexus &ctx_in) noexcept : ctx(ctx_in) {}
-    ~BarrierGuard() { ctx.barrier(); }
-};
-
-}
-
 TEST(SendFdTest, require_that_an_open_socket_handle_can_be_passed_over_a_unix_domain_socket)
 {
     constexpr size_t num_threads = 3;
@@ -131,18 +122,18 @@ TEST(SendFdTest, require_that_an_open_socket_handle_can_be_passed_over_a_unix_do
                     auto thread_id = ctx.thread_id();
                     if (thread_id == 0) {        // server
                         SocketHandle socket = accept(f1);
-                        BarrierGuard guard(ctx);
+                        auto guard = defer([&](){ ctx.barrier(); });
                         SCOPED_TRACE("verify socket io server side");
                         verify_socket_io(true, socket);  // server side
                     } else if (thread_id == 1) { // proxy
                         SocketHandle server_socket = connect(f1);
                         SocketHandle client_socket = accept(f2);
-                        BarrierGuard guard(ctx);
+                        auto guard = defer([&](){ ctx.barrier(); });
                         ASSERT_NO_FATAL_FAILURE(send_fd(client_socket, std::move(server_socket)));
                     } else {                     // client
                         SocketHandle proxy_socket = connect(f2);
                         std::optional<SocketHandle> socket;
-                        BarrierGuard guard(ctx);
+                        auto guard = defer([&](){ ctx.barrier(); });
                         ASSERT_NO_FATAL_FAILURE(recv_fd(proxy_socket, socket));
                         ASSERT_TRUE(socket.has_value());
                         SCOPED_TRACE("verify socket io client side");
