@@ -61,13 +61,11 @@ AttributeUsageNotifier::AttributeUsageListener::notify_attribute_usage(const Att
     _notifier->notify_attribute_usage(attribute_usage);
 }
 
-AttributeUsageNotifier::AttributeUsageNotifier(std::shared_ptr<IAttributeUsageListener> tracker,
-                                               std::shared_ptr<IAttributeUsageListener> filter)
+AttributeUsageNotifier::AttributeUsageNotifier(std::shared_ptr<IAttributeUsageListener> resource_usage_notifier)
   : _lock(),
     _attribute_usage(),
     _max_attribute_usage(),
-    _tracker(std::move(tracker)),
-    _filter(std::move(filter)),
+    _resource_usage_notifier(std::move(resource_usage_notifier)),
     _closed(false)
 {
 }
@@ -123,11 +121,8 @@ void
 AttributeUsageNotifier::notify_attribute_usage()
 {
     if (!_closed) {
-        if (_tracker) {
-            _tracker->notify_attribute_usage(_max_attribute_usage);
-        }
-        if (_filter) {
-            _filter->notify_attribute_usage(_max_attribute_usage);
+        if (_resource_usage_notifier) {
+            _resource_usage_notifier->notify_attribute_usage(_max_attribute_usage);
         }
     }
 }

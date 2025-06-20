@@ -5,6 +5,7 @@
 #include "i_resource_usage_notifier.h"
 #include "resource_usage_state.h"
 #include "disk_mem_usage_metrics.h"
+#include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/vespalib/util/hw_info.h>
@@ -22,7 +23,8 @@ class ResourceUsageWriteFilter;
  * Class to notify resource usage based on sampled disk and memory usage.
  * The notification includes the configured limits.
  */
-class ResourceUsageNotifier : public IResourceUsageNotifier {
+class ResourceUsageNotifier : public IResourceUsageNotifier,
+                              public IAttributeUsageListener {
 public:
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
@@ -53,18 +55,19 @@ private:
     vespalib::ProcessMemoryStats _memoryStats;
     uint64_t                     _diskUsedSizeBytes;
     TransientResourceUsage       _transient_usage;
+    AttributeUsageStats          _attribute_usage;
     Config                       _config;
     ResourceUsageState           _usage_state;
     mutable DiskMemUsageMetrics  _disk_mem_usage_metrics;
     std::vector<IResourceUsageListener *> _listeners;
     ResourceUsageWriteFilter&    _filter;
 
-    void recalcState(const Guard &guard); // called with _lock held
+    void recalcState(const Guard &guard, bool disk_mem_sample); // called with _lock held
     double getMemoryUsedRatio(const Guard &guard) const;
     double getDiskUsedRatio(const Guard &guard) const;
     double get_relative_transient_memory_usage(const Guard& guard) const;
     double get_relative_transient_disk_usage(const Guard& guard) const;
-    void notifyDiskMemUsage(const Guard &guard, ResourceUsageState state);
+    void notify_resource_usage(const Guard &guard, ResourceUsageState state, bool disk_mem_sample);
 
 public:
     ResourceUsageNotifier(ResourceUsageWriteFilter& filter);
@@ -80,6 +83,7 @@ public:
     DiskMemUsageMetrics get_metrics() const;
     void add_resource_usage_listener(IResourceUsageListener *listener) override;
     void remove_resource_usage_listener(IResourceUsageListener *listener) override;
+    void notify_attribute_usage(const AttributeUsageStats& attribute_usage) override;
 };
 
 

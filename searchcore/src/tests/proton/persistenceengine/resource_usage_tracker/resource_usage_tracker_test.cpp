@@ -63,6 +63,12 @@ public:
                                             ResourceUsageWithLimit{ memory_usage, 0.8 },
                                             transient_disk_usage, transient_memory_usage));
     }
+    void notify_attribute_usage(const AttributeUsageStats& attribute_usage) {
+        _notifier.notify(ResourceUsageState(ResourceUsageWithLimit(0.0, 0.8),
+                                            ResourceUsageWithLimit(0.0, 0.8),
+                                            0.0, 0.0,
+                                            attribute_usage));
+    }
 
     ResourceUsage get_usage() { return _listener->get_usage(); }
     size_t get_update_count() const { return _listener->get_update_count(); }
@@ -142,24 +148,23 @@ AttributeUsageStats make_stats(const std::string& document_type, const std::stri
 
 TEST_F(ResourceUsageTrackerTest, attribute_usage_is_sent_to_listener)
 {
-    notify(0.0, 0.0);
     auto register_guard = _tracker->set_listener(*_listener);
-    _tracker->notify_attribute_usage(make_stats("doctype2", "0.ready", "a1", 15));
+    notify_attribute_usage(make_stats("doctype2", "0.ready", "a1", 15));
     EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1.comp", 15), get_usage());
     EXPECT_EQ(2, get_update_count());
-    _tracker->notify_attribute_usage(make_stats("doctype1", "2.notready", "a1", 16));
+    notify_attribute_usage(make_stats("doctype1", "2.notready", "a1", 16));
     EXPECT_EQ(make_resource_usage("doctype1.2.notready.a1.comp", 16), get_usage());
     EXPECT_EQ(3, get_update_count());
-    _tracker->notify_attribute_usage(make_stats("doctype2", "0.ready", "a1", 15));
+    notify_attribute_usage(make_stats("doctype2", "0.ready", "a1", 15));
     EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1.comp", 15), get_usage());
     EXPECT_EQ(4, get_update_count());
-    _tracker->notify_attribute_usage(make_stats("doctype1", "0.ready", "a1", 10));
+    notify_attribute_usage(make_stats("doctype1", "0.ready", "a1", 10));
     EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1.comp", 10), get_usage());
     EXPECT_EQ(5, get_update_count());
-    _tracker->notify_attribute_usage(make_stats("", "", "", 10));
+    notify_attribute_usage(make_stats("", "", "", 10));
     EXPECT_EQ(make_resource_usage("", 0), get_usage());
     EXPECT_EQ(6, get_update_count());
-    _tracker->notify_attribute_usage(make_stats("doctype2", "0.ready", "a1", 15));
+    notify_attribute_usage(make_stats("doctype2", "0.ready", "a1", 15));
     EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1.comp", 15), get_usage());
     EXPECT_EQ(7, get_update_count());
 }

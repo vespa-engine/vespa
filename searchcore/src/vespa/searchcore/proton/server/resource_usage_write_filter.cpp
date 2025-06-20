@@ -126,7 +126,6 @@ makeUnblockingMessage(double memoryUsed,
 
 ResourceUsageWriteFilter::ResourceUsageWriteFilter(const HwInfo& hwInfo)
     : IResourceWriteFilter(),
-      IAttributeUsageListener(),
       _lock(),
       _hwInfo(hwInfo),
       _acceptWrite(true),
@@ -134,7 +133,6 @@ ResourceUsageWriteFilter::ResourceUsageWriteFilter(const HwInfo& hwInfo)
       _diskUsedSizeBytes(0),
       _state(),
       _usage_state(),
-      _attribute_usage(),
       _attribute_usage_filter_config()
 { }
 
@@ -159,7 +157,8 @@ ResourceUsageWriteFilter::recalc_state(const Guard& guard)
         makeDiskLimitMessage(message, _usage_state.diskState().usage(), _usage_state.diskState().limit(), _hwInfo, _diskUsedSizeBytes);
     }
     {
-        const auto &max_usage = _attribute_usage.max_address_space_usage();
+        const auto& attribute_usage = _usage_state.attribute_usage();
+        const auto& max_usage = attribute_usage.max_address_space_usage();
         double used = max_usage.getUsage().usage();
         if (used > _attribute_usage_filter_config._address_space_limit) {
             if (hasMessage) {
@@ -167,7 +166,7 @@ ResourceUsageWriteFilter::recalc_state(const Guard& guard)
             }
             hasMessage = true;
             make_attribute_address_space_error_message(message, used,
-                                                       _attribute_usage_filter_config._address_space_limit, _attribute_usage);
+                                                       _attribute_usage_filter_config._address_space_limit, attribute_usage);
         }
     }
     if (hasMessage) {
@@ -222,14 +221,6 @@ ResourceUsageWriteFilter::set_config(AttributeUsageFilterConfig attribute_usage_
 {
     Guard guard(_lock);
     _attribute_usage_filter_config = attribute_usage_filter_config;
-    recalc_state(guard);
-}
-
-void
-ResourceUsageWriteFilter::notify_attribute_usage(const AttributeUsageStats& attribute_usage)
-{
-    Guard guard(_lock);
-    _attribute_usage = attribute_usage;
     recalc_state(guard);
 }
 

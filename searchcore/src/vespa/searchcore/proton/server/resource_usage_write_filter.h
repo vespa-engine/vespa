@@ -19,8 +19,7 @@ namespace proton {
  * If resource limit is reached then further writes are denied
  * in order to prevent entering an unrecoverable state.
  */
-class ResourceUsageWriteFilter : public IResourceWriteFilter,
-                                 public IAttributeUsageListener {
+class ResourceUsageWriteFilter : public IResourceWriteFilter {
 public:
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
@@ -34,7 +33,6 @@ private:
     uint64_t                     _diskUsedSizeBytes;
     State                        _state;
     ResourceUsageState           _usage_state;
-    AttributeUsageStats          _attribute_usage;
     AttributeUsageFilterConfig   _attribute_usage_filter_config;
 
     void recalc_state(const Guard& guard);
@@ -47,8 +45,6 @@ public:
     void notify_resource_usage(const ResourceUsageState& state, const vespalib::ProcessMemoryStats &memoryStats,
                                uint64_t diskUsedSizeBytes);
     void set_config(AttributeUsageFilterConfig attribute_usage_filter_config);
-    void notify_attribute_usage(const AttributeUsageStats& attribute_usage) override;
 };
-
 
 } // namespace proton

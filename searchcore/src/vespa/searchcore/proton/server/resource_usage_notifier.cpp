@@ -7,16 +7,33 @@
 
 namespace proton {
 
+ResourceUsageNotifier::ResourceUsageNotifier(ResourceUsageWriteFilter& filter)
+    : _lock(),
+      _hwInfo(filter.get_hw_info()),
+      _memoryStats(),
+      _diskUsedSizeBytes(),
+      _transient_usage(),
+      _attribute_usage(),
+      _config(),
+      _usage_state(),
+      _disk_mem_usage_metrics(),
+      _listeners(),
+      _filter(filter)
+{ }
+
+ResourceUsageNotifier::~ResourceUsageNotifier() = default;
+
 void
-ResourceUsageNotifier::recalcState(const Guard &guard)
+ResourceUsageNotifier::recalcState(const Guard &guard, bool disk_mem_sample)
 {
     double memoryUsed = getMemoryUsedRatio(guard);
     double diskUsed = getDiskUsedRatio(guard);
-    ResourceUsageState dmstate(ResourceUsageWithLimit(diskUsed, _config._diskLimit),
-                               ResourceUsageWithLimit(memoryUsed, _config._memoryLimit),
-                               get_relative_transient_disk_usage(guard),
-                               get_relative_transient_memory_usage(guard));
-    notifyDiskMemUsage(guard, dmstate);
+    ResourceUsageState usage(ResourceUsageWithLimit(diskUsed, _config._diskLimit),
+                             ResourceUsageWithLimit(memoryUsed, _config._memoryLimit),
+                             get_relative_transient_disk_usage(guard),
+                             get_relative_transient_memory_usage(guard),
+                             _attribute_usage);
+    notify_resource_usage(guard, usage, disk_mem_sample);
 }
 
 double
@@ -46,28 +63,21 @@ ResourceUsageNotifier::get_relative_transient_disk_usage(const Guard&) const
     return  static_cast<double>(_transient_usage.disk()) / _hwInfo.disk().sizeBytes();
 }
 
-ResourceUsageNotifier::ResourceUsageNotifier(ResourceUsageWriteFilter& filter)
-    : _lock(),
-      _hwInfo(filter.get_hw_info()),
-      _memoryStats(),
-      _diskUsedSizeBytes(),
-      _transient_usage(),
-      _config(),
-      _usage_state(),
-      _disk_mem_usage_metrics(),
-      _listeners(),
-      _filter(filter)
-{ }
-
-ResourceUsageNotifier::~ResourceUsageNotifier() = default;
-
 void
 ResourceUsageNotifier::set_resource_usage(const TransientResourceUsage& transient_usage, vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes) {
     Guard guard(_lock);
     _transient_usage = transient_usage;
     _memoryStats = memoryStats;
     _diskUsedSizeBytes = diskUsedSizeBytes;
-    recalcState(guard);
+    recalcState(guard, true);
+}
+
+void
+ResourceUsageNotifier::notify_attribute_usage(const AttributeUsageStats& attribute_usage)
+{
+    Guard guard(_lock);
+    _attribute_usage = attribute_usage;
+    recalcState(guard, false);
 }
 
 bool
@@ -76,7 +86,7 @@ ResourceUsageNotifier::setConfig(Config config_in)
     Guard guard(_lock);
     if (_config == config_in) return false;
     _config = config_in;
-    recalcState(guard);
+    recalcState(guard, false);
     return true;
 }
 
@@ -145,11 +155,13 @@ ResourceUsageNotifier::remove_resource_usage_listener(IResourceUsageListener *li
 }
 
 void
-ResourceUsageNotifier::notifyDiskMemUsage(const Guard &guard, ResourceUsageState state)
+ResourceUsageNotifier::notify_resource_usage(const Guard &guard, ResourceUsageState state, bool disk_mem_sample)
 {
     (void) guard;
     _usage_state = state;
-    _disk_mem_usage_metrics.merge(state);
+    if (disk_mem_sample) {
+        _disk_mem_usage_metrics.merge(state);
+    }
     _filter.notify_resource_usage(_usage_state, _memoryStats, _diskUsedSizeBytes);
     for (const auto &listener : _listeners) {
         listener->notify_resource_usage(_usage_state);
