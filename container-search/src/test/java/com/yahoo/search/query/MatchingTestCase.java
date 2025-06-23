@@ -62,7 +62,7 @@ public class MatchingTestCase {
         assertEquals("3", query.getRanking().getProperties().get("vespa.matching.minhitsperthread").get(0));
         assertEquals("0.8", query.getRanking().getProperties().get("vespa.matching.global_filter.upper_limit").get(0));
         assertEquals("0.3", query.getRanking().getProperties().get("vespa.matching.global_filter.lower_limit").get(0));
-        assertEquals("0.2", query.getRanking().getProperties().get("vespa.matching.acorn_one.lower_limit").get(0));
+        assertEquals("0.2", query.getRanking().getProperties().get("vespa.matching.acorn_one.upper_limit").get(0));
         assertEquals("2.5", query.getRanking().getProperties().get("vespa.matching.nns.target_hits_max_adjustment_factor").get(0));
         assertEquals("0.7", query.getRanking().getProperties().get("vespa.matching.filter_threshold").get(0));
         assertEquals("0.6", query.getRanking().getProperties().get("vespa.matching.weakand.stop_word_drop_limit").get(0));

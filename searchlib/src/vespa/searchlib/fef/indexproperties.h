@@ -322,7 +322,7 @@ namespace matching {
      * then use the ACORN-1-esque heuristics. These heuristics drastically improve the response time at
      * the cost of slightly lower recall.
      **/
-    struct AcornOneLowerLimit {
+    struct AcornOneUpperLimit {
         static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);

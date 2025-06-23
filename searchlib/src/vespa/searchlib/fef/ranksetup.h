@@ -81,7 +81,7 @@ private:
     double                   _softTimeoutTailCost;
     double                   _global_filter_lower_limit;
     double                   _global_filter_upper_limit;
-    double                   _acorn_one_lower_limit;
+    double                   _acorn_one_upper_limit;
     double                   _target_hits_max_adjustment_factor;
     double                   _weakand_stop_word_adjust_limit;
     double                   _weakand_stop_word_drop_limit;
@@ -407,8 +407,8 @@ public:
     double get_global_filter_lower_limit() const { return _global_filter_lower_limit; }
     void set_global_filter_upper_limit(double v) { _global_filter_upper_limit = v; }
     double get_global_filter_upper_limit() const { return _global_filter_upper_limit; }
-    void set_acorn_one_lower_limit(double v) { _acorn_one_lower_limit = v; }
-    double get_acorn_one_lower_limit() const { return _acorn_one_lower_limit; }
+    void set_acorn_one_upper_limit(double v) { _acorn_one_upper_limit = v; }
+    double get_acorn_one_upper_limit() const { return _acorn_one_upper_limit; }
     void set_target_hits_max_adjustment_factor(double v) { _target_hits_max_adjustment_factor = v; }
     double get_target_hits_max_adjustment_factor() const { return _target_hits_max_adjustment_factor; }
     void set_fuzzy_matching_algorithm(vespalib::FuzzyMatchingAlgorithm v) { _fuzzy_matching_algorithm = v; }
