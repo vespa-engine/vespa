@@ -83,10 +83,15 @@ void make_attribute_address_space_message(std::ostream& os, const AttributeUsage
        as.used() << ", dead: " <<
        as.dead() << ", limit: " <<
        as.limit() << "}, " <<
-       "document_type: " << std::quoted(usage.document_type()) << ", " <<
-       "attributeName: \"" << max.getAttributeName() << "\", " <<
-       "componentName: \"" << max.get_component_name() << "\", " <<
-       "subdb: \"" << max.getSubDbName() << "\"}";
+       "document_type: " << std::quoted(usage.document_type()) << ", ";
+    if (max.getSubDbName().empty()) {
+        os << "attributeName: " << std::quoted(max.getAttributeName()) << "}";
+    } else {
+        os <<
+           "attributeName: " << std::quoted(max.getAttributeName()) << ", " <<
+           "componentName: " << std::quoted(max.get_component_name()) << ", " <<
+           "subdb: \"" << max.getSubDbName() << "\"}";
+    }
 }
 
 void make_attribute_address_space_error_message(std::ostream& os, double used, double limit,

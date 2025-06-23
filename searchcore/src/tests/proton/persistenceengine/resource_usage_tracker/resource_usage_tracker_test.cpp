@@ -146,6 +146,15 @@ AttributeUsageStats make_stats(const std::string& document_type, const std::stri
     return stats;
 }
 
+AttributeUsageStats make_index_stats(const std::string& document_type, size_t used_address_space)
+{
+    AttributeUsageStats stats(document_type);
+    search::AddressSpaceUsage usage;
+    usage.set("", vespalib::AddressSpace(used_address_space, 0, usage_limit));
+    stats.merge(usage, "index_shards", "");
+    return stats;
+}
+
 }
 
 TEST_F(ResourceUsageTrackerTest, attribute_usage_is_sent_to_listener)
@@ -169,6 +178,9 @@ TEST_F(ResourceUsageTrackerTest, attribute_usage_is_sent_to_listener)
     notify_attribute_usage(make_stats("doctype2", "0.ready", "a1", 15));
     EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1.comp", 15), get_usage());
     EXPECT_EQ(7, get_update_count());
+    notify_attribute_usage(make_index_stats("doctype2", 14));
+    EXPECT_EQ(make_resource_usage("doctype2.index_shards", 14), get_usage());
+    EXPECT_EQ(8, get_update_count());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

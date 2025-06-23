@@ -4,6 +4,8 @@
 
 #include "i_maintenance_job.h"
 
+namespace searchcorespi { class IIndexManager; }
+
 namespace proton {
 
 struct IAttributeManager;
@@ -22,13 +24,15 @@ class SampleAttributeUsageJob : public IMaintenanceJob
     IAttributeManagerSP   _notReadyAttributeManager;
     AttributeUsageFilter &_attributeUsageFilter;
     const std::string     _document_type;
+    std::shared_ptr<searchcorespi::IIndexManager> _index_manager;
 
 public:
     SampleAttributeUsageJob(IAttributeManagerSP readyAttributeManager,
                             IAttributeManagerSP notReadyAttributeManager,
                             AttributeUsageFilter &attributeUsageFilter,
                             const std::string &docTypeName,
-                            vespalib::duration interval);
+                            vespalib::duration interval,
+                            std::shared_ptr<searchcorespi::IIndexManager> index_manager);
     ~SampleAttributeUsageJob() override;
 
     bool run() override;

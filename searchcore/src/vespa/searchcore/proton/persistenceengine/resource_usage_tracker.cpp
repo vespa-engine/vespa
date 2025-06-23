@@ -64,8 +64,12 @@ ResourceUsageTracker::notify_resource_usage(const ResourceUsageState& state)
     auto& attribute_usage = state.attribute_usage();
     if (!attribute_usage.document_type().empty()) {
         auto& max = attribute_usage.max_address_space_usage();
-        name = attribute_usage.document_type() + "." + max.getSubDbName() + "." + max.getAttributeName() + "." +
-               max.get_component_name();
+        if (max.getSubDbName().empty()) {
+            name = attribute_usage.document_type() + "." + max.getAttributeName();
+        } else {
+            name = attribute_usage.document_type() + "." + max.getSubDbName() + "." + max.getAttributeName() + "." +
+                   max.get_component_name();
+        }
     }
     // The transient resource usage is subtracted from the total resource usage
     // before it eventually is reported to the cluster controller (to decide whether to block client feed).

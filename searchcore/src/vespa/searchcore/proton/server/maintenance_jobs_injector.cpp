@@ -88,7 +88,8 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     IAttributeManagerSP readyAttributeManager,
                                     IAttributeManagerSP notReadyAttributeManager,
                                     AttributeUsageFilter &attributeUsageFilter,
-                                    std::shared_ptr<MaintenanceJobTokenSource> lid_space_compaction_job_token_source)
+                                    std::shared_ptr<MaintenanceJobTokenSource> lid_space_compaction_job_token_source,
+                                    std::shared_ptr<searchcorespi::IIndexManager> index_manager)
 {
     controller.registerJob(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
     auto visibility_delay = config.getVisibilityDelay();
@@ -128,7 +129,8 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
             std::make_unique<SampleAttributeUsageJob>(std::move(readyAttributeManager),
                                                       std::move(notReadyAttributeManager),
                                                       attributeUsageFilter, docTypeName,
-                                                      config.getAttributeUsageSampleInterval()));
+                                                      config.getAttributeUsageSampleInterval(),
+                                                      std::move(index_manager)));
 }
 
 } // namespace proton
