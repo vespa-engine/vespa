@@ -132,8 +132,7 @@ ResourceUsageWriteFilter::ResourceUsageWriteFilter(const HwInfo& hwInfo)
       _memoryStats(),
       _diskUsedSizeBytes(0),
       _state(),
-      _usage_state(),
-      _attribute_usage_filter_config()
+      _usage_state()
 { }
 
 ResourceUsageWriteFilter::~ResourceUsageWriteFilter() = default;
@@ -157,16 +156,15 @@ ResourceUsageWriteFilter::recalc_state(const Guard& guard)
         makeDiskLimitMessage(message, _usage_state.diskState().usage(), _usage_state.diskState().limit(), _hwInfo, _diskUsedSizeBytes);
     }
     {
+        const auto& max_attribute_address_space_state = _usage_state.max_attribute_address_space_state();
         const auto& attribute_usage = _usage_state.attribute_usage();
-        const auto& max_usage = attribute_usage.max_address_space_usage();
-        double used = max_usage.getUsage().usage();
-        if (used > _attribute_usage_filter_config._address_space_limit) {
+        if (max_attribute_address_space_state.aboveLimit()) {
             if (hasMessage) {
                 message << ", ";
             }
             hasMessage = true;
-            make_attribute_address_space_error_message(message, used,
-                                                       _attribute_usage_filter_config._address_space_limit, attribute_usage);
+            make_attribute_address_space_error_message(message, max_attribute_address_space_state.usage(),
+                                                       max_attribute_address_space_state.limit(), attribute_usage);
         }
     }
     if (hasMessage) {
@@ -213,14 +211,6 @@ ResourceUsageWriteFilter::notify_resource_usage(const ResourceUsageState& state,
     _usage_state = state;
     _memoryStats = memoryStats;
     _diskUsedSizeBytes = diskUsedSizeBytes;
-    recalc_state(guard);
-}
-
-void
-ResourceUsageWriteFilter::set_config(AttributeUsageFilterConfig attribute_usage_filter_config)
-{
-    Guard guard(_lock);
-    _attribute_usage_filter_config = attribute_usage_filter_config;
     recalc_state(guard);
 }
 

@@ -64,9 +64,11 @@ public:
                                             transient_disk_usage, transient_memory_usage));
     }
     void notify_attribute_usage(const AttributeUsageStats& attribute_usage) {
+        double max_attribute_address_space_usage = attribute_usage.max_address_space_usage().getUsage().usage();
         _notifier.notify(ResourceUsageState(ResourceUsageWithLimit(0.0, 0.8),
                                             ResourceUsageWithLimit(0.0, 0.8),
                                             0.0, 0.0,
+                                            ResourceUsageWithLimit(max_attribute_address_space_usage, 0.8),
                                             attribute_usage));
     }
 

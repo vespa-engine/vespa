@@ -5,6 +5,7 @@
 #include "i_resource_usage_notifier.h"
 #include "resource_usage_state.h"
 #include "disk_mem_usage_metrics.h"
+#include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
@@ -33,15 +34,19 @@ public:
     {
         double _memoryLimit;
         double _diskLimit;
+        AttributeUsageFilterConfig _attribute_limit;
 
-        Config() : Config(1.0, 1.0) { }
+        Config() : Config(1.0, 1.0, AttributeUsageFilterConfig()) { }
 
-        Config(double memoryLimit_in, double diskLimit_in)
+        Config(double memoryLimit_in, double diskLimit_in, AttributeUsageFilterConfig attribute_limit_in)
             : _memoryLimit(memoryLimit_in),
-              _diskLimit(diskLimit_in)
+              _diskLimit(diskLimit_in),
+              _attribute_limit(attribute_limit_in)
         { }
         bool operator == (const Config & rhs) const noexcept {
-            return (_memoryLimit == rhs._memoryLimit) && (_diskLimit == rhs._diskLimit);
+            return (_memoryLimit == rhs._memoryLimit) &&
+                   (_diskLimit == rhs._diskLimit) &&
+                   (_attribute_limit == rhs._attribute_limit);
         }
         bool operator != (const Config & rhs) const noexcept {
             return ! (*this == rhs);
