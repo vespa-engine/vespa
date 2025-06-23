@@ -1,4 +1,4 @@
-package=ai.vespa.embedding
+package=ai.vespa.embedding.config
 
 # GGUF embedding model
 embeddingModel model
