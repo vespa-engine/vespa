@@ -10,6 +10,7 @@
 #include "floatbucketresultnode.h"
 #include "stringbucketresultnode.h"
 #include "rawbucketresultnode.h"
+#include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/stllike/identity.h>
 #include <algorithm>
@@ -102,10 +103,10 @@ private:
     size_t onSize() const override { return _result.size(); }
     const vespalib::Identifiable::RuntimeClass & getBaseClass() const override { return B::_RTClass; }
     int64_t onGetInteger(size_t index) const override {
-        return index < _result.size() ? _result[index].getInteger() : 0L;
+        return index < _result.size() ? _result[index].getInteger() : attribute::getUndefined<int64_t>();
     }
     double onGetFloat(size_t index)    const override {
-        return index < _result.size() ? _result[index].getFloat() : 0.0;
+        return index < _result.size() ? _result[index].getFloat() : attribute::getUndefined<double>();
     }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
         return  index < _result.size() ? _result[index].getString(buf) : ConstBufferRef(buf.data(), 0);
@@ -449,10 +450,10 @@ public:
     void reserve(size_t sz) override { _v.reserve(sz); }
 private:
     int64_t onGetInteger(size_t index) const override {
-        return index < _v.size() ? _v[index]->getInteger() : 0L;
+        return index < _v.size() ? _v[index]->getInteger() : attribute::getUndefined<int64_t>();
     }
     double onGetFloat(size_t index)    const override {
-        return index < _v.size() ? _v[index]->getFloat() : 0.0;
+        return index < _v.size() ? _v[index]->getFloat() : attribute::getUndefined<double>();
     }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
         return  index < _v.size() ? _v[index]->getString(buf) : ConstBufferRef(buf.data(), 0);
