@@ -3,6 +3,7 @@ package=ai.vespa.llm.clients
 
 # The name of the secret containing the api key
 apiKeySecretName string default=""
+apiKeySecretRef string default=""
 
 # Endpoint for LLM client - if not set reverts to default for client
 endpoint string default=""

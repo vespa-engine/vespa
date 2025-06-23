@@ -7,7 +7,10 @@ import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.text.StringUtilities;
+import org.apache.commons.lang3.StringUtils;
 
+import java.util.Optional;
 import java.util.logging.Logger;
 
 
@@ -31,8 +34,17 @@ public abstract class ConfigurableLanguageModel implements LanguageModel {
 
     @Inject
     public ConfigurableLanguageModel(LlmClientConfig config, Secrets secretStore) {
-        this.apiKey = findApiKeyInSecretStore(config.apiKeySecretName(), secretStore);
+        var secretRef = getApiKeySecretRef(config);
+        this.apiKey = findApiKeyInSecretStore(secretRef, secretStore);
         this.endpoint = config.endpoint();
+    }
+
+    private static String getApiKeySecretRef(LlmClientConfig config) {
+        var secretRef = Optional.ofNullable(config.apiKeySecretRef()).orElse("");
+        if(!StringUtils.isBlank(secretRef)){
+            return secretRef;
+        }
+        return config.apiKeySecretName();
     }
 
     private static Secret findApiKeyInSecretStore(String property, Secrets secretStore) {
