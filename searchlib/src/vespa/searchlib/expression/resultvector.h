@@ -101,9 +101,15 @@ private:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override { ::visit(visitor, "Vector", _result); }
     size_t onSize() const override { return _result.size(); }
     const vespalib::Identifiable::RuntimeClass & getBaseClass() const override { return B::_RTClass; }
-    int64_t onGetInteger(size_t index) const override { return _result[index].getInteger(index); }
-    double onGetFloat(size_t index)    const override { return _result[index].getFloat(index); }
-    ConstBufferRef onGetString(size_t index, BufferRef buf) const override { return  _result[index].getString(index, buf); }
+    int64_t onGetInteger(size_t index) const override {
+        return index < _result.size() ? _result[index].getInteger() : 0L;
+    }
+    double onGetFloat(size_t index)    const override {
+        return index < _result.size() ? _result[index].getFloat() : 0.0;
+    }
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
+        return  index < _result.size() ? _result[index].getString(buf) : ConstBufferRef(buf.data(), 0);
+    }
     size_t hash() const override;
     int onCmp(const Identifiable & b) const override;
     Vector _result;
@@ -442,9 +448,15 @@ public:
     void resize(size_t sz) override { _v.resize(sz); }
     void reserve(size_t sz) override { _v.reserve(sz); }
 private:
-    int64_t onGetInteger(size_t index) const override { return _v[index]->getInteger(index); }
-    double onGetFloat(size_t index)    const override { return _v[index]->getFloat(index); }
-    ConstBufferRef onGetString(size_t index, BufferRef buf) const override { return  _v[index]->getString(index, buf); }
+    int64_t onGetInteger(size_t index) const override {
+        return index < _v.size() ? _v[index]->getInteger() : 0L;
+    }
+    double onGetFloat(size_t index)    const override {
+        return index < _v.size() ? _v[index]->getFloat() : 0.0;
+    }
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
+        return  index < _v.size() ? _v[index]->getString(buf) : ConstBufferRef(buf.data(), 0);
+    }
     size_t hash() const override;
     size_t onSize() const override { return _v.size(); }
     std::vector<ResultNode::CP> _v;
