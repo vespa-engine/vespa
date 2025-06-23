@@ -218,8 +218,12 @@ protected:
                                    uint32_t level, const GlobalFilter *filter, uint32_t nodeid_limit,
                                    const vespalib::Doom* const doom, uint32_t estimated_visited_nodes) const __attribute__((noinline));
     template <class VisitedTracker>
-    void exploreNeighborhood(std::deque<uint32_t>& neighborhood, HnswTraversalCandidate &cand, VisitedTracker &visited,
-                             uint32_t level, const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit) const;
+    void exploreNeighborhood(HnswTraversalCandidate &cand, std::deque<uint32_t> &found, VisitedTracker &visited, uint32_t level,
+                             const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit) const;
+    template <class VisitedTracker>
+    void exploreNeighborhoodByOneHop(std::deque<uint32_t> &todo, std::deque<uint32_t> &found, VisitedTracker &visited, uint32_t level,
+                                     const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit,
+                                     uint32_t max_neighbors_to_find) const;
     template <class BestNeighbors>
     void search_layer(const BoundDistanceFunction &df, uint32_t neighbors_to_find, BestNeighbors& best_neighbors,
                       uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter = nullptr) const;

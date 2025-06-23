@@ -464,8 +464,9 @@ HnswIndex<type>::search_layer_acorn_helper(const BoundDistanceFunction &df, uint
         }
         candidates.pop();
 
+        // Instead of taking immediate neighbors, we additionally explore 2-hop neighbors (and possibly 3-hop neighbors)
         neighborhood.clear();
-        exploreNeighborhood(neighborhood, cand, visited, level, filter_wrapper, nodeid_limit);
+        exploreNeighborhood(cand, neighborhood, visited, level, filter_wrapper, nodeid_limit);
 
         for (uint32_t neighbor_nodeid : neighborhood) {
             auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
@@ -496,19 +497,36 @@ HnswIndex<type>::search_layer_acorn_helper(const BoundDistanceFunction &df, uint
 template <HnswIndexType type>
 template <class VisitedTracker>
 void
-HnswIndex<type>::exploreNeighborhood(std::deque<uint32_t> &neighborhood, HnswTraversalCandidate &cand, VisitedTracker &visited,
+HnswIndex<type>::exploreNeighborhood(HnswTraversalCandidate &cand, std::deque<uint32_t> &found, VisitedTracker &visited,
                                      uint32_t level, const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit) const {
+    assert(found.empty());
+
     std::deque<uint32_t> todo;
     todo.push_back(cand.nodeid);
 
     uint32_t max_neighbors_to_find = max_links_for_level(level);
-    uint32_t max_depth = 2;
 
-    std::deque<uint32_t> todoNextDepth;
-    uint32_t currentDepth = 1;
-    bool oneMore = false;
+    // Explore (1-hop) neighbors
+    exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find);
 
-    while (!todo.empty() && neighborhood.size() <= max_neighbors_to_find && currentDepth <= max_depth) {
+    // Explore 2-hop neighbors
+    exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find);
+
+    // Explore 3-hop neighbors, but only if we have not found enough nodes yet (one quarter of the desired amount)
+    if (found.size() < max_neighbors_to_find / 4) {
+        exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find);
+    }
+}
+
+template <HnswIndexType type>
+template <class VisitedTracker>
+void
+HnswIndex<type>::exploreNeighborhoodByOneHop(std::deque<uint32_t> &todo, std::deque<uint32_t> &found, VisitedTracker &visited, uint32_t level,
+                                             const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit,
+                                             uint32_t max_neighbors_to_find) const {
+    // We do not explore the candidates that we newly add to the deque
+    uint32_t nodesToExplore = todo.size();
+    for (uint32_t nodesExplored = 0; nodesExplored < nodesToExplore && found.size() < max_neighbors_to_find; ++nodesExplored) {
         uint32_t nodeid = todo.front();
         todo.pop_front();
         auto& node = _graph.acquire_node(nodeid);
@@ -518,8 +536,10 @@ HnswIndex<type>::exploreNeighborhood(std::deque<uint32_t> &neighborhood, HnswTra
             if (neighbor_nodeid >= nodeid_limit) {
                 continue;
             }
-            todoNextDepth.push_back(neighbor_nodeid);
+            // Just explore everything in the next hop, even if the current node passes the filter or was marked as visited
+            todo.push_back(neighbor_nodeid);
 
+            // Skip if the current node was marked as visited (-> We already checked if it passes the filter)
             auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
             auto neighbor_ref = neighbor_node.levels_ref().load_acquire();
             if (!neighbor_ref.valid() || !visited.try_mark(neighbor_nodeid)) {
@@ -528,26 +548,17 @@ HnswIndex<type>::exploreNeighborhood(std::deque<uint32_t> &neighborhood, HnswTra
 
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             if (filter_wrapper.check(neighbor_docid)) {
-                neighborhood.push_back(neighbor_nodeid);
+                found.push_back(neighbor_nodeid);
 
-                if (neighborhood.size() >= max_neighbors_to_find) {
+                // Abort if we already found enough neighbors
+                if (found.size() >= max_neighbors_to_find) {
                     return;
                 }
             }
         }
-
-        if (todo.empty()) {
-            todo = std::move(todoNextDepth);
-            todoNextDepth = std::deque<uint32_t>();
-
-            if (!oneMore && currentDepth == max_depth && neighborhood.size() < max_neighbors_to_find / 4) {
-                oneMore = true;
-            } else {
-                ++currentDepth;
-            }
-        }
     }
 }
+
 
 template <HnswIndexType type>
 template <class BestNeighbors>
