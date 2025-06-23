@@ -33,7 +33,6 @@ private:
     uint64_t                     _diskUsedSizeBytes;
     State                        _state;
     ResourceUsageState           _usage_state;
-    AttributeUsageFilterConfig   _attribute_usage_filter_config;
 
     void recalc_state(const Guard& guard);
 public:
@@ -44,7 +43,6 @@ public:
     const vespalib::HwInfo& get_hw_info() const noexcept { return _hwInfo; }
     void notify_resource_usage(const ResourceUsageState& state, const vespalib::ProcessMemoryStats &memoryStats,
                                uint64_t diskUsedSizeBytes);
-    void set_config(AttributeUsageFilterConfig attribute_usage_filter_config);
 };
 
 } // namespace proton

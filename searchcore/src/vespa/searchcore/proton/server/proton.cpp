@@ -129,6 +129,7 @@ diskMemUsageSamplerConfig(const ProtonConfig &proton, const vespalib::HwInfo &hw
 {
     return { proton.writefilter.memorylimit,
              proton.writefilter.disklimit,
+             AttributeUsageFilterConfig(proton.writefilter.attribute.addressSpaceLimit),
              vespalib::from_s(proton.writefilter.sampleinterval),
              hwInfo };
 }
@@ -469,7 +470,6 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
                             protonConfig.search.memory.limiter.minhits);
     const std::shared_ptr<const DocumentTypeRepo> repo = configSnapshot->getDocumentTypeRepoSP();
 
-    _write_filter->set_config(AttributeUsageFilterConfig(protonConfig.writefilter.attribute.addressSpaceLimit));
     _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, configSnapshot->getHwInfo()), *_scheduler);
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setConfig(protonConfig.flush.memory);

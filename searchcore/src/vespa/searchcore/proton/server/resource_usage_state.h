@@ -18,6 +18,7 @@ class ResourceUsageState
     ResourceUsageWithLimit _memoryState;
     double                 _transient_disk_usage;
     double                 _transient_memory_usage;
+    ResourceUsageWithLimit _max_attribute_address_space_state;
     AttributeUsageStats    _attribute_usage;
 
 public:
@@ -30,6 +31,7 @@ public:
                        const ResourceUsageWithLimit &memoryState_,
                        double transient_disk_usage_,
                        double transient_memory_usage_,
+                       const ResourceUsageWithLimit& max_attribute_address_space_state,
                        const AttributeUsageStats& attribute_usage);
     ~ResourceUsageState();
     bool operator==(const ResourceUsageState &rhs) const;
@@ -42,6 +44,9 @@ public:
     double non_transient_memory_usage() const { return std::max(0.0, _memoryState.usage() - _transient_memory_usage); }
     bool aboveDiskLimit(double resourceLimitFactor) const { return diskState().aboveLimit(resourceLimitFactor); }
     bool aboveMemoryLimit(double resourceLimitFactor) const { return memoryState().aboveLimit(resourceLimitFactor); }
+    const ResourceUsageWithLimit& max_attribute_address_space_state() const noexcept {
+        return _max_attribute_address_space_state;
+    }
     const AttributeUsageStats& attribute_usage() const noexcept { return _attribute_usage; }
 };
 

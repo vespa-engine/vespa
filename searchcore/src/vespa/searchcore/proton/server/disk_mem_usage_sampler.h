@@ -3,6 +3,7 @@
 #pragma once
 
 #include "resource_usage_notifier.h"
+#include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
 
 namespace vespalib { class IDestructorCallback; }
@@ -43,9 +44,10 @@ public:
 
         Config(double memoryLimit_in,
                double diskLimit_in,
+               AttributeUsageFilterConfig attribute_limit_in,
                vespalib::duration sampleInterval_in,
                const vespalib::HwInfo &hwInfo_in)
-            : filterConfig(memoryLimit_in, diskLimit_in),
+            : filterConfig(memoryLimit_in, diskLimit_in, attribute_limit_in),
               sampleInterval(sampleInterval_in),
               hwInfo(hwInfo_in)
         { }

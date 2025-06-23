@@ -53,7 +53,8 @@ struct DiskMemUsageSamplerTest : public ::testing::Test {
           notifier(std::make_shared<ResourceUsageNotifier>(*write_filter)),
           sampler(std::make_unique<DiskMemUsageSampler>(".", *write_filter, *notifier))
     {
-        sampler->setConfig(DiskMemUsageSampler::Config(0.8, 0.8, 50ms, make_hw_info()), executor);
+        sampler->setConfig(DiskMemUsageSampler::Config(0.8, 0.8, AttributeUsageFilterConfig(),
+                                                       50ms, make_hw_info()), executor);
         sampler->add_transient_usage_provider(std::make_shared<MyProvider>(50, 200));
         sampler->add_transient_usage_provider(std::make_shared<MyProvider>(100, 150));
     }

@@ -28,10 +28,13 @@ ResourceUsageNotifier::recalcState(const Guard &guard, bool disk_mem_sample)
 {
     double memoryUsed = getMemoryUsedRatio(guard);
     double diskUsed = getDiskUsedRatio(guard);
+    double attribute_address_space_used = _attribute_usage.max_address_space_usage().getUsage().usage();
     ResourceUsageState usage(ResourceUsageWithLimit(diskUsed, _config._diskLimit),
                              ResourceUsageWithLimit(memoryUsed, _config._memoryLimit),
                              get_relative_transient_disk_usage(guard),
                              get_relative_transient_memory_usage(guard),
+                             ResourceUsageWithLimit(attribute_address_space_used,
+                                                    _config._attribute_limit._address_space_limit),
                              _attribute_usage);
     notify_resource_usage(guard, usage, disk_mem_sample);
 }
