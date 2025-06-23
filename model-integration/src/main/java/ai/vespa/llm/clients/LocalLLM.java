@@ -4,10 +4,10 @@ package ai.vespa.llm.clients;
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
 import ai.vespa.llm.LanguageModelException;
+import ai.vespa.llm.clients.LlmLocalClientConfig.ContextOverflowPolicy;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
-
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import de.kherud.llama.LlamaModel;
@@ -29,8 +29,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
-
-import ai.vespa.llm.clients.LlmLocalClientConfig.ContextOverflowPolicy;
 
 /**
  * A language model running locally on the container node.
