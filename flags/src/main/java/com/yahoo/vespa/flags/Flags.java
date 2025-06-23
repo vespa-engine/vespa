@@ -280,12 +280,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag INCREMENTAL_USAGE_CALCULATION = defineFeatureFlag(
-            "incremental-usage-calculation", false,
-            List.of("evgiz"), "2025-02-27", "2025-09-01",
-            "Use new incremental usage calculation for node snapshots",
-            "Takes effect at controller startup");
-
     public static final UnboundIntFlag MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY = defineIntFlag(
             "max-content-node-maintenance-op-concurrency", -1,
             List.of("vekterli"), "2025-03-07", "2025-09-01",
