@@ -25,6 +25,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
 
     private static final Logger log = Logger.getLogger(GgufEmbedder.class.getName());
     private final LlamaModel model;
+    private final int maxPromptTokens;
 
     public static class Exception extends RuntimeException {
         public Exception(Throwable cause) { super(cause); }
@@ -42,16 +43,19 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         if (config.continuousBatching()) modelParams.enableContBatching();
         if (config.poolingType() != GgufEmbedderConfig.PoolingType.Enum.UNSPECIFIED)
             modelParams.setPoolingType(PoolingType.valueOf(config.poolingType().name()));
-        if (config.physicalMaxBatchSize() >= 0) modelParams.setUbatchSize(config.physicalMaxBatchSize());
-        if (config.logicalMaxBatchSize() >= 0) modelParams.setBatchSize(config.logicalMaxBatchSize());
+        if (config.physicalMaxBatchSize() > 0) modelParams.setUbatchSize(config.physicalMaxBatchSize());
+        if (config.logicalMaxBatchSize() > 0) modelParams.setBatchSize(config.logicalMaxBatchSize());
+        if (config.contextSize() > 0) modelParams.setCtxSize(config.contextSize());
         model = new LlamaModel(modelParams);
+        maxPromptTokens = config.maxPromptTokens();
     }
 
     @Override
     public Tensor embed(String text, Context context, TensorType tensorType) {
+        var prompt = truncatePrompt(text);
         record CacheKey(String embedderId, String text){}
-        var cacheKey = new CacheKey(context.getEmbedderId(), text);
-        var rawEmbedding = context.computeCachedValueIfAbsent(cacheKey, () -> wrapLlamaException(() -> model.embed(text)));
+        var cacheKey = new CacheKey(context.getEmbedderId(), prompt);
+        var rawEmbedding = context.computeCachedValueIfAbsent(cacheKey, () -> wrapLlamaException(() -> model.embed(prompt)));
         if (tensorType.dimensions().size() != 1) {
             throw new IllegalArgumentException(
                     "Error in embedding to type '%s': should only have one dimension.".formatted(tensorType));
@@ -96,5 +100,19 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         } catch (RuntimeException e) {
             throw new Exception(e);
         }
+    }
+
+    /**
+     * Performs a naive truncation of the prompt to the maximum number of tokens.
+     * Tokens are assumed to be independent and that the token sequence can be safely truncated at any position.
+     */
+    private String truncatePrompt(String text) {
+        if (maxPromptTokens <= 0) return text;
+        var tokens = model.encode(text);
+        var maxTruncatedLength = maxPromptTokens - 2; // Reserve space for start and end token
+        if (tokens.length <= maxTruncatedLength) return text;
+        log.fine(() -> "Truncating prompt from %d to %d tokens".formatted(tokens.length, maxTruncatedLength));
+        var truncatedTokens = Arrays.copyOfRange(tokens, 0, maxTruncatedLength);
+        return model.decode(truncatedTokens);
     }
 }
