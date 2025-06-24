@@ -37,11 +37,9 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         var modelPath = helper.getModelPathResolvingIfNecessary(config.embeddingModelReference()).toString();
         var modelParams = new ModelParameters()
                 .enableEmbedding()
-                .enableContBatching()
                 .setParallel(config.parallel())
                 .disableLog()
                 .setModel(modelPath)
-                .setCtxSize(config.contextSize())
                 .setGpuLayers(config.gpuLayers());
         if (config.continuousBatching()) modelParams.enableContBatching();
         if (config.poolingType() != GgufEmbedderConfig.PoolingType.Enum.UNSPECIFIED)
