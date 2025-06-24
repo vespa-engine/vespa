@@ -47,6 +47,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         if (config.physicalMaxBatchSize() > 0) modelParams.setUbatchSize(config.physicalMaxBatchSize());
         if (config.logicalMaxBatchSize() > 0) modelParams.setBatchSize(config.logicalMaxBatchSize());
         if (config.contextSize() > 0) modelParams.setCtxSize(config.contextSize());
+        if (config.seed() > -1) modelParams.setSeed(config.seed());
         model = new LlamaModel(modelParams);
         maxPromptTokens = config.maxPromptTokens();
     }

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,6 +29,7 @@ class GgufEmbedderTest {
     void produces_correct_embedding() {
         var config = new GgufEmbedderConfig.Builder()
                 .embeddingModel(ModelReference.valueOf(TINY_LLM_MODEL))
+                .seed(1)
                 .build();
         var embedder = new GgufEmbedder(config, ModelReference::value);
         String text = "This is a test";
@@ -37,9 +39,21 @@ class GgufEmbedderTest {
             assertNotNull(embedding);
             assertEquals(tensorType, embedding.type());
             assertTrue(embedding.sum().asDouble() != 0.0);
-            assertEquals(
-                    "tensor<float>(x[64]):[1.0292758, -1.3270985, 0.18010023, -1.7205194, 0.104211554, -5.9496317, 1.6353445, 0.37937796, 0.7343295, -0.46375245, 1.208143, -1.4408318, -1.3857322, 0.0313699, -1.4294251, -9.711142, -1.1832366, -2.1676993, 0.45259798, -3.6219897, 1.0608853, -0.53369373, 0.1757773, 5.515418, -1.0470327, -0.39121142, -0.6377803, 0.597403, -0.34900287, -1.0746356, 3.792547, 3.5979981, 1.6292435, 1.067964, 0.2716063, -2.0164044, 3.003206, 1.1531613, 0.22300358, 3.1061413, 2.0321712, -0.025435379, 0.42662904, -0.17282704, 0.85300887, 0.5182117, -0.25126216, 0.68381417, 0.014906612, 1.3040913, 0.07799442, 0.63696116, 2.3029523, -2.0566816, 1.2332673, 0.764334, -0.0061218967, -1.5629356, -0.14813207, -0.6894363, -1.5513821, 1.2363527, -1.350878, -1.6226838]",
-                    embedding.toString());
+            double[] expectedValues = {
+                    1.0292758, -1.3270985, 0.18010023, -1.7205194, 0.104211554, -5.9496317, 1.6353445, 0.37937796,
+                    0.7343295, -0.46375245, 1.208143, -1.4408318, -1.3857322, 0.0313699, -1.4294251, -9.711142,
+                    -1.1832366, -2.1676993, 0.45259798, -3.6219897, 1.0608853, -0.53369373, 0.1757773, 5.515418,
+                    -1.0470327, -0.39121142, -0.6377803, 0.597403, -0.34900287, -1.0746356, 3.792547, 3.5979981,
+                    1.6292435, 1.067964, 0.2716063, -2.0164044, 3.003206, 1.1531613, 0.22300358, 3.1061413, 2.0321712,
+                    -0.025435379, 0.42662904, -0.17282704, 0.85300887, 0.5182117, -0.25126216, 0.68381417, 0.014906612,
+                    1.3040913, 0.07799442, 0.63696116, 2.3029523, -2.0566816, 1.2332673, 0.764334, -0.0061218967,
+                    -1.5629356, -0.14813207, -0.6894363, -1.5513821, 1.2363527, -1.350878, -1.6226838};
+            double[] actualValues = new double[embedding.sizeAsInt()];
+            var valueIterator = embedding.valueIterator();
+            for (int i = 0; i < actualValues.length; i++) {
+                actualValues[i] = valueIterator.next();
+            }
+            assertArrayEquals(expectedValues, actualValues, 1e-5);
         } finally {
             assertDoesNotThrow(embedder::deconstruct);
         }
@@ -49,6 +63,7 @@ class GgufEmbedderTest {
     void produces_correct_token_ids() {
         var config = new GgufEmbedderConfig.Builder()
                 .embeddingModel(ModelReference.valueOf(TINY_LLM_MODEL))
+                .seed(1)
                 .build();
         var embedder = new GgufEmbedder(config, ModelReference::value);
         String text = "This is a test";
@@ -73,6 +88,7 @@ class GgufEmbedderTest {
                     .physicalMaxBatchSize(2*1024)
                     .logicalMaxBatchSize(2*1024)
                     .contextSize(2*1024)
+                    .seed(1)
                     .build();
             var embedder = new GgufEmbedder(config, ModelReference::value);
             try {
@@ -94,6 +110,7 @@ class GgufEmbedderTest {
             var config = new GgufEmbedderConfig.Builder()
                     .embeddingModel(ModelReference.valueOf(TINY_LLM_MODEL))
                     .maxPromptTokens(128)
+                    .seed(1)
                     .build();
             var embedder = new GgufEmbedder(config, ModelReference::value);
             try {
@@ -114,6 +131,7 @@ class GgufEmbedderTest {
         void fails_with_default_config() {
             var config = new GgufEmbedderConfig.Builder()
                     .embeddingModel(ModelReference.valueOf(TINY_LLM_MODEL))
+                    .seed(1)
                     .build();
             var embedder = new GgufEmbedder(config, ModelReference::value);
             try {

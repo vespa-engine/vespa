@@ -15,7 +15,7 @@ physicalMaxBatchSize int default=-1
 # Set the logical maximum batch size (default: -1 = use runtime default).
 logicalMaxBatchSize int default=-1
 
-# Continous batching mode (default: false).
+# Continuous batching mode (default: false).
 continuousBatching bool default=false
 
 # Set the size of the prompt context (default: 0 = loaded from model).
@@ -23,3 +23,6 @@ contextSize int default=0
 
 # Set the number of tokens to keep from the initial prompt (default: 0 = all)
 maxPromptTokens int default=0
+
+# Random number generator seed used by LLM runtime during inference (default: -1 = use random seed).
+seed int default = -1
