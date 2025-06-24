@@ -2,6 +2,7 @@
 
 #include "avx3_dl.h"
 #include "avxprivate.hpp"
+#include "x64_generic.h"
 
 namespace vespalib::hwaccelerated {
 
@@ -17,15 +18,24 @@ Avx3DlAccelerator::dotProduct(const double* af, const double* bf, size_t sz) con
 
 size_t
 Avx3DlAccelerator::populationCount(const uint64_t* a, size_t sz) const noexcept {
-    // When targeting VPOPCNTDQ the compiler auto-vectorization somewhat ironically
-    // gets horribly confused when the code is explicitly written to do popcounts
-    // in parallel across elements. Just doing a plain, boring loop lets the auto-
-    // vectorizer understand the semantics of the loop much more easily.
-    size_t count = 0;
-    for (size_t i = 0; i < sz; ++i) {
-        count += std::popcount(a[i]);
+    if (sz <= 32) [[likely]] {
+        // Don't fire up the AVX-512 steam engines for short vectors. Just looking at the
+        // groundhog shadow of a 512 bits wide AVX instruction may be enough to send a Xeon
+        // CPU from the baseline power license level 0 into a frequency throttled power
+        // license level of 1. This is much less of a problem on >= Ice Lake microarchitectures,
+        // but still measurable in practice.
+        return X64GenericAccelerator::populationCount(a, sz);
+    } else {
+        // When targeting VPOPCNTDQ the compiler auto-vectorization somewhat ironically
+        // gets horribly confused when the code is explicitly written to do popcounts
+        // in parallel across elements. Just doing a plain, boring loop lets the auto-
+        // vectorizer understand the semantics of the loop much more easily.
+        size_t count = 0;
+        for (size_t i = 0; i < sz; ++i) {
+            count += std::popcount(a[i]);
+        }
+        return count;
     }
-    return count;
 }
 
 double
