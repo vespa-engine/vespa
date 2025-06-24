@@ -117,10 +117,10 @@ class GgufEmbedderTest {
                     .build();
             var embedder = new GgufEmbedder(config, ModelReference::value);
             try {
-                var message = assertThrows(GgufEmbedder.Exception.class, () ->
+                var message = assertThrows(IllegalArgumentException.class, () ->
                     embedder.embed(LARGE_PROMPT, DUMMY_CONTEXT, TensorType.fromSpec("tensor<float>(x[1024])")));
                 assertEquals(
-                        "de.kherud.llama.LlamaException: input is too large to process. increase the physical batch size",
+                        "Input text is too large (prompt UTF-16 length: 1600). Either set max prompt tokens or adjust batch/context size.",
                         message.getMessage());
             } finally {
                 assertDoesNotThrow(embedder::deconstruct);

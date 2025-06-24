@@ -37,6 +37,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         var modelPath = helper.getModelPathResolvingIfNecessary(config.embeddingModelReference()).toString();
         var modelParams = new ModelParameters()
                 .enableEmbedding()
+                .disableLog()
                 .setModel(modelPath)
                 .setCtxSize(config.contextSize())
                 .setGpuLayers(config.gpuLayers());
@@ -118,7 +119,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
                     && cause.getMessage().contains("input is too large to process")) {
                 // Illegal input must be propagated as IllegalArgumentException
                 throw new IllegalArgumentException(
-                        "Input text is too large (length=%d). Either set max prompt tokens or adjust batch/context size."
+                        "Input text is too large (prompt UTF-16 length: %d). Either set max prompt tokens or adjust batch/context size."
                                 .formatted(prompt.length()),
                         cause);
             }
