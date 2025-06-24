@@ -7,8 +7,6 @@ import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.text.StringUtilities;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -41,7 +39,7 @@ public abstract class ConfigurableLanguageModel implements LanguageModel {
 
     private static String getApiKeySecretRef(LlmClientConfig config) {
         var secretRef = Optional.ofNullable(config.apiKeySecretRef()).orElse("");
-        if(!StringUtils.isBlank(secretRef)){
+        if(!secretRef.isBlank()){
             return secretRef;
         }
         return config.apiKeySecretName();
