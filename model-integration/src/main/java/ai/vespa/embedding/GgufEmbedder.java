@@ -14,6 +14,7 @@ import de.kherud.llama.args.PoolingType;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -38,7 +39,6 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         var modelParams = new ModelParameters()
                 .enableEmbedding()
                 .setParallel(config.parallel())
-                .disableLog()
                 .setModel(modelPath)
                 .setGpuLayers(config.gpuLayers());
         if (config.continuousBatching()) modelParams.enableContBatching();
@@ -50,6 +50,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         if (config.seed() > -1) modelParams.setSeed(config.seed());
         if (config.threads() != 0) modelParams.setThreads(calculateThreadCount(config.threads()));
         if (config.batchThreads() != 0) modelParams.setThreadsBatch(calculateThreadCount(config.batchThreads()));
+        if (!log.isLoggable(Level.FINE)) modelParams.disableLog();
         model = new LlamaModel(modelParams);
         maxPromptTokens = config.maxPromptTokens();
     }
