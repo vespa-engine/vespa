@@ -8,6 +8,7 @@
 #include "iheartbeathandler.h"
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 
+namespace searchcorespi { class IIndexManager; }
 namespace storage::spi {struct BucketExecutor; }
 namespace proton {
 
@@ -48,7 +49,8 @@ struct MaintenanceJobsInjector
                            IAttributeManagerSP readyAttributeManager,
                            IAttributeManagerSP notReadyAttributeManager,
                            AttributeUsageFilter &attributeUsageFilter,
-                           std::shared_ptr<MaintenanceJobTokenSource> lid_space_compaction_job_token_source);
+                           std::shared_ptr<MaintenanceJobTokenSource> lid_space_compaction_job_token_source,
+                           std::shared_ptr<searchcorespi::IIndexManager> index_mgr);
 };
 
 } // namespace proton

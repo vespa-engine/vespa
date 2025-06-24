@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/server/resource_usage_notifier.h>
 #include <vespa/searchcore/proton/server/resource_usage_with_limit.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
+#include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -11,6 +12,7 @@
 using namespace proton;
 using search::AddressSpaceUsage;
 using search::AddressSpaceComponents;
+using search::queryeval::ISourceSelector;
 using vespalib::HwInfo;
 
 namespace fs = std::filesystem;
@@ -21,6 +23,7 @@ vespalib::AddressSpace enumStoreOverLoad(30_Gi, 0, 32_Gi);
 
 vespalib::AddressSpace multiValueOverLoad(127_Mi, 0, 128_Mi);
 
+vespalib::AddressSpace source_selector_overload(250, 0, ISourceSelector::SOURCE_LIMIT);
 
 class MyAttributeStats : public AttributeUsageStats
 {
@@ -39,6 +42,13 @@ public:
         AddressSpaceUsage usage;
         usage.set(AddressSpaceComponents::multi_value, multiValueOverLoad);
         merge(usage, "multiValueName", "ready");
+    }
+
+    void trigger_source_selector_limit() {
+        AddressSpaceUsage usage;
+        usage.set("", source_selector_overload);
+        merge(usage, "index_shards", "");
+
     }
 };
 
@@ -213,6 +223,24 @@ TEST_F(ResourceUsageWriteFilterTest, Check_that_multivalue_limit_can_be_reached)
               "addressSpace: { used: 133169152, dead: 0, limit: 134217728}, "
               "document_type: \"test\", "
               "attributeName: \"multiValueName\", componentName: \"multi-value\", subdb: \"ready\"}");
+}
+
+TEST_F(ResourceUsageWriteFilterTest, Check_that_source_selector_limit_can_be_reached)
+{
+    EXPECT_TRUE(_notifier.setConfig(Config(0.8, 0.8, AttributeUsageFilterConfig(0.8))));
+    MyAttributeStats stats;
+    stats.trigger_source_selector_limit();
+    notify_attribute_usage(stats);
+    testWrite("addressSpaceLimitReached: { "
+              "action: \""
+              "add more content nodes"
+              "\", "
+              "reason: \""
+              "max address space in attribute vector components used (0.984252) > limit (0.8)"
+              "\", "
+              "addressSpace: { used: 250, dead: 0, limit: 254}, "
+              "document_type: \"test\", "
+              "attributeName: \"index_shards\"}");
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

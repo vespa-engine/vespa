@@ -32,6 +32,7 @@
 #include <vespa/searchcore/proton/test/clusterstatehandler.h>
 #include <vespa/searchcore/proton/test/resource_usage_notifier.h>
 #include <vespa/searchcore/proton/test/mock_attribute_manager.h>
+#include <vespa/searchcore/proton/test/mock_index_manager.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
@@ -278,6 +279,13 @@ struct MyLongRunningJob : public BlockableMaintenanceJob
 MyLongRunningJob::~MyLongRunningJob() = default;
 
 using MyAttributeManager = test::MockAttributeManager;
+
+class MyIndexManager : public test::MockIndexManager {
+public:
+    ~MyIndexManager() override;
+};
+
+MyIndexManager::~MyIndexManager() = default;
 
 MaintenanceDocumentSubDB
 MyDocumentSubDB::getSubDB()
@@ -551,6 +559,7 @@ public:
     std::shared_ptr<MaintenanceJobTokenSource> _lid_space_compaction_job_token_source;
     std::shared_ptr<proton::IAttributeManager> _readyAttributeManager;
     std::shared_ptr<proton::IAttributeManager> _notReadyAttributeManager;
+    std::shared_ptr<MyIndexManager>    _index_manager;
     AttributeUsageFilter               _attributeUsageFilter;
     test::ResourceUsageNotifier        _resource_usage_notifier;
     BucketCreateNotifier               _bucketCreateNotifier;
@@ -660,6 +669,7 @@ MaintenanceControllerTest::MaintenanceControllerTest()
       _lid_space_compaction_job_token_source(std::make_shared<MaintenanceJobTokenSource>()),
       _readyAttributeManager(std::make_shared<MyAttributeManager>()),
       _notReadyAttributeManager(std::make_shared<MyAttributeManager>()),
+      _index_manager(std::make_shared<MyIndexManager>()),
       _attributeUsageFilter(),
       _bucketCreateNotifier(),
       _refCount(),
@@ -720,7 +730,7 @@ MaintenanceControllerTest::injectMaintenanceJobs()
                                             _bucketCreateNotifier, makeBucketSpace(), _fh, _fh,
                                             _bmc, _clusterStateHandler, _bucketHandler, _calc, _resource_usage_notifier,
                                             _jobTrackers, _readyAttributeManager, _notReadyAttributeManager,
-                                            _attributeUsageFilter, _lid_space_compaction_job_token_source);
+                                            _attributeUsageFilter, _lid_space_compaction_job_token_source, _index_manager);
     }
 }
 
