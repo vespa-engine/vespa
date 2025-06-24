@@ -37,7 +37,7 @@ protected:
 private:
     void updateBlocked(const LockGuard &guard);
 protected:
-    void internalNotifyDiskMemUsage(const ResourceUsageState &state);
+    void internal_notify_resource_usage(const ResourceUsageState &state);
 
 public:
     BlockableMaintenanceJob(const std::string &name,

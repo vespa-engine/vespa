@@ -449,7 +449,7 @@ void
 BucketMoveJob::notify_resource_usage(const ResourceUsageState& state)
 {
     // Called by master write thread
-    internalNotifyDiskMemUsage(state);
+    internal_notify_resource_usage(state);
 }
 
 void
