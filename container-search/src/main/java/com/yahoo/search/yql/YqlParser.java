@@ -767,7 +767,18 @@ public class YqlParser implements Parser {
         NearItem near = new NearItem();
         near.setIndexName(field);
         for (OperatorNode<ExpressionOperator> word : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
-            near.addItem(instantiateWordItem(field, word, near.getClass()));
+            if (word.getOperator() == ExpressionOperator.CALL) {
+                List<String> names = word.getArgument(0);
+                switch (names.get(0)) {
+                case EQUIV:
+                    near.addItem(instantiateEquivItem(field, word));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Expected equiv, got: " + names.get(0));
+                }
+            } else {
+                near.addItem(instantiateWordItem(field, word, near.getClass()));
+            }
         }
         Integer distance = getAnnotation(ast, DISTANCE, Integer.class, null, "term distance for NEAR operator");
         if (distance != null) {
@@ -782,7 +793,18 @@ public class YqlParser implements Parser {
         NearItem onear = new ONearItem();
         onear.setIndexName(field);
         for (OperatorNode<ExpressionOperator> word : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
-            onear.addItem(instantiateWordItem(field, word, onear.getClass()));
+            if (word.getOperator() == ExpressionOperator.CALL) {
+                List<String> names = word.getArgument(0);
+                switch (names.get(0)) {
+                case EQUIV:
+                    onear.addItem(instantiateEquivItem(field, word));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Expected equiv, got: " + names.get(0));
+                }
+            } else {
+                onear.addItem(instantiateWordItem(field, word, onear.getClass()));
+            }
         }
         Integer distance = getAnnotation(ast, DISTANCE, Integer.class, null, "term distance for ONEAR operator");
         if (distance != null) {
