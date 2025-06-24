@@ -55,7 +55,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         var prompt = truncatePrompt(text);
         record CacheKey(String embedderId, String text){}
         var cacheKey = new CacheKey(context.getEmbedderId(), prompt);
-        var rawEmbedding = context.computeCachedValueIfAbsent(cacheKey, () -> wrapLlamaException(() -> model.embed(prompt)));
+        var rawEmbedding = context.computeCachedValueIfAbsent(cacheKey, () -> generateRawEmbedding(prompt));
         if (tensorType.dimensions().size() != 1) {
             throw new IllegalArgumentException(
                     "Error in embedding to type '%s': should only have one dimension.".formatted(tensorType));
@@ -94,14 +94,6 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         model.close();
     }
 
-    private static <T> T wrapLlamaException(Supplier<T> supplier) {
-        try {
-            return supplier.get();
-        } catch (RuntimeException e) {
-            throw new Exception(e);
-        }
-    }
-
     /**
      * Performs a naive truncation of the prompt to the maximum number of tokens.
      * Tokens are assumed to be independent and that the token sequence can be safely truncated at any position.
@@ -114,5 +106,31 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         log.fine(() -> "Truncating prompt from %d to %d tokens".formatted(tokens.length, maxTruncatedLength));
         var truncatedTokens = Arrays.copyOfRange(tokens, 0, maxTruncatedLength);
         return model.decode(truncatedTokens);
+    }
+
+    private float[] generateRawEmbedding(String prompt) {
+        try {
+            return wrapLlamaException(() -> model.embed(prompt));
+        } catch (GgufEmbedder.Exception e) {
+            var cause = e.getCause();
+            if (cause == null) throw e;
+            if (cause.getClass().getName().endsWith("de.kherud.llama.LlamaException") // Package-private exception
+                    && cause.getMessage().contains("input is too large to process")) {
+                // Illegal input must be propagated as IllegalArgumentException
+                throw new IllegalArgumentException(
+                        "Input text is too large (length=%d). Either set max prompt tokens or adjust batch/context size."
+                                .formatted(prompt.length()),
+                        cause);
+            }
+            throw e;
+        }
+    }
+
+    private static <T> T wrapLlamaException(Supplier<T> supplier) {
+        try {
+            return supplier.get();
+        } catch (RuntimeException e) {
+            throw new GgufEmbedder.Exception(e);
+        }
     }
 }
