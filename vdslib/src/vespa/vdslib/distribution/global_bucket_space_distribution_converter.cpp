@@ -147,21 +147,27 @@ void build_global_groups(DistributionConfigBuilder& builder, const DistributionC
     builder.readyCopies = builder.redundancy;
 }
 
-} // anon ns
-
-std::shared_ptr<DistributionConfig>
-GlobalBucketSpaceDistributionConverter::convert_to_global(const DistributionConfig& source) {
+std::shared_ptr<DistributionConfig> convert_config_to_global(const DistributionConfig& source) {
     DistributionConfigBuilder builder;
     set_distribution_invariant_config_fields(builder);
     build_global_groups(builder, source);
     return std::make_shared<DistributionConfig>(builder);
 }
 
-std::shared_ptr<lib::Distribution>
+} // anon ns
+
+std::shared_ptr<const lib::Distribution>
 GlobalBucketSpaceDistributionConverter::convert_to_global(const lib::Distribution& distr) {
     const auto& src_config = distr.serialized();
-    auto global_config = convert_to_global(*string_to_config(src_config));
-    return std::make_shared<lib::Distribution>(*global_config);
+    // Even though we don't use the partition specs for any global distribution
+    // semantics, we still have to rewrite the group/node tree to ensure that the
+    // distribution config "hashes" do not change. Otherwise, upgrades will fail
+    // due to mismatching config strings between distributors and storage nodes.
+    // TODO Vespa 9 change distributor<->content node bucket info handshake to not
+    //  require distribution config hash since we now get atomic state+config bundles
+    //  from the cluster controller.
+    auto global_config = convert_config_to_global(*string_to_config(src_config));
+    return std::make_shared<const lib::Distribution>(*global_config, true);
 }
 
 std::unique_ptr<DistributionConfig>
@@ -169,13 +175,6 @@ GlobalBucketSpaceDistributionConverter::string_to_config(const std::string& cfg)
     vespalib::asciistream iss(cfg);
     config::AsciiConfigReader<vespa::config::content::StorDistributionConfig> reader(iss);
     return reader.read();
-}
-
-std::string GlobalBucketSpaceDistributionConverter::config_to_string(const DistributionConfig& cfg) {
-    vespalib::asciistream ost;
-    config::AsciiConfigWriter writer(ost);
-    writer.write(cfg);
-    return ost.str();
 }
 
 }

@@ -45,6 +45,7 @@ Distribution::Distribution()
       _redundancy(),
       _initialRedundancy(0),
       _readyCopies(0),
+      _global(false),
       _activePerGroup(false),
       _ensurePrimaryPersisted(true)
 {
@@ -63,6 +64,7 @@ Distribution::Distribution(const Distribution& d)
       _redundancy(),
       _initialRedundancy(0),
       _readyCopies(0),
+      _global(d.is_global()),
       _activePerGroup(false),
       _ensurePrimaryPersisted(true),
       _serialized(d._serialized)
@@ -83,17 +85,24 @@ Distribution::ConfigWrapper::steal() noexcept {
     return std::move(_cfg);
 }
 
-Distribution::Distribution(const ConfigWrapper & config) :
-    Distribution(config.get())
-{ }
+Distribution::Distribution(const ConfigWrapper& config)
+    : Distribution(config.get())
+{
+}
 
-Distribution::Distribution(const vespa::config::content::StorDistributionConfig & config)
+Distribution::Distribution(const vespa::config::content::StorDistributionConfig& config)
+    : Distribution(config, false)
+{
+}
+
+Distribution::Distribution(const vespa::config::content::StorDistributionConfig& config, bool is_global)
     : _distributionBitMasks(getDistributionBitMasks()),
       _nodeGraph(),
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
       _readyCopies(0),
+      _global(is_global),
       _activePerGroup(false),
       _ensurePrimaryPersisted(true)
 {
@@ -111,6 +120,7 @@ Distribution::Distribution(const std::string& serialized)
       _redundancy(),
       _initialRedundancy(0),
       _readyCopies(0),
+      _global(false),
       _activePerGroup(false),
       _ensurePrimaryPersisted(true),
       _serialized(serialized)
@@ -168,7 +178,7 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
             "Got config that didn't seem to specify even a root group. Must "
             "have a root group at minimum:\n" + _serialized, VESPA_STRLOC);
     }
-    nodeGraph->calculateDistributionHashValues();
+    nodeGraph->finalize();
     _nodeGraph = std::move(nodeGraph);
     _node2Group = std::move(node2Group);
     _redundancy = config.redundancy;
@@ -176,6 +186,16 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
     _ensurePrimaryPersisted = config.ensurePrimaryPersisted;
     _readyCopies = config.readyCopies;
     _activePerGroup = config.activePerLeafGroup;
+    if (_global) {
+        // Top-level `_redundancy` is used for flat topologies, in which case global
+        // distribution is trivial.
+        _redundancy = _nodeGraph->descendent_node_count();
+        // All replicas shall be indexed the data for globally distributed documents.
+        _readyCopies = _redundancy;
+        _initialRedundancy = 0;
+        _ensurePrimaryPersisted = true;
+        _activePerGroup = true;
+    }
 }
 
 uint32_t
@@ -278,7 +298,6 @@ Distribution::getIdealGroups(const document::BucketId& bucket, const ClusterStat
         results.emplace_back(parent, redundancy);
         return;
     }
-    const Group::Distribution& redundancyArray = parent.getDistribution(redundancy);
     uint32_t seed = getGroupSeed(bucket, clusterState, parent);
     RandomGen random(seed);
     uint32_t currentIndex = 0;
@@ -298,15 +317,20 @@ Distribution::getIdealGroups(const document::BucketId& bucket, const ClusterStat
         tmpResults.emplace_back(score, g.second);
     }
     std::sort(tmpResults.begin(), tmpResults.end());
-    if (tmpResults.size() > redundancyArray.size()) {
-        tmpResults.resize(redundancyArray.size());
-    }
-    for (uint32_t i=0, n=tmpResults.size(); i<n; ++i) {
-        ScoredGroup& group(tmpResults[i]);
-        // This should never happen. Config should verify that each group
-        // has enough groups beneath them.
-        assert(group._group != nullptr);
-        getIdealGroups(bucket, clusterState, *group._group, redundancyArray[i], results);
+    if (!_global) [[likely]] {
+        assert(parent.redundancy_value_within_bounds(redundancy));
+        const Group::Distribution& redundancyArray = parent.getDistribution(redundancy);
+        if (tmpResults.size() > redundancyArray.size()) {
+            tmpResults.resize(redundancyArray.size());
+        }
+        for (uint32_t i=0, n=tmpResults.size(); i<n; ++i) {
+            ScoredGroup& group(tmpResults[i]);
+            getIdealGroups(bucket, clusterState, *group._group, redundancyArray[i], results);
+        }
+    } else {
+        for (ScoredGroup& group : tmpResults) {
+            getIdealGroups(bucket, clusterState, *group._group, group._group->descendent_node_count(), results);
+        }
     }
 }
 
@@ -375,11 +399,11 @@ Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& cluste
         throw TooFewBucketBitsInUseException(ost.view(), VESPA_STRLOC);
     }
     // Find what hierarchical groups we should have copies in
-    std::vector<ResultGroup> _groupDistribution;
+    std::vector<ResultGroup> group_distribution;
     uint32_t seed;
     if (nodeType == NodeType::STORAGE) {
         seed = getStorageSeed(bucket, clusterState);
-        getIdealGroups(bucket, clusterState, *_nodeGraph, redundancy, _groupDistribution);
+        getIdealGroups(bucket, clusterState, *_nodeGraph, redundancy, group_distribution);
     } else {
         seed = getDistributorSeed(bucket, clusterState);
         const Group* group(getIdealDistributorGroup(bucket, clusterState, *_nodeGraph));
@@ -388,12 +412,12 @@ Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& cluste
             ss << "There is no legal distributor target in state with version " << clusterState.getVersion();
             throw NoDistributorsAvailableException(ss.view(), VESPA_STRLOC);
         }
-        _groupDistribution.emplace_back(*group, 1);
+        group_distribution.emplace_back(*group, 1);
     }
     RandomGen random(seed);
     uint32_t randomIndex = 0;
     std::vector<ScoredNode> tmpResults;
-    for (const auto & group : _groupDistribution) {
+    for (const auto& group : group_distribution) {
         uint16_t groupRedundancy(group._redundancy);
         const std::vector<uint16_t>& nodes(group._group->getNodes());
         // Create temporary place to hold results.
@@ -432,7 +456,7 @@ Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& cluste
         }
         trimResult(tmpResults, groupRedundancy);
         resultNodes.reserve(resultNodes.size() + tmpResults.size());
-        for (const auto & scored : tmpResults) {
+        for (const auto& scored : tmpResults) {
             resultNodes.push_back(scored._index);
         }
     }
