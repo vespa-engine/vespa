@@ -26,3 +26,18 @@ maxPromptTokens int default=0
 
 # Random number generator seed used by LLM runtime during inference (default: -1 = use random seed).
 seed int default = -1
+
+# Set the maximum number of parallel sequences to decode (default: 1 = no parallel decoding).
+parallel int default=1
+
+# Set the number of threads to use during generation (default: 0 = use runtime default).
+# - If 0>, the the number of threads as an absolute value.
+# - If 0, use runtime default.
+# - If <0, the number of threads as a ratio of the cpu cores, e.g. -1 for all cores.
+threads double default=0
+
+# Set the number of threads to use during batch and prompt processing (default: 0 = use runtime default).
+# - If 0>, the the number of threads as an absolute value.
+# - If 0, use runtime default.
+# - If <0, the number of threads as a ratio of the cpu cores, e.g. -1 for all cores.
+batchThreads double default=0

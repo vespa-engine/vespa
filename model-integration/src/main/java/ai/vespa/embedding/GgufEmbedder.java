@@ -37,6 +37,8 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         var modelPath = helper.getModelPathResolvingIfNecessary(config.embeddingModelReference()).toString();
         var modelParams = new ModelParameters()
                 .enableEmbedding()
+                .enableContBatching()
+                .setParallel(config.parallel())
                 .disableLog()
                 .setModel(modelPath)
                 .setCtxSize(config.contextSize())
@@ -48,6 +50,8 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         if (config.logicalMaxBatchSize() > 0) modelParams.setBatchSize(config.logicalMaxBatchSize());
         if (config.contextSize() > 0) modelParams.setCtxSize(config.contextSize());
         if (config.seed() > -1) modelParams.setSeed(config.seed());
+        if (config.threads() != 0) modelParams.setThreads(calculateThreadCount(config.threads()));
+        if (config.batchThreads() != 0) modelParams.setThreadsBatch(calculateThreadCount(config.batchThreads()));
         model = new LlamaModel(modelParams);
         maxPromptTokens = config.maxPromptTokens();
     }
@@ -134,5 +138,16 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         } catch (RuntimeException e) {
             throw new GgufEmbedder.Exception(e);
         }
+    }
+
+    /**
+     * Calculates the number of threads to use based on the configuration value.
+     * - If value > 0, use the absolute value.
+     * - If value < 0, use as a ratio of available CPU cores.
+     */
+    private static int calculateThreadCount(double configValue) {
+        if (configValue > 0) return (int) configValue; // Use absolute value
+        int availableProcessors = java.lang.Runtime.getRuntime().availableProcessors();
+        return (int) Math.round(availableProcessors * Math.abs(configValue));
     }
 }
