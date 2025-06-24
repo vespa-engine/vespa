@@ -17,7 +17,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.time.Duration;
@@ -149,7 +148,7 @@ class HttpFeedClient implements FeedClient {
                                                   getQuery(empty(), true),
                                                   requestHeaders,
                                                   null,
-                                                  Duration.ofSeconds(15),
+                                                  Duration.ofSeconds(30),
                                                   nanoClock);
             CompletableFuture<HttpResponse> future = new CompletableFuture<>();
             cluster.dispatch(request, future);

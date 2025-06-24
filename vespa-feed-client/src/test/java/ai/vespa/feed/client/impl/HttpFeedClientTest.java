@@ -230,7 +230,7 @@ class HttpFeedClientTest {
             try {
                 assertNull(request.body());
                 assertEquals("POST", request.method());
-                assertEquals("/document/v1/feeder/handshake/docid/dummy?dryRun=true&timeout=15000ms", request.pathAndQuery());
+                assertEquals("/document/v1/feeder/handshake/docid/dummy?dryRun=true&timeout=30000ms", request.pathAndQuery());
                 vessel.complete(response.get());
             }
             catch (Throwable t) {
