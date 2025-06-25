@@ -100,6 +100,8 @@ public:
 
     [[nodiscard]] virtual uint64_t current_resource_usage() const noexcept = 0;
 
+    [[nodiscard]] virtual uint64_t max_resource_usage() const noexcept = 0;
+
     struct DynamicThrottleParams {
         uint32_t window_size_increment      = 20;
         uint32_t min_window_size            = 20;
