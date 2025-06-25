@@ -113,14 +113,34 @@
           </provided>
         </configuration>
         <executions>
-        <execution>
-          <id>document-gen</id>
-          <goals>
-            <goal>document-gen</goal>
-          </goals>
-        </execution>
-      </executions>
-    </plugin>
+          <execution>
+            <id>document-gen</id>
+            <goals>
+              <goal>document-gen</goal>
+            </goals>
+            <phase>generate-test-sources</phase>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>add-test-sources</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources/vespa-documentgen-plugin</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
