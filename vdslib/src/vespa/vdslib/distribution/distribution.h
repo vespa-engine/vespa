@@ -27,6 +27,8 @@ class NodeState;
 
 class Distribution : public document::Printable {
 public:
+    using SP = std::shared_ptr<Distribution>;
+    using UP = std::unique_ptr<Distribution>;
     using DistributionConfig = const vespa::config::content::internal::InternalStorDistributionType;
     using DistributionConfigBuilder = vespa::config::content::internal::InternalStorDistributionType;
 
@@ -34,13 +36,12 @@ private:
     std::vector<uint32_t>      _distributionBitMasks;
     std::unique_ptr<Group>     _nodeGraph;
     std::vector<const Group *> _node2Group;
-    uint16_t                   _redundancy;
-    uint16_t                   _initialRedundancy;
-    uint16_t                   _readyCopies;
-    bool                       _global;
-    bool                       _activePerGroup;
-    bool                       _ensurePrimaryPersisted;
-    std::string                _serialized;
+    uint16_t _redundancy;
+    uint16_t _initialRedundancy;
+    uint16_t _readyCopies;
+    bool     _activePerGroup;
+    bool     _ensurePrimaryPersisted;
+    std::string _serialized;
 
     struct ResultGroup {
         const Group* _group;
@@ -87,20 +88,19 @@ private:
 public:
     class ConfigWrapper {
     public:
-        ConfigWrapper(ConfigWrapper&& rhs) noexcept = default;
-        ConfigWrapper& operator=(ConfigWrapper&& rhs) noexcept = default;
+        ConfigWrapper(ConfigWrapper && rhs) noexcept = default;
+        ConfigWrapper & operator = (ConfigWrapper && rhs) noexcept = default;
         explicit ConfigWrapper(std::unique_ptr<DistributionConfig> cfg) noexcept;
         ~ConfigWrapper();
-        [[nodiscard]] const DistributionConfig& get() const noexcept { return *_cfg; }
+        [[nodiscard]] const DistributionConfig & get() const noexcept { return *_cfg; }
         [[nodiscard]] std::unique_ptr<DistributionConfig> steal() noexcept;
     private:
         std::unique_ptr<DistributionConfig> _cfg;
     };
     Distribution();
     Distribution(const Distribution&);
-    Distribution(const Distribution&, bool is_global);
-    explicit Distribution(const ConfigWrapper& cfg);
-    explicit Distribution(const DistributionConfig& cfg);
+    explicit Distribution(const ConfigWrapper & cfg);
+    explicit Distribution(const DistributionConfig & cfg);
     explicit Distribution(const std::string& serialized);
     ~Distribution() override;
 
@@ -114,7 +114,6 @@ public:
     [[nodiscard]] uint16_t getReadyCopies() const noexcept { return _readyCopies; }
     [[nodiscard]] bool ensurePrimaryPersisted() const noexcept { return _ensurePrimaryPersisted; }
     [[nodiscard]] bool activePerGroup() const noexcept { return _activePerGroup; }
-    [[nodiscard]] bool is_global() const noexcept { return _global; }
 
     bool operator==(const Distribution& o) const noexcept { return (_serialized == o._serialized); }
     bool operator!=(const Distribution& o) const noexcept { return (_serialized != o._serialized); }

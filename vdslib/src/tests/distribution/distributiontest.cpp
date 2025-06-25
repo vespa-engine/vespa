@@ -1116,17 +1116,4 @@ TEST_F(DistributionTest, control_size_of_IndexList) {
     EXPECT_EQ(24u, sizeof(Distribution::IndexList));
 }
 
-TEST_F(DistributionTest, copying_preserves_global_flag) {
-    Distribution distr1(Distribution::getDefaultDistributionConfig(1, 10));
-    EXPECT_FALSE(distr1.is_global());
-    Distribution distr2(distr1, true);
-    EXPECT_TRUE(distr2.is_global());
-    EXPECT_EQ(distr2.getRedundancy(), 10);
-    EXPECT_EQ(distr2.getReadyCopies(), 10);
-    Distribution distr3(distr2);
-    EXPECT_TRUE(distr3.is_global());
-    EXPECT_EQ(distr3.getRedundancy(), 10);
-    EXPECT_EQ(distr3.getReadyCopies(), 10);
-}
-
 }
