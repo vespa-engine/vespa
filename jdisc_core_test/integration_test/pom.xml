@@ -262,7 +262,16 @@
                                     --add-opens=java.base/java.net=ALL-UNNAMED
                                     --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED
                                 </argLine>
-                             </configuration>
+                            </configuration>
+                            <executions>
+                                <execution>
+                                    <id>default-test</id>
+                                    <goals>
+                                        <goal>test</goal>
+                                    </goals>
+                                    <phase>integration-test</phase>
+                                </execution>
+                            </executions>
                         </plugin>
                     </plugins>
                 </pluginManagement>
@@ -277,7 +286,7 @@
                 <executions>
                     <execution>
                         <id>copy-dependencies</id>
-                        <phase>process-test-classes</phase>
+                        <phase>pre-integration-test</phase>
                         <goals>
                             <goal>copy-dependencies</goal>
                         </goals>
@@ -289,7 +298,7 @@
                     <execution>
                         <!-- we need an explicit copy of cert-a for the pre-install in cert-oa-path's manifest -->
                         <id>cert-a</id>
-                        <phase>process-test-classes</phase>
+                        <phase>pre-integration-test</phase>
                         <goals>
                             <goal>copy-dependencies</goal>
                         </goals>
