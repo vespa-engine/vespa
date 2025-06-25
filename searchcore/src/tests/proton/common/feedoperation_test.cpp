@@ -77,6 +77,15 @@ uint32_t getDocSize(const Document &doc)
     return docSize;
 }
 
+uint32_t get_update_size(const DocumentUpdate &update)
+{
+    vespalib::nbostream stream;
+    update.serializeHEAD(stream);
+    uint32_t upd_size = stream.size();
+    assert(upd_size != 0);
+    return upd_size;
+}
+
 uint32_t getDocIdSize(const DocumentId &doc_id)
 {
     return doc_id.toString().size() + 1;
@@ -248,9 +257,11 @@ TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_update_ope
     vespalib::nbostream stream;
     BucketId bucket(toBucket(docId.getGlobalId()));
     auto upd(f.makeUpdate());
+    uint32_t exp_serialized_size = get_update_size(*upd);
     {
         UpdateOperation op(bucket, 10, upd);
         op.serialize(stream);
+        EXPECT_EQ(op.getSerializedDocSize(), exp_serialized_size); // "doc" size isn't entirely accurate, but oh well
     }
     {
         UpdateOperation op;
@@ -258,6 +269,7 @@ TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_update_ope
         EXPECT_EQ(*upd, *op.getUpdate());
         EXPECT_EQ(bucket, op.getBucketId());
         EXPECT_EQ(10u, op.getTimestamp());
+        EXPECT_EQ(op.getSerializedDocSize(), exp_serialized_size);
     }
 }
 
