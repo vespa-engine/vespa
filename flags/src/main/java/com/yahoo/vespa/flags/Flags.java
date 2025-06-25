@@ -339,7 +339,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag REQUIRE_OPERATOR_MODE = defineFeatureFlag(
             "require-operator-mode", false,
-            List.of("eirik"), "2025-05-27", "2025-06-25",
+            List.of("eirik"), "2025-05-27", "2025-07-25",
             "Wheter operator mode is required to access hostedOperator functionality",
             "Takes effect immediately"
     );
