@@ -174,7 +174,7 @@
                 <executions>
                     <execution>
                         <id>copy-dependencies</id>
-                        <phase>compile</phase>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>copy-dependencies</goal>
                         </goals>
@@ -192,7 +192,7 @@
                 <executions>
                     <execution>
                         <id>export-packages</id>
-                        <phase>compile</phase>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>exec</goal>
                         </goals>
