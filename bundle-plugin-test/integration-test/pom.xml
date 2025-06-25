@@ -76,11 +76,24 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-test</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
         <configuration>
           <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
           <systemPropertyVariables>
             <test.bundle.path>${project.build.directory}/dependency</test.bundle.path>
           </systemPropertyVariables>
+          <includes>
+            <include>**/*Test*</include>
+          </includes>
         </configuration>
       </plugin>
       <plugin>
@@ -89,7 +102,7 @@
         <executions>
           <execution>
             <id>copy-dependencies</id>
-            <phase>process-test-classes</phase>
+            <phase>pre-integration-test</phase>
             <goals>
               <goal>copy-dependencies</goal>
             </goals>
