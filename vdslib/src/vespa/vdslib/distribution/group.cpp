@@ -14,7 +14,6 @@ namespace storage::lib {
 Group::Group(uint16_t index, std::string_view name) noexcept
     : _name(name),
       _index(index),
-      _descendent_node_count(0),
       _distributionHash(0),
       _capacity(1.0),
       _subGroups(),
@@ -26,7 +25,6 @@ Group::Group(uint16_t index, std::string_view name,
              const Distribution& d, uint16_t redundancy)
     : _name(name),
       _index(index),
-      _descendent_node_count(0),
       _distributionHash(0),
       _distributionSpec(d),
       _preCalculated(redundancy + 1),
@@ -52,7 +50,6 @@ Group::operator==(const Group& other) const noexcept
 {
     return (_name == other._name &&
             _index == other._index &&
-            _descendent_node_count == other._descendent_node_count &&
             _distributionSpec == other._distributionSpec &&
             _preCalculated.size() == other._preCalculated.size() &&
             _capacity == other._capacity &&
@@ -163,38 +160,14 @@ Group::getGroupForNode(uint16_t nodeIdx) const
     return nullptr;
 }
 
-uint16_t
-Group::update_descendent_node_counts() noexcept
-{
-    uint16_t nodes = 0;
-    if (isLeafGroup()) {
-        nodes = _nodes.size();
-    } else {
-        for (const auto& g : _subGroups) {
-            nodes += g.second->update_descendent_node_counts();
-        }
-    }
-    _descendent_node_count = nodes;
-    return nodes;
-}
-
-
 void
-Group::calculateDistributionHashValues(uint32_t parentHash) noexcept
+Group::calculateDistributionHashValues(uint32_t parentHash)
 {
     _distributionHash = parentHash ^ (1664525L * _index + 1013904223L);
     for (const auto & subGroup : _subGroups) {
         subGroup.second->calculateDistributionHashValues(_distributionHash);
     }
 }
-
-void
-Group::finalize() noexcept
-{
-    calculateDistributionHashValues();
-    (void) update_descendent_node_counts();
-}
-
 
 void
 Group::getConfigHash(vespalib::asciistream& out) const

@@ -1,5 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
+ * @class vdslib::Group
+ *
  * Defines a Group object that defines a group of groups/nodes.
  *
  * The "1|*" partitions representation is stored as an array of double,
@@ -24,12 +26,11 @@ class Group : public document::Printable
 {
 public:
     using UP = std::unique_ptr<Group>;
-    using Distribution = RedundancyGroupDistribution;
+    using Distribution = RedundancyGroupDistribution ;
 
 private:
-    std::string                _name;
+    std::string           _name;
     uint16_t                   _index;
-    uint16_t                   _descendent_node_count;
     uint32_t                   _distributionHash;
     Distribution               _distributionSpec;
     std::vector<Distribution>  _preCalculated;
@@ -43,18 +44,8 @@ private:
     // output nodes in a well-defined order, i.e. _originalNodes == _nodes.
     std::vector<uint16_t>      _originalNodes;
 
-    void calculateDistributionHashValues(uint32_t parentHash) noexcept;
-    [[nodiscard]] uint16_t update_descendent_node_counts() noexcept;
+    void calculateDistributionHashValues(uint32_t parentHash);
     void getConfigHash(vespalib::asciistream & out) const;
-
-    /**
-     * Calculates distribution hashes, used to create unique values for each
-     * group to XOR their bucket seeds with. Calculated based on index of itself
-     * and parent groups. Call this on the root group to generate all hashes.
-     */
-    void calculateDistributionHashValues() noexcept {
-        calculateDistributionHashValues(0x8badf00d);
-    }
 
 public:
     // Create leaf node
@@ -65,8 +56,6 @@ public:
     ~Group() override;
 
     [[nodiscard]] bool isLeafGroup() const noexcept { return ! _nodes.empty(); }
-    // Total number of leaf nodes existing recursively in/under this group
-    [[nodiscard]] uint16_t descendent_node_count() const noexcept { return _descendent_node_count; }
     bool operator==(const Group& other) const noexcept;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
@@ -77,7 +66,6 @@ public:
     const std::map<uint16_t, Group*>& getSubGroups() const noexcept { return _subGroups; }
     const std::vector<uint16_t>& getNodes() const noexcept { return _nodes; };
     const Distribution& getDistributionSpec() const noexcept { return _distributionSpec; }
-    [[nodiscard]] bool redundancy_value_within_bounds(size_t idx) const noexcept { return idx < _preCalculated.size(); }
     const Distribution& getDistribution(uint16_t redundancy) const noexcept { return _preCalculated[redundancy]; }
     uint32_t getDistributionHash() const noexcept { return _distributionHash; }
 
@@ -91,10 +79,13 @@ public:
     const Group* getGroupForNode(uint16_t index) const;
 
     /**
-     * Computes certain important immutable properties of the group/node tree.
-     * Must always be invoked prior to the first use of any ideal state computation.
+     * Calculates distribution hashes, used to create unique values for each
+     * group to XOR their bucket seeds with. Calculated based on index of itself
+     * and parent groups. Call this on the root group to generate all hashes.
      */
-    void finalize() noexcept;
+    void calculateDistributionHashValues() {
+        calculateDistributionHashValues(0x8badf00d);
+    }
 
     /**
      * Get a string uniquely describing the parts of the distribution config
