@@ -14,6 +14,7 @@ import de.kherud.llama.args.PoolingType;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -37,9 +38,8 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         var modelPath = helper.getModelPathResolvingIfNecessary(config.embeddingModelReference()).toString();
         var modelParams = new ModelParameters()
                 .enableEmbedding()
-                .disableLog()
+                .setParallel(config.parallel())
                 .setModel(modelPath)
-                .setCtxSize(config.contextSize())
                 .setGpuLayers(config.gpuLayers());
         if (config.continuousBatching()) modelParams.enableContBatching();
         if (config.poolingType() != GgufEmbedderConfig.PoolingType.Enum.UNSPECIFIED)
@@ -48,6 +48,9 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         if (config.logicalMaxBatchSize() > 0) modelParams.setBatchSize(config.logicalMaxBatchSize());
         if (config.contextSize() > 0) modelParams.setCtxSize(config.contextSize());
         if (config.seed() > -1) modelParams.setSeed(config.seed());
+        if (config.threads() != 0) modelParams.setThreads(calculateThreadCount(config.threads()));
+        if (config.batchThreads() != 0) modelParams.setThreadsBatch(calculateThreadCount(config.batchThreads()));
+        if (!log.isLoggable(Level.FINE)) modelParams.disableLog();
         model = new LlamaModel(modelParams);
         maxPromptTokens = config.maxPromptTokens();
     }
@@ -134,5 +137,16 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         } catch (RuntimeException e) {
             throw new GgufEmbedder.Exception(e);
         }
+    }
+
+    /**
+     * Calculates the number of threads to use based on the configuration value.
+     * - If value > 0, use the absolute value.
+     * - If value < 0, use as a ratio of available CPU cores.
+     */
+    private static int calculateThreadCount(double configValue) {
+        if (configValue > 0) return (int) configValue; // Use absolute value
+        int availableProcessors = java.lang.Runtime.getRuntime().availableProcessors();
+        return (int) Math.round(availableProcessors * Math.abs(configValue));
     }
 }
