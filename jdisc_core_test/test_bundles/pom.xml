@@ -35,13 +35,12 @@
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
             <plugin>
-                <!-- Trick to package bundles before test phase to allow running 'mvn test' -->
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>package-test-bundles</id>
-                        <phase>process-classes</phase>
+                        <phase>pre-integration-test</phase>
                         <goals>
                             <goal>bundle</goal>
                         </goals>

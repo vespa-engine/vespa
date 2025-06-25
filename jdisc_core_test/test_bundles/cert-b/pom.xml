@@ -21,10 +21,9 @@
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
                 <executions>
-                    <!-- Trick to package bundle before test phase, see test_bundles pom -->
                     <execution>
                         <id>package-cert-b</id>
-                        <phase>process-classes</phase>
+                        <phase>pre-integration-test</phase>
                         <goals>
                             <goal>generate-osgi-manifest</goal>
                             <goal>assemble-container-plugin</goal>
