@@ -110,7 +110,7 @@ import static org.mockito.Mockito.when;
  * @author Simon Thoresen Hult
  * @author bjorncs
  */
-public class HttpServerTest {
+public class HttpServerIT {
 
     @TempDir
     public File tmpFolder;

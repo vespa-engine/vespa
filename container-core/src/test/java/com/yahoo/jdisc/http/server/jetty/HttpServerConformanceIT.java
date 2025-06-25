@@ -54,9 +54,9 @@ import static org.hamcrest.Matchers.matchesPattern;
 /**
  * @author Simon Thoresen Hult
  */
-public class HttpServerConformanceTest extends ServerProviderConformanceTest {
+public class HttpServerConformanceIT extends ServerProviderConformanceTest {
 
-    private static final Logger log = Logger.getLogger(HttpServerConformanceTest.class.getName());
+    private static final Logger log = Logger.getLogger(HttpServerConformanceIT.class.getName());
 
     private static final String REQUEST_CONTENT = "myRequestContent";
     private static final String RESPONSE_CONTENT = "myResponseContent";
@@ -66,7 +66,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     private static CloseableHttpClient httpClient;
     private static ExecutorService executorService;
 
-    protected HttpServerConformanceTest() {
+    protected HttpServerConformanceIT() {
         super(false);
     }
 
@@ -93,7 +93,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     @AfterAll
     public static void reportDiagnostics() {
         System.out.println(
-                "After " + HttpServerConformanceTest.class.getSimpleName()
+                "After " + HttpServerConformanceIT.class.getSimpleName()
                 + ": #threads=" + Thread.getAllStackTraces().size());
     }
 
