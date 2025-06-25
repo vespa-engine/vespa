@@ -52,6 +52,25 @@ TEST_F(SharedOperationHandlerTest, unlimited_throttler_does_not_throttle) {
     EXPECT_EQ(throttler->current_active_token_count(), 2u);
 }
 
+TEST_F(SharedOperationHandlerTest, unlimited_throttler_tracks_max_resource_usage) {
+    auto throttler = SharedOperationThrottler::make_unlimited_throttler();
+    EXPECT_EQ(throttler->max_resource_usage(), 0);
+    auto token1 = throttler->try_acquire_one(1000);
+    ASSERT_TRUE(token1.valid());
+    EXPECT_EQ(throttler->max_resource_usage(), 1000);
+    auto token2 = throttler->try_acquire_one(2000);
+    ASSERT_TRUE(token2.valid());
+    EXPECT_EQ(throttler->max_resource_usage(), 3000);
+    token2.reset();
+    EXPECT_EQ(throttler->max_resource_usage(), 3000);
+    auto token3 = throttler->try_acquire_one(1900);
+    ASSERT_TRUE(token3.valid());
+    EXPECT_EQ(throttler->max_resource_usage(), 3000); // Monotonically increases
+    auto token4 = throttler->try_acquire_one(101);
+    ASSERT_TRUE(token4.valid());
+    EXPECT_EQ(throttler->max_resource_usage(), 3001);
+}
+
 TEST_F(SharedOperationHandlerTest, dynamic_throttler_respects_initial_window_size) {
     auto token1 = f._throttler->try_acquire_one();
     EXPECT_TRUE(token1.valid());
@@ -193,6 +212,25 @@ TEST_F(SharedOperationHandlerTest, unlimited_resource_usage_does_not_block_token
     EXPECT_TRUE(token2.valid());
     // We still track the resource usage
     EXPECT_EQ(f._throttler->current_resource_usage(), 30'000);
+}
+
+TEST_F(SharedOperationHandlerTest, dynamic_operation_throttler_tracks_max_resource_usage) {
+    f._throttler = SharedOperationThrottler::make_dynamic_throttler(params_with_resource_limit(0)); // 0 == inf
+    EXPECT_EQ(f._throttler->max_resource_usage(), 0);
+    auto token1 = f._throttler->try_acquire_one(1000);
+    ASSERT_TRUE(token1.valid());
+    EXPECT_EQ(f._throttler->max_resource_usage(), 1000);
+    auto token2 = f._throttler->try_acquire_one(2000);
+    ASSERT_TRUE(token2.valid());
+    EXPECT_EQ(f._throttler->max_resource_usage(), 3000);
+    token2.reset();
+    EXPECT_EQ(f._throttler->max_resource_usage(), 3000);
+    auto token3 = f._throttler->try_acquire_one(1900);
+    ASSERT_TRUE(token3.valid());
+    EXPECT_EQ(f._throttler->max_resource_usage(), 3000); // Monotonically increases
+    auto token4 = f._throttler->try_acquire_one(101);
+    ASSERT_TRUE(token4.valid());
+    EXPECT_EQ(f._throttler->max_resource_usage(), 3001);
 }
 
 // Note on test semantics: these tests are adapted from a subset of the MessageBus

@@ -61,7 +61,9 @@ UpdateOperation::serialize(vespalib::nbostream &os) const
 {
     assertValidBucketId(_upd->getId());
     DocumentOperation::serialize(os);
+    const size_t old_size = os.size();
     serializeUpdate(os);
+    _serializedDocSize = os.size() - old_size;
 }
 
 
@@ -70,7 +72,9 @@ UpdateOperation::deserialize(vespalib::nbostream &is, const DocumentTypeRepo &re
 {
     DocumentOperation::deserialize(is, repo);
     try {
+        const size_t old_size = is.size();
         deserializeUpdate(std::move(is), repo);
+        _serializedDocSize = old_size - is.size();
     } catch (document::DocumentTypeNotFoundException &e) {
         LOG(warning, "Failed deserialize update operation using unknown document type '%s'",
             e.getDocumentTypeName().c_str());

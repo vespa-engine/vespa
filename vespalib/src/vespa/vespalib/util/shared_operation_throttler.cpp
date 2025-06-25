@@ -15,13 +15,15 @@ class NoLimitsOperationThrottler final : public SharedOperationThrottler {
 public:
     NoLimitsOperationThrottler()
         : SharedOperationThrottler(),
-          _refs(0u),
-          _current_resource_usage(0)
+          _mutex(),
+          _refs(0),
+          _current_resource_usage(0),
+          _max_resource_usage(0)
     {
     }
     ~NoLimitsOperationThrottler() override {
-        assert(_refs.load() == 0u);
-        assert(_current_resource_usage.load() == 0);
+        assert(_refs == 0);
+        assert(_current_resource_usage == 0);
     }
     Token blocking_acquire_one(uint64_t operation_resource_usage) noexcept override {
         internal_ref_count_and_resource_usage_increase(operation_resource_usage);
@@ -37,25 +39,35 @@ public:
     }
     uint32_t current_window_size() const noexcept override { return 0; }
     uint32_t current_active_token_count() const noexcept override {
-        return _refs.load(std::memory_order_relaxed);
+        std::lock_guard guard(_mutex);
+        return _refs;
     }
     uint32_t waiting_threads() const noexcept override { return 0; }
     uint64_t current_resource_usage() const noexcept override {
-        return _current_resource_usage.load(std::memory_order_relaxed);
+        std::lock_guard guard(_mutex);
+        return _current_resource_usage;
+    }
+    uint64_t max_resource_usage() const noexcept override {
+        std::lock_guard guard(_mutex);
+        return _max_resource_usage;
     }
     void reconfigure_dynamic_throttling(const DynamicThrottleParams&) noexcept override { /* no-op */ }
 private:
     void internal_ref_count_and_resource_usage_increase(uint64_t operation_resource_usage) noexcept {
-        // Relaxed semantics suffice, as there are no transitive memory visibility/ordering requirements.
-        _current_resource_usage.fetch_add(operation_resource_usage, std::memory_order_relaxed);
-        _refs.fetch_add(1u, std::memory_order_relaxed);
+        std::lock_guard guard(_mutex);
+        _current_resource_usage += operation_resource_usage;
+        ++_refs;
+        _max_resource_usage = std::max(_current_resource_usage, _max_resource_usage);
     }
     void release_one(uint64_t operation_resource_usage) noexcept override {
-        _current_resource_usage.fetch_sub(operation_resource_usage, std::memory_order_relaxed);
-        _refs.fetch_sub(1u, std::memory_order_relaxed);
+        std::lock_guard guard(_mutex);
+        _current_resource_usage -= operation_resource_usage;
+        --_refs;
     }
-    std::atomic<uint32_t> _refs;
-    std::atomic<uint64_t> _current_resource_usage;
+    mutable std::mutex _mutex;
+    uint64_t           _refs;
+    uint64_t           _current_resource_usage;
+    uint64_t           _max_resource_usage;
 };
 
 /**
@@ -275,6 +287,7 @@ class DynamicOperationThrottler final : public SharedOperationThrottler {
     uint32_t                _pending_ops;
     uint32_t                _waiting_threads;
     uint64_t                _current_resource_usage;
+    uint64_t                _max_resource_usage;
     uint64_t                _resource_usage_soft_limit;
 public:
     DynamicOperationThrottler(const DynamicThrottleParams& params,
@@ -288,6 +301,7 @@ public:
     uint32_t current_active_token_count() const noexcept override;
     uint32_t waiting_threads() const noexcept override;
     uint64_t current_resource_usage() const noexcept override;
+    uint64_t max_resource_usage() const noexcept override;
     void reconfigure_dynamic_throttling(const DynamicThrottleParams& params) noexcept override;
 private:
     void release_one(uint64_t operation_resource_usage) noexcept override;
@@ -308,6 +322,7 @@ DynamicOperationThrottler::DynamicOperationThrottler(const DynamicThrottleParams
       _pending_ops(0),
       _waiting_threads(0),
       _current_resource_usage(0),
+      _max_resource_usage(0),
       _resource_usage_soft_limit(params.resource_usage_soft_limit)
 {
 }
@@ -343,6 +358,7 @@ DynamicOperationThrottler::add_to_current_resource_usage(uint64_t operation_reso
 {
     assert(!add_would_overflow<uint64_t>(_current_resource_usage, operation_resource_usage));
     _current_resource_usage += operation_resource_usage;
+    _max_resource_usage = std::max(_max_resource_usage, _current_resource_usage);
 }
 
 void
@@ -446,6 +462,13 @@ DynamicOperationThrottler::current_resource_usage() const noexcept
 {
     std::lock_guard lock(_mutex);
     return _current_resource_usage;
+}
+
+uint64_t
+DynamicOperationThrottler::max_resource_usage() const noexcept
+{
+    std::lock_guard lock(_mutex);
+    return _max_resource_usage;
 }
 
 void
