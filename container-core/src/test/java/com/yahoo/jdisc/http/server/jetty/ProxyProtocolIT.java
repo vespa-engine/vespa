@@ -44,9 +44,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author bjorncs
  */
 @Timeout(value = 60)
-class ProxyProtocolTest {
+class ProxyProtocolIT {
 
-    private static final Logger log = Logger.getLogger(ProxyProtocolTest.class.getName());
+    private static final Logger log = Logger.getLogger(ProxyProtocolIT.class.getName());
 
     private static Path privateKeyFile;
     private static Path certificateFile;

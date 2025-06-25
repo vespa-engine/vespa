@@ -29,7 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * @author Simon Thoresen Hult
  */
-public class JDiscHttpServletTest {
+public class JDiscHttpServletIT {
 
     @Test
     void requireThatServerRespondsToAllMethods() throws Exception {

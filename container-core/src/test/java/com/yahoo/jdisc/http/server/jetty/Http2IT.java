@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author bjorncs
  */
-class Http2Test {
+class Http2IT {
     @Test
     void requireThatServerCanRespondToHttp2Request(@TempDir Path tmpFolder) throws Exception {
         Path privateKeyFile = tmpFolder.resolve("private-key.pem");

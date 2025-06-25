@@ -56,7 +56,7 @@ import static org.mockito.Mockito.when;
  * @author Oyvind Bakksjo
  * @author bjorncs
  */
-public class FilterTestCase {
+public class FilterIT {
     @Test
     void requireThatRequestFilterIsNotRunOnUnboundPath() throws Exception {
         RequestFilterMockBase filter = mock(RequestFilterMockBase.class);

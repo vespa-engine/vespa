@@ -31,9 +31,9 @@ import static org.mockito.Mockito.verify;
 /**
  * @author bjorncs
  */
-class SslHandshakeMetricsTest {
+class SslHandshakeMetricsIT {
 
-    private static final Logger log = Logger.getLogger(SslHandshakeMetricsTest.class.getName());
+    private static final Logger log = Logger.getLogger(SslHandshakeMetricsIT.class.getName());
     private static Path privateKeyFile;
     private static Path certificateFile;
 
