@@ -33,7 +33,7 @@
                         <execution>
                             <id>package-test-bundles</id>
                             <!-- Must be done after generating classpath-mappings and copying it in the 'main' bundle. -->
-                            <phase>test-compile</phase>
+                            <phase>pre-integration-test</phase>
                             <goals>
                                 <goal>generate-osgi-manifest</goal>
                                 <goal>assemble-container-plugin</goal>

@@ -72,7 +72,7 @@ public class ExportPackages {
         Properties props = new Properties();
         try {
             props.load(ExportPackages.class.getResourceAsStream(PROPERTIES_FILE));
-        } catch (IOException e) {
+        } catch (IOException|NullPointerException e) {
             throw new IllegalStateException("Failed to read resource '" + PROPERTIES_FILE + "'.");
         }
         return props.getProperty(EXPORT_PACKAGES);
