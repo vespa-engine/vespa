@@ -341,6 +341,7 @@
               <classesDirectory>target/test-classes</classesDirectory>
               <outputDirectory>tmp/</outputDirectory>
               <finalName>simpleplugin</finalName>
+              <classifier>simpleplugin</classifier>
               <includes>
                 <include>**/test/SimplePlugin.class</include>
                 <include>**/test/SimpleService.class</include>
