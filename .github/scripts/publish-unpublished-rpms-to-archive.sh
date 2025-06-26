@@ -69,18 +69,22 @@ echo
 UPLOAD_FAILED=false
 echo "GitHub event: $GITHUB_EVENT_NAME"
 
-if [ "$GITHUB_EVENT_NAME" == "schedule" ]; then
-  for rpm in $(ls *.rpm); do
-    echo "Uploading $rpm ..."
-    if ! $MYDIR/upload-rpm-to-cloudsmith.sh $rpm ; then
+for rpm in *.rpm; do
+  [ -e "$rpm" ] || continue
+  echo "Uploading $rpm ..."
+  if [ "${DRY_RUN:-false}" != "true" ]; then
+    $MYDIR/upload-rpm-to-cloudsmith.sh $rpm
+    if [ $? -ne 0 ]; then
       echo "Could not upload $rpm"
       UPLOAD_FAILED=true
     else
       echo "$rpm uploaded"
     fi
-  done
-  echo
-fi
+  else
+    echo "DRY_RUN: Skipping upload of $rpm"
+  fi
+done
+echo
 
 if $UPLOAD_FAILED; then
   echo "Some RPMs failed to upload"
