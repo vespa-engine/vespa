@@ -438,9 +438,9 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 
     _executor.sync();
     waitForOnlineState();
-    if (replay_throttle_policy.get_params()) {
+    if (replay_throttle_policy.get_params() && (replay_throttle_policy.get_params()->resource_usage_soft_limit > 0)) {
         LOG(info, "Estimated maximum memory usage during transaction log replay was %" PRIu64
-                " bytes. Soft limit was %" PRIu64 " bytes",
+                  " bytes. Soft limit was %" PRIu64 " bytes",
             _shared_replay_throttler->max_resource_usage(),
             replay_throttle_policy.get_params()->resource_usage_soft_limit);
     }
