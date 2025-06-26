@@ -106,6 +106,7 @@ public class RankProfile implements Cloneable {
     private Double postFilterThreshold = null;
     private Double approximateThreshold = null;
     private Double acornOneThreshold = null;
+    private Double acornOneExploration = null;
     private Double targetHitsMaxAdjustmentFactor = null;
     private Double weakandStopwordLimit = null;
     private Boolean weakandAllowDropAll = null;
@@ -793,6 +794,7 @@ public class RankProfile implements Cloneable {
     public void setPostFilterThreshold(double threshold) { this.postFilterThreshold = threshold; }
     public void setApproximateThreshold(double threshold) { this.approximateThreshold = threshold; }
     public void setAcornOneThreshold(double threshold) { this.acornOneThreshold = threshold; }
+    public void setAcornOneExploration(double exploration) { this.acornOneExploration = exploration; }
     public void setTargetHitsMaxAdjustmentFactor(double factor) { this.targetHitsMaxAdjustmentFactor = factor; }
     public void setWeakandStopwordLimit(double limit) { this.weakandStopwordLimit = limit; }
     public void setWeakandAdjustTarget(double target) { this.weakandAdjustTarget = target; }
@@ -824,6 +826,13 @@ public class RankProfile implements Cloneable {
             return OptionalDouble.of(acornOneThreshold);
         }
         return uniquelyInherited(RankProfile::getAcornOneThreshold, OptionalDouble::isPresent, "acorn-one-threshold").orElse(OptionalDouble.empty());
+    }
+
+    public OptionalDouble getAcornOneExploration() {
+        if (acornOneExploration != null) {
+            return OptionalDouble.of(acornOneExploration);
+        }
+        return uniquelyInherited(RankProfile::getAcornOneExploration, OptionalDouble::isPresent, "acorn-one-exploration").orElse(OptionalDouble.empty());
     }
 
     public OptionalDouble getTargetHitsMaxAdjustmentFactor() {
