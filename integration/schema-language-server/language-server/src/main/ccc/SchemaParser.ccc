@@ -559,6 +559,7 @@ TOKEN :
 | < POST_FILTER_THRESHOLD: "post-filter-threshold" >
 | < APPROXIMATE_THRESHOLD: "approximate-threshold" >
 | < ACORN_ONE_THRESHOLD: "acorn-one-threshold" >
+| < ACORN_ONE_EXPLORATION: "acorn-one-exploration" >
 | < TARGET_HITS_MAX_ADJUSTMENT_FACTOR: "target-hits-max-adjustment-factor" >
 | < KEEP_RANK_COUNT: "keep-rank-count" >
 | < RANK_SCORE_DROP_LIMIT: "rank-score-drop-limit" >
@@ -2206,6 +2207,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
        | postFilterThreshold(profile)
        | approximateThreshold(profile)
        | acornOneThreshold(profile)
+       | acornOneExploration(profile)
        | targetHitsMaxAdjustmentFactor(profile)
        | rankProperties(profile)
        | secondPhase(profile)
@@ -2822,6 +2824,19 @@ void acornOneThreshold(ParsedRankProfile profile) :
 ;
 
 /**
+ * This rule consumes an acorn-one-exploration statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void acornOneExploration(ParsedRankProfile profile) :
+{
+    double exploration;
+}
+
+    (<ACORN_ONE_EXPLORATION> <COLON> exploration = floatValue()) { profile.setAcornOneExploration(exploration); }
+;
+
+/**
  * This rule consumes a target-hits-max-adjustment-factor statement for a rank profile.
  *
  * @param profile the rank profile to modify
@@ -3285,6 +3300,7 @@ String identifierWithDashStr :
     |
     ( <IDENTIFIER_WITH_DASH>
     | <ACORN_ONE_THRESHOLD>
+    | <ACORN_ONE_EXPLORATION>
     | <ADJUST_TARGET>
     | <ALLOW_DROP_ALL>
     | <APPROXIMATE_THRESHOLD>
