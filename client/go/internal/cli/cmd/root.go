@@ -142,7 +142,10 @@ func New(stdout, stderr io.Writer, environment []string) (*CLI, error) {
 		Short: "The command-line tool for Vespa.ai",
 		Long: `The command-line tool for Vespa.ai.
 
-Use it on Vespa instances running locally, remotely or in Vespa Cloud.
+Use it on Vespa instances running locally, remotely or in Vespa Cloud -
+use a token for Vespa Cloud access:
+
+$ export VESPA_CLI_DATA_PLANE_TOKEN='value-of-token'
 
 To get started, see the following quick start guides:
 
