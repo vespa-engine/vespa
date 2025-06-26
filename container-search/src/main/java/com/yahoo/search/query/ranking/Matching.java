@@ -26,6 +26,7 @@ public class Matching implements Cloneable {
     public static final String POST_FILTER_THRESHOLD = "postFilterThreshold";
     public static final String APPROXIMATE_THRESHOLD = "approximateThreshold";
     public static final String ACORN_ONE_THRESHOLD = "acornOneThreshold";
+    public static final String ACORN_ONE_EXPLORATION = "acornOneExploration";
     public static final String TARGET_HITS_MAX_ADJUSTMENT_FACTOR = "targetHitsMaxAdjustmentFactor";
     public static final String FILTER_THRESHOLD = "filterThreshold";
     public static final String WEAKAND = "weakand";
@@ -41,6 +42,7 @@ public class Matching implements Cloneable {
         argumentType.addField(new FieldDescription(POST_FILTER_THRESHOLD, "double"));
         argumentType.addField(new FieldDescription(APPROXIMATE_THRESHOLD, "double"));
         argumentType.addField(new FieldDescription(ACORN_ONE_THRESHOLD, "double"));
+        argumentType.addField(new FieldDescription(ACORN_ONE_EXPLORATION, "double"));
         argumentType.addField(new FieldDescription(TARGET_HITS_MAX_ADJUSTMENT_FACTOR, "double"));
         argumentType.addField(new FieldDescription(FILTER_THRESHOLD, "double"));
         argumentType.addField(new FieldDescription(WEAKAND, new QueryProfileFieldType(WeakAnd.getArgumentType())));
@@ -56,6 +58,7 @@ public class Matching implements Cloneable {
     private Double postFilterThreshold = null;
     private Double approximateThreshold = null;
     private Double acornOneThreshold = null;
+    private Double acornOneExploration = null;
     private Double targetHitsMaxAdjustmentFactor = null;
     private Double filterThreshold = null;
 
@@ -68,6 +71,7 @@ public class Matching implements Cloneable {
     public Double getPostFilterThreshold() { return postFilterThreshold; }
     public Double getApproximateThreshold() { return approximateThreshold; }
     public Double getAcornOneThreshold() { return acornOneThreshold; }
+    public Double getAcornOneExploration() { return acornOneExploration; }
     public Double getTargetHitsMaxAdjustmentFactor() { return targetHitsMaxAdjustmentFactor; }
     public Double getFilterThreshold() { return filterThreshold; }
     public WeakAnd getWeakAnd() { return weakAnd; }
@@ -100,6 +104,9 @@ public class Matching implements Cloneable {
     public void setAcornOneThreshold(double threshold) {
         acornOneThreshold = threshold;
     }
+    public void setAcornOneExploration(double threshold) {
+        acornOneExploration = threshold;
+    }
     public void setTargetHitsMaxAdjustmentFactor(double factor) {
         targetHitsMaxAdjustmentFactor = factor;
     }
@@ -130,6 +137,9 @@ public class Matching implements Cloneable {
         }
         if (acornOneThreshold != null) {
             rankProperties.put("vespa.matching.acorn_one.upper_limit", String.valueOf(acornOneThreshold));
+        }
+        if (acornOneThreshold != null) {
+            rankProperties.put("vespa.matching.acorn_one.exploration", String.valueOf(acornOneExploration));
         }
         if (targetHitsMaxAdjustmentFactor != null) {
             rankProperties.put("vespa.matching.nns.target_hits_max_adjustment_factor", String.valueOf(targetHitsMaxAdjustmentFactor));
@@ -164,6 +174,7 @@ public class Matching implements Cloneable {
                 Objects.equals(postFilterThreshold, matching.postFilterThreshold) &&
                 Objects.equals(approximateThreshold, matching.approximateThreshold) &&
                 Objects.equals(acornOneThreshold, matching.acornOneThreshold) &&
+                Objects.equals(acornOneExploration, matching.acornOneExploration) &&
                 Objects.equals(targetHitsMaxAdjustmentFactor, matching.targetHitsMaxAdjustmentFactor) &&
                 Objects.equals(filterThreshold, matching.filterThreshold) &&
                 Objects.equals(weakAnd, matching.weakAnd);
@@ -172,7 +183,7 @@ public class Matching implements Cloneable {
     @Override
     public int hashCode() {
         return Objects.hash(termwiseLimit, numThreadsPerSearch, numSearchPartitions, minHitsPerThread,
-                postFilterThreshold, approximateThreshold, acornOneThreshold, targetHitsMaxAdjustmentFactor, filterThreshold, weakAnd);
+                postFilterThreshold, approximateThreshold, acornOneThreshold, acornOneExploration, targetHitsMaxAdjustmentFactor, filterThreshold, weakAnd);
     }
 }
 
