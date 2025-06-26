@@ -65,6 +65,7 @@ public class ParsedRankingConverter {
         parsed.getPostFilterThreshold().ifPresent(profile::setPostFilterThreshold);
         parsed.getApproximateThreshold().ifPresent(profile::setApproximateThreshold);
         parsed.getAcornOneThreshold().ifPresent(profile::setAcornOneThreshold);
+        parsed.getAcornOneExploration().ifPresent(profile::setAcornOneExploration);
         parsed.getTargetHitsMaxAdjustmentFactor().ifPresent(profile::setTargetHitsMaxAdjustmentFactor);
         parsed.getWeakandStopwordLimit().ifPresent(profile::setWeakandStopwordLimit);
         parsed.getWeakandAllowDropAll().ifPresent(profile::setWeakandAllowDropAll);

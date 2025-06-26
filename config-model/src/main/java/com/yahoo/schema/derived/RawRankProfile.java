@@ -171,6 +171,7 @@ public class RawRankProfile {
         private final OptionalDouble postFilterThreshold;
         private final OptionalDouble approximateThreshold;
         private final OptionalDouble acornOneThreshold;
+        private final OptionalDouble acornOneExploration;
         private final OptionalDouble targetHitsMaxAdjustmentFactor;
         private final OptionalDouble weakandStopwordLimit;
         private final Boolean weakandAllowDropAll;
@@ -228,6 +229,7 @@ public class RawRankProfile {
             postFilterThreshold = compiled.getPostFilterThreshold();
             approximateThreshold = compiled.getApproximateThreshold();
             acornOneThreshold = compiled.getAcornOneThreshold();
+            acornOneExploration = compiled.getAcornOneExploration();
             targetHitsMaxAdjustmentFactor = compiled.getTargetHitsMaxAdjustmentFactor();
             weakandStopwordLimit = compiled.getWeakandStopwordLimit();
             weakandAdjustTarget = compiled.getWeakandAdjustTarget();
@@ -499,6 +501,9 @@ public class RawRankProfile {
             }
             if (acornOneThreshold.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.acorn_one.upper_limit", String.valueOf(acornOneThreshold.getAsDouble())));
+            }
+            if (acornOneExploration.isPresent()) {
+                properties.add(new Pair<>("vespa.matching.acorn_one.exploration", String.valueOf(acornOneExploration.getAsDouble())));
             }
             if (targetHitsMaxAdjustmentFactor.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.nns.target_hits_max_adjustment_factor", String.valueOf(targetHitsMaxAdjustmentFactor.getAsDouble())));
