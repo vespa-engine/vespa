@@ -692,11 +692,6 @@ group[2].nodes[2].index 5
 )"))));
     }
 
-    static std::shared_ptr<lib::Distribution> derived_global_grouped_distribution() {
-        auto default_distr = default_grouped_distribution();
-        return lib::GlobalBucketSpaceDistributionConverter::convert_to_global(*default_distr);
-    }
-
 private:
     BucketManagerTest& _self;
     std::shared_ptr<lib::ClusterState> _state;

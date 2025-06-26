@@ -93,7 +93,7 @@ DistributorStripeTestUtil::set_redundancy(uint32_t redundancy)
 }
 
 void
-DistributorStripeTestUtil::trigger_distribution_change(lib::Distribution::SP distr)
+DistributorStripeTestUtil::trigger_distribution_change(std::shared_ptr<lib::Distribution> distr)
 {
     _node->getComponentRegister().setDistribution(distr);
     auto new_config = lib::BucketSpaceDistributionConfigs::from_default_distribution(std::move(distr));
