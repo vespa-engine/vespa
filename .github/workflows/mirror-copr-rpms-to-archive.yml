@@ -2,6 +2,12 @@ name: Mirror Copr RPMs to archive
 
 on:
   workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Run only non-destructive commands, skipping the destructive ones'
+        required: false
+        type: boolean
+        default: true
 
   pull_request:
     paths:
@@ -13,6 +19,9 @@ on:
 
   schedule:
    - cron: '0 6 * * *'
+
+env:
+  DRY_RUN: ${{ (inputs.dry-run || github.event_name == 'pull_request') && 'true' || '' }}
 
 jobs:
   mirror-copr-rpms-to-archive:
