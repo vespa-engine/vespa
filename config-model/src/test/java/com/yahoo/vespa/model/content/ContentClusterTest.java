@@ -996,6 +996,16 @@ public class ContentClusterTest extends ContentBaseTest {
         assertPrepareRestartCommand(createClusterWithFlushOnShutdownOverride(true, true));
     }
 
+    @Test
+    void flush_on_shutdown_follows_feature_flag_for_use_new_prepare_for_restart() throws Exception {
+        assertNoPreShutdownCommand(createOneNodeCluster(new TestProperties().setHostedVespa(true).useNewPrepareForRestart(true)));
+        assertPrepareRestartCommand(createOneNodeCluster(new TestProperties().setHostedVespa(true).useNewPrepareForRestart(false)));
+
+        // Always flush on non-hosted
+        assertPrepareRestartCommand(createOneNodeCluster(new TestProperties().setHostedVespa(false).useNewPrepareForRestart(true)));
+        assertPrepareRestartCommand(createOneNodeCluster(new TestProperties().setHostedVespa(false).useNewPrepareForRestart(false)));
+    }
+
     private static String oneNodeClusterXml() {
         return "<content version=\"1.0\" id=\"mockcluster\">" +
                 "  <redundancy>3</redundancy>" +

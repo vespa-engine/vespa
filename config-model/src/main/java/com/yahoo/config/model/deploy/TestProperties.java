@@ -77,6 +77,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxContentNodeMaintenanceOpConcurrency = -1;
     private int maxDistributorDocumentOperationSizeMib = -1;
     private long searchCoreTransactionLogReplaySoftMemoryLimit = 0;
+    private boolean useNewPrepareForRestart = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -129,6 +130,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
     @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
     @Override public long searchCoreTransactionLogReplaySoftMemoryLimit() { return searchCoreTransactionLogReplaySoftMemoryLimit; }
+    @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -336,6 +338,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setSearchCoreTransactionLogReplaySoftMemoryLimit(long limit) {
         this.searchCoreTransactionLogReplaySoftMemoryLimit = limit;
+        return this;
+    }
+
+    public TestProperties useNewPrepareForRestart(boolean value) {
+        this.useNewPrepareForRestart = value;
         return this;
     }
 
