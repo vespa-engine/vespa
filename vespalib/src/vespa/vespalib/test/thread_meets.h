@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/rendezvous.h>
+#include <vespa/vespalib/util/rendezvous.hpp>
 
 namespace vespalib::test {
 

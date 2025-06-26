@@ -18,6 +18,7 @@
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/searchlib/common/allocatedbitvector.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/limited_thread_bundle_wrapper.h>
 #include <cinttypes>
 

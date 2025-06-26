@@ -3,6 +3,7 @@
 #include "match_loop_communicator.h"
 #include <vespa/searchlib/features/first_phase_rank_lookup.h>
 #include <vespa/vespalib/util/priority_queue.h>
+#include <vespa/vespalib/util/rendezvous.hpp>
 
 using search::features::FirstPhaseRankLookup;
 

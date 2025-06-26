@@ -2,6 +2,7 @@
 
 #include "transport_debugger.h"
 #include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/rendezvous.hpp>
 #include <cassert>
 
 namespace fnet {

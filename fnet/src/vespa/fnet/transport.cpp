@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/rendezvous.h>
+#include <vespa/vespalib/util/rendezvous.hpp>
 #include <vespa/vespalib/util/backtrace.h>
 #include <xxhash.h>
 
