@@ -123,5 +123,3 @@ public:
 };
 
 } // namespace vespalib
-
-#include "rendezvous.hpp"

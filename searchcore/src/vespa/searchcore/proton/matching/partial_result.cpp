@@ -2,6 +2,7 @@
 
 #include "partial_result.h"
 #include <cstring>
+#include <cassert>
 
 namespace proton::matching {
 
