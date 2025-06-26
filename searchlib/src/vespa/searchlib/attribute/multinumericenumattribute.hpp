@@ -69,6 +69,7 @@ MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(ReaderBase &attrReader)
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
     this->set_size_on_disk(attrReader.size_on_disk() + udatBuffer->size_on_disk());
+    this->set_last_flush_duration(attrReader.flush_duration());
     this->_mvMapping.reserve(numDocs);
 
     if (this->hasPostings()) {
@@ -117,6 +118,7 @@ MultiValueNumericEnumAttribute<B, M>::onLoad(vespalib::Executor *)
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
     this->set_size_on_disk(attrReader.size_on_disk());
+    this->set_last_flush_duration(attrReader.flush_duration());
     if (numDocs > 0) {
         this->onAddDoc(numDocs - 1);
     }

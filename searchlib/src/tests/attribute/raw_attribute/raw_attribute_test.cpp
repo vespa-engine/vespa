@@ -97,6 +97,8 @@ struct MyIssueHandler : Issue::Handler {
     }
 };
 
+auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
+
 }
 
 class RawAttributeTest : public ::testing::Test
@@ -229,12 +231,15 @@ TEST_F(RawAttributeTest, save_and_load)
     _raw->set_raw(2, mini_test);
     _attr->setCreateSerialNum(20);
     EXPECT_EQ(0, _attr->size_on_disk());
+    EXPECT_EQ(zero_flush_duration, _attr->last_flush_duration());
     _attr->save();
     auto saved_size_on_disk = _attr->size_on_disk();
     EXPECT_NE(0, saved_size_on_disk);
+    EXPECT_NE(zero_flush_duration, _attr->last_flush_duration());
     reset_attr(false);
     _attr->load();
     EXPECT_EQ(saved_size_on_disk, _attr->size_on_disk());
+    EXPECT_NE(zero_flush_duration, _attr->last_flush_duration());
     EXPECT_EQ(11, _attr->getCommittedDocIdLimit());
     EXPECT_EQ(11, _attr->getStatus().getNumDocs());
     EXPECT_EQ(20, _attr->getCreateSerialNum());

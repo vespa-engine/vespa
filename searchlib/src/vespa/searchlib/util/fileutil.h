@@ -5,6 +5,7 @@
 #include <memory>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/array.h>
+#include <chrono>
 #include <string>
 
 using vespalib::GenericHeader;
@@ -17,6 +18,7 @@ protected:
     void * _buffer;
     size_t _size;
     uint64_t _size_on_disk;
+    std::chrono::steady_clock::duration _flush_duration;
     std::unique_ptr<GenericHeader> _header;
 public:
     LoadedBuffer(const LoadedBuffer & rhs) = delete;
@@ -27,6 +29,7 @@ public:
         : _buffer(buf),
           _size(sz),
           _size_on_disk(0),
+          _flush_duration(std::chrono::steady_clock::duration::zero()),
           _header()
     { }
 
@@ -37,6 +40,7 @@ public:
     bool  empty() const { return _size == 0; }
     size_t size(size_t elemSize) const { return  _size/elemSize; }
     uint64_t size_on_disk() const noexcept { return _size_on_disk; }
+    std::chrono::steady_clock::duration flush_duration() const noexcept { return _flush_duration; }
     const GenericHeader &getHeader() const { return *_header; }
 };
 

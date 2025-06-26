@@ -69,6 +69,8 @@ auto zipped_and_sorted_by_first(const std::vector<T0>& a, const std::vector<T1>&
     return combined;
 }
 
+auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
+
 }
 
 template <typename Attribute>
@@ -416,6 +418,7 @@ testSingleValue(Attribute & svsa, Config &cfg)
     svsa.save(load.getBaseFileName());
     load.load();
     EXPECT_EQ(svsa.size_on_disk(), load.size_on_disk());
+    EXPECT_NE(zero_flush_duration, load.last_flush_duration());
 }
 
 TEST_F(StringAttributeTest, testSingleValue)

@@ -10,6 +10,7 @@
 #include <vespa/searchlib/attribute/attributesaver.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/util/filekit.h>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 
@@ -72,6 +73,7 @@ DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore()
     std::filesystem::create_directory(std::filesystem::path(_flushDir));
     SerialNumFileHeaderContext fileHeaderContext(_dmsft._fileHeaderContext, _syncToken);
     bool saveSuccess = false;
+    auto create_time = std::chrono::steady_clock::now();
     if (_dmsft._hwInfo.disk().slow()) {
         search::AttributeMemorySaveTarget memorySaveTarget;
         saveSuccess = _saver->save(memorySaveTarget);
@@ -80,6 +82,7 @@ DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore()
             saveSuccess = memorySaveTarget.writeToFile(_dmsft._tuneFileAttributes, fileHeaderContext);
             if (saveSuccess) {
                 _dmsft._dms->set_size_on_disk(memorySaveTarget.size_on_disk());
+                _dmsft._dms->set_last_flush_duration(FileHeaderContext::make_flush_duration(create_time));
             }
         }
     } else {
@@ -87,6 +90,7 @@ DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore()
         saveSuccess = _saver->save(saveTarget);
         if (saveSuccess) {
             _dmsft._dms->set_size_on_disk(saveTarget.size_on_disk());
+            _dmsft._dms->set_last_flush_duration(FileHeaderContext::make_flush_duration(create_time));
         }
         _saver.reset();
     }

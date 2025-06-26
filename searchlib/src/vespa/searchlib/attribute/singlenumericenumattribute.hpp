@@ -88,6 +88,7 @@ SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
     this->set_size_on_disk(attrReader.size_on_disk() + udatBuffer->size_on_disk());
+    this->set_last_flush_duration(attrReader.flush_duration());
     if (this->hasPostings()) {
         auto loader = this->getEnumStore().make_enumerated_postings_loader();
         loader.load_unique_values(udatBuffer->buffer(), udatBuffer->size());
@@ -134,6 +135,7 @@ SingleValueNumericEnumAttribute<B>::onLoad(vespalib::Executor *)
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
     this->set_size_on_disk(attrReader.size_on_disk());
+    this->set_last_flush_duration(attrReader.flush_duration());
     if (numDocs > 0) {
         this->onAddDoc(numDocs - 1);
     }

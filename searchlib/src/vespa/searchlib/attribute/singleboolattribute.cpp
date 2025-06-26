@@ -210,6 +210,7 @@ SingleBoolAttribute::onLoad(vespalib::Executor *)
         setNumDocs(numDocs);
         setCommittedDocIdLimit(numDocs);
         set_size_on_disk(attrReader.size_on_disk());
+        set_last_flush_duration(attrReader.flush_duration());
     }
 
     return ok;

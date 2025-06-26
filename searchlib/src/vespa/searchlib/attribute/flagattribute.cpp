@@ -96,7 +96,7 @@ FlagAttributeT<B>::onLoadEnumerated(ReaderBase &attrReader)
     uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, std::span<const uint32_t>(), saver);
     this->checkSetMaxValueCount(maxvc);
     this->set_size_on_disk(attrReader.size_on_disk() + udatBuffer->size_on_disk());
-
+    this->set_last_flush_duration(attrReader.flush_duration());
     return true;
 }
 

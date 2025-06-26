@@ -8,6 +8,7 @@
 #include <vespa/searchcommon/attribute/hnsw_index_params.h>
 #include <vespa/searchcommon/attribute/predicate_params.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <chrono>
 #include <optional>
 #include <string>
 
@@ -33,6 +34,7 @@ private:
     uint64_t    _totalValueCount;
     uint64_t    _createSerialNum;
     uint32_t    _version;
+    std::chrono::steady_clock::duration _flush_duration;
     vespalib::GenericHeader _extra_tags;
 
     void internalExtractTags(const vespalib::GenericHeader &header);
@@ -72,6 +74,7 @@ public:
     static AttributeHeader extractTags(const vespalib::GenericHeader &header, const std::string &file_name);
     void addTags(vespalib::GenericHeader &header) const;
     vespalib::GenericHeader& get_extra_tags() noexcept { return _extra_tags; }
+    std::chrono::steady_clock::duration get_flush_duration() const noexcept { return _flush_duration; }
 };
 
 }

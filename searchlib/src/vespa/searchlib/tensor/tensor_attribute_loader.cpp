@@ -372,6 +372,7 @@ TensorAttributeLoader::on_load(vespalib::Executor* executor)
     _attr.getStatus().setNumDocs(docid_limit);
     _attr.setCommittedDocIdLimit(docid_limit);
     _attr.set_size_on_disk(reader.size_on_disk() + get_index_size_on_disk());
+    _attr.set_last_flush_duration(reader.flush_duration());
     if (_index != nullptr) {
         bool use_index_file = false;
         if (has_index_file(_attr)) {

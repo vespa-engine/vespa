@@ -3,6 +3,7 @@
 #include "fileutil.hpp"
 #include "disk_space_calculator.h"
 #include "filesizecalculator.h"
+#include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/guard.h>
 #include <vespa/fastlib/io/bufferedfile.h>
@@ -55,6 +56,7 @@ LoadedMmap::LoadedMmap(const std::string &fileName)
                             sz = fileSize;
                             _size = sz - headerLen;
                             _buffer = static_cast<char *>(_mapBuffer) + headerLen;
+                            _flush_duration = common::FileHeaderContext::get_flush_duration(*_header);
                             badHeader = false;
                         }
                     }

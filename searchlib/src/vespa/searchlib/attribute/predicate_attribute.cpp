@@ -241,6 +241,7 @@ PredicateAttribute::onLoad(vespalib::Executor *)
     setNumDocs(highest_doc_id + 1);
     setCommittedDocIdLimit(highest_doc_id + 1);
     set_size_on_disk(loaded_buffer->size_on_disk());
+    set_last_flush_duration(loaded_buffer->flush_duration());
     _index->onDeserializationCompleted();
     return true;
 }

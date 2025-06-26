@@ -4,6 +4,7 @@
 #include "attributevector.h"
 #include "load_utils.h"
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/util/filesizecalculator.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <cassert>
@@ -42,7 +43,8 @@ ReaderBase::ReaderBase(AttributeVector &attr)
       _enumerated(false),
       _hasLoadData(false),
       _version(0),
-      _docIdLimit(0)
+      _docIdLimit(0),
+      _flush_duration(std::chrono::steady_clock::duration::zero())
 {
     if (!attr.headerTypeOK(_datFile.header())) {
         _datFile.close();
@@ -70,6 +72,7 @@ ReaderBase::ReaderBase(AttributeVector &attr)
     _hasLoadData = hasData() &&
                    (!attr.hasMultiValue() || hasIdx()) &&
                    (!attr.hasWeightedSetType() || hasWeight());
+    _flush_duration = common::FileHeaderContext::get_flush_duration(_datFile.header());
 }
 
 ReaderBase::~ReaderBase() = default;
