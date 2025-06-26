@@ -529,7 +529,7 @@ equalsHelper<double>(const double &lhs, const double &rhs)
     return lhs == rhs;
 }
 
-auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
+constexpr auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
 
 }
 

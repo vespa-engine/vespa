@@ -84,7 +84,7 @@ std::string vec_mixed_1m_2d_spec("tensor(a{},x[2])");
 std::string vec_mixed_2m_2d_spec("tensor(a{},b{},x[2])");
 std::vector<std::string> vec_specs{vec_2d_spec, vec_mixed_1m_2d_spec, vec_mixed_2m_2d_spec};
 
-auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
+constexpr auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
 
 Value::UP createTensor(const TensorSpec &spec) {
     return value_from_spec(spec, FastValueBuilderFactory::get());

@@ -97,7 +97,7 @@ struct MyIssueHandler : Issue::Handler {
     }
 };
 
-auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
+constexpr auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
 
 }
 

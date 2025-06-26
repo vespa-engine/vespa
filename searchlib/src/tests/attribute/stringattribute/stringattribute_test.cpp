@@ -69,7 +69,7 @@ auto zipped_and_sorted_by_first(const std::vector<T0>& a, const std::vector<T1>&
     return combined;
 }
 
-auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
+constexpr auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
 
 }
 

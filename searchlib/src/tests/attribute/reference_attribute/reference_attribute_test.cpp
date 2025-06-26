@@ -46,7 +46,7 @@ std::string doc1("id:test:music::1");
 std::string doc2("id:test:music::2");
 std::string doc3("id:test:music::3");
 
-auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
+constexpr auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
 
 }
 

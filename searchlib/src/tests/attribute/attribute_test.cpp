@@ -49,7 +49,7 @@ string asuDir("asutmp");
 
 constexpr size_t sizeof_large_string_entry = sizeof(vespalib::datastore::UniqueStoreEntry<std::string>);
 
-auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
+constexpr auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
 
 }
 
