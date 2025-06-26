@@ -73,6 +73,7 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _global_filter_lower_limit(0.0),
       _global_filter_upper_limit(1.0),
       _acorn_one_upper_limit(0.0),
+      _acorn_one_exploration(0.01),
       _target_hits_max_adjustment_factor(20.0),
       _weakand_stop_word_adjust_limit(matching::WeakAndStopWordAdjustLimit::DEFAULT_VALUE),
       _weakand_stop_word_drop_limit(matching::WeakAndStopWordDropLimit::DEFAULT_VALUE),
@@ -132,6 +133,7 @@ RankSetup::configure()
     set_global_filter_lower_limit(matching::GlobalFilterLowerLimit::lookup(_indexEnv.getProperties()));
     set_global_filter_upper_limit(matching::GlobalFilterUpperLimit::lookup(_indexEnv.getProperties()));
     set_acorn_one_upper_limit(matching::AcornOneUpperLimit::lookup(_indexEnv.getProperties()));
+    set_acorn_one_exploration(matching::AcornOneExploration::lookup(_indexEnv.getProperties()));
     set_target_hits_max_adjustment_factor(matching::TargetHitsMaxAdjustmentFactor::lookup(_indexEnv.getProperties()));
     set_fuzzy_matching_algorithm(matching::FuzzyAlgorithm::lookup(_indexEnv.getProperties()));
     set_weakand_stop_word_adjust_limit(matching::WeakAndStopWordAdjustLimit::lookup(_indexEnv.getProperties()));

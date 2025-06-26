@@ -113,6 +113,7 @@ public:
                                                          const BoundDistanceFunction &df,
                                                          const GlobalFilter &filter,
                                                          bool low_hit_ratio,
+                                                         double exploration,
                                                          uint32_t explore_k,
                                                          const vespalib::Doom& doom,
                                                          double distance_threshold) const = 0;
