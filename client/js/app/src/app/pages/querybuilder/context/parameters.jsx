@@ -58,6 +58,7 @@ export default param('root', [
       param('postFilterThreshold', 'Float', { min: 0, max: 1 }),
       param('approximateThreshold', 'Float', { min: 0, max: 1 }),
       param('acornOneThreshold', 'Float', { min: 0, max: 1 }),
+      param('acornOneExploration', 'Float', { min: 0, max: 1 }),
     ]),
     param('matchPhase', [
       param('attribute', 'String'),
