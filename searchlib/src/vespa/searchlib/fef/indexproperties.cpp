@@ -445,6 +445,22 @@ AcornOneUpperLimit::lookup(const Properties &props, double defaultValue)
     return lookupDouble(props, NAME, defaultValue);
 }
 
+const std::string AcornOneExploration::NAME("vespa.matching.acorn_one.exploration");
+
+const double AcornOneExploration::DEFAULT_VALUE(0.01);
+
+double
+AcornOneExploration::lookup(const Properties &props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+double
+AcornOneExploration::lookup(const Properties &props, double defaultValue)
+{
+    return lookupDouble(props, NAME, defaultValue);
+}
+
 const std::string WeakAndStopWordAdjustLimit::NAME("vespa.matching.weakand.stop_word_adjust_limit");
 const double WeakAndStopWordAdjustLimit::DEFAULT_VALUE(1.0);
 double WeakAndStopWordAdjustLimit::lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }

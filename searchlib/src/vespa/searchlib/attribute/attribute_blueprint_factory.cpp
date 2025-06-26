@@ -776,6 +776,7 @@ public:
                                                                             params.global_filter_lower_limit,
                                                                             params.global_filter_upper_limit,
                                                                             params.acorn_one_upper_limit,
+                                                                            params.acorn_one_exploration,
                                                                             params.target_hits_max_adjustment_factor,
                                                                             getRequestContext().getDoom()));
         } catch (const vespalib::IllegalArgumentException& ex) {
