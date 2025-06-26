@@ -33,7 +33,7 @@
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake
 %global _vespa_abseil_cpp_version 20250127.1
-%global _vespa_build_depencencies_version 1.5.0
+%global _vespa_build_depencencies_version 1.6.0
 %global _vespa_gtest_version 1.16.0
 %global _vespa_protobuf_version 5.30.1
 %global _vespa_openblas_version 0.3.27
@@ -203,7 +203,7 @@ Requires: openssl-libs
 Requires: llvm-libs
 Requires: vespa-protobuf = %{_vespa_protobuf_version}
 %endif
-Requires: vespa-onnxruntime = 1.20.1
+Requires: vespa-onnxruntime = 1.22.0
 Requires: vespa-jllama = %{_vespa_llama_version}
 Requires: vespa-openblas >= %{_vespa_openblas_version}
 
