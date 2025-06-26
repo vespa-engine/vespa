@@ -529,6 +529,8 @@ equalsHelper<double>(const double &lhs, const double &rhs)
     return lhs == rhs;
 }
 
+constexpr auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
+
 }
 
 template <typename VectorType, typename BufferType>
@@ -701,17 +703,20 @@ EnumeratedSaveTest::checkMem(AttributeVector &v, const MemAttr &e, const std::st
         EXPECT_TRUE(v.save(ms, make_attr_name("convert")));
         EXPECT_TRUE(ms.writeToFile(tune, fileHeaderContext));
         EXPECT_NE(0u, ms.size_on_disk());
+        EXPECT_NE(zero_flush_duration, v.last_flush_duration());
         auto cfg = v.getConfig();
         cfg.set_dictionary_config(search::DictionaryConfig(search::DictionaryConfig::Type::BTREE));
         auto v2 = AttributeFactory::createAttribute(make_attr_name("convert"), cfg);
         EXPECT_TRUE(v2->load());
         EXPECT_NE(0u, v2->size_on_disk());
+        EXPECT_NE(zero_flush_duration, v2->last_flush_duration());
         MemAttr m2;
         EXPECT_TRUE(v2->save(m2, v.getBaseFileName()));
         ASSERT_TRUE(m2 == e);
         auto v3 = AttributeFactory::createAttribute(make_attr_name("convert"), v.getConfig());
         EXPECT_TRUE(v3->load());
         EXPECT_NE(0u, v3->size_on_disk());
+        EXPECT_NE(zero_flush_duration, v3->last_flush_duration());
     }
 }
 
@@ -721,10 +726,12 @@ EnumeratedSaveTest::saveBoth(AttributePtr v)
 {
     EXPECT_TRUE(v->save());
     EXPECT_NE(0u, v->size_on_disk());
+    EXPECT_NE(zero_flush_duration, v->last_flush_duration());
     std::string basename = v->getBaseFileName();
     AttributePtr v2 = make(v->getConfig(), basename, true);
     EXPECT_TRUE(v2->load());
     EXPECT_EQ(v->size_on_disk(), v2->size_on_disk());
+    EXPECT_NE(zero_flush_duration, v2->last_flush_duration());
     EXPECT_TRUE(v2->save(basename + "_e"));
 
     search::AttributeMemorySaveTarget ms;
@@ -752,6 +759,7 @@ EnumeratedSaveTest::load(AttributePtr v, const std::string &name)
     v->setBaseFileName(name);
     EXPECT_TRUE(v->load());
     EXPECT_NE(0u, v->size_on_disk());
+    EXPECT_NE(zero_flush_duration, v->last_flush_duration());
 }
 
 EnumeratedSaveTest::AttributePtr
@@ -762,6 +770,7 @@ EnumeratedSaveTest::checkLoad(Config cfg, const std::string &name,
     AttributePtr v = AttributeFactory::createAttribute(make_attr_name(name), cfg);
     EXPECT_TRUE(v->load());
     EXPECT_NE(0u, v->size_on_disk());
+    EXPECT_NE(zero_flush_duration, v->last_flush_duration());
     compare(v, ev);;
     return v;
 }

@@ -46,6 +46,8 @@ std::string doc1("id:test:music::1");
 std::string doc2("id:test:music::2");
 std::string doc3("id:test:music::3");
 
+constexpr auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
+
 }
 
 struct MyGidToLidMapperFactory : public search::attribute::test::MockGidToLidMapperFactory {
@@ -168,12 +170,14 @@ struct ReferenceAttributeTest : public ::testing::Test {
     void save() {
         attr().save();
         EXPECT_NE(0, attr().size_on_disk());
+        EXPECT_NE(zero_flush_duration, attr().last_flush_duration());
     }
 
     void load() {
         resetAttr();
         attr().load();
         EXPECT_NE(0, attr().size_on_disk());
+        EXPECT_NE(zero_flush_duration, attr().last_flush_duration());
     }
 
     void triggerCompaction(uint64_t iterLimit) {

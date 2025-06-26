@@ -102,7 +102,8 @@ AttributeVector::AttributeVector(std::string_view baseFileName, const Config &c)
       _isUpdateableInMemoryOnly(attribute::isUpdateableInMemoryOnly(getName(), getConfig())),
       _nextStatUpdateTime(),
       _memory_allocator(make_memory_allocator(_baseFileName.getAttributeName(), c)),
-      _size_on_disk(0)
+      _size_on_disk(0),
+      _last_flush_duration(0)
 {
 }
 
@@ -268,6 +269,7 @@ bool
 AttributeVector::save(IAttributeSaveTarget &saveTarget, std::string_view fileName)
 {
     commit();
+    auto create_time = std::chrono::steady_clock::now();
     // First check if new style save is available.
     std::unique_ptr<AttributeSaver> saver(onInitSave(fileName));
     if (saver) {
@@ -276,6 +278,7 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget, std::string_view fileNam
         auto result = saver->save(saveTarget);
         if (result) {
             set_size_on_disk(saveTarget);
+            set_last_flush_duration(FileHeaderContext::make_flush_duration(create_time));
         }
         return result;
     }
@@ -287,6 +290,7 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget, std::string_view fileNam
     onSave(saveTarget);
     saveTarget.close();
     set_size_on_disk(saveTarget);
+    set_last_flush_duration(FileHeaderContext::make_flush_duration(create_time));
     return true;
 }
 

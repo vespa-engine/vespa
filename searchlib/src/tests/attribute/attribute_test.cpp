@@ -49,6 +49,8 @@ string asuDir("asutmp");
 
 constexpr size_t sizeof_large_string_entry = sizeof(vespalib::datastore::UniqueStoreEntry<std::string>);
 
+constexpr auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
+
 }
 
 namespace search {
@@ -495,11 +497,14 @@ void AttributeTest::testReload(const AttributePtr & a)
     a->setCreateSerialNum(43u);
     if (a->getCommittedDocIdLimit() == 0) {
         EXPECT_EQ(0, a->size_on_disk());
+        EXPECT_EQ(zero_flush_duration, a->last_flush_duration());
     } else {
         EXPECT_NE(0, a->size_on_disk());
+        EXPECT_NE(zero_flush_duration, a->last_flush_duration());
     }
     EXPECT_TRUE( a->save(b->getBaseFileName()) );
     EXPECT_NE(0, a->size_on_disk());
+    EXPECT_NE(zero_flush_duration, a->last_flush_duration());
     a->commit(true);
     {
         double actSize = statSize(*b);
@@ -519,10 +524,12 @@ void AttributeTest::testReload(const AttributePtr & a)
     EXPECT_TRUE( b->load() );
     EXPECT_EQ(43u, b->getCreateSerialNum());
     EXPECT_EQ(a->size_on_disk(), b->size_on_disk());
+    EXPECT_NE(zero_flush_duration, b->last_flush_duration());
     compare<VectorType, BufferType>
         (*(static_cast<VectorType *>(a.get())), *(static_cast<VectorType *>(b.get())));
     EXPECT_TRUE( c->load() );
     EXPECT_EQ(a->size_on_disk(), c->size_on_disk());
+    EXPECT_NE(zero_flush_duration, c->last_flush_duration());
     compare<VectorType, BufferType>
         (*(static_cast<VectorType *>(a.get())), *(static_cast<VectorType *>(c.get())));
 
@@ -712,9 +719,11 @@ AttributeTest::testMemorySaver(const AttributePtr & a)
     EXPECT_TRUE(saveTarget.writeToFile(TuneFileAttributes(), DummyFileHeaderContext()));
     EXPECT_TRUE(fs::exists(fs::path(datFile)));
     EXPECT_EQ(0, a->size_on_disk());
+    EXPECT_NE(zero_flush_duration, a->last_flush_duration());
     EXPECT_NE(0, saveTarget.size_on_disk());
     EXPECT_TRUE(b->load());
     EXPECT_EQ(saveTarget.size_on_disk(), b->size_on_disk());
+    EXPECT_NE(zero_flush_duration, b->last_flush_duration());
     compare<VectorType, BufferType>(*(static_cast<VectorType *>(a.get())), *(static_cast<VectorType *>(b.get())));
 }
 

@@ -431,6 +431,7 @@ private:
     vespalib::steady_time                 _nextStatUpdateTime;
     std::shared_ptr<vespalib::alloc::MemoryAllocator> _memory_allocator;
     std::atomic<uint64_t>                 _size_on_disk;
+    std::atomic<std::chrono::steady_clock::rep> _last_flush_duration;
 
     /// Clean up [0, firstUsed>
     virtual void reclaim_memory(generation_t oldest_used_gen);
@@ -500,9 +501,15 @@ public:
 
     void drain_hold(uint64_t hold_limit);
 
-    void set_size_on_disk(uint64_t value) noexcept {_size_on_disk.store(value, std::memory_order_release); }
+    void set_size_on_disk(uint64_t value) noexcept { _size_on_disk.store(value, std::memory_order_release); }
     void set_size_on_disk(const IAttributeSaveTarget& target);
     uint64_t size_on_disk() const noexcept { return _size_on_disk.load(std::memory_order_acquire); }
+    void set_last_flush_duration(std::chrono::steady_clock::duration value) noexcept {
+        _last_flush_duration.store(value.count(), std::memory_order_relaxed);
+    }
+    std::chrono::steady_clock::duration last_flush_duration() const noexcept {
+        return std::chrono::steady_clock::duration(_last_flush_duration.load(std::memory_order_relaxed));
+    }
 };
 
 }

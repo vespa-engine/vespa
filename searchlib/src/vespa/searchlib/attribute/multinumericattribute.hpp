@@ -123,6 +123,7 @@ MultiValueNumericAttribute<B, M>::onLoadEnumerated(ReaderBase & attrReader)
     auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
     assert((udatBuffer->size() % sizeof(T)) == 0);
     this->set_size_on_disk(attrReader.size_on_disk() + udatBuffer->size_on_disk());
+    this->set_last_flush_duration(attrReader.flush_duration());
     std::span<const T> map(reinterpret_cast<const T *>(udatBuffer->buffer()), udatBuffer->size() / sizeof(T));
     uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, std::span<const uint32_t>(), attribute::NoSaveLoadedEnum());
     this->checkSetMaxValueCount(maxvc);
@@ -154,6 +155,7 @@ MultiValueNumericAttribute<B, M>::onLoad(vespalib::Executor *)
     B::setNumDocs(numDocs);
     B::setCommittedDocIdLimit(numDocs);
     this->set_size_on_disk(attrReader.size_on_disk());
+    this->set_last_flush_duration(attrReader.flush_duration());
     this->_mvMapping.reserve(numDocs+1);
     for (DocId doc = 0; doc < numDocs; ++doc) {
         const uint32_t valueCount(attrReader.getNextValueCount());

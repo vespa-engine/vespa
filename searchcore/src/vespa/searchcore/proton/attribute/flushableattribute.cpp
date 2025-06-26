@@ -13,6 +13,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <future>
@@ -82,6 +83,7 @@ FlushableAttribute::Flusher::saveAttribute()
     std::filesystem::create_directory(std::filesystem::path(vespalib::dirname(_flushFile)));
     SerialNumFileHeaderContext fileHeaderContext(_fattr._fileHeaderContext, _syncToken);
     bool saveSuccess = true;
+    auto create_time = std::chrono::steady_clock::now();
     if (_saver && _saver->hasGenerationGuard() && _fattr._hwInfo.disk().slow()) {
         saveSuccess = _saver->save(_saveTarget);
         _saver.reset();
@@ -92,12 +94,14 @@ FlushableAttribute::Flusher::saveAttribute()
             saveSuccess = _saver->save(saveTarget);
             if (saveSuccess) {
                 _fattr._attr->set_size_on_disk(saveTarget.size_on_disk());
+                _fattr._attr->set_last_flush_duration(FileHeaderContext::make_flush_duration(create_time));
             }
             _saver.reset();
         } else {
             saveSuccess = _saveTarget.writeToFile(_fattr._tuneFileAttributes, fileHeaderContext);
             if (saveSuccess) {
                 _fattr._attr->set_size_on_disk(_saveTarget.size_on_disk());
+                _fattr._attr->set_last_flush_duration(FileHeaderContext::make_flush_duration(create_time));
             }
         }
     }

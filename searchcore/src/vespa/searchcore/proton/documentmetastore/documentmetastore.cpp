@@ -119,6 +119,7 @@ public:
     }
 
     uint64_t size_on_disk() const noexcept { return _datFile.size_on_disk(); }
+    std::chrono::steady_clock::duration flush_duration() const noexcept { return _datFile.flush_duration(); }
 };
 
 Reader::Reader(std::unique_ptr<FastOS_FileInterface> datFile)
@@ -329,6 +330,7 @@ DocumentMetaStore::onLoad(vespalib::Executor *)
     setNumDocs(_metaDataStore.size());
     setCommittedDocIdLimit(_metaDataStore.size());
     set_size_on_disk(reader.size_on_disk());
+    set_last_flush_duration(reader.flush_duration());
 
     return true;
 }

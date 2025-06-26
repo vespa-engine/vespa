@@ -218,6 +218,7 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
     setNumDocs(numDocs);
     setCommittedDocIdLimit(numDocs);
     set_size_on_disk(attrReader.size_on_disk() + udatBuffer->size_on_disk());
+    set_last_flush_duration(attrReader.flush_duration());
 
     if (hasPostings()) {
         auto loader = this->getEnumStoreBase()->make_enumerated_postings_loader();

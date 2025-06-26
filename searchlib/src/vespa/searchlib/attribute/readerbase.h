@@ -4,6 +4,7 @@
 
 #include <vespa/searchlib/util/file_with_header.h>
 #include <vespa/searchlib/util/fileutil.h>
+#include <chrono>
 
 namespace search {
 
@@ -43,6 +44,7 @@ public:
      * Includes direct io padding and disk space calculator padding.
      */
     uint64_t size_on_disk() const;
+    std::chrono::steady_clock::duration flush_duration() const noexcept { return _flush_duration; }
 protected:
     FileWithHeader _datFile;
 private:
@@ -58,6 +60,7 @@ private:
     bool                  _hasLoadData;
     uint32_t              _version;
     uint32_t              _docIdLimit;
+    std::chrono::steady_clock::duration _flush_duration;
 protected:
     size_t getDataCountHelper(size_t elemSize) const {
         size_t dataSize = _datFile.data_size();
