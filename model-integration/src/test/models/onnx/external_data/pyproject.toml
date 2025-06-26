@@ -1,0 +1,13 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+[project]
+name = "external_data"
+version = "0.1.0"
+description = "Generate ONNX model with external data file"
+requires-python = ">=3.8"
+dependencies = [
+    "onnx>=1.14.0",
+    "numpy>=1.21.0",
+]
+
+[tool.uv]
+dev-dependencies = []
