@@ -118,6 +118,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"glebashnik"}) default Object sidecarsForTest() { return null; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean useTriton() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default long searchCoreTransactionLogReplaySoftMemoryLimit() { return 0; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean useNewPrepareForRestart() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

@@ -93,8 +93,8 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
             var search = new ContentSearchCluster(ancestor, clusterName, deployState.getProperties().featureFlags(),
                                                   documentDefinitions, globallyDistributedDocuments,
-                                                  getFlushOnShutdown(flushOnShutdownElem), syncTransactionLog,
-                                                  fractionOfMemoryReserved);
+                                                  getFlushOnShutdown(flushOnShutdownElem, deployState),
+                                                  syncTransactionLog, fractionOfMemoryReserved);
 
             ModelElement tuning = clusterElem.childByPath("engine.proton.tuning");
             if (tuning != null) {
@@ -105,8 +105,9 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             return search;
         }
 
-        private boolean getFlushOnShutdown(Boolean flushOnShutdownElem) {
-            return Objects.requireNonNullElse(flushOnShutdownElem, true);
+        private boolean getFlushOnShutdown(Boolean flushOnShutdownElem, DeployState deployState) {
+            boolean useNewPrepareForRestart = deployState.featureFlags().useNewPrepareForRestart();
+            return Objects.requireNonNullElse(flushOnShutdownElem, ! deployState.isHosted() || ! useNewPrepareForRestart);
         }
 
         private Double getQueryTimeout(ModelElement clusterElem) {

@@ -1339,7 +1339,8 @@
       "public int maxDistributorDocumentOperationSizeMib()",
       "public java.lang.Object sidecarsForTest()",
       "public boolean useTriton()",
-      "public long searchCoreTransactionLogReplaySoftMemoryLimit()"
+      "public long searchCoreTransactionLogReplaySoftMemoryLimit()",
+      "public boolean useNewPrepareForRestart()"
     ],
     "fields" : [ ]
   },
