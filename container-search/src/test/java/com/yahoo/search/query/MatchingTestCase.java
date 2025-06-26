@@ -37,6 +37,7 @@ public class MatchingTestCase {
                 "&ranking.matching.postFilterThreshold=0.8" +
                 "&ranking.matching.approximateThreshold=0.3" +
                 "&ranking.matching.acornOneThreshold=0.2" +
+                "&ranking.matching.acornOneExploration=0.012" +
                 "&ranking.matching.targetHitsMaxAdjustmentFactor=2.5" +
                 "&ranking.matching.filterThreshold=0.7" +
                 "&ranking.matching.weakand.stopwordLimit=0.6" +
@@ -49,6 +50,7 @@ public class MatchingTestCase {
         assertEquals(Double.valueOf(0.8), query.getRanking().getMatching().getPostFilterThreshold());
         assertEquals(Double.valueOf(0.3), query.getRanking().getMatching().getApproximateThreshold());
         assertEquals(Double.valueOf(0.2), query.getRanking().getMatching().getAcornOneThreshold());
+        assertEquals(Double.valueOf(0.012), query.getRanking().getMatching().getAcornOneExploration());
         assertEquals(Double.valueOf(2.5), query.getRanking().getMatching().getTargetHitsMaxAdjustmentFactor());
         assertEquals(Double.valueOf(0.7), query.getRanking().getMatching().getFilterThreshold());
         assertEquals(Double.valueOf(0.6), query.getRanking().getMatching().getWeakAnd().getStopwordLimit());
@@ -63,6 +65,7 @@ public class MatchingTestCase {
         assertEquals("0.8", query.getRanking().getProperties().get("vespa.matching.global_filter.upper_limit").get(0));
         assertEquals("0.3", query.getRanking().getProperties().get("vespa.matching.global_filter.lower_limit").get(0));
         assertEquals("0.2", query.getRanking().getProperties().get("vespa.matching.acorn_one.upper_limit").get(0));
+        assertEquals("0.012", query.getRanking().getProperties().get("vespa.matching.acorn_one.exploration").get(0));
         assertEquals("2.5", query.getRanking().getProperties().get("vespa.matching.nns.target_hits_max_adjustment_factor").get(0));
         assertEquals("0.7", query.getRanking().getProperties().get("vespa.matching.filter_threshold").get(0));
         assertEquals("0.6", query.getRanking().getProperties().get("vespa.matching.weakand.stop_word_drop_limit").get(0));
