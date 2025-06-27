@@ -4,6 +4,7 @@ package ai.vespa.embedding;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
+import ai.vespa.modelintegration.utils.OnnxExternalDataResolver;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
@@ -64,7 +65,8 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         OnnxEvaluatorOptions options = optionsBuilder.build();
 
         tokenizer = new WordPieceEmbedder.Builder(config.tokenizerVocab().toString()).build();
-        this.evaluator = onnx.evaluatorOf(config.transformerModel().toString(), options);
+        var resolver = new OnnxExternalDataResolver();
+        this.evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), options);
 
         validateModel();
     }

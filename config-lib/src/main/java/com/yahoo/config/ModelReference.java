@@ -31,6 +31,7 @@ public class ModelReference {
                            Optional<String> secretRef,
                            Optional<FileReference> path,
                            Path resolved) {
+        // Optional fields are null for resolved references, and 'resolved' is optional but not of type Optional... (╯°□°）╯︵ ┻━┻
         this.modelId = modelId;
         this.url = url;
         this.secretRef = secretRef;
@@ -142,7 +143,14 @@ public class ModelReference {
 
     /** Creates a resolved reference. */
     public static ModelReference resolved(Path path) {
-        return new ModelReference(null, null, null, null, Objects.requireNonNull(path));
+        return new ModelReference(
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Objects.requireNonNull(path));
+    }
+
+    /** Creates a resolved reference where the original URI path is kept. */
+    public static ModelReference resolved(Path path, UrlReference url) {
+        return new ModelReference(
+                Optional.empty(), Optional.of(url), Optional.empty(), Optional.empty(), Objects.requireNonNull(path));
     }
 
 }

@@ -354,7 +354,8 @@
       "public static com.yahoo.config.ModelReference unresolved(com.yahoo.config.FileReference)",
       "public static com.yahoo.config.ModelReference unresolved(java.util.Optional, java.util.Optional, java.util.Optional)",
       "public static com.yahoo.config.ModelReference unresolved(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
-      "public static com.yahoo.config.ModelReference resolved(java.nio.file.Path)"
+      "public static com.yahoo.config.ModelReference resolved(java.nio.file.Path)",
+      "public static com.yahoo.config.ModelReference resolved(java.nio.file.Path, com.yahoo.config.UrlReference)"
     ],
     "fields" : [ ]
   },

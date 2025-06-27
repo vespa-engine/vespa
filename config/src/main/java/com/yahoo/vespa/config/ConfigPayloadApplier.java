@@ -254,7 +254,8 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         if (isClientside() && model.url().isPresent() && model.secretRef().isPresent())
             return model; // Postpone resolve to component - secret store not available during deserialization!
         if (isClientside() && model.url().isPresent()) // url has priority
-            return ModelReference.resolved(Path.of(resolveUrl(model.url().get().value()).value()));
+            // Keep original URL - required for downloading external data files during construction of component graph
+            return ModelReference.resolved(Path.of(resolveUrl(model.url().get().value()).value()), model.url().get());
         if (isClientside() && model.path().isPresent())
             return ModelReference.resolved(Path.of(resolvePath(model.path().get().value()).value()));
         return model;
