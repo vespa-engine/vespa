@@ -3,6 +3,7 @@
 package ai.vespa.utils;
 
 import ai.vespa.embedding.ModelPathHelper;
+import ai.vespa.embedding.ModelPathHelperImpl;
 import ai.vespa.modelintegration.evaluator.OnnxStreamParser;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
@@ -18,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Resolves external data files for an ONNX models
+ * Resolves external data files for an ONNX models.
  * Files are retrieved using {@link ModelPathHelper} and symlinked into a temporary directory together with the ONNX model file.
  *
  * @author bjorncs
@@ -31,6 +32,14 @@ public class OnnxExternalDataResolver {
 
     public OnnxExternalDataResolver(ModelPathHelper modelPathHelper) {
         this.modelPathHelper = modelPathHelper;
+    }
+
+    /** Create a resolver that does not support external models protected by bearer token */
+    public OnnxExternalDataResolver() {
+        this(new ModelPathHelperImpl(__ -> {
+            throw new UnsupportedOperationException(
+                    "Bearer token protected ONNX models are not supported in this context.");
+        }));
     }
 
     /**

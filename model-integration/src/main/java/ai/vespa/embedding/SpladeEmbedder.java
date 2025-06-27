@@ -4,6 +4,7 @@ package ai.vespa.embedding;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
+import ai.vespa.utils.OnnxExternalDataResolver;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
@@ -75,7 +76,8 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         if (config.transformerGpuDevice() >= 0)
             optionsBuilder.setGpuDevice(config.transformerGpuDevice());
         var onnxOpts = optionsBuilder.build();
-        evaluator = onnx.evaluatorOf(config.transformerModel().toString(), onnxOpts);
+        var resolver = new OnnxExternalDataResolver();
+        evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxOpts);
         validateModel();
     }
 
