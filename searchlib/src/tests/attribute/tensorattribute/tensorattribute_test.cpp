@@ -310,12 +310,14 @@ public:
     std::vector<Neighbor> find_top_k(uint32_t k,
                                      const search::tensor::BoundDistanceFunction &df,
                                      uint32_t explore_k,
+                                     double adaptive_beam_search_slack,
                                      const vespalib::Doom& doom,
                                      double distance_threshold) const override
     {
         (void) k;
         (void) df;
         (void) explore_k;
+        (void) adaptive_beam_search_slack;
         (void) doom;
         (void) distance_threshold;
         return {};
@@ -323,12 +325,14 @@ public:
     std::vector<Neighbor> find_top_k_with_filter(uint32_t k,
                                                  const search::tensor::BoundDistanceFunction &df,
                                                  const GlobalFilter& filter, uint32_t explore_k,
+                                                 double adaptive_beam_search_slack,
                                                  const vespalib::Doom& doom,
                                                  double distance_threshold) const override
     {
         (void) k;
         (void) df;
         (void) explore_k;
+        (void) adaptive_beam_search_slack;
         (void) filter;
         (void) doom;
         (void) distance_threshold;
@@ -1446,7 +1450,7 @@ public:
             field,
             std::make_unique<DistanceCalculator>(this->as_dense_tensor(),
                                                  create_query_tensor(vec_2d(17, 42))),
-            3, approximate, 5, 100100.25,
+            3, approximate, 5, 0.0, 100100.25,
             global_filter_lower_limit, 1.0, target_hits_max_adjustment_factor, vespalib::Doom::never());
         EXPECT_EQ(11u, bp->getState().estimate().estHits);
         EXPECT_EQ(100100.25 * 100100.25, bp->get_distance_threshold());
