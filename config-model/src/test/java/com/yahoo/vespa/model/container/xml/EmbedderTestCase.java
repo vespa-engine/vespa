@@ -291,7 +291,7 @@ public class EmbedderTestCase {
 
     private static HuggingFaceEmbedderConfig assertHuggingfaceEmbedderComponentPresent(ApplicationContainerCluster cluster) {
         var hfEmbedder = (HuggingFaceEmbedder) cluster.getComponentsMap().get(new ComponentId("hf-embedder"));
-        assertEquals("ai.vespa.embedding.huggingface.HuggingFaceEmbedder", hfEmbedder.getClassId().getName());
+        assertEquals("ai.vespa.embedding.HuggingFaceEmbedder", hfEmbedder.getClassId().getName());
         var cfgBuilder = new HuggingFaceEmbedderConfig.Builder();
         hfEmbedder.getConfig(cfgBuilder);
         return cfgBuilder.build();
