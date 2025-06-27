@@ -1,9 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-syntax = "proto3";
+edition = "2023";
+// Preserve proto3 default field presence semantics
+option features.field_presence = IMPLICIT;
 
 option cc_enable_arenas = true;
 
 package storage.mbusprot.protobuf;
+
+import "google/protobuf/cpp_features.proto";
+option features.(pb.cpp).string_type = VIEW;
 
 // Note: we use a *Request/*Response naming convention rather than *Command/*Reply,
 // as the former is the gRPC convention and that's where we intend to move.
