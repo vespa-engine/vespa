@@ -2,6 +2,7 @@
 package ai.vespa.embedding;
 
 import ai.vespa.embedding.config.GgufEmbedderConfig;
+import ai.vespa.modelintegration.utils.ModelPathHelper;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.process.Embedder;

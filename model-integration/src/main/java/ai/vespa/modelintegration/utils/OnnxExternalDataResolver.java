@@ -1,9 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-package ai.vespa.utils;
+package ai.vespa.modelintegration.utils;
 
-import ai.vespa.embedding.ModelPathHelper;
-import ai.vespa.embedding.ModelPathHelperImpl;
 import ai.vespa.modelintegration.evaluator.OnnxStreamParser;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;

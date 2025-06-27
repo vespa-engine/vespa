@@ -4,7 +4,7 @@ package ai.vespa.embedding;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
-import ai.vespa.utils.OnnxExternalDataResolver;
+import ai.vespa.modelintegration.utils.OnnxExternalDataResolver;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
