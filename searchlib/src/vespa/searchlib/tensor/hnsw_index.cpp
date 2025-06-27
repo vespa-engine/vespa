@@ -513,7 +513,7 @@ HnswIndex<type>::exploreNeighborhood(HnswTraversalCandidate &cand, std::deque<ui
     exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find);
 
     // Explore 3-hop neighbors, but only if we have not found enough nodes yet (one quarter of the desired amount)
-    if (found.size() * 4 < max_neighbors_to_find && static_cast<double>(todo.size()) < exploration * (max_neighbors_to_find * max_neighbors_to_find * max_neighbors_to_find)) {
+    if (static_cast<double>(todo.size()) < exploration * (max_neighbors_to_find * max_neighbors_to_find * max_neighbors_to_find)) {
         exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find);
     }
 }
