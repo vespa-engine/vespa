@@ -64,7 +64,7 @@ $top/dist/getversionmap.sh $top > $top/dist/vtag.map
 
 # Set up maven wrapper.
 echo "Setting up maven wrapper in $(pwd)"
-mvn -B wrapper:wrapper -Dmaven=3.8.8 -N ${MAVEN_EXTRA_OPTS}
+mvn -B wrapper:wrapper -Dmaven=3.9.9 -N ${MAVEN_EXTRA_OPTS}
 ${MAVEN_CMD} -v
 
 # must install parent poms first:
