@@ -88,7 +88,7 @@ documentapi::TestAndSetCondition get_tas_condition(const protobuf::TestAndSetCon
 
 void set_tas_condition(protobuf::TestAndSetCondition& dest, const documentapi::TestAndSetCondition& src) {
     if (src.has_selection()) {
-        dest.set_selection(src.getSelection().data(), src.getSelection().size());
+        dest.set_selection(src.getSelection());
     }
     if (src.has_required_timestamp()) {
         dest.set_required_timestamp(src.required_timestamp());
@@ -108,7 +108,7 @@ std::shared_ptr<document::Document> get_document(const protobuf::Document& src_d
 void set_update(protobuf::Update& dest, const document::DocumentUpdate& src) {
     vespalib::nbostream stream;
     src.serializeHEAD(stream);
-    dest.set_payload(stream.peek(), stream.size());
+    dest.set_payload(std::string_view(stream.peek(), stream.size()));
 }
 
 std::shared_ptr<document::DocumentUpdate> get_update(const protobuf::Update& src,
@@ -146,7 +146,7 @@ void write_response_header(vespalib::GrowableByteBuffer& buf, const api::Storage
     const auto& result = reply.getResult();
     hdr.set_return_code_id(static_cast<uint32_t>(result.getResult()));
     if (!result.getMessage().empty()) {
-        hdr.set_return_code_message(result.getMessage().data(), result.getMessage().size());
+        hdr.set_return_code_message(result.getMessage());
     }
     // TODO deprecate this field entirely
     hdr.set_message_id(reply.originator_msg_id()); // This is the _peer's_ process-internal message ID
@@ -419,7 +419,7 @@ void no_op_encode([[maybe_unused]] ::google::protobuf::Message&) {
 void set_document(protobuf::Document& target_doc, const document::Document& src_doc) {
     vespalib::nbostream stream;
     src_doc.serialize(stream);
-    target_doc.set_payload(stream.peek(), stream.size());
+    target_doc.set_payload(std::string_view(stream.peek(), stream.size()));
 }
 
 }
@@ -524,7 +524,7 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeUpdateReply(const SCmd& cm
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RemoveCommand& msg) const {
     encode_bucket_request<protobuf::RemoveRequest>(buf, msg, [&](auto& req) {
         auto doc_id_str = msg.getDocumentId().toString();
-        req.set_document_id(doc_id_str.data(), doc_id_str.size());
+        req.set_document_id(doc_id_str);
         req.set_new_timestamp(msg.getTimestamp());
         if (msg.getCondition().isPresent()) {
             set_tas_condition(*req.mutable_condition(), msg.getCondition());
@@ -583,10 +583,10 @@ api::InternalReadConsistency read_consistency_from_protobuf(protobuf::GetRequest
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::GetCommand& msg) const {
     encode_bucket_request<protobuf::GetRequest>(buf, msg, [&](auto& req) {
         auto doc_id = msg.getDocumentId().toString();
-        req.set_document_id(doc_id.data(), doc_id.size());
+        req.set_document_id(doc_id);
         req.set_before_timestamp(msg.getBeforeTimestamp());
         if (!msg.getFieldSet().empty()) {
-            req.set_field_set(msg.getFieldSet().data(), msg.getFieldSet().size());
+            req.set_field_set(msg.getFieldSet());
         }
         req.set_internal_read_consistency(read_consistency_to_protobuf(msg.internal_read_consistency()));
         if (msg.has_condition()) {
@@ -654,7 +654,7 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeGetReply(const SCmd& cmd, 
 namespace {
 
 void set_document_id(protobuf::DocumentId& dest, const document::DocumentId& src) {
-    *dest.mutable_id() = src.toString();
+    dest.set_id(src.toString());
 }
 
 document::DocumentId get_document_id(const protobuf::DocumentId& src) {
@@ -687,7 +687,7 @@ get_id_and_timestamp_vector(const ::google::protobuf::RepeatedPtrField<protobuf:
 
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RemoveLocationCommand& msg) const {
     encode_bucket_request<protobuf::RemoveLocationRequest>(buf, msg, [&](auto& req) {
-        req.set_document_selection(msg.getDocumentSelection().data(), msg.getDocumentSelection().size());
+        req.set_document_selection(msg.getDocumentSelection());
         if (msg.only_enumerate_docs()) {
             req.mutable_phase_one(); // Instantiating it is enough
         } else if (!msg.explicit_remove_set().empty()) {
@@ -1019,9 +1019,9 @@ void fill_proto_apply_diff_vector(::google::protobuf::RepeatedPtrField<protobuf:
     for (const auto& entry : src) {
         auto* proto_entry = dest.Add();
         set_diff_entry(*proto_entry->mutable_entry_meta(), entry._entry);
-        proto_entry->set_document_id(entry._docName.data(), entry._docName.size());
-        proto_entry->set_header_blob(entry._headerBlob.data(), entry._headerBlob.size());
-        proto_entry->set_body_blob(entry._bodyBlob.data(), entry._bodyBlob.size());
+        proto_entry->set_document_id(entry._docName);
+        proto_entry->set_header_blob(std::string_view(entry._headerBlob.data(), entry._headerBlob.size()));
+        proto_entry->set_body_blob(std::string_view(entry._bodyBlob.data(), entry._bodyBlob.size()));
     }
 }
 
@@ -1075,8 +1075,8 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RequestBucketInfoCo
             auto* all_buckets = req.mutable_all_buckets();
             auto cluster_state = msg.getSystemState().toString();
             all_buckets->set_distributor_index(msg.getDistributor());
-            all_buckets->set_cluster_state(cluster_state.data(), cluster_state.size());
-            all_buckets->set_distribution_hash(msg.getDistributionHash().data(), msg.getDistributionHash().size());
+            all_buckets->set_cluster_state(cluster_state);
+            all_buckets->set_distribution_hash(msg.getDistributionHash());
         }
     });
 }
@@ -1304,27 +1304,27 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::CreateVisitorComman
         }
 
         auto* ctrl_meta = req.mutable_control_meta();
-        ctrl_meta->set_library_name(msg.getLibraryName().data(), msg.getLibraryName().size());
-        ctrl_meta->set_instance_id(msg.getInstanceId().data(), msg.getInstanceId().size());
+        ctrl_meta->set_library_name(msg.getLibraryName());
+        ctrl_meta->set_instance_id(msg.getInstanceId());
         ctrl_meta->set_visitor_command_id(msg.getVisitorCmdId());
-        ctrl_meta->set_control_destination(msg.getControlDestination().data(), msg.getControlDestination().size());
-        ctrl_meta->set_data_destination(msg.getDataDestination().data(), msg.getDataDestination().size());
+        ctrl_meta->set_control_destination(msg.getControlDestination());
+        ctrl_meta->set_data_destination(msg.getDataDestination());
         ctrl_meta->set_queue_timeout(vespalib::count_ms(msg.getQueueTimeout()));
         ctrl_meta->set_max_pending_reply_count(msg.getMaximumPendingReplyCount());
         ctrl_meta->set_max_buckets_per_visitor(msg.getMaxBucketsPerVisitor());
 
         auto* constraints = req.mutable_constraints();
-        constraints->set_document_selection(msg.getDocumentSelection().data(), msg.getDocumentSelection().size());
+        constraints->set_document_selection(msg.getDocumentSelection());
         constraints->set_from_time_usec(msg.getFromTime());
         constraints->set_to_time_usec(msg.getToTime());
         constraints->set_visit_inconsistent_buckets(msg.visitInconsistentBuckets());
         constraints->set_visit_removes(msg.visitRemoves());
-        constraints->set_field_set(msg.getFieldSet().data(), msg.getFieldSet().size());
+        constraints->set_field_set(msg.getFieldSet());
 
         for (const auto& param : msg.getParameters()) {
             auto* proto_param = req.add_client_parameters();
-            proto_param->set_key(param.first.data(), param.first.size());
-            proto_param->set_value(param.second.data(), param.second.size());
+            proto_param->set_key(param.first);
+            proto_param->set_value(param.second);
         }
     });
 }
@@ -1394,7 +1394,7 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeCreateVisitorReply(const S
 
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::DestroyVisitorCommand& msg) const {
     encode_request<protobuf::DestroyVisitorRequest>(buf, msg, [&](auto& req) {
-        req.set_instance_id(msg.getInstanceId().data(), msg.getInstanceId().size());
+        req.set_instance_id(msg.getInstanceId());
     });
 }
 
@@ -1420,13 +1420,13 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeDestroyVisitorReply(const 
 
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::StatBucketCommand& msg) const {
     encode_bucket_request<protobuf::StatBucketRequest>(buf, msg, [&](auto& req) {
-        req.set_document_selection(msg.getDocumentSelection().data(), msg.getDocumentSelection().size());
+        req.set_document_selection(msg.getDocumentSelection());
     });
 }
 
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::StatBucketReply& msg) const {
     encode_bucket_response<protobuf::StatBucketResponse>(buf, msg, [&](auto& res) {
-        res.set_results(msg.getResults().data(), msg.getResults().size());
+        res.set_results(msg.getResults());
     });
 }
 
