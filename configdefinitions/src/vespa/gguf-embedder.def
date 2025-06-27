@@ -41,3 +41,12 @@ threads double default=0
 # - If 0, use runtime default.
 # - If <0, the number of threads as a ratio of the cpu cores, e.g. -1 for all cores.
 batchThreads double default=0
+
+# Prefix to prepend to prompt (if in query context)
+prependQuery string default=""
+
+# Prefix to prepend to prompt (if in document context)
+prependDocument string default=""
+
+# Normalize output embeddings
+normalize bool default=false

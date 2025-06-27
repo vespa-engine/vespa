@@ -11,7 +11,7 @@ import com.yahoo.tensor.TensorType;
 /**
  * @author bjorncs
  */
-public enum PoolingStrategy {
+enum PoolingStrategy {
     MEAN {
         @Override
         public Tensor toSentenceEmbedding(TensorType type, Tensor tokenEmbeddings, Tensor attentionMask) {
@@ -36,9 +36,9 @@ public enum PoolingStrategy {
         }
     };
 
-    public abstract Tensor toSentenceEmbedding(TensorType type, Tensor tokenEmbeddings, Tensor attentionMask);
+    abstract Tensor toSentenceEmbedding(TensorType type, Tensor tokenEmbeddings, Tensor attentionMask);
 
-    public static PoolingStrategy fromString(String strategy) {
+    static PoolingStrategy fromString(String strategy) {
         return switch (strategy.toLowerCase()) {
             case "mean" -> MEAN;
             case "cls" -> CLS;

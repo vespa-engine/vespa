@@ -12,7 +12,6 @@ import com.yahoo.language.huggingface.HuggingFaceTokenizer;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.Tensors;
 
@@ -137,7 +136,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
             return binaryQuantization(embeddingResult, targetType);
         } else {
             Tensor result = poolingStrategy.toSentenceEmbedding(targetType, tokenEmbeddings, embeddingResult.attentionMask);
-            return  normalize ? normalize(result, targetType) : result;
+            return  normalize ? Normalize.normalize(result, targetType) : result;
         }
     }
 
@@ -151,24 +150,6 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         return text;
     }
 
-    Tensor normalize(Tensor embedding, TensorType tensorType) {
-        double sumOfSquares = 0.0;
-
-        Tensor.Builder builder = Tensor.Builder.of(tensorType);
-        for (int i = 0; i < tensorType.dimensions().get(0).size().get(); i++) {
-            double item = embedding.get(TensorAddress.of(i));
-            sumOfSquares += item * item;
-        }
-
-        double magnitude = Math.sqrt(sumOfSquares);
-
-        for (int i = 0; i < tensorType.dimensions().get(0).size().get(); i++) {
-            double value = embedding.get(TensorAddress.of(i));
-            builder.cell(value / magnitude, i);
-        }
-
-        return builder.build();
-    }
 
     private HuggingFaceEmbedder.HFEmbeddingResult lookupOrEvaluate(Context context, String text) {
         var key = new HFEmbedderCacheKey(context.getEmbedderId(), text);
@@ -216,7 +197,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                                          indexed(targetType.indexedSubtype().dimensions().get(0).name(), targetUnpackagedDimensions)
                                          .build();
         Tensor result = poolingStrategy.toSentenceEmbedding(poolingType, embeddingResult.output(), embeddingResult.attentionMask());
-        result = normalize? normalize(result, poolingType) : result;
+        result = normalize? Normalize.normalize(result, poolingType) : result;
         Tensor packedResult = Tensors.packBits(result);
         if ( ! packedResult.type().equals(targetType))
             throw new IllegalStateException("Expected pack_bits to produce " + targetType + ", but got " + packedResult.type());
