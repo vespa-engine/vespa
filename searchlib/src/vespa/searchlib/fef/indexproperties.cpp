@@ -524,6 +524,21 @@ FilterFirstExploration::lookup(const Properties &props, double defaultValue)
     return lookupDouble(props, NAME, defaultValue);
 }
 
+const std::string AdaptiveBeamSearchSlack::NAME("vespa.matching.nns.adaptive_beam_search_slack");
+
+const double AdaptiveBeamSearchSlack::DEFAULT_VALUE(0.00);
+
+double
+AdaptiveBeamSearchSlack::lookup(const Properties &props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+double
+AdaptiveBeamSearchSlack::lookup(const Properties &props, double defaultValue)
+{
+    return lookupDouble(props, NAME, defaultValue);
+}
 
 const std::string TargetHitsMaxAdjustmentFactor::NAME("vespa.matching.nns.target_hits_max_adjustment_factor");
 

@@ -352,6 +352,7 @@ MatchToolsFactory::extract_create_blueprint_params(const RankSetup& rank_setup, 
     double upper_limit = GlobalFilterUpperLimit::lookup(rank_properties, rank_setup.get_global_filter_upper_limit());
     double filter_first_upper_limit = FilterFirstUpperLimit::lookup(rank_properties, rank_setup.get_filter_first_upper_limit());
     double filter_first_exploration = FilterFirstExploration::lookup(rank_properties, rank_setup.get_filter_first_exploration());
+    double adaptive_beam_search_slack = AdaptiveBeamSearchSlack::lookup(rank_properties, rank_setup.get_adaptive_beam_search_slack());
     double target_hits_max_adjustment_factor = TargetHitsMaxAdjustmentFactor::lookup(rank_properties, rank_setup.get_target_hits_max_adjustment_factor());
     auto fuzzy_matching_algorithm = FuzzyAlgorithm::lookup(rank_properties, rank_setup.get_fuzzy_matching_algorithm());
     double weakand_stop_word_adjust_limit = WeakAndStopWordAdjustLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_adjust_limit());
@@ -367,6 +368,7 @@ MatchToolsFactory::extract_create_blueprint_params(const RankSetup& rank_setup, 
             upper_limit * active_hit_ratio,
             filter_first_upper_limit * active_hit_ratio,
             filter_first_exploration,
+            adaptive_beam_search_slack,
             target_hits_max_adjustment_factor,
             fuzzy_matching_algorithm,
             StopWordStrategy(weakand_stop_word_adjust_limit,

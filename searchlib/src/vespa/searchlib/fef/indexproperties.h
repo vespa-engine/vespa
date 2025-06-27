@@ -340,6 +340,16 @@ namespace matching {
     };
 
     /**
+     * Property to control the adaptive-beam-search slack in an HNSW search.
+     **/
+    struct AdaptiveBeamSearchSlack {
+        static const std::string NAME;
+        static const double DEFAULT_VALUE;
+        static double lookup(const Properties &props);
+        static double lookup(const Properties &props, double defaultValue);
+    };
+
+    /**
      * Property to control the auto-adjustment of targetHits in a nearestNeighbor search using HNSW index with post-filtering.
      *
      * The targetHits is auto-adjusted in an effort to expose targetHits hits to first-phase ranking after post-filtering:
