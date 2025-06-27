@@ -27,6 +27,9 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
     private static final Logger log = Logger.getLogger(GgufEmbedder.class.getName());
     private final LlamaModel model;
     private final int maxPromptTokens;
+    private final String prependQuery;
+    private final String prependDocument;
+    private final boolean normalize;
 
     public static class Exception extends RuntimeException {
         public Exception(Throwable cause) { super(cause); }
@@ -53,11 +56,14 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         if (!log.isLoggable(Level.FINE)) modelParams.disableLog();
         model = new LlamaModel(modelParams);
         maxPromptTokens = config.maxPromptTokens();
+        prependQuery = config.prependQuery();
+        prependDocument = config.prependDocument();
+        normalize = config.normalize();
     }
 
     @Override
     public Tensor embed(String text, Context context, TensorType tensorType) {
-        var prompt = truncatePrompt(text);
+        var prompt = prependAndTruncatePrompt(text, context);
         record CacheKey(String embedderId, String text){}
         var cacheKey = new CacheKey(context.getEmbedderId(), prompt);
         var rawEmbedding = context.computeCachedValueIfAbsent(cacheKey, () -> generateRawEmbedding(prompt));
@@ -80,7 +86,8 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         for (int i = 0; i < dimensionSize; i++) {
             builder.cell(rawEmbedding[i], i);
         }
-        return builder.build();
+        var embedding = builder.build();
+        return normalize ? Normalize.normalize(embedding, tensorType) : embedding;
     }
 
     @Override
@@ -100,10 +107,15 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
     }
 
     /**
-     * Performs a naive truncation of the prompt to the maximum number of tokens.
+     * Add prefix to prompt if configured, then do naive truncation of the prompt to the maximum number of tokens.
      * Tokens are assumed to be independent and that the token sequence can be safely truncated at any position.
      */
-    private String truncatePrompt(String text) {
+    private String prependAndTruncatePrompt(String text, Context context) {
+        if (!prependQuery.isBlank() && context.getDestination().startsWith("query")) {
+            text = prependQuery + " " + text;
+        } else if (!prependDocument.isBlank()) {
+            text = prependDocument + " " + text;
+        }
         if (maxPromptTokens <= 0) return text;
         var tokens = model.encode(text);
         var maxTruncatedLength = maxPromptTokens - 2; // Reserve space for start and end token

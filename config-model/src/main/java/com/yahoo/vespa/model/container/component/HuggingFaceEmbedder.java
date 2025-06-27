@@ -43,7 +43,7 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
     private String prependDocument;
 
     public HuggingFaceEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
-        super("ai.vespa.embedding.huggingface.HuggingFaceEmbedder", INTEGRATION_BUNDLE_NAME, xml);
+        super("ai.vespa.embedding.HuggingFaceEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         var model = Model.fromXml(state, xml, "transformer-model", Set.of(ONNX_MODEL)).orElseThrow();
         this.onnxModelOptions = new OnnxModelOptions(
                 getChildValue(xml, "onnx-execution-mode"),

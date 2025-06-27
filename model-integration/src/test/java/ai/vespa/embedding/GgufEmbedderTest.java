@@ -60,6 +60,26 @@ class GgufEmbedderTest {
     }
 
     @Test
+    void produces_normalized_embedding() {
+        var config = new GgufEmbedderConfig.Builder()
+                .embeddingModel(ModelReference.valueOf(TINY_LLM_MODEL))
+                .seed(1)
+                .normalize(true)
+                .build();
+        var embedder = new GgufEmbedder(config, ModelReference::value);
+        String text = "This is a test";
+        try {
+            var tensorType = TensorType.fromSpec("tensor<float>(x[64])");
+            var embedding = embedder.embed(text, DUMMY_CONTEXT, tensorType);
+            assertNotNull(embedding);
+            assertEquals(tensorType, embedding.type());
+            assertEquals(1.0, embedding.multiply(embedding).sum().asDouble(), 1e-5);
+        } finally {
+            assertDoesNotThrow(embedder::deconstruct);
+        }
+    }
+
+    @Test
     void produces_correct_token_ids() {
         var config = new GgufEmbedderConfig.Builder()
                 .embeddingModel(ModelReference.valueOf(TINY_LLM_MODEL))
