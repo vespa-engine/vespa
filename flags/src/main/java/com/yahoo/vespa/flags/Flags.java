@@ -354,7 +354,7 @@ public class Flags {
     public static final UnboundBooleanFlag USE_NEW_PREPARE_FOR_RESTART_METHOD = defineFeatureFlag(
             "use-new-prepare-for-restart-method", false,
             List.of("hmusum"), "2025-06-17", "2025-09-01",
-            "Whether Azure hosts should be provisioned with IPv6 addresses",
+            "Whether to use new logic and new RPC method to do prepareForRestart for content nodes",
             "Takes effect at next tick",
             HOSTNAME
     );
