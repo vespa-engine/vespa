@@ -3,7 +3,7 @@
 package ai.vespa.utils;
 
 import ai.vespa.embedding.ModelPathHelper;
-import ai.vespa.modelintegration.evaluator.OnnxUtilities;
+import ai.vespa.modelintegration.evaluator.OnnxStreamParser;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
 
@@ -41,7 +41,7 @@ public class OnnxExternalDataResolver {
         var localPath = modelPathHelper.getModelPathResolvingIfNecessary(ref);
         if (shouldSkipExternalDataResolution(ref)) return localPath;
         try {
-            var externalDataLocations = OnnxUtilities.getExternalDataLocations(localPath);
+            var externalDataLocations = OnnxStreamParser.getExternalDataLocations(localPath);
             if (externalDataLocations.isEmpty()) return localPath;
             log.fine(() -> "Found external data locations for ONNX model '%s': %s".formatted(ref, externalDataLocations));
             var url = ref.url().get().value();

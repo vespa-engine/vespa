@@ -8,18 +8,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bjorncs
  */
-class OnnxUtilitiesTest {
+class OnnxStreamParserTest {
 
     @Test
     void extracts_external_data_locations_from_model_file() throws IOException {
         assertEquals(
                 Set.of(Paths.get("external_data.bin")),
-                OnnxUtilities.getExternalDataLocations(
+                OnnxStreamParser.getExternalDataLocations(
                         Path.of("src/test/models/onnx/external_data/add_with_external_data.onnx")));
     }
 
