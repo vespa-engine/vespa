@@ -1,6 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.BufferOverflowException;
@@ -558,4 +561,23 @@ public final class Utf8 {
         }
     }
 
+    public static FileReader reader(File file) throws FileNotFoundException {
+        try {
+            return new FileReader(file, UTF_8);
+        } catch (FileNotFoundException ex) {
+            throw ex;
+        } catch (IOException ex) {
+            throw new FileNotFoundException(ex.getMessage());
+        }
+    }
+
+    public static FileReader reader(String file) throws FileNotFoundException {
+        try {
+            return new FileReader(file, UTF_8);
+        } catch (FileNotFoundException ex) {
+            throw ex;
+        } catch (IOException ex) {
+            throw new FileNotFoundException(ex.getMessage());
+        }
+    }
 }

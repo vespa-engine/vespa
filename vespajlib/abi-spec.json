@@ -3505,7 +3505,9 @@
       "public static int encode(int, byte[], int)",
       "public static void encode(int, java.nio.ByteBuffer)",
       "public static int encode(int, java.io.OutputStream)",
-      "public static int codePointAsUtf8Length(int)"
+      "public static int codePointAsUtf8Length(int)",
+      "public static java.io.FileReader reader(java.io.File)",
+      "public static java.io.FileReader reader(java.lang.String)"
     ],
     "fields" : [ ]
   },
