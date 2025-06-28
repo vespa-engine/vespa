@@ -89,7 +89,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default double feedConcurrency() { return 0.5; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double feedNiceness() { return 0.0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int maxUnCommittedMemory() { return 130000; }
-        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.526") default String searchMmapAdvise() { return "SEQUENTIAL"; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean containerDumpHeapOnShutdownTimeout() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int heapSizePercentage() { return 0; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }

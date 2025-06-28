@@ -784,12 +784,6 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    void searchMmapAdviseSettingIsControlledByFlag() {
-        var config = resolveProtonConfig(new TestProperties(), xmlWithVisibilityDelay(null));
-        assertEquals(ProtonConfig.Search.Mmap.Advise.Enum.SEQUENTIAL, config.search().mmap().advise());
-    }
-
-    @Test
     void failWhenNoDocumentsElementSpecified() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             createContent(

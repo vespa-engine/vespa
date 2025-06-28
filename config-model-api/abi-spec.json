@@ -1311,7 +1311,6 @@
       "public double feedConcurrency()",
       "public double feedNiceness()",
       "public int maxUnCommittedMemory()",
-      "public java.lang.String searchMmapAdvise()",
       "public boolean containerDumpHeapOnShutdownTimeout()",
       "public int heapSizePercentage()",
       "public java.util.List allowedAthenzProxyIdentities()",
