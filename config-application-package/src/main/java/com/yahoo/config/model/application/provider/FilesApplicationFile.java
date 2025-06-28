@@ -207,7 +207,7 @@ public class FilesApplicationFile extends ApplicationFile {
             if (file.isDirectory()) {
                 return new MetaData(ContentStatusNew, "");
             } else {
-                return new MetaData(ContentStatusNew, ConfigUtils.getMd5(IOUtils.readAll(createReader())));
+                return new MetaData(ContentStatusNew, ConfigUtils.getMd5(IOUtils.readFileBytes(file)));
             }
         } catch (IOException | IllegalArgumentException e) {
             return null;
