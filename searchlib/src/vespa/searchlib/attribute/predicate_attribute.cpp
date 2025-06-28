@@ -15,6 +15,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.predicate_attribute");
@@ -290,8 +291,13 @@ PredicateAttribute::updateValue(uint32_t doc_id, const PredicateFieldValue &valu
     PredicateTreeAnnotations result;
     PredicateTreeAnnotator::annotate(inspector, result, _lower_bound, _upper_bound);
     _index->indexDocument(doc_id, result);
-    assert(result.min_feature <= MAX_MIN_FEATURE);
-    uint8_t minFeature = static_cast<uint8_t>(result.min_feature);
+    /*
+     * Setting a lower value for min feature due to capping should
+     * only cause a minor performance degradation due a higher
+     * probability for PrediateSearch::doSeek calling
+     * PredicateSearch::evaluateHit.
+     */
+    uint8_t minFeature = static_cast<uint8_t>(std::min(uint32_t(MAX_MIN_FEATURE), result.min_feature));
     _min_feature[doc_id] = minFeature;
     _interval_range_vector[doc_id] = result.interval_range;
     _max_interval_range = std::max(result.interval_range, _max_interval_range);
