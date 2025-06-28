@@ -240,4 +240,10 @@ DocumentMetaStoreFlushTarget::getApproxBytesToWriteToDisk() const
     return _dms->getEstimatedSaveByteSize();
 }
 
+std::chrono::steady_clock::duration
+DocumentMetaStoreFlushTarget::last_flush_duration() const noexcept
+{
+    return _dms->last_flush_duration();
+}
+
 } // namespace proton

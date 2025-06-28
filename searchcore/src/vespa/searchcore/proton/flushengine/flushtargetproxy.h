@@ -53,6 +53,7 @@ public:
     searchcorespi::FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
     double get_replay_operation_cost() const override { return _target->get_replay_operation_cost(); }
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
 };
 
 } // namespace proton
