@@ -66,6 +66,7 @@ public:
 
     static void initCleanup(const std::string &baseDir);
     uint64_t getApproxBytesToWriteToDisk() const override;
+    std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
 };
 
 } // namespace proton

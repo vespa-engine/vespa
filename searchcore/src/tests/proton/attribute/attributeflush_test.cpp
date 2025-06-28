@@ -52,6 +52,8 @@ namespace {
 
 const uint64_t createSerialNum = 42u;
 
+constexpr auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
+
 }
 
 class TaskWrapper : public Executor::Task
@@ -466,6 +468,7 @@ TEST(AttributeFlushTest, require_that_last_flush_time_is_reported)
         AttributeManager &am = amf._m;
         AttributeVector::SP av = amf.addAttribute("a9");
         EXPECT_EQ(vespalib::system_time(), am.getFlushable("a9")->getLastFlushTime());
+        EXPECT_EQ(zero_flush_duration, am.getFlushable("a9")->last_flush_duration());
     }
     { // no snapshot flushed yet
         AttributeManagerFixture amf(f);
@@ -473,9 +476,11 @@ TEST(AttributeFlushTest, require_that_last_flush_time_is_reported)
         AttributeVector::SP av = amf.addAttribute("a9");
         IFlushTarget::SP ft = am.getFlushable("a9");
         EXPECT_EQ(vespalib::system_time(), ft->getLastFlushTime());
+        EXPECT_EQ(zero_flush_duration, ft->last_flush_duration());
         ft->initFlush(200, std::make_shared<search::FlushToken>())->run();
         EXPECT_TRUE(FastOS_File::Stat("flush/a9/snapshot-200", &stat));
         EXPECT_EQ(stat._modifiedTime, ft->getLastFlushTime());
+        EXPECT_NE(zero_flush_duration, ft->last_flush_duration());
     }
     { // snapshot flushed
         AttributeManagerFixture amf(f);
@@ -483,6 +488,7 @@ TEST(AttributeFlushTest, require_that_last_flush_time_is_reported)
         amf.addAttribute("a9");
         IFlushTarget::SP ft = am.getFlushable("a9");
         EXPECT_EQ(stat._modifiedTime, ft->getLastFlushTime());
+        EXPECT_NE(zero_flush_duration, ft->last_flush_duration());
         { // updated flush time after nothing to flush
             std::this_thread::sleep_for(1100ms);
             std::chrono::seconds now = duration_cast<seconds>(vespalib::system_clock::now().time_since_epoch());
@@ -490,6 +496,7 @@ TEST(AttributeFlushTest, require_that_last_flush_time_is_reported)
             EXPECT_FALSE(task);
             EXPECT_LT(stat._modifiedTime, ft->getLastFlushTime());
             EXPECT_NEAR(now.count(), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()).count(), 3);
+            EXPECT_NE(zero_flush_duration, ft->last_flush_duration());
         }
     }
 }
