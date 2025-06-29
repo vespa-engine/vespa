@@ -2,7 +2,6 @@
 package com.yahoo.prelude.query.textualrepresentation.test;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,11 +10,11 @@ import java.util.List;
 import java.util.Map;
 
 import com.yahoo.prelude.query.Item;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
+import com.yahoo.text.Utf8;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test of TextualQueryRepresentation.
@@ -115,7 +114,7 @@ public class TextualQueryRepresentationTestCase {
     }
 
     private String getCorrect(String filename) throws Exception {
-        BufferedReader reader = new BufferedReader(new FileReader(
+        BufferedReader reader = new BufferedReader(Utf8.createReader(
                 "src/test/java/com/yahoo/prelude/query/textualrepresentation/test/" + filename));
         StringBuilder result = new StringBuilder();
         for (String line; (line = reader.readLine()) != null;)

@@ -4,10 +4,10 @@ package com.yahoo.searchlib.treenet;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.treenet.parser.ParseException;
 import com.yahoo.searchlib.treenet.parser.TreeNetParser;
+import com.yahoo.text.Utf8;
 import org.junit.Test;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
@@ -60,7 +60,7 @@ public class TreeNetParserTestCase {
     private String readFile(String file) {
         try {
             StringBuilder ret = new StringBuilder();
-            BufferedReader in = new BufferedReader(new FileReader(file));
+            BufferedReader in = new BufferedReader(Utf8.createReader(file));
             while (true) {
                 String str = in.readLine();
                 if (str == null) {

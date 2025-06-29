@@ -4,13 +4,13 @@ package com.yahoo.logserver.handlers.archive;
 import com.yahoo.log.InvalidLogFormatException;
 import com.yahoo.log.LogMessage;
 import com.yahoo.plugin.SystemPropertyConfig;
+import com.yahoo.text.Utf8;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -132,7 +132,7 @@ public class ArchiverHandlerTestCase {
             File f = new File(name);
             assertTrue(f.exists());
 
-            BufferedReader br = new BufferedReader(new FileReader(f));
+            BufferedReader br = new BufferedReader(Utf8.createReader(f));
             for (String line = br.readLine();
                  line != null;
                  line = br.readLine()) {
@@ -184,7 +184,7 @@ public class ArchiverHandlerTestCase {
             assertTrue(f.exists());
 
             // ensure there's the same log message in all files
-            BufferedReader br = new BufferedReader(new FileReader(f));
+            BufferedReader br = new BufferedReader(Utf8.createReader(f));
             for (String line = br.readLine();
                  line != null;
                  line = br.readLine()) {

@@ -3,11 +3,11 @@
 package com.yahoo.search.logging;
 
 import com.yahoo.io.IOUtils;
+import com.yahoo.text.Utf8;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Base64;
@@ -34,7 +34,7 @@ public class LocalDiskLoggerTest {
                 .send();
         logger.deconstruct();
 
-        String test = IOUtils.readAll(new FileReader(logFile));
+        String test = IOUtils.readAll(Utf8.createReader(logFile));
         assertTrue(test.contains(Base64.getEncoder().encodeToString("my entry blob content".getBytes())));
         assertTrue(test.contains("my-track"));
     }

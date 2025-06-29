@@ -3,10 +3,10 @@ package com.yahoo.vespa.config;
 
 import com.yahoo.config.codegen.CNode;
 import com.yahoo.config.codegen.DefParser;
+import com.yahoo.text.Utf8;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -31,7 +31,7 @@ public class ConfigDefinitionBuilderTest {
     // TODO Test ranges
     public void testCreateConfigDefinition() throws IOException {
         File defFile = new File(DEF_NAME);
-        DefParser defParser = new DefParser(defFile.getName(), new FileReader(defFile));
+        DefParser defParser = new DefParser(defFile.getName(), Utf8.createReader(defFile));
         CNode root = defParser.getTree();
 
         ConfigDefinition def = ConfigDefinitionBuilder.createConfigDefinition(root);

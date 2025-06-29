@@ -6,9 +6,9 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.yahoo.search.predicate.PredicateQuery;
 import com.yahoo.search.predicate.PredicateQueryParser;
 import com.yahoo.search.predicate.SubqueryBitmap;
+import com.yahoo.text.Utf8;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -94,7 +94,7 @@ public class PredicateQuerySerializer {
 
     public static List<PredicateQuery> parseQueriesFromFile(String queryFile, int maxQueryCount) throws IOException {
         PredicateQuerySerializer serializer = new PredicateQuerySerializer();
-        try (BufferedReader reader = new BufferedReader(new FileReader(queryFile), 8 * 1024)) {
+        try (BufferedReader reader = new BufferedReader(Utf8.createReader(queryFile), 8 * 1024)) {
             return reader.lines()
                     .limit(maxQueryCount)
                     .map(serializer::fromJSON)

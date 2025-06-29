@@ -4,11 +4,11 @@ package com.yahoo.search.predicate.utils;
 import com.google.common.net.UrlEscapers;
 import com.yahoo.search.predicate.PredicateQuery;
 import com.yahoo.search.predicate.serialization.PredicateQuerySerializer;
+import com.yahoo.text.Utf8;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
@@ -163,7 +163,7 @@ public class TargetingQueryFileConverter {
     }
 
     private static Subqueries parseRiseQueries(File riseQueryFile, int maxQueries) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(riseQueryFile))) {
+        try (BufferedReader reader = new BufferedReader(Utf8.createReader(riseQueryFile))) {
             Subqueries parsedSubqueries = new Subqueries();
             AtomicInteger counter = new AtomicInteger(1);
             reader.lines()

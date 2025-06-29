@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
+import com.yahoo.text.Utf8;
 import com.yahoo.text.XML;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -16,7 +17,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ public class XmlPreProcessor {
                            RegionName region,
                            CloudName cloud,
                            Tags tags) throws IOException {
-        this(applicationDir, new FileReader(xmlInput), instance, environment, region, cloud, tags);
+        this(applicationDir, Utf8.createReader(xmlInput), instance, environment, region, cloud, tags);
     }
 
     public XmlPreProcessor(File applicationDir,

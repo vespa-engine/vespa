@@ -3,13 +3,13 @@ package com.yahoo.document;
 
 import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.document.idstring.IdString;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.Before;
 import org.junit.Test;
 
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.regex.Pattern;
@@ -108,7 +108,7 @@ public class DocumentIdTestCase {
     public void testCalculateGlobalId() throws IOException {
 
         String file = "src/tests/cpp-globalidbucketids.txt";
-        BufferedReader fr = new BufferedReader(new FileReader(file));
+        BufferedReader fr = new BufferedReader(Utf8.createReader(file));
         String line;
         String[] split_line;
         String[] split_gid;
@@ -140,7 +140,7 @@ public class DocumentIdTestCase {
         for(int i=0; i<b.length;i++){
             String ss = s.substring(2*i,2*i+2);
             assertEquals(Integer.valueOf(ss, 16).intValue(),(((int)b[i])+256)%256);
-        }       
+        }
     }
 
     //Compares bucketId with C++ implementation located in
@@ -148,7 +148,7 @@ public class DocumentIdTestCase {
     @Test
     public void testGetBucketId() throws IOException{
         String file = "src/tests/cpp-globalidbucketids.txt";
-        BufferedReader fr = new BufferedReader(new FileReader(file));
+        BufferedReader fr = new BufferedReader(Utf8.createReader(file));
         String line;
         String[] split_line;
         BucketId bid;

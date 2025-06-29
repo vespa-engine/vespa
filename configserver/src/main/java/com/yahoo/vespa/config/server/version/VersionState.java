@@ -98,7 +98,7 @@ public class VersionState {
                 // continue, use value in file
             }
         }
-        try (FileReader reader = new FileReader(versionFile)) {
+        try (FileReader reader = Utf8.createReader(versionFile)) {
             return Version.fromString(IOUtils.readAll(reader));
         } catch (Exception e) {
             return Version.emptyVersion;

@@ -2,9 +2,9 @@
 package com.yahoo.search.predicate.utils;
 
 import com.yahoo.document.predicate.Predicate;
+import com.yahoo.text.Utf8;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.function.Consumer;
 
@@ -19,7 +19,7 @@ import java.util.function.Consumer;
 public class VespaFeedParser {
 
     public static int parseDocuments(String feedFile, int maxDocuments, Consumer<Predicate> consumer) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(feedFile), 8 * 1024)) {
+        try (BufferedReader reader = new BufferedReader(Utf8.createReader(feedFile), 8 * 1024)) {
             reader.mark(1);
             String line = reader.readLine();
             boolean xmlFeed = line.startsWith("<");

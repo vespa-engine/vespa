@@ -2,10 +2,10 @@
 package com.yahoo.searchlib.gbdt;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.text.Utf8;
 import org.junit.Test;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 
 import static org.junit.Assert.*;
@@ -52,7 +52,7 @@ public class GbdtModelTestCase {
 
     private static String readFile(String file) throws IOException {
         StringBuilder ret = new StringBuilder();
-        BufferedReader in = new BufferedReader(new FileReader(file));
+        BufferedReader in = new BufferedReader(Utf8.createReader(file));
         while (true) {
             String str = in.readLine();
             if (str == null) {

@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.core;
 
 import com.google.common.collect.Sets;
+import com.yahoo.text.Utf8;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -185,7 +186,7 @@ public class ExportPackagesIT {
 
     private static Properties getPropertiesFromFile(File file) throws IOException {
         Properties properties = new Properties();
-        try (FileReader reader = new FileReader(file)) {
+        try (FileReader reader = Utf8.createReader(file)) {
             properties.load(reader);
         }
         return properties;

@@ -5,6 +5,7 @@ import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 import com.yahoo.system.ProcessExecuter;
+import com.yahoo.text.Utf8;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,7 +16,6 @@ import java.util.logging.Level;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -208,7 +208,7 @@ public class SystemPoller {
     static long getPidJiffies(VespaService service) {
         int pid = service.getPid();
         try {
-            BufferedReader in = new BufferedReader(new FileReader("/proc/" + pid + "/stat"));
+            BufferedReader in = new BufferedReader(Utf8.createReader("/proc/" + pid + "/stat"));
             return getPidJiffies(in);
         } catch (FileNotFoundException ex) {
             log.log(Level.FINE, () -> "Unable to find pid " + pid + " in proc directory, for service " + service.getInstanceName());
@@ -236,7 +236,7 @@ public class SystemPoller {
 
     private static JiffiesAndCpus getTotalSystemJiffies() {
         try {
-            BufferedReader in = new BufferedReader(new FileReader("/proc/stat"));
+            BufferedReader in = new BufferedReader(Utf8.createReader("/proc/stat"));
             return getTotalSystemJiffies(in);
         } catch (FileNotFoundException ex) {
             log.log(Level.SEVERE, "Unable to open stat file", ex);

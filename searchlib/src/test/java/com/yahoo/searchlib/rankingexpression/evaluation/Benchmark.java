@@ -7,9 +7,9 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.text.Utf8;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -31,7 +31,7 @@ public final class Benchmark {
         }
         List<Result> res = new ArrayList<Result>();
         try {
-            BufferedReader in = new BufferedReader(new FileReader(args[0]));
+            BufferedReader in = new BufferedReader(Utf8.createReader(args[0]));
             StringBuilder str = new StringBuilder();
             String line;
             while ((line = in.readLine()) != null) {

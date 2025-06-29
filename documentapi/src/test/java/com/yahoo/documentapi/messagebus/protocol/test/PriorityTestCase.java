@@ -3,10 +3,10 @@ package com.yahoo.documentapi.messagebus.protocol.test;
 
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol.Priority;
+import com.yahoo.text.Utf8;
 import org.junit.Test;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,7 +23,7 @@ public class PriorityTestCase {
     @Test
     public void requireThat51PriorityValuesAreCorrect() throws IOException {
         String path = "test/crosslanguagefiles/5.1-Priority.txt";
-        BufferedReader in = new BufferedReader(new FileReader(path));
+        BufferedReader in = new BufferedReader(Utf8.createReader(path));
 
         List<Priority> expected = new LinkedList<Priority>(List.of(Priority.values()));
         String str;

@@ -2,9 +2,9 @@
 package com.yahoo.searchlib.treenet;
 
 import com.yahoo.searchlib.treenet.parser.TreeNetParser;
+import com.yahoo.text.Utf8;
 
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 
 /**
  * @author Simon Thoresen Hult
@@ -22,7 +22,7 @@ public class TreeNetConverter {
             System.exit(1);
         }
         try {
-            TreeNetParser parser = new TreeNetParser(new FileReader(args[0]));
+            TreeNetParser parser = new TreeNetParser(Utf8.createReader(args[0]));
             System.out.println(parser.treeNet().toRankingExpression());
         } catch (FileNotFoundException e) {
             System.err.println("Could not find file '" + args[0] + "'.");

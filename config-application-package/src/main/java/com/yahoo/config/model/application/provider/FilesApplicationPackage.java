@@ -204,7 +204,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                             readers.addAll(getFiles(relativePath.append(file.getName()), namePrefix + "/" + file.getName(), suffix, recurse));
                     } else {
                         if (suffix == null || file.getName().endsWith(suffix))
-                            readers.add(new NamedReader(file.getName(), new FileReader(file)));
+                            readers.add(new NamedReader(file.getName(), Utf8.createReader(file)));
                     }
                 }
             }
@@ -233,7 +233,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         try {
             File hostsFile = getHostsFile();
             if (!hostsFile.exists()) return null;
-            return new FileReader(hostsFile);
+            return Utf8.createReader(hostsFile);
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
@@ -314,7 +314,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         Set<NamedReader> ret = new LinkedHashSet<>();
         try {
             for (File f : getSearchDefinitionFiles()) {
-                ret.add(new NamedReader(f.getName(), new FileReader(f)));
+                ret.add(new NamedReader(f.getName(), Utf8.createReader(f)));
             }
         } catch (Exception e) {
             throw new IllegalArgumentException("Couldn't get schema contents.", e);
@@ -330,7 +330,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
      */
     private Reader retrieveConfigDefReader(File defPath) {
         try {
-            return new NamedReader(defPath.getPath(), new FileReader(defPath));
+            return new NamedReader(defPath.getPath(), Utf8.createReader(defPath));
         } catch (IOException e) {
             throw new IllegalArgumentException("Could not read config definition file '" + defPath + "'", e);
         }
@@ -424,7 +424,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     @Override
     public Reader getServices() {
         try {
-            return new FileReader(getServicesSource());
+            return Utf8.createReader(getServicesSource());
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
@@ -497,7 +497,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         if ( ! metaFile.exists()) {
             return defaultMetaData;
         }
-        try (FileReader reader = new FileReader(metaFile)) {
+        try (FileReader reader = Utf8.createReader(metaFile)) {
             return ApplicationMetaData.fromJsonString(IOUtils.readAll(reader));
         } catch (Exception e) {
             // Not a big deal, return default

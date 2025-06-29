@@ -2,11 +2,11 @@
 package com.yahoo.config.subscription;
 
 import com.yahoo.foo.FunctionTestConfig;
+import com.yahoo.text.Utf8;
 import org.junit.Before;
 import org.junit.Test;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
@@ -161,7 +161,7 @@ public class FunctionTest {
     }
 
     private void attemptLacking(String param, boolean isArray) throws IOException {
-        BufferedReader in = new BufferedReader(new FileReader(new File(PATH + "defaultvalues.txt")));
+        BufferedReader in = new BufferedReader(Utf8.createReader(new File(PATH + "defaultvalues.txt")));
         StringBuilder config = new StringBuilder();
         String line;
         while ((line = in.readLine()) != null) {

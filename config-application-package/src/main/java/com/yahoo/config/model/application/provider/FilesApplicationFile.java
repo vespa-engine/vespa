@@ -13,7 +13,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -82,7 +81,7 @@ public class FilesApplicationFile extends ApplicationFile {
 
     @Override
     public Reader createReader() throws FileNotFoundException {
-        return new FileReader(file);
+        return Utf8.createReader(file);
     }
 
     @Override

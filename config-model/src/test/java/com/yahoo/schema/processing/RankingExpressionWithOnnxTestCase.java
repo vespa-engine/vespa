@@ -12,12 +12,12 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.text.Utf8;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
@@ -417,7 +417,7 @@ public class RankingExpressionWithOnnxTestCase {
             for (File file : files) {
                 if ( ! file.getName().endsWith(suffix)) continue;
                 try {
-                    readers.add(new NamedReader(file.getName(), new FileReader(file)));
+                    readers.add(new NamedReader(file.getName(), Utf8.createReader(file)));
                 }
                 catch (IOException e) {
                     throw new UncheckedIOException(e);

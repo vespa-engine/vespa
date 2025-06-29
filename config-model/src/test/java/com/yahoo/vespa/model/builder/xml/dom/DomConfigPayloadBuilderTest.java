@@ -5,6 +5,7 @@ import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.slime.JsonFormat;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -15,7 +16,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.Reader;
 import java.io.StringReader;
 
@@ -31,7 +31,7 @@ public class DomConfigPayloadBuilderTest {
 
     @Test
     void testFunctionTest_DefaultValues() throws FileNotFoundException {
-        Element configRoot = getDocument(new FileReader("src/test/cfg/admin/userconfigs/functiontest-defaultvalues.xml"));
+        Element configRoot = getDocument(Utf8.createReader("src/test/cfg/admin/userconfigs/functiontest-defaultvalues.xml"));
         String expected = ""
                 + "{"
                 + "\"bool_val\":\"false\","
@@ -57,7 +57,7 @@ public class DomConfigPayloadBuilderTest {
     // Multi line strings are not tested in 'DefaultValues', so here it is.
     @Test
     void verifyThatWhitespaceIsPreservedForStrings() throws Exception {
-        Element configRoot = getDocument(new FileReader("src/test/cfg/admin/userconfigs/whitespace-test.xml"));
+        Element configRoot = getDocument(Utf8.createReader("src/test/cfg/admin/userconfigs/whitespace-test.xml"));
         assertPayload("{\"stringVal\":\" This is a string\\n  that contains different kinds of whitespace \"}", configRoot);
     }
 
@@ -238,7 +238,7 @@ public class DomConfigPayloadBuilderTest {
                             "<longval>invalid</longval>" +
                             "</config>");
             DefParser defParser = new DefParser("simpletypes",
-                    new FileReader("src/test/resources/configdefinitions/test.simpletypes.def"));
+                    Utf8.createReader("src/test/resources/configdefinitions/test.simpletypes.def"));
             ConfigDefinition def = ConfigDefinitionBuilder.createConfigDefinition(defParser.getTree());
             ConfigPayloadBuilder unused =  new DomConfigPayloadBuilder(def).build(configRoot);
         });

@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.benchmark;
 
 import com.yahoo.jrt.*;
 import com.yahoo.system.CommandLineParser;
+import com.yahoo.text.Utf8;
 
 import java.io.*;
 import java.util.*;
@@ -74,7 +75,7 @@ public class StressTester {
         if (verificationFile != null) {
             BufferedReader reader = null;
             try {
-                reader = new BufferedReader(new FileReader(verificationFile));
+                reader = new BufferedReader(Utf8.createReader(verificationFile));
                 String l;
                 while ((l = reader.readLine()) != null) {
                     String[] line = l.split(",");

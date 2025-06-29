@@ -11,11 +11,11 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+import com.yahoo.text.Utf8;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,13 +44,13 @@ public class QueryProfileXMLReader {
 
             for (File file : sortFiles(dir)) {
                 if ( ! file.getName().endsWith(".xml")) continue;
-                queryProfileReaders.add(new NamedReader(file.getName(), new FileReader(file)));
+                queryProfileReaders.add(new NamedReader(file.getName(), Utf8.createReader(file)));
             }
             File typeDir = new File(dir,"types");
             if (typeDir.isDirectory()) {
                 for (File file : sortFiles(typeDir)) {
                     if ( ! file.getName().endsWith(".xml")) continue;
-                    queryProfileTypeReaders.add(new NamedReader(file.getName(), new FileReader(file)));
+                    queryProfileTypeReaders.add(new NamedReader(file.getName(), Utf8.createReader(file)));
                 }
             }
 

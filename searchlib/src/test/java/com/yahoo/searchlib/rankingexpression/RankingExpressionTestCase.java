@@ -12,6 +12,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.tensor.functions.Reduce;
+import com.yahoo.text.Utf8;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -21,7 +22,6 @@ import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -253,7 +253,7 @@ public class RankingExpressionTestCase {
 
     @Test
     public void testParse() throws ParseException, IOException {
-        BufferedReader reader = new BufferedReader(new FileReader("src/tests/rankingexpression/rankingexpressionlist"));
+        BufferedReader reader = new BufferedReader(Utf8.createReader("src/tests/rankingexpression/rankingexpressionlist"));
         String line;
         int lineNumber = 0;
         while ((line = reader.readLine()) != null) {

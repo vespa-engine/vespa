@@ -3,7 +3,6 @@ package com.yahoo.prelude.semantics.benchmark;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -11,6 +10,7 @@ import java.util.Iterator;
 
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
+import com.yahoo.text.Utf8;
 import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.prelude.semantics.RuleImporter;
 import com.yahoo.prelude.semantics.parser.ParseException;
@@ -30,7 +30,7 @@ public class RuleBaseBenchmark {
         }
         RuleBase ruleBase = new RuleImporter(new SimpleLinguistics()).importFile(ruleBaseFile, fsaFile);
         ArrayList<String> queries = new ArrayList<>();
-        BufferedReader reader = new BufferedReader(new FileReader(queryFile));
+        BufferedReader reader = new BufferedReader(Utf8.createReader(queryFile));
         String line;
         while((line=reader.readLine())!=null){
             queries.add(line);

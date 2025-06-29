@@ -7,11 +7,11 @@ import com.yahoo.search.pagetemplates.PageTemplate;
 import com.yahoo.search.pagetemplates.PageTemplateRegistry;
 import com.yahoo.search.pagetemplates.model.*;
 import com.yahoo.search.query.Sorting;
+import com.yahoo.text.Utf8;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
@@ -46,7 +46,7 @@ public class PageTemplateXMLReader {
 
             for (File file : sortFiles(dir)) {
                 if ( ! file.getName().endsWith(".xml")) continue;
-                pageReaders.add(new NamedReader(file.getName(), new FileReader(file)));
+                pageReaders.add(new NamedReader(file.getName(), Utf8.createReader(file)));
             }
 
             return read(pageReaders, true);
@@ -70,7 +70,7 @@ public class PageTemplateXMLReader {
         NamedReader pageReader = null;
         try {
             File file = new File(fileName);
-            pageReader = new NamedReader(fileName,new FileReader(file));
+            pageReader = new NamedReader(fileName,Utf8.createReader(file));
             String firstName = file.getName().substring(0, file.getName().length() - 4);
             return read(List.of(pageReader), true).getComponent(firstName);
         }
