@@ -2,10 +2,10 @@
 package com.yahoo.config.codegen;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 /**
  * This class generates code for a config class from a given def-file.
@@ -26,12 +26,12 @@ public class MakeConfig {
     }
 
     @SuppressWarnings("WeakerAccess") // Used by ConfigGenMojo
-    public static boolean makeConfig(MakeConfigProperties properties) throws FileNotFoundException {
+    public static boolean makeConfig(MakeConfigProperties properties) throws IOException {
         for (File specFile : properties.specFiles) {
             String name = specFile.getName();
             if (name.endsWith(".def")) name = name.substring(0, name.length() - 4);
 
-            DefParser parser = new DefParser(name, new FileReader(specFile));
+            DefParser parser = new DefParser(name, new FileReader(specFile, StandardCharsets.UTF_8));
             parser.enableSystemErr();
             InnerCNode configRoot = parser.getTree();
             checkNamespaceAndPacakge(name, configRoot, isCpp(properties));
@@ -143,4 +143,3 @@ public class MakeConfig {
     }
 
 }
-
