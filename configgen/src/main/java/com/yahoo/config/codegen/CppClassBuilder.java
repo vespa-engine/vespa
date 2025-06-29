@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.StringTokenizer;
@@ -58,7 +59,7 @@ public class CppClassBuilder implements ClassBuilder {
     }
 
     void writeFile(File f, String content) throws IOException {
-        FileWriter fw = new FileWriter(f);
+        FileWriter fw = new FileWriter(f, StandardCharsets.UTF_8);
         fw.write(content);
         fw.close();
     }
