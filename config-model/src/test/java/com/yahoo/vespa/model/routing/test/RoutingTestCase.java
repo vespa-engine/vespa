@@ -184,7 +184,7 @@ public class RoutingTestCase {
             name = application.getCanonicalPath() + "/" + name;
             System.out.println("\tWriting file '" + name + "'.");
 
-            PrintWriter writer = new PrintWriter(new FileWriter(name));
+            PrintWriter writer = new PrintWriter(Utf8.createWriter(name));
             writer.print(content);
             writer.close();
 

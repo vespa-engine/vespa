@@ -98,7 +98,7 @@ public class VipStatusHandlerTestCase {
     void testFileFound() throws IOException {
         File statusFile = File.createTempFile("VipStatusHandlerTestCase", null);
         try {
-            FileWriter writer = new FileWriter(statusFile);
+            FileWriter writer = Utf8.createWriter(statusFile);
             String OK = "OK\n";
             writer.write(OK);
             writer.close();

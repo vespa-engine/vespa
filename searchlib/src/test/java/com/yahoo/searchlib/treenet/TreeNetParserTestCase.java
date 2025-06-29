@@ -76,7 +76,7 @@ public class TreeNetParserTestCase {
 
     private void writeFile(String file, String content) {
         try {
-            FileWriter out = new FileWriter(file);
+            FileWriter out = Utf8.createWriter(file);
             out.write(content);
             out.close();
         } catch (IOException e) {

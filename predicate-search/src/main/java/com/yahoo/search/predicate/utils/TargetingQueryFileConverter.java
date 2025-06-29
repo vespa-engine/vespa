@@ -57,7 +57,7 @@ public class TargetingQueryFileConverter {
 
     private static void writeSubqueriesToFile(List<Query> queries, File output, OutputFormat outputFormat)
             throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(output))) {
+        try (BufferedWriter writer = new BufferedWriter(Utf8.createWriter(output))) {
             if (outputFormat == OutputFormat.JSON) {
                 writeJSONOutput(writer, queries);
             } else {

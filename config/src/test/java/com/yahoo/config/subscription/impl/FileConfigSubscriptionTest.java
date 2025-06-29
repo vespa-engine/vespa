@@ -5,6 +5,7 @@ import com.yahoo.config.subscription.DirSource;
 import com.yahoo.config.subscription.FileSource;
 import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.foo.TestReferenceConfig;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.TimingValues;
 import org.junit.Before;
@@ -33,7 +34,7 @@ public class FileConfigSubscriptionTest {
     }
 
     private void writeConfig(String field, String value) throws IOException {
-        FileWriter writer = new FileWriter(TEST_TYPES_FILE);
+        FileWriter writer = Utf8.createWriter(TEST_TYPES_FILE);
         writer.write(field + " " + value);
         writer.close();
     }

@@ -13,6 +13,7 @@ import com.yahoo.messagebus.MessageHandler;
 import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.rpc.RPCNetwork;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
+import com.yahoo.text.Utf8;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -38,7 +39,7 @@ public class SimpleServer {
                               new MessageBusParams().addProtocol(new DocumentProtocol(documentMgr)));
         session = mbus.createDestinationSession(new DestinationSessionParams().setMessageHandler(msgHandler));
 
-        PrintWriter writer = new PrintWriter(new FileWriter(configDir + "/messagebus.cfg"));
+        PrintWriter writer = new PrintWriter(Utf8.createWriter(configDir + "/messagebus.cfg"));
         writer.println("routingtable[1]\n" +
                        "routingtable[0].protocol \"document\"\n" +
                        "routingtable[0].hop[0]\n" +
@@ -48,7 +49,7 @@ public class SimpleServer {
                        "routingtable[0].route[0].hop[0] \"" + session.getConnectionSpec() + "\"");
         writer.close();
 
-        writer = new PrintWriter(new FileWriter(configDir + "/slobroks.cfg"));
+        writer = new PrintWriter(Utf8.createWriter(configDir + "/slobroks.cfg"));
         writer.println(slobrok.configId().substring(4));
         writer.close();
     }

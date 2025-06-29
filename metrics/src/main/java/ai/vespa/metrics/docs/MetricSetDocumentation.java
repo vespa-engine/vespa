@@ -4,6 +4,7 @@ package ai.vespa.metrics.docs;
 import ai.vespa.metrics.Suffix;
 import ai.vespa.metrics.VespaMetrics;
 import ai.vespa.metrics.set.MetricSet;
+import com.yahoo.text.Utf8;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -70,7 +71,7 @@ public class MetricSetDocumentation {
                             </table>
                             """, type.toLowerCase(), type, htmlRows(metricTypeByName.get(type))))
                 );
-        try (FileWriter fileWriter = new FileWriter(path + "/" + metricSet.getId().toLowerCase() + "-set-metrics-reference.html")) {
+        try (FileWriter fileWriter = Utf8.createWriter(path + "/" + metricSet.getId().toLowerCase() + "-set-metrics-reference.html")) {
             fileWriter.write(referenceBuilder.toString());
         } catch (IOException e) {
             throw new UncheckedIOException(e);

@@ -2,6 +2,7 @@
 package ai.vespa.metrics.docs;
 
 import ai.vespa.metrics.VespaMetrics;
+import com.yahoo.text.Utf8;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -31,7 +32,7 @@ public class MetricDocumentation {
                         </table>
                         """, metricType, htmlRows(metrics)));
 
-        try (FileWriter fileWriter = new FileWriter(path + "/" + metricType.toLowerCase() + "-metrics-reference.html")) {
+        try (FileWriter fileWriter = Utf8.createWriter(path + "/" + metricType.toLowerCase() + "-metrics-reference.html")) {
             fileWriter.write(referenceBuilder.toString());
         } catch (IOException e) {
             throw new UncheckedIOException(e);

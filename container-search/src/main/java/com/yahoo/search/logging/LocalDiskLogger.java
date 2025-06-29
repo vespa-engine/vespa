@@ -2,7 +2,8 @@
 
 package com.yahoo.search.logging;
 
-import java.io.FileWriter;
+import com.yahoo.io.IOUtils;
+import java.io.Writer;
 import java.io.IOException;
 
 public class LocalDiskLogger extends AbstractThreadedLogger {
@@ -16,7 +17,7 @@ public class LocalDiskLogger extends AbstractThreadedLogger {
     @Override
     public boolean transport(LoggerEntry entry) {
         String json = entry.serialize();
-        try (FileWriter fw = new FileWriter(logFilePath, true)) {
+        try (Writer fw = IOUtils.createWriter(logFilePath, true)) {
             fw.write(json);
             fw.write(System.getProperty("line.separator"));
             return true;

@@ -82,7 +82,7 @@ public class VersionState {
 
     public void storeVersion(String vespaVersion) {
         curator.set(versionPath, Utf8.toBytes(vespaVersion));
-        try (FileWriter writer = new FileWriter(versionFile)) {
+        try (FileWriter writer = Utf8.createWriter(versionFile)) {
             writer.write(vespaVersion);
         } catch (IOException e) {
             throw new RuntimeException(e);

@@ -55,10 +55,10 @@ public class FileReceiverTest {
     @Test
     public void receiveCompressedParts() throws IOException{
         File dirWithFiles = temporaryFolder.newFolder("files");
-        FileWriter writerA = new FileWriter(new File(dirWithFiles, "a"));
+        FileWriter writerA = Utf8.createWriter(new File(dirWithFiles, "a"));
         writerA.write("1");
         writerA.close();
-        FileWriter writerB = new FileWriter(new File(dirWithFiles, "b"));
+        FileWriter writerB = Utf8.createWriter(new File(dirWithFiles, "b"));
         writerB.write("2");
         writerB.close();
 

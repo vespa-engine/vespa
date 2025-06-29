@@ -38,7 +38,7 @@ public abstract class CrossPlatformTestFactory {
 
     public void recordTestResults() throws Exception {
         File results = new File(directory, name + ".java.results");
-        try (FileWriter fw = new FileWriter(results)) {
+        try (FileWriter fw = Utf8.createWriter(results)) {
             fw.write(serialize());
         }
     }

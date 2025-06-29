@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metrics.docs;
 
-
 import ai.vespa.metrics.Unit;
+import com.yahoo.text.Utf8;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -33,7 +33,7 @@ public class UnitDocumentation {
                         </table>
                         """, htmlRows(units)));
 
-        try (FileWriter fileWriter = new FileWriter(path + "/unit-metrics-reference.html")) {
+        try (FileWriter fileWriter = Utf8.createWriter(path + "/unit-metrics-reference.html")) {
             fileWriter.write(referenceBuilder.toString());
         } catch (IOException e) {
             throw new UncheckedIOException(e);

@@ -22,6 +22,7 @@ import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.FieldSet;
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.text.Utf8;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -155,7 +156,7 @@ public class DocumentGenMojo extends AbstractMojo {
             getLog().debug("No changes, not updating "+target);
             return;
         }
-        try (Writer out = new FileWriter(target)) {
+        try (Writer out = Utf8.createWriter(target)) {
                 out.write("@ExportPackage\n" +
                     "package "+packageName+";\n\n" +
                     "import com.yahoo.osgi.annotation.ExportPackage;\n");
@@ -191,7 +192,7 @@ public class DocumentGenMojo extends AbstractMojo {
             getLog().debug("No changes, not updating "+target);
             return;
         }
-        try (Writer out = new FileWriter(target)) {
+        try (Writer out = Utf8.createWriter(target)) {
                 out.write("package "+packageName+";\n\n" +
                     "/**\n" +
                     " *  Registry of generated concrete document, struct and annotation types.\n" +
@@ -303,7 +304,7 @@ public class DocumentGenMojo extends AbstractMojo {
             getLog().debug("No changes, not updating "+target);
             return;
         }
-        try (Writer out = new FileWriter(target)) {
+        try (Writer out = Utf8.createWriter(target)) {
                 out.write("package "+packageName+".annotation;\n\n" +
                     "import "+packageName+".ConcreteDocumentFactory;\n" +
                     exportInnerImportsFromDocAndSuperTypes(docType, packageName) +
@@ -410,7 +411,7 @@ public class DocumentGenMojo extends AbstractMojo {
             getLog().debug("No changes, not updating "+target);
             return;
         }
-        try (Writer doc = new FileWriter(target)) {
+        try (Writer doc = Utf8.createWriter(target)) {
             exportDocumentClass(docType, doc, packageName);
         } catch (IOException e) {
             throw new RuntimeException("Could not export sources for document type '"+docType.getName()+"'", e);

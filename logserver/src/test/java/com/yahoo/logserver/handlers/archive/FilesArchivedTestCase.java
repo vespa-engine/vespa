@@ -2,6 +2,7 @@
 
 package com.yahoo.logserver.handlers.archive;
 
+import com.yahoo.text.Utf8;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -28,7 +29,7 @@ public class FilesArchivedTestCase {
     private void makeLogfile(String name, long hours) throws IOException {
         File f = new File(tmpDir, name);
         f.getParentFile().mkdirs();
-        new FileWriter(f).write("foo bar baz\n");
+        Utf8.createWriter(f).write("foo bar baz\n");
         long now = System.currentTimeMillis();
         f.setLastModified(now - (hours * 3600 * 1000));
     }
