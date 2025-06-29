@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.zookeeper;
 import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.io.HexDump;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
@@ -187,7 +188,7 @@ class ZKApplicationFile extends ApplicationFile {
         if (zkApp.exists(metaPath)) {
             return getMetaDataFromZk(metaPath);
         }
-        return new MetaData(ContentStatusNew, isDirectory() ? "" : ConfigUtils.getMd5(zkApp.getData(getZKPath(path))));
+        return new MetaData(ContentStatusNew, isDirectory() ? "" : ConfigUtils.getMd5(zkApp.getBytes(getZKPath(path))));
     }
 
     private MetaData getMetaDataFromZk(Path metaPath) {

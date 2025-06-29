@@ -406,7 +406,7 @@ public abstract class IOUtils {
         try (BufferedReader buffered = new BufferedReader(reader)) {
             int c;
             while ((c = buffered.read()) != -1)
-                sb.appendCodePoint(c);
+                sb.append((char)c);
         }
         return sb.toString();
     }
