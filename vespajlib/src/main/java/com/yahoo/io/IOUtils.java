@@ -82,7 +82,7 @@ public abstract class IOUtils {
 
     /** Creates a buffered reader in the default encoding */
     public static BufferedReader createReader(String filename) throws IOException {
-        return new BufferedReader(new FileReader(filename));
+        return new BufferedReader(new FileReader(filename, utf8Charset));
     }
 
     /**
@@ -108,7 +108,7 @@ public abstract class IOUtils {
      */
     public static BufferedWriter createWriter(File file, String encoding, boolean append) throws IOException {
         createDirectory(file.getAbsolutePath());
-        return new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append),encoding));
+        return new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), encoding));
     }
 
     /**
@@ -119,7 +119,7 @@ public abstract class IOUtils {
      */
     public static BufferedWriter createWriter(String filename, boolean append) throws IOException {
         createDirectory(filename);
-        return new BufferedWriter(new FileWriter(filename, append));
+        return new BufferedWriter(new FileWriter(filename, utf8Charset, append));
     }
 
     /**
@@ -130,7 +130,7 @@ public abstract class IOUtils {
      */
     public static BufferedWriter createWriter(File file, boolean append) throws IOException {
         createDirectory(file.getAbsolutePath());
-        return new BufferedWriter(new FileWriter(file, append));
+        return new BufferedWriter(new FileWriter(file, utf8Charset, append));
     }
 
     /** Creates the directory path of this file if it does not exist */
@@ -290,7 +290,7 @@ public abstract class IOUtils {
         int lineCount = 0;
 
         try {
-            reader = createReader(file,"utf8");
+            reader = createReader(file);
             while (reader.readLine() != null)
                 lineCount++;
             return lineCount;
@@ -313,7 +313,7 @@ public abstract class IOUtils {
         try {
             List<String> lines = new java.util.ArrayList<>();
 
-            reader = createReader(fileName,"utf8");
+            reader = createReader(fileName);
             String line;
 
             while (null != (line = reader.readLine()))
