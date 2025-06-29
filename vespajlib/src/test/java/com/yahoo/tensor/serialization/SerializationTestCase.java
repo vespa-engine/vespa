@@ -7,12 +7,12 @@ import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.test.json.Jackson;
+import com.yahoo.text.Utf8;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +34,7 @@ public class SerializationTestCase {
         if (!testSpec.exists()) {
             testSpec = new File("../" + testPath);
         }
-        try(BufferedReader br = new BufferedReader(new FileReader(testSpec))) {
+        try(BufferedReader br = new BufferedReader(Utf8.createReader(testSpec))) {
             String test = br.readLine();
             while (test != null) {
                 tests.add(test);
