@@ -44,7 +44,7 @@ protected:
 
 FlushHistoryTest::FlushHistoryTest()
     : ::testing::Test(),
-    _flush_history(NORMAL_STRATEGY, 42, 3)
+      _flush_history(NORMAL_STRATEGY, 42, 3)
 {
 }
 
