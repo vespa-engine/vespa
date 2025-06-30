@@ -283,11 +283,12 @@ public:
         }
         EXPECT_EQ(exp, act);
     }
-    void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits, bool filter_first = false) {
+
+    void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits, bool filter_first = false, double adaptive_beam_search_slack = 0.0) {
         uint32_t k = 3;
         auto qv = vectors.get_vector(docid, 0);
         auto df = index->distance_function_factory().for_query_vector(qv);
-        auto rv = index->top_k_candidates(*df, k, 0.0, global_filter->ptr_if_active(), filter_first, 0.01, _doom->get_doom()).peek();
+        auto rv = index->top_k_candidates(*df, k, adaptive_beam_search_slack, 0.0, global_filter->ptr_if_active(), filter_first, 0.01, _doom->get_doom()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         size_t idx = 0;
         for (const auto & hit : rv) {
@@ -298,27 +299,27 @@ public:
         if (exp_hits.size() == k) {
             std::vector<uint32_t> expected_by_docid = exp_hits;
             std::sort(expected_by_docid.begin(), expected_by_docid.end());
-            auto got_by_docid = index->find_top_k(k, *df, k, 0.0, _doom->get_doom(), 100100.25);
+            auto got_by_docid = index->find_top_k(k, *df, k, adaptive_beam_search_slack, _doom->get_doom(), 100100.25);
             for (idx = 0; idx < k; ++idx) {
                 EXPECT_EQ(expected_by_docid[idx], got_by_docid[idx].docid);
             }
         }
         if (!exp_hits.empty()) {
-            check_with_distance_threshold(docid);
+            check_with_distance_threshold(docid, adaptive_beam_search_slack);
         }
     }
-    void check_with_distance_threshold(uint32_t docid) {
+    void check_with_distance_threshold(uint32_t docid, double adaptive_beam_search_slack = 0.0) {
         auto qv = vectors.get_vector(docid, 0);
         auto df = index->distance_function_factory().for_query_vector(qv);
         uint32_t k = 3;
-        auto rv = index->top_k_candidates(*df, k, 0.0, global_filter->ptr_if_active(), false, 0.01, _doom->get_doom()).peek();
+        auto rv = index->top_k_candidates(*df, k, adaptive_beam_search_slack, 0.0, global_filter->ptr_if_active(), false, 0.01, _doom->get_doom()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         EXPECT_EQ(rv.size(), 3);
         EXPECT_LE(rv[0].distance, rv[1].distance);
         double thr = (rv[0].distance + rv[1].distance) * 0.5;
         auto got_by_docid = (global_filter->is_active())
-            ? index->find_top_k_with_filter(k, *df, *global_filter, false, 0.01, k, 0.0, _doom->get_doom(), thr)
-            : index->find_top_k(k, *df, k, 0.0, _doom->get_doom(), thr);
+            ? index->find_top_k_with_filter(k, *df, *global_filter, false, 0.01, k, adaptive_beam_search_slack, 0.0, _doom->get_doom(), thr)
+            : index->find_top_k(k, *df, k, adaptive_beam_search_slack, 0.0, _doom->get_doom(), thr);
         EXPECT_EQ(got_by_docid.size(), 1);
         EXPECT_EQ(got_by_docid[0].docid, index->get_docid(rv[0].nodeid));
         for (const auto & hit : got_by_docid) {
@@ -492,6 +493,48 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_filter_first_sear
     this->expect_top_3(9, {3, 2}, true);
     this->reset_doom(-1s);
     this->expect_top_3(2, {}, true);
+}
+
+TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_adaptive_beam_search)
+{
+    this->init(false);
+    this->add_document(1);
+    this->add_document(2);
+    this->add_document(3);
+    this->add_document(4);
+    this->add_document(5);
+    this->add_document(6);
+    this->add_document(7);
+
+    double slack_values[] = {0.0, 0.1, 0.5, 1.0};
+    for (double slack : slack_values) {
+        this->reset_doom();
+        this->expect_top_3(1, {1}, false, slack);
+        this->expect_top_3(2, {2, 1, 3}, false, slack);
+        this->expect_top_3(3, {3}, false, slack);
+        this->expect_top_3(4, {4, 1, 3}, false, slack);
+        this->expect_top_3(5, {5, 6, 2}, false, slack);
+        this->expect_top_3(6, {6, 5, 2}, false, slack);
+        this->expect_top_3(7, {7, 3, 2}, false, slack);
+        this->expect_top_3(8, {4, 3, 1}, false, slack);
+        this->expect_top_3(9, {7, 3, 2}, false, slack);
+    }
+
+    this->set_filter({2,3,4,6});
+    for (double slack : slack_values) {
+        this->reset_doom();
+
+        this->expect_top_3(2, {2, 3}, false, slack);
+        this->expect_top_3(4, {4, 3}, false, slack);
+        this->expect_top_3(5, {6, 2}, false, slack);
+        this->expect_top_3(6, {6, 2}, false, slack);
+        this->expect_top_3(7, {3, 2}, false, slack);
+        this->expect_top_3(8, {4, 3}, false, slack);
+        this->expect_top_3(9, {3, 2}, false, slack);
+
+        this->reset_doom(-1s);
+        this->expect_top_3(2, {}, false, slack);
+    }
 }
 
 TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_and_removed)
