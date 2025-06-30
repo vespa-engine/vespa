@@ -500,7 +500,7 @@ public class RawRankProfile {
                 properties.add(new Pair<>("vespa.matching.global_filter.lower_limit", String.valueOf(approximateThreshold.getAsDouble())));
             }
             if (acornOneThreshold.isPresent()) {
-                properties.add(new Pair<>("vespa.matching.acorn_one.upper_limit", String.valueOf(acornOneThreshold.getAsDouble())));
+                properties.add(new Pair<>("vespa.matching.nns.acorn_one_upper_limit", String.valueOf(acornOneThreshold.getAsDouble())));
             }
             if (acornOneExploration.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.nns.acorn_one_exploration", String.valueOf(acornOneExploration.getAsDouble())));

@@ -136,7 +136,7 @@ public class Matching implements Cloneable {
             rankProperties.put("vespa.matching.global_filter.lower_limit", String.valueOf(approximateThreshold));
         }
         if (acornOneThreshold != null) {
-            rankProperties.put("vespa.matching.acorn_one.upper_limit", String.valueOf(acornOneThreshold));
+            rankProperties.put("vespa.matching.nns.acorn_one_upper_limit", String.valueOf(acornOneThreshold));
         }
         if (acornOneThreshold != null) {
             rankProperties.put("vespa.matching.nns.acorn_one_exploration", String.valueOf(acornOneExploration));

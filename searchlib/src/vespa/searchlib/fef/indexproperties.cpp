@@ -429,22 +429,6 @@ GlobalFilterUpperLimit::lookup(const Properties &props, double defaultValue)
     return lookupDouble(props, NAME, defaultValue);
 }
 
-const std::string AcornOneUpperLimit::NAME("vespa.matching.acorn_one.upper_limit");
-
-const double AcornOneUpperLimit::DEFAULT_VALUE(0.00);
-
-double
-AcornOneUpperLimit::lookup(const Properties &props)
-{
-    return lookup(props, DEFAULT_VALUE);
-}
-
-double
-AcornOneUpperLimit::lookup(const Properties &props, double defaultValue)
-{
-    return lookupDouble(props, NAME, defaultValue);
-}
-
 const std::string WeakAndStopWordAdjustLimit::NAME("vespa.matching.weakand.stop_word_adjust_limit");
 const double WeakAndStopWordAdjustLimit::DEFAULT_VALUE(1.0);
 double WeakAndStopWordAdjustLimit::lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
@@ -506,6 +490,22 @@ void
 ElementGap::set_for_field(Properties& props, const std::string& field_name, const std::string& element_gap)
 {
     props.add(NAME + "." + field_name, element_gap);
+}
+
+const std::string AcornOneUpperLimit::NAME("vespa.matching.nns.acorn_one_upper_limit");
+
+const double AcornOneUpperLimit::DEFAULT_VALUE(0.00);
+
+double
+AcornOneUpperLimit::lookup(const Properties &props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+double
+AcornOneUpperLimit::lookup(const Properties &props, double defaultValue)
+{
+    return lookupDouble(props, NAME, defaultValue);
 }
 
 const std::string AcornOneExploration::NAME("vespa.matching.nns.acorn_one_exploration");

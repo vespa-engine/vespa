@@ -533,7 +533,7 @@ rank-profile feature_logging {
         verifyRankProfileSetting(rankProfile, rawRankProfile, RankProfile::getApproximateThreshold,
                                  approximateThreshold, "vespa.matching.global_filter.lower_limit");
         verifyRankProfileSetting(rankProfile, rawRankProfile, RankProfile::getAcornOneThreshold,
-                                 acornOneThreshold, "vespa.matching.acorn_one.upper_limit");
+                                 acornOneThreshold, "vespa.matching.nns.acorn_one_upper_limit");
     }
 
     @Test
