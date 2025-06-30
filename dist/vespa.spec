@@ -330,9 +330,9 @@ export PATH="%{_prefix}-deps/bin:$PATH"
 
 %if 0%{?_use_mvn_wrapper}
 mvn -B wrapper:wrapper -Dmaven=3.9.9 -N
-%define _mvn_cmd $(pwd)/mvnw
+%global _mvn_cmd $(pwd)/mvnw
 %else
-%define _mvn_cmd mvn
+%global _mvn_cmd mvn
 %endif
 %{?_use_mvn_wrapper:env VESPA_MAVEN_COMMAND=%{_mvn_cmd} }sh bootstrap.sh java
 %{_mvn_cmd} --batch-mode -nsu -T 1C install -DskipTests -Dmaven.javadoc.skip=true
