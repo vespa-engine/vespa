@@ -11,7 +11,7 @@ namespace {
 
 template <typename Key, typename Value>
 std::vector<Value>
-make_vector(const std::map<Key, Value>& entries)
+make_value_vector(const std::map<Key, Value>& entries)
 {
     std::vector<Value> result;
     result.reserve(entries.size());
@@ -108,7 +108,7 @@ FlushHistory::flush_done(uint32_t id)
 {
     std::lock_guard guard(_mutex);
     auto it = _active.lower_bound(id);
-    assert(it != _active.end() || it->first == id);
+    assert(it != _active.end() && it->first == id);
     _finished.emplace_back(it->second);
     auto now = steady_clock::now();
     _finished.back().flush_done(now);
@@ -184,11 +184,11 @@ FlushHistory::make_view() const
     bool priority_strategy_copy = _priority_strategy;
     auto strategy_start_time_copy = _strategy_start_time;
     std::vector<FlushHistoryEntry> finished_copy(_finished.begin(), _finished.end());
-    auto active_copy = make_vector(_active);
-    auto pending_copy = make_vector(_pending);
+    auto active_copy = make_value_vector(_active);
+    auto pending_copy = make_value_vector(_pending);
     std::vector<FlushStrategyHistoryEntry> finished_strategies_copy(_finished_strategies.begin(),
                                                                     _finished_strategies.end());
-    auto last_strategies_copy = make_vector(_last_strategies);
+    auto last_strategies_copy = make_value_vector(_last_strategies);
     guard.unlock();
     std::sort(pending_copy.begin(), pending_copy.end(), [](const auto& lhs, const auto& rhs) { return lhs.id() < rhs.id(); });
     return std::make_shared<FlushHistoryView>(std::move(strategy_copy),
