@@ -31,7 +31,8 @@ PrepareRestartFlushStrategy::Config::Config(double tlsReplayByteCost_,
 }
 
 PrepareRestartFlushStrategy::PrepareRestartFlushStrategy(const Config &cfg)
-    : _cfg(cfg)
+    : IFlushStrategy(),
+      _cfg(cfg)
 {
 }
 
@@ -165,6 +166,12 @@ PrepareRestartFlushStrategy::getFlushTargets(const FlushContext::List &targetLis
     return flatten(findBestTargetsToFlushPerHandler(
             groupByFlushHandler(removeGCFlushTargets(targetList)),
             _cfg, tlsStatsMap));
+}
+
+std::string
+PrepareRestartFlushStrategy::name() const
+{
+    return "prepare_restart";
 }
 
 } // namespace proton

@@ -226,6 +226,11 @@ MemoryFlush::getFlushTargets(const FlushContext::List& targetList,
     return fv;
 }
 
+std::string
+MemoryFlush::name() const
+{
+    return "memory";
+}
 
 bool
 MemoryFlush::CompareTarget::operator()(const FlushContext::SP &lfc, const FlushContext::SP &rfc) const

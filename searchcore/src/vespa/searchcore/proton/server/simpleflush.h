@@ -21,10 +21,10 @@ public:
     SimpleFlush();
 
     // Implements IFlushStrategy
-    virtual FlushContext::List getFlushTargets(const FlushContext::List& targetList,
-                                               const flushengine::TlsStatsMap&,
-                                               const flushengine::ActiveFlushStats&) const override;
-
+    FlushContext::List getFlushTargets(const FlushContext::List& targetList,
+                                       const flushengine::TlsStatsMap&,
+                                       const flushengine::ActiveFlushStats&) const override;
+    std::string name() const override;
 };
 
 } // namespace proton

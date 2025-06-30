@@ -28,9 +28,12 @@ CompareTarget::operator()(const FlushContext::SP &lfc,
     return lhs.getLastFlushTime() < rhs.getLastFlushTime();
 }
 
+std::string strategy_name("flush_all");
+
 }
 
 FlushAllStrategy::FlushAllStrategy()
+    : IFlushStrategy()
 {
 }
 
@@ -45,6 +48,12 @@ FlushAllStrategy::getFlushTargets(const FlushContext::List &targetList,
     FlushContext::List fv(targetList);
     std::sort(fv.begin(), fv.end(), CompareTarget());
     return fv;
+}
+
+std::string
+FlushAllStrategy::name() const
+{
+    return strategy_name;
 }
 
 } // namespace proton

@@ -359,6 +359,8 @@ public:
         return fv;
     }
 
+    std::string name() const override { return "flush_simple"; }
+
     bool
     compare(const IFlushTarget::SP &lhs, const IFlushTarget::SP &rhs) const
     {
@@ -398,6 +400,7 @@ public:
     FlushContext::List getFlushTargets(const FlushContext::List &, const flushengine::TlsStatsMap &, const flushengine::ActiveFlushStats&) const override {
         return {};
     }
+    std::string name() const override { return "flush_nothing"; }
 };
 
 // --------------------------------------------------------------------------------
