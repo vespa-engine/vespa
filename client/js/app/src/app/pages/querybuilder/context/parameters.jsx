@@ -59,6 +59,7 @@ export default param('root', [
       param('approximateThreshold', 'Float', { min: 0, max: 1 }),
       param('filterFirstThreshold', 'Float', { min: 0, max: 1 }),
       param('filterFirstExploration', 'Float', { min: 0, max: 1 }),
+      param('adaptiveBeamSearchSlack', 'Float', { min: 0, max: 1 }),
     ]),
     param('matchPhase', [
       param('attribute', 'String'),
