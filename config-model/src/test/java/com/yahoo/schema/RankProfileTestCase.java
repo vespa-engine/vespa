@@ -547,7 +547,7 @@ rank-profile feature_logging {
         var rankProfile = rp.getFirst();
         var rawRankProfile = rp.getSecond();
         verifyRankProfileSetting(rankProfile, rawRankProfile, RankProfile::getAcornOneExploration,
-                                 acornOneExploration, "vespa.matching.acorn_one.exploration");
+                                 acornOneExploration, "vespa.matching.nns.acorn_one_exploration");
     }
 
     @Test

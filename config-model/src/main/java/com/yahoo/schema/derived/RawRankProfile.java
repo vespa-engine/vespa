@@ -503,7 +503,7 @@ public class RawRankProfile {
                 properties.add(new Pair<>("vespa.matching.acorn_one.upper_limit", String.valueOf(acornOneThreshold.getAsDouble())));
             }
             if (acornOneExploration.isPresent()) {
-                properties.add(new Pair<>("vespa.matching.acorn_one.exploration", String.valueOf(acornOneExploration.getAsDouble())));
+                properties.add(new Pair<>("vespa.matching.nns.acorn_one_exploration", String.valueOf(acornOneExploration.getAsDouble())));
             }
             if (targetHitsMaxAdjustmentFactor.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.nns.target_hits_max_adjustment_factor", String.valueOf(targetHitsMaxAdjustmentFactor.getAsDouble())));

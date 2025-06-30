@@ -445,22 +445,6 @@ AcornOneUpperLimit::lookup(const Properties &props, double defaultValue)
     return lookupDouble(props, NAME, defaultValue);
 }
 
-const std::string AcornOneExploration::NAME("vespa.matching.acorn_one.exploration");
-
-const double AcornOneExploration::DEFAULT_VALUE(0.01);
-
-double
-AcornOneExploration::lookup(const Properties &props)
-{
-    return lookup(props, DEFAULT_VALUE);
-}
-
-double
-AcornOneExploration::lookup(const Properties &props, double defaultValue)
-{
-    return lookupDouble(props, NAME, defaultValue);
-}
-
 const std::string WeakAndStopWordAdjustLimit::NAME("vespa.matching.weakand.stop_word_adjust_limit");
 const double WeakAndStopWordAdjustLimit::DEFAULT_VALUE(1.0);
 double WeakAndStopWordAdjustLimit::lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
@@ -523,6 +507,23 @@ ElementGap::set_for_field(Properties& props, const std::string& field_name, cons
 {
     props.add(NAME + "." + field_name, element_gap);
 }
+
+const std::string AcornOneExploration::NAME("vespa.matching.nns.acorn_one_exploration");
+
+const double AcornOneExploration::DEFAULT_VALUE(0.01);
+
+double
+AcornOneExploration::lookup(const Properties &props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+double
+AcornOneExploration::lookup(const Properties &props, double defaultValue)
+{
+    return lookupDouble(props, NAME, defaultValue);
+}
+
 
 const std::string TargetHitsMaxAdjustmentFactor::NAME("vespa.matching.nns.target_hits_max_adjustment_factor");
 
