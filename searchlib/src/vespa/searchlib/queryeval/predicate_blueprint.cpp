@@ -98,6 +98,17 @@ pushZStarPostingList(const SimpleIndex<vespalib::datastore::EntryRef> &interval_
     }
 }
 
+/*
+ * Cap numbers to max value instead of overflowing when counting how many of the features the document is interested
+ * in being present in the query. This depends on the corresponding _min_feature value in the predicate attribute
+ * being capped to the same or a lower max value.
+ *
+ * Given a document with a predicate field containing an OR of 256 or more different features. Only one of those
+ * features is needed in the query for the document being a hit, thus the min feature value for that document is 1.
+ * Without capping, a query containing 256 of the above features would trigger an overflow for the above document,
+ * where _kv[doc_id] wraps back to 0, causing the document to be skipped during query evaluation since the value would
+ * be less than the min feature value for that document.
+ */
 class CappedAddToK
 {
     std::span<uint8_t> _kV;
