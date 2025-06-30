@@ -41,7 +41,9 @@ public:
     time_point create_time() const noexcept { return _create_time; }
     time_point start_time() const noexcept { return _start_time; }
     time_point finish_time() const noexcept { return _finish_time; }
-    duration flush_duration() const noexcept { return _finish_time - _start_time; }
+    duration flush_duration() const noexcept {
+        return _finish_time != time_point() ? _finish_time - _start_time : duration();
+    }
     duration last_flush_duration() const noexcept { return _last_flush_duration; }
     uint32_t id() const noexcept { return _id; }
     void start_flush(time_point start_time_in, uint32_t id_in) noexcept;
