@@ -139,7 +139,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
             return binaryQuantization(embeddingResult, targetType);
         } else {
             Tensor result = poolingStrategy.toSentenceEmbedding(targetType, tokenEmbeddings, embeddingResult.attentionMask);
-            return  normalize ? Normalize.normalize(result, targetType) : result;
+            return  normalize ? EmbeddingNormalizer.normalize(result, targetType) : result;
         }
     }
 
@@ -200,7 +200,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                                          indexed(targetType.indexedSubtype().dimensions().get(0).name(), targetUnpackagedDimensions)
                                          .build();
         Tensor result = poolingStrategy.toSentenceEmbedding(poolingType, embeddingResult.output(), embeddingResult.attentionMask());
-        result = normalize? Normalize.normalize(result, poolingType) : result;
+        result = normalize? EmbeddingNormalizer.normalize(result, poolingType) : result;
         Tensor packedResult = Tensors.packBits(result);
         if ( ! packedResult.type().equals(targetType))
             throw new IllegalStateException("Expected pack_bits to produce " + targetType + ", but got " + packedResult.type());

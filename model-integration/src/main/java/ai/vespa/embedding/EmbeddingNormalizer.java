@@ -10,8 +10,8 @@ import com.yahoo.tensor.TensorType;
  *
  * @author bjorncs
  */
-class Normalize {
-    private Normalize() {}
+class EmbeddingNormalizer {
+    private EmbeddingNormalizer() {}
 
     static Tensor normalize(Tensor embedding, TensorType tensorType) {
         double sumOfSquares = 0.0;
