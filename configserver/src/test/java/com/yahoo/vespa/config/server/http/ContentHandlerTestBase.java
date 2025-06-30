@@ -65,7 +65,7 @@ public abstract class ContentHandlerTestBase extends SessionHandlerTest {
         assertStatus("/foo/?return=status&recursive=true",
                 "[{\"status\":\"new\",\"md5\":\"\",\"name\":\"" + baseUrl + "foo/bar\"}," +
                         "{\"status\":\"new\",\"md5\":\"9a0364b9e99bb480dd25e1f0284c8555\",\"name\":\"" + baseUrl + "foo/bar/file-without-extension\"}," +
-                        "{\"status\":\"new\",\"md5\":\"dd9f9fbaf9adb96fd7be2f9bbe562714\",\"name\":\"" + baseUrl + "foo/bar/test.jar\"}," +
+                        "{\"status\":\"new\",\"md5\":\"56f62ad750881d2f8276136896ff84fb\",\"name\":\"" + baseUrl + "foo/bar/test.jar\"}," +
                         "{\"status\":\"new\",\"md5\":\"c157a79031e1c40f85931829bc5fc552\",\"name\":\"" + baseUrl + "foo/test1.json\"}," +
                         "{\"status\":\"new\",\"md5\":\"258622b1688250cb619f3c9ccaefb7eb\",\"name\":\"" + baseUrl + "foo/test2.txt\"}]");
     }
