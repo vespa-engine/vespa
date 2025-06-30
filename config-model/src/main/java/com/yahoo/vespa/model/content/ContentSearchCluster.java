@@ -16,7 +16,7 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
-import com.yahoo.vespa.model.search.IndexingDocproc;
+import com.yahoo.vespa.model.search.IndexingCluster;
 import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SchemaDefinitionXMLHandler;
 import com.yahoo.vespa.model.search.SearchCluster;
@@ -49,7 +49,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
     /** The single, indexed search cluster this sets up (supporting multiple document types), or null if none */
     private IndexedSearchCluster searchCluster;
-    private final IndexingDocproc indexingDocproc;
+    private final IndexingCluster indexingCluster;
     private Redundancy redundancy;
 
     private final String clusterName;
@@ -139,7 +139,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
                                  double fractionOfMemoryReserved)
     {
         super(parent, "search");
-        this.indexingDocproc = new IndexingDocproc();
+        this.indexingCluster = new IndexingCluster();
         this.clusterName = clusterName;
         this.documentDefinitions = documentDefinitions;
         this.globallyDistributedDocuments = globallyDistributedDocuments;
@@ -378,7 +378,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     }
     public IndexedSearchCluster getSearchCluster() { return searchCluster; }
     public boolean hasSearchCluster()       { return searchCluster != null; }
-    public IndexingDocproc getIndexingDocproc() { return indexingDocproc; }
+    public IndexingCluster getIndexingDocproc() { return indexingCluster; }
     public String getClusterName() { return clusterName; }
 
     @Override
