@@ -58,7 +58,7 @@
 
 %define go_version 1.24.2
 
-%if 0%{?el8}
+%if 0%{?el8} || 0%{?el9}
 %global _use_mvn_wrapper 1
 %endif
 
@@ -329,10 +329,13 @@ export FACTORY_VESPA_VERSION=%{version}
 export PATH="%{_prefix}-deps/bin:$PATH"
 
 %if 0%{?_use_mvn_wrapper}
-mvn -B wrapper:wrapper -Dmaven=3.8.8 -N
+mvn -B wrapper:wrapper -Dmaven=3.9.9 -N
+%global _mvn_cmd $(pwd)/mvnw
+%else
+%global _mvn_cmd mvn
 %endif
-%{?_use_mvn_wrapper:env VESPA_MAVEN_COMMAND=$(pwd)/mvnw }sh bootstrap.sh java
-%{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C install -DskipTests -Dmaven.javadoc.skip=true
+%{?_use_mvn_wrapper:env VESPA_MAVEN_COMMAND=%{_mvn_cmd} }sh bootstrap.sh java
+%{_mvn_cmd} --batch-mode -nsu -T 1C install -DskipTests -Dmaven.javadoc.skip=true
 
 %{_command_cmake} -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=$JAVA_HOME \
@@ -353,7 +356,7 @@ export JAVA_HOME=%{?_java_home}
 export JAVA_HOME=/usr/lib/jvm/java-%{_vespa_java_version}-openjdk
 %endif
 export PATH="$JAVA_HOME/bin:$PATH"
-#%{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C -Dmaven.javadoc.skip=true test
+LC_CTYPE=C.UTF-8 %{_mvn_cmd} --batch-mode -nsu -T 1C test
 make test ARGS="--output-on-failure %{_smp_mflags}"
 %endif
 
