@@ -14,6 +14,7 @@
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <algorithm>
+#include <limits>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.predicate.predicate_blueprint");
@@ -97,6 +98,35 @@ pushZStarPostingList(const SimpleIndex<vespalib::datastore::EntryRef> &interval_
     }
 }
 
+/*
+ * Cap numbers to max value instead of overflowing when counting how many of the features the document is interested
+ * in being present in the query. This depends on the corresponding _min_feature value in the predicate attribute
+ * being capped to the same or a lower max value.
+ *
+ * Given a document with a predicate field containing an OR of 256 or more different features. Only one of those
+ * features is needed in the query for the document being a hit, thus the min feature value for that document is 1.
+ * Without capping, a query containing 256 of the above features would trigger an overflow for the above document,
+ * where _kv[doc_id] wraps back to 0, causing the document to be skipped during query evaluation since the value would
+ * be less than the min feature value for that document.
+ */
+class CappedAddToK
+{
+    std::span<uint8_t> _kV;
+public:
+    CappedAddToK(std::span<uint8_t> kV)
+        : _kV(kV)
+    {
+    }
+    void operator()(uint32_t doc_id) {
+        if (doc_id < _kV.size()) [[likely]] {
+            uint8_t v = _kV[doc_id];
+            if (v < std::numeric_limits<uint8_t>::max()) [[likely]] {
+                _kV[doc_id] = v + 1;
+            }
+        }
+    }
+};
+
 }  // namespace
 
 void
@@ -105,17 +135,10 @@ PredicateBlueprint::addPostingToK(uint64_t feature)
     const auto &interval_index = _index.getIntervalIndex();
     auto tmp = interval_index.lookup(feature);
     if (__builtin_expect(tmp.valid() && (_cachedFeatures.find(feature) == _cachedFeatures.end()), true)) {
-        uint8_t *kVBase = &_kV[0];
-        size_t kVSize = _kV.size();
         interval_index.foreach_frozen_key(
                 tmp.getData(),
                 feature,
-                [=](uint32_t doc_id)
-                {
-                    if (__builtin_expect(doc_id < kVSize, true)) {
-                        ++kVBase[doc_id];
-                    }
-                });
+                CappedAddToK(_kV));
     }
 }
 
@@ -125,32 +148,18 @@ PredicateBlueprint::addBoundsPostingToK(uint64_t feature)
     const auto &bounds_index = _index.getBoundsIndex();
     auto tmp = bounds_index.lookup(feature);
     if (__builtin_expect(tmp.valid(), true)) {
-        uint8_t *kVBase = &_kV[0];
-        size_t kVSize = _kV.size();
         bounds_index.foreach_frozen_key(
                 tmp.getData(),
                 feature,
-                [=](uint32_t doc_id)
-                {
-                    if (__builtin_expect(doc_id < kVSize, true)) {
-                        ++kVBase[doc_id];
-                    }
-                });
+                CappedAddToK(_kV));
     }
 }
 
 void
 PredicateBlueprint::addZeroConstraintToK()
 {
-    uint8_t *kVBase = &_kV[0];
-    size_t kVSize = _kV.size();
     _index.getZeroConstraintDocs().foreach_key(
-            [=](uint32_t doc_id)
-            {
-                if (__builtin_expect(doc_id < kVSize, true)) {
-                    ++kVBase[doc_id];
-                }
-            });
+            CappedAddToK(_kV));
 }
 
 PredicateBlueprint::PredicateBlueprint(const FieldSpecBase &field,
