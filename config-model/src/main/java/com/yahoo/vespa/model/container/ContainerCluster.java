@@ -416,8 +416,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public DocprocChains getDocprocChains() {
         if (containerDocproc == null)
-            throw new IllegalArgumentException("Document processing components not found in container cluster '" + getSubId() +
-                                            "': Add <document-processing/> to the cluster in services.xml");
+            throw new IllegalArgumentException("Document processing components not found in container cluster '" +
+                                               getSubId() +
+                                               "': Add <document-processing/> to the cluster in services.xml");
         return containerDocproc.getChains();
     }
 

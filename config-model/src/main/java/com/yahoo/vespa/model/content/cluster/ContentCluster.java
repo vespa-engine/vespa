@@ -221,13 +221,14 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             Double queryTimeout = search.getQueryTimeout();
             if (queryTimeout != null) {
                 Preconditions.checkState(index.getQueryTimeout() == null,
-                        "In " + index + ": You may not specify query-timeout in both proton and content.");
+                                         "In " + index + ": You may not specify query-timeout in both proton and content.");
                 index.setQueryTimeout(queryTimeout);
             }
             index.setSearchCoverage(DomSearchCoverageBuilder.build(element));
             if (element.child("dispatch") != null)
-                logger.logApplicationPackage(WARNING, "The <dispatch> element is deprecated and ignored and will be removed in the next major release. "
-                        + " See https://docs.vespa.ai/en/reference/services-content.html#dispatch for details.");
+                logger.logApplicationPackage(WARNING, "The <dispatch> element is deprecated and ignored " +
+                                                      "and will be removed in the next major release. " +
+                                                      " See https://docs.vespa.ai/en/reference/services-content.html#dispatch");
 
             if (index.getTuning() == null)
                 index.setTuning(new Tuning(index));
@@ -236,19 +237,12 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
 
         private void setupDocumentProcessing(ContentCluster c, ModelElement e) {
             String docprocCluster = e.stringAttribute("cluster");
-            if (docprocCluster != null) {
-                docprocCluster = docprocCluster.trim();
-            }
+            if (docprocCluster != null && !docprocCluster.isBlank())
+                c.getSearch().getIndexingDocproc().setClusterName(docprocCluster.trim());
+
             String docprocChain = e.stringAttribute("chain");
-            if (docprocChain != null) {
-                docprocChain = docprocChain.trim();
-            }
-            if (docprocCluster != null && !docprocCluster.isEmpty()) {
-                c.getSearch().getIndexingDocproc().setClusterName(docprocCluster);
-            }
-            if (docprocChain != null && !docprocChain.isEmpty()) {
-                c.getSearch().getIndexingDocproc().setChainName(docprocChain);
-            }
+            if (docprocChain != null && !docprocChain.isBlank())
+                c.getSearch().getIndexingDocproc().setChainName(docprocChain.trim());
         }
 
         private void setupTuning(ContentCluster c, ModelElement tuning) {
@@ -747,14 +741,6 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         }
 
         builder.cluster(getConfigId(), clusterBuilder);
-    }
-
-    /**
-     * Mark whether the config emitted by this cluster currently should be applied by clients already running with
-     * a previous generation of it only by restarting the consuming processes.
-     */
-    public void setDeferChangesUntilRestart(boolean deferChangesUntilRestart) {
-        // TODO
     }
 
     @Override

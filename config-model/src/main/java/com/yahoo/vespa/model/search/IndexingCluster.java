@@ -3,17 +3,23 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
 
-import java.util.Objects;
-
 /**
- * Utility class to track configuration for which indexing docproc to use by a search cluster.
+ * Utility class to track configuration for which indexing docproc to use by a content cluster.
+ *
+ * @author tegge
  */
-public class IndexingDocproc {
+public class IndexingCluster {
 
     private String clusterName; // The name of the docproc cluster to run indexing, by config.
     private String chainName;
 
     private DocprocChain chain; // The actual docproc chain indexing for this.
+
+    public IndexingCluster() {
+        clusterName = null;
+        chainName = null;
+        chain = null;
+    }
 
     public boolean hasExplicitCluster() {
         return clusterName != null;
@@ -24,7 +30,7 @@ public class IndexingDocproc {
     }
 
     /**
-     * Returns the name of the docproc cluster running indexing for this search cluster. This is derived from the
+     * Returns the name of the docproc cluster running indexing for this content cluster. This is derived from the
      * services file on initialization, this can NOT be used at runtime to determine indexing chain. When initialization
      * is done, the {@link #getServiceName()} method holds the actual indexing docproc chain object.
      *
@@ -53,7 +59,7 @@ public class IndexingDocproc {
     }
 
     public String getServiceName() {
-        return Objects.requireNonNull(chain).getServiceName();
+        return chain.getServiceName();
     }
 
     /**
@@ -62,12 +68,8 @@ public class IndexingDocproc {
      *
      * @param chain the chain that is to run indexing for this cluster
      */
-    public void setChain(DocprocChain chain) { this.chain = chain; }
-
-    public IndexingDocproc() {
-        clusterName = null;
-        chainName = null;
-        chain = null;
+    public void setChain(DocprocChain chain) {
+        this.chain = chain;
     }
 
 }
