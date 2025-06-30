@@ -36,4 +36,10 @@ FlushTargetProxy::get_approx_bytes_to_read_from_disk() const noexcept
     return _target->get_approx_bytes_to_read_from_disk();
 }
 
+std::chrono::steady_clock::duration
+FlushTargetProxy::last_flush_duration() const noexcept
+{
+    return _target->last_flush_duration();
+}
+
 } // namespace proton

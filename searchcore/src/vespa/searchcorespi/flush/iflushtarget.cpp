@@ -28,4 +28,10 @@ LeafFlushTarget::get_approx_bytes_to_read_from_disk() const noexcept
     return 0;
 }
 
+std::chrono::steady_clock::duration
+LeafFlushTarget::last_flush_duration() const noexcept
+{
+    return std::chrono::steady_clock::duration::zero();
+}
+
 }

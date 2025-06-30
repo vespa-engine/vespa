@@ -75,6 +75,7 @@ public:
     uint64_t getApproxBytesToWriteToDisk() const override;
     uint64_t get_approx_bytes_to_read_from_disk() const noexcept override;
     double get_replay_operation_cost() const override;
+    std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
 };
 
 } // namespace proton
