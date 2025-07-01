@@ -280,24 +280,21 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>com.github.os72</groupId>
-                    <artifactId>protoc-jar-maven-plugin</artifactId>
-                    <version>3.11.4</version>
+                    <groupId>io.github.ascopes</groupId>
+                    <artifactId>protobuf-maven-plugin</artifactId>
+                    <version>3.6.0</version>
+                    <configuration>
+                        <protocVersion>${protobuf.vespa.version}</protocVersion>
+                        <sourceDirectories>
+                            <sourceDirectory>src/main/protobuf</sourceDirectory>
+                            <sourceDirectory>src/protobuf</sourceDirectory>
+                        </sourceDirectories>
+                    </configuration>
                     <executions>
                         <execution>
-                            <phase>generate-sources</phase>
                             <goals>
-                                <goal>run</goal>
+                                <goal>generate</goal>
                             </goals>
-                            <configuration>
-                                <protocVersion>${protobuf.vespa.version}</protocVersion>
-                                <addSources>main</addSources>
-                                <outputDirectory>${project.build.directory}/generated-sources/protobuf</outputDirectory>
-                                <inputDirectories>
-                                    <include>src/main/protobuf</include>
-                                    <include>src/protobuf</include>
-                                </inputDirectories>
-                            </configuration>
                         </execution>
                     </executions>
                 </plugin>

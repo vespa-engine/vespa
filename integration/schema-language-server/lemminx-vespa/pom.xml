@@ -114,10 +114,6 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>com.github.os72</groupId>
-        <artifactId>protoc-jar-maven-plugin</artifactId>
-      </plugin>
     </plugins>
   </build>
 </project>
