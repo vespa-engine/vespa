@@ -265,6 +265,13 @@ public class PermanentFlags {
             INSTANCE_ID
     );
 
+    public static final UnboundDoubleFlag RESOURCE_LIMIT_ADDRESS_SPACE = defineDoubleFlag(
+            "resource-limit-address-space", 0.89,
+            "Resource limit (between 0.0 and 1.0) for memory address space on content nodes, used by cluster controller for when to block feed",
+            "Takes effect on next deployment",
+            INSTANCE_ID
+    );
+
     public static final UnboundDoubleFlag RESOURCE_LIMIT_LOW_WATERMARK_DIFFERENCE = defineDoubleFlag(
             "resource-limit-low-watermark-difference", 0.01,
             "Number between 0.0 and 1.0 for how much lower low watermark limit should be than content node resource limits . " +

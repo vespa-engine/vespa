@@ -1318,6 +1318,7 @@
       "public double resourceLimitDisk()",
       "public double resourceLimitMemory()",
       "public double resourceLimitLowWatermarkDifference()",
+      "public double resourceLimitAddressSpace()",
       "public boolean forwardIssuesAsErrors()",
       "public boolean useV8GeoPositions()",
       "public java.util.List ignoredHttpUserAgents()",
