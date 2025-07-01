@@ -35,6 +35,7 @@ public:
     virtual FlushContext::List getFlushTargets(const FlushContext::List& targetList,
                                                const flushengine::TlsStatsMap& tlsStatsMap,
                                                const flushengine::ActiveFlushStats& active_flushes) const = 0;
+    virtual std::string name() const = 0;
 protected:
     IFlushStrategy() = default;
 };

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "flush_engine_explorer.h"
+#include "flush_history_explorer.h"
 #include "flushengine.h"
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
@@ -8,6 +9,7 @@
 using vespalib::slime::Cursor;
 using vespalib::slime::Inserter;
 using vespalib::StateExplorer;
+using proton::flushengine::FlushHistoryExplorer;
 using searchcorespi::IFlushTarget;
 
 namespace proton {
@@ -51,8 +53,12 @@ convertToSlime(const FlushContext::List &allTargets,
         vespalib::duration timeSinceLastFlush = now - target->getLastFlushTime();
         object.setDouble("timeSinceLastFlush", vespalib::to_s(timeSinceLastFlush));
         object.setBool("needUrgentFlush", target->needUrgentFlush());
+        object.setLong("last_flush_duration",
+                       duration_cast<std::chrono::microseconds>(target->last_flush_duration()).count());
     }
 }
+
+const std::string FLUSH_HISTORY("flush_history");
 
 }
 
@@ -72,6 +78,21 @@ FlushEngineExplorer::get_state(const Inserter &inserter, bool full) const
         sortTargetList(allTargets);
         convertToSlime(allTargets, now, object.setArray("allTargets"));
     }
+}
+
+std::vector<std::string>
+FlushEngineExplorer::get_children_names() const
+{
+    return { FLUSH_HISTORY };
+}
+
+std::unique_ptr<vespalib::StateExplorer>
+FlushEngineExplorer::get_child(std::string_view name) const
+{
+    if (name == FLUSH_HISTORY) {
+        return std::make_unique<FlushHistoryExplorer>(_engine.get_flush_history());
+    }
+    return {};
 }
 
 } // namespace proton

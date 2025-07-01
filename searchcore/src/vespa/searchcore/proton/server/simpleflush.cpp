@@ -21,6 +21,12 @@ SimpleFlush::getFlushTargets(const FlushContext::List& targetList,
     return fv;
 }
 
+std::string
+SimpleFlush::name() const
+{
+    return "simple_flush";
+}
+
 bool
 SimpleFlush::CompareTarget::compare(const IFlushTarget & lhs, const IFlushTarget & rhs) const
 {

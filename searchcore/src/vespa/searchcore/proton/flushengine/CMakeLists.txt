@@ -8,6 +8,11 @@ vespa_add_library(searchcore_flushengine STATIC
     flushcontext.cpp
     flushengine.cpp
     flush_engine_explorer.cpp
+    flush_history.cpp
+    flush_history_entry.cpp
+    flush_history_explorer.cpp
+    flush_history_view.cpp
+    flush_strategy_history_entry.cpp
     flush_target_candidate.cpp
     flush_target_candidates.cpp
     flushtargetproxy.cpp

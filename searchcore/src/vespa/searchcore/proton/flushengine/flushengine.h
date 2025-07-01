@@ -17,7 +17,12 @@ namespace search { class FlushToken; }
 
 namespace proton {
 
-namespace flushengine { class ITlsStatsFactory; }
+namespace flushengine {
+
+class FlushHistory;
+class ITlsStatsFactory;
+
+}
 
 class FlushEngine
 {
@@ -61,6 +66,7 @@ private:
     std::atomic<bool>              _has_thread;
     IFlushStrategy::SP             _strategy;
     mutable IFlushStrategy::SP     _priorityStrategy;
+    uint32_t                       _strategy_id;
     mutable std::shared_ptr<PriorityFlushToken> _priority_flush_token;
     vespalib::ThreadStackExecutor  _executor;
     mutable std::mutex             _lock;
@@ -74,6 +80,7 @@ private:
     PendingPrunes                       _pendingPrune;
     std::shared_ptr<search::FlushToken> _normal_flush_token;
     std::shared_ptr<search::FlushToken> _gc_flush_token;
+    std::shared_ptr<flushengine::FlushHistory> _flush_history;
 
     FlushContext::List getTargetList(bool includeFlushingTargets) const;
     std::pair<FlushContext::List,bool> getSortedTargetList();
@@ -186,6 +193,7 @@ public:
     void mark_currently_flushing_tasks(std::shared_ptr<PriorityFlushToken> priority_flush_token);
     uint32_t maxConcurrentTotal() const { return _maxConcurrentNormal + 1; }
     uint32_t maxConcurrentNormal() const { return _maxConcurrentNormal; }
+    const std::shared_ptr<flushengine::FlushHistory>& get_flush_history() const noexcept { return _flush_history; }
 };
 
 } // namespace proton

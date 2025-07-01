@@ -37,9 +37,10 @@ private:
 public:
     PrepareRestartFlushStrategy(const Config &cfg);
 
-    virtual FlushContext::List getFlushTargets(const FlushContext::List &targetList,
-                                               const flushengine::TlsStatsMap &tlsStatsMap,
-                                               const flushengine::ActiveFlushStats&) const override;
+    FlushContext::List getFlushTargets(const FlushContext::List &targetList,
+                                       const flushengine::TlsStatsMap &tlsStatsMap,
+                                       const flushengine::ActiveFlushStats&) const override;
+    std::string name() const override;
 };
 
 } // namespace proton
