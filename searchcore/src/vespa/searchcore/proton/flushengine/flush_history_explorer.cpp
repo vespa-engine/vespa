@@ -41,10 +41,16 @@ convert_to_slime(const FlushHistoryEntry& entry, Inserter& inserter)
     object.setLong("strategy_id", entry.strategy_id());
     object.setBool("priority_strategy", entry.priority_strategy());
     object.setLong("create_time", as_system_microseconds(entry.create_time()));
-    object.setLong("start_time_usecs", as_system_microseconds(entry.start_time()));
-    object.setLong("finish_time_usecs", as_system_microseconds(entry.finish_time()));
-    object.setLong("flush_duration_usecs", duration_cast<microseconds>(entry.flush_duration()).count());
-    object.setLong("last_flush_duration_usecs", duration_cast<microseconds>(entry.last_flush_duration()).count());
+    if (entry.start_time() != steady_clock::time_point()) {
+        object.setLong("start_time_usecs", as_system_microseconds(entry.start_time()));
+        if (entry.finish_time() != steady_clock::time_point()) {
+            object.setLong("finish_time_usecs", as_system_microseconds(entry.finish_time()));
+            object.setLong("flush_duration_usecs", duration_cast<microseconds>(entry.flush_duration()).count());
+        }
+    }
+    if (entry.last_flush_duration() != steady_clock::duration()) {
+        object.setLong("last_flush_duration_usecs", duration_cast<microseconds>(entry.last_flush_duration()).count());
+    }
     object.setLong("id", entry.id());
 }
 
