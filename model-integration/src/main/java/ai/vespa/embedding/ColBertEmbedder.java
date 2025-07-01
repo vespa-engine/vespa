@@ -3,6 +3,7 @@ package ai.vespa.embedding;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.utils.OnnxExternalDataResolver;
 import com.yahoo.api.annotations.Beta;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.component.AbstractComponent;
@@ -107,7 +108,9 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         if (config.transformerGpuDevice() >= 0)
             optionsBuilder.setGpuDevice(config.transformerGpuDevice());
         var onnxOpts = optionsBuilder.build();
-        evaluator = onnx.evaluatorOf(config.transformerModel().toString(), onnxOpts);
+        var resolver = new OnnxExternalDataResolver();
+        evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxOpts);
+
         validateModel();
     }
 

@@ -2,6 +2,7 @@
 package ai.vespa.embedding;
 
 import ai.vespa.embedding.config.GgufEmbedderConfig;
+import ai.vespa.modelintegration.utils.ModelPathHelper;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.process.Embedder;
@@ -87,7 +88,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
             builder.cell(rawEmbedding[i], i);
         }
         var embedding = builder.build();
-        return normalize ? Normalize.normalize(embedding, tensorType) : embedding;
+        return normalize ? EmbeddingNormalizer.normalize(embedding, tensorType) : embedding;
     }
 
     @Override
