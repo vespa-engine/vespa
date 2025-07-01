@@ -115,7 +115,7 @@ public class FleetControllerClusterTest {
         assertEquals(3, limits.size());
         assertEquals(expDisk, limits.get("disk"), DELTA);
         assertEquals(expMemory, limits.get("memory"), DELTA);
-        assertEquals(0.9, limits.get("attribute-address-space"), DELTA);
+        assertEquals(0.89, limits.get("attribute-address-space"), DELTA);
     }
 
     private FleetcontrollerConfig getConfigForResourceLimitsTuning(Double diskLimit, Double memoryLimit) {

@@ -421,7 +421,7 @@ initialize.threads int default = 0
 
 ## Portion of max address space used in components in attribute vectors
 ## before put and update operations in feed is blocked.
-writefilter.attribute.address_space_limit double default = 0.92
+writefilter.attribute.address_space_limit double default = 0.91
 
 ## Portion of physical memory that can be resident memory in anonymous mapping
 ## by the proton process before put and update portion of feed is blocked.
