@@ -709,6 +709,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         private final AtomicLong documentsWritten = new AtomicLong();
         private final AtomicLong documentsFlushed = new AtomicLong();
         private final AtomicLong documentsAcked = new AtomicLong();
+        private final JsonFormat.EncodeOptions tensorOptions;
         private boolean documentsDone = false;
         private boolean first = true;
         private ContentChannel channel;
@@ -716,6 +717,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         private JsonResponse(ResponseHandler handler, HttpRequest request) throws IOException {
             this.handler = handler;
             this.request = request;
+            this.tensorOptions = createTensorOptionsFromRequest(request);
             json = jsonFactory.createGenerator(out);
             json.writeStartObject();
         }
@@ -742,6 +744,25 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             return response;
         }
 
+        private static JsonFormat.EncodeOptions createTensorOptionsFromRequest(HttpRequest request) {
+            // TODO: Flip default on Vespa 9 to "short-value"
+            String format = "short";
+            if (request != null && request.parameters().containsKey("format.tensors")) {
+                var params = request.parameters().get("format.tensors");
+                if (params.size() == 1) {
+                    format = params.get(0);
+                }
+            }
+            return switch (format) {
+                case "hex" ->         new JsonFormat.EncodeOptions(true, false, true);
+                case "hex-value" ->   new JsonFormat.EncodeOptions(true, true, true);
+                case "short-value" -> new JsonFormat.EncodeOptions(true, true, false);
+                case "long" ->        new JsonFormat.EncodeOptions(false, false, false);
+                case "long-value" ->  new JsonFormat.EncodeOptions(false, true, false);
+                default ->            new JsonFormat.EncodeOptions(true, false, false); // aka "short"
+            };
+        }
+
         synchronized void commit(int status) throws IOException {
             commit(status, true);
         }
@@ -750,13 +771,13 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         synchronized void commit(int status, boolean fullyApplied) throws IOException {
             Response response = new Response(status);
             response.headers().add("Content-Type", List.of("application/json; charset=UTF-8"));
-            if (! fullyApplied)
+            if (! fullyApplied) {
                 response.headers().add(Headers.IGNORED_FIELDS, "true");
+            }
             try {
                 channel = handler.handleResponse(response);
                 buffer.connectTo(channel);
-            }
-            catch (RuntimeException e) {
+            } catch (RuntimeException e) {
                 throw new IOException(e);
             }
         }
@@ -779,8 +800,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                 }
                 json.close(); // Also closes object and array scopes.
                 out.close();  // Simply flushes the output stream.
-            }
-            finally {
+            } finally {
                 if (channel != null)
                     channel.close(logException); // Closes the response handler's content channel.
             }
@@ -809,8 +829,9 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         private void writeTrace(TraceNode node) throws IOException {
-            if (node.hasNote())
+            if (node.hasNote()) {
                 json.writeStringField("message", node.getNote());
+            }
             if ( ! node.isLeaf()) {
                 json.writeArrayFieldStart(node.isStrict() ? "trace" : "fork");
                 for (int i = 0; i < node.getNumChildren(); i++) {
@@ -823,29 +844,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         private JsonFormat.EncodeOptions tensorOptions() {
-            // TODO: Flip default on Vespa 9 to "short-value"
-            String format = "short";
-            if (request != null && request.parameters().containsKey("format.tensors")) {
-                var params = request.parameters().get("format.tensors");
-                if (params.size() == 1) {
-                    format = params.get(0);
-                }
-            }
-            return switch (format) {
-                case "hex" ->
-                        new JsonFormat.EncodeOptions(true, false, true);
-                case "hex-value" ->
-                        new JsonFormat.EncodeOptions(true, true, true);
-                default ->
-                        // aka "short"
-                        new JsonFormat.EncodeOptions(true, false, false);
-                case "short-value" ->
-                        new JsonFormat.EncodeOptions(true, true, false);
-                case "long" ->
-                        new JsonFormat.EncodeOptions(false, false, false);
-                case "long-value" ->
-                        new JsonFormat.EncodeOptions(false, true, false);
-            };
+            return this.tensorOptions;
         }
 
         private boolean tensorShortForm() {
@@ -916,10 +915,11 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         void ackDocuments() {
             while (documentsAcked.incrementAndGet() <= documentsFlushed.get() + FLUSH_SIZE) {
                 CompletionHandler ack = acks.poll();
-                if (ack != null)
+                if (ack != null) {
                     ack.completed();
-                else
+                } else {
                     break;
+                }
             }
             documentsAcked.decrementAndGet(); // We overshoot by one above, so decrement again when done.
         }
@@ -927,16 +927,16 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         synchronized void flushDocuments() throws IOException {
             for (int i = 0; i < FLUSH_SIZE; i++) {
                 ByteArrayOutputStream doc = docs.poll();
-                if (doc == null)
+                if (doc == null) {
                     break;
+                }
 
                 if ( ! documentsDone) {
                     if (first) { // First chunk, remove leading comma from first document, and flush "json" to "buffer".
                         json.flush();
                         buffer.write(ByteBuffer.wrap(doc.toByteArray(), 1, doc.size() - 1), null);
                         first = false;
-                    }
-                    else {
+                    } else {
                         buffer.write(ByteBuffer.wrap(doc.toByteArray()), null);
                     }
                 }
