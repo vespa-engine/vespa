@@ -12,6 +12,7 @@ options {
     USER_TOKEN_MANAGER = false;
     USER_CHAR_STREAM   = true;
     ERROR_REPORTING    = true;
+    UNICODE_INPUT      = true;
 }
 
 // --------------------------------------------------------------------------------
