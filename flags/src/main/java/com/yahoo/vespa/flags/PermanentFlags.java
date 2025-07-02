@@ -624,6 +624,14 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             VESPA_VERSION, INSTANCE_ID);
 
+    public static final UnboundIntFlag SEARCHNODE_INITIALIZER_THREADS = defineIntFlag(
+            "searchnode-initializer-threads", 0,
+            "Number of initializer threads used for loading structures from disk at proton startup." +
+                    "The threads are shared between document databases when value is larger than 0." +
+                    "When set to 0 (default) we use 1 separate thread per document database.",
+            "Takes effect at startup of search node",
+            INSTANCE_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
