@@ -103,6 +103,10 @@ private:
     std::condition_variable        _cond;
     FlushHandlerMap                _handlers;
     FlushMap                       _flushing;
+    /*
+     *  map from strategy id to count of active flushes with the strategy id, where current flush strategy is also
+     *  counted as an active flush to ensure that the map is never empty.
+     */
     std::map<uint32_t, uint32_t>   _flushing_strategies;
     std::mutex                     _setStrategyLock; // serialize setStrategy calls
     std::mutex                     _strategyLock;

@@ -288,7 +288,7 @@ FlushEngine::prune()
         handler->flushDone(oldestFlushed.first);
         prune_done(strategy_ids_for_finished_flushes, kv.second);
     }
-    prune_flushing_strategies(strategy_ids_for_finished_flushes);
+    prune_flushing_strategies(std::move(strategy_ids_for_finished_flushes));
     return true;
 }
 
@@ -427,7 +427,7 @@ FlushEngine::getSortedTargetList()
         ret = BoundFlushContextList(_strategy->getFlushTargets(unsortedTargets, tlsStatsMap, active_flushes), _strategy_id, false);
     }
     strategy_guard.unlock();
-    prune_flushing_strategies(strategy_ids_for_finished_flushes);
+    prune_flushing_strategies(std::move(strategy_ids_for_finished_flushes));
     return ret;
 }
 
@@ -547,12 +547,11 @@ FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
     uint32_t strategy_id = 0;
     {
         auto itr = _flushing.find(taskId);
-        if (itr != _flushing.end()) {
-            priority_flush_token = std::move(itr->second._priority_flush_token);
-            strategy_id = itr->second._strategy_id;
-            _flush_history->flush_done(taskId);
-            _flushing.erase(itr);
-        }
+        assert(itr != _flushing.end());
+        priority_flush_token = std::move(itr->second._priority_flush_token);
+        strategy_id = itr->second._strategy_id;
+        _flush_history->flush_done(taskId);
+        _flushing.erase(itr);
     }
     assert(ctx.getHandler());
     assert(strategy_id != 0);
@@ -567,7 +566,7 @@ FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
     }
     _cond.notify_all();
     guard.unlock();
-    prune_flushing_strategies(strategy_ids_for_finished_flushes);
+    prune_flushing_strategies(std::move(strategy_ids_for_finished_flushes));
 }
 
 IFlushHandler::SP
@@ -585,7 +584,7 @@ FlushEngine::putFlushHandler(const DocTypeName &docTypeName, const IFlushHandler
     }
     _pendingPrune.emplace(flushHandler, PendingPrunes::mapped_type());
     guard.unlock();
-    prune_flushing_strategies(strategy_ids_for_finished_flushes);
+    prune_flushing_strategies(std::move(strategy_ids_for_finished_flushes));
     return result;
 }
 
@@ -603,7 +602,7 @@ FlushEngine::removeFlushHandler(const DocTypeName &docTypeName)
         }
     }
     guard.unlock();
-    prune_flushing_strategies(strategy_ids_for_finished_flushes);
+    prune_flushing_strategies(std::move(strategy_ids_for_finished_flushes));
     return result;
 }
 
