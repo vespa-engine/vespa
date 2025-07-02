@@ -121,9 +121,9 @@ private:
     std::string flushNextTarget(const std::string & name, const FlushContext::List & contexts, uint32_t strategy_id);
     void flushAll(const FlushContext::List &lst, uint32_t strategy_id);
     bool prune();
-    void prune_done(std::vector<uint32_t>& finished_strategy_ids, const std::vector<PruneMeta>& prune_metas);
-    void prune_flushing_strategies(std::vector<uint32_t> finished_strategy_ids);
-    void maybe_apply_changed_strategy(std::vector<uint32_t>& finished_strategy_ids, std::unique_lock<std::mutex>& strategy_guard);
+    void prune_done(std::vector<uint32_t>& strategy_ids_for_finished_flushes, const std::vector<PruneMeta>& prune_metas);
+    void prune_flushing_strategies(std::vector<uint32_t> strategy_ids_for_finished_flushes);
+    void maybe_apply_changed_strategy(std::vector<uint32_t>& strategy_ids_for_finished_flushes, std::unique_lock<std::mutex>& strategy_guard);
     void mark_active_strategy(uint32_t strategy_id, std::lock_guard<std::mutex>&);
     uint32_t initFlush(const FlushContext &ctx,
                        std::shared_ptr<PriorityFlushToken> priority_flush_token, uint32_t strategy_id);
