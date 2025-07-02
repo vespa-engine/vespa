@@ -66,6 +66,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final double defaultFeedNiceness;
     private final boolean forwardIssuesToQrs;
     private final long transactionLogReplaySoftMemoryLimit;
+    private final int searchNodeInitializerThreads;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final double fractionOfMemoryReserved;
@@ -151,6 +152,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         this.defaultFeedNiceness = featureFlags.feedNiceness();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
         this.transactionLogReplaySoftMemoryLimit = featureFlags.searchCoreTransactionLogReplaySoftMemoryLimit();
+        this.searchNodeInitializerThreads = featureFlags.searchNodeInitializerThreads();
     }
 
     public void setVisibilityDelay(double delay) {
@@ -338,7 +340,11 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         builder.forward_issues(forwardIssuesToQrs);
 
         int numDocumentDbs = builder.documentdb.size();
-        builder.initialize(new ProtonConfig.Initialize.Builder().threads(numDocumentDbs + 1));
+        builder.initialize(
+                new ProtonConfig.Initialize.Builder()
+                        .threads(searchNodeInitializerThreads == 0
+                                         ? numDocumentDbs + 1
+                                         : searchNodeInitializerThreads));
 
         if (resourceLimits != null) resourceLimits.getConfig(builder);
 
