@@ -14,6 +14,7 @@ FlushHistoryEntry::FlushHistoryEntry(std::string name_in, std::string strategy_i
       _create_time(create_time_in),
       _start_time(),
       _finish_time(),
+      _prune_time(),
       _last_flush_duration(last_flush_duration_in),
       _id(id_in)
 {
@@ -39,6 +40,12 @@ void
 FlushHistoryEntry::flush_done(time_point finish_time_in) noexcept
 {
     _finish_time = finish_time_in;
+}
+
+void
+FlushHistoryEntry::prune_done(time_point prune_time_in) noexcept
+{
+    _prune_time = prune_time_in;
 }
 
 }

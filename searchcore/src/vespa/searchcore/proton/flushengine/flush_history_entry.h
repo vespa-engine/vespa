@@ -22,6 +22,7 @@ class FlushHistoryEntry {
     time_point  _create_time;
     time_point  _start_time;
     time_point  _finish_time;
+    time_point  _prune_time;
     duration    _last_flush_duration;
     uint32_t    _id;
 
@@ -41,6 +42,7 @@ public:
     time_point create_time() const noexcept { return _create_time; }
     time_point start_time() const noexcept { return _start_time; }
     time_point finish_time() const noexcept { return _finish_time; }
+    time_point prune_time() const noexcept { return _prune_time; }
     duration flush_duration() const noexcept {
         return _finish_time != time_point() ? _finish_time - _start_time : duration();
     }
@@ -48,6 +50,7 @@ public:
     uint32_t id() const noexcept { return _id; }
     void start_flush(time_point start_time_in, uint32_t id_in) noexcept;
     void flush_done(time_point finish_time_in) noexcept;
+    void prune_done(time_point prune_time_in) noexcept;
 };
 
 }

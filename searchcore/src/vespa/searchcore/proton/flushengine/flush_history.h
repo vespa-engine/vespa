@@ -51,6 +51,7 @@ public:
     void start_flush(const std::string& handler_name, const std::string& target_name,
                      duration last_flush_duration, uint32_t id);
     void flush_done(uint32_t id);
+    void prune_done(uint32_t id);
     void add_pending_flush(const std::string& handler_name, const std::string& target_name,
                            duration last_flush_duration);
     void drop_pending_flush(const std::string& handler_name, const std::string& target_name);
