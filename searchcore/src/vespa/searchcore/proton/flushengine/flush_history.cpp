@@ -106,12 +106,23 @@ FlushHistory::start_flush(const std::string& handler_name, const std::string& ta
 void
 FlushHistory::flush_done(uint32_t id)
 {
+    // Note: flush is still considered actuve after flush done, until prune is done.
+    std::lock_guard guard(_mutex);
+    auto it = _active.lower_bound(id);
+    assert(it != _active.end() && it->first == id);
+    auto now = steady_clock::now();
+    it->second.flush_done(now);
+}
+
+void
+FlushHistory::prune_done(uint32_t id)
+{
     std::lock_guard guard(_mutex);
     auto it = _active.lower_bound(id);
     assert(it != _active.end() && it->first == id);
     _finished.emplace_back(it->second);
     auto now = steady_clock::now();
-    _finished.back().flush_done(now);
+    _finished.back().prune_done(now);
     _active.erase(it);
     prune_finished();
 }

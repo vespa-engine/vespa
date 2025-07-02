@@ -71,6 +71,8 @@ TEST_F(FlushHistoryTest, track_flushes)
     _flush_history.start_flush(HANDLER1, "a3", 4s, 7);
     _flush_history.flush_done(6);
     _flush_history.flush_done(5);
+    _flush_history.prune_done(6);
+    _flush_history.prune_done(5);
     auto view = _flush_history.make_view();
     EXPECT_EQ((SV{"handler2.a2", "handler1.a1"}), make_names(view->finished()));
     EXPECT_EQ(SV{"handler1.a3"}, make_names(view->active()));
@@ -85,6 +87,7 @@ TEST_F(FlushHistoryTest, trackes_pending_flushes)
     _flush_history.start_flush(HANDLER1, "a1", 3s, 5);
     _flush_history.start_flush(HANDLER2, "a2", 1s, 6);
     _flush_history.flush_done(6);
+    _flush_history.prune_done(6);
     auto view = _flush_history.make_view();
     EXPECT_EQ(SV{"handler2.a2"}, make_names(view->finished()));
     EXPECT_EQ(SV{"handler1.a1"}, make_names(view->active()));
