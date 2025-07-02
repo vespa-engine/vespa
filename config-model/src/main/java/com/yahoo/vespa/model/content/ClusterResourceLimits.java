@@ -15,7 +15,7 @@ import static java.util.logging.Level.WARNING;
  *
  * This includes the limits used by the cluster controller and the content nodes (proton).
  *
- * @author geirst
+ * @author Geir Storli
  */
 public class ClusterResourceLimits {
 
@@ -41,6 +41,7 @@ public class ClusterResourceLimits {
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
         private final double resourceLimitLowWatermarkDifference;
+        private final double resourceLimitLowAddressSpace;
         private final DeployLogger deployLogger;
 
         private ResourceLimits.Builder ctrlBuilder = new ResourceLimits.Builder();
@@ -50,18 +51,15 @@ public class ClusterResourceLimits {
                        double resourceLimitDisk,
                        double resourceLimitMemory,
                        double resourceLimitLowWatermarkDifference,
+                       double resourceLimitLowAddressSpace,
                        DeployLogger deployLogger) {
             this.hostedVespa = hostedVespa;
             this.resourceLimitDisk = resourceLimitDisk;
             this.resourceLimitMemory = resourceLimitMemory;
-            this.resourceLimitLowWatermarkDifference = requireNonNegative(resourceLimitLowWatermarkDifference);
+            this.resourceLimitLowWatermarkDifference = resourceLimitLowWatermarkDifference;
+            this.resourceLimitLowAddressSpace = resourceLimitLowAddressSpace;
             this.deployLogger = deployLogger;
-            verifyLimits(resourceLimitDisk, resourceLimitMemory);
-        }
-
-        private static double requireNonNegative(double value) {
-            if (value < 0) throw new IllegalArgumentException(value + " must be non-negative, but was " + value);
-            return value;
+            verifyLimits(resourceLimitDisk, resourceLimitMemory, resourceLimitLowWatermarkDifference, resourceLimitLowAddressSpace);
         }
 
         public ClusterResourceLimits build(ModelElement clusterElem) {
@@ -105,12 +103,18 @@ public class ClusterResourceLimits {
                                                          nodeBuilder.getMemoryLimit(),
                                                          ctrlBuilder::setMemoryLimit,
                                                          resourceLimitMemory);
+            considerSettingDefaultClusterControllerLimit(ctrlBuilder.getAddressSpaceLimit(),
+                                                         nodeBuilder.getAddressSpaceLimit(),
+                                                         ctrlBuilder::setAddressSpaceLimit,
+                                                         resourceLimitLowAddressSpace);
 
             deriveClusterControllerLimit(ctrlBuilder.getDiskLimit(), nodeBuilder.getDiskLimit(), ctrlBuilder::setDiskLimit);
             deriveClusterControllerLimit(ctrlBuilder.getMemoryLimit(), nodeBuilder.getMemoryLimit(), ctrlBuilder::setMemoryLimit);
+            deriveClusterControllerLimit(ctrlBuilder.getAddressSpaceLimit(), nodeBuilder.getAddressSpaceLimit(), ctrlBuilder::setAddressSpaceLimit);
 
             deriveContentNodeLimit(nodeBuilder.getDiskLimit(), ctrlBuilder.getDiskLimit(), 0.6, nodeBuilder::setDiskLimit);
             deriveContentNodeLimit(nodeBuilder.getMemoryLimit(), ctrlBuilder.getMemoryLimit(), 0.5, nodeBuilder::setMemoryLimit);
+            deriveContentNodeLimit(nodeBuilder.getAddressSpaceLimit(), ctrlBuilder.getAddressSpaceLimit(), 0.5, nodeBuilder::setAddressSpaceLimit);
 
             ctrlBuilder.setLowWatermarkDifference(resourceLimitLowWatermarkDifference);
             nodeBuilder.setLowWatermarkDifference(resourceLimitLowWatermarkDifference);
@@ -151,9 +155,12 @@ public class ClusterResourceLimits {
         }
 
 
-        private void verifyLimits(double resourceLimitDisk, double resourceLimitMemory) {
+        private void verifyLimits(double resourceLimitDisk, double resourceLimitMemory,
+                                  double resourceLimitLowWatermarkDifference, double resourceLimitAddressSpace) {
             verifyLimitInRange(resourceLimitDisk, "disk");
             verifyLimitInRange(resourceLimitMemory, "memory");
+            verifyLimitInRange(resourceLimitLowWatermarkDifference, "low watermark difference");
+            verifyLimitInRange(resourceLimitAddressSpace, "address space");
         }
 
         private void verifyLimitInRange(double limit, String type) {

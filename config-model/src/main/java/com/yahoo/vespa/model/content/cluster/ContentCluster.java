@@ -185,6 +185,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                                                                    deployState.featureFlags().resourceLimitDisk(),
                                                                    resourceLimitMemory,
                                                                    deployState.featureFlags().resourceLimitLowWatermarkDifference(),
+                                                                   deployState.featureFlags().resourceLimitAddressSpace(),
                                                                    deployState.getDeployLogger())
                     .build(contentElement);
 

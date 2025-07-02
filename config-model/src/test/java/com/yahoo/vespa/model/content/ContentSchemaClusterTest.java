@@ -73,26 +73,31 @@ public class ContentSchemaClusterTest {
         return new ProtonConfig(builder);
     }
 
-    private static void assertProtonResourceLimits(double expDiskLimit, double expMemoryLimit, String clusterXml) throws Exception {
-        assertProtonResourceLimits(expDiskLimit, expMemoryLimit, createCluster(clusterXml));
+    private static void assertProtonResourceLimits(double expDiskLimit, double expMemoryLimit,
+                                                   double expAddressSpaceLimit, String clusterXml) throws Exception {
+        assertProtonResourceLimits(expDiskLimit, expMemoryLimit, expAddressSpaceLimit, createCluster(clusterXml));
     }
 
-    private static void assertProtonResourceLimits(double expDiskLimit, double expMemoryLimit, ContentCluster cluster) {
+    private static void assertProtonResourceLimits(double expDiskLimit, double expMemoryLimit,
+                                                   double expAddressSpaceLimit, ContentCluster cluster) {
         var cfg = getProtonConfig(cluster);
         assertEquals(expDiskLimit, cfg.writefilter().disklimit(), EPSILON);
         assertEquals(expMemoryLimit, cfg.writefilter().memorylimit(), EPSILON);
+        assertEquals(expAddressSpaceLimit, cfg.writefilter().attribute().address_space_limit(), EPSILON);
     }
 
-    private static void assertClusterControllerResourceLimits(double expDiskLimit, double expMemoryLimit, String clusterXml) throws Exception {
-        assertClusterControllerResourceLimits(expDiskLimit, expMemoryLimit, createCluster(clusterXml));
+    private static void assertClusterControllerResourceLimits(double expDiskLimit, double expMemoryLimit,
+                                                              double expAddressSpaceLimit, String clusterXml) throws Exception {
+        assertClusterControllerResourceLimits(expDiskLimit, expMemoryLimit, expAddressSpaceLimit, createCluster(clusterXml));
     }
 
-    private static void assertClusterControllerResourceLimits(double expDiskLimit, double expMemoryLimit, ContentCluster cluster) {
+    private static void assertClusterControllerResourceLimits(double expDiskLimit, double expMemoryLimit, double expAddressSpaceLimit, ContentCluster cluster) {
         var config = getFleetcontrollerConfig(cluster);
         var limits = config.cluster_feed_block_limit();
         assertEquals(3, limits.size());
         assertEquals(expDiskLimit, limits.get("disk"), EPSILON);
         assertEquals(expMemoryLimit, limits.get("memory"), EPSILON);
+        assertEquals(expAddressSpaceLimit, limits.get("attribute-address-space"), EPSILON);
         assertEquals(0.01, config.cluster_feed_block_noise_level(), EPSILON);
     }
 
@@ -104,40 +109,41 @@ public class ContentSchemaClusterTest {
 
     @Test
     void requireThatProtonResourceLimitsCanBeSet() throws Exception {
-        assertProtonResourceLimits(0.88, 0.77,
+        assertProtonResourceLimits(0.88, 0.77, 0.91,
                 new ContentClusterBuilder().protonDiskLimit(0.88).protonMemoryLimit(0.77).getXml());
     }
 
     @Test
     void requireThatOnlyDiskLimitCanBeSet() throws Exception {
-        assertProtonResourceLimits(0.88, 0.9,
+        assertProtonResourceLimits(0.88, 0.9, 0.91,
                 new ContentClusterBuilder().protonDiskLimit(0.88).getXml());
     }
 
     @Test
     void requireThatOnlyMemoryLimitCanBeSet() throws Exception {
-        assertProtonResourceLimits(0.9, 0.77,
+        assertProtonResourceLimits(0.9, 0.77, 0.91,
                 new ContentClusterBuilder().protonMemoryLimit(0.77).getXml());
     }
 
     @Test
     void cluster_controller_resource_limits_can_be_set() throws Exception {
-        assertClusterControllerResourceLimits(0.92, 0.93,
+        assertClusterControllerResourceLimits(0.92, 0.93, 0.89,
                 new ContentClusterBuilder().clusterControllerDiskLimit(0.92).clusterControllerMemoryLimit(0.93).getXml());
     }
 
     @Test
     void resource_limits_are_derived_from_the_other_if_not_specified() throws Exception {
         var cluster = createCluster(new ContentClusterBuilder().clusterControllerDiskLimit(0.5).protonMemoryLimit(0.95).getXml());
-        assertProtonResourceLimits(0.8, 0.95, cluster);
-        assertClusterControllerResourceLimits(0.5, 0.94, cluster);
+        assertProtonResourceLimits(0.8, 0.95, 0.91, cluster);
+        assertClusterControllerResourceLimits(0.5, 0.94, 0.89, cluster);
+        assertClusterControllerResourceLimits(0.5, 0.94, 0.89, cluster);
     }
 
     @Test
     void default_resource_limits_with_feed_block_in_distributor() throws Exception {
         var cluster = createCluster(new ContentClusterBuilder().getXml());
-        assertProtonResourceLimits(0.9, 0.9, cluster);
-        assertClusterControllerResourceLimits(0.75, 0.8, cluster);
+        assertProtonResourceLimits(0.9, 0.9, 0.91, cluster);
+        assertClusterControllerResourceLimits(0.75, 0.8, 0.89, cluster);
     }
 
     @Test
