@@ -58,6 +58,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double resourceLimitDisk = 0.75;
     private double resourceLimitMemory = 0.8;
     private double resourceLimitLowWatermarkDifference = 0.01;
+    private double resourceLimitAddressSpace = 0.89;
     private int maxUnCommittedMemory = 123456;
     private boolean useV8GeoPositions = true;
     private List<String> environmentVariables = List.of();
@@ -111,6 +112,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double resourceLimitLowWatermarkDifference() { return resourceLimitLowWatermarkDifference; }
+    @Override public double resourceLimitAddressSpace() { return resourceLimitAddressSpace; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
@@ -257,6 +259,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setResourceLimitLowWatermarkDifference(double value) {
         this.resourceLimitLowWatermarkDifference = value;
+        return this;
+    }
+
+    public TestProperties setResourceLimitAddressSpace(double value) {
+        this.resourceLimitAddressSpace = value;
         return this;
     }
 

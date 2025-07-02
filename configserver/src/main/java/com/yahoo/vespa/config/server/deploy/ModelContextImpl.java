@@ -178,6 +178,7 @@ public class ModelContextImpl implements ModelContext {
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
         private final double resourceLimitLowWatermarkDifference;
+        private final double resourceLimitAddressSpace;
         private final boolean containerDumpHeapOnShutdownTimeout;
         private final int maxUnCommittedMemory;
         private final boolean forwardIssuesAsErrors;
@@ -224,6 +225,7 @@ public class ModelContextImpl implements ModelContext {
             this.resourceLimitDisk = PermanentFlags.RESOURCE_LIMIT_DISK.bindTo(source).with(appId).with(version).value();
             this.resourceLimitMemory = PermanentFlags.RESOURCE_LIMIT_MEMORY.bindTo(source).with(appId).with(version).value();
             this.resourceLimitLowWatermarkDifference = PermanentFlags.RESOURCE_LIMIT_LOW_WATERMARK_DIFFERENCE.bindTo(source).with(appId).with(version).value();
+            this.resourceLimitAddressSpace = PermanentFlags.RESOURCE_LIMIT_ADDRESS_SPACE.bindTo(source).with(appId).with(version).value();
             this.containerDumpHeapOnShutdownTimeout = PermanentFlags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT.bindTo(source).with(appId).with(version).value();
             this.maxUnCommittedMemory = PermanentFlags.MAX_UNCOMMITTED_MEMORY.bindTo(source).with(appId).with(version).value();
             this.forwardIssuesAsErrors = PermanentFlags.FORWARD_ISSUES_AS_ERRORS.bindTo(source).with(appId).with(version).value();
@@ -272,6 +274,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double resourceLimitDisk() { return resourceLimitDisk; }
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
         @Override public double resourceLimitLowWatermarkDifference() { return resourceLimitLowWatermarkDifference; }
+        @Override public double resourceLimitAddressSpace() { return resourceLimitAddressSpace; }
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
         @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
         @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }

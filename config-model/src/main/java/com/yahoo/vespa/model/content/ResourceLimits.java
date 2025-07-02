@@ -16,11 +16,13 @@ public class ResourceLimits implements FleetcontrollerConfig.Producer, ProtonCon
     private final Optional<Double> diskLimit;
     private final Optional<Double> memoryLimit;
     private final Optional<Double> lowWatermarkDifference;
+    private final Optional<Double> addressSpaceLimit;
 
     private ResourceLimits(Builder builder) {
         this.diskLimit = builder.diskLimit;
         this.memoryLimit = builder.memoryLimit;
         this.lowWatermarkDifference = builder.lowWatermarkDifference;
+        this.addressSpaceLimit = builder.addressSpaceLimit;
     }
 
     public Optional<Double> getDiskLimit() {
@@ -33,6 +35,10 @@ public class ResourceLimits implements FleetcontrollerConfig.Producer, ProtonCon
 
     public Optional<Double> getLowWatermarkDifference() {
         return lowWatermarkDifference;
+    }
+
+    public Optional<Double> getAddressSpaceLimit() {
+        return addressSpaceLimit;
     }
 
     @Override
@@ -57,6 +63,7 @@ public class ResourceLimits implements FleetcontrollerConfig.Producer, ProtonCon
         private Optional<Double> diskLimit = Optional.empty();
         private Optional<Double> memoryLimit = Optional.empty();
         private Optional<Double> lowWatermarkDifference = Optional.empty();
+        private Optional<Double> addressSpaceLimit = Optional.empty();
 
         public ResourceLimits build() { return new ResourceLimits(this); }
 
@@ -78,6 +85,13 @@ public class ResourceLimits implements FleetcontrollerConfig.Producer, ProtonCon
 
         public Builder setLowWatermarkDifference(double lowWatermarkDifference) {
             this.lowWatermarkDifference = Optional.of(lowWatermarkDifference);
+            return this;
+        }
+
+        public Optional<Double> getAddressSpaceLimit() { return addressSpaceLimit; }
+
+        public Builder setAddressSpaceLimit(double addressSpaceLimit) {
+            this.addressSpaceLimit = Optional.of(addressSpaceLimit);
             return this;
         }
 
