@@ -211,6 +211,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useTriton;
         private final long searchCoreTransactionLogReplaySoftMemoryLimit;
         private final boolean useNewPrepareForRestart;
+        private final int searchNodeInitializerThreads;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.useNonPublicEndpointForTest = Flags.USE_NON_PUBLIC_ENDPOINT_FOR_TEST.bindTo(source).with(appId).with(version).value();
@@ -258,6 +259,7 @@ public class ModelContextImpl implements ModelContext {
             this.useTriton = Flags.USE_TRITON.bindTo(source).with(appId).with(version).value();
             this.searchCoreTransactionLogReplaySoftMemoryLimit = Flags.SEARCH_CORE_TRANSACTION_LOG_REPLAY_SOFT_MEMORY_LIMIT.bindTo(source).with(appId).with(version).value();
             this.useNewPrepareForRestart = Flags.USE_NEW_PREPARE_FOR_RESTART_METHOD.bindTo(source).with(appId).with(version).value();
+            this.searchNodeInitializerThreads = PermanentFlags.SEARCHNODE_INITIALIZER_THREADS.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
@@ -305,6 +307,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useTriton() { return useTriton; }
         @Override public long searchCoreTransactionLogReplaySoftMemoryLimit() { return searchCoreTransactionLogReplaySoftMemoryLimit; }
         @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
+        @Override public int searchNodeInitializerThreads() { return searchNodeInitializerThreads; }
     }
 
     public static class Properties implements ModelContext.Properties {
