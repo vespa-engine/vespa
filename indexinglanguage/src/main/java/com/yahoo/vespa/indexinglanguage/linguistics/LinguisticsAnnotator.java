@@ -16,6 +16,8 @@ import com.yahoo.text.Text;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
@@ -29,6 +31,8 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  * @author Simon Thoresen Hult
  */
 public class LinguisticsAnnotator {
+
+    private static final Logger log = Logger.getLogger(LinguisticsAnnotator.class.getName());
 
     private final Linguistics factory;
     private final AnnotatorConfig config;
@@ -77,6 +81,9 @@ public class LinguisticsAnnotator {
         String input = (text.getString().length() <= config.getMaxTokenizeLength())
                        ? text.getString()
                        : Text.substringByCodepoints(text.getString(), 0, config.getMaxTokenizeLength());
+
+        if (isLikelyBinaryData(input)) return false;
+
         Iterable<Token> tokens = tokenizer.tokenize(input, config.asLinguisticsParameters());
         TermOccurrences termOccurrences = new TermOccurrences(config.getMaxTermOccurrences());
         SpanTree tree = new SpanTree(SpanTrees.LINGUISTICS);
@@ -144,6 +151,19 @@ public class LinguisticsAnnotator {
             if (termOccurrences.termCountBelowLimit(term))
                 parent.span((int)token.getOffset(), token.getOrig().length()).annotate(termAnnotation(term, token.getOrig()));
         }
+    }
+
+    // Use the ratio of Unicode replacement characters as heuristic if the text is likely representing binary data
+    // https://en.wikipedia.org/wiki/Specials_(Unicode_block)#Replacement_character
+    private static boolean isLikelyBinaryData(String text) {
+        var replacementCharCount = text.chars().filter(c -> c == 0xFFFD).count();
+        if (replacementCharCount > 10 && replacementCharCount > text.length() * 0.1D) {
+            log.log(Level.FINE, () ->
+                    "Text contains %d replacement characters, which is more than 10%% of %d"
+                            .formatted(replacementCharCount, text.length()));
+            return true;
+        }
+        return false;
     }
 
 }

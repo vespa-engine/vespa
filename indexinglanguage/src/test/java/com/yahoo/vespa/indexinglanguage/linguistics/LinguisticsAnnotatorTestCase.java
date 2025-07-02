@@ -6,24 +6,22 @@ import com.yahoo.document.annotation.AnnotationTypes;
 import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.LinguisticsParameters;
-import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.TokenType;
 import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.language.simple.SimpleToken;
-
 import org.junit.Test;
 import org.mockito.Mockito;
 
-
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -261,6 +259,16 @@ public class LinguisticsAnnotatorTestCase {
             }
             assertAnnotations(expected, input.toString(), tokens);
         }
+    }
+
+    @Test
+    public void requireThatHighRatioOfReplacementCharactersAreNotAnnotated() {
+        Predicate<String> isAnnotationsProduced =
+                txt -> new LinguisticsAnnotator(new SimpleLinguistics(), new AnnotatorConfig())
+                        .annotate(new StringFieldValue(txt));
+        assertTrue(isAnnotationsProduced.test("\uFFFD".repeat(10) + "a".repeat(90))); // Up to 10 replacement characters allowed
+        assertTrue(isAnnotationsProduced.test("\uFFFD".repeat(11) + "a".repeat(100))); // Up to 10% being replacement characters allowed
+        assertFalse(isAnnotationsProduced.test("\uFFFD".repeat(11) + "a".repeat(90))); // Above both limits, so no annotations
     }
 
     // --------------------------------------------------------------------------------
