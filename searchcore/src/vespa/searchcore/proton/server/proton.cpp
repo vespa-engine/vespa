@@ -548,6 +548,7 @@ Proton::~Proton()
     }
     _scheduler.reset();
     _executor.shutdown();
+    // Drain tasks scheduled on _executor by _rpcHooks using letProtonDo() member function.
     _executor.sync();
     _rpcHooks.reset();
     if (_flushEngine) {

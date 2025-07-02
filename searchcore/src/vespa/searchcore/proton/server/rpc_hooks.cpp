@@ -149,6 +149,7 @@ RPCHooksBase::close()
 {
     LOG(info, "shutting down monitoring interface");
     _transport->ShutDown(true);
+    // Proton destructor drains tasks scheduled on proton executor before destroying _rpcHooks.
 }
 
 void

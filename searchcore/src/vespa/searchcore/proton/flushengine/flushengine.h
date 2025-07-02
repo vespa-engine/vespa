@@ -3,7 +3,6 @@
 
 #include "flushcontext.h"
 #include "iflushstrategy.h"
-#include "priority_flush_token.h"
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -21,6 +20,7 @@ namespace proton {
 namespace flushengine {
 
 class FlushHistory;
+class FlushStrategyIdNotifier;
 class ITlsStatsFactory;
 
 }
@@ -51,21 +51,17 @@ private:
     {
         FlushInfo();
         FlushInfo(uint32_t taskId, const std::string& handler_name, const IFlushTarget::SP &target,
-                  std::shared_ptr<PriorityFlushToken> priority_flush_token, uint32_t strategy_id);
+                  uint32_t strategy_id);
         ~FlushInfo();
 
         IFlushTarget::SP  _target;
-        std::shared_ptr<PriorityFlushToken> _priority_flush_token;
         uint32_t _strategy_id;
     };
     struct PruneMeta {
-        std::shared_ptr<PriorityFlushToken> _priority_flush_token;
         uint32_t                            _flush_id;
         uint32_t                            _strategy_id;
-        PruneMeta(std::shared_ptr<PriorityFlushToken> priority_flush_token,
-                  uint32_t flush_id, uint32_t strategy_id) noexcept
-            : _priority_flush_token(std::move(priority_flush_token)),
-              _flush_id(flush_id),
+        PruneMeta(uint32_t flush_id, uint32_t strategy_id) noexcept
+            : _flush_id(flush_id),
               _strategy_id(strategy_id)
         {}
     };
@@ -97,7 +93,6 @@ private:
     IFlushStrategy::SP             _strategy;
     mutable IFlushStrategy::SP     _priorityStrategy;
     uint32_t                       _strategy_id;
-    mutable std::shared_ptr<PriorityFlushToken> _priority_flush_token;
     vespalib::ThreadStackExecutor  _executor;
     mutable std::mutex             _lock;
     std::condition_variable        _cond;
@@ -112,6 +107,7 @@ private:
     std::mutex                     _strategyLock;
     std::condition_variable        _strategyCond;
     bool                           _strategy_changed;
+    std::shared_ptr<flushengine::FlushStrategyIdNotifier> _lowest_strategy_id_notifier;
     std::shared_ptr<flushengine::ITlsStatsFactory> _tlsStatsFactory;
     PendingPrunes                       _pendingPrune;
     std::shared_ptr<search::FlushToken> _normal_flush_token;
@@ -129,10 +125,8 @@ private:
     void prune_flushing_strategies(std::vector<uint32_t> strategy_ids_for_finished_flushes);
     void maybe_apply_changed_strategy(std::vector<uint32_t>& strategy_ids_for_finished_flushes, std::unique_lock<std::mutex>& strategy_guard);
     void mark_active_strategy(uint32_t strategy_id, std::lock_guard<std::mutex>&);
-    uint32_t initFlush(const FlushContext &ctx,
-                       std::shared_ptr<PriorityFlushToken> priority_flush_token, uint32_t strategy_id);
-    uint32_t initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP &target,
-                       std::shared_ptr<PriorityFlushToken> priority_flush_token, uint32_t strategy_id);
+    uint32_t initFlush(const FlushContext &ctx, uint32_t strategy_id);
+    uint32_t initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP &target, uint32_t strategy_id);
     void flushDone(const FlushContext &ctx, uint32_t taskId);
     bool canFlushMore(const std::unique_lock<std::mutex> &guard, IFlushTarget::Priority priority) const;
     void wait_for_slot_or_pending_prune(IFlushTarget::Priority priority);
@@ -232,7 +226,6 @@ public:
     FlushMetaSet getCurrentlyFlushingSet() const;
 
     void setStrategy(IFlushStrategy::SP strategy);
-    void mark_currently_flushing_tasks(std::shared_ptr<PriorityFlushToken> priority_flush_token);
     uint32_t maxConcurrentTotal() const { return _maxConcurrentNormal + 1; }
     uint32_t maxConcurrentNormal() const { return _maxConcurrentNormal; }
     const std::shared_ptr<flushengine::FlushHistory>& get_flush_history() const noexcept { return _flush_history; }
