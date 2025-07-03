@@ -1392,6 +1392,7 @@
       "public java.util.List tenantSecretStores()",
       "public java.lang.String jvmGCOptions()",
       "public abstract java.lang.String jvmGCOptions(java.util.Optional)",
+      "public int searchNodeInitializerThreads(java.lang.String)",
       "public boolean useDedicatedNodeForLogserver()",
       "public boolean allowDisableMtls()",
       "public java.util.List operatorCertificates()",

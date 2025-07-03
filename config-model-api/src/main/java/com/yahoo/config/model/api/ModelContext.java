@@ -155,6 +155,8 @@ public interface ModelContext {
         // Default setting for the gc-options attribute if not specified explicit by application
         String jvmGCOptions(Optional<ClusterSpec.Type> clusterType);
 
+        default int searchNodeInitializerThreads(String clusterId) { return 0; }
+
         // Note: Used in unit tests (set to false in TestProperties) to avoid needing to deal with implicitly created node for logserver
         default boolean useDedicatedNodeForLogserver() { return true; }
 

@@ -95,7 +95,8 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             var search = new ContentSearchCluster(ancestor, clusterName, deployState.getProperties().featureFlags(),
                                                   documentDefinitions, globallyDistributedDocuments,
                                                   getFlushOnShutdown(flushOnShutdownElem, deployState),
-                                                  syncTransactionLog, fractionOfMemoryReserved);
+                                                  syncTransactionLog, fractionOfMemoryReserved,
+                                                  deployState.getProperties().searchNodeInitializerThreads(clusterName));
 
             ModelElement tuning = clusterElem.childByPath("engine.proton.tuning");
             if (tuning != null) {
@@ -137,7 +138,8 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
                                  Set<NewDocumentType> globallyDistributedDocuments,
                                  boolean flushOnShutdown,
                                  Boolean syncTransactionLog,
-                                 double fractionOfMemoryReserved)
+                                 double fractionOfMemoryReserved,
+                                 int searchNodeInitializeThreads)
     {
         super(parent, "search");
         this.indexingCluster = new IndexingCluster();
@@ -152,7 +154,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         this.defaultFeedNiceness = featureFlags.feedNiceness();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
         this.transactionLogReplaySoftMemoryLimit = featureFlags.searchCoreTransactionLogReplaySoftMemoryLimit();
-        this.searchNodeInitializerThreads = featureFlags.searchNodeInitializerThreads();
+        this.searchNodeInitializerThreads = searchNodeInitializeThreads;
     }
 
     public void setVisibilityDelay(double delay) {
