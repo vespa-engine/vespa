@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "transactionlogmanagerbase.h"
+#include <vespa/searchcore/proton/common/memory_usage_logger.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -124,6 +125,7 @@ TransactionLogManagerBase::isDoingReplay() const {
 void
 TransactionLogManagerBase::logReplayComplete() const {
     doLogReplayComplete(_domainName, _replayStopWatch.elapsed());
+    MemoryUsageLogger::log("finish replay transaction log", _domainName);
 }
 
 const std::string &

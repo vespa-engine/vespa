@@ -6,6 +6,7 @@
 #include "i_attribute_factory.h"
 #include "attribute_transient_memory_calculator.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
+#include <vespa/searchcore/proton/common/memory_usage_logger.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/searchcommon/attribute/persistent_predicate_params.h>
@@ -195,6 +196,8 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
     assert(attr->hasLoadData());
     vespalib::Timer timer;
     EventLogger::loadAttributeStart(_documentSubDbName, attr->getName());
+    auto label = _documentSubDbName + "/" + attr->getName();
+    MemoryUsageLogger::log("start load attribute", label);
     if (!attr->load(&_shared_executor)) {
         LOG(warning, "Could not load attribute vector '%s' from disk. Returning empty attribute vector",
             attr->getBaseFileName().c_str());
@@ -203,6 +206,7 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
         attr->set_reserved_doc_values();
         attr->commit(CommitParam(serialNum));
         EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), timer.elapsed());
+        MemoryUsageLogger::log("finish load attribute", label);
     }
     return true;
 }

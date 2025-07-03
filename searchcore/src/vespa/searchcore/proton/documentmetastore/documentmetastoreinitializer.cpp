@@ -4,6 +4,7 @@
 #include "documentmetastore.h"
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
+#include <vespa/searchcore/proton/common/memory_usage_logger.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <filesystem>
 
@@ -46,12 +47,14 @@ DocumentMetaStoreInitializer::run()
             assert(_dms->hasLoadData());
             vespalib::Timer stopWatch;
             EventLogger::loadDocumentMetaStoreStart(_subDbName);
+            MemoryUsageLogger::log("start load documentmetastore", _subDbName);
             if (!_dms->load()) {
                 throw IllegalStateException(failedMsg(_docTypeName.c_str()));
             } else {
                 _dms->commit(search::CommitParam(snap.syncToken));
             }
             EventLogger::loadDocumentMetaStoreComplete(_subDbName, stopWatch.elapsed());
+            MemoryUsageLogger::log("finished load documentmetastore", _subDbName);
         }
     } else {
         std::filesystem::create_directory(std::filesystem::path(_baseDir));
