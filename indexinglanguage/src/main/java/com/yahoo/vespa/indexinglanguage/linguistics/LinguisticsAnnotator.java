@@ -160,8 +160,11 @@ public class LinguisticsAnnotator {
         if (replacementCharCount > config.getMaxReplacementCharacters()
                 && replacementCharCount > text.length() * config.getMaxReplacementCharactersRatio()) {
             log.log(Level.FINE, () ->
-                    "Text contains %d replacement characters, which is more than 10%% of %d"
-                            .formatted(replacementCharCount, text.length()));
+            {
+                var ratioAsPercent = (int) Math.round(config.getMaxReplacementCharactersRatio() * 100);
+                return "Text contains %d replacement characters, which is more than %d%% of %d"
+                        .formatted(replacementCharCount, ratioAsPercent, text.length());
+            });
             return true;
         }
         return false;
