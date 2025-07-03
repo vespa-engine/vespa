@@ -27,6 +27,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
@@ -38,6 +39,7 @@ import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -184,7 +186,16 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         }
     }
 
-
+    public void getConfig(QrStartConfig.Builder builder) {
+        builder.jvm
+                .verbosegc(false)
+                .availableProcessors(1)
+                .minHeapsize(256)
+                .heapsize(256)
+                .heapSizeAsPercentageOfPhysicalMemory(0)
+                .gcopts(G1GC);
+    }
+    
     protected boolean messageBusEnabled() { return false; }
 
     private MetricSet getAdditionalDefaultMetrics() {
