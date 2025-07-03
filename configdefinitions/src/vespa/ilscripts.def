@@ -11,7 +11,7 @@ fieldmatchmaxlength int default=1000000
 # The maximum allowed ratio of replacement characters before skipping annotation processing
 maxReplacementCharactersRatio double default=0.1
 # The maximum number of replacement characters to allow before skipping annotation processing
-maxReplacementCharacters int default=10
+maxReplacementCharacters int default=1000
 
 ilscript[].doctype    string
 ilscript[].docfield[] string
