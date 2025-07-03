@@ -20,7 +20,9 @@ import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -79,7 +81,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxDistributorDocumentOperationSizeMib = -1;
     private long searchCoreTransactionLogReplaySoftMemoryLimit = 0;
     private boolean useNewPrepareForRestart = false;
-    private int searchNodeInitializerThreads = 0;
+    private Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -134,7 +136,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
     @Override public long searchCoreTransactionLogReplaySoftMemoryLimit() { return searchCoreTransactionLogReplaySoftMemoryLimit; }
     @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
-    @Override public int searchNodeInitializerThreads() { return searchNodeInitializerThreads; }
+    @Override public int searchNodeInitializerThreads() { return 0; }
+    @Override public int searchNodeInitializerThreads(String clusterId) { return searchNodeInitializerThreads.getOrDefault(clusterId, 0); }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -355,8 +358,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setSearchNodeInitializerThreads(int value) {
-        this.searchNodeInitializerThreads = value;
+    public TestProperties setSearchNodeInitializerThreads(int value, String clusterId) {
+        this.searchNodeInitializerThreads.put(clusterId, value);
         return this;
     }
 

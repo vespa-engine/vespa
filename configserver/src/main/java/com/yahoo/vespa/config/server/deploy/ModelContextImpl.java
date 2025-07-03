@@ -32,6 +32,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.flags.custom.Sidecars;
@@ -46,6 +47,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import static com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig;
+import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
 
 /**
@@ -211,7 +213,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useTriton;
         private final long searchCoreTransactionLogReplaySoftMemoryLimit;
         private final boolean useNewPrepareForRestart;
-        private final int searchNodeInitializerThreads;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.useNonPublicEndpointForTest = Flags.USE_NON_PUBLIC_ENDPOINT_FOR_TEST.bindTo(source).with(appId).with(version).value();
@@ -259,7 +260,6 @@ public class ModelContextImpl implements ModelContext {
             this.useTriton = Flags.USE_TRITON.bindTo(source).with(appId).with(version).value();
             this.searchCoreTransactionLogReplaySoftMemoryLimit = Flags.SEARCH_CORE_TRANSACTION_LOG_REPLAY_SOFT_MEMORY_LIMIT.bindTo(source).with(appId).with(version).value();
             this.useNewPrepareForRestart = Flags.USE_NEW_PREPARE_FOR_RESTART_METHOD.bindTo(source).with(appId).with(version).value();
-            this.searchNodeInitializerThreads = PermanentFlags.SEARCHNODE_INITIALIZER_THREADS.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
@@ -307,7 +307,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useTriton() { return useTriton; }
         @Override public long searchCoreTransactionLogReplaySoftMemoryLimit() { return searchCoreTransactionLogReplaySoftMemoryLimit; }
         @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
-        @Override public int searchNodeInitializerThreads() { return searchNodeInitializerThreads; }
     }
 
     public static class Properties implements ModelContext.Properties {
@@ -331,6 +330,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<TenantVault> tenantVaults;
         private final List<TenantSecretStore> tenantSecretStores;
         private final StringFlag jvmGCOptionsFlag;
+        private final IntFlag searchNodeInitializerThreadsFlag;
         private final boolean allowDisableMtls;
         private final List<X509Certificate> operatorCertificates;
         private final List<String> tlsCiphersOverride;
@@ -379,6 +379,9 @@ public class ModelContextImpl implements ModelContext {
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
                     .with(Dimension.INSTANCE_ID, applicationId.serializedForm())
                     .with(Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance());
+            this.searchNodeInitializerThreadsFlag = PermanentFlags.SEARCHNODE_INITIALIZER_THREADS.bindTo(flagSource)
+                                                                                                 .with(Dimension.INSTANCE_ID, applicationId.serializedForm())
+                                                                                                 .with(Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance());
             this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource).with(applicationId).value();
             this.operatorCertificates = operatorCertificates;
             this.tlsCiphersOverride = PermanentFlags.TLS_CIPHERS_OVERRIDE.bindTo(flagSource).with(applicationId).value();
@@ -460,6 +463,10 @@ public class ModelContextImpl implements ModelContext {
             return flagValueForClusterType(jvmGCOptionsFlag, clusterType);
         }
 
+        @Override public int searchNodeInitializerThreads(String clusterId) {
+            return intFlagValueForClusterId(searchNodeInitializerThreadsFlag, clusterId);
+        }
+
         @Override
         public boolean allowDisableMtls() {
             return allowDisableMtls;
@@ -476,6 +483,10 @@ public class ModelContextImpl implements ModelContext {
             return clusterType.map(type -> flag.with(CLUSTER_TYPE, type.name()))
                               .orElse(flag)
                               .value();
+        }
+
+        public int intFlagValueForClusterId(IntFlag flag, String clusterId) {
+            return flag.with(CLUSTER_ID, clusterId).value();
         }
 
         @Override

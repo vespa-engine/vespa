@@ -1715,11 +1715,12 @@ public class ContentClusterTest extends ContentBaseTest {
 
     private int inferSearchNodeInitializerThreadsFromFlag(Integer flagValueOrNull) {
         var props = new TestProperties();
+        var clusterId = "storage";
         if (flagValueOrNull != null) {
-            props.setSearchNodeInitializerThreads(flagValueOrNull);
+            props.setSearchNodeInitializerThreads(flagValueOrNull, clusterId);
         }
         VespaModel model = createEnd2EndOneNode(props);
-        ContentCluster cc = model.getContentClusters().get("storage");
+        ContentCluster cc = model.getContentClusters().get(clusterId);
         var builder = new ProtonConfig.Builder();
         cc.getSearch().getConfig(builder);
         var cfg = new ProtonConfig(builder);
