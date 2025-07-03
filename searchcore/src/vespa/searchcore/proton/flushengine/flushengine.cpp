@@ -141,13 +141,13 @@ FlushEngine::close()
     {
         std::lock_guard<std::mutex> strategyGuard(_strategyLock);
         std::unique_lock guard(_lock);
-        _gc_flush_token->request_stop();
+        _gc_flush_token->request_stop(); // Signal active fusion flushes to abort.
         _closed = true;
         _cond.notify_all();
     }
     _lowest_strategy_id_notifier->close();
     if (_thread.joinable()) {
-        _thread.join();
+        _thread.join(); // Wait for active flushes to complete or abort and flush engine scheduler thread to exit.
     }
     _executor.shutdown().sync();
     return *this;
@@ -187,17 +187,17 @@ bool
 FlushEngine::wait_for_slot(IFlushTarget::Priority priority)
 {
     std::unique_lock<std::mutex> guard(_lock);
-    while ( ! canFlushMore(guard, priority)) {
+    while ( ! canFlushMore(guard, priority) && !is_closed()) {
         _cond.wait_for(guard, 1s); // broadcast when flush done
     }
-    return !_closed.load(std::memory_order_relaxed);
+    return !is_closed();
 }
 
 void
 FlushEngine::wait_for_slot_or_pending_prune(IFlushTarget::Priority priority)
 {
     std::unique_lock<std::mutex> guard(_lock);
-    while ( ! canFlushMore(guard, priority) && _pendingPrune.empty()) {
+    while (! canFlushMore(guard, priority) && !is_closed() && _pendingPrune.empty()) {
         _cond.wait_for(guard, 1s); // broadcast when flush done
     }
 }
@@ -215,6 +215,7 @@ FlushEngine::checkAndFlush(std::string prev) {
     if (lst._priority_flush) {
         // Everything returned from a priority strategy should be flushed
         flushAll(lst._ctx_list, lst._strategy_id);
+        return "[priority_targets]"; // prevent idle_wait in FlushEngine::run()
     } else if ( ! lst._ctx_list.empty()) {
         if (has_slot(IFlushTarget::Priority::NORMAL)) {
             prev = flushNextTarget(prev, lst._ctx_list, lst._strategy_id);
@@ -240,19 +241,19 @@ FlushEngine::run()
 {
     _has_thread = true;
     std::string prevFlushName;
-    for (vespalib::duration idleInterval=vespalib::duration::zero(); !_closed.load(std::memory_order_relaxed); idleInterval = _idleInterval) {
+    while (!is_closed()) {
         LOG(debug, "Making another check for something to flush, last was '%s'", prevFlushName.c_str());
         wait_for_slot_or_pending_prune(IFlushTarget::Priority::HIGH);
         if (prune()) {
             // Prune attempted on one or more handlers
-        } else {
+        } else if (!is_closed()) {
             prevFlushName = checkAndFlush(prevFlushName);
             if (prevFlushName.empty()) {
-                idle_wait(idleInterval);
+                idle_wait(_idleInterval);
             }
         }
     }
-    _executor.sync();
+    _executor.sync(); // Wait for active flushes to complete or abort
     prune();
     _has_thread = false;
 }
@@ -638,7 +639,7 @@ FlushEngine::setStrategy(IFlushStrategy::SP strategy)
     auto notifier = _lowest_strategy_id_notifier;
     std::lock_guard<std::mutex> setStrategyGuard(_setStrategyLock);
     std::unique_lock<std::mutex> strategyGuard(_strategyLock);
-    if (_closed.load(std::memory_order_relaxed)) {
+    if (is_closed()) {
         std::unique_lock guard(_lock);
         return;
     }

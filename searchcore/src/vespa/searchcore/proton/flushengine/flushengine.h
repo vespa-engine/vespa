@@ -135,6 +135,7 @@ private:
     bool has_slot(IFlushTarget::Priority priority);
     bool isFlushing(const std::lock_guard<std::mutex> &guard, const std::string & name) const;
     std::string checkAndFlush(std::string prev);
+    bool is_closed() const noexcept { return _closed.load(std::memory_order_relaxed); }
 
     friend class FlushTask;
     friend class FlushEngineExplorer;
