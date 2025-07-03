@@ -492,6 +492,39 @@ ElementGap::set_for_field(Properties& props, const std::string& field_name, cons
     props.add(NAME + "." + field_name, element_gap);
 }
 
+const std::string FilterFirstUpperLimit::NAME("vespa.matching.nns.filter_first_upper_limit");
+
+const double FilterFirstUpperLimit::DEFAULT_VALUE(0.00);
+
+double
+FilterFirstUpperLimit::lookup(const Properties &props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+double
+FilterFirstUpperLimit::lookup(const Properties &props, double defaultValue)
+{
+    return lookupDouble(props, NAME, defaultValue);
+}
+
+const std::string FilterFirstExploration::NAME("vespa.matching.nns.filter_first_exploration");
+
+const double FilterFirstExploration::DEFAULT_VALUE(0.01);
+
+double
+FilterFirstExploration::lookup(const Properties &props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+double
+FilterFirstExploration::lookup(const Properties &props, double defaultValue)
+{
+    return lookupDouble(props, NAME, defaultValue);
+}
+
+
 const std::string TargetHitsMaxAdjustmentFactor::NAME("vespa.matching.nns.target_hits_max_adjustment_factor");
 
 const double TargetHitsMaxAdjustmentFactor::DEFAULT_VALUE(20.0);

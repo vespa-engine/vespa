@@ -15,6 +15,8 @@ struct CreateBlueprintParams
 {
     double global_filter_lower_limit;
     double global_filter_upper_limit;
+    double filter_first_upper_limit;
+    double filter_first_exploration;
     double target_hits_max_adjustment_factor;
     vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm;
     queryeval::wand::StopWordStrategy weakand_stop_word_strategy;
@@ -22,12 +24,16 @@ struct CreateBlueprintParams
 
     CreateBlueprintParams(double global_filter_lower_limit_in,
                           double global_filter_upper_limit_in,
+                          double filter_first_upper_limit_in,
+                          double filter_first_exploration_in,
                           double target_hits_max_adjustment_factor_in,
                           vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm_in,
                           queryeval::wand::StopWordStrategy weakand_stop_word_strategy_in,
                           std::optional<double> filter_threshold_in)
         : global_filter_lower_limit(global_filter_lower_limit_in),
           global_filter_upper_limit(global_filter_upper_limit_in),
+          filter_first_upper_limit(filter_first_upper_limit_in),
+          filter_first_exploration(filter_first_exploration_in),
           target_hits_max_adjustment_factor(target_hits_max_adjustment_factor_in),
           fuzzy_matching_algorithm(fuzzy_matching_algorithm_in),
           weakand_stop_word_strategy(weakand_stop_word_strategy_in),
@@ -38,6 +44,8 @@ struct CreateBlueprintParams
     CreateBlueprintParams()
         : CreateBlueprintParams(fef::indexproperties::matching::GlobalFilterLowerLimit::DEFAULT_VALUE,
                                 fef::indexproperties::matching::GlobalFilterUpperLimit::DEFAULT_VALUE,
+                                fef::indexproperties::matching::FilterFirstUpperLimit::DEFAULT_VALUE,
+                                fef::indexproperties::matching::FilterFirstExploration::DEFAULT_VALUE,
                                 fef::indexproperties::matching::TargetHitsMaxAdjustmentFactor::DEFAULT_VALUE,
                                 fef::indexproperties::matching::FuzzyAlgorithm::DEFAULT_VALUE,
                                 queryeval::wand::StopWordStrategy::none(),

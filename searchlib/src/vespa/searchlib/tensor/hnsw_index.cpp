@@ -11,7 +11,6 @@
 #include "vector_bundle.h"
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
-#include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/util/doom.h>
@@ -81,42 +80,6 @@ struct PairDist {
 bool operator< (const PairDist &a, const PairDist &b) {
     return (a.distance < b.distance);
 }
-
-template <HnswIndexType type>
-class GlobalFilterWrapper;
-
-template <>
-class GlobalFilterWrapper<HnswIndexType::SINGLE> {
-    const GlobalFilter *_filter;
-public:
-    explicit GlobalFilterWrapper(const GlobalFilter *filter)
-        : _filter(filter)
-    {
-    }
-
-    [[nodiscard]] bool check(uint32_t docid) const noexcept { return !_filter || _filter->check(docid); }
-
-    void clamp_nodeid_limit(uint32_t& nodeid_limit) {
-        if (_filter) {
-            nodeid_limit = std::min(nodeid_limit, _filter->size());
-        }
-    }
-};
-
-template <>
-class GlobalFilterWrapper<HnswIndexType::MULTI> {
-    const GlobalFilter *_filter;
-    uint32_t            _docid_limit;
-public:
-    explicit GlobalFilterWrapper(const GlobalFilter *filter)
-        : _filter(filter),
-          _docid_limit(filter ? filter->size() : 0u)
-    {
-    }
-
-    [[nodiscard]] bool check(uint32_t docid) const noexcept { return !_filter || (docid < _docid_limit && _filter->check(docid)); }
-    static void clamp_nodeid_limit(uint32_t&) { }
-};
 
 }
 
@@ -401,7 +364,7 @@ HnswIndex<type>::search_layer_helper(const BoundDistanceFunction &df, uint32_t n
                                      uint32_t estimated_visited_nodes) const
 {
     NearestPriQ candidates;
-    GlobalFilterWrapper<type> filter_wrapper(filter);
+    internal::GlobalFilterWrapper<type> filter_wrapper(filter);
     filter_wrapper.clamp_nodeid_limit(nodeid_limit);
     VisitedTracker visited(nodeid_limit, estimated_visited_nodes);
     if (doom != nullptr && doom->soft_doom()) {
@@ -460,6 +423,143 @@ HnswIndex<type>::search_layer_helper(const BoundDistanceFunction &df, uint32_t n
     }
 }
 
+
+template <HnswIndexType type>
+template <class VisitedTracker, class BestNeighbors>
+void
+HnswIndex<type>::search_layer_filter_first_helper(const BoundDistanceFunction &df, uint32_t neighbors_to_find,
+                                                  BestNeighbors& best_neighbors, double exploration, uint32_t level, const GlobalFilter *filter,
+                                                  uint32_t nodeid_limit, const vespalib::Doom* const doom,
+                                                  uint32_t estimated_visited_nodes) const
+{
+    assert(filter);
+    NearestPriQ candidates;
+    internal::GlobalFilterWrapper<type> filter_wrapper(filter);
+    filter_wrapper.clamp_nodeid_limit(nodeid_limit);
+    VisitedTracker visited(nodeid_limit, estimated_visited_nodes);
+    if (doom != nullptr && doom->soft_doom()) {
+        while (!best_neighbors.empty()) {
+            best_neighbors.pop();
+        }
+        return;
+    }
+    for (const auto &entry : best_neighbors.peek()) {
+        if (entry.nodeid >= nodeid_limit) {
+            continue;
+        }
+        candidates.push(entry);
+        visited.mark(entry.nodeid);
+        if (!filter_wrapper.check(entry.docid)) {
+            assert(best_neighbors.peek().size() == 1);
+            best_neighbors.pop();
+        }
+    }
+    double limit_dist = std::numeric_limits<double>::max();
+
+    std::deque<uint32_t> neighborhood;
+    while (!candidates.empty()) {
+        auto cand = candidates.top();
+        if (cand.distance > limit_dist) {
+            break;
+        }
+        candidates.pop();
+
+        // Instead of taking immediate neighbors, we additionally explore 2-hop neighbors (and possibly 3-hop neighbors)
+        neighborhood.clear();
+        exploreNeighborhood(cand, neighborhood, visited, exploration, level, filter_wrapper, nodeid_limit);
+
+        for (uint32_t neighbor_nodeid : neighborhood) {
+            auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
+            auto neighbor_ref = neighbor_node.levels_ref().load_acquire();
+            if (! neighbor_ref.valid()) {
+                continue;
+            }
+            uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
+            uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
+            double dist_to_input = calc_distance(df, neighbor_docid, neighbor_subspace);
+            if (dist_to_input < limit_dist) {
+                candidates.emplace(neighbor_nodeid, neighbor_ref, dist_to_input);
+
+                // exploreNeighborhood only returns nodes that pass the filter, no need to check that here
+                best_neighbors.emplace(neighbor_nodeid, neighbor_docid, neighbor_ref, dist_to_input);
+                while (best_neighbors.size() > neighbors_to_find) {
+                    best_neighbors.pop();
+                    limit_dist = best_neighbors.top().distance;
+                }
+            }
+        }
+        if (doom != nullptr && doom->soft_doom()) {
+            break;
+        }
+    }
+}
+
+template <HnswIndexType type>
+template <class VisitedTracker>
+void
+HnswIndex<type>::exploreNeighborhood(HnswTraversalCandidate &cand, std::deque<uint32_t> &found, VisitedTracker &visited, double exploration,
+                                     uint32_t level, const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit) const {
+    assert(found.empty());
+
+    std::deque<uint32_t> todo;
+    todo.push_back(cand.nodeid);
+
+    uint32_t max_neighbors_to_find = max_links_for_level(level);
+
+    // Explore (1-hop) neighbors
+    exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find);
+
+    // Explore 2-hop neighbors
+    exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find);
+
+    // Explore 3-hop neighbors, but only if we have not found enough nodes yet (one quarter of the desired amount)
+    if (static_cast<double>(todo.size()) < exploration * (max_neighbors_to_find * max_neighbors_to_find * max_neighbors_to_find)) {
+        exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find);
+    }
+}
+
+template <HnswIndexType type>
+template <class VisitedTracker>
+void
+HnswIndex<type>::exploreNeighborhoodByOneHop(std::deque<uint32_t> &todo, std::deque<uint32_t> &found, VisitedTracker &visited, uint32_t level,
+                                             const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit,
+                                             uint32_t max_neighbors_to_find) const {
+    // We do not explore the candidates that we newly add to the deque
+    uint32_t nodesToExplore = todo.size();
+    for (uint32_t nodesExplored = 0; nodesExplored < nodesToExplore && found.size() < max_neighbors_to_find; ++nodesExplored) {
+        uint32_t nodeid = todo.front();
+        todo.pop_front();
+        auto& node = _graph.acquire_node(nodeid);
+        auto ref = node.levels_ref().load_acquire();
+
+        for (uint32_t neighbor_nodeid : _graph.get_link_array(ref, level)) {
+            if (neighbor_nodeid >= nodeid_limit) {
+                continue;
+            }
+            // Just explore everything in the next hop, even if the current node passes the filter or was marked as visited
+            todo.push_back(neighbor_nodeid);
+
+            // Skip if the current node was marked as visited (-> We already checked if it passes the filter)
+            auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
+            auto neighbor_ref = neighbor_node.levels_ref().load_acquire();
+            if (!neighbor_ref.valid() || !visited.try_mark(neighbor_nodeid)) {
+                continue;
+            }
+
+            uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
+            if (filter_wrapper.check(neighbor_docid)) {
+                found.push_back(neighbor_nodeid);
+
+                // Abort if we already found enough neighbors
+                if (found.size() >= max_neighbors_to_find) {
+                    return;
+                }
+            }
+        }
+    }
+}
+
+
 template <HnswIndexType type>
 template <class BestNeighbors>
 void
@@ -472,6 +572,21 @@ HnswIndex<type>::search_layer(const BoundDistanceFunction &df, uint32_t neighbor
         search_layer_helper<BitVectorVisitedTracker>(df, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, doom, estimated_visited_nodes);
     } else {
         search_layer_helper<HashSetVisitedTracker>(df, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, doom, estimated_visited_nodes);
+    }
+}
+
+template <HnswIndexType type>
+template <class BestNeighbors>
+void
+HnswIndex<type>::search_layer_filter_first(const BoundDistanceFunction &df, uint32_t neighbors_to_find, BestNeighbors& best_neighbors, double exploration,
+                                           uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter) const
+{
+    uint32_t nodeid_limit = _graph.nodes_size.load(std::memory_order_acquire);
+    uint32_t estimated_visited_nodes = estimate_visited_nodes(level, nodeid_limit, neighbors_to_find, filter);
+    if (estimated_visited_nodes >= nodeid_limit / 128) {
+        search_layer_filter_first_helper<BitVectorVisitedTracker>(df, neighbors_to_find, best_neighbors, exploration, level, filter, nodeid_limit, doom, estimated_visited_nodes);
+    } else {
+        search_layer_filter_first_helper<HashSetVisitedTracker>(df, neighbors_to_find, best_neighbors, exploration, level, filter, nodeid_limit, doom, estimated_visited_nodes);
     }
 }
 
@@ -883,10 +998,10 @@ struct NeighborsByDocId {
 
 template <HnswIndexType type>
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex<type>::top_k_by_docid(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter *filter,
+HnswIndex<type>::top_k_by_docid(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter *filter, bool low_hit_ratio, double exploration,
                                 uint32_t explore_k, const vespalib::Doom& doom, double distance_threshold) const
 {
-    SearchBestNeighbors candidates = top_k_candidates(df, std::max(k, explore_k), filter, doom);
+    SearchBestNeighbors candidates = top_k_candidates(df, std::max(k, explore_k), filter, low_hit_ratio, exploration, doom);
     auto result = candidates.get_neighbors(k, distance_threshold);
     std::sort(result.begin(), result.end(), NeighborsByDocId());
     return result;
@@ -897,20 +1012,20 @@ std::vector<NearestNeighborIndex::Neighbor>
 HnswIndex<type>::find_top_k(uint32_t k, const BoundDistanceFunction &df, uint32_t explore_k,
                             const vespalib::Doom& doom, double distance_threshold) const
 {
-    return top_k_by_docid(k, df, nullptr, explore_k, doom, distance_threshold);
+    return top_k_by_docid(k, df, nullptr, false, 0.0, explore_k, doom, distance_threshold);
 }
 
 template <HnswIndexType type>
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex<type>::find_top_k_with_filter(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter,
+HnswIndex<type>::find_top_k_with_filter(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter, bool low_hit_ratio, double exploration,
                                         uint32_t explore_k, const vespalib::Doom& doom, double distance_threshold) const
 {
-    return top_k_by_docid(k, df, &filter, explore_k, doom, distance_threshold);
+    return top_k_by_docid(k, df, &filter, low_hit_ratio, exploration, explore_k, doom, distance_threshold);
 }
 
 template <HnswIndexType type>
 typename HnswIndex<type>::SearchBestNeighbors
-HnswIndex<type>::top_k_candidates(const BoundDistanceFunction &df, uint32_t k, const GlobalFilter *filter, const vespalib::Doom& doom) const
+HnswIndex<type>::top_k_candidates(const BoundDistanceFunction &df, uint32_t k, const GlobalFilter *filter, bool low_hit_ratio, double exploration, const vespalib::Doom& doom) const
 {
     SearchBestNeighbors best_neighbors;
     auto entry = _graph.get_entry_node();
@@ -928,7 +1043,11 @@ HnswIndex<type>::top_k_candidates(const BoundDistanceFunction &df, uint32_t k, c
         --search_level;
     }
     best_neighbors.push(entry_point);
-    search_layer(df, k, best_neighbors, 0, &doom, filter);
+    if (filter && filter->is_active() && low_hit_ratio) {
+        search_layer_filter_first(df, k, best_neighbors, exploration, 0, &doom, filter);
+    } else {
+        search_layer(df, k, best_neighbors, 0, &doom, filter);
+    }
     return best_neighbors;
 }
 

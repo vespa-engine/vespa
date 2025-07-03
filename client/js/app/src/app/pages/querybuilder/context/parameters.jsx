@@ -57,6 +57,8 @@ export default param('root', [
       param('termwiseLimit', 'Float', { min: 0, max: 1 }),
       param('postFilterThreshold', 'Float', { min: 0, max: 1 }),
       param('approximateThreshold', 'Float', { min: 0, max: 1 }),
+      param('filterFirstThreshold', 'Float', { min: 0, max: 1 }),
+      param('filterFirstExploration', 'Float', { min: 0, max: 1 }),
     ]),
     param('matchPhase', [
       param('attribute', 'String'),

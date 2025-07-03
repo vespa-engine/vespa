@@ -339,6 +339,8 @@ TOKEN :
 | < TERMWISE_LIMIT: "termwise-limit" >
 | < POST_FILTER_THRESHOLD: "post-filter-threshold" >
 | < APPROXIMATE_THRESHOLD: "approximate-threshold" >
+| < FILTER_FIRST_THRESHOLD: "filter-first-threshold" >
+| < FILTER_FIRST_EXPLORATION: "filter-first-exploration" >
 | < TARGET_HITS_MAX_ADJUSTMENT_FACTOR: "target-hits-max-adjustment-factor" >
 | < KEEP_RANK_COUNT: "keep-rank-count" >
 | < RANK_SCORE_DROP_LIMIT: "rank-score-drop-limit" >
@@ -1793,6 +1795,8 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
       | termwiseLimit(profile)
       | postFilterThreshold(profile)
       | approximateThreshold(profile)
+      | filterFirstThreshold(profile)
+      | filterFirstExploration(profile)
       | targetHitsMaxAdjustmentFactor(profile)
       | rankFeatures(profile)
       | rankProperties(profile)
@@ -2367,6 +2371,32 @@ void approximateThreshold(ParsedRankProfile profile) :
 }
 
 /**
+ * This rule consumes a filter-first-threshold statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void filterFirstThreshold(ParsedRankProfile profile) :
+{
+    double threshold;
+}
+{
+    (<FILTER_FIRST_THRESHOLD> <COLON> threshold = floatValue()) { profile.setFilterFirstThreshold(threshold); }
+}
+
+/**
+ * This rule consumes a filter-first-exploration statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void filterFirstExploration(ParsedRankProfile profile) :
+{
+    double exploration;
+}
+{
+    (<FILTER_FIRST_EXPLORATION> <COLON> exploration = floatValue()) { profile.setFilterFirstExploration(exploration); }
+}
+
+/**
  * This rule consumes a target-hits-max-adjustment-factor statement for a rank profile.
  *
  * @param profile the rank profile to modify
@@ -2820,6 +2850,8 @@ String identifierWithDash() :
     | <FAST_ACCESS>
     | <FAST_RANK>
     | <FAST_SEARCH>
+    | <FILTER_FIRST_EXPLORATION>
+    | <FILTER_FIRST_THRESHOLD>
     | <FILTER_THRESHOLD>
     | <FIRST_PHASE>
     | <FROM_DISK>

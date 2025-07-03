@@ -112,6 +112,8 @@ public:
     virtual std::vector<Neighbor> find_top_k_with_filter(uint32_t k,
                                                          const BoundDistanceFunction &df,
                                                          const GlobalFilter &filter,
+                                                         bool low_hit_ratio,
+                                                         double exploration,
                                                          uint32_t explore_k,
                                                          const vespalib::Doom& doom,
                                                          double distance_threshold) const = 0;

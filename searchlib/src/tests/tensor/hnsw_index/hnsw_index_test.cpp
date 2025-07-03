@@ -273,7 +273,7 @@ public:
         vespalib::eval::TypedCells qv_cells(qv_ref);
         auto df = index->distance_function_factory().for_query_vector(qv_cells);
         auto got_by_docid = (global_filter->is_active()) ?
-                            index->find_top_k_with_filter(k, *df, *global_filter, explore_k, _doom->get_doom(), 10000.0) :
+                            index->find_top_k_with_filter(k, *df, *global_filter, false, 0.01, explore_k, _doom->get_doom(), 10000.0) :
                             index->find_top_k(k, *df, explore_k, _doom->get_doom(), 10000.0);
         std::vector<uint32_t> act;
         act.reserve(got_by_docid.size());
@@ -282,11 +282,11 @@ public:
         }
         EXPECT_EQ(exp, act);
     }
-    void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits) {
+    void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits, bool filter_first = false) {
         uint32_t k = 3;
         auto qv = vectors.get_vector(docid, 0);
         auto df = index->distance_function_factory().for_query_vector(qv);
-        auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active(), _doom->get_doom()).peek();
+        auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active(), filter_first, 0.01, _doom->get_doom()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         size_t idx = 0;
         for (const auto & hit : rv) {
@@ -310,13 +310,13 @@ public:
         auto qv = vectors.get_vector(docid, 0);
         auto df = index->distance_function_factory().for_query_vector(qv);
         uint32_t k = 3;
-        auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active(), _doom->get_doom()).peek();
+        auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active(), false, 0.01, _doom->get_doom()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         EXPECT_EQ(rv.size(), 3);
         EXPECT_LE(rv[0].distance, rv[1].distance);
         double thr = (rv[0].distance + rv[1].distance) * 0.5;
         auto got_by_docid = (global_filter->is_active())
-            ? index->find_top_k_with_filter(k, *df, *global_filter, k, _doom->get_doom(), thr)
+            ? index->find_top_k_with_filter(k, *df, *global_filter, false, 0.01, k, _doom->get_doom(), thr)
             : index->find_top_k(k, *df, k, _doom->get_doom(), thr);
         EXPECT_EQ(got_by_docid.size(), 1);
         EXPECT_EQ(got_by_docid[0].docid, index->get_docid(rv[0].nodeid));
@@ -469,6 +469,28 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_selec
     this->expect_top_3(9, {3, 2});
     this->reset_doom(-1s);
     this->expect_top_3(2, {});
+}
+
+TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_filter_first_search) {
+    this->init(false);
+    this->add_document(1);
+    this->add_document(2);
+    this->add_document(3);
+    this->add_document(4);
+    this->add_document(5);
+    this->add_document(6);
+    this->add_document(7);
+
+    this->set_filter({2,3,4,6});
+    this->expect_top_3(2, {2, 3}, true);
+    this->expect_top_3(4, {4, 3}, true);
+    this->expect_top_3(5, {6, 2}, true);
+    this->expect_top_3(6, {6, 2}, true);
+    this->expect_top_3(7, {3, 2}, true);
+    this->expect_top_3(8, {4, 3}, true);
+    this->expect_top_3(9, {3, 2}, true);
+    this->reset_doom(-1s);
+    this->expect_top_3(2, {}, true);
 }
 
 TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_and_removed)

@@ -317,6 +317,29 @@ namespace matching {
     };
 
     /**
+     * Property to control when the filter-first heuristics are used in an HNSW search.
+     * If the estimated ratio of matching documents is less than this limit,
+     * then use the filter-first heuristics. These heuristics drastically improve the response time at
+     * the cost of slightly lower recall when a very high percentage of documents is filtered out.
+     **/
+    struct FilterFirstUpperLimit {
+        static const std::string NAME;
+        static const double DEFAULT_VALUE;
+        static double lookup(const Properties &props);
+        static double lookup(const Properties &props, double defaultValue);
+    };
+
+    /**
+     * Property to control how aggressively the filter-first heuristic explores the graph.
+     **/
+    struct FilterFirstExploration {
+        static const std::string NAME;
+        static const double DEFAULT_VALUE;
+        static double lookup(const Properties &props);
+        static double lookup(const Properties &props, double defaultValue);
+    };
+
+    /**
      * Property to control the auto-adjustment of targetHits in a nearestNeighbor search using HNSW index with post-filtering.
      *
      * The targetHits is auto-adjusted in an effort to expose targetHits hits to first-phase ranking after post-filtering:

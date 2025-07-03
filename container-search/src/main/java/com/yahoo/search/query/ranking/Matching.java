@@ -25,6 +25,8 @@ public class Matching implements Cloneable {
     public static final String MINHITSPERTHREAD = "minHitsPerThread";
     public static final String POST_FILTER_THRESHOLD = "postFilterThreshold";
     public static final String APPROXIMATE_THRESHOLD = "approximateThreshold";
+    public static final String FILTER_FIRST_THRESHOLD = "filterFirstThreshold";
+    public static final String FILTER_FIRST_EXPLORATION = "filterFirstExploration";
     public static final String TARGET_HITS_MAX_ADJUSTMENT_FACTOR = "targetHitsMaxAdjustmentFactor";
     public static final String FILTER_THRESHOLD = "filterThreshold";
     public static final String WEAKAND = "weakand";
@@ -39,6 +41,8 @@ public class Matching implements Cloneable {
         argumentType.addField(new FieldDescription(MINHITSPERTHREAD, "integer"));
         argumentType.addField(new FieldDescription(POST_FILTER_THRESHOLD, "double"));
         argumentType.addField(new FieldDescription(APPROXIMATE_THRESHOLD, "double"));
+        argumentType.addField(new FieldDescription(FILTER_FIRST_THRESHOLD, "double"));
+        argumentType.addField(new FieldDescription(FILTER_FIRST_EXPLORATION, "double"));
         argumentType.addField(new FieldDescription(TARGET_HITS_MAX_ADJUSTMENT_FACTOR, "double"));
         argumentType.addField(new FieldDescription(FILTER_THRESHOLD, "double"));
         argumentType.addField(new FieldDescription(WEAKAND, new QueryProfileFieldType(WeakAnd.getArgumentType())));
@@ -53,6 +57,8 @@ public class Matching implements Cloneable {
     private Integer minHitsPerThread = null;
     private Double postFilterThreshold = null;
     private Double approximateThreshold = null;
+    private Double filterFirstThreshold = null;
+    private Double filterFirstExploration = null;
     private Double targetHitsMaxAdjustmentFactor = null;
     private Double filterThreshold = null;
 
@@ -64,6 +70,8 @@ public class Matching implements Cloneable {
     public Integer getMinHitsPerThread() { return minHitsPerThread; }
     public Double getPostFilterThreshold() { return postFilterThreshold; }
     public Double getApproximateThreshold() { return approximateThreshold; }
+    public Double getFilterFirstThreshold() { return filterFirstThreshold; }
+    public Double getFilterFirstExploration() { return filterFirstExploration; }
     public Double getTargetHitsMaxAdjustmentFactor() { return targetHitsMaxAdjustmentFactor; }
     public Double getFilterThreshold() { return filterThreshold; }
     public WeakAnd getWeakAnd() { return weakAnd; }
@@ -93,6 +101,12 @@ public class Matching implements Cloneable {
     public void setApproximateThreshold(double threshold) {
         approximateThreshold = threshold;
     }
+    public void setFilterFirstThreshold(double threshold) {
+        filterFirstThreshold = threshold;
+    }
+    public void setFilterFirstExploration(double threshold) {
+        filterFirstExploration = threshold;
+    }
     public void setTargetHitsMaxAdjustmentFactor(double factor) {
         targetHitsMaxAdjustmentFactor = factor;
     }
@@ -120,6 +134,12 @@ public class Matching implements Cloneable {
         }
         if (approximateThreshold != null) {
             rankProperties.put("vespa.matching.global_filter.lower_limit", String.valueOf(approximateThreshold));
+        }
+        if (filterFirstThreshold != null) {
+            rankProperties.put("vespa.matching.nns.filter_first_upper_limit", String.valueOf(filterFirstThreshold));
+        }
+        if (filterFirstThreshold != null) {
+            rankProperties.put("vespa.matching.nns.filter_first_exploration", String.valueOf(filterFirstExploration));
         }
         if (targetHitsMaxAdjustmentFactor != null) {
             rankProperties.put("vespa.matching.nns.target_hits_max_adjustment_factor", String.valueOf(targetHitsMaxAdjustmentFactor));
@@ -153,6 +173,8 @@ public class Matching implements Cloneable {
                 Objects.equals(minHitsPerThread, matching.minHitsPerThread) &&
                 Objects.equals(postFilterThreshold, matching.postFilterThreshold) &&
                 Objects.equals(approximateThreshold, matching.approximateThreshold) &&
+                Objects.equals(filterFirstThreshold, matching.filterFirstThreshold) &&
+                Objects.equals(filterFirstExploration, matching.filterFirstExploration) &&
                 Objects.equals(targetHitsMaxAdjustmentFactor, matching.targetHitsMaxAdjustmentFactor) &&
                 Objects.equals(filterThreshold, matching.filterThreshold) &&
                 Objects.equals(weakAnd, matching.weakAnd);
@@ -161,7 +183,7 @@ public class Matching implements Cloneable {
     @Override
     public int hashCode() {
         return Objects.hash(termwiseLimit, numThreadsPerSearch, numSearchPartitions, minHitsPerThread,
-                postFilterThreshold, approximateThreshold, targetHitsMaxAdjustmentFactor, filterThreshold, weakAnd);
+                postFilterThreshold, approximateThreshold, filterFirstThreshold, filterFirstExploration, targetHitsMaxAdjustmentFactor, filterThreshold, weakAnd);
     }
 }
 
