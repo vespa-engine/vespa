@@ -33,8 +33,8 @@ public class ParsedRankProfile extends ParsedBlock {
     private Double termwiseLimit = null;
     private Double postFilterThreshold = null;
     private Double approximateThreshold = null;
-    private Double acornOneThreshold = null;
-    private Double acornOneExploration = null;
+    private Double filterFirstThreshold = null;
+    private Double filterFirstExploration = null;
     private Double targetHitsMaxAdjustmentFactor = null;
     private final List<FeatureList> matchFeatures = new ArrayList<>();
     private final List<FeatureList> rankFeatures = new ArrayList<>();
@@ -81,8 +81,8 @@ public class ParsedRankProfile extends ParsedBlock {
     Optional<Double> getTermwiseLimit() { return Optional.ofNullable(this.termwiseLimit); }
     Optional<Double> getPostFilterThreshold() { return Optional.ofNullable(this.postFilterThreshold); }
     Optional<Double> getApproximateThreshold() { return Optional.ofNullable(this.approximateThreshold); }
-    Optional<Double> getAcornOneThreshold() { return Optional.ofNullable(this.acornOneThreshold); }
-    Optional<Double> getAcornOneExploration() { return Optional.ofNullable(this.acornOneExploration); }
+    Optional<Double> getFilterFirstThreshold() { return Optional.ofNullable(this.filterFirstThreshold); }
+    Optional<Double> getFilterFirstExploration() { return Optional.ofNullable(this.filterFirstExploration); }
     Optional<Double> getTargetHitsMaxAdjustmentFactor() { return Optional.ofNullable(this.targetHitsMaxAdjustmentFactor); }
     List<FeatureList> getMatchFeatures() { return List.copyOf(this.matchFeatures); }
     List<FeatureList> getRankFeatures() { return List.copyOf(this.rankFeatures); }
@@ -313,14 +313,14 @@ public class ParsedRankProfile extends ParsedBlock {
         this.approximateThreshold = threshold;
     }
 
-    public void setAcornOneThreshold(double threshold) {
-        verifyThat(acornOneThreshold == null, "already has acorn-one-threshold");
-        this.acornOneThreshold = threshold;
+    public void setFilterFirstThreshold(double threshold) {
+        verifyThat(filterFirstThreshold == null, "already has filter-first-threshold");
+        this.filterFirstThreshold = threshold;
     }
 
-    public void setAcornOneExploration(double exploration) {
-        verifyThat(acornOneExploration == null, "already has acorn-one-exploration");
-        this.acornOneExploration = exploration;
+    public void setFilterFirstExploration(double exploration) {
+        verifyThat(filterFirstExploration == null, "already has filter-first-exploration");
+        this.filterFirstExploration = exploration;
     }
 
     public void setTargetHitsMaxAdjustmentFactor(double factor) {

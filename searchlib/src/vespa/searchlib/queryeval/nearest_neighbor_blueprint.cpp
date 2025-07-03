@@ -43,8 +43,8 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
                                                    double distance_threshold,
                                                    double global_filter_lower_limit,
                                                    double global_filter_upper_limit,
-                                                   double acorn_one_upper_limit,
-                                                   double acorn_one_exploration,
+                                                   double filter_first_upper_limit,
+                                                   double filter_first_exploration,
                                                    double target_hits_max_adjustment_factor,
                                                    const vespalib::Doom& doom)
     : ComplexLeafBlueprint(field),
@@ -58,8 +58,8 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _distance_threshold(std::numeric_limits<double>::max()),
       _global_filter_lower_limit(global_filter_lower_limit),
       _global_filter_upper_limit(global_filter_upper_limit),
-      _acorn_one_upper_limit(acorn_one_upper_limit),
-      _acorn_one_exploration(acorn_one_exploration),
+      _filter_first_upper_limit(filter_first_upper_limit),
+      _filter_first_exploration(filter_first_exploration),
       _target_hits_max_adjustment_factor(target_hits_max_adjustment_factor),
       _distance_heap(target_hits),
       _found_hits(),
@@ -122,7 +122,7 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
     uint32_t k = _adjusted_target_hits;
     const auto &df = _distance_calc->function();
     if (_global_filter->is_active()) {
-        _found_hits = nns_index->find_top_k_with_filter(k, df, *_global_filter, _global_filter_hit_ratio.value() < _acorn_one_upper_limit, _acorn_one_exploration,
+        _found_hits = nns_index->find_top_k_with_filter(k, df, *_global_filter, _global_filter_hit_ratio.value() < _filter_first_upper_limit, _filter_first_exploration,
                                                         k + _explore_additional_hits, _doom, _distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else {

@@ -282,11 +282,11 @@ public:
         }
         EXPECT_EQ(exp, act);
     }
-    void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits, bool acorn = false) {
+    void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits, bool filter_first = false) {
         uint32_t k = 3;
         auto qv = vectors.get_vector(docid, 0);
         auto df = index->distance_function_factory().for_query_vector(qv);
-        auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active(), acorn, 0.01, _doom->get_doom()).peek();
+        auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active(), filter_first, 0.01, _doom->get_doom()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         size_t idx = 0;
         for (const auto & hit : rv) {
@@ -471,7 +471,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_selec
     this->expect_top_3(2, {});
 }
 
-TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_acorn_1_search) {
+TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_filter_first_search) {
     this->init(false);
     this->add_document(1);
     this->add_document(2);

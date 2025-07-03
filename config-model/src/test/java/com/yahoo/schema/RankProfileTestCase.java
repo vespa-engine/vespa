@@ -524,30 +524,30 @@ rank-profile feature_logging {
         verifyApproximateNearestNeighborThresholdSettings(0.7, 0.3, 0.4);
     }
 
-    private void verifyApproximateNearestNeighborThresholdSettings(Double postFilterThreshold, Double approximateThreshold, Double acornOneThreshold) throws ParseException {
-        var rp = createRankProfile(postFilterThreshold, approximateThreshold, acornOneThreshold, null, null);
+    private void verifyApproximateNearestNeighborThresholdSettings(Double postFilterThreshold, Double approximateThreshold, Double filterFirstThreshold) throws ParseException {
+        var rp = createRankProfile(postFilterThreshold, approximateThreshold, filterFirstThreshold, null, null);
         var rankProfile = rp.getFirst();
         var rawRankProfile = rp.getSecond();
         verifyRankProfileSetting(rankProfile, rawRankProfile, RankProfile::getPostFilterThreshold,
                                  postFilterThreshold, "vespa.matching.global_filter.upper_limit");
         verifyRankProfileSetting(rankProfile, rawRankProfile, RankProfile::getApproximateThreshold,
                                  approximateThreshold, "vespa.matching.global_filter.lower_limit");
-        verifyRankProfileSetting(rankProfile, rawRankProfile, RankProfile::getAcornOneThreshold,
-                                 acornOneThreshold, "vespa.matching.nns.acorn_one_upper_limit");
+        verifyRankProfileSetting(rankProfile, rawRankProfile, RankProfile::getFilterFirstThreshold,
+                                 filterFirstThreshold, "vespa.matching.nns.filter_first_upper_limit");
     }
 
     @Test
-    void acorn_one_exploration_is_configurable() throws ParseException {
-	verifyAcornOneExploration(null);
-	verifyAcornOneExploration(0.012);
+    void filter_first_exploration_is_configurable() throws ParseException {
+	verifyFilterFirstExploration(null);
+	verifyFilterFirstExploration(0.012);
     }
 
-    private void verifyAcornOneExploration(Double acornOneExploration) throws ParseException {
-        var rp = createRankProfile(null, null, null, acornOneExploration, null);
+    private void verifyFilterFirstExploration(Double filterFirstExploration) throws ParseException {
+        var rp = createRankProfile(null, null, null, filterFirstExploration, null);
         var rankProfile = rp.getFirst();
         var rawRankProfile = rp.getSecond();
-        verifyRankProfileSetting(rankProfile, rawRankProfile, RankProfile::getAcornOneExploration,
-                                 acornOneExploration, "vespa.matching.nns.acorn_one_exploration");
+        verifyRankProfileSetting(rankProfile, rawRankProfile, RankProfile::getFilterFirstExploration,
+                                 filterFirstExploration, "vespa.matching.nns.filter_first_exploration");
     }
 
     @Test
@@ -727,10 +727,10 @@ rank-profile feature_logging {
 
     private Pair<RankProfile, RawRankProfile> createRankProfile(Double postFilterThreshold,
                                                                 Double approximateThreshold,
-                                                                Double acornOneThreshold,
-                                                                Double acornOneExploration,
+                                                                Double filterFirstThreshold,
+                                                                Double filterFirstExploration,
                                                                 Double targetHitsMaxAdjustmentFactor) throws ParseException {
-        return createRankProfile(createSDWithRankProfile(postFilterThreshold, approximateThreshold, acornOneThreshold, acornOneExploration, targetHitsMaxAdjustmentFactor, null, null, null, null));
+        return createRankProfile(createSDWithRankProfile(postFilterThreshold, approximateThreshold, filterFirstThreshold, filterFirstExploration, targetHitsMaxAdjustmentFactor, null, null, null, null));
     }
 
     private Pair<RankProfile, RawRankProfile> createWeakandRankProfile(Double weakAndStopwordLimit,
@@ -756,8 +756,8 @@ rank-profile feature_logging {
 
     private String createSDWithRankProfile(Double postFilterThreshold,
                                            Double approximateThreshold,
-                                           Double acornOneThreshold,
-                                           Double acornOneExploration,
+                                           Double filterFirstThreshold,
+                                           Double filterFirstExploration,
                                            Double targetHitsMaxAdjustmentFactor,
                                            Double weakandStopwordLimit,
                                            Boolean weakandAllowDropAll,
@@ -769,8 +769,8 @@ rank-profile feature_logging {
                 "    rank-profile my_profile {",
                 (postFilterThreshold != null ?           ("        post-filter-threshold: " + postFilterThreshold) : ""),
                 (approximateThreshold != null ?          ("        approximate-threshold: " + approximateThreshold) : ""),
-                (acornOneThreshold    != null ?          ("        acorn-one-threshold: " + acornOneThreshold) : ""),
-                (acornOneExploration != null  ?          ("        acorn-one-exploration: " + acornOneExploration) : ""),
+                (filterFirstThreshold != null ?          ("        filter-first-threshold: " + filterFirstThreshold) : ""),
+                (filterFirstExploration != null  ?       ("        filter-first-exploration: " + filterFirstExploration) : ""),
                 (targetHitsMaxAdjustmentFactor != null ? ("        target-hits-max-adjustment-factor: " + targetHitsMaxAdjustmentFactor) : ""),
                 (weakandStopwordLimit != null ?          ("        weakand { stopword-limit: " + weakandStopwordLimit + "}") : ""),
                 (weakandAllowDropAll != null ?           ("        weakand { allow-drop-all: " + weakandAllowDropAll + "}") : ""),

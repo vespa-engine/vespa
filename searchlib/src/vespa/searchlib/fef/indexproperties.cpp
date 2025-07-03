@@ -492,34 +492,34 @@ ElementGap::set_for_field(Properties& props, const std::string& field_name, cons
     props.add(NAME + "." + field_name, element_gap);
 }
 
-const std::string AcornOneUpperLimit::NAME("vespa.matching.nns.acorn_one_upper_limit");
+const std::string FilterFirstUpperLimit::NAME("vespa.matching.nns.filter_first_upper_limit");
 
-const double AcornOneUpperLimit::DEFAULT_VALUE(0.00);
+const double FilterFirstUpperLimit::DEFAULT_VALUE(0.00);
 
 double
-AcornOneUpperLimit::lookup(const Properties &props)
+FilterFirstUpperLimit::lookup(const Properties &props)
 {
     return lookup(props, DEFAULT_VALUE);
 }
 
 double
-AcornOneUpperLimit::lookup(const Properties &props, double defaultValue)
+FilterFirstUpperLimit::lookup(const Properties &props, double defaultValue)
 {
     return lookupDouble(props, NAME, defaultValue);
 }
 
-const std::string AcornOneExploration::NAME("vespa.matching.nns.acorn_one_exploration");
+const std::string FilterFirstExploration::NAME("vespa.matching.nns.filter_first_exploration");
 
-const double AcornOneExploration::DEFAULT_VALUE(0.01);
+const double FilterFirstExploration::DEFAULT_VALUE(0.01);
 
 double
-AcornOneExploration::lookup(const Properties &props)
+FilterFirstExploration::lookup(const Properties &props)
 {
     return lookup(props, DEFAULT_VALUE);
 }
 
 double
-AcornOneExploration::lookup(const Properties &props, double defaultValue)
+FilterFirstExploration::lookup(const Properties &props, double defaultValue)
 {
     return lookupDouble(props, NAME, defaultValue);
 }

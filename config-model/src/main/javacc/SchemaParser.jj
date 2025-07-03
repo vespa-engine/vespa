@@ -339,8 +339,8 @@ TOKEN :
 | < TERMWISE_LIMIT: "termwise-limit" >
 | < POST_FILTER_THRESHOLD: "post-filter-threshold" >
 | < APPROXIMATE_THRESHOLD: "approximate-threshold" >
-| < ACORN_ONE_THRESHOLD: "acorn-one-threshold" >
-| < ACORN_ONE_EXPLORATION: "acorn-one-exploration" >
+| < FILTER_FIRST_THRESHOLD: "filter-first-threshold" >
+| < FILTER_FIRST_EXPLORATION: "filter-first-exploration" >
 | < TARGET_HITS_MAX_ADJUSTMENT_FACTOR: "target-hits-max-adjustment-factor" >
 | < KEEP_RANK_COUNT: "keep-rank-count" >
 | < RANK_SCORE_DROP_LIMIT: "rank-score-drop-limit" >
@@ -1795,8 +1795,8 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
       | termwiseLimit(profile)
       | postFilterThreshold(profile)
       | approximateThreshold(profile)
-      | acornOneThreshold(profile)
-      | acornOneExploration(profile)
+      | filterFirstThreshold(profile)
+      | filterFirstExploration(profile)
       | targetHitsMaxAdjustmentFactor(profile)
       | rankFeatures(profile)
       | rankProperties(profile)
@@ -2371,29 +2371,29 @@ void approximateThreshold(ParsedRankProfile profile) :
 }
 
 /**
- * This rule consumes an acorn-one-threshold statement for a rank profile.
+ * This rule consumes a filter-first-threshold statement for a rank profile.
  *
  * @param profile the rank profile to modify
  */
-void acornOneThreshold(ParsedRankProfile profile) :
+void filterFirstThreshold(ParsedRankProfile profile) :
 {
     double threshold;
 }
 {
-    (<ACORN_ONE_THRESHOLD> <COLON> threshold = floatValue()) { profile.setAcornOneThreshold(threshold); }
+    (<FILTER_FIRST_THRESHOLD> <COLON> threshold = floatValue()) { profile.setFilterFirstThreshold(threshold); }
 }
 
 /**
- * This rule consumes an acorn-one-exploration statement for a rank profile.
+ * This rule consumes a filter-first-exploration statement for a rank profile.
  *
  * @param profile the rank profile to modify
  */
-void acornOneExploration(ParsedRankProfile profile) :
+void filterFirstExploration(ParsedRankProfile profile) :
 {
     double exploration;
 }
 {
-    (<ACORN_ONE_EXPLORATION> <COLON> exploration = floatValue()) { profile.setAcornOneExploration(exploration); }
+    (<FILTER_FIRST_EXPLORATION> <COLON> exploration = floatValue()) { profile.setFilterFirstExploration(exploration); }
 }
 
 /**
@@ -2831,8 +2831,6 @@ String identifierWithDash() :
     ( identifier = identifier() { return identifier; } )
     |
     ( <IDENTIFIER_WITH_DASH>
-    | <ACORN_ONE_THRESHOLD>
-    | <ACORN_ONE_EXPLORATION>
     | <ADJUST_TARGET>
     | <ALLOW_DROP_ALL>
     | <APPROXIMATE_THRESHOLD>
@@ -2852,6 +2850,8 @@ String identifierWithDash() :
     | <FAST_ACCESS>
     | <FAST_RANK>
     | <FAST_SEARCH>
+    | <FILTER_FIRST_EXPLORATION>
+    | <FILTER_FIRST_THRESHOLD>
     | <FILTER_THRESHOLD>
     | <FIRST_PHASE>
     | <FROM_DISK>

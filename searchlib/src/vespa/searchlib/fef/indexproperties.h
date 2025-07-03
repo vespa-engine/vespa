@@ -317,12 +317,12 @@ namespace matching {
     };
 
     /**
-     * Property to control when the ACORN-1-esque heuristics are used in an HNSW search.
+     * Property to control when the filter-first heuristics are used in an HNSW search.
      * If the estimated ratio of matching documents is less than this limit,
-     * then use the ACORN-1-esque heuristics. These heuristics drastically improve the response time at
-     * the cost of slightly lower recall.
+     * then use the filter-first heuristics. These heuristics drastically improve the response time at
+     * the cost of slightly lower recall when a very high percentage of documents is filtered out.
      **/
-    struct AcornOneUpperLimit {
+    struct FilterFirstUpperLimit {
         static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);
@@ -330,9 +330,9 @@ namespace matching {
     };
 
     /**
-     * Property to control how aggressively the ACORN-1-esque heuristics explores N-hop neighbors heyond 2-hop neighbors.
+     * Property to control how aggressively the filter-first heuristic explores the graph.
      **/
-    struct AcornOneExploration {
+    struct FilterFirstExploration {
         static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);

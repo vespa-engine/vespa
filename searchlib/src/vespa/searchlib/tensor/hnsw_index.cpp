@@ -427,10 +427,10 @@ HnswIndex<type>::search_layer_helper(const BoundDistanceFunction &df, uint32_t n
 template <HnswIndexType type>
 template <class VisitedTracker, class BestNeighbors>
 void
-HnswIndex<type>::search_layer_acorn_helper(const BoundDistanceFunction &df, uint32_t neighbors_to_find,
-                                           BestNeighbors& best_neighbors, double exploration, uint32_t level, const GlobalFilter *filter,
-                                           uint32_t nodeid_limit, const vespalib::Doom* const doom,
-                                           uint32_t estimated_visited_nodes) const
+HnswIndex<type>::search_layer_filter_first_helper(const BoundDistanceFunction &df, uint32_t neighbors_to_find,
+                                                  BestNeighbors& best_neighbors, double exploration, uint32_t level, const GlobalFilter *filter,
+                                                  uint32_t nodeid_limit, const vespalib::Doom* const doom,
+                                                  uint32_t estimated_visited_nodes) const
 {
     assert(filter);
     NearestPriQ candidates;
@@ -578,15 +578,15 @@ HnswIndex<type>::search_layer(const BoundDistanceFunction &df, uint32_t neighbor
 template <HnswIndexType type>
 template <class BestNeighbors>
 void
-HnswIndex<type>::search_layer_acorn(const BoundDistanceFunction &df, uint32_t neighbors_to_find, BestNeighbors& best_neighbors, double exploration,
-                                    uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter) const
+HnswIndex<type>::search_layer_filter_first(const BoundDistanceFunction &df, uint32_t neighbors_to_find, BestNeighbors& best_neighbors, double exploration,
+                                           uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter) const
 {
     uint32_t nodeid_limit = _graph.nodes_size.load(std::memory_order_acquire);
     uint32_t estimated_visited_nodes = estimate_visited_nodes(level, nodeid_limit, neighbors_to_find, filter);
     if (estimated_visited_nodes >= nodeid_limit / 128) {
-        search_layer_acorn_helper<BitVectorVisitedTracker>(df, neighbors_to_find, best_neighbors, exploration, level, filter, nodeid_limit, doom, estimated_visited_nodes);
+        search_layer_filter_first_helper<BitVectorVisitedTracker>(df, neighbors_to_find, best_neighbors, exploration, level, filter, nodeid_limit, doom, estimated_visited_nodes);
     } else {
-        search_layer_acorn_helper<HashSetVisitedTracker>(df, neighbors_to_find, best_neighbors, exploration, level, filter, nodeid_limit, doom, estimated_visited_nodes);
+        search_layer_filter_first_helper<HashSetVisitedTracker>(df, neighbors_to_find, best_neighbors, exploration, level, filter, nodeid_limit, doom, estimated_visited_nodes);
     }
 }
 
@@ -1044,7 +1044,7 @@ HnswIndex<type>::top_k_candidates(const BoundDistanceFunction &df, uint32_t k, c
     }
     best_neighbors.push(entry_point);
     if (filter && filter->is_active() && low_hit_ratio) {
-        search_layer_acorn(df, k, best_neighbors, exploration, 0, &doom, filter);
+        search_layer_filter_first(df, k, best_neighbors, exploration, 0, &doom, filter);
     } else {
         search_layer(df, k, best_neighbors, 0, &doom, filter);
     }
