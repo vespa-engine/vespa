@@ -121,12 +121,6 @@ public class PermanentFlags {
             "List of IPs or CIDRs that are blocked for outbound connections",
             "Takes effect on next tick");
 
-    public static final UnboundIntFlag TENANT_BUDGET_QUOTA = defineIntFlag(
-            "tenant-budget-quota", -1,
-            "The budget in cents/hr a tenant is allowed spend per instance, as calculated by NodeResources",
-            "Only takes effect on next deployment, if set to a value other than the default for flag!",
-            TENANT_ID);
-
     public static final UnboundDoubleFlag GLOBAL_HOURLY_TRIAL_CREDIT_SPENDING_LIMIT = defineDoubleFlag(
             "global-hourly-trial-credit-spending-limit", 0.0,
             "The global maximum credit limit per hour (for all tenants). If this limit is exceeded, trial tenant deployments are blocked. Zero/negative value indicates no limit.",
