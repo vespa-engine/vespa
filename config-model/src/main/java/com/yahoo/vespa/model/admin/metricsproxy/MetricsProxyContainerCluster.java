@@ -39,7 +39,6 @@ import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
