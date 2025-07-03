@@ -2,6 +2,7 @@
 
 #include "summarymanagerinitializer.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
+#include <vespa/searchcore/proton/common/memory_usage_logger.h>
 #include <filesystem>
 
 namespace proton {
@@ -38,10 +39,12 @@ SummaryManagerInitializer::run()
     std::filesystem::create_directory(std::filesystem::path(_baseDir));
     vespalib::Timer timer;
     EventLogger::loadDocumentStoreStart(_subDbName);
+    MemoryUsageLogger::log("start load document store", _subDbName);
     *_result = std::make_shared<SummaryManager>
                (_shared_executor, _storeCfg, _grow, _baseDir,
                 _tuneFile, _fileHeaderContext, _tlSyncer, _bucketizer);
     EventLogger::loadDocumentStoreComplete(_subDbName, timer.elapsed());
+    MemoryUsageLogger::log("finish load document store", _subDbName);
 }
 
 } // namespace proton
