@@ -20,22 +20,16 @@ public class AnnotatorConfig implements Cloneable {
     private int maxTermOccurrences;
     private int maxTokenLength;
     private int maxTokenizeLength;
-    private double maxReplacementCharactersRatio;
-    private int maxReplacementCharacters;
 
     public static final int DEFAULT_MAX_TERM_OCCURRENCES;
     private static final int DEFAULT_MAX_TOKEN_LENGTH;
     private static final int DEFAULT_MAX_TOKENIZE_LENGTH;
-    private static final double DEFAULT_MAX_REPLACEMENT_CHARACTERS_RATIO;
-    private static final int DEFAULT_MAX_REPLACEMENT_CHARACTERS;
 
     static {
         IlscriptsConfig defaults = new IlscriptsConfig(new IlscriptsConfig.Builder());
         DEFAULT_MAX_TERM_OCCURRENCES = defaults.maxtermoccurrences();
         DEFAULT_MAX_TOKEN_LENGTH = defaults.maxtokenlength();
         DEFAULT_MAX_TOKENIZE_LENGTH = defaults.fieldmatchmaxlength();
-        DEFAULT_MAX_REPLACEMENT_CHARACTERS_RATIO = defaults.maxReplacementCharactersRatio();
-        DEFAULT_MAX_REPLACEMENT_CHARACTERS = defaults.maxReplacementCharacters();
     }
 
     public AnnotatorConfig() {
@@ -46,8 +40,6 @@ public class AnnotatorConfig implements Cloneable {
         maxTermOccurrences = DEFAULT_MAX_TERM_OCCURRENCES;
         maxTokenLength = DEFAULT_MAX_TOKEN_LENGTH;
         maxTokenizeLength = DEFAULT_MAX_TOKENIZE_LENGTH;
-        maxReplacementCharactersRatio = DEFAULT_MAX_REPLACEMENT_CHARACTERS_RATIO;
-        maxReplacementCharacters = DEFAULT_MAX_REPLACEMENT_CHARACTERS;
     }
 
     public AnnotatorConfig(AnnotatorConfig other) {
@@ -58,8 +50,6 @@ public class AnnotatorConfig implements Cloneable {
         maxTermOccurrences = other.maxTermOccurrences;
         maxTokenLength = other.maxTokenLength;
         maxTokenizeLength = other.maxTokenizeLength;
-        maxReplacementCharactersRatio = other.maxReplacementCharactersRatio;
-        maxReplacementCharacters = other.maxReplacementCharacters;
     }
 
     public Language getLanguage() {
@@ -123,12 +113,6 @@ public class AnnotatorConfig implements Cloneable {
 
     public static int getDefaultMaxTokenLength() { return DEFAULT_MAX_TOKEN_LENGTH; }
 
-    public double getMaxReplacementCharactersRatio() { return maxReplacementCharactersRatio; }
-    public AnnotatorConfig setMaxReplacementCharactersRatio(double ratio) { this.maxReplacementCharactersRatio = ratio; return this;}
-
-    public int getMaxReplacementCharacters() { return maxReplacementCharacters; }
-    public AnnotatorConfig setMaxReplacementCharacters(int count) { this.maxReplacementCharacters = count; return this; }
-
     public AnnotatorConfig setMaxTokenizeLength(int maxTokenizeLength) {
         this.maxTokenizeLength = maxTokenizeLength;
         return this;
@@ -150,14 +134,6 @@ public class AnnotatorConfig implements Cloneable {
         return maxTermOccurrences != DEFAULT_MAX_TERM_OCCURRENCES;
     }
 
-    public boolean hasNonDefaultMaxReplacementCharactersRatio() {
-        return maxReplacementCharactersRatio != DEFAULT_MAX_REPLACEMENT_CHARACTERS_RATIO;
-    }
-
-    public boolean hasNonDefaultMaxReplacementCharacters() {
-        return maxReplacementCharacters != DEFAULT_MAX_REPLACEMENT_CHARACTERS;
-    }
-
     public LinguisticsParameters asLinguisticsParameters() {
         return new LinguisticsParameters(language, stemMode, removeAccents, lowercase);
     }
@@ -172,16 +148,13 @@ public class AnnotatorConfig implements Cloneable {
         if (maxTermOccurrences != other.maxTermOccurrences) return false;
         if (maxTokenLength != other.maxTokenLength) return false;
         if (maxTokenizeLength != other.maxTokenizeLength) return false;
-        if (maxReplacementCharactersRatio != other.maxReplacementCharactersRatio) return false;
-        if (maxReplacementCharacters != other.maxReplacementCharacters) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(getClass(), language.hashCode(), stemMode.hashCode(),
-                            removeAccents, lowercase, maxTermOccurrences, maxTokenLength, maxTokenizeLength,
-                            maxReplacementCharactersRatio, maxReplacementCharacters);
+                            removeAccents, lowercase, maxTermOccurrences, maxTokenLength, maxTokenizeLength);
     }
 
     @Override
@@ -203,10 +176,6 @@ public class AnnotatorConfig implements Cloneable {
             ret.append(" max-token-length:" + getMaxTokenLength());
         if (hasNonDefaultMaxTermOccurrences())
             ret.append(" max-occurrences:" + getMaxTermOccurrences());
-        if (hasNonDefaultMaxReplacementCharactersRatio())
-            ret.append(" max-replacement-characters-ratio:").append(getMaxReplacementCharactersRatio());
-        if (hasNonDefaultMaxReplacementCharacters())
-            ret.append(" max-replacement-characters:").append(getMaxReplacementCharacters());
         return ret.toString();
     }
 
