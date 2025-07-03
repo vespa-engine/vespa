@@ -13,12 +13,12 @@ vespa_add_library(searchcore_flushengine STATIC
     flush_history_explorer.cpp
     flush_history_view.cpp
     flush_strategy_history_entry.cpp
+    flush_strategy_id_notifier.cpp
     flush_target_candidate.cpp
     flush_target_candidates.cpp
     flushtargetproxy.cpp
     flushtask.cpp
     prepare_restart_flush_strategy.cpp
-    priority_flush_token.cpp
     threadedflushtarget.cpp
     tls_stats_factory.cpp
     tls_stats_map.cpp
