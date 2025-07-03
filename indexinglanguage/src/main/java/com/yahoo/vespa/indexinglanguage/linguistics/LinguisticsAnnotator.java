@@ -155,9 +155,10 @@ public class LinguisticsAnnotator {
 
     // Use the ratio of Unicode replacement characters as heuristic if the text is likely representing binary data
     // https://en.wikipedia.org/wiki/Specials_(Unicode_block)#Replacement_character
-    private static boolean isLikelyBinaryData(String text) {
+    private boolean isLikelyBinaryData(String text) {
         var replacementCharCount = text.chars().filter(c -> c == 0xFFFD).count();
-        if (replacementCharCount > 10 && replacementCharCount > text.length() * 0.1D) {
+        if (replacementCharCount > config.getMaxReplacementCharacters()
+                && replacementCharCount > text.length() * config.getMaxReplacementCharactersRatio()) {
             log.log(Level.FINE, () ->
                     "Text contains %d replacement characters, which is more than 10%% of %d"
                             .formatted(replacementCharCount, text.length()));

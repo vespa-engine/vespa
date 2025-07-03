@@ -263,8 +263,12 @@ public class LinguisticsAnnotatorTestCase {
 
     @Test
     public void requireThatHighRatioOfReplacementCharactersAreNotAnnotated() {
+        var config = new AnnotatorConfig()
+                .setMaxReplacementCharacters(10)
+                .setMaxReplacementCharactersRatio(0.1d);
+
         Predicate<String> isAnnotationsProduced =
-                txt -> new LinguisticsAnnotator(new SimpleLinguistics(), new AnnotatorConfig())
+                txt -> new LinguisticsAnnotator(new SimpleLinguistics(), config)
                         .annotate(new StringFieldValue(txt));
         assertTrue(isAnnotationsProduced.test("\uFFFD".repeat(10) + "a".repeat(90))); // Up to 10 replacement characters allowed
         assertTrue(isAnnotationsProduced.test("\uFFFD".repeat(11) + "a".repeat(100))); // Up to 10% being replacement characters allowed
