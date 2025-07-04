@@ -14,7 +14,6 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
 import java.net.URI;
@@ -39,7 +38,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private ApplicationId applicationId = ApplicationId.defaultId();
     private List<ConfigServerSpec> configServerSpecs = List.of();
     private boolean hostedVespa = false;
-    private Zone zone = Zone.defaultZone();
     private Set<ContainerEndpoint> endpoints = Set.of();
     private boolean useDedicatedNodeForLogserver = false;
     private String jvmGCOptions = null;
@@ -92,7 +90,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public AthenzDomain tenantSecretDomain() { return null; }
     @Override public String athenzDnsSuffix() { return null; }
     @Override public boolean hostedVespa() { return hostedVespa; }
-    @Override public Zone zone() { return zone; }
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
     @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType) { return jvmGCOptions; }
     @Override public boolean isBootstrap() { return false; }
@@ -209,11 +206,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setEndpointCertificateSecrets(Optional<EndpointCertificateSecrets> endpointCertificateSecrets) {
         this.endpointCertificateSecrets = endpointCertificateSecrets;
-        return this;
-    }
-
-    public TestProperties setZone(Zone zone) {
-        this.zone = zone;
         return this;
     }
 
