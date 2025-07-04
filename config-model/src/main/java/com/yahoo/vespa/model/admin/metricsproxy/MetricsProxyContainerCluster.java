@@ -185,14 +185,13 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         }
     }
 
+    @Override
     public void getConfig(QrStartConfig.Builder builder) {
+        super.getConfig(builder);
+        
         builder.jvm
-                .verbosegc(false)
-                .availableProcessors(1)
                 .minHeapsize(256)
-                .heapsize(256)
-                .heapSizeAsPercentageOfPhysicalMemory(0)
-                .gcopts(G1GC);
+                .heapsize(256);
     }
     
     protected boolean messageBusEnabled() { return false; }
