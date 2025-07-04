@@ -9,10 +9,14 @@ import ai.vespa.metricsproxy.http.yamas.YamasHandler;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
+import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames;
 import com.yahoo.vespa.model.container.Container;
@@ -40,6 +44,7 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.g
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getMetricsNodesConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.servicesWithAdminOnly;
+import static com.yahoo.vespa.model.container.ContainerCluster.G1GC;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -129,6 +134,21 @@ public class MetricsProxyContainerClusterTest {
         var accessLog = getAccessLogComponent(hostedModel.getAdmin().getMetricsProxyCluster());
         assertNotNull(accessLog);
         assertEquals("logs/vespa/access/JsonAccessLog.metrics-proxy.%Y%m%d%H%M%S", accessLog.getFileNamePattern());
+    }
+    
+    @Test
+    void configure_jvm_options() {
+        var state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true)).build();
+        var root = new MockRoot("foo", state);
+        var cluster = new MetricsProxyContainerCluster(root, "bar", state);
+        var configBuilder = new QrStartConfig.Builder();
+        cluster.getConfig(configBuilder);
+        var jvm = configBuilder.build().jvm();
+        assertEquals(1, jvm.availableProcessors());
+        assertEquals(256, jvm.minHeapsize());
+        assertEquals(256, jvm.heapsize());
+        assertEquals(0, jvm.heapSizeAsPercentageOfPhysicalMemory());
+        assertEquals(G1GC, jvm.gcopts());
     }
 
     private AccessLogComponent getAccessLogComponent(ContainerCluster<? extends Container> cluster) {
