@@ -560,7 +560,7 @@ TOKEN :
 | < APPROXIMATE_THRESHOLD: "approximate-threshold" >
 | < FILTER_FIRST_THRESHOLD: "filter-first-threshold" >
 | < FILTER_FIRST_EXPLORATION: "filter-first-exploration" >
-| < ADAPTIVE_BEAM_SEARCH_SLACK: "adaptive-beam-search-slack" >
+| < EXPLORATION_SLACK: "exploration-slack" >
 | < TARGET_HITS_MAX_ADJUSTMENT_FACTOR: "target-hits-max-adjustment-factor" >
 | < KEEP_RANK_COUNT: "keep-rank-count" >
 | < RANK_SCORE_DROP_LIMIT: "rank-score-drop-limit" >
@@ -2209,7 +2209,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
        | approximateThreshold(profile)
        | filterFirstThreshold(profile)
        | filterFirstExploration(profile)
-       | adaptiveBeamSearchSlack(profile)
+       | explorationSlack(profile)
        | targetHitsMaxAdjustmentFactor(profile)
        | rankProperties(profile)
        | secondPhase(profile)
@@ -2839,16 +2839,16 @@ void filterFirstExploration(ParsedRankProfile profile) :
 ;
 
 /**
- * This rule consumes an adaptive-beam-search-slack statement for a rank profile.
+ * This rule consumes an exploration-slack statement for a rank profile.
  *
  * @param profile the rank profile to modify
  */
-void adaptiveBeamSearchSlack(ParsedRankProfile profile) :
+void explorationSlack(ParsedRankProfile profile) :
 {
     double slack;
 }
 
-    (<ADAPTIVE_BEAM_SEARCH_SLACK> <COLON> slack = floatValue()) { profile.setAdaptiveBeamSearchSlack(slack); }
+    (<EXPLORATION_SLACK> <COLON> slack = floatValue()) { profile.setExplorationSlack(slack); }
 ;
 
 /**
@@ -3314,7 +3314,6 @@ String identifierWithDashStr :
     ( identifier = identifierStr { return identifier; } )
     |
     ( <IDENTIFIER_WITH_DASH>
-    | <ADAPTIVE_BEAM_SEARCH_SLACK>
     | <ADJUST_TARGET>
     | <ALLOW_DROP_ALL>
     | <APPROXIMATE_THRESHOLD>
@@ -3331,6 +3330,7 @@ String identifierWithDashStr :
     | <EVALUATION_POINT>
     | <EXACT_TERMINATOR>
     | <EXECUTION_MODE>
+    | <EXPLORATION_SLACK>
     | <FAST_ACCESS>
     | <FAST_RANK>
     | <FAST_SEARCH>

@@ -105,7 +105,7 @@ public:
     virtual std::vector<Neighbor> find_top_k(uint32_t k,
                                              const BoundDistanceFunction &df,
                                              uint32_t explore_k,
-                                             double adaptive_beam_search_slack,
+                                             double exploration_slack,
                                              const vespalib::Doom& doom,
                                              double distance_threshold) const = 0;
 
@@ -116,7 +116,7 @@ public:
                                                          bool low_hit_ratio,
                                                          double exploration,
                                                          uint32_t explore_k,
-                                                         double adaptive_beam_search_slack,
+                                                         double exploration_slack,
                                                          const vespalib::Doom& doom,
                                                          double distance_threshold) const = 0;
 

@@ -40,7 +40,7 @@ private:
     double _global_filter_upper_limit;
     double _filter_first_upper_limit;
     double _filter_first_exploration;
-    double _adaptive_beam_search_slack;
+    double _exploration_slack;
     double _target_hits_max_adjustment_factor;
     mutable NearestNeighborDistanceHeap _distance_heap;
     std::vector<search::tensor::NearestNeighborIndex::Neighbor> _found_hits;
@@ -62,7 +62,7 @@ public:
                              double global_filter_upper_limit,
                              double filter_first_upper_limit,
                              double filter_first_exploration,
-                             double adaptive_beam_search_slack,
+                             double exploration_slack,
                              double target_hits_max_adjustment_factor,
                              const vespalib::Doom& doom);
     NearestNeighborBlueprint(const NearestNeighborBlueprint&) = delete;

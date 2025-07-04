@@ -777,7 +777,7 @@ public:
                                                                             params.global_filter_upper_limit,
                                                                             params.filter_first_upper_limit,
                                                                             params.filter_first_exploration,
-                                                                            params.adaptive_beam_search_slack,
+                                                                            params.exploration_slack,
                                                                             params.target_hits_max_adjustment_factor,
                                                                             getRequestContext().getDoom()));
         } catch (const vespalib::IllegalArgumentException& ex) {

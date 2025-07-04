@@ -340,9 +340,10 @@ namespace matching {
     };
 
     /**
-     * Property to control the adaptive-beam-search slack in an HNSW search.
+     * Property to control the slack in an HNSW search. A higher slack results in a higher recall
+     * at the cost of the respone time.
      **/
-    struct AdaptiveBeamSearchSlack {
+    struct ExplorationSlack {
         static const std::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);

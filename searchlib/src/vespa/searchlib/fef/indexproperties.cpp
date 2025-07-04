@@ -524,18 +524,18 @@ FilterFirstExploration::lookup(const Properties &props, double defaultValue)
     return lookupDouble(props, NAME, defaultValue);
 }
 
-const std::string AdaptiveBeamSearchSlack::NAME("vespa.matching.nns.adaptive_beam_search_slack");
+const std::string ExplorationSlack::NAME("vespa.matching.nns.exploration_slack");
 
-const double AdaptiveBeamSearchSlack::DEFAULT_VALUE(0.00);
+const double ExplorationSlack::DEFAULT_VALUE(0.00);
 
 double
-AdaptiveBeamSearchSlack::lookup(const Properties &props)
+ExplorationSlack::lookup(const Properties &props)
 {
     return lookup(props, DEFAULT_VALUE);
 }
 
 double
-AdaptiveBeamSearchSlack::lookup(const Properties &props, double defaultValue)
+ExplorationSlack::lookup(const Properties &props, double defaultValue)
 {
     return lookupDouble(props, NAME, defaultValue);
 }

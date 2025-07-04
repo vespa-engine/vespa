@@ -107,7 +107,7 @@ public class RankProfile implements Cloneable {
     private Double approximateThreshold = null;
     private Double filterFirstThreshold = null;
     private Double filterFirstExploration = null;
-    private Double adaptiveBeamSearchSlack = null;
+    private Double explorationSlack = null;
     private Double targetHitsMaxAdjustmentFactor = null;
     private Double weakandStopwordLimit = null;
     private Boolean weakandAllowDropAll = null;
@@ -796,7 +796,7 @@ public class RankProfile implements Cloneable {
     public void setApproximateThreshold(double threshold) { this.approximateThreshold = threshold; }
     public void setFilterFirstThreshold(double threshold) { this.filterFirstThreshold = threshold; }
     public void setFilterFirstExploration(double exploration) { this.filterFirstExploration = exploration; }
-    public void setAdaptiveBeamSearchSlack(double slack) { this.adaptiveBeamSearchSlack = slack; }
+    public void setExplorationSlack(double slack) { this.explorationSlack = slack; }
     public void setTargetHitsMaxAdjustmentFactor(double factor) { this.targetHitsMaxAdjustmentFactor = factor; }
     public void setWeakandStopwordLimit(double limit) { this.weakandStopwordLimit = limit; }
     public void setWeakandAdjustTarget(double target) { this.weakandAdjustTarget = target; }
@@ -837,11 +837,11 @@ public class RankProfile implements Cloneable {
         return uniquelyInherited(RankProfile::getFilterFirstExploration, OptionalDouble::isPresent, "filter-first-exploration").orElse(OptionalDouble.empty());
     }
 
-    public OptionalDouble getAdaptiveBeamSearchSlack() {
-        if (adaptiveBeamSearchSlack != null) {
-            return OptionalDouble.of(adaptiveBeamSearchSlack);
+    public OptionalDouble getExplorationSlack() {
+        if (explorationSlack != null) {
+            return OptionalDouble.of(explorationSlack);
         }
-        return uniquelyInherited(RankProfile::getAdaptiveBeamSearchSlack, OptionalDouble::isPresent, "adaptive-beam-search-slack").orElse(OptionalDouble.empty());
+        return uniquelyInherited(RankProfile::getExplorationSlack, OptionalDouble::isPresent, "exploration-slack").orElse(OptionalDouble.empty());
     }
 
     public OptionalDouble getTargetHitsMaxAdjustmentFactor() {

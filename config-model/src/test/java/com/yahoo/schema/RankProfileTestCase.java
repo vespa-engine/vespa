@@ -551,15 +551,15 @@ rank-profile feature_logging {
     }
 
     @Test
-    void adaptive_beam_search_slack_is_configurable() throws ParseException {
-        verifyAdaptiveBeamSearchSlack(null);
-        verifyAdaptiveBeamSearchSlack(0.09);
+    void exploration_slack_is_configurable() throws ParseException {
+        verifyExplorationSlack(null);
+        verifyExplorationSlack(0.09);
     }
 
-    private void verifyAdaptiveBeamSearchSlack(Double adaptiveBeamSearchSlack) throws ParseException {
-        var rp = createRankProfile(null, null, null, null, adaptiveBeamSearchSlack, null);
-        verifyRankProfileSetting(rp.getFirst(), rp.getSecond(), RankProfile::getAdaptiveBeamSearchSlack,
-                adaptiveBeamSearchSlack, "vespa.matching.nns.adaptive_beam_search_slack");
+    private void verifyExplorationSlack(Double explorationSlack) throws ParseException {
+        var rp = createRankProfile(null, null, null, null, explorationSlack, null);
+        verifyRankProfileSetting(rp.getFirst(), rp.getSecond(), RankProfile::getExplorationSlack,
+                explorationSlack, "vespa.matching.nns.exploration_slack");
     }
 
     @Test
@@ -741,9 +741,9 @@ rank-profile feature_logging {
                                                                 Double approximateThreshold,
                                                                 Double filterFirstThreshold,
                                                                 Double filterFirstExploration,
-                                                                Double adaptiveBeamSearchSlack,
+                                                                Double explorationSlack,
                                                                 Double targetHitsMaxAdjustmentFactor) throws ParseException {
-        return createRankProfile(createSDWithRankProfile(postFilterThreshold, approximateThreshold, filterFirstThreshold, filterFirstExploration, adaptiveBeamSearchSlack, targetHitsMaxAdjustmentFactor, null, null, null, null));
+        return createRankProfile(createSDWithRankProfile(postFilterThreshold, approximateThreshold, filterFirstThreshold, filterFirstExploration, explorationSlack, targetHitsMaxAdjustmentFactor, null, null, null, null));
     }
 
     private Pair<RankProfile, RawRankProfile> createWeakandRankProfile(Double weakAndStopwordLimit,
@@ -771,7 +771,7 @@ rank-profile feature_logging {
                                            Double approximateThreshold,
                                            Double filterFirstThreshold,
                                            Double filterFirstExploration,
-                                           Double adaptiveBeamSearchSlack,
+                                           Double explorationSlack,
                                            Double targetHitsMaxAdjustmentFactor,
                                            Double weakandStopwordLimit,
                                            Boolean weakandAllowDropAll,
@@ -785,7 +785,7 @@ rank-profile feature_logging {
                 (approximateThreshold != null ?          ("        approximate-threshold: " + approximateThreshold) : ""),
                 (filterFirstThreshold != null ?          ("        filter-first-threshold: " + filterFirstThreshold) : ""),
                 (filterFirstExploration != null  ?       ("        filter-first-exploration: " + filterFirstExploration) : ""),
-                (adaptiveBeamSearchSlack != null ?       ("        adaptive-beam-search-slack: " + adaptiveBeamSearchSlack) : ""),
+                (explorationSlack != null ?              ("        exploration-slack: " + explorationSlack) : ""),
                 (targetHitsMaxAdjustmentFactor != null ? ("        target-hits-max-adjustment-factor: " + targetHitsMaxAdjustmentFactor) : ""),
                 (weakandStopwordLimit != null ?          ("        weakand { stopword-limit: " + weakandStopwordLimit + "}") : ""),
                 (weakandAllowDropAll != null ?           ("        weakand { allow-drop-all: " + weakandAllowDropAll + "}") : ""),
