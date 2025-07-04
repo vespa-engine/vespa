@@ -278,7 +278,7 @@ public:
 
     DistanceFunctionFactory &distance_function_factory() const override { return *_distance_ff; }
 
-    SearchBestNeighbors top_k_candidates(const BoundDistanceFunction &df, uint32_t k, const GlobalFilter *filter, bool low_hit_ratio, double exploration,
+    SearchBestNeighbors top_k_candidates(const BoundDistanceFunction &df, uint32_t k, double adaptive_beam_search_slack, const GlobalFilter *filter, bool low_hit_ratio, double exploration,
                                          const vespalib::Doom& doom) const;
 
     uint32_t get_entry_nodeid() const { return _graph.get_entry_node().nodeid; }

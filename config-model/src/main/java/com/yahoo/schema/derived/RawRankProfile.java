@@ -506,6 +506,7 @@ public class RawRankProfile {
             }
             if (filterFirstExploration.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.nns.filter_first_exploration", String.valueOf(filterFirstExploration.getAsDouble())));
+            }
             if (adaptiveBeamSearchSlack.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.nns.adaptive_beam_search_slack", String.valueOf(adaptiveBeamSearchSlack.getAsDouble())));
             }
