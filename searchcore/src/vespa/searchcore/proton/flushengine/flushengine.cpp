@@ -57,6 +57,12 @@ logTarget(const char * text, const FlushContext & ctx) {
         ctx.getHandler()->getCurrentSerialNumber());
 }
 
+bool
+reuse_strategy(const IFlushStrategy& old_strategy, const IFlushStrategy& strategy) {
+    return (old_strategy.name() == strategy.name() ||
+            (old_strategy.name() == "flush_all" && strategy.name() == "prepare_restart"));
+}
+
 VESPA_THREAD_STACK_TAG(flush_engine_executor)
 
 }
@@ -98,6 +104,7 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
       _has_thread(false),
       _strategy(std::move(strategy)),
       _priorityStrategy(),
+      _priority_strategy_queue(),
       _strategy_id(duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count()),
       _executor(maxConcurrentTotal(), CpuUsage::wrap(flush_engine_executor, CpuUsage::Category::COMPACT)),
       _lock(),
@@ -107,7 +114,6 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
       _flushing_strategies(),
       _setStrategyLock(),
       _strategyLock(),
-      _strategyCond(),
       _strategy_changed(false),
       _lowest_strategy_id_notifier(std::make_shared<FlushStrategyIdNotifier>(_strategy_id)),
       _tlsStatsFactory(std::move(tlsStatsFactory)),
@@ -487,7 +493,10 @@ FlushEngine::flushAll(const FlushContext::List &lst, uint32_t strategy_id)
     std::lock_guard<std::mutex> strategyGuard(_strategyLock);
     _strategy_changed = true;
     _priorityStrategy.reset();
-    _strategyCond.notify_all();
+    if (!_priority_strategy_queue.empty()) {
+        _priorityStrategy = _priority_strategy_queue.front();
+        _priority_strategy_queue.pop_front();
+    }
 }
 
 std::string
@@ -633,6 +642,47 @@ FlushEngine::initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP 
     return taskId;
 }
 
+uint32_t
+FlushEngine::set_strategy_helper(std::shared_ptr<IFlushStrategy> strategy, std::unique_lock<std::mutex>& strategy_guard)
+{
+    (void) strategy_guard;
+    bool need_wakeup = false;
+    uint32_t wait_strategy_id = _strategy_id;
+    if (!_priorityStrategy) {
+        _priorityStrategy = std::move(strategy);
+        wait_strategy_id += 2u; // switch to strategy then to next one
+        _strategy_changed = true;
+        need_wakeup = true;
+    } else {
+        if (_strategy_changed) {
+            wait_strategy_id += 1u; // Account for maybe_apply_changed_strategy detecting switch to _priorityStrategy
+        }
+        // wait_strategy_id is now the strategy id for _priorityStrategy
+        if (reuse_strategy(*_priorityStrategy, *strategy)) {
+            // Reuse _priorityStrategy
+            wait_strategy_id += 1u;
+        } else {
+            uint32_t idx = 0;
+            for (auto& old_strategy : _priority_strategy_queue) {
+                if (reuse_strategy(*old_strategy, *strategy)) {
+                    break;
+                }
+                ++idx;
+            }
+            if (idx >= _priority_strategy_queue.size()) {
+                _priority_strategy_queue.push_back(std::move(strategy));
+            }
+            // switch to idx non-reused strategies then (possibly reused) strategy, then next one
+            wait_strategy_id += idx + 2u;
+        }
+    }
+    if (need_wakeup) {
+        std::lock_guard<std::mutex> guard(_lock);
+        _cond.notify_all();
+    }
+    return wait_strategy_id;
+}
+
 void
 FlushEngine::setStrategy(IFlushStrategy::SP strategy)
 {
@@ -643,17 +693,7 @@ FlushEngine::setStrategy(IFlushStrategy::SP strategy)
         std::unique_lock guard(_lock);
         return;
     }
-    assert(!_priorityStrategy);
-    _priorityStrategy = std::move(strategy);
-    _strategy_changed = true;
-    uint32_t wait_strategy_id = _strategy_id + 2u;
-    {
-        std::lock_guard<std::mutex> guard(_lock);
-        _cond.notify_all();
-    }
-    while (_priorityStrategy) {
-        _strategyCond.wait(strategyGuard);
-    }
+    uint32_t wait_strategy_id = set_strategy_helper(std::move(strategy), strategyGuard);
     strategyGuard.unlock();
     /*
      * Wait for flushes started before the strategy change, for
