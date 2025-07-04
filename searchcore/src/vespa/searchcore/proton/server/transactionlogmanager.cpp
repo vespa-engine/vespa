@@ -4,6 +4,7 @@
 #include "configstore.h"
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
+#include <vespa/searchcore/proton/common/memory_usage_logger.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <cassert>
 
@@ -137,6 +138,8 @@ TransactionLogManager::startReplay(SerialNum first,
     if (LOG_WOULD_LOG(event)) {
         EventLogger::transactionLogReplayStart(
                 getDomainName(), first, syncToken);
+        MemoryUsageLogger::log("start replay transactionlog",
+            getDomainName() + "[" + std::to_string(first) + ", " + std::to_string(syncToken) +")");
     }
     if (!_visitor->visit(first, syncToken)) {
         throw IllegalStateException(

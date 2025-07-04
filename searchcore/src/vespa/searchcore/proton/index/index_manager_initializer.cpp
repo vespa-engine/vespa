@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "index_manager_initializer.h"
+#include <vespa/searchcore/proton/common/memory_usage_logger.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <filesystem>
 
@@ -45,9 +46,11 @@ IndexManagerInitializer::run()
     LOG(debug, "About to create proton::IndexManager with %u index field(s)", _schema.getNumIndexFields());
     std::filesystem::create_directory(std::filesystem::path(_baseDir));
     vespalib::File::sync(vespalib::dirname(_baseDir));
+    MemoryUsageLogger::log("start load disk index", _baseDir);
     *_indexManager = std::make_shared<index::IndexManager>
                     (_baseDir, _posting_list_cache, _indexConfig, _schema, _serialNum, _reconfigurer, _threadingService,
                      _warmupExecutor, _tuneFileIndexManager, _tuneFileAttributes, _fileHeaderContext);
+    MemoryUsageLogger::log("finish load disk index", _baseDir);
 }
 
 

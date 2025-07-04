@@ -9,6 +9,7 @@
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
+#include <vespa/searchcore/proton/common/memory_usage_logger.h>
 #include <vespa/searchcore/proton/common/replay_feed_token_factory.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/lambdatask.h>
@@ -46,6 +47,7 @@ handleProgress(TlsReplayProgress &progress, SerialNum currentSerial)
                                                   progress.getFirst(),
                                                   progress.getLast(),
                                                   progress.getCurrent());
+        MemoryUsageLogger::log("progress replay transactionlog", progress.getDomainName() + " " + std::to_string(progress.getProgress()));
     }
 }
 
