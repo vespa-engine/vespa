@@ -525,7 +525,7 @@ rank-profile feature_logging {
     }
 
     private void verifyApproximateNearestNeighborThresholdSettings(Double postFilterThreshold, Double approximateThreshold, Double filterFirstThreshold) throws ParseException {
-        var rp = createRankProfile(postFilterThreshold, approximateThreshold, filterFirstThreshold, null, null);
+        var rp = createRankProfile(postFilterThreshold, approximateThreshold, filterFirstThreshold, null, null, null);
         var rankProfile = rp.getFirst();
         var rawRankProfile = rp.getSecond();
         verifyRankProfileSetting(rankProfile, rawRankProfile, RankProfile::getPostFilterThreshold,
@@ -543,11 +543,23 @@ rank-profile feature_logging {
     }
 
     private void verifyFilterFirstExploration(Double filterFirstExploration) throws ParseException {
-        var rp = createRankProfile(null, null, null, filterFirstExploration, null);
+        var rp = createRankProfile(null, null, null, filterFirstExploration, null, null);
         var rankProfile = rp.getFirst();
         var rawRankProfile = rp.getSecond();
         verifyRankProfileSetting(rankProfile, rawRankProfile, RankProfile::getFilterFirstExploration,
                                  filterFirstExploration, "vespa.matching.nns.filter_first_exploration");
+    }
+
+    @Test
+    void exploration_slack_is_configurable() throws ParseException {
+        verifyExplorationSlack(null);
+        verifyExplorationSlack(0.09);
+    }
+
+    private void verifyExplorationSlack(Double explorationSlack) throws ParseException {
+        var rp = createRankProfile(null, null, null, null, explorationSlack, null);
+        verifyRankProfileSetting(rp.getFirst(), rp.getSecond(), RankProfile::getExplorationSlack,
+                explorationSlack, "vespa.matching.nns.exploration_slack");
     }
 
     @Test
@@ -557,7 +569,7 @@ rank-profile feature_logging {
     }
 
     private void verifyTargetHitsMaxAdjustmentFactor(Double targetHitsMaxAdjustmentFactor) throws ParseException {
-        var rp = createRankProfile(null, null, null, null, targetHitsMaxAdjustmentFactor);
+        var rp = createRankProfile(null, null, null, null, null, targetHitsMaxAdjustmentFactor);
         verifyRankProfileSetting(rp.getFirst(), rp.getSecond(), RankProfile::getTargetHitsMaxAdjustmentFactor,
                                  targetHitsMaxAdjustmentFactor, "vespa.matching.nns.target_hits_max_adjustment_factor");
     }
@@ -606,7 +618,7 @@ rank-profile feature_logging {
     }
 
     private void verifyFilterThreshold(Double threshold) throws ParseException {
-        var rp = createRankProfile(createSDWithRankProfile(null, null, null, null, null, null, null, null, threshold));
+        var rp = createRankProfile(createSDWithRankProfile(null, null, null, null, null, null, null, null, null, threshold));
         verifyRankProfileSetting(rp.getFirst(), rp.getSecond(), RankProfile::getFilterThreshold,
                 threshold, "vespa.matching.filter_threshold");
     }
@@ -729,14 +741,15 @@ rank-profile feature_logging {
                                                                 Double approximateThreshold,
                                                                 Double filterFirstThreshold,
                                                                 Double filterFirstExploration,
+                                                                Double explorationSlack,
                                                                 Double targetHitsMaxAdjustmentFactor) throws ParseException {
-        return createRankProfile(createSDWithRankProfile(postFilterThreshold, approximateThreshold, filterFirstThreshold, filterFirstExploration, targetHitsMaxAdjustmentFactor, null, null, null, null));
+        return createRankProfile(createSDWithRankProfile(postFilterThreshold, approximateThreshold, filterFirstThreshold, filterFirstExploration, explorationSlack, targetHitsMaxAdjustmentFactor, null, null, null, null));
     }
 
     private Pair<RankProfile, RawRankProfile> createWeakandRankProfile(Double weakAndStopwordLimit,
                                                                        Boolean allowDropAll,
                                                                        Double weakAndAdjustTarget) throws ParseException {
-        return createRankProfile(createSDWithRankProfile(null, null, null, null,  null, weakAndStopwordLimit, allowDropAll, weakAndAdjustTarget, null));
+        return createRankProfile(createSDWithRankProfile(null, null, null, null,  null, null, weakAndStopwordLimit, allowDropAll, weakAndAdjustTarget, null));
     }
 
     private Pair<RankProfile, RawRankProfile> createRankProfile(String schemaContent) throws ParseException {
@@ -758,6 +771,7 @@ rank-profile feature_logging {
                                            Double approximateThreshold,
                                            Double filterFirstThreshold,
                                            Double filterFirstExploration,
+                                           Double explorationSlack,
                                            Double targetHitsMaxAdjustmentFactor,
                                            Double weakandStopwordLimit,
                                            Boolean weakandAllowDropAll,
@@ -771,6 +785,7 @@ rank-profile feature_logging {
                 (approximateThreshold != null ?          ("        approximate-threshold: " + approximateThreshold) : ""),
                 (filterFirstThreshold != null ?          ("        filter-first-threshold: " + filterFirstThreshold) : ""),
                 (filterFirstExploration != null  ?       ("        filter-first-exploration: " + filterFirstExploration) : ""),
+                (explorationSlack != null ?              ("        exploration-slack: " + explorationSlack) : ""),
                 (targetHitsMaxAdjustmentFactor != null ? ("        target-hits-max-adjustment-factor: " + targetHitsMaxAdjustmentFactor) : ""),
                 (weakandStopwordLimit != null ?          ("        weakand { stopword-limit: " + weakandStopwordLimit + "}") : ""),
                 (weakandAllowDropAll != null ?           ("        weakand { allow-drop-all: " + weakandAllowDropAll + "}") : ""),

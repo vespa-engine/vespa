@@ -66,6 +66,7 @@ public class ParsedRankingConverter {
         parsed.getApproximateThreshold().ifPresent(profile::setApproximateThreshold);
         parsed.getFilterFirstThreshold().ifPresent(profile::setFilterFirstThreshold);
         parsed.getFilterFirstExploration().ifPresent(profile::setFilterFirstExploration);
+        parsed.getExplorationSlack().ifPresent(profile::setExplorationSlack);
         parsed.getTargetHitsMaxAdjustmentFactor().ifPresent(profile::setTargetHitsMaxAdjustmentFactor);
         parsed.getWeakandStopwordLimit().ifPresent(profile::setWeakandStopwordLimit);
         parsed.getWeakandAllowDropAll().ifPresent(profile::setWeakandAllowDropAll);

@@ -172,6 +172,7 @@ public class RawRankProfile {
         private final OptionalDouble approximateThreshold;
         private final OptionalDouble filterFirstThreshold;
         private final OptionalDouble filterFirstExploration;
+        private final OptionalDouble explorationSlack;
         private final OptionalDouble targetHitsMaxAdjustmentFactor;
         private final OptionalDouble weakandStopwordLimit;
         private final Boolean weakandAllowDropAll;
@@ -230,6 +231,7 @@ public class RawRankProfile {
             approximateThreshold = compiled.getApproximateThreshold();
             filterFirstThreshold = compiled.getFilterFirstThreshold();
             filterFirstExploration = compiled.getFilterFirstExploration();
+            explorationSlack = compiled.getExplorationSlack();
             targetHitsMaxAdjustmentFactor = compiled.getTargetHitsMaxAdjustmentFactor();
             weakandStopwordLimit = compiled.getWeakandStopwordLimit();
             weakandAdjustTarget = compiled.getWeakandAdjustTarget();
@@ -504,6 +506,9 @@ public class RawRankProfile {
             }
             if (filterFirstExploration.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.nns.filter_first_exploration", String.valueOf(filterFirstExploration.getAsDouble())));
+            }
+            if (explorationSlack.isPresent()) {
+                properties.add(new Pair<>("vespa.matching.nns.exploration_slack", String.valueOf(explorationSlack.getAsDouble())));
             }
             if (targetHitsMaxAdjustmentFactor.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.nns.target_hits_max_adjustment_factor", String.valueOf(targetHitsMaxAdjustmentFactor.getAsDouble())));

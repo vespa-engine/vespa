@@ -524,6 +524,21 @@ FilterFirstExploration::lookup(const Properties &props, double defaultValue)
     return lookupDouble(props, NAME, defaultValue);
 }
 
+const std::string ExplorationSlack::NAME("vespa.matching.nns.exploration_slack");
+
+const double ExplorationSlack::DEFAULT_VALUE(0.00);
+
+double
+ExplorationSlack::lookup(const Properties &props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+double
+ExplorationSlack::lookup(const Properties &props, double defaultValue)
+{
+    return lookupDouble(props, NAME, defaultValue);
+}
 
 const std::string TargetHitsMaxAdjustmentFactor::NAME("vespa.matching.nns.target_hits_max_adjustment_factor");
 
