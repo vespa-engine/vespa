@@ -16,7 +16,6 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
@@ -28,7 +27,6 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -64,7 +62,6 @@ public class ModelContextImplTest {
                         ApplicationId.defaultId(),
                         Version.emptyVersion,
                         configserverConfig,
-                        Zone.defaultZone(),
                         endpoints,
                         false,
                         false,
@@ -90,7 +87,6 @@ public class ModelContextImplTest {
         assertEquals(ApplicationId.defaultId(), context.properties().applicationId());
         assertTrue(context.properties().configServerSpecs().isEmpty());
         assertTrue(context.properties().multitenant());
-        assertNotNull(context.properties().zone());
         assertFalse(context.properties().hostedVespa());
         assertEquals(endpoints, context.properties().endpoints());
         assertFalse(context.properties().isFirstTimeDeployment());

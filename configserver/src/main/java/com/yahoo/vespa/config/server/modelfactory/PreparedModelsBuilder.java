@@ -210,7 +210,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         return new ModelContextImpl.Properties(params.getApplicationId(),
                                                modelVersion,
                                                configserverConfig,
-                                               zone(),
                                                Set.copyOf(containerEndpoints),
                                                params.isBootstrap(),
                                                activeApplicationVersions.isEmpty(),
