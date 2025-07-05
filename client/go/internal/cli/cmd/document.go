@@ -30,8 +30,8 @@ func addDocumentFlags(cli *CLI, cmd *cobra.Command, printCurl *bool, timeoutSecs
 	cli.bindWaitFlag(cmd, 0, waitSecs)
 }
 
-func documentClient(cli *CLI, timeoutSecs int, waiter *Waiter, printCurl bool, headers []string) (*document.Client, *vespa.Service, error) {
-	docService, err := documentService(cli, waiter)
+func documentClient(cli *CLI, timeoutSecs int, waiter *Waiter, printCurl bool, headers []string, targetFlags *TargetFlags) (*document.Client, *vespa.Service, error) {
+	docService, err := documentService(cli, waiter, targetFlags)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -64,8 +64,8 @@ func documentClient(cli *CLI, timeoutSecs int, waiter *Waiter, printCurl bool, h
 	return client, docService, nil
 }
 
-func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI, headers []string, data string) error {
-	client, service, err := documentClient(cli, timeoutSecs, waiter, printCurl, headers)
+func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI, headers []string, data string, targetFlags *TargetFlags) error {
+	client, service, err := documentClient(cli, timeoutSecs, waiter, printCurl, headers, targetFlags)
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter
 	return printResult(cli, operationResult(false, doc, service, result), false)
 }
 
-func readDocuments(ids []string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI, fieldSet string, headers []string, ignoreNotFound bool) error {
+func readDocuments(ids []string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI, fieldSet string, headers []string, ignoreNotFound bool, targetFlags *TargetFlags) error {
 	parsedIds := make([]document.Id, 0, len(ids))
 	for _, id := range ids {
 		parsedId, err := document.ParseId(id)
@@ -144,7 +144,7 @@ func readDocuments(ids []string, timeoutSecs int, waiter *Waiter, printCurl bool
 		parsedIds = append(parsedIds, parsedId)
 	}
 
-	client, service, err := documentClient(cli, timeoutSecs, waiter, printCurl, headers)
+	client, service, err := documentClient(cli, timeoutSecs, waiter, printCurl, headers, targetFlags)
 	if err != nil {
 		return err
 	}
@@ -188,6 +188,7 @@ func newDocumentCmd(cli *CLI) *cobra.Command {
 		headers     []string
 		data        string
 	)
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "document json-file",
 		Short: "Issue a single document operation to Vespa",
@@ -208,9 +209,10 @@ should be used instead of this.`,
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
-			return sendOperation(-1, args, timeoutSecs, waiter, printCurl, cli, headers, data)
+			return sendOperation(-1, args, timeoutSecs, waiter, printCurl, cli, headers, data, targetFlags)
 		},
 	}
+	targetFlags.AddFlags(cmd)
 	addDocumentFlags(cli, cmd, &printCurl, &timeoutSecs, &waitSecs, &headers, &data)
 	return cmd
 }
@@ -223,6 +225,7 @@ func newDocumentPutCmd(cli *CLI) *cobra.Command {
 		headers     []string
 		data        string
 	)
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "put [id] json-file",
 		Short: "Writes a document to Vespa",
@@ -241,9 +244,10 @@ $ vespa document put id:mynamespace:music::a-head-full-of-dreams --data '{"field
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
-			return sendOperation(document.OperationPut, args, timeoutSecs, waiter, printCurl, cli, headers, data)
+			return sendOperation(document.OperationPut, args, timeoutSecs, waiter, printCurl, cli, headers, data, targetFlags)
 		},
 	}
+	targetFlags.AddFlags(cmd)
 	addDocumentFlags(cli, cmd, &printCurl, &timeoutSecs, &waitSecs, &headers, &data)
 	return cmd
 }
@@ -256,6 +260,7 @@ func newDocumentUpdateCmd(cli *CLI) *cobra.Command {
 		headers     []string
 		data        string
 	)
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "update [id] json-file",
 		Short: "Modifies some fields of an existing document",
@@ -268,9 +273,10 @@ $ vespa document update id:mynamespace:music::a-head-full-of-dreams src/test/res
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
-			return sendOperation(document.OperationUpdate, args, timeoutSecs, waiter, printCurl, cli, headers, data)
+			return sendOperation(document.OperationUpdate, args, timeoutSecs, waiter, printCurl, cli, headers, data, targetFlags)
 		},
 	}
+	targetFlags.AddFlags(cmd)
 	addDocumentFlags(cli, cmd, &printCurl, &timeoutSecs, &waitSecs, &headers, &data)
 	return cmd
 }
@@ -283,6 +289,7 @@ func newDocumentRemoveCmd(cli *CLI) *cobra.Command {
 		headers     []string
 		data        string
 	)
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "remove id | json-file",
 		Short: "Removes a document from Vespa",
@@ -296,7 +303,7 @@ $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
 			if strings.HasPrefix(args[0], "id:") {
-				client, service, err := documentClient(cli, timeoutSecs, waiter, printCurl, headers)
+				client, service, err := documentClient(cli, timeoutSecs, waiter, printCurl, headers, targetFlags)
 				if err != nil {
 					return err
 				}
@@ -308,10 +315,11 @@ $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
 				result := client.Send(doc)
 				return printResult(cli, operationResult(false, doc, service, result), false)
 			} else {
-				return sendOperation(document.OperationRemove, args, timeoutSecs, waiter, printCurl, cli, headers, data)
+				return sendOperation(document.OperationRemove, args, timeoutSecs, waiter, printCurl, cli, headers, data, targetFlags)
 			}
 		},
 	}
+	targetFlags.AddFlags(cmd)
 	addDocumentFlags(cli, cmd, &printCurl, &timeoutSecs, &waitSecs, &headers, &data)
 	return cmd
 }
@@ -326,6 +334,7 @@ func newDocumentGetCmd(cli *CLI) *cobra.Command {
 		headers        []string
 		data           string
 	)
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:               "get id(s)",
 		Short:             "Gets one or more documents",
@@ -336,22 +345,23 @@ func newDocumentGetCmd(cli *CLI) *cobra.Command {
 $ vespa document get id:mynamespace:music::song-1 id:mynamespace:music::song-2`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
-			return readDocuments(args, timeoutSecs, waiter, printCurl, cli, fieldSet, headers, ignoreNotFound)
+			return readDocuments(args, timeoutSecs, waiter, printCurl, cli, fieldSet, headers, ignoreNotFound, targetFlags)
 		},
 	}
+	targetFlags.AddFlags(cmd)
 	cmd.Flags().StringVar(&fieldSet, "field-set", "", "Fields to include when reading document")
 	cmd.Flags().BoolVar(&ignoreNotFound, "ignore-missing", false, "Do not treat non-existent document as an error")
 	addDocumentFlags(cli, cmd, &printCurl, &timeoutSecs, &waitSecs, &headers, &data)
 	return cmd
 }
 
-func documentService(cli *CLI, waiter *Waiter) (*vespa.Service, error) {
-	target, err := cli.target(targetOptions{})
+func documentService(cli *CLI, waiter *Waiter, targetFlags *TargetFlags) (*vespa.Service, error) {
+	target, err := targetFlags.GetTarget(anyTarget)
 	if err != nil {
 		return nil, err
 	}
 	authMethod := cli.selectAuthMethod()
-	return waiter.ServiceWithAuthMethod(target, cli.config.cluster(), authMethod)
+	return waiter.ServiceWithAuthMethod(target, targetFlags.Cluster(), authMethod)
 }
 
 func printResult(cli *CLI, result OperationResult, payloadOnlyOnSuccess bool) error {
