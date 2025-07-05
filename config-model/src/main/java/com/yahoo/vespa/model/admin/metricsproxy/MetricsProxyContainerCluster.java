@@ -107,7 +107,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
         setJvmGCOptions(deployState.getProperties().jvmGCOptions(
                 Optional.of(ClusterSpec.Type.admin),
-                Optional.of(ClusterSpec.Id.from("metrics-proxy"))
+                Optional.of(ClusterSpec.Id.from(name))
         ));
         
         if (isHostedVespa())
