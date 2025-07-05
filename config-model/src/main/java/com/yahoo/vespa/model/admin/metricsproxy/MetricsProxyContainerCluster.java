@@ -24,6 +24,7 @@ import ai.vespa.metricsproxy.service.SystemPollerProvider;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.osgi.provider.model.ComponentModel;
@@ -103,6 +104,12 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
         addPlatformBundle(METRICS_PROXY_BUNDLE_FILE);
         addClusterComponents();
+
+        setJvmGCOptions(deployState.getProperties().jvmGCOptions(
+                Optional.of(ClusterSpec.Type.admin),
+                Optional.of(ClusterSpec.Id.from("metrics-proxy"))
+        ));
+        
         if (isHostedVespa())
             addAccessLog("metrics-proxy");
     }
