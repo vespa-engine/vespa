@@ -328,7 +328,4 @@
             </plugin>
         </plugins>
     </build>
-    <properties>
-        <test.hide>false</test.hide>
-    </properties>
 </project>
