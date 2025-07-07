@@ -137,7 +137,7 @@ private:
     bool isFlushing(const std::lock_guard<std::mutex> &guard, const std::string & name) const;
     std::string checkAndFlush(std::string prev);
     bool is_closed() const noexcept { return _closed.load(std::memory_order_relaxed); }
-    uint32_t set_strategy_helper(std::shared_ptr<IFlushStrategy> strategy, std::unique_lock<std::mutex>& strategy_guard);
+    uint32_t set_strategy_helper(std::shared_ptr<IFlushStrategy> strategy);
 
     friend class FlushTask;
     friend class FlushEngineExplorer;

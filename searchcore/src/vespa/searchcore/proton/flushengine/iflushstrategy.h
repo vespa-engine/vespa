@@ -16,6 +16,8 @@ class TlsStatsMap;
  * when and what to flush.
  */
 class IFlushStrategy {
+protected:
+    uint32_t _id;
 public:
     using SP = std::shared_ptr<IFlushStrategy>;
 
@@ -36,8 +38,13 @@ public:
                                                const flushengine::TlsStatsMap& tlsStatsMap,
                                                const flushengine::ActiveFlushStats& active_flushes) const = 0;
     virtual std::string name() const = 0;
+    void set_id(uint32_t id) noexcept { _id = id; }
+    uint32_t get_id() const noexcept { return _id; }
+
 protected:
-    IFlushStrategy() = default;
+    IFlushStrategy()
+        : _id(0u)
+    {}
 };
 
 }
