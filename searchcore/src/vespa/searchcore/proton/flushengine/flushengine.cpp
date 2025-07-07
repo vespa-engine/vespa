@@ -357,9 +357,15 @@ FlushEngine::maybe_apply_changed_strategy(std::vector<uint32_t>& strategy_ids_fo
     _strategy_changed = false;
     strategy_ids_for_finished_flushes.emplace_back(_strategy_id);
     auto strategy_name = _priorityStrategy ? _priorityStrategy->name() : _strategy->name();
-    bool priority_strategy = static_cast<bool>(_priorityStrategy);
+    bool priority_strategy = false;
+    if (_priorityStrategy) {
+        priority_strategy = true;
+        _strategy_id = _priorityStrategy->get_id();
+    } else {
+        ++_strategy_id;
+    }
     _flush_history->clear_pending_flushes();
-    _flush_history->set_strategy(std::move(strategy_name), ++_strategy_id, priority_strategy);
+    _flush_history->set_strategy(std::move(strategy_name), _strategy_id, priority_strategy);
     std::lock_guard guard(_lock);
     auto it = _flushing_strategies.lower_bound(_strategy_id);
     assert(it == _flushing_strategies.end());
@@ -649,44 +655,38 @@ FlushEngine::initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP 
 }
 
 uint32_t
-FlushEngine::set_strategy_helper(std::shared_ptr<IFlushStrategy> strategy, std::unique_lock<std::mutex>& strategy_guard)
+FlushEngine::set_strategy_helper(std::shared_ptr<IFlushStrategy> strategy)
 {
-    (void) strategy_guard;
-    bool need_wakeup = false;
-    uint32_t wait_strategy_id = _strategy_id;
-    if (!_priorityStrategy) {
-        _priorityStrategy = std::move(strategy);
-        wait_strategy_id += 2u; // switch to strategy then to next one
-        _strategy_changed = true;
-        need_wakeup = true;
-    } else {
-        if (_strategy_changed) {
-            wait_strategy_id += 1u; // Account for maybe_apply_changed_strategy detecting switch to _priorityStrategy
-        }
-        // wait_strategy_id is now the strategy id for _priorityStrategy
-        if (reuse_strategy(*_priorityStrategy, *strategy)) {
-            // Reuse _priorityStrategy
-            wait_strategy_id += 1u;
-        } else {
-            uint32_t idx = 0;
-            for (auto& old_strategy : _priority_strategy_queue) {
-                if (reuse_strategy(*old_strategy, *strategy)) {
-                    break;
-                }
-                ++idx;
-            }
-            if (idx >= _priority_strategy_queue.size()) {
-                _priority_strategy_queue.push_back(std::move(strategy));
-            }
-            // switch to idx non-reused strategies then (possibly reused) strategy, then next one
-            wait_strategy_id += idx + 2u;
-        }
+    std::lock_guard strategy_guard(_strategyLock);
+    if (is_closed()) {
+        std::unique_lock guard(_lock);
+        return 0u; // Set strategy failed due to flush engine being closed.
     }
-    if (need_wakeup) {
+    if (!_priorityStrategy) {
+        strategy->set_id(_strategy_id + 1u);
+        _priorityStrategy = std::move(strategy);
+        _strategy_changed = true;
         std::lock_guard<std::mutex> guard(_lock);
         _cond.notify_all();
+        return _priorityStrategy->get_id() + 1u; // switch to strategy then to next one
+    } else {
+        // wait_strategy_id is now the strategy id for _priorityStrategy
+        if (reuse_strategy(*_priorityStrategy, *strategy)) {
+            return _priorityStrategy->get_id() + 1u;
+        } else {
+            for (auto& old_strategy : _priority_strategy_queue) {
+                if (reuse_strategy(*old_strategy, *strategy)) {
+                    return old_strategy->get_id() + 1u;
+                }
+            }
+            strategy->set_id((_priority_strategy_queue.empty() ?
+                              _priorityStrategy->get_id() :
+                              _priority_strategy_queue.back()->get_id()) + 1u);
+            _priority_strategy_queue.push_back(std::move(strategy));
+            // switch to queued strategies then next one
+            return _priority_strategy_queue.back()->get_id() + 1;
+        }
     }
-    return wait_strategy_id;
 }
 
 void
@@ -694,19 +694,15 @@ FlushEngine::setStrategy(IFlushStrategy::SP strategy)
 {
     auto notifier = _lowest_strategy_id_notifier;
     std::lock_guard<std::mutex> setStrategyGuard(_setStrategyLock);
-    std::unique_lock<std::mutex> strategyGuard(_strategyLock);
-    if (is_closed()) {
-        std::unique_lock guard(_lock);
-        return;
-    }
-    uint32_t wait_strategy_id = set_strategy_helper(std::move(strategy), strategyGuard);
-    strategyGuard.unlock();
+    uint32_t wait_strategy_id = set_strategy_helper(std::move(strategy));
     /*
      * Wait for flushes started before the strategy change, for
      * flushes initiated by the strategy, and for flush engine to call
      * prune() afterwards.
      */
-    notifier->wait_ge_strategy_id(wait_strategy_id);
+    if (wait_strategy_id != 0u) {
+        notifier->wait_ge_strategy_id(wait_strategy_id);
+    }
 }
 
 } // namespace proton
