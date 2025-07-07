@@ -59,6 +59,12 @@ logTarget(const char * text, const FlushContext & ctx) {
 
 bool
 reuse_strategy(const IFlushStrategy& old_strategy, const IFlushStrategy& strategy) {
+    /*
+     * If same strategy is already active or queued then reuse it instead of enqueueing a new one.
+     * FlushAllStrategy (with name "flush_all") flushes all targets and is thus a superset of
+     * PrepareRestartFlushStrategy (with name "prepare_restart"). If the former is active or queued then
+     * don't enqueue the latter.
+     */
     return (old_strategy.name() == strategy.name() ||
             (old_strategy.name() == "flush_all" && strategy.name() == "prepare_restart"));
 }
