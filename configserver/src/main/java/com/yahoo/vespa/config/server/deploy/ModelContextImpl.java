@@ -459,8 +459,8 @@ public class ModelContextImpl implements ModelContext {
             return tenantSecretStores;
         }
 
-        @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType) {
-            return flagValueForClusterType(jvmGCOptionsFlag, clusterType);
+        @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId) {
+            return flagValueForClusterTypeAndClusterId(jvmGCOptionsFlag, clusterType, clusterId);
         }
 
         @Override public int searchNodeInitializerThreads(String clusterId) {
@@ -479,10 +479,14 @@ public class ModelContextImpl implements ModelContext {
 
         @Override public List<String> tlsCiphersOverride() { return tlsCiphersOverride; }
 
-        public String flagValueForClusterType(StringFlag flag, Optional<ClusterSpec.Type> clusterType) {
-            return clusterType.map(type -> flag.with(CLUSTER_TYPE, type.name()))
-                              .orElse(flag)
-                              .value();
+        public String flagValueForClusterTypeAndClusterId(StringFlag flag, Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId) {
+            var flagWithClusterType =  clusterType.map(type -> flag.with(CLUSTER_TYPE, type.name()))
+                    .orElse(flag);
+            
+            var flagWithContainerId = clusterId.map(id -> flagWithClusterType.with(CLUSTER_ID, id.value()))
+                    .orElse(flagWithClusterType);
+            
+            return flagWithContainerId.value();
         }
 
         public int intFlagValueForClusterId(IntFlag flag, String clusterId) {
