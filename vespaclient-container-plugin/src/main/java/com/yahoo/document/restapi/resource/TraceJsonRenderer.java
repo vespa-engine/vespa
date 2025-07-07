@@ -11,6 +11,8 @@ import java.io.IOException;
  */
 class TraceJsonRenderer {
 
+    private TraceJsonRenderer() {}
+
     static void writeTrace(JsonGenerator json, TraceNode node) throws IOException {
         if (node.hasNote()) {
             json.writeStringField("message", node.getNote());
