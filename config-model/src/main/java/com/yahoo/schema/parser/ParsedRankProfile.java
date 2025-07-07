@@ -35,6 +35,7 @@ public class ParsedRankProfile extends ParsedBlock {
     private Double approximateThreshold = null;
     private Double filterFirstThreshold = null;
     private Double filterFirstExploration = null;
+    private Double explorationSlack = null;
     private Double targetHitsMaxAdjustmentFactor = null;
     private final List<FeatureList> matchFeatures = new ArrayList<>();
     private final List<FeatureList> rankFeatures = new ArrayList<>();
@@ -83,6 +84,7 @@ public class ParsedRankProfile extends ParsedBlock {
     Optional<Double> getApproximateThreshold() { return Optional.ofNullable(this.approximateThreshold); }
     Optional<Double> getFilterFirstThreshold() { return Optional.ofNullable(this.filterFirstThreshold); }
     Optional<Double> getFilterFirstExploration() { return Optional.ofNullable(this.filterFirstExploration); }
+    Optional<Double> getExplorationSlack() { return Optional.ofNullable(this.explorationSlack); }
     Optional<Double> getTargetHitsMaxAdjustmentFactor() { return Optional.ofNullable(this.targetHitsMaxAdjustmentFactor); }
     List<FeatureList> getMatchFeatures() { return List.copyOf(this.matchFeatures); }
     List<FeatureList> getRankFeatures() { return List.copyOf(this.rankFeatures); }
@@ -321,6 +323,11 @@ public class ParsedRankProfile extends ParsedBlock {
     public void setFilterFirstExploration(double exploration) {
         verifyThat(filterFirstExploration == null, "already has filter-first-exploration");
         this.filterFirstExploration = exploration;
+    }
+
+    public void setExplorationSlack(double slack) {
+        verifyThat(explorationSlack == null, "already has exploration-slack");
+        this.explorationSlack = slack;
     }
 
     public void setTargetHitsMaxAdjustmentFactor(double factor) {

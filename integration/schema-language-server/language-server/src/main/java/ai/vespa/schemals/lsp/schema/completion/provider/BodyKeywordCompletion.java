@@ -146,6 +146,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructSnippet("approximate-threshold", "approximate-threshold: $0"),
             CompletionUtils.constructSnippet("filter-first-threshold", "filter-first-threshold: $0"),
             CompletionUtils.constructSnippet("filter-first-exploration", "filter-first-exploration: $0"),
+            CompletionUtils.constructSnippet("exploration-slack", "exploration-slack: $0"),
             CompletionUtils.constructSnippet("target-hits-max-adjustment-factor", "target-hits-max-adjustment-factor: $0"),
             CompletionUtils.constructSnippet("filter-threshold", "filter-threshold: $0"),
 
