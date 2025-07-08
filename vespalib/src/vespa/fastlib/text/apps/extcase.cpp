@@ -29,7 +29,7 @@ static int hexval(char cp)
     return -1;
 }
 
-void DumpCase(void)
+void DumpCase()
 {
     Fast_BufferedFile file;
     unsigned int code;

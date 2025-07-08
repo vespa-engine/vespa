@@ -48,7 +48,7 @@ public:
 
     Node::UP clone() const override;
 
-    const BucketIdFactory &getBucketIdFactory(void) const { return _bucketIdFactory; }
+    const BucketIdFactory& getBucketIdFactory() const { return _bucketIdFactory; }
 };
 
 }

@@ -30,12 +30,12 @@ class Mutex
   /**
    * @brief Constructor
    */
-  Mutex(void);
+  Mutex();
 
   /**
    * @brief Destructor
    */
-  ~Mutex(void);
+  ~Mutex();
 
   /**
    * @brief Try to get a lock.
@@ -45,7 +45,7 @@ class Mutex
    *
    * @return True if locking was successful.
    */
-  bool tryLock (void);
+  bool tryLock ();
 
   /**
    * @brief Get a lock.
@@ -56,14 +56,14 @@ class Mutex
    *
    * @return True if locking was successful.
    */
-  bool lock (void);
+  bool lock ();
 
   /**
    * @brief Release a lock.
    *
    * @return True if unlocking was successful.
    */
-  bool unlock (void);
+  bool unlock ();
 
 };
 

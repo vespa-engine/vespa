@@ -72,7 +72,7 @@ FixedSizeHashMap::force_add(const EntryComparator& comp, const KvType& kv)
 }
 
 FixedSizeHashMap::KvType&
-FixedSizeHashMap::add(const ShardedHashComparator & comp, std::function<EntryRef(void)>& insert_entry)
+FixedSizeHashMap::add(const ShardedHashComparator & comp, std::function<EntryRef()>& insert_entry)
 {
     uint32_t hash_idx = comp.hash_idx() % _modulo;
     auto& chain_head = _chain_heads[hash_idx];

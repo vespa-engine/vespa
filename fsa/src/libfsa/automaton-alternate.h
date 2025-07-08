@@ -399,7 +399,7 @@ private:
      *
      * @return Reference to the transition list.
      */
-    const TransitionList& getTransitionList(void) const { return _tlist; }
+    const TransitionList& getTransitionList() const { return _tlist; }
 
 
   };
@@ -479,7 +479,7 @@ private:
     deallocate(pointer, size_type)
     { }
 
-    void release(void)
+    void release()
     {
       for(size_t i = 0; i < _chunks.size(); i++){
         ::munmap(_chunks[i], _CAPACITY);
@@ -979,7 +979,7 @@ public:
    * @return Pointer to a newly created  FSA object.  The caller is
    *         responsible for freeing it.
    */
-  FSA* getFSA(void);
+  FSA* getFSA();
 
 };
 // }}}

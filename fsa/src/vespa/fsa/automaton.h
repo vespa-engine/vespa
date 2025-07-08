@@ -497,7 +497,7 @@ private:
      *
      * @return Reference to the transition list.
      */
-    const TransitionList& getTransitionList(void) const { return _tlist; }
+    const TransitionList& getTransitionList() const { return _tlist; }
 
 
   };
@@ -961,7 +961,7 @@ public:
    * @return Pointer to a newly created  FSA object.  The caller is
    *         responsible for freeing it.
    */
-  FSA* getFSA(void);
+  FSA* getFSA();
 
 };
 // }}}

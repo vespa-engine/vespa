@@ -27,7 +27,7 @@ public:
     virtual void freeze() = 0;
     virtual void assign_generation(generation_t current_gen) = 0;
     virtual void reclaim_memory(generation_t oldest_used_gen) = 0;
-    virtual UniqueStoreAddResult add(const EntryComparator& comp, std::function<EntryRef(void)> insertEntry) = 0;
+    virtual UniqueStoreAddResult add(const EntryComparator& comp, std::function<EntryRef()> insertEntry) = 0;
     virtual EntryRef find(const EntryComparator& comp) = 0;
     virtual void remove(const EntryComparator& comp, EntryRef ref) = 0;
     virtual void move_keys_on_compact(ICompactable& compactable, const EntryRefFilter& compacting_buffers) = 0;

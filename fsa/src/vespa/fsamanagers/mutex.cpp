@@ -25,30 +25,30 @@ struct Mutex::Impl
 
 // }}}
 
-Mutex::Mutex(void) : _impl(new Impl)
+Mutex::Mutex() : _impl(new Impl)
 {
   int rc;
   rc = pthread_mutex_init(&(_impl->_mutex),NULL);
   assert(rc == 0);
 }
 
-Mutex::~Mutex(void)
+Mutex::~Mutex()
 {
   pthread_mutex_destroy(&(_impl->_mutex));
   delete _impl;
 }
 
-bool Mutex::tryLock (void)
+bool Mutex::tryLock ()
 {
   return pthread_mutex_trylock(&(_impl->_mutex)) == 0;
 }
 
-bool Mutex::lock (void)
+bool Mutex::lock ()
 {
   return pthread_mutex_lock(&(_impl->_mutex)) == 0;
 }
 
-bool Mutex::unlock (void)
+bool Mutex::unlock ()
 {
   return pthread_mutex_unlock(&(_impl->_mutex)) == 0;
 }

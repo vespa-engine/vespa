@@ -491,7 +491,7 @@ EnumStoreFoldedDictionary::EnumStoreFoldedDictionary(IEnumStore& enumStore, std:
 EnumStoreFoldedDictionary::~EnumStoreFoldedDictionary() = default;
 
 UniqueStoreAddResult
-EnumStoreFoldedDictionary::add(const EntryComparator& comp, std::function<EntryRef(void)> insertEntry)
+EnumStoreFoldedDictionary::add(const EntryComparator& comp, std::function<EntryRef()> insertEntry)
 {
     static_assert(!has_hash_dictionary, "Folded Dictionary does not support hash dictionary");
     auto it = _btree_dict.lowerBound(AtomicEntryRef(), comp);

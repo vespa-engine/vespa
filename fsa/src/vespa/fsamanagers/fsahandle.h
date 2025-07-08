@@ -105,7 +105,7 @@ public:
    *
    * Remove reference to the FSA object.
    */
-  ~Handle(void)
+  ~Handle()
   {
     _fsa->removeReference();
   }
@@ -131,7 +131,7 @@ public:
    *
    * @return true iff underlying %FSA was properly constructed.
    */
-  bool isOk(void) const
+  bool isOk() const
   {
     return _fsa->isOk();
   }
@@ -141,7 +141,7 @@ public:
    *
    * @return fsa library version.
    */
-  uint32_t version(void) const
+  uint32_t version() const
   {
     return _fsa->version();
   }
@@ -151,7 +151,7 @@ public:
    *
    * @return Serial number.
    */
-  uint32_t serial(void) const
+  uint32_t serial() const
   {
     return _fsa->serial();
   }

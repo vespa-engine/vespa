@@ -36,7 +36,7 @@ sigtermhandler(int signo)
 }
 
 static void
-hook_sigterm(void)
+hook_sigterm()
 {
     struct sigaction act;
     act.sa_handler = sigtermhandler;
