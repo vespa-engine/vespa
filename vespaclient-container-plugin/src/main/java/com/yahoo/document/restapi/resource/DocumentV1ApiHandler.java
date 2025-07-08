@@ -67,7 +67,6 @@ import com.yahoo.messagebus.DynamicThrottlePolicy;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.Trace;
-import com.yahoo.messagebus.TraceNode;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.restapi.Path;
 import com.yahoo.search.query.ParameterParser;
@@ -809,21 +808,25 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         synchronized void writePathId(String path) throws IOException {
-            json.writeStringField("pathId", path);
+            json.writeFieldName(JsonNames.PATH_ID);
+            json.writeString(path);
         }
 
         @Override
         public synchronized void writeMessage(String message) throws IOException {
-            json.writeStringField("message", message);
+            json.writeFieldName(JsonNames.MESSAGE);
+            json.writeString(message);
         }
 
         @Override
         public synchronized void writeDocumentCount(long count) throws IOException {
-            json.writeNumberField("documentCount", count);
+            json.writeFieldName(JsonNames.DOCUMENT_COUNT);
+            json.writeNumber(count);
         }
 
         synchronized void writeDocId(DocumentId id) throws IOException {
-            json.writeStringField("id", id.toString());
+            json.writeFieldName(JsonNames.ID);
+            json.writeString(id.toString());
         }
 
         @Override
@@ -851,7 +854,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         @Override
         public synchronized void writeDocumentsArrayStart() throws IOException {
-            json.writeArrayFieldStart("documents");
+            json.writeFieldName(JsonNames.DOCUMENTS);
+            json.writeStartArray();
         }
 
         private interface DocumentWriter {
@@ -875,7 +879,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             writeDocument(myOut -> {
                 try (JsonGenerator myJson = jsonFactory.createGenerator(myOut)) {
                     myJson.writeStartObject();
-                    myJson.writeStringField("remove", id.toString());
+                    myJson.writeFieldName(JsonNames.REMOVE);
+                    myJson.writeString(id.toString());
                     myJson.writeEndObject();
                 }
             }, completionHandler);
@@ -966,7 +971,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         @Override
         public synchronized void writeEpilogueContinuation(String token) throws IOException {
-            json.writeStringField("continuation", token);
+            json.writeFieldName(JsonNames.CONTINUATION);
+            json.writeString(token);
         }
 
     }
