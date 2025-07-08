@@ -89,6 +89,9 @@ class JettyCluster implements Cluster {
                 endpoint.inflight.incrementAndGet();
                 long reqTimeoutMillis = req.timeLeft().toMillis();
                 if (reqTimeoutMillis <= 0) {
+                    log.log(Level.FINE, () ->
+                            String.format("Request %s (%s) timed out after '%s' ms",
+                                    req, System.identityHashCode(vessel), req.timeout()));
                     vessel.completeExceptionally(new TimeoutException("operation timed out after '" + req.timeout() + "'"));
                     return;
                 }
@@ -113,8 +116,9 @@ class JettyCluster implements Cluster {
                     }
                     jettyReq.body(new BytesRequestContent(APPLICATION_JSON.asString(), bytes));
                 }
-                log.log(Level.FINER, () ->
-                        String.format("Dispatching request %s (%s)", req, System.identityHashCode(vessel)));
+                log.log(Level.FINE, () ->
+                        String.format("Dispatching request %s (%s) with timeout %d ms",
+                                req, System.identityHashCode(vessel), reqTimeoutMillis));
                 jettyReq.send(new BufferingResponseListener() {
                     @Override
                     public void onComplete(Result result) {
