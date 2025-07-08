@@ -1560,12 +1560,12 @@ public class ContentClusterTest extends ContentBaseTest {
     @Test
     void distributor_max_document_operation_size_config_is_controlled_by_properties() throws Exception {
         int mi = 1024 * 1024;
-        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(null)); // defaults to -1
-        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(-2));
-        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(0));
-        assertEquals(100*mi,  resolveMaxDistributorDocOperationSizeConfig(100));
-        assertEquals(2047*mi, resolveMaxDistributorDocOperationSizeConfig(2047));
-        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(2048));
+        assertEquals( 128 * mi, resolveMaxDistributorDocOperationSizeConfig(null)); // defaults to 134217728 (128 MiB)
+        assertEquals( 128 * mi, resolveMaxDistributorDocOperationSizeConfig(-2));
+        assertEquals( 128 * mi, resolveMaxDistributorDocOperationSizeConfig(0));
+        assertEquals( 100 * mi, resolveMaxDistributorDocOperationSizeConfig(100));
+        assertEquals(2047 * mi, resolveMaxDistributorDocOperationSizeConfig(2047));
+        assertEquals( 128 * mi, resolveMaxDistributorDocOperationSizeConfig(2048));
     }
 
     @Test

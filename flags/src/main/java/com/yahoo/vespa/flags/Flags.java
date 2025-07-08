@@ -290,7 +290,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundIntFlag MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB = defineIntFlag(
-            "max-distributor-document-operation-size-mib", -1,
+            "max-distributor-document-operation-size-mib", 128,
             List.of("vekterli"), "2025-03-17", "2025-10-01",
             "Sets the maximum size in MiB of a document operation (Put or Update) that a distributor " +
             "will accept when it arrives over the Document API. Any value outside (1, 2048) implies " +

@@ -156,7 +156,7 @@ DistributorConfiguration::configure(const DistributorManagerConfig & config)
     if (config.maxDocumentOperationMessageSizeBytes > 0) {
         _max_document_operation_message_size_bytes = config.maxDocumentOperationMessageSizeBytes;
     } else {
-        _max_document_operation_message_size_bytes = INT32_MAX;
+        _max_document_operation_message_size_bytes = 128_Mi;
     }
 
     if (config.maxClusterClockSkewSec >= 0) {
