@@ -29,7 +29,7 @@ static dissector_handle_t fnetrpc_handle;
 
 #ifndef ENABLE_STATIC
 G_MODULE_EXPORT void
-plugin_register(void)
+plugin_register()
 {
         /* register the new protocol, protocol fields, and subtrees */
         if (proto_fnetrpc == -1) { /* execute protocol initialization only once */
@@ -38,7 +38,7 @@ plugin_register(void)
 }
 
 G_MODULE_EXPORT void
-plugin_reg_handoff(void){
+plugin_reg_handoff(){
         proto_reg_handoff_fnetrpc();
 }
 #endif
@@ -140,7 +140,7 @@ static gint *ett[] = {
 
 
 void
-proto_register_fnetrpc(void)
+proto_register_fnetrpc()
 {
     module_t *fnetrpc_module;
 
@@ -159,7 +159,7 @@ proto_register_fnetrpc(void)
 
 
 void
-proto_reg_handoff_fnetrpc(void)
+proto_reg_handoff_fnetrpc()
 {
     static int Initialized=FALSE;
 

@@ -61,7 +61,7 @@ class IndexMaintainer : public IIndexManager,
         uint32_t _pruneGen;
 
         ChangeGens() : _pruneGen(0) { }
-        void bumpPruneGen(void) { ++_pruneGen; }
+        void bumpPruneGen() { ++_pruneGen; }
         bool operator==(const ChangeGens &rhs) const { return _pruneGen == rhs._pruneGen; }
         bool operator!=(const ChangeGens &rhs) const { return _pruneGen != rhs._pruneGen; }
     };
@@ -245,7 +245,7 @@ class IndexMaintainer : public IIndexManager,
 
     void doneSetSchema(SetSchemaArgs &args, std::shared_ptr<IMemoryIndex>& newIndex, SerialNum serial_num);
 
-    Schema getSchema(void) const;
+    Schema getSchema() const;
     std::shared_ptr<const Schema> getActiveFusionPrunedSchema() const;
     search::TuneFileAttributes getAttrTune();
     ChangeGens getChangeGens();

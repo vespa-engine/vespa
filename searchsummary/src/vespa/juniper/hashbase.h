@@ -29,10 +29,10 @@ public:
         _item(item) {}
     ~Fast_HashTableElement() {}
 
-    inline Fast_HashTableElement<Key, T>* GetNext(void) { return _next; }
+    inline Fast_HashTableElement<Key, T>* GetNext() { return _next; }
     inline void                           SetNext(Fast_HashTableElement<Key, T>* next) { _next = next; }
-    inline Key                            GetKey(void) { return _key; }
-    inline T                              GetItem(void) { return _item; }
+    inline Key                            GetKey() { return _key; }
+    inline T                              GetItem() { return _item; }
 };
 
 template <typename Key, typename T, int _tableSize> class Fast_HashTableIterator {
@@ -50,7 +50,7 @@ protected:
         _runner = SearchNext();
     };
 
-    Fast_HashTableElement<Key, T>* SearchNext(void) {
+    Fast_HashTableElement<Key, T>* SearchNext() {
         Fast_HashTableElement<Key, T>* retVal = NULL;
 
         for (++_index; _index < _hashTable->_tableSize; _index++) {
@@ -77,7 +77,7 @@ public:
     inline bool End() const { return _runner == NULL; };
     // becomes true when ++ on the last element
 
-    inline void Rewind(void) {
+    inline void Rewind() {
         _runner = NULL;
         _index = -1;
 
@@ -117,11 +117,11 @@ public:
         memset(_lookupTable, 0, _tableSize * sizeof(element*));
     }
 
-    Fast_HashTableIterator<Key, T, _tableSize>* NewIterator(void) { return new iterator(*this); }
+    Fast_HashTableIterator<Key, T, _tableSize>* NewIterator() { return new iterator(*this); }
 
-    inline int ElementCount(void) { return _numElements; }
+    inline int ElementCount() { return _numElements; }
 
-    inline void Clear(void) {
+    inline void Clear() {
         if (_numElements == 0) return;
         for (int i = 0; i < _tableSize; i++) {
             element *curr, *prev = NULL;
@@ -245,7 +245,7 @@ public:
         }
     }
 
-    void Print(void) {
+    void Print() {
         for (int i = 0; i < _tableSize; i++) {
             if (_lookupTable[i] != NULL) {
                 printf("[%i]", i);
@@ -259,7 +259,7 @@ public:
         }
     }
 
-    virtual ~Fast_HashTable(void) {
+    virtual ~Fast_HashTable() {
         Clear();
         delete[] _lookupTable;
     }

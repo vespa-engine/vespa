@@ -41,7 +41,7 @@ protected:
    *
    * @return True.
    */
-  virtual bool destroy(void)
+  virtual bool destroy()
   {
     delete this;
     return true;
@@ -59,7 +59,7 @@ public:
   /**
    * @brief Constructor
    */
-  RefCountable(void)
+  RefCountable()
     : _refCount(0),
       _sequencerLock()
   {
@@ -73,7 +73,7 @@ public:
   /**
    * @brief Increase reference count.
    */
-  virtual void addReference(void)
+  virtual void addReference()
   {
     _sequencerLock.lock();
     _refCount++;
@@ -86,7 +86,7 @@ public:
    *
    * @return True if the object was destroyed.
    */
-  virtual bool removeReference(void)
+  virtual bool removeReference()
   {
     bool destroyed = false;
 

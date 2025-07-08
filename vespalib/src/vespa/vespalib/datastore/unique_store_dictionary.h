@@ -76,7 +76,7 @@ public:
     void freeze() override;
     void assign_generation(generation_t current_gen) override;
     void reclaim_memory(generation_t oldest_used_gen) override;
-    UniqueStoreAddResult add(const EntryComparator& comp, std::function<EntryRef(void)> insertEntry) override;
+    UniqueStoreAddResult add(const EntryComparator& comp, std::function<EntryRef()> insertEntry) override;
     EntryRef find(const EntryComparator& comp) override;
     void remove(const EntryComparator& comp, EntryRef ref) override;
     void move_keys_on_compact(ICompactable& compactable, const EntryRefFilter& compacting_buffers) override;

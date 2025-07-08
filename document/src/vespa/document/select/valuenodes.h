@@ -304,7 +304,7 @@ public:
     FunctionValueNode(std::string_view name, std::unique_ptr<ValueNode> src);
 
     Function getFunction() const { return _function; }
-    const std::string &getFunctionName(void) const { return _funcname; }
+    const std::string& getFunctionName() const { return _funcname; }
 
     std::unique_ptr<Value> getValue(const Context& context) const override {
         return getValue(_source->getValue(context));

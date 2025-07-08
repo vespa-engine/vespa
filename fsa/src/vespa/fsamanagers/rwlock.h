@@ -31,12 +31,12 @@ class RWLock
   /**
    * @brief Constructor.
    */
-  RWLock(void);
+  RWLock();
 
   /**
    * @brief Destructor.
    */
-  ~RWLock(void);
+  ~RWLock();
 
   /**
    * @brief Try to get a read (shared) lock.
@@ -46,7 +46,7 @@ class RWLock
    *
    * @return True if locking was successful.
    */
-  bool tryRdLock (void);
+  bool tryRdLock ();
 
   /**
    * @brief Try to get a write (exclusive) lock.
@@ -56,7 +56,7 @@ class RWLock
    *
    * @return True if locking was successful.
    */
-  bool tryWrLock (void);
+  bool tryWrLock ();
 
   /**
    * @brief Get a read (shared) lock.
@@ -67,7 +67,7 @@ class RWLock
    *
    * @return True if locking was successful.
    */
-  bool rdLock (void);
+  bool rdLock ();
 
   /**
    * @brief Get a write (exclusive) lock.
@@ -78,14 +78,14 @@ class RWLock
    *
    * @return True if locking was successful.
    */
-  bool wrLock (void);
+  bool wrLock ();
 
   /**
    * @brief Release a (shared or exclusive) lock.
    *
    * @return True if unlocking was successful.
    */
-  bool unlock (void);
+  bool unlock ();
 
 };
 

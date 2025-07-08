@@ -9,7 +9,7 @@
 
 namespace document {
 
-ForceLink::ForceLink(void)
+ForceLink::ForceLink()
 {
     if (time(nullptr) == 0) {
         DocumentType          type("foo", 1);

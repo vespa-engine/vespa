@@ -62,7 +62,7 @@ ShardedHashMap::hold_shard(std::unique_ptr<const FixedSizeHashMap> map)
 }
 
 ShardedHashMap::KvType&
-ShardedHashMap::add(const EntryComparator& comp, EntryRef key_ref, std::function<EntryRef(void)>& insert_entry)
+ShardedHashMap::add(const EntryComparator& comp, EntryRef key_ref, std::function<EntryRef()>& insert_entry)
 {
     ShardedHashComparator shardedComp(comp, key_ref, num_shards);
     auto map = _maps[shardedComp.shard_idx()].load(std::memory_order_relaxed);

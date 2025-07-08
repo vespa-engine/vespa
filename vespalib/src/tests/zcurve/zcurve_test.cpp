@@ -17,7 +17,7 @@ using geo::ZCurve;
 #define BMLIMIT 0x1000000
 
 void
-testEncoding(void)
+testEncoding()
 {
     int32_t x = 0;
     int32_t y = 0;
@@ -52,7 +52,7 @@ testEncoding(void)
 
 
 void
-testDecoding(void)
+testDecoding()
 {
     int32_t x = 0;
     int32_t y = 0;
@@ -187,7 +187,7 @@ bm()
 
 template <bool decode>
 int64_t
-bm2(void)
+bm2()
 {
     int64_t res = 0;
     double before = ftime();

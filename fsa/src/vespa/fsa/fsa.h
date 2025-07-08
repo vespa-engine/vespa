@@ -547,7 +547,7 @@ public:
      *
      * @return True if the state is final.
      */
-    virtual bool isFinal(void) const
+    virtual bool isFinal() const
     {
       return _fsa->isFinal(_state);
     }
@@ -561,7 +561,7 @@ public:
      *
      * @return Size of data item, or -1 if the state is not final.
      */
-    virtual int dataSize(void) const
+    virtual int dataSize() const
     {
       return _fsa->dataSize(_state);
     }
@@ -1911,7 +1911,7 @@ public:
    *
    * @return fsa library version.
    */
-  uint32_t version(void) const
+  uint32_t version() const
   {
     return _version;
   }
@@ -1921,7 +1921,7 @@ public:
    *
    * @return Serial number.
    */
-  uint32_t serial(void) const
+  uint32_t serial() const
   {
     return _serial;
   }
@@ -1931,7 +1931,7 @@ public:
    *
    * @return True if the %FSA was built with perfect hash.
    */
-  bool hasPerfectHash(void) const
+  bool hasPerfectHash() const
   {
     return _has_perfect_hash;
   }
