@@ -28,7 +28,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.SharedHosts;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -320,7 +319,6 @@ public class ModelContextImpl implements ModelContext {
         private final String tenantSecretDomain;
         private final String athenzDnsSuffix;
         private final boolean hostedVespa;
-        private final Zone zone;
         private final Set<ContainerEndpoint> endpoints;
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
@@ -345,7 +343,6 @@ public class ModelContextImpl implements ModelContext {
         public Properties(ApplicationId applicationId,
                           Version modelVersion,
                           ConfigserverConfig configserverConfig,
-                          Zone zone,
                           Set<ContainerEndpoint> endpoints,
                           boolean isBootstrap,
                           boolean isFirstTimeDeployment,
@@ -367,7 +364,6 @@ public class ModelContextImpl implements ModelContext {
             this.tenantSecretDomain = configserverConfig.tenantSecretDomain();
             this.athenzDnsSuffix = configserverConfig.athenzDnsSuffix();
             this.hostedVespa = configserverConfig.hostedVespa();
-            this.zone = zone;
             this.endpoints = endpoints;
             this.isBootstrap = isBootstrap;
             this.isFirstTimeDeployment = isFirstTimeDeployment;
@@ -417,7 +413,7 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public AthenzDomain tenantSecretDomain() {
             if (tenantSecretDomain.isEmpty())
-                throw new IllegalArgumentException("Tenant secret domain is not set for zone " + zone);
+                throw new IllegalArgumentException("Tenant secret domain is not set");
             return AthenzDomain.from(tenantSecretDomain);
         }
 
@@ -428,9 +424,6 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public boolean hostedVespa() { return hostedVespa; }
-
-        @Override
-        public Zone zone() { return zone; }
 
         @Override
         public Set<ContainerEndpoint> endpoints() { return endpoints; }
