@@ -38,7 +38,7 @@ cd $DLDIR
 
 readonly DNF="dnf -y -q --forcearch $RPMARCH"
 
-$DNF list --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa --showduplicates 'vespa*' | grep "Available Packages" -A 100000 | tail -n +2 | sed '/\.src\ */d' | sed -E "s/\.($RPMARCH|noarch)\ */-/" | awk '{print $1}' | grep -v '.src$' > $COPR_PACKAGES
+$DNF list --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa --showduplicates 'vespa*' | grep "Available Packages" -A 100000 | tail -n +2 | sed '/\.src\ */d' | sed -E "s/\.($RPMARCH|noarch)\ */-/" | awk '{print $1}' | grep -v 8.363.17 | grep -v '.src$' > $COPR_PACKAGES
 
 echo "Packages on Copr:"
 cat $COPR_PACKAGES
