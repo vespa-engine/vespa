@@ -99,7 +99,7 @@ class JettyCluster implements Cluster {
                         .version(HttpVersion.HTTP_2)
                         .method(HttpMethod.fromString(req.method()))
                         .headers(hs -> req.headers().forEach((k, v) -> hs.add(k, v.get())))
-                        .idleTimeout(IDLE_TIMEOUT.toMillis(), MILLISECONDS)
+                        .idleTimeout(reqTimeoutMillis, MILLISECONDS)
                         .timeout(reqTimeoutMillis, MILLISECONDS);
                 if (req.body() != null) {
                     boolean shouldCompress = compression == gzip || compression == auto && req.body().length > 512;
