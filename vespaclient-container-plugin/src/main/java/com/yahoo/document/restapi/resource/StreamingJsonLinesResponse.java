@@ -92,7 +92,8 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
     public void writeDocumentValue(Document document, CompletionHandler completionHandler) throws IOException {
         writeJsonLine((json) -> {
             json.writeStartObject();
-            json.writeStringField("put", document.getId().toString());
+            json.writeFieldName(JsonNames.PUT);
+            json.writeString(document.getId().toString());
             new JsonWriter(json, tensorOptions).writeFields(document);
             json.writeEndObject();
             appendUpdatedContinuationLineIfPresent(json);
@@ -103,7 +104,8 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
     public void writeDocumentRemoval(DocumentId id, CompletionHandler completionHandler) throws IOException {
         writeJsonLine((json) -> {
             json.writeStartObject();
-            json.writeStringField("remove", id.toString());
+            json.writeFieldName(JsonNames.REMOVE);
+            json.writeString(id.toString());
             json.writeEndObject();
             appendUpdatedContinuationLineIfPresent(json);
         }, completionHandler);
@@ -152,7 +154,8 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
 
     private void appendContinuationToken(JsonGenerator json, String token) throws IOException {
         json.writeStartObject();
-        json.writeStringField("continuation", token);
+        json.writeFieldName(JsonNames.CONTINUATION);
+        json.writeString(token);
         json.writeEndObject();
     }
 
@@ -169,7 +172,8 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
     public void writeTrace(Trace trace) throws IOException {
         writeJsonLine((json) -> {
             json.writeStartObject();
-            json.writeObjectFieldStart("trace");
+            json.writeFieldName(JsonNames.TRACE);
+            json.writeStartObject();
             TraceJsonRenderer.writeTrace(json, trace.getRoot());
             json.writeEndObject();
             json.writeEndObject();
@@ -180,7 +184,8 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
     public void writeMessage(String message) throws IOException {
         writeJsonLine((json) -> {
             json.writeStartObject();
-            json.writeStringField("message", message);
+            json.writeFieldName(JsonNames.MESSAGE);
+            json.writeString(message);
             json.writeEndObject();
         });
     }
@@ -190,7 +195,8 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
         // TODO do we want this for streaming or do we want another kind of session summary?
         writeJsonLine((json) -> {
             json.writeStartObject();
-            json.writeNumberField("documentCount", count);
+            json.writeFieldName(JsonNames.DOCUMENT_COUNT);
+            json.writeNumber(count);
             json.writeEndObject();
         });
     }
