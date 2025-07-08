@@ -690,11 +690,30 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         dispatchFirst();
     }
 
+    private static JsonFormat.EncodeOptions createTensorOptionsFromRequest(HttpRequest request) {
+        // TODO: Flip default on Vespa 9 to "short-value"
+        String format = "short";
+        if (request != null && request.parameters().containsKey("format.tensors")) {
+            var params = request.parameters().get("format.tensors");
+            if (params.size() == 1) {
+                format = params.get(0);
+            }
+        }
+        return switch (format) {
+            case "hex" ->         new JsonFormat.EncodeOptions(true, false, true);
+            case "hex-value" ->   new JsonFormat.EncodeOptions(true, true, true);
+            case "short-value" -> new JsonFormat.EncodeOptions(true, true, false);
+            case "long" ->        new JsonFormat.EncodeOptions(false, false, false);
+            case "long-value" ->  new JsonFormat.EncodeOptions(false, true, false);
+            default ->            new JsonFormat.EncodeOptions(true, false, false); // aka "short"
+        };
+    }
 
     // ------------------------------------------------ Responses ------------------------------------------------
 
     /** Class for writing and returning JSON responses to document operations in a thread safe manner. */
-    private static class JsonResponse implements AutoCloseable {
+    // TODO move class to package-level
+    private static class JsonResponse implements StreamableJsonResponse {
 
         private static final ByteBuffer emptyBuffer = ByteBuffer.wrap(new byte[0]);
         private static final int FLUSH_SIZE = 128;
@@ -744,31 +763,13 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             return response;
         }
 
-        private static JsonFormat.EncodeOptions createTensorOptionsFromRequest(HttpRequest request) {
-            // TODO: Flip default on Vespa 9 to "short-value"
-            String format = "short";
-            if (request != null && request.parameters().containsKey("format.tensors")) {
-                var params = request.parameters().get("format.tensors");
-                if (params.size() == 1) {
-                    format = params.get(0);
-                }
-            }
-            return switch (format) {
-                case "hex" ->         new JsonFormat.EncodeOptions(true, false, true);
-                case "hex-value" ->   new JsonFormat.EncodeOptions(true, true, true);
-                case "short-value" -> new JsonFormat.EncodeOptions(true, true, false);
-                case "long" ->        new JsonFormat.EncodeOptions(false, false, false);
-                case "long-value" ->  new JsonFormat.EncodeOptions(false, true, false);
-                default ->            new JsonFormat.EncodeOptions(true, false, false); // aka "short"
-            };
-        }
-
         synchronized void commit(int status) throws IOException {
             commit(status, true);
         }
 
         /** Commits a response with the given status code and some default headers, and writes whatever content is buffered. */
-        synchronized void commit(int status, boolean fullyApplied) throws IOException {
+        @Override
+        public synchronized void commit(int status, boolean fullyApplied) throws IOException {
             Response response = new Response(status);
             response.headers().add("Content-Type", List.of("application/json; charset=UTF-8"));
             if (! fullyApplied) {
@@ -801,8 +802,9 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                 json.close(); // Also closes object and array scopes.
                 out.close();  // Simply flushes the output stream.
             } finally {
-                if (channel != null)
+                if (channel != null) {
                     channel.close(logException); // Closes the response handler's content channel.
+                }
             }
         }
 
@@ -810,11 +812,13 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             json.writeStringField("pathId", path);
         }
 
-        synchronized void writeMessage(String message) throws IOException {
+        @Override
+        public synchronized void writeMessage(String message) throws IOException {
             json.writeStringField("message", message);
         }
 
-        synchronized void writeDocumentCount(long count) throws IOException {
+        @Override
+        public synchronized void writeDocumentCount(long count) throws IOException {
             json.writeNumberField("documentCount", count);
         }
 
@@ -822,24 +826,10 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             json.writeStringField("id", id.toString());
         }
 
-        synchronized void writeTrace(Trace trace) throws IOException {
+        @Override
+        public synchronized void writeTrace(Trace trace) throws IOException {
             if (trace != null && ! trace.getRoot().isEmpty()) {
-                writeTrace(trace.getRoot());
-            }
-        }
-
-        private void writeTrace(TraceNode node) throws IOException {
-            if (node.hasNote()) {
-                json.writeStringField("message", node.getNote());
-            }
-            if ( ! node.isLeaf()) {
-                json.writeArrayFieldStart(node.isStrict() ? "trace" : "fork");
-                for (int i = 0; i < node.getNumChildren(); i++) {
-                    json.writeStartObject();
-                    writeTrace(node.getChild(i));
-                    json.writeEndObject();
-                }
-                json.writeEndArray();
+                TraceJsonRenderer.writeTrace(json, trace.getRoot());
             }
         }
 
@@ -859,7 +849,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             new JsonWriter(json, tensorOptions()).writeFields(document);
         }
 
-        synchronized void writeDocumentsArrayStart() throws IOException {
+        @Override
+        public synchronized void writeDocumentsArrayStart() throws IOException {
             json.writeArrayFieldStart("documents");
         }
 
@@ -868,15 +859,19 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         /** Writes documents to an internal queue, which is flushed regularly. */
-        void writeDocumentValue(Document document, CompletionHandler completionHandler) throws IOException {
+        @Override
+        public void writeDocumentValue(Document document, CompletionHandler completionHandler) throws IOException {
             writeDocument(myOut -> {
                 try (JsonGenerator myJson = jsonFactory.createGenerator(myOut)) {
+                    // TODO shouldn't this just take tensorOptions directly?
+                    //  This does not actually allow for hex format rendering...!
                     new JsonWriter(myJson, tensorShortForm(), tensorDirectValues()).write(document);
                 }
             }, completionHandler);
         }
 
-        void writeDocumentRemoval(DocumentId id, CompletionHandler completionHandler) throws IOException {
+        @Override
+        public void writeDocumentRemoval(DocumentId id, CompletionHandler completionHandler) throws IOException {
             writeDocument(myOut -> {
                 try (JsonGenerator myJson = jsonFactory.createGenerator(myOut)) {
                     myJson.writeStartObject();
@@ -956,13 +951,21 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             });
         }
 
-        synchronized void writeArrayEnd() throws IOException {
+        @Override
+        public synchronized void writeDocumentsArrayEnd() throws IOException {
             flushDocuments();
             documentsDone = true;
             json.writeEndArray();
         }
 
-        synchronized void writeContinuation(String token) throws IOException {
+        @Override
+        public void reportUpdatedContinuation(Supplier<String> token) throws IOException {
+            // Not supported by the restful Document V1 format; only a single epilogue
+            // continuation token may be emitted.
+        }
+
+        @Override
+        public synchronized void writeEpilogueContinuation(String token) throws IOException {
             json.writeStringField("continuation", token);
         }
 
@@ -1376,13 +1379,13 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private interface VisitCallback {
         /** Called at the start of response rendering. */
-        default void onStart(JsonResponse response, boolean fullyApplied) throws IOException { }
+        default void onStart(StreamableJsonResponse response, boolean fullyApplied) throws IOException { }
 
         /** Called for every document or removal received from backend visitors—must call the ack for these to proceed. */
-        default void onDocument(JsonResponse response, Document document, DocumentId removeId, long persistedTimestamp, Runnable ack, Consumer<String> onError) { }
+        default void onDocument(StreamableJsonResponse response, Document document, DocumentId removeId, long persistedTimestamp, Runnable ack, Consumer<String> onError) { }
 
         /** Called at the end of response rendering, before generic status data is written. Called from a dedicated thread pool. */
-        default void onEnd(JsonResponse response) throws IOException { }
+        default void onEnd(StreamableJsonResponse response) throws IOException { }
     }
 
     @FunctionalInterface
@@ -1426,7 +1429,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                  ResponseHandler handler,
                                  String route, VisitProcessingCallback operation) {
         visit(request, parameters, false, fullyApplied, handler, new VisitCallback() {
-            @Override public void onDocument(JsonResponse response, Document document, DocumentId removeId,
+            @Override public void onDocument(StreamableJsonResponse response, Document document, DocumentId removeId,
                                              long persistedTimestamp, Runnable ack, Consumer<String> onError) {
                 DocumentOperationParameters operationParameters = parameters().withRoute(route)
                         .withResponseHandler(operationResponse -> {
@@ -1465,13 +1468,13 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private void visitAndWrite(HttpRequest request, VisitorParameters parameters, ResponseHandler handler, boolean streamed) {
         visit(request, parameters, streamed, true, handler, new VisitCallback() {
-            @Override public void onStart(JsonResponse response, boolean fullyApplied) throws IOException {
+            @Override public void onStart(StreamableJsonResponse response, boolean fullyApplied) throws IOException {
                 if (streamed)
                     response.commit(Response.Status.OK, fullyApplied);
 
                 response.writeDocumentsArrayStart();
             }
-            @Override public void onDocument(JsonResponse response, Document document, DocumentId removeId,
+            @Override public void onDocument(StreamableJsonResponse response, Document document, DocumentId removeId,
                                              long persistedTimestamp, Runnable ack, Consumer<String> onError) {
                 try {
                     if (streamed) {
@@ -1495,8 +1498,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                     onError.accept(e.getMessage());
                 }
             }
-            @Override public void onEnd(JsonResponse response) throws IOException {
-                response.writeArrayEnd();
+            @Override public void onEnd(StreamableJsonResponse response) throws IOException {
+                response.writeDocumentsArrayEnd();
             }
         });
     }
@@ -1505,10 +1508,24 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         visit(request, parameters, false, true, handler, new VisitCallback() { });
     }
 
+    private StreamableJsonResponse createStreamableJsonResponse(HttpRequest request, ResponseHandler handler, boolean streaming) throws IOException {
+        if (streaming && request != null) {
+            // TODO! This is very temporary!
+            var format = request.parameters().getOrDefault("format", List.of());
+            if ((format.size() == 1) && "jsonl-experimental-20250707".equals(format.get(0))) {
+                var writer = new BufferedContentChannelResponseWriter(handler);
+                var tensorOptions = createTensorOptionsFromRequest(request);
+                return new StreamingJsonLinesResponse(writer, tensorOptions);
+            }
+        }
+        return JsonResponse.create(request, handler);
+    }
+
     @SuppressWarnings("fallthrough")
-    private void visit(HttpRequest request, VisitorParameters parameters, boolean streaming, boolean fullyApplied, ResponseHandler handler, VisitCallback callback) {
+    private void visit(HttpRequest request, VisitorParameters parameters, boolean streaming, boolean fullyApplied,
+                       ResponseHandler handler, VisitCallback callback) {
         try {
-            JsonResponse response = JsonResponse.create(request, handler);
+            StreamableJsonResponse response = createStreamableJsonResponse(request, handler, streaming);
             Phaser phaser = new Phaser(2); // Synchronize this thread (dispatch) with the visitor callback thread.
             AtomicReference<String> error = new AtomicReference<>(); // Set if error occurs during processing of visited documents.
             callback.onStart(response, fullyApplied);
@@ -1548,7 +1565,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                     if (error.get() == null) {
                                         ProgressToken progress = getProgress() != null ? getProgress() : parameters.getResumeToken();
                                         if (progress != null && ! progress.isFinished())
-                                            response.writeContinuation(progress.serializeToString());
+                                            response.writeEpilogueContinuation(progress.serializeToString());
 
                                         status = Response.Status.OK;
                                         break;
@@ -1565,6 +1582,12 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                         phaser.arriveAndAwaitAdvance(); // We may get here while dispatching thread is still putting us in the map.
                         visits.remove(this).destroy();
                     });
+                }
+                @Override public void onProgress(ProgressToken token) {
+                    super.onProgress(token);
+                    if (streaming) {
+                        loggingException(() -> response.reportUpdatedContinuation(token::serializeToString));
+                    }
                 }
             };
             if (parameters.getRemoteDataHandler() == null) {
