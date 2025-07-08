@@ -83,20 +83,27 @@ class JettyCluster implements Cluster {
 
     @Override
     public void dispatch(HttpRequest req, CompletableFuture<HttpResponse> vessel) {
+        long reqTimeoutMillis = req.timeLeft().toMillis();
+        // Fail immediately if request is already timed out
+        if (reqTimeoutMillis <= 0) {
+            timeOutRequest(req, vessel);
+            return;
+        }
+
+        // Schedule an external timeout to ensure requests are timed out
+        // The HTTP client will sometimes not respect the timeout set on the request (observed on 12.0.23)
+        var timeout = client.getScheduler()
+                .schedule(() -> timeOutRequest(req, vessel), reqTimeoutMillis, MILLISECONDS);
+
         client.getExecutor().execute(() -> {
             Endpoint endpoint = findLeastBusyEndpoint(endpoints);
             try {
                 endpoint.inflight.incrementAndGet();
-                long reqTimeoutMillis = req.timeLeft().toMillis();
-                if (reqTimeoutMillis <= 0) {
-                    vessel.completeExceptionally(new TimeoutException("operation timed out after '" + req.timeout() + "'"));
-                    return;
-                }
                 Request jettyReq = client.newRequest(URI.create(endpoint.uri + req.pathAndQuery()))
                         .version(HttpVersion.HTTP_2)
                         .method(HttpMethod.fromString(req.method()))
                         .headers(hs -> req.headers().forEach((k, v) -> hs.add(k, v.get())))
-                        .idleTimeout(IDLE_TIMEOUT.toMillis(), MILLISECONDS)
+                        .idleTimeout(reqTimeoutMillis, MILLISECONDS)
                         .timeout(reqTimeoutMillis, MILLISECONDS);
                 if (req.body() != null) {
                     boolean shouldCompress = compression == gzip || compression == auto && req.body().length > 512;
@@ -113,11 +120,13 @@ class JettyCluster implements Cluster {
                     }
                     jettyReq.body(new BytesRequestContent(APPLICATION_JSON.asString(), bytes));
                 }
-                log.log(Level.FINER, () ->
-                        String.format("Dispatching request %s (%s)", req, System.identityHashCode(vessel)));
+                log.log(Level.FINE, () ->
+                        String.format("Dispatching request %s (%s) with timeout %d ms",
+                                req, System.identityHashCode(vessel), reqTimeoutMillis));
                 jettyReq.send(new BufferingResponseListener() {
                     @Override
                     public void onComplete(Result result) {
+                        timeout.cancel();
                         log.log(Level.FINER, () ->
                                 String.format("Completed request %s (%s): %s",
                                         req, System.identityHashCode(vessel),
@@ -136,11 +145,19 @@ class JettyCluster implements Cluster {
                     }
                 });
             } catch (Throwable t) {
+                timeout.cancel();
                 log.log(t instanceof Exception ? Level.FINE : Level.WARNING, "Failed to dispatch request: " + req, t.getMessage());
                 endpoint.inflight.decrementAndGet();
                 vessel.completeExceptionally(t);
             }
         });
+    }
+
+    private static void timeOutRequest(HttpRequest req, CompletableFuture<HttpResponse> vessel) {
+        log.log(Level.FINE, () ->
+                String.format("Request %s (%s) timed out after '%s' ms",
+                        req, System.identityHashCode(vessel), req.timeout()));
+        vessel.completeExceptionally(new TimeoutException("operation timed out after '" + req.timeout() + "'"));
     }
 
     @Override
