@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docprocs.indexing;
 
-import java.util.ArrayList;
-import java.util.List;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
@@ -30,6 +28,8 @@ import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -130,7 +130,7 @@ public class IndexingProcessor extends DocumentProcessor {
             buffer.flip();
             inputDocument = documentTypeManager.createDocument(buffer);
         }
-        Document output = script.execute(fieldValuesFactory, inputDocument);
+        Document output = script.execute(fieldValuesFactory, inputDocument, isReindexingOperation(input));
         if (output == null) return;
 
         out.add(new DocumentPut(input, output));
@@ -160,6 +160,12 @@ public class IndexingProcessor extends DocumentProcessor {
             // Ideally, this should be handled by dependency injection, however for now this workaround is necessary.
         }
         return map;
+    }
+
+    private static boolean isReindexingOperation(DocumentPut op) {
+        // All reindexing operation will have a special expression value in the test and set condition.
+        // Below value must match the constant in storage/src/vespa/storage/common/reindexing_constants.cpp.
+        return op.getCondition().getSelection().equals("@@__vespa_internal_allow_through_bucket_lock");
     }
 
 }

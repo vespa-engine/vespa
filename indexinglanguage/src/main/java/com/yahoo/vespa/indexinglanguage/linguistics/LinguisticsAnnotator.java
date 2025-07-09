@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.linguistics;
 
+import ai.vespa.sampling.ProbabilisticSampleRate;
+import com.yahoo.document.DocumentId;
 import com.yahoo.document.annotation.Annotation;
 import com.yahoo.document.annotation.AnnotationTypes;
 import com.yahoo.document.annotation.Span;
@@ -16,6 +18,9 @@ import com.yahoo.text.Text;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Filter;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
@@ -29,6 +34,21 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  * @author Simon Thoresen Hult
  */
 public class LinguisticsAnnotator {
+
+    private static final Logger log = Logger.getLogger(LinguisticsAnnotator.class.getName());
+
+    static {
+        class RateLimitingLogFilter implements Filter {
+            // A very conservative sampling rate to avoid spamming the logs during reindexing
+            final ProbabilisticSampleRate sampleRate = ProbabilisticSampleRate.withSystemDefaults(0.1);
+            final Filter prevFilter;
+            RateLimitingLogFilter(Filter prevFilter) { this.prevFilter = prevFilter; }
+            @Override public boolean isLoggable(LogRecord lr) {
+                return sampleRate.shouldSample() && (prevFilter == null || prevFilter.isLoggable(lr));
+            }
+        }
+        log.setFilter(new RateLimitingLogFilter(log.getFilter()));
+    }
 
     private final Linguistics factory;
     private final AnnotatorConfig config;
@@ -70,13 +90,16 @@ public class LinguisticsAnnotator {
      * @param text the text to annotate
      * @return whether anything was annotated
      */
-    public boolean annotate(StringFieldValue text) {
+    public boolean annotate(StringFieldValue text, DocumentId docId, boolean isReindexingOperation) {
         if (text.getSpanTree(SpanTrees.LINGUISTICS) != null) return true;  // Already annotated with LINGUISTICS.
 
         Tokenizer tokenizer = factory.getTokenizer();
         String input = (text.getString().length() <= config.getMaxTokenizeLength())
                        ? text.getString()
                        : Text.substringByCodepoints(text.getString(), 0, config.getMaxTokenizeLength());
+
+        if (isLikelyBinaryData(input, docId, isReindexingOperation)) return false;
+
         Iterable<Token> tokens = tokenizer.tokenize(input, config.asLinguisticsParameters());
         TermOccurrences termOccurrences = new TermOccurrences(config.getMaxTermOccurrences());
         SpanTree tree = new SpanTree(SpanTrees.LINGUISTICS);
@@ -88,6 +111,9 @@ public class LinguisticsAnnotator {
         text.setSpanTree(tree);
         return true;
     }
+
+    /** For unit testing only */
+    boolean annotate(StringFieldValue text) { return annotate(text, null, false); }
 
     /** Creates a TERM annotation which has the term as annotation (only) if it is different from the original. */
     public static Annotation termAnnotation(String term, String originalTerm) {
@@ -146,4 +172,30 @@ public class LinguisticsAnnotator {
         }
     }
 
+    /**
+     * Use the ratio of Unicode replacement characters as heuristic if the text is likely representing binary data
+     *
+     * @see <a href="https://en.wikipedia.org/wiki/Specials_(Unicode_block)#Replacement_character">...</a>
+     * @throws IllegalArgumentException if text is likely binary data and not a reindexing operation
+     */
+    private boolean isLikelyBinaryData(String text, DocumentId docId, boolean isReindexingOperation) {
+        var maxRatio = config.getMaxReplacementCharactersRatio();
+        var maxCharacters = config.getMaxReplacementCharacters();
+        // Skip if both thresholds are disabled
+        if (maxRatio >= 1 && (maxCharacters < 0 || maxCharacters == Integer.MAX_VALUE)) return false;
+        var replacementCharCount = text.chars().filter(c -> c == 0xFFFD).count();
+        if (replacementCharCount > maxCharacters && replacementCharCount > text.length() * maxRatio) {
+            var reason = ("some text of length %d is classified as binary data as it contains %d Unicode replacement characters. " +
+                    "(max-replacement-character-ratio=%d%%, max-replacement-characters=%d)")
+                    .formatted(text.length(), replacementCharCount, (int)Math.round(maxRatio * 100) , maxCharacters);
+            var docIdString = (docId != null) ? "%s".formatted(docId.toString()) : "<unknown>";
+            if (isReindexingOperation) {
+                log.warning("Skipping tokenization of '%s' while reindexing: %s. ".formatted(docIdString, reason));
+                return true;
+            } else {
+                throw new IllegalArgumentException("Invalid document '%s': %s".formatted(docIdString, reason));
+            }
+        }
+        return false;
+    }
 }
