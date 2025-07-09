@@ -84,6 +84,14 @@ public class StreamingJsonLinesResponseTest {
         }
     }
 
+    private static VisitorContinuation continuationOf(String token, double percentFinished) {
+        return new VisitorContinuation(token, percentFinished);
+    }
+
+    private static VisitorContinuation continuationOf(String token) {
+        return continuationOf(token, 50.0);
+    }
+
     @Test
     void commit_is_forwarded_to_writer_with_jsonl_content_type() throws IOException {
         var f = new Fixture();
@@ -125,19 +133,19 @@ public class StreamingJsonLinesResponseTest {
         // See deadlock danger comment in the implementation for a rationale on why
         // we can't write to the underlying channel as part of the token update itself.
         var f = new Fixture();
-        f.jsonlResponse.reportUpdatedContinuation(() -> "cooltoken2000");
+        f.jsonlResponse.reportUpdatedContinuation(() -> continuationOf("cooltoken2000"));
         verify(f.writer, never()).write(anyString(), any());
     }
 
     @Test
     void inline_continuation_token_updates_are_written_as_part_of_next_put() throws IOException {
         var f = new Fixture();
-        f.jsonlResponse.reportUpdatedContinuation(() -> "cooltoken2000");
+        f.jsonlResponse.reportUpdatedContinuation(() -> continuationOf("cooltoken2000"));
         // Token update and put is coalesced into the same buffer write.
         f.jsonlResponse.writeDocumentValue(f.doc1, null);
         String expected = """
                 {"put":"id:ns:music::one","fields":{}}
-                {"continuation":"cooltoken2000"}
+                {"continuation":{"token":"cooltoken2000","percentFinished":50.0}}
                 """;
         verify(f.writer).write(expected, null);
         // Writing another put should _not_ have the token
@@ -151,11 +159,11 @@ public class StreamingJsonLinesResponseTest {
     @Test
     void inline_continuation_token_updates_are_written_as_part_of_next_remove() throws IOException {
         var f = new Fixture();
-        f.jsonlResponse.reportUpdatedContinuation(() -> "cooltoken3000");
+        f.jsonlResponse.reportUpdatedContinuation(() -> continuationOf("cooltoken3000", 30.0));
         f.jsonlResponse.writeDocumentRemoval(new DocumentId("id:ns:music::three"), null);
         String expected = """
                 {"remove":"id:ns:music::three"}
-                {"continuation":"cooltoken3000"}
+                {"continuation":{"token":"cooltoken3000","percentFinished":30.0}}
                 """;
         verify(f.writer).write(expected, null);
         f.jsonlResponse.writeDocumentRemoval(new DocumentId("id:ns:music::four"), null);
@@ -168,13 +176,13 @@ public class StreamingJsonLinesResponseTest {
     @Test
     void multiple_continuation_token_updates_retain_newest_token_value() throws IOException {
         var f = new Fixture();
-        f.jsonlResponse.reportUpdatedContinuation(() -> "cooltoken2000");
-        f.jsonlResponse.reportUpdatedContinuation(() -> "cooltoken3000");
-        f.jsonlResponse.reportUpdatedContinuation(() -> "cooltoken4000");
+        f.jsonlResponse.reportUpdatedContinuation(() -> continuationOf("cooltoken2000", 20.0));
+        f.jsonlResponse.reportUpdatedContinuation(() -> continuationOf("cooltoken3000", 30.0));
+        f.jsonlResponse.reportUpdatedContinuation(() -> continuationOf("cooltoken4000", 40.0));
         f.jsonlResponse.writeDocumentValue(f.doc1, null);
         String expected = """
                 {"put":"id:ns:music::one","fields":{}}
-                {"continuation":"cooltoken4000"}
+                {"continuation":{"token":"cooltoken4000","percentFinished":40.0}}
                 """;
         verify(f.writer).write(expected, null);
     }
@@ -183,8 +191,21 @@ public class StreamingJsonLinesResponseTest {
     void epilogue_continuation_token_is_written_immediately() throws IOException {
         var f = new Fixture();
         // Not written while session lock is held, so it's safe to write it immediately.
-        f.jsonlResponse.writeEpilogueContinuation("swagtoken");
-        verify(f.writer).write("{\"continuation\":\"swagtoken\"}\n", null);
+        f.jsonlResponse.writeEpilogueContinuation(continuationOf("swagtoken"));
+        String expected = """
+                {"continuation":{"token":"swagtoken","percentFinished":50.0}}
+                """;
+        verify(f.writer).write(expected, null);
+    }
+
+    @Test
+    void finished_epilogue_continuation_emits_continuation_with_no_token_and_100_pct_completion() throws IOException {
+        var f = new Fixture();
+        f.jsonlResponse.writeEpilogueContinuation(VisitorContinuation.FINISHED);
+        String expected = """
+                {"continuation":{"percentFinished":100.0}}
+                """;
+        verify(f.writer).write(expected, null);
     }
 
     private static void verifyCompletionHandlerUntouched(CompletionHandler handler) {
