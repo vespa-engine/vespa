@@ -22,16 +22,25 @@ on:
 
 env:
   DRY_RUN: ${{ (inputs.dry-run || github.event_name == 'pull_request') && 'true' || '' }}
+  # Get the service Slug from Spacelift output: https://vespaai.app.spacelift.io/stack/cloudsmith/outputs
+  CLOUDSMITH_SERVICE_SLUG: ''
+
+permissions:
+  contents: read
+  id-token: write # Needed to use the OIDC Auth
+
+defaults:
+  run:
+    # Specify to ensure "pipefail and errexit" are set.
+    # Ref: https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defaultsrunshell
+    shell: bash
 
 jobs:
-  mirror-copr-rpms-to-archive:
+  mirror:
     runs-on: ubuntu-latest
 
     container:
         image: almalinux:8
-        env:
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
-          CLOUDSMITH_API_TOKEN: ${{ secrets.CLOUDSMITH_API_TOKEN }}
         volumes:
           - ${{ github.workspace }}:/workspace
 
@@ -48,6 +57,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Cloudsmith CLI + Auth
+        uses: cloudsmith-io/cloudsmith-cli-action@v1.0.3
+        with:
+          oidc-namespace: 'vespa'
+          oidc-service-slug: ${{ env.CLOUDSMITH_SERVICE_SLUG }}
 
       - name: Install tools
         run: |
