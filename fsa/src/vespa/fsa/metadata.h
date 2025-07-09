@@ -148,7 +148,7 @@ public:
     if(_ok)
       return (const void*)((const uint8_t*)_data+idx*size);
     else
-      return NULL;
+      return nullptr;
   }
 
   const void *getIndirectRecordEntry(uint32_t idx) const
@@ -158,7 +158,7 @@ public:
       return (const void*)((const uint8_t*)_data+offset);
     }
     else
-      return NULL;
+      return nullptr;
   }
 
   const char *getCharPtrEntry(uint32_t offset) const
@@ -166,7 +166,7 @@ public:
     if(_ok)
       return ((const char*)_data)+offset;
     else
-      return NULL;
+      return nullptr;
   }
 
 };

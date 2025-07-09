@@ -816,27 +816,27 @@ IndexMaintainer::doneSetSchema(SetSchemaArgs &args, std::shared_ptr<IMemoryIndex
 
 
 Schema
-IndexMaintainer::getSchema(void) const
+IndexMaintainer::getSchema() const
 {
     LockGuard lock(_index_update_lock);
     return _schema;
 }
 
 std::shared_ptr<const Schema>
-IndexMaintainer::getActiveFusionPrunedSchema(void) const
+IndexMaintainer::getActiveFusionPrunedSchema() const
 {
     LockGuard lock(_index_update_lock);
     return _activeFusionPrunedSchema;
 }
 
 TuneFileAttributes
-IndexMaintainer::getAttrTune(void)
+IndexMaintainer::getAttrTune()
 {
     return _tuneFileAttributes;
 }
 
 IndexMaintainer::ChangeGens
-IndexMaintainer::getChangeGens(void)
+IndexMaintainer::getChangeGens()
 {
     LockGuard lock(_index_update_lock);
     return _changeGens;
@@ -1195,7 +1195,7 @@ IndexMaintainer::getFusionStats() const
 }
 
 uint32_t
-IndexMaintainer::getNumFrozenMemoryIndexes(void) const
+IndexMaintainer::getNumFrozenMemoryIndexes() const
 {
     // Called by flush engine scheduler thread (from getFlushTargets())
     LockGuard state_lock(_index_update_lock);

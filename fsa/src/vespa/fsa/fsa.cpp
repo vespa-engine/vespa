@@ -39,7 +39,7 @@ FSA::iterator& FSA::iterator::operator++()
   state_t next;
   unsigned int depth;
 
-  if(_item._symbol==0xff || _item._fsa==NULL)
+  if(_item._symbol==0xff || _item._fsa==nullptr)
     return *this;
 
   if(_item._symbol==0 && _item._state==0)
@@ -86,22 +86,22 @@ uint32_t FSA::libVER()
 // {{{ MetaData::MetaData()
 
 FSA::FSA(const char *file, FileAccessMethod fam) :
-  _mmap_addr(NULL), _mmap_length(0),
+  _mmap_addr(nullptr), _mmap_length(0),
   _version(0), _serial(0),
-  _state(NULL), _symbol(NULL), _size(0),
-  _data(NULL), _data_size(0), _data_type(DATA_VARIABLE), _fixed_data_size(0),
-  _has_perfect_hash(false),_perf_hash(NULL),
+  _state(nullptr), _symbol(nullptr), _size(0),
+  _data(nullptr), _data_size(0), _data_type(DATA_VARIABLE), _fixed_data_size(0),
+  _has_perfect_hash(false),_perf_hash(nullptr),
   _start(0), _ok(false)
 {
   _ok = read(file, fam);
 }
 
 FSA::FSA(const std::string &file, FileAccessMethod fam) :
-  _mmap_addr(NULL), _mmap_length(0),
+  _mmap_addr(nullptr), _mmap_length(0),
   _version(0), _serial(0),
-  _state(NULL), _symbol(NULL), _size(0),
-  _data(NULL), _data_size(0), _data_type(DATA_VARIABLE), _fixed_data_size(0),
-  _has_perfect_hash(false),_perf_hash(NULL),
+  _state(nullptr), _symbol(nullptr), _size(0),
+  _data(nullptr), _data_size(0), _data_type(DATA_VARIABLE), _fixed_data_size(0),
+  _has_perfect_hash(false),_perf_hash(nullptr),
   _start(0), _ok(false)
 {
   _ok = read(file.c_str(), fam);
@@ -112,14 +112,14 @@ FSA::FSA(const std::string &file, FileAccessMethod fam) :
 
 FSA::~FSA()
 {
-  if(_mmap_addr!=NULL && _mmap_addr!=MAP_FAILED){
+  if(_mmap_addr!=nullptr && _mmap_addr!=MAP_FAILED){
     munmap(_mmap_addr,_mmap_length);
   }
   else{
-    if(_state!=NULL) free(_state);
-    if(_symbol!=NULL) free(_symbol);
-    if(_data!=NULL) free(_data);
-    if(_perf_hash!=NULL) free(_perf_hash);
+    if(_state!=nullptr) free(_state);
+    if(_symbol!=nullptr) free(_symbol);
+    if(_data!=nullptr) free(_data);
+    if(_perf_hash!=nullptr) free(_perf_hash);
   }
 }
 
@@ -130,19 +130,19 @@ void FSA::reset()
 {
   _version = 0;
   _serial = 0;
-  if(_mmap_addr!=NULL && _mmap_addr!=MAP_FAILED){
+  if(_mmap_addr!=nullptr && _mmap_addr!=MAP_FAILED){
     munmap(_mmap_addr,_mmap_length);
   }
   else{
-    if(_state!=NULL) free(_state);
-    if(_symbol!=NULL) free(_symbol);
-    if(_data!=NULL) free(_data);
-    if(_perf_hash!=NULL) free(_perf_hash);
+    if(_state!=nullptr) free(_state);
+    if(_symbol!=nullptr) free(_symbol);
+    if(_data!=nullptr) free(_data);
+    if(_perf_hash!=nullptr) free(_perf_hash);
   }
-  _mmap_addr=NULL; _mmap_length=0;
-  _state=NULL; _symbol=NULL; _size=0;
-  _data=NULL; _data_size=0; _data_type=DATA_VARIABLE; _fixed_data_size=0;
-  _has_perfect_hash=false; _perf_hash=NULL;
+  _mmap_addr=nullptr; _mmap_length=0;
+  _state=nullptr; _symbol=nullptr; _size=0;
+  _data=nullptr; _data_size=0; _data_type=DATA_VARIABLE; _fixed_data_size=0;
+  _has_perfect_hash=false; _perf_hash=nullptr;
   _start=0;
 }
 
@@ -160,7 +160,7 @@ bool FSA::read(const char *file, FileAccessMethod fam)
   if(fam==FILE_ACCESS_UNDEF)
     fam=_default_file_access_method;
 
-  if(file==NULL)
+  if(file==nullptr)
     return false;
 
   int fd = ::open(file,O_RDONLY);
@@ -208,7 +208,7 @@ bool FSA::read(const char *file, FileAccessMethod fam)
     }
   }
 
-  if(_mmap_addr==NULL){
+  if(_mmap_addr==nullptr){
     _symbol = (symbol_t*)malloc(_size*sizeof(symbol_t));
     r=::read(fd,_symbol,_size*sizeof(symbol_t));
     if(r!=_size*sizeof(symbol_t)){
@@ -222,7 +222,7 @@ bool FSA::read(const char *file, FileAccessMethod fam)
   }
   checksum += Checksum::compute(_symbol,_size*sizeof(symbol_t));
 
-  if(_mmap_addr==NULL){
+  if(_mmap_addr==nullptr){
     _state = Unaligned<state_t>::ptr(malloc(_size*sizeof(state_t)));
     r=::read(fd,_state,_size*sizeof(state_t));
     if(r!=_size*sizeof(state_t)){
@@ -237,7 +237,7 @@ bool FSA::read(const char *file, FileAccessMethod fam)
   }
   checksum += Checksum::compute(_state,_size*sizeof(state_t));
 
-  if(_mmap_addr==NULL){
+  if(_mmap_addr==nullptr){
     _data = (data_t*)malloc(_data_size);
     r=::read(fd,_data,_data_size);
     if(r!=_data_size){
@@ -254,7 +254,7 @@ bool FSA::read(const char *file, FileAccessMethod fam)
   checksum += Checksum::compute(_data,_data_size);
 
   if(header._has_perfect_hash){
-    if(_mmap_addr==NULL){
+    if(_mmap_addr==nullptr){
       _perf_hash = Unaligned<hash_t>::ptr(malloc(_size*sizeof(hash_t)));
       r=::read(fd,_perf_hash,_size*sizeof(hash_t));
       if(r!=_size*sizeof(hash_t)){

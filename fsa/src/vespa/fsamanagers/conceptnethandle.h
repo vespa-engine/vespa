@@ -41,7 +41,7 @@ private:
 
   class RefCountableConceptNet: public ConceptNet, public RefCountable<ConceptNet> {
   public:
-    RefCountableConceptNet(const char *fsafile, const char *datafile=NULL, FileAccessMethod fam = FILE_ACCESS_UNDEF) : ConceptNet(fsafile,datafile,fam) {}
+    RefCountableConceptNet(const char *fsafile, const char *datafile=nullptr, FileAccessMethod fam = FILE_ACCESS_UNDEF) : ConceptNet(fsafile,datafile,fam) {}
   };
 
   RefCountableConceptNet *_conceptNet; /**< The ConceptNet object itself. */
@@ -69,7 +69,7 @@ public:
    * @param fam File access mode (read or mmap). If not set, the
    *            global preferred access mode will be used.
    */
-  Handle(const char *fsafile, const char *datafile=NULL, FileAccessMethod fam = FILE_ACCESS_UNDEF) :
+  Handle(const char *fsafile, const char *datafile=nullptr, FileAccessMethod fam = FILE_ACCESS_UNDEF) :
     _conceptNet(new RefCountableConceptNet(fsafile,datafile,fam))
   {
     _conceptNet->addReference();
@@ -93,7 +93,7 @@ public:
   /**
    * @brief Destructor.
    */
-  ~Handle(void)
+  ~Handle()
   {
     _conceptNet->removeReference();
   }

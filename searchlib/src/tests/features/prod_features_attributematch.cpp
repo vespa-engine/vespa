@@ -75,12 +75,12 @@ TEST_F(ProdFeaturesTest, test_attribute_match)
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sstr");   // 0 matches
         ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
         setupForAttributeTest(ft);
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("sint") != NULL);   // query term 0, hit in sint
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("sint") != NULL);   // query term 1, ..
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("sint") != NULL);   // query term 2, ..
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("sint") != NULL);   // query term 3, ..
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("sfloat") != NULL); // query term 4, hit in sfloat
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addIndexNode(StringList().add("foo")) != NULL);
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("sint") != nullptr);   // query term 0, hit in sint
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("sint") != nullptr);   // query term 1, ..
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("sint") != nullptr);   // query term 2, ..
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("sint") != nullptr);   // query term 3, ..
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("sfloat") != nullptr); // query term 4, hit in sfloat
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addIndexNode(StringList().add("foo")) != nullptr);
         ft.getQueryEnv().getTerms()[0].setWeight(search::query::Weight(20));
         ft.getQueryEnv().getTerms()[0].setUniqueId(0);
         ft.getQueryEnv().getTerms()[1].setWeight(search::query::Weight(20));
@@ -153,7 +153,7 @@ TEST_F(ProdFeaturesTest, test_attribute_match)
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "aint");   // 1 matches
         ft.getIndexEnv().getProperties().add("attributeMatch(aint).fieldCompletenessImportance", "0.5");
         setupForAttributeTest(ft);
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("aint") != NULL);   // 0
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("aint") != nullptr);   // 0
         ASSERT_TRUE(ft.setup());
 
         MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
@@ -183,13 +183,13 @@ TEST_F(ProdFeaturesTest, test_attribute_match)
         ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
         ft.getIndexEnv().getProperties().add("attributeMatch(wsint).maxWeight", "100");
         setupForAttributeTest(ft);
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("wsint") != NULL);   // 0
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("wsint") != nullptr);   // 0
         ft.getQueryEnv().getTerms()[0].setWeight(search::query::Weight(2));
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("wsint") != NULL);   // 1
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("wsint") != nullptr);   // 1
         ft.getQueryEnv().getTerms()[1].setWeight(search::query::Weight(3));
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("wsfloat") != NULL); // 2
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("wsfloat") != nullptr); // 2
         ft.getQueryEnv().getTerms()[2].setWeight(search::query::Weight(0));
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addIndexNode(StringList().add("foo")) != NULL);
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addIndexNode(StringList().add("foo")) != nullptr);
         ft.getQueryEnv().getTerms()[3].setWeight(search::query::Weight(0));
         ASSERT_TRUE(ft.setup());
 
@@ -265,7 +265,7 @@ TEST_F(ProdFeaturesTest, test_attribute_match)
         FtFeatureTest ft(_factory, "attributeMatch(unique)");
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "unique");
         setupForAttributeTest(ft);
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("unique") != NULL);
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("unique") != nullptr);
         ASSERT_TRUE(ft.setup());
 
         RankResult exp;
@@ -300,8 +300,8 @@ TEST_F(ProdFeaturesTest, test_attribute_match)
         wint->commit();
         ASSERT_TRUE(wint->getValueCount(0) == 0);
 
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("aint") != NULL);
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("wint") != NULL);
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("aint") != nullptr);
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("wint") != nullptr);
         ASSERT_TRUE(ft.setup());
 
         RankResult exp;

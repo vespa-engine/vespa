@@ -25,40 +25,40 @@ struct RWLock::Impl
 
 // }}}
 
-RWLock::RWLock(void) : _impl(new Impl)
+RWLock::RWLock() : _impl(new Impl)
 {
   int rc;
-  rc = pthread_rwlock_init(&(_impl->_rwlock),NULL);
+  rc = pthread_rwlock_init(&(_impl->_rwlock),nullptr);
   assert(rc == 0);
 }
 
-RWLock::~RWLock(void)
+RWLock::~RWLock()
 {
   pthread_rwlock_destroy(&(_impl->_rwlock));
   delete _impl;
 }
 
-bool RWLock::tryRdLock (void)
+bool RWLock::tryRdLock ()
 {
   return pthread_rwlock_tryrdlock(&(_impl->_rwlock)) == 0;
 }
 
-bool RWLock::tryWrLock (void)
+bool RWLock::tryWrLock ()
 {
   return pthread_rwlock_trywrlock(&(_impl->_rwlock)) == 0;
 }
 
-bool RWLock::rdLock (void)
+bool RWLock::rdLock ()
 {
   return pthread_rwlock_rdlock(&(_impl->_rwlock)) == 0;
 }
 
-bool RWLock::wrLock (void)
+bool RWLock::wrLock ()
 {
   return pthread_rwlock_wrlock(&(_impl->_rwlock)) == 0;
 }
 
-bool RWLock::unlock (void)
+bool RWLock::unlock ()
 {
   return pthread_rwlock_unlock(&(_impl->_rwlock)) == 0;
 }

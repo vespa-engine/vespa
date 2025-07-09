@@ -50,7 +50,7 @@ public class PermanentFlags {
             "jvm-gc-options", "",
             "Sets default jvm gc options",
             "Takes effect at redeployment",
-            INSTANCE_ID);
+            INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID);
 
     public static final UnboundIntFlag HEAP_SIZE_PERCENTAGE = defineIntFlag(
             "heap-size-percentage", 69,

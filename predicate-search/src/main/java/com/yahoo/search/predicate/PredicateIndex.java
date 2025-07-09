@@ -34,8 +34,11 @@ import java.util.stream.Stream;
  * </p>
  * @author Magnar Nedland
  * @author bjorncs
+ *
+ * @deprecated See <a href="https://docs.vespa.ai/en/vespa9-release-notes.html">Vespa 9 Release Notes</a>
  */
 @Beta
+@Deprecated(forRemoval = true, since = "8")
 public class PredicateIndex {
 
     private static final int SERIALIZATION_FORMAT_VERSION = 3;

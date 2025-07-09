@@ -40,7 +40,7 @@ void
 ArrayOperationNode::wireAttributes(const IAttributeContext &attrCtx)
 {
     _attribute = attrCtx.getAttribute(_attributeName);
-    if (_attribute == NULL) {
+    if (_attribute == nullptr) {
         throw std::runtime_error(vespalib::make_string("Failed locating attribute vector '%s'", _attributeName.c_str()));
     }
 }

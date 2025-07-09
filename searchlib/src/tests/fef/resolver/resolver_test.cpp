@@ -87,8 +87,8 @@ TEST_F(ResolverTest, requireThatWeGetUniqueBlueprints) {
     EXPECT_TRUE(res->compile());
     const BlueprintResolver::ExecutorSpecList& spec = res->getExecutorSpecs();
     ASSERT_EQ(2u, spec.size());
-    EXPECT_TRUE(dynamic_cast<BaseBlueprint *>(spec[0].blueprint.get()) != NULL);
-    EXPECT_TRUE(dynamic_cast<CombineBlueprint *>(spec[1].blueprint.get()) != NULL);
+    EXPECT_TRUE(dynamic_cast<BaseBlueprint *>(spec[0].blueprint.get()) != nullptr);
+    EXPECT_TRUE(dynamic_cast<CombineBlueprint *>(spec[1].blueprint.get()) != nullptr);
 }
 
 TEST_F(ResolverTest, require_that_bad_input_is_handled) {

@@ -57,6 +57,18 @@ logTarget(const char * text, const FlushContext & ctx) {
         ctx.getHandler()->getCurrentSerialNumber());
 }
 
+bool
+reuse_strategy(const IFlushStrategy& old_strategy, const IFlushStrategy& strategy) {
+    /*
+     * If same strategy is already active or queued then reuse it instead of enqueueing a new one.
+     * FlushAllStrategy (with name "flush_all") flushes all targets and is thus a superset of
+     * PrepareRestartFlushStrategy (with name "prepare_restart"). If the former is active or queued then
+     * don't enqueue the latter.
+     */
+    return (old_strategy.name() == strategy.name() ||
+            (old_strategy.name() == "flush_all" && strategy.name() == "prepare_restart"));
+}
+
 VESPA_THREAD_STACK_TAG(flush_engine_executor)
 
 }
@@ -98,6 +110,7 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
       _has_thread(false),
       _strategy(std::move(strategy)),
       _priorityStrategy(),
+      _priority_strategy_queue(),
       _strategy_id(duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count()),
       _executor(maxConcurrentTotal(), CpuUsage::wrap(flush_engine_executor, CpuUsage::Category::COMPACT)),
       _lock(),
@@ -107,7 +120,6 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
       _flushing_strategies(),
       _setStrategyLock(),
       _strategyLock(),
-      _strategyCond(),
       _strategy_changed(false),
       _lowest_strategy_id_notifier(std::make_shared<FlushStrategyIdNotifier>(_strategy_id)),
       _tlsStatsFactory(std::move(tlsStatsFactory)),
@@ -345,9 +357,15 @@ FlushEngine::maybe_apply_changed_strategy(std::vector<uint32_t>& strategy_ids_fo
     _strategy_changed = false;
     strategy_ids_for_finished_flushes.emplace_back(_strategy_id);
     auto strategy_name = _priorityStrategy ? _priorityStrategy->name() : _strategy->name();
-    bool priority_strategy = static_cast<bool>(_priorityStrategy);
+    bool priority_strategy = false;
+    if (_priorityStrategy) {
+        priority_strategy = true;
+        _strategy_id = _priorityStrategy->get_id();
+    } else {
+        ++_strategy_id;
+    }
     _flush_history->clear_pending_flushes();
-    _flush_history->set_strategy(std::move(strategy_name), ++_strategy_id, priority_strategy);
+    _flush_history->set_strategy(std::move(strategy_name), _strategy_id, priority_strategy);
     std::lock_guard guard(_lock);
     auto it = _flushing_strategies.lower_bound(_strategy_id);
     assert(it == _flushing_strategies.end());
@@ -487,7 +505,10 @@ FlushEngine::flushAll(const FlushContext::List &lst, uint32_t strategy_id)
     std::lock_guard<std::mutex> strategyGuard(_strategyLock);
     _strategy_changed = true;
     _priorityStrategy.reset();
-    _strategyCond.notify_all();
+    if (!_priority_strategy_queue.empty()) {
+        _priorityStrategy = _priority_strategy_queue.front();
+        _priority_strategy_queue.pop_front();
+    }
 }
 
 std::string
@@ -633,34 +654,55 @@ FlushEngine::initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP 
     return taskId;
 }
 
+uint32_t
+FlushEngine::set_strategy_helper(std::shared_ptr<IFlushStrategy> strategy)
+{
+    std::lock_guard strategy_guard(_strategyLock);
+    if (is_closed()) {
+        std::unique_lock guard(_lock);
+        return 0u; // Set strategy failed due to flush engine being closed.
+    }
+    if (!_priorityStrategy) {
+        strategy->set_id(_strategy_id + 1u);
+        _priorityStrategy = std::move(strategy);
+        _strategy_changed = true;
+        std::lock_guard<std::mutex> guard(_lock);
+        _cond.notify_all();
+        return _priorityStrategy->get_id() + 1u; // switch to strategy then to next one
+    } else {
+        // wait_strategy_id is now the strategy id for _priorityStrategy
+        if (reuse_strategy(*_priorityStrategy, *strategy)) {
+            return _priorityStrategy->get_id() + 1u;
+        } else {
+            for (auto& old_strategy : _priority_strategy_queue) {
+                if (reuse_strategy(*old_strategy, *strategy)) {
+                    return old_strategy->get_id() + 1u;
+                }
+            }
+            strategy->set_id((_priority_strategy_queue.empty() ?
+                              _priorityStrategy->get_id() :
+                              _priority_strategy_queue.back()->get_id()) + 1u);
+            _priority_strategy_queue.push_back(std::move(strategy));
+            // switch to queued strategies then next one
+            return _priority_strategy_queue.back()->get_id() + 1;
+        }
+    }
+}
+
 void
 FlushEngine::setStrategy(IFlushStrategy::SP strategy)
 {
     auto notifier = _lowest_strategy_id_notifier;
     std::lock_guard<std::mutex> setStrategyGuard(_setStrategyLock);
-    std::unique_lock<std::mutex> strategyGuard(_strategyLock);
-    if (is_closed()) {
-        std::unique_lock guard(_lock);
-        return;
-    }
-    assert(!_priorityStrategy);
-    _priorityStrategy = std::move(strategy);
-    _strategy_changed = true;
-    uint32_t wait_strategy_id = _strategy_id + 2u;
-    {
-        std::lock_guard<std::mutex> guard(_lock);
-        _cond.notify_all();
-    }
-    while (_priorityStrategy) {
-        _strategyCond.wait(strategyGuard);
-    }
-    strategyGuard.unlock();
+    uint32_t wait_strategy_id = set_strategy_helper(std::move(strategy));
     /*
      * Wait for flushes started before the strategy change, for
      * flushes initiated by the strategy, and for flush engine to call
      * prune() afterwards.
      */
-    notifier->wait_ge_strategy_id(wait_strategy_id);
+    if (wait_strategy_id != 0u) {
+        notifier->wait_ge_strategy_id(wait_strategy_id);
+    }
 }
 
 } // namespace proton

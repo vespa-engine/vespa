@@ -142,7 +142,7 @@ factory<LogDataStore>::factory(std::string dir)
       _config(),
       _executor(1),
       _noTlSyncer(),
-      _datastore(_executor, dir, _config, GrowStrategy(), tuning, _fileHeaderContext, _noTlSyncer, NULL)
+      _datastore(_executor, dir, _config, GrowStrategy(), tuning, _fileHeaderContext, _noTlSyncer, nullptr)
 {}
 
 factory<LogDataStore>::~factory() {}

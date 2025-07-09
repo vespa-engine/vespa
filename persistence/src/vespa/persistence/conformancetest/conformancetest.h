@@ -35,13 +35,13 @@ public:
                 const DocumenttypesConfig &typesCfg) = 0;
 
         virtual void
-        clear(void)
+        clear()
         {
             // clear persistent state, i.e. remove files/directories
         }
 
         virtual bool
-        hasPersistence(void) const
+        hasPersistence() const
         {
             return false;
         }

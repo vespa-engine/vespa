@@ -124,7 +124,7 @@ public:
         return ShardedHashComparator(comp, EntryRef(), _num_shards);
     }
 
-    KvType& add(const ShardedHashComparator & comp, std::function<EntryRef(void)>& insert_entry);
+    KvType& add(const ShardedHashComparator & comp, std::function<EntryRef()>& insert_entry);
     KvType* remove(const ShardedHashComparator & comp);
     KvType* find(const ShardedHashComparator & comp) {
         uint32_t hash_idx = comp.hash_idx() % _modulo;

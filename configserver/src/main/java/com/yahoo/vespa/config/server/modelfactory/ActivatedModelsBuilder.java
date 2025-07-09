@@ -150,7 +150,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         return new ModelContextImpl.Properties(applicationId,
                                                modelVersion,
                                                configserverConfig,
-                                               zone(),
                                                ImmutableSet.copyOf(new ContainerEndpointsCache(TenantRepository.getTenantPath(tenant), curator).read(applicationId)),
                                                false, // We may be bootstrapping, but we only know and care during prepare
                                                false, // Always false, assume no one uses it when activating

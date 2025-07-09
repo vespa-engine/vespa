@@ -57,7 +57,7 @@ Application::parseOpts(int argc, char **argv)
 }
 
 void
-Application::usage(void)
+Application::usage()
 {
     std::cerr <<
         "Usage: vespa-configproxy-cmd [options]"                                 << std::endl <<

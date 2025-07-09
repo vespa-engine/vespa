@@ -560,6 +560,7 @@ TOKEN :
 | < APPROXIMATE_THRESHOLD: "approximate-threshold" >
 | < FILTER_FIRST_THRESHOLD: "filter-first-threshold" >
 | < FILTER_FIRST_EXPLORATION: "filter-first-exploration" >
+| < EXPLORATION_SLACK: "exploration-slack" >
 | < TARGET_HITS_MAX_ADJUSTMENT_FACTOR: "target-hits-max-adjustment-factor" >
 | < KEEP_RANK_COUNT: "keep-rank-count" >
 | < RANK_SCORE_DROP_LIMIT: "rank-score-drop-limit" >
@@ -2208,6 +2209,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
        | approximateThreshold(profile)
        | filterFirstThreshold(profile)
        | filterFirstExploration(profile)
+       | explorationSlack(profile)
        | targetHitsMaxAdjustmentFactor(profile)
        | rankProperties(profile)
        | secondPhase(profile)
@@ -2837,6 +2839,19 @@ void filterFirstExploration(ParsedRankProfile profile) :
 ;
 
 /**
+ * This rule consumes an exploration-slack statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void explorationSlack(ParsedRankProfile profile) :
+{
+    double slack;
+}
+
+    (<EXPLORATION_SLACK> <COLON> slack = floatValue()) { profile.setExplorationSlack(slack); }
+;
+
+/**
  * This rule consumes a target-hits-max-adjustment-factor statement for a rank profile.
  *
  * @param profile the rank profile to modify
@@ -3315,6 +3330,7 @@ String identifierWithDashStr :
     | <EVALUATION_POINT>
     | <EXACT_TERMINATOR>
     | <EXECUTION_MODE>
+    | <EXPLORATION_SLACK>
     | <FAST_ACCESS>
     | <FAST_RANK>
     | <FAST_SEARCH>

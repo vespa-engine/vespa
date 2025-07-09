@@ -136,9 +136,11 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     private boolean retry(HttpRequest request, int attempt) {
-        if (attempt > strategy.retries() || request.timeLeft().toMillis() <= 0)
+        var timeLeft = request.timeLeft().toMillis();
+        if (attempt > strategy.retries() || timeLeft <= 0) {
+            log.fine(() -> String.format("Giving up on %s after %d attempts (%dms left)", request, attempt, timeLeft));
             return false;
-
+        }
         switch (request.method().toUpperCase()) {
             case "POST":   return strategy.retry(FeedClient.OperationType.PUT);
             case "PUT":    return strategy.retry(FeedClient.OperationType.UPDATE);
@@ -153,16 +155,15 @@ class HttpRequestStrategy implements RequestStrategy {
      */
     private boolean retry(HttpRequest request, Throwable thrown, int attempt) {
         breaker.failure(thrown);
+        log.log(FINE, thrown, () -> String.format("Failed attempt %d at %s", attempt, request));
         if (   (thrown instanceof IOException)               // General IO problems.
             //  Thrown by HTTP2Session.StreamsState.reserveSlot, likely on GOAWAY from server
             || (thrown instanceof IllegalStateException && "session closed".equals(thrown.getMessage()))
             || thrown instanceof RetryableException
         ) {
-            log.log(FINER, thrown, () -> "Failed attempt " + attempt + " at " + request);
+            log.finer(() -> String.format("Retrying request %s after exception '%s'", request, thrown));
             return retry(request, attempt);
         }
-
-        log.log(FINE, thrown, () -> "Failed attempt " + attempt + " at " + request);
         return false;
     }
 
@@ -302,8 +303,10 @@ class HttpRequestStrategy implements RequestStrategy {
         vessel.whenCompleteAsync((response, thrown) -> {
                                      result.set(response, thrown);
                                      // Retry the operation if it failed with a transient error ...
-                                     if (thrown != null ? retry(request, thrown, attempt)
-                                                        : retry(request, response, attempt)) {
+                                     var shouldRetry = thrown != null
+                                             ? retry(request, thrown, attempt)
+                                             : retry(request, response, attempt);
+                                     if (shouldRetry) {
                                          CompletableFuture<HttpResponse> retry = new CompletableFuture<>();
                                          offer(request, retry);
                                          handleAttempt(retry, request, result, attempt + (breaker.state() == HALF_OPEN ? 0 : 1));

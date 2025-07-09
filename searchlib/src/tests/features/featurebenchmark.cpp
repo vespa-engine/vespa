@@ -247,7 +247,7 @@ Benchmark::runFieldMatch(Config & cfg)
     FtFeatureTest ft(_factory, feature);
 
     setupPropertyMap(ft.getIndexEnv().getProperties(), cfg.getUnknown());
-    setupFieldMatch(ft, index, query, field, NULL, 0, 0.0f, 0);
+    setupFieldMatch(ft, index, query, field, nullptr, 0, 0.0f, 0);
 
     start();
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;

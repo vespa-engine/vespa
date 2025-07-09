@@ -196,9 +196,9 @@ MyAttributeManager::asyncForAttribute(std::string_view, std::unique_ptr<IAttribu
 }
 
     void extract_posting_info(Result &result, const PostingInfo *postingInfo) {
-    if (postingInfo != NULL) {
+    if (postingInfo != nullptr) {
         const MinMaxPostingInfo *minMax = dynamic_cast<const MinMaxPostingInfo *>(postingInfo);
-        if (minMax != NULL) {
+        if (minMax != nullptr) {
             result.set_minmax(minMax->getMinWeight(), minMax->getMaxWeight());
         }
     }

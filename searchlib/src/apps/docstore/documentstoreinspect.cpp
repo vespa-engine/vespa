@@ -112,7 +112,7 @@ DocumentStoreInspectApp::verify(const std::string & dir)
     transactionlog::NoSyncProxy noTlSyncer;
 
     LogDataStore store(executor, dir, config, growStrategy, tuning,
-                       fileHeaderContext, noTlSyncer, NULL, true);
+                       fileHeaderContext, noTlSyncer, nullptr, true);
     store.verify(false);
     return retval;
 }

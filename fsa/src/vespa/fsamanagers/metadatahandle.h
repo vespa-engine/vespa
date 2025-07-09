@@ -93,7 +93,7 @@ public:
   /**
    * @brief Destructor.
    */
-  ~Handle(void)
+  ~Handle()
   {
     _metaData->removeReference();
   }

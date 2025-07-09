@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/time.h>
 #include <condition_variable>
+#include <deque>
 #include <set>
 #include <mutex>
 #include <thread>
@@ -92,6 +93,7 @@ private:
     std::atomic<bool>              _has_thread;
     IFlushStrategy::SP             _strategy;
     mutable IFlushStrategy::SP     _priorityStrategy;
+    std::deque<std::shared_ptr<IFlushStrategy>> _priority_strategy_queue;
     uint32_t                       _strategy_id;
     vespalib::ThreadStackExecutor  _executor;
     mutable std::mutex             _lock;
@@ -105,7 +107,6 @@ private:
     std::map<uint32_t, uint32_t>   _flushing_strategies;
     std::mutex                     _setStrategyLock; // serialize setStrategy calls
     std::mutex                     _strategyLock;
-    std::condition_variable        _strategyCond;
     bool                           _strategy_changed;
     std::shared_ptr<flushengine::FlushStrategyIdNotifier> _lowest_strategy_id_notifier;
     std::shared_ptr<flushengine::ITlsStatsFactory> _tlsStatsFactory;
@@ -136,6 +137,7 @@ private:
     bool isFlushing(const std::lock_guard<std::mutex> &guard, const std::string & name) const;
     std::string checkAndFlush(std::string prev);
     bool is_closed() const noexcept { return _closed.load(std::memory_order_relaxed); }
+    uint32_t set_strategy_helper(std::shared_ptr<IFlushStrategy> strategy);
 
     friend class FlushTask;
     friend class FlushEngineExplorer;

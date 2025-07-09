@@ -72,7 +72,7 @@ public:
     /**
      * @brief Return next random 32-bit signed integer
      **/
-    int32_t nextInt32(void) {
+    int32_t nextInt32() {
         iterate();
         return (_state >> 16);
     }

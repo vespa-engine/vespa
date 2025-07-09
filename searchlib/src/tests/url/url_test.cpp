@@ -16,8 +16,8 @@ CheckString(const char *name,
             const unsigned char *test1,
             const unsigned char *test2)
 {
-    assert(test1 != NULL);
-    assert(test2 != NULL);
+    assert(test1 != nullptr);
+    assert(test2 != nullptr);
 
     if (strcmp((const char*)test1, (const char*)test2)!=0) {
         printf("FAILED: %s: '%s' != '%s'!\n", name, test1, test2);

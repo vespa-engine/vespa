@@ -110,7 +110,7 @@ GenerationHandler::GenerationHandler()
     _first->setValid();
 }
 
-GenerationHandler::~GenerationHandler(void)
+GenerationHandler::~GenerationHandler()
 {
     update_oldest_used_generation();
     assert(_first == _last.load(std::memory_order_relaxed));
@@ -188,7 +188,7 @@ GenerationHandler::getGenerationRefCount(generation_t gen) const
 }
 
 uint64_t
-GenerationHandler::getGenerationRefCount(void) const
+GenerationHandler::getGenerationRefCount() const
 {
     uint64_t ret = 0;
     for (GenerationHold *hold = _first; hold != nullptr; hold = hold->_next) {

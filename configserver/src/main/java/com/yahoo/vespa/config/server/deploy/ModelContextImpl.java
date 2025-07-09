@@ -28,7 +28,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.SharedHosts;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -320,7 +319,6 @@ public class ModelContextImpl implements ModelContext {
         private final String tenantSecretDomain;
         private final String athenzDnsSuffix;
         private final boolean hostedVespa;
-        private final Zone zone;
         private final Set<ContainerEndpoint> endpoints;
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
@@ -345,7 +343,6 @@ public class ModelContextImpl implements ModelContext {
         public Properties(ApplicationId applicationId,
                           Version modelVersion,
                           ConfigserverConfig configserverConfig,
-                          Zone zone,
                           Set<ContainerEndpoint> endpoints,
                           boolean isBootstrap,
                           boolean isFirstTimeDeployment,
@@ -367,7 +364,6 @@ public class ModelContextImpl implements ModelContext {
             this.tenantSecretDomain = configserverConfig.tenantSecretDomain();
             this.athenzDnsSuffix = configserverConfig.athenzDnsSuffix();
             this.hostedVespa = configserverConfig.hostedVespa();
-            this.zone = zone;
             this.endpoints = endpoints;
             this.isBootstrap = isBootstrap;
             this.isFirstTimeDeployment = isFirstTimeDeployment;
@@ -378,7 +374,8 @@ public class ModelContextImpl implements ModelContext {
             this.tenantSecretStores = tenantSecretStores;
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
                     .with(Dimension.INSTANCE_ID, applicationId.serializedForm())
-                    .with(Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance());
+                    .with(Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance())
+                    .withVersion(Optional.of(modelVersion));
             this.searchNodeInitializerThreadsFlag = PermanentFlags.SEARCHNODE_INITIALIZER_THREADS.bindTo(flagSource)
                                                                                                  .with(Dimension.INSTANCE_ID, applicationId.serializedForm())
                                                                                                  .with(Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance());
@@ -417,7 +414,7 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public AthenzDomain tenantSecretDomain() {
             if (tenantSecretDomain.isEmpty())
-                throw new IllegalArgumentException("Tenant secret domain is not set for zone " + zone);
+                throw new IllegalArgumentException("Tenant secret domain is not set");
             return AthenzDomain.from(tenantSecretDomain);
         }
 
@@ -428,9 +425,6 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public boolean hostedVespa() { return hostedVespa; }
-
-        @Override
-        public Zone zone() { return zone; }
 
         @Override
         public Set<ContainerEndpoint> endpoints() { return endpoints; }
@@ -459,8 +453,8 @@ public class ModelContextImpl implements ModelContext {
             return tenantSecretStores;
         }
 
-        @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType) {
-            return flagValueForClusterType(jvmGCOptionsFlag, clusterType);
+        @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId) {
+            return flagValueForClusterTypeAndClusterId(jvmGCOptionsFlag, clusterType, clusterId);
         }
 
         @Override public int searchNodeInitializerThreads(String clusterId) {
@@ -479,10 +473,19 @@ public class ModelContextImpl implements ModelContext {
 
         @Override public List<String> tlsCiphersOverride() { return tlsCiphersOverride; }
 
-        public String flagValueForClusterType(StringFlag flag, Optional<ClusterSpec.Type> clusterType) {
-            return clusterType.map(type -> flag.with(CLUSTER_TYPE, type.name()))
-                              .orElse(flag)
-                              .value();
+        public String flagValueForClusterTypeAndClusterId(
+                StringFlag flag, Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId) {
+            // Resolving the value here instead of the model context constructor is
+            // suboptimal as the flag value may change during a single config generation,
+            // which may trigger a warning from the jdisc container at best and potentially result in bad stuff.
+            // Luckily this is feature flag that's rarely modified.
+            var flagWithClusterType = clusterType.map(type -> flag.with(CLUSTER_TYPE, type.name()))
+                    .orElse(flag);
+            
+            var flagWithContainerId = clusterId.map(id -> flagWithClusterType.with(CLUSTER_ID, id.value()))
+                    .orElse(flagWithClusterType);
+            
+            return flagWithContainerId.value();
         }
 
         public int intFlagValueForClusterId(IntFlag flag, String clusterId) {

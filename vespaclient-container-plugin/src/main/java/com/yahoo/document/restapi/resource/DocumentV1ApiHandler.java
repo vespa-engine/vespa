@@ -4,7 +4,6 @@ package com.yahoo.document.restapi.resource;
 import ai.vespa.utils.BytesQuantity;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonFactoryBuilder;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.component.annotation.Inject;
@@ -12,7 +11,6 @@ import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.container.core.HandlerMetricContextUtil;
 import com.yahoo.container.core.documentapi.VespaDocumentAccess;
-import com.yahoo.container.jdisc.ContentChannelOutputStream;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
@@ -27,7 +25,6 @@ import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.document.json.DocumentOperationType;
 import com.yahoo.document.json.JsonReader;
-import com.yahoo.document.json.JsonWriter;
 import com.yahoo.document.json.ParsedDocumentOperation;
 import com.yahoo.document.restapi.DocumentOperationExecutorConfig;
 import com.yahoo.document.select.parser.ParseException;
@@ -55,7 +52,6 @@ import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.Response.Status;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
-import com.yahoo.jdisc.handler.BufferedContentChannel;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ReadableContentChannel;
@@ -66,23 +62,18 @@ import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.messagebus.DynamicThrottlePolicy;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.StaticThrottlePolicy;
-import com.yahoo.messagebus.Trace;
-import com.yahoo.messagebus.TraceNode;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.restapi.Path;
 import com.yahoo.search.query.ParameterParser;
 import com.yahoo.tensor.serialization.JsonFormat;
-import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.http.server.Headers;
 import com.yahoo.vespa.http.server.MetricNames;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.Exceptions.RunnableThrowingIOException;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.time.Clock;
 import java.time.Duration;
@@ -93,13 +84,10 @@ import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.ScheduledExecutorService;
@@ -111,7 +99,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -161,6 +148,10 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static final JsonFactory jsonFactory = new JsonFactoryBuilder()
             .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
             .build();
+
+    // Not all response renderings will ever output any documents; these can just use a default
+    // pre-allocated tensor option instead of trying to fish it out of the request.
+    private static final JsonFormat.EncodeOptions DEFAULT_TENSOR_OPTIONS = new JsonFormat.EncodeOptions(true, false, false);
 
     private static final String CREATE = "create";
     private static final String CONDITION = "condition";
@@ -690,283 +681,26 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         dispatchFirst();
     }
 
+    private static JsonFormat.EncodeOptions createTensorOptionsFromRequest(HttpRequest request) {
+        // TODO: Flip default on Vespa 9 to "short-value"
+        String format = "short";
+        if (request != null && request.parameters().containsKey("format.tensors")) {
+            var params = request.parameters().get("format.tensors");
+            if (params.size() == 1) {
+                format = params.get(0);
+            }
+        }
+        return switch (format) {
+            case "hex" ->         new JsonFormat.EncodeOptions(true, false, true);
+            case "hex-value" ->   new JsonFormat.EncodeOptions(true, true, true);
+            case "short-value" -> new JsonFormat.EncodeOptions(true, true, false);
+            case "long" ->        new JsonFormat.EncodeOptions(false, false, false);
+            case "long-value" ->  new JsonFormat.EncodeOptions(false, true, false);
+            default ->            new JsonFormat.EncodeOptions(true, false, false); // aka "short"
+        };
+    }
 
     // ------------------------------------------------ Responses ------------------------------------------------
-
-    /** Class for writing and returning JSON responses to document operations in a thread safe manner. */
-    private static class JsonResponse implements AutoCloseable {
-
-        private static final ByteBuffer emptyBuffer = ByteBuffer.wrap(new byte[0]);
-        private static final int FLUSH_SIZE = 128;
-
-        private final BufferedContentChannel buffer = new BufferedContentChannel();
-        private final OutputStream out = new ContentChannelOutputStream(buffer);
-        private final JsonGenerator json;
-        private final ResponseHandler handler;
-        private final HttpRequest request;
-        private final Queue<CompletionHandler> acks = new ConcurrentLinkedQueue<>();
-        private final Queue<ByteArrayOutputStream> docs = new ConcurrentLinkedQueue<>();
-        private final AtomicLong documentsWritten = new AtomicLong();
-        private final AtomicLong documentsFlushed = new AtomicLong();
-        private final AtomicLong documentsAcked = new AtomicLong();
-        private final JsonFormat.EncodeOptions tensorOptions;
-        private boolean documentsDone = false;
-        private boolean first = true;
-        private ContentChannel channel;
-
-        private JsonResponse(ResponseHandler handler, HttpRequest request) throws IOException {
-            this.handler = handler;
-            this.request = request;
-            this.tensorOptions = createTensorOptionsFromRequest(request);
-            json = jsonFactory.createGenerator(out);
-            json.writeStartObject();
-        }
-
-        /** Creates a new JsonResponse with path and id fields written. */
-        static JsonResponse create(DocumentPath path, ResponseHandler handler, HttpRequest request) throws IOException {
-            JsonResponse response = new JsonResponse(handler, request);
-            response.writePathId(path.rawPath());
-            response.writeDocId(path.id());
-            return response;
-        }
-
-        /** Creates a new JsonResponse with path field written. */
-        static JsonResponse create(HttpRequest request, ResponseHandler handler) throws IOException {
-            JsonResponse response = new JsonResponse(handler, request);
-            response.writePathId(request.getUri().getRawPath());
-            return response;
-        }
-
-        /** Creates a new JsonResponse with path and message fields written. */
-        static JsonResponse create(HttpRequest request, String message, ResponseHandler handler) throws IOException {
-            JsonResponse response = create(request, handler);
-            response.writeMessage(message);
-            return response;
-        }
-
-        private static JsonFormat.EncodeOptions createTensorOptionsFromRequest(HttpRequest request) {
-            // TODO: Flip default on Vespa 9 to "short-value"
-            String format = "short";
-            if (request != null && request.parameters().containsKey("format.tensors")) {
-                var params = request.parameters().get("format.tensors");
-                if (params.size() == 1) {
-                    format = params.get(0);
-                }
-            }
-            return switch (format) {
-                case "hex" ->         new JsonFormat.EncodeOptions(true, false, true);
-                case "hex-value" ->   new JsonFormat.EncodeOptions(true, true, true);
-                case "short-value" -> new JsonFormat.EncodeOptions(true, true, false);
-                case "long" ->        new JsonFormat.EncodeOptions(false, false, false);
-                case "long-value" ->  new JsonFormat.EncodeOptions(false, true, false);
-                default ->            new JsonFormat.EncodeOptions(true, false, false); // aka "short"
-            };
-        }
-
-        synchronized void commit(int status) throws IOException {
-            commit(status, true);
-        }
-
-        /** Commits a response with the given status code and some default headers, and writes whatever content is buffered. */
-        synchronized void commit(int status, boolean fullyApplied) throws IOException {
-            Response response = new Response(status);
-            response.headers().add("Content-Type", List.of("application/json; charset=UTF-8"));
-            if (! fullyApplied) {
-                response.headers().add(Headers.IGNORED_FIELDS, "true");
-            }
-            try {
-                channel = handler.handleResponse(response);
-                buffer.connectTo(channel);
-            } catch (RuntimeException e) {
-                throw new IOException(e);
-            }
-        }
-
-        /** Commits a response with the given status code and some default headers, writes buffered content, and closes this. */
-        synchronized void respond(int status) throws IOException {
-            try (this) {
-                commit(status);
-            }
-        }
-
-        /** Closes the JSON and the output content channel of this. */
-        @Override
-        public synchronized void close() throws IOException {
-            documentsDone = true; // In case we were closed without explicitly closing the documents array.
-            try {
-                if (channel == null) {
-                    log.log(WARNING, "Close called before response was committed, in " + getClass().getName());
-                    commit(Response.Status.INTERNAL_SERVER_ERROR);
-                }
-                json.close(); // Also closes object and array scopes.
-                out.close();  // Simply flushes the output stream.
-            } finally {
-                if (channel != null)
-                    channel.close(logException); // Closes the response handler's content channel.
-            }
-        }
-
-        synchronized void writePathId(String path) throws IOException {
-            json.writeStringField("pathId", path);
-        }
-
-        synchronized void writeMessage(String message) throws IOException {
-            json.writeStringField("message", message);
-        }
-
-        synchronized void writeDocumentCount(long count) throws IOException {
-            json.writeNumberField("documentCount", count);
-        }
-
-        synchronized void writeDocId(DocumentId id) throws IOException {
-            json.writeStringField("id", id.toString());
-        }
-
-        synchronized void writeTrace(Trace trace) throws IOException {
-            if (trace != null && ! trace.getRoot().isEmpty()) {
-                writeTrace(trace.getRoot());
-            }
-        }
-
-        private void writeTrace(TraceNode node) throws IOException {
-            if (node.hasNote()) {
-                json.writeStringField("message", node.getNote());
-            }
-            if ( ! node.isLeaf()) {
-                json.writeArrayFieldStart(node.isStrict() ? "trace" : "fork");
-                for (int i = 0; i < node.getNumChildren(); i++) {
-                    json.writeStartObject();
-                    writeTrace(node.getChild(i));
-                    json.writeEndObject();
-                }
-                json.writeEndArray();
-            }
-        }
-
-        private JsonFormat.EncodeOptions tensorOptions() {
-            return this.tensorOptions;
-        }
-
-        private boolean tensorShortForm() {
-            return tensorOptions().shortForm();
-        }
-
-        private boolean tensorDirectValues() {
-            return tensorOptions().directValues();
-        }
-
-        synchronized void writeSingleDocument(Document document) throws IOException {
-            new JsonWriter(json, tensorOptions()).writeFields(document);
-        }
-
-        synchronized void writeDocumentsArrayStart() throws IOException {
-            json.writeArrayFieldStart("documents");
-        }
-
-        private interface DocumentWriter {
-            void write(ByteArrayOutputStream out) throws IOException;
-        }
-
-        /** Writes documents to an internal queue, which is flushed regularly. */
-        void writeDocumentValue(Document document, CompletionHandler completionHandler) throws IOException {
-            writeDocument(myOut -> {
-                try (JsonGenerator myJson = jsonFactory.createGenerator(myOut)) {
-                    new JsonWriter(myJson, tensorShortForm(), tensorDirectValues()).write(document);
-                }
-            }, completionHandler);
-        }
-
-        void writeDocumentRemoval(DocumentId id, CompletionHandler completionHandler) throws IOException {
-            writeDocument(myOut -> {
-                try (JsonGenerator myJson = jsonFactory.createGenerator(myOut)) {
-                    myJson.writeStartObject();
-                    myJson.writeStringField("remove", id.toString());
-                    myJson.writeEndObject();
-                }
-            }, completionHandler);
-        }
-
-        /** Writes documents to an internal queue, which is flushed regularly. */
-        void writeDocument(DocumentWriter documentWriter, CompletionHandler completionHandler) throws IOException {
-            // Serialise document and add to queue, not necessarily in the order dictated by "written" above,
-            // i.e., the first 128 documents in the queue are not necessarily the ones ack'ed early.
-            ByteArrayOutputStream myOut = new ByteArrayOutputStream(1);
-            myOut.write(','); // Prepend rather than append, to avoid double memory copying.
-            documentWriter.write(myOut);
-            docs.add(myOut);
-
-            // It is crucial that ACKing of in-flight operations happens _after_ the document payload is
-            // visible in the `docs` queue. Otherwise, there is a risk that the ACK sets in motion a
-            // full unwind of the entire visitor session from the content node back to the client session
-            // (that's us), triggering the `onDone` callback and transitively the final flush of enqueued
-            // documents. If `myOut` is then not part of `docs`, it won't be rendered at all.
-            // This is a Dark Souls-tier distributed race condition.
-            if (completionHandler != null) {
-                acks.add(completionHandler);
-                ackDocuments();
-            }
-
-            // Flush the first FLUSH_SIZE documents in the queue to the network layer if chunk is filled.
-            if (documentsWritten.incrementAndGet() % FLUSH_SIZE == 0) {
-                flushDocuments();
-            }
-        }
-
-        void ackDocuments() {
-            while (documentsAcked.incrementAndGet() <= documentsFlushed.get() + FLUSH_SIZE) {
-                CompletionHandler ack = acks.poll();
-                if (ack != null) {
-                    ack.completed();
-                } else {
-                    break;
-                }
-            }
-            documentsAcked.decrementAndGet(); // We overshoot by one above, so decrement again when done.
-        }
-
-        synchronized void flushDocuments() throws IOException {
-            for (int i = 0; i < FLUSH_SIZE; i++) {
-                ByteArrayOutputStream doc = docs.poll();
-                if (doc == null) {
-                    break;
-                }
-
-                if ( ! documentsDone) {
-                    if (first) { // First chunk, remove leading comma from first document, and flush "json" to "buffer".
-                        json.flush();
-                        buffer.write(ByteBuffer.wrap(doc.toByteArray(), 1, doc.size() - 1), null);
-                        first = false;
-                    } else {
-                        buffer.write(ByteBuffer.wrap(doc.toByteArray()), null);
-                    }
-                }
-            }
-
-            // Ensure new, eligible acks are done, after flushing these documents.
-            buffer.write(emptyBuffer, new CompletionHandler() {
-                @Override public void completed() {
-                    documentsFlushed.addAndGet(FLUSH_SIZE);
-                    ackDocuments();
-                }
-                @Override public void failed(Throwable t) {
-                    // This is typically caused by the client closing the connection during production of the response content.
-                    log.log(FINE, "Error writing documents", t);
-                    completed();
-                }
-            });
-        }
-
-        synchronized void writeArrayEnd() throws IOException {
-            flushDocuments();
-            documentsDone = true;
-            json.writeEndArray();
-        }
-
-        synchronized void writeContinuation(String token) throws IOException {
-            json.writeStringField("continuation", token);
-        }
-
-    }
 
     private static void options(Collection<Method> methods, ResponseHandler handler) {
         loggingException(() -> {
@@ -980,26 +714,27 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         loggingException(() -> {
             String message = Exceptions.toMessageString(e);
             log.log(FINE, () -> "Bad request for " + request.getMethod() + " at " + request.getUri().getRawPath() + ": " + message);
-            JsonResponse.create(request, message, handler).respond(Response.Status.BAD_REQUEST);
+            JsonResponse.createWithPathAndMessage(request, message, handler, DEFAULT_TENSOR_OPTIONS)
+                        .respond(Response.Status.BAD_REQUEST);
         });
     }
 
     private static void notFound(HttpRequest request, Collection<String> paths, ResponseHandler handler) {
         loggingException(() -> {
-        JsonResponse.create(request,
-                           "Nothing at '" + request.getUri().getRawPath() + "'. " +
-                           "Available paths are:\n" + String.join("\n", paths),
-                            handler)
-                    .respond(Response.Status.NOT_FOUND);
+            JsonResponse.createWithPathAndMessage(request,
+                               "Nothing at '" + request.getUri().getRawPath() + "'. " +
+                               "Available paths are:\n" + String.join("\n", paths),
+                                handler, DEFAULT_TENSOR_OPTIONS)
+                        .respond(Response.Status.NOT_FOUND);
         });
     }
 
     private static void methodNotAllowed(HttpRequest request, Collection<Method> methods, ResponseHandler handler) {
         loggingException(() -> {
-            JsonResponse.create(request,
+            JsonResponse.createWithPathAndMessage(request,
                                "'" + request.getMethod() + "' not allowed at '" + request.getUri().getRawPath() + "'. " +
                                "Allowed methods are: " + methods.stream().sorted().map(Method::name).collect(joining(", ")),
-                                handler)
+                                handler, DEFAULT_TENSOR_OPTIONS)
                         .respond(Response.Status.METHOD_NOT_ALLOWED);
         });
     }
@@ -1007,29 +742,31 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static void overload(HttpRequest request, String message, ResponseHandler handler) {
         loggingException(() -> {
             log.log(FINE, () -> "Overload handling request " + request.getMethod() + " " + request.getUri().getRawPath() + ": " + message);
-            JsonResponse.create(request, message, handler).respond(Response.Status.TOO_MANY_REQUESTS);
+            JsonResponse.createWithPathAndMessage(request, message, handler, DEFAULT_TENSOR_OPTIONS)
+                        .respond(Response.Status.TOO_MANY_REQUESTS);
         });
     }
 
     private static void serverError(HttpRequest request, Throwable t, ResponseHandler handler) {
         loggingException(() -> {
             log.log(WARNING, "Uncaught exception handling request " + request.getMethod() + " " + request.getUri().getRawPath(), t);
-            JsonResponse.create(request, Exceptions.toMessageString(t), handler).respond(Response.Status.INTERNAL_SERVER_ERROR);
+            JsonResponse.createWithPathAndMessage(request, Exceptions.toMessageString(t), handler, DEFAULT_TENSOR_OPTIONS)
+                        .respond(Response.Status.INTERNAL_SERVER_ERROR);
         });
     }
 
     private static void timeout(HttpRequest request, String message, ResponseHandler handler) {
         loggingException(() -> {
             log.log(FINE, () -> "Timeout handling request " + request.getMethod() + " " + request.getUri().getRawPath() + ": " + message);
-            JsonResponse.create(request, message, handler).respond(Response.Status.GATEWAY_TIMEOUT);
+            JsonResponse.createWithPathAndMessage(request, message, handler, DEFAULT_TENSOR_OPTIONS)
+                        .respond(Response.Status.GATEWAY_TIMEOUT);
         });
     }
 
     private static void loggingException(RunnableThrowingIOException runnable) {
         try {
             runnable.run();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.log(FINE, "Failed writing response", e);
         }
     }
@@ -1187,11 +924,12 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                ResponseHandler handler,
                                com.yahoo.documentapi.Response response,
                                SuccessCallback callback) {
-        try (JsonResponse jsonResponse = JsonResponse.create(path, handler, request)) {
+        var tensorOptions = createTensorOptionsFromRequest(request); // request may be null; implies short form
+        try (JsonResponse jsonResponse = JsonResponse.createWithPathAndId(path, handler, tensorOptions)) {
             jsonResponse.writeTrace(response.getTrace());
-            if (response.isSuccess())
+            if (response.isSuccess()) {
                 callback.onSuccess((response instanceof DocumentResponse) ? ((DocumentResponse) response).getDocument() : null, jsonResponse);
-            else {
+            } else {
                 jsonResponse.writeMessage(response.getTextMessage());
                 switch (response.outcome()) {
                     case NOT_FOUND -> jsonResponse.commit(Response.Status.NOT_FOUND);
@@ -1209,8 +947,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                     }
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.log(FINE, "Failed writing response", e);
         }
     }
@@ -1376,13 +1113,13 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private interface VisitCallback {
         /** Called at the start of response rendering. */
-        default void onStart(JsonResponse response, boolean fullyApplied) throws IOException { }
+        default void onStart(StreamableJsonResponse response, boolean fullyApplied) throws IOException { }
 
         /** Called for every document or removal received from backend visitors—must call the ack for these to proceed. */
-        default void onDocument(JsonResponse response, Document document, DocumentId removeId, long persistedTimestamp, Runnable ack, Consumer<String> onError) { }
+        default void onDocument(StreamableJsonResponse response, Document document, DocumentId removeId, long persistedTimestamp, Runnable ack, Consumer<String> onError) { }
 
         /** Called at the end of response rendering, before generic status data is written. Called from a dedicated thread pool. */
-        default void onEnd(JsonResponse response) throws IOException { }
+        default void onEnd(StreamableJsonResponse response) throws IOException { }
     }
 
     @FunctionalInterface
@@ -1426,7 +1163,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                  ResponseHandler handler,
                                  String route, VisitProcessingCallback operation) {
         visit(request, parameters, false, fullyApplied, handler, new VisitCallback() {
-            @Override public void onDocument(JsonResponse response, Document document, DocumentId removeId,
+            @Override public void onDocument(StreamableJsonResponse response, Document document, DocumentId removeId,
                                              long persistedTimestamp, Runnable ack, Consumer<String> onError) {
                 DocumentOperationParameters operationParameters = parameters().withRoute(route)
                         .withResponseHandler(operationResponse -> {
@@ -1465,13 +1202,13 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private void visitAndWrite(HttpRequest request, VisitorParameters parameters, ResponseHandler handler, boolean streamed) {
         visit(request, parameters, streamed, true, handler, new VisitCallback() {
-            @Override public void onStart(JsonResponse response, boolean fullyApplied) throws IOException {
+            @Override public void onStart(StreamableJsonResponse response, boolean fullyApplied) throws IOException {
                 if (streamed)
                     response.commit(Response.Status.OK, fullyApplied);
 
                 response.writeDocumentsArrayStart();
             }
-            @Override public void onDocument(JsonResponse response, Document document, DocumentId removeId,
+            @Override public void onDocument(StreamableJsonResponse response, Document document, DocumentId removeId,
                                              long persistedTimestamp, Runnable ack, Consumer<String> onError) {
                 try {
                     if (streamed) {
@@ -1495,8 +1232,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                     onError.accept(e.getMessage());
                 }
             }
-            @Override public void onEnd(JsonResponse response) throws IOException {
-                response.writeArrayEnd();
+            @Override public void onEnd(StreamableJsonResponse response) throws IOException {
+                response.writeDocumentsArrayEnd();
             }
         });
     }
@@ -1505,10 +1242,24 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         visit(request, parameters, false, true, handler, new VisitCallback() { });
     }
 
+    private StreamableJsonResponse createStreamableJsonResponse(HttpRequest request, ResponseHandler handler, boolean streaming) throws IOException {
+        var tensorOptions = createTensorOptionsFromRequest(request);
+        if (streaming) {
+            // TODO! This is very temporary!
+            var format = request.parameters().getOrDefault("format", List.of());
+            if ((format.size() == 1) && "jsonl-experimental-20250707".equals(format.get(0))) {
+                var writer = new BufferedContentChannelResponseWriter(handler);
+                return new StreamingJsonLinesResponse(writer, tensorOptions);
+            }
+        }
+        return JsonResponse.createWithPath(request, handler, tensorOptions);
+    }
+
     @SuppressWarnings("fallthrough")
-    private void visit(HttpRequest request, VisitorParameters parameters, boolean streaming, boolean fullyApplied, ResponseHandler handler, VisitCallback callback) {
+    private void visit(HttpRequest request, VisitorParameters parameters, boolean streaming, boolean fullyApplied,
+                       ResponseHandler handler, VisitCallback callback) {
         try {
-            JsonResponse response = JsonResponse.create(request, handler);
+            StreamableJsonResponse response = createStreamableJsonResponse(request, handler, streaming);
             Phaser phaser = new Phaser(2); // Synchronize this thread (dispatch) with the visitor callback thread.
             AtomicReference<String> error = new AtomicReference<>(); // Set if error occurs during processing of visited documents.
             callback.onStart(response, fullyApplied);
@@ -1548,7 +1299,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                     if (error.get() == null) {
                                         ProgressToken progress = getProgress() != null ? getProgress() : parameters.getResumeToken();
                                         if (progress != null && ! progress.isFinished())
-                                            response.writeContinuation(progress.serializeToString());
+                                            response.writeEpilogueContinuation(progress.serializeToString());
 
                                         status = Response.Status.OK;
                                         break;
@@ -1565,6 +1316,12 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                         phaser.arriveAndAwaitAdvance(); // We may get here while dispatching thread is still putting us in the map.
                         visits.remove(this).destroy();
                     });
+                }
+                @Override public void onProgress(ProgressToken token) {
+                    super.onProgress(token);
+                    if (streaming) {
+                        loggingException(() -> response.reportUpdatedContinuation(token::serializeToString));
+                    }
                 }
             };
             if (parameters.getRemoteDataHandler() == null) {
@@ -1641,18 +1398,6 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         for (String property : properties)
             if (request.parameters().containsKey(property))
                 throw new IllegalArgumentException("May not specify '" + property + "' at '" + request.getUri().getRawPath() + "'");
-    }
-
-    @FunctionalInterface
-    interface Parser<T> extends Function<String, T> {
-        default T parse(String value) {
-            try {
-                return apply(value);
-            }
-            catch (RuntimeException e) {
-                throw new IllegalArgumentException("Failed parsing '" + value + "': " + Exceptions.toMessageString(e));
-            }
-        }
     }
 
     private class MeasuringResponseHandler implements ResponseHandler {
@@ -1753,82 +1498,6 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                return space;
                            }))
                            .orElse(FixedBucketSpaces.defaultSpace());
-    }
-
-    private static class DocumentPath {
-
-        private final Path path;
-        private final String rawPath;
-        private final Optional<Group> group;
-
-        DocumentPath(Path path, String rawPath) {
-            this.path = requireNonNull(path);
-            this.rawPath = requireNonNull(rawPath);
-            this.group = Optional.ofNullable(path.get("number")).map(unsignedLongParser::parse).map(Group::of)
-                                 .or(() -> Optional.ofNullable(path.get("group")).map(Group::of));
-        }
-
-        DocumentId id() {
-            return new DocumentId("id:" + requireNonNull(path.get("namespace")) +
-                                  ":" + requireNonNull(path.get("documentType")) +
-                                  ":" + group.map(Group::docIdPart).orElse("") +
-                                  ":" + String.join("/", requireNonNull(path.getRest()).segments())); // :'(
-        }
-
-        String rawPath() { return rawPath; }
-        Optional<String> documentType() { return Optional.ofNullable(path.get("documentType")); }
-        Optional<String> namespace() { return Optional.ofNullable(path.get("namespace")); }
-        Optional<Group> group() { return group; }
-
-    }
-
-    static class Group {
-
-        private final String docIdPart;
-        private final String selection;
-
-        private Group(String docIdPart, String selection) {
-            this.docIdPart = docIdPart;
-            this.selection = selection;
-        }
-
-        public static Group of(long value) {
-            String stringValue = Long.toUnsignedString(value);
-            return new Group("n=" + stringValue, "id.user==" + stringValue);
-        }
-
-        public static Group of(String value) {
-            Text.validateTextString(value)
-                .ifPresent(codePoint -> { throw new IllegalArgumentException(String.format("Illegal code point U%04X in group", codePoint)); });
-
-            return new Group("g=" + value, "id.group=='" + value.replaceAll("'", "\\\\'") + "'");
-        }
-
-        public String docIdPart() { return docIdPart; }
-        public String selection() { return selection; }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Group group = (Group) o;
-            return docIdPart.equals(group.docIdPart) &&
-                   selection.equals(group.selection);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(docIdPart, selection);
-        }
-
-        @Override
-        public String toString() {
-            return "Group{" +
-                   "docIdPart='" + docIdPart + '\'' +
-                   ", selection='" + selection + '\'' +
-                   '}';
-        }
-
     }
 
 }

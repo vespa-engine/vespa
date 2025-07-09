@@ -33,7 +33,7 @@ FileTableFactory::createTable(const std::string & name) const
         return table;
     }
     LOG(warning, "Could not open file '%s' for creating table '%s'", completeName.c_str(), name.c_str());
-    return Table::SP(NULL);
+    return Table::SP(nullptr);
 }
 
 }

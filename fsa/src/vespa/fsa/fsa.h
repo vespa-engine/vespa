@@ -182,7 +182,7 @@ public:
      * Creates an unitialized iterator. The effect of using any of
      * the access methods on unitialized iterators is undefined.
      */
-    iterator() : _item(NULL) {}
+    iterator() : _item(nullptr) {}
 
     /**
      * @brief Copy constructor.
@@ -547,7 +547,7 @@ public:
      *
      * @return True if the state is final.
      */
-    virtual bool isFinal(void) const
+    virtual bool isFinal() const
     {
       return _fsa->isFinal(_state);
     }
@@ -561,7 +561,7 @@ public:
      *
      * @return Size of data item, or -1 if the state is not final.
      */
-    virtual int dataSize(void) const
+    virtual int dataSize() const
     {
       return _fsa->dataSize(_state);
     }
@@ -570,10 +570,10 @@ public:
      * @brief Get the data item.
      *
      * Get the data item assiciated with a final state. The return
-     * value NULL indicates that the current state is not a final
+     * value nullptr indicates that the current state is not a final
      * state.
      *
-     * @return Pointer to data item, or NULL if the state is not final.
+     * @return Pointer to data item, or nullptr if the state is not final.
      */
     virtual const data_t *data() const
     {
@@ -584,10 +584,10 @@ public:
      * @brief Get the data item as a character string.
      *
      * Get the data item assiciated with a final state. The return
-     * value NULL indicates that the current state is not a final
+     * value nullptr indicates that the current state is not a final
      * state.
      *
-     * @return Pointer to data item, or NULL if the state is not final.
+     * @return Pointer to data item, or nullptr if the state is not final.
      */
     virtual const char *cData() const
     {
@@ -640,10 +640,10 @@ public:
      * Perform a string lookup in the automaton (sequence of
      * transitions, starting from the start state. Returns a pointer
      * to the data item associated with the final state if the string
-     * is accepted, NULL otherwise.
+     * is accepted, nullptr otherwise.
      *
      * @param  in   Input string.
-     * @return      Pointer to data item, or NULL if the state is not final.
+     * @return      Pointer to data item, or nullptr if the state is not final.
      */
     virtual const data_t *lookup(const symbol_t *in)
     {
@@ -657,10 +657,10 @@ public:
      * Perform a string lookup in the automaton (sequence of
      * transitions, starting from the start state. Returns a pointer
      * to the data item associated with the final state if the string
-     * is accepted, NULL otherwise.
+     * is accepted, nullptr otherwise.
      *
      * @param  in   Input string.
-     * @return      Pointer to data item, or NULL if the state is not final.
+     * @return      Pointer to data item, or nullptr if the state is not final.
      */
     virtual const data_t *lookup(const char *in)
     {
@@ -673,10 +673,10 @@ public:
      * Perform a string lookup in the automaton (sequence of
      * transitions, starting from the start state. Returns a pointer
      * to the data item associated with the final state if the string
-     * is accepted, NULL otherwise.
+     * is accepted, nullptr otherwise.
      *
      * @param  in   Input string.
-     * @return      Pointer to data item, or NULL if the state is not final.
+     * @return      Pointer to data item, or nullptr if the state is not final.
      */
     virtual const data_t *lookup(const std::string &in)
     {
@@ -1855,7 +1855,7 @@ private:
 
   static const FileAccessMethod _default_file_access_method = FILE_ACCESS_MMAP;   /**< Default file access method (read/mmap). */
 
-  void          *_mmap_addr;             /**< mmap address, NULL is file has not been mmapped.   */
+  void          *_mmap_addr;             /**< mmap address, nullptr is file has not been mmapped.   */
   size_t         _mmap_length;           /**< mmap length.                                       */
 
   uint32_t       _version;               /**< Version of fsalib used to build this fsa. */
@@ -1911,7 +1911,7 @@ public:
    *
    * @return fsa library version.
    */
-  uint32_t version(void) const
+  uint32_t version() const
   {
     return _version;
   }
@@ -1921,7 +1921,7 @@ public:
    *
    * @return Serial number.
    */
-  uint32_t serial(void) const
+  uint32_t serial() const
   {
     return _serial;
   }
@@ -1931,7 +1931,7 @@ public:
    *
    * @return True if the %FSA was built with perfect hash.
    */
-  bool hasPerfectHash(void) const
+  bool hasPerfectHash() const
   {
     return _has_perfect_hash;
   }
@@ -2035,19 +2035,19 @@ public:
    * @brief Get a pointer to the data item associated with a final state.
    *
    * @param fs State.
-   * @return Pointer to data item, or NULL if the state is not final.
+   * @return Pointer to data item, or nullptr if the state is not final.
    */
   const data_t *data(unsigned int fs) const
   {
     if(fs==0)
-      return NULL;
+      return nullptr;
     if(_symbol[fs+FINAL_SYMBOL]==FINAL_SYMBOL){
       if(_data_type==DATA_FIXED)
         return _data+_state[fs+FINAL_SYMBOL];
       else
         return _data+_state[fs+FINAL_SYMBOL]+sizeof(uint32_t);
     }
-    return NULL;
+    return nullptr;
   }
 
   /**
@@ -2100,12 +2100,12 @@ private:
    * @param d  Descriptor containing all FSA parameters.
    */
   FSA(Descriptor &d) :
-    _mmap_addr(NULL), _mmap_length(0),
+    _mmap_addr(nullptr), _mmap_length(0),
     _version(d._version), _serial(d._serial),
     _state(d._state), _symbol(d._symbol), _size(d._size),
     _data(d._data), _data_size(d._data_size), _data_type(d._data_type),
     _fixed_data_size(d._fixed_data_size),
-    _has_perfect_hash(d._perf_hash!=NULL),_perf_hash(d._perf_hash),
+    _has_perfect_hash(d._perf_hash!=nullptr),_perf_hash(d._perf_hash),
     _start(d._start)
   {
   }
