@@ -202,7 +202,7 @@ private:
         } else if (idx == 0) {
             return & this->_buffer[this->_offsets[doc]];
         }
-        return NULL;
+        return nullptr;
     }
     template <typename T>
     uint32_t getAllHelper(DocId doc, T * v, uint32_t sz) const

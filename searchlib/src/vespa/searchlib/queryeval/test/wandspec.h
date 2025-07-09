@@ -31,10 +31,10 @@ public:
         _handles.push_back(_layout.allocTermField(0));
         return *this;
     }
-    wand::Terms getTerms(fef::MatchData *matchData = NULL) {
+    wand::Terms getTerms(fef::MatchData *matchData = nullptr) {
         wand::Terms terms;
         for (size_t i = 0; i < _leafs.size(); ++i) {
-            fef::TermFieldMatchData *tfmd = (matchData != NULL ? matchData->resolveTermField(_handles[i]) : NULL);
+            fef::TermFieldMatchData *tfmd = (matchData != nullptr ? matchData->resolveTermField(_handles[i]) : nullptr);
             terms.push_back(wand::Term(_leafs[i].create(_history, tfmd).release(),
                                        _leafs[i].weight,
                                        _leafs[i].result.inspect().size(),

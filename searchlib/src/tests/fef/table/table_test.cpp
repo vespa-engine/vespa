@@ -90,11 +90,11 @@ TEST_F(TableTest, file_table_factory)
     {
         FileTableFactory ftf(_tables1Dir);
         EXPECT_TRUE(assertCreateTable(ftf, "a", Table().add(1.5).add(2.25).add(3)));
-        EXPECT_TRUE(ftf.createTable("b").get() == NULL);
+        EXPECT_TRUE(ftf.createTable("b").get() == nullptr);
     }
     {
         FileTableFactory ftf(_tables1Dir);
-        EXPECT_TRUE(ftf.createTable("a").get() != NULL);
+        EXPECT_TRUE(ftf.createTable("a").get() != nullptr);
     }
 }
 
@@ -114,14 +114,14 @@ TEST_F(TableTest, function_table_factory)
                Table().add(5000).add(5693.15).add(6098.61)));
     EXPECT_TRUE(assertCreateTable(ftf, "linear(10,100,3)",
                Table().add(100).add(110).add(120)));
-    EXPECT_TRUE(ftf.createTable("expdecay()").get() == NULL);
-    EXPECT_TRUE(ftf.createTable("expdecay(10)").get() == NULL);
-    EXPECT_TRUE(ftf.createTable("loggrowth()").get() == NULL);
-    EXPECT_TRUE(ftf.createTable("linear()").get() == NULL);
-    EXPECT_TRUE(ftf.createTable("none").get() == NULL);
-    EXPECT_TRUE(ftf.createTable("none(").get() == NULL);
-    EXPECT_TRUE(ftf.createTable("none)").get() == NULL);
-    EXPECT_TRUE(ftf.createTable("none)(").get() == NULL);
+    EXPECT_TRUE(ftf.createTable("expdecay()").get() == nullptr);
+    EXPECT_TRUE(ftf.createTable("expdecay(10)").get() == nullptr);
+    EXPECT_TRUE(ftf.createTable("loggrowth()").get() == nullptr);
+    EXPECT_TRUE(ftf.createTable("linear()").get() == nullptr);
+    EXPECT_TRUE(ftf.createTable("none").get() == nullptr);
+    EXPECT_TRUE(ftf.createTable("none(").get() == nullptr);
+    EXPECT_TRUE(ftf.createTable("none)").get() == nullptr);
+    EXPECT_TRUE(ftf.createTable("none)(").get() == nullptr);
 }
 
 TEST_F(TableTest, table_manager)
@@ -133,24 +133,24 @@ TEST_F(TableTest, table_manager)
 
         {
             const Table * t = tm.getTable("a"); // from tables1
-            ASSERT_TRUE(t != NULL);
+            ASSERT_TRUE(t != nullptr);
             EXPECT_TRUE(assertTable(*t, Table().add(1.5).add(2.25).add(3)));
             EXPECT_TRUE(t == tm.getTable("a"));
         }
         {
             const Table * t = tm.getTable("b"); // from tables2
-            ASSERT_TRUE(t != NULL);
+            ASSERT_TRUE(t != nullptr);
             EXPECT_TRUE(assertTable(*t, Table().add(40).add(50).add(60)));
             EXPECT_TRUE(t == tm.getTable("b"));
         }
         {
-            EXPECT_TRUE(tm.getTable("c") == NULL);
-            EXPECT_TRUE(tm.getTable("c") == NULL);
+            EXPECT_TRUE(tm.getTable("c") == nullptr);
+            EXPECT_TRUE(tm.getTable("c") == nullptr);
         }
     }
     {
         TableManager tm;
-        ASSERT_TRUE(tm.getTable("a") == NULL);
+        ASSERT_TRUE(tm.getTable("a") == nullptr);
     }
 }
 

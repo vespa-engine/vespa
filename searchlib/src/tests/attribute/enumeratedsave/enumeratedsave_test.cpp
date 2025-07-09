@@ -572,7 +572,7 @@ VectorType &
 EnumeratedSaveTest::as(AttributePtr &v)
 {
     VectorType *res = dynamic_cast<VectorType *>(v.get());
-    assert(res != NULL);
+    assert(res != nullptr);
     return *res;
 }
 

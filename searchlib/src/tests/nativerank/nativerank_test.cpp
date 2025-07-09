@@ -409,11 +409,11 @@ NativeRankTest::assertNativeAttributeMatch(feature_t score, const ANAM & t1, con
     ft.getIndexEnv().getProperties().add("nativeRank.useTableNormalization", "false"); // make it easier to test
     ft.getIndexEnv().getProperties().import(props);
     bool failure = false;
-    EXPECT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("foo") != NULL) << (failure = true, "");
+    EXPECT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("foo") != nullptr) << (failure = true, "");
     if (failure) {
         return false;
     }
-    EXPECT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("bar") != NULL) << (failure = true, "");
+    EXPECT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("bar") != nullptr) << (failure = true, "");
     if (failure) {
         return false;
     }

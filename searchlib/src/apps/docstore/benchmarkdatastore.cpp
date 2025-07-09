@@ -44,11 +44,11 @@ BenchmarkDataStoreApp::main(int argc, char **argv)
         std::string readType("directio");
         std::string directory(argv[1]);
         if (argc >= 3) {
-            numReads = strtoul(argv[2], NULL, 0);
+            numReads = strtoul(argv[2], nullptr, 0);
             if (argc >= 4) {
-                numThreads = strtoul(argv[3], NULL, 0);
+                numThreads = strtoul(argv[3], nullptr, 0);
                 if (argc >= 5) {
-                    perChunk = strtoul(argv[4], NULL, 0);
+                    perChunk = strtoul(argv[4], nullptr, 0);
                     if (argc >= 5) {
                         readType = argv[5];
                     }
@@ -101,7 +101,7 @@ BenchmarkDataStoreApp::benchmark(const std::string & dir, size_t numReads, size_
     transactionlog::NoSyncProxy noTlSyncer;
     LogDataStore store(executor, dir, config, growStrategy, tuning,
                        fileHeaderContext,
-                       noTlSyncer, NULL, true);
+                       noTlSyncer, nullptr, true);
     vespalib::ThreadStackExecutor bmPool(numThreads);
     LOG(info, "Start read benchmark with %lu threads doing %lu reads in chunks of %lu reads. Totally %lu objects", numThreads, numReads, perChunk, numThreads * numReads * perChunk);
     for (size_t i(0); i < numThreads; i++) {

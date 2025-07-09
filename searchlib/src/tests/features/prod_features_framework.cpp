@@ -18,26 +18,26 @@ TEST_F(ProdFeaturesTest, test_framework)
             .addField(FieldType::INDEX, CollectionType::ARRAY, "baz");
         {
             const FieldInfo * info = indexEnv.getFieldByName("foo");
-            ASSERT_TRUE(info != NULL);
+            ASSERT_TRUE(info != nullptr);
             EXPECT_EQ(info->id(), 0u);
             EXPECT_TRUE(info->type() == FieldType::INDEX);
             EXPECT_TRUE(info->collection() == CollectionType::SINGLE);
         }
         {
             const FieldInfo * info = indexEnv.getFieldByName("bar");
-            ASSERT_TRUE(info != NULL);
+            ASSERT_TRUE(info != nullptr);
             EXPECT_EQ(info->id(), 1u);
             EXPECT_TRUE(info->type() == FieldType::ATTRIBUTE);
             EXPECT_TRUE(info->collection() == CollectionType::WEIGHTEDSET);
         }
         {
             const FieldInfo * info = indexEnv.getFieldByName("baz");
-            ASSERT_TRUE(info != NULL);
+            ASSERT_TRUE(info != nullptr);
             EXPECT_EQ(info->id(), 2u);
             EXPECT_TRUE(info->type() == FieldType::INDEX);
             EXPECT_TRUE(info->collection() == CollectionType::ARRAY);
         }
-        ASSERT_TRUE(indexEnv.getFieldByName("qux") == NULL);
+        ASSERT_TRUE(indexEnv.getFieldByName("qux") == nullptr);
     }
 
     QueryEnvironment queryEnv(&indexEnv);
@@ -89,7 +89,7 @@ TEST_F(ProdFeaturesTest, test_framework)
         {
             {
                 TermFieldMatchData *tfmd = mdb.getTermFieldMatchData(0, 0);
-                ASSERT_TRUE(tfmd != NULL);
+                ASSERT_TRUE(tfmd != nullptr);
 
                 FieldPositionsIterator itr = tfmd->getIterator(); // foo (index)
                 ASSERT_TRUE(itr.valid());
@@ -103,14 +103,14 @@ TEST_F(ProdFeaturesTest, test_framework)
             }
             {
                 TermFieldMatchData *tfmd = mdb.getTermFieldMatchData(0, 1);
-                ASSERT_TRUE(tfmd != NULL);
+                ASSERT_TRUE(tfmd != nullptr);
 
                 FieldPositionsIterator itr = tfmd->getIterator(); // bar (attribute)
                 ASSERT_TRUE(!itr.valid());
             }
             {
                 TermFieldMatchData *tfmd = mdb.getTermFieldMatchData(0, 2);
-                ASSERT_TRUE(tfmd != NULL);
+                ASSERT_TRUE(tfmd != nullptr);
 
                 FieldPositionsIterator itr = tfmd->getIterator(); // baz (index)
                 ASSERT_TRUE(itr.valid());
@@ -125,7 +125,7 @@ TEST_F(ProdFeaturesTest, test_framework)
         }
         {
             TermFieldMatchData *tfmd = mdb.getTermFieldMatchData(1, 1);
-            ASSERT_TRUE(tfmd != NULL);
+            ASSERT_TRUE(tfmd != nullptr);
 
             FieldPositionsIterator itr = tfmd->getIterator(); // bar (attribute)
             ASSERT_TRUE(!itr.valid());
@@ -150,11 +150,11 @@ TEST_F(ProdFeaturesTest, test_framework)
         FeatureTest ft(factory, indexEnv, queryEnv, layout,
                        StringList().add("value(10)").add("value(20)").add("value(30)"), overrides);
         MatchDataBuilder::UP mdb1 = ft.createMatchDataBuilder();
-        EXPECT_TRUE(mdb1.get() == NULL);
+        EXPECT_TRUE(mdb1.get() == nullptr);
         EXPECT_TRUE(!ft.execute(RankResult().addScore("value(10)", 10.0f)));
         ASSERT_TRUE(ft.setup());
         MatchDataBuilder::UP mdb2 = ft.createMatchDataBuilder();
-        EXPECT_TRUE(mdb2.get() != NULL);
+        EXPECT_TRUE(mdb2.get() != nullptr);
 
         EXPECT_TRUE(ft.execute(RankResult().addScore("value(10)", 10.0f).addScore("value(20)", 20.0f)));
         EXPECT_TRUE(!ft.execute(RankResult().addScore("value(10)", 20.0f)));
