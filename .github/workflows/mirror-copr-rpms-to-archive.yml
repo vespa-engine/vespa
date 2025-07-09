@@ -23,7 +23,7 @@ on:
 env:
   DRY_RUN: ${{ (inputs.dry-run || github.event_name == 'pull_request') && 'true' || '' }}
   # Get the service Slug from Spacelift output: https://vespaai.app.spacelift.io/stack/cloudsmith/outputs
-  CLOUDSMITH_SERVICE_SLUG: ''
+  CLOUDSMITH_SERVICE_SLUG: 'gha-sync-rpm-mirrors-v-eng-ves'
 
 permissions:
   contents: read
