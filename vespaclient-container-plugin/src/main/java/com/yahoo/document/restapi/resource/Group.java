@@ -11,15 +11,7 @@ import java.util.Objects;
  *
  * @author Jon Marius Venstad
  */
-class Group {
-
-    private final String docIdPart;
-    private final String selection;
-
-    private Group(String docIdPart, String selection) {
-        this.docIdPart = docIdPart;
-        this.selection = selection;
-    }
+record Group(String docIdPart, String selection) {
 
     public static Group of(long value) {
         String stringValue = Long.toUnsignedString(value);
@@ -33,36 +25,6 @@ class Group {
                 });
 
         return new Group("g=" + value, "id.group=='" + value.replaceAll("'", "\\\\'") + "'");
-    }
-
-    public String docIdPart() {
-        return docIdPart;
-    }
-
-    public String selection() {
-        return selection;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Group group = (Group) o;
-        return docIdPart.equals(group.docIdPart) &&
-                selection.equals(group.selection);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(docIdPart, selection);
-    }
-
-    @Override
-    public String toString() {
-        return "Group{" +
-                "docIdPart='" + docIdPart + '\'' +
-                ", selection='" + selection + '\'' +
-                '}';
     }
 
 }
