@@ -3,6 +3,7 @@
 
 #include "flushcontext.h"
 #include "iflushstrategy.h"
+#include "set_strategy_result.h"
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -200,6 +201,7 @@ public:
      * This method is synchronous and thread-safe.
      */
     void triggerFlush();
+    flushengine::SetStrategyResult trigger_flush2();
 
     void kick();
 
@@ -229,6 +231,7 @@ public:
     FlushMetaSet getCurrentlyFlushingSet() const;
 
     void setStrategy(IFlushStrategy::SP strategy);
+    flushengine::SetStrategyResult set_strategy(std::shared_ptr<IFlushStrategy> strategy);
     uint32_t maxConcurrentTotal() const { return _maxConcurrentNormal + 1; }
     uint32_t maxConcurrentNormal() const { return _maxConcurrentNormal; }
     const std::shared_ptr<flushengine::FlushHistory>& get_flush_history() const noexcept { return _flush_history; }

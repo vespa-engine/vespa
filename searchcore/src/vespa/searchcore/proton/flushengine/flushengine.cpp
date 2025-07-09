@@ -23,6 +23,7 @@ using searchcorespi::IFlushTarget;
 using proton::flushengine::FlushHistory;
 using proton::flushengine::FlushHistoryEntry;
 using proton::flushengine::FlushStrategyIdNotifier;
+using proton::flushengine::SetStrategyResult;
 using vespalib::CpuUsage;
 using namespace std::chrono_literals;
 
@@ -169,6 +170,12 @@ void
 FlushEngine::triggerFlush()
 {
     setStrategy(std::make_shared<FlushAllStrategy>());
+}
+
+flushengine::SetStrategyResult
+FlushEngine::trigger_flush2()
+{
+    return set_strategy(std::make_shared<FlushAllStrategy>());
 }
 
 void
@@ -703,6 +710,15 @@ FlushEngine::setStrategy(IFlushStrategy::SP strategy)
     if (wait_strategy_id != 0u) {
         notifier->wait_ge_strategy_id(wait_strategy_id);
     }
+}
+
+SetStrategyResult
+FlushEngine::set_strategy(std::shared_ptr<IFlushStrategy> strategy)
+{
+    auto notifier = _lowest_strategy_id_notifier;
+    auto flush_history = _flush_history;
+    uint32_t wait_strategy_id = set_strategy_helper(std::move(strategy));
+    return SetStrategyResult(wait_strategy_id, std::move(notifier), std::move(flush_history));
 }
 
 } // namespace proton

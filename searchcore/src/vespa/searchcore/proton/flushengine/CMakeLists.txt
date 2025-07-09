@@ -3,6 +3,7 @@ vespa_add_library(searchcore_flushengine STATIC
     SOURCES
     active_flush_stats.cpp
     cachedflushtarget.cpp
+    set_strategy_result.cpp
     shrink_lid_space_flush_target.cpp
     flush_all_strategy.cpp
     flushcontext.cpp
@@ -13,6 +14,7 @@ vespa_add_library(searchcore_flushengine STATIC
     flush_history_explorer.cpp
     flush_history_view.cpp
     flush_strategy_history_entry.cpp
+    flush_strategy_id_listener.cpp
     flush_strategy_id_notifier.cpp
     flush_target_candidate.cpp
     flush_target_candidates.cpp
