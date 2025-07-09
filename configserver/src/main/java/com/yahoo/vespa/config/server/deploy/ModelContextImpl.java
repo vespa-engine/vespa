@@ -374,7 +374,8 @@ public class ModelContextImpl implements ModelContext {
             this.tenantSecretStores = tenantSecretStores;
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
                     .with(Dimension.INSTANCE_ID, applicationId.serializedForm())
-                    .with(Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance());
+                    .with(Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance())
+                    .withVersion(Optional.of(modelVersion));
             this.searchNodeInitializerThreadsFlag = PermanentFlags.SEARCHNODE_INITIALIZER_THREADS.bindTo(flagSource)
                                                                                                  .with(Dimension.INSTANCE_ID, applicationId.serializedForm())
                                                                                                  .with(Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance());
@@ -472,8 +473,13 @@ public class ModelContextImpl implements ModelContext {
 
         @Override public List<String> tlsCiphersOverride() { return tlsCiphersOverride; }
 
-        public String flagValueForClusterTypeAndClusterId(StringFlag flag, Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId) {
-            var flagWithClusterType =  clusterType.map(type -> flag.with(CLUSTER_TYPE, type.name()))
+        public String flagValueForClusterTypeAndClusterId(
+                StringFlag flag, Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId) {
+            // Resolving the value here instead of the model context constructor is
+            // suboptimal as the flag value may change during a single config generation,
+            // which may trigger a warning from the jdisc container at best and potentially result in bad stuff.
+            // Luckily this is feature flag that's rarely modified.
+            var flagWithClusterType = clusterType.map(type -> flag.with(CLUSTER_TYPE, type.name()))
                     .orElse(flag);
             
             var flagWithContainerId = clusterId.map(id -> flagWithClusterType.with(CLUSTER_ID, id.value()))
