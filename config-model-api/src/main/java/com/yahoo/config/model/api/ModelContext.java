@@ -120,6 +120,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default long searchCoreTransactionLogReplaySoftMemoryLimit() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean useNewPrepareForRestart() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchNodeInitializerThreads() { return 0; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

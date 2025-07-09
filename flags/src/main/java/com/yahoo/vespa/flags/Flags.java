@@ -371,6 +371,13 @@ public class Flags {
             "Takes effect at next restart of the vespa-proton-bin process",
             INSTANCE_ID);
 
+    public static final UnboundIntFlag SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS = defineIntFlag(
+            "search-core-max-outstanding-move-ops", 100,
+            List.of("hmusum"), "2025-07-09", "2025-10-01",
+            "The max outstanding move operations a maintenance job can have before being blocked.",
+            "Takes effect at next deployment of the application",
+            INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
