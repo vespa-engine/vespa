@@ -78,6 +78,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxContentNodeMaintenanceOpConcurrency = -1;
     private int maxDistributorDocumentOperationSizeMib = -1;
     private long searchCoreTransactionLogReplaySoftMemoryLimit = 0;
+    private int searchCoreMaxOutstandingMoveOps = 100;
     private boolean useNewPrepareForRestart = false;
     private Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
 
@@ -132,6 +133,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
     @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
     @Override public long searchCoreTransactionLogReplaySoftMemoryLimit() { return searchCoreTransactionLogReplaySoftMemoryLimit; }
+    @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
     @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
     @Override public int searchNodeInitializerThreads() { return 0; }
     @Override public int searchNodeInitializerThreads(String clusterId) { return searchNodeInitializerThreads.getOrDefault(clusterId, 0); }
@@ -342,6 +344,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setSearchCoreTransactionLogReplaySoftMemoryLimit(long limit) {
         this.searchCoreTransactionLogReplaySoftMemoryLimit = limit;
+        return this;
+    }
+
+    public TestProperties setSearchCoreMaxOutstandingMoveOps(int value) {
+        this.searchCoreMaxOutstandingMoveOps = value;
         return this;
     }
 

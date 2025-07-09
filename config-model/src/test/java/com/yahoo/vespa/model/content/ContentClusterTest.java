@@ -1713,6 +1713,26 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals( 1234567L, inferTxnLogReplayMemoryLimitFromFlag(1234567L));
     }
 
+
+    private int inferSearchCoreMaxOutstandingMoveOps(Integer flagValueOrNull) {
+        var props = new TestProperties();
+        if (flagValueOrNull != null) {
+            props.setSearchCoreMaxOutstandingMoveOps(flagValueOrNull);
+        }
+        VespaModel model = createEnd2EndOneNode(props);
+        ContentCluster cc = model.getContentClusters().get("storage");
+        var builder = new ProtonConfig.Builder();
+        cc.getSearch().getConfig(builder);
+        var cfg = new ProtonConfig(builder);
+        return cfg.maintenancejobs().maxoutstandingmoveops();
+    }
+
+    @Test
+    void search_core_max_outstanding_move_ops_is_configurable_via_feature_flag() {
+        assertEquals(100, inferSearchCoreMaxOutstandingMoveOps(null)); // Default is 100
+        assertEquals(8, inferSearchCoreMaxOutstandingMoveOps(8));
+    }
+
     private int inferSearchNodeInitializerThreadsFromFlag(Integer flagValueOrNull) {
         var props = new TestProperties();
         var clusterId = "storage";
