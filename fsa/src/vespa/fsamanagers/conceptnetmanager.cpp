@@ -27,9 +27,9 @@ ConceptNetManager::~ConceptNetManager()
 
 bool ConceptNetManager::load(const std::string &id, const std::string &fsafile, const std::string &datafile)
 {
-  ConceptNet::Handle *newcn = new ConceptNet::Handle(fsafile.c_str(), datafile.length()>0?datafile.c_str():NULL);
+  ConceptNet::Handle *newcn = new ConceptNet::Handle(fsafile.c_str(), datafile.length()>0?datafile.c_str():nullptr);
 
-  if(newcn==NULL || !(*newcn)->isOk()){
+  if(newcn==nullptr || !(*newcn)->isOk()){
     delete newcn;
     return false;
   }
@@ -54,7 +54,7 @@ bool ConceptNetManager::load(const std::string &id, const std::string &fsafile, 
 
 ConceptNet::Handle* ConceptNetManager::get(const std::string &id) const
 {
-  ConceptNet::Handle *newhandle=NULL;
+  ConceptNet::Handle *newhandle=nullptr;
   _lock.rdLock();
   {
     LibraryConstIterator it = _library.find(id);

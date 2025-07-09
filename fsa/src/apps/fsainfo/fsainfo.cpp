@@ -11,9 +11,9 @@
 
 using namespace fsa;
 
-void usage(const char *name, const char *errormsg = NULL)
+void usage(const char *name, const char *errormsg = nullptr)
 {
-  if(errormsg!=NULL){
+  if(errormsg!=nullptr){
     fprintf(stderr,"%s: %s\n",name,errormsg);
   }
   fprintf(stderr,"usage:\n");

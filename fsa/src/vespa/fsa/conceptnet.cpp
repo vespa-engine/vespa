@@ -32,26 +32,26 @@ const uint32_t ConceptNet::MAGIC;
 // {{{ ConceptNet::ConceptNet()
 
 ConceptNet::ConceptNet(const char *fsafile, const char *datafile, FileAccessMethod fam) :
-  _mmap_addr(NULL), _mmap_length(0),
+  _mmap_addr(nullptr), _mmap_length(0),
   _unit_fsa(fsafile,fam),
-  _index_size(0), _index(NULL),
-  _info_size(0), _info(NULL),
-  _catindex_size(0), _catindex(NULL),
-  _strings_size(0), _strings(NULL),
+  _index_size(0), _index(nullptr),
+  _info_size(0), _info(nullptr),
+  _catindex_size(0), _catindex(nullptr),
+  _strings_size(0), _strings(nullptr),
   _ok(false)
 {
   _ok = _unit_fsa.isOk();
-  if(_ok && datafile!=NULL)
+  if(_ok && datafile!=nullptr)
     _ok = read(datafile,fam);
 }
 
 ConceptNet::ConceptNet(const std::string &fsafile, const std::string &datafile, FileAccessMethod fam) :
-  _mmap_addr(NULL), _mmap_length(0),
+  _mmap_addr(nullptr), _mmap_length(0),
   _unit_fsa(fsafile,fam),
-  _index_size(0), _index(NULL),
-  _info_size(0), _info(NULL),
-  _catindex_size(0), _catindex(NULL),
-  _strings_size(0), _strings(NULL),
+  _index_size(0), _index(nullptr),
+  _info_size(0), _info(nullptr),
+  _catindex_size(0), _catindex(nullptr),
+  _strings_size(0), _strings(nullptr),
   _ok(false)
 {
   _ok = _unit_fsa.isOk();
@@ -73,7 +73,7 @@ ConceptNet::~ConceptNet()
 
 void ConceptNet::reset()
 {
-  if(_mmap_addr!=NULL && _mmap_addr!=MAP_FAILED){
+  if(_mmap_addr!=nullptr && _mmap_addr!=MAP_FAILED){
     munmap(_mmap_addr,_mmap_length);
   }
   else{
@@ -82,12 +82,12 @@ void ConceptNet::reset()
     delete[] _catindex;
     delete[] _strings;
   }
-  _mmap_addr=NULL; _mmap_length=0;
+  _mmap_addr=nullptr; _mmap_length=0;
   // leave _unit_fsa alone
-  _index_size=0; _index=NULL;
-  _info_size=0; _info=NULL;
-  _catindex_size=0; _catindex=NULL;
-  _strings_size=0; _strings=NULL;
+  _index_size=0; _index=nullptr;
+  _info_size=0; _info=nullptr;
+  _catindex_size=0; _catindex=nullptr;
+  _strings_size=0; _strings=nullptr;
   _ok=false;
 }
 
@@ -105,7 +105,7 @@ bool ConceptNet::read(const char *datafile, FileAccessMethod fam)
   if(fam==FILE_ACCESS_UNDEF)
     fam=_default_file_access_method;
 
-  if(datafile==NULL)
+  if(datafile==nullptr)
     return false;
 
   int fd = ::open(datafile,O_RDONLY);
@@ -151,7 +151,7 @@ bool ConceptNet::read(const char *datafile, FileAccessMethod fam)
   }
 
   // read _index
-  if(_mmap_addr==NULL){
+  if(_mmap_addr==nullptr){
     _index = new UnitData[_index_size];
     r=::read(fd,_index,_index_size*sizeof(UnitData));
     if(r!=_index_size*sizeof(UnitData)){
@@ -165,7 +165,7 @@ bool ConceptNet::read(const char *datafile, FileAccessMethod fam)
   }
 
   // read _info
-  if(_mmap_addr==NULL){
+  if(_mmap_addr==nullptr){
     _info = new uint32_t[_info_size];
     r=::read(fd,_info,_info_size*sizeof(uint32_t));
     if(r!=_info_size*sizeof(uint32_t)){
@@ -179,7 +179,7 @@ bool ConceptNet::read(const char *datafile, FileAccessMethod fam)
   }
 
   // read _catindex
-  if(_mmap_addr==NULL){
+  if(_mmap_addr==nullptr){
     _catindex = new uint32_t[_catindex_size];
     r=::read(fd,_catindex,_catindex_size*sizeof(uint32_t));
     if(r!=_catindex_size*sizeof(uint32_t)){
@@ -193,7 +193,7 @@ bool ConceptNet::read(const char *datafile, FileAccessMethod fam)
   }
 
   // read _strings
-  if(_mmap_addr==NULL){
+  if(_mmap_addr==nullptr){
     _strings = new char[_strings_size];
     r=::read(fd,_strings,_strings_size*sizeof(char));
     if(r!=_strings_size*sizeof(char)){
@@ -229,7 +229,7 @@ const char * ConceptNet::lookup(int idx) const
 {
 #ifndef NO_RANGE_CHECK
   if(idx<0 || (uint32_t)idx>=_index_size){
-    return NULL;
+    return nullptr;
   }
 #endif
   return _strings+_index[idx]._term;
@@ -497,7 +497,7 @@ int ConceptNet::cat(int idx, int j) const
 const char *ConceptNet::catName(int catIdx) const
 {
   if(catIdx<0 || (uint32_t)catIdx>=_catindex_size){
-    return NULL;
+    return nullptr;
   }
   return _strings+_catindex[catIdx];
 

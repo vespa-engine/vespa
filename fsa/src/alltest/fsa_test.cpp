@@ -29,7 +29,7 @@ int main(int, char**)
   }
 
   const unsigned char *pb = fs->lookup("cucumber");
-  if(pb!=NULL){
+  if(pb!=nullptr){
     printf("lookup test: \"cucumber\" -> \"%s\"\n",pb);
   }
   else{

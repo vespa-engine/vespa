@@ -38,7 +38,7 @@ public:
    *
    * Creates an empty blob.
    */
-  Blob() : _size(0), _data(NULL) {}
+  Blob() : _size(0), _data(nullptr) {}
 
   /**
    * @brief Constructor
@@ -80,7 +80,7 @@ public:
   { s.copy((char*)_data,_size); }
 
   /** Destructor */
-  ~Blob() { if(_data!=NULL) free(_data); }
+  ~Blob() { if(_data!=nullptr) free(_data); }
 
   /**
    * @brief Get data size.
@@ -104,7 +104,7 @@ public:
    */
   void assign(const std::string &s)
   {
-    if(_data!=NULL) free(_data);
+    if(_data!=nullptr) free(_data);
     _size=s.size();
     _data=malloc(s.size());
     s.copy((char*)_data,_size);

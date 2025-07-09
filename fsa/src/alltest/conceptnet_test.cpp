@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 
   ConceptNet::Handle* cn = ConceptNetManager::instance().get(domain);
 
-  if(cn!=NULL){
+  if(cn!=nullptr){
     for(int i=optind+1;i<argc;i++){
       int idx = (*cn)->lookup(argv[i]);
       printf("%s(%d) : (%d,%d,%d,%d) (%f,%f)\n",argv[i],idx,

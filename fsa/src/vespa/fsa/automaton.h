@@ -91,7 +91,7 @@ private:
      *
      * Default constructor, creates an empty transition list.
      */
-    TransitionList() : _alloc(0), _size(0), _trans(NULL) {};
+    TransitionList() : _alloc(0), _size(0), _trans(nullptr) {};
 
     /**
      * @brief Constructor.
@@ -101,10 +101,10 @@ private:
      *
      * @param prealloc  Number of states to preallocate space for.
      */
-    TransitionList(unsigned int prealloc) : _alloc(prealloc), _size(0), _trans(NULL)
+    TransitionList(unsigned int prealloc) : _alloc(prealloc), _size(0), _trans(nullptr)
     { if(prealloc>0){
         _trans = (Transition*)malloc(prealloc*sizeof(Transition));
-        assert(_trans!=NULL);
+        assert(_trans!=nullptr);
       }
     }
 
@@ -112,18 +112,18 @@ private:
      * @brief Destructor.
      */
     ~TransitionList()
-    { if(_trans!=NULL) free(_trans); }
+    { if(_trans!=nullptr) free(_trans); }
 
     /**
      * @brief Copy constructor.
      *
      * @param tl Reference to transition list object.
      */
-    TransitionList(const TransitionList& tl) :  _alloc(tl._size), _size(tl._size), _trans(NULL)
+    TransitionList(const TransitionList& tl) :  _alloc(tl._size), _size(tl._size), _trans(nullptr)
     {
       if(_alloc>0){
         _trans = (Transition*)malloc(_alloc*sizeof(Transition));
-        assert(_trans!=NULL);
+        assert(_trans!=nullptr);
       }
       for(unsigned int i=0; i<_size; i++)
         _trans[i] = tl._trans[i];
@@ -205,31 +205,31 @@ private:
     /**
      * @brief Get the last transition.
      *
-     * Returns a pointer to the last transition, or NULL pointer if
+     * Returns a pointer to the last transition, or nullptr if
      * the list is empty.
      *
-     * @return Pointer to last transition, or NULL.
+     * @return Pointer to last transition, or nullptr.
      */
     Transition* last()
     { if(_size>0) return &_trans[_size-1];
-      return NULL;
+      return nullptr;
     }
 
     /**
      * @brief Get the transition corresponding to a symbol.
      *
      * Returns a pointer to the transition corresponding to a given
-     * symbol, or NULL pointer if the symbol is not found on the list
+     * symbol, or nullptr if the symbol is not found on the list
      * (a transition with that symbol does not exist).
      *
      * @param sy Input symbol.
-     * @return Pointer to last transition, or NULL.
+     * @return Pointer to last transition, or nullptr.
      */
     Transition* find(symbol_t sy)
     { for(unsigned int i=0; i<_size; i++){
         if(_trans[i]._symbol == sy) return &_trans[i];
       }
-      return NULL;
+      return nullptr;
     }
 
     /**
@@ -252,7 +252,7 @@ private:
           _alloc+=2;
           _trans = (Transition*)realloc(_trans,_alloc*sizeof(Transition));
         }
-        assert(_trans!=NULL);
+        assert(_trans!=nullptr);
       }
       _trans[_size]._symbol=sy;
       _trans[_size]._state=st;
@@ -368,9 +368,9 @@ private:
      * @brief Constructor.
      *
      * Default constructor, creates a state with an empty transition
-     * list and no (NULL) blob.
+     * list and no (nullptr) blob.
      */
-    State() : _tlist(), _blob(NULL) {}
+    State() : _tlist(), _blob(nullptr) {}
 
     /**
      * @brief Constructor.
@@ -385,14 +385,14 @@ private:
     /**
      * @brief Destructor.
      */
-    ~State() { if(_blob!=NULL) delete _blob; }
+    ~State() { if(_blob!=nullptr) delete _blob; }
 
     /**
      * @brief Check if the state is final (accepting) state.
      *
      * @return True if the state is final.
      */
-    bool isFinal() { return child(FSA::FINAL_SYMBOL)!=NULL; }
+    bool isFinal() { return child(FSA::FINAL_SYMBOL)!=nullptr; }
 
     /**
      * @brief Get the blob assigned to the state.
@@ -416,29 +416,29 @@ private:
      *
      * Get the child of the state which is reached by a transition
      * with a given symbol. If there is no out-transition with that
-     * symbol, NULL is returned.
+     * symbol, nullptr is returned.
      *
-     * @return Pointer to the child, or NULL.
+     * @return Pointer to the child, or nullptr.
      */
     State* child(symbol_t sy)
     { Transition* t = _tlist.find(sy);
-      if(t!=NULL){ return t->_state; }
-      return NULL;
+      if(t!=nullptr){ return t->_state; }
+      return nullptr;
     }
 
     /**
      * @brief Get the last child.
      *
      * Get the last child of the state which is reached by a valid
-     * transition (not FINAL_SYMBOL). If no such children exists, NULL
+     * transition (not FINAL_SYMBOL). If no such children exists, nullptr
      * is returned.
      *
-     * @return Pointer to last child, or NULL.
+     * @return Pointer to last child, or nullptr.
      */
     State* lastChild()
     { Transition* t = _tlist.last();
-      if(t!=NULL && t->_symbol!=FSA::FINAL_SYMBOL){ return t->_state; }
-      return NULL;
+      if(t!=nullptr && t->_symbol!=FSA::FINAL_SYMBOL){ return t->_state; }
+      return nullptr;
     }
 
     /**
@@ -451,7 +451,7 @@ private:
      */
     void updateLastChild(State* st)
     { Transition* t = _tlist.last();
-      if(t!=NULL){
+      if(t!=nullptr){
         t->_state = st;
       }
     }
@@ -463,13 +463,13 @@ private:
      * given symbol (and optional blob).
      *
      * @param sy New transition symbol.
-     * @param b  Optional blob to be assigned to the new state, defaults to NULL.
+     * @param b  Optional blob to be assigned to the new state, defaults to nullptr.
      * @return Pointer to the new state.
      */
-    State* addEmptyChild(symbol_t sy, const Blob *b=NULL)
+    State* addEmptyChild(symbol_t sy, const Blob *b=nullptr)
     {
       State* child = new State(b);
-      assert(child!=NULL);
+      assert(child!=nullptr);
       _tlist.append(sy,child);
       return child;
     }
@@ -667,15 +667,15 @@ private:
       _packable(false),
       _pack_map(),
       _blob_map(),
-      _packed_ptr(NULL),
-      _packed_idx(NULL),
-      _symbol(NULL),
-      _used(NULL),
-      _perf_hash(NULL),
-      _totals(NULL),
+      _packed_ptr(nullptr),
+      _packed_idx(nullptr),
+      _symbol(nullptr),
+      _used(nullptr),
+      _perf_hash(nullptr),
+      _totals(nullptr),
       _packed_size(0),
       _last_packed(0),
-      _blob(NULL),
+      _blob(nullptr),
       _blob_size(0),
       _blob_used(0),
       _blob_type(0),
@@ -766,7 +766,7 @@ private:
      * @brief Perform a lookup in the packed automaton.
      *
      * @param input Input string
-     * @return Pointer to data associated with input, or NULL if input is not accepted.
+     * @return Pointer to data associated with input, or nullptr if input is not accepted.
      */
     const unsigned char* lookup(const char *input) const;
 
@@ -839,7 +839,7 @@ private:
    * @param suffix Suffix.
    * @param b Data item associated with the input.
    */
-  void addSuffix(State* state, const char *suffix, const Blob *b=NULL);
+  void addSuffix(State* state, const char *suffix, const Blob *b=nullptr);
 
   /**
    * @brief Clean up data structures and release memory.
@@ -854,7 +854,7 @@ public:
   Automaton() :
     _register(),
     _blob_register(),
-    _q0(NULL),
+    _q0(nullptr),
     _previous_input(),
     _finalized(false),
     _packed()
@@ -911,7 +911,7 @@ public:
    * @param input Input string.
    * @param b     Pointer to data item.
    */
-  void insertSortedString(const char *input, const Blob *b=NULL);
+  void insertSortedString(const char *input, const Blob *b=nullptr);
 
   /**
    * @brief Finalize the automaton.

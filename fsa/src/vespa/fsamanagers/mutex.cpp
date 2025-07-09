@@ -28,7 +28,7 @@ struct Mutex::Impl
 Mutex::Mutex() : _impl(new Impl)
 {
   int rc;
-  rc = pthread_mutex_init(&(_impl->_mutex),NULL);
+  rc = pthread_mutex_init(&(_impl->_mutex),nullptr);
   assert(rc == 0);
 }
 

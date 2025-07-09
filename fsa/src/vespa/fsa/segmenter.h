@@ -527,7 +527,7 @@ public:
     {
       if(method<SEGMENTATION_WEIGHTED || method>=SEGMENTATION_METHODS)
         method=SEGMENTATION_WEIGHTED;
-      if(_segmentation[method]==NULL){
+      if(_segmentation[method]==nullptr){
         buildSegmentation(method);
       }
       return _segmentation[method];
