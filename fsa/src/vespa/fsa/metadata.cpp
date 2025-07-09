@@ -28,12 +28,12 @@ const uint32_t MetaData::MAGIC;
 
 // {{{ MetaData::MetaData()
 
-MetaData::MetaData(const char *datafile, FileAccessMethod fam) : _mmap_addr(NULL), _mmap_length(0), _ok(false), _header(), _data(NULL)
+MetaData::MetaData(const char *datafile, FileAccessMethod fam) : _mmap_addr(nullptr), _mmap_length(0), _ok(false), _header(), _data(nullptr)
 {
   _ok = read(datafile,fam);
 }
 
-MetaData::MetaData(const std::string &datafile, FileAccessMethod fam) : _mmap_addr(NULL), _mmap_length(0), _ok(false), _header(), _data(NULL)
+MetaData::MetaData(const std::string &datafile, FileAccessMethod fam) : _mmap_addr(nullptr), _mmap_length(0), _ok(false), _header(), _data(nullptr)
 {
   _ok = read(datafile.c_str(),fam);
 }
@@ -52,15 +52,15 @@ MetaData::~MetaData()
 
 void MetaData::reset()
 {
-  if(_mmap_addr!=NULL && _mmap_addr!=MAP_FAILED){
+  if(_mmap_addr!=nullptr && _mmap_addr!=MAP_FAILED){
     munmap(_mmap_addr,_mmap_length);
   }
   else{
-    if(_data!=NULL) free(_data);
+    if(_data!=nullptr) free(_data);
   }
-  _mmap_addr=NULL; _mmap_length=0;
+  _mmap_addr=nullptr; _mmap_length=0;
   _ok=false;
-  _data=NULL;
+  _data=nullptr;
 }
 
 // }}}
@@ -75,7 +75,7 @@ bool MetaData::read(const char *datafile, FileAccessMethod fam)
   if(fam==FILE_ACCESS_UNDEF)
     fam=_default_file_access_method;
 
-  if(datafile==NULL)
+  if(datafile==nullptr)
     return false;
 
   int fd = ::open(datafile,O_RDONLY);
@@ -110,7 +110,7 @@ bool MetaData::read(const char *datafile, FileAccessMethod fam)
     }
   }
 
-  if(_mmap_addr==NULL){
+  if(_mmap_addr==nullptr){
     _data = malloc(_header._size);
     r=::read(fd,_data,_header._size);
     if(r!=_header._size){

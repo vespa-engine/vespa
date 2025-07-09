@@ -28,7 +28,7 @@ struct RWLock::Impl
 RWLock::RWLock() : _impl(new Impl)
 {
   int rc;
-  rc = pthread_rwlock_init(&(_impl->_rwlock),NULL);
+  rc = pthread_rwlock_init(&(_impl->_rwlock),nullptr);
   assert(rc == 0);
 }
 

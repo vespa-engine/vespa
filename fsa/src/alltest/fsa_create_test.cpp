@@ -72,13 +72,13 @@ int main(int, char**)
   double d4 = t.elapsed();
 
   std::cout << "Automoaton build finished (" << 1000*d1 << "ms," << 1000*(d2-d1) << "ms)"
-            << ", fsa retrieval (" << 1000*(d4-d3) << "ms) " << ((fsa==NULL)?"failed":"succeded") << ".\n";
+            << ", fsa retrieval (" << 1000*(d4-d3) << "ms) " << ((fsa==nullptr)?"failed":"succeded") << ".\n";
 
-  if(fsa!=NULL){
+  if(fsa!=nullptr){
     FSA::State fs(*fsa);
     const unsigned char *pb = fs.lookup("cucumber");
     std::cout << "Lookup(\"cucumber\") -> ";
-    if(pb!=NULL){
+    if(pb!=nullptr){
       std::cout << "\"" << pb << "\"";
     }
     else{

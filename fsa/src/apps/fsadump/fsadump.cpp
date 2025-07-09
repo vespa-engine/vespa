@@ -24,14 +24,14 @@ enum FSA_Input_Format {
   OUTPUT_DOT
 };
 
-void error(const char *name, const char *errormsg = NULL)
+void error(const char *name, const char *errormsg = nullptr)
 {
-  if(errormsg!=NULL){
+  if(errormsg!=nullptr){
     fprintf(stderr,"%s: %s\n",name,errormsg);
   }
 }
 
-void usage(const char *name, const char *errormsg = NULL)
+void usage(const char *name, const char *errormsg = nullptr)
 {
   error(name,errormsg);
   fprintf(stderr,"usage:\n");

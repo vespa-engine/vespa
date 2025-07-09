@@ -75,7 +75,7 @@ bool FSAManager::getUrl(const std::string &url, const std::string &file)
 
 FSA::Handle* FSAManager::get(const std::string &id) const
 {
-  FSA::Handle *newhandle=NULL;
+  FSA::Handle *newhandle=nullptr;
   _lock.rdLock();
   {
     LibraryConstIterator it = _library.find(id);

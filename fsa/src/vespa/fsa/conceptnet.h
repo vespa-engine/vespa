@@ -127,7 +127,7 @@ public:
    * @param fam File access mode (read or mmap). If not set, the
    *            global default access mode will be used.
    */
-  ConceptNet(const char *fsafile, const char *datafile=NULL, FileAccessMethod fam = FILE_ACCESS_UNDEF);
+  ConceptNet(const char *fsafile, const char *datafile=nullptr, FileAccessMethod fam = FILE_ACCESS_UNDEF);
   ConceptNet(const std::string &fsafile, const std::string &datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF);
 
   /**
@@ -175,7 +175,7 @@ public:
    * Look up a unit index in the concept net, and get the unit string.
    *
    * @param idx Unit index.
-   * @return Pointer to the unit string, or NULL if index is out of range.
+   * @return Pointer to the unit string, or nullptr if index is out of range.
    */
   const char * lookup(int idx) const;
 
@@ -359,7 +359,7 @@ public:
    * @brief Get the name of a category.
    *
    * @param catIdx Category index.
-   * @return Catergory name, or NULL if catIdx is out of range.
+   * @return Catergory name, or nullptr if catIdx is out of range.
    */
   const char *catName(int catIdx) const;
 

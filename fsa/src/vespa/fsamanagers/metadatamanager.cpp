@@ -29,7 +29,7 @@ bool MetaDataManager::load(const std::string &id, const std::string &datafile)
 {
   MetaData::Handle *newmd = new MetaData::Handle(datafile.c_str());
 
-  if(newmd==NULL || !(*newmd)->isOk()){
+  if(newmd==nullptr || !(*newmd)->isOk()){
     delete newmd;
     return false;
   }
@@ -54,7 +54,7 @@ bool MetaDataManager::load(const std::string &id, const std::string &datafile)
 
 MetaData::Handle* MetaDataManager::get(const std::string &id) const
 {
-  MetaData::Handle *newhandle=NULL;
+  MetaData::Handle *newhandle=nullptr;
   _lock.rdLock();
   {
     LibraryConstIterator it = _library.find(id);

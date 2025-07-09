@@ -22,9 +22,9 @@ enum FSA_Input_Format {
   INPUT_BINARY,
   INPUT_BINARY_RAW };
 
-void usage(const char *name, const char *errormsg = NULL)
+void usage(const char *name, const char *errormsg = nullptr)
 {
-  if(errormsg!=NULL){
+  if(errormsg!=nullptr){
     fprintf(stderr,"%s: %s\n",name,errormsg);
   }
   fprintf(stderr,"usage:\n");
@@ -99,17 +99,17 @@ int main(int argc, char** argv)
       format = INPUT_TEXT_NUM;
       break;
     case 's':
-      num_size = strtoul(optarg,NULL,0);
+      num_size = strtoul(optarg,nullptr,0);
       if(num_size!=1 && num_size!=2 && num_size!=4){
         usage(argv[0],"invalid numerical info size (-s)");
         return 1;
       }
       break;
     case 'z':
-      info_size_binary = strtoul(optarg,NULL,0);
+      info_size_binary = strtoul(optarg,nullptr,0);
       break;
     case 'S':
-      serial = strtoul(optarg,NULL,0);
+      serial = strtoul(optarg,nullptr,0);
       break;
     case 'e':
       format = INPUT_TEXT_EMPTY;
@@ -137,7 +137,7 @@ int main(int argc, char** argv)
     output_file = argv[optind+1];
   }
   else if(optind+1==argc){
-    input_file = NULL;
+    input_file = nullptr;
     output_file = argv[optind];
   }
   else{
@@ -165,7 +165,7 @@ int main(int argc, char** argv)
   automaton.init();
   if(verbose) std::cerr << " done." << std::endl;
 
-  if(input_file!=NULL){
+  if(input_file!=nullptr){
     infile.open(input_file);
     if (infile.fail()) {
       std::cerr << "Error: Could not open file \"" << input_file << "\"\n";
@@ -215,16 +215,16 @@ int main(int argc, char** argv)
       temp = temp.substr(split + 1);
       switch(num_size){
       case 1:
-        num_meta.u1=strtoul(temp.c_str(),NULL,0);
+        num_meta.u1=strtoul(temp.c_str(),nullptr,0);
         meta.assign((const char*)&num_meta,1);
         break;
       case 2:
-        num_meta.u2=strtoul(temp.c_str(),NULL,0);
+        num_meta.u2=strtoul(temp.c_str(),nullptr,0);
         meta.assign((const char*)&num_meta,2);
         break;
       case 4:
       default:
-        num_meta.u4=strtoul(temp.c_str(),NULL,0);
+        num_meta.u4=strtoul(temp.c_str(),nullptr,0);
         meta.assign((const char*)&num_meta,4);
         break;
       }
@@ -267,7 +267,7 @@ int main(int argc, char** argv)
     empty_meta_str = false;
   }
   if(verbose) std::cerr << "\rInserting lines ... (inserted " << count << "/" <<  (lines-1) << " lines) ... done.\n";
-  if(input_file!=NULL){
+  if(input_file!=nullptr){
     infile.close();
   }
 

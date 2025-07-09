@@ -28,7 +28,7 @@ public:
    * @brief Constructor, registers current time.
    */
   TimeStamp() {
-    gettimeofday(&_ts,NULL);
+    gettimeofday(&_ts,nullptr);
   }
   /**
    * @brief Destructor.
@@ -42,7 +42,7 @@ public:
    */
   void reset()
   {
-    gettimeofday(&_ts,NULL);
+    gettimeofday(&_ts,nullptr);
   }
 
   /**
@@ -63,7 +63,7 @@ public:
   double elapsed() const
   {
     struct timeval now;
-    gettimeofday(&now,NULL);
+    gettimeofday(&now,nullptr);
     return double(now.tv_sec)-double(_ts.tv_sec)+
       (double(now.tv_usec)-double(_ts.tv_usec))/1000000.0;
   }
