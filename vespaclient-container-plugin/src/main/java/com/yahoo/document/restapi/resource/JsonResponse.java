@@ -207,6 +207,7 @@ class JsonResponse implements StreamableJsonResponse {
         json.writeStartArray();
     }
 
+    @FunctionalInterface
     private interface DocumentWriter {
         void write(ByteArrayOutputStream out) throws IOException;
     }
