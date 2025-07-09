@@ -501,7 +501,7 @@ AttributeVector::shrinkLidSpace()
     assert(committed_doc_id_limit == _committedDocIdLimit.load(std::memory_order_relaxed));
     onShrinkLidSpace();
     attribute::IPostingListAttributeBase *pab = getIPostingListAttributeBase();
-    if (pab != NULL) {
+    if (pab != nullptr) {
         pab->forwardedShrinkLidSpace(committed_doc_id_limit);
     }
     incGeneration();

@@ -25,7 +25,7 @@ using NativeAttributeMatchParams = NativeRankParamsBase<NativeAttributeMatchPara
 class NativeAttributeMatchExecutor : public fef::FeatureExecutor {
 protected:
     struct CachedTermData {
-        CachedTermData() : scale(0), weightBoostTable(NULL), tfh(fef::IllegalHandle) { }
+        CachedTermData() : scale(0), weightBoostTable(nullptr), tfh(fef::IllegalHandle) { }
         CachedTermData(const NativeAttributeMatchParams & params, const fef::ITermFieldData & tfd, feature_t s) :
              scale(s),
              weightBoostTable(&params.vector[tfd.getFieldId()].weightBoostTable),

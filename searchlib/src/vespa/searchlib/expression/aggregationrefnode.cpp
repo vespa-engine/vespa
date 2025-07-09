@@ -13,7 +13,7 @@ IMPLEMENT_EXPRESSIONNODE(AggregationRefNode, ExpressionNode);
 AggregationRefNode::AggregationRefNode(const AggregationRefNode & rhs) :
     ExpressionNode(),
     _index(rhs._index),
-    _expressionNode(NULL)
+    _expressionNode(nullptr)
 {
 }
 
@@ -21,14 +21,14 @@ AggregationRefNode & AggregationRefNode::operator = (const AggregationRefNode & 
 {
     if (this != &expr) {
         _index = expr._index;
-        _expressionNode = NULL;
+        _expressionNode = nullptr;
     }
     return *this;
 }
 
 bool AggregationRefNode::onExecute() const
 {
-    if (_expressionNode != NULL) {
+    if (_expressionNode != nullptr) {
         return _expressionNode->execute();
     }
     return false;
@@ -36,9 +36,9 @@ bool AggregationRefNode::onExecute() const
 
 void AggregationRefNode::locateExpression(ExpressionNodeArray & exprVec) const
 {
-    if (_expressionNode == NULL) {
+    if (_expressionNode == nullptr) {
         _expressionNode = static_cast<ExpressionNode *>(exprVec[_index].get());
-        if (_expressionNode == NULL) {
+        if (_expressionNode == nullptr) {
             throw std::runtime_error(make_string("Failed locating expression for index '%d'", _index));
         }
     }

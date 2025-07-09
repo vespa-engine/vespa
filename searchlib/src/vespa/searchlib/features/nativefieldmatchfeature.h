@@ -13,7 +13,7 @@ namespace search::features {
 struct NativeFieldMatchParam : public NativeParamBase
 {
     static const uint32_t NOT_DEF_FIELD_LENGTH;
-    NativeFieldMatchParam() noexcept : NativeParamBase(), firstOccTable(NULL), numOccTable(NULL), averageFieldLength(NOT_DEF_FIELD_LENGTH), firstOccImportance(0.5) { }
+    NativeFieldMatchParam() noexcept : NativeParamBase(), firstOccTable(nullptr), numOccTable(nullptr), averageFieldLength(NOT_DEF_FIELD_LENGTH), firstOccImportance(0.5) { }
     const fef::Table * firstOccTable;
     const fef::Table * numOccTable;
     uint32_t averageFieldLength;

@@ -34,12 +34,12 @@ public:
      *
      * @param indexEnv The index environment of this.
      */
-    QueryEnvironment(IndexEnvironment *indexEnv = NULL);
+    QueryEnvironment(IndexEnvironment *indexEnv = nullptr);
     ~QueryEnvironment();
 
     const Properties &getProperties() const override { return _properties; }
     uint32_t getNumTerms() const override { return _terms.size(); }
-    const ITermData *getTerm(uint32_t idx) const override { return idx < _terms.size() ? &_terms[idx] : NULL; }
+    const ITermData *getTerm(uint32_t idx) const override { return idx < _terms.size() ? &_terms[idx] : nullptr; }
     GeoLocationSpecPtrs getAllLocations() const override {
         GeoLocationSpecPtrs locations;
         for (const auto & loc : _locations) {
@@ -55,7 +55,7 @@ public:
         }
         return index::FieldLengthInfo(1.0, 1.0, 1);
     }
-    const IIndexEnvironment &getIndexEnvironment() const override { assert(_indexEnv != NULL); return *_indexEnv; }
+    const IIndexEnvironment &getIndexEnvironment() const override { assert(_indexEnv != nullptr); return *_indexEnv; }
 
     /** Returns a reference to the index environment of this. */
     IndexEnvironment *getIndexEnv() { return _indexEnv; }
@@ -66,7 +66,7 @@ public:
     /** Sets the index environment of this. */
     QueryEnvironment &setIndexEnv(IndexEnvironment *indexEnv) {
         _indexEnv = indexEnv;
-        _attrCtx = ((indexEnv == NULL) ? search::attribute::IAttributeContext::UP() :
+        _attrCtx = ((indexEnv == nullptr) ? search::attribute::IAttributeContext::UP() :
                     indexEnv->getAttributeMap().createContext());
         return *this;
     }
@@ -77,7 +77,7 @@ public:
      * @param vecMan the manager we want to use
      **/
     void overrideAttributeManager(AttributeManager *vecMan) {
-        _attrCtx = ((vecMan == NULL) ? search::attribute::IAttributeContext::UP() : vecMan->createContext());
+        _attrCtx = ((vecMan == nullptr) ? search::attribute::IAttributeContext::UP() : vecMan->createContext());
     }
 
     /** Returns a reference to the list of term data objects. */

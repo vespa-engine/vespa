@@ -33,7 +33,7 @@ test_sort(unsigned int caseNum, unsigned int n, unsigned int ntop)
         ntop = n;
 
     array = new RankedHit[n];
-    assert(array != NULL);
+    assert(array != nullptr);
 
     for (i = 0; i < n; i++) {
         array[i]._docId = i;

@@ -750,7 +750,7 @@ FakeWord::dump(FieldWriter &fieldWriter,
 
 FakeWord::RandomizedReader::RandomizedReader()
     : _r(),
-      _fw(NULL),
+      _fw(nullptr),
       _wordIdx(0u),
       _valid(false),
       _ri(),

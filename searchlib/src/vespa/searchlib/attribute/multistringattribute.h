@@ -60,7 +60,7 @@ public:
     const char * get(DocId doc) const  override {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         if (indices.size() == 0) {
-            return NULL;
+            return nullptr;
         } else {
             return this->_enumStore.get_value(multivalue::get_value_ref(indices[0]).load_acquire());
         }

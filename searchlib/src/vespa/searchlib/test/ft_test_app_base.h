@@ -55,7 +55,7 @@ struct FtTestAppBase {
     static bool assertCreateInstance(const T & prototype, const std::string & baseName) {
         search::fef::Blueprint::UP bp = prototype.createInstance();
         bool failed = false;
-        EXPECT_TRUE(dynamic_cast<T*>(bp.get()) != NULL) << (failed = true, "");
+        EXPECT_TRUE(dynamic_cast<T*>(bp.get()) != nullptr) << (failed = true, "");
         if (failed) {
             return false;
         }

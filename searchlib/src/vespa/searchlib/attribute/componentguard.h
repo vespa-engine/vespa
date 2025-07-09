@@ -36,7 +36,7 @@ public:
     T * get()                      { return _component.get(); }
     T * operator -> ()             { return _component.get(); }
     T & operator * ()              { return *_component.get(); }
-    bool valid()             const { return _component.get() != NULL; }
+    bool valid()             const { return _component.get() != nullptr; }
 };
 
 }

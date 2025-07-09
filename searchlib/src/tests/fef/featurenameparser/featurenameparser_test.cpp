@@ -58,7 +58,7 @@ testFile(const std::string &name)
     uint32_t lineN = 0;
     FILE *f = fopen(name.c_str(), "r");
     ASSERT_TRUE(f != 0);
-    while (fgets(buf, sizeof(buf), f) != NULL) {
+    while (fgets(buf, sizeof(buf), f) != nullptr) {
         ++lineN;
         std::string line(buf);
         if (*line.rbegin() == '\n') {
