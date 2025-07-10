@@ -14,9 +14,10 @@ import (
 
 func newCurlCmd(cli *CLI) *cobra.Command {
 	var (
-		waitSecs int
-		dryRun   bool
+		waitSecs   int
+		dryRun     bool
 	)
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "curl [curl-options] path",
 		Short: "Access Vespa directly using curl",
@@ -33,12 +34,12 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 		SilenceUsage:      true,
 		Args:              cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.target(targetOptions{})
+			target, err := cli.targetWithFlags(targetOptions{}, targetFlags)
 			if err != nil {
 				return err
 			}
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
-			service, err := waiter.Service(target, cli.config.cluster())
+			service, err := waiter.Service(target, targetFlags.Cluster())
 			if err != nil {
 				return err
 			}
@@ -61,6 +62,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 			return nil
 		},
 	}
+	targetFlags.AddFlags(cmd)
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Print the curl command that would be executed")
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
 	return cmd

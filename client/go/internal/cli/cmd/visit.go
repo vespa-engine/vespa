@@ -89,8 +89,9 @@ var totalDocCount int
 
 func newVisitCmd(cli *CLI) *cobra.Command {
 	var (
-		vArgs visitArgs
+		vArgs      visitArgs
 	)
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "visit",
 		Short: "Retrieve and print all documents from Vespa",
@@ -117,7 +118,7 @@ $ vespa visit --field-set "[id]" # list document IDs
 			}
 			vArgs.header = header
 			waiter := cli.waiter(time.Duration(vArgs.waitSecs)*time.Second, cmd)
-			service, err := documentService(cli, waiter)
+			service, err := documentService(cli, waiter, targetFlags)
 			if err != nil {
 				return err
 			}
@@ -143,6 +144,7 @@ $ vespa visit --field-set "[id]" # list document IDs
 			return nil
 		},
 	}
+	targetFlags.AddFlags(cmd)
 	cmd.Flags().StringVar(&vArgs.contentCluster, "content-cluster", "*", `Which content cluster to visit documents from`)
 	cmd.Flags().StringVar(&vArgs.fieldSet, "field-set", "", `Which fieldset to ask for`)
 	cmd.Flags().StringVar(&vArgs.selection, "selection", "", `Select subset of cluster`)
