@@ -780,7 +780,7 @@ public class YqlParser implements Parser {
                         near.addItem(instantiateWordAlternativesItem(field, word));
                         break;
                     default:
-                        throw new IllegalArgumentException("Expected equiv, got: " + names.get(0));
+                        throw new IllegalArgumentException("Expected " + EQUIV + ", " + PHRASE + ", or " + ALTERNATIVES + ", but got: " + names.get(0));
                 }
             } else {
                 near.addItem(instantiateWordItem(field, word, near.getClass()));
@@ -812,7 +812,7 @@ public class YqlParser implements Parser {
                         onear.addItem(instantiateWordAlternativesItem(field, word));
                         break;
                     default:
-                        throw new IllegalArgumentException("Expected 'equiv' or 'phrase', got: " + names.get(0));
+                        throw new IllegalArgumentException("Expected " + EQUIV + ", " + PHRASE + ", or " + ALTERNATIVES + ", but got: " +names.get(0));
                 }
             } else {
                 onear.addItem(instantiateWordItem(field, word, onear.getClass()));
