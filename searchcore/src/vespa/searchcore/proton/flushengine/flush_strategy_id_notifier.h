@@ -26,7 +26,7 @@ public:
     ~FlushStrategyIdNotifier();
     void set_strategy_id(uint32_t strategy_id);
     void close();
-    void wait_ge_strategy_id(uint32_t strategy_id);
+    void wait_gt_strategy_id(uint32_t strategy_id);
     [[nodiscard]] bool add_strategy_id_listener(std::shared_ptr<FlushStrategyIdListener> listener);
     void remove_strategy_id_listener(std::shared_ptr<FlushStrategyIdListener> listener);
 };

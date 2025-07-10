@@ -82,7 +82,7 @@ SetFlushStrategyRpcHandler::set_strategy_id(uint32_t strategy_id)
             return;
         }
         _strategy_id = strategy_id;
-        if (_strategy_id < _wait_strategy_id) {
+        if (_strategy_id <= _wait_strategy_id) {
             return;
         }
     }

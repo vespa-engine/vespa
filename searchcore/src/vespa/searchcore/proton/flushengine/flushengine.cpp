@@ -675,23 +675,21 @@ FlushEngine::set_strategy_helper(std::shared_ptr<IFlushStrategy> strategy)
         _strategy_changed = true;
         std::lock_guard<std::mutex> guard(_lock);
         _cond.notify_all();
-        return _priorityStrategy->get_id() + 1u; // switch to strategy then to next one
+        return _priorityStrategy->get_id();
     } else {
-        // wait_strategy_id is now the strategy id for _priorityStrategy
         if (reuse_strategy(*_priorityStrategy, *strategy)) {
-            return _priorityStrategy->get_id() + 1u;
+            return _priorityStrategy->get_id();
         } else {
             for (auto& old_strategy : _priority_strategy_queue) {
                 if (reuse_strategy(*old_strategy, *strategy)) {
-                    return old_strategy->get_id() + 1u;
+                    return old_strategy->get_id();
                 }
             }
             strategy->set_id((_priority_strategy_queue.empty() ?
                               _priorityStrategy->get_id() :
                               _priority_strategy_queue.back()->get_id()) + 1u);
             _priority_strategy_queue.push_back(std::move(strategy));
-            // switch to queued strategies then next one
-            return _priority_strategy_queue.back()->get_id() + 1;
+            return _priority_strategy_queue.back()->get_id();
         }
     }
 }
@@ -708,7 +706,7 @@ FlushEngine::setStrategy(IFlushStrategy::SP strategy)
      * prune() afterwards.
      */
     if (wait_strategy_id != 0u) {
-        notifier->wait_ge_strategy_id(wait_strategy_id);
+        notifier->wait_gt_strategy_id(wait_strategy_id);
     }
 }
 
