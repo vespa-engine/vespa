@@ -133,7 +133,7 @@ RPCHooksBase::initRPC()
                     FRT_METHOD(RPCHooksBase::rpc_prepareRestart2), this);
     rb.MethodDesc("Tell the node to prepare for a restart by flushing components "
             "such that TLS replay time + time spent flushing components is as low as possible");
-    rb.ParamDesc("start_flush", "Whether to start new ich component to check the status for");
+    rb.ParamDesc("start_flush", "Whether to set a new flush strategy to check the status for");
     rb.ParamDesc("flush_strategy_id", "Flush strategy id to wait for");
     rb.ParamDesc("timeout", "How many milliseconds to wait for flush to complete");
     rb.ReturnDesc("success", "Whether or not prepare for restart was triggered.");
