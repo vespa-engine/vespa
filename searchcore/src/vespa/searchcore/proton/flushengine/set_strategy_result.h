@@ -11,7 +11,7 @@ class FlushHistory;
 class FlushStrategyIdNotifier;
 
 /*
- * Result of a call to FlushEngine::set_strategy. If _strategy_id is zero then the flush engine could not set the
+ * Result of a call to FlushEngine::set_strategy. If _wait_strategy_id is zero then the flush engine could not set the
  * strategy.
  */
 class SetStrategyResult {
