@@ -48,10 +48,16 @@ echo "Using maven target: ${MAVEN_TARGET}"
 # Set up maven wrapper.
 echo "Setting up maven wrapper in $(pwd)"
 mvn -B wrapper:wrapper -Dmaven=3.9.9 -N ${MAVEN_EXTRA_OPTS}
-rm -rf wrapper/bin
-mkdir -p wrapper/bin
-printf '#!/bin/sh\nexec %s/mvnw "$@"\n' "$(pwd)" > wrapper/bin/mvn
-chmod +x wrapper/bin/mvn
+
+# Proxy allowing you to put $(pwd)/maven-wrapper/bin first in PATH
+# to redirect any plain "mvn" commands so they use the wrapper
+wbdir=maven-wrapper/bin
+rm -rf ${wbdir}
+mkdir -p ${wbdir}
+printf '#!/bin/sh\nexec %s/mvnw "$@"\n' "$(pwd)" > ${wbdir}/mvn
+chmod +x ${wbdir}/mvn
+unset wbdir
+
 ${MAVEN_CMD} -v
 
 if [ "$MODE" = "wrapper" ]; then
