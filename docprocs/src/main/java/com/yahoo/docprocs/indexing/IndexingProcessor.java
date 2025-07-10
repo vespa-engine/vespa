@@ -165,7 +165,7 @@ public class IndexingProcessor extends DocumentProcessor {
     private static boolean isReindexingOperation(DocumentPut op) {
         // All reindexing operation will have a special expression value in the test and set condition.
         // Below value must match the constant in storage/src/vespa/storage/common/reindexing_constants.cpp.
-        return op.getCondition().getSelection().equals("@@__vespa_internal_allow_through_bucket_lock");
+        return op.getCondition().getSelection().startsWith("@@__vespa_internal_allow_through_bucket_lock");
     }
 
 }
