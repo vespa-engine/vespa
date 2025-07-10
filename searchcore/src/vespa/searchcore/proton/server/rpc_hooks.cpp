@@ -2,6 +2,7 @@
 
 #include "rpc_hooks.h"
 #include "detached_rpc_requests_owner.h"
+#include "prepare_restart_rpc_handler.h"
 #include "prepare_restart2_rpc_handler.h"
 #include "proton.h"
 #include <vespa/searchcore/proton/flushengine/set_strategy_result.h>
@@ -200,6 +201,21 @@ RPCHooksBase::letProtonDo(Executor::Task::UP task)
 void
 RPCHooksBase::triggerFlush(FRT_RPCRequest *req)
 {
+    if (experimental::enable_prepare_restart2) {
+        LOG(info, "RPCHooksBase::triggerFlush will create experimental detached rpc handler");
+        std::chrono::steady_clock::duration timeout(610s); // 10s greater timeout than the one in vespa-proton-cmd
+        auto set_strategy_result = _proton.trigger_flush2();
+        using TriggerFlushRpcHandler = PrepareRestartRpcHandler;
+        using RefCountedRpcRequest = vespalib::ref_counted<FRT_RPCRequest>;
+        auto handler = std::make_shared<TriggerFlushRpcHandler>(_detached_requests_owner,
+                                                                RefCountedRpcRequest::internal_attach(req),
+                                                                set_strategy_result.lowest_strategy_id_notifier(),
+                                                                _transport->GetScheduler(),
+                                                                set_strategy_result.wait_strategy_id(),
+                                                                timeout);
+        handler->setup();
+        return;
+    }
     if (_proton.triggerFlush()) {
         req->GetReturn()->AddInt8(1);
         LOG(info, "RPCHooksBase::Flush finished successfully");
@@ -213,6 +229,20 @@ RPCHooksBase::triggerFlush(FRT_RPCRequest *req)
 void
 RPCHooksBase::prepareRestart(FRT_RPCRequest *req)
 {
+    if (experimental::enable_prepare_restart2) {
+        LOG(info, "RPCHooksBase::prepareRestart will create experimental detached rpc handler");
+        std::chrono::steady_clock::duration timeout(610s); // 10s greater timeout than the one in vespa-proton-cmd
+        auto set_strategy_result = _proton.prepare_restart2();
+        using RefCountedRpcRequest = vespalib::ref_counted<FRT_RPCRequest>;
+        auto handler = std::make_shared<PrepareRestartRpcHandler>(_detached_requests_owner,
+                                                                  RefCountedRpcRequest::internal_attach(req),
+                                                                  set_strategy_result.lowest_strategy_id_notifier(),
+                                                                  _transport->GetScheduler(),
+                                                                  set_strategy_result.wait_strategy_id(),
+                                                                  timeout);
+        handler->setup();
+        return;
+    }
     if (_proton.prepareRestart()) {
         req->GetReturn()->AddInt8(1);
         LOG(info, "RPCHooksBase::prepareRestart finished successfully");
