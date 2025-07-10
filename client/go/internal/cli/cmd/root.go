@@ -180,6 +180,7 @@ For detailed description of flags and configuration, see 'vespa help config'.
 			// and executes the corresponding vespa-<cmd> binary with those arguments.
 
 			// Find the index of the subcommand in os.Args (so we can pass through all user arguments and flags)
+			// This is a hack to get the subcommand flags and arguments since Cobra doesn't provide undefined flags
 			var subcmdIdx int
 			for i, arg := range os.Args {
 				if i == 0 {
