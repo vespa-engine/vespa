@@ -48,10 +48,10 @@ FlushStrategyIdNotifier::close()
 }
 
 void
-FlushStrategyIdNotifier::wait_ge_strategy_id(uint32_t strategy_id)
+FlushStrategyIdNotifier::wait_gt_strategy_id(uint32_t strategy_id)
 {
     std::unique_lock guard(_lock);
-    while (_strategy_id < strategy_id && !_closed) {
+    while (_strategy_id <= strategy_id && !_closed) {
         _cond.wait(guard);
     }
 }
