@@ -1649,6 +1649,9 @@ public class YqlParser implements Parser {
     private boolean phraseSegmentChildSupported(Class<?> parent) {
         if (parent == null) return true;
 
+        if (parent == NearItem.class) return true;
+        if (parent == ONearItem.class) return true;
+
         // not supported in backend, but the container flattens the arguments itself:
         if (parent == PhraseItem.class) return true;
 
