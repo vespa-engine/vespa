@@ -266,6 +266,29 @@ TEST(NewTest, test_realloc_large_buffers) {
     EXPECT_EQ(1, mallopt(M_MMAP_THRESHOLD, 1_Gi));
 }
 
+// Edge case: reallocation of block large enough to get its own distinct memory mapped
+// region down to an allocation _smaller_ than the original allocation. The amount of
+// memory copied from the old allocation to the new one must be the _minimum_ of the
+// two allocation sizes.
+TEST(NewTest, realloc_from_large_to_small_constrains_copied_memory_extent) {
+    if (_env == MallocLibrary::UNKNOWN) {
+        return;
+    }
+    constexpr size_t old_sz = 8_Mi;
+    constexpr size_t new_sz = 1_Ki;
+    ASSERT_EQ(1, mallopt(M_MMAP_THRESHOLD, 1_Mi));
+    char* buf = static_cast<char*>(malloc(old_sz));
+    assert(buf);
+    memset(buf, 0x5b, old_sz);
+    // This will SIGSEGV (with a very high likelihood) if we don't constrain the copied
+    // memory size since it will attempt to write outside a valid mapped region.
+    char* realloc_buf = static_cast<char*>(realloc(buf, new_sz));
+    EXPECT_NE(realloc_buf, buf); // Should not have reused buffer
+
+    EXPECT_EQ(0u, count_mismatches(realloc_buf, 0x5b, new_sz));
+    free(realloc_buf);
+}
+
 void verify_alignment(void * ptr, size_t align, size_t min_sz) {
     EXPECT_NE(ptr, nullptr);
     EXPECT_EQ(0u, size_t(ptr) & (align-1));
