@@ -161,7 +161,46 @@ For detailed description of flags and configuration, see 'vespa help config'.
 		SilenceUsage:      false,
 		Args:              cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("invalid command: %s", args[0])
+			if len(args) == 0 {
+				// No command given, print help as usual.
+				return cmd.Help()
+			}
+
+			found, _, _ := cmd.Find(args)
+			if found != nil && found != cmd {
+				// Found an internal command. Let Cobra handle it.
+				// Return nil so execution falls through to Cobra's handler.
+				return nil
+			}
+
+			// No internal command found, try to run an external vespa-<cmd>
+			// Find the subcommand being proxied
+			var subcmdIdx int
+			for i, arg := range os.Args {
+				if i == 0 {
+					continue // skip program name
+				}
+				if arg == args[0] {
+					subcmdIdx = i
+					break
+				}
+			}
+
+			extCmd := "vespa-" + args[0]
+			path, err := exec.LookPath(extCmd)
+			if err != nil {
+				return fmt.Errorf("unknown command '%s' (no internal command, and failed to find '%s' in $PATH)", args[0], extCmd)
+			}
+
+			execCmd := exec.Command(path, os.Args[subcmdIdx+1:]...)
+			execCmd.Stdin = os.Stdin
+			execCmd.Stdout = os.Stdout
+			execCmd.Stderr = os.Stderr
+
+			if err := execCmd.Run(); err != nil {
+				return fmt.Errorf("failed to execute %s: %v", extCmd, err)
+			}
+			return nil
 		},
 	}
 	cmd.CompletionOptions.HiddenDefaultCmd = true // Do not show the 'completion' command in help output
@@ -204,6 +243,7 @@ For detailed description of flags and configuration, see 'vespa help config'.
 	cli.configureSpinner()
 	cli.configureCommands()
 	cmd.PersistentPreRunE = cli.configureOutput
+	cmd.FParseErrWhitelist.UnknownFlags = true // Ignore unknown flags, so that we can pass them to external commands
 	return &cli, nil
 }
 
