@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/config-proton.h>
+#include <vespa/searchcore/proton/flushengine/set_strategy_result.h>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -32,6 +33,7 @@ private:
 public:
     PrepareRestartHandler(FlushEngine &flushEngine);
     bool prepareRestart(const ProtonConfig &protonCfg);
+    flushengine::SetStrategyResult prepare_restart2(const ProtonConfig &protonCfg);
 };
 
 }

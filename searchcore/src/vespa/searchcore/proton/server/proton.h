@@ -14,6 +14,7 @@
 #include "rpc_hooks.h"
 #include "shared_threading_service.h"
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
+#include <vespa/searchcore/proton/flushengine/set_strategy_result.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
@@ -206,6 +207,8 @@ public:
 
     bool triggerFlush();
     bool prepareRestart();
+    flushengine::SetStrategyResult trigger_flush2();
+    flushengine::SetStrategyResult prepare_restart2();
 
     void getComponentConfig(Consumer &consumer) override;
     void setClusterState(BucketSpace bucketSpace, const storage::spi::ClusterState &calc) override;

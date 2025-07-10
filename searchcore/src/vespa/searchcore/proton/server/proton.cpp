@@ -71,6 +71,7 @@ LOG_SETUP(".proton.server.proton");
 using CpuCategory = vespalib::CpuUsage::Category;
 
 using document::DocumentTypeRepo;
+using proton::flushengine::SetStrategyResult;
 using search::diskindex::IPostingListCache;
 using search::diskindex::PostingListCache;
 using search::engine::MonitorReply;
@@ -843,6 +844,22 @@ Proton::prepareRestart()
 {
     BootstrapConfig::SP configSnapshot = getActiveConfigSnapshot();
     return _prepareRestartHandler->prepareRestart(configSnapshot->getProtonConfig());
+}
+
+SetStrategyResult
+Proton::trigger_flush2()
+{
+    if (!_flushEngine) {
+        return SetStrategyResult();
+    }
+    return _flushEngine->trigger_flush2();
+}
+
+SetStrategyResult
+Proton::prepare_restart2()
+{
+    BootstrapConfig::SP configSnapshot = getActiveConfigSnapshot();
+    return _prepareRestartHandler->prepare_restart2(configSnapshot->getProtonConfig());
 }
 
 namespace {

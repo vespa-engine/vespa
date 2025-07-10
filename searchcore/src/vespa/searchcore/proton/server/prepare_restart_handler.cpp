@@ -7,6 +7,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.prepare_restart_handler");
 
+using proton::flushengine::SetStrategyResult;
+
 namespace proton {
 
 PrepareRestartHandler::PrepareRestartHandler(FlushEngine &flushEngine)
@@ -44,6 +46,15 @@ createPrepareRestartConfig(const PrepareRestartHandler::ProtonConfig &protonCfg)
                                                protonCfg.flush.preparerestart.readcost);
 }
 
+}
+
+SetStrategyResult
+PrepareRestartHandler::prepare_restart2(const ProtonConfig &protonCfg)
+{
+    if (!_flushEngine.has_thread()) {
+        return SetStrategyResult();
+    }
+    return _flushEngine.set_strategy(std::make_shared<PrepareRestartFlushStrategy>(createPrepareRestartConfig(protonCfg)));
 }
 
 void
