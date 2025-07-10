@@ -83,6 +83,7 @@ vespa_add_library(searchcore_server STATIC
     operationdonecontext.cpp
     persistencehandlerproxy.cpp
     prepare_restart_handler.cpp
+    prepare_restart_rpc_handler.cpp
     prepare_restart2_rpc_handler.cpp
     proton.cpp
     proton_config_fetcher.cpp
