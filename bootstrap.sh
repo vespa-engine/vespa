@@ -16,6 +16,8 @@ elif [ "$1" = "java" ]; then
     MODE=java
 elif [ "$1" = "default" ]; then
     MODE=default
+elif [ "$1" = "wrapper" ]; then
+    MODE=wrapper
 elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     usage
     exit 0
@@ -43,6 +45,25 @@ echo "Using maven command: ${MAVEN_CMD}"
 echo "Using maven extra opts: ${MAVEN_EXTRA_OPTS}"
 echo "Using maven target: ${MAVEN_TARGET}"
 
+# Set up maven wrapper.
+echo "Setting up maven wrapper in $(pwd)"
+mvn -B wrapper:wrapper -Dmaven=3.9.9 -N ${MAVEN_EXTRA_OPTS}
+
+# Proxy allowing you to put $(pwd)/maven-wrapper/bin first in PATH
+# to redirect any plain "mvn" commands so they use the wrapper
+wbdir=maven-wrapper/bin
+rm -rf ${wbdir}
+mkdir -p ${wbdir}
+printf '#!/bin/sh\nexec %s/mvnw "$@"\n' "$(pwd)" > ${wbdir}/mvn
+chmod +x ${wbdir}/mvn
+unset wbdir
+
+${MAVEN_CMD} -v
+
+if [ "$MODE" = "wrapper" ]; then
+    exit
+fi
+
 mvn_install() {
     ${MAVEN_CMD} --batch-mode --no-snapshot-updates -Dmaven.wagon.http.retryHandler.count=5 clean ${MAVEN_TARGET} ${MAVEN_EXTRA_OPTS} "$@"
 }
@@ -61,11 +82,6 @@ $top/dist/getversionmap.sh $top > $top/dist/vtag.map
 # The 'java' mode only builds the plugins.
 # The 'default' mode also builds some modules needed by C++ code.
 # The 'full' mode also builds modules needed by C++ tests.
-
-# Set up maven wrapper.
-echo "Setting up maven wrapper in $(pwd)"
-mvn -B wrapper:wrapper -Dmaven=3.9.9 -N ${MAVEN_EXTRA_OPTS}
-${MAVEN_CMD} -v
 
 # must install parent poms first:
 echo "Downloading all dependencies. This may take a few minutes with an empty Maven cache."
