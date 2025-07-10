@@ -173,12 +173,17 @@ For detailed description of flags and configuration, see 'vespa help config'.
 				return nil
 			}
 
-			// No internal command found, try to run an external vespa-<cmd>
-			// Find the subcommand being proxied
+			// External subcommand proxying:
+			// If no internal command is found, attempt to run an external vespa-<cmd> plugin binary.
+			// This enables the vespa CLI to support external subcommands (like git), passing through all user arguments and flags.
+			// The following logic finds the external subcommand, builds the argument list from the original CLI invocation (os.Args),
+			// and executes the corresponding vespa-<cmd> binary with those arguments.
+
+			// Find the index of the subcommand in os.Args (so we can pass through all user arguments and flags)
 			var subcmdIdx int
 			for i, arg := range os.Args {
 				if i == 0 {
-					continue // skip program name
+					continue // skip program name (os.Args[0])
 				}
 				if arg == args[0] {
 					subcmdIdx = i
@@ -186,12 +191,15 @@ For detailed description of flags and configuration, see 'vespa help config'.
 				}
 			}
 
+			// Build the external command name, e.g., "vespa-foo" for subcommand "foo"
 			extCmd := "vespa-" + args[0]
 			path, err := exec.LookPath(extCmd)
 			if err != nil {
-				return fmt.Errorf("unknown command '%s' (no internal command, and failed to find '%s' in $PATH)", args[0], extCmd)
+				// If not found in $PATH, show an error indicating both internal and external commands failed
+				return fmt.Errorf("Unknown command '%s': no internal command, and failed to find '%s' in $PATH", args[0], extCmd)
 			}
 
+			// All arguments after the subcommand (including user flags) are passed through to the external plugin
 			execCmd := exec.Command(path, os.Args[subcmdIdx+1:]...)
 			execCmd.Stdin = os.Stdin
 			execCmd.Stdout = os.Stdout
