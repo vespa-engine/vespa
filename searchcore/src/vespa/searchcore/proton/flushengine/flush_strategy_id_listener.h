@@ -20,9 +20,10 @@ public:
     virtual ~FlushStrategyIdListener();
     virtual void set_strategy_id(uint32_t strategy_id) = 0;
     virtual void notifier_closed() = 0;
-    bool add_to_notifier(std::shared_ptr<FlushStrategyIdListener> self);
+    [[nodiscard]] bool add_to_notifier(std::shared_ptr<FlushStrategyIdListener> self);
     void remove_from_notifier(std::shared_ptr<FlushStrategyIdListener> self);
-    bool& strategy_id_listener_removed() noexcept { return _strategy_id_listener_removed; }
+    [[nodiscard]] bool strategy_id_listener_removed() const noexcept { return _strategy_id_listener_removed; }
+    void set_strategy_id_listener_removed() noexcept { _strategy_id_listener_removed = true; }
 };
 
 }

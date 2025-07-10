@@ -39,7 +39,7 @@ void
 DetachedRpcRequestsOwner::remove_detached_request(std::shared_ptr<DetachedRpcRequest> request)
 {
     std::unique_lock guard(_lock);
-    request->detached_request_removed() = true;
+    request->set_detached_request_removed();
     auto it = std::find(_detached_requests.begin(), _detached_requests.end(), request);
     if (it != _detached_requests.end()) {
         _detached_requests.erase(it);

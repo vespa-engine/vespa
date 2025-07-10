@@ -21,7 +21,7 @@ class DetachedRpcRequestsOwner {
 public:
     DetachedRpcRequestsOwner();
     ~DetachedRpcRequestsOwner();
-    bool add_detached_request(std::shared_ptr<DetachedRpcRequest> request);
+    [[nodiscard]] bool add_detached_request(std::shared_ptr<DetachedRpcRequest> request);
     void remove_detached_request(std::shared_ptr<DetachedRpcRequest> request);
     void close();
 };

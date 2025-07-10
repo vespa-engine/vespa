@@ -28,10 +28,11 @@ public:
     DetachedRpcRequest(std::shared_ptr<DetachedRpcRequestsOwner> owner,
                        vespalib::ref_counted<FRT_RPCRequest> req);
     virtual ~DetachedRpcRequest();
-    bool add_to_owner(std::shared_ptr<DetachedRpcRequest> self);
+    [[nodiscard]] bool add_to_owner(std::shared_ptr<DetachedRpcRequest> self);
     void remove_from_owner(std::shared_ptr<DetachedRpcRequest> self);
-    virtual std::future<void> owner_aborted() = 0;
-    bool& detached_request_removed() noexcept { return _detached_request_removed; }
+    [[nodiscard]] virtual std::future<void> owner_aborted() = 0;
+    [[nodiscard]] bool detached_request_removed() const noexcept { return _detached_request_removed; }
+    void set_detached_request_removed() noexcept { _detached_request_removed = true; }
 };
 
 }

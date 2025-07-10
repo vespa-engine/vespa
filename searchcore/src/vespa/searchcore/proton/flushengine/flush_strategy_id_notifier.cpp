@@ -76,7 +76,7 @@ void
 FlushStrategyIdNotifier::remove_strategy_id_listener(std::shared_ptr<FlushStrategyIdListener> listener)
 {
     std::unique_lock guard(_lock);
-    listener->strategy_id_listener_removed() = true;
+    listener->set_strategy_id_listener_removed();
     auto it = std::find(_listeners.begin(), _listeners.end(), listener);
     if (it != _listeners.end()) {
         _listeners.erase(it);
