@@ -15,11 +15,11 @@ using proton::flushengine::FlushStrategyIdNotifier;
 namespace proton {
 
 SetFlushStrategyRpcHandler::SetFlushStrategyRpcHandler(std::shared_ptr<DetachedRpcRequestsOwner> owner,
-                                                 vespalib::ref_counted<FRT_RPCRequest> req,
-                                                 std::shared_ptr<FlushStrategyIdNotifier> notifier,
-                                                 FNET_Scheduler *scheduler,
-                                                 uint32_t wait_strategy_id,
-                                                 std::chrono::steady_clock::duration timeout)
+                                                       vespalib::ref_counted<FRT_RPCRequest> req,
+                                                       std::shared_ptr<FlushStrategyIdNotifier> notifier,
+                                                       FNET_Scheduler* scheduler,
+                                                       uint32_t wait_strategy_id,
+                                                       std::chrono::steady_clock::duration timeout)
     : DetachedRpcRequest(std::move(owner), std::move(req)),
       FlushStrategyIdListener(std::move(notifier)),
       FNET_Task(scheduler),
