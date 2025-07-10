@@ -13,8 +13,8 @@ SetStrategyResult::SetStrategyResult(uint32_t wait_strategy_id_in,
                                      std::shared_ptr<FlushStrategyIdNotifier> lowest_strategy_id_notifier_in,
                                      std::shared_ptr<FlushHistory> flush_history_in)
     : _wait_strategy_id(wait_strategy_id_in),
-      _lowest_strategy_id_notifier(lowest_strategy_id_notifier_in),
-      _flush_history(flush_history_in)
+      _lowest_strategy_id_notifier(std::move(lowest_strategy_id_notifier_in)),
+      _flush_history(std::move(flush_history_in))
 {
 }
 
