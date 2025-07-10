@@ -1106,7 +1106,7 @@ TEST_F(DistributorStripeTest, maintenance_operation_cancellation_does_not_invoke
 
 TEST_F(DistributorStripeTest, max_document_operation_message_size_config_is_propagated_to_internal_config) {
     setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
-    EXPECT_EQ(getConfig().max_document_operation_message_size_bytes(), INT32_MAX); // TODO enforce a sensible(tm) default
+    EXPECT_EQ(getConfig().max_document_operation_message_size_bytes(), 128_Mi);
 
     // Values <= 0 implies max (i.e. unbounded)
     configure_max_document_operation_message_size(-1);
