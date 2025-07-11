@@ -19,8 +19,7 @@ public:
                              uint32_t wait_strategy_id,
                              std::chrono::steady_clock::duration timeout_time);
     ~PrepareRestartRpcHandler() override;
-    void make_done_result() override;
-    void make_timeout_result() override;
+    void make_result() override;
 };
 
 }

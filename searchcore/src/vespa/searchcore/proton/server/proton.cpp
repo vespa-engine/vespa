@@ -856,10 +856,10 @@ Proton::trigger_flush2()
 }
 
 SetStrategyResult
-Proton::prepare_restart2()
+Proton::prepare_restart2(uint32_t wait_strategy_id)
 {
     BootstrapConfig::SP configSnapshot = getActiveConfigSnapshot();
-    return _prepareRestartHandler->prepare_restart2(configSnapshot->getProtonConfig());
+    return _prepareRestartHandler->prepare_restart2(configSnapshot->getProtonConfig(), wait_strategy_id);
 }
 
 namespace {

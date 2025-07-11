@@ -33,7 +33,7 @@ private:
 public:
     PrepareRestartHandler(FlushEngine &flushEngine);
     bool prepareRestart(const ProtonConfig &protonCfg);
-    flushengine::SetStrategyResult prepare_restart2(const ProtonConfig &protonCfg);
+    flushengine::SetStrategyResult prepare_restart2(const ProtonConfig &protonCfg, uint32_t wait_strategy_id);
 };
 
 }

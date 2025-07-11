@@ -18,15 +18,9 @@ PrepareRestartRpcHandler::PrepareRestartRpcHandler(std::shared_ptr<DetachedRpcRe
 PrepareRestartRpcHandler::~PrepareRestartRpcHandler() = default;
 
 void
-PrepareRestartRpcHandler::make_done_result()
+PrepareRestartRpcHandler::make_result()
 {
-    _req->GetReturn()->AddInt8(1);
-}
-
-void
-PrepareRestartRpcHandler::make_timeout_result()
-{
-    _req->GetReturn()->AddInt8(0);
+    _req->GetReturn()->AddInt8(is_success() ? 1 : 0);;
 }
 
 }

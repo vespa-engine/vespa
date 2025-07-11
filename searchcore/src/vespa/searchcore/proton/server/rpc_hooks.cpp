@@ -130,11 +130,10 @@ RPCHooksBase::initRPC()
     if (!experimental::enable_prepare_restart2) {
         return;
     }
-    rb.DefineMethod("proton.prepareRestart2", "bii", "bs",
+    rb.DefineMethod("proton.prepareRestart2", "ii", "bs",
                     FRT_METHOD(RPCHooksBase::rpc_prepareRestart2), this);
     rb.MethodDesc("Tell the node to prepare for a restart by flushing components "
             "such that TLS replay time + time spent flushing components is as low as possible");
-    rb.ParamDesc("start_flush", "Whether to set a new flush strategy to check the status for");
     rb.ParamDesc("flush_strategy_id", "Flush strategy id to wait for");
     rb.ParamDesc("timeout", "How many milliseconds to wait for flush to complete");
     rb.ReturnDesc("success", "Whether or not prepare for restart was triggered.");
@@ -232,7 +231,7 @@ RPCHooksBase::prepareRestart(FRT_RPCRequest *req)
     if (experimental::enable_prepare_restart2) {
         LOG(info, "RPCHooksBase::prepareRestart will create experimental detached rpc handler");
         std::chrono::steady_clock::duration timeout(610s); // 10s greater timeout than the one in vespa-proton-cmd
-        auto set_strategy_result = _proton.prepare_restart2();
+        auto set_strategy_result = _proton.prepare_restart2(0);
         using RefCountedRpcRequest = vespalib::ref_counted<FRT_RPCRequest>;
         auto handler = std::make_shared<PrepareRestartRpcHandler>(_detached_requests_owner,
                                                                   RefCountedRpcRequest::internal_attach(req),
@@ -259,19 +258,18 @@ RPCHooksBase::prepareRestart2(FRT_RPCRequest *req)
     LOG(info, "RPCHooksBase::prepareRestart2 started");
 
     FRT_Values &arg = *req->GetParams();
-    bool start_flush = (arg[0]._intval32 != 0);
-    uint32_t strategy_id = arg[1]._intval32;
-    std::chrono::steady_clock::duration timeout = std::chrono::milliseconds(arg[2]._intval32);
-    (void) start_flush;
-    (void) strategy_id;
+    uint32_t wait_strategy_id = arg[0]._intval32;
+    std::chrono::steady_clock::duration timeout = std::chrono::milliseconds(arg[1]._intval32);
 
-    auto set_strategy_result = _proton.prepare_restart2();
+    auto set_strategy_result = _proton.prepare_restart2(wait_strategy_id);
+    using RefCountedRpcRequest = vespalib::ref_counted<FRT_RPCRequest>;
     auto handler = std::make_shared<PrepareRestart2RpcHandler>(_detached_requests_owner,
-                                                               vespalib::ref_counted<FRT_RPCRequest>::internal_attach(req),
+                                                               RefCountedRpcRequest::internal_attach(req),
                                                                set_strategy_result.lowest_strategy_id_notifier(),
                                                                _transport->GetScheduler(),
                                                                set_strategy_result.wait_strategy_id(),
-                                                               timeout);
+                                                               timeout,
+                                                               set_strategy_result.flush_history());
     handler->setup();
 }
 

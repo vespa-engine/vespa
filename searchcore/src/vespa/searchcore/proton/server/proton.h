@@ -208,7 +208,7 @@ public:
     bool triggerFlush();
     bool prepareRestart();
     flushengine::SetStrategyResult trigger_flush2();
-    flushengine::SetStrategyResult prepare_restart2();
+    flushengine::SetStrategyResult prepare_restart2(uint32_t wait_strategy_id);
 
     void getComponentConfig(Consumer &consumer) override;
     void setClusterState(BucketSpace bucketSpace, const storage::spi::ClusterState &calc) override;

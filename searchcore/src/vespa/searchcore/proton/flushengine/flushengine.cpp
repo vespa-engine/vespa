@@ -719,4 +719,12 @@ FlushEngine::set_strategy(std::shared_ptr<IFlushStrategy> strategy)
     return SetStrategyResult(wait_strategy_id, std::move(notifier), std::move(flush_history));
 }
 
+flushengine::SetStrategyResult
+FlushEngine::poll_strategy(uint32_t wait_strategy_id)
+{
+    auto notifier = _lowest_strategy_id_notifier;
+    auto flush_history = _flush_history;
+    return SetStrategyResult(wait_strategy_id, std::move(notifier), std::move(flush_history));
+}
+
 } // namespace proton

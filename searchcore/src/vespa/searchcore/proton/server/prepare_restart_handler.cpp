@@ -49,12 +49,16 @@ createPrepareRestartConfig(const PrepareRestartHandler::ProtonConfig &protonCfg)
 }
 
 SetStrategyResult
-PrepareRestartHandler::prepare_restart2(const ProtonConfig &protonCfg)
+PrepareRestartHandler::prepare_restart2(const ProtonConfig &protonCfg, uint32_t wait_strategy_id)
 {
     if (!_flushEngine.has_thread()) {
         return SetStrategyResult();
     }
-    return _flushEngine.set_strategy(std::make_shared<PrepareRestartFlushStrategy>(createPrepareRestartConfig(protonCfg)));
+    if (wait_strategy_id == 0) {
+        return _flushEngine.set_strategy(std::make_shared<PrepareRestartFlushStrategy>(createPrepareRestartConfig(protonCfg)));
+    } else {
+        return _flushEngine.poll_strategy(wait_strategy_id);
+    }
 }
 
 void
