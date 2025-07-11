@@ -29,13 +29,13 @@ const char* FakeRewriter::Name() const {
 
 RewriteHandle* FakeRewriter::Rewrite(uint32_t langid, const char* term) {
     std::string t(term);
-    if (langid > 4) return NULL;
+    if (langid > 4) return nullptr;
     return new RewriteHandle(t, langid);
 }
 
 RewriteHandle* FakeRewriter::Rewrite(uint32_t langid, const char* term, size_t length) {
     std::string t(term, length);
-    if (langid > 4) return NULL;
+    if (langid > 4) return nullptr;
     return new RewriteHandle(t, langid);
 }
 
@@ -43,7 +43,7 @@ const char* FakeRewriter::NextTerm(RewriteHandle* exp, size_t& length) {
     std::string& t = exp->next();
     if (t.size() == 0) {
         delete exp;
-        return NULL;
+        return nullptr;
     }
     length = t.size();
     return t.c_str();

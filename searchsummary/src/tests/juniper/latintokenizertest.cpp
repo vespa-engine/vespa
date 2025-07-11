@@ -4,14 +4,14 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-class Mapel_Pucntuation {
+class Maple_Punctuation {
 private:
     /** Member variables. */
     static bool* _lookup;
 
 public:
     /** Constructors */
-    Mapel_Pucntuation();
+    Maple_Punctuation();
 
     /** Punctuation predicate. */
     bool operator()(char c) const { return _lookup[static_cast<unsigned char>(c)]; }
@@ -30,13 +30,13 @@ public:
     bool operator()(char c) const { return _lookup[static_cast<unsigned char>(c)]; }
 };
 
-bool* Maple_Space::_lookup = NULL;
-bool* Mapel_Pucntuation::_lookup = NULL;
+bool* Maple_Space::_lookup = nullptr;
+bool* Maple_Punctuation::_lookup = nullptr;
 
-Mapel_Pucntuation::Mapel_Pucntuation() {
+Maple_Punctuation::Maple_Punctuation() {
 
     // Initialize lookup table.
-    if (_lookup == NULL) {
+    if (_lookup == nullptr) {
 
         _lookup = new bool[256];
 
@@ -69,7 +69,7 @@ Mapel_Pucntuation::Mapel_Pucntuation() {
 Maple_Space::Maple_Space() {
 
     // Initialize lookup table.
-    if (_lookup == NULL) {
+    if (_lookup == nullptr) {
 
         _lookup = new bool[256];
 
@@ -229,22 +229,22 @@ TEST(LatinTokenizerTest, testEndingLength) {
 
 TEST(LatinTokenizerTest, testNull) {
 
-    Fast_SimpleLatinTokenizer* lt = new Fast_SimpleLatinTokenizer(NULL);
+    Fast_SimpleLatinTokenizer* lt = new Fast_SimpleLatinTokenizer(nullptr);
 
     EXPECT_TRUE(!lt->MoreTokens());
 
-    EXPECT_TRUE(lt->GetOriginalText() == NULL);
+    EXPECT_TRUE(lt->GetOriginalText() == nullptr);
 
     delete lt;
 }
 
 TEST(LatinTokenizerTest, testNullLength) {
 
-    Fast_SimpleLatinTokenizer* lt = new Fast_SimpleLatinTokenizer(NULL, 0);
+    Fast_SimpleLatinTokenizer* lt = new Fast_SimpleLatinTokenizer(nullptr, 0);
 
     EXPECT_TRUE(!lt->MoreTokens());
 
-    EXPECT_TRUE(lt->GetOriginalText() == NULL);
+    EXPECT_TRUE(lt->GetOriginalText() == nullptr);
 
     delete lt;
 }
@@ -275,7 +275,7 @@ private:
     TPS& operator=(const TPS&);
 
 public:
-    TPS() : _myfunc(NULL) {}
+    TPS() : _myfunc(nullptr) {}
     void Init(int (*myfunc)(int c)) { _myfunc = myfunc; }
 
     bool operator()(char c) {
@@ -305,7 +305,7 @@ TEST(LatinTokenizerTest, testTypeparamObservers) {
 
 TEST(LatinTokenizerTest, testMapelURL) {
 
-    using MyTokenizer = Fast_LatinTokenizer<Maple_Space, Mapel_Pucntuation>;
+    using MyTokenizer = Fast_LatinTokenizer<Maple_Space, Maple_Punctuation>;
 
     std::string  text("http://search.msn.co.uk/results.asp?q= cfg=SMCBROWSE rn=1825822 dp=1873075 v=166:");
     MyTokenizer* tok = new MyTokenizer(const_cast<char*>(text.c_str()));

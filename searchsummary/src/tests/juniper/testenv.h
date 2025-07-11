@@ -39,7 +39,7 @@ private:
 
 class TestQuery {
 public:
-    TestQuery(const char* qexp, const char* options = NULL);
+    TestQuery(const char* qexp, const char* options = nullptr);
     QueryParser _qparser;
     QueryHandle _qhandle;
 };

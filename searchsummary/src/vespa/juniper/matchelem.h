@@ -39,7 +39,7 @@ public:
     // Set if this match element is part of a valid match
     inline bool valid() const { return _valid; }
 
-    virtual MatchCandidate* Complex() { return NULL; }
+    virtual MatchCandidate* Complex() { return nullptr; }
 
 protected:
     off_t _starttoken; // The token number at which this element starts

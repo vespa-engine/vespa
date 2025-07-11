@@ -16,7 +16,7 @@ public:
         typename std::pair<typename std::map<_key, _val>::iterator, bool> p =
             _map.insert(std::make_pair(key, val));
         if (p.second) return p.first->second;
-        return NULL;
+        return nullptr;
     }
 
     _val find(_key key) {
@@ -24,7 +24,7 @@ public:
         if (it != _map.end())
             return it->second;
         else
-            return NULL;
+            return nullptr;
     }
 
     size_t size() { return _map.size(); }
@@ -36,7 +36,7 @@ public:
         typename std::map<_key, _val>::iterator it(_map.begin());
         for (; it != _map.end(); ++it) {
             delete (it->second);
-            it->second = NULL;
+            it->second = nullptr;
         }
     }
 

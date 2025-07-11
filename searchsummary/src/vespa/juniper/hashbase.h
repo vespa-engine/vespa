@@ -51,12 +51,12 @@ protected:
     };
 
     Fast_HashTableElement<Key, T>* SearchNext() {
-        Fast_HashTableElement<Key, T>* retVal = NULL;
+        Fast_HashTableElement<Key, T>* retVal = nullptr;
 
         for (++_index; _index < _hashTable->_tableSize; _index++) {
             retVal = _hashTable->_lookupTable[_index];
 
-            if (retVal != NULL) break;
+            if (retVal != nullptr) break;
         }
 
         return retVal;
@@ -67,18 +67,18 @@ public:
     inline Key GetCurrentKey() { return _runner->GetKey(); }
 
     inline void Next() {
-        if (_runner != NULL) {
+        if (_runner != nullptr) {
             _runner = _runner->GetNext();
 
-            if (_runner == NULL) { _runner = SearchNext(); }
+            if (_runner == nullptr) { _runner = SearchNext(); }
         }
     };
 
-    inline bool End() const { return _runner == NULL; };
+    inline bool End() const { return _runner == nullptr; };
     // becomes true when ++ on the last element
 
     inline void Rewind() {
-        _runner = NULL;
+        _runner = nullptr;
         _index = -1;
 
         _runner = SearchNext();
@@ -111,7 +111,7 @@ protected:
     }
 
 public:
-    Fast_HashTable() : _numElements(0), _lookupTable(NULL), _compare() {
+    Fast_HashTable() : _numElements(0), _lookupTable(nullptr), _compare() {
         using dummyDef = element;
         _lookupTable = new dummyDef*[_tableSize];
         memset(_lookupTable, 0, _tableSize * sizeof(element*));
@@ -124,26 +124,26 @@ public:
     inline void Clear() {
         if (_numElements == 0) return;
         for (int i = 0; i < _tableSize; i++) {
-            element *curr, *prev = NULL;
+            element *curr, *prev = nullptr;
 
-            for (curr = _lookupTable[i]; curr != NULL; curr = curr->GetNext()) {
-                if (prev != NULL) {
+            for (curr = _lookupTable[i]; curr != nullptr; curr = curr->GetNext()) {
+                if (prev != nullptr) {
                     delete prev;
                     _numElements--;
                     if (_numElements == 0) break;
                 }
                 prev = curr;
-                _lookupTable[i] = NULL;
+                _lookupTable[i] = nullptr;
             }
 
-            if (prev != NULL) delete prev;
+            if (prev != nullptr) delete prev;
         }
     }
 
     Key Insert(Key key, T item) {
         int pos = HashFunction(key);
 
-        if (_lookupTable[pos] == NULL || !_compare(item, _lookupTable[pos]->GetItem())) {
+        if (_lookupTable[pos] == nullptr || !_compare(item, _lookupTable[pos]->GetItem())) {
             _lookupTable[pos] = new element(key, _lookupTable[pos], item);
         } else {
             element* pel = _lookupTable[pos];
@@ -162,11 +162,11 @@ public:
 
     T Find(Key key) {
         T retVal;
-        retVal = NULL;
+        retVal = nullptr;
 
         int pos = HashFunction(key);
 
-        for (element* curr = _lookupTable[pos]; curr != NULL; curr = curr->GetNext()) {
+        for (element* curr = _lookupTable[pos]; curr != nullptr; curr = curr->GetNext()) {
             if (curr->GetKey() == key) {
                 retVal = curr->GetItem();
                 break;
@@ -179,20 +179,20 @@ public:
     element* FindRef(Key key) {
         int pos = HashFunction(key);
 
-        for (element* curr = _lookupTable[pos]; curr != NULL; curr = curr->GetNext())
+        for (element* curr = _lookupTable[pos]; curr != nullptr; curr = curr->GetNext())
             if (curr->GetKey() == key) return curr;
-        return NULL;
+        return nullptr;
     }
 
     T Remove(Key key) {
-        T retVal = NULL;
+        T retVal = nullptr;
 
         int pos = HashFunction(key);
 
         element* curr = _lookupTable[pos];
-        element* prev = NULL;
+        element* prev = nullptr;
 
-        for (; curr != NULL; curr = curr->GetNext()) {
+        for (; curr != nullptr; curr = curr->GetNext()) {
             if (curr->GetKey() == key) {
                 retVal = curr->GetItem();
                 break;
@@ -201,8 +201,8 @@ public:
             prev = curr;
         }
 
-        if (curr != NULL) {
-            if (prev != NULL) {
+        if (curr != nullptr) {
+            if (prev != nullptr) {
                 prev->SetNext(curr->GetNext());
             } else {
                 _lookupTable[pos] = curr->GetNext();
@@ -219,16 +219,16 @@ public:
     void RemoveItem(T item) {
         for (int i = 0; i < _tableSize; i++) {
             element* curr = _lookupTable[i];
-            element* prev = NULL;
+            element* prev = nullptr;
 
-            while (curr != NULL) {
+            while (curr != nullptr) {
                 if (item == curr->GetItem()) {
                     // Found item to delete
                     element* toBeDeleted = curr;
 
                     curr = curr->GetNext();
 
-                    if (prev != NULL) {
+                    if (prev != nullptr) {
                         prev->SetNext(curr);
                     } else {
                         _lookupTable[i] = curr;
@@ -247,10 +247,10 @@ public:
 
     void Print() {
         for (int i = 0; i < _tableSize; i++) {
-            if (_lookupTable[i] != NULL) {
+            if (_lookupTable[i] != nullptr) {
                 printf("[%i]", i);
 
-                for (element* curr = _lookupTable[i]; curr != NULL; curr = curr->GetNext()) {
+                for (element* curr = _lookupTable[i]; curr != nullptr; curr = curr->GetNext()) {
                     printf(" -> %u", curr->GetKey());
                 }
 
