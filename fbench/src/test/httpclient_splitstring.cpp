@@ -28,10 +28,10 @@ DebugHTTPClient::SplitLineTest(const char *input)
   printf("*** TEST HTTPClient::SplitString ***\n");
   printf("string:'%s'\n", str);
   rest = str;
-  while (rest != NULL) {
+  while (rest != nullptr) {
     rest = SplitString(rest, argc, argv, 5);
     printf("argc:'%d'\n", argc);
-    printf("rest:'%s'\n", (rest == NULL) ? "NULL" : rest);
+    printf("rest:'%s'\n", (rest == nullptr) ? "NULL" : rest);
     for(i = 0; i < argc; i++) {
       printf("  %d:'%s'\n", i, argv[i]);
     }
