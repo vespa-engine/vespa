@@ -224,6 +224,15 @@ updateCoverage(Coverage & coverage, const MaybeMatchPhaseLimiter & limiter, cons
     LOG(debug, "covered = %" PRIu64, coverage.getCovered());
 }
 
+void initCoverage(Coverage & coverage,
+                  const search::IDocumentMetaStore &metaStore,
+                  const bucketdb::BucketDBOwner & bucketdb)
+{
+    coverage.setCovered(0);
+    coverage.setActive(metaStore.getNumActiveLids());
+    coverage.setTargetActive(bucketdb.getNumActiveDocs());
+}
+
 }
 
 SearchReply::UP
@@ -235,10 +244,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
     vespalib::Timer total_matching_time;
     MatchingStats my_stats;
     SearchReply::UP reply = std::make_unique<SearchReply>();
-    Coverage & coverage = reply->coverage;
-    coverage.setCovered(0);
-    coverage.setActive(metaStore.getNumActiveLids());
-    coverage.setTargetActive(bucketdb.getNumActiveDocs());
+    initCoverage(reply->coverage, metaStore, bucketdb);
 
     bool isDoomExplicit = false;
     { // we want to measure full set-up and tear-down time as part of
@@ -283,7 +289,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             return reply;
         }
         if (mtf->get_request_context().getDoom().soft_doom()) {
-            coverage.degradeTimeout();
+            reply->coverage.degradeTimeout();
             vespalib::Issue::report("Search request soft doomed during query setup and initialization.");
             return reply;
         }
@@ -313,7 +319,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
                                                           _distributionKey, numParts);
         my_stats = MatchMaster::getStats(std::move(master));
         reply = std::move(result->_reply);
-        updateCoverage(coverage, mtf->match_limiter(), my_stats, metaStore, bucketdb);
+        updateCoverage(reply->coverage, mtf->match_limiter(), my_stats, metaStore, bucketdb);
 
         LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%" PRIu64 ", rankprofile=%s",
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), mtf->estimate().estHits, reply->totalHitCount,
