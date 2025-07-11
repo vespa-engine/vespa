@@ -307,18 +307,18 @@ TEST_F(MessageBusTest, test_routing_policy_cache)
     MessageBus &bus = client->server.mb;
 
     IRoutingPolicy::SP all = bus.getRoutingPolicy(SimpleProtocol::NAME, "All", "");
-    ASSERT_TRUE(all.get() != NULL);
+    ASSERT_TRUE(all.get() != nullptr);
 
     IRoutingPolicy::SP ref = bus.getRoutingPolicy(SimpleProtocol::NAME, "All", "");
-    ASSERT_TRUE(ref.get() != NULL);
+    ASSERT_TRUE(ref.get() != nullptr);
     ASSERT_TRUE(all.get() == ref.get());
 
     IRoutingPolicy::SP allArg = bus.getRoutingPolicy(SimpleProtocol::NAME, "All", "Arg");
-    ASSERT_TRUE(allArg.get() != NULL);
+    ASSERT_TRUE(allArg.get() != nullptr);
     ASSERT_TRUE(all.get() != allArg.get());
 
     IRoutingPolicy::SP refArg = bus.getRoutingPolicy(SimpleProtocol::NAME, "All", "Arg");
-    ASSERT_TRUE(refArg.get() != NULL);
+    ASSERT_TRUE(refArg.get() != nullptr);
     ASSERT_TRUE(allArg.get() == refArg.get());
 }
 
