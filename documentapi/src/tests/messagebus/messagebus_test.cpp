@@ -62,7 +62,7 @@ TEST_F(MessageBusTest, test_message)
     EXPECT_TRUE(blob.size() > 0);
 
     Routable::UP dec1 = protocol.decode(vespalib::Version(6,221), blob);
-    EXPECT_TRUE(dec1.get() != NULL);
+    EXPECT_TRUE(dec1.get() != nullptr);
     EXPECT_TRUE(dec1->isReply() == false);
     EXPECT_TRUE(dec1->getType() == DocumentProtocol::MESSAGE_UPDATEDOCUMENT);
 
@@ -83,13 +83,13 @@ TEST_F(MessageBusTest, test_protocol)
     EXPECT_TRUE(protocol.getName() == "document");
 
     IRoutingPolicy::UP policy = protocol.createPolicy(string("DocumentRouteSelector"), string("file:documentrouteselectorpolicy.cfg"));
-    EXPECT_TRUE(policy.get() != NULL);
+    EXPECT_TRUE(policy.get() != nullptr);
 
     policy = protocol.createPolicy(string(""),string(""));
-    EXPECT_TRUE(policy.get() == NULL);
+    EXPECT_TRUE(policy.get() == nullptr);
 
     policy = protocol.createPolicy(string("Balle"),string(""));
-    EXPECT_TRUE(policy.get() == NULL);
+    EXPECT_TRUE(policy.get() == nullptr);
 }
 
 TEST_F(MessageBusTest, get_document_message_is_not_sequenced)
