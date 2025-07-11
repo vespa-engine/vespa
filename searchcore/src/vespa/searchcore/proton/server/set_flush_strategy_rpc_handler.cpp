@@ -26,7 +26,7 @@ SetFlushStrategyRpcHandler::SetFlushStrategyRpcHandler(std::shared_ptr<DetachedR
       _ticks(0),
       _wait_strategy_id(wait_strategy_id),
       _strategy_id(0),
-      _completed(0u),
+      _completed(Completed::started),
       _start_time(std::chrono::steady_clock::now()),
       _timeout(timeout)
 {
@@ -37,9 +37,9 @@ SetFlushStrategyRpcHandler::SetFlushStrategyRpcHandler(std::shared_ptr<DetachedR
 SetFlushStrategyRpcHandler::~SetFlushStrategyRpcHandler() = default;
 
 bool
-SetFlushStrategyRpcHandler::set_complete(uint8_t value)
+SetFlushStrategyRpcHandler::set_complete(uint8_t value) noexcept
 {
-    uint8_t expected = 0u;
+    uint8_t expected = Completed::started;
     return _completed.compare_exchange_strong(expected, value);
 }
 
@@ -47,6 +47,11 @@ void
 SetFlushStrategyRpcHandler::setup()
 {
     auto self = shared_from_this();
+    if (_wait_strategy_id == 0 && set_complete(Completed::missing_wait_strategy_id)) {
+        make_result();
+        _req.internal_detach()->Return(); // handover
+        return;
+    }
     if (add_to_owner(self)) {
         if (add_to_notifier(self)) {
             ScheduleNow();
@@ -88,7 +93,7 @@ SetFlushStrategyRpcHandler::set_strategy_id(uint32_t strategy_id)
     }
     if (set_complete(Completed::done)) {
         LOG(debug, "PrepareRestart2Handler::set_strategy_id(%u) completed request", strategy_id);
-        make_done_result();
+        make_result();
         _req.internal_detach()->Return(); // handover
         Kill();
         remove_from_owner(self);
@@ -124,7 +129,7 @@ SetFlushStrategyRpcHandler::PerformTask()
     if (time_left <= 0.0) {
         if (set_complete(Completed::timeout)) {
             LOG(debug, "PrepareRestart2Handler::PerformTask, _ticks=%u, elapsed=%f considered a timeout", _ticks, elapsed_s);
-            make_timeout_result();
+            make_result();
             _req.internal_detach()->Return(); // handover
             // No reschedule
             remove_from_owner(self);

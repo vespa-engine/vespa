@@ -334,9 +334,8 @@ public:
         } else if (strcmp(argv[2], "prepareRestart2") == 0 && argc >= 3) {
             _req->SetMethodName("proton.prepareRestart2");
             FRT_Values &params = *_req->GetParams();
-            params.AddInt8(argc > 3 ? atoi(argv[3]) : 0);
+            params.AddInt32(argc > 3 ? atoi(argv[3]) : 0);
             params.AddInt32(argc > 4 ? atoi(argv[4]) : 0);
-            params.AddInt32(argc > 5 ? atoi(argv[5]) : 0);
             invokeRPC(false, 600.0);
             invoked = true;
             FRT_Values &rvals = *_req->GetReturn();

@@ -18,6 +18,7 @@ class SetFlushStrategyRpcHandler : public DetachedRpcRequest,
                                    public flushengine::FlushStrategyIdListener,
                                    public FNET_Task,
                                    public std::enable_shared_from_this<SetFlushStrategyRpcHandler> {
+protected:
     uint32_t                _ticks;
     uint32_t                _wait_strategy_id;
     uint32_t                _strategy_id;
@@ -31,8 +32,11 @@ class SetFlushStrategyRpcHandler : public DetachedRpcRequest,
         static constexpr uint8_t done = 3;
         static constexpr uint8_t timeout = 4;
         static constexpr uint8_t lost_conn = 5;
+        static constexpr uint8_t missing_wait_strategy_id = 6;
     };
-    bool set_complete(uint8_t value);
+    bool set_complete(uint8_t value) noexcept;
+    uint8_t get_complete() const noexcept { return _completed.load(std::memory_order_acquire); }
+    bool is_success() const noexcept { return get_complete() == Completed::done; }
 public:
     SetFlushStrategyRpcHandler(std::shared_ptr<DetachedRpcRequestsOwner> owner,
                                vespalib::ref_counted<FRT_RPCRequest> req,
@@ -46,8 +50,7 @@ public:
     void set_strategy_id(uint32_t strategy_id) override;
     void notifier_closed() override;
     void PerformTask() override;
-    virtual void make_done_result() = 0;
-    virtual void make_timeout_result() = 0;
+    virtual void make_result() = 0;
 };
 
 }
