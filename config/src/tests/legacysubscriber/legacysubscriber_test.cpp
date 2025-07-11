@@ -38,7 +38,7 @@ TEST(LegacySubscriberTest, requireThatFileLegacyWorks)
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>(ConfigIdGenerator::id("file", "test1.cfg"), &cb);
     ASSERT_TRUE(cb._configured);
-    ASSERT_TRUE(cb._config.get() != NULL);
+    ASSERT_TRUE(cb._config.get() != nullptr);
     ASSERT_EQ("bar", cb._config->myField);
 }
 
@@ -48,7 +48,7 @@ TEST(LegacySubscriberTest, requireThatDirLegacyWorks)
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>(ConfigIdGenerator::id("dir","testdir"), &cb);
     ASSERT_TRUE(cb._configured);
-    ASSERT_TRUE(cb._config.get() != NULL);
+    ASSERT_TRUE(cb._config.get() != nullptr);
     ASSERT_EQ("bar", cb._config->myField);
 }
 
@@ -63,11 +63,11 @@ TEST(LegacySubscriberTest, requireThatDirMultiFileLegacyWorks)
     s2.subscribe<BarConfig>(ConfigIdGenerator::id("dir", "testdir/foobar"), &cb2);
 
     ASSERT_TRUE(cb1._configured);
-    ASSERT_TRUE(cb1._config.get() != NULL);
+    ASSERT_TRUE(cb1._config.get() != nullptr);
     ASSERT_EQ("bar", cb1._config->fooValue);
 
     ASSERT_TRUE(cb2._configured);
-    ASSERT_TRUE(cb2._config.get() != NULL);
+    ASSERT_TRUE(cb2._config.get() != nullptr);
     ASSERT_EQ("foo", cb2._config->barValue);
 }
 
@@ -77,13 +77,13 @@ TEST(LegacySubscriberTest, requireThatFileLegacyWorksMultipleTimes)
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>(ConfigIdGenerator::id("file", "test1.cfg"), &cb);
     ASSERT_TRUE(cb._configured);
-    ASSERT_TRUE(cb._config.get() != NULL);
+    ASSERT_TRUE(cb._config.get() != nullptr);
     ASSERT_EQ("bar", cb._config->myField);
     cb._configured = false;
     LegacySubscriber s2;
     s2.subscribe<MyConfig>(ConfigIdGenerator::id("file", "test1.cfg"), &cb);
     ASSERT_TRUE(cb._configured);
-    ASSERT_TRUE(cb._config.get() != NULL);
+    ASSERT_TRUE(cb._config.get() != nullptr);
     ASSERT_EQ("bar", cb._config->myField);
 }
 
@@ -93,7 +93,7 @@ TEST(LegacySubscriberTest, requireThatRawLegacyWorks)
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>("raw:myField \"bar\"\n", &cb);
     ASSERT_TRUE(cb._configured);
-    ASSERT_TRUE(cb._config.get() != NULL);
+    ASSERT_TRUE(cb._config.get() != nullptr);
     ASSERT_EQ("bar", cb._config->myField);
 }
 

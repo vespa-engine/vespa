@@ -9,7 +9,7 @@ private:
     BloomFilter& operator=(const BloomFilter &);
 
 public:
-        BloomFilter(int size, int hashes, uint32_t *buf = NULL);
+        BloomFilter(int size, int hashes, uint32_t *buf = nullptr);
         ~BloomFilter();
 
         bool check(const uint32_t *data, int len, bool add);

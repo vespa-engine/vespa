@@ -348,13 +348,13 @@ TEST_F(HitCollectorTest, feature_set)
     EXPECT_EQ(sf->numDocs(), 3u);
     {
         const auto * f = sf->getFeaturesByDocId(1);
-        ASSERT_TRUE(f != NULL);
+        ASSERT_TRUE(f != nullptr);
         EXPECT_EQ(f[0].as_double(), 11); // 10 + docId
         EXPECT_EQ(f[1].as_double(), 31); // 30 + docId
     }
     {
         const auto * f = sf->getFeaturesByDocId(3);
-        ASSERT_TRUE(f != NULL);
+        ASSERT_TRUE(f != nullptr);
         EXPECT_TRUE(f[0].is_double());
         EXPECT_TRUE(!f[0].is_data());
         EXPECT_EQ(f[0].as_double(), 13);
@@ -372,12 +372,12 @@ TEST_F(HitCollectorTest, feature_set)
     }
     {
         const auto * f = sf->getFeaturesByDocId(4);
-        ASSERT_TRUE(f != NULL);
+        ASSERT_TRUE(f != nullptr);
         EXPECT_EQ(f[0].as_double(), 14);
         EXPECT_EQ(f[1].as_double(), 34);
     }
-    ASSERT_TRUE(sf->getFeaturesByDocId(0) == NULL);
-    ASSERT_TRUE(sf->getFeaturesByDocId(2) == NULL);
+    ASSERT_TRUE(sf->getFeaturesByDocId(0) == nullptr);
+    ASSERT_TRUE(sf->getFeaturesByDocId(2) == nullptr);
 
     SearchResult sr;
     hc.fillSearchResult(sr);

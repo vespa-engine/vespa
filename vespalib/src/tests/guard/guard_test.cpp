@@ -27,15 +27,15 @@ TEST(GuardTest, testFilePointer)
         EXPECT_TRUE(strcmp(tmp, "Hello") == 0);
     }
     {
-        FILE *pt = NULL;
+        FILE *pt = nullptr;
         {
             FilePointer file(fopen("filept.txt", "r"));
             EXPECT_TRUE(file.valid());
             pt = file;
         }
-        EXPECT_TRUE(pt != NULL);
+        EXPECT_TRUE(pt != nullptr);
         // char tmp[128];
-        // EXPECT_TRUE(fgets(tmp, sizeof(tmp), pt) == NULL);
+        // EXPECT_TRUE(fgets(tmp, sizeof(tmp), pt) == nullptr);
     }
     {
         FilePointer file(fopen("filept.txt", "w"));
@@ -51,10 +51,10 @@ TEST(GuardTest, testFilePointer)
 
         FILE *ref = file.fp();
         FILE *fp = file.release();
-        EXPECT_TRUE(fp != NULL);
+        EXPECT_TRUE(fp != nullptr);
         EXPECT_TRUE(fp == ref);
         EXPECT_TRUE(!file.valid());
-        EXPECT_TRUE(file.fp() == NULL);
+        EXPECT_TRUE(file.fp() == nullptr);
         fclose(fp);
     }
 }

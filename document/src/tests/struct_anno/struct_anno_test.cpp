@@ -44,19 +44,19 @@ TEST(StructAnnoTest, require_that_struct_fields_can_contain_annotations)
     deserializer.read(doc);
 
     FieldValue::UP urlRef = doc.getValue("my_url");
-    ASSERT_TRUE(urlRef.get() != NULL);
+    ASSERT_TRUE(urlRef.get() != nullptr);
     const StructFieldValue *url = dynamic_cast<const StructFieldValue*>(urlRef.get());
-    ASSERT_TRUE(url != NULL);
+    ASSERT_TRUE(url != nullptr);
 
     FieldValue::UP strRef = url->getValue("scheme");
     const StringFieldValue *str = dynamic_cast<const StringFieldValue*>(strRef.get());
-    ASSERT_TRUE(str != NULL);
+    ASSERT_TRUE(str != nullptr);
 
     auto tree = std::move(str->getSpanTrees().front());
 
     EXPECT_EQ("my_tree", tree->getName());
     const SimpleSpanList *root = dynamic_cast<const SimpleSpanList*>(&tree->getRoot());
-    ASSERT_TRUE(root != NULL);
+    ASSERT_TRUE(root != nullptr);
     EXPECT_EQ(1u, root->size());
     SimpleSpanList::const_iterator it = root->begin();
     EXPECT_EQ(Span(0, 6), (*it++));

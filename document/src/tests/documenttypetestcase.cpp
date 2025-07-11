@@ -55,12 +55,12 @@ TEST(DocumentTypeTest, testInheritanceConfig)
         repo(readDocumenttypesConfig(TEST_PATH("data/inheritancetest.cfg")));
     {
         const DocumentType* type(repo.getDocumentType("music"));
-        EXPECT_TRUE(type != NULL);
+        EXPECT_TRUE(type != nullptr);
     }
 
     {
         const DocumentType* type(repo.getDocumentType("books"));
-        EXPECT_TRUE(type != NULL);
+        EXPECT_TRUE(type != nullptr);
     }
 }
 

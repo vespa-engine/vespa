@@ -7,29 +7,29 @@
 namespace document::select {
 
 Context::Context()
-    : _doc(NULL),
-      _docId(NULL),
-      _docUpdate(NULL),
+    : _doc(nullptr),
+      _docId(nullptr),
+      _docUpdate(nullptr),
       _variables()
 { }
 
 Context::Context(const Document& doc)
     : _doc(&doc),
-      _docId(NULL),
-      _docUpdate(NULL),
+      _docId(nullptr),
+      _docUpdate(nullptr),
       _variables()
 { }
 
 Context::Context(const DocumentId& docId)
-    : _doc(NULL),
+    : _doc(nullptr),
       _docId(&docId),
-      _docUpdate(NULL),
+      _docUpdate(nullptr),
       _variables()
 { }
 
 Context::Context(const DocumentUpdate& docUpdate)
-    : _doc(NULL),
-      _docId(NULL),
+    : _doc(nullptr),
+      _docId(nullptr),
       _docUpdate(&docUpdate),
       _variables()
 { }

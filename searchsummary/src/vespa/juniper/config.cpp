@@ -33,12 +33,12 @@ Config::Config(const char* config_name, const Juniper& juniper)
     size_t               max_matches = atoi(GetProp("dynsum.max_matches", "3"));
     const char*          escape_markup = GetProp("dynsum.escape_markup", "auto");
     const char*          preserve_white_space = GetProp("dynsum.preserve_white_space", "off");
-    size_t               match_winsize = strtol(GetProp("matcher.winsize", "200"), NULL, 0);
+    size_t               match_winsize = strtol(GetProp("matcher.winsize", "200"), nullptr, 0);
     size_t               max_match_candidates = atoi(GetProp("matcher.max_match_candidates", "1000"));
     const char*          seps = GetProp("dynsum.separators", separators.c_str());
     const unsigned char* cons =
         reinterpret_cast<const unsigned char*>(GetProp("dynsum.connectors", separators.c_str()));
-    double proximity_factor = vespalib::locale::c::strtod(GetProp("proximity.factor", "0.25"), NULL);
+    double proximity_factor = vespalib::locale::c::strtod(GetProp("proximity.factor", "0.25"), nullptr);
     // Silently convert to something sensible
     if (proximity_factor > 1E8 || proximity_factor < 0) proximity_factor = 0.25;
 
@@ -69,8 +69,8 @@ const char* Config::GetProp(const char* name, const char* def) {
     if (_config_name == "juniper") {
         return _juniper.getProp().GetProperty(propstr.c_str(), def);
     } else {
-        const char* p = _juniper.getProp().GetProperty(propstr.c_str(), NULL);
-        if (p == NULL) {
+        const char* p = _juniper.getProp().GetProperty(propstr.c_str(), nullptr);
+        if (p == nullptr) {
             propstr = "juniper.";
             propstr.append(name);
             p = _juniper.getProp().GetProperty(propstr.c_str(), def);

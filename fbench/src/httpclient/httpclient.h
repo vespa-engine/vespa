@@ -173,7 +173,7 @@ protected:
    * @param url the url you want to connect to
    **/
   bool Connect(const char *url, bool usePost = false,
-               const char *content = NULL, int contentLen = 0);
+               const char *content = nullptr, int contentLen = 0);
 
   /**
    * Read the next line of text from the data stream into 'buf'. If
@@ -342,11 +342,11 @@ public:
    * @return FetchStatus object which can be queried for status.
    * @param url the url to fetch.
    * @param file where to save the fetched document. If this parameter
-   *             is NULL, the content will be read and then discarded.
+   *             is nullptr, the content will be read and then discarded.
    * @param usePost whether to use POST in the request
    * @param content if usePost is true, the content to post
    * @param contentLen length of content in bytes
    **/
-  FetchStatus Fetch(const char *url, std::ostream *file = NULL,
-                    bool usePost = false, const char *content = NULL, int contentLen = 0);
+  FetchStatus Fetch(const char *url, std::ostream *file = nullptr,
+                    bool usePost = false, const char *content = nullptr, int contentLen = 0);
 };

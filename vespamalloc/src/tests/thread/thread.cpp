@@ -63,12 +63,12 @@ TEST(ThreadTest, main) {
         pthread_t th;
         void *retval;
         if (strcmp(testType, "exit") == 0) {
-            EXPECT_EQ( pthread_create(&th, NULL, just_exit, NULL), 0);
+            EXPECT_EQ( pthread_create(&th, nullptr, just_exit, nullptr), 0);
         } else if (strcmp(testType, "cancel") == 0) {
-            EXPECT_EQ( pthread_create(&th, NULL, just_cancel, NULL), 0);
+            EXPECT_EQ( pthread_create(&th, nullptr, just_cancel, nullptr), 0);
             EXPECT_EQ( pthread_cancel(th), 0);
         } else {
-            EXPECT_EQ( pthread_create(&th, NULL, just_return, NULL), 0);
+            EXPECT_EQ( pthread_create(&th, nullptr, just_return, nullptr), 0);
         }
         EXPECT_EQ(pthread_join(th, &retval), 0);
     }

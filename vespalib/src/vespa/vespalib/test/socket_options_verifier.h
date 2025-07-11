@@ -30,7 +30,7 @@ struct SocketOptionsVerifier {
     int fd;
     SocketOptionsVerifier(int fd_in) : fd(fd_in) {}
     void verify_blocking(bool value) {
-        int flags = fcntl(fd, F_GETFL, NULL);
+        int flags = fcntl(fd, F_GETFL, nullptr);
         EXPECT_NE(flags, -1);
         EXPECT_EQ(((flags & O_NONBLOCK) == 0), value);
     }

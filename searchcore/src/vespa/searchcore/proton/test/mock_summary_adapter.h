@@ -15,7 +15,7 @@ struct MockSummaryAdapter : public ISummaryAdapter
     void remove(SerialNum, DocumentIdT) override {}
     void heartBeat(SerialNum) override {}
     const search::IDocumentStore &getDocumentStore() const override {
-        const search::IDocumentStore *store = NULL;
+        const search::IDocumentStore *store = nullptr;
         return *store;
     }
     std::unique_ptr<document::Document> get(DocumentIdT, const DocumentTypeRepo &) override {

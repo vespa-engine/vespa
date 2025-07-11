@@ -33,11 +33,11 @@ using HOLD = PtrHolder<DataRef>;
 TEST(PtrHolderTest, test_empty)
 {
     HOLD hold;
-    EXPECT_TRUE(hold.get().get() == NULL);
+    EXPECT_TRUE(hold.get().get() == nullptr);
     EXPECT_TRUE(!hold.hasValue());
     EXPECT_TRUE(!hold.hasNewValue());
     EXPECT_TRUE(!hold.latch());
-    EXPECT_TRUE(hold.get().get() == NULL);
+    EXPECT_TRUE(hold.get().get() == nullptr);
     EXPECT_TRUE(!hold.hasValue());
     EXPECT_TRUE(!hold.hasNewValue());
     hold.set(nullptr);

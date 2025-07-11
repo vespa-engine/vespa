@@ -172,11 +172,11 @@ void
 cleanup(GenerationHandler & g,
         ManagerType & m,
         BTreeNode::Ref n1Ref, NodeType * n1,
-        BTreeNode::Ref n2Ref = BTreeNode::Ref(), NodeType * n2 = NULL)
+        BTreeNode::Ref n2Ref = BTreeNode::Ref(), NodeType * n2 = nullptr)
 {
     assert(ManagerType::isValidRef(n1Ref));
     m.holdNode(n1Ref, n1);
-    if (n2 != NULL) {
+    if (n2 != nullptr) {
         assert(ManagerType::isValidRef(n2Ref));
         m.holdNode(n2Ref, n2);
     } else {

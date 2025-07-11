@@ -14,7 +14,7 @@ public:
      *  by the processor.
      */
     struct Token {
-        Token() : token(NULL), bytepos(0), charpos(0), wordpos(0), bytelen(0), charlen(0), curlen(0) {}
+        Token() : token(nullptr), bytepos(0), charpos(0), wordpos(0), bytelen(0), charlen(0), curlen(0) {}
         const ucs4_t* token;   //!< a normalized UCS4 representation of the token
         off_t         bytepos; //!< Position in bytes from start of original text
         off_t         charpos; //!< Position in number of characters according to utf8 encoding

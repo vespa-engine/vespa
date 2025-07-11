@@ -5,7 +5,7 @@ namespace vespamalloc {
 
 static Allocator * createAllocator()
 {
-    if (_GmemP == NULL) {
+    if (_GmemP == nullptr) {
         _GmemP = new (_Gmem) Allocator(1, 0x200000);
     }
     return _GmemP;
