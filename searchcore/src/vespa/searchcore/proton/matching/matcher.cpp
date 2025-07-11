@@ -235,11 +235,6 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
     vespalib::Timer total_matching_time;
     MatchingStats my_stats;
     SearchReply::UP reply = std::make_unique<SearchReply>();
-    Coverage & coverage = reply->coverage;
-    coverage.setCovered(0);
-    coverage.setActive(metaStore.getNumActiveLids());
-    coverage.setTargetActive(bucketdb.getNumActiveDocs());
-
     bool isDoomExplicit = false;
     { // we want to measure full set-up and tear-down time as part of
       // collateral time
@@ -283,7 +278,6 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             return reply;
         }
         if (mtf->get_request_context().getDoom().soft_doom()) {
-            coverage.degradeTimeout();
             vespalib::Issue::report("Search request soft doomed during query setup and initialization.");
             return reply;
         }
@@ -313,6 +307,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
                                                           _distributionKey, numParts);
         my_stats = MatchMaster::getStats(std::move(master));
         reply = std::move(result->_reply);
+        Coverage & coverage = reply->coverage;
         updateCoverage(coverage, mtf->match_limiter(), my_stats, metaStore, bucketdb);
 
         LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%" PRIu64 ", rankprofile=%s",
