@@ -19,8 +19,11 @@ interface StreamableJsonResponse extends AutoCloseable {
     void writeDocumentsArrayEnd() throws IOException;
     void writeDocumentValue(Document document, CompletionHandler completionHandler) throws IOException;
     void writeDocumentRemoval(DocumentId id, CompletionHandler completionHandler) throws IOException;
-    void reportUpdatedContinuation(Supplier<String> token) throws IOException;
-    void writeEpilogueContinuation(String token) throws IOException;
+    // The implementation MUST NOT assume the Supplier is safe to invoke at any other
+    // time than during the synchronous invocation of this method. This is because the
+    // underlying supplied resource may require locking for safe access.
+    void reportUpdatedContinuation(Supplier<VisitorContinuation> continuationSupplier) throws IOException;
+    void writeEpilogueContinuation(VisitorContinuation continuation) throws IOException;
     void writeTrace(Trace trace) throws IOException;
     void writeMessage(String message) throws IOException;
     void writeDocumentCount(long count) throws IOException;

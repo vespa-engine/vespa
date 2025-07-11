@@ -321,15 +321,19 @@ class JsonResponse implements StreamableJsonResponse {
     }
 
     @Override
-    public void reportUpdatedContinuation(Supplier<String> token) throws IOException {
+    public void reportUpdatedContinuation(Supplier<VisitorContinuation> continuationSupplier) throws IOException {
         // Not supported by the restful Document V1 format; only a single epilogue
         // continuation token may be emitted.
     }
 
     @Override
-    public synchronized void writeEpilogueContinuation(String token) throws IOException {
-        json.writeFieldName(JsonNames.CONTINUATION);
-        json.writeString(token);
+    public synchronized void writeEpilogueContinuation(VisitorContinuation continuation) throws IOException {
+        if (continuation.hasRemaining()) {
+            json.writeFieldName(JsonNames.CONTINUATION);
+            json.writeString(continuation.token());
+        }
+        // Else: no explicit completion signal for the REST-ful response format;
+        // it is implied by the _absence_ of a continuation token field.
     }
 
 }

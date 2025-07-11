@@ -12,13 +12,15 @@ import com.fasterxml.jackson.core.io.SerializedString;
 class JsonNames {
     private JsonNames() {}
 
-    static final SerializedString CONTINUATION   = new SerializedString("continuation");
-    static final SerializedString DOCUMENTS      = new SerializedString("documents");
-    static final SerializedString DOCUMENT_COUNT = new SerializedString("documentCount");
-    static final SerializedString ID             = new SerializedString("id");
-    static final SerializedString MESSAGE        = new SerializedString("message");
-    static final SerializedString PATH_ID        = new SerializedString("pathId");
-    static final SerializedString PUT            = new SerializedString("put");
-    static final SerializedString REMOVE         = new SerializedString("remove");
-    static final SerializedString TRACE          = new SerializedString("trace");
+    static final SerializedString CONTINUATION     = new SerializedString("continuation");
+    static final SerializedString DOCUMENTS        = new SerializedString("documents");
+    static final SerializedString DOCUMENT_COUNT   = new SerializedString("documentCount");
+    static final SerializedString ID               = new SerializedString("id");
+    static final SerializedString MESSAGE          = new SerializedString("message");
+    static final SerializedString PATH_ID          = new SerializedString("pathId");
+    static final SerializedString PERCENT_FINISHED = new SerializedString("percentFinished");
+    static final SerializedString PUT              = new SerializedString("put");
+    static final SerializedString REMOVE           = new SerializedString("remove");
+    static final SerializedString TOKEN            = new SerializedString("token");
+    static final SerializedString TRACE            = new SerializedString("trace");
 }
