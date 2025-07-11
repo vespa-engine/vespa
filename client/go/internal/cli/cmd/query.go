@@ -41,9 +41,10 @@ func newQueryCmd(cli *CLI) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "query query-parameters",
 		Short: "Issue a query to Vespa",
-		Example: `$ vespa query "yql=select * from music where album contains 'head'" hits=5
-$ vespa query --format=plain "yql=select * from music where album contains 'head'" hits=5
-$ vespa query --header="X-First-Name: Joe" "yql=select * from music where album contains 'head'" hits=5`,
+		Example: `$ vespa query 'yql=select * from music where album contains "head"' hits=5
+$ vespa query --format=plain 'yql=select * from music where album contains "head"' hits=5
+$ vespa query --file q-vector.json
+$ vespa query --header='X-First-Name: Joe' 'yql=select * from music where album contains "head"' hits=5`,
 		Long: `Issue a query to Vespa.
 
 Any parameter from https://docs.vespa.ai/en/reference/query-api-reference.html
