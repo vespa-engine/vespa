@@ -11,9 +11,9 @@ int main(int argc, char **argv) {
         size_t concurrency(1);
         size_t numRuns(1000);
         if (argc > 2) {
-            numRuns = strtoul(argv[2], NULL, 0);
+            numRuns = strtoul(argv[2], nullptr, 0);
             if (argc > 3) {
-                concurrency = strtoul(argv[3], NULL, 0);
+                concurrency = strtoul(argv[3], nullptr, 0);
             }
         }
         Benchmark::run(argv[1], numRuns, concurrency);

@@ -77,9 +77,9 @@ FrozenBTreeTest::FrozenBTreeTest()
     : ::testing::Test(),
       _randomValues(),
       _sortedRandomValues(),
-      _generationHandler(NULL),
-      _allocator(NULL),
-      _tree(NULL),
+      _generationHandler(nullptr),
+      _allocator(nullptr),
+      _tree(nullptr),
       _randomGenerator()
 {
 }
@@ -89,9 +89,9 @@ FrozenBTreeTest::~FrozenBTreeTest() = default;
 void
 FrozenBTreeTest::allocTree()
 {
-    assert(_generationHandler == NULL);
-    assert(_allocator == NULL);
-    assert(_tree == NULL);
+    assert(_generationHandler == nullptr);
+    assert(_allocator == nullptr);
+    assert(_tree == nullptr);
     _generationHandler = new GenerationHandler;
     _allocator = new NodeAllocator();
     _tree = new Tree;
@@ -127,9 +127,9 @@ FrozenBTreeTest::freeTree(bool verbose)
     EXPECT_TRUE(_intTree->getNumInternalNodes() == 0 &&
                _intTree->getNumLeafNodes() == 0);
     delete _intTree;
-    _intTree = NULL;
+    _intTree = nullptr;
     delete _intKeyStore;
-    _intKeyStore = NULL;
+    _intKeyStore = nullptr;
 #endif
     (void) verbose;
     _tree->clear(*_allocator);
@@ -138,11 +138,11 @@ FrozenBTreeTest::freeTree(bool verbose)
     _generationHandler->incGeneration();
     _allocator->reclaim_memory(_generationHandler->get_oldest_used_generation());
     delete _tree;
-    _tree = NULL;
+    _tree = nullptr;
     delete _allocator;
-    _allocator = NULL;
+    _allocator = nullptr;
     delete _generationHandler;
-    _generationHandler = NULL;
+    _generationHandler = nullptr;
 }
 
 

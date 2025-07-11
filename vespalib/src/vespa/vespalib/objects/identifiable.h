@@ -33,8 +33,8 @@
   static  vespalib::Identifiable::RuntimeInfo  _RTInfo; \
   static  vespalib::Identifiable::RuntimeClass _RTClass; \
   static const std::type_info & typeId() { return typeid(cclass); } \
-  static bool tryCast(const vespalib::Identifiable * v) { return dynamic_cast<const cclass *>(v) != NULL; } \
-  static cclass *identifyClassAsIdentifiable() { return NULL; } /* no implementation */
+  static bool tryCast(const vespalib::Identifiable * v) { return dynamic_cast<const cclass *>(v) != nullptr; } \
+  static cclass *identifyClassAsIdentifiable() { return nullptr; } /* no implementation */
 
 #define DECLARE_IDENTIFIABLE_BASE_COMMON(cclass) \
   DECLARE_IDENTIFIABLE_STATIC_BASE_COMMON(cclass) \
@@ -108,28 +108,28 @@
 
 #define IMPLEMENT_IDENTIFIABLE_ABSTRACT(cclass, base)  \
   IMPLEMENT_IDENTIFIABLE_BASE(cclass, #cclass, base, IDENTIFIABLE_CLASSID(cclass), \
-                              NULL, cclass::typeId, cclass::tryCast, "")
+                              nullptr, cclass::typeId, cclass::tryCast, "")
 #define IMPLEMENT_IDENTIFIABLE(cclass, base) \
   IMPLEMENT_IDENTIFIABLE_CONCRET(cclass)           \
   IMPLEMENT_IDENTIFIABLE_BASE(cclass, #cclass, base, IDENTIFIABLE_CLASSID(cclass), \
                               cclass::createAsIdentifiable, cclass::typeId, cclass::tryCast, "")
 #define IMPLEMENT_IDENTIFIABLE_ABSTRACT_NS(ns, cclass, base) \
   IMPLEMENT_IDENTIFIABLE_BASE(ns::cclass, #ns"::"#cclass, base, IDENTIFIABLE_CLASSID_NS(ns, cclass), \
-                              NULL, cclass::typeId, cclass::tryCast, "")
+                              nullptr, cclass::typeId, cclass::tryCast, "")
 #define IMPLEMENT_IDENTIFIABLE_NS(ns, cclass, base) \
   IMPLEMENT_IDENTIFIABLE_CONCRET(ns::cclass)           \
   IMPLEMENT_IDENTIFIABLE_BASE(ns::cclass, #ns"::"#cclass, base, IDENTIFIABLE_CLASSID_NS(ns, cclass), \
                               cclass::createAsIdentifiable, cclass::typeId, cclass::tryCast, "")
 #define IMPLEMENT_IDENTIFIABLE_ABSTRACT_NS2(ns1, ns2, cclass, base) \
   IMPLEMENT_IDENTIFIABLE_BASE(ns1::ns2::cclass, #ns1"::"#ns2"::"#cclass, base, IDENTIFIABLE_CLASSID_NS2(ns1, ns2, cclass), \
-                              NULL, cclass::typeId, cclass::tryCast, "")
+                              nullptr, cclass::typeId, cclass::tryCast, "")
 #define IMPLEMENT_IDENTIFIABLE_NS2(ns1, ns2, cclass, base) \
   IMPLEMENT_IDENTIFIABLE_CONCRET(ns1::ns2::cclass)           \
   IMPLEMENT_IDENTIFIABLE_BASE(ns1::ns2::cclass, #ns1"::"#ns2"::"#cclass, base, IDENTIFIABLE_CLASSID_NS2(ns1, ns2, cclass), \
                               cclass::createAsIdentifiable, cclass::typeId, cclass::tryCast, "")
 #define IMPLEMENT_IDENTIFIABLE_ABSTRACT_NS3(ns1, ns2, ns3, cclass, base) \
   IMPLEMENT_IDENTIFIABLE_BASE(ns1::ns2::ns3::cclass, #ns1"::"#ns2"::"#ns3"::"#cclass, base, IDENTIFIABLE_CLASSID_NS3(ns1, ns2, ns3, cclass), \
-                              NULL, cclass::typeId, cclass::tryCast, "")
+                              nullptr, cclass::typeId, cclass::tryCast, "")
 #define IMPLEMENT_IDENTIFIABLE_NS3(ns1, ns2, ns3, cclass, base) \
   IMPLEMENT_IDENTIFIABLE_CONCRET(ns1::ns2::ns3::cclass)           \
   IMPLEMENT_IDENTIFIABLE_BASE(ns1::ns2::ns3::cclass, #ns1"::"#ns2"::"#ns3"::"#cclass, base, IDENTIFIABLE_CLASSID_NS3(ns1, ns2, ns3, cclass), \
@@ -334,7 +334,7 @@ public:
      * It is symetric with the << operator, and does the same as >>, except instead of checking the id
      * it uses it to construct an object.
      * @param is The nbostream used for input.
-     * @return The object created and constructed by deserialize. NULL if there are any errors.
+     * @return The object created and constructed by deserialize. nullptr if there are any errors.
      */
     static UP create(Deserializer & is);
     static UP create(nbostream & is) { NBOSerializer nis(is); return create(nis); }
@@ -353,7 +353,7 @@ public:
      * It is symetric with the << operator
      * @param is The nbostream used for input.
      * @param obj The object that the stream will be deserialized into.
-     * @return The object created and constructed by deserialize. NULL if there are any errors.
+     * @return The object created and constructed by deserialize. nullptr if there are any errors.
      */
     friend Deserializer & operator >> (Deserializer & os, Identifiable & obj);
     friend nbostream & operator >> (nbostream & os, Identifiable & obj);
