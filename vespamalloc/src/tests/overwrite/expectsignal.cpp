@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    int retval = strtol(argv[1], NULL, 0);
+    int retval = strtol(argv[1], nullptr, 0);
 
     fprintf(stderr, "argc=%d : Running '%s' expecting signal %d\n", argc, argv[2], retval);
 
