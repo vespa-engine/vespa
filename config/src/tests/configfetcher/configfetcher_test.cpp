@@ -60,7 +60,7 @@ TEST(ConfigFetcherTest, requireThatConfigUpdatesArePerformed)
         fetcher.subscribe<MyConfig>("test1", &cb, spec);
         fetcher.start();
         ASSERT_TRUE(cb._configured);
-        ASSERT_TRUE(cb._config.get() != NULL);
+        ASSERT_TRUE(cb._config.get() != nullptr);
         ASSERT_EQ("my", cb._config->defName());
         ASSERT_EQ("foo", cb._config->myField);
 

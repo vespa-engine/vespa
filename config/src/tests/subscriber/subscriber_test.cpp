@@ -55,7 +55,7 @@ namespace {
 
     void verifyConfig(const std::string & expected, std::unique_ptr<BazConfig> cfg)
     {
-        ASSERT_TRUE(cfg.get() != NULL);
+        ASSERT_TRUE(cfg.get() != nullptr);
         ASSERT_EQ(expected, cfg->bazValue);
     }
 

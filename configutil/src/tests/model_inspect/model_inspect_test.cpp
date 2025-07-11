@@ -229,7 +229,7 @@ TEST(ModelInspectTest, action_no_command)
 {
     std::stringstream f1;
     ModelDummy f2(f1);
-    char *argv[] = { strdup("notacommand"), NULL, NULL };
+    char *argv[] = { strdup("notacommand"), nullptr, nullptr };
     ASSERT_EQ(1, f2.action(1, argv));
     ASSERT_EQ(1, f2.action(2, argv));
     ASSERT_EQ(1, f2.action(3, argv));
@@ -271,25 +271,25 @@ TEST(ModelInspectTest, action)
         free(arg[0]);
     }
     {
-        char *arg[] = { strdup("host"), NULL };
+        char *arg[] = { strdup("host"), nullptr };
         ASSERT_EQ(0, f2.action(2, arg));
         ASSERT_TRUE(f2._listHost);
         free(arg[0]);
     }
     {
-        char *arg[] = { strdup("cluster"), NULL };
+        char *arg[] = { strdup("cluster"), nullptr };
         ASSERT_EQ(0, f2.action(2, arg));
         ASSERT_TRUE(f2._listCluster);
         free(arg[0]);
     }
     {
-        char *arg[] = { strdup("service"), NULL };
+        char *arg[] = { strdup("service"), nullptr };
         ASSERT_EQ(0, f2.action(2, arg));
         ASSERT_TRUE(f2._listService);
         free(arg[0]);
     }
     {
-        char *arg[] = { strdup("configid"), NULL };
+        char *arg[] = { strdup("configid"), nullptr };
         ASSERT_EQ(0, f2.action(2, arg));
         ASSERT_TRUE(f2._listConfigId);
         free(arg[0]);
@@ -302,7 +302,7 @@ TEST(ModelInspectTest, action)
         free(arg[1]);
     }
     {
-        char *arg[] = { strdup("get-index-of"), NULL, NULL };
+        char *arg[] = { strdup("get-index-of"), nullptr, nullptr };
         ASSERT_EQ(0, f2.action(3, arg));
         ASSERT_TRUE(f2._getIndexOf);
         free(arg[0]);
