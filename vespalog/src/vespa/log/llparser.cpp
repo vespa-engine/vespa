@@ -25,7 +25,7 @@ LLParser::LLParser()
 {
     assert(_target != nullptr);
     const char *envServ = getenv("VESPA_SERVICE_NAME");
-    if (envServ != NULL) {
+    if (envServ != nullptr) {
         _defService = envServ;
     }
     snprintf(_defPid, 10, "%d", (int)getpid());
@@ -87,7 +87,7 @@ LLParser::doInput(char *line)
     double logTime = 0.0;
     bool timefield = false;
     int pidfield = 0;
-    char *eod = NULL;
+    char *eod = nullptr;
 
     char *first = line;
     char *tab = strchr(first, '\t');	// time?
@@ -319,7 +319,7 @@ LLParser::makeMessage(const char *tmf, const char *hsf, const char *pdf,
     char tmbuffer[24];
     if (tmf[0] == '\0') {
         struct timeval tv;
-        gettimeofday(&tv, NULL);
+        gettimeofday(&tv, nullptr);
         snprintf(tmbuffer, 24, "%u.%06u",
                  static_cast<unsigned int>(tv.tv_sec),
                  static_cast<unsigned int>(tv.tv_usec));

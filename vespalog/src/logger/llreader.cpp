@@ -61,7 +61,7 @@ InputBuf::extend()
     _size *= 2;
     int pos = _bp - _buf;
     char *nbuf = (char *)realloc(_buf, _size);
-    if (nbuf == NULL) {
+    if (nbuf == nullptr) {
         free(_buf);
         throw MsgException("realloc failed");
     }
