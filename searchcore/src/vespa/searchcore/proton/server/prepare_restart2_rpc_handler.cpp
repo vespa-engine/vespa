@@ -72,7 +72,7 @@ add_finished_flush(JsonStream& stream, const FlushHistoryView& view, uint32_t st
         stream << "finished" << Object();
         stream << "flush_count" << count;
         stream << "last_finish" << Object();
-        stream << "finished" << as_system_microseconds(best->finish_time());
+        stream << "finish_time" << as_system_microseconds(best->finish_time());
         stream << "strategy" << best->strategy();
         stream << "strategy_id" << best->strategy_id();
         stream << End();
@@ -98,7 +98,7 @@ add_active_flush(JsonStream& stream, const FlushHistoryView& view, uint32_t stra
         stream << "active" << Object();
         stream << "flush_count" << count;
         stream << "last_start" << Object();
-        stream << "start" << as_system_microseconds(best->start_time());
+        stream << "start_time" << as_system_microseconds(best->start_time());
         stream << "strategy" << best->strategy();
         stream << "strategy_id" << best->strategy_id();
         stream << End();
