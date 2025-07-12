@@ -5619,6 +5619,7 @@
     "methods" : [
       "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
       "public void <init>(com.yahoo.search.Query$Type, com.yahoo.search.query.QueryType$Composite, com.yahoo.search.query.QueryType$Tokenization, com.yahoo.search.query.QueryType$Syntax)",
+      "public void <init>(com.yahoo.search.Query$Type, com.yahoo.search.query.QueryType$Composite, com.yahoo.search.query.QueryType$Tokenization, com.yahoo.search.query.QueryType$Syntax, boolean)",
       "public com.yahoo.search.Query$Type getType()",
       "public com.yahoo.search.query.QueryType$Composite getComposite()",
       "public com.yahoo.search.query.QueryType setComposite(com.yahoo.search.query.QueryType$Composite)",
@@ -5629,6 +5630,8 @@
       "public com.yahoo.search.query.QueryType$Syntax getSyntax()",
       "public com.yahoo.search.query.QueryType setSyntax(com.yahoo.search.query.QueryType$Syntax)",
       "public com.yahoo.search.query.QueryType setSyntax(java.lang.String)",
+      "public boolean isYqlDefault()",
+      "public com.yahoo.search.query.QueryType setYqlDefault(boolean)",
       "public void validate()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -5639,7 +5642,8 @@
     "fields" : [
       "public static final java.lang.String COMPOSITE",
       "public static final java.lang.String TOKENIZATION",
-      "public static final java.lang.String SYNTAX"
+      "public static final java.lang.String SYNTAX",
+      "public static final java.lang.String IS_YQL_DEFAULT"
     ]
   },
   "com.yahoo.search.query.Ranking" : {

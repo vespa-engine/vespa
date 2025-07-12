@@ -21,10 +21,12 @@ public class QueryType {
     private Composite composite;
     private Tokenization tokenization;
     private Syntax syntax;
+    private boolean isYqlDefault;
 
     public static final String COMPOSITE = "composite";
     public static final String TOKENIZATION = "tokenization";
     public static final String SYNTAX = "syntax";
+    public static final String IS_YQL_DEFAULT = "isYqlDefault";
 
     static {
         argumentType = new QueryProfileType(Model.TYPE);
@@ -34,16 +36,22 @@ public class QueryType {
         argumentType.addField(new FieldDescription(COMPOSITE, "string"));
         argumentType.addField(new FieldDescription(TOKENIZATION, "string"));
         argumentType.addField(new FieldDescription(SYNTAX, "string"));
+        argumentType.addField(new FieldDescription(IS_YQL_DEFAULT, "boolean"));
         argumentType.freeze();
     }
 
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     public QueryType(Query.Type type, Composite composite, Tokenization tokenization, Syntax syntax) {
+        this(type, composite, tokenization, syntax, false);
+    }
+
+    public QueryType(Query.Type type, Composite composite, Tokenization tokenization, Syntax syntax, boolean isYqlDefault) {
         this.type = type;
         this.composite = composite;
         this.tokenization = tokenization;
         this.syntax = syntax;
+        this.isYqlDefault = isYqlDefault;
     }
 
     /** Returns the overall type of this. */
@@ -69,10 +77,8 @@ public class QueryType {
         return this;
     }
 
-    /**
-     * Returns whether this should use internal tokenization, or delegate this to the linguistics component.
-     */
-    public Tokenization getTokenization() {return tokenization;}
+    /** Returns whether this should use internal tokenization, or delegate this to the linguistics component. */
+    public Tokenization getTokenization() { return tokenization; }
 
     /**
      * Sets whether this should use internal tokenization, or delegate this to the linguistics component.
@@ -92,7 +98,7 @@ public class QueryType {
     }
 
     /** Returns the query syntax used in this query. */
-    public Syntax getSyntax() {return syntax;}
+    public Syntax getSyntax() { return syntax; }
 
     /**
      * Sets the query syntax used in this query.
@@ -111,6 +117,23 @@ public class QueryType {
         return this;
     }
 
+    /**
+     * Returns whether this should be taken as the default 'grammar' settings when parsing YQL user queries.
+     * Default is false.
+     */
+    public boolean isYqlDefault() { return isYqlDefault; }
+
+    /**
+     * Sets whether this query type should be used as the default 'grammar' settings when parsing YQL
+     * user queries.
+     *
+     * @return this for chaining
+     */
+    public QueryType setYqlDefault(boolean isYqlDefault) {
+        this.isYqlDefault = isYqlDefault;
+        return this;
+    }
+
     /** Throws IllegalArgumentException if the combination of options set in this are ot supported. */
     public void validate() {
         if (tokenization == Tokenization.linguistics && syntax != Syntax.none)
@@ -124,12 +147,13 @@ public class QueryType {
         if (other.composite != this.composite) return false;
         if (other.tokenization != this.tokenization) return false;
         if (other.syntax != this.syntax) return false;
+        if (other.isYqlDefault != this.isYqlDefault) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, composite, tokenization, syntax);
+        return Objects.hash(type, composite, tokenization, syntax, isYqlDefault);
     }
 
     @Override
@@ -160,7 +184,9 @@ public class QueryType {
         };
     }
 
+    /** Returns the query type given by this string, or the default type (WEAKAND) if the given type is null. */
     public static QueryType from(String typeName) {
+        if (typeName == null) return QueryType.from(Query.Type.WEAKAND);
         return QueryType.from(Query.Type.getType(typeName));
     }
 
