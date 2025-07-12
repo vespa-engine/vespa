@@ -237,7 +237,7 @@ public class DocumentScriptTestCase {
         docType.addField("myField", fieldValue.getDataType());
         Document doc = new Document(docType, "id:ns:myDocumentType::");
         doc.setFieldValue("myField", fieldValue.clone());
-        doc = newScript(docType).execute(fieldValuesFactory, doc);
+        doc = newScript(docType).execute(fieldValuesFactory, doc, isReindexingOperation(input));
         return doc.getFieldValue("myField");
     }
 
@@ -347,7 +347,7 @@ public class DocumentScriptTestCase {
     }
 
     private static Document execute(Document document) {
-        return newScript(document.getDataType()).execute(new FieldValuesFactory(), document);
+        return newScript(document.getDataType()).execute(new FieldValuesFactory(), document, isReindexingOperation(input));
     }
 
     private static DocumentUpdate execute(DocumentUpdate update) {
