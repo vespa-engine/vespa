@@ -10,7 +10,9 @@ import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NullItem;
+import com.yahoo.prelude.query.ONearItem;
 import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
@@ -409,6 +411,8 @@ public abstract class AbstractParser implements CustomParser {
     protected CompositeItem newComposite() {
         return switch (environment.getType().getComposite()) {
             case and     -> new AndItem();
+            case near    -> new NearItem();
+            case oNear   -> new ONearItem();
             case or      -> new OrItem();
             case phrase  -> new PhraseItem();
             case weakAnd -> new WeakAndItem();
