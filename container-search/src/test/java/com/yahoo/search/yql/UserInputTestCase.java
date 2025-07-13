@@ -24,7 +24,7 @@ import static com.yahoo.container.protect.Error.INVALID_QUERY_PARAMETER;
 
 /**
  * Tests where you really test YqlParser but need the full Query infrastructure.
- *
+ *x
  * @author steinar
  */
 public class UserInputTestCase {

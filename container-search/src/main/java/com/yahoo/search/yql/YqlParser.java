@@ -868,18 +868,32 @@ public class YqlParser implements Parser {
     }
 
     private QueryType buildQueryType(OperatorNode<ExpressionOperator> ast) {
+        var queryType = QueryType.from(Query.Type.WEAKAND);
+        if (userQuery != null) {
+            queryType = QueryType.from(userQuery.properties().getString("query.type"));
+            queryType = queryType.setComposite(userQuery.properties().getString("query.type.composite"));
+            queryType = queryType.setTokenization(userQuery.properties().getString("query.type.tokenization"));
+            queryType = queryType.setSyntax(userQuery.properties().getString("query.type.syntax"));
+            queryType = queryType.setYqlDefault(userQuery.properties().getBoolean("query.type.isYqlDefault"));
+        }
+        if ( ! queryType.isYqlDefault())
+            queryType = QueryType.from(Query.Type.WEAKAND);
+
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
-                                       Query.Type.WEAKAND.toString(), "The overall query type of the user input");
+                                       null, "The overall query type of the user input");
+        if (grammar != null)
+            queryType = QueryType.from(grammar);
+
         String composite = getAnnotation(ast, USER_INPUT_GRAMMAR_COMPOSITE, String.class,
                                          null, "The composite type terms should be collected under");
         String tokenization = getAnnotation(ast, USER_INPUT_GRAMMAR_TOKENIZATION, String.class,
                                             null, "The tokenization type to apply to the user input string");
         String syntax = getAnnotation(ast, USER_INPUT_GRAMMAR_SYNTAX, String.class,
                                       null, "The syntax type of the user input");
-
-        return QueryType.from(grammar).setComposite(composite)
-                                      .setTokenization(tokenization)
-                                      .setSyntax(syntax);
+        return queryType.setComposite(composite)
+                        .setTokenization(tokenization)
+                        .setSyntax(syntax)
+                        .setYqlDefault(queryType.isYqlDefault());
     }
 
     private Language decideParsingLanguage(OperatorNode<ExpressionOperator> ast, String wordData) {

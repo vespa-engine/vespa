@@ -493,7 +493,7 @@ public class YqlParserTestCase {
         assertEquals("yoni jo dima", ((WordItem) root).getWord());
 
         root = parse("select foo from bar where {grammar:\"all\"}userInput(\"yoni jo dima\")").getRoot();
-        assertTrue(root instanceof AndItem);
+        assertInstanceOf(AndItem.class, root);
         AndItem andItem = (AndItem) root;
         assertEquals(3, andItem.getItemCount());
 
