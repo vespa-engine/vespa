@@ -5568,7 +5568,9 @@
       "public static final enum com.yahoo.search.query.QueryType$Composite and",
       "public static final enum com.yahoo.search.query.QueryType$Composite or",
       "public static final enum com.yahoo.search.query.QueryType$Composite phrase",
-      "public static final enum com.yahoo.search.query.QueryType$Composite weakAnd"
+      "public static final enum com.yahoo.search.query.QueryType$Composite weakAnd",
+      "public static final enum com.yahoo.search.query.QueryType$Composite near",
+      "public static final enum com.yahoo.search.query.QueryType$Composite oNear"
     ]
   },
   "com.yahoo.search.query.QueryType$Syntax" : {

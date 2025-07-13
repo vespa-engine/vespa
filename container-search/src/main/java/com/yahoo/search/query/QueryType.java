@@ -162,7 +162,7 @@ public class QueryType {
                " [composite: " + composite + ", tokenization: " + tokenization + ", syntax: " + syntax + "]";
     }
 
-    public enum Composite { and, or, phrase, weakAnd }
+    public enum Composite { and, or, phrase, weakAnd, near, oNear }
 
     public enum Tokenization { internal, linguistics }
 

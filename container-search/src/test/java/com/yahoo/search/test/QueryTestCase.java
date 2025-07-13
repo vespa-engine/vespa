@@ -49,6 +49,8 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.yql.MinimalQueryInserter;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

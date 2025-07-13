@@ -528,6 +528,15 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testPhraseSegmentsInNear() {
+        assertEquals("NEAR(2) default:'a b' default:c",
+                     parse("SELECT * FROM sources * WHERE (default contains near('a-b','c'))").getRoot().toString());
+
+        assertEquals("ONEAR(2) default:'a b' default:c",
+                     parse("SELECT * FROM sources * WHERE (default contains onear('a-b','c'))").getRoot().toString());
+    }
+
+    @Test
     void testAccentDropping() {
         assertFalse(getRootWord("select foo from bar where baz contains " +
                 "( {accentDrop: false} \"colors\")").isNormalizable());

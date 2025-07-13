@@ -142,7 +142,7 @@ public class WordAlternativesItem extends TermItem {
     @Override
     public WordAlternativesItem clone() {
         var clone = (WordAlternativesItem)super.clone();
-        clone.alternatives = new ArrayList(this.alternatives);
+        clone.alternatives = new ArrayList<>(this.alternatives);
         return clone;
     }
 
