@@ -378,12 +378,12 @@ namespace {
 
 template <typename T0, typename T1>
 struct equal_types {
-    static const bool value = false;
+    static constexpr bool value = false;
 };
 
 template <typename T0>
 struct equal_types<T0, T0> {
-    static const bool value = true;
+    static constexpr bool value = true;
 };
 
 }
