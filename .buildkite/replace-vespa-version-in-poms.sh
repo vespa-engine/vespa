@@ -23,12 +23,12 @@ if [[ -z $(find -L "$DIR" -name "pom.xml") ]]; then
 fi
 
 if [[ "$(uname)" == "Darwin" ]]; then
-    SED_INPLACE="sed -i ''"
+    SED_INPLACE=(sed -i '')
 else
-    SED_INPLACE="sed -i"
+    SED_INPLACE=(sed -i)
 fi
 
-find -L "$DIR" -name "pom.xml" -exec $SED_INPLACE \
+find -L "$DIR" -name "pom.xml" -exec "${SED_INPLACE[@]}" \
      -e "s,<version>.*SNAPSHOT.*</version>,<version>$VESPA_VERSION</version>," \
      -e "s,<vespaversion>.*project.version.*</vespaversion>,<vespaversion>$VESPA_VERSION</vespaversion>," \
      -e "s,<test-framework.version>.*project.version.*</test-framework.version>,<test-framework.version>$VESPA_VERSION</test-framework.version>," \
