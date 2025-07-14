@@ -19,7 +19,7 @@ fi
 
 if [[ -z $(find -L "$DIR" -name "pom.xml") ]]; then
     echo "No pom.xml files found in $DIR"
-    exit 0
+    exit 1
 fi
 
 if [[ "$(uname)" == "Darwin" ]]; then
