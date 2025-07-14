@@ -245,7 +245,6 @@ TEST_F(DocumentApiConverterTest, get_from_specific_replica) {
     EXPECT_EQ(2, cmd->debug_replica_node_id().value());
 }
 
-
 TEST_F(DocumentApiConverterTest, create_visitor) {
     documentapi::CreateVisitorMessage cv("mylib", "myinstance", "control-dest", "data-dest");
     cv.setBucketSpace(defaultSpaceName);
