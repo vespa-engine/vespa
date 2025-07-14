@@ -125,8 +125,10 @@ add_previous_flush_strategy(JsonStream& stream, const FlushHistoryView& view, co
     stream << "previous" << Object();
     stream << "strategy" << entry.name();
     stream << "start_time" << as_system_microseconds(entry.start_time());
-    stream << "finish_time" << as_system_microseconds(entry.finish_time());
-    // Note: above finish time is when strategy scheduled last flush job, not when that job completed.
+    stream << "switch_time" << as_system_microseconds(entry.switch_time());
+    if (entry.finish_time() != steady_clock::time_point()) {
+        stream << "finish_time" << as_system_microseconds(entry.finish_time());
+    }
     stream << "id" << entry.id();
     add_active_flush(stream, view, entry.id());
     add_finished_flush(stream, view, entry.id());
@@ -137,12 +139,13 @@ void
 add_current_flush_strategy(JsonStream& stream, const FlushHistoryView& view)
 {
     stream << "current" << Object();
-    stream << "strategy" << view.strategy();
-    stream << "start_time" << as_system_microseconds(view.strategy_start_time());
-    stream << "id" << view.strategy_id();
-    add_active_flush(stream, view, view.strategy_id());
-    add_finished_flush(stream, view, view.strategy_id());
-    add_pending_flush(stream, view, view.strategy_id());
+    auto& active_strategy = view.active_strategy();
+    stream << "strategy" << active_strategy.name();
+    stream << "start_time" << as_system_microseconds(active_strategy.start_time());
+    stream << "id" << active_strategy.id();
+    add_active_flush(stream, view, active_strategy.id());
+    add_finished_flush(stream, view, active_strategy.id());
+    add_pending_flush(stream, view, active_strategy.id());
     stream << End();
 }
 

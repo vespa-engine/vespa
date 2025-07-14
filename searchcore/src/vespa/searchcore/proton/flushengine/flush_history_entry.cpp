@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "flush_history_entry.h"
+#include "flush_strategy_history_entry.h"
 
 namespace proton::flushengine {
 
@@ -17,6 +18,14 @@ FlushHistoryEntry::FlushHistoryEntry(std::string name_in, std::string strategy_i
       _prune_time(),
       _last_flush_duration(last_flush_duration_in),
       _id(id_in)
+{
+
+}
+
+FlushHistoryEntry::FlushHistoryEntry(std::string name_in, const FlushStrategyHistoryEntry& strategy_entry,
+                                     time_point create_time_in, duration last_flush_duration_in, uint32_t id_in)
+    : FlushHistoryEntry(std::move(name_in), strategy_entry.name(), strategy_entry.id(),
+                        strategy_entry.priority_strategy(), create_time_in, last_flush_duration_in, id_in)
 {
 
 }
