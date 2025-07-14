@@ -233,7 +233,18 @@ TEST_F(DocumentApiConverterTest, get) {
     EXPECT_EQ(defaultBucket, cmd->getBucket());
     EXPECT_EQ(defaultDocId, cmd->getDocumentId());
     EXPECT_EQ("foo bar", cmd->getFieldSet());
+    EXPECT_EQ(false, cmd->has_debug_replica_node_id());
 }
+
+TEST_F(DocumentApiConverterTest, get_from_specific_replica) {
+    documentapi::GetDocumentMessage getmsg(defaultDocId, "foo bar");
+    getmsg.set_debug_replica_node_id(2);
+
+    auto cmd = toStorageAPI<api::GetCommand>(getmsg);
+    EXPECT_EQ(true, cmd->has_debug_replica_node_id());
+    EXPECT_EQ(2, cmd->debug_replica_node_id().value());
+}
+
 
 TEST_F(DocumentApiConverterTest, create_visitor) {
     documentapi::CreateVisitorMessage cv("mylib", "myinstance", "control-dest", "data-dest");
