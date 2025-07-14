@@ -61,21 +61,26 @@ make_active_flush_counts(const FlushHistoryView& view)
     return view.active_strategy().flush_counts();;
 }
 
-struct TSS {
+/*
+ * Struct used to track which timestamps are set in a flush strategy history entry
+ */
+struct TimeStampsSet {
     bool switch_time_set;
     bool finish_time_set;
     bool last_flush_time_set;
-    TSS(bool switch_time_set_in, bool finish_time_set_in, bool last_flush_time_set_in)
+    constexpr TimeStampsSet(bool switch_time_set_in, bool finish_time_set_in, bool last_flush_time_set_in) noexcept
         : switch_time_set(switch_time_set_in),
           finish_time_set(finish_time_set_in),
           last_flush_time_set(last_flush_time_set_in)
     {
 
     }
-    bool operator==(const TSS&) const noexcept = default;
+    bool operator==(const TimeStampsSet&) const noexcept = default;
 };
 
-void PrintTo(const TSS& tss, std::ostream* os)
+using TSS = TimeStampsSet;
+
+void PrintTo(const TimeStampsSet& tss, std::ostream* os)
 {
     *os << "{ switched=" << std::boolalpha << tss.switch_time_set << ", finished=" << tss.finish_time_set
     << ", flushed=" << tss.last_flush_time_set << " }";
@@ -235,6 +240,12 @@ TEST_F(FlushHistoryTest, active_priority_flush_strategy_can_be_detected)
 
 TEST_F(FlushHistoryTest, flush_strategy_can_be_changed)
 {
+    /*
+     * 3 flush strategies:
+     * { "normal", id = 42, priority_strategy = false } started 1 flush: handler1.a1.
+     * { "all",    id = 43, priority_strategy = true  } started 2 flushes: handler2.a2 and handler1.a3
+     * { "normal", id = 44, priority_strategy = false } started no flushes
+     */
     _flush_history.start_flush(HANDLER1, "a1", 3s, 5);
     _flush_history.set_strategy(ALL_STRATEGY, 43, true);
     _flush_history.add_pending_flush(HANDLER2, "a2", 1s);
@@ -242,6 +253,10 @@ TEST_F(FlushHistoryTest, flush_strategy_can_be_changed)
     _flush_history.start_flush(HANDLER2, "a2", 1s, 6);
     _flush_history.start_flush(HANDLER1, "a3", 4s, 7);
     _flush_history.set_strategy(NORMAL_STRATEGY, 44, false);
+
+    /*
+     * No flushes have completed.
+     */
     auto view = _flush_history.make_view();
     ASSERT_EQ(2, view->draining_strategies().size());
     auto& active_strategy = view->active_strategy();
@@ -266,8 +281,14 @@ TEST_F(FlushHistoryTest, flush_strategy_can_be_changed)
     EXPECT_EQ((std::vector<TSS>{}), make_finished_tss(*view));
     EXPECT_EQ((std::vector<TSS>{{true, false, false}, {true, false, false}}), make_draining_tss(*view));
     EXPECT_EQ(TSS(false, false, false),make_active_tss(*view));
+
+    /*
+     * Complete flush "handler2.a2". The flush "handler1.a1" is not yet completed, thus no flush strategies
+     * history entries move from draining_strategies to finished_strategies.
+     */
     _flush_history.flush_done(6);
     _flush_history.prune_done(6);
+
     view = _flush_history.make_view();
     EXPECT_EQ((SV{}), make_names(view->finished_strategies()));
     EXPECT_EQ((SV{NORMAL_STRATEGY, ALL_STRATEGY}), make_names(view->draining_strategies()));
@@ -277,8 +298,14 @@ TEST_F(FlushHistoryTest, flush_strategy_can_be_changed)
     EXPECT_EQ((std::vector<TSS>{}), make_finished_tss(*view));
     EXPECT_EQ((std::vector<TSS>{{true, false, false}, {true, false, true}}), make_draining_tss(*view));
     EXPECT_EQ(TSS(false, false, true), make_active_tss(*view));
+
+    /*
+     * Complete flush "handler1.a1". Flush strategy history entry for { "normal", 42, false } moves from
+     * draining_strategies to finished_strategies.
+     */
     _flush_history.flush_done(5);
     _flush_history.prune_done(5);
+
     view = _flush_history.make_view();
     EXPECT_EQ((SV{NORMAL_STRATEGY}), make_names(view->finished_strategies()));
     EXPECT_EQ((SV{ALL_STRATEGY}), make_names(view->draining_strategies()));
@@ -288,8 +315,15 @@ TEST_F(FlushHistoryTest, flush_strategy_can_be_changed)
     EXPECT_EQ((std::vector<TSS>{{true, true, true}}), make_finished_tss(*view));
     EXPECT_EQ((std::vector<TSS>{{true, false, true}}), make_draining_tss(*view));
     EXPECT_EQ(TSS(false, false, true), make_active_tss(*view));
+
+
+    /*
+     * Complete flush "handler1.a3". Flush strategy history entry for { "all", 43, true } moves from
+     * draining_strategies to finished_strategies.
+     */
     _flush_history.flush_done(7);
     _flush_history.prune_done(7);
+
     view = _flush_history.make_view();
     EXPECT_EQ((SV{NORMAL_STRATEGY, ALL_STRATEGY}), make_names(view->finished_strategies()));
     EXPECT_EQ((SV{}), make_names(view->draining_strategies()));

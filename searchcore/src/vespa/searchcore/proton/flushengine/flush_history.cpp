@@ -88,7 +88,7 @@ FlushHistory::prune_draining_strategies(time_point now)
             break;
         }
         strategy.set_finish_time(now);
-        _finished_strategies.push_back(strategy);
+        _finished_strategies.push_back(std::move(strategy));
         _draining_strategies.erase(_draining_strategies.begin());
     }
 }
@@ -100,7 +100,8 @@ FlushHistory::strategy_flush_done(uint32_t strategy_id, time_point now)
     if (it != _draining_strategies.end()) {
         auto &starting_strategy = it->second;
         starting_strategy.finish_flush(strategy_id, now);
-        for (++it; it != _draining_strategies.end(); ++it) {
+        ++it;
+        for (; it != _draining_strategies.end(); ++it) {
             it->second.finish_flush(strategy_id, now);
         }
         auto lit = _last_strategies.find(starting_strategy.name());

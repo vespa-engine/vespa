@@ -16,17 +16,21 @@ class FlushStrategyHistoryEntry {
     using duration = steady_clock::duration;
 
 public:
+    /*
+     * Flush counts for a flush strategy. The remaining active flushes when the flush strategy was created
+     * is tracked in _inherited, with _inherited_finished being incremented when those flushes complete.
+     */
     struct FlushCounts {
-        uint32_t    _started;
-        uint32_t    _finished;
-        uint32_t    _inherited;
-        uint32_t    _inherited_finished;
+        uint32_t    _started;            // # flushes started by this flush strategy
+        uint32_t    _finished;           // # flushes started by this flush strategy that have finished
+        uint32_t    _inherited;          // # flushes started by an earlier flush strategy
+        uint32_t    _inherited_finished; // # flushes started by an earlier flush strategy that have finished
 
-        FlushCounts(uint32_t inherited)
-        : FlushCounts(0, 0, inherited, 0)
+        constexpr explicit FlushCounts(uint32_t inherited) noexcept
+            : FlushCounts(0, 0, inherited, 0)
         {
         }
-        FlushCounts(uint32_t started, uint32_t finished, uint32_t inherited, uint32_t inherited_finished)
+        constexpr FlushCounts(uint32_t started, uint32_t finished, uint32_t inherited, uint32_t inherited_finished) noexcept
             : _started(started),
               _finished(finished),
               _inherited(inherited),
