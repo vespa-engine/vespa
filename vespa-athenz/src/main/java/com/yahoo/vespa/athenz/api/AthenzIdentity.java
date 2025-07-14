@@ -8,9 +8,7 @@ import java.net.URI;
 public interface AthenzIdentity {
     AthenzDomain getDomain();
     String getName();
-    default URI spiffeUri() {
-        return URI.create("spiffe://%s/sa/%s".formatted(getDomainName(), getName()));
-    }
+    URI spiffeUri();
     default String getFullName() {
         return getDomain().getName() + "." + getName();
     }

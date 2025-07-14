@@ -1,12 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zts.utils;
 
-import com.yahoo.security.SubjectAlternativeName;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.Pkcs10CsrBuilder;
+import com.yahoo.security.SubjectAlternativeName;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
@@ -35,7 +34,7 @@ public class IdentityCsrGenerator {
                         dnsSuffix))
                 .addSubjectAlternativeName(
                         SubjectAlternativeName.Type.URI,
-                        "spiffe://%s/sa/%s".formatted(identity.getDomainName(), identity.getName()))
+                        identity.spiffeUri().toString())
                 .build();
     }
 
