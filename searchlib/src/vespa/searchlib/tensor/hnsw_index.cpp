@@ -614,7 +614,7 @@ HnswIndex<type>::exploreNeighborhoodByOneHop(std::deque<uint32_t> &todo, std::de
             }
 
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
-            if (filteror_docid)) {
+            if (filter_wrapper.check(neighbor_docid)) {
                 found.push_back(neighbor_nodeid);
 
                 // Abort if we already found enough neighbors
