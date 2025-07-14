@@ -19,6 +19,7 @@ func newCertCmd(cli *CLI) *cobra.Command {
 		skipApplicationPackage bool
 		overwriteCertificate   bool
 	)
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "cert",
 		Short: "Create a new self-signed certificate for authentication with Vespa Cloud data plane",
@@ -66,18 +67,19 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return doCert(cli, overwriteCertificate, skipApplicationPackage, args)
+			return doCert(cli, targetFlags, overwriteCertificate, skipApplicationPackage, args)
 		},
 	}
 	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
 	// TODO(mpolden): Stop adding certificate to application package and remove this flag
 	cmd.Flags().BoolVarP(&skipApplicationPackage, "no-add", "N", false, "Do not add certificate to the application package")
-	cmd.MarkPersistentFlagRequired(applicationFlag)
+	targetFlags.AddApplicationFlag(cmd)
 	return cmd
 }
 
 func newCertAddCmd(cli *CLI) *cobra.Command {
 	var overwriteCertificate bool
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "add",
 		Short: "Add certificate to application package",
@@ -94,22 +96,29 @@ $ vespa auth cert add -a my-tenant.my-app.my-instance path/to/application/packag
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return doCertAdd(cli, overwriteCertificate, args)
+			return doCertAdd(cli, targetFlags, overwriteCertificate, args)
 		},
 	}
 	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate")
-	cmd.MarkPersistentFlagRequired(applicationFlag)
+	targetFlags.AddApplicationFlag(cmd)
 	return cmd
 }
 
-func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, args []string) error {
-	targetType, err := cli.targetType(cloudTargetOnly)
+func doCert(cli *CLI, targetFlags *TargetFlags, overwriteCertificate, skipApplicationPackage bool, args []string) error {
+	targetType, err := cli.targetTypeWithFlags(cloudTargetOnly, targetFlags)
 	if err != nil {
 		return err
 	}
-	app, err := cli.config.application()
+
+	// Validate that application is provided (either via flag or config)
+	applicationString := targetFlags.Application()
+	if applicationString == "" {
+		return errHint(fmt.Errorf("no application specified"), "Try the --"+applicationFlag+" flag")
+	}
+
+	app, err := vespa.ApplicationFromString(applicationString)
 	if err != nil {
-		return err
+		return errHint(err, "application format is <tenant>.<app>[.<instance>]")
 	}
 	privateKeyFile, err := cli.config.privateKeyPath(app, targetType.name)
 	if err != nil {
@@ -143,13 +152,13 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, args []
 	cli.printSuccess("Certificate written to ", color.CyanString("'"+certificateFile.path+"'"))
 	cli.printSuccess("Private key written to ", color.CyanString("'"+privateKeyFile.path+"'"))
 	if !skipApplicationPackage {
-		return doCertAdd(cli, overwriteCertificate, args)
+		return doCertAdd(cli, targetFlags, overwriteCertificate, args)
 	}
 	return nil
 }
 
-func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
-	target, err := cli.target(targetOptions{supportedType: cloudTargetOnly})
+func doCertAdd(cli *CLI, targetFlags *TargetFlags, overwriteCertificate bool, args []string) error {
+	target, err := cli.targetWithFlags(targetOptions{supportedType: cloudTargetOnly}, targetFlags)
 	if err != nil {
 		return err
 	}

@@ -430,6 +430,7 @@ func verifyTest(cli *CLI, testsParent string, suite string, required bool) error
 		}
 		return nil
 	}
-	_, _, err = runTests(cli, testDirectory, true, nil)
+	targetFlags := NewTargetFlagsWithCLI(cli)
+	_, _, err = runTests(cli, testDirectory, true, nil, targetFlags)
 	return err
 }
