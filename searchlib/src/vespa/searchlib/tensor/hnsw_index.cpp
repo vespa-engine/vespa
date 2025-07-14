@@ -534,61 +534,53 @@ void
 HnswIndex<type>::exploreNeighborhood(HnswTraversalCandidate &cand, std::deque<uint32_t> &found, VisitedTracker &visited, double exploration,
                                      uint32_t level, const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit, std::ofstream *trace_file) const {
     assert(found.empty());
+    size_t found_progress = 0;
 
     std::deque<uint32_t> todo;
     todo.push_back(cand.nodeid);
 
     uint32_t max_neighbors_to_find = max_links_for_level(level);
 
+    if (trace_file) *trace_file << "1-hop visited:";
     // Explore (1-hop) neighbors
-    exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find);
+    exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find, trace_file);
+    if (trace_file) *trace_file << "\n";
     
     if (trace_file) {
-        *trace_file << "1-hop visited:";
-        for (uint32_t node_id : todo) {
-            *trace_file << std::format(" {},", node_id);
-        }
-        *trace_file << "\n";
         *trace_file << "1-hop found:";
-        for (uint32_t node_id : found) {
-            *trace_file << std::format(" {},", node_id);
+        for (auto i = found.begin() + found_progress; i != found.end(); ++i) {
+            *trace_file << std::format(" {},", *i);
         }
         *trace_file << "\n";
     }
+    found_progress = found.size();
 
     // Explore 2-hop neighbors
-    exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find);
+    if (trace_file) *trace_file << "2-hop visited:";
+    exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find, trace_file);
+    if (trace_file) *trace_file << "\n";
 
     if (trace_file) {
-        *trace_file << "2-hop visited:";
-        for (uint32_t node_id : todo) {
-            *trace_file << std::format(" {},", node_id);
-        }
-        *trace_file << "\n";
         *trace_file << "2-hop found:";
-        for (uint32_t node_id : found) {
-            *trace_file << std::format(" {},", node_id);
+        for (auto i = found.begin() + found_progress; i != found.end(); ++i) {
+            *trace_file << std::format(" {},", *i);
         }
         *trace_file << "\n";
     }
+    found_progress = found.size();
 
     // Explore 3-hop neighbors, but only if we have not found enough nodes yet (one quarter of the desired amount)
     if (static_cast<double>(todo.size()) < exploration * (max_neighbors_to_find * max_neighbors_to_find * max_neighbors_to_find)) {
-        exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find);
-
+        if (trace_file) *trace_file << "3-hop visited:";
+        exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find, trace_file);
+        if (trace_file) *trace_file << "\n";
         if (trace_file) {
-            *trace_file << "3-hop visited:";
-            for (uint32_t node_id : todo) {
-                *trace_file << std::format(" {},", node_id);
-            }
-            *trace_file << "\n";
             *trace_file << "3-hop found:";
-            for (uint32_t node_id : found) {
-                *trace_file << std::format(" {},", node_id);
+            for (auto i = found.begin() + found_progress; i != found.end(); ++i) {
+                *trace_file << std::format(" {},", *i);
             }
             *trace_file << "\n";
         }
-
     }
 }
 
@@ -597,7 +589,7 @@ template <class VisitedTracker>
 void
 HnswIndex<type>::exploreNeighborhoodByOneHop(std::deque<uint32_t> &todo, std::deque<uint32_t> &found, VisitedTracker &visited, uint32_t level,
                                              const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit,
-                                             uint32_t max_neighbors_to_find) const {
+                                             uint32_t max_neighbors_to_find, std::ofstream *trace_file) const {
     // We do not explore the candidates that we newly add to the deque
     uint32_t nodesToExplore = todo.size();
     for (uint32_t nodesExplored = 0; nodesExplored < nodesToExplore && found.size() < max_neighbors_to_find; ++nodesExplored) {
@@ -607,6 +599,7 @@ HnswIndex<type>::exploreNeighborhoodByOneHop(std::deque<uint32_t> &todo, std::de
         auto ref = node.levels_ref().load_acquire();
 
         for (uint32_t neighbor_nodeid : _graph.get_link_array(ref, level)) {
+            if (trace_file) *trace_file << std::format(" {},", neighbor_nodeid);
             if (neighbor_nodeid >= nodeid_limit) {
                 continue;
             }
@@ -621,7 +614,7 @@ HnswIndex<type>::exploreNeighborhoodByOneHop(std::deque<uint32_t> &todo, std::de
             }
 
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
-            if (filter_wrapper.check(neighbor_docid)) {
+            if (filteror_docid)) {
                 found.push_back(neighbor_nodeid);
 
                 // Abort if we already found enough neighbors

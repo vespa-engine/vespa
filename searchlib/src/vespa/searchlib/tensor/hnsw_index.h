@@ -227,7 +227,7 @@ protected:
     template <class VisitedTracker>
     void exploreNeighborhoodByOneHop(std::deque<uint32_t> &todo, std::deque<uint32_t> &found, VisitedTracker &visited, uint32_t level,
                                      const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit,
-                                     uint32_t max_neighbors_to_find) const;
+                                     uint32_t max_neighbors_to_find, std::ofstream *trace_file = nullptr) const;
     template <class BestNeighbors>
     void search_layer(const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack, BestNeighbors& best_neighbors,
                       uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter = nullptr, std::ofstream *trace_file = nullptr) const;
