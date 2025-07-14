@@ -62,7 +62,22 @@ convert_to_slime(const FlushStrategyHistoryEntry& entry, Inserter& inserter)
     object.setLong("strategy_id", entry.id());
     object.setBool("priority_strategy", entry.priority_strategy());
     object.setLong("start_time_usecs", as_system_microseconds(entry.start_time()));
-    object.setLong("finish_time_usecs", as_system_microseconds(entry.finish_time()));
+    if (entry.switch_time() != steady_clock::time_point()) {
+        object.setLong("switch_time_usecs", as_system_microseconds(entry.switch_time()));
+        if (entry.finish_time() != steady_clock::time_point()) {
+            object.setLong("finish_time_usecs", as_system_microseconds(entry.finish_time()));
+        }
+    }
+    if (entry.last_flush_finish_time() != steady_clock::time_point()) {
+        object.setLong("last_flush_finish_time_usecs", as_system_microseconds(entry.last_flush_finish_time()));
+    }
+    object.setLong("started_flushes", entry.started_flushes());
+    object.setLong("finished_flushes", entry.finished_flushes());
+    if (entry.inherited_started_flushes()) {
+        Cursor& inherited = object.setObject("inherited");
+        inherited.setLong("started_flushes", entry.inherited_started_flushes());
+        inherited.setLong("finished_flushes", entry.inherited_finished_flushes());
+    }
 }
 
 void
@@ -98,11 +113,7 @@ FlushHistoryExplorer::get_state(const vespalib::slime::Inserter &inserter, bool 
     Cursor &object = inserter.insertObject();
     if (full) {
         auto view = _flush_history->make_view();
-        object.setString("strategy", view->strategy());
         object.setLong("strategy_id_base", view->strategy_id_base());
-        object.setLong("strategy_id", view->strategy_id());
-        object.setBool("priority_strategy", view->priority_strategy());
-        object.setLong("strategy_start_time", as_system_microseconds(view->strategy_start_time()));
         object.setLong("max_concurrent_normal", view->max_concurrent_normal());
         {
             Memory finished_mem("finished");
@@ -123,6 +134,16 @@ FlushHistoryExplorer::get_state(const vespalib::slime::Inserter &inserter, bool 
             Memory finished_strategies_mem("finished_strategies");
             ObjectInserter finished_strategies_inserter(object, finished_strategies_mem);
             convert_to_slime(view->finished_strategies(), finished_strategies_inserter);
+        }
+        {
+            Memory draining_strategies_mem("draining_strategies");
+            ObjectInserter draining_strategies_inserter(object, draining_strategies_mem);
+            convert_to_slime(view->draining_strategies(), draining_strategies_inserter);
+        }
+        {
+            Memory active_strategy_mem("active_strategy");
+            ObjectInserter active_strategy_inserter(object, active_strategy_mem);
+            convert_to_slime(view->active_strategy(), active_strategy_inserter);
         }
         {
             Memory last_strategies_mem("last_strategies");

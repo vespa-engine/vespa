@@ -28,17 +28,15 @@ FlushHistory::FlushHistory(std::string strategy, uint32_t strategy_id, uint32_t 
       _keep_duration(std::chrono::minutes(5u)),
       _keep_entries(100),
       _keep_entries_max(10000),
-      _strategy(std::move(strategy)),
       _strategy_id_base(strategy_id),
-      _strategy_id(strategy_id),
-      _priority_strategy(false),
-      _strategy_start_time(steady_clock::now()),
       _max_concurrent_normal(max_concurrent_normal),
       _pending_id(0),
       _finished(),
       _active(),
       _pending(),
       _finished_strategies(),
+      _draining_strategies(),
+      _active_strategy(strategy, strategy_id, false, steady_clock::now(), 0),
       _last_strategies()
 {
 }
@@ -82,6 +80,40 @@ FlushHistory::prune_finished_strategies()
 }
 
 void
+FlushHistory::prune_draining_strategies(time_point now)
+{
+    while (!_draining_strategies.empty()) {
+        auto& strategy = _draining_strategies.begin()->second;
+        if (strategy.has_active_flushes()) {
+            break;
+        }
+        strategy.set_finish_time(now);
+        _finished_strategies.push_back(strategy);
+        _draining_strategies.erase(_draining_strategies.begin());
+    }
+}
+
+void
+FlushHistory::strategy_flush_done(uint32_t strategy_id, time_point now)
+{
+    auto it = _draining_strategies.find(strategy_id);
+    if (it != _draining_strategies.end()) {
+        auto &starting_strategy = it->second;
+        starting_strategy.finish_flush(strategy_id, now);
+        for (++it; it != _draining_strategies.end(); ++it) {
+            it->second.finish_flush(strategy_id, now);
+        }
+        auto lit = _last_strategies.find(starting_strategy.name());
+        if (lit != _last_strategies.end()) {
+            lit->second.finish_flush(strategy_id, now);
+        }
+    }
+    _active_strategy.finish_flush(strategy_id, now);
+    prune_draining_strategies(now);
+    prune_finished_strategies();
+}
+
+void
 FlushHistory::start_flush(const std::string& handler_name, const std::string& target_name, duration last_flush_duration, uint32_t id)
 {
     // Note: this member function is called when queueing flush engine task, initFlush has already completed.
@@ -95,10 +127,10 @@ FlushHistory::start_flush(const std::string& handler_name, const std::string& ta
         _pending.erase(pending_it);
     } else {
         auto now = steady_clock::now();
-        active_it = _active.emplace_hint(active_it, id, FlushHistoryEntry(name, _strategy, _strategy_id,
-                                                                          _priority_strategy, now,
+        active_it = _active.emplace_hint(active_it, id, FlushHistoryEntry(name, _active_strategy, now,
                                                                           last_flush_duration, ++_pending_id));
     }
+    _active_strategy.start_flush();
     auto now = steady_clock::now();
     active_it->second.start_flush(now, id);
 }
@@ -120,11 +152,13 @@ FlushHistory::prune_done(uint32_t id)
     std::lock_guard guard(_mutex);
     auto it = _active.lower_bound(id);
     assert(it != _active.end() && it->first == id);
+    auto strategy_id = it->second.strategy_id();
     _finished.emplace_back(it->second);
     auto now = steady_clock::now();
     _finished.back().prune_done(now);
     _active.erase(it);
     prune_finished();
+    strategy_flush_done(strategy_id, now);
 }
 
 void
@@ -137,11 +171,9 @@ FlushHistory::add_pending_flush(const std::string& handler_name, const std::stri
     auto pending_it = _pending.lower_bound(name);
     auto now = steady_clock::now();
     if (pending_it != _pending.end() && pending_it->first == name) {
-        pending_it->second = FlushHistoryEntry(name, _strategy, _strategy_id, _priority_strategy, now,
-                                               last_flush_duration, ++_pending_id);
+        pending_it->second = FlushHistoryEntry(name, _active_strategy, now, last_flush_duration, ++_pending_id);
     } else {
-        _pending.emplace_hint(pending_it, name, FlushHistoryEntry(name, _strategy, _strategy_id,
-                                                                  _priority_strategy, now,
+        _pending.emplace_hint(pending_it, name, FlushHistoryEntry(name, _active_strategy, now,
                                                                   last_flush_duration, ++_pending_id));
     }
 }
@@ -170,18 +202,16 @@ FlushHistory::set_strategy(std::string strategy, uint32_t strategy_id, bool prio
 {
     std::lock_guard guard(_mutex);
     auto now = steady_clock::now();
-    FlushStrategyHistoryEntry entry(_strategy, _strategy_id, _priority_strategy, _strategy_start_time, now);
-    auto it = _last_strategies.lower_bound(_strategy);
-    if (it != _last_strategies.end() && it->first == _strategy) {
-        it->second = entry;
+    _active_strategy.set_switch_time(now);
+    auto it = _last_strategies.lower_bound(_active_strategy.name());
+    if (it != _last_strategies.end() && it->first == _active_strategy.name()) {
+        it->second = _active_strategy;
     } else {
-        _last_strategies.emplace_hint(it, _strategy, entry);
+        _last_strategies.emplace_hint(it, _active_strategy.name(), _active_strategy);
     }
-    _finished_strategies.push_back(entry);
-    _strategy = std::move(strategy);
-    _strategy_id = strategy_id;
-    _priority_strategy = priority_strategy;
-    _strategy_start_time = now;
+    _draining_strategies.emplace_hint(_draining_strategies.end(), _active_strategy.id(), _active_strategy);
+    _active_strategy = FlushStrategyHistoryEntry(strategy, strategy_id, priority_strategy, now, _active.size());
+    prune_draining_strategies(now);
     prune_finished_strategies();
 }
 
@@ -189,29 +219,25 @@ std::shared_ptr<const FlushHistoryView>
 FlushHistory::make_view() const
 {
     std::unique_lock guard(_mutex);
-    auto strategy_copy = _strategy;
     auto strategy_id_base_copy = _strategy_id_base;
-    auto strategy_id_copy = _strategy_id;
-    bool priority_strategy_copy = _priority_strategy;
-    auto strategy_start_time_copy = _strategy_start_time;
     std::vector<FlushHistoryEntry> finished_copy(_finished.begin(), _finished.end());
     auto active_copy = make_value_vector(_active);
     auto pending_copy = make_value_vector(_pending);
     std::vector<FlushStrategyHistoryEntry> finished_strategies_copy(_finished_strategies.begin(),
                                                                     _finished_strategies.end());
+    auto draining_strategies_copy = make_value_vector(_draining_strategies);
+    auto active_strategy_copy = _active_strategy;
     auto last_strategies_copy = make_value_vector(_last_strategies);
     guard.unlock();
     std::sort(pending_copy.begin(), pending_copy.end(), [](const auto& lhs, const auto& rhs) { return lhs.id() < rhs.id(); });
-    return std::make_shared<FlushHistoryView>(std::move(strategy_copy),
-                                              strategy_id_base_copy,
-                                              strategy_id_copy,
-                                              priority_strategy_copy,
-                                              strategy_start_time_copy,
+    return std::make_shared<FlushHistoryView>(strategy_id_base_copy,
                                               _max_concurrent_normal,
                                               std::move(finished_copy),
                                               std::move(active_copy),
                                               std::move(pending_copy),
                                               std::move(finished_strategies_copy),
+                                              std::move(draining_strategies_copy),
+                                              std::move(active_strategy_copy),
                                               std::move(last_strategies_copy));
 }
 

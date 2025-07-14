@@ -24,23 +24,23 @@ class FlushHistory {
     duration                                 _keep_duration;
     size_t                                   _keep_entries;
     size_t                                   _keep_entries_max; // limit at which _keep_duration is ignored
-    std::string                              _strategy;
     const uint32_t                           _strategy_id_base;
-    uint32_t                                 _strategy_id;
-    bool                                     _priority_strategy;
-    time_point                               _strategy_start_time;
     const uint32_t                           _max_concurrent_normal;
     uint32_t                                 _pending_id;
     std::deque<FlushHistoryEntry>            _finished;
     std::map<uint32_t, FlushHistoryEntry>    _active;
     std::map<std::string, FlushHistoryEntry> _pending;
     std::deque<FlushStrategyHistoryEntry>    _finished_strategies;
+    std::map<uint32_t, FlushStrategyHistoryEntry>    _draining_strategies; // non-active strategies with active flushes
+    FlushStrategyHistoryEntry                        _active_strategy;
     std::map<std::string, FlushStrategyHistoryEntry> _last_strategies;
 
     std::string build_name(const std::string& handler_name, const std::string& target_name);
 
     void prune_finished();
     void prune_finished_strategies();
+    void prune_draining_strategies(time_point now);
+    void strategy_flush_done(uint32_t strategy_id, time_point now);
 public:
     FlushHistory(std::string strategy, uint32_t stategy_id, uint32_t max_concurrent_normal);
     FlushHistory(const FlushHistory&) = delete;

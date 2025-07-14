@@ -7,6 +7,8 @@
 
 namespace proton::flushengine {
 
+class FlushStrategyHistoryEntry;
+
 /*
  * A recent flush operation that can be shown in the state explorer.
  */
@@ -30,6 +32,8 @@ public:
     FlushHistoryEntry(std::string name_in, std::string strategy_in, uint32_t strategy_id_in,
                       bool priority_strategy_in, time_point create_time_in,
                       duration last_flush_duration_in, uint32_t id_in);
+    FlushHistoryEntry(std::string name_in, const FlushStrategyHistoryEntry& strategy_entry,
+                      time_point create_time_in, duration last_flush_duration_in, uint32_t id_in);
     FlushHistoryEntry(const FlushHistoryEntry &);
     FlushHistoryEntry(FlushHistoryEntry &&) noexcept;
     ~FlushHistoryEntry();
