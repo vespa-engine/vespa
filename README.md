@@ -123,6 +123,29 @@ mvn -v
 
 Use this if you only need to build the Java modules, otherwise follow the complete development guide above.
 
+### Run tests for shell scripts (on Mac)
+Shell scripts are tested with [BATS](https://bats-core.readthedocs.io/en/stable/).
+To run the tests locally, install the testing framework and its plugins.:
+```bash
+brew install node
+sudo npm install -g bats bats-assert bats-support bats-mock
+```
+Export the `BATS_PLUGIN_PATH` environment variable to point to the global npm modules directory, which contains the BATS plugins:
+```bash
+export BATS_PLUGIN_PATH="$(npm root -g)"
+```
+Then run all tests with the following command (from the root of the repository):
+```bash
+bats -r .
+```
+To run a specific test, use:
+```bash
+bats test_dir/test_name.bats
+```
+Tests can also be run in IntelliJ IDEA with the [BashSupport Pro](https://plugins.jetbrains.com/plugin/13841-bashsupport-pro)
+plugin. Ensure the `BATS_PLUGIN_PATH` environment variable is exported before launching the IDE
+to avoid setting it in each run configuration.
+
 ## License
 
 Code licensed under the Apache 2.0 license. See [LICENSE](LICENSE) for terms.
