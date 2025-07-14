@@ -139,7 +139,6 @@ public class YqlParser implements Parser {
     public static final String USER_INPUT_LANGUAGE = "language";
     private static final String USER_INPUT_GRAMMAR_RAW = "raw";
     private static final String USER_INPUT_GRAMMAR_SEGMENT = "segment";
-    private static final Set<String> WEAKAND_GRAMMARS = Set.of("weakAnd", "tokenize");
     private static final String USER_INPUT = "userInput";
     private static final String USER_QUERY = "userQuery";
     private static final String NON_EMPTY = "nonEmpty";
@@ -510,12 +509,12 @@ public class YqlParser implements Parser {
             item.setDistanceThreshold(distanceThreshold);
         }
         Integer hnswExploreAdditionalHits = getAnnotation(ast, HNSW_EXPLORE_ADDITIONAL_HITS,
-                Integer.class, null, "number of extra hits to explore for HNSW algorithm");
+                                                          Integer.class, null, "number of extra hits to explore for HNSW algorithm");
         if (hnswExploreAdditionalHits != null) {
             item.setHnswExploreAdditionalHits(hnswExploreAdditionalHits);
         }
         Boolean allowApproximate = getAnnotation(ast, APPROXIMATE,
-                Boolean.class, Boolean.TRUE, "allow approximate nearest neighbor search");
+                                                 Boolean.class, Boolean.TRUE, "allow approximate nearest neighbor search");
         item.setAllowApproximate(allowApproximate);
         String label = getAnnotation(ast, LABEL, String.class, null, "item label");
         if (label != null) {
@@ -727,7 +726,7 @@ public class YqlParser implements Parser {
     }
 
     private Item instantiatePhraseSegmentItem(String field, OperatorNode<ExpressionOperator> ast, boolean forcePhrase) {
-        Substring origin = getOrigin(ast);
+        Substring origin = getSubstring(ast);
         Boolean stem = getAnnotation(ast, STEM, Boolean.class, Boolean.TRUE, STEM_DESCRIPTION);
         Boolean andSegmenting = getAnnotation(ast, AND_SEGMENTING, Boolean.class, Boolean.FALSE,
                                               "setting for whether to force using AND for segments on and off");
@@ -770,11 +769,17 @@ public class YqlParser implements Parser {
             if (word.getOperator() == ExpressionOperator.CALL) {
                 List<String> names = word.getArgument(0);
                 switch (names.get(0)) {
-                case EQUIV:
-                    near.addItem(instantiateEquivItem(field, word));
-                    break;
-                default:
-                    throw new IllegalArgumentException("Expected equiv, got: " + names.get(0));
+                    case EQUIV:
+                        near.addItem(instantiateEquivItem(field, word));
+                        break;
+                    case PHRASE:
+                        near.addItem(instantiatePhraseItem(field, word));
+                        break;
+                    case ALTERNATIVES:
+                        near.addItem(instantiateWordAlternativesItem(field, word));
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Expected " + EQUIV + ", " + PHRASE + ", or " + ALTERNATIVES + ", but got: " + names.get(0));
                 }
             } else {
                 near.addItem(instantiateWordItem(field, word, near.getClass()));
@@ -796,11 +801,17 @@ public class YqlParser implements Parser {
             if (word.getOperator() == ExpressionOperator.CALL) {
                 List<String> names = word.getArgument(0);
                 switch (names.get(0)) {
-                case EQUIV:
-                    onear.addItem(instantiateEquivItem(field, word));
-                    break;
-                default:
-                    throw new IllegalArgumentException("Expected equiv, got: " + names.get(0));
+                    case EQUIV:
+                        onear.addItem(instantiateEquivItem(field, word));
+                        break;
+                    case PHRASE:
+                        onear.addItem(instantiatePhraseItem(field, word));
+                        break;
+                    case ALTERNATIVES:
+                        onear.addItem(instantiateWordAlternativesItem(field, word));
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Expected " + EQUIV + ", " + PHRASE + ", or " + ALTERNATIVES + ", but got: " +names.get(0));
                 }
             } else {
                 onear.addItem(instantiateWordItem(field, word, onear.getClass()));
@@ -857,18 +868,32 @@ public class YqlParser implements Parser {
     }
 
     private QueryType buildQueryType(OperatorNode<ExpressionOperator> ast) {
+        var queryType = QueryType.from(Query.Type.WEAKAND);
+        if (userQuery != null) {
+            queryType = QueryType.from(userQuery.properties().getString("query.type"));
+            queryType = queryType.setComposite(userQuery.properties().getString("query.type.composite"));
+            queryType = queryType.setTokenization(userQuery.properties().getString("query.type.tokenization"));
+            queryType = queryType.setSyntax(userQuery.properties().getString("query.type.syntax"));
+            queryType = queryType.setYqlDefault(userQuery.properties().getBoolean("query.type.isYqlDefault"));
+        }
+        if ( ! queryType.isYqlDefault())
+            queryType = QueryType.from(Query.Type.WEAKAND);
+
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
-                                       Query.Type.WEAKAND.toString(), "The overall query type of the user input");
+                                       null, "The overall query type of the user input");
+        if (grammar != null)
+            queryType = QueryType.from(grammar);
+
         String composite = getAnnotation(ast, USER_INPUT_GRAMMAR_COMPOSITE, String.class,
                                          null, "The composite type terms should be collected under");
         String tokenization = getAnnotation(ast, USER_INPUT_GRAMMAR_TOKENIZATION, String.class,
                                             null, "The tokenization type to apply to the user input string");
         String syntax = getAnnotation(ast, USER_INPUT_GRAMMAR_SYNTAX, String.class,
                                       null, "The syntax type of the user input");
-
-        return QueryType.from(grammar).setComposite(composite)
-                                      .setTokenization(tokenization)
-                                      .setSyntax(syntax);
+        return queryType.setComposite(composite)
+                        .setTokenization(tokenization)
+                        .setSyntax(syntax)
+                        .setYqlDefault(queryType.isYqlDefault());
     }
 
     private Language decideParsingLanguage(OperatorNode<ExpressionOperator> ast, String wordData) {
@@ -1481,7 +1506,7 @@ public class YqlParser implements Parser {
             double exactness = value.getArgument(0, Double.class);
             terms.add(new WordAlternativesItem.Alternative(term, exactness));
         }
-        Substring origin = getOrigin(ast);
+        Substring origin = getSubstring(ast);
         Boolean isFromQuery = getAnnotation(ast, IMPLICIT_TRANSFORMS, Boolean.class, Boolean.TRUE,
                                             IMPLICIT_TRANSFORMS_DESCRIPTION);
         return leafStyleSettings(ast, new WordAlternativesItem(field, isFromQuery, origin, terms));
@@ -1534,13 +1559,12 @@ public class YqlParser implements Parser {
     // TODO: Clean up such that there is one way to look up an Index instance
     //       which always expands first, but not using getIndex, which performs checks that doesn't always work
     private Item instantiateWordItem(String field,
-                                     String rawWord,
+                                     String wordData,
                                      OperatorNode<ExpressionOperator> ast,
                                      Class<?> parent,
                                      SegmentWhen segmentPolicy,
                                      Boolean exactMatch,
                                      Language language) {
-        String wordData = rawWord;
         if (getAnnotation(ast, NFKC, Boolean.class, Boolean.FALSE,
                           "setting for whether to NFKC normalize input data")) {
             // NOTE: If this is set to FALSE (default), we will still NFKC normalize text data
@@ -1556,8 +1580,6 @@ public class YqlParser implements Parser {
         boolean substrMatch = getAnnotation(ast, SUBSTRING, Boolean.class, Boolean.FALSE,
                                             "setting for whether to use substring match of input data");
         boolean exact = exactMatch != null ? exactMatch : indexFactsSession.getIndex(indexNameExpander.expand(field)).isExact();
-        String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
-                                       Query.Type.WEAKAND.toString(), "grammar for handling word input");
         Preconditions.checkArgument((prefixMatch ? 1 : 0) +
                                     (substrMatch ? 1 : 0) + (suffixMatch ? 1 : 0) < 2,
                                     "Only one of prefix, substring and suffix can be set.");
@@ -1572,30 +1594,39 @@ public class YqlParser implements Parser {
         } else if (exact) {
             wordItem = new ExactStringItem(wordData, fromQuery);
         } else {
-            switch (segmentPolicy) {
-                case NEVER:
-                    wordItem = new WordItem(wordData, fromQuery);
-                    break;
-                case POSSIBLY:
-                    if (shouldSegment(field, fromQuery) && ! grammar.equals(USER_INPUT_GRAMMAR_RAW)) {
-                        wordItem = segment(field, ast, wordData, fromQuery, parent, language);
-                    } else {
-                        wordItem = new WordItem(wordData, fromQuery);
-                    }
-                    break;
-                case ALWAYS:
-                    wordItem = segment(field, ast, wordData, fromQuery, parent, language);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unexpected segmenting rule: " + segmentPolicy);
-            }
+            wordItem = instantiateWordItem(field, wordData, ast, parent, segmentPolicy, language);
         }
         if (wordItem instanceof WordItem) {
             prepareWord(field, ast, (WordItem) wordItem);
         }
         if (language != Language.ENGLISH) // mark the language used, unless it's the default
             ((Item)wordItem).setLanguage(language);
-        return (Item) leafStyleSettings(ast, wordItem);
+        return (Item)leafStyleSettings(ast, wordItem);
+    }
+
+    private TaggableItem instantiateWordItem(String field,
+                                             String wordData,
+                                             OperatorNode<ExpressionOperator> ast,
+                                             Class<?> parent,
+                                             SegmentWhen segmentPolicy,
+                                             Language language) {
+        String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
+                                       Query.Type.WEAKAND.toString(), "grammar for handling word input");
+        boolean fromQuery = getAnnotation(ast, IMPLICIT_TRANSFORMS,
+                                          Boolean.class, Boolean.TRUE, IMPLICIT_TRANSFORMS_DESCRIPTION);
+        switch (segmentPolicy) {
+            case NEVER:
+                return new WordItem(wordData, fromQuery);
+            case POSSIBLY:
+                if (shouldSegment(field, fromQuery) && ! grammar.equals(USER_INPUT_GRAMMAR_RAW))
+                    return segment(field, ast, wordData, fromQuery, parent, language);
+                else
+                    return new WordItem(wordData, fromQuery);
+            case ALWAYS:
+                return segment(field, ast, wordData, fromQuery, parent, language);
+            default:
+                throw new IllegalArgumentException("Unexpected segmenting rule: " + segmentPolicy);
+        }
     }
 
     private boolean shouldSegment(String field, boolean fromQuery) {
@@ -1605,23 +1636,22 @@ public class YqlParser implements Parser {
     private TaggableItem segment(String field, OperatorNode<ExpressionOperator> ast, String wordData,
                                  boolean fromQuery, Class<?> parent, Language language) {
         String toSegment = wordData;
-        Substring s = getOrigin(ast);
+        Substring substring = getSubstring(ast);
         Language usedLanguage = language == null ? currentlyParsing.getLanguage() : language;
-        if (s != null) {
-            toSegment = s.getValue();
+        if (substring != null) {
+            toSegment = substring.getValue();
         }
-        List<String> words = segmenter.segment(toSegment, usedLanguage);
-
+        List<String> segments = segmenter.segment(toSegment, usedLanguage);
         TaggableItem wordItem;
-        if (words.isEmpty()) {
+        if (segments.isEmpty()) {
             wordItem = new WordItem(wordData, fromQuery);
-        } else if (words.size() == 1 || !phraseArgumentSupported(parent)) {
-            wordItem = new WordItem(words.get(0), fromQuery);
+        } else if (segments.size() == 1 || !phraseSegmentChildSupported(parent)) {
+            wordItem = new WordItem(segments.get(0), fromQuery);
         } else {
             wordItem = new PhraseSegmentItem(toSegment, fromQuery, false);
             ((PhraseSegmentItem) wordItem).setIndexName(field);
-            for (String w : words) {
-                WordItem segment = new WordItem(w, fromQuery);
+            for (String s : segments) {
+                WordItem segment = new WordItem(s, fromQuery);
                 prepareWord(field, ast, segment);
                 ((PhraseSegmentItem) wordItem).addItem(segment);
             }
@@ -1630,8 +1660,11 @@ public class YqlParser implements Parser {
         return wordItem;
     }
 
-    private boolean phraseArgumentSupported(Class<?> parent) {
+    private boolean phraseSegmentChildSupported(Class<?> parent) {
         if (parent == null) return true;
+
+        if (parent == NearItem.class) return true;
+        if (parent == ONearItem.class) return true;
 
         // not supported in backend, but the container flattens the arguments itself:
         if (parent == PhraseItem.class) return true;
@@ -1855,7 +1888,7 @@ public class YqlParser implements Parser {
     }
 
     private void wordStyleSettings(OperatorNode<ExpressionOperator> ast, WordItem out) {
-        Substring origin = getOrigin(ast);
+        Substring origin = getSubstring(ast);
         if (origin != null) {
             out.setOrigin(origin);
         }
@@ -1899,11 +1932,9 @@ public class YqlParser implements Parser {
         return indexFactsSession.getCanonicName(index);
     }
 
-    private Substring getOrigin(OperatorNode<ExpressionOperator> ast) {
+    private Substring getSubstring(OperatorNode<ExpressionOperator> ast) {
         Map<?, ?> origin = getAnnotation(ast, ORIGIN, Map.class, null, ORIGIN_DESCRIPTION);
-        if (origin == null) {
-            return null;
-        }
+        if (origin == null) return null;
         String original = getMapValue(ORIGIN, origin, ORIGIN_ORIGINAL, String.class);
         int offset = getMapValue(ORIGIN, origin, ORIGIN_OFFSET, Integer.class);
         int length = getMapValue(ORIGIN, origin, ORIGIN_LENGTH, Integer.class);

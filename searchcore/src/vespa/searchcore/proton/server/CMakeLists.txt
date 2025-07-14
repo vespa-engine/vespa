@@ -10,6 +10,8 @@ vespa_add_library(searchcore_server STATIC
     clusterstatehandler.cpp
     combiningfeedview.cpp
     ddbstate.cpp
+    detached_rpc_request.cpp
+    detached_rpc_requests_owner.cpp
     disk_mem_usage_metrics.cpp
     disk_mem_usage_sampler.cpp
     docstorevalidator.cpp
@@ -81,6 +83,8 @@ vespa_add_library(searchcore_server STATIC
     operationdonecontext.cpp
     persistencehandlerproxy.cpp
     prepare_restart_handler.cpp
+    prepare_restart_rpc_handler.cpp
+    prepare_restart2_rpc_handler.cpp
     proton.cpp
     proton_config_fetcher.cpp
     proton_config_snapshot.cpp
@@ -107,6 +111,7 @@ vespa_add_library(searchcore_server STATIC
     searchhandlerproxy.cpp
     searchview.cpp
     sequenced_task_executor_explorer.cpp
+    set_flush_strategy_rpc_handler.cpp
     shared_threading_service.cpp
     shared_threading_service_config.cpp
     simpleflush.cpp

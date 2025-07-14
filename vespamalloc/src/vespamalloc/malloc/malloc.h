@@ -239,8 +239,10 @@ void * MemoryManager<MemBlockPtrT, ThreadListT>::realloc(void *oldPtr, size_t sz
     if (oldPtr == nullptr) return malloc(sz);
     if ( ! _segment.containsPtr(oldPtr)) {
         void * ptr = malloc(sz);
-        size_t oldBlockSize = _mmapPool.get_size(MemBlockPtrT(oldPtr).rawPtr());
-        memcpy(ptr, oldPtr, MemBlockPtrT::unAdjustSize(oldBlockSize));
+        const size_t oldBlockSize = _mmapPool.get_size(MemBlockPtrT(oldPtr).rawPtr());
+        // `realloc` shall preserve buffer contents up to and including the _minimum_ of the old and new sizes.
+        const size_t preserve_mem_sz = std::min(sz, MemBlockPtrT::unAdjustSize(oldBlockSize));
+        memcpy(ptr, oldPtr, preserve_mem_sz);
         _mmapPool.unmap(MemBlockPtrT(oldPtr).rawPtr());
         return ptr;
     }
@@ -265,6 +267,7 @@ void * MemoryManager<MemBlockPtrT, ThreadListT>::realloc(void *oldPtr, size_t sz
             ptr = oldPtr;
         }
     } else {
+        // FIXME what are the semantics of this? Should this even be allowed?
         ptr = malloc(sz);
         memcpy(ptr, oldPtr, sz);
     }

@@ -162,7 +162,7 @@ long GetRelevancy(Result& result_handle);
  *    based on the same content and analysis.
  *  @return The generated Teaser object. This object is valid until result_handle is deleted.
  */
-Summary* GetTeaser(Result& result_handle, const Config* alt_config = NULL);
+Summary* GetTeaser(Result& result_handle, const Config* alt_config = nullptr);
 
 /** Retrieve log information based on the previous calls to this result handle.
  *  Note that for the log to be complete, the juniper log override entry in

@@ -1255,6 +1255,10 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         return JsonResponse.createWithPath(request, handler, tensorOptions);
     }
 
+    private static VisitorContinuation continuationFromToken(ProgressToken token) {
+        return new VisitorContinuation(token.serializeToString(), token.percentFinished());
+    }
+
     @SuppressWarnings("fallthrough")
     private void visit(HttpRequest request, VisitorParameters parameters, boolean streaming, boolean fullyApplied,
                        ResponseHandler handler, VisitCallback callback) {
@@ -1282,9 +1286,9 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                             long statsDocCount = (getVisitorStatistics() != null ? getVisitorStatistics().getDocumentsVisited() : 0);
                             response.writeDocumentCount(parameters.getLocalDataHandler() != null ? locallyReceivedDocCount.get() : statsDocCount);
 
-                            if (session.get() != null)
+                            if (session.get() != null) {
                                 response.writeTrace(session.get().getTrace());
-
+                            }
                             int status = Status.INTERNAL_SERVER_ERROR;
                             switch (code) {
                                 case TIMEOUT: // Intentional fallthrough.
@@ -1298,8 +1302,13 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                 case SUCCESS:
                                     if (error.get() == null) {
                                         ProgressToken progress = getProgress() != null ? getProgress() : parameters.getResumeToken();
-                                        if (progress != null && ! progress.isFinished())
-                                            response.writeEpilogueContinuation(progress.serializeToString());
+                                        if (progress != null) {
+                                            if (progress.isFinished()) {
+                                                response.writeEpilogueContinuation(VisitorContinuation.FINISHED);
+                                            } else {
+                                                response.writeEpilogueContinuation(continuationFromToken(progress));
+                                            }
+                                        }
 
                                         status = Response.Status.OK;
                                         break;
@@ -1320,7 +1329,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                 @Override public void onProgress(ProgressToken token) {
                     super.onProgress(token);
                     if (streaming) {
-                        loggingException(() -> response.reportUpdatedContinuation(token::serializeToString));
+                        loggingException(() -> response.reportUpdatedContinuation(() -> continuationFromToken(token)));
                     }
                 }
             };

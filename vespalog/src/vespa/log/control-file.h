@@ -21,7 +21,7 @@ private:
     enum Mode _mode;
     std::string _fileName;
     void ensureHeader();
-    bool hasPrefix() { return (_prefix != NULL &&
+    bool hasPrefix() { return (_prefix != nullptr &&
                                _prefix[0] != '\0' &&
                                _prefix[0] != ' ' &&
                                _prefix[0] != '\n'); }

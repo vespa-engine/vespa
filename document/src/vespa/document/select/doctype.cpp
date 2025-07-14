@@ -27,14 +27,14 @@ DocType::DocType(std::string_view doctype)
 ResultList
 DocType::contains(const Context &context) const
 {
-    if (context._doc != NULL) {
+    if (context._doc != nullptr) {
         const Document &doc = *context._doc;
         return
             ResultList(Result::get(
                 documentTypeEqualsName(doc.getType(),
                                        _doctype)));
     }
-    if (context._docId != NULL) {
+    if (context._docId != nullptr) {
         return ResultList(Result::get((context._docId->getDocType() == _doctype)));
     }
     const DocumentUpdate &upd(*context._docUpdate);
@@ -46,12 +46,12 @@ ResultList
 DocType::trace(const Context& context, std::ostream& out) const
 {
     ResultList result = contains(context);
-    if (context._doc != NULL) {
+    if (context._doc != nullptr) {
         const Document &doc = *context._doc;
         out << "DocType - Doc is type " << doc.getType()
             << ", wanted " << _doctype << ", returning "
             << result << ".\n";
-    } else if (context._docId != NULL) {
+    } else if (context._docId != nullptr) {
         out << "DocType - Doc is type (document id -- unknown type)"
             << ", wanted " << _doctype << ", returning "
             << result << ".\n";

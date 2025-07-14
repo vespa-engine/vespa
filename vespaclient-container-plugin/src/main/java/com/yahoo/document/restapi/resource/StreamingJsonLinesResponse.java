@@ -46,7 +46,7 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
     private final ResponseWriter responseWriter;
     private final JsonFormat.EncodeOptions tensorOptions;
     private final Object lock = new Object();
-    private String pendingContinuation = null;
+    private VisitorContinuation pendingContinuation = null;
 
     public StreamingJsonLinesResponse(ResponseWriter responseWriter, JsonFormat.EncodeOptions tensorOptions) {
         this.responseWriter = responseWriter;
@@ -112,7 +112,7 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
     }
 
     @Override
-    public void reportUpdatedContinuation(Supplier<String> token) throws IOException {
+    public void reportUpdatedContinuation(Supplier<VisitorContinuation> continuationSupplier) throws IOException {
         // Continuation token updates happen within the context of the main visitor session lock,
         // so we cannot directly write the token here, or we risk forming a following locking cycle
         // with the jDisc response queue lock:
@@ -127,11 +127,11 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
         // it this way we avoid duplicate token updates upon session close, as that will otherwise
         // first give a token update, then write the epilogue token (iff the session has not
         // already completed).
-        String tokenStr = token.get();
+        VisitorContinuation continuation = continuationSupplier.get();
         synchronized (lock) {
             // It's OK to overwrite any existing pending continuation token since updates are
             // strictly ordered and later updates shall subsume previous updates.
-            pendingContinuation = tokenStr;
+            pendingContinuation = continuation;
         }
     }
 
@@ -152,20 +152,25 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
         }
     }
 
-    private void appendContinuationToken(JsonGenerator json, String token) throws IOException {
+    private void appendContinuationToken(JsonGenerator json, VisitorContinuation continuation) throws IOException {
         json.writeStartObject();
         json.writeFieldName(JsonNames.CONTINUATION);
-        json.writeString(token);
+        json.writeStartObject();
+        if (continuation.hasRemaining()) {
+            json.writeFieldName(JsonNames.TOKEN);
+            json.writeString(continuation.token());
+        }
+        json.writeFieldName(JsonNames.PERCENT_FINISHED);
+        json.writeNumber(continuation.percentFinished());
+        json.writeEndObject();
         json.writeEndObject();
     }
 
     @Override
-    public void writeEpilogueContinuation(String token) throws IOException {
+    public void writeEpilogueContinuation(VisitorContinuation continuation) throws IOException {
         writeJsonLine((json) -> {
-            appendContinuationToken(json, token);
+            appendContinuationToken(json, continuation);
         });
-        // TODO this is not called if the session is finished; should we emit an explicit
-        //  "session finished" (perhaps with visitor stats?) demarcation entry?
     }
 
     @Override

@@ -24,7 +24,7 @@ bool set_bool_opt(int fd, int level, int name, bool value) {
 bool
 SocketOptions::set_blocking(int fd, bool value)
 {
-    int flags = fcntl(fd, F_GETFL, NULL);
+    int flags = fcntl(fd, F_GETFL, nullptr);
     if (flags != -1) {
         if (value) {
             flags &= ~O_NONBLOCK; // clear non-blocking flag

@@ -82,7 +82,7 @@ main(int argc, char** argv)
 
     // filter the input
     char *line    = new char[bufsize];
-    assert(line != NULL);
+    assert(line != nullptr);
     int   res;
     char *tmp;
     char *url;
@@ -91,7 +91,7 @@ main(int argc, char** argv)
     int   idx;
     int   outIdx;
     char *buf     = new char[bufsize];
-    assert(buf != NULL);
+    assert(buf != nullptr);
     int   state; // 0=expect param name, 1=copy, 2=skip
     bool  gotQuery;
     memcpy(buf, prefix, prefixlen);
@@ -99,18 +99,18 @@ main(int argc, char** argv)
 
         // find field beginning
         tmp = strstr(line, beginToken);
-        startIdx = (tmp != NULL) ? (tmp - line) + beginTokenlen : 0;
+        startIdx = (tmp != nullptr) ? (tmp - line) + beginTokenlen : 0;
 
         // find url beginning
         url = strstr(line + startIdx, trigger);
-        if (url == NULL)
+        if (url == nullptr)
             continue;                                // CONTINUE
 
         // find field end
         tmp = strstr(line + startIdx, endToken);
-        if (tmp == NULL)
+        if (tmp == nullptr)
             tmp = strstr(line + startIdx, "\"");
-        endIdx = (tmp != NULL) ? (tmp - line) : strlen(line);
+        endIdx = (tmp != nullptr) ? (tmp - line) : strlen(line);
 
         // find params
         idx = (url - line) + triggerlen;

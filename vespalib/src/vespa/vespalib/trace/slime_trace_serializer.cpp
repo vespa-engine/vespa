@@ -22,7 +22,7 @@ SlimeTraceSerializer::visit(const TraceNode & node)
 {
     assert(!_cursors.empty());
     Cursor * current(_cursors.top());
-    assert(current != NULL);
+    assert(current != nullptr);
     _cursors.pop();
     addTimestamp(*current, node);
     addPayload(*current, node);

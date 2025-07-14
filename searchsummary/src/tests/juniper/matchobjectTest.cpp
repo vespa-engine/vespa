@@ -73,7 +73,7 @@ TEST(MatchObjectTest, testTerm) {
 TEST(MatchObjectTest, testMatch) {
     // Check that we hit on the longest match first
     juniper::QueryParser p("AND(junipe,juniper)");
-    juniper::QueryHandle qh(p, NULL);
+    juniper::QueryHandle qh(p, nullptr);
 
     MatchObject*    mo = qh.MatchObj();
     juniper::Result res(*juniper::TestConfig, qh, "", 0);
@@ -118,7 +118,7 @@ TEST(MatchObjectTest, testMatch) {
                                     "extremelylongwordhit))");
         QueryHandle&      qh1(q._qhandle);
         juniper::Result   res1(*juniper::TestConfig, qh1, doc.c_str(), doc.size());
-        juniper::Summary* sum = res1.GetTeaser(NULL);
+        juniper::Summary* sum = res1.GetTeaser(nullptr);
         std::string       s(sum->Text());
         EXPECT_EQ(s, "A simple document with an <b>extremelylongwordhit</b> in the middle"
                        " of it that islong enough to allow...triggered "
@@ -141,7 +141,7 @@ TEST(MatchObjectTest, testMatchAnnotated) {
     TestQuery         q("AND(big,buy)");
     QueryHandle&      qh1(q._qhandle);
     juniper::Result   res1(*juniper::TestConfig, qh1, doc, strlen(doc));
-    juniper::Summary* sum = res1.GetTeaser(NULL);
+    juniper::Summary* sum = res1.GetTeaser(nullptr);
     std::string       s(sum->Text());
 
     EXPECT_EQ(s, "A <b>big</b> and ugly teaser about <b>"

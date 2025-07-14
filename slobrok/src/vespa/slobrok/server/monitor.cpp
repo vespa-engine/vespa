@@ -28,7 +28,7 @@ Monitor::~Monitor()
 void
 Monitor::enable(FRT_Target *monitorTarget)
 {
-    assert(monitorTarget != NULL);
+    assert(monitorTarget != nullptr);
     Unschedule();
     disconnect();
     _enabled = true;

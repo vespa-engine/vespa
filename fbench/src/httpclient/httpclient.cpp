@@ -51,7 +51,7 @@ HTTPClient::HTTPClient(vespalib::CryptoEngine::SP engine, const char *hostname, 
     _chunkLeft(0),
     _dataRead(0),
     _dataDone(false),
-    _reader(NULL)
+    _reader(nullptr)
 {
 }
 

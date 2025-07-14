@@ -305,7 +305,6 @@ public final class Version implements Comparable<Version> {
      * A version is considered to be <b>equal to </b> another version if the
      * major, minor and micro components are equal and the qualifier component
      * is equal (using <code>String.equals</code>).
-     * <p>
      *
      * @param object The <code>Version</code> object to be compared.
      * @return <code>true</code> if <code>object</code> is a

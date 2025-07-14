@@ -355,11 +355,12 @@ public class DistributorTest {
                         </group>
                       </content>
                       """;
-        assertEquals(-1, parseAndGetConfig(services).max_document_operation_message_size_bytes());
+        var miB = 1024 * 1024;
+        assertEquals(128 * miB, parseAndGetConfig(services).max_document_operation_message_size_bytes());
 
-        assertEquals(1024 * 1024 * 1024, parseAndGetConfig(createServices("1024MiB")).max_document_operation_message_size_bytes());
-        assertEquals(1024 * 1024 * 1024, parseAndGetConfig(createServices("1024M")).max_document_operation_message_size_bytes());
-        assertEquals(1024 * 1024 * 1024, parseAndGetConfig(createServices("1024Mb")).max_document_operation_message_size_bytes());
+        assertEquals(1024 * miB, parseAndGetConfig(createServices("1024MiB")).max_document_operation_message_size_bytes());
+        assertEquals(1024 * miB, parseAndGetConfig(createServices("1024M")).max_document_operation_message_size_bytes());
+        assertEquals(1024 * miB, parseAndGetConfig(createServices("1024Mb")).max_document_operation_message_size_bytes());
 
         assertThrows(IllegalArgumentException.class,
                      () -> parseAndGetConfig(createServices("3gb")).max_document_operation_message_size_bytes(),

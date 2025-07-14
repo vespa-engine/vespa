@@ -7,7 +7,7 @@ void * thread_alloc(void * arg)
 {
     char * v = new char [*static_cast<int *>(arg)];
     delete [] v;
-    return NULL;
+    return nullptr;
 }
 
 int main(int argc, char **argv) {
@@ -24,11 +24,11 @@ int main(int argc, char **argv) {
     for (int i(0); i < numThreads; ) {
         for (int j(0); (i < numThreads) && j < 10000; i++, j++) {
             pthread_t thread;
-            if (pthread_create(&thread, NULL, thread_alloc, &allocSize) != 0) {
+            if (pthread_create(&thread, nullptr, thread_alloc, &allocSize) != 0) {
                 LOG(error, "Failed to create thread");
                 return 1;
             }
-            if (pthread_join(thread, NULL) != 0) {
+            if (pthread_join(thread, nullptr) != 0) {
                 LOG(error, "Failed to join thread");
                 return 1;
             }

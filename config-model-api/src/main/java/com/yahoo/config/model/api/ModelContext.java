@@ -114,12 +114,13 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default int documentV1QueueSize() { return -1; /* use default from config def */ }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxContentNodeMaintenanceOpConcurrency() { return -1; }
-        @ModelFeatureFlag(owners = {"vekterli"}) default int maxDistributorDocumentOperationSizeMib() { return -1; }
+        @ModelFeatureFlag(owners = {"vekterli"}) default int maxDistributorDocumentOperationSizeMib() { return 128; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default Object sidecarsForTest() { return null; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean useTriton() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default long searchCoreTransactionLogReplaySoftMemoryLimit() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean useNewPrepareForRestart() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchNodeInitializerThreads() { return 0; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

@@ -11,6 +11,7 @@ class FNET_Transport;
 
 namespace proton {
 
+class DetachedRpcRequestsOwner;
 class Proton;
 
 class RPCHooksBase : public FRT_Invokable
@@ -20,6 +21,7 @@ private:
 
     Proton                         & _proton;
     std::unique_ptr<FNET_Transport>  _transport;
+    std::shared_ptr<DetachedRpcRequestsOwner> _detached_requests_owner;
     std::unique_ptr<FRT_Supervisor>  _orb;
     std::unique_ptr<ProtoRpcAdapter> _proto_rpc_adapter;
     slobrok::api::RegisterAPI        _regAPI;
@@ -29,6 +31,7 @@ private:
 
     void triggerFlush(FRT_RPCRequest *req);
     void prepareRestart(FRT_RPCRequest *req);
+    void prepareRestart2(FRT_RPCRequest *req);
     void reportState(FRT_RPCRequest * req) __attribute__((noinline));
     void getProtonStatus(FRT_RPCRequest * req);
 
@@ -57,6 +60,7 @@ public:
     void rpc_GetProtonStatus(FRT_RPCRequest *req);
     void rpc_triggerFlush(FRT_RPCRequest *req);
     void rpc_prepareRestart(FRT_RPCRequest *req);
+    void rpc_prepareRestart2(FRT_RPCRequest *req);
 protected:
     void open(Params & params);
 };

@@ -202,7 +202,7 @@ BufferedLogger::BufferedLogger()
 
 BufferedLogger::~BufferedLogger()
 {
-    delete _backing; _backing = NULL;
+    delete _backing; _backing = nullptr;
 }
 
 namespace {

@@ -99,7 +99,7 @@ public:
         }
         Executor::Task::UP wrapper(new TaskWrapper(std::move(task), gate));
         Executor::Task::UP ok = _executor.execute(std::move(wrapper));
-        assert(ok.get() == NULL);
+        assert(ok.get() == nullptr);
     }
 };
 
@@ -291,7 +291,7 @@ TEST(AttributeFlushTest, require_that_updater_and_flusher_can_run_concurrently)
 {
     Fixture f;
     AttributeManager &am = f._m;
-    EXPECT_TRUE(f.addAttribute("a1").get() != NULL);
+    EXPECT_TRUE(f.addAttribute("a1").get() != nullptr);
     IFlushTarget::SP ft = am.getFlushable("a1");
     (static_cast<FlushableAttribute *>(ft.get()))->setCleanUpAfterFlush(false);
     UpdaterTask updaterTask(am);
@@ -343,12 +343,12 @@ TEST(AttributeFlushTest, require_that_flushable_attribute_manages_sync_token_inf
 
     IndexMetaInfo info("flush/a3");
     EXPECT_EQ(0u, fa->getFlushedSerialNum());
-    EXPECT_TRUE(fa->initFlush(0, std::make_shared<search::FlushToken>()).get() == NULL);
+    EXPECT_TRUE(fa->initFlush(0, std::make_shared<search::FlushToken>()).get() == nullptr);
     EXPECT_TRUE(!info.load());
 
     av->commit(CommitParam(10)); // last sync token = 10
     EXPECT_EQ(0u, fa->getFlushedSerialNum());
-    EXPECT_TRUE(fa->initFlush(10, std::make_shared<search::FlushToken>()).get() != NULL);
+    EXPECT_TRUE(fa->initFlush(10, std::make_shared<search::FlushToken>()).get() != nullptr);
     fa->initFlush(10, std::make_shared<search::FlushToken>())->run();
     EXPECT_EQ(10u, fa->getFlushedSerialNum());
     EXPECT_TRUE(info.load());

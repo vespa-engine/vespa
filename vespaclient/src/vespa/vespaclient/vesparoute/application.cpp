@@ -64,7 +64,7 @@ Application::main(int argc, char **argv)
             throw InvalidConfigException(fmt("There is no routing table for protocol '%s'.", _params.getProtocol().c_str()));
         }
         for (const std::string & hop : _params.getHops()) {
-            if (table->getHop(hop) == NULL) {
+            if (table->getHop(hop) == nullptr) {
                 throw InvalidConfigException(fmt("There is no hop named '%s' for protocol '%s'.", hop.c_str(), _params.getProtocol().c_str()));
             }
         }
@@ -479,7 +479,7 @@ bool
 Application::isService(FRT_Supervisor &frt, const std::string &spec) const
 {
     FRT_Target *target = frt.GetTarget(spec.c_str());
-    if (target == NULL) {
+    if (target == nullptr) {
         return false;
     }
     FRT_RPCRequest *req = frt.AllocRPCRequest();
@@ -510,7 +510,7 @@ mbus::HopBlueprint
 Application::getHop(const std::string &str) const
 {
     const mbus::HopBlueprint *ret = _mbus->getRoutingTable(_params.getProtocol())->getHop(str);
-    if (ret == NULL) {
+    if (ret == nullptr) {
         return mbus::HopBlueprint(mbus::HopSpec("anonymous", str));
     }
     return *ret;
@@ -520,7 +520,7 @@ mbus::Route
 Application::getRoute(const std::string &str) const
 {
     const mbus::Route *ret = _mbus->getRoutingTable(_params.getProtocol())->getRoute(str);
-    if (ret != NULL) {
+    if (ret != nullptr) {
         return *ret;
     }
     return mbus::Route::parse(str);

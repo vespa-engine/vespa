@@ -127,7 +127,7 @@ ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri &uri)
         std::cerr << e.getMessage() << std::endl;
     }
 
-    if (_cfg.get() == NULL) {
+    if (_cfg.get() == nullptr) {
         std::cerr << "FATAL ERROR: failed to get model configuration." << std::endl;
         std::_Exit(1);
     }

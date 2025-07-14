@@ -235,18 +235,18 @@ TEST_F(IdentifiableTest, test_identifiable)
     EXPECT_EQ(strcmp(rtcB.name(), "B"), 0);
 
     const Identifiable::RuntimeClass * rt(Identifiable::classFromId(0x1ab76245));
-    ASSERT_TRUE(rt == NULL);
+    ASSERT_TRUE(rt == nullptr);
     rt = Identifiable::classFromId(Abstract::classId);
-    ASSERT_TRUE(rt != NULL);
+    ASSERT_TRUE(rt != nullptr);
     Identifiable * u = rt->create();
-    ASSERT_TRUE(u == NULL);
+    ASSERT_TRUE(u == nullptr);
     rt = Identifiable::classFromId(A::classId);
-    ASSERT_TRUE(rt != NULL);
+    ASSERT_TRUE(rt != nullptr);
     rt = Identifiable::classFromId(B::classId);
-    ASSERT_TRUE(rt != NULL);
+    ASSERT_TRUE(rt != nullptr);
 
     Identifiable * o = rt->create();
-    ASSERT_TRUE(o != NULL);
+    ASSERT_TRUE(o != nullptr);
 
     const Identifiable::RuntimeClass & rtc = o->getClass();
     ASSERT_TRUE(rtc.id() == B::classId);
@@ -267,11 +267,11 @@ TEST_F(IdentifiableTest, test_identifiable)
     delete o;
 
     rt = Identifiable::classFromName("NotBNorA");
-    ASSERT_TRUE(rt == NULL);
+    ASSERT_TRUE(rt == nullptr);
     rt = Identifiable::classFromName("B");
-    ASSERT_TRUE(rt != NULL);
+    ASSERT_TRUE(rt != nullptr);
     o = rt->create();
-    ASSERT_TRUE(o != NULL);
+    ASSERT_TRUE(o != nullptr);
     const Identifiable::RuntimeClass & rtc2 = o->getClass();
     ASSERT_TRUE(rtc2.id() == B::classId);
     ASSERT_TRUE(strcmp(rtc2.name(), "B") == 0);
@@ -282,7 +282,7 @@ TEST_F(IdentifiableTest, test_identifiable)
     ASSERT_TRUE(o->getClass().id() == B::classId);
     delete o;
 
-    IdentifiablePtr<C> c0(NULL);
+    IdentifiablePtr<C> c0(nullptr);
     IdentifiablePtr<C> c1(new C(10));
     IdentifiablePtr<C> c2(new C(20));
 

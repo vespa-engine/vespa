@@ -1560,12 +1560,12 @@ public class ContentClusterTest extends ContentBaseTest {
     @Test
     void distributor_max_document_operation_size_config_is_controlled_by_properties() throws Exception {
         int mi = 1024 * 1024;
-        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(null)); // defaults to -1
-        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(-2));
-        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(0));
-        assertEquals(100*mi,  resolveMaxDistributorDocOperationSizeConfig(100));
-        assertEquals(2047*mi, resolveMaxDistributorDocOperationSizeConfig(2047));
-        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(2048));
+        assertEquals( 128 * mi, resolveMaxDistributorDocOperationSizeConfig(null)); // defaults to 134217728 (128 MiB)
+        assertEquals( 128 * mi, resolveMaxDistributorDocOperationSizeConfig(-2));
+        assertEquals( 128 * mi, resolveMaxDistributorDocOperationSizeConfig(0));
+        assertEquals( 100 * mi, resolveMaxDistributorDocOperationSizeConfig(100));
+        assertEquals(2047 * mi, resolveMaxDistributorDocOperationSizeConfig(2047));
+        assertEquals( 128 * mi, resolveMaxDistributorDocOperationSizeConfig(2048));
     }
 
     @Test
@@ -1711,6 +1711,26 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals( 0L,       inferTxnLogReplayMemoryLimitFromFlag(0L));
         assertEquals(-10L,      inferTxnLogReplayMemoryLimitFromFlag(-10L));
         assertEquals( 1234567L, inferTxnLogReplayMemoryLimitFromFlag(1234567L));
+    }
+
+
+    private int inferSearchCoreMaxOutstandingMoveOps(Integer flagValueOrNull) {
+        var props = new TestProperties();
+        if (flagValueOrNull != null) {
+            props.setSearchCoreMaxOutstandingMoveOps(flagValueOrNull);
+        }
+        VespaModel model = createEnd2EndOneNode(props);
+        ContentCluster cc = model.getContentClusters().get("storage");
+        var builder = new ProtonConfig.Builder();
+        cc.getSearch().getConfig(builder);
+        var cfg = new ProtonConfig(builder);
+        return cfg.maintenancejobs().maxoutstandingmoveops();
+    }
+
+    @Test
+    void search_core_max_outstanding_move_ops_is_configurable_via_feature_flag() {
+        assertEquals(100, inferSearchCoreMaxOutstandingMoveOps(null)); // Default is 100
+        assertEquals(8, inferSearchCoreMaxOutstandingMoveOps(8));
     }
 
     private int inferSearchNodeInitializerThreadsFromFlag(Integer flagValueOrNull) {

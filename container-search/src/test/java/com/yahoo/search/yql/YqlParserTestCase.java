@@ -493,7 +493,7 @@ public class YqlParserTestCase {
         assertEquals("yoni jo dima", ((WordItem) root).getWord());
 
         root = parse("select foo from bar where {grammar:\"all\"}userInput(\"yoni jo dima\")").getRoot();
-        assertTrue(root instanceof AndItem);
+        assertInstanceOf(AndItem.class, root);
         AndItem andItem = (AndItem) root;
         assertEquals(3, andItem.getItemCount());
 
@@ -525,6 +525,15 @@ public class YqlParserTestCase {
             assertTrue(childWord.isStemmed());
             assertFalse(childWord.isNormalizable());
         }
+    }
+
+    @Test
+    void testPhraseSegmentsInNear() {
+        assertEquals("NEAR(2) default:'a b' default:c",
+                     parse("SELECT * FROM sources * WHERE (default contains near('a-b','c'))").getRoot().toString());
+
+        assertEquals("ONEAR(2) default:'a b' default:c",
+                     parse("SELECT * FROM sources * WHERE (default contains onear('a-b','c'))").getRoot().toString());
     }
 
     @Test
