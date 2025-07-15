@@ -196,7 +196,6 @@ public class SchemaParserTest {
             "../../../config-model/src/test/examples/invalidngram1.sd",
             "../../../config-model/src/test/examples/invalidngram2.sd",
             "../../../config-model/src/test/examples/invalidngram3.sd",
-            "../../../config-model/src/test/examples/largerankingexpressions/rankexpression.sd",
             "../../../config-model/src/test/examples/multiplesummaries.sd",
             "../../../config-model/src/test/examples/nextgen/boldedsummaryfields.sd",
             "../../../config-model/src/test/examples/nextgen/dynamicsummaryfields.sd",
@@ -219,7 +218,6 @@ public class SchemaParserTest {
             "../../../config-model/src/test/examples/position_extra.sd",
             "../../../config-model/src/test/examples/position_index.sd",
             "../../../config-model/src/test/examples/position_summary.sd",
-            "../../../config-model/src/test/examples/rankingexpressionfunction/rankingexpressionfunction.sd",
             "../../../config-model/src/test/examples/rankingexpressioninfile/rankingexpressioninfile.sd",
             "../../../config-model/src/test/examples/rankmodifier/literal.sd",
             "../../../config-model/src/test/examples/rankpropvars.sd",
@@ -309,9 +307,11 @@ public class SchemaParserTest {
             new BadFileTestCase("../../../config-model/src/test/examples/invalidimplicitsummarysource.sd", 1),
             new BadFileTestCase("../../../config-model/src/test/examples/invalidselfreferringsummary.sd", 1),
             new BadFileTestCase("../../../config-model/src/test/examples/invalidsummarysource.sd", 1),
+            new BadFileTestCase("../../../config-model/src/test/examples/largerankingexpressions/rankexpression.sd", 2),
+            new BadFileTestCase("../../../config-model/src/test/examples/rankingexpressionfunction/rankingexpressionfunction.sd", 2),
             new BadFileTestCase("../../../config-model/src/test/examples/stemmingresolver.sd", 1),
-            new BadFileTestCase("../../../config-model/src/test/derived/rankingexpression/rankexpression.sd", 7),
-            new BadFileTestCase("../../../config-model/src/test/derived/renamedfeatures/foo.sd", 1),
+            new BadFileTestCase("../../../config-model/src/test/derived/rankingexpression/rankexpression.sd", 30),
+            new BadFileTestCase("../../../config-model/src/test/derived/renamedfeatures/foo.sd", 4),
 
             new BadFileTestCase("../../../config-model/src/test/derived/rankprofiles/rankprofiles.sd", 1), // only throws a warning during vespa deploy, but it is an unresolved reference case.
 

@@ -91,9 +91,9 @@ public class BuiltInFunctions {
             "absoluteProximity",
             "occurrence",
             "absoluteOccurrence",
-            "weightedOccureence",
-            "weightedAbsoluteOccurence",
-            "significantOccurence",
+            "weightedOccurrence",
+            "weightedAbsoluteOccurrence",
+            "significantOccurrence",
         
         // ==== Feild match features - normalized and relative to the whole query ====
             "weight",
@@ -344,8 +344,8 @@ public class BuiltInFunctions {
         )));
 
         // === ML Model features ===
-        put("onnx", new GenericFunction("onnx", new FunctionSignature(new SymbolArgument(SymbolType.ONNX_MODEL, "onnx-model"))));
-        put("onnxModel", new GenericFunction("onnxModel", new FunctionSignature(new SymbolArgument(SymbolType.ONNX_MODEL, "onnx-model"))));
+        put("onnx", new GenericFunction("onnx", new FunctionSignature(new SymbolArgument(SymbolType.ONNX_MODEL, "onnx-model")).withAnyProperty()));
+        put("onnxModel", new GenericFunction("onnxModel", new FunctionSignature(new SymbolArgument(SymbolType.ONNX_MODEL, "onnx-model")).withAnyProperty()));
         put("lightgbm", new GenericFunction("lightgbm", new FunctionSignature(new StringArgument("\"lightgbm-model-name\""))));
         put("xgboost", new GenericFunction("xgboost", new FunctionSignature(new StringArgument("\"xgboost-model-name\""))));
 

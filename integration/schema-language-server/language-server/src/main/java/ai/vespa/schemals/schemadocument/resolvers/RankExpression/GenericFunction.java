@@ -100,6 +100,11 @@ public class GenericFunction {
             node.setFunctionSignature(new SpecificFunction(this, signature.get()));
             return diagnostics;
         }
+
+        if (signature.get().anyPropertyAllowed()) {
+            node.setFunctionSignature(new SpecificFunction(this, signature.get()));
+            return diagnostics;
+        }
         
         String availableProps = (signatureProps.size() == 0) ? "No one" : String.join(", ", signatureProps);
         if (!property.isPresent()) {
