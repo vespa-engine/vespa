@@ -10,6 +10,7 @@ vespa_add_executable(searchcore_proton_server_gtest_test_app TEST
     memory_flush_config_updater_test.cpp
     memoryconfigstore_test.cpp
     move_operation_limiter_test.cpp
+    prepare_restart2_rpc_handler_test.cpp
     threading_service_config_test.cpp
     DEPENDS
     searchcore_server

@@ -33,6 +33,8 @@ protected:
         static constexpr uint8_t timeout = 4;
         static constexpr uint8_t lost_conn = 5;
         static constexpr uint8_t missing_wait_strategy_id = 6;
+        static constexpr uint8_t lost_notifier = 7;
+        static constexpr uint8_t lost_owner = 8;
     };
     bool set_complete(uint8_t value) noexcept;
     uint8_t get_complete() const noexcept { return _completed.load(std::memory_order_acquire); }
