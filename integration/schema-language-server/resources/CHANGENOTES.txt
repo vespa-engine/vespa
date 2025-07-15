@@ -1,3 +1,2 @@
-- Improved completion in YQL files.
-- Added support for chunk in indexing expressions
-- Minor bug fixes.
+- Added support for 'elementwise' rank feature.
+- Improved ranking expression analysis and diagnostics.

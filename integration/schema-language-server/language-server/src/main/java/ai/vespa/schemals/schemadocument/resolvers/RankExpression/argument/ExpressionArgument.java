@@ -7,6 +7,9 @@ import org.eclipse.lsp4j.Diagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
+/**
+ * An argument representing any kind of ranking expression.
+ */
 public class ExpressionArgument implements Argument {
 
     private String displayStr = "EXPRESSION";

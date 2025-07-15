@@ -5,11 +5,11 @@ import java.util.Optional;
 import org.eclipse.lsp4j.Diagnostic;
 
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.index.Symbol;
-import ai.vespa.schemals.index.Symbol.SymbolStatus;
-import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
+/**
+ * An argument that can be any string.
+ */
 public class StringArgument implements Argument {
 
     private String displayStr = "STRING";
@@ -30,19 +30,7 @@ public class StringArgument implements Argument {
     
     @Override
     public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
-
-        Node leaf = node.getSchemaNode();
-
-        while (leaf.size() > 0) {
-            if (leaf.hasSymbol()) {
-                Symbol symbol = leaf.getSymbol();
-                if (symbol.getStatus() == SymbolStatus.REFERENCE) {
-                    context.schemaIndex().deleteSymbolReference(symbol);
-                }
-                leaf.removeSymbol();
-            }
-            leaf = leaf.get(0);
-        }
+        ArgumentUtils.removeNodeSymbols(context, node);
 
         return Optional.empty();
     }
