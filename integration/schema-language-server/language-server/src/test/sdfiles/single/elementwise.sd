@@ -1,0 +1,17 @@
+schema elementwise {
+    document elementwise {
+        field chunks type array<string> {
+            indexing: attribute | index
+        }
+    }
+    
+    rank-profile myprofile {
+        function chunk_func_default() {
+            expression: elementwise(bm25(chunks), dim)
+        }
+
+        function chunk_func_float() {
+            expression: elementwise(bm25(chunks), x, float)
+        }
+    }
+}

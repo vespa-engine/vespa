@@ -238,12 +238,13 @@ public class SchemaParserTest {
             /*
              * CUSTOM TESTS
              * */
-            "src/test/sdfiles/single/structinfieldset.sd",
             "src/test/sdfiles/single/attributeposition.sd",
             "src/test/sdfiles/single/defaultdefault.sd",
-            "src/test/sdfiles/single/subqueries.sd",
+            "src/test/sdfiles/single/elementwise.sd",
+            "src/test/sdfiles/single/embed.sd",
             "src/test/sdfiles/single/rankprofilebuiltin.sd",
-            "src/test/sdfiles/single/embed.sd"
+            "src/test/sdfiles/single/structinfieldset.sd",
+            "src/test/sdfiles/single/subqueries.sd",
         };
 
         return Arrays.stream(filePaths)
