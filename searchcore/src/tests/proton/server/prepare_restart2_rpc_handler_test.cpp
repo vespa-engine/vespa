@@ -45,38 +45,38 @@ std::string as_string(const FRT_StringValue& v)
 /*
  * Base class that supports waiting for destruction.
  */
-class DestroyedFutureFactoryBase {
-    std::promise<void>       _destroyed_promise;
-    std::shared_future<void> _destroyed_future;
+class DestructionFutureFactoryBase {
+    std::promise<void>       _destruction_promise;
+    std::shared_future<void> _destruction_future;
 public:
-    DestroyedFutureFactoryBase();
-    virtual ~DestroyedFutureFactoryBase();
-    [[nodiscard]] std::shared_future<void> get_destroyed_future() const noexcept { return _destroyed_future; }
+    DestructionFutureFactoryBase();
+    virtual ~DestructionFutureFactoryBase();
+    [[nodiscard]] std::shared_future<void> get_destruction_future() const noexcept { return _destruction_future; }
 };
 
-DestroyedFutureFactoryBase::DestroyedFutureFactoryBase()
-    : _destroyed_promise(),
-      _destroyed_future(_destroyed_promise.get_future().share())
+DestructionFutureFactoryBase::DestructionFutureFactoryBase()
+    : _destruction_promise(),
+      _destruction_future(_destruction_promise.get_future().share())
 {
 }
 
-DestroyedFutureFactoryBase::~DestroyedFutureFactoryBase()
+DestructionFutureFactoryBase::~DestructionFutureFactoryBase()
 {
-    _destroyed_promise.set_value();
+    _destruction_promise.set_value();
 }
 
 /*
  * Wrapper class that supports waiting for destruction.
  */
 template <class B>
-struct DestroyedFutureFactory : public DestroyedFutureFactoryBase,
-                                public B {
+struct DestructionFutureFactory : public DestructionFutureFactoryBase,
+                                  public B {
     using B::B;
-    ~DestroyedFutureFactory() override;
+    ~DestructionFutureFactory() override;
 };
 
 template <class B>
-DestroyedFutureFactory<B>::~DestroyedFutureFactory() = default;
+DestructionFutureFactory<B>::~DestructionFutureFactory() = default;
 
 /*
  * Shared context for DestructGuard, used to detect (premature) destruction
@@ -193,7 +193,7 @@ MyReturnHandler::HandleReturn()
     _returned = true;
     auto& v = *_req->GetReturn();
     ASSERT_EQ("bs", std::string(v.GetTypeString(), v.GetNumValues()));
-    _success = v[0]._intval8 == 1;
+    _success = (v[0]._intval8 == 1);
     _result = as_string(v[1]._string);
     _slime = Slime();
     EXPECT_EQ(_result.size(), JsonFormat::decode(_result, _slime));
@@ -338,7 +338,7 @@ PrepareRestart2RpcHandlerTest::test_handler(uint32_t wait_strategy_id, steady_cl
 {
     auto req_copy = vespalib::ref_counted_from(*_return_handler->_req);
     req_copy->Detach();
-    using Handler = DestroyedFutureFactory<PrepareRestart2RpcHandler>;
+    using Handler = DestructionFutureFactory<PrepareRestart2RpcHandler>;
     auto handler = std::make_shared<Handler>(_detached_rpc_requests_owner,
                                              std::move(req_copy),
                                              _notifier,
@@ -347,7 +347,7 @@ PrepareRestart2RpcHandlerTest::test_handler(uint32_t wait_strategy_id, steady_cl
                                              timeout,
                                              _history);
     handler->setup();
-    auto future = handler->get_destroyed_future();
+    auto future = handler->get_destruction_future();
     handler.reset();
     return future;
 }
