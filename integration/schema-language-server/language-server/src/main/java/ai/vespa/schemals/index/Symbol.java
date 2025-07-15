@@ -140,7 +140,8 @@ public class Symbol {
         REFERENCE,
         UNRESOLVED,
         INVALID,
-        BUILTIN_REFERENCE // reference to stuff like "default" that doesn't have a definition in our CSTs
+        BUILTIN_REFERENCE, // reference to stuff like "default" that doesn't have a definition in our CSTs
+        OPAQUE // a symbol that has a type but is neither a definition nor a reference, so not really a symbol - just something with a type.
     }
 
     public enum SymbolType {

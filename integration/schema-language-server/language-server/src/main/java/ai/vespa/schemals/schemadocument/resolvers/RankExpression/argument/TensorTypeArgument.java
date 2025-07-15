@@ -63,7 +63,7 @@ public class TensorTypeArgument implements Argument {
                     .build());
         }
 
-        ArgumentUtils.modifyNodeSymbol(context, node, err.isPresent() ? null : SymbolType.TENSOR_CELL_VALUE_TYPE, SymbolStatus.BUILTIN_REFERENCE);
+        ArgumentUtils.modifyNodeSymbol(context, node, err.isPresent() ? null : SymbolType.TENSOR_CELL_VALUE_TYPE, SymbolStatus.OPAQUE);
         return err;
     }
 }

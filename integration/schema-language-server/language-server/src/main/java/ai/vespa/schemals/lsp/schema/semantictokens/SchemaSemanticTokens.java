@@ -19,6 +19,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventDocumentContext;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.lsp.common.semantictokens.CommonSemanticTokens;
@@ -218,22 +219,24 @@ public class SchemaSemanticTokens {
 
         if (!node.hasSymbol()) return ret;
 
-        if (SchemaSemanticTokenConfig.userDefinedSymbolTypes.contains(node.getSymbol().getType()) && (
-            node.getSymbol().getStatus() == SymbolStatus.REFERENCE ||
-            node.getSymbol().getStatus() == SymbolStatus.DEFINITION
+        Symbol symbol = node.getSymbol();
+
+        if (SchemaSemanticTokenConfig.userDefinedSymbolTypes.contains(symbol.getType()) && (
+            symbol.getStatus() == SymbolStatus.REFERENCE ||
+            symbol.getStatus() == SymbolStatus.DEFINITION
         )) {
-            Integer tokenType = identifierTypeMap.get(node.getSymbol().getType());
+            Integer tokenType = identifierTypeMap.get(symbol.getType());
             
             if (tokenType != null) {
                 SemanticTokenMarker tokenMarker = new SemanticTokenMarker(tokenType, node);
-                if (node.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
+                if (symbol.getStatus() == SymbolStatus.DEFINITION) {
                     tokenMarker.addModifier(SemanticTokenModifiers.Definition);
                 }
                 ret.add(tokenMarker);
             }
 
-        } else if (node.hasSymbol() && node.getSymbol().getStatus() == SymbolStatus.BUILTIN_REFERENCE) {
-            SymbolType type = node.getSymbol().getType();
+        } else if (symbol.getStatus() == SymbolStatus.BUILTIN_REFERENCE) {
+            SymbolType type = symbol.getType();
             Integer tokenType = identifierTypeMap.get(type);
 
             if (type == SymbolType.FUNCTION && node.getLanguageType() == LanguageType.RANK_EXPRESSION) {
@@ -243,6 +246,14 @@ public class SchemaSemanticTokens {
             if (tokenType != null && tokenType != -1) {
                 SemanticTokenMarker tokenMarker = new SemanticTokenMarker(tokenType, node);
                 tokenMarker.addModifier(SemanticTokenModifiers.DefaultLibrary);
+                ret.add(tokenMarker);
+            }
+        } else if (symbol.getStatus() == SymbolStatus.OPAQUE) {
+            SymbolType type = symbol.getType();
+            Integer tokenType = identifierTypeMap.get(type);
+
+            if (tokenType != null && tokenType != -1) {
+                SemanticTokenMarker tokenMarker = new SemanticTokenMarker(tokenType, node);
                 ret.add(tokenMarker);
             }
         }
