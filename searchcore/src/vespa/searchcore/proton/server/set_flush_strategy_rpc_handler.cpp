@@ -55,7 +55,12 @@ SetFlushStrategyRpcHandler::setup()
     if (add_to_owner(self)) {
         if (add_to_notifier(self)) {
             ScheduleNow();
+        } else if (set_complete(Completed::lost_notifier)) {
+            remove_from_owner(self);
+            // Notifier is gone, rpc server should be gone too, do nothing
         }
+    } else if (set_complete(Completed::lost_owner)) {
+        // RPC server is gone, do nothing
     }
 }
 
