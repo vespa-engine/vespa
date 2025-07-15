@@ -3,7 +3,6 @@ package com.yahoo.vespa.athenz.api;
 
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 
-import java.net.URI;
 import java.util.Objects;
 
 /**
@@ -44,12 +43,6 @@ public class AthenzService implements AthenzIdentity {
     @Override
     public String getName() {
         return serviceName;
-    }
-
-    @Override
-    public URI spiffeUri() {
-        // spiffe://athenz.cloud/ns/default/sa/<athenz-domain>.<athenz-service>
-        return URI.create("spiffe://athenz.cloud/ns/default/sa/%s.%s".formatted(getDomainName(), serviceName));
     }
 
     @Override
