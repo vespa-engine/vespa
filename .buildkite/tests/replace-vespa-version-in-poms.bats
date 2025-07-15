@@ -12,7 +12,8 @@ setup_file() {
   # Echo the name of the test file, to get prettier output from github actions
   test=$(basename "$BATS_TEST_FILENAME")
   if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
-    echo -e "\033[36m$test\033[0m" >&3
+    # Print the test name in blue, bold, and underlined
+    printf "%s%-80s%s\n" "$(tput setf 1)$(tput bold)$(tput smul)" "$test" "$(tput sgr0)" >&3
   fi
 }
 
