@@ -208,6 +208,13 @@ public class BuiltInFunctions {
         // ==== Rank score ====
         put("bm25", new GenericFunction("bm25", new FunctionSignature(new FieldArgument("field"))));
 
+        put("elementwise", new GenericFunction("elementwise", List.of(
+            new FunctionSignature(List.of(
+                new ExpressionArgument("bm25(field)"),
+                new StringArgument("dimension")
+            ))
+        )));
+
         put("nativeRank", new GenericFunction("nativeRank", List.of(
             new FunctionSignature(),
             new FunctionSignature(new FieldArgument("field"), true)

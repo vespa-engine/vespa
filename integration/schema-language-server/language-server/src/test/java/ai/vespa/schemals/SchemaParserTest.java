@@ -310,7 +310,7 @@ public class SchemaParserTest {
             new BadFileTestCase("../../../config-model/src/test/examples/invalidselfreferringsummary.sd", 1),
             new BadFileTestCase("../../../config-model/src/test/examples/invalidsummarysource.sd", 1),
             new BadFileTestCase("../../../config-model/src/test/examples/stemmingresolver.sd", 1),
-            new BadFileTestCase("../../../config-model/src/test/derived/rankingexpression/rankexpression.sd", 10),
+            new BadFileTestCase("../../../config-model/src/test/derived/rankingexpression/rankexpression.sd", 7),
             new BadFileTestCase("../../../config-model/src/test/derived/renamedfeatures/foo.sd", 1),
 
             new BadFileTestCase("../../../config-model/src/test/derived/rankprofiles/rankprofiles.sd", 1), // only throws a warning during vespa deploy, but it is an unresolved reference case.
