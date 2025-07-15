@@ -6,7 +6,6 @@ import java.util.Optional;
 import org.eclipse.lsp4j.Diagnostic;
 
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
@@ -29,20 +28,8 @@ public class EnumArgument implements Argument {
 	public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
         if (!validateArgument(node)) return Optional.empty();
 
-        RankNode leaf = node;
-        while (leaf.getChildren().size() > 0) {
-            leaf = leaf.getChildren().get(0);
-        }
+        ArgumentUtils.modifyNodeSymbol(context, node, SymbolType.DIMENSION, SymbolStatus.BUILTIN_REFERENCE);
 
-        Symbol symbol = leaf.getSymbol();
-        if (symbol == null) return Optional.empty();
-
-        if (symbol.getStatus() == SymbolStatus.REFERENCE) {
-            context.schemaIndex().deleteSymbolReference(symbol);
-        }
-
-        symbol.setType(SymbolType.DIMENSION);
-        symbol.setStatus(SymbolStatus.BUILTIN_REFERENCE);
         return Optional.empty();
 	}
 

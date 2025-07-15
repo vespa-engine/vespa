@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.KeywordArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.LabelArgument;
@@ -18,6 +17,7 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldA
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.IntegerArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.StringArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.TensorTypeArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.VectorArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.FieldType;
 
@@ -212,6 +212,11 @@ public class BuiltInFunctions {
             new FunctionSignature(List.of(
                 new ExpressionArgument("bm25(field)"),
                 new StringArgument("dimension")
+            )),
+            new FunctionSignature(List.of(
+                new ExpressionArgument("bm25(field)"),
+                new StringArgument("dimension"),
+                new TensorTypeArgument("cell_type")
             ))
         )));
 

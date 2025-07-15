@@ -30,19 +30,7 @@ public class StringArgument implements Argument {
     
     @Override
     public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
-
-        Node leaf = node.getSchemaNode();
-
-        while (leaf.size() > 0) {
-            if (leaf.hasSymbol()) {
-                Symbol symbol = leaf.getSymbol();
-                if (symbol.getStatus() == SymbolStatus.REFERENCE) {
-                    context.schemaIndex().deleteSymbolReference(symbol);
-                }
-                leaf.removeSymbol();
-            }
-            leaf = leaf.get(0);
-        }
+        ArgumentUtils.removeNodeSymbols(context, node);
 
         return Optional.empty();
     }

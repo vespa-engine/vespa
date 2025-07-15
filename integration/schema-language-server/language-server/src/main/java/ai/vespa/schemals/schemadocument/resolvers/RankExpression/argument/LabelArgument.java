@@ -35,14 +35,7 @@ public class LabelArgument implements Argument {
     }
 
     public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
-
-        Symbol symbol = node.getSymbol();
-
-        if (symbol != null) {
-            symbol.setType(SymbolType.LABEL);
-            symbol.setStatus(SymbolStatus.BUILTIN_REFERENCE);
-        }
-
+        ArgumentUtils.modifyNodeSymbol(context, node, SymbolType.LABEL, SymbolStatus.BUILTIN_REFERENCE);
         return Optional.empty();
     }
 

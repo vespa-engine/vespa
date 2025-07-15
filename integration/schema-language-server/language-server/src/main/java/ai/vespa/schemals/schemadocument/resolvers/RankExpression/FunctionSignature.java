@@ -72,7 +72,7 @@ public class FunctionSignature {
     int matchScore(List<RankNode> arguments) {
         if (!expandable) {
             if (arguments.size() != argumentList.size()) {
-                return 0;
+                return -1;
             }
     
         }

@@ -7,11 +7,8 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.index.Symbol;
-import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.parser.rankingexpression.ast.INTEGER;
 import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 public class IntegerArgument implements Argument {
@@ -38,20 +35,9 @@ public class IntegerArgument implements Argument {
     }
 
     @Override
-    public Optional<Diagnostic> parseArgument(ParseContext context, RankNode argument) {
+    public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
 
-        Node leaf = argument.getSchemaNode();
-
-        while (leaf.size() > 0) {
-            if (leaf.hasSymbol()) {
-                Symbol symbol = leaf.getSymbol();
-                if (symbol.getStatus() == SymbolStatus.REFERENCE) {
-                    context.schemaIndex().deleteSymbolReference(symbol);
-                }
-                leaf.removeSymbol();
-            }
-            leaf = leaf.get(0);
-        }
+        Node leaf = ArgumentUtils.removeNodeSymbols(context, node);
 
         if (!leaf.isASTInstance(INTEGER.class)) {
             return Optional.of(new SchemaDiagnostic.Builder()
@@ -60,7 +46,6 @@ public class IntegerArgument implements Argument {
                 .setSeverity(DiagnosticSeverity.Error)
                 .build());
         }
-
 
         return Optional.empty();
     }

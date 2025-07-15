@@ -169,6 +169,7 @@ public class Symbol {
         TENSOR,
         TENSOR_DIMENSION_INDEXED,
         TENSOR_DIMENSION_MAPPED,
+        TENSOR_CELL_VALUE_TYPE,
         TYPE_UNKNOWN,
         DIMENSION,
     }
