@@ -141,7 +141,7 @@ public class CommandLineOptions {
 
         options.addOption(Option.builder()
             .hasArg(true)
-            .desc("Specify from which replica to get the document")
+            .desc("Specify from which replica node to get the document")
             .longOpt(REPLICA_OPTION)
             .argName("nodeId")
             .type(Integer.class)
