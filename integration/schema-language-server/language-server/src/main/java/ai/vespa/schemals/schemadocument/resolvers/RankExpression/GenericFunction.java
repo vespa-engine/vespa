@@ -20,6 +20,11 @@ import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
+/**
+ * A representation of a rank feature. Holds a list of signatures, which are overloads
+ * of this function. Matching a GenericFunction object with a list of argument {@link RankNode}s
+ * gives the {@link FunctionSignature} applicable to the arguments.
+ */
 public class GenericFunction {
 
     private String name;
@@ -102,7 +107,11 @@ public class GenericFunction {
         }
 
         if (signature.get().anyPropertyAllowed()) {
-            node.setFunctionSignature(new SpecificFunction(this, signature.get()));
+            if (property.isEmpty()) {
+                node.setFunctionSignature(new SpecificFunction(this, signature.get()));
+            } else {
+                node.setFunctionSignature(new SpecificFunction(this, signature.get(), Optional.of(property.get().getText())));
+            }
             return diagnostics;
         }
         

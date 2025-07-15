@@ -9,6 +9,10 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
+/**
+ * An argument that has to be a specific word.
+ * Equivalent to an {@link ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.EnumArgument} with only one element.
+ */
 public class KeywordArgument implements Argument {
 
     private String argument;

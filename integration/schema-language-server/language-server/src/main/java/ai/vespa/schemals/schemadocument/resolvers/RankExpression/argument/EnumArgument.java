@@ -11,7 +11,8 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 /**
- * EnumArgument
+ * An argument that only can be one of a list of valid strings.
+ * For example the 'operation' argument of the 'foreach' feature.
  */
 public class EnumArgument implements Argument {
     String displayString;

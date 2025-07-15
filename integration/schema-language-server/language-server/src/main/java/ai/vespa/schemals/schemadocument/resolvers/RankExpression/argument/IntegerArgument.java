@@ -11,6 +11,9 @@ import ai.vespa.schemals.parser.rankingexpression.ast.INTEGER;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
+/**
+ * An argument that has to be an integer literal.
+ */
 public class IntegerArgument implements Argument {
 
     private String displayStr;

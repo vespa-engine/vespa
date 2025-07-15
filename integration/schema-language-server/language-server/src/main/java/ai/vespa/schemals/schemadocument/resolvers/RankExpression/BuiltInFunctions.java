@@ -21,6 +21,19 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Tensor
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.VectorArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.FieldType;
 
+/**
+ * A big list of all the builtin ranking features and their signatures.
+ *
+ * Each ranking feature is represented by a {@link GenericFunction}. There is a mapping from identifier to 
+ * generic function.
+ *
+ * Each generic function may have several function signatures, which are valid ways of applying that specific identifier.
+ * They can vary in number of arguments, type of arguments and which properties can be used e.g. attribute(foo).count.
+ *
+ * Each argument is represented by a class implementing {@link ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument}.
+ *
+ * If describing a signature is hard, a feature can be added to the {@link BuiltInFunctions#simpleBuiltInFunctionsSet}, which only requires the identifier.
+ */
 public class BuiltInFunctions {
     public static final Map<String, GenericFunction> rankExpressionBuiltInFunctions = new HashMap<>() {{
         // ==== Query features ====

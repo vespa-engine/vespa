@@ -5,8 +5,6 @@ import java.util.Optional;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
-import com.yahoo.schema.parser.ParsedType;
-import com.yahoo.schema.parser.ParsedType.Variant;
 import com.yahoo.tensor.TensorType;
 
 import ai.vespa.schemals.common.SchemaDiagnostic;
@@ -16,6 +14,9 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
+/**
+ * An argument that has to be a valid cell type of a tensor. For example "float" or "int8".
+ */
 public class TensorTypeArgument implements Argument {
 
     private String displayStr = "type";

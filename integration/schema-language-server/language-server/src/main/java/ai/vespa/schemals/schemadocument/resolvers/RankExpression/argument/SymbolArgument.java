@@ -13,6 +13,10 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
+/**
+ * Similar to {@link ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument}, but this can
+ * be any symbol of a given type, for example an onnx model.
+ */
 public class SymbolArgument implements Argument {
     
     private SymbolType symbolType;

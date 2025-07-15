@@ -13,6 +13,12 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
+/**
+ * A specific signature of a rank feature.
+ *
+ * Can be matched against a list of argument {@link RankNode}s, and apply processing on each argument node,
+ * given by the specific implementation of the {@link Argument}.
+ */
 public class FunctionSignature {
 
     private List<Argument> argumentList;
