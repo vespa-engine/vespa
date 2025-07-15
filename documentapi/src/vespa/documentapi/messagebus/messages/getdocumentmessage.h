@@ -10,7 +10,7 @@ class GetDocumentMessage : public DocumentMessage {
 private:
     document::DocumentId    _documentId; // The identifier of the document to retrieve.
     string                  _fieldSet; // Comma-separated list of fields to return
-    std::optional<uint32_t> _debug_replica_node_id;
+    std::optional<uint16_t> _debug_replica_node_id;
 
 protected:
     DocumentReply::UP doCreateReply() const override;
@@ -63,8 +63,8 @@ public:
      */
     const string& getFieldSet() const { return _fieldSet; }
 
-    [[nodiscard]] std::optional<uint32_t> debug_replica_node_id() const noexcept { return _debug_replica_node_id; }
-    void set_debug_replica_node_id(std::optional<uint32_t> node_id) noexcept { _debug_replica_node_id = node_id; }
+    [[nodiscard]] std::optional<uint16_t> debug_replica_node_id() const noexcept { return _debug_replica_node_id; }
+    void set_debug_replica_node_id(std::optional<uint16_t> node_id) noexcept { _debug_replica_node_id = node_id; }
     [[nodiscard]] bool has_debug_replica_node_id() const noexcept { return _debug_replica_node_id.has_value(); }
 
     uint32_t getType() const override;
