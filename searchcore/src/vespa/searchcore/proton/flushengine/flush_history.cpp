@@ -98,15 +98,11 @@ FlushHistory::strategy_flush_done(uint32_t strategy_id, time_point now)
 {
     auto it = _draining_strategies.find(strategy_id);
     if (it != _draining_strategies.end()) {
-        auto &starting_strategy = it->second;
-        starting_strategy.finish_flush(strategy_id, now);
-        ++it;
         for (; it != _draining_strategies.end(); ++it) {
             it->second.finish_flush(strategy_id, now);
         }
-        auto lit = _last_strategies.find(starting_strategy.name());
-        if (lit != _last_strategies.end()) {
-            lit->second.finish_flush(strategy_id, now);
+        for (auto& last_strategy : _last_strategies) {
+            last_strategy.second.finish_flush(strategy_id, now);
         }
     }
     _active_strategy.finish_flush(strategy_id, now);
