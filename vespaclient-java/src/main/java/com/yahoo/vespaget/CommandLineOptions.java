@@ -260,7 +260,16 @@ public class CommandLineOptions {
     }
 
     private static Integer getReplica(CommandLine cl) throws ParseException {
-        return (Integer) cl.getParsedOptionValue(REPLICA_OPTION);
+        Integer node_id = (Integer) cl.getParsedOptionValue(REPLICA_OPTION);
+
+        if (node_id != null) {
+            // Check node id range
+            if (node_id < 0 || node_id >= 65535) {
+                throw new IllegalArgumentException("Invalid replica node ID: " + node_id.toString() + ". Valid node ID must be between 0 and 65534 (inclusive)");
+            }
+        }
+
+        return node_id;
     }
 
     private static DocumentProtocol.Priority getPriority(CommandLine cl) throws ParseException {
