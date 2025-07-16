@@ -126,7 +126,7 @@ TokenExtractor::sanitize_word(std::string_view word, const document::Document* d
 }
 
 void
-TokenExtractor::consider_word(std::vector<SpanTerm>& terms, std::string_view text, const Span& span, const FieldValue* fv, const Document* doc) const
+TokenExtractor::consider_word(SpanTermVector& terms, std::string_view text, const Span& span, const FieldValue* fv, const Document* doc) const
 {
     if (span.length() > 0 && span.from() >= 0 &&
         static_cast<size_t>(span.from()) + static_cast<size_t>(span.length()) <= text.size()) {
@@ -139,7 +139,7 @@ TokenExtractor::consider_word(std::vector<SpanTerm>& terms, std::string_view tex
 }
 
 void
-TokenExtractor::extract(std::vector<SpanTerm>& terms, const document::StringFieldValue::SpanTrees& trees, std::string_view text, const Document* doc) const
+TokenExtractor::extract(SpanTermVector& terms, const document::StringFieldValue::SpanTrees& trees, std::string_view text, const Document* doc) const
 {
     auto tree = StringFieldValue::findTree(trees, SPANTREE_NAME);
     if (tree == nullptr) {

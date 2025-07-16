@@ -45,8 +45,8 @@ TokensConverter::handle_indexing_terms(const StringFieldValue& value, vespalib::
 {
     Cursor& a = inserter.insertArray();
     ArrayInserter ai(a);
-    using SpanTerm = TokenExtractor::SpanTerm;
-    std::vector<SpanTerm> terms;
+    using SpanTermVector = TokenExtractor::SpanTermVector;
+    SpanTermVector terms;
     auto span_trees = value.getSpanTrees();
     _token_extractor.extract(terms, span_trees, _text, nullptr);
     auto it = terms.begin();
