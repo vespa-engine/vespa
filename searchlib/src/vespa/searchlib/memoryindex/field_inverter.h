@@ -181,8 +181,8 @@ private:
     index::DocIdAndPosOccFeatures  _features;
     UInt32Vector                   _wordRefs;
 
-    using SpanTerm = linguistics::TokenExtractor::SpanTerm;
-    std::vector<SpanTerm>          _terms;
+    using SpanTermVector = linguistics::TokenExtractor::SpanTermVector;
+    SpanTermVector                 _terms;
 
     // Info about aborted and pending documents.
     std::vector<PositionRange>                  _abortedDocs;

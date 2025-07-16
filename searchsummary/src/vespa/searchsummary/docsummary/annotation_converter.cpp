@@ -74,8 +74,8 @@ AnnotationConverter::annotateSpans(const document::Span& span, ForwardIt it, For
 void
 AnnotationConverter::handleIndexingTerms(const StringFieldValue& value)
 {
-    using SpanTerm = TokenExtractor::SpanTerm;
-    std::vector<SpanTerm> terms;
+    using SpanTermVector = TokenExtractor::SpanTermVector;
+    SpanTermVector terms;
     auto span_trees = value.getSpanTrees();
     TokenExtractor token_extractor(dummy_field_name, FieldInverter::max_word_len);
     token_extractor.extract(terms, span_trees, _text, nullptr);
