@@ -20,7 +20,9 @@ using proton::PrepareRestart2RpcHandler;
 using proton::flushengine::FlushHistory;
 using proton::flushengine::FlushStrategyIdNotifier;
 using std::chrono::steady_clock;
+using vespalib::Memory;
 using vespalib::Slime;
+using vespalib::slime::Inspector;
 using vespalib::slime::JsonFormat;
 
 namespace {
@@ -241,6 +243,12 @@ MyReturnHandler::check_req()
     EXPECT_EQ(1, _req->count_refs());
 }
 
+const std::string FLUSH_ALL_STRATEGY("flush_all");
+const std::string MEMORY_STRATEGY("memory");
+const std::string PREPARE_RESTART_STRATEGY("prepare_restart");
+const std::string HANDLER1("handler1");
+const std::string HANDLER2("handler2");
+
 std::shared_ptr<FlushHistory>
 make_flush_history()
 {
@@ -278,6 +286,9 @@ protected:
     std::shared_future<void> test_handler(uint32_t wait_strategy_id, steady_clock::duration timeout);
     void expect_result(bool expect_success);
     void expect_no_result();
+    void expect_strategy(Inspector& inspector, Memory key, const std::string& exp_name, uint32_t exp_id);
+    void expect_flush_counts(Inspector& inspector, Memory key, uint32_t exp_flushed, uint32_t exp_flushing,
+                             std::optional<uint32_t> exp_pending_flushes);
 };
 
 std::unique_ptr<FNET_Transport> PrepareRestart2RpcHandlerTest::_transport;
@@ -369,6 +380,33 @@ PrepareRestart2RpcHandlerTest::expect_no_result()
     ASSERT_FALSE(_return_handler->has_returned());
 }
 
+void
+PrepareRestart2RpcHandlerTest::expect_strategy(Inspector& inspector, Memory key, const std::string& exp_name,
+                                               uint32_t exp_id)
+{
+    SCOPED_TRACE(key.make_stringview());
+    auto& strategy = inspector[key];
+    EXPECT_TRUE(strategy.valid());
+    EXPECT_EQ(exp_name, strategy["strategy"].asString());
+    EXPECT_EQ(exp_id, strategy["id"].asLong());
+}
+
+void
+PrepareRestart2RpcHandlerTest::expect_flush_counts(Inspector& inspector, Memory key, uint32_t exp_flushed,
+                                                   uint32_t exp_flushing, std::optional<uint32_t> exp_pending_flushes)
+{
+    SCOPED_TRACE(key.make_stringview());
+    auto& strategy = inspector[key];
+    EXPECT_TRUE(strategy.valid());
+    EXPECT_EQ(exp_flushed, strategy["flushed"].asLong());
+    EXPECT_EQ(exp_flushing, strategy["flushing"].asLong());
+    if (exp_pending_flushes.has_value()) {
+        EXPECT_EQ(exp_pending_flushes.value(), strategy["pending_flushes"].asLong());
+    } else {
+        EXPECT_FALSE(strategy["pending_flushes"].valid());
+    }
+}
+
 TEST_F(PrepareRestart2RpcHandlerTest, successful_request)
 {
     auto future = test_handler(199, 5s);
@@ -376,7 +414,8 @@ TEST_F(PrepareRestart2RpcHandlerTest, successful_request)
     expect_result(true);
     auto& slime = _return_handler->_slime;
     EXPECT_EQ(199, slime.get()["wait_strategy_id"].asLong());
-    EXPECT_EQ(200, slime.get()["current"]["id"].asLong());
+    EXPECT_FALSE(slime.get()["previous"].valid());
+    expect_strategy(slime.get(), "current", MEMORY_STRATEGY, 200);
 }
 
 TEST_F(PrepareRestart2RpcHandlerTest, timeout_request)
@@ -389,7 +428,8 @@ TEST_F(PrepareRestart2RpcHandlerTest, timeout_request)
     EXPECT_LT(50ms, after - before);
     auto& slime = _return_handler->_slime;
     EXPECT_EQ(200, slime.get()["wait_strategy_id"].asLong());
-    EXPECT_EQ(200, slime.get()["current"]["id"].asLong());
+    EXPECT_FALSE(slime.get()["previous"].valid());
+    expect_strategy(slime.get(), "current", MEMORY_STRATEGY, 200);
 }
 
 TEST_F(PrepareRestart2RpcHandlerTest, rpc_server_aborted_request)
@@ -439,7 +479,8 @@ TEST_F(PrepareRestart2RpcHandlerTest, missing_wait_strategy_id)
     expect_result(false);
     auto& slime = _return_handler->_slime;
     EXPECT_EQ(0, slime.get()["wait_strategy_id"].asLong());
-    EXPECT_EQ(200, slime.get()["current"]["id"].asLong());
+    EXPECT_FALSE(slime.get()["previous"].valid());
+    expect_strategy(slime.get(), "current", MEMORY_STRATEGY, 200);
 }
 
 TEST_F(PrepareRestart2RpcHandlerTest, missing_wait_strategy_id_and_history)
@@ -450,5 +491,139 @@ TEST_F(PrepareRestart2RpcHandlerTest, missing_wait_strategy_id_and_history)
     expect_result(false);
     auto& slime = _return_handler->_slime;
     EXPECT_EQ(0, slime.get()["wait_strategy_id"].asLong());
+    EXPECT_FALSE(slime.get()["previous"].valid());
     EXPECT_FALSE(slime.get()["current"].valid());
+}
+
+TEST_F(PrepareRestart2RpcHandlerTest, previous_flush_all)
+{
+    _history->set_strategy(FLUSH_ALL_STRATEGY, 201, true);
+    _history->set_strategy(MEMORY_STRATEGY, 202, false);
+    auto future = test_handler(1, 0s);
+    future.wait();
+    expect_result(true);
+    auto& slime = _return_handler->_slime;
+    EXPECT_EQ(1, slime.get()["wait_strategy_id"].asLong());
+    expect_strategy(slime.get(), "previous", FLUSH_ALL_STRATEGY, 201);
+    expect_strategy(slime.get(), "current", MEMORY_STRATEGY, 202);
+}
+
+TEST_F(PrepareRestart2RpcHandlerTest, previous_flush_all_then_prepare_restart)
+{
+    _history->set_strategy(FLUSH_ALL_STRATEGY, 201, true);
+    _history->set_strategy(MEMORY_STRATEGY, 202, false);
+    _history->set_strategy(PREPARE_RESTART_STRATEGY, 203, true);
+    _history->set_strategy(MEMORY_STRATEGY, 204, false);
+    auto future = test_handler(1, 0s);
+    future.wait();
+    expect_result(true);
+    auto& slime = _return_handler->_slime;
+    EXPECT_EQ(1, slime.get()["wait_strategy_id"].asLong());
+    expect_strategy(slime.get(), "previous", PREPARE_RESTART_STRATEGY, 203);
+    expect_strategy(slime.get(), "current", MEMORY_STRATEGY, 204);
+}
+
+TEST_F(PrepareRestart2RpcHandlerTest, previous_prepare_restart_then_flush_all)
+{
+    _history->set_strategy(PREPARE_RESTART_STRATEGY, 201, true);
+    _history->set_strategy(MEMORY_STRATEGY, 202, false);
+    _history->set_strategy(FLUSH_ALL_STRATEGY, 203, true);
+    _history->set_strategy(MEMORY_STRATEGY, 204, false);
+    auto future = test_handler(1, 0s);
+    future.wait();
+    expect_result(true);
+    auto& slime = _return_handler->_slime;
+    EXPECT_EQ(1, slime.get()["wait_strategy_id"].asLong());
+    expect_strategy(slime.get(), "previous", FLUSH_ALL_STRATEGY, 203);
+    expect_strategy(slime.get(), "current", MEMORY_STRATEGY, 204);
+}
+
+TEST_F(PrepareRestart2RpcHandlerTest, poll_sequence)
+{
+    /*
+     * 2 flush strategies:
+     * { "memory", id = 200, priority_strategy = false } started 1 flush: handler1.a1.
+     * { "prepare_restart", id = 201, priority_strategy = true  } started 2 flushes: handler2.a2 and handler1.a3
+     * and set 1 flush as pending: handler1.a4
+     */
+    _history->start_flush(HANDLER1, "a1", 3s, 5);
+    _history->set_strategy(PREPARE_RESTART_STRATEGY, 201, true);
+    _history->add_pending_flush(HANDLER2, "a2", 1s);
+    _history->add_pending_flush(HANDLER1, "a3", 4s);
+    _history->add_pending_flush(HANDLER1, "a4", 1s);
+    _history->start_flush(HANDLER2, "a2", 1s, 6);
+    _history->start_flush(HANDLER1, "a3", 4s, 7);
+
+    auto future = test_handler(1, 0s);
+    future.wait();
+    expect_result(true);
+    auto& slime = _return_handler->_slime;
+    {
+        SCOPED_TRACE("before first completed flush");
+        EXPECT_EQ(1, slime.get()["wait_strategy_id"].asLong());
+        EXPECT_FALSE(slime.get()["previous"].valid());
+        expect_strategy(slime.get(), "current", PREPARE_RESTART_STRATEGY, 201);
+        expect_flush_counts(slime.get(), "current", 0, 3, 1);
+    }
+
+    /*
+     * Complete flush "handler2.a2". Starts pending flush "handler1.a4". Switch to flush trategy
+     * { "memory", id = 202, priority_strategy = false }
+     */
+    _history->flush_done(6);
+    _history->prune_done(6);
+    _history->start_flush(HANDLER1, "a4", 1s, 8);
+    _history->set_strategy(MEMORY_STRATEGY, 202, false);
+    _return_handler->alloc_req();
+    future = test_handler(1, 0s);
+    future.wait();
+    expect_result(true);
+    {
+        SCOPED_TRACE("after first completed flush");
+        EXPECT_EQ(1, slime.get()["wait_strategy_id"].asLong());
+        expect_strategy(slime.get(), "previous", PREPARE_RESTART_STRATEGY, 201);
+        expect_flush_counts(slime.get(), "previous", 1, 3, std::nullopt);
+        expect_strategy(slime.get(), "current", MEMORY_STRATEGY, 202);
+        expect_flush_counts(slime.get(), "current", 0, 3, 0);
+    }
+
+    /*
+     * Complete flush "handler1.a1".
+     */
+    _history->flush_done(5);
+    _history->prune_done(5);
+    _notifier->set_strategy_id(201);
+    _return_handler->alloc_req();
+    future = test_handler(1, 0s);
+    future.wait();
+    expect_result(true);
+    {
+        SCOPED_TRACE("after second completed flush");
+        EXPECT_EQ(1, slime.get()["wait_strategy_id"].asLong());
+        expect_strategy(slime.get(), "previous", PREPARE_RESTART_STRATEGY, 201);
+        expect_flush_counts(slime.get(), "previous", 2, 2, std::nullopt);
+        expect_strategy(slime.get(), "current", MEMORY_STRATEGY, 202);
+        expect_flush_counts(slime.get(), "current", 1, 2, 0);
+    }
+
+    /*
+     * Complete flushes "handler1.a3" and "handler1.a4".
+     */
+    _history->flush_done(7);
+    _history->prune_done(7);
+    _history->flush_done(8);
+    _history->prune_done(8);
+    _notifier->set_strategy_id(202);
+    _return_handler->alloc_req();
+    future = test_handler(1, 0s);
+    future.wait();
+    expect_result(true);
+    {
+        SCOPED_TRACE("after fourth completed flush");
+        EXPECT_EQ(1, slime.get()["wait_strategy_id"].asLong());
+        expect_strategy(slime.get(), "previous", PREPARE_RESTART_STRATEGY, 201);
+        expect_flush_counts(slime.get(), "previous", 4, 0, std::nullopt);
+        expect_strategy(slime.get(), "current", MEMORY_STRATEGY, 202);
+        expect_flush_counts(slime.get(), "current", 3, 0, 0);
+    }
 }
