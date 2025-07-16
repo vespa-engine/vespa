@@ -98,7 +98,7 @@ public class LinguisticsAnnotator {
                        ? text.getString()
                        : Text.substringByCodepoints(text.getString(), 0, config.getMaxTokenizeLength());
 
-        if (isLikelyBinaryData(input, docId, isReindexingOperation)) return false;
+        if (checkLikelyBinaryData(input, docId, isReindexingOperation)) return false;
 
         Iterable<Token> tokens = tokenizer.tokenize(input, config.asLinguisticsParameters());
         TermOccurrences termOccurrences = new TermOccurrences(config.getMaxTermOccurrences());
@@ -176,9 +176,10 @@ public class LinguisticsAnnotator {
      * Use the ratio of Unicode replacement characters as heuristic if the text is likely representing binary data
      *
      * @see <a href="https://en.wikipedia.org/wiki/Specials_(Unicode_block)#Replacement_character">...</a>
-     * @throws IllegalArgumentException if text is likely binary data and not a reindexing operation
+     * @throws IllegalArgumentException if text is likely binary data and is <strong>not</strong> a reindexing operation
+     * @return true if the text is likely binary data and is a reindexing operation, false otherwise
      */
-    private boolean isLikelyBinaryData(String text, DocumentId docId, boolean isReindexingOperation) {
+    private boolean checkLikelyBinaryData(String text, DocumentId docId, boolean isReindexingOperation) {
         var maxRatio = config.getMaxReplacementCharactersRatio();
         var maxCharacters = config.getMaxReplacementCharacters();
         // Skip if both thresholds are disabled
