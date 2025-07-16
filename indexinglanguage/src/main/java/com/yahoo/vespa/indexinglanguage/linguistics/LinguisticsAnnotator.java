@@ -180,6 +180,9 @@ public class LinguisticsAnnotator {
      * @return true if the text is likely binary data and is a reindexing operation, false otherwise
      */
     private boolean checkLikelyBinaryData(String text, DocumentId docId, boolean isReindexingOperation) {
+        // Temporary environment variable to disable this check
+        if (System.getenv("VESPA_DISABLE_LINGUISTICS_BINARY_CHECK") != null) return false;
+
         var maxRatio = config.getMaxReplacementCharactersRatio();
         var maxCharacters = config.getMaxReplacementCharacters();
         // Skip if both thresholds are disabled
