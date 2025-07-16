@@ -928,7 +928,7 @@ TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
     EXPECT_EQ(sizeof(PutCommand),        sizeof(TestAndSetCommand) + 40);
     EXPECT_EQ(sizeof(UpdateCommand),     sizeof(TestAndSetCommand) + 40);
     EXPECT_EQ(sizeof(RemoveCommand),     sizeof(TestAndSetCommand) + 48 + sizeof(std::string));
-    EXPECT_EQ(sizeof(GetCommand),        sizeof(BucketInfoCommand) + sizeof(TestAndSetCondition) + /* Is this also padding? */ 56 + 2 * sizeof(std::string) + sizeof(std::optional<uint16_t>) - /* negative padding? */ 4);
+    EXPECT_EQ(sizeof(GetCommand),        sizeof(BucketInfoCommand) + sizeof(document::DocumentId) + sizeof(Timestamp) + sizeof(std::string) + sizeof(TestAndSetCondition) + sizeof(InternalReadConsistency) + /* padding */ 1 + sizeof(std::optional<uint16_t>) + /* padding */ 2);
 }
 
 } // storage::api
