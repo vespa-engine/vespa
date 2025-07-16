@@ -66,7 +66,7 @@ public class CsrGenerator {
         var b = Pkcs10CsrBuilder.fromKeypair(principal, keyPair, SHA256_WITH_RSA)
                 .addSubjectAlternativeName(DNS, getIdentitySAN(instanceId))
                 .addSubjectAlternativeName(EMAIL, String.format("%s.%s@%s", identity.getDomainName(), identity.getName(), dnsSuffix))
-                .addSubjectAlternativeName(URI, "spiffe://athenz.cloud/ns/default/ra/%s.%s".formatted(role.domain().getName(), role.roleName()));
+                .addSubjectAlternativeName(URI, "spiffe://%s/ra/%s".formatted(role.domain().getName(), role.roleName()));
         if (clusterType != null) b.addSubjectAlternativeName(URI, clusterType.asCertificateSanUri().toString());
         return b.build();
     }
