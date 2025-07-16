@@ -1,6 +1,8 @@
 schema rankproperties {
     document rankproperties {
         field title type string { }
+        field content type string { }
+        field tags type string { }
     }
 
     rank-profile my-profile inherits default {
@@ -16,6 +18,8 @@ schema rankproperties {
             elementSimilarity(tags).output.sumWeightSquared: "sum((0.35*p+0.15*o+0.30*q+0.20*f)*w^2)"
             elementSimilarity(tags).output.avgWeightSquared: "avg((0.35*p+0.15*o+0.30*q+0.20*f)*w^2)"
             elementSimilarity(tags).output.sumWeight: "sum(w)"
+            test(title): 123 # No error, only warning
+            bm25(noexist).k1: 0.254 # Error, the field noexist doesn't exist
         }
     }
 }
