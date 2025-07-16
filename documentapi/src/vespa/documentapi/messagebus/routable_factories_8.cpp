@@ -53,14 +53,6 @@ std::string_view get_raw_field_set(const protobuf::FieldSet& src) noexcept {
     return src.spec();
 }
 
-void set_debug_replica_node_id(protobuf::DebugGetFromReplica& dest, uint32_t src) {
-    dest.set_node_id(src);
-}
-
-std::optional<uint32_t> get_debug_replica_node_id(const protobuf::GetDocumentRequest& src) noexcept {
-    return src.debug_replica().node_id();
-}
-
 void set_raw_selection(protobuf::DocumentSelection& dest, std::string_view src) {
     dest.set_selection(src.data(), src.size());
 }
@@ -256,13 +248,13 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::get_document_message_fact
             set_document_id(*dest.mutable_document_id(), src.getDocumentId());
             set_raw_field_set(*dest.mutable_field_set(), src.getFieldSet());
             if (src.has_debug_replica_node_id()) {
-                set_debug_replica_node_id(*dest.mutable_debug_replica(), src.debug_replica_node_id().value());
+                dest.set_debug_replica_node_id(src.debug_replica_node_id().value());
             }
         },
         [](const protobuf::GetDocumentRequest& src) {
             auto msg = std::make_unique<GetDocumentMessage>(get_document_id(src.document_id()), get_raw_field_set(src.field_set()));
-            if (src.has_debug_replica()) {
-                msg->set_debug_replica_node_id(get_debug_replica_node_id(src));
+            if (src.has_debug_replica_node_id()) {
+                msg->set_debug_replica_node_id(src.debug_replica_node_id());
             }
             return msg;
         }

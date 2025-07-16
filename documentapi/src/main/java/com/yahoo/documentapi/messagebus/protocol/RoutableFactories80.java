@@ -195,16 +195,6 @@ abstract class RoutableFactories80 {
         return fieldSet.getSpec();
     }
 
-    private static DocapiCommon.DebugGetFromReplica toProtoDebugReplica(int nodeId) {
-        return DocapiCommon.DebugGetFromReplica.newBuilder()
-            .setNodeId(nodeId)
-            .build();
-    }
-
-    private static int fromProtoDebugReplica(DocapiCommon.DebugGetFromReplica proto) {
-        return proto.getNodeId();
-    }
-
     private static ByteBuffer serializeDoc(Document doc) {
         var buf = new GrowableByteBuffer(8 * 1024, 2.0f);
         doc.serialize(DocumentSerializerFactory.createHead(buf));
@@ -322,7 +312,7 @@ abstract class RoutableFactories80 {
                             .setFieldSet(toProtoFieldSet(apiMsg.getFieldSet()));
 
                         if (apiMsg.hasDebugReplicaNodeId()) {
-                            builder = builder.setDebugReplica(toProtoDebugReplica(apiMsg.getDebugReplicaNodeId()));
+                            builder = builder.setDebugReplicaNodeId(apiMsg.getDebugReplicaNodeId());
                         }
 
                         return builder.build();
@@ -331,8 +321,8 @@ abstract class RoutableFactories80 {
                         var msg = new GetDocumentMessage(fromProtoDocId(protoMsg.getDocumentId()),
                                                          fromProtoFieldSet(protoMsg.getFieldSet()));
 
-                        if (protoMsg.hasDebugReplica()) {
-                            msg.setDebugReplicaNodeId(fromProtoDebugReplica(protoMsg.getDebugReplica()));
+                        if (protoMsg.hasDebugReplicaNodeId()) {
+                            msg.setDebugReplicaNodeId(protoMsg.getDebugReplicaNodeId());
                         }
 
                         return msg;

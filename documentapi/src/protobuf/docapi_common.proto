@@ -26,10 +26,6 @@ message FieldSet {
     string spec = 1;
 }
 
-message DebugGetFromReplica {
-    uint32 node_id = 1;
-}
-
 message GlobalId {
     // Shall always be 12 bytes (96 bits)
     bytes raw_gid = 1;

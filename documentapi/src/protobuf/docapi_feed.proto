@@ -19,9 +19,9 @@ message DocumentUpdate {
 }
 
 message GetDocumentRequest {
-    DocumentId document_id              = 1;
-    FieldSet   field_set                = 2;
-    DebugGetFromReplica debug_replica   = 3;
+    DocumentId document_id                  = 1;
+    FieldSet   field_set                    = 2;
+    optional uint32 debug_replica_node_id   = 3;
 }
 
 message GetDocumentResponse {
