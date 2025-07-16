@@ -36,6 +36,9 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
 public class LinguisticsAnnotator {
 
     private static final Logger log = Logger.getLogger(LinguisticsAnnotator.class.getName());
+    // Temporary environment variable to disable this check
+    private static final boolean binaryCheckDisabled =
+            Boolean.parseBoolean(System.getenv("VESPA_DISABLE_LINGUISTICS_BINARY_CHECK"));
 
     static {
         class RateLimitingLogFilter implements Filter {
@@ -180,8 +183,7 @@ public class LinguisticsAnnotator {
      * @return true if the text is likely binary data and is a reindexing operation, false otherwise
      */
     private boolean checkLikelyBinaryData(String text, DocumentId docId, boolean isReindexingOperation) {
-        // Temporary environment variable to disable this check
-        if (System.getenv("VESPA_DISABLE_LINGUISTICS_BINARY_CHECK") != null) return false;
+        if (binaryCheckDisabled) return false;
 
         var maxRatio = config.getMaxReplacementCharactersRatio();
         var maxCharacters = config.getMaxReplacementCharacters();
