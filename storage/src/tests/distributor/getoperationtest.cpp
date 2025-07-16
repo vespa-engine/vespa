@@ -167,6 +167,9 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
 
     void do_test_read_consistency_is_propagated(api::InternalReadConsistency consistency);
     void set_up_condition_match_get_operation();
+
+    void do_test_get_document_from_specified_debug_replica_node(uint16_t debug_replica_node_id,
+                                                                std::string authorVal, uint32_t timestamp);
 };
 
 GetOperationTest::GetOperationTest() = default;
@@ -769,7 +772,8 @@ TEST_F(GetOperationTest, trace_is_aggregated_from_all_sub_replies_and_propagated
     EXPECT_THAT(trace_str, HasSubstr("baz"));
 }
 
-TEST_F(GetOperationTest, debug_replica_node_id_1_gets_only_node1) {
+void GetOperationTest::do_test_get_document_from_specified_debug_replica_node(uint16_t debug_replica_node_id,
+                                                                              std::string authorVal, uint32_t timestamp) {
     setClusterState("distributor:1 storage:3");
     addNodesToBucketDB(bucketId, "0=200,1=201,2=200");
 
@@ -777,44 +781,30 @@ TEST_F(GetOperationTest, debug_replica_node_id_1_gets_only_node1) {
         makeDocumentBucket(bucketId),
         docId,
         document::AllFields::NAME);
-    cmd->set_debug_replica_node_id(1);
+    cmd->set_debug_replica_node_id(debug_replica_node_id);
 
     start_operation(cmd, api::InternalReadConsistency::Strong);
 
-    ASSERT_EQ("Get => 1", _sender.getCommands(true));
+    std::string expected_output = std::format("Get => {}", debug_replica_node_id);
+    ASSERT_EQ(expected_output, _sender.getCommands(true));
 
-    sendReply(0, api::ReturnCode::OK, "bar", 456);
+    sendReply(0, api::ReturnCode::OK, authorVal, timestamp);
 
     ASSERT_EQ(_sender.replies().size(), 1);
     auto& reply = dynamic_cast<api::GetReply&>(*_sender.replies().back());
     EXPECT_TRUE(reply.had_consistent_replicas());
     ASSERT_TRUE(reply.getDocument());
-    EXPECT_EQ("bar",
+    EXPECT_EQ(authorVal,
               reply.getDocument()->getValue(reply.getDocument()->getField("author"))->toString());
+
+}
+
+TEST_F(GetOperationTest, debug_replica_node_id_1_gets_only_node1) {
+    do_test_get_document_from_specified_debug_replica_node(1, "bar", 456);
 }
 
 TEST_F(GetOperationTest, debug_replica_node_id_2_gets_only_node2) {
-    setClusterState("distributor:1 storage:3");
-    addNodesToBucketDB(bucketId, "0=200,1=201,2=200");
-
-    auto cmd = std::make_shared<api::GetCommand>(
-        makeDocumentBucket(bucketId),
-        docId,
-        document::AllFields::NAME);
-    cmd->set_debug_replica_node_id(2);
-
-    start_operation(cmd, api::InternalReadConsistency::Strong);
-
-    ASSERT_EQ("Get => 2", _sender.getCommands(true));
-
-    sendReply(0, api::ReturnCode::OK, "zinga", 999);
-
-    ASSERT_EQ(_sender.replies().size(), 1);
-    auto& reply = dynamic_cast<api::GetReply&>(*_sender.replies().back());
-    EXPECT_TRUE(reply.had_consistent_replicas());
-    ASSERT_TRUE(reply.getDocument());
-    EXPECT_EQ("zinga",
-              reply.getDocument()->getValue(reply.getDocument()->getField("author"))->toString());
+    do_test_get_document_from_specified_debug_replica_node(2, "zinga", 999);
 }
 
 TEST_F(GetOperationTest, debug_replica_node_id_nonexistent_node_returns_no_document) {
