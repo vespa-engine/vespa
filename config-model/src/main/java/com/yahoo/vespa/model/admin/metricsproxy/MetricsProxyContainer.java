@@ -10,7 +10,6 @@ import ai.vespa.metricsproxy.rpc.RpcConnector;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServices;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
-import ai.vespa.utils.BytesQuantity;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ApplicationId;
@@ -160,7 +159,8 @@ public class MetricsProxyContainer extends Container implements
             builder.jvm.heapsize(heapSize);
             builder.jvm.minHeapsize(heapSize);
             builder.jvm.compressedClassSpaceSize(0);
-            builder.jvm.baseMaxDirectMemorySize((int)BytesQuantity.ofMB(128).toBytes());
+            builder.jvm.baseMaxDirectMemorySize(128);
+            builder.jvm.availableProcessors(2);
         }
     }
 
