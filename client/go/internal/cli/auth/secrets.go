@@ -12,7 +12,11 @@ type realKeyring struct{}
 type dummyKeyring struct{}
 
 func NewKeyring() SecretStore {
-	if env := os.Getenv("VESPA_CLI_DUMMY_KEYRING"); env != "" {
+	return NewKeyringWithOptions(false)
+}
+
+func NewKeyringWithOptions(useDummy bool) SecretStore {
+	if useDummy || os.Getenv("VESPA_CLI_DUMMY_KEYRING") != "" {
 		return &dummyKeyring{}
 	}
 	return &realKeyring{}
