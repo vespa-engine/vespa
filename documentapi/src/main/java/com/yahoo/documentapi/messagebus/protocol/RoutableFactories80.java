@@ -312,7 +312,7 @@ abstract class RoutableFactories80 {
                             .setFieldSet(toProtoFieldSet(apiMsg.getFieldSet()));
 
                         if (apiMsg.hasDebugReplicaNodeId()) {
-                            builder = builder.setDebugReplicaNodeId(apiMsg.getDebugReplicaNodeId());
+                            builder.setDebugReplicaNodeId(apiMsg.getDebugReplicaNodeId());
                         }
 
                         return builder.build();
