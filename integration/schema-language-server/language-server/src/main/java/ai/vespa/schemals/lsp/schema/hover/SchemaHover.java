@@ -305,6 +305,8 @@ public class SchemaHover {
             SchemaNode schemaNode = node.getSchemaNode();
             Hover symbolHover = getSymbolHover(schemaNode, context);
 
+            if (symbolHover == null) return null;
+
             if (schemaNode.getLanguageType() == LanguageType.RANK_EXPRESSION) {
                 var content = symbolHover.getContents();
                 if (content.isRight()) {

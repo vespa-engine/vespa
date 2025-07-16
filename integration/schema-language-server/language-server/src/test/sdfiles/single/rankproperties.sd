@@ -1,0 +1,21 @@
+schema rankproperties {
+    document rankproperties {
+        field title type string { }
+    }
+
+    rank-profile my-profile inherits default {
+        rank-properties {
+            fieldMatch(title).maxAlternativeSegmentations: 10
+            fieldMatch(title).maxOccurrences: 5
+            bm25(title).k1: 1.5
+            bm25(title).b: 0.85
+            bm25(title).averageFieldLength: 200
+            elementwise(bm25(content),x,float).k1: 1.4
+            elementwise(bm25(content),x,float).b: 0.87
+            elementwise(bm25(content),x,float).averageElementLength: 50
+            elementSimilarity(tags).output.sumWeightSquared: "sum((0.35*p+0.15*o+0.30*q+0.20*f)*w^2)"
+            elementSimilarity(tags).output.avgWeightSquared: "avg((0.35*p+0.15*o+0.30*q+0.20*f)*w^2)"
+            elementSimilarity(tags).output.sumWeight: "sum(w)"
+        }
+    }
+}

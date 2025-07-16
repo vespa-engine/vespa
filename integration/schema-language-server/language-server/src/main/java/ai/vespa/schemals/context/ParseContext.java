@@ -20,6 +20,7 @@ import ai.vespa.schemals.schemadocument.parser.schema.IdentifyDocumentSummaryInh
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifyDocumentlessSchema;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifyNamedDocument;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifyRankProfileInheritance;
+import ai.vespa.schemals.schemadocument.parser.schema.IdentifyRankProperties;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifySchemaInheritance;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifyStructInheritance;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifySymbolDefinition;
@@ -77,6 +78,7 @@ public class ParseContext {
             add(new IdentifyDirtySchemaNodes(context));
             add(new IdentifyDocumentlessSchema(context));
             add(new IdentifyNamedDocument(context));
+            add(new IdentifyRankProperties(context));
         }};
     }
 
@@ -91,6 +93,7 @@ public class ParseContext {
             add(new IdentifySymbolReferences(context));
             add(new IdentifyRankProfileInheritance(context));
             add(new IdentifyDirtySchemaNodes(context));
+            add(new IdentifyRankProperties(context));
         }};
     }
 

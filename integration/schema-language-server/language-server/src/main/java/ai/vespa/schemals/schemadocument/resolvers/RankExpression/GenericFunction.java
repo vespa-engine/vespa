@@ -71,11 +71,13 @@ public class GenericFunction {
 
     public String getName() { return name; }
 
-    public List<Diagnostic> handleArgumentList(ParseContext context, RankNode node) {
+    public List<Diagnostic> handleArgumentList(ParseContext context, RankNode node, boolean ignoreProperty) {
         List<Diagnostic> diagnostics = new ArrayList<>();
 
-        Optional<SchemaNode> property = node.getProperty();
+        // TODO: Different property handlers instead of ignoring
+        Optional<SchemaNode> property = ignoreProperty ? Optional.empty() : node.getProperty();
         Optional<String> propertyString = Optional.empty();
+
         if (property.isPresent()) {
             propertyString = Optional.of(property.get().getText());
         }
@@ -160,17 +162,17 @@ public class GenericFunction {
         return diagnostics;
     }
 
-    private static boolean propertyInSet(Optional<String> string, Set<String> propertiySet) {
+    private static boolean propertyInSet(Optional<String> string, Set<String> propertySet) {
         if (string.isEmpty() && (
-            propertiySet.size() == 0 ||
-            propertiySet.contains("")
+            propertySet.size() == 0 ||
+            propertySet.contains("")
         )) {
             return true;
         }
 
         if (string.isEmpty()) return false;
 
-        return propertiySet.contains(string.get());
+        return propertySet.contains(string.get());
     }
 
     private Optional<FunctionSignature> findFunctionSignature(List<RankNode> arguments, Optional<String> property) {

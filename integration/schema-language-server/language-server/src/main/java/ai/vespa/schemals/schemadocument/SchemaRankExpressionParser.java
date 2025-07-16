@@ -76,8 +76,10 @@ public class SchemaRankExpressionParser {
         try {
             if (node.isASTInstance(consumedExpressionElm.class)) {
                 tolerantParser.expression();
-            } else {
+            } else if (node.isASTInstance(consumedFeatureListElm.class)) {
                 tolerantParser.featureList();
+            } else {
+                tolerantParser.rankPropertyFeature();
             }
         } catch (ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
             // Ignore
