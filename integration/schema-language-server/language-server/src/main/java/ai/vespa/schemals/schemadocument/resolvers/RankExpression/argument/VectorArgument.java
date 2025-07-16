@@ -8,7 +8,9 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 /**
- * VectorArgument
+ * Functionally similar to a {@link ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.StringArgument},
+ * but should refer to a vector sent with the query. 
+ * This class exists in case we want to do more checks later.
  */
 public class VectorArgument implements Argument {
 

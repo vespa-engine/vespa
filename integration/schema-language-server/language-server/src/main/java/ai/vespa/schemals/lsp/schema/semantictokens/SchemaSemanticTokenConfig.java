@@ -303,22 +303,23 @@ class SchemaSemanticTokenConfig {
     }};
 
     static final HashMap<SymbolType, String> identifierTypeLSPNameMap = new HashMap<SymbolType, String>() {{
-        put(SymbolType.SCHEMA, "namespace");
-        put(SymbolType.DOCUMENT, "class");
-        put(SymbolType.FIELD, "variable");
-        put(SymbolType.FIELDSET, "variable");
-        put(SymbolType.STRUCT, "variable");
-        put(SymbolType.STRUCT_FIELD, "variable");
-        put(SymbolType.RANK_PROFILE, "variable");
-        put(SymbolType.FUNCTION, "function");
-        put(SymbolType.DOCUMENT_SUMMARY, "variable");
-        put(SymbolType.PARAMETER, "parameter");
-        put(SymbolType.LABEL, "variable");
-        put(SymbolType.QUERY_INPUT, "variable");
-        put(SymbolType.RANK_CONSTANT, "variable");
-        put(SymbolType.PROPERTY, "property");
-        put(SymbolType.LAMBDA_FUNCTION, "keyword");
-        put(SymbolType.DIMENSION, "keyword");
-        put(SymbolType.ANNOTATION, "variable");
+        put(SymbolType.ANNOTATION, SemanticTokenTypes.Variable);
+        put(SymbolType.DIMENSION, SemanticTokenTypes.Keyword);
+        put(SymbolType.DOCUMENT, SemanticTokenTypes.Class);
+        put(SymbolType.DOCUMENT_SUMMARY, SemanticTokenTypes.Variable);
+        put(SymbolType.FIELD, SemanticTokenTypes.Variable);
+        put(SymbolType.FIELDSET, SemanticTokenTypes.Variable);
+        put(SymbolType.FUNCTION, SemanticTokenTypes.Function);
+        put(SymbolType.LABEL, SemanticTokenTypes.Variable);
+        put(SymbolType.LAMBDA_FUNCTION, SemanticTokenTypes.Keyword);
+        put(SymbolType.PARAMETER, SemanticTokenTypes.Parameter);
+        put(SymbolType.PROPERTY, SemanticTokenTypes.Property);
+        put(SymbolType.QUERY_INPUT, SemanticTokenTypes.Variable);
+        put(SymbolType.RANK_CONSTANT, SemanticTokenTypes.Variable);
+        put(SymbolType.RANK_PROFILE, SemanticTokenTypes.Variable);
+        put(SymbolType.SCHEMA, SemanticTokenTypes.Namespace);
+        put(SymbolType.STRUCT, SemanticTokenTypes.Variable);
+        put(SymbolType.STRUCT_FIELD, SemanticTokenTypes.Variable);
+        put(SymbolType.TENSOR_CELL_VALUE_TYPE, SemanticTokenTypes.Type);
     }};
 }

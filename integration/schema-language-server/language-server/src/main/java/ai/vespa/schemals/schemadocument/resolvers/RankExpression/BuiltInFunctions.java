@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.KeywordArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.LabelArgument;
@@ -18,9 +17,23 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldA
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.IntegerArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.StringArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.TensorTypeArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.VectorArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.FieldType;
 
+/**
+ * A big list of all the builtin ranking features and their signatures.
+ *
+ * Each ranking feature is represented by a {@link GenericFunction}. There is a mapping from identifier to 
+ * generic function.
+ *
+ * Each generic function may have several function signatures, which are valid ways of applying that specific identifier.
+ * They can vary in number of arguments, type of arguments and which properties can be used e.g. attribute(foo).count.
+ *
+ * Each argument is represented by a class implementing {@link ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument}.
+ *
+ * If describing a signature is hard, a feature can be added to the {@link BuiltInFunctions#simpleBuiltInFunctionsSet}, which only requires the identifier.
+ */
 public class BuiltInFunctions {
     public static final Map<String, GenericFunction> rankExpressionBuiltInFunctions = new HashMap<>() {{
         // ==== Query features ====
@@ -91,9 +104,9 @@ public class BuiltInFunctions {
             "absoluteProximity",
             "occurrence",
             "absoluteOccurrence",
-            "weightedOccureence",
-            "weightedAbsoluteOccurence",
-            "significantOccurence",
+            "weightedOccurrence",
+            "weightedAbsoluteOccurrence",
+            "significantOccurrence",
         
         // ==== Feild match features - normalized and relative to the whole query ====
             "weight",
@@ -207,6 +220,18 @@ public class BuiltInFunctions {
         
         // ==== Rank score ====
         put("bm25", new GenericFunction("bm25", new FunctionSignature(new FieldArgument("field"))));
+
+        put("elementwise", new GenericFunction("elementwise", List.of(
+            new FunctionSignature(List.of(
+                new ExpressionArgument("bm25(field)"),
+                new StringArgument("dimension")
+            )),
+            new FunctionSignature(List.of(
+                new ExpressionArgument("bm25(field)"),
+                new StringArgument("dimension"),
+                new TensorTypeArgument("cell_type")
+            ))
+        )));
 
         put("nativeRank", new GenericFunction("nativeRank", List.of(
             new FunctionSignature(),
@@ -332,8 +357,8 @@ public class BuiltInFunctions {
         )));
 
         // === ML Model features ===
-        put("onnx", new GenericFunction("onnx", new FunctionSignature(new SymbolArgument(SymbolType.ONNX_MODEL, "onnx-model"))));
-        put("onnxModel", new GenericFunction("onnxModel", new FunctionSignature(new SymbolArgument(SymbolType.ONNX_MODEL, "onnx-model"))));
+        put("onnx", new GenericFunction("onnx", new FunctionSignature(new SymbolArgument(SymbolType.ONNX_MODEL, "onnx-model")).withAnyProperty()));
+        put("onnxModel", new GenericFunction("onnxModel", new FunctionSignature(new SymbolArgument(SymbolType.ONNX_MODEL, "onnx-model")).withAnyProperty()));
         put("lightgbm", new GenericFunction("lightgbm", new FunctionSignature(new StringArgument("\"lightgbm-model-name\""))));
         put("xgboost", new GenericFunction("xgboost", new FunctionSignature(new StringArgument("\"xgboost-model-name\""))));
 

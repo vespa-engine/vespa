@@ -27,7 +27,8 @@ public class SchemaDiagnostic {
         DEPRECATED_TOKEN_SEARCH,
         FEATURES_INHERITS_NON_PARENT,
         FIELD_ARGUMENT_MISSING_INDEXING_TYPE,
-        UNDEFINED_SYMBOL
+        UNDEFINED_SYMBOL,
+        INVALID_TYPE
     };
 
     /**

@@ -3,6 +3,13 @@ package ai.vespa.schemals.schemadocument.resolvers.RankExpression;
 import java.util.Optional;
 
 
+/**
+ * An instantiation of a {@link GenericFunction} with
+ * - A {@link FunctionSignature}
+ * - An optional property (what comes after the '.' in features)
+ *
+ * Used for completion and hover information
+ */
 public class SpecificFunction {
 
     GenericFunction function;

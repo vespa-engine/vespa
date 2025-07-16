@@ -16,6 +16,10 @@ import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
+/**
+ * An argument referring to a named field.
+ * Can enforce specific field types and indexing modes.
+ */
 public class FieldArgument extends SymbolArgument {
 
     public static enum FieldType {

@@ -1,0 +1,50 @@
+name: Run BATS Tests
+
+on:
+  workflow_dispatch: # Allows manual triggering of the workflow
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - '**/*.sh'
+      - '**/*.bats'
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - '**/*.sh'
+      - '**/*.bats'
+
+jobs:
+  test:
+    name: BATS Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22' # Use a recent LTS version
+
+      - name: Install BATS and helpers
+        run: |
+          npm install -g bats
+          npm install -g bats-assert
+          npm install -g bats-support
+          npm install -g bats-mock
+
+      - name: Run BATS tests
+        env:
+          TERM: xterm
+        run: |
+          # Set the plugin path to the global npm root directory
+          # (required to run the 'load' command in the BATS tests)
+          export BATS_PLUGIN_PATH="$(npm root -g)"
+
+          # Run all .bats tests in all subdirectories
+          bats -r .

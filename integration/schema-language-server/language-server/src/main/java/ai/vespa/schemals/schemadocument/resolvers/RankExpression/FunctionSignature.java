@@ -13,11 +13,18 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
+/**
+ * A specific signature of a rank feature.
+ *
+ * Can be matched against a list of argument {@link RankNode}s, and apply processing on each argument node,
+ * given by the specific implementation of the {@link Argument}.
+ */
 public class FunctionSignature {
 
     private List<Argument> argumentList;
     private Set<String> properties;
     private boolean expandable = false;
+    private boolean anyPropertyAllowed = false;
 
     public FunctionSignature(List<Argument> arguments, Set<String> properties, boolean expandable) {
         this.argumentList = arguments;
@@ -69,10 +76,20 @@ public class FunctionSignature {
         this(new ArrayList<>());
     }
 
+    // If any string '.foo' is allowed on a rank feature
+    public FunctionSignature withAnyProperty() {
+        this.anyPropertyAllowed = true;
+        return this;
+    }
+
+    public boolean anyPropertyAllowed() {
+        return this.anyPropertyAllowed;
+    }
+
     int matchScore(List<RankNode> arguments) {
         if (!expandable) {
             if (arguments.size() != argumentList.size()) {
-                return 0;
+                return -1;
             }
     
         }

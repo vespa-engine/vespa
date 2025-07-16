@@ -84,7 +84,7 @@ public class Spooler {
 
     public void processFiles(Function<LoggerEntry, Boolean> transport) throws IOException {
         List<Path> files = listFilesInPath(readyPath);
-        if (files.size() == 0) {
+        if (files.isEmpty()) {
             log.log(Level.FINEST, () -> "No files in ready path " + readyPath.toFile().getAbsolutePath());
             return;
         }
@@ -124,7 +124,7 @@ public class Spooler {
                 }
                 failures.remove(f);
             } catch (Exception e) {
-                handleFailure(f);
+                handleFailure(f, e);
             } finally {
                 if (success) {
                     if (keepSuccessFiles)
@@ -140,14 +140,14 @@ public class Spooler {
         }
     }
 
-    private void handleFailure(File file) {
+    private void handleFailure(File file, Exception e) {
         failures.putIfAbsent(file, 0);
         var failCount = failures.compute(file, (f, count) -> count + 1);
         if (failCount > maxFailures) {
             log.log(Level.WARNING, "Unable to process file " + file + " after trying " + maxFailures + " times, moving it to " + failuresPath);
             moveProcessedFile(file, failuresPath);
         } else {
-            log.log(Level.INFO, "Unable to process file " + file + " after trying " + maxFailures + " times, will retry");
+            log.log(Level.INFO, "Unable to process file " + file + ", will retry. Error: " + e.getMessage());
         }
     }
 

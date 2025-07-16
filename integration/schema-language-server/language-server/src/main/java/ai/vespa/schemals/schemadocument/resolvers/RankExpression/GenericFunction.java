@@ -20,6 +20,11 @@ import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
+/**
+ * A representation of a rank feature. Holds a list of signatures, which are overloads
+ * of this function. Matching a GenericFunction object with a list of argument {@link RankNode}s
+ * gives the {@link FunctionSignature} applicable to the arguments.
+ */
 public class GenericFunction {
 
     private String name;
@@ -79,10 +84,10 @@ public class GenericFunction {
 
         if (signature.isEmpty()) {
             List<String> signatureStrings = signatures.stream()
-                                                      .map(func -> func.toString())
+                                                      .map(func -> name + func.toString())
                                                       .collect(Collectors.toList());
             String availableSignatures = String.join("\n", signatureStrings);
-            String message = "No function matched for that sinature. Available signatures are:\n" + availableSignatures;
+            String message = "No function matched the given signature. Available signatures are:\n" + availableSignatures;
             diagnostics.add(new SchemaDiagnostic.Builder()
                 .setRange(node.getRange())
                 .setMessage(message)
@@ -98,6 +103,15 @@ public class GenericFunction {
         if (property.isEmpty() && (signatureProps.contains("") || signatureProps.size() == 0)) {
             // This is valid
             node.setFunctionSignature(new SpecificFunction(this, signature.get()));
+            return diagnostics;
+        }
+
+        if (signature.get().anyPropertyAllowed()) {
+            if (property.isEmpty()) {
+                node.setFunctionSignature(new SpecificFunction(this, signature.get()));
+            } else {
+                node.setFunctionSignature(new SpecificFunction(this, signature.get(), Optional.of(property.get().getText())));
+            }
             return diagnostics;
         }
         
