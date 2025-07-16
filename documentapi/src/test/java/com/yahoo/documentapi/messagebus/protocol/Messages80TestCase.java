@@ -90,6 +90,8 @@ public class Messages80TestCase extends MessagesTestBase {
                 var msg2 = (GetDocumentMessage)deserialize("GetDocumentMessage", DocumentProtocol.MESSAGE_GETDOCUMENT, lang);
                 assertEquals("id:ns:testdoc::", msg2.getDocumentId().toString());
                 assertEquals("foo bar", msg2.getFieldSet());
+                assertEquals(null, msg2.getDebugReplicaNodeId());
+                assertEquals(false, msg2.hasDebugReplicaNodeId());
             });
         }
     }

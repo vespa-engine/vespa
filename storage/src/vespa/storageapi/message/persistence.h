@@ -204,6 +204,7 @@ class GetCommand : public BucketInfoCommand {
     std::string        _fieldSet;
     TestAndSetCondition     _condition;
     InternalReadConsistency _internal_read_consistency;
+    std::optional<uint16_t> _debug_replica_node_id;
 public:
     GetCommand(const document::Bucket &bucket, const document::DocumentId&,
                std::string_view fieldSet, Timestamp before = MAX_TIMESTAMP);
@@ -229,6 +230,10 @@ public:
     api::LockingRequirements lockingRequirements() const noexcept override {
         return api::LockingRequirements::Shared;
     }
+
+    void set_debug_replica_node_id(std::optional<uint16_t> node_id) noexcept { _debug_replica_node_id = node_id; }
+    [[nodiscard]] std::optional<uint16_t> debug_replica_node_id() const noexcept { return _debug_replica_node_id; }
+    [[nodiscard]] bool has_debug_replica_node_id() const noexcept { return _debug_replica_node_id.has_value(); }
 
     DECLARE_STORAGECOMMAND(GetCommand, onGet)
 };

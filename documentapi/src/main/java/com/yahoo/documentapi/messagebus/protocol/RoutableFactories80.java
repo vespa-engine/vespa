@@ -306,15 +306,27 @@ abstract class RoutableFactories80 {
     static RoutableFactory createGetDocumentMessageFactory() {
         return ProtobufCodecBuilder
                 .of(GetDocumentMessage.class, DocapiFeed.GetDocumentRequest.class)
-                .encoder((apiMsg) ->
-                        DocapiFeed.GetDocumentRequest.newBuilder()
+                .encoder((apiMsg) -> {
+                        var builder = DocapiFeed.GetDocumentRequest.newBuilder()
                             .setDocumentId(toProtoDocId(apiMsg.getDocumentId()))
-                            .setFieldSet(toProtoFieldSet(apiMsg.getFieldSet()))
-                            .build())
-                .decoder(DocapiFeed.GetDocumentRequest.parser(), (protoMsg) ->
-                        new GetDocumentMessage(
-                                fromProtoDocId(protoMsg.getDocumentId()),
-                                fromProtoFieldSet(protoMsg.getFieldSet())))
+                            .setFieldSet(toProtoFieldSet(apiMsg.getFieldSet()));
+
+                        if (apiMsg.hasDebugReplicaNodeId()) {
+                            builder.setDebugReplicaNodeId(apiMsg.getDebugReplicaNodeId());
+                        }
+
+                        return builder.build();
+                })
+                .decoder(DocapiFeed.GetDocumentRequest.parser(), (protoMsg) -> {
+                        var msg = new GetDocumentMessage(fromProtoDocId(protoMsg.getDocumentId()),
+                                                         fromProtoFieldSet(protoMsg.getFieldSet()));
+
+                        if (protoMsg.hasDebugReplicaNodeId()) {
+                            msg.setDebugReplicaNodeId(protoMsg.getDebugReplicaNodeId());
+                        }
+
+                        return msg;
+                })
                 .build();
     }
 
