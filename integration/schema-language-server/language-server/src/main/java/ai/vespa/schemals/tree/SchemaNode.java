@@ -190,7 +190,7 @@ public class SchemaNode extends Node {
         return elmNode.getILScript();
     }
 
-    public String getRankExpressionString() {
+    public String getRankingExpressionString() {
         if (!containsOtherLanguageData(LanguageType.RANK_EXPRESSION)) return null;
 
         if (originalSchemaNode instanceof consumedExpressionElm) {
