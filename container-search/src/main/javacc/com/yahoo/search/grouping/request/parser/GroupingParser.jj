@@ -131,6 +131,7 @@ TOKEN :
     <MOD: "mod"> |
     <MUL: "mul"> |
     <NEG: "neg"> |
+    <NOT: "not"> |
     <NORMALIZESUBJECT: "normalizesubject"> |
     <NOW: "now"> |
     <OR: "or"> |
