@@ -63,7 +63,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.vespa.config.util.ConfigUtils.getCanonicalHostName;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
@@ -223,11 +222,6 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
                                   .returnDesc(0, "statistics", "Statistics for server"));
         getSupervisor().addMethod(new Method("filedistribution.serveFile", "si*", "is", this::serveFile)
                                   .requireCapabilities(Capability.CONFIGSERVER__FILEDISTRIBUTION_API));
-        getSupervisor().addMethod(new Method("filedistribution.setFileReferencesToDownload", "S", "i", this::setFileReferencesToDownload)
-                                  .requireCapabilities(Capability.CONFIGSERVER__FILEDISTRIBUTION_API)
-                                  .methodDesc("set which file references to download")
-                                  .paramDesc(0, "file references", "file reference to download")
-                                  .returnDesc(0, "ret", "0 if success, 1 otherwise"));
         getSupervisor().addMethod(new Method("filedistribution.triggerDownload", "Ss", "i", this::triggerDownload)
                                           .requireCapabilities(Capability.CONFIGSERVER__FILEDISTRIBUTION_API)
                                           .methodDesc("trigger download of file references from supplied source")
@@ -568,25 +562,6 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
                     var receiver = new ChunkedFileReceiver(request.target());
                     fileServer.serveFile(reference, downloadFromOtherSourceIfNotFound, acceptedCompressionTypes, request, receiver);
                 });
-    }
-
-    private void setFileReferencesToDownload(Request req) {
-        req.detach();
-        rpcAuthorizer.authorizeFileRequest(req)
-                .thenRun(() -> { // okay to do in authorizer thread as downloadFromSource is async
-                    String[] fileReferenceStrings = req.parameters().get(0).asStringArray();
-
-                    // Download directly from the source that has the file reference, which
-                    // is the client that sent the request
-                    var client = req.target();
-                    var peerSpec = client.peerSpec();
-                    Stream.of(fileReferenceStrings)
-                            .map(FileReference::new)
-                            .forEach(fileReference -> downloadFromSource(fileReference, client.toString(), peerSpec));
-                    req.returnValues().add(new Int32Value(0));
-                });
-        req.returnValues().add(new Int32Value(0));
-        req.returnRequest();
     }
 
     private void triggerDownload(Request req) {
