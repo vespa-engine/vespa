@@ -58,7 +58,5 @@ public class IdentifyRankProperties extends Identifier<SchemaNode> {
 
         node.insertChildAfter(0, newNode);
         node.removeChild(0);
-
-        return;
     }
 }

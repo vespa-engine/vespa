@@ -400,5 +400,4 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
         }
         return false;
     }
-
 }

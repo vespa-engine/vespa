@@ -5,7 +5,6 @@ import java.util.List;
 import org.eclipse.lsp4j.Diagnostic;
 
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.INHERITS;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.rootSchema;
@@ -34,6 +33,5 @@ public class IdentifySchemaInheritance extends Identifier<SchemaNode> {
         }
 
         context.setInheritsSchemaNode(node);
-        return;
 	}
 }

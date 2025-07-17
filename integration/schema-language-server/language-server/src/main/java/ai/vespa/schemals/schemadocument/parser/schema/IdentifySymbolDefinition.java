@@ -153,8 +153,6 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
                     .setSeverity(DiagnosticSeverity.Warning)
                     .build());
         }
-
-        return;
     }
 
     /**
@@ -314,8 +312,6 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
         } else {
             node.setSymbolStatus(SymbolStatus.INVALID);
         }
-
-        return;
     }
 
     /**

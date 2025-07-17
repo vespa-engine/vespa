@@ -29,8 +29,5 @@ public class IdentifyRankProfileInheritance extends Identifier<SchemaNode> {
         }
 
         context.addUnresolvedInheritanceNode(node);
-        return;
 	}
-
-    
 }
