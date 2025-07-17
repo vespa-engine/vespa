@@ -1,6 +1,5 @@
 package ai.vespa.schemals.schemadocument.parser.schema;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -13,8 +12,8 @@ import org.eclipse.lsp4j.Range;
 import com.yahoo.schema.parser.ParsedType.Variant;
 import com.yahoo.schema.processing.ReservedFunctionNames;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.TensorTypeParser;
 import com.yahoo.tensor.TensorType.MappedDimension;
+import com.yahoo.tensor.TensorTypeParser;
 
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.common.SchemaDiagnostic;
@@ -45,8 +44,8 @@ import ai.vespa.schemals.parser.rankingexpression.ast.tensorTypeDimension;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
+import ai.vespa.schemals.tree.SchemaNode;
 
 /**
  * IdentifySymbolDefinition identifies symbol definitions, and mark the SchemaNode as a symbol and adds it to the index
@@ -57,46 +56,44 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
 		super(context);
 	}
 
-
     /**
      * Marks the node as a symbol with SymbolStatus DEFINITION
      * It is mainly based on the node type being an identifier, and the parent being of a certain type.
      * But in a lot of cases we need to check more.
      */
-    public ArrayList<Diagnostic> identify(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
-
+    @Override
+    public void identify(SchemaNode node, List<Diagnostic> diagnostics) {
         if (node.isASTInstance(dataType.class)) {
-            handleDataTypeDefinition(node, ret);
-            return ret;
+            handleDataTypeDefinition(node, diagnostics);
+            return;
         }
 
         if (node.getLanguageType() == LanguageType.RANK_EXPRESSION) {
-            return identifyDefinitionInRankExpression(node);
+            identifyDefinitionInRankExpression(node, diagnostics);
         }
         
         boolean isIdentifier = node.isASTInstance(identifierStr.class);
         boolean isIdentifierWithDash = node.isASTInstance(identifierWithDashStr.class);
 
-        if (!isIdentifier && !isIdentifierWithDash) return ret;
+        if (!isIdentifier && !isIdentifierWithDash) return;
 
         Node parent = node.getParent();
-        if (parent == null) return ret;
+        if (parent == null) return;
 
-        if (handleSpecialCases(node.getSchemaNode(), parent.getSchemaNode(), ret)) {
-            return ret;
+        if (handleSpecialCases(node.getSchemaNode(), parent.getSchemaNode(), diagnostics)) {
+            return;
         }
 
         Map<Class<?>, SymbolType> searchMap = isIdentifier ? SchemaIndex.IDENTIFIER_TYPE_MAP : SchemaIndex.IDENTIFIER_WITH_DASH_TYPE_MAP;
         SymbolType symbolType = searchMap.get(parent.getASTClass());
-        if (symbolType == null) return ret;
+        if (symbolType == null) return;
 
         // Root item, should not have a scope
         if (parent.isASTInstance(namedDocument.class) || parent.isASTInstance(rootSchema.class)) {
             node.setSymbol(symbolType, context.fileURI());
             node.setSymbolStatus(SymbolStatus.DEFINITION);
             context.schemaIndex().insertSymbolDefinition(node.getSymbol());
-            return ret;
+            return;
         }
 
         Optional<Symbol> scope = CSTUtils.findScope(node);
@@ -104,23 +101,23 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
             if (symbolType == SymbolType.RANK_PROFILE && parent.getParent() != null && parent.getParent().isASTInstance(RootRankProfile.class)) {
                 // we are in a rank-profile file (.profile)
                 String workspaceRootURI = context.scheduler().getWorkspaceURI();
-                if (workspaceRootURI == null) return ret;
+                if (workspaceRootURI == null) return;
                 String currentURI = context.fileURI();
 
                 String schemaName = FileUtils.firstPathComponentAfterPrefix(currentURI, workspaceRootURI);
 
-                if (schemaName == null) return ret;
+                if (schemaName == null) return;
 
                 Optional<Symbol> schemaSymbol = context.schemaIndex().getSchemaDefinition(schemaName);
 
-                if (schemaSymbol.isEmpty()) return ret;
+                if (schemaSymbol.isEmpty()) return;
 
                 // TODO: rank-profile belonging to namedDocument??
                 node.setSymbol(symbolType, context.fileURI(), schemaSymbol.get());
                 node.setSymbolStatus(SymbolStatus.DEFINITION);
                 context.schemaIndex().insertSymbolDefinition(node.getSymbol());
             }
-            return ret;
+            return;
         }
 
         node.setSymbol(symbolType, context.fileURI(), scope.get());
@@ -133,9 +130,9 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
             context.schemaIndex().insertSymbolDefinition(node.getSymbol());
 
             if (node.getSymbol().getType() == SymbolType.FUNCTION) {
-                verifySymbolFunctionName(node, ret);
+                verifySymbolFunctionName(node, diagnostics);
             }
-            return ret;
+            return;
         } 
 
         node.setSymbolStatus(SymbolStatus.INVALID);
@@ -150,14 +147,14 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
             }
 
             if (range != null)
-                ret.add(new SchemaDiagnostic.Builder()
+                diagnostics.add(new SchemaDiagnostic.Builder()
                     .setRange(range)
                     .setMessage("Field '" + node.getText() + "' shadows a document field with the same name.")
                     .setSeverity(DiagnosticSeverity.Warning)
                     .build());
         }
 
-        return ret;
+        return;
     }
 
     /**
@@ -273,26 +270,24 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
         context.schemaIndex().insertSymbolDefinition(node.getSymbol());
     }
 
-    private ArrayList<Diagnostic> identifyDefinitionInRankExpression(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<>();
-
+    private void identifyDefinitionInRankExpression(SchemaNode node, List<Diagnostic> diagnostics) {
         if (!node.isASTInstance(ai.vespa.schemals.parser.rankingexpression.ast.identifierStr.class)) {
-            return ret;
+            return;
         }
 
         Node parent = node.getParent();
-        if (parent == null) return ret;
+        if (parent == null) return;
 
         Node grandParent = parent.getParent();
-        if (grandParent == null) return ret;
+        if (grandParent == null) return;
 
         if (parent.isASTInstance(tensorTypeDimension.class) && grandParent.isASTInstance(tensorType.class)) {
-            handleTensorTypeDefinitions(node, grandParent.getSchemaNode(), ret);
-            return ret;
+            handleTensorTypeDefinitions(node, grandParent.getSchemaNode(), diagnostics);
+            return;
         }
 
         if (!grandParent.isASTInstance(lambdaFunction.class) || grandParent.size() < 1) {
-            return ret;
+            return;
         }
 
         // This is specific to lambda function definitions
@@ -302,7 +297,7 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
             Optional<Symbol> parentScope = CSTUtils.findScope(parent);
     
             if (parentScope.isEmpty()) {
-                return ret;
+                return;
             }
     
             lambdaDefinitionNode.setSymbol(SymbolType.LAMBDA_FUNCTION, context.fileURI(), parentScope.get(), "lambda_" + node.hashCode());
@@ -320,7 +315,7 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
             node.setSymbolStatus(SymbolStatus.INVALID);
         }
 
-        return ret;
+        return;
     }
 
     /**

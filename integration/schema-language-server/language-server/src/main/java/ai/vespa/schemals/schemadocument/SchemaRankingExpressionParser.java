@@ -3,7 +3,6 @@ package ai.vespa.schemals.schemadocument;
 import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.ast.consumedExpressionElm;

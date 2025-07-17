@@ -1,6 +1,5 @@
 package ai.vespa.schemals.schemadocument.parser.yqlplus;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -16,13 +15,11 @@ public class IdentifySymbolReferences extends Identifier<YQLNode> {
         super(context);
     }
 
-    public List<Diagnostic> identify(YQLNode node) {
-
+    @Override
+    public void identify(YQLNode node, List<Diagnostic> diagnostics) {
         if (node.getASTClass() == identifierStr.class || node.getASTClass() == ai.vespa.schemals.parser.grouping.ast.identifierStr.class) {
             context.logger().info("TODO");
         }
-
-        return new ArrayList<>();
     }
 
 }

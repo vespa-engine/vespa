@@ -1,6 +1,5 @@
 package ai.vespa.schemals.schemadocument.parser.schema;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,15 +33,15 @@ public class IdentifyType extends Identifier<SchemaNode> {
 		super(context);
 	}
 
-    public List<Diagnostic> identify(SchemaNode node) {
-        List<Diagnostic> ret = new ArrayList<Diagnostic>();
-
+    @Override
+    public void identify(SchemaNode node, List<Diagnostic> diagnostics) {
         if (node.isASTInstance(inputElm.class)) {
-            return identifyInputType(node);
+            identifyInputType(node, diagnostics);
+            return;
         }
 
         if (!node.isASTInstance(dataType.class)) {
-            return ret;
+            return;
         }
 
         dataType originalNode = (dataType)node.getOriginalSchemaNode();
@@ -51,7 +50,7 @@ public class IdentifyType extends Identifier<SchemaNode> {
 
         if (originalNode.isArrayOldStyle) {
             String nodeText = node.get(0).getText();
-            ret.add(new SchemaDiagnostic.Builder()
+            diagnostics.add(new SchemaDiagnostic.Builder()
                     .setRange(node.getRange())
                     .setMessage("Data type syntax '" + nodeText + "[]' is deprecated, use 'array<" + nodeText + ">' instead.")
                     .setSeverity(DiagnosticSeverity.Warning)
@@ -61,12 +60,12 @@ public class IdentifyType extends Identifier<SchemaNode> {
 
         if (parsedType == null) {
             // some parsing error has occured
-            return ret;
+            return;
         }
 
         if (parsedType.getVariant() == Variant.ANN_REFERENCE) {
             if (!isInsideAnnotationBody(node)) {
-                ret.add(new SchemaDiagnostic.Builder()
+                diagnostics.add(new SchemaDiagnostic.Builder()
                         .setRange( node.getRange())
                         .setMessage( "annotationreference should only be used inside an annotation")
                         .setSeverity( DiagnosticSeverity.Error)
@@ -82,7 +81,7 @@ public class IdentifyType extends Identifier<SchemaNode> {
                 ParsedType keyParsedType = ((dataType)keyTypeNode.getSchemaNode().getOriginalSchemaNode()).getParsedType();
                 if (keyParsedType.getVariant() != Variant.BUILTIN) {
                     // TODO: quickfix
-                    ret.add(new SchemaDiagnostic.Builder()
+                    diagnostics.add(new SchemaDiagnostic.Builder()
                             .setRange( keyTypeNode.getRange())
                             .setMessage( "Map key type must be a primitive type")
                             .setSeverity( DiagnosticSeverity.Error)
@@ -92,7 +91,7 @@ public class IdentifyType extends Identifier<SchemaNode> {
         }
 
         if (parsedType.getVariant() != Variant.UNKNOWN) {
-            return ret;
+            return;
         }
 
         Optional<Symbol> scope = CSTUtils.findScope(node);
@@ -103,7 +102,6 @@ public class IdentifyType extends Identifier<SchemaNode> {
         }
 
         this.context.addUnresolvedTypeNode(node);
-        return ret;
     }
 
     private static boolean isInsideAnnotationBody(SchemaNode node) {
@@ -115,11 +113,9 @@ public class IdentifyType extends Identifier<SchemaNode> {
         return false;
     }
 
-    private List<Diagnostic> identifyInputType(SchemaNode node) {
-        List<Diagnostic> ret = new ArrayList<>();
-
+    private void identifyInputType(SchemaNode node, List<Diagnostic> diagnostics) {
         if (!node.isASTInstance(inputElm.class) || node.size() == 0) {
-            return ret;
+            return;
         }
 
         SchemaNode valueTypeNode = null;
@@ -131,7 +127,7 @@ public class IdentifyType extends Identifier<SchemaNode> {
         }
 
         if (valueTypeNode == null) {
-            return ret;
+            return;
         }
 
         Node typeToken = valueTypeNode.findFirstLeaf();
@@ -146,13 +142,11 @@ public class IdentifyType extends Identifier<SchemaNode> {
         }
 
         if (warningMessage != null) {
-            ret.add(new SchemaDiagnostic.Builder()
+            diagnostics.add(new SchemaDiagnostic.Builder()
                 .setRange(valueTypeNode.getRange())
                 .setMessage(warningMessage)
                 .setSeverity(DiagnosticSeverity.Warning)
                 .build());
         }
-
-        return ret;
     }
 }

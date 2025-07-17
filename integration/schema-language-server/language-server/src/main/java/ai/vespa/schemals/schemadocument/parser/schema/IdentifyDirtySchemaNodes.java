@@ -1,6 +1,5 @@
 package ai.vespa.schemals.schemadocument.parser.schema;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -40,11 +39,12 @@ public class IdentifyDirtySchemaNodes extends Identifier<SchemaNode> {
         return cause.getMessage();
     }
 
-    public List<Diagnostic> identify(SchemaNode node) {
-        List<Diagnostic> ret = new ArrayList<>();
+    @Override
+    public void identify(SchemaNode node, List<Diagnostic> diagnostics) {
 
         if (!(node.getOriginalSchemaNode() instanceof Token)) {
-            return pureDirtyNodeIdentifier.identify(node);
+            pureDirtyNodeIdentifier.identify(node, diagnostics);
+            return;
         }
 
         Token nodeAsToken = (Token)(node.getOriginalSchemaNode());
@@ -54,7 +54,7 @@ public class IdentifyDirtySchemaNodes extends Identifier<SchemaNode> {
             TokenSource tokenSource = node.getTokenSource();
             Range range = CSTUtils.getRangeFromOffsets(tokenSource, parseException.beginOffset, parseException.endOffset);
             String message = getParseExceptionMessage(parseException.parseException);
-            ret.add(new SchemaDiagnostic.Builder()
+            diagnostics.add(new SchemaDiagnostic.Builder()
                 .setRange(range)
                 .setMessage(message)
                 .setSeverity(DiagnosticSeverity.Error)
@@ -64,7 +64,7 @@ public class IdentifyDirtySchemaNodes extends Identifier<SchemaNode> {
         IllegalArgumentException illegalArgumentException = nodeAsToken.getIllegalArgumentException();
 
         if (illegalArgumentException != null) {
-            ret.add(new SchemaDiagnostic.Builder()
+            diagnostics.add(new SchemaDiagnostic.Builder()
                 .setRange(node.getRange())
                 .setMessage(illegalArgumentException.getMessage())
                 .setSeverity(DiagnosticSeverity.Error)
@@ -72,9 +72,7 @@ public class IdentifyDirtySchemaNodes extends Identifier<SchemaNode> {
         }
 
         if (parseException == null && illegalArgumentException == null) {
-            ret.addAll(pureDirtyNodeIdentifier.identify(node));
+            pureDirtyNodeIdentifier.identify(node, diagnostics);
         }
-
-        return ret;
     }
 }

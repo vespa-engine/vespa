@@ -1,6 +1,6 @@
 package ai.vespa.schemals.schemadocument.parser.schema;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -22,14 +22,12 @@ public class IdentifyStructInheritance extends Identifier<SchemaNode> {
 	}
 
 	@Override
-	public ArrayList<Diagnostic> identify(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<>();
-
-        if (!node.isASTInstance(identifierStr.class)) return ret;
-        if (node.getParent() == null || !node.getParent().isASTInstance(inheritsStruct.class)) return ret;
+    public void identify(SchemaNode node, List<Diagnostic> diagnostics) {
+        if (!node.isASTInstance(identifierStr.class)) return;
+        if (node.getParent() == null || !node.getParent().isASTInstance(inheritsStruct.class)) return;
 
         if (!node.hasSymbol()) {
-            ret.add(new SchemaDiagnostic.Builder()
+            diagnostics.add(new SchemaDiagnostic.Builder()
                 .setRange(node.getRange())
                 .setMessage("Should be reference")
                 .setSeverity(DiagnosticSeverity.Warning)
@@ -37,7 +35,5 @@ public class IdentifyStructInheritance extends Identifier<SchemaNode> {
         }
 
         context.addUnresolvedInheritanceNode(node);
-
-        return ret;
 	}
 }

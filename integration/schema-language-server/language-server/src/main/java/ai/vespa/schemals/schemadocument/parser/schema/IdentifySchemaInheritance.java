@@ -1,6 +1,6 @@
 package ai.vespa.schemals.schemadocument.parser.schema;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
 
@@ -22,21 +22,18 @@ public class IdentifySchemaInheritance extends Identifier<SchemaNode> {
 	}
 
 	@Override
-	public ArrayList<Diagnostic> identify(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<>();
-
-        if (!node.isASTInstance(identifierStr.class)) return ret;
-        if (node.getParent() == null) return ret;
-        if (!node.getParent().isASTInstance(rootSchema.class)) return ret;
-        if (node.getPreviousSibling() == null) return ret;
-        if (!node.getPreviousSibling().isASTInstance(INHERITS.class)) return ret;
+    public void identify(SchemaNode node, List<Diagnostic> diagnostics) {
+        if (!node.isASTInstance(identifierStr.class)) return;
+        if (node.getParent() == null) return;
+        if (!node.getParent().isASTInstance(rootSchema.class)) return;
+        if (node.getPreviousSibling() == null) return;
+        if (!node.getPreviousSibling().isASTInstance(INHERITS.class)) return;
 
         if (!node.hasSymbol()) {
-            return ret;
+            return;
         }
 
         context.setInheritsSchemaNode(node);
-
-        return ret;
+        return;
 	}
 }

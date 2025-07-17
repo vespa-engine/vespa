@@ -270,7 +270,7 @@ public class SchemaDocument implements DocumentManager {
         }
 
         for (Identifier<SchemaNode> identifier : context.identifiers()) {
-            diagnostics.addAll(identifier.identify(node));
+            identifier.identify(node, diagnostics);
         }
 
         for (ai.vespa.schemals.tree.Node child : node) {
