@@ -145,11 +145,15 @@ public class LuceneTokenizerTest {
         return tokenList;
     }
 
+    private List<String> tokenToStrings(Iterable<Token> tokens) {
+        List<String> tokenList = new ArrayList<>();
+        tokens.forEach(token -> tokenList.add(token.toString()));
+        return tokenList;
+    }
+
     private List<String> tokenStrings(Iterable<Token> tokens) {
         List<String> tokenList = new ArrayList<>();
-        tokens.forEach(token -> {
-            tokenList.add(token.getTokenString());
-        });
+        tokens.forEach(token -> tokenList.add(token.getTokenString()));
         return tokenList;
     }
 
@@ -297,4 +301,63 @@ public class LuceneTokenizerTest {
         assertEquals(List.of("dog", "cat"), tokenStrings(stemModeTokens));
 
     }
+
+    @Test
+    public void testSynonymConfiguration() {
+        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, false, true);
+        String languageCode = Language.ENGLISH.languageCode();
+        var analysis = new LuceneAnalysisConfig.Analysis.Builder();
+        analysis.tokenizer.name("whitespace");
+
+        analysis.tokenFilters.add(tokenFilter("asciiFolding"));
+
+        var synonymGraphFilter = tokenFilter("synonymGraph");
+        synonymGraphFilter.conf.put("synonyms", "synonyms.txt");
+        synonymGraphFilter.conf.put("ignoreCase", "true");
+        synonymGraphFilter.conf.put("expand", "true");
+        analysis.tokenFilters.add(synonymGraphFilter);
+
+        var stopFilter = tokenFilter("stop");
+        stopFilter.conf.put("words", "stopwords.txt");
+        stopFilter.conf.put("ignoreCase", "true");
+        analysis.tokenFilters.add(stopFilter);
+
+        var wordDelimiterFilter = tokenFilter("wordDelimiterGraph");
+        wordDelimiterFilter.conf.put("generateWordParts", "1");
+        wordDelimiterFilter.conf.put("generateNumberParts", "1");
+        wordDelimiterFilter.conf.put("catenateWords", "1");
+        wordDelimiterFilter.conf.put("catenateNumbers", "1");
+        wordDelimiterFilter.conf.put("catenateAll", "1");
+        wordDelimiterFilter.conf.put("splitOnCaseChange", "0");
+        wordDelimiterFilter.conf.put("splitOnNumerics", "1");
+        wordDelimiterFilter.conf.put("stemEnglishPossessive", "1");
+        wordDelimiterFilter.conf.put("preserveOriginal", "1");
+        wordDelimiterFilter.conf.put("protected", "wordDelimiterGraphFilterFactoryProtected.txt");
+        analysis.tokenFilters.add(wordDelimiterFilter);
+
+        analysis.tokenFilters.add(tokenFilter("lowercase"));
+
+        analysis.tokenFilters.add(tokenFilter("removeDuplicates"));
+
+        var config = new LuceneAnalysisConfig.Builder()
+                                             .configDir(Optional.of(FileReference.mockFileReferenceForUnitTesting(new File("."))))
+                                             .analysis(Map.of(languageCode, analysis));
+        LuceneLinguistics linguistics = new LuceneLinguistics(config.build(), new ComponentRegistry<>());
+
+        Iterable<Token> tokens = linguistics.getTokenizer().tokenize("Wi-Fi Sticker", parameters);
+        assertEquals(List.of("token 'wi-fi' (stems: [wifi, wi], original: 'Wi-Fi')",
+                             "token 'fi' (original: 'Fi')",
+                             "token 'sticker' (original: 'Sticker')"),
+                     tokenToStrings(tokens));
+
+        assertEquals("token 'c++' (original: 'C++')",
+                     linguistics.getTokenizer().tokenize("C++", parameters).iterator().next().toString());
+        assertEquals("token 'ship' (stems: [boat], original: 'boat')",
+                     linguistics.getTokenizer().tokenize("boat", parameters).iterator().next().toString());
+    }
+
+    private LuceneAnalysisConfig.Analysis.TokenFilters.Builder tokenFilter(String name) {
+        return new LuceneAnalysisConfig.Analysis.TokenFilters.Builder().name(name);
+    }
+
 }
