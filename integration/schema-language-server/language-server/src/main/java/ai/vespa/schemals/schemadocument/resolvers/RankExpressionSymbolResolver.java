@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
@@ -160,8 +161,14 @@ public class RankExpressionSymbolResolver {
             // Remove symbol reference, but display a warning
             removeSymbolFromIndex(context, node.getSchemaNode());
 
+            Range range = node.getRange();
+
+            // Limit range to first identifier if possible to avoid crashing diagnostics
+            if (node.getSchemaNode().size() > 0)
+                range = node.getSchemaNode().get(0).getRange();
+
             diagnostics.add(new SchemaDiagnostic.Builder()
-                    .setRange(node.getRange())
+                    .setRange(range)
                     .setMessage("No feature with the name " + identifier + " was found. Property has no effect.")
                     .setSeverity(DiagnosticSeverity.Warning)
                     .build());
