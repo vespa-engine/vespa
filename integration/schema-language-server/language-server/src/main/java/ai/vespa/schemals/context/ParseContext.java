@@ -1,16 +1,12 @@
 package ai.vespa.schemals.context;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
-import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.YQLNode;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.FieldIndex;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
-
 import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.schemadocument.parser.IdentifyDirtyNodes;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifyDeprecatedToken;
@@ -27,6 +23,8 @@ import ai.vespa.schemals.schemadocument.parser.schema.IdentifySymbolDefinition;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifySymbolReferences;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifyType;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.UnresolvedFieldArgument;
+import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.YQLNode;
 
 public class ParseContext { 
     private String content;

@@ -1,14 +1,11 @@
 package ai.vespa.schemals.context;
 
-import java.io.PrintStream;
-
 import org.eclipse.lsp4j.TextDocumentIdentifier;
-
-import ai.vespa.schemals.schemadocument.DocumentManager;
 
 import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class EventDocumentContext extends EventContext {

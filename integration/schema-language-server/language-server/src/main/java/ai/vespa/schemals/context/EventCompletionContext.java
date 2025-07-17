@@ -1,7 +1,5 @@
 package ai.vespa.schemals.context;
 
-import java.io.PrintStream;
-
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 

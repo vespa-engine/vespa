@@ -1,6 +1,5 @@
 package ai.vespa.schemals.lsp.yqlplus.completion.provider;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -10,9 +9,6 @@ import org.eclipse.lsp4j.Position;
 import com.yahoo.search.grouping.request.MathFunctions;
 import com.yahoo.search.grouping.request.TimeFunctions;
 
-import ai.vespa.schemals.tree.CSTUtils;
-import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.Node.LanguageType;
 import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
 import ai.vespa.schemals.lsp.common.completion.CompletionUtils;
@@ -23,6 +19,9 @@ import ai.vespa.schemals.parser.grouping.ast.expElm;
 import ai.vespa.schemals.parser.grouping.ast.expList;
 import ai.vespa.schemals.parser.grouping.ast.lbraceElm;
 import ai.vespa.schemals.parser.grouping.ast.operationBody;
+import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
+import ai.vespa.schemals.tree.Node.LanguageType;
 
 public class GroupingExpressionProvider implements CompletionProvider {
 

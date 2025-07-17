@@ -1,10 +1,7 @@
 package ai.vespa.schemals.lsp.yqlplus.completion.provider;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Position;
@@ -17,21 +14,17 @@ import ai.vespa.schemals.parser.yqlplus.ast.FROM;
 import ai.vespa.schemals.parser.yqlplus.ast.SOURCES;
 import ai.vespa.schemals.parser.yqlplus.ast.limit_fun;
 import ai.vespa.schemals.parser.yqlplus.ast.offset_fun;
-import ai.vespa.schemals.parser.yqlplus.ast.orderby_fields;
 import ai.vespa.schemals.parser.yqlplus.ast.orderby_fun;
 import ai.vespa.schemals.parser.yqlplus.ast.query_statement;
-import ai.vespa.schemals.parser.yqlplus.ast.select_field_spec;
 import ai.vespa.schemals.parser.yqlplus.ast.select_source;
-import ai.vespa.schemals.parser.yqlplus.ast.select_source_from;
 import ai.vespa.schemals.parser.yqlplus.ast.select_source_sources;
 import ai.vespa.schemals.parser.yqlplus.ast.select_statement;
 import ai.vespa.schemals.parser.yqlplus.ast.timeout_fun;
 import ai.vespa.schemals.parser.yqlplus.ast.where_fun;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.YQLNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
-import ai.vespa.schemals.tree.YQL.YQLUtils;
+import ai.vespa.schemals.tree.YQLNode;
 
 public class RootCompletion implements CompletionProvider {
 

@@ -7,8 +7,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Optional;
+import java.util.Set;
 
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -25,7 +25,6 @@ import ai.vespa.schemals.parser.ast.inputName;
 import ai.vespa.schemals.parser.ast.namedDocument;
 import ai.vespa.schemals.parser.ast.onnxModel;
 import ai.vespa.schemals.parser.ast.onnxModelOutput;
-import ai.vespa.schemals.parser.ast.onnxModelInProfile;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;

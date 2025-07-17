@@ -9,7 +9,6 @@ import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.schemaRankPropertyKey;
 import ai.vespa.schemals.parser.ast.IDENTIFIER;
 import ai.vespa.schemals.parser.ast.IDENTIFIER_WITH_DASH;
-import ai.vespa.schemals.parser.ast.VARIABLE;
 import ai.vespa.schemals.parser.ast.rankProperty;
 import ai.vespa.schemals.parser.ast.rankPropertyItem;
 import ai.vespa.schemals.schemadocument.parser.Identifier;

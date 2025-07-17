@@ -1,7 +1,5 @@
 package ai.vespa.schemals.context;
 
-import java.io.PrintStream;
-
 import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.SchemaIndex;

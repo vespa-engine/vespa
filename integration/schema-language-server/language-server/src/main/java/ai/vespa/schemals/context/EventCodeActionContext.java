@@ -1,6 +1,5 @@
 package ai.vespa.schemals.context;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 

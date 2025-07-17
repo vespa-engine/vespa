@@ -14,9 +14,8 @@ import ai.vespa.schemals.parser.grouping.ast.request;
 import ai.vespa.schemals.parser.grouping.ast.spaceElm;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.YQLNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
-import ai.vespa.schemals.tree.YQL.YQLUtils;
+import ai.vespa.schemals.tree.YQLNode;
 
 public class RootGroupingCompletion implements CompletionProvider {
 

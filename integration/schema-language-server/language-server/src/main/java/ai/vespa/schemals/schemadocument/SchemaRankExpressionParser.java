@@ -1,31 +1,14 @@
 package ai.vespa.schemals.schemadocument;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Position;
-import org.eclipse.lsp4j.Range;
-
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.index.Symbol;
-import ai.vespa.schemals.index.Symbol.SymbolStatus;
-import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.Node;
-import ai.vespa.schemals.parser.Token.TokenType;
-import ai.vespa.schemals.parser.ast.IDENTIFIER_WITH_DASH;
-import ai.vespa.schemals.parser.ast.NL;
-import ai.vespa.schemals.parser.ast.identifierWithDashStr;
-import ai.vespa.schemals.parser.ast.onnxModelInput;
 import ai.vespa.schemals.parser.ast.consumedExpressionElm;
 import ai.vespa.schemals.parser.ast.consumedFeatureListElm;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
@@ -34,7 +17,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
 
 /**
- * SchemaRankExpressionParser is a parser for rank epxressions, which is small part in other files
+ * Parser for rank expressions, which is small part in other files
  */
 public class SchemaRankExpressionParser {
     static void printExpressionTree(PrintStream logger, ExpressionNode node, int indent) {
