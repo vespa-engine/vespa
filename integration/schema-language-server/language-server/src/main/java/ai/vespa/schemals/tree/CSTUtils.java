@@ -14,9 +14,11 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.TokenSource;
+import ai.vespa.schemals.parser.schemaRankPropertyKey;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.functionElm;
 import ai.vespa.schemals.parser.ast.consumedExpressionElm;
+import ai.vespa.schemals.parser.ast.consumedFeatureListElm;
 import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.tensorGenerateBody;
@@ -323,10 +325,16 @@ public class CSTUtils {
             ret += " [RANK_EXPRESSION";
             if (node.isASTInstance(consumedExpressionElm.class)) {
                 ret += " (EXPRESSION)";
-            } else {
+            } else if (node.isASTInstance(consumedFeatureListElm.class)) {
                 ret += " (FEATURE LIST)";
+            } else if (node.isASTInstance(schemaRankPropertyKey.class)) {
+                ret += " (PROPERTY KEY)";
             }
             ret += "]";
+        }
+
+        if (node.getRankNode().isPresent()) {
+            ret += " (rank node type: " + node.getRankNode().get().getType().toString() + ")";
         }
 
         if (node.getLanguageType() == LanguageType.RANK_EXPRESSION && (node.getOriginalRankExpressionNode() instanceof BaseNode)) {

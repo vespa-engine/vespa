@@ -21,7 +21,6 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.YQLNode;
-import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class YQLDocument implements DocumentManager {
 

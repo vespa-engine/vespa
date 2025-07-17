@@ -7,11 +7,15 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.Range;
 
+import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.rankingexpression.ast.rankPropertyFeature;
 import ai.vespa.schemals.parser.rankingexpression.ast.unaryFunctionName;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.BuiltInFunctions;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.GenericFunction;
@@ -81,8 +85,13 @@ public class RankExpressionSymbolResolver {
             }
 
             if (node.getSymbolStatus() == SymbolStatus.UNRESOLVED) {
-                findBuiltInFunction(node, context, diagnostics);
+                if (node.getSchemaNode().getParent().isASTInstance(rankPropertyFeature.class)) {
+                    findRankPropertyFeature(node, context, diagnostics);
+                } else {
+                    findBuiltInFunction(node, context, diagnostics);
+                }
             }
+
 
         }
 
@@ -124,6 +133,10 @@ public class RankExpressionSymbolResolver {
             return;
         }
 
+        if (node.getSchemaNode().getParent().isASTInstance(rankPropertyFeature.class)) {
+            return;
+        }
+
         String identifier = node.getSymbol().getShortIdentifier();
 
         GenericFunction functionHandler = BuiltInFunctions.rankExpressionBuiltInFunctions.get(identifier);
@@ -134,11 +147,43 @@ public class RankExpressionSymbolResolver {
         node.getSymbol().setStatus(SymbolStatus.BUILTIN_REFERENCE);
 
         Optional<SchemaNode> functionProperty = node.getProperty();
-        if (functionProperty.isPresent()) {
-            removeSymbolFromIndex(context, functionProperty.get());
+        functionProperty.ifPresent(property -> removeSymbolFromIndex(context, property));
+
+        diagnostics.addAll(functionHandler.handleArgumentList(context, node, false));
+    }
+
+    private static void findRankPropertyFeature(RankNode node, ParseContext context, List<Diagnostic> diagnostics) {
+        String identifier = node.getSymbol().getShortIdentifier();
+
+        GenericFunction functionHandler = BuiltInFunctions.rankExpressionBuiltInFunctions.get(identifier);
+        if (functionHandler == null) {
+            // If no builtin feature is found, the property doesn't really have any effect.
+            // Remove symbol reference, but display a warning
+            removeSymbolFromIndex(context, node.getSchemaNode());
+
+            Range range = node.getRange();
+
+            // Limit range to first identifier if possible to avoid crashing diagnostics
+            if (node.getSchemaNode().size() > 0)
+                range = node.getSchemaNode().get(0).getRange();
+
+            diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange(range)
+                    .setMessage("No feature with the name " + identifier + " was found. Property has no effect.")
+                    .setSeverity(DiagnosticSeverity.Warning)
+                    .build());
+
+            return;
         }
 
-        diagnostics.addAll(functionHandler.handleArgumentList(context, node));
+        node.getSymbol().setType(SymbolType.FUNCTION);
+        node.getSymbol().setStatus(SymbolStatus.BUILTIN_REFERENCE);
+
+        // TODO: Check valid config properties
+        Optional<SchemaNode> functionProperty = node.getProperty();
+        functionProperty.ifPresent(property -> removeSymbolFromIndex(context, property));
+
+        diagnostics.addAll(functionHandler.handleArgumentList(context, node, true));
     }
 
     private static final List<SymbolType> possibleTypes = new ArrayList<>() {{

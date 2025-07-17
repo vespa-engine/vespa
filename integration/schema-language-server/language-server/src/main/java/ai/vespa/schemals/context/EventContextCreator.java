@@ -1,7 +1,5 @@
 package ai.vespa.schemals.context;
 
-import java.io.PrintStream;
-
 import org.eclipse.lsp4j.CodeActionParams;
 import org.eclipse.lsp4j.CodeLensParams;
 import org.eclipse.lsp4j.CompletionParams;
@@ -15,8 +13,6 @@ import org.eclipse.lsp4j.TextDocumentPositionParams;
 import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
-
-import ai.vespa.schemals.context.InvalidContextException;
 
 public class EventContextCreator {
     public final SchemaDocumentScheduler scheduler;

@@ -220,7 +220,6 @@ public class SchemaParserTest {
             "../../../config-model/src/test/examples/position_summary.sd",
             "../../../config-model/src/test/examples/rankingexpressioninfile/rankingexpressioninfile.sd",
             "../../../config-model/src/test/examples/rankmodifier/literal.sd",
-            "../../../config-model/src/test/examples/rankpropvars.sd",
             "../../../config-model/src/test/examples/reserved_words_as_field_names.sd",
             "../../../config-model/src/test/examples/stemmingdefault.sd",
             "../../../config-model/src/test/examples/stemmingsetting.sd",
@@ -309,8 +308,9 @@ public class SchemaParserTest {
             new BadFileTestCase("../../../config-model/src/test/examples/invalidsummarysource.sd", 1),
             new BadFileTestCase("../../../config-model/src/test/examples/largerankingexpressions/rankexpression.sd", 2),
             new BadFileTestCase("../../../config-model/src/test/examples/rankingexpressionfunction/rankingexpressionfunction.sd", 2),
+            new BadFileTestCase("../../../config-model/src/test/examples/rankpropvars.sd", 2),
             new BadFileTestCase("../../../config-model/src/test/examples/stemmingresolver.sd", 1),
-            new BadFileTestCase("../../../config-model/src/test/derived/rankingexpression/rankexpression.sd", 30),
+            new BadFileTestCase("../../../config-model/src/test/derived/rankingexpression/rankexpression.sd", 42),
             new BadFileTestCase("../../../config-model/src/test/derived/renamedfeatures/foo.sd", 4),
 
             new BadFileTestCase("../../../config-model/src/test/derived/rankprofiles/rankprofiles.sd", 1), // only throws a warning during vespa deploy, but it is an unresolved reference case.
@@ -319,11 +319,12 @@ public class SchemaParserTest {
 
             new BadFileTestCase("../../../config-model/src/test/examples/simple.sd", 5), // TODO: unused rank-profile functions should throw errors? Also rank-type doesntexist: ... in field?
 
-            new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),
-            new BadFileTestCase("src/test/sdfiles/single/onnxmodel.sd", 1),
-            new BadFileTestCase("src/test/sdfiles/single/tensorGenerate.sd", 2),
-            new BadFileTestCase("src/test/sdfiles/single/onnxmodelinput.sd", 6),
             new BadFileTestCase("src/test/sdfiles/single/featuresinheritance.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/onnxmodel.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/onnxmodelinput.sd", 6),
+            new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),
+            new BadFileTestCase("src/test/sdfiles/single/rankproperties.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/tensorGenerate.sd", 2),
         };
 
         return Arrays.stream(tests)

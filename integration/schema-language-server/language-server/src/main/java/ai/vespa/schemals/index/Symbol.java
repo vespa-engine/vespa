@@ -1,13 +1,12 @@
 package ai.vespa.schemals.index;
 
-import ai.vespa.schemals.common.FileUtils;
-import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.SchemaNode;
-
 import java.net.URI;
 
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
+
+import ai.vespa.schemals.common.FileUtils;
+import ai.vespa.schemals.tree.Node;
 
 /**
  * Symbol represents a symbol in a document.

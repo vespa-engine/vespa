@@ -24,7 +24,7 @@ import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
- * RankNode represents a node in the Rank pexression AST.
+ * RankNode represents a node in the Rank expression AST.
  * The node can either represent an expression, a feature or a built-in-function
  * 
  * An expression is a rank expression.
@@ -67,7 +67,7 @@ public class RankNode implements Iterable<RankNode>  {
     private RankNodeType type;
     private ReturnType returnType;
     private boolean insideLambdaFunction = false;
-    private boolean arugmentListExists = false;
+    private boolean argumentListExists = false;
 
     // parameters for features, child nodes for expressions
     private List<RankNode> children;
@@ -94,7 +94,7 @@ public class RankNode implements Iterable<RankNode>  {
             Optional<List<RankNode>> children = findParameters(node);
             if (children.isPresent()) {
                 this.children = children.get();
-                arugmentListExists = true;
+                argumentListExists = true;
             } else {
                 this.children = new ArrayList<>();
             }
@@ -279,7 +279,7 @@ public class RankNode implements Iterable<RankNode>  {
     }
 
     public boolean getArgumentListExists() {
-        return arugmentListExists;
+        return argumentListExists;
     }
 
     public String toString() {

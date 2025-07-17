@@ -5,25 +5,22 @@ import java.util.Optional;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
-import ai.vespa.schemals.parser.Token;
-import ai.vespa.schemals.parser.Token.TokenType;
-import ai.vespa.schemals.parser.TokenSource;
-import ai.vespa.schemals.parser.Node.NodeType;
-import ai.vespa.schemals.parser.Token.ParseExceptionSource;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.Node.NodeType;
 import ai.vespa.schemals.parser.SubLanguageData;
+import ai.vespa.schemals.parser.Token;
+import ai.vespa.schemals.parser.Token.ParseExceptionSource;
+import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.TokenSource;
+import ai.vespa.schemals.parser.schemaRankPropertyKey;
+import ai.vespa.schemals.parser.ast.consumedExpressionElm;
+import ai.vespa.schemals.parser.ast.consumedFeatureListElm;
 import ai.vespa.schemals.parser.ast.indexingElm;
-import ai.vespa.schemals.parser.ast.onnxModel;
-import ai.vespa.schemals.parser.ast.onnxModelInput;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
-import ai.vespa.schemals.parser.ast.expressionElm;
-import ai.vespa.schemals.parser.ast.consumedExpressionElm;
-import ai.vespa.schemals.parser.ast.consumedFeatureListElm;
-import ai.vespa.schemals.parser.ast.featureListElm;
 
 /**
  * SchemaNode represents a node in the AST of a file the language server parses.
@@ -181,7 +178,8 @@ public class SchemaNode extends Node {
             (language == LanguageType.INDEXING && originalSchemaNode instanceof indexingElm) ||
             (language == LanguageType.RANK_EXPRESSION && (
                 (originalSchemaNode instanceof consumedExpressionElm) ||
-                (originalSchemaNode instanceof consumedFeatureListElm)
+                (originalSchemaNode instanceof consumedFeatureListElm) ||
+                (originalSchemaNode instanceof schemaRankPropertyKey)
             ))
         );
     }
@@ -201,6 +199,9 @@ public class SchemaNode extends Node {
         } else if (originalSchemaNode instanceof consumedFeatureListElm) {
             consumedFeatureListElm featureListNode = (consumedFeatureListElm)originalSchemaNode;
             return featureListNode.getFeatureList();
+        } else if (originalSchemaNode instanceof schemaRankPropertyKey) {
+            schemaRankPropertyKey rankPropertyNode = (schemaRankPropertyKey)originalSchemaNode;
+            return rankPropertyNode.getPropertyName();
         }
         return null;
     }

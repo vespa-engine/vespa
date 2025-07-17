@@ -2,8 +2,6 @@ package ai.vespa.schemals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -49,7 +47,6 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentItem;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
-import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.jsonrpc.messages.Either3;
@@ -75,8 +72,8 @@ import ai.vespa.schemals.lsp.schema.rename.SchemaRename;
 import ai.vespa.schemals.lsp.schema.semantictokens.SchemaSemanticTokens;
 import ai.vespa.schemals.lsp.yqlplus.codelens.YQLPlusCodeLens;
 import ai.vespa.schemals.lsp.yqlplus.semantictokens.YQLPlusSemanticTokens;
-import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 import ai.vespa.schemals.schemadocument.DocumentManager.DocumentType;
+import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 /**
  * SchemaTextDocumentService handles incomming requests from the client.
