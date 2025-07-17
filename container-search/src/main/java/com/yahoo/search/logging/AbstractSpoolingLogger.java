@@ -20,7 +20,7 @@ import java.util.logging.Level;
  */
 public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger implements Runnable {
 
-    protected static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(Spooler.class.getName());
+    protected static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(AbstractSpoolingLogger.class.getName());
 
     private final ScheduledExecutorService executorService;
     private final AtomicBoolean executorStarted = new AtomicBoolean(false);
@@ -28,7 +28,12 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
 
     @SuppressWarnings("unused") // Used by subclasses
     public AbstractSpoolingLogger() {
-        this(new Spooler(Clock.systemUTC()));
+        this(new Spooler(Clock.systemUTC(), 100));
+    }
+
+    @SuppressWarnings("unused") // Used by subclasses
+    public AbstractSpoolingLogger(int maxFailures) {
+        this(new Spooler(Clock.systemUTC(), maxFailures));
     }
 
     public AbstractSpoolingLogger(Spooler spooler) {
