@@ -42,7 +42,7 @@ public class IdentifyRankProperties extends Identifier<SchemaNode> {
         }
 
         // Replace the rankPropertyItem corresponding to the rank-property key
-        // with a consumedFeatureListElm marked as containing ranking expression data.
+        // with a new node marked as containing ranking expression data.
         // This will make it get handled by the ranking expression parser later.
         String keyData = node.get(0).getText();
         rankPropertyItem oldASTNode = (rankPropertyItem)(node.get(0).getSchemaNode().getOriginalSchemaNode());
