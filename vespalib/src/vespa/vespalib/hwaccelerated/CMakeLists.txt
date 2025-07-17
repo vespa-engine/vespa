@@ -3,7 +3,7 @@
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   set(ACCEL_FILES "x64_generic.cpp" "avx2.cpp" "avx3.cpp" "avx3_dl.cpp")
 elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
-  set(ACCEL_FILES "neon.cpp" "neon_fp16_dotprod.cpp")
+  set(ACCEL_FILES "neon.cpp" "neon_fp16_dotprod.cpp" "sve.cpp" "sve2.cpp")
 else()
   message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
 endif()
@@ -21,6 +21,8 @@ set_source_files_properties(avx3_dl.cpp           PROPERTIES COMPILE_FLAGS "-O3 
 
 set_source_files_properties(neon.cpp              PROPERTIES COMPILE_FLAGS "-O3 -march=armv8.2-a")
 set_source_files_properties(neon_fp16_dotprod.cpp PROPERTIES COMPILE_FLAGS "-O3 -march=armv8.2-a+fp16+dotprod+crypto -mtune=neoverse-n1")
+set_source_files_properties(sve.cpp               PROPERTIES COMPILE_FLAGS "-O3 -march=armv8.2-a+sve -mtune=neoverse-n1")
+set_source_files_properties(sve2.cpp              PROPERTIES COMPILE_FLAGS "-O3 -march=armv8.2-a+sve2 -mtune=neoverse-n1")
 
 set(BLA_VENDOR OpenBLAS)
 vespa_add_target_package_dependency(vespa_hwaccelerated BLAS)
