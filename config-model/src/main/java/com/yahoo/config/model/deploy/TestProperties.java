@@ -77,7 +77,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean logserverOtelCol = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
     private int maxDistributorDocumentOperationSizeMib = -1;
-    private long searchCoreTransactionLogReplaySoftMemoryLimit = 0;
+    private long searchCoreTransactionLogReplaySoftMemoryLimit = -3;
     private int searchCoreMaxOutstandingMoveOps = 100;
     private boolean useNewPrepareForRestart = false;
     private Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
