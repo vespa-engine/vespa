@@ -24,7 +24,6 @@ import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode.RankNodeType;
-import ai.vespa.schemals.tree.rankingexpression.RankNode.ReturnType;
 
 /**
  * RankExpressionSymbolResolver goes through unresolved symbols in rank expression, to check if they are calling built in functions and tries
@@ -142,7 +141,6 @@ public class RankExpressionSymbolResolver {
         GenericFunction functionHandler = BuiltInFunctions.rankExpressionBuiltInFunctions.get(identifier);
         if (functionHandler == null) return;
         
-        node.setReturnType(ReturnType.DOUBLE);
         node.getSymbol().setType(SymbolType.FUNCTION);
         node.getSymbol().setStatus(SymbolStatus.BUILTIN_REFERENCE);
 
