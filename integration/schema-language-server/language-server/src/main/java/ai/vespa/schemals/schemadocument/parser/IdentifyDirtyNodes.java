@@ -1,6 +1,5 @@
 package ai.vespa.schemals.schemadocument.parser;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -19,20 +18,17 @@ public class IdentifyDirtyNodes<T extends Node> extends Identifier<T> {
 		super(context);
 	}
 
-    public List<Diagnostic> identify(T node) {
-        List<Diagnostic> ret = new ArrayList<>();
-
+    @Override
+    public void identify(T node, List<Diagnostic> diagnostics) {
         if (
             node.getIsDirty() &&
             node.isLeaf()
         ) {
-            ret.add(new SchemaDiagnostic.Builder()
+            diagnostics.add(new SchemaDiagnostic.Builder()
                 .setRange(node.getRange())
                 .setMessage("Invalid syntax.")
                 .setSeverity(DiagnosticSeverity.Error)
                 .build());
         }
-
-        return ret;
     }
 }

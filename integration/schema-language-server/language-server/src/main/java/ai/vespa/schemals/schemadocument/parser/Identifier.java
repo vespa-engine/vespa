@@ -18,5 +18,5 @@ public abstract class Identifier<T extends Node> {
         this.context = context;
     }
 
-    public abstract List<Diagnostic> identify(T node);
+    public abstract void identify(T node, List<Diagnostic> diagnostics);
 }

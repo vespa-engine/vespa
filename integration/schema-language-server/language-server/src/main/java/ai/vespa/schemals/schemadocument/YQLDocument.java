@@ -251,7 +251,7 @@ public class YQLDocument implements DocumentManager {
     private static void traverseCST(YQLNode node, ParseContext context, ArrayList<Diagnostic> diagnostics) {
 
         for (Identifier<YQLNode> identifier : context.YQLIdentifiers()) {
-            diagnostics.addAll(identifier.identify(node));
+            identifier.identify(node, diagnostics);
         }
 
         for (Node child : node) {

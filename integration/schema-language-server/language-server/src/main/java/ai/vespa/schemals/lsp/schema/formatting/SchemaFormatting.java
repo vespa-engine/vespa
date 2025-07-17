@@ -146,7 +146,7 @@ public class SchemaFormatting {
 
         // Insert a new line + indent if node is not on its own line
         if (node.getPreviousSibling() != null) {
-            Node shouldBeNL = node.getPreviousSibling().getLastLeafDescendant();
+            Node shouldBeNL = node.getPreviousSibling().findLastLeaf();
             if (!shouldBeNL.isASTInstance(NL.class)) {
                 edits.add(new TextEdit(new Range(
                     shouldBeNL.getRange().getEnd(),

@@ -1,6 +1,6 @@
 package ai.vespa.schemals.schemadocument.parser.schema;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -24,14 +24,11 @@ public class SwitchDeprecatedTokenTypes extends Identifier<SchemaNode> {
         put(TokenType.MACRO, TokenType.FUNCTION);
     }};
 
-    public ArrayList<Diagnostic> identify(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<>();
-
+    @Override
+    public void identify(SchemaNode node, List<Diagnostic> diagnostics) {
         TokenType newType = switchTokenTypeMap.get(node.getSchemaType());
         if (newType != null) {
             node.setSchemaType(newType);
         } 
-
-        return ret;
     }
 }

@@ -24,7 +24,6 @@ import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode.RankNodeType;
-import ai.vespa.schemals.tree.rankingexpression.RankNode.ReturnType;
 
 /**
  * RankExpressionSymbolResolver goes through unresolved symbols in rank expression, to check if they are calling built in functions and tries
@@ -38,44 +37,31 @@ public class RankExpressionSymbolResolver {
      * @param node        The schema node to resolve the rank expression references in.
      * @param context     The parse context.
      */
-    public static List<Diagnostic> resolveRankExpressionReferences(SchemaNode node, ParseContext context) {
-        List<Diagnostic> diagnostics = new ArrayList<>();
-
+    public static void resolveRankExpressionReferences(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
         if (node.getLanguageType() == LanguageType.RANK_EXPRESSION) {
-
-            diagnostics.addAll(resolveRankExpression(node, context));
-
+            resolveRankExpression(node, context, diagnostics);
         } else {
             for (Node child : node) {
-                diagnostics.addAll(resolveRankExpressionReferences(child.getSchemaNode(), context));
+                resolveRankExpressionReferences(child.getSchemaNode(), context, diagnostics);
             }
         }
-
-        return diagnostics;
     }
 
-    public static List<Diagnostic> resolveRankExpression(SchemaNode schemaNode, ParseContext context) {
-        List<Diagnostic> diagnostics = new ArrayList<>();
-
+    public static void resolveRankExpression(SchemaNode schemaNode, ParseContext context, List<Diagnostic> diagnostics) {
         List<RankNode> rankNodes = RankNode.createTree(schemaNode);
 
         for (RankNode node : rankNodes) {
-            diagnostics.addAll(traverseRankExpressionTree(node, context));
+            traverseRankExpressionTree(node, context, diagnostics);
         }
-
-        return diagnostics;
     }
 
-    private static List<Diagnostic> traverseRankExpressionTree(RankNode node, ParseContext context) {
-        List<Diagnostic> diagnostics = new ArrayList<>();
-
+    private static void traverseRankExpressionTree(RankNode node, ParseContext context, List<Diagnostic> diagnostics) {
         for (RankNode child : node) {
-            diagnostics.addAll(traverseRankExpressionTree(child, context));
+            traverseRankExpressionTree(child, context, diagnostics);
         }
 
         // All feature nodes has a symbol before the traversal
         if (node.hasSymbol()) {
-
             if (node.getSymbolStatus() == SymbolStatus.UNRESOLVED) {
                 resolveReference(node, context, diagnostics);
             }
@@ -91,11 +77,7 @@ public class RankExpressionSymbolResolver {
                     findBuiltInFunction(node, context, diagnostics);
                 }
             }
-
-
         }
-
-        return diagnostics;
     }
 
     public static final Set<Class<?>> builtInTokenizedFunctions = new HashSet<>() {{
@@ -142,7 +124,6 @@ public class RankExpressionSymbolResolver {
         GenericFunction functionHandler = BuiltInFunctions.rankExpressionBuiltInFunctions.get(identifier);
         if (functionHandler == null) return;
         
-        node.setReturnType(ReturnType.DOUBLE);
         node.getSymbol().setType(SymbolType.FUNCTION);
         node.getSymbol().setStatus(SymbolStatus.BUILTIN_REFERENCE);
 

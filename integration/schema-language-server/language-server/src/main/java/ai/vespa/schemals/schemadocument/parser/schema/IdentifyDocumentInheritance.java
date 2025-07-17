@@ -1,15 +1,13 @@
 package ai.vespa.schemals.schemadocument.parser.schema;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4j.DiagnosticSeverity;
 
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
-import ai.vespa.schemals.common.SchemaDiagnostic;
-import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -22,22 +20,15 @@ public class IdentifyDocumentInheritance extends Identifier<SchemaNode> {
 	}
 
 	@Override
-	public ArrayList<Diagnostic> identify(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<>();
-
-        if (!node.isSchemaASTInstance(identifierStr.class)) return ret;
-        if (node.getParent() == null || !node.getParent().getSchemaNode().isSchemaASTInstance(inheritsDocument.class)) return ret;
+    public void identify(SchemaNode node, List<Diagnostic> diagnostics) {
+        if (!node.isASTInstance(identifierStr.class)) return;
+        if (node.getParent() == null || !node.getParent().isASTInstance(inheritsDocument.class)) return;
 
         if (!node.hasSymbol()) {
-            ret.add(new SchemaDiagnostic.Builder()
-                        .setRange(node.getRange())
-                        .setMessage("Should be symbol")
-                        .setSeverity(DiagnosticSeverity.Warning)
-                        .build());
+            return;
         }
 
         this.context.addUnresolvedInheritanceNode(node);
-
-        return ret;
+        return;
 	}
 }

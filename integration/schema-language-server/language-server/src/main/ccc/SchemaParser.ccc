@@ -340,7 +340,7 @@ INJECT Token :
     }
 
     private IllegalArgumentException illegalArgumentException;
-    public IllegalArgumentException getIllegalArguemntException() { return illegalArgumentException; }
+    public IllegalArgumentException getIllegalArgumentException() { return illegalArgumentException; }
 
     void addIllegalArgumentException(IllegalArgumentException e) {
         illegalArgumentException = e;

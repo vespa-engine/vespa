@@ -266,15 +266,11 @@ public class SchemaDocument implements DocumentManager {
         }
 
         if (node.containsOtherLanguageData(LanguageType.RANK_EXPRESSION)) {
-            // Range nodeRange = node.getRange();
-            // String nodeString = node.get(0).get(0).getText();
-            // Position rankExpressionStart = CSTUtils.addPositions(nodeRange.getStart(), new Position(0, nodeString.length()));
-
-            SchemaRankExpressionParser.embedCST(context, node, diagnostics);
+            SchemaRankingExpressionParser.embedCST(context, node, diagnostics);
         }
 
         for (Identifier<SchemaNode> identifier : context.identifiers()) {
-            diagnostics.addAll(identifier.identify(node));
+            identifier.identify(node, diagnostics);
         }
 
         for (ai.vespa.schemals.tree.Node child : node) {

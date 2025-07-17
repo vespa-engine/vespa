@@ -94,45 +94,46 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
         add(rankTypeElm.class);
     }};
 
-    public ArrayList<Diagnostic> identify(SchemaNode node) {
-        if (node.hasSymbol()) return new ArrayList<Diagnostic>();
+    @Override
+    public void identify(SchemaNode node, List<Diagnostic> diagnostics) {
+        if (node.hasSymbol()) return;
 
         if (node.getLanguageType() == LanguageType.SCHEMA || node.getLanguageType() == LanguageType.CUSTOM) {
-            return identifySchemaLanguage(node);
+            identifySchemaLanguage(node, diagnostics);
+            return;
         }
 
         if (node.getLanguageType() == LanguageType.RANK_EXPRESSION) {
-            return identifyRankExpressionLanguage(node);
+            identifyRankExpressionLanguage(node, diagnostics);
+            return;
         }
-
-        return new ArrayList<Diagnostic>();
     }
 
-    private ArrayList<Diagnostic> identifySchemaLanguage(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<>();
-
-        boolean isIdentifier = node.isSchemaASTInstance(identifierStr.class);
-        boolean isIdentifierWithDash = node.isSchemaASTInstance(identifierWithDashStr.class);
+    private void identifySchemaLanguage(SchemaNode node, List<Diagnostic> diagnostics) {
+        boolean isIdentifier = node.isASTInstance(identifierStr.class);
+        boolean isIdentifierWithDash = node.isASTInstance(identifierWithDashStr.class);
 
         if (!isIdentifier && !isIdentifierWithDash) {
-            return ret;
+            return;
         }
 
         Node rawParent = node.getParent();
-        if (rawParent == null) return ret;
+        if (rawParent == null) return;
         SchemaNode parent = rawParent.getSchemaNode();
 
         if (fieldReferenceIdentifierParents.contains(parent.getASTClass())) {
-            return handleFieldReference(node);
+            handleFieldReference(node, diagnostics);
+            return;
         }
 
         if (parent.isASTInstance(importField.class)) {
-            return handleImportField(node);
+            handleImportField(node, diagnostics);
+            return;
         }
 
         HashMap<Class<?>, SymbolType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
         SymbolType symbolType = searchMap.get(parent.getASTClass());
-        if (symbolType == null) return ret;
+        if (symbolType == null) return;
 
 
         Optional<Symbol> scope = CSTUtils.findScope(node);
@@ -143,11 +144,9 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
         }
         node.setSymbolStatus(SymbolStatus.UNRESOLVED);
 
-        if (parent.isSchemaASTInstance(referenceType.class)) {
+        if (parent.isASTInstance(referenceType.class)) {
             context.addUnresolvedDocumentReferenceNode(node);
         }
-
-        return ret;
     }
 
     private static final Set<Class<?>> identifierNodes = new HashSet<>() {{
@@ -155,14 +154,13 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
         addAll(RankExpressionSymbolResolver.builtInTokenizedFunctions);
     }};
 
-    private ArrayList<Diagnostic> identifyRankExpressionLanguage(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<>();
-        if (!identifierNodes.contains(node.getOriginalRankExpressionNode().getClass())) return ret;
+    private void identifyRankExpressionLanguage(SchemaNode node, List<Diagnostic> diagnostics) {
+        if (!identifierNodes.contains(node.getOriginalRankExpressionNode().getClass())) return;
 
         SchemaNode parent = node.getParent().getSchemaNode();
 
 
-        if (!(parent.getOriginalRankExpressionNode() instanceof BaseNode)) return ret;
+        if (!(parent.getOriginalRankExpressionNode() instanceof BaseNode)) return;
 
         ExpressionNode expressionNode = ((BaseNode)parent.getOriginalRankExpressionNode()).expressionNode;
 
@@ -180,7 +178,7 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
 
             if (referenceTo.equals("file")) {
                 // TODO: handle expression files;
-                return ret;
+                return;
             }
 
             if (scope.isPresent()) {
@@ -210,17 +208,14 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
                 node.setSymbol(SymbolType.FUNCTION, context.fileURI());
             }
         }
-        return ret;
     }
     
-    private ArrayList<Diagnostic> handleFieldReference(SchemaNode identifierNode) {
-        ArrayList<Diagnostic> ret = new ArrayList<>();
-
+    private void handleFieldReference(SchemaNode identifierNode, List<Diagnostic> diagnostics) {
         Node parent = identifierNode.getParent();
 
         // Edge case: if we are in a summary element and there is specified a source list, we will not mark it as a reference
         if (parent.isASTInstance(summaryInDocument.class) && summaryHasSourceList(parent)) {
-            return ret;
+            return;
         }
 
         // Another edge case: if someone writes summary documentid {}
@@ -237,7 +232,7 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
                 identifierNode.setSymbol(SymbolType.FIELD, context.fileURI());
             }
             identifierNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
-            return ret;
+            return;
         }
 
         // Another edge case: rank-type ...
@@ -259,13 +254,13 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
                     if (i < validRankTypes.size() - 1) msg += ", ";
                 }
                 msg += ".";
-                ret.add(new SchemaDiagnostic.Builder()
+                diagnostics.add(new SchemaDiagnostic.Builder()
                     .setRange(identifierNode.getRange())
                     .setMessage(msg)
                     .setSeverity(DiagnosticSeverity.Error)
                     .build());
             }
-            return ret;
+            return;
         }
 
         String fieldIdentifier = identifierNode.getText();
@@ -323,17 +318,13 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
 
             myIndex++;
         }
-
-        return ret;
     }
 
     /*
      * This needs to split the AST node containing a dot into two nodes
      */
-    private ArrayList<Diagnostic> handleImportField(SchemaNode identifierNode) {
-        ArrayList<Diagnostic> ret = new ArrayList<>();
-
-        if (!identifierNode.getPreviousSibling().isASTInstance(FIELD.class)) return ret;
+    private void handleImportField(SchemaNode identifierNode, List<Diagnostic> diagnostics) {
+        if (!identifierNode.getPreviousSibling().isASTInstance(FIELD.class)) return;
 
         Node parent = identifierNode.getParent();
 
@@ -341,16 +332,16 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
 
         if (!fieldIdentifier.contains(".")) {
             // TODO: parser throws an error here. But we could handle it so it looks better
-            return ret;
+            return;
         }
 
         if (fieldIdentifier.endsWith(".") || fieldIdentifier.startsWith(".")) {
-            ret.add(new SchemaDiagnostic.Builder()
+            diagnostics.add(new SchemaDiagnostic.Builder()
                     .setRange( identifierNode.getRange())
                     .setMessage( "Expected an identifier")
                     .setSeverity( DiagnosticSeverity.Error)
                     .build() );
-            return ret;
+            return;
         }
 
         String[] subfields = fieldIdentifier.split("[.]");
@@ -398,8 +389,6 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
         } else {
             newNode.setSymbol(SymbolType.SUBFIELD, context.fileURI());
         }
-
-        return ret;
     }
 
     /*
@@ -411,5 +400,4 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
         }
         return false;
     }
-
 }
