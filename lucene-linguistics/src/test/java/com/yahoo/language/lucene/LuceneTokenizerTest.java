@@ -343,11 +343,17 @@ public class LuceneTokenizerTest {
                                              .configDir(Optional.of(FileReference.mockFileReferenceForUnitTesting(new File("."))))
                                              .analysis(Map.of(languageCode, analysis));
         LuceneLinguistics linguistics = new LuceneLinguistics(config.build(), new ComponentRegistry<>());
+
         Iterable<Token> tokens = linguistics.getTokenizer().tokenize("Wi-Fi Sticker", parameters);
         assertEquals(List.of("token 'wi-fi' (stems: [wifi, wi], original: 'Wi-Fi')",
                              "token 'fi' (original: 'Fi')",
                              "token 'sticker' (original: 'Sticker')"),
                      tokenToStrings(tokens));
+
+        assertEquals("token 'c++' (original: 'C++')",
+                     linguistics.getTokenizer().tokenize("C++", parameters).iterator().next().toString());
+        assertEquals("token 'ship' (stems: [boat], original: 'boat')",
+                     linguistics.getTokenizer().tokenize("boat", parameters).iterator().next().toString());
     }
 
     private LuceneAnalysisConfig.Analysis.TokenFilters.Builder tokenFilter(String name) {
