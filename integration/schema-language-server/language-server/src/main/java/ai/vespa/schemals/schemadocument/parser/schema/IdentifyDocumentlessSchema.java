@@ -27,18 +27,18 @@ public class IdentifyDocumentlessSchema extends Identifier<SchemaNode> {
 	@Override
 	public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
-        if (!node.isSchemaASTInstance(rootSchema.class))return ret;
+        if (!node.isASTInstance(rootSchema.class))return ret;
 
         if (node.size() < 2 || node.get(1).getIsDirty()) {
-            // Schema has bad syntax. Missing mandatory document would not be helpful
+            // Bad syntax
             return ret;
         }
 
         // Look for document definition inside
         for (Node child : node) {
-            if (!child.getSchemaNode().isSchemaASTInstance(rootSchemaItem.class)) continue;
+            if (!child.isASTInstance(rootSchemaItem.class)) continue;
             if (child.size() == 0) continue;
-            if (child.get(0).getSchemaNode().isSchemaASTInstance(documentElm.class)) return ret; // Found document
+            if (child.get(0).isASTInstance(documentElm.class)) return ret; // Found document
         }
 
         ret.add(new SchemaDiagnostic.Builder()

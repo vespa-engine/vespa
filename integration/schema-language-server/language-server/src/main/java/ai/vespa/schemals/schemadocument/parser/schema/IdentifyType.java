@@ -41,7 +41,7 @@ public class IdentifyType extends Identifier<SchemaNode> {
             return identifyInputType(node);
         }
 
-        if (!node.isSchemaASTInstance(dataType.class)) {
+        if (!node.isASTInstance(dataType.class)) {
             return ret;
         }
 
@@ -109,7 +109,7 @@ public class IdentifyType extends Identifier<SchemaNode> {
     private static boolean isInsideAnnotationBody(SchemaNode node) {
         Node currentNode = node;
         while (currentNode != null) {
-            if (currentNode.getSchemaNode().isSchemaASTInstance(annotationBody.class)) return true;
+            if (currentNode.isASTInstance(annotationBody.class)) return true;
             currentNode = currentNode.getParent();
         }
         return false;

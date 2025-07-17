@@ -30,9 +30,9 @@ public class IdentifyNamedDocument extends Identifier<SchemaNode> {
 	@Override
 	public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
-        if (!node.isSchemaASTInstance(documentElm.class))return ret;
+        if (!node.isASTInstance(documentElm.class))return ret;
 
-        if (node.size() < 2 || !node.get(1).getSchemaNode().isSchemaASTInstance(identifierStr.class))return ret;
+        if (node.size() < 2 || !node.get(1).getSchemaNode().isASTInstance(identifierStr.class))return ret;
 
         Range identifierRange = node.get(1).getRange();
         String documentName = node.get(1).getText();

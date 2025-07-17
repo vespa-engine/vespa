@@ -111,8 +111,8 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
     private ArrayList<Diagnostic> identifySchemaLanguage(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
-        boolean isIdentifier = node.isSchemaASTInstance(identifierStr.class);
-        boolean isIdentifierWithDash = node.isSchemaASTInstance(identifierWithDashStr.class);
+        boolean isIdentifier = node.isASTInstance(identifierStr.class);
+        boolean isIdentifierWithDash = node.isASTInstance(identifierWithDashStr.class);
 
         if (!isIdentifier && !isIdentifierWithDash) {
             return ret;
@@ -143,7 +143,7 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
         }
         node.setSymbolStatus(SymbolStatus.UNRESOLVED);
 
-        if (parent.isSchemaASTInstance(referenceType.class)) {
+        if (parent.isASTInstance(referenceType.class)) {
             context.addUnresolvedDocumentReferenceNode(node);
         }
 

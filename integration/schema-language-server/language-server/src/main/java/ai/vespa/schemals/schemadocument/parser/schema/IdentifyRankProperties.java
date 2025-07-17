@@ -12,6 +12,7 @@ import ai.vespa.schemals.parser.ast.IDENTIFIER_WITH_DASH;
 import ai.vespa.schemals.parser.ast.rankProperty;
 import ai.vespa.schemals.parser.ast.rankPropertyItem;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -34,8 +35,7 @@ public class IdentifyRankProperties extends Identifier<SchemaNode> {
         if ( node.size() != 3
          || !node.get(0).isASTInstance(rankPropertyItem.class) ) return List.of(); // malformed schema
 
-
-        var leaf = node.findFirstLeaf();
+        Node leaf = node.findFirstLeaf();
         if (!leaf.isASTInstance(IDENTIFIER.class) && 
             !leaf.isASTInstance(IDENTIFIER_WITH_DASH.class)) {
             return List.of();

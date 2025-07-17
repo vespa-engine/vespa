@@ -7,13 +7,14 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 
-import ai.vespa.schemals.parser.ParseException;
-import ai.vespa.schemals.parser.TokenSource;
-import ai.vespa.schemals.parser.Token.ParseExceptionSource;
-import ai.vespa.schemals.schemadocument.parser.Identifier;
-import ai.vespa.schemals.schemadocument.parser.IdentifyDirtyNodes;
 import ai.vespa.schemals.common.SchemaDiagnostic;
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.parser.ParseException;
+import ai.vespa.schemals.parser.Token;
+import ai.vespa.schemals.parser.Token.ParseExceptionSource;
+import ai.vespa.schemals.parser.TokenSource;
+import ai.vespa.schemals.schemadocument.parser.Identifier;
+import ai.vespa.schemals.schemadocument.parser.IdentifyDirtyNodes;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -30,7 +31,6 @@ public class IdentifyDirtySchemaNodes extends Identifier<SchemaNode> {
 	}
 
 	private String getParseExceptionMessage(ParseException exception) {
-
         Throwable cause = exception.getCause();
 
         if (cause == null) {
@@ -43,7 +43,12 @@ public class IdentifyDirtySchemaNodes extends Identifier<SchemaNode> {
     public List<Diagnostic> identify(SchemaNode node) {
         List<Diagnostic> ret = new ArrayList<>();
 
-        ParseExceptionSource parseException = node.getParseExceptionSource();
+        if (!(node.getOriginalSchemaNode() instanceof Token)) {
+            return pureDirtyNodeIdentifier.identify(node);
+        }
+
+        Token nodeAsToken = (Token)(node.getOriginalSchemaNode());
+        ParseExceptionSource parseException = nodeAsToken.getParseExceptionSource();
         
         if (parseException != null) {
             TokenSource tokenSource = node.getTokenSource();
@@ -56,7 +61,7 @@ public class IdentifyDirtySchemaNodes extends Identifier<SchemaNode> {
                 .build());
         }
 
-        IllegalArgumentException illegalArgumentException = node.getIllegalArgumentException();
+        IllegalArgumentException illegalArgumentException = nodeAsToken.getIllegalArgumentException();
 
         if (illegalArgumentException != null) {
             ret.add(new SchemaDiagnostic.Builder()
@@ -66,11 +71,7 @@ public class IdentifyDirtySchemaNodes extends Identifier<SchemaNode> {
                 .build());
         }
 
-
-        if (
-            parseException == null &&
-            illegalArgumentException == null
-        ) {
+        if (parseException == null && illegalArgumentException == null) {
             ret.addAll(pureDirtyNodeIdentifier.identify(node));
         }
 
