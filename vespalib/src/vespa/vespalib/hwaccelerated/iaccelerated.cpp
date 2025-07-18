@@ -11,6 +11,8 @@
 #    define VESPA_HWACCEL_ARCH_NAME "aarch64"
 #    include "neon.h"
 #    include "neon_fp16_dotprod.h"
+#    include "sve.h"
+#    include "sve2.h"
 // There's no __builtin_cpu_supports() on aarch64, so we have to go via getauxval()
 // HW capability bits, _iff_ it exists on the platform. Otherwise we just have to
 // assume that the default baseline build settings are OK.
@@ -99,6 +101,34 @@ namespace {
 #endif // VESPA_HAS_AARCH64_HWCAP_H
 }
 
+// Support for Scalable Vector Extension
+[[nodiscard]] bool supports_sve() {
+#if defined(HWCAP_SVE)
+    if (!supports_neon_aes_fp16_and_dotprod()) {
+        return false;
+    }
+    const unsigned long hw = getauxval(AT_HWCAP);
+    const bool has_sve = (hw & HWCAP_SVE) != 0;
+    return has_sve;
+#else
+    return false;
+#endif
+}
+
+// Support for Scalable Vector Extension 2
+[[nodiscard]] bool supports_sve2() {
+#if defined(HWCAP2_SVE2)
+    if (!supports_sve()) {
+        return false;
+    }
+    const unsigned long hw = getauxval(AT_HWCAP2);
+    const bool has_sve2 = (hw & HWCAP2_SVE2) != 0;
+    return has_sve2;
+#else
+    return false;
+#endif
+}
+
 #endif // aarch64
 
 namespace target {
@@ -116,6 +146,8 @@ constexpr static uint32_t AVX3              = 2;
 constexpr static uint32_t AVX2              = 1;
 constexpr static uint32_t X64_GENERIC       = 0;
 #else
+constexpr static uint32_t SVE2              = 3;
+constexpr static uint32_t SVE               = 2;
 constexpr static uint32_t NEON_FP16_DOTPROD = 1;
 constexpr static uint32_t NEON              = 0;
 #endif
@@ -134,7 +166,9 @@ constexpr static uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
     case AVX2:              return "AVX2";
     default:                return "X64_GENERIC";
 #else
-    case NEON_FP16_DOTPROD: return "NEON_DOTPROD";
+    case SVE2:              return "SVE2";
+    case SVE:               return "SVE";
+    case NEON_FP16_DOTPROD: return "NEON_FP16_DOTPROD";
     case NEON:              return "NEON";
     default:                return "NEON";
 #endif
@@ -153,7 +187,11 @@ constexpr static uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
         return X64_GENERIC;
     }
 #else
-    if (str == "NEON_FP16_DOTPROD") {
+    if (str == "SVE2") {
+        return SVE2;
+    } else if (str == "SVE") {
+        return SVE;
+    } else if (str == "NEON_FP16_DOTPROD") {
         return NEON_FP16_DOTPROD;
     } else if (str == "NEON") {
         return NEON;
@@ -178,6 +216,12 @@ constexpr static uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
     }
     return X64_GENERIC;
 #else // aarch64
+    if (supports_sve2()) {
+        return SVE2;
+    }
+    if (supports_sve()) {
+        return SVE;
+    }
     if (supports_neon_aes_fp16_and_dotprod()) {
         return NEON_FP16_DOTPROD;
     }
@@ -227,6 +271,12 @@ IAccelerated::UP create_accelerator() {
         return std::make_unique<Avx2Accelerator>();
     }
 #else // aarch64
+    if (target_level.is_enabled(target::SVE2)) {
+        return std::make_unique<Sve2Accelerator>();
+    }
+    if (target_level.is_enabled(target::SVE)) {
+        return std::make_unique<SveAccelerator>();
+    }
     if (target_level.is_enabled(target::NEON_FP16_DOTPROD)) {
         return std::make_unique<NeonFp16DotprodAccelerator>();
     }
