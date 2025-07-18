@@ -93,7 +93,7 @@ public class Autoscaler {
 
         var loadAdjustment = model.loadAdjustment();
         if (logDetails) {
-            log.info("Application: " + application.id().toShortString() + ", loadAdjustment: " +
+            log.info("Application: " + application.id().toShortString() + ", clusterId: " + cluster.id() + ", loadAdjustment: " +
                      loadAdjustment.toString() + ", ideal " + model.idealLoad() + ", " + model.cpu(nodeRepository.clock().instant()));
         }
 
