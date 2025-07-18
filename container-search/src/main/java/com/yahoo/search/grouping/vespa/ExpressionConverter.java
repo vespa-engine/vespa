@@ -61,6 +61,7 @@ import com.yahoo.search.grouping.request.ModFunction;
 import com.yahoo.search.grouping.request.MonthOfYearFunction;
 import com.yahoo.search.grouping.request.MulFunction;
 import com.yahoo.search.grouping.request.NegFunction;
+import com.yahoo.search.grouping.request.NotPredicate;
 import com.yahoo.search.grouping.request.NormalizeSubjectFunction;
 import com.yahoo.search.grouping.request.NowFunction;
 import com.yahoo.search.grouping.request.OrFunction;
@@ -130,6 +131,7 @@ import com.yahoo.searchlib.expression.ModuloFunctionNode;
 import com.yahoo.searchlib.expression.MultiArgFunctionNode;
 import com.yahoo.searchlib.expression.MultiplyFunctionNode;
 import com.yahoo.searchlib.expression.NegateFunctionNode;
+import com.yahoo.searchlib.expression.NotPredicateNode;
 import com.yahoo.searchlib.expression.NormalizeSubjectFunctionNode;
 import com.yahoo.searchlib.expression.NumElemFunctionNode;
 import com.yahoo.searchlib.expression.OrFunctionNode;
@@ -255,6 +257,8 @@ class ExpressionConverter {
     public FilterExpressionNode toFilterExpressionNode(FilterExpression expression) {
         if (expression instanceof RegexPredicate rp) {
             return new RegexPredicateNode(rp.getPattern(), toExpressionNode(rp.getExpression()));
+        }  else if (expression instanceof NotPredicate np) {
+           return new NotPredicateNode(toFilterExpressionNode(np.getExpression()));
         } else {
             throw new IllegalInputException(
                     "Can not convert '%s' to a filter expression.".formatted(expression.getClass().getSimpleName()));

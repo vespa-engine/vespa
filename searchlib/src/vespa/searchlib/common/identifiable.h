@@ -180,3 +180,4 @@
 #define CID_search_SparseSketch                             SEARCHLIB_CID(171)
 #define CID_search_expression_RegexPredicateNode            SEARCHLIB_CID(172)
 // #define CID_search_expression_TruePredicateNode             SEARCHLIB_CID(173)
+#define CID_search_expression_NotPredicateNode            SEARCHLIB_CID(174)

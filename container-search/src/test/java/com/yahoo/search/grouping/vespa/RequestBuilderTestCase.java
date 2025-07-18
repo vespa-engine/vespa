@@ -22,6 +22,7 @@ import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
 import com.yahoo.searchlib.expression.FilterExpressionNode;
+import com.yahoo.searchlib.expression.NotPredicateNode;
 import com.yahoo.searchlib.expression.RegexPredicateNode;
 import com.yahoo.searchlib.expression.StrCatFunctionNode;
 import com.yahoo.searchlib.expression.StringResultNode;
@@ -831,6 +832,12 @@ public class RequestBuilderTestCase {
                 "[[{ Attribute, filter = [Regex [Attribute]] }, { Attribute, result = [Count] }]]");
     }
 
+    @Test
+    void require_that_filter_predicate_layout_is_correct() {
+        assertLayout("all(group(a) filter(not(regex(\".*suffix$\", a))) each(output(count())))",
+                "[[{ Attribute, filter = [Not [Regex [Attribute]]], result = [Count] }]]");
+    }
+
     private static void assertTotalGroupsAndSummaries(long expected, String query) {
         assertTotalGroupsAndSummaries(expected, Long.MAX_VALUE, query);
     }
@@ -1088,6 +1095,9 @@ public class RequestBuilderTestCase {
             if (filterExp instanceof RegexPredicateNode rpn) {
                 var simpleName = rpn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
                 return "Regex [%s]".formatted(simpleName);
+            } else if (filterExp instanceof NotPredicateNode npn) {
+                var simpleName = npn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
+                return "Not [%s]".formatted(simpleName);
             }
             return filterExp.getClass().getSimpleName();
         }
