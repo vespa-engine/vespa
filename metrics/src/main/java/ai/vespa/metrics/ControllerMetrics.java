@@ -40,6 +40,7 @@ public enum ControllerMetrics implements VespaMetrics {
     DEPLOYMENT_BROKEN_SYSTEM_VERSION("deployment.brokenSystemVersion", Unit.BINARY, "Deployment: Value 1 for broken system versions, 0 if not"),
     REMAINING_ROTATIONS("remaining_rotations", Unit.ROTATION, "Remaining rotations"),
     DNS_QUEUED_REQUESTS("dns.queuedRequests", Unit.REQUEST, "Queued DNS requests"),
+    CLOUD_QUOTA_USAGE("cloud.quota.usage", Unit.FRACTION, "Cloud Quota usage per resource type"),
     ZMS_QUOTA_USAGE("zms.quota.usage", Unit.FRACTION, "ZMS Quota usage per resource type"),
     COREDUMP_PROCESSED("coredump.processed", Unit.FAILURE,"Controller: Core dumps processed"),
     AUTH0_EXCEPTIONS("auth0.exceptions", Unit.FAILURE, "Controller: Auth0 exceptions"),

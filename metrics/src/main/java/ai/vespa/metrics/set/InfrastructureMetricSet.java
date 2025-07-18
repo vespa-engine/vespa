@@ -189,6 +189,7 @@ public class InfrastructureMetricSet {
 
         addMetric(metrics, ControllerMetrics.REMAINING_ROTATIONS, EnumSet.of(min, max, last)); // TODO: Vespa 9: Remove last WAIT
         addMetric(metrics, ControllerMetrics.DNS_QUEUED_REQUESTS.max());
+        addMetric(metrics, ControllerMetrics.CLOUD_QUOTA_USAGE.max());
         addMetric(metrics, ControllerMetrics.ZMS_QUOTA_USAGE.max());
         addMetric(metrics, ControllerMetrics.COREDUMP_PROCESSED.count());
         addMetric(metrics, ControllerMetrics.AUTH0_EXCEPTIONS.count());
