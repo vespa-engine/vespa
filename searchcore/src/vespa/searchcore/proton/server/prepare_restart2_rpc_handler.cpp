@@ -41,8 +41,8 @@ as_system_microseconds(const steady_clock::time_point &time_point)
 const FlushStrategyHistoryEntry*
 last_flush_all_or_prepare_restart_strategy(const FlushHistoryView& view) {
     auto& last = view.last_strategies();
-    auto prepare_restart_it = std::find_if(last.begin(), last.end(), [](auto& e) { return e.name() == "prepare_restart"; });
-    auto flush_all_it = std::find_if(last.begin(), last.end(), [](auto& e) { return e.name() == "flush_all"; });
+    auto prepare_restart_it = std::find_if(last.begin(), last.end(), [](auto& e) { return e.is_prepare_restart(); });
+    auto flush_all_it = std::find_if(last.begin(), last.end(), [](auto& e) { return e.is_flush_all(); });
     if (prepare_restart_it == last.end()) {
         if (flush_all_it == last.end()) {
             return nullptr;
@@ -105,9 +105,9 @@ add_history(JsonStream& stream, const FlushHistory& flush_history)
         add_previous_flush_strategy(stream, *previous);
     }
     add_current_flush_strategy(stream, *view);
-    auto progress_strategy = &view->active_strategy();
+    auto* progress_strategy = &view->active_strategy();
     if (progress_strategy->has_active_flushes()) {
-        if ((progress_strategy->name() != "flush_all" && progress_strategy->name() != "prepare_restart") &&
+        if ((!progress_strategy->is_flush_all() && !progress_strategy->is_prepare_restart()) &&
             previous != nullptr) {
             progress_strategy = previous;
         }

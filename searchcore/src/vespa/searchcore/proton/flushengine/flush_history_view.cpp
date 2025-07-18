@@ -38,24 +38,24 @@ FlushHistoryView& FlushHistoryView::operator=(FlushHistoryView&&) noexcept = def
 FlushHistoryView::time_point
 FlushHistoryView::estimated_flush_complete_time(time_point now) const
 {
-    vespalib::PriorityQueue<time_point> complete;
+    vespalib::PriorityQueue<time_point> complete_at; // Note: lowest value at front
     for (auto& active : _active) {
-        // Add estimated flush complete time for active flush thread
-        complete.push(std::max(now, active.start_time() + active.last_flush_duration()));
+        // Add estimated flush complete_at time for active flush thread
+        complete_at.push(std::max(now, active.start_time() + active.last_flush_duration()));
     }
-    while (complete.size() < _max_concurrent_normal) {
+    while (complete_at.size() < _max_concurrent_normal) {
         // Idle flush threads can start new flushes now
-        complete.push(now);
+        complete_at.push(now);
     }
-    // Estimate flush complete times as pending flushes are handled
+    // Estimate flush complete_at times as pending flushes are handled
     for (auto& pending : _pending) {
-        complete.front() += pending.last_flush_duration();
-        complete.adjust();
+        complete_at.front() += pending.last_flush_duration();
+        complete_at.adjust();
     }
-    while (complete.size() > 1) {
-        complete.pop_front();
+    while (complete_at.size() > 1) {
+        complete_at.pop_front();
     }
-    return complete.front();
+    return complete_at.front();
 }
 
 }

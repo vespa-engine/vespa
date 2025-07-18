@@ -75,6 +75,8 @@ public:
     void start_flush() noexcept;
     void finish_flush(uint32_t strategy_id, time_point now) noexcept;
     bool has_active_flushes() const noexcept { return _flush_counts.has_active_flushes(); }
+    bool is_flush_all() const noexcept;
+    bool is_prepare_restart() const noexcept;
 };
 
 }
