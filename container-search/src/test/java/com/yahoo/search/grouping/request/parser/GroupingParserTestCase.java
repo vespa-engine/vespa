@@ -638,6 +638,9 @@ public class GroupingParserTestCase {
                 () -> assertParse(
                         "all(group($myalias=foo) filter(regex(\".*mysubstring.*\", $myalias)) each(output(count())))",
                         "all(group(foo) filter(regex(\".*mysubstring.*\", foo)) each(output(count())))"));
+
+        assertAll("filter with predicates",
+                () -> assertParse("all(group(foo) filter(not(regex(\"mybar\", foo))) each(output(count())))"));
     }
 
     // --------------------------------------------------------------------------------

@@ -328,7 +328,8 @@ FilterExpression filterExp(GroupingOperation grp) :
     FilterExpression exp;
 }
 {
-    exp = regexPredicate(grp)
+    ( (exp = regexPredicate(grp)) |
+      (exp = notPredicate(grp)))
     { return exp; }
 }
 
@@ -954,6 +955,15 @@ RegexPredicate regexPredicate(GroupingOperation grp) :
 {
     <REGEX> lbrace() pattern = string() comma() exp = exp(grp) rbrace()
     { return new RegexPredicate(pattern, exp); }
+}
+
+NotPredicate notPredicate(GroupingOperation grp) :
+{
+    FilterExpression exp;
+}
+{
+    <NOT> lbrace() exp = filterExp(grp) rbrace()
+    { return new NotPredicate(exp); }
 }
 
 void bucket(GroupingOperation grp, BucketResolver resolver) :

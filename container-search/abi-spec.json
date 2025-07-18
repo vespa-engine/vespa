@@ -3772,6 +3772,20 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.NotPredicate" : {
+    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.grouping.request.FilterExpression)",
+      "public com.yahoo.search.grouping.request.FilterExpression getExpression()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.FilterExpression copy()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.grouping.request.NowFunction" : {
     "superClass" : "com.yahoo.search.grouping.request.FunctionNode",
     "interfaces" : [ ],
