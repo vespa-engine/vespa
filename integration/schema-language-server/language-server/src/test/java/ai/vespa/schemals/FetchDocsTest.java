@@ -14,6 +14,7 @@ import java.util.List;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.TextDocumentItem;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
@@ -46,19 +47,6 @@ public class FetchDocsTest {
             assertEquals(0, 1, ioe.getMessage());
         }
 
-        //if (Paths.get("").resolve("tmp").toFile().exists()) {
-        //    deleteDirectory(Paths.get("").resolve("tmp").toFile());
-        //}
-    }
-
-    private boolean deleteDirectory(File directory) {
-        File[] contents = directory.listFiles();
-        if (contents != null) {
-            for (File f : contents) {
-                deleteDirectory(f);
-            }
-        }
-        return directory.delete();
     }
 
     @Test
@@ -112,6 +100,23 @@ public class FetchDocsTest {
 
             assertNotEquals(null, hoverResult, 
                 "Failed to get hover information for " + fileName + ":" + (lineNum+1) + ":" + (hoverPosition.getCharacter()+1) +": " + line.substring(nonWhiteSpace));
+        }
+    }
+
+    private static boolean deleteDirectory(File directory) {
+        File[] contents = directory.listFiles();
+        if (contents != null) {
+            for (File f : contents) {
+                deleteDirectory(f);
+            }
+        }
+        return directory.delete();
+    }
+
+    @AfterAll
+    static void cleanup() {
+        if (Paths.get("").resolve("tmp").toFile().exists()) {
+            deleteDirectory(Paths.get("").resolve("tmp").toFile());
         }
     }
 }
