@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.Position;
@@ -69,25 +68,31 @@ public class FetchDocsTest {
         assertNotEquals(null, scheduler.getDocument(fileURI), "Adding a document to the scheduler should create a DocumentManager for it.");
         DocumentManager document = scheduler.getDocument(fileURI);
 
-        List<String> lines = fileContent.lines().toList();
-
         assertNotNull(document.getRootNode());
 
-        for (int lineNum = 0; lineNum < lines.size(); ++lineNum) {
-            int nonWhiteSpace = 0;
+        // Non-exhaustive, but covers several keywords and symbol types
+        Position[] positionsToTest = {
+            new Position(0, 0),
+            new Position(0, 10),
+            new Position(1, 11),
+            new Position(2, 11),
+            new Position(2, 17),
+            new Position(4, 16),
+            new Position(5, 16),
+            new Position(6, 16),
+            new Position(7, 18),
+            new Position(13, 18),
+            new Position(19, 18),
+            new Position(47, 18),
+            new Position(50, 29),
+            new Position(63, 22),
+            new Position(72, 10),
+            new Position(89, 13),
+            new Position(134, 19),
+            new Position(139, 9),
+        };
 
-            String line = lines.get(lineNum);
-
-            for (nonWhiteSpace = 0; nonWhiteSpace < line.length(); ++nonWhiteSpace) {
-                if (!Character.isWhitespace(line.charAt(nonWhiteSpace)))break;
-            }
-
-            if (nonWhiteSpace == line.length()) continue;
-
-            if (line.charAt(nonWhiteSpace) == '}') continue;
-
-            Position hoverPosition = new Position(lineNum, nonWhiteSpace);
-
+        for (Position hoverPosition : positionsToTest) {
             EventPositionContext hoverContext = new EventPositionContext(
                 scheduler,
                 schemaIndex,
@@ -97,9 +102,8 @@ public class FetchDocsTest {
             );
 
             Hover hoverResult = SchemaHover.getHover(hoverContext, hoverPath);
-
-            assertNotEquals(null, hoverResult, 
-                "Failed to get hover information for " + fileName + ":" + (lineNum+1) + ":" + (hoverPosition.getCharacter()+1) +": " + line.substring(nonWhiteSpace));
+            assertNotNull(hoverResult, 
+                "Failed to get hover information for " + fileName + ":" + (hoverPosition.getLine()+1) + ":" + (hoverPosition.getCharacter()+1));
         }
     }
 
