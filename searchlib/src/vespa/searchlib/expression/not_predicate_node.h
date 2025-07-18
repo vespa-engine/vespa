@@ -9,19 +9,17 @@ namespace search::expression {
 /**
  **/
 class NotPredicateNode : public FilterPredicateNode {
-private:
-    ExpressionTree _argument;
+    FilterPredicateNode::CP _expression;
 
-    bool check(const ResultNode* result) const;
 public:
     NotPredicateNode() noexcept;
     ~NotPredicateNode();
     NotPredicateNode* clone() const override { return new NotPredicateNode(*this); }
 
     // for unit testing::
-    RegexPredicateNode(std::string regex, ExpressionNode::UP input);
+    NotPredicateNode(const FilterPredicateNode& input);
 
-    DECLARE_IDENTIFIABLE_NS2(search, expression, RegexPredicateNode);
+    DECLARE_IDENTIFIABLE_NS2(search, expression, NotPredicateNode);
     DECLARE_NBO_SERIALIZE;
     bool allow(DocId docId, HitRank rank) override;
     bool allow(const document::Document &, HitRank) override;
