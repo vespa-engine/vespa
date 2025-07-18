@@ -39,5 +39,6 @@ vespa_add_library(searchlib_expression OBJECT
     floatresultnode.cpp
     integerresultnode.cpp
     regex_predicate_node.cpp
+    not_predicate_node.cpp
     DEPENDS
 )
