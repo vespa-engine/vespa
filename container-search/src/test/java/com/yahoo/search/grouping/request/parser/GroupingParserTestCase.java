@@ -107,6 +107,7 @@ public class GroupingParserTestCase {
                 "mod",
                 "mul",
                 "neg",
+                "not",
                 "normalizesubject",
                 "now",
                 "or",

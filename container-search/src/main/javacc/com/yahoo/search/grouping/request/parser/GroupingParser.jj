@@ -1069,6 +1069,7 @@ String identifier() :
         <MOD> |
         <MUL> |
         <NEG> |
+        "not" |
         <NORMALIZESUBJECT> |
         <NOW> |
         <OR> |
