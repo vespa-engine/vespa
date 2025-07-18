@@ -41,8 +41,8 @@ as_system_microseconds(const steady_clock::time_point &time_point)
 const FlushStrategyHistoryEntry*
 last_flush_all_or_prepare_restart_strategy(const FlushHistoryView& view) {
     auto& last = view.last_strategies();
-    auto prepare_restart_it = std::find_if(last.begin(), last.end(), [](auto& e) { return e.name() == "prepare_restart"; });
-    auto flush_all_it = std::find_if(last.begin(), last.end(), [](auto& e) { return e.name() == "flush_all"; });
+    auto prepare_restart_it = std::find_if(last.begin(), last.end(), [](auto& e) { return e.is_prepare_restart(); });
+    auto flush_all_it = std::find_if(last.begin(), last.end(), [](auto& e) { return e.is_flush_all(); });
     if (prepare_restart_it == last.end()) {
         if (flush_all_it == last.end()) {
             return nullptr;
@@ -105,6 +105,27 @@ add_history(JsonStream& stream, const FlushHistory& flush_history)
         add_previous_flush_strategy(stream, *previous);
     }
     add_current_flush_strategy(stream, *view);
+    auto* progress_strategy = &view->active_strategy();
+    if (progress_strategy->has_active_flushes()) {
+        if ((!progress_strategy->is_flush_all() && !progress_strategy->is_prepare_restart()) &&
+            previous != nullptr) {
+            progress_strategy = previous;
+        }
+    } else {
+        progress_strategy = nullptr;
+    }
+    if (progress_strategy != nullptr) {
+        auto start_time = progress_strategy->start_time();
+        auto now = steady_clock::now();
+        auto estimated_finish_time = view->estimated_flush_complete_time(now);
+        auto remaining_duration = estimated_finish_time - now;
+        auto current_duration = now - start_time;
+        auto estimated_total_duration = estimated_finish_time - start_time;
+        auto progress = (duration_cast<std::chrono::duration<double>>(current_duration).count() /
+                         duration_cast<std::chrono::duration<double>>(estimated_total_duration).count()) * 100.0;
+        stream << "progress" << progress;
+        stream << "estimated_completion_in" << duration_cast<microseconds>(remaining_duration).count();
+    }
 }
 
 }

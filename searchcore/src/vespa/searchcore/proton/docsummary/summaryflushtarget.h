@@ -31,6 +31,7 @@ public:
 
     FlushStats getLastFlushStats() const override { return _lastStats; }
     uint64_t getApproxBytesToWriteToDisk() const override { return 0; }
+    std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
 };
 
 } // namespace proton

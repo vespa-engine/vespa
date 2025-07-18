@@ -82,4 +82,10 @@ IndexFlushTarget::getApproxBytesToWriteToDisk() const
     }
 }
 
+std::chrono::steady_clock::duration
+IndexFlushTarget::last_flush_duration() const noexcept
+{
+    return 10s; // placeholder value
+}
+
 }
