@@ -330,7 +330,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
             try {
 
-                return SchemaHover.getHover(eventContextCreator.createContext(params));
+                return SchemaHover.getHover(eventContextCreator.createContext(params), SchemaLanguageServer.getDefaultDocumentationPath());
 
             } catch (InvalidContextException ex) {
                 // ignore

@@ -2,12 +2,15 @@ package ai.vespa.schemals;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -20,8 +23,10 @@ import com.yahoo.io.IOUtils;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.context.InvalidContextException;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.schema.definition.SchemaDefinition;
+import ai.vespa.schemals.lsp.schema.hover.SchemaHover;
 import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifySymbolDefinition;
@@ -31,6 +36,7 @@ import ai.vespa.schemals.testutils.TestLogger;
 import ai.vespa.schemals.testutils.TestSchemaDiagnosticsHandler;
 import ai.vespa.schemals.testutils.TestSchemaMessageHandler;
 import ai.vespa.schemals.testutils.TestSchemaProgressHandler;
+import ai.vespa.schemals.testutils.Utils;
 
 /**
  * LSPTest
@@ -91,4 +97,5 @@ public class LSPTest {
                 "Definition request returned wrong range for position " + startPos.toString());
         }
     }
+
 }
