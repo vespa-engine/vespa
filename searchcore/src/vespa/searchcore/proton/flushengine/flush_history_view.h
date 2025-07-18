@@ -48,6 +48,7 @@ public:
     const std::vector<FlushStrategyHistoryEntry>& draining_strategies() const noexcept { return _draining_strategies; }
     const FlushStrategyHistoryEntry& active_strategy() const noexcept { return _active_strategy; }
     const std::vector<FlushStrategyHistoryEntry>& last_strategies() const noexcept { return _last_strategies; }
+    time_point estimated_flush_complete_time(time_point now) const;
 };
 
 }

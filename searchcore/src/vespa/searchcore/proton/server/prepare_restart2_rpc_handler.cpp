@@ -105,6 +105,27 @@ add_history(JsonStream& stream, const FlushHistory& flush_history)
         add_previous_flush_strategy(stream, *previous);
     }
     add_current_flush_strategy(stream, *view);
+    auto progress_strategy = &view->active_strategy();
+    if (progress_strategy->has_active_flushes()) {
+        if ((progress_strategy->name() != "flush_all" && progress_strategy->name() != "prepare_restart") &&
+            previous != nullptr) {
+            progress_strategy = previous;
+        }
+    } else {
+        progress_strategy = nullptr;
+    }
+    if (progress_strategy != nullptr) {
+        auto start_time = progress_strategy->start_time();
+        auto now = steady_clock::now();
+        auto estimated_finish_time = view->estimated_flush_complete_time(now);
+        auto remaining_duration = estimated_finish_time - now;
+        auto current_duration = now - start_time;
+        auto estimated_total_duration = estimated_finish_time - start_time;
+        auto progress = (duration_cast<std::chrono::duration<double>>(current_duration).count() /
+                         duration_cast<std::chrono::duration<double>>(estimated_total_duration).count()) * 100.0;
+        stream << "progress" << progress;
+        stream << "estimated_completion_in" << duration_cast<microseconds>(remaining_duration).count();
+    }
 }
 
 }
