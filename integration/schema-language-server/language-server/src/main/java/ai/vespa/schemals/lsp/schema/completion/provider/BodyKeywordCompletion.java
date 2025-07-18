@@ -1,5 +1,6 @@
 package ai.vespa.schemals.lsp.schema.completion.provider;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,7 @@ import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
+import ai.vespa.schemals.SchemaLanguageServer;
 import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
 import ai.vespa.schemals.lsp.common.completion.CompletionUtils;
@@ -218,11 +220,12 @@ public class BodyKeywordCompletion implements CompletionProvider {
         put(indexInsideField.class, FixedKeywordBodies.INDEX.completionItems());
         put(indexOutsideDoc.class, FixedKeywordBodies.INDEX.completionItems());
 
+        Path schemaHoverPath = SchemaLanguageServer.getDefaultDocumentationPath().resolve("schema");
         // compute docs
         for (var entry : this.entrySet()) {
             for (CompletionItem item : entry.getValue()) {
                 String markdownKey = item.getLabel().toUpperCase().replaceAll("-", "_");
-                Optional<Hover> hover = SchemaHover.getFileHoverInformation("schema", markdownKey, new Range());
+                Optional<Hover> hover = SchemaHover.getFileHoverInformation(schemaHoverPath, markdownKey, new Range());
                 if (hover.isPresent() && hover.get().getContents().isRight()) {
                     item.setDocumentation(hover.get().getContents().getRight());
                 }
