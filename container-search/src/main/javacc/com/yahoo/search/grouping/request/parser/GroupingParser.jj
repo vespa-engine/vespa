@@ -329,7 +329,8 @@ FilterExpression filterExp(GroupingOperation grp) :
 }
 {
     ( (exp = regexPredicate(grp)) |
-      (exp = notPredicate(grp)))
+      (exp = notPredicate(grp))   |
+      (exp = orPredicate(grp)))
     { return exp; }
 }
 
@@ -964,6 +965,16 @@ NotPredicate notPredicate(GroupingOperation grp) :
 {
     <NOT> lbrace() exp = filterExp(grp) rbrace()
     { return new NotPredicate(exp); }
+}
+
+OrPredicate orPredicate(GroupingOperation grp) :
+{
+    FilterExpression exp;
+    List<FilterExpression> args = new LinkedList<FilterExpression>();
+}
+{
+    <OR> lbrace() ( exp = filterExp(grp) { args.add(exp); } ( comma() exp = filterExp(grp) { args.add(exp); } )+ ) rbrace()
+    { return new OrPredicate(args); }
 }
 
 void bucket(GroupingOperation grp, BucketResolver resolver) :
