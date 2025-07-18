@@ -5,7 +5,6 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.process.StemMode;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.vespa.indexinglanguage.linguistics.LinguisticsAnnotator;
 
@@ -52,7 +51,7 @@ public final class TokenizeExpression extends Expression {
         if (lang != null)
             configWithLanguage.setLanguage(lang);
         LinguisticsAnnotator annotator = new LinguisticsAnnotator(linguistics, configWithLanguage);
-        annotator.annotate(output);
+        annotator.annotate(output, context.getDocumentId().orElse(null), context.isReindexingOperation());
     }
 
     @Override
