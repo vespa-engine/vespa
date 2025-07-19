@@ -528,7 +528,7 @@ public enum Language {
      * Returns UNKNOWN when passed null or an unknown language tag.
      *
      * @param languageTag the language tag for which the <code>Language</code> to return
-     * @return the corresponding <code>Language</code>, or {@link #UNKNOWN} if not known
+     * @return the corresponding <code>Language</code>, or {@link #UNKNOWN} if not known or if the argument is null
      */
     public static Language fromLanguageTag(String languageTag) {
         if (languageTag == null) return UNKNOWN;

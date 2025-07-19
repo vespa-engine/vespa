@@ -11,6 +11,7 @@ import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.asse
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * @author Simon Thoresen Hult
@@ -20,7 +21,7 @@ public class SetLanguageTestCase {
     @Test
     public void requireThatHashCodeAndEqualsAreImplemented() {
         Expression exp = new SetLanguageExpression();
-        assertFalse(exp.equals(new Object()));
+        assertNotEquals(exp, new Object());
         assertEquals(exp, new SetLanguageExpression());
         assertEquals(exp.hashCode(), new SetLanguageExpression().hashCode());
     }
@@ -34,7 +35,7 @@ public class SetLanguageTestCase {
     }
 
     @Test
-    public void testsettingEnglish() {
+    public void testSettingEnglish() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         ctx.setCurrentValue(new StringFieldValue("en"));
         new SetLanguageExpression().execute(ctx);
@@ -45,6 +46,13 @@ public class SetLanguageTestCase {
     public void testSettingUnknown() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         ctx.setCurrentValue(new StringFieldValue("unknown"));
+        new SetLanguageExpression().execute(ctx);
+        assertEquals(Language.UNKNOWN, ctx.getLanguage());
+    }
+
+    @Test
+    public void testSettingMissingValue() {
+        ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         new SetLanguageExpression().execute(ctx);
         assertEquals(Language.UNKNOWN, ctx.getLanguage());
     }

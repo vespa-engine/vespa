@@ -26,6 +26,7 @@ public final class SetLanguageExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
+        if (context.getCurrentValue() == null) context.setLanguage(Language.UNKNOWN);
         context.setLanguage(Language.fromLanguageTag(String.valueOf(context.getCurrentValue())));
     }
 
