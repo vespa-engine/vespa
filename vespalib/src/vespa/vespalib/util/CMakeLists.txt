@@ -55,6 +55,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     md5.c
     memory_trap.cpp
     memoryusage.cpp
+    mimalloc_intercept.cpp
     mmap_file_allocator.cpp
     mmap_file_allocator_factory.cpp
     monitored_refcount.cpp
