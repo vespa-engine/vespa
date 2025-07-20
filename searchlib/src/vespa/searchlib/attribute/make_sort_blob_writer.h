@@ -14,4 +14,10 @@ class ISortBlobWriter;
 std::unique_ptr<ISortBlobWriter>
 make_sort_blob_writer(const IAttributeVector* vector, const search::common::FieldSortSpec& field_sort_spec);
 
+std::unique_ptr<ISortBlobWriter>
+make_fieldpath_sort_blob_writer(const IAttributeVector* keyVector, 
+                                const IAttributeVector* valueVector,
+                                const std::string& searchKey,
+                                const search::common::FieldSortSpec& field_sort_spec);
+
 }

@@ -495,4 +495,30 @@ TEST(SortTest, make_sort_blob_writer_throws_when_missing_value_is_illegal) {
     verify_make_sort_blob_writer_throws(BasicType::FLOAT, CollectionType::ARRAY, true);
 }
 
+TEST(SortTest, fieldpath_sort_parsing) {
+    search::uca::UcaConverterFactory ucaFactory;
+    search::AttributeManager mgr;
+    search::AttributeContext ac(mgr);
+    
+    // Create mock map attributes
+    Config keyConfig(BasicType::STRING, CollectionType::ARRAY);
+    Config valueConfig(BasicType::INT32, CollectionType::ARRAY);
+    
+    auto keyAttr = AttributeFactory::createAttribute("myMap.key", keyConfig);
+    auto valueAttr = AttributeFactory::createAttribute("myMap.value", valueConfig);
+    
+    mgr.add(keyAttr);
+    mgr.add(valueAttr);
+    
+    // Test FieldPath sort spec parsing
+    FastS_SortSpec sortSpec("no-metastore", 0, vespalib::Doom::never(), ucaFactory);
+    
+    // This should succeed - the FieldPath syntax should be detected and handled
+    EXPECT_TRUE(sortSpec.Init("+myMap{myKey}", ac));
+    
+    // Test descending FieldPath sort
+    FastS_SortSpec sortSpecDesc("no-metastore", 0, vespalib::Doom::never(), ucaFactory);
+    EXPECT_TRUE(sortSpecDesc.Init("-myMap{myKey}", ac));
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -188,18 +188,63 @@ FastS_SortSpec::Add(IAttributeContext & vecMan, const FieldSortSpec & field_sort
         vector = vecMan.getAttribute(_documentmetastore);
     } else {
         type = (field_sort_spec.is_ascending()) ? ASC_VECTOR : DESC_VECTOR;
-        vector = vecMan.getAttribute(field_sort_spec._field);
-        if ( !vector) {
-            Issue::report("sort spec: Attribute vector '%s' is not valid. Skipped in sorting", field_sort_spec._field.c_str());
-            return false;
-        }
-        if (!vector->is_sortable()) {
-            Issue::report("sort spec: Attribute vector '%s' is not sortable. Skipped in sorting", field_sort_spec._field.c_str());
-            return false;
+        
+        // Check if this is a FieldPath (contains {...} syntax)
+        size_t open_brace = field_sort_spec._field.find('{');
+        if (open_brace != std::string::npos && field_sort_spec._field.find('}', open_brace) != std::string::npos) {
+            // FieldPath syntax: extract base attribute name
+            std::string base_attr = field_sort_spec._field.substr(0, open_brace);
+            vector = vecMan.getAttribute(base_attr);
+            if (!vector) {
+                Issue::report("sort spec: Base attribute '%s' for FieldPath '%s' is not valid. Skipped in sorting", 
+                             base_attr.c_str(), field_sort_spec._field.c_str());
+                return false;
+            }
+            if (!vector->is_sortable()) {
+                Issue::report("sort spec: Base attribute '%s' for FieldPath '%s' is not sortable. Skipped in sorting", 
+                             base_attr.c_str(), field_sort_spec._field.c_str());
+                return false;
+            }
+        } else {
+            // Regular attribute
+            vector = vecMan.getAttribute(field_sort_spec._field);
+            if ( !vector) {
+                Issue::report("sort spec: Attribute vector '%s' is not valid. Skipped in sorting", field_sort_spec._field.c_str());
+                return false;
+            }
+            if (!vector->is_sortable()) {
+                Issue::report("sort spec: Attribute vector '%s' is not sortable. Skipped in sorting", field_sort_spec._field.c_str());
+                return false;
+            }
         }
     }
 
-    auto sort_blob_writer = make_sort_blob_writer(vector, field_sort_spec);
+    std::unique_ptr<search::attribute::ISortBlobWriter> sort_blob_writer;
+    
+    // Check if this is a FieldPath and handle accordingly
+    size_t open_brace = field_sort_spec._field.find('{');
+    if (open_brace != std::string::npos && field_sort_spec._field.find('}', open_brace) != std::string::npos) {
+        // FieldPath: extract key from {...} syntax
+        size_t close_brace = field_sort_spec._field.find('}', open_brace);
+        std::string key = field_sort_spec._field.substr(open_brace + 1, close_brace - open_brace - 1);
+        
+        // Get key and value attributes for the map
+        std::string base_attr = field_sort_spec._field.substr(0, open_brace);
+        const IAttributeVector* keyVector = vecMan.getAttribute(base_attr + ".key");
+        const IAttributeVector* valueVector = vecMan.getAttribute(base_attr + ".value");
+        
+        if (!keyVector || !valueVector) {
+            Issue::report("sort spec: FieldPath '%s' requires both .key and .value attributes. Skipped in sorting", 
+                         field_sort_spec._field.c_str());
+            return false;
+        }
+        
+        sort_blob_writer = make_fieldpath_sort_blob_writer(keyVector, valueVector, key, field_sort_spec);
+    } else {
+        // Regular attribute
+        sort_blob_writer = make_sort_blob_writer(vector, field_sort_spec);
+    }
+    
     if (vector != nullptr && !sort_blob_writer) {
         return false;
     }
