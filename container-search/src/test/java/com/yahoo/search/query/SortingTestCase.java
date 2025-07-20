@@ -31,11 +31,16 @@ public class SortingTestCase {
         assertNotNull(Sorting.fromString("+a"));
         assertNotNull(Sorting.fromString("-a"));
         assertNotNull(Sorting.fromString("a.b"));
+        // Test FieldPath syntax for map key sorting
+        assertNotNull(Sorting.fromString("myMap{myKey}"));
+        assertNotNull(Sorting.fromString("+myMap{myKey}"));
+        assertNotNull(Sorting.fromString("-myMap{myKey}"));
+        assertNotNull(Sorting.fromString("myMap{\"quoted key\"}"));
         try {
             assertNotNull(Sorting.fromString("-1"));
             fail("'-1' should not be allowed as attribute name.");
         } catch (IllegalArgumentException e) {
-            assertEquals(e.getMessage(), "Illegal attribute name '1' for sorting. Requires '[\\[]*[a-zA-Z_][\\.a-zA-Z0-9_-]*[\\]]*'");
+            assertEquals(e.getMessage(), "Illegal attribute name '1' for sorting. Requires '[\\[]*[a-zA-Z_][\\.a-zA-Z0-9_-]*([{][^}]*[}])?[\\]]*'");
         } catch (Exception e) {
             fail("I only expect 'IllegalArgumentException', not: + " + e.toString());
         }
@@ -112,6 +117,25 @@ public class SortingTestCase {
     private static String failedSpec(String spec) {
         var e = assertThrows(IllegalInputException.class, () -> { Sorting.fromString(spec); });
         return e.getMessage();
+    }
+
+    @Test
+    void testFieldPathSorting() {
+        Sorting sorting = Sorting.fromString("myMap{myKey}");
+        assertEquals(1, sorting.fieldOrders().size());
+        Sorting.FieldOrder fo = sorting.fieldOrders().get(0);
+        assertTrue(fo.getSorter() instanceof Sorting.AttributeMapSorter);
+        Sorting.AttributeMapSorter mapSorter = (Sorting.AttributeMapSorter) fo.getSorter();
+        assertEquals("myMap", mapSorter.getMapName());
+        assertEquals("myKey", mapSorter.getKey());
+        assertEquals("myMap.key", mapSorter.getKeyAttribute());
+        assertEquals("myMap.value", mapSorter.getValueAttribute());
+        assertEquals("myMap{\"myKey\"}", mapSorter.toSerialForm());
+        
+        // Test with quoted key
+        Sorting quotedSorting = Sorting.fromString("myMap{\"quoted key\"}");
+        Sorting.AttributeMapSorter quotedMapSorter = (Sorting.AttributeMapSorter) quotedSorting.fieldOrders().get(0).getSorter();
+        assertEquals("quoted key", quotedMapSorter.getKey());
     }
 
     @Test

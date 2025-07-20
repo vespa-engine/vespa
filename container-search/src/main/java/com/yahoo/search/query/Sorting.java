@@ -121,7 +121,12 @@ public class Sorting implements Cloneable {
                     }
                 }
             } else {
-                sorter = new AttributeSorter(canonic(functionName, indexFacts));
+                String canonicName = canonic(functionName, indexFacts);
+                if (isFieldPath(canonicName)) {
+                    sorter = new AttributeMapSorter(canonicName);
+                } else {
+                    sorter = new AttributeSorter(canonicName);
+                }
             }
             Order order = Order.UNDEFINED;
             if (orderMarker == '+' || orderMarker == '-') {
@@ -242,9 +247,13 @@ public class Sorting implements Cloneable {
         return b.length;
     }
 
+    private static boolean isFieldPath(String fieldName) {
+        return fieldName.contains("{") && fieldName.contains("}");
+    }
+
     public static class AttributeSorter implements Cloneable {
 
-        private static final Pattern legalAttributeName = Pattern.compile("[\\[]*[a-zA-Z_][\\.a-zA-Z0-9_-]*[\\]]*");
+        private static final Pattern legalAttributeName = Pattern.compile("[\\[]*[a-zA-Z_][\\.a-zA-Z0-9_-]*([{][^}]*[}])?[\\]]*");
 
         private String fieldName;
 
@@ -288,6 +297,59 @@ public class Sorting implements Cloneable {
         @SuppressWarnings({ "rawtypes", "unchecked" })
         public int compare(Comparable a, Comparable b) {
             return a.compareTo(b);
+        }
+
+    }
+
+    public static class AttributeMapSorter extends AttributeSorter {
+
+        private final String mapName;
+        private final String key;
+
+        public AttributeMapSorter(String fieldPath) {
+            super(fieldPath);
+            int keyStart = fieldPath.indexOf('{');
+            int keyEnd = fieldPath.indexOf('}');
+            if (keyStart == -1 || keyEnd == -1 || keyEnd <= keyStart) {
+                throw new IllegalInputException("Invalid FieldPath syntax: " + fieldPath);
+            }
+            this.mapName = fieldPath.substring(0, keyStart);
+            String keyWithQuotes = fieldPath.substring(keyStart + 1, keyEnd);
+            // Remove quotes if present
+            if (keyWithQuotes.startsWith("\"") && keyWithQuotes.endsWith("\"")) {
+                this.key = keyWithQuotes.substring(1, keyWithQuotes.length() - 1);
+            } else {
+                this.key = keyWithQuotes;
+            }
+        }
+
+        public String getMapName() { return mapName; }
+        public String getKey() { return key; }
+
+        public String getKeyAttribute() {
+            return mapName + ".key";
+        }
+
+        public String getValueAttribute() {
+            return mapName + ".value";
+        }
+
+        @Override
+        public String toSerialForm() {
+            return mapName + "{\"" + key + "\"}";
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof AttributeMapSorter)) {
+                return false;
+            }
+            return super.equals(other);
+        }
+
+        @Override
+        public AttributeMapSorter clone() {
+            return (AttributeMapSorter)super.clone();
         }
 
     }
@@ -625,12 +687,31 @@ public class Sorting implements Cloneable {
                 return new String();
             }
             var oldPos = pos;
+            boolean inFieldPath = false;
+            boolean inQuotes = false;
+            
             while (pos < spec.length()) {
                 var c = spec.charAt(pos);
-                if (c == ' ' || c == ',' || c == '(' || c == ')' || c == '\\' || c == '"') {
-                    break;
+                
+                if (inFieldPath) {
+                    if (c == '"' && !inQuotes) {
+                        inQuotes = true;
+                    } else if (c == '"' && inQuotes) {
+                        inQuotes = false;
+                    } else if (c == '}' && !inQuotes) {
+                        ++pos; // Include the closing brace
+                        break;
+                    }
+                    ++pos;
+                } else {
+                    if (c == ' ' || c == ',' || c == '(' || c == ')' || c == '\\' || c == '"') {
+                        break;
+                    }
+                    if (c == '{') {
+                        inFieldPath = true;
+                    }
+                    ++pos;
                 }
-                ++pos;
             }
             return spec.substring(oldPos, pos);
         }
