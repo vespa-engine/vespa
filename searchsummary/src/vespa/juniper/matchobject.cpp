@@ -212,7 +212,7 @@ QueryTerm* match_iterator::first_match(Token& token) {
     queryterm_hashtable::keytype keyval = termval;
     if (LOG_WOULD_LOG(spam)) {
         char utf8term[1024];
-        Fast_UnicodeUtil::utf8ncopy(utf8term, term, 1024, (term != nullptr ? len : 0));
+        Fast_UnicodeUtil::utf8ncopy(utf8term, term, 1024, len);
         LOG(spam, "term %s, len %ld, keyval 0x%x termval 0x%x", utf8term, len, keyval, termval);
     }
     _el = _table.FindRef(keyval);
