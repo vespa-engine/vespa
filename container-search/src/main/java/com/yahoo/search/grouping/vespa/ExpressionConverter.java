@@ -65,6 +65,7 @@ import com.yahoo.search.grouping.request.NotPredicate;
 import com.yahoo.search.grouping.request.NormalizeSubjectFunction;
 import com.yahoo.search.grouping.request.NowFunction;
 import com.yahoo.search.grouping.request.OrFunction;
+import com.yahoo.search.grouping.request.OrPredicate;
 import com.yahoo.search.grouping.request.PredefinedFunction;
 import com.yahoo.search.grouping.request.RawValue;
 import com.yahoo.search.grouping.request.RegexPredicate;
@@ -135,6 +136,7 @@ import com.yahoo.searchlib.expression.NotPredicateNode;
 import com.yahoo.searchlib.expression.NormalizeSubjectFunctionNode;
 import com.yahoo.searchlib.expression.NumElemFunctionNode;
 import com.yahoo.searchlib.expression.OrFunctionNode;
+import com.yahoo.searchlib.expression.OrPredicateNode;
 import com.yahoo.searchlib.expression.RangeBucketPreDefFunctionNode;
 import com.yahoo.searchlib.expression.RawBucketResultNode;
 import com.yahoo.searchlib.expression.RawBucketResultNodeVector;
@@ -258,7 +260,10 @@ class ExpressionConverter {
         if (expression instanceof RegexPredicate rp) {
             return new RegexPredicateNode(rp.getPattern(), toExpressionNode(rp.getExpression()));
         }  else if (expression instanceof NotPredicate np) {
-           return new NotPredicateNode(toFilterExpressionNode(np.getExpression()));
+            return new NotPredicateNode(toFilterExpressionNode(np.getExpression()));
+        } else if (expression instanceof OrPredicate op) {
+            var args = op.getArgs().stream().map(this::toFilterExpressionNode).toList();
+            return new OrPredicateNode(args);
         } else {
             throw new IllegalInputException(
                     "Can not convert '%s' to a filter expression.".formatted(expression.getClass().getSimpleName()));
