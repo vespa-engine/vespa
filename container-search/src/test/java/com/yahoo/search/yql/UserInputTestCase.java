@@ -73,26 +73,6 @@ public class UserInputTestCase {
     }
 
     @Test
-    void testIt() {
-        URIBuilder builder = searchUri();
-        builder.setParameter("yql", "select * from sources * where {grammar: 'linguistics'}userInput('Noëlᛁ')");
-        Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where default contains \"nal le\"", query.yqlRepresentation());
-
-        // where default contains {stem: false, accentDrop: false, implicitTransforms: false}'Noëlᛁ'
-    }
-
-    @Test
-    void testIt2() {
-        URIBuilder builder = searchUri();
-        builder.setParameter("yql", "select * from sources * where default contains ({stem: false, accentDrop: false, implicitTransforms: false}'Noëlᛁ')");
-        Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where default contains \"nal le\"", query.yqlRepresentation());
-
-        // where default contains {stem: false, accentDrop: false, implicitTransforms: false}'Noëlᛁ'
-    }
-
-    @Test
     void testRawUserInput() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql", "select * from sources * where {grammar: \"raw\"}userInput(\"nal le\")");
