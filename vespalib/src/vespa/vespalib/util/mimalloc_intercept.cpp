@@ -33,7 +33,7 @@ namespace {
 
 // `noipa` this function to ensure it gets a stack frame that we can count.
 // See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html for its use vs. `noinline`
-__attribute__((noipa, noreturn))
+__attribute__((noreturn))
 void terminate_on_mi_malloc_failure_once(int err, [[maybe_unused]] void* arg) {
     // From https://microsoft.github.io/mimalloc/group__extended.html:
     // "The possible error codes are:
@@ -61,7 +61,9 @@ void terminate_on_mi_malloc_failure_once(int err, [[maybe_unused]] void* arg) {
         // binaries where we already init the symbolizer, so triggering a core for other
         // (presumably less beefy) processes is not necessarily a problem.
         constexpr int max_frames = 32;
-        constexpr int skip_frames = 4; // this frame + terminate_on_mi_malloc_failure + _mi_error_message + _mi_malloc_generic
+        // Don't make any assumptions on which frames can be omitted from the stack trace.
+        // This is both dependent on compiler optimizations and the underlying mimalloc code.
+        constexpr int skip_frames = 0;
         void* frames[max_frames];
         int depth = absl::GetStackTrace(frames, max_frames, skip_frames);
         for (int i = 0; i < depth; ++i) {

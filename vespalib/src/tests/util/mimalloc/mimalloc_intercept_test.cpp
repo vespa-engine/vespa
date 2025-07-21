@@ -2,41 +2,39 @@
 
 #include <vespa/vespalib/util/mimalloc_intercept.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <absl/base/optimization.h>
 #include <absl/debugging/symbolize.h>
 #include <cerrno>
 
-// Utility to force the compiler to assume functions have side effects. Otherwise,
-// it simply cannot resist the temptation to optimize/inline across even functions
-// declared as __attribute__((noipa)).
-// See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
-#define VESPA_ENFORCE_FN_SIDE_EFFECTS asm("")
-
 using namespace ::testing;
 
-namespace vespalib {
+extern "C" { // Avoid any name mangling
 
-// Disable all inter-process optimizations for these very simple forwarding functions.
-__attribute__((noipa)) void my_failing_function(int err);
-__attribute__((noipa)) void my_fake_mi_error_message(int err);
-__attribute__((noipa)) void my_fake_mi_malloc_generic(int err);
+__attribute__((noinline)) void my_failing_function(int err);
+__attribute__((noinline)) void my_fake_mi_error_message(int err);
+__attribute__((noinline)) void my_fake_mi_malloc_generic(int err);
 
 // The error handler skips a few frames of the stack top due to assumptions on the internal
-// mimalloc call-path, so to get `my_failing_function` in the stack trace, emulate this here.
+// mimalloc call-path, so to avoid getting an empty stack trace, emulate these here.
 
 void my_fake_mi_error_message(int err) {
-    terminate_on_mi_malloc_failure(err, nullptr);
-    VESPA_ENFORCE_FN_SIDE_EFFECTS;
+    vespalib::terminate_on_mi_malloc_failure(err, nullptr);
+    ABSL_BLOCK_TAIL_CALL_OPTIMIZATION();
 }
 
 void my_fake_mi_malloc_generic(int err) {
     my_fake_mi_error_message(err);
-    VESPA_ENFORCE_FN_SIDE_EFFECTS;
+    ABSL_BLOCK_TAIL_CALL_OPTIMIZATION();
 }
 
 void my_failing_function(int err) {
     my_fake_mi_malloc_generic(err);
-    VESPA_ENFORCE_FN_SIDE_EFFECTS;
+    ABSL_BLOCK_TAIL_CALL_OPTIMIZATION();
 }
+
+} // extern "C"
+
+namespace vespalib {
 
 TEST(MiMallocErrorHandlerDeathTest, oom_condition_quick_exits_with_stack_trace) {
     EXPECT_EXIT({ my_failing_function(ENOMEM); }, ExitedWithCode(66),
