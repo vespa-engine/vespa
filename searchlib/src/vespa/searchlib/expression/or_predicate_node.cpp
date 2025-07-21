@@ -3,6 +3,9 @@
 #include "resultnode.h"
 #include "resultvector.h"
 
+#include <vespa/vespalib/objects/serializer.hpp>
+#include <vespa/vespalib/objects/deserializer.hpp>
+
 namespace search::expression {
 
 using vespalib::Deserializer;
@@ -37,7 +40,9 @@ OrPredicateNode::OrPredicateNode(const std::vector<FilterPredicateNode>& input)
 {
 }
 
-Serializer& OrPredicateNode::onSerialize(Serializer& os) const { return os << args(); }
+Serializer& OrPredicateNode::onSerialize(Serializer& os) const {
+    return os << args();
+}
 
 Deserializer& OrPredicateNode::onDeserialize(Deserializer& is) {
     is >> args();
