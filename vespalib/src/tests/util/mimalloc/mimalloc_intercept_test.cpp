@@ -15,7 +15,7 @@ __attribute__((noinline)) void my_fake_mi_error_message(int err);
 __attribute__((noinline)) void my_fake_mi_malloc_generic(int err);
 
 // The error handler skips a few frames of the stack top due to assumptions on the internal
-// mimalloc call-path, so to avoid getting an empty stack trace, emulate these here.
+// mimalloc call-path, so to get `my_failing_function` in the stack trace, emulate this here.
 
 void my_fake_mi_error_message(int err) {
     vespalib::terminate_on_mi_malloc_failure(err, nullptr);

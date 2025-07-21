@@ -31,8 +31,6 @@ namespace vespalib {
 
 namespace {
 
-// `noipa` this function to ensure it gets a stack frame that we can count.
-// See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html for its use vs. `noinline`
 __attribute__((noreturn))
 void terminate_on_mi_malloc_failure_once(int err, [[maybe_unused]] void* arg) {
     // From https://microsoft.github.io/mimalloc/group__extended.html:
