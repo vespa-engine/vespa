@@ -1,11 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "mimalloc_intercept.h"
 #include <absl/debugging/stacktrace.h>
 #include <absl/debugging/symbolize.h>
+#include <atomic>
 #include <cerrno>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <thread>
+
+using namespace std::chrono_literals;
 
 // Global init-time utility for detecting the presence of mimalloc and installing
 // a custom error handler that ensures malloc() never returns nullptr on allocation
@@ -25,7 +31,10 @@ namespace vespalib {
 
 namespace {
 
-void terminate_on_mi_malloc_failure(int err, [[maybe_unused]] void* arg) {
+// `noipa` this function to ensure it gets a stack frame that we can count.
+// See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html for its use vs. `noinline`
+__attribute__((noipa, noreturn))
+void terminate_on_mi_malloc_failure_once(int err, [[maybe_unused]] void* arg) {
     // From https://microsoft.github.io/mimalloc/group__extended.html:
     // "The possible error codes are:
     //   EAGAIN:    Double free was detected (only in debug and secure mode).
@@ -52,7 +61,7 @@ void terminate_on_mi_malloc_failure(int err, [[maybe_unused]] void* arg) {
         // binaries where we already init the symbolizer, so triggering a core for other
         // (presumably less beefy) processes is not necessarily a problem.
         constexpr int max_frames = 32;
-        constexpr int skip_frames = 3; // this frame + _mi_error_message + _mi_malloc_generic
+        constexpr int skip_frames = 4; // this frame + terminate_on_mi_malloc_failure + _mi_error_message + _mi_malloc_generic
         void* frames[max_frames];
         int depth = absl::GetStackTrace(frames, max_frames, skip_frames);
         for (int i = 0; i < depth; ++i) {
@@ -78,6 +87,36 @@ void terminate_on_mi_malloc_failure(int err, [[maybe_unused]] void* arg) {
     }
 }
 
+// It's possible for an unspecified number of threads to concurrently enter our fatal
+// mimalloc error interception handler, but we only want to trigger a stack trace and
+// a process exit/abort from the first one that reports that the end is near. The
+// alternative is a jumbled mess of interleaved error messages and stacks on stderr.
+// This flag must always be initialized before `init_mi_malloc_error_handler`, so
+// the two should always be kept in the same translation unit and in this order.
+std::atomic_flag error_handler_entered{};
+
+} // anon ns
+
+void terminate_on_mi_malloc_failure(int err, void* fwd_arg) {
+    // Only allow the first failing thread to enter the error handler. The error handler
+    // will always terminate the process in one way or another, so for the other threads
+    // there is nothing else to do than to wait for the inevitable.
+    // Reminder: `test_and_set()` returns the _previously_ held value.
+    if (!error_handler_entered.test_and_set()) {
+        terminate_on_mi_malloc_failure_once(err, fwd_arg);
+    } else {
+        // This ship is already sinking, so play the violin until the process is terminated.
+        // It should be noted that until P2809R1 is in place, infinite _trivial_ (side effect
+        // less) loops are technically undefined, but we assume that `sleep_for` explicitly
+        // models a side effect.
+        while (true) {
+            std::this_thread::sleep_for(1s);
+        }
+    }
+}
+
+namespace {
+
 class MiMallocAutoRegisterErrorHandler {
 public:
     MiMallocAutoRegisterErrorHandler() {
@@ -91,6 +130,6 @@ public:
 
 [[maybe_unused]] MiMallocAutoRegisterErrorHandler init_mi_malloc_error_handler;
 
-}
+} // anon ns
 
 }
