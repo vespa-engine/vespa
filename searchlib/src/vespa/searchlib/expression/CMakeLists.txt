@@ -42,5 +42,6 @@ vespa_add_library(searchlib_expression OBJECT
     not_predicate_node.cpp
     multi_arg_predicate_node.cpp
     or_predicate_node.cpp
+    and_predicate_node.cpp
     DEPENDS
 )
