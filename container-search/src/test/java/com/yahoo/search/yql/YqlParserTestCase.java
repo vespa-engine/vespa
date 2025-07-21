@@ -514,6 +514,7 @@ public class YqlParserTestCase {
             WordItem childWord = (WordItem)child;
             assertFalse(childWord.isStemmed());
             assertTrue(childWord.isNormalizable());
+            assertFalse(childWord.isLowercased());
         }
 
         root = parse("select foo from bar where {grammar:\"linguistics\"}userInput(\"yoni jo dima\")").getRoot();
@@ -524,6 +525,7 @@ public class YqlParserTestCase {
             WordItem childWord = (WordItem)child;
             assertTrue(childWord.isStemmed());
             assertFalse(childWord.isNormalizable());
+            assertTrue(childWord.isLowercased());
         }
     }
 
