@@ -17,6 +17,7 @@ import com.yahoo.searchlib.aggregation.GroupingLevel;
 import com.yahoo.searchlib.aggregation.HitsAggregationResult;
 import com.yahoo.searchlib.aggregation.SumAggregationResult;
 import com.yahoo.searchlib.expression.AddFunctionNode;
+import com.yahoo.searchlib.expression.AndPredicateNode;
 import com.yahoo.searchlib.expression.AttributeMapLookupNode;
 import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.ConstantNode;
@@ -840,6 +841,10 @@ public class RequestBuilderTestCase {
                 "[[{ Attribute, filter = [Not [Regex [Attribute]]], result = [Count] }]]");
         assertLayout("all(group(a) filter(or(regex(\".*suffix$\", a),regex(\".*suffix$\", b))) each(output(count())))",
                 "[[{ Attribute, filter = [Or [Regex [Attribute], Regex [Attribute]]], result = [Count] }]]");
+        assertLayout("all(group(a) filter(and(regex(\".*suffix$\", a),regex(\".*suffix$\", b))) each(output(count())))",
+                "[[{ Attribute, filter = [And [Regex [Attribute], Regex [Attribute]]], result = [Count] }]]");
+        assertLayout("all(group(a) filter(and(or(regex(\".*suffix$\", a),regex(\".*suffix$\", b)), not(regex(\".*suffix$\", c)))) each(output(count())))",
+                "[[{ Attribute, filter = [And [Or [Regex [Attribute], Regex [Attribute]], Not [Regex [Attribute]]]], result = [Count] }]]");
     }
 
     private static void assertTotalGroupsAndSummaries(long expected, String query) {
@@ -1106,6 +1111,11 @@ public class RequestBuilderTestCase {
                 var simpleName = opn.getArgs().get().stream()
                         .map(LayoutWriter::toSimpleName).collect(Collectors.joining(", "));
                 return "Or [%s]".formatted(simpleName);
+            }
+            else if (filterExp instanceof AndPredicateNode apn) {
+                var simpleName = apn.getArgs().get().stream()
+                        .map(LayoutWriter::toSimpleName).collect(Collectors.joining(", "));
+                return "And [%s]".formatted(simpleName);
             }
             return filterExp.getClass().getSimpleName();
         }

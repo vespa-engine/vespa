@@ -30,7 +30,7 @@ public class NotPredicateNode extends FilterExpressionNode {
     @Override protected int onGetClassId() { return classId; }
 
     @Override
-    public NotPredicateNode clone() {
+    public FilterExpressionNode clone() {
         return new NotPredicateNode(expression != null ? expression.clone() : null);
     }
 

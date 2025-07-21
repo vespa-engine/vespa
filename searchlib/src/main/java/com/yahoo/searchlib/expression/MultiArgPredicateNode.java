@@ -7,6 +7,7 @@ import com.yahoo.vespa.objects.Serializer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -14,10 +15,10 @@ import java.util.Optional;
  *
  * @author johsol
  */
-public class MultiArgPredicateNode extends FilterExpressionNode {
+public abstract class MultiArgPredicateNode extends FilterExpressionNode {
 
-    public static final int classId = registerClass(0x4000 + 175, MultiArgPredicateNode.class, MultiArgPredicateNode::new);
-    private List<FilterExpressionNode> args = new ArrayList<FilterExpressionNode>();
+    public static final int classId = registerClass(0x4000 + 175, MultiArgPredicateNode.class);
+    private List<FilterExpressionNode> args = new ArrayList<>();
 
     public MultiArgPredicateNode() {}
 
@@ -25,14 +26,23 @@ public class MultiArgPredicateNode extends FilterExpressionNode {
         this.args = args;
     }
 
+    public final MultiArgPredicateNode addArg(FilterExpressionNode arg) {
+        Objects.requireNonNull(arg, "Can not add null arg"); // throws NullPointerException
+        args.add(arg);
+        return this;
+    }
+
+    public FilterExpressionNode getArg(int i) {
+        return args.get(i);
+    }
+
+    public int getNumArgs() {
+        return args.size();
+    }
+
     public Optional<List<FilterExpressionNode>> getArgs() { return Optional.ofNullable(args); }
 
     @Override protected int onGetClassId() { return classId; }
-
-    @Override
-    public OrPredicateNode clone() {
-        return new OrPredicateNode(args != null ? args.stream().map(FilterExpressionNode::clone).toList() : null);
-    }
 
     @Override
     protected void onSerialize(Serializer buf) {

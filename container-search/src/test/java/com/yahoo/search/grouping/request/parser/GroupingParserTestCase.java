@@ -641,7 +641,9 @@ public class GroupingParserTestCase {
 
         assertAll("filter with predicates",
                 () -> assertParse("all(group(foo) filter(not(regex(\"mybar\", foo))) each(output(count())))"),
-                () -> assertParse("all(group(foo) filter(or(regex(\"mybar\", foo), regex(\"mybaz\", foo), regex(\"myfoo\", boz))) each(output(count())))"));
+                () -> assertParse("all(group(foo) filter(or(regex(\"mybar\", foo), regex(\"mybaz\", foo), regex(\"myfoo\", boz))) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(and(regex(\"mybar\", foo), regex(\"mybaz\", foo), regex(\"myfoo\", boz))) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(and(or(regex(\"mybar\", foo), not(regex(\"mybaz\", foo))), regex(\"myfoo\", boz))) each(output(count())))"));
     }
 
     // --------------------------------------------------------------------------------

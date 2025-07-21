@@ -5,6 +5,7 @@ import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.grouping.request.AddFunction;
 import com.yahoo.search.grouping.request.AggregatorNode;
 import com.yahoo.search.grouping.request.AndFunction;
+import com.yahoo.search.grouping.request.AndPredicate;
 import com.yahoo.search.grouping.request.ArrayAtLookup;
 import com.yahoo.search.grouping.request.AttributeFunction;
 import com.yahoo.search.grouping.request.AttributeMapLookupValue;
@@ -105,6 +106,7 @@ import com.yahoo.searchlib.aggregation.XorAggregationResult;
 import com.yahoo.searchlib.expression.AddFunctionNode;
 import com.yahoo.searchlib.expression.AggregationRefNode;
 import com.yahoo.searchlib.expression.AndFunctionNode;
+import com.yahoo.searchlib.expression.AndPredicateNode;
 import com.yahoo.searchlib.expression.ArrayAtLookupNode;
 import com.yahoo.searchlib.expression.AttributeMapLookupNode;
 import com.yahoo.searchlib.expression.AttributeNode;
@@ -264,6 +266,9 @@ class ExpressionConverter {
         } else if (expression instanceof OrPredicate op) {
             var args = op.getArgs().stream().map(this::toFilterExpressionNode).toList();
             return new OrPredicateNode(args);
+        } else if (expression instanceof AndPredicate ap) {
+            var args = ap.getArgs().stream().map(this::toFilterExpressionNode).toList();
+            return new AndPredicateNode(args);
         } else {
             throw new IllegalInputException(
                     "Can not convert '%s' to a filter expression.".formatted(expression.getClass().getSimpleName()));

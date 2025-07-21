@@ -12,24 +12,23 @@ import java.util.List;
  *
  * @author johsol
  */
-public class OrPredicateNode extends MultiArgPredicateNode {
+public class AndPredicateNode extends MultiArgPredicateNode {
 
-    public static final int classId = registerClass(0x4000 + 176, OrPredicateNode.class, OrPredicateNode::new);
+    public static final int classId = registerClass(0x4000 + 177, AndPredicateNode.class, AndPredicateNode::new);
 
-    public OrPredicateNode() {}
+    public AndPredicateNode() {}
 
-    public OrPredicateNode(List<FilterExpressionNode> args) {
+    public AndPredicateNode(List<FilterExpressionNode> args) {
         super(args);
     }
 
+    @Override protected int onGetClassId() { return classId; }
+
     @Override
     public FilterExpressionNode clone() {
-        return new OrPredicateNode(getArgs().map(list -> list.stream()
+        return new AndPredicateNode(getArgs().map(list -> list.stream()
                 .map(FilterExpressionNode::clone).toList()).orElse(null));
     }
-
-
-    @Override protected int onGetClassId() { return classId; }
 
     @Override
     protected void onSerialize(Serializer buf) {
