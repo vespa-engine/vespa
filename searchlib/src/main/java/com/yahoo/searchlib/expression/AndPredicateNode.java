@@ -8,7 +8,7 @@ import com.yahoo.vespa.objects.Serializer;
 import java.util.List;
 
 /**
- * Protocol class for {@code OrPredicate}.
+ * Protocol class for {@code AndPredicate}.
  *
  * @author johsol
  */
