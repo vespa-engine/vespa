@@ -111,7 +111,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                 redeploy = true;
                 logAutoscaling(current, autoscaling.resources().get(), applicationId, clusterNodes.not().retired());
                 if (logDetails) {
-                    log.info("autoscaling data for " + applicationId.toFullString() + ": "
+                    log.info("Autoscaling data for " + applicationId.toFullString() + ", clusterId " + clusterId.value() + ":"
                             + "\n\tmetrics().cpuCostPerQuery(): " + autoscaling.metrics().cpuCostPerQuery()
                             + "\n\tmetrics().queryRate(): " + autoscaling.metrics().queryRate()
                             + "\n\tmetrics().growthRateHeadroom(): " + autoscaling.metrics().growthRateHeadroom()
