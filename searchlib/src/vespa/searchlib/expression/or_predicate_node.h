@@ -8,8 +8,7 @@
 namespace search::expression {
 
 /**
- * @class OrPredicateNode
- * @brief Implements logical OR filter used in grouping expressions.
+ * Implements logical OR filter used in grouping expressions.
  **/
 class OrPredicateNode : public MultiArgPredicateNode {
 public:

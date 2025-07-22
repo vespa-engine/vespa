@@ -7,8 +7,7 @@
 namespace search::expression {
 
 /**
- * @class MultiArgPredicateNode
- * @brief Abstract base class for predicate nodes with multiple children.
+ * Abstract base class for predicate nodes with multiple children.
  **/
 class MultiArgPredicateNode : public FilterPredicateNode {
     using FilterPredicateNodeVector = std::vector<FilterPredicateNode::CP>;
