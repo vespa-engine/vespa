@@ -22,7 +22,10 @@ public class AndPredicateNode extends MultiArgPredicateNode {
         super(args);
     }
 
-    @Override protected int onGetClassId() { return classId; }
+    @Override
+    protected int onGetClassId() {
+        return classId;
+    }
 
     @Override
     public FilterExpressionNode clone() {

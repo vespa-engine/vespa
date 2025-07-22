@@ -25,9 +25,14 @@ public class NotPredicateNode extends FilterExpressionNode {
         this.expression = expression;
     }
 
-    public Optional<FilterExpressionNode> getExpression() { return Optional.ofNullable(expression); }
+    public Optional<FilterExpressionNode> getExpression() {
+        return Optional.ofNullable(expression);
+    }
 
-    @Override protected int onGetClassId() { return classId; }
+    @Override
+    protected int onGetClassId() {
+        return classId;
+    }
 
     @Override
     public FilterExpressionNode clone() {

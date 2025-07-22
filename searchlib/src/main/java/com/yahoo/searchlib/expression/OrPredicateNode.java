@@ -27,9 +27,11 @@ public class OrPredicateNode extends MultiArgPredicateNode {
         return new OrPredicateNode(getArgs().map(list -> list.stream()
                 .map(FilterExpressionNode::clone).toList()).orElse(null));
     }
-
-
-    @Override protected int onGetClassId() { return classId; }
+    
+    @Override
+    protected int onGetClassId() {
+        return classId;
+    }
 
     @Override
     protected void onSerialize(Serializer buf) {

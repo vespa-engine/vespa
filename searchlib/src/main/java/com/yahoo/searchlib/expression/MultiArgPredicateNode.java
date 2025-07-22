@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Protocol class for {@code OrPredicate}.
+ * Protocol class for descendants of {@code FilterExpressionNode} that has several {@code FilterExpressionNode} as children.
  *
  * @author johsol
  */
@@ -40,9 +40,14 @@ public abstract class MultiArgPredicateNode extends FilterExpressionNode {
         return args.size();
     }
 
-    public Optional<List<FilterExpressionNode>> getArgs() { return Optional.ofNullable(args); }
+    public Optional<List<FilterExpressionNode>> getArgs() {
+        return Optional.ofNullable(args);
+    }
 
-    @Override protected int onGetClassId() { return classId; }
+    @Override
+    protected int onGetClassId() {
+        return classId;
+    }
 
     @Override
     protected void onSerialize(Serializer buf) {
