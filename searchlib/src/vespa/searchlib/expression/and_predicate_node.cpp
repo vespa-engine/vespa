@@ -12,25 +12,7 @@ using vespalib::Serializer;
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, expression, AndPredicateNode, MultiArgPredicateNode);
 
-bool AndPredicateNode::allow(const document::Document & doc, const HitRank rank) {
-    for (auto& arg : args()) {
-        if (!arg->allow(doc, rank)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool AndPredicateNode::allow(const DocId docId, const HitRank rank) {
-    for (auto& arg : args()) {
-        if (!arg->allow(docId, rank)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-AndPredicateNode::AndPredicateNode() noexcept : MultiArgPredicateNode() {}
+AndPredicateNode::AndPredicateNode() noexcept = default;
 
 AndPredicateNode::~AndPredicateNode() = default;
 
@@ -46,6 +28,24 @@ Serializer& AndPredicateNode::onSerialize(Serializer& os) const {
 Deserializer& AndPredicateNode::onDeserialize(Deserializer& is) {
     is >> args();
     return is;
+}
+
+bool AndPredicateNode::allow(const DocId docId, const HitRank rank) {
+    for (auto& arg : args()) {
+        if (!arg->allow(docId, rank)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool AndPredicateNode::allow(const document::Document & doc, const HitRank rank) {
+    for (auto& arg : args()) {
+        if (!arg->allow(doc, rank)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 } // namespace search::expression

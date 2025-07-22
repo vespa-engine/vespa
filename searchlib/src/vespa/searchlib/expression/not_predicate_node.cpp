@@ -10,15 +10,7 @@ using vespalib::Serializer;
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, expression, NotPredicateNode, FilterPredicateNode);
 
-bool NotPredicateNode::allow(const document::Document & doc, HitRank rank) {
-    return !_expression->allow(doc, rank);
-}
-
-bool NotPredicateNode::allow(DocId docId, HitRank rank) {
-    return !_expression->allow(docId, rank);
-}
-
-NotPredicateNode::NotPredicateNode() noexcept : _expression() {}
+NotPredicateNode::NotPredicateNode() noexcept = default;
 
 NotPredicateNode::~NotPredicateNode() = default;
 
@@ -27,12 +19,21 @@ NotPredicateNode::NotPredicateNode(const FilterPredicateNode& input)
 {
 }
 
-
-Serializer& NotPredicateNode::onSerialize(Serializer& os) const { return os << _expression; }
+Serializer& NotPredicateNode::onSerialize(Serializer& os) const {
+    return os << _expression;
+}
 
 Deserializer& NotPredicateNode::onDeserialize(Deserializer& is) {
     is >> _expression;
     return is;
+}
+
+bool NotPredicateNode::allow(DocId docId, HitRank rank) {
+    return !_expression->allow(docId, rank);
+}
+
+bool NotPredicateNode::allow(const document::Document & doc, HitRank rank) {
+    return !_expression->allow(doc, rank);
 }
 
 void NotPredicateNode::visitMembers(vespalib::ObjectVisitor& visitor) const {

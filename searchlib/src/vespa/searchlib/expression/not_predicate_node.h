@@ -23,6 +23,7 @@ public:
 
     DECLARE_IDENTIFIABLE_NS2(search, expression, NotPredicateNode);
     DECLARE_NBO_SERIALIZE;
+
     bool allow(DocId docId, HitRank rank) override;
     bool allow(const document::Document &, HitRank) override;
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;

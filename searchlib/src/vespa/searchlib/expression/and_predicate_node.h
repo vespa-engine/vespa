@@ -13,16 +13,15 @@ namespace search::expression {
  **/
 class AndPredicateNode : public MultiArgPredicateNode {
 public:
-    DECLARE_NBO_SERIALIZE;
-
-    DECLARE_IDENTIFIABLE_NS2(search, expression, AndPredicateNode);
-
     AndPredicateNode() noexcept;
     ~AndPredicateNode() override;
     AndPredicateNode* clone() const override { return new AndPredicateNode(*this); }
 
     // for unit testing::
     AndPredicateNode(const std::vector<FilterPredicateNode>& input);
+
+    DECLARE_NBO_SERIALIZE;
+    DECLARE_IDENTIFIABLE_NS2(search, expression, AndPredicateNode);
 
     bool allow(DocId docId, HitRank rank) override;
     bool allow(const document::Document &, HitRank) override;
