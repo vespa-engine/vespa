@@ -4,21 +4,29 @@ package com.yahoo.search.grouping.request;
 import com.yahoo.api.annotations.Beta;
 
 /**
- * Represents a filter expression that negates the subexpression.
+ * Represents a logical negation (NOT) of a filter expression used to exclude grouping elements.
  *
  * @author johsol
  */
 @Beta
 public class NotPredicate extends FilterExpression {
-
     private final FilterExpression expression;
 
     public NotPredicate(FilterExpression expression) {
         this.expression = expression;
     }
 
-    public FilterExpression getExpression() { return expression; }
+    public FilterExpression getExpression() {
+        return expression;
+    }
 
-    @Override public String toString() { return "not(%s)".formatted(expression); }
-    @Override public FilterExpression copy() { return new NotPredicate(expression.copy()); }
+    @Override
+    public String toString() {
+        return "not(%s)".formatted(expression);
+    }
+
+    @Override
+    public FilterExpression copy() {
+        return new NotPredicate(expression.copy());
+    }
 }

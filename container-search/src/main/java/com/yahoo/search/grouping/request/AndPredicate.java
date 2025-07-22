@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Represents a filter expression that 'and' the subexpressions.
+ * Represents a logical conjunction (AND) of filter expressions used to match grouping elements.
  *
  * @author johsol
  */
@@ -19,7 +19,9 @@ public class AndPredicate extends FilterExpression {
         this.args = args;
     }
 
-    public List<FilterExpression> getArgs() { return args; }
+    public List<FilterExpression> getArgs() {
+        return args;
+    }
 
     @Override
     public String toString() {
@@ -28,5 +30,8 @@ public class AndPredicate extends FilterExpression {
                 .collect(Collectors.joining(", ")) + ")";
     }
 
-    @Override public FilterExpression copy() { return new AndPredicate(args.stream().map(FilterExpression::copy).toList()); }
+    @Override
+    public FilterExpression copy() {
+        return new AndPredicate(args.stream().map(FilterExpression::copy).toList());
+    }
 }
