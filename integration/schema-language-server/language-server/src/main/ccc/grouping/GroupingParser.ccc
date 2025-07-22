@@ -131,6 +131,7 @@ TOKEN :
     <MUL: "mul"> |
     <NEG: "neg"> |
     <NORMALIZESUBJECT: "normalizesubject"> |
+    <NOT: "not"> |
     <NOW: "now"> |
     <OR: "or"> |
     <ORDER: "order"> |
@@ -192,6 +193,7 @@ UNPARSED :
 // Production rules.
 //
 // --------------------------------------------------------------------------------
+/**/
 
 List<GroupingOperation> requestList :
 {
@@ -321,7 +323,10 @@ FilterExpression filterExp(GroupingOperation grp) :
 {
     FilterExpression exp;
 }
-    ( exp = regexPredicate(grp) )
+    ( (exp = regexPredicate(grp)) |
+      (exp = notPredicate(grp))   |
+      (exp = orPredicate(grp))    |
+      (exp = andPredicate(grp)))
     { return exp; }
 ;
 
@@ -948,6 +953,32 @@ RegexPredicate regexPredicate(GroupingOperation grp) :
     { return new RegexPredicate(pattern, exp); }
 ;
 
+NotPredicate notPredicate(GroupingOperation grp) :
+{
+    FilterExpression exp;
+}
+    ( <NOT> lbraceElm exp = filterExp(grp) rbraceElm )
+    { return new NotPredicate(exp); }
+;
+
+OrPredicate orPredicate(GroupingOperation grp) :
+{
+    FilterExpression exp;
+    List<FilterExpression> args = new LinkedList<FilterExpression>();
+}
+    ( <OR> lbraceElm ( exp = filterExp(grp) { args.add(exp); } ( commaElm exp = filterExp(grp) { args.add(exp); } )+ ) rbraceElm )
+    { return new OrPredicate(args); }
+;
+
+AndPredicate andPredicate(GroupingOperation grp) :
+{
+    FilterExpression exp;
+    List<FilterExpression> args = new LinkedList<FilterExpression>();
+}
+    ( <AND> lbraceElm ( exp = filterExp(grp) { args.add(exp); } ( commaElm exp = filterExp(grp) { args.add(exp); } )+ ) rbraceElm )
+    { return new AndPredicate(args); }
+;
+
 bucketElm(GroupingOperation grp, BucketResolver resolver) :
 {
     ConstantValue from, to = null;
@@ -1058,6 +1089,7 @@ String identifierStr :
         <MUL> |
         <NEG> |
         <NORMALIZESUBJECT> |
+        <NOT> |
         <NOW> |
         <OR> |
         <ORDER> |
