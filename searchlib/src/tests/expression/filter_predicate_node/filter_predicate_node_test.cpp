@@ -3,13 +3,14 @@
 #include <vespa/searchlib/expression/constantnode.h>
 #include <vespa/searchlib/expression/stringresultnode.h>
 #include <vespa/searchlib/expression/filter_predicate_node.h>
+#include <vespa/searchlib/expression/not_predicate_node.h>
 #include <vespa/searchlib/expression/regex_predicate_node.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::expression;
 
 /**
- * Defines methods for declaratively create filter expression trees.
+ * Defines methods for declaratively creating filter expression trees.
  */
 class FilterPredicateNodesTest : public ::testing::Test {
     std::unique_ptr<FilterPredicateNode> _node;
@@ -25,7 +26,9 @@ public:
     FilterPredicateNodesTest& set_node(std::unique_ptr<FilterPredicateNode> node);
 
     static std::unique_ptr<FilterPredicateNode> make_regex(const std::string& regex_value,
-                                                       std::unique_ptr<ExpressionNode> result_node);
+                                                           std::unique_ptr<ExpressionNode> result_node);
+
+    static std::unique_ptr<FilterPredicateNode> make_not(const std::unique_ptr<FilterPredicateNode>& filter_node);
 
     static std::unique_ptr<ExpressionNode> make_result(const std::string& value);
 };
@@ -44,8 +47,12 @@ FilterPredicateNodesTest& FilterPredicateNodesTest::set_node(std::unique_ptr<Fil
 }
 
 std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_regex(const std::string& regex_value,
-                                                                      std::unique_ptr<ExpressionNode> result_node) {
+                                                                          std::unique_ptr<ExpressionNode> result_node) {
     return std::make_unique<RegexPredicateNode>(regex_value, std::move(result_node));
+}
+
+std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_not(const std::unique_ptr<FilterPredicateNode>& filter_node) {
+    return std::make_unique<NotPredicateNode>(*filter_node);
 }
 
 std::unique_ptr<ExpressionNode> FilterPredicateNodesTest::make_result(const std::string& value) {
@@ -57,6 +64,12 @@ TEST_F(FilterPredicateNodesTest, test_regex_match) {
     EXPECT_TRUE(set_node(make_regex("foo.*", make_result("foobar"))).evaluate());
     EXPECT_FALSE(set_node(make_regex("foo", make_result("foobar"))).evaluate());
     EXPECT_FALSE(set_node(make_regex("bar", make_result("foobar"))).evaluate());
+}
+
+TEST_F(FilterPredicateNodesTest, test_not_predicate) {
+    EXPECT_FALSE(set_node(make_not(make_regex("foo.*", make_result("foobar")))).evaluate());
+    EXPECT_TRUE(set_node(make_not(make_regex("foo", make_result("foobar")))).evaluate());
+    EXPECT_TRUE(set_node(make_not(make_regex("bar", make_result("foobar")))).evaluate());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
