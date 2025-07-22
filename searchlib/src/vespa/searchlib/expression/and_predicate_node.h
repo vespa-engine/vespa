@@ -8,6 +8,8 @@
 namespace search::expression {
 
 /**
+ * @class AndPredicateNode
+ * @brief Implements logical AND filter used in grouping expressions.
  **/
 class AndPredicateNode : public MultiArgPredicateNode {
 public:

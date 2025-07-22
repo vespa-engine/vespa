@@ -7,6 +7,8 @@
 namespace search::expression {
 
 /**
+ * @class NotPredicateNode
+ * @brief Implements logical NOT filter used in grouping expressions for negating sub filter expressions.
  **/
 class NotPredicateNode : public FilterPredicateNode {
     FilterPredicateNode::CP _expression;
