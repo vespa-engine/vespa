@@ -8,61 +8,55 @@
 
 using namespace search::expression;
 
-struct Fixture {
-    std::unique_ptr<StringResultNode> _input;
+/**
+ * Defines methods for declaratively create filter expression trees.
+ */
+class FilterPredicateNodesTest : public ::testing::Test {
     std::unique_ptr<FilterPredicateNode> _node;
 
-    Fixture();
-    ~Fixture();
+protected:
+    FilterPredicateNodesTest();
 
-    Fixture& setup_doc(const char * field_value);
-    // Fixture& setup_doc(std::vector<std::string> field_value);
-    Fixture& setup_node(std::string regex_value);
-    bool evaluate();
+    ~FilterPredicateNodesTest() override;
+
+public:
+    bool evaluate() const;
+
+    FilterPredicateNodesTest& set_node(std::unique_ptr<FilterPredicateNode> node);
+
+    static std::unique_ptr<FilterPredicateNode> make_regex(const std::string& regex_value,
+                                                       std::unique_ptr<ExpressionNode> result_node);
+
+    static std::unique_ptr<ExpressionNode> make_result(const std::string& value);
 };
 
-Fixture::Fixture() : _input(), _node() {}
-Fixture::~Fixture() = default;
+FilterPredicateNodesTest::FilterPredicateNodesTest() = default;
 
+FilterPredicateNodesTest::~FilterPredicateNodesTest() = default;
 
-Fixture&
-Fixture::setup_doc(const char * field_value)
-{
-    _input = std::make_unique<StringResultNode>(field_value);
-    return *this;
-}
-
-Fixture&
-Fixture::setup_node(std::string regex_value)
-{
-    _node = std::make_unique<RegexPredicateNode>(regex_value,
-                                                 std::make_unique<ConstantNode>(
-                                                         ResultNode::UP(_input->clone())));
-    return *this;
-}
-
-bool
-Fixture::evaluate()
-{
+bool FilterPredicateNodesTest::evaluate() const {
     return _node->allow(42, 17.25);
 }
 
+FilterPredicateNodesTest& FilterPredicateNodesTest::set_node(std::unique_ptr<FilterPredicateNode> node) {
+    _node = std::move(node);
+    return *this;
+}
 
-class RegexFilterTest : public Fixture, public ::testing::Test
-{
-protected:
-    RegexFilterTest();
-    ~RegexFilterTest() override;
-};
+std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_regex(const std::string& regex_value,
+                                                                      std::unique_ptr<ExpressionNode> result_node) {
+    return std::make_unique<RegexPredicateNode>(regex_value, std::move(result_node));
+}
 
-RegexFilterTest::RegexFilterTest() = default;
-RegexFilterTest::~RegexFilterTest() = default;
+std::unique_ptr<ExpressionNode> FilterPredicateNodesTest::make_result(const std::string& value) {
+    return std::make_unique<ConstantNode>(
+        ResultNode::UP(std::make_unique<StringResultNode>(value)->clone()));
+}
 
-TEST_F(RegexFilterTest, test_regex_match)
-{
-    EXPECT_TRUE(setup_doc("foobar").setup_node("foo.*").evaluate());
-    EXPECT_FALSE(setup_doc("foobar").setup_node("foo").evaluate());
-    EXPECT_FALSE(setup_doc("foobar").setup_node("bar").evaluate());
+TEST_F(FilterPredicateNodesTest, test_regex_match) {
+    EXPECT_TRUE(set_node(make_regex("foo.*", make_result("foobar"))).evaluate());
+    EXPECT_FALSE(set_node(make_regex("foo", make_result("foobar"))).evaluate());
+    EXPECT_FALSE(set_node(make_regex("bar", make_result("foobar"))).evaluate());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
