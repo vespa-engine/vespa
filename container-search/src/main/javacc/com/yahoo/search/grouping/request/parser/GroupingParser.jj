@@ -24,6 +24,7 @@ PARSER_BEGIN(GroupingParser)
 
 package com.yahoo.search.grouping.request.parser;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedList;
 import com.yahoo.javacc.UnicodeUtilities;
@@ -971,7 +972,7 @@ NotPredicate notPredicate(GroupingOperation grp) :
 OrPredicate orPredicate(GroupingOperation grp) :
 {
     FilterExpression exp;
-    List<FilterExpression> args = new LinkedList<FilterExpression>();
+    List<FilterExpression> args = new ArrayList<FilterExpression>();
 }
 {
     <OR> lbrace() ( exp = filterExp(grp) { args.add(exp); } ( comma() exp = filterExp(grp) { args.add(exp); } )+ ) rbrace()
@@ -981,7 +982,7 @@ OrPredicate orPredicate(GroupingOperation grp) :
 AndPredicate andPredicate(GroupingOperation grp) :
 {
     FilterExpression exp;
-    List<FilterExpression> args = new LinkedList<FilterExpression>();
+    List<FilterExpression> args = new ArrayList<FilterExpression>();
 }
 {
     <AND> lbrace() ( exp = filterExp(grp) { args.add(exp); } ( comma() exp = filterExp(grp) { args.add(exp); } )+ ) rbrace()

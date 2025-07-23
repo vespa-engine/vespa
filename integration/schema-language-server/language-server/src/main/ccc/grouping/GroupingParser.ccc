@@ -12,6 +12,7 @@ FAULT_TOLERANT=true;
 SMART_NODE_CREATION=false; // Will create a tree node for every rule
 
 INJECT GroupingParser:
+    import java.util.ArrayList;
     import java.util.List;
     import java.util.LinkedList;
     import com.yahoo.javacc.UnicodeUtilities;
@@ -963,7 +964,7 @@ NotPredicate notPredicate(GroupingOperation grp) :
 OrPredicate orPredicate(GroupingOperation grp) :
 {
     FilterExpression exp;
-    List<FilterExpression> args = new LinkedList<FilterExpression>();
+    List<FilterExpression> args = new ArrayList<FilterExpression>();
 }
     ( <OR> lbraceElm ( exp = filterExp(grp) { args.add(exp); } ( commaElm exp = filterExp(grp) { args.add(exp); } )+ ) rbraceElm )
     { return new OrPredicate(args); }
@@ -972,7 +973,7 @@ OrPredicate orPredicate(GroupingOperation grp) :
 AndPredicate andPredicate(GroupingOperation grp) :
 {
     FilterExpression exp;
-    List<FilterExpression> args = new LinkedList<FilterExpression>();
+    List<FilterExpression> args = new ArrayList<FilterExpression>();
 }
     ( <AND> lbraceElm ( exp = filterExp(grp) { args.add(exp); } ( commaElm exp = filterExp(grp) { args.add(exp); } )+ ) rbraceElm )
     { return new AndPredicate(args); }
