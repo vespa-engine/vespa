@@ -1276,9 +1276,25 @@ public class QueryTestCase {
                                          "&q=a b"),
                               profile.compile(null));
         Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
-        if (r.hits().getError() != null)
-            System.out.println(r.hits().getError());
         assertEquals("OR default:a default:b", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testQueryTypeDefaultsApplyToContainsNotJustUserQuery() {
+        var profile = new QueryProfile("test");
+        profile.set("query.type", "linguistics", null);
+        profile.set("query.type.isYqlDefault", "true", null);
+        var query = new Query(httpEncode("?yql=select * from sources * where default contains 'a' and default contains 'b'"),
+                              profile.compile(null));
+        Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
+        assertEquals("AND default:a default:b", query.getModel().getQueryTree().toString());
+        for (Item child : ((CompositeItem)query.getModel().getQueryTree().getRoot()).items()) {
+            WordItem word = (WordItem)child;
+            // Further token processing is disabled due to type=linguistics applied by default to all terms
+            assertTrue(word.isStemmed());
+            assertFalse(word.isNormalizable());
+            assertTrue(word.isLowercased());
+        }
     }
 
     @Test
@@ -1290,8 +1306,6 @@ public class QueryTestCase {
                                          "&q=a b"),
                               profile.compile(null));
         Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
-        if (r.hits().getError() != null)
-            System.out.println(r.hits().getError());
         assertEquals("OR default:a default:b", query.getModel().getQueryTree().toString());
     }
 

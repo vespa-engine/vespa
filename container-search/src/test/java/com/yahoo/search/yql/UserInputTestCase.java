@@ -7,7 +7,10 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.WeakAndItem;
+import com.yahoo.prelude.query.WordItem;
 import org.apache.http.client.utils.URIBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +48,21 @@ public class UserInputTestCase {
         searchChain = null;
         context = null;
         execution = null;
+    }
+
+    @Test
+    public void testNear() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql", "select * from sources * where ({grammar.syntax:'none',grammar.tokenization:'linguistics',grammar.composite:'near'}userInput('Noëlᛁ continuation'))");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where default contains near(\"noel\\u16C1\", \"continuation\")", query.yqlRepresentation());
+        for (Item child : ((CompositeItem)query.getModel().getQueryTree().getRoot()).items()) {
+            WordItem word = (WordItem)child;
+            // Further token processing is disabled due to type=linguistics applied by default to all terms
+            assertTrue(word.isStemmed());
+            assertFalse(word.isNormalizable());
+            assertTrue(word.isLowercased());
+        }
     }
 
     @Test
