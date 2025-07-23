@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace search::expression {
 
@@ -32,6 +33,11 @@ Serializer& MultiArgPredicateNode::onSerialize(Serializer& os) const {
 
 Deserializer& MultiArgPredicateNode::onDeserialize(Deserializer& is) {
     is >> _args;
+
+    if (std::ranges::any_of(_args, [](const auto& arg){ return arg.get() == nullptr; })) {
+        throw vespalib::IllegalArgumentException("Filter predicate node received non-present argument node.");
+    }
+
     return is;
 }
 

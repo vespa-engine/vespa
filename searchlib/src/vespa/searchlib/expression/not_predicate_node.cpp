@@ -1,5 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "not_predicate_node.h"
+
+#include <vespa/vespalib/util/exceptions.h>
+
 #include "resultnode.h"
 #include "resultvector.h"
 
@@ -29,6 +32,11 @@ Serializer& NotPredicateNode::onSerialize(Serializer& os) const {
 
 Deserializer& NotPredicateNode::onDeserialize(Deserializer& is) {
     is >> _expression;
+
+    if (_expression.get() == nullptr) {
+        throw vespalib::IllegalArgumentException("Filter predicate node received non-present argument node.");
+    }
+
     return is;
 }
 
