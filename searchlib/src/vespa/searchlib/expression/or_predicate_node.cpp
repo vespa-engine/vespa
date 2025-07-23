@@ -16,7 +16,7 @@ OrPredicateNode::OrPredicateNode() noexcept = default;
 
 OrPredicateNode::~OrPredicateNode() = default;
 
-OrPredicateNode::OrPredicateNode(const std::vector<FilterPredicateNode>& input)
+OrPredicateNode::OrPredicateNode(const std::vector<FilterPredicateNode::IP>& input)
   : MultiArgPredicateNode(input)
 {
 }

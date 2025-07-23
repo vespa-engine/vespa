@@ -10,14 +10,14 @@ namespace search::expression {
  * Abstract base class for predicate nodes with multiple children.
  **/
 class MultiArgPredicateNode : public FilterPredicateNode {
-    using FilterPredicateNodeVector = std::vector<FilterPredicateNode::CP>;
+    using FilterPredicateNodeVector = std::vector<FilterPredicateNode::IP>;
     FilterPredicateNodeVector _args;
 
 public:
     MultiArgPredicateNode() noexcept;
     ~MultiArgPredicateNode() override;
 
-    MultiArgPredicateNode(const std::vector<FilterPredicateNode>& input);
+    explicit MultiArgPredicateNode(const std::vector<FilterPredicateNode::IP>& input);
 
     DECLARE_IDENTIFIABLE_ABSTRACT_NS2(search, expression, MultiArgPredicateNode);
 

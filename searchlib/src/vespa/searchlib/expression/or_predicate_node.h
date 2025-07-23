@@ -17,7 +17,7 @@ public:
     OrPredicateNode* clone() const override { return new OrPredicateNode(*this); }
 
     // for unit testing::
-    OrPredicateNode(const std::vector<FilterPredicateNode>& input);
+    explicit OrPredicateNode(const std::vector<FilterPredicateNode::IP>& input);
 
     DECLARE_NBO_SERIALIZE;
     DECLARE_IDENTIFIABLE_NS2(search, expression, OrPredicateNode);

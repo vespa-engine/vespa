@@ -10,15 +10,15 @@ namespace search::expression {
  * Implements logical NOT filter used in grouping expressions for negating sub filter expressions.
  **/
 class NotPredicateNode : public FilterPredicateNode {
-    FilterPredicateNode::CP _expression;
+    FilterPredicateNode::IP _expression;
 
 public:
     NotPredicateNode() noexcept;
-    ~NotPredicateNode();
+    ~NotPredicateNode() override;
     NotPredicateNode* clone() const override { return new NotPredicateNode(*this); }
 
     // for unit testing::
-    NotPredicateNode(const FilterPredicateNode& input);
+    explicit NotPredicateNode(const FilterPredicateNode::IP& input);
 
     DECLARE_IDENTIFIABLE_NS2(search, expression, NotPredicateNode);
     DECLARE_NBO_SERIALIZE;

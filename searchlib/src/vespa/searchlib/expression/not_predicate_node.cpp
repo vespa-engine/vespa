@@ -14,8 +14,8 @@ NotPredicateNode::NotPredicateNode() noexcept = default;
 
 NotPredicateNode::~NotPredicateNode() = default;
 
-NotPredicateNode::NotPredicateNode(const FilterPredicateNode& input)
-  : _expression(input.clone())
+NotPredicateNode::NotPredicateNode(const FilterPredicateNode::IP& input)
+  : _expression(input->clone())
 {
 }
 

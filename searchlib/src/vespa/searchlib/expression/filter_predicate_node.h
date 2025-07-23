@@ -11,7 +11,7 @@ namespace search::expression {
 class FilterPredicateNode : public vespalib::Identifiable
 {
 public:
-    using CP = vespalib::IdentifiablePtr<FilterPredicateNode>;
+    using IP = vespalib::IdentifiablePtr<FilterPredicateNode>;
 
     DECLARE_IDENTIFIABLE_ABSTRACT_NS2(search, expression, FilterPredicateNode);
     virtual FilterPredicateNode * clone() const = 0;

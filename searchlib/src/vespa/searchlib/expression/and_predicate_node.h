@@ -17,7 +17,7 @@ public:
     AndPredicateNode* clone() const override { return new AndPredicateNode(*this); }
 
     // for unit testing::
-    AndPredicateNode(const std::vector<FilterPredicateNode>& input);
+    explicit AndPredicateNode(const std::vector<FilterPredicateNode::IP>& input);
 
     DECLARE_NBO_SERIALIZE;
     DECLARE_IDENTIFIABLE_NS2(search, expression, AndPredicateNode);
