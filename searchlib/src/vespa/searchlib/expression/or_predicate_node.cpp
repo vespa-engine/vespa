@@ -16,6 +16,10 @@ OrPredicateNode::OrPredicateNode() noexcept = default;
 
 OrPredicateNode::~OrPredicateNode() = default;
 
+OrPredicateNode::OrPredicateNode(const OrPredicateNode&) = default;
+
+OrPredicateNode& OrPredicateNode::operator=(const OrPredicateNode&) = default;
+
 Serializer& OrPredicateNode::onSerialize(Serializer& os) const {
     return os << args();
 }

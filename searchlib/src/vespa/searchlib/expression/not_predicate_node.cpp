@@ -14,6 +14,10 @@ NotPredicateNode::NotPredicateNode() noexcept = default;
 
 NotPredicateNode::~NotPredicateNode() = default;
 
+NotPredicateNode::NotPredicateNode(const NotPredicateNode&) = default;
+
+NotPredicateNode& NotPredicateNode::operator=(const NotPredicateNode&) = default;
+
 NotPredicateNode::NotPredicateNode(const std::unique_ptr<FilterPredicateNode>& input)
   : _expression(input->clone())
 {

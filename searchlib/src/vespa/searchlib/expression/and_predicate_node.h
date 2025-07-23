@@ -14,6 +14,9 @@ class AndPredicateNode : public MultiArgPredicateNode {
 public:
     AndPredicateNode() noexcept;
     ~AndPredicateNode() override;
+    AndPredicateNode(const AndPredicateNode&);
+    AndPredicateNode& operator=(const AndPredicateNode&);
+
     [[nodiscard]] AndPredicateNode* clone() const override { return new AndPredicateNode(*this); }
 
     DECLARE_NBO_SERIALIZE;

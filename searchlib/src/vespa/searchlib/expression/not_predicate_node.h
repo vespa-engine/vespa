@@ -15,6 +15,9 @@ class NotPredicateNode : public FilterPredicateNode {
 public:
     NotPredicateNode() noexcept;
     ~NotPredicateNode() override;
+    NotPredicateNode(const NotPredicateNode&);
+    NotPredicateNode& operator=(const NotPredicateNode&);
+
     [[nodiscard]] NotPredicateNode* clone() const override { return new NotPredicateNode(*this); }
 
     // for unit testing::

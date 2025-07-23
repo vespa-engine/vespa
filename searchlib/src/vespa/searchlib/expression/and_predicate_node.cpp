@@ -16,6 +16,10 @@ AndPredicateNode::AndPredicateNode() noexcept = default;
 
 AndPredicateNode::~AndPredicateNode() = default;
 
+AndPredicateNode::AndPredicateNode(const AndPredicateNode&) = default;
+
+AndPredicateNode& AndPredicateNode::operator=(const AndPredicateNode&) = default;
+
 Serializer& AndPredicateNode::onSerialize(Serializer& os) const {
     return os << args();
 }

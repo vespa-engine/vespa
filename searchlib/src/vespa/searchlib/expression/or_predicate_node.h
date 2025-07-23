@@ -14,6 +14,9 @@ class OrPredicateNode : public MultiArgPredicateNode {
 public:
     OrPredicateNode() noexcept;
     ~OrPredicateNode() override;
+    OrPredicateNode(const OrPredicateNode&);
+    OrPredicateNode& operator=(const OrPredicateNode&);
+
     [[nodiscard]] OrPredicateNode* clone() const override { return new OrPredicateNode(*this); }
 
     DECLARE_NBO_SERIALIZE;

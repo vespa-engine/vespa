@@ -13,6 +13,10 @@ MultiArgPredicateNode::MultiArgPredicateNode() noexcept = default;
 
 MultiArgPredicateNode::~MultiArgPredicateNode() = default;
 
+MultiArgPredicateNode::MultiArgPredicateNode(const MultiArgPredicateNode&) = default;
+
+MultiArgPredicateNode& MultiArgPredicateNode::operator=(const MultiArgPredicateNode&) = default;
+
 MultiArgPredicateNode::MultiArgPredicateNode(const std::vector<FilterPredicateNode::IP>& input) {
     for (const auto& node : input) {
         _args.emplace_back(node->clone());

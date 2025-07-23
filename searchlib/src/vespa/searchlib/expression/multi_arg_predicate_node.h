@@ -16,6 +16,8 @@ class MultiArgPredicateNode : public FilterPredicateNode {
 public:
     MultiArgPredicateNode() noexcept;
     ~MultiArgPredicateNode() override;
+    MultiArgPredicateNode(const MultiArgPredicateNode&);
+    MultiArgPredicateNode& operator=(const MultiArgPredicateNode&);
 
     explicit MultiArgPredicateNode(const std::vector<FilterPredicateNode::IP>& input);
 
