@@ -5,6 +5,8 @@
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
 
+#include <algorithm>
+
 namespace search::expression {
 
 using vespalib::Deserializer;
@@ -30,21 +32,11 @@ Deserializer& OrPredicateNode::onDeserialize(Deserializer& is) {
 }
 
 bool OrPredicateNode::allow(const DocId docId, const HitRank rank) {
-    for (auto& arg : args()) {
-        if (arg->allow(docId, rank)) {
-            return true;
-        }
-    }
-    return false;
+    return std::ranges::any_of(args(), [docId, rank](auto arg){ return arg->allow(docId, rank); });
 }
 
 bool OrPredicateNode::allow(const document::Document& doc, const HitRank rank) {
-    for (auto& arg : args()) {
-        if (arg->allow(doc, rank)) {
-            return true;
-        }
-    }
-    return false;
+    return std::ranges::any_of(args(), [&doc, rank](auto arg){ return arg->allow(doc, rank); });
 }
 
 } // namespace search::expression
