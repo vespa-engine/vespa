@@ -75,6 +75,7 @@ public final class ClusterModel {
     private Double queryFractionOfMax = null;
     private Double maxQueryGrowthRate = null;
     private OptionalDouble averageQueryRate = OptionalDouble.empty();
+    private Double queryCpuFraction = null;
 
     public ClusterModel(NodeRepository nodeRepository,
                         Application application,
@@ -405,7 +406,7 @@ public final class ClusterModel {
 
         /** Ideal cpu load must take the application traffic fraction into account. */
         double idealLoad() {
-            double queryCpuFraction = queryFraction();
+            queryCpuFraction = queryFraction();
             // Assumptions: 1) Write load is not organic so we should not increase to handle potential future growth.
             //                 (TODO: But allow applications to set their target write rate and size for that)
             //              2) Write load does not change in BCP scenarios.
@@ -435,10 +436,16 @@ public final class ClusterModel {
         }
 
         public String toString() {
-            return "cpu model idealLoad: " + idealLoad() + ", queryFraction: " + queryFraction() +
-                   ", growthRateHeadroom: " + growthRateHeadroom(at) + ", trafficShiftHeadroom: " + trafficShiftHeadroom(at);
+            return "idealLoad: " + idealLoad()
+                    + ", queryCpuFraction: " + queryCpuFraction
+                    + ", costPerQuery: " + costPerQuery().orElse(0)
+                    + ", averageQueryRate: " + averageQueryRate.orElse(0)
+                    + ", queryFractionOfMax: " + queryFractionOfMax
+                    + ", maxQueryGrowthRate: " + maxQueryGrowthRate
+                    + ", growthRateHeadroom: " + growthRateHeadroom(at)
+                    + ", trafficShiftHeadroom: " + trafficShiftHeadroom(at)
+                    + ", scalingDurationMinutes: " + scalingDuration().toMinutes();
         }
-
     }
 
     private class MemoryModel {

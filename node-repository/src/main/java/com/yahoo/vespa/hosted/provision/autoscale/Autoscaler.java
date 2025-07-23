@@ -17,7 +17,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * The autoscaler gives advice about what resources should be allocated to a cluster based on observed behavior.
+ * The Autoscaler gives advice about what resources should be allocated to a cluster based on observed behavior.
  *
  * @author bratseth
  */
@@ -94,7 +94,7 @@ public class Autoscaler {
         var loadAdjustment = model.loadAdjustment();
         if (logDetails) {
             log.info("applicationId: " + application.id().toShortString() + ", clusterId: " + cluster.id().value() + ", loadAdjustment: " +
-                     loadAdjustment.toString() + ", ideal " + model.idealLoad() + ", " + model.cpu(nodeRepository.clock().instant()));
+                     loadAdjustment.toString() + ", idealLoad " + model.idealLoad() + ", " + model.cpu(nodeRepository.clock().instant()));
         }
 
         var target = allocationOptimizer.findBestAllocation(loadAdjustment, model, limits, logDetails);
