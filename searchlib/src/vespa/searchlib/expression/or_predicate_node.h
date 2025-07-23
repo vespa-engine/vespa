@@ -14,10 +14,7 @@ class OrPredicateNode : public MultiArgPredicateNode {
 public:
     OrPredicateNode() noexcept;
     ~OrPredicateNode() override;
-    OrPredicateNode* clone() const override { return new OrPredicateNode(*this); }
-
-    // for unit testing::
-    explicit OrPredicateNode(const std::vector<FilterPredicateNode::IP>& input);
+    [[nodiscard]] OrPredicateNode* clone() const override { return new OrPredicateNode(*this); }
 
     DECLARE_NBO_SERIALIZE;
     DECLARE_IDENTIFIABLE_NS2(search, expression, OrPredicateNode);

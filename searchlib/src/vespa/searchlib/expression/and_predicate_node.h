@@ -14,10 +14,7 @@ class AndPredicateNode : public MultiArgPredicateNode {
 public:
     AndPredicateNode() noexcept;
     ~AndPredicateNode() override;
-    AndPredicateNode* clone() const override { return new AndPredicateNode(*this); }
-
-    // for unit testing::
-    explicit AndPredicateNode(const std::vector<FilterPredicateNode::IP>& input);
+    [[nodiscard]] AndPredicateNode* clone() const override { return new AndPredicateNode(*this); }
 
     DECLARE_NBO_SERIALIZE;
     DECLARE_IDENTIFIABLE_NS2(search, expression, AndPredicateNode);

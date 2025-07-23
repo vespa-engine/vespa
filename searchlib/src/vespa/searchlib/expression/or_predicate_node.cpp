@@ -16,11 +16,6 @@ OrPredicateNode::OrPredicateNode() noexcept = default;
 
 OrPredicateNode::~OrPredicateNode() = default;
 
-OrPredicateNode::OrPredicateNode(const std::vector<FilterPredicateNode::IP>& input)
-  : MultiArgPredicateNode(input)
-{
-}
-
 Serializer& OrPredicateNode::onSerialize(Serializer& os) const {
     return os << args();
 }

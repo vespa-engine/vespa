@@ -16,11 +16,6 @@ AndPredicateNode::AndPredicateNode() noexcept = default;
 
 AndPredicateNode::~AndPredicateNode() = default;
 
-AndPredicateNode::AndPredicateNode(const std::vector<FilterPredicateNode::IP>& input)
-  : MultiArgPredicateNode(input)
-{
-}
-
 Serializer& AndPredicateNode::onSerialize(Serializer& os) const {
     return os << args();
 }
