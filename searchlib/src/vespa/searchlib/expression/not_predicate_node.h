@@ -27,7 +27,7 @@ public:
     DECLARE_NBO_SERIALIZE;
 
     bool allow(DocId docId, HitRank rank) override;
-    bool allow(const document::Document &, HitRank) override;
+    bool allow(const document::Document&, HitRank) override;
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     void selectMembers(const vespalib::ObjectPredicate& predicate,
                        vespalib::ObjectOperation& operation) override;

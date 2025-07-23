@@ -38,7 +38,7 @@ bool OrPredicateNode::allow(const DocId docId, const HitRank rank) {
     return false;
 }
 
-bool OrPredicateNode::allow(const document::Document & doc, const HitRank rank) {
+bool OrPredicateNode::allow(const document::Document& doc, const HitRank rank) {
     for (auto& arg : args()) {
         if (arg->allow(doc, rank)) {
             return true;

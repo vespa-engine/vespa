@@ -23,7 +23,7 @@ public:
     DECLARE_IDENTIFIABLE_NS2(search, expression, AndPredicateNode);
 
     bool allow(DocId docId, HitRank rank) override;
-    bool allow(const document::Document &, HitRank) override;
+    bool allow(const document::Document&, HitRank) override;
 };
 
 } // namespace search::expression

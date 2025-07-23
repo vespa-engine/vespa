@@ -36,7 +36,7 @@ bool NotPredicateNode::allow(DocId docId, HitRank rank) {
     return !_expression->allow(docId, rank);
 }
 
-bool NotPredicateNode::allow(const document::Document & doc, HitRank rank) {
+bool NotPredicateNode::allow(const document::Document& doc, HitRank rank) {
     return !_expression->allow(doc, rank);
 }
 
