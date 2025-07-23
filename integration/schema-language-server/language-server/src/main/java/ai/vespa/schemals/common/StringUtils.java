@@ -6,7 +6,6 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.SchemaNode;
 
 /**
  * StringUtils

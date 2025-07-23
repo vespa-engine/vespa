@@ -44,4 +44,16 @@ FlushStrategyHistoryEntry::finish_flush(uint32_t strategy_id, time_point now) no
     }
 }
 
+bool
+FlushStrategyHistoryEntry::is_flush_all() const noexcept
+{
+    return _name == "flush_all";
+}
+
+bool
+FlushStrategyHistoryEntry::is_prepare_restart() const noexcept
+{
+    return _name == "prepare_restart";
+}
+
 }

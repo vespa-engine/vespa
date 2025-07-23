@@ -3,8 +3,6 @@ package ai.vespa.schemals.lsp.common.command.commandtypes;
 import java.util.List;
 import java.util.Optional;
 
-import com.google.gson.JsonPrimitive;
-
 import ai.vespa.schemals.context.EventExecuteCommandContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;

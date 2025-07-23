@@ -1,11 +1,11 @@
 package ai.vespa.schemals.schemadocument.parser.schema;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
 
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.ast.INHERITS;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
@@ -21,21 +21,17 @@ public class IdentifySchemaInheritance extends Identifier<SchemaNode> {
 	}
 
 	@Override
-	public ArrayList<Diagnostic> identify(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<>();
-
-        if (!node.isSchemaASTInstance(identifierStr.class)) return ret;
-        if (node.getParent() == null) return ret;
-        if (!node.getParent().getSchemaNode().isSchemaASTInstance(rootSchema.class)) return ret;
-        if (node.getPreviousSibling() == null) return ret;
-        if (node.getPreviousSibling().getSchemaNode().getSchemaType() != TokenType.INHERITS) return ret;
+    public void identify(SchemaNode node, List<Diagnostic> diagnostics) {
+        if (!node.isASTInstance(identifierStr.class)) return;
+        if (node.getParent() == null) return;
+        if (!node.getParent().isASTInstance(rootSchema.class)) return;
+        if (node.getPreviousSibling() == null) return;
+        if (!node.getPreviousSibling().isASTInstance(INHERITS.class)) return;
 
         if (!node.hasSymbol()) {
-            return ret;
+            return;
         }
 
         context.setInheritsSchemaNode(node);
-
-        return ret;
 	}
 }

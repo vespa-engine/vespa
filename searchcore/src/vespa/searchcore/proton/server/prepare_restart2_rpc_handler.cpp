@@ -41,97 +41,48 @@ as_system_microseconds(const steady_clock::time_point &time_point)
 const FlushStrategyHistoryEntry*
 last_flush_all_or_prepare_restart_strategy(const FlushHistoryView& view) {
     auto& last = view.last_strategies();
-    auto prepare_restart_it = std::find_if(last.begin(), last.end(), [](auto& e) { return e.name() == "prepare_restart"; });
-    auto flush_all_it = std::find_if(last.begin(), last.end(), [](auto& e) { return e.name() == "flush_all"; });
+    auto prepare_restart_it = std::find_if(last.begin(), last.end(), [](auto& e) { return e.is_prepare_restart(); });
+    auto flush_all_it = std::find_if(last.begin(), last.end(), [](auto& e) { return e.is_flush_all(); });
     if (prepare_restart_it == last.end()) {
         if (flush_all_it == last.end()) {
             return nullptr;
         }
         return flush_all_it.operator->();
     }
+    if (flush_all_it == last.end()) {
+        return prepare_restart_it.operator->();
+    }
     return prepare_restart_it->id() > flush_all_it->id() ? prepare_restart_it.operator->() : flush_all_it.operator->();
 }
 
 void
-add_finished_flush(JsonStream& stream, const FlushHistoryView& view, uint32_t strategy_id)
+add_flush_strategy(JsonStream& stream, const FlushStrategyHistoryEntry& entry)
 {
-    auto& active = view.finished();
-    const FlushHistoryEntry* best = nullptr;
-    uint32_t count = 0;
-    for (auto& entry : active) {
-        if (entry.strategy_id() <= strategy_id) {
-            if (entry.strategy_id() == strategy_id) {
-                ++count;
-            }
-            if (best == nullptr || best->finish_time() < entry.finish_time()) {
-                best = &entry;
-            }
+    stream << "strategy" << entry.name();
+    stream << "id" << entry.id();
+    stream << "start_time" << as_system_microseconds(entry.start_time());
+    if (entry.switch_time() != steady_clock::time_point()) {
+        stream << "switch_time" << as_system_microseconds(entry.switch_time());
+        if (entry.finish_time() != steady_clock::time_point()) {
+            stream << "finish_time" << as_system_microseconds(entry.finish_time());
         }
     }
-    if (best != nullptr) {
-        stream << "finished" << Object();
-        stream << "flush_count" << count;
-        stream << "last_finish" << Object();
-        stream << "finish_time" << as_system_microseconds(best->finish_time());
-        stream << "strategy" << best->strategy();
-        stream << "strategy_id" << best->strategy_id();
-        stream << End();
-        stream << End();
+    if (entry.last_flush_finish_time() != steady_clock::time_point()) {
+        stream << "last_flush_finish_time" << as_system_microseconds(entry.last_flush_finish_time());
     }
+
+    auto& flush_counts = entry.flush_counts();
+    auto flushed = flush_counts._finished + flush_counts._inherited_finished;
+    auto flushing = flush_counts._started + flush_counts._inherited - flushed;
+    stream << "flushed" << flushed;
+    stream << "flushing" << flushing;
 }
 
 void
-add_active_flush(JsonStream& stream, const FlushHistoryView& view, uint32_t strategy_id)
-{
-    auto& active = view.active();
-    const FlushHistoryEntry* best = nullptr;
-    uint32_t count = 0;
-    for (auto& entry : active) {
-        if (entry.strategy_id() <= strategy_id) {
-            ++count;
-            if (best == nullptr || best->start_time() < entry.start_time()) {
-                best = &entry;
-            }
-        }
-    }
-    if (best != nullptr) {
-        stream << "active" << Object();
-        stream << "flush_count" << count;
-        stream << "last_start" << Object();
-        stream << "start_time" << as_system_microseconds(best->start_time());
-        stream << "strategy" << best->strategy();
-        stream << "strategy_id" << best->strategy_id();
-        stream << End();
-        stream << End();
-    }
-}
-
-void
-add_pending_flush(JsonStream& stream, const FlushHistoryView& view, uint32_t strategy_id)
-{
-    auto& pending = view.pending();
-    uint32_t count = 0;
-    for (auto& entry : pending) {
-        if (entry.strategy_id() <= strategy_id) {
-            ++count;
-        }
-    }
-    stream << "pending_flushes" << count;
-}
-
-void
-add_previous_flush_strategy(JsonStream& stream, const FlushHistoryView& view, const FlushStrategyHistoryEntry& entry)
+add_previous_flush_strategy(JsonStream& stream, const FlushStrategyHistoryEntry& entry)
 {
     stream << "previous" << Object();
-    stream << "strategy" << entry.name();
-    stream << "start_time" << as_system_microseconds(entry.start_time());
-    stream << "switch_time" << as_system_microseconds(entry.switch_time());
-    if (entry.finish_time() != steady_clock::time_point()) {
-        stream << "finish_time" << as_system_microseconds(entry.finish_time());
-    }
-    stream << "id" << entry.id();
-    add_active_flush(stream, view, entry.id());
-    add_finished_flush(stream, view, entry.id());
+    add_flush_strategy(stream, entry);
     stream << End();
 }
 
@@ -140,12 +91,8 @@ add_current_flush_strategy(JsonStream& stream, const FlushHistoryView& view)
 {
     stream << "current" << Object();
     auto& active_strategy = view.active_strategy();
-    stream << "strategy" << active_strategy.name();
-    stream << "start_time" << as_system_microseconds(active_strategy.start_time());
-    stream << "id" << active_strategy.id();
-    add_active_flush(stream, view, active_strategy.id());
-    add_finished_flush(stream, view, active_strategy.id());
-    add_pending_flush(stream, view, active_strategy.id());
+    add_flush_strategy(stream, active_strategy);
+    stream << "pending_flushes" << view.pending().size();
     stream << End();
 }
 
@@ -155,9 +102,30 @@ add_history(JsonStream& stream, const FlushHistory& flush_history)
     auto view = flush_history.make_view();
     auto previous = last_flush_all_or_prepare_restart_strategy(*view);
     if (previous != nullptr) {
-        add_previous_flush_strategy(stream, *view, *previous);
+        add_previous_flush_strategy(stream, *previous);
     }
     add_current_flush_strategy(stream, *view);
+    auto* progress_strategy = &view->active_strategy();
+    if (progress_strategy->has_active_flushes()) {
+        if ((!progress_strategy->is_flush_all() && !progress_strategy->is_prepare_restart()) &&
+            previous != nullptr) {
+            progress_strategy = previous;
+        }
+    } else {
+        progress_strategy = nullptr;
+    }
+    if (progress_strategy != nullptr) {
+        auto start_time = progress_strategy->start_time();
+        auto now = steady_clock::now();
+        auto estimated_finish_time = view->estimated_flush_complete_time(now);
+        auto remaining_duration = estimated_finish_time - now;
+        auto current_duration = now - start_time;
+        auto estimated_total_duration = estimated_finish_time - start_time;
+        auto progress = (duration_cast<std::chrono::duration<double>>(current_duration).count() /
+                         duration_cast<std::chrono::duration<double>>(estimated_total_duration).count()) * 100.0;
+        stream << "progress" << progress;
+        stream << "estimated_completion_in" << duration_cast<microseconds>(remaining_duration).count();
+    }
 }
 
 }

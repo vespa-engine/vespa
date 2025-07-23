@@ -7,8 +7,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
-import com.google.gson.JsonPrimitive;
-
 import ai.vespa.schemals.context.EventExecuteCommandContext;
 import ai.vespa.schemals.lsp.common.command.CommandUtils;
 

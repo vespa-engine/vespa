@@ -54,11 +54,11 @@ make_corrupted_document(DocBuilder &b, size_t wordOffset)
 
 class TokenExtractorTest : public ::testing::Test {
 protected:
-    using SpanTerm = TokenExtractor::SpanTerm;
+    using SpanTermVector = TokenExtractor::SpanTermVector;
     DocBuilder                _doc_builder;
     std::unique_ptr<Document> _doc;
     TokenExtractor            _token_extractor;
-    std::vector<SpanTerm>     _terms;
+    SpanTermVector            _terms;
 
     static constexpr size_t max_word_len = 20;
 

@@ -13,6 +13,8 @@ vespa_define_module(
     xxhash
     zstd
     ${VESPA_URING_LIB}
+    absl::stacktrace
+    absl::symbolize
 
     APPS
     src/apps/vespa-detect-hostname
@@ -169,6 +171,7 @@ vespa_define_module(
     src/tests/util/generationhandler_stress
     src/tests/util/hamming
     src/tests/util/md5
+    src/tests/util/mimalloc
     src/tests/valgrind
     src/tests/visit_ranges
     src/tests/wakeup

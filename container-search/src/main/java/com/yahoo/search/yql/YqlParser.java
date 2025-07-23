@@ -2015,7 +2015,7 @@ public class YqlParser implements Parser {
             isRanked = getAnnotation(ast, RANKED, Boolean.class, null, RANKED_DESCRIPTION);
             filter = getAnnotation(ast, FILTER, Boolean.class, null, FILTER_DESCRIPTION);
             stem = getAnnotation(ast, STEM, Boolean.class, null, STEM_DESCRIPTION);
-            normalizeCase = getAnnotation(ast, NORMALIZE_CASE, Boolean.class, Boolean.TRUE, NORMALIZE_CASE_DESCRIPTION);
+            normalizeCase = getAnnotation(ast, NORMALIZE_CASE, Boolean.class, null, NORMALIZE_CASE_DESCRIPTION);
             accentDrop = getAnnotation(ast, ACCENT_DROP, Boolean.class, null, ACCENT_DROP_DESCRIPTION);
             usePositionData = getAnnotation(ast, USE_POSITION_DATA, Boolean.class, null, USE_POSITION_DATA_DESCRIPTION);
         }

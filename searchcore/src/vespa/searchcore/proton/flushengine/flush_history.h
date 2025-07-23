@@ -6,6 +6,7 @@
 #include "flush_strategy_history_entry.h"
 #include <deque>
 #include <map>
+#include <memory>
 #include <mutex>
 
 namespace proton::flushengine {

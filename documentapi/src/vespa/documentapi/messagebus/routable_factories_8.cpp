@@ -14,6 +14,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <optional>
 #include <string_view>
 
 #include <vespa/log/bufferedlogger.h>
@@ -246,9 +247,16 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::get_document_message_fact
         [](const GetDocumentMessage& src, protobuf::GetDocumentRequest& dest) {
             set_document_id(*dest.mutable_document_id(), src.getDocumentId());
             set_raw_field_set(*dest.mutable_field_set(), src.getFieldSet());
+            if (src.has_debug_replica_node_id()) {
+                dest.set_debug_replica_node_id(src.debug_replica_node_id().value());
+            }
         },
         [](const protobuf::GetDocumentRequest& src) {
-            return std::make_unique<GetDocumentMessage>(get_document_id(src.document_id()), get_raw_field_set(src.field_set()));
+            auto msg = std::make_unique<GetDocumentMessage>(get_document_id(src.document_id()), get_raw_field_set(src.field_set()));
+            if (src.has_debug_replica_node_id()) {
+                msg->set_debug_replica_node_id(src.debug_replica_node_id());
+            }
+            return msg;
         }
     );
 }

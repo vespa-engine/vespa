@@ -82,7 +82,7 @@ class FormattingUtils {
 
 
     static boolean shouldHaveSpaceBetween(Node left, Node right) {
-        String leftText = left.getLastLeafDescendant().getText();
+        String leftText = left.findLastLeaf().getText();
         String rightText = right.getText();
         if (leftText.isEmpty() || rightText.isEmpty()) return false;
 

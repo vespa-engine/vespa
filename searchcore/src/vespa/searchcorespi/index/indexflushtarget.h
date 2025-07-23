@@ -34,6 +34,7 @@ public:
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
     FlushStats getLastFlushStats() const override { return _lastStats; }
     uint64_t getApproxBytesToWriteToDisk() const override;
+    std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
 };
 
 }

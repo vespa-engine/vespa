@@ -62,6 +62,10 @@ public class Spooler {
         this(clock, false, 1000);
     }
 
+    public Spooler(Clock clock, int maxFailures) {
+        this(clock, false, maxFailures);
+    }
+
     public Spooler(Clock clock, boolean keepSuccessFiles, int maxFailures) {
         this(defaultSpoolPath, defaultMaxEntriesPerFile, clock, keepSuccessFiles, maxFailures);
     }

@@ -86,4 +86,10 @@ SummaryFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::I
     return future.get();
 }
 
+std::chrono::steady_clock::duration
+SummaryFlushTarget::last_flush_duration() const noexcept
+{
+    return 200ms; // placeholder value.
+}
+
 } // namespace proton

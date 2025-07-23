@@ -10,7 +10,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import org.apache.commons.math3.analysis.function.Pow;
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
 import org.eclipse.lsp4j.CreateFile;
 import org.eclipse.lsp4j.MessageType;

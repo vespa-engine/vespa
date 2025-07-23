@@ -18,7 +18,6 @@ import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.SchemaNode;
 
 /**
  * Handles a rename requests

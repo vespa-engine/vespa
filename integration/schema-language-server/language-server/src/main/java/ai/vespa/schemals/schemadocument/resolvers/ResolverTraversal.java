@@ -24,9 +24,8 @@ public class ResolverTraversal {
     }
 
     private static void traverse(ParseContext context, SchemaNode currentNode, List<Diagnostic> diagnostics, boolean insideRankExpression) {
-
         if (currentNode.getLanguageType() == LanguageType.RANK_EXPRESSION && !insideRankExpression) {
-            diagnostics.addAll(RankExpressionSymbolResolver.resolveRankExpression(currentNode, context));
+            RankExpressionSymbolResolver.resolveRankExpression(currentNode, context, diagnostics);
         }
 
         if (currentNode.hasSymbol() && currentNode.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {

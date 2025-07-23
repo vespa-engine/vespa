@@ -229,6 +229,13 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
     }
 
     /**
+     * Assumes that serverPath is not null.
+     */
+    public static Path getDefaultDocumentationPath() {
+        return serverPath.resolve("hover");
+    }
+
+    /**
      * Assumes documentation is loaded if documentationPath/schema contains .md files.
      * If documentation is not loaded, unpacks markdown files from the current jar.
      */

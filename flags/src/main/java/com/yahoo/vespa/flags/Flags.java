@@ -360,7 +360,7 @@ public class Flags {
     );
 
     public static final UnboundLongFlag SEARCH_CORE_TRANSACTION_LOG_REPLAY_SOFT_MEMORY_LIMIT = defineLongFlag(
-            "search-core-transaction-log-replay-soft-memory-limit", 0,
+            "search-core-transaction-log-replay-soft-memory-limit", -3,
             List.of("vekterli"), "2025-06-18", "2025-11-01",
             "Iff nonzero, sets a soft limit for the amount of memory that can be concurrently " +
             "used during transaction log replaying. The limit is soft in that it must always " +

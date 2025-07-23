@@ -357,7 +357,7 @@ public class YqlParserTestCase {
         assertEquals(BoolItem.class, query.getRoot().getClass());
         BoolItem item = (BoolItem) query.getRoot();
         assertEquals("flag", item.getIndexName());
-        assertEquals(false, item.value());
+        assertFalse(item.value());
     }
 
     @Test
@@ -484,11 +484,11 @@ public class YqlParserTestCase {
         Item root = parse("select foo from bar where baz contains (\"yoni jo dima\")").getRoot();
         assertEquals("baz:'yoni jo dima'", root.toString());
         assertFalse(root instanceof WordItem);
-        assertTrue(root instanceof PhraseSegmentItem);
+        assertInstanceOf(PhraseSegmentItem.class, root);
 
         root = parse("select foo from bar where baz contains ({grammar:\"raw\"}\"yoni jo dima\")").getRoot();
         assertEquals("baz:yoni jo dima", root.toString());
-        assertTrue(root instanceof WordItem);
+        assertInstanceOf(WordItem.class, root);
         assertFalse(root instanceof ExactStringItem);
         assertEquals("yoni jo dima", ((WordItem) root).getWord());
 
@@ -498,8 +498,8 @@ public class YqlParserTestCase {
         assertEquals(3, andItem.getItemCount());
 
         root = parse("select foo from bar where {grammar:\"raw\"}userInput(\"yoni jo dima\")").getRoot();
-        assertTrue(root instanceof WordItem);
-        assertTrue(root instanceof ExactStringItem);
+        assertInstanceOf(WordItem.class, root);
+        assertInstanceOf(ExactStringItem.class, root);
         assertEquals("yoni jo dima", ((WordItem) root).getWord());
     }
 
@@ -507,23 +507,25 @@ public class YqlParserTestCase {
     void testLinguisticsMode() {
         // Default for comparison
         Item root = parse("select foo from bar where userInput(\"yoni jo dima\")").getRoot();
-        assertTrue(root instanceof WeakAndItem);
+        assertInstanceOf(WeakAndItem.class, root);
         assertEquals("WEAKAND(100) default:yoni default:jo default:dima", root.toString());
         for (Item child : ((WeakAndItem)root).items()) {
-            assertTrue(child instanceof WordItem);
+            assertInstanceOf(WordItem.class, child);
             WordItem childWord = (WordItem)child;
             assertFalse(childWord.isStemmed());
             assertTrue(childWord.isNormalizable());
+            assertFalse(childWord.isLowercased());
         }
 
         root = parse("select foo from bar where {grammar:\"linguistics\"}userInput(\"yoni jo dima\")").getRoot();
-        assertTrue(root instanceof WeakAndItem);
+        assertInstanceOf(WeakAndItem.class, root);
         assertEquals("WEAKAND(100) default:yoni default:jo default:dima", root.toString());
         for (Item child : ((WeakAndItem)root).items()) {
-            assertTrue(child instanceof WordItem);
+            assertInstanceOf(WordItem.class, child);
             WordItem childWord = (WordItem)child;
             assertTrue(childWord.isStemmed());
             assertFalse(childWord.isNormalizable());
+            assertTrue(childWord.isLowercased());
         }
     }
 
@@ -1515,7 +1517,7 @@ public class YqlParserTestCase {
 
     private WordItem getRootWord(String yqlQuery) {
         Item root = parse(yqlQuery).getRoot();
-        assertTrue(root instanceof WordItem);
+        assertInstanceOf(WordItem.class, root);
         return (WordItem)root;
     }
 

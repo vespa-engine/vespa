@@ -1,6 +1,6 @@
 package ai.vespa.schemals.schemadocument.parser.schema;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -28,25 +28,22 @@ public class IdentifyNamedDocument extends Identifier<SchemaNode> {
 	}
 
 	@Override
-	public ArrayList<Diagnostic> identify(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<>();
-        if (!node.isSchemaASTInstance(documentElm.class))return ret;
+    public void identify(SchemaNode node, List<Diagnostic> diagnostics) {
+        if (!node.isASTInstance(documentElm.class)) return;
 
-        if (node.size() < 2 || !node.get(1).getSchemaNode().isSchemaASTInstance(identifierStr.class))return ret;
+        if (node.size() < 2 || !node.get(1).getSchemaNode().isASTInstance(identifierStr.class)) return;
 
         Range identifierRange = node.get(1).getRange();
         String documentName = node.get(1).getText();
         Optional<Symbol> schemaSymbol = context.schemaIndex().getSchemaDefinition(documentName);
         if (schemaSymbol.isEmpty() || !schemaSymbol.get().getShortIdentifier().equals(documentName)) {
             // TODO: Quickfix
-            ret.add(new SchemaDiagnostic.Builder()
+            diagnostics.add(new SchemaDiagnostic.Builder()
                 .setRange(identifierRange)
                 .setMessage("Invalid document name \"" + documentName + "\". The document name must match the containing schema's name.")
                 .setSeverity(DiagnosticSeverity.Error)
                 .setCode(DiagnosticCode.DOCUMENT_NAME_SAME_AS_SCHEMA)
                 .build());
         }
-
-        return ret;
 	}
 }

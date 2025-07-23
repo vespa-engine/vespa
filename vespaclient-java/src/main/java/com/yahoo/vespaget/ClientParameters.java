@@ -41,13 +41,15 @@ public class ClientParameters {
     public final boolean tensorShortForm;
     // Output JSON tensorvalues directly
     public final boolean tensorDirectValues;
+    // Debug: Determines replica to get from.
+    public final Integer debugReplicaNodeId;
 
     private ClientParameters(
             boolean help, Iterator<String> documentIds, boolean printIdsOnly,
             String fieldSet, String route, String cluster, String configId,
             boolean showDocSize, double timeout, boolean noRetry, int traceLevel,
             DocumentProtocol.Priority priority, boolean jsonOutput, boolean tensorShortForm,
-            boolean tensorDirectValues) {
+            boolean tensorDirectValues, Integer debugReplicaNodeId) {
 
         this.help = help;
         this.documentIds = documentIds;
@@ -64,6 +66,7 @@ public class ClientParameters {
         this.jsonOutput = jsonOutput;
         this.tensorShortForm = tensorShortForm;
         this.tensorDirectValues = tensorDirectValues;
+        this.debugReplicaNodeId = debugReplicaNodeId;
     }
 
     public static class Builder {
@@ -82,6 +85,7 @@ public class ClientParameters {
         private boolean jsonOutput = true;
         private boolean tensorShortForm;
         private boolean tensorDirectValues;
+        private Integer debugReplicaNodeId;
 
         public Builder setHelp(boolean help) {
             this.help = help;
@@ -158,10 +162,16 @@ public class ClientParameters {
             return this;
         }
 
+        public Builder setDebugReplicaNodeId(Integer debugReplicaNodeId) {
+            this.debugReplicaNodeId = debugReplicaNodeId;
+            return this;
+        }
+
         public ClientParameters build() {
             return new ClientParameters(
                     help, documentIds, printIdsOnly, fieldSet, route, cluster, configId,
-                    showDocSize, timeout, noRetry, traceLevel, priority, jsonOutput, tensorShortForm, tensorDirectValues);
+                    showDocSize, timeout, noRetry, traceLevel, priority, jsonOutput, tensorShortForm, tensorDirectValues,
+                    debugReplicaNodeId);
         }
     }
 

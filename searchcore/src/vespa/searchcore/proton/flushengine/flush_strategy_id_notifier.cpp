@@ -2,6 +2,7 @@
 
 #include "flush_strategy_id_notifier.h"
 #include "flush_strategy_id_listener.h"
+#include <algorithm>
 #include <cassert>
 
 namespace proton::flushengine {

@@ -77,7 +77,7 @@ public class FileUtils {
 
     // https://stackoverflow.com/questions/1976007/what-characters-are-forbidden-in-windows-and-linux-directory-names
     private final static Set<Character> DISALLOWED_CHARS = Set.of('/', '<', '>', ':', '"', '\\', '|', '?', '*');
-    public static String sanitizeFileName(String fileName) {
+    public final static String sanitizeFileName(String fileName) {
         return fileName.chars()
                        .filter(c -> !DISALLOWED_CHARS.contains((char) c))
                        .mapToObj(c -> "" + (char) c)

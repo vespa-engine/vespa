@@ -185,7 +185,7 @@ public abstract class Node implements Iterable<Node> {
     }
 
     public boolean isLeaf() {
-        return children.size() == 0;
+        return size() == 0;
     }
 
     public boolean hasSymbol() {
@@ -238,12 +238,27 @@ public abstract class Node implements Iterable<Node> {
         return symbol;
     }
 
-    /*
-     * Return the last node in the preorder traversal of this node.
+    /**
+     * @return The leftmost leaf descendant of this node. 
      */
-    public Node getLastLeafDescendant() {
-        if (isLeaf()) return this;
-        return get(size() - 1).getLastLeafDescendant();
+    public Node findFirstLeaf() {
+        Node ret = this;
+        while (!ret.isLeaf()) {
+            ret = ret.get(0);
+        }
+        return ret.getSchemaNode();
+    }
+
+    /**
+     * @return The rightmost leaf descendant of this node.
+     */
+    public Node findLastLeaf() {
+        Node ret = this;
+        while (!ret.isLeaf()) {
+            ret = ret.get(ret.size() - 1);
+        }
+
+        return ret;
     }
 
     public abstract int getBeginOffset();

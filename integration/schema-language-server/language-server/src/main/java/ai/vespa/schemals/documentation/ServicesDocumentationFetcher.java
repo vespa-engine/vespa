@@ -4,13 +4,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.parser.Tag;
+
 import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
 
 public class ServicesDocumentationFetcher extends ContentFetcher {

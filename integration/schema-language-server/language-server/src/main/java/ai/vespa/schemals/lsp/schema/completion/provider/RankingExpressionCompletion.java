@@ -1,5 +1,6 @@
 package ai.vespa.schemals.lsp.schema.completion.provider;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.Set;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Hover;
 
+import ai.vespa.schemals.SchemaLanguageServer;
 import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -45,6 +47,8 @@ public class RankingExpressionCompletion implements CompletionProvider {
      */
     private final static List<CompletionItem> builtinFunctionCompletions = new ArrayList<>() {{
         Set<String> addedNames = new HashSet<>();
+        Path rankFeatureHoverPath = SchemaLanguageServer.getDefaultDocumentationPath().resolve("rankExpression");
+
         for (var entry : BuiltInFunctions.rankExpressionBuiltInFunctions.entrySet()) {
             if (!(entry.getValue() instanceof GenericFunction)) continue;
 
@@ -59,7 +63,7 @@ public class RankingExpressionCompletion implements CompletionProvider {
                 item.setInsertText(buildGroupInsertText(name, group));
 
                 SpecificFunction specificFunction = new SpecificFunction((GenericFunction)entry.getValue(), group.get(0));
-                Optional<Hover> hover = SchemaHover.getRankFeatureHover(specificFunction);
+                Optional<Hover> hover = SchemaHover.getRankFeatureHover(specificFunction, rankFeatureHoverPath);
 
                 if (hover.isPresent() && hover.get().getContents().isRight()) {
                     item.setDocumentation(hover.get().getContents().getRight());
@@ -169,6 +173,7 @@ public class RankingExpressionCompletion implements CompletionProvider {
         FunctionSignature signature = functionSignature.get().getSignature();
 
         List<CompletionItem> result = new ArrayList<>();
+        Path rankFeatureHoverPath = SchemaLanguageServer.getDefaultDocumentationPath().resolve("rankExpression");
 
         for (String prop : signature.getProperties()) {
             if (prop.isBlank()) continue;
@@ -176,7 +181,7 @@ public class RankingExpressionCompletion implements CompletionProvider {
 
             specificFunction.setProperty(prop);
 
-            Optional<Hover> documentationHover = SchemaHover.getRankFeatureHover(specificFunction);
+            Optional<Hover> documentationHover = SchemaHover.getRankFeatureHover(specificFunction, rankFeatureHoverPath);
 
             if (documentationHover.isPresent() && documentationHover.get().getContents().isRight()) {
                 item.setDocumentation(documentationHover.get().getContents().getRight());

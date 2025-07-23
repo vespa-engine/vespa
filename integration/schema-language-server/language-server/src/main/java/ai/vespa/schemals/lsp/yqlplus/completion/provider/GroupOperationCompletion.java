@@ -13,8 +13,6 @@ import ai.vespa.schemals.lsp.common.completion.CompletionUtils;
 import ai.vespa.schemals.parser.grouping.ast.LBRACE;
 import ai.vespa.schemals.parser.grouping.ast.RBRACE;
 import ai.vespa.schemals.parser.grouping.ast.SPACE;
-import ai.vespa.schemals.parser.grouping.ast.allOperation;
-import ai.vespa.schemals.parser.grouping.ast.eachOperation;
 import ai.vespa.schemals.parser.grouping.ast.lbraceElm;
 import ai.vespa.schemals.parser.grouping.ast.operation;
 import ai.vespa.schemals.parser.grouping.ast.operationBody;
@@ -22,7 +20,6 @@ import ai.vespa.schemals.parser.grouping.ast.rbraceElm;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.Node.LanguageType;
-import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class GroupOperationCompletion implements CompletionProvider {
 

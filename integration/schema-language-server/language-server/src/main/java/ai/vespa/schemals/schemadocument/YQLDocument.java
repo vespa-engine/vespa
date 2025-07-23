@@ -21,7 +21,6 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.YQLNode;
-import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class YQLDocument implements DocumentManager {
 
@@ -252,7 +251,7 @@ public class YQLDocument implements DocumentManager {
     private static void traverseCST(YQLNode node, ParseContext context, ArrayList<Diagnostic> diagnostics) {
 
         for (Identifier<YQLNode> identifier : context.YQLIdentifiers()) {
-            diagnostics.addAll(identifier.identify(node));
+            identifier.identify(node, diagnostics);
         }
 
         for (Node child : node) {

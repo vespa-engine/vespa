@@ -1707,7 +1707,7 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     void search_node_transaction_log_replay_memory_limit_is_configurable_via_feature_flag() {
-        assertEquals( 0L,       inferTxnLogReplayMemoryLimitFromFlag(null)); // Default is unlimited
+        assertEquals(-3L,       inferTxnLogReplayMemoryLimitFromFlag(null));
         assertEquals( 0L,       inferTxnLogReplayMemoryLimitFromFlag(0L));
         assertEquals(-10L,      inferTxnLogReplayMemoryLimitFromFlag(-10L));
         assertEquals( 1234567L, inferTxnLogReplayMemoryLimitFromFlag(1234567L));

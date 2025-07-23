@@ -1,6 +1,6 @@
 package ai.vespa.schemals.schemadocument.parser.schema;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -34,13 +34,11 @@ public class IdentifyDeprecatedToken extends Identifier<SchemaNode> {
         put(TokenType.SEARCH,             new DeprecatedToken("Use schema instead.", DiagnosticCode.DEPRECATED_TOKEN_SEARCH));
     }};
 
-    public ArrayList<Diagnostic> identify(SchemaNode node) {
-        // TODO: semantic context
-        ArrayList<Diagnostic> ret = new ArrayList<>();
-
+    @Override
+    public void identify(SchemaNode node, List<Diagnostic> diagnostics) {
         DeprecatedToken entry = deprecatedTokens.get(node.getSchemaType());
         if (entry != null) {
-            ret.add(
+            diagnostics.add(
                 new SchemaDiagnostic.Builder()
                     .setRange(node.getRange())
                     .setMessage(node.getText() + " is deprecated. " + entry.message)
@@ -49,7 +47,7 @@ public class IdentifyDeprecatedToken extends Identifier<SchemaNode> {
                     .build()
             );
 
-            return ret;
+            return;
         }
 
         if ((node.getSchemaType() == TokenType.ATTRIBUTE || node.getSchemaType() == TokenType.INDEX) && node.getNextSibling() != null && node.getNextSibling().isASTInstance(identifierStr.class)) {
@@ -75,7 +73,7 @@ public class IdentifyDeprecatedToken extends Identifier<SchemaNode> {
                 String fieldIdentifier = fieldNode.get(1).getText();
 
                 if (fieldNode.getParent().isASTInstance(fieldOutsideDoc.class)) {
-                    ret.add(
+                    diagnostics.add(
                         new SchemaDiagnostic.Builder()
                             .setRange(node.getNextSibling().getRange())
                             .setMessage("Cannot create " + offendingKind + " '" + attributeName + "' in field '" + fieldIdentifier + "' outside document.")
@@ -83,7 +81,7 @@ public class IdentifyDeprecatedToken extends Identifier<SchemaNode> {
                             .build()
                     );
                 } else {
-                    ret.add(
+                    diagnostics.add(
                         new SchemaDiagnostic.Builder()
                             .setRange(node.getNextSibling().getRange())
                             .setMessage("Creating an " + offendingKind + " for field '" + fieldIdentifier + "' with a different name '" + attributeName + 
@@ -96,7 +94,5 @@ public class IdentifyDeprecatedToken extends Identifier<SchemaNode> {
                 }
             }
         }
-
-        return ret;
     }
 }

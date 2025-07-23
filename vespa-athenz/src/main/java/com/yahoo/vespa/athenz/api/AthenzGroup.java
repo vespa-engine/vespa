@@ -2,6 +2,7 @@
 
 package com.yahoo.vespa.athenz.api;
 
+import java.net.URI;
 import java.util.Objects;
 
 public class AthenzGroup implements AthenzIdentity {
@@ -47,6 +48,13 @@ public class AthenzGroup implements AthenzIdentity {
     @Override
     public String getName() {
         return groupName;
+    }
+
+    @Override
+    public URI spiffeUri() {
+        // Assuming it's the same as for service identities
+        // spiffe://athenz.cloud/ns/default/sa/<athenz-domain>.<athenz-group>
+        return URI.create("spiffe://athenz.cloud/ns/default/sa/%s.%s".formatted(getDomainName(), groupName));
     }
 
     @Override

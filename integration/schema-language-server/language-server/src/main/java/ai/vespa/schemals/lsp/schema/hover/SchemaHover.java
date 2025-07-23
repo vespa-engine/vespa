@@ -1,9 +1,6 @@
 package ai.vespa.schemals.lsp.schema.hover;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -11,7 +8,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.MarkupContent;
@@ -31,8 +27,8 @@ import ai.vespa.schemals.parser.indexinglanguage.ast.SUMMARY;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SpecificFunction;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
+import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
 /**
@@ -249,7 +245,7 @@ public class SchemaHover {
         return null;
     }
 
-    private static Optional<Hover> rankFeatureHover(SchemaNode node, EventPositionContext context) {
+    private static Optional<Hover> rankFeatureHover(SchemaNode node, EventPositionContext context, Path rankFeatureDocPath) {
 
         // Search for rankNode connection
         Node currentNode = node;
@@ -278,7 +274,7 @@ public class SchemaHover {
             functionSignature.clearProperty();
         }
 
-        Optional<Hover> result = getRankFeatureHover(functionSignature);
+        Optional<Hover> result = getRankFeatureHover(functionSignature, rankFeatureDocPath);
         result.ifPresent(hover -> hover.setRange(node.getRange()));
         return result;
     }
@@ -288,22 +284,24 @@ public class SchemaHover {
      * @param function
      * @return Hover with empty range
      */
-    public static Optional<Hover> getRankFeatureHover(SpecificFunction function) {
-        Optional<Hover> result = getFileHoverInformation("rankExpression", function.getSignatureString(), new Range());
+    public static Optional<Hover> getRankFeatureHover(SpecificFunction function, Path rankFeatureDocPath) {
+        Optional<Hover> result = getFileHoverInformation(rankFeatureDocPath, function.getSignatureString(), new Range());
 
         if (result.isPresent()) {
             return result;
         }
 
-        return getFileHoverInformation("rankExpression", function.getSignatureString(true), new Range());
+        return getFileHoverInformation(rankFeatureDocPath, function.getSignatureString(true), new Range());
     }
 
-    public static Hover getHover(EventPositionContext context) {
+    public static Hover getHover(EventPositionContext context, Path documentationPath) {
         Node node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         
         if (node != null && node.isSchemaNode()) {
             SchemaNode schemaNode = node.getSchemaNode();
             Hover symbolHover = getSymbolHover(schemaNode, context);
+
+            if (symbolHover == null) return null;
 
             if (schemaNode.getLanguageType() == LanguageType.RANK_EXPRESSION) {
                 var content = symbolHover.getContents();
@@ -311,7 +309,7 @@ public class SchemaHover {
                     MarkupContent markupContent = content.getRight();
                     if (markupContent.getValue() == "builtin") {
 
-                        Optional<Hover> builtinHover = rankFeatureHover(schemaNode, context);
+                        Optional<Hover> builtinHover = rankFeatureHover(schemaNode, context, documentationPath.resolve("rankExpression"));
                         if (builtinHover.isPresent()) {
                             return builtinHover.get();
                         }
@@ -330,14 +328,14 @@ public class SchemaHover {
             return getIndexingHover(schemaNode, context);
         }
 
-        Optional<Hover> hoverInfo = getFileHoverInformation("schema", schemaNode.getClassLeafIdentifierString(), schemaNode.getRange());
+        Optional<Hover> hoverInfo = getFileHoverInformation(documentationPath.resolve("schema"), schemaNode.getClassLeafIdentifierString(), schemaNode.getRange());
         if (hoverInfo.isEmpty()) {
             return null;
         }
         return hoverInfo.get();
     }
 
-    public static Optional<Hover> getFileHoverInformation(String hoverDirectory, String markdownKey, Range range) {
+    public static Optional<Hover> getFileHoverInformation(Path hoverDirectory, String markdownKey, Range range) {
         // avoid doing unnecessary IO operations
         if (markdownContentCache.containsKey(markdownKey)) {
             Optional<MarkupContent> mdContent = markdownContentCache.get(markdownKey);
@@ -349,11 +347,10 @@ public class SchemaHover {
             }
         }
 
-        if (SchemaLanguageServer.serverPath == null)return Optional.empty();
         String fileName = markdownKey + ".md";
         fileName = FileUtils.sanitizeFileName(fileName);
 
-        Path markdownPath = SchemaLanguageServer.serverPath.resolve("hover").resolve(hoverDirectory).resolve(fileName);
+        Path markdownPath = hoverDirectory.resolve(fileName);
 
         try {
             String markdown = Files.readString(markdownPath);

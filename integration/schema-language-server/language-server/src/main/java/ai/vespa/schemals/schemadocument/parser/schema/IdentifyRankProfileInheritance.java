@@ -1,6 +1,6 @@
 package ai.vespa.schemals.schemadocument.parser.schema;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
 
@@ -20,20 +20,14 @@ public class IdentifyRankProfileInheritance extends Identifier<SchemaNode> {
 	}
 
 	@Override
-	public ArrayList<Diagnostic> identify(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<>();
-
-        if (!node.isASTInstance(identifierWithDashStr.class)) return ret;
-        if (node.getParent() == null || !node.getParent().isASTInstance(inheritsRankProfile.class)) return ret;
+    public void identify(SchemaNode node, List<Diagnostic> diagnostics) {
+        if (!node.isASTInstance(identifierWithDashStr.class)) return;
+        if (node.getParent() == null || !node.getParent().isASTInstance(inheritsRankProfile.class)) return;
 
         if (!node.hasSymbol()) {
-            return ret;
+            return;
         }
 
         context.addUnresolvedInheritanceNode(node);
-
-        return ret;
 	}
-
-    
 }

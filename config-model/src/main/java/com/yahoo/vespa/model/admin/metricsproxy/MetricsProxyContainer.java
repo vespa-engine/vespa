@@ -153,14 +153,14 @@ public class MetricsProxyContainer extends Container implements
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
         cluster.getConfig(builder);
-
         if (clusterMembership.isPresent()) {
             boolean adminCluster = clusterMembership.get().cluster().type() == ClusterSpec.Type.admin;
-            int maxHeapSize = adminCluster ? 96 : 256;
-            builder.jvm
-                    .gcopts(jvmGCOptions)
-                    .heapsize(maxHeapSize);
-            if (adminCluster) builder.jvm.minHeapsize(maxHeapSize);
+            int heapSize = adminCluster ? 96 : 320;
+            builder.jvm.heapsize(heapSize);
+            builder.jvm.minHeapsize(heapSize);
+            builder.jvm.compressedClassSpaceSize(0);
+            builder.jvm.baseMaxDirectMemorySize(128);
+            builder.jvm.availableProcessors(2);
         }
     }
 

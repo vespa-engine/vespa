@@ -208,6 +208,14 @@ List<ReferenceNode> featureList() :
     { return ret; }
 ;
 
+ReferenceNode rankPropertyFeature() :
+{
+    ReferenceNode exp;
+}
+    ( ( exp = feature() ) <EOF> )
+    { return exp; }
+;
+
 ExpressionNode rankingExpression() :
 {
     ExpressionNode ret;

@@ -1,7 +1,13 @@
 package ai.vespa.schemals.tree.rankingexpression;
 
+import java.io.PrintStream;
+
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
+
+import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
+import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
+import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.parser.rankingexpression.Node;
@@ -52,5 +58,38 @@ public class RankingExpressionUtils {
             printTree(logger, child, indent + 1);
         }
     }
+
+    /**
+     * Print the expression tree described by the given {@link ExpressionNode}, which is a more
+     * abstract tree than the parser AST constructed by Vespa after parsing.
+     *
+     * @param logger
+     * @param node
+     * @param indent
+     */
+    public static void printExpressionTree(PrintStream logger, ExpressionNode node, int indent) {
+        String className = node.getClass().getSimpleName();
+        String msg = node.toString() + " (" + className + ")";
+
+        if (node instanceof ReferenceNode) {
+            var ref = ((ReferenceNode)node).reference();
+
+            msg += " [REF: " + ref.name() + "]";
+
+            if (ref.isIdentifier()) {
+                msg += " [IDENTIFIER]";
+            } 
+            if (ref.output() != null) {
+                msg += " [OUTPUT: " + ref.output() + "]";
+            }
+        }
+        logger.println(new String(new char[indent]).replaceAll("\0", "\t") + msg);
+        if (node instanceof CompositeNode) {
+            for (var child : ((CompositeNode)node).children()) {
+                printExpressionTree(logger, child, indent + 1);
+            }
+        }
+    }
+
 
 }

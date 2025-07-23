@@ -2,7 +2,7 @@
 vespa_add_executable(defaults_vespa-print-default_app
     SOURCES
     printdefault.cpp
-    OUTPUT_NAME vespa-print-default
+    OUTPUT_NAME vespa-print-default-bin
     INSTALL bin
     DEPENDS
     vespadefaults

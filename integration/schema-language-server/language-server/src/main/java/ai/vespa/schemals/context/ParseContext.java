@@ -1,16 +1,12 @@
 package ai.vespa.schemals.context;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
-import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.YQLNode;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.index.FieldIndex;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
-
 import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.schemadocument.parser.IdentifyDirtyNodes;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifyDeprecatedToken;
@@ -20,12 +16,15 @@ import ai.vespa.schemals.schemadocument.parser.schema.IdentifyDocumentSummaryInh
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifyDocumentlessSchema;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifyNamedDocument;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifyRankProfileInheritance;
+import ai.vespa.schemals.schemadocument.parser.schema.IdentifyRankProperties;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifySchemaInheritance;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifyStructInheritance;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifySymbolDefinition;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifySymbolReferences;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifyType;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument.UnresolvedFieldArgument;
+import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.YQLNode;
 
 public class ParseContext { 
     private String content;
@@ -77,6 +76,7 @@ public class ParseContext {
             add(new IdentifyDirtySchemaNodes(context));
             add(new IdentifyDocumentlessSchema(context));
             add(new IdentifyNamedDocument(context));
+            add(new IdentifyRankProperties(context));
         }};
     }
 
@@ -91,6 +91,7 @@ public class ParseContext {
             add(new IdentifySymbolReferences(context));
             add(new IdentifyRankProfileInheritance(context));
             add(new IdentifyDirtySchemaNodes(context));
+            add(new IdentifyRankProperties(context));
         }};
     }
 

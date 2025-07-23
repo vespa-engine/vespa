@@ -5,29 +5,30 @@ import java.util.Optional;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
-import ai.vespa.schemals.parser.Token;
-import ai.vespa.schemals.parser.Token.TokenType;
-import ai.vespa.schemals.parser.TokenSource;
-import ai.vespa.schemals.parser.Node.NodeType;
-import ai.vespa.schemals.parser.Token.ParseExceptionSource;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.Node.NodeType;
 import ai.vespa.schemals.parser.SubLanguageData;
+import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.TokenSource;
+import ai.vespa.schemals.parser.schemaRankPropertyKey;
+import ai.vespa.schemals.parser.ast.consumedExpressionElm;
+import ai.vespa.schemals.parser.ast.consumedFeatureListElm;
 import ai.vespa.schemals.parser.ast.indexingElm;
-import ai.vespa.schemals.parser.ast.onnxModel;
-import ai.vespa.schemals.parser.ast.onnxModelInput;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
-import ai.vespa.schemals.parser.ast.expressionElm;
-import ai.vespa.schemals.parser.ast.consumedExpressionElm;
-import ai.vespa.schemals.parser.ast.consumedFeatureListElm;
-import ai.vespa.schemals.parser.ast.featureListElm;
 
 /**
- * SchemaNode represents a node in the AST of a file the language server parses.
- * The node exposes a general interface to handle different AST from different parsers.
+ * SchemaNode represents a node in the CST of a .sd or .profile file parse.
+ * It could belong to one of the three languages
+ * <ul>
+ *   <li>Schema</li>
+ *   <li>Indexing</li>
+ *   <li>Ranking expression</li>
+ *   <li>'Custom language' used for patching the syntax tree</li>
+ * </ul>
  */
 public class SchemaNode extends Node {
     
@@ -181,7 +182,8 @@ public class SchemaNode extends Node {
             (language == LanguageType.INDEXING && originalSchemaNode instanceof indexingElm) ||
             (language == LanguageType.RANK_EXPRESSION && (
                 (originalSchemaNode instanceof consumedExpressionElm) ||
-                (originalSchemaNode instanceof consumedFeatureListElm)
+                (originalSchemaNode instanceof consumedFeatureListElm) ||
+                (originalSchemaNode instanceof schemaRankPropertyKey)
             ))
         );
     }
@@ -192,7 +194,7 @@ public class SchemaNode extends Node {
         return elmNode.getILScript();
     }
 
-    public String getRankExpressionString() {
+    public String getRankingExpressionString() {
         if (!containsOtherLanguageData(LanguageType.RANK_EXPRESSION)) return null;
 
         if (originalSchemaNode instanceof consumedExpressionElm) {
@@ -201,6 +203,9 @@ public class SchemaNode extends Node {
         } else if (originalSchemaNode instanceof consumedFeatureListElm) {
             consumedFeatureListElm featureListNode = (consumedFeatureListElm)originalSchemaNode;
             return featureListNode.getFeatureList();
+        } else if (originalSchemaNode instanceof schemaRankPropertyKey) {
+            schemaRankPropertyKey rankPropertyNode = (schemaRankPropertyKey)originalSchemaNode;
+            return rankPropertyNode.getPropertyName();
         }
         return null;
     }
@@ -231,6 +236,7 @@ public class SchemaNode extends Node {
         simulatedSchemaClass = astClass;
     }
 
+    @Override
     public boolean isASTInstance(Class<?> astClass) {
         if (language == LanguageType.CUSTOM && astClass == simulatedSchemaClass) return true;
         if (language == LanguageType.SCHEMA) return astClass.isInstance(originalSchemaNode);
@@ -239,16 +245,7 @@ public class SchemaNode extends Node {
         return false;
     }
 
-    public boolean isSchemaASTInstance(Class<? extends ai.vespa.schemals.parser.Node> astClass) {
-        if (language == LanguageType.CUSTOM) return astClass.equals(simulatedSchemaClass);
-        
-        return astClass.isInstance(originalSchemaNode);
-    }
-
-    public boolean isRankExpressionASTInstance(Class<? extends ai.vespa.schemals.parser.rankingexpression.Node> astClass) {
-        return astClass.isInstance(originalRankExpressionNode);
-    }
-
+    @Override
     public Class<?> getASTClass() {
         if (language == LanguageType.CUSTOM) return simulatedSchemaClass;
 
@@ -265,10 +262,6 @@ public class SchemaNode extends Node {
         }
 
         return null;
-    }
-
-    public String getIdentifierString() {
-        return identifierString;
     }
 
     public void setNewStartCharacter(int startCharacter) {
@@ -332,7 +325,6 @@ public class SchemaNode extends Node {
     }
 
     public String getText() {
-        
         if (language == LanguageType.SCHEMA) {
             return originalSchemaNode.getSource();
         }
@@ -349,40 +341,6 @@ public class SchemaNode extends Node {
             return contentString;
         }
 
-        return null;
-    }
-
-    public SchemaNode findFirstLeaf() {
-        Node ret = this;
-        while (ret.size() > 0) {
-            ret = ret.get(0);
-        }
-        return ret.getSchemaNode();
-    }
-
-    public IllegalArgumentException getIllegalArgumentException() {
-
-        if (language == LanguageType.SCHEMA) {
-            if (originalSchemaNode instanceof Token) {
-                return ((Token)originalSchemaNode).getIllegalArguemntException();
-            }
-        }
-
-        // if (language == LanguageType.INDEXING) {
-        //     if (originalIndexingNode instanceof ai.vespa.schemals.parser.indexinglanguage.Token) {
-        //         return ((ai.vespa.schemals.parser.indexinglanguage.Token)originalIndexingNode)
-        //     }
-        // }
-
-        return null;
-    }
-
-    public ParseExceptionSource getParseExceptionSource() {
-        if (language == LanguageType.SCHEMA) {
-            if (originalSchemaNode instanceof Token) {
-                return ((Token)originalSchemaNode).getParseExceptionSource();
-            }
-        }
         return null;
     }
 

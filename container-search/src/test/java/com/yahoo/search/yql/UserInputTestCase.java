@@ -99,9 +99,9 @@ public class UserInputTestCase {
                              "{grammar.composite:'or', grammar.tokenization:'linguistics', grammar.syntax:'none'}userInput('a b -c')"
                             );
         Query query1 = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where (default contains ({stem: false, accentDrop: false, implicitTransforms: false}\"a\") OR " +
-                                                             "default contains ({stem: false, accentDrop: false, implicitTransforms: false}\"b\") OR " +
-                                                             "default contains ({stem: false, accentDrop: false, implicitTransforms: false}\"c\"))",
+        assertEquals("select * from sources * where (default contains ({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"a\") OR " +
+                                                             "default contains ({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"b\") OR " +
+                                                             "default contains ({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"c\"))",
                      query1.yqlRepresentation());
 
         builder.setParameter("yql",

@@ -566,6 +566,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
                 .minHeapsize(32)
                 .heapsize(256)
                 .heapSizeAsPercentageOfPhysicalMemory(0)
+                .stacksize(512)
                 .gcopts(Objects.requireNonNullElse(jvmGCOptions, G1GC));
     }
 
