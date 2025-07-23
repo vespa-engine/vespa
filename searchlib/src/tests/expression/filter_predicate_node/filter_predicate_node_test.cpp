@@ -30,7 +30,7 @@ public:
     static std::unique_ptr<FilterPredicateNode> make_regex(const std::string& regex_value,
                                                            std::unique_ptr<ExpressionNode> result_node);
 
-    static std::unique_ptr<FilterPredicateNode> make_not(const std::unique_ptr<FilterPredicateNode>& filter_node);
+    static std::unique_ptr<FilterPredicateNode> make_not(std::unique_ptr<FilterPredicateNode> filter_node);
 
     template<typename... Nodes>
     static std::unique_ptr<FilterPredicateNode> make_or(Nodes... nodes);
@@ -59,22 +59,21 @@ std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_regex(const 
     return std::make_unique<RegexPredicateNode>(regex_value, std::move(result_node));
 }
 
-std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_not(
-    const std::unique_ptr<FilterPredicateNode>& filter_node) {
-    return std::make_unique<NotPredicateNode>(filter_node);
+std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_not(std::unique_ptr<FilterPredicateNode> filter_node) {
+    return std::make_unique<NotPredicateNode>(std::move(filter_node));
 }
 
 template<typename... Nodes>
 std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_or(Nodes... nodes) {
     auto or_predicate = std::make_unique<OrPredicateNode>();
-    (or_predicate->args().push_back(std::move(nodes)), ...);
+    (or_predicate->args().emplace_back(std::move(nodes)), ...);
     return or_predicate;
 }
 
 template<typename... Nodes>
 std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_and(Nodes... nodes) {
     auto and_predicate = std::make_unique<AndPredicateNode>();
-    (and_predicate->args().push_back(std::move(nodes)), ...);
+    (and_predicate->args().emplace_back(std::move(nodes)), ...);
     return and_predicate;
 }
 

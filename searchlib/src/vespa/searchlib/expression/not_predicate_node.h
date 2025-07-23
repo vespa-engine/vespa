@@ -21,7 +21,7 @@ public:
     [[nodiscard]] NotPredicateNode* clone() const override { return new NotPredicateNode(*this); }
 
     // for unit testing::
-    explicit NotPredicateNode(const std::unique_ptr<FilterPredicateNode>& input);
+    explicit NotPredicateNode(std::unique_ptr<FilterPredicateNode> input);
 
     DECLARE_IDENTIFIABLE_NS2(search, expression, NotPredicateNode);
     DECLARE_NBO_SERIALIZE;
