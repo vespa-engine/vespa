@@ -40,7 +40,7 @@ void MultiArgPredicateNode::visitMembers(vespalib::ObjectVisitor& visitor) const
 }
 
 void MultiArgPredicateNode::selectMembers(const vespalib::ObjectPredicate& predicate,
-                                       vespalib::ObjectOperation& operation) {
+                                                vespalib::ObjectOperation& operation) {
     FilterPredicateNode::selectMembers(predicate, operation);
     for(auto& _arg : _args) {
         _arg->select(predicate, operation);

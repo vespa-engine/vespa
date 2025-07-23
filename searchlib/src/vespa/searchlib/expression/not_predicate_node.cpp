@@ -45,7 +45,7 @@ void NotPredicateNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
 }
 
 void NotPredicateNode::selectMembers(const vespalib::ObjectPredicate& predicate,
-                                       vespalib::ObjectOperation& operation) {
+                                           vespalib::ObjectOperation& operation) {
     _expression->select(predicate, operation);
 }
 
