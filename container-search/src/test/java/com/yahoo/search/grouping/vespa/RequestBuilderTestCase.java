@@ -1108,13 +1108,10 @@ public class RequestBuilderTestCase {
                 var simpleName = npn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
                 return "Not [%s]".formatted(simpleName);
             } else if (filterExp instanceof OrPredicateNode opn) {
-                var simpleName = opn.getArgs().get().stream()
-                        .map(LayoutWriter::toSimpleName).collect(Collectors.joining(", "));
+                var simpleName = opn.getArgs().stream().map(LayoutWriter::toSimpleName).collect(Collectors.joining(", "));
                 return "Or [%s]".formatted(simpleName);
-            }
-            else if (filterExp instanceof AndPredicateNode apn) {
-                var simpleName = apn.getArgs().get().stream()
-                        .map(LayoutWriter::toSimpleName).collect(Collectors.joining(", "));
+            } else if (filterExp instanceof AndPredicateNode apn) {
+                var simpleName = apn.getArgs().stream().map(LayoutWriter::toSimpleName).collect(Collectors.joining(", "));
                 return "And [%s]".formatted(simpleName);
             }
             return filterExp.getClass().getSimpleName();

@@ -8,7 +8,6 @@ import com.yahoo.vespa.objects.Serializer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Protocol class for descendants of {@code FilterExpressionNode} that has several {@code FilterExpressionNode} as children.
@@ -27,7 +26,7 @@ public abstract class MultiArgPredicateNode extends FilterExpressionNode {
     }
 
     public final MultiArgPredicateNode addArg(FilterExpressionNode arg) {
-        Objects.requireNonNull(arg, "Can not add null arg"); // throws NullPointerException
+        Objects.requireNonNull(arg, "Can not add null arg");
         args.add(arg);
         return this;
     }
@@ -40,8 +39,8 @@ public abstract class MultiArgPredicateNode extends FilterExpressionNode {
         return args.size();
     }
 
-    public Optional<List<FilterExpressionNode>> getArgs() {
-        return Optional.ofNullable(args);
+    public List<FilterExpressionNode> getArgs() {
+        return args;
     }
 
     @Override
@@ -84,10 +83,6 @@ public abstract class MultiArgPredicateNode extends FilterExpressionNode {
 
     @Override
     public int hashCode() {
-        int ret = 0;
-        for (FilterExpressionNode node : args) {
-            ret += node.hashCode();
-        }
-        return ret;
+        return Objects.hashCode(args);
     }
 }

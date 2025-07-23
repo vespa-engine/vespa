@@ -3,6 +3,8 @@ package com.yahoo.search.grouping.request;
 
 import com.yahoo.api.annotations.Beta;
 
+import java.util.Objects;
+
 /**
  * Represents a logical negation (NOT) of a filter expression used to exclude grouping elements.
  *
@@ -13,6 +15,7 @@ public class NotPredicate extends FilterExpression {
     private final FilterExpression expression;
 
     public NotPredicate(FilterExpression expression) {
+        Objects.requireNonNull(expression, "Expression cannot be null");
         this.expression = expression;
     }
 

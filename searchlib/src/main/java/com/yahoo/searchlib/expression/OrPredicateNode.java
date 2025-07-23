@@ -24,8 +24,7 @@ public class OrPredicateNode extends MultiArgPredicateNode {
 
     @Override
     public FilterExpressionNode clone() {
-        return new OrPredicateNode(getArgs().map(list -> list.stream()
-                .map(FilterExpressionNode::clone).toList()).orElse(null));
+        return new OrPredicateNode(getArgs().stream().map(FilterExpressionNode::clone).toList());
     }
     
     @Override

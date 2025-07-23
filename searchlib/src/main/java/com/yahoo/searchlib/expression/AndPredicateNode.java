@@ -29,8 +29,7 @@ public class AndPredicateNode extends MultiArgPredicateNode {
 
     @Override
     public FilterExpressionNode clone() {
-        return new AndPredicateNode(getArgs().map(list -> list.stream()
-                .map(FilterExpressionNode::clone).toList()).orElse(null));
+        return new AndPredicateNode(getArgs().stream().map(FilterExpressionNode::clone).toList());
     }
 
     @Override
