@@ -23,7 +23,7 @@ protected:
     ~FilterPredicateNodesTest() override;
 
 public:
-    bool evaluate() const;
+    [[nodiscard]] bool evaluate() const;
 
     FilterPredicateNodesTest& set_node(std::unique_ptr<FilterPredicateNode> node);
 
@@ -61,7 +61,7 @@ std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_regex(const 
 
 std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_not(
     const std::unique_ptr<FilterPredicateNode>& filter_node) {
-    return std::make_unique<NotPredicateNode>(*filter_node);
+    return std::make_unique<NotPredicateNode>(filter_node);
 }
 
 template<typename... Nodes>
@@ -79,8 +79,7 @@ std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_and(Nodes...
 }
 
 std::unique_ptr<ExpressionNode> FilterPredicateNodesTest::make_result(const std::string& value) {
-    return std::make_unique<ConstantNode>(
-        ResultNode::UP(std::make_unique<StringResultNode>(value)->clone()));
+    return std::make_unique<ConstantNode>(std::make_unique<StringResultNode>(value));
 }
 
 TEST_F(FilterPredicateNodesTest, test_regex_match) {
