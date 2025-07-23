@@ -16,6 +16,9 @@ public class AndPredicate extends FilterExpression {
     private final List<FilterExpression> args;
 
     public AndPredicate(List<FilterExpression> args) {
+        if (args == null || args.size() < 2) {
+            throw new IllegalArgumentException("AndPredicate requires args to contain at least two elements.");
+        }
         this.args = args;
     }
 
