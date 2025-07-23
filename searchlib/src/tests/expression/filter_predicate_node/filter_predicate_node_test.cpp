@@ -115,6 +115,21 @@ TEST_F(FilterPredicateNodesTest, test_or_one_match) {
         evaluate());
 }
 
+TEST_F(FilterPredicateNodesTest, test_or_three_arguments) {
+    EXPECT_TRUE(
+        set_node(make_or(
+            make_regex("foo", make_result("foobar")),
+            make_regex("foobar", make_result("foobar")),
+            make_regex("baz", make_result("foobar")))).
+        evaluate());
+    EXPECT_FALSE(
+        set_node(make_or(
+            make_regex("foo", make_result("foobar")),
+            make_regex("bar", make_result("foobar")),
+            make_regex("baz", make_result("foobar")))).
+        evaluate());
+}
+
 TEST_F(FilterPredicateNodesTest, test_and_no_match) {
     EXPECT_FALSE(
         set_node(make_and(
@@ -136,6 +151,21 @@ TEST_F(FilterPredicateNodesTest, test_and_all_match) {
         set_node(make_and(
             make_regex("foo", make_result("foo")),
             make_regex("bar", make_result("bar")))).
+        evaluate());
+}
+
+TEST_F(FilterPredicateNodesTest, test_and_three_arguments) {
+    EXPECT_TRUE(
+        set_node(make_and(
+            make_regex("foo", make_result("foo")),
+            make_regex("bar", make_result("bar")),
+            make_regex("baz", make_result("baz")))).
+        evaluate());
+    EXPECT_FALSE(
+        set_node(make_and(
+            make_regex("foo", make_result("foo")),
+            make_regex("bar", make_result("bar")),
+            make_regex("baz", make_result("foobar")))).
         evaluate());
 }
 
