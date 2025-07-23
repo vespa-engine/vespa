@@ -41,7 +41,6 @@ public class NotPredicateNode extends FilterExpressionNode {
 
     @Override
     protected void onSerialize(Serializer buf) {
-        // Future-proofing: allow optional expression in protocol in case it's added later to the grouping language
         serializeOptional(buf, expression);
     }
 
