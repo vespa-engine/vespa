@@ -279,7 +279,8 @@ public class SymbolReferenceResolver {
                     if (!referencedSymbolIndexingTypes.contains(IndexingType.ATTRIBUTE)) {
                         diagnostics.add(new SchemaDiagnostic.Builder()
                                 .setRange( node.getRange())
-                                .setMessage( "Cannot import " + referencedSymbol.get().getLongIdentifier() + " because it is not an attribute field. Only attribute fields can be imported.")
+                                .setMessage( "Cannot import " + referencedSymbol.get().getLongIdentifier() + " " +
+                                             "because it is not an attribute field. Only attribute fields can be imported.")
                                 .setSeverity( DiagnosticSeverity.Error)
                                 .setCode(DiagnosticCode.IMPORT_FIELD_ATTRIBUTE)
                                 .build() );
@@ -287,7 +288,8 @@ public class SymbolReferenceResolver {
                         // TODO: quickfix
                         diagnostics.add(new SchemaDiagnostic.Builder()
                                 .setRange( node.getRange())
-                                .setMessage( "Cannot import " + referencedSymbol.get().getLongIdentifier() + " because it is an index field. Importing index fields is not supported.")
+                                .setMessage( "Cannot import " + referencedSymbol.get().getLongIdentifier() + " " +
+                                             "because it is an index field. Importing index fields is not supported.")
                                 .setSeverity( DiagnosticSeverity.Error)
                                 .build() );
                     }

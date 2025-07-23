@@ -746,7 +746,7 @@ public class YqlParser implements Parser {
 
         if (words != null && words.size() > 0) {
             for (String word : words) {
-                phrase.addItem(new WordItem(word, field, true));
+                phrase.addItem(instantiateWordItem(word, field, true, ast));
             }
         } else {
             for (OperatorNode<ExpressionOperator> word : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
@@ -1616,17 +1616,36 @@ public class YqlParser implements Parser {
                                           Boolean.class, Boolean.TRUE, IMPLICIT_TRANSFORMS_DESCRIPTION);
         switch (segmentPolicy) {
             case NEVER:
-                return new WordItem(wordData, fromQuery);
+                return instantiateWordItem(wordData, fromQuery, ast);
             case POSSIBLY:
                 if (shouldSegment(field, fromQuery) && ! grammar.equals(USER_INPUT_GRAMMAR_RAW))
                     return segment(field, ast, wordData, fromQuery, parent, language);
                 else
-                    return new WordItem(wordData, fromQuery);
+                    return instantiateWordItem(wordData, fromQuery, ast);
             case ALWAYS:
                 return segment(field, ast, wordData, fromQuery, parent, language);
             default:
                 throw new IllegalArgumentException("Unexpected segmenting rule: " + segmentPolicy);
         }
+    }
+
+    private WordItem instantiateWordItem(String word, boolean fromQuery, OperatorNode<ExpressionOperator> ast) {
+        return instantiateWordItem(word, null, fromQuery, ast);
+    }
+
+    private WordItem instantiateWordItem(String word, String field, boolean fromQuery, OperatorNode<ExpressionOperator> ast) {
+        var wordItem = new WordItem(word, field, fromQuery);
+        if (userQuery != null && userQuery.properties().getBoolean("query.type.isYqlDefault")) {
+            QueryType queryType = buildQueryType(ast);
+            if (queryType.getTokenization() == QueryType.Tokenization.linguistics) {
+                // linguistics == all processing is done by one linguistics invocation,
+                // so disable further processing of this word
+                wordItem.setStemmed(true);
+                wordItem.setNormalizable(false);
+                wordItem.setLowercased(true);
+            }
+        }
+        return wordItem;
     }
 
     private boolean shouldSegment(String field, boolean fromQuery) {
@@ -1644,14 +1663,14 @@ public class YqlParser implements Parser {
         List<String> segments = segmenter.segment(toSegment, usedLanguage);
         TaggableItem wordItem;
         if (segments.isEmpty()) {
-            wordItem = new WordItem(wordData, fromQuery);
+            wordItem = instantiateWordItem(wordData, fromQuery, ast);
         } else if (segments.size() == 1 || !phraseSegmentChildSupported(parent)) {
-            wordItem = new WordItem(segments.get(0), fromQuery);
+            wordItem = instantiateWordItem(segments.get(0), fromQuery, ast);
         } else {
             wordItem = new PhraseSegmentItem(toSegment, fromQuery, false);
             ((PhraseSegmentItem) wordItem).setIndexName(field);
             for (String s : segments) {
-                WordItem segment = new WordItem(s, fromQuery);
+                WordItem segment = instantiateWordItem(s, fromQuery, ast);
                 prepareWord(field, ast, segment);
                 ((PhraseSegmentItem) wordItem).addItem(segment);
             }
