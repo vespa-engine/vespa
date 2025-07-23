@@ -193,7 +193,6 @@ UNPARSED :
 // Production rules.
 //
 // --------------------------------------------------------------------------------
-/**/
 
 List<GroupingOperation> requestList :
 {
