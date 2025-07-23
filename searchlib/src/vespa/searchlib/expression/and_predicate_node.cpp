@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "and_predicate_node.h"
+
 #include "resultnode.h"
 
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
 
-namespace search::expression {
+#include <algorithm>
 
+namespace search::expression {
 using vespalib::Deserializer;
 using vespalib::Serializer;
 
@@ -30,21 +32,10 @@ Deserializer& AndPredicateNode::onDeserialize(Deserializer& is) {
 }
 
 bool AndPredicateNode::allow(const DocId docId, const HitRank rank) {
-    for (auto& arg : args()) {
-        if (!arg->allow(docId, rank)) {
-            return false;
-        }
-    }
-    return true;
+    return std::ranges::all_of(args(), [docId, rank](auto arg){ return arg->allow(docId, rank); });
 }
 
 bool AndPredicateNode::allow(const document::Document& doc, const HitRank rank) {
-    for (auto& arg : args()) {
-        if (!arg->allow(doc, rank)) {
-            return false;
-        }
-    }
-    return true;
+    return std::ranges::all_of(args(), [&doc, rank](auto arg){ return arg->allow(doc, rank); });
 }
-
 } // namespace search::expression
