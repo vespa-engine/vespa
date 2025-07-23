@@ -19,7 +19,6 @@ public:
 
     [[nodiscard]] OrPredicateNode* clone() const override { return new OrPredicateNode(*this); }
 
-    DECLARE_NBO_SERIALIZE;
     DECLARE_IDENTIFIABLE_NS2(search, expression, OrPredicateNode);
 
     bool allow(DocId docId, HitRank rank) override;

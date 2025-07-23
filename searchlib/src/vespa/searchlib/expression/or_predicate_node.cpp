@@ -2,9 +2,6 @@
 #include "or_predicate_node.h"
 #include "resultnode.h"
 
-#include <vespa/vespalib/objects/serializer.hpp>
-#include <vespa/vespalib/objects/deserializer.hpp>
-
 #include <algorithm>
 
 namespace search::expression {
@@ -21,15 +18,6 @@ OrPredicateNode::~OrPredicateNode() = default;
 OrPredicateNode::OrPredicateNode(const OrPredicateNode&) = default;
 
 OrPredicateNode& OrPredicateNode::operator=(const OrPredicateNode&) = default;
-
-Serializer& OrPredicateNode::onSerialize(Serializer& os) const {
-    return os << args();
-}
-
-Deserializer& OrPredicateNode::onDeserialize(Deserializer& is) {
-    is >> args();
-    return is;
-}
 
 bool OrPredicateNode::allow(const DocId docId, const HitRank rank) {
     return std::ranges::any_of(args(), [docId, rank](auto arg){ return arg->allow(docId, rank); });

@@ -22,6 +22,7 @@ public:
     explicit MultiArgPredicateNode(const std::vector<FilterPredicateNode::IP>& input);
 
     DECLARE_IDENTIFIABLE_ABSTRACT_NS2(search, expression, MultiArgPredicateNode);
+    DECLARE_NBO_SERIALIZE;
 
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     void selectMembers(const vespalib::ObjectPredicate& predicate,

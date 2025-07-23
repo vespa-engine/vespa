@@ -2,6 +2,9 @@
 #include "multi_arg_predicate_node.h"
 #include "resultvector.h"
 
+#include <vespa/vespalib/objects/serializer.hpp>
+#include <vespa/vespalib/objects/deserializer.hpp>
+
 namespace search::expression {
 
 using vespalib::Deserializer;
@@ -21,6 +24,15 @@ MultiArgPredicateNode::MultiArgPredicateNode(const std::vector<FilterPredicateNo
     for (const auto& node : input) {
         _args.emplace_back(node->clone());
     }
+}
+
+Serializer& MultiArgPredicateNode::onSerialize(Serializer& os) const {
+    return os << _args;
+}
+
+Deserializer& MultiArgPredicateNode::onDeserialize(Deserializer& is) {
+    is >> _args;
+    return is;
 }
 
 void MultiArgPredicateNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
