@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -101,17 +100,14 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                     nonActiveNodes++;
                 }
             }
-            AtomicReference<ClusterSpec.Type> clusterType = new AtomicReference<>();
-            allocatedNodes.stream().findFirst().flatMap(Node::allocation).ifPresent(allocation -> {
-                clusterType.set(allocation.membership().cluster().type());
-            });
+            ClusterSpec.Type clusterType = allocatedNodes.stream().findFirst().flatMap(Node::allocation).get().membership().cluster().type();
             double nonActiveFraction;
             if (activeNodes == 0) { // Cluster has been removed
                 nonActiveFraction = 1;
             } else {
                 nonActiveFraction = (double) nonActiveNodes / ((double) activeNodes + (double) nonActiveNodes);
             }
-            Metric.Context context = getContext(dimensions(clusterId.application(), clusterType.get(), clusterId.cluster()));
+            Metric.Context context = getContext(dimensions(clusterId.application(), clusterType, clusterId.cluster()));
             metric.set(ConfigServerMetrics.NODES_ACTIVE.baseName(), activeNodes, context);
             metric.set(ConfigServerMetrics.NODES_NON_ACTIVE.baseName(), nonActiveNodes, context);
             metric.set(ConfigServerMetrics.NODES_NON_ACTIVE_FRACTION.baseName(), nonActiveFraction, context);
@@ -283,7 +279,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
             boolean down = NodeHealthTracker.allDown(services);
             metric.set(ConfigServerMetrics.NODE_FAILER_BAD_NODE.baseName(), (down ? 1 : 0), context);
 
-            boolean nodeDownInNodeRepo = node.history().isDown();;
+            boolean nodeDownInNodeRepo = node.history().isDown();
             metric.set(ConfigServerMetrics.DOWN_IN_NODE_REPO.baseName(), (nodeDownInNodeRepo ? 1 : 0), context);
         }
 
