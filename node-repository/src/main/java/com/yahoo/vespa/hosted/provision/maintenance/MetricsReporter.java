@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -100,13 +101,17 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                     nonActiveNodes++;
                 }
             }
+            AtomicReference<ClusterSpec.Type> clusterType = new AtomicReference<>();
+            allocatedNodes.stream().findFirst().flatMap(Node::allocation).ifPresent(allocation -> {
+                clusterType.set(allocation.membership().cluster().type());
+            });
             double nonActiveFraction;
             if (activeNodes == 0) { // Cluster has been removed
                 nonActiveFraction = 1;
             } else {
                 nonActiveFraction = (double) nonActiveNodes / ((double) activeNodes + (double) nonActiveNodes);
             }
-            Metric.Context context = getContext(dimensions(clusterId.application(), clusterId.cluster()));
+            Metric.Context context = getContext(dimensions(clusterId.application(), clusterType.get(), clusterId.cluster()));
             metric.set(ConfigServerMetrics.NODES_ACTIVE.baseName(), activeNodes, context);
             metric.set(ConfigServerMetrics.NODES_NON_ACTIVE.baseName(), nonActiveNodes, context);
             metric.set(ConfigServerMetrics.NODES_NON_ACTIVE_FRACTION.baseName(), nonActiveFraction, context);
@@ -419,6 +424,12 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                                       .orElse(true))
                               .size();
         metric.set(ConfigServerMetrics.NODES_EMPTY_EXCLUSIVE.baseName(), emptyHosts, null);
+    }
+
+    private static Map<String, String> dimensions(ApplicationId application, ClusterSpec.Type type, ClusterSpec.Id cluster) {
+        Map<String, String> dimensions = new HashMap<>(dimensions(application, cluster));
+        dimensions.put("clustertype", type.toString());
+        return dimensions;
     }
 
     static Map<String, String> dimensions(ApplicationId application, ClusterSpec.Id cluster) {

@@ -201,7 +201,7 @@ public final class Node implements Nodelike {
     public Optional<Allocation> allocation() { return allocation; }
 
     /** Returns the current allocation when it must exist, or throw exception there is not allocation. */
-    private Allocation requireAllocation(String message) {
+    public Allocation requireAllocation(String message) {
         final Optional<Allocation> allocation = this.allocation;
         if ( ! allocation.isPresent())
             throw new IllegalStateException(message + " for  " + hostname() + ": The node is unallocated");
