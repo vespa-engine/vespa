@@ -12,6 +12,7 @@ FAULT_TOLERANT=true;
 SMART_NODE_CREATION=false; // Will create a tree node for every rule
 
 INJECT GroupingParser:
+    import java.util.ArrayList;
     import java.util.List;
     import java.util.LinkedList;
     import com.yahoo.javacc.UnicodeUtilities;
@@ -131,6 +132,7 @@ TOKEN :
     <MUL: "mul"> |
     <NEG: "neg"> |
     <NORMALIZESUBJECT: "normalizesubject"> |
+    <NOT: "not"> |
     <NOW: "now"> |
     <OR: "or"> |
     <ORDER: "order"> |
@@ -321,7 +323,10 @@ FilterExpression filterExp(GroupingOperation grp) :
 {
     FilterExpression exp;
 }
-    ( exp = regexPredicate(grp) )
+    ( (exp = regexPredicate(grp)) |
+      (exp = notPredicate(grp))   |
+      (exp = orPredicate(grp))    |
+      (exp = andPredicate(grp)))
     { return exp; }
 ;
 
@@ -948,6 +953,32 @@ RegexPredicate regexPredicate(GroupingOperation grp) :
     { return new RegexPredicate(pattern, exp); }
 ;
 
+NotPredicate notPredicate(GroupingOperation grp) :
+{
+    FilterExpression exp;
+}
+    ( <NOT> lbraceElm exp = filterExp(grp) rbraceElm )
+    { return new NotPredicate(exp); }
+;
+
+OrPredicate orPredicate(GroupingOperation grp) :
+{
+    FilterExpression exp;
+    List<FilterExpression> args = new ArrayList<FilterExpression>();
+}
+    ( <OR> lbraceElm ( exp = filterExp(grp) { args.add(exp); } ( commaElm exp = filterExp(grp) { args.add(exp); } )+ ) rbraceElm )
+    { return new OrPredicate(args); }
+;
+
+AndPredicate andPredicate(GroupingOperation grp) :
+{
+    FilterExpression exp;
+    List<FilterExpression> args = new ArrayList<FilterExpression>();
+}
+    ( <AND> lbraceElm ( exp = filterExp(grp) { args.add(exp); } ( commaElm exp = filterExp(grp) { args.add(exp); } )+ ) rbraceElm )
+    { return new AndPredicate(args); }
+;
+
 bucketElm(GroupingOperation grp, BucketResolver resolver) :
 {
     ConstantValue from, to = null;
@@ -1058,6 +1089,7 @@ String identifierStr :
         <MUL> |
         <NEG> |
         <NORMALIZESUBJECT> |
+        <NOT> |
         <NOW> |
         <OR> |
         <ORDER> |
