@@ -195,7 +195,6 @@ public class YQLParserTest {
             "select * from sources * where ({stem: false}(foo contains \"a\" and bar contains \"b\")) or foo contains ({stem: false}\"c\")",
             "select * from sources * where foo contains @animal and foo contains phrase(@animal, @syntaxExample, @animal)",
             "select * from sources * where sddocname contains 'purchase' | all(group(customer) each(output(sum(price))))",
-            "select * from sources * where true | all(group(customer) filter(and(regex(\"foo\", bar), or(not(regex(\"baz\", a)), regex(\"b\", b)))) each(output(sum(price))))",
         };
 
         Stream<String> queryStream = Stream.concat(Arrays.stream(queries), Arrays.stream(groupingQueries));

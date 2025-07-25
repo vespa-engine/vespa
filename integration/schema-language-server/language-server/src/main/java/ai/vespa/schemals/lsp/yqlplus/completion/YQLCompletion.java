@@ -9,7 +9,6 @@ import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
 import ai.vespa.schemals.lsp.yqlplus.completion.provider.GroupOperationCompletion;
 import ai.vespa.schemals.lsp.yqlplus.completion.provider.GroupingExpressionProvider;
-import ai.vespa.schemals.lsp.yqlplus.completion.provider.GroupingFilterProvider;
 import ai.vespa.schemals.lsp.yqlplus.completion.provider.RootCompletion;
 import ai.vespa.schemals.lsp.yqlplus.completion.provider.RootGroupingCompletion;
 
@@ -22,8 +21,7 @@ public class YQLCompletion {
         new RootCompletion(),
         new RootGroupingCompletion(),
         new GroupOperationCompletion(),
-        new GroupingExpressionProvider(),
-        new GroupingFilterProvider()
+        new GroupingExpressionProvider()
     };
 
     public static ArrayList<CompletionItem> getCompletionItems(EventCompletionContext context, PrintStream errorLogger) {

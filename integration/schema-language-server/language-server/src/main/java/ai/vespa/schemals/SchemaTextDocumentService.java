@@ -203,8 +203,6 @@ public class SchemaTextDocumentService implements TextDocumentService {
                 EventFormattingContext context = eventContextCreator.createContext(params);
                 return SchemaFormatting.computeFormattingEdits(context);
             } catch (InvalidContextException ignore) {
-            } catch (Exception e) {
-                logger.error("Error during formatting request: " + e.getMessage());
             }
             return List.of();
         });
@@ -217,8 +215,6 @@ public class SchemaTextDocumentService implements TextDocumentService {
                 EventRangeFormattingContext context = eventContextCreator.createContext(params);
                 return SchemaFormatting.computeRangeFormattingEdits(context);
             } catch (InvalidContextException ignore) {
-            } catch (Exception e) {
-                logger.error("Error during range formatting request: " + e.getMessage());
             }
             return List.of();
         });
