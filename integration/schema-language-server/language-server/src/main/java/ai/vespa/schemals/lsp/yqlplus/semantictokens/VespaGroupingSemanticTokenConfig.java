@@ -84,7 +84,6 @@ class VespaGroupingSemanticToken {
         put(AT.class, SemanticTokenTypes.Keyword);
 
         put(ADD.class, simpleExpressions);
-        put(AND.class, simpleExpressions);
         put(ALIAS.class, simpleExpressions); // TODO: Verify that this is a function
         put(ATTRIBUTE.class, simpleExpressions);
         put(AVG.class, simpleExpressions);
@@ -101,7 +100,6 @@ class VespaGroupingSemanticToken {
         put(MUL.class, simpleExpressions);
         put(NEG.class, simpleExpressions);
         put(NORMALIZESUBJECT.class, simpleExpressions);
-        put(NOT.class, simpleExpressions);
         put(NOW.class, simpleExpressions);
         put(OR.class, simpleExpressions);
         put(PREDEFINED.class, simpleExpressions);
