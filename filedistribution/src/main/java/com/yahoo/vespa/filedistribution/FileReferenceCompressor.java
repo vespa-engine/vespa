@@ -71,20 +71,27 @@ public class FileReferenceCompressor {
         ArchiveEntry entry;
         while ((entry = archiveInputStream.getNextEntry()) != null) {
             File outFile = new File(outputFile, entry.getName());
+            File canonicalOutFile = outFile.getCanonicalFile();
+            File canonicalOutputDir = outputFile.getCanonicalFile();
+
+            if (!canonicalOutFile.toPath().startsWith(canonicalOutputDir.toPath())) {
+                throw new IOException("Invalid archive entry: " + entry.getName());
+            }
+
             if (entry.isDirectory()) {
-                if (!(outFile.exists() && outFile.isDirectory())) {
-                    log.log(Level.FINE, () -> "Creating dir: " + outFile.getAbsolutePath());
-                    if (!outFile.mkdirs()) {
+                if (!(canonicalOutFile.exists() && canonicalOutFile.isDirectory())) {
+                    log.log(Level.FINE, () -> "Creating dir: " + canonicalOutFile.getAbsolutePath());
+                    if (!canonicalOutFile.mkdirs()) {
                         log.log(Level.WARNING, "Could not create dir " + entry.getName());
                     }
                 }
             } else {
                 // Create parent dir if necessary
-                File parent = new File(outFile.getParent());
+                File parent = new File(canonicalOutFile.getParent());
                 if (!parent.exists() && !parent.mkdirs()) {
                     log.log(Level.WARNING, "Could not create dir " + parent.getAbsolutePath());
                 }
-                try (FileOutputStream fos = new FileOutputStream(outFile)) {
+                try (FileOutputStream fos = new FileOutputStream(canonicalOutFile)) {
                     archiveInputStream.transferTo(fos);
                 }
             }

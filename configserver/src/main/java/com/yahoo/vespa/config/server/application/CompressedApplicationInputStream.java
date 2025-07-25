@@ -91,6 +91,9 @@ public class CompressedApplicationInputStream implements AutoCloseable {
                 tmpStream.close();
                 log.log(Level.FINE, "Creating output file: " + file.path());
                 Path dstFile = dir.resolve(file.path().toString()).normalize();
+                if (!dstFile.startsWith(dir.normalize())) {
+                    throw new IOException("Entry attempts to write outside the target directory: " + dstFile);
+                }
                 Files.createDirectories(dstFile.getParent());
                 Files.move(tmpFile, dstFile);
                 tmpFile = createTempFile(dir);

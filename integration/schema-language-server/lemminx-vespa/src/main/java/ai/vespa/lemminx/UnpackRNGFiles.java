@@ -42,7 +42,12 @@ public class UnpackRNGFiles {
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
                 if (!entry.isDirectory() && entry.getName().endsWith(".rng") && entry.getName().startsWith("resources/schema")) {
-                    Path writePath = serverPath.resolve(entry.getName());
+                    Path writePath = serverPath.resolve(entry.getName()).normalize();
+                    Path targetDir = serverPath.resolve("resources").resolve("schema").normalize();
+                    if (!writePath.startsWith(targetDir)) {
+                        // Potential Zip Slip attack, skip this entry
+                        continue;
+                    }
                     try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(entry.getName())) {
                         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
                         String content = reader.lines().collect(Collectors.joining(System.lineSeparator()));

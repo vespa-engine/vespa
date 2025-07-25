@@ -31,7 +31,13 @@ public class ConfigDefinitionDir {
         for (Bundle.DefEntry def : bundle.getDefEntries()) {
             checkUserDefConflict(bundle, def, bundlesAdded);
             String defFilename = def.defNamespace + "." + def.defName + ".def";
-            OutputStream out = new FileOutputStream(new File(defDir, defFilename));
+            File outFile = new File(defDir, defFilename);
+            // Zip Slip fix: ensure output file path is within defDir
+            if (!outFile.toPath().normalize().startsWith(defDir.toPath().normalize())) {
+                throw new IllegalArgumentException("Refusing to write config definition outside of " + defDir.getAbsolutePath() +
+                        " (got " + outFile.getAbsolutePath() + ")");
+            }
+            OutputStream out = new FileOutputStream(outFile);
             out.write(def.contents.getBytes());
             out.close();
         }
