@@ -24,7 +24,6 @@ PARSER_BEGIN(GroupingParser)
 
 package com.yahoo.search.grouping.request.parser;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedList;
 import com.yahoo.javacc.UnicodeUtilities;
@@ -132,7 +131,6 @@ TOKEN :
     <MOD: "mod"> |
     <MUL: "mul"> |
     <NEG: "neg"> |
-    <NOT: "not"> |
     <NORMALIZESUBJECT: "normalizesubject"> |
     <NOW: "now"> |
     <OR: "or"> |
@@ -329,10 +327,7 @@ FilterExpression filterExp(GroupingOperation grp) :
     FilterExpression exp;
 }
 {
-    ( (exp = regexPredicate(grp)) |
-      (exp = notPredicate(grp))   |
-      (exp = orPredicate(grp))    |
-      (exp = andPredicate(grp)))
+    exp = regexPredicate(grp)
     { return exp; }
 }
 
@@ -960,35 +955,6 @@ RegexPredicate regexPredicate(GroupingOperation grp) :
     { return new RegexPredicate(pattern, exp); }
 }
 
-NotPredicate notPredicate(GroupingOperation grp) :
-{
-    FilterExpression exp;
-}
-{
-    <NOT> lbrace() exp = filterExp(grp) rbrace()
-    { return new NotPredicate(exp); }
-}
-
-OrPredicate orPredicate(GroupingOperation grp) :
-{
-    FilterExpression exp;
-    List<FilterExpression> args = new ArrayList<FilterExpression>();
-}
-{
-    <OR> lbrace() ( exp = filterExp(grp) { args.add(exp); } ( comma() exp = filterExp(grp) { args.add(exp); } )+ ) rbrace()
-    { return new OrPredicate(args); }
-}
-
-AndPredicate andPredicate(GroupingOperation grp) :
-{
-    FilterExpression exp;
-    List<FilterExpression> args = new ArrayList<FilterExpression>();
-}
-{
-    <AND> lbrace() ( exp = filterExp(grp) { args.add(exp); } ( comma() exp = filterExp(grp) { args.add(exp); } )+ ) rbrace()
-    { return new AndPredicate(args); }
-}
-
 void bucket(GroupingOperation grp, BucketResolver resolver) :
 {
     ConstantValue from, to = null;
@@ -1102,7 +1068,6 @@ String identifier() :
         <MOD> |
         <MUL> |
         <NEG> |
-        <NOT> |
         <NORMALIZESUBJECT> |
         <NOW> |
         <OR> |

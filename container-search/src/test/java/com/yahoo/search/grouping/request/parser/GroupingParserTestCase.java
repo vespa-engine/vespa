@@ -107,7 +107,6 @@ public class GroupingParserTestCase {
                 "mod",
                 "mul",
                 "neg",
-                "not",
                 "normalizesubject",
                 "now",
                 "or",
@@ -638,12 +637,6 @@ public class GroupingParserTestCase {
                 () -> assertParse(
                         "all(group($myalias=foo) filter(regex(\".*mysubstring.*\", $myalias)) each(output(count())))",
                         "all(group(foo) filter(regex(\".*mysubstring.*\", foo)) each(output(count())))"));
-
-        assertAll("filter with predicates",
-                () -> assertParse("all(group(foo) filter(not(regex(\"mybar\", foo))) each(output(count())))"),
-                () -> assertParse("all(group(foo) filter(or(regex(\"mybar\", foo), regex(\"mybaz\", foo), regex(\"myfoo\", boz))) each(output(count())))"),
-                () -> assertParse("all(group(foo) filter(and(regex(\"mybar\", foo), regex(\"mybaz\", foo), regex(\"myfoo\", boz))) each(output(count())))"),
-                () -> assertParse("all(group(foo) filter(and(or(regex(\"mybar\", foo), not(regex(\"mybaz\", foo))), regex(\"myfoo\", boz))) each(output(count())))"));
     }
 
     // --------------------------------------------------------------------------------

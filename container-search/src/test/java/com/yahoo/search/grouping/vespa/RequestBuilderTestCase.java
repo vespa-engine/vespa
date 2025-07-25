@@ -17,14 +17,11 @@ import com.yahoo.searchlib.aggregation.GroupingLevel;
 import com.yahoo.searchlib.aggregation.HitsAggregationResult;
 import com.yahoo.searchlib.aggregation.SumAggregationResult;
 import com.yahoo.searchlib.expression.AddFunctionNode;
-import com.yahoo.searchlib.expression.AndPredicateNode;
 import com.yahoo.searchlib.expression.AttributeMapLookupNode;
 import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
 import com.yahoo.searchlib.expression.FilterExpressionNode;
-import com.yahoo.searchlib.expression.NotPredicateNode;
-import com.yahoo.searchlib.expression.OrPredicateNode;
 import com.yahoo.searchlib.expression.RegexPredicateNode;
 import com.yahoo.searchlib.expression.StrCatFunctionNode;
 import com.yahoo.searchlib.expression.StringResultNode;
@@ -36,7 +33,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -835,18 +831,6 @@ public class RequestBuilderTestCase {
                 "[[{ Attribute, filter = [Regex [Attribute]] }, { Attribute, result = [Count] }]]");
     }
 
-    @Test
-    void require_that_filter_predicate_layout_is_correct() {
-        assertLayout("all(group(a) filter(not(regex(\".*suffix$\", a))) each(output(count())))",
-                "[[{ Attribute, filter = [Not [Regex [Attribute]]], result = [Count] }]]");
-        assertLayout("all(group(a) filter(or(regex(\".*suffix$\", a),regex(\".*suffix$\", b))) each(output(count())))",
-                "[[{ Attribute, filter = [Or [Regex [Attribute], Regex [Attribute]]], result = [Count] }]]");
-        assertLayout("all(group(a) filter(and(regex(\".*suffix$\", a),regex(\".*suffix$\", b))) each(output(count())))",
-                "[[{ Attribute, filter = [And [Regex [Attribute], Regex [Attribute]]], result = [Count] }]]");
-        assertLayout("all(group(a) filter(and(or(regex(\".*suffix$\", a),regex(\".*suffix$\", b)), not(regex(\".*suffix$\", c)))) each(output(count())))",
-                "[[{ Attribute, filter = [And [Or [Regex [Attribute], Regex [Attribute]], Not [Regex [Attribute]]]], result = [Count] }]]");
-    }
-
     private static void assertTotalGroupsAndSummaries(long expected, String query) {
         assertTotalGroupsAndSummaries(expected, Long.MAX_VALUE, query);
     }
@@ -1104,15 +1088,6 @@ public class RequestBuilderTestCase {
             if (filterExp instanceof RegexPredicateNode rpn) {
                 var simpleName = rpn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
                 return "Regex [%s]".formatted(simpleName);
-            } else if (filterExp instanceof NotPredicateNode npn) {
-                var simpleName = npn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
-                return "Not [%s]".formatted(simpleName);
-            } else if (filterExp instanceof OrPredicateNode opn) {
-                var simpleName = opn.getArgs().stream().map(LayoutWriter::toSimpleName).collect(Collectors.joining(", "));
-                return "Or [%s]".formatted(simpleName);
-            } else if (filterExp instanceof AndPredicateNode apn) {
-                var simpleName = apn.getArgs().stream().map(LayoutWriter::toSimpleName).collect(Collectors.joining(", "));
-                return "And [%s]".formatted(simpleName);
             }
             return filterExp.getClass().getSimpleName();
         }
