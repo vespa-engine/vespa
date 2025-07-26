@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.collections.LazyMap;
+import com.yahoo.document.DocumentId;
 import com.yahoo.document.FieldPath;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Language;
@@ -11,6 +12,7 @@ import com.yahoo.language.detect.Detection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @author Simon Thoresen Hult
@@ -22,6 +24,9 @@ public class ExecutionContext {
     private FieldValue currentValue;
     private Language language;
     private final Map<Object, Object> cache = LazyMap.newHashMap();
+    // Document id is practical for logging and informative error messages
+    private DocumentId documentId;
+    private boolean isReindexingOperation;
 
     public ExecutionContext() {
         this(null);
@@ -110,10 +115,19 @@ public class ExecutionContext {
         return detected;
     }
 
+    public boolean isReindexingOperation() { return isReindexingOperation; }
+    public ExecutionContext setReindexingOperation() { isReindexingOperation = true; return this; }
+
+    public Optional<DocumentId> getDocumentId() { return Optional.ofNullable(documentId); }
+    public ExecutionContext setDocumentId(DocumentId id) { documentId = Objects.requireNonNull(id); return this; }
+
     /** Clears all state in this except the cache. */
     public ExecutionContext clear() {
+        // Why is language not cleared?
         variables.clear();
         currentValue = null;
+        documentId = null;
+        isReindexingOperation = false;
         return this;
     }
 

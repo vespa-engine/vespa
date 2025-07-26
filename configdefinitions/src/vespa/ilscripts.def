@@ -7,6 +7,12 @@ maxtermoccurrences int default=10000
 maxtokenlength int default=1000
 fieldmatchmaxlength int default=1000000
 
+# Note on replacement character thresholds: both must be exceeded to skip annotation processing. See LinguisticsAnnotator for details.
+# The maximum allowed ratio of replacement characters before skipping annotation processing
+maxReplacementCharactersRatio double default=0.3
+# The maximum number of replacement characters to allow before skipping annotation processing
+maxReplacementCharacters int default=10000
+
 ilscript[].doctype    string
 ilscript[].docfield[] string
 ilscript[].content[]  string
