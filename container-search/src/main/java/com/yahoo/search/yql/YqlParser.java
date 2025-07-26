@@ -1638,7 +1638,7 @@ public class YqlParser implements Parser {
         if (userQuery != null && userQuery.properties().getBoolean("query.type.isYqlDefault")) {
             QueryType queryType = buildQueryType(ast);
             if (queryType.getTokenization() == QueryType.Tokenization.linguistics) {
-                // linguistics == all processing is done by one linguistics invocation,
+                // tokenization==linguistics --> all processing is done by one linguistics invocation,
                 // so disable further processing of this word
                 wordItem.setStemmed(true);
                 wordItem.setNormalizable(false);
