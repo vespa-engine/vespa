@@ -531,7 +531,7 @@ replay_throttling_policy.window_size_increment int default=20
 ## A positive number specifies max memory usage in bytes.
 ## A negative number specifies memory usage as a percentage of total memory.
 ## A value of zero implies no enforced memory limit.
-replay_throttling_policy.memory_usage_soft_limit_bytes long default=0
+replay_throttling_policy.memory_usage_soft_limit_bytes long default=-3
 
 ## Everything below are deprecated and ignored. Will go away at any time.
 
