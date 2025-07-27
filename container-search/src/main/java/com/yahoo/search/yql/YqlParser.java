@@ -74,9 +74,11 @@ import com.yahoo.prelude.query.WeightedSetItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.processing.IllegalInputException;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.request.GroupingOperation;
+import com.yahoo.search.query.Model;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.QueryType;
 import com.yahoo.search.query.Sorting;
@@ -207,6 +209,11 @@ public class YqlParser implements Parser {
     public static final String MAX_EDIT_DISTANCE = "maxEditDistance";
     public static final String PREFIX_LENGTH = "prefixLength";
 
+    private static final CompoundName modelType = CompoundName.fromComponents(Model.MODEL, Model.TYPE);
+    private static final CompoundName modelTypeComposite = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.COMPOSITE);
+    private static final CompoundName modelTypeTokenization = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.TOKENIZATION);
+    private static final CompoundName modelTypeSyntax = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.SYNTAX);
+    private static final CompoundName modelTypeIsYqlDefault = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.IS_YQL_DEFAULT);
 
     private final IndexFacts indexFacts;
     private final List<ConnectedItem> connectedItems = new ArrayList<>();
@@ -870,11 +877,11 @@ public class YqlParser implements Parser {
     private QueryType buildQueryType(OperatorNode<ExpressionOperator> ast) {
         var queryType = QueryType.from(Query.Type.WEAKAND);
         if (userQuery != null) {
-            queryType = QueryType.from(userQuery.properties().getString("query.type"));
-            queryType = queryType.setComposite(userQuery.properties().getString("query.type.composite"));
-            queryType = queryType.setTokenization(userQuery.properties().getString("query.type.tokenization"));
-            queryType = queryType.setSyntax(userQuery.properties().getString("query.type.syntax"));
-            queryType = queryType.setYqlDefault(userQuery.properties().getBoolean("query.type.isYqlDefault"));
+            queryType = QueryType.from(userQuery.properties().getString(modelType));
+            queryType = queryType.setComposite(userQuery.properties().getString(modelTypeComposite));
+            queryType = queryType.setTokenization(userQuery.properties().getString(modelTypeTokenization));
+            queryType = queryType.setSyntax(userQuery.properties().getString(modelTypeSyntax));
+            queryType = queryType.setYqlDefault(userQuery.properties().getBoolean(modelTypeIsYqlDefault));
         }
         if ( ! queryType.isYqlDefault())
             queryType = QueryType.from(Query.Type.WEAKAND);
@@ -1635,7 +1642,7 @@ public class YqlParser implements Parser {
 
     private WordItem instantiateWordItem(String word, String field, boolean fromQuery, OperatorNode<ExpressionOperator> ast) {
         var wordItem = new WordItem(word, field, fromQuery);
-        if (userQuery != null && userQuery.properties().getBoolean("query.type.isYqlDefault")) {
+        if (userQuery != null && userQuery.properties().getBoolean(modelTypeIsYqlDefault)) {
             QueryType queryType = buildQueryType(ast);
             if (queryType.getTokenization() == QueryType.Tokenization.linguistics) {
                 // tokenization==linguistics --> all processing is done by one linguistics invocation,
