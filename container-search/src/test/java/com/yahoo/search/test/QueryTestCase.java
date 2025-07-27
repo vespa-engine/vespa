@@ -1270,8 +1270,8 @@ public class QueryTestCase {
     @Test
     void testMainQueryTypeDefaults() {
         var profile = new QueryProfile("test");
-        profile.set("query.type", "any", null);
-        profile.set("query.type.isYqlDefault", "true", null);
+        profile.set("model.type", "any", null);
+        profile.set("model.type.isYqlDefault", "true", null);
         var query = new Query(httpEncode("?yql=select * from sources * where userInput(@q)" +
                                          "&q=a b"),
                               profile.compile(null));
@@ -1280,10 +1280,18 @@ public class QueryTestCase {
     }
 
     @Test
+    void testMainQueryTypeDefaultsWithAlias() {
+        var query = new Query(httpEncode("?yql=select * from sources * where userInput(@q)" +
+                                         "&q=a b&type=any&model.type.isYqlDefault=true"), null);
+        Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
+        assertEquals("OR default:a default:b", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
     void testQueryTypeDefaultsApplyToContainsNotJustUserQuery() {
         var profile = new QueryProfile("test");
-        profile.set("query.type", "linguistics", null);
-        profile.set("query.type.isYqlDefault", "true", null);
+        profile.set("model.type", "linguistics", null);
+        profile.set("model.type.isYqlDefault", "true", null);
         var query = new Query(httpEncode("?yql=select * from sources * where default contains 'a' and default contains 'b'"),
                               profile.compile(null));
         Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
@@ -1300,8 +1308,8 @@ public class QueryTestCase {
     @Test
     void testDetailQueryTypeDefaults() {
         var profile = new QueryProfile("test");
-        profile.set("query.type.composite", "or", null);
-        profile.set("query.type.isYqlDefault", "true", null);
+        profile.set("model.type.composite", "or", null);
+        profile.set("model.type.isYqlDefault", "true", null);
         var query = new Query(httpEncode("?yql=select * from sources * where userInput(@q)" +
                                          "&q=a b"),
                               profile.compile(null));
@@ -1340,7 +1348,7 @@ public class QueryTestCase {
 
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfile profile = new QueryProfile("default");
-        profile.set("query.type", "all", registry);
+        profile.set("model.type", "all", registry);
         registry.register(profile);
         CompiledQueryProfileRegistry cRegistry = registry.compile();
         Query q = new Query(httpEncode("?query=a b -c&model.type=linguistics"), cRegistry.findQueryProfile("default"));
