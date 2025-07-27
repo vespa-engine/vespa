@@ -1340,7 +1340,7 @@ public class QueryTestCase {
 
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfile profile = new QueryProfile("default");
-        profile.set(" model.type", "all", registry);
+        profile.set("model.type", "all", registry);
         registry.register(profile);
         CompiledQueryProfileRegistry cRegistry = registry.compile();
         Query q = new Query(httpEncode("?query=a b -c&model.type=linguistics"), cRegistry.findQueryProfile("default"));
