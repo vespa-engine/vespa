@@ -1280,6 +1280,14 @@ public class QueryTestCase {
     }
 
     @Test
+    void testMainQueryTypeDefaultsWithAlias() {
+        var query = new Query(httpEncode("?yql=select * from sources * where userInput(@q)" +
+                                         "&q=a b&type=any&model.type.isYqlDefault=true"), null);
+        Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
+        assertEquals("OR default:a default:b", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
     void testQueryTypeDefaultsApplyToContainsNotJustUserQuery() {
         var profile = new QueryProfile("test");
         profile.set("model.type", "linguistics", null);

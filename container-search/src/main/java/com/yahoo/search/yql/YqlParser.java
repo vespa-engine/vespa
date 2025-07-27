@@ -210,6 +210,7 @@ public class YqlParser implements Parser {
     public static final String PREFIX_LENGTH = "prefixLength";
 
     private static final CompoundName modelType = CompoundName.fromComponents(Model.MODEL, Model.TYPE);
+    private static final CompoundName modelTypeAlias = CompoundName.from("type");
     private static final CompoundName modelTypeComposite = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.COMPOSITE);
     private static final CompoundName modelTypeTokenization = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.TOKENIZATION);
     private static final CompoundName modelTypeSyntax = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.SYNTAX);
@@ -877,7 +878,7 @@ public class YqlParser implements Parser {
     private QueryType buildQueryType(OperatorNode<ExpressionOperator> ast) {
         var queryType = QueryType.from(Query.Type.WEAKAND);
         if (userQuery != null) {
-            queryType = QueryType.from(userQuery.properties().getString(modelType));
+            queryType = QueryType.from(userQuery.properties().getString(modelType, userQuery.properties().getString(modelTypeAlias)));
             queryType = queryType.setComposite(userQuery.properties().getString(modelTypeComposite));
             queryType = queryType.setTokenization(userQuery.properties().getString(modelTypeTokenization));
             queryType = queryType.setSyntax(userQuery.properties().getString(modelTypeSyntax));
