@@ -66,6 +66,18 @@ public class UserInputTestCase {
     }
 
     @Test
+    public void testNearDistanceAnnotation() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql", "select * from sources * where ({grammar.syntax:'none',grammar.tokenization:'linguistics',grammar.composite:'near',distance:3}userInput('a b'))");
+        Query near = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where default contains ({distance: 3}near(\"a\", \"b\"))", near.yqlRepresentation());
+
+        builder.setParameter("yql", "select * from sources * where ({grammar.syntax:'none',grammar.tokenization:'linguistics',grammar.composite:'oNear',distance:4}userInput('a b'))");
+        Query oNear = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where default contains ({distance: 4}onear(\"a\", \"b\"))", oNear.yqlRepresentation());
+    }
+
+    @Test
     void testSimpleUserInput() {
         {
             URIBuilder builder = searchUri();
