@@ -862,6 +862,13 @@ public class YqlParser implements Parser {
                     weakAndItem.setN(targetNumHits);
                 }
             }
+            if ((queryType.getComposite() == QueryType.Composite.near || queryType.getComposite() == QueryType.Composite.oNear)
+                && item instanceof NearItem nearItem) {
+                Integer distance = getAnnotation(ast, DISTANCE, Integer.class, null, "'distance' for near/oNear");
+                if (distance != null) {
+                    nearItem.setDistance(distance);
+                }
+            }
         }
 
         return item;
