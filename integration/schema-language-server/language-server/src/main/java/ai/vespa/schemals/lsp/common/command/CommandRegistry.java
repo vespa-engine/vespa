@@ -133,6 +133,12 @@ public class CommandRegistry {
         },
         GET_DEFINED_SCHEMAS {
             /*
+             * Get a list of schema names known to the language server ( i.e. in the workspace ).
+             *
+             * Parameters:
+             *
+             * Return value:
+             * list[string] -- the schema names.
              */
             public String title() { return "Get defined schemas"; }
             public SchemaCommand construct() { return new GetDefinedSchemas(); }
