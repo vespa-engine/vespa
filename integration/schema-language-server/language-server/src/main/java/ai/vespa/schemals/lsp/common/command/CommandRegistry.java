@@ -14,6 +14,7 @@ import ai.vespa.schemals.lsp.common.command.commandtypes.DocumentParse;
 import ai.vespa.schemals.lsp.common.command.commandtypes.RunVespaQuery;
 import ai.vespa.schemals.lsp.common.command.commandtypes.FindDocument;
 import ai.vespa.schemals.lsp.common.command.commandtypes.GetDefinedSchemas;
+import ai.vespa.schemals.lsp.common.command.commandtypes.GetSchemaFields;
 import ai.vespa.schemals.lsp.common.command.commandtypes.SchemaCommand;
 import ai.vespa.schemals.lsp.common.command.commandtypes.SetupWorkspace;
 import ai.vespa.schemals.lsp.common.command.commandtypes.HasSetupWorkspace;
@@ -138,10 +139,23 @@ public class CommandRegistry {
              * Parameters:
              *
              * Return value:
-             * list[string] -- the schema names.
+             * List<String> -- the schema names.
              */
             public String title() { return "Get defined schemas"; }
             public SchemaCommand construct() { return new GetDefinedSchemas(); }
+        },
+        GET_SCHEMA_FIELDS {
+            /*
+             * Get a list of the fields belonging to a schema. The schema has to exist.
+             *
+             * Parameters:
+             * schemaName: String -- The name of the schema to query for fields
+             *
+             * Return value:
+             * List<String> -- the field names.
+             */
+            public String title() { return "Get schema fields"; }
+            public SchemaCommand construct() { return new GetSchemaFields(); }
         }
     }
 

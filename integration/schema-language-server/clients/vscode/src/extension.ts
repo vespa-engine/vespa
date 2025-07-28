@@ -153,6 +153,14 @@ export function activate(context: vscode.ExtensionContext) {
         }
     })));
 
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.stop", async () => {
+        if (schemaClient === null) {
+            return;
+        }
+
+        await schemaClient.stop();
+    }));
+
 
     context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.schema.findSchemaDefinition", async (fileName) => {
         if (schemaClient === null) { return null; }
@@ -214,6 +222,19 @@ export function activate(context: vscode.ExtensionContext) {
             const result = await schemaClient.sendRequest("workspace/executeCommand", {
                 command: "GET_DEFINED_SCHEMAS",
                 arguments: []
+            });
+            return result;
+        } catch (err) {
+            logger.error("Error when sending command: " + err);
+        }
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.schema.getSchemaFields", async (schemaName) => {
+        if (schemaClient === null) { return false; }
+        try {
+            const result = await schemaClient.sendRequest("workspace/executeCommand", {
+                command: "GET_SCHEMA_FIELDS",
+                arguments: [schemaName]
             });
             return result;
         } catch (err) {
