@@ -169,7 +169,13 @@ public class SchemaValidators {
 
     private static void writeContentsToFile(File outDir, String outFile, InputStream inputStream) throws IOException {
         String contents = IOUtils.readAll(new InputStreamReader(inputStream));
-        File out = new File(outDir, outFile);
+
+        // Validate and sanitize the output path
+        File out = new File(outDir, outFile).getCanonicalFile();
+        if (!out.getPath().startsWith(outDir.getCanonicalPath() + File.separator)) {
+            throw new IOException("Invalid file path: " + outFile);
+        }
+
         IOUtils.writeFile(out, contents, false);
     }
 

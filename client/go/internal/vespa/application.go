@@ -254,7 +254,11 @@ func (ap *ApplicationPackage) Unzip(test bool) (string, error) {
 	}
 	defer f.Close()
 	for _, f := range f.File {
+		// Normalize the file path and ensure it stays within the temp directory
 		dst := filepath.Join(tmp, f.Name)
+		if !strings.HasPrefix(filepath.Clean(dst), filepath.Clean(tmp)+string(os.PathSeparator)) {
+			return "", fmt.Errorf("illegal file path in archive: %s", f.Name)
+		}
 		if f.FileInfo().IsDir() {
 			if err := os.Mkdir(dst, f.FileInfo().Mode()); err != nil {
 				return "", err
