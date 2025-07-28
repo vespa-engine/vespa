@@ -20,11 +20,11 @@ OrPredicateNode::OrPredicateNode(const OrPredicateNode&) = default;
 OrPredicateNode& OrPredicateNode::operator=(const OrPredicateNode&) = default;
 
 bool OrPredicateNode::allow(const DocId docId, const HitRank rank) {
-    return std::ranges::any_of(args(), [docId, rank](auto arg){ return arg->allow(docId, rank); });
+    return std::ranges::any_of(args(), [docId, rank](auto& arg){ return arg->allow(docId, rank); });
 }
 
 bool OrPredicateNode::allow(const document::Document& doc, const HitRank rank) {
-    return std::ranges::any_of(args(), [&doc, rank](auto arg){ return arg->allow(doc, rank); });
+    return std::ranges::any_of(args(), [&doc, rank](auto& arg){ return arg->allow(doc, rank); });
 }
 
 } // namespace search::expression

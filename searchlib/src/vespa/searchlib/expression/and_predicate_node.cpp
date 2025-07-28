@@ -19,10 +19,10 @@ AndPredicateNode::AndPredicateNode(const AndPredicateNode&) = default;
 AndPredicateNode& AndPredicateNode::operator=(const AndPredicateNode&) = default;
 
 bool AndPredicateNode::allow(const DocId docId, const HitRank rank) {
-    return std::ranges::all_of(args(), [docId, rank](auto arg){ return arg->allow(docId, rank); });
+    return std::ranges::all_of(args(), [docId, rank](auto& arg){ return arg->allow(docId, rank); });
 }
 
 bool AndPredicateNode::allow(const document::Document& doc, const HitRank rank) {
-    return std::ranges::all_of(args(), [&doc, rank](auto arg){ return arg->allow(doc, rank); });
+    return std::ranges::all_of(args(), [&doc, rank](auto& arg){ return arg->allow(doc, rank); });
 }
 } // namespace search::expression
