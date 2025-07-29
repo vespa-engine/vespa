@@ -49,6 +49,8 @@ class HitRescorer {
     }
 
     private static double evalScorer(WrappedHit wrapped, Evaluator scorer, List<MatchFeatureInput> fromMF) {
+        // Add before match-features so that the value can be overriden.
+        scorer.bind("currentRelevanceScore", Tensor.from(wrapped.getScore()));
         for (var argSpec : fromMF) {
             var asTensor = wrapped.getTensor(argSpec.matchFeatureName());
             if (asTensor != null) {
@@ -58,8 +60,6 @@ class HitRescorer {
                 return 0.0;
             }
         }
-        var relevance = Tensor.from(wrapped.getScore());
-        scorer.bind("currentRelevanceScore", relevance);
         return scorer.evaluateScore();
     }
 }
