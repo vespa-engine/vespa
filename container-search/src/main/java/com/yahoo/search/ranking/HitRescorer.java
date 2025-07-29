@@ -58,6 +58,8 @@ class HitRescorer {
                 return 0.0;
             }
         }
+        var relevance = Tensor.from(wrapped.getScore());
+        scorer.bind("currentRelevanceScore", relevance);
         return scorer.evaluateScore();
     }
 }
