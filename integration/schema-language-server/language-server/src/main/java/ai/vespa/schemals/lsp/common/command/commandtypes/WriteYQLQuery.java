@@ -18,7 +18,8 @@ import ai.vespa.schemals.context.EventExecuteCommandContext;
 import ai.vespa.schemals.lsp.common.command.CommandUtils;
 
 public class WriteYQLQuery implements SchemaCommand {
-    private String fileName;
+
+    private String filePath;
     private String query;
 
     @Override
@@ -32,7 +33,7 @@ public class WriteYQLQuery implements SchemaCommand {
         Optional<String> query = CommandUtils.getStringArgument(arguments.get(1));
         if (fileName.isEmpty() || query.isEmpty()) return false;
 
-        this.fileName = fileName.get();
+        this.filePath = fileName.get();
         this.query = query.get();
         return true;
     }
@@ -41,7 +42,7 @@ public class WriteYQLQuery implements SchemaCommand {
     public Object execute(EventExecuteCommandContext context) {
         if (context.scheduler.getWorkspaceURI() == null) return null;
 
-        URI fileURI = URI.create(context.scheduler.getWorkspaceURI()).resolve(fileName);
+        URI fileURI = Paths.get(filePath).toUri();
         Range insertRange = new Range(new Position(0, 0), new Position(0, 0));
         WorkspaceEdit edit = new WorkspaceEditBuilder()
             .addResourceOperation(new CreateFile(fileURI.toString(), new CreateFileOptions(true, false)))

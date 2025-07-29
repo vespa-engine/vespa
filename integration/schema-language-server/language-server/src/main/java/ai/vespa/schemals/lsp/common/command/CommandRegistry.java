@@ -164,7 +164,7 @@ public class CommandRegistry {
              * Write an YQL query to a file. Overwrite if a query exists in the same file.
              *
              * Parameters:
-             * fileName: String -- The name of the file to write to.
+             * filePath: String -- The path of the file to write to.
              * query: String -- The yql query to write
              *
              * Return value:

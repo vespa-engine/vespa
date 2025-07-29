@@ -32,7 +32,6 @@ public class DocumentOpen implements SchemaCommand {
             uriToOpen = URI.create(context.scheduler.getWorkspaceURI()).resolve(fileURI);
         }
         context.logger.info("Show document: " + uriToOpen.toString());
-        // No return value, as the execution **is** issuing an action on the client side.
         context.messageHandler.showDocument(uriToOpen.toString()).join();
         return null;
     }

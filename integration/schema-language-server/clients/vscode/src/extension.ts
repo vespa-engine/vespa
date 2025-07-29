@@ -246,17 +246,8 @@ export function activate(context: vscode.ExtensionContext) {
         if (schemaClient === null) { return false; }
         try {
             schemaClient.sendRequest("workspace/executeCommand", {
-                command: "COMMAND_LIST",
-                arguments: [
-                    {
-                        "command": "WRITE_YQL_QUERY",
-                        "arguments": [fileName, query]
-                    },
-                    {
-                        "command": "DOCUMENT_OPEN",
-                        "arguments": [fileName]
-                    }
-                ]
+                command: "WRITE_YQL_QUERY",
+                arguments: [fileName, query]
             });
         } catch (err) {
             logger.error("Error when sending command: " + err);
