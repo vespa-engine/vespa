@@ -17,6 +17,7 @@ import ai.vespa.schemals.lsp.common.command.commandtypes.GetDefinedSchemas;
 import ai.vespa.schemals.lsp.common.command.commandtypes.GetSchemaFields;
 import ai.vespa.schemals.lsp.common.command.commandtypes.SchemaCommand;
 import ai.vespa.schemals.lsp.common.command.commandtypes.SetupWorkspace;
+import ai.vespa.schemals.lsp.common.command.commandtypes.WriteYQLQuery;
 import ai.vespa.schemals.lsp.common.command.commandtypes.HasSetupWorkspace;
 
 /**
@@ -33,7 +34,8 @@ public class CommandRegistry {
              * Sends a window/showDocument request to the client.
              *
              * Parameters:
-             * fileURI: String -- path to document 
+             * fileURI: String -- uri or relative path to document. If fileURI is not an URI
+             *                    it is interpreted as a relative path from workspace root.
              *
              * Return value:
              * null
@@ -156,6 +158,20 @@ public class CommandRegistry {
              */
             public String title() { return "Get schema fields"; }
             public SchemaCommand construct() { return new GetSchemaFields(); }
+        },
+        WRITE_YQL_QUERY {
+            /*
+             * Write an YQL query to a file. Overwrite if a query exists in the same file.
+             *
+             * Parameters:
+             * fileName: String -- The name of the file to write to.
+             * query: String -- The yql query to write
+             *
+             * Return value:
+             * null
+             */
+            public String title() { return "Write YQL query"; }
+            public SchemaCommand construct() { return new WriteYQLQuery(); }
         }
     }
 

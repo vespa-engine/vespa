@@ -242,6 +242,27 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }));
 
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.schema.writeYQLQuery", (fileName, query) => {
+        if (schemaClient === null) { return false; }
+        try {
+            schemaClient.sendRequest("workspace/executeCommand", {
+                command: "COMMAND_LIST",
+                arguments: [
+                    {
+                        "command": "WRITE_YQL_QUERY",
+                        "arguments": [fileName, query]
+                    },
+                    {
+                        "command": "DOCUMENT_OPEN",
+                        "arguments": [fileName]
+                    }
+                ]
+            });
+        } catch (err) {
+            logger.error("Error when sending command: " + err);
+        }
+    }));
+
     logger.info("Vespa language client activated");
 }
 

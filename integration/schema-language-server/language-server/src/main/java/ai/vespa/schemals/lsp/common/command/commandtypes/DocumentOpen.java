@@ -1,5 +1,7 @@
 package ai.vespa.schemals.lsp.common.command.commandtypes;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,8 +20,20 @@ public class DocumentOpen implements SchemaCommand {
     public Object execute(EventExecuteCommandContext context) {
         if (fileURI == null)
             return null;
+
+        URI uriToOpen;
+        try {
+            uriToOpen = new URI(fileURI);
+            if (uriToOpen.getScheme() == null)
+                throw new URISyntaxException(fileURI, "Expected a scheme.");
+        } catch(URISyntaxException ex) {
+            if (context.scheduler.getWorkspaceURI() == null) return null;
+
+            uriToOpen = URI.create(context.scheduler.getWorkspaceURI()).resolve(fileURI);
+        }
+        context.logger.info("Show document: " + uriToOpen.toString());
         // No return value, as the execution **is** issuing an action on the client side.
-        context.messageHandler.showDocument(fileURI).join();
+        context.messageHandler.showDocument(uriToOpen.toString()).join();
         return null;
     }
 
@@ -30,7 +44,8 @@ public class DocumentOpen implements SchemaCommand {
         Optional<String> argument = CommandUtils.getStringArgument(arguments.get(0));
         if (argument.isEmpty()) return false;
 
-        fileURI = argument.get();
+        this.fileURI = argument.get();
+
         return true;
     }
 
