@@ -1458,7 +1458,7 @@ public:
             std::make_unique<DistanceCalculator>(this->as_dense_tensor(),
                                                  create_query_tensor(vec_2d(17, 42))),
             3, approximate, 5, 100100.25,
-            global_filter_lower_limit, 1.0, 0.0, 0.01, 0.0, target_hits_max_adjustment_factor, vespalib::Doom::never());
+            global_filter_lower_limit, 1.0, 0.0, 0.3, 0.0, target_hits_max_adjustment_factor, vespalib::Doom::never());
         EXPECT_EQ(11u, bp->getState().estimate().estHits);
         EXPECT_EQ(100100.25 * 100100.25, bp->get_distance_threshold());
         return bp;
