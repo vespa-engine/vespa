@@ -48,6 +48,62 @@ INJECT GroupingParserLexer:
     }
 }
 
+/**
+ * By allowing tokens to store exceptions we create a more fault tolerant parser,
+ * preventing premature exit from parsing even though the user has errors in the document.
+ *
+ * ParseExceptions are syntactical errors, so storing them is mainly to provide a better indication on
+ * where the error occurred (rather than "there is some error in this document").
+ *
+ * IllegalArgumentExceptions come from the Parsed* classes in config-model, these are more semantic errors
+ * coming from invalid constructs that can be caught early during parsing. They do however not cover all errors that
+ * can occur in schemas when deploying an application.
+ */
+INJECT Token :
+{
+
+    public class ParseExceptionSource {
+        public ParseException parseException;
+        public int beginOffset;
+        public int endOffset;
+
+        ParseExceptionSource(ParseException e, int beginOffset, int endOffset) {
+            parseException = e;
+            this.beginOffset = beginOffset;
+            this.endOffset = endOffset;
+        }
+    }
+
+    private ParseExceptionSource parseExceptionSource;
+    public ParseExceptionSource getParseExceptionSource() { return parseExceptionSource; }
+
+    void addParseException(ParseException e, int beginOffset, int endOffset) {
+        parseExceptionSource = new ParseExceptionSource(e, beginOffset, endOffset);
+        setDirty(true);
+    }
+
+    void addParseException(ParseException e) {
+        addParseException(e, getBeginOffset(), getEndOffset());
+    }
+
+    public class IllegalArgumentExceptionSource {
+        public IllegalArgumentException illegalArgumentException;
+        public Token endToken;
+
+        IllegalArgumentExceptionSource(IllegalArgumentException e, Token endToken) {
+            illegalArgumentException = e;
+            this.endToken = endToken;
+        }
+    }
+
+    private IllegalArgumentException illegalArgumentException;
+    public IllegalArgumentException getIllegalArgumentException() { return illegalArgumentException; }
+
+    void addIllegalArgumentException(IllegalArgumentException e) {
+        illegalArgumentException = e;
+    }
+
+}
         
 TOKEN :
     <INTEGER: <DECIMAL> (["l","L"])? | <HEX> (["l","L"])? | <OCTAL> (["l","L"])?> |
@@ -950,7 +1006,15 @@ RegexPredicate regexPredicate(GroupingOperation grp) :
     GroupingExpression exp;
 }
     ( <REGEX> lbraceElm pattern = stringElm commaElm exp = expElm(grp) rbraceElm )
-    { return new RegexPredicate(pattern, exp); }
+    { 
+        try {
+            return new RegexPredicate(pattern, exp); 
+        } catch (IllegalArgumentException ex) {
+            // This can happen if the regex is not valid
+            lastConsumedToken.addIllegalArgumentException(ex);
+            return new RegexPredicate("", exp);
+        }
+    }
 ;
 
 NotPredicate notPredicate(GroupingOperation grp) :
