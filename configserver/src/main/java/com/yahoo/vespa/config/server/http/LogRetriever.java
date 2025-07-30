@@ -39,7 +39,8 @@ public class LogRetriever {
             if (deployTime.isPresent() && Instant.now().isBefore(deployTime.get().plus(Duration.ofMinutes(5))))
                 return new EmptyResponse();
 
-            return new GatewayTimeoutResponse(504);
+            return new HttpErrorResponse(500, HttpErrorResponse.ErrorCode.INTERNAL_SERVER_ERROR.name(),
+                                         "Failed to retrieve logs from log server: " + e.getMessage());
         }
     }
 
