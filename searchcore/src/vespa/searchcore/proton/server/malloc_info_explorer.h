@@ -13,7 +13,7 @@ namespace proton {
  *   1. Implementation independent info via `mallinfo()` or `mallinfo2()` (if supported
  *      by the platform).
  *   2. Malloc-implementation specific information for implementations we know about.
- *      Currently only covers vespamalloc.
+ *      Currently only covers vespamalloc and mimalloc.
  */
 class MallocInfoExplorer : public vespalib::StateExplorer {
 public:

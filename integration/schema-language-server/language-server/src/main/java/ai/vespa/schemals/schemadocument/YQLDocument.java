@@ -70,7 +70,8 @@ public class YQLDocument implements DocumentManager {
     @Override
     public ParseContext getParseContext() {
         ParseContext context = new ParseContext(fileContent, logger, fileURI, schemaIndex, scheduler);
-        context.useVespaGroupingIdentifiers();
+        context.useGeneralIdentifers();
+        context.useYqlAndGroupingIdentifiers();
         return context;
     }
 
@@ -251,6 +252,10 @@ public class YQLDocument implements DocumentManager {
     private static void traverseCST(YQLNode node, ParseContext context, ArrayList<Diagnostic> diagnostics) {
 
         for (Identifier<YQLNode> identifier : context.YQLIdentifiers()) {
+            identifier.identify(node, diagnostics);
+        }
+
+        for (Identifier<ai.vespa.schemals.tree.Node> identifier : context.generalIdentifiers()) {
             identifier.identify(node, diagnostics);
         }
 

@@ -17,8 +17,12 @@ extern "C" {
 // Weakly resolved symbols that will be nullptr if they fail to resolve. Used to
 // both detect the presence of a particular malloc implementation and to do the
 // info dumping for it.
+// Vespamalloc:
 void vespamalloc_dump_info(FILE* out_file) __attribute__((weak));
-// TODO mimalloc and friends
+// MiMalloc:
+// From https://microsoft.github.io/mimalloc/group__extended.html:
+using mi_output_fun = void(const char* msg, void* aux_arg);
+void mi_stats_print_out(mi_output_fun* out, void* aux_arg) __attribute__((weak));
 
 }
 
@@ -33,13 +37,17 @@ namespace {
 
 enum class MallocImpl {
     LibcOrUnknown,
-    VespaMalloc
+    VespaMalloc,
+    MiMalloc
 };
 
 [[nodiscard]]
 MallocImpl detect_malloc_impl() noexcept {
     if (vespamalloc_dump_info != nullptr) {
         return MallocImpl::VespaMalloc;
+    }
+    if (mi_stats_print_out != nullptr) {
+        return MallocImpl::MiMalloc;
     }
     return MallocImpl::LibcOrUnknown;
 }
@@ -48,6 +56,7 @@ MallocImpl detect_malloc_impl() noexcept {
 std::string_view to_string(MallocImpl mi) noexcept {
     switch (mi) {
     case MallocImpl::VespaMalloc:   return "vespamalloc";
+    case MallocImpl::MiMalloc:      return "mimalloc";
     case MallocImpl::LibcOrUnknown: return "libc_or_unknown";
     }
     abort();
@@ -80,6 +89,21 @@ std::string get_vespamalloc_info_dump() {
 #else
     return "<unsupported by platform>";
 #endif
+}
+
+void my_mimalloc_info_callback(const char* msg, void* aux_arg) {
+    assert(aux_arg != nullptr);
+    auto* out_str = static_cast<std::string*>(aux_arg); // untyped C APIs <3
+    // We can get a callback many times for a given `mi_stats_print_out`
+    // call, so have to append rather than overwrite.
+    out_str->append(msg);
+}
+
+std::string get_mimalloc_info_dump() {
+    std::string info;
+    // `mi_stats_print_out` forwards a void* of our choice to the callback.
+    mi_stats_print_out(my_mimalloc_info_callback, &info);
+    return info;
 }
 
 #ifdef __GLIBC__
@@ -139,6 +163,8 @@ void MallocInfoExplorer::get_state(const Inserter& inserter, bool full) const {
 #endif
     if (malloc_impl == MallocImpl::VespaMalloc) {
         emit_malloc_internal_info_dump(object, get_vespamalloc_info_dump());
+    } else if (malloc_impl == MallocImpl::MiMalloc) {
+        emit_malloc_internal_info_dump(object, get_mimalloc_info_dump());
     }
 #else
     (void) object;

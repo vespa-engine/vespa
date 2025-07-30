@@ -15,7 +15,6 @@ import org.junit.jupiter.api.TestFactory;
 
 import com.yahoo.io.IOUtils;
 
-import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
@@ -29,6 +28,7 @@ public class SchemaParserTest {
 
     ParseResult parseString(String input, String fileName) throws Exception {
         ParseContext context = Utils.createTestContext(input, fileName);
+        context.useGeneralIdentifers();
         context.useDocumentIdentifiers();
         return SchemaDocument.parseContent(context);
     }

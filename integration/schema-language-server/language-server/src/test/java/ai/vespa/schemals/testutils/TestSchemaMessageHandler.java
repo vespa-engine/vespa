@@ -1,6 +1,5 @@
 package ai.vespa.schemals.testutils;
 
-import java.io.StringWriter;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 

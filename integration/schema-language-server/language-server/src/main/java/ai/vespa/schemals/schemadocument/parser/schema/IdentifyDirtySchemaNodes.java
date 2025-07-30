@@ -61,17 +61,7 @@ public class IdentifyDirtySchemaNodes extends Identifier<SchemaNode> {
                 .build());
         }
 
-        IllegalArgumentException illegalArgumentException = nodeAsToken.getIllegalArgumentException();
-
-        if (illegalArgumentException != null) {
-            diagnostics.add(new SchemaDiagnostic.Builder()
-                .setRange(node.getRange())
-                .setMessage(illegalArgumentException.getMessage())
-                .setSeverity(DiagnosticSeverity.Error)
-                .build());
-        }
-
-        if (parseException == null && illegalArgumentException == null) {
+        if (parseException == null && nodeAsToken.getIllegalArgumentException() == null) {
             pureDirtyNodeIdentifier.identify(node, diagnostics);
         }
     }

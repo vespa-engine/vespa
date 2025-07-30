@@ -79,6 +79,7 @@ public class SchemaDocument implements DocumentManager {
     @Override
     public ParseContext getParseContext() {
         ParseContext context = new ParseContext(content, this.logger, this.fileURI, this.schemaIndex, this.scheduler);
+        context.useGeneralIdentifers();
         context.useDocumentIdentifiers();
         return context;
     }
@@ -269,7 +270,11 @@ public class SchemaDocument implements DocumentManager {
             SchemaRankingExpressionParser.embedCST(context, node, diagnostics);
         }
 
-        for (Identifier<SchemaNode> identifier : context.identifiers()) {
+        for (Identifier<SchemaNode> identifier : context.schemaIdentifiers()) {
+            identifier.identify(node, diagnostics);
+        }
+
+        for (Identifier<ai.vespa.schemals.tree.Node> identifier : context.generalIdentifiers()) {
             identifier.identify(node, diagnostics);
         }
 
