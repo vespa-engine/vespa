@@ -55,7 +55,7 @@ INJECT GroupingParserLexer:
  * ParseExceptions are syntactical errors, so storing them is mainly to provide a better indication on
  * where the error occurred (rather than "there is some error in this document").
  *
- * IllegalArgumentExceptions come from the Parsed* classes in config-model, these are more semantic errors
+ * IllegalArgumentExceptions come from the returned classes from for example container-search, these are more semantic errors
  * coming from invalid constructs that can be caught early during parsing. They do however not cover all errors that
  * can occur in schemas when deploying an application.
  */
