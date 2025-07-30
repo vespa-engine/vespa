@@ -21,7 +21,7 @@ public abstract class SegmentItem extends CompositeItem implements BlockItem {
     private final String value;
     private final boolean isFromQuery;
     private boolean isFromUser;
-    private final boolean stemmed;
+    private boolean stemmed;
     private SegmentingRule segmentingRule = SegmentingRule.LANGUAGE_DEFAULT;
     private final Substring origin;
 
@@ -76,6 +76,10 @@ public abstract class SegmentItem extends CompositeItem implements BlockItem {
     @Override
     public boolean isStemmed() {
         return stemmed;
+    }
+
+    public void setStemmed(boolean stemmed) {
+        this.stemmed = stemmed;
     }
 
     public void lock() {

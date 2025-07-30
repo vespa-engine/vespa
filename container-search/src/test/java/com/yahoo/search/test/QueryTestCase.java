@@ -26,6 +26,7 @@ import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
@@ -49,8 +50,6 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.yql.MinimalQueryInserter;
-import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -1277,6 +1276,22 @@ public class QueryTestCase {
                               profile.compile(null));
         Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
         assertEquals("OR default:a default:b", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testLinguisticsModeWithPhraseSegment() {
+        var profile = new QueryProfile("test");
+        profile.set("model.type", "linguistics", null);
+        profile.set("model.type.isYqlDefault", "true", null);
+        var query = new Query(httpEncode("?yql=select * from sources * where default contains '10,000'"),
+                              profile.compile(null));
+        Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
+        assertEquals("select * from sources * where default contains ({origin: {original: \"10,000\", offset: 0, length: 6}, stem: false}phrase(\"10\", \"000\"))",
+                     query.yqlRepresentation());
+
+        var phrase = (PhraseSegmentItem)query.getModel().getQueryTree().getRoot();
+        // Further token processing is disabled due to type=linguistics applied by default to all terms
+        assertTrue(phrase.isStemmed());
     }
 
     @Test

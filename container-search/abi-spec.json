@@ -1515,6 +1515,7 @@
       "public java.lang.String stringValue()",
       "public boolean isFromQuery()",
       "public boolean isStemmed()",
+      "public void setStemmed(boolean)",
       "public void lock()",
       "public boolean isLocked()",
       "public int getNumWords()",

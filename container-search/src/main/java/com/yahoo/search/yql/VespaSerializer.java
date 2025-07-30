@@ -640,12 +640,12 @@ public class VespaSerializer {
                     destination.append(", ");
                 }
                 Item current = segment.getItem(i);
-                if (current instanceof WordItem) {
+                if (current instanceof WordItem word) {
                     destination.append('"');
-                    escape(((WordItem) current).getIndexedString(), destination).append('"');
+                    escape(word.getIndexedString(), destination).append('"');
                 } else {
-                    throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName()
-                                                       + " in phrases not implemented, please report this as a bug.");
+                    throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName() +
+                                                       " in phrases not implemented, please report this as a bug.");
                 }
             }
         }
@@ -658,8 +658,7 @@ public class VespaSerializer {
             return serialize(destination, item, true);
         }
 
-        static boolean serialize(StringBuilder destination, Item item, boolean includeField) {
-            PhraseSegmentItem phrase = (PhraseSegmentItem) item;
+        static boolean serialize(StringBuilder destination, PhraseSegmentItem phrase, boolean includeField) {
             Substring origin = phrase.getOrigin();
             String image;
             int offset;
@@ -680,19 +679,33 @@ public class VespaSerializer {
 
             destination.append("({");
             serializeOrigin(destination, image, offset, length);
-            String annotations = leafAnnotations(phrase);
-            if (!annotations.isEmpty()) {
-                destination.append(", ").append(annotations);
-            }
-            if (phrase.getSegmentingRule() == SegmentingRule.BOOLEAN_AND) {
-                destination.append(", ").append('"').append(AND_SEGMENTING).append("\": true");
-            }
+            String leafAnnotations = leafAnnotations(phrase);
+            if (!leafAnnotations.isEmpty())
+                destination.append(", ").append(leafAnnotations);
+            String phraseSegmentAnnotations = phraseSegmentAnnotations(phrase);
+            if (!phraseSegmentAnnotations.isEmpty())
+                destination.append(", ").append(phraseSegmentAnnotations);
             destination.append("}");
             destination.append(PHRASE).append('(');
             serializeWords(destination, phrase);
             destination.append("))");
             return false;
         }
+
+        private static String phraseSegmentAnnotations(PhraseSegmentItem item) {
+            StringBuilder annotation = new StringBuilder();
+            int initLen = annotation.length();
+            if (item.getSegmentingRule() == SegmentingRule.BOOLEAN_AND) {
+                comma(annotation, initLen);
+                annotation.append('"').append(AND_SEGMENTING).append("\": true");
+            }
+            if (item.isStemmed()) {
+                VespaSerializer.comma(annotation, initLen);
+                annotation.append(STEM).append(": false");
+            }
+            return annotation.toString();
+        }
+
     }
 
     private static class PhraseSerializer extends Serializer<PhraseItem> {
@@ -718,10 +731,10 @@ public class VespaSerializer {
                 if (i > 0)
                     destination.append(", ");
                 Item current = phrase.getItem(i);
-                if (current instanceof WordItem) {
-                    WordSerializer.serializeWordWithoutIndex(destination, current);
-                } else if (current instanceof PhraseSegmentItem) {
-                    PhraseSegmentSerializer.serialize(destination, current, false);
+                if (current instanceof WordItem word) {
+                    WordSerializer.serializeWordWithoutIndex(destination, word);
+                } else if (current instanceof PhraseSegmentItem phraseSegment) {
+                    PhraseSegmentSerializer.serialize(destination, phraseSegment, false);
                 } else if (current instanceof WordAlternativesItem) {
                     WordAlternativesSerializer.serialize(destination, (WordAlternativesItem) current, false);
                 } else {
@@ -1148,18 +1161,13 @@ public class VespaSerializer {
 
         @Override
         boolean serialize(StringBuilder destination, WordItem item) {
-            StringBuilder wordAnnotations = getAllAnnotations(item);
-
             destination.append(normalizeIndexName(item.getIndexName())).append(" contains ");
-            VespaSerializer.annotatedTerm(destination, item, wordAnnotations.toString());
+            VespaSerializer.annotatedTerm(destination, item, getAllAnnotations(item).toString());
             return false;
         }
 
-        static void serializeWordWithoutIndex(StringBuilder destination, Item item) {
-            WordItem w = (WordItem) item;
-            StringBuilder wordAnnotations = getAllAnnotations(w);
-
-            VespaSerializer.annotatedTerm(destination, w, wordAnnotations.toString());
+        static void serializeWordWithoutIndex(StringBuilder destination, WordItem word) {
+            VespaSerializer.annotatedTerm(destination, word, getAllAnnotations(word).toString());
         }
 
         private static StringBuilder getAllAnnotations(WordItem w) {
