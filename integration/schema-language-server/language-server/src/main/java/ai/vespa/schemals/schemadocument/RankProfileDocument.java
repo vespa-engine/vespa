@@ -65,6 +65,7 @@ public class RankProfileDocument implements DocumentManager {
     @Override
     public ParseContext getParseContext() {
         ParseContext context = new ParseContext(content, logger, fileURI, schemaIndex, this.scheduler);
+        context.useGeneralIdentifers();
         context.useRankProfileIdentifiers();
         return context;
     }

@@ -6,11 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import ai.vespa.schemals.context.ParseContext;
@@ -24,7 +22,7 @@ public class YQLParserTest {
 
     ParseResult parseString(String input, String fileName) throws Exception {
         ParseContext context = Utils.createTestContext(input, fileName);
-        context.useVespaGroupingIdentifiers();
+        context.useYqlAndGroupingIdentifiers();
         return YQLDocument.parseContent(context);
     }
 
@@ -209,6 +207,7 @@ public class YQLParserTest {
     Stream<DynamicTest> InvalidQuery() throws Exception {
         var queries = new TestWithError[] {
             new TestWithError(1, "seletc *"),
+            new TestWithError(1, "select * from sources * where true | all(group(foo) filter(regex(\"*\", field)))"),
             // new TestWithError(1, "select * from sources * where true | all(group(a) order(attr * count()) each(output(count())) )"),
         };
 

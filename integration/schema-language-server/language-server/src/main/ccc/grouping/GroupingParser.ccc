@@ -244,12 +244,13 @@ UNPARSED :
   <MULTI_LINE_COMMENT: "/*" (~["*"])* "*" (~["*","/"] (~["*"])* "*" | "*")* "/" >
 ;
 
-
-// --------------------------------------------------------------------------------
-//
-// Production rules.
-//
-// --------------------------------------------------------------------------------
+/*
+ * --------------------------------------------------------------------------------
+ *
+ * Production rules.
+ *
+ * -------------------------------------------------------------------------------
+ */
 
 List<GroupingOperation> requestList :
 {
@@ -1004,14 +1005,15 @@ RegexPredicate regexPredicate(GroupingOperation grp) :
 {
     String pattern;
     GroupingExpression exp;
+    Token stringToken;
 }
-    ( <REGEX> lbraceElm pattern = stringElm commaElm exp = expElm(grp) rbraceElm )
+    ( <REGEX> lbraceElm pattern = stringElm { stringToken = lastConsumedToken; } commaElm exp = expElm(grp) rbraceElm )
     { 
         try {
             return new RegexPredicate(pattern, exp); 
         } catch (IllegalArgumentException ex) {
             // This can happen if the regex is not valid
-            lastConsumedToken.addIllegalArgumentException(ex);
+            stringToken.addIllegalArgumentException(ex);
             return new RegexPredicate("", exp);
         }
     }

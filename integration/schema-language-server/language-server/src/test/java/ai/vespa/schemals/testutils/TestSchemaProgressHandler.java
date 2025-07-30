@@ -3,7 +3,6 @@ package ai.vespa.schemals.testutils;
 import java.util.UUID;
 
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
-import org.eclipse.lsp4j.services.LanguageClient;
 
 import ai.vespa.schemals.SchemaProgressHandler;
 
