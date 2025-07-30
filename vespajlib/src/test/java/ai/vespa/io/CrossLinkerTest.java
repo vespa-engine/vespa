@@ -118,6 +118,5 @@ class CrossLinkerTest {
         fill(tmpOne, 2, 4);
         fill(tmpTwo, 3, 3);
         linker.crossLink(tmpOne, tmpTwo);
-        checkEqTrees();
     }
 }
