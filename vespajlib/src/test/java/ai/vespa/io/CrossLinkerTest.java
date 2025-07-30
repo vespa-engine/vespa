@@ -31,8 +31,7 @@ class CrossLinkerTest {
     }
 
     Path mkTemp(String prefix) throws IOException {
-        Path curr = Path.of(System.getProperty("user.dir"));
-        Path p = Files.createTempDirectory(curr, prefix);
+        Path p = Files.createTempDirectory(prefix);
         p.toFile().deleteOnExit();
         return p;
     }
@@ -45,8 +44,8 @@ class CrossLinkerTest {
 
     @BeforeEach
     void setup() throws IOException {
-        this.tmpOne = mkTemp("one").getFileName();
-        this.tmpTwo = mkTemp("two").getFileName();
+        this.tmpOne = mkTemp("one");
+        this.tmpTwo = mkTemp("two");
         this.linker = new CrossLinker();
         this.mult = 1;
     }
