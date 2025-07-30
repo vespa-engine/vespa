@@ -235,8 +235,8 @@ void dispatch_pairwise(FnAccuArity<2>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT 
 template <size_t Idx, typename KernelFn, typename VecT, typename AccuV>
 HWY_INLINE
 void dispatch(FnAccuArity<4>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec,
-                       AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3,
-                       AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept
+              AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3,
+              AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept
 {
     constexpr size_t my_idx = Idx % 2;
     if constexpr (my_idx == 0) {
@@ -466,7 +466,7 @@ struct KernelBody {
             const KernelFn kernel_fn,
             Accumulators&&... accumulators) noexcept
     {
-        const size_t N = hn::Lanes(d);
+        HWY_LANES_CONSTEXPR const size_t N = hn::Lanes(d);
         size_t i = 0;
         for (; (i + UnrollFactor*N) <= n_elems; i += UnrollFactor*N) {
             UnrolledLoopBody<UnrollFactor>::pairwise_load_and_dispatch(arity, d, a, b, i, N, kernel_fn,
@@ -504,7 +504,7 @@ struct KernelBody {
             const KernelFn kernel_fn,
             Accumulators&&... accumulators) noexcept
     {
-        const size_t N = hn::Lanes(d);
+        HWY_LANES_CONSTEXPR const size_t N = hn::Lanes(d);
         size_t i = 0;
         for (; (i + UnrollFactor*N) <= n_elems; i += UnrollFactor*N) {
             UnrolledLoopBody<UnrollFactor>::elementwise_load_and_dispatch(arity, d, a, i, N, kernel_fn,
@@ -732,6 +732,30 @@ struct HwyReduceKernel<UsesNAccumulators<8>, UnrolledByT, FnHasAccuArityT> {
     }
 };
 
+// Utility function for invoking a function that has an intermediate result type that
+// may overflow if the input size is beyond a certain threshold. If the size is > this
+// threshold, invoke the function on input chunks that do not exceed this threshold,
+// maintaining a running sum across the chunks. The sum type must be one that is _not_
+// expected to overflow regardless of the input size.
+template <size_t MaxChunkSize, typename SumT, typename F, typename T>
+[[nodiscard]] SumT
+compute_chunked_sum(F&& fn, const T* HWY_RESTRICT lhs, const T* HWY_RESTRICT rhs, const size_t sz) noexcept {
+    if (sz <= MaxChunkSize) [[likely]] {
+        return fn(lhs, rhs, sz);
+    }
+    // Process input in chunks that are small enough that the intermediate accumulators
+    // won't overflow, but large enough that we can spin up the vector steam engines fully.
+    // TODO explicitly test this fallback path
+    SumT sum{};
+    size_t i = 0;
+    for (; i + MaxChunkSize <= sz; i += MaxChunkSize) {
+        sum += fn(lhs + i, rhs + i, MaxChunkSize);
+    }
+    if (sz > i) {
+        sum += fn(lhs + i, rhs + i, sz - i);
+    }
+    return sum;
+}
 
 #if VESPA_HWY_DYNAMIC
 }  // namespace HWY_NAMESPACE
