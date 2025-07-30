@@ -14,7 +14,10 @@ import java.util.TreeSet;
  */
 public class CrossLinker {
 
-    public CrossLinker() {}
+    private final boolean verbose;
+
+    public CrossLinker() { this(false); }
+    public CrossLinker(boolean verbose) { this.verbose = verbose; }
 
     public void crossLink(String srcDir, String dstDir) {
         try {
@@ -50,13 +53,13 @@ public class CrossLinker {
     void linkOrCopy(Path src, Path dst) throws IOException {
         try {
             Path ok = Files.createLink(dst, src);
-            System.out.println("link " + src + " -> " + ok);
+            if (verbose) System.out.println("link " + src + " -> " + ok);
             return;
         } catch (Exception e) {
             // should maybe log error first time
         }
         Files.copy(src, dst);
-        System.out.println("copy " + src + " -> " + dst);
+        if (verbose) System.out.println("copy " + src + " -> " + dst);
     }
 
     void crossLink(Path src, Path dst) throws IOException {
