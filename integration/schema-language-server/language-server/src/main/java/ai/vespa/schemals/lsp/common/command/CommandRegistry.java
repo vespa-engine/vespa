@@ -154,7 +154,7 @@ public class CommandRegistry {
              * schemaName: String -- The name of the schema to query for fields
              *
              * Return value:
-             * List<String> -- the field names.
+             * List<List<String>> -- List of pairs of field name and stringified field type.
              */
             public String title() { return "Get schema fields"; }
             public SchemaCommand construct() { return new GetSchemaFields(); }

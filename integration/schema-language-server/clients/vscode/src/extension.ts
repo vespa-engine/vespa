@@ -232,11 +232,11 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.schema.getSchemaFields", async (schemaName) => {
         if (schemaClient === null) { return false; }
         try {
-            const result = await schemaClient.sendRequest("workspace/executeCommand", {
+            const result: string[][] = await schemaClient.sendRequest("workspace/executeCommand", {
                 command: "GET_SCHEMA_FIELDS",
                 arguments: [schemaName]
             });
-            return result;
+            return JSON.stringify(result);
         } catch (err) {
             logger.error("Error when sending command: " + err);
         }
