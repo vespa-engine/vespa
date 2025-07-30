@@ -2053,14 +2053,7 @@ void onnxModelItem(OnnxModel onnxModel) :
                     lastConsumedToken.addIllegalArgumentException(ex);
                 }
             } 
-        | (path = uriItem()) 
-            {
-                try {
-                    onnxModel.setUri(path);
-                } catch (IllegalArgumentException ex) {
-                    lastConsumedToken.addIllegalArgumentException(ex);
-                }
-            } 
+        | (uriInOnnxModel(onnxModel)) 
         | <GPU_DEVICE> <COLON> num = integerElm() 
             {
                 try {
@@ -2148,6 +2141,23 @@ String uriItem() :
 
   (<URI> <COLON> ( <URI_PATH> ) { path = lastConsumedToken.toString(); } (<NL>)*) { return path; }
 ;
+
+void uriInOnnxModel(OnnxModel onnxModel) :
+{
+   String path;
+   Token uriToken;
+}
+
+  (<URI> { uriToken = lastConsumedToken; } <COLON> ( <URI_PATH> ) { path = lastConsumedToken.toString(); } (<NL>)*) 
+{ 
+    try {
+        onnxModel.setUri(path);
+    } catch (IllegalArgumentException ex) {
+        uriToken.addIllegalArgumentException(ex);
+    }
+  }
+;
+
 
 String rankingConstantErrorMessage(String name) : {}
 
