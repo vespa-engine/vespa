@@ -95,6 +95,7 @@ import com.yahoo.prelude.query.RangeItem;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
+import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.Substring;
@@ -181,9 +182,13 @@ public class VespaSerializer {
             if (includeField) {
                 destination.append(normalizeIndexName(item.getIndexName())).append(" contains ");
             }
+
             destination.append("({");
             serializeOrigin(destination, image, offset, length);
             destination.append(", ").append(AND_SEGMENTING).append(": true");
+            String andSegmentAnnotations = segmentAnnotations(item);
+            if (!andSegmentAnnotations.isEmpty())
+                destination.append(", ").append(andSegmentAnnotations);
             destination.append("}");
             destination.append(PHRASE).append('(');
             serializeWords(destination, item);
@@ -682,7 +687,7 @@ public class VespaSerializer {
             String leafAnnotations = leafAnnotations(phrase);
             if (!leafAnnotations.isEmpty())
                 destination.append(", ").append(leafAnnotations);
-            String phraseSegmentAnnotations = phraseSegmentAnnotations(phrase);
+            String phraseSegmentAnnotations = segmentAnnotations(phrase);
             if (!phraseSegmentAnnotations.isEmpty())
                 destination.append(", ").append(phraseSegmentAnnotations);
             destination.append("}");
@@ -690,20 +695,6 @@ public class VespaSerializer {
             serializeWords(destination, phrase);
             destination.append("))");
             return false;
-        }
-
-        private static String phraseSegmentAnnotations(PhraseSegmentItem item) {
-            StringBuilder annotation = new StringBuilder();
-            int initLen = annotation.length();
-            if (item.getSegmentingRule() == SegmentingRule.BOOLEAN_AND) {
-                comma(annotation, initLen);
-                annotation.append('"').append(AND_SEGMENTING).append("\": true");
-            }
-            if (item.isStemmed()) {
-                VespaSerializer.comma(annotation, initLen);
-                annotation.append(STEM).append(": false");
-            }
-            return annotation.toString();
         }
 
     }
@@ -1606,6 +1597,20 @@ public class VespaSerializer {
         destination.append("\", ").append(ORIGIN_OFFSET).append(": ")
                 .append(offset).append(", ").append(ORIGIN_LENGTH)
                 .append(": ").append(length).append("}");
+    }
+
+    private static String segmentAnnotations(SegmentItem item) {
+        StringBuilder annotation = new StringBuilder();
+        int initLen = annotation.length();
+        if (item.getSegmentingRule() == SegmentingRule.BOOLEAN_AND) {
+            comma(annotation, initLen);
+            annotation.append('"').append(AND_SEGMENTING).append("\": true");
+        }
+        if (item.isStemmed()) {
+            VespaSerializer.comma(annotation, initLen);
+            annotation.append(STEM).append(": false");
+        }
+        return annotation.toString();
     }
 
     private static String normalizeIndexName(String indexName) {

@@ -1662,13 +1662,13 @@ public class YqlParser implements Parser {
         var item = new PhraseSegmentItem(word, fromQuery, false);
         item.setIndexName(field);
         if (shouldDisableFurtherTokenProcessing(ast))
-            item.setStemmed(true); // No normalizing and lowercasing of segments currently
+            item.setStemmed(true); // Block items are stemmed as a whole, so disabling must be at this level
         return item;
     }
 
     private boolean shouldDisableFurtherTokenProcessing(OperatorNode<ExpressionOperator> ast) {
         // tokenization==linguistics --> all processing is done by one linguistics invocation,
-        // so disable stemming, normalizing and lowercasing (as applicable) on terms
+        // so disable stemming, normalizing and lowercasing
         if (userQuery != null && userQuery.properties().getBoolean(modelTypeIsYqlDefault)) {
             QueryType queryType = buildQueryType(ast);
             return queryType.getTokenization() == QueryType.Tokenization.linguistics;
