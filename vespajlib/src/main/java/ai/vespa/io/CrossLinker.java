@@ -31,8 +31,10 @@ public class CrossLinker {
 
     Set<Path> entries(Path dir) throws IOException {
         var result = new TreeSet<Path>();
-        for (Path p : Files.newDirectoryStream(dir)) {
-            result.add(p.getFileName());
+        try (var stream = Files.newDirectoryStream(dir)) {
+            for (Path p : stream) {
+                result.add(p.getFileName());
+            }
         }
         return result;
     }
