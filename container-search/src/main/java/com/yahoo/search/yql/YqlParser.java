@@ -703,7 +703,7 @@ public class YqlParser implements Parser {
         assertHasFunctionName(ast, PHRASE);
 
         if (getAnnotation(ast, ORIGIN, Map.class, null, ORIGIN_DESCRIPTION, false) != null) {
-            return instantiatePhraseSegmentItem(field, ast, false);
+            return instantiateSegmentItem(field, ast, false);
         }
 
         PhraseItem phrase = new PhraseItem();
@@ -717,7 +717,7 @@ public class YqlParser implements Parser {
                     if (getAnnotation(word, ORIGIN, Map.class, null, ORIGIN_DESCRIPTION, false) == null) {
                         phrase.addItem(instantiatePhraseItem(field, word));
                     } else {
-                        phrase.addItem(instantiatePhraseSegmentItem(field, word, true));
+                        phrase.addItem(instantiateSegmentItem(field, word, true));
                     }
                     break;
                 case ALTERNATIVES:
@@ -733,9 +733,10 @@ public class YqlParser implements Parser {
         return leafStyleSettings(ast, phrase);
     }
 
-    private Item instantiatePhraseSegmentItem(String field, OperatorNode<ExpressionOperator> ast, boolean forcePhrase) {
+    private Item instantiateSegmentItem(String field, OperatorNode<ExpressionOperator> ast, boolean forcePhrase) {
         Substring origin = getSubstring(ast);
-        Boolean stem = getAnnotation(ast, STEM, Boolean.class, Boolean.TRUE, STEM_DESCRIPTION);
+        Boolean stem = getAnnotation(ast, STEM, Boolean.class, Boolean.TRUE, STEM_DESCRIPTION) ||
+                       shouldDisableFurtherTokenProcessing(ast);
         Boolean andSegmenting = getAnnotation(ast, AND_SEGMENTING, Boolean.class, Boolean.FALSE,
                                               "setting for whether to force using AND for segments on and off");
         SegmentItem phrase;
