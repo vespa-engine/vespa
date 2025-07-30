@@ -22,6 +22,7 @@ public class YQLParserTest {
 
     ParseResult parseString(String input, String fileName) throws Exception {
         ParseContext context = Utils.createTestContext(input, fileName);
+        context.useGeneralIdentifers();
         context.useYqlAndGroupingIdentifiers();
         return YQLDocument.parseContent(context);
     }
