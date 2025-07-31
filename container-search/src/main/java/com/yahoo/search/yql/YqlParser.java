@@ -691,7 +691,7 @@ public class YqlParser implements Parser {
         // All terms below sameElement are relative to this.
         IndexNameExpander prev = swapIndexCreator(new PrefixExpander(field));
         for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
-            // TODO getIndex that is called once every term is rather expensive as it does sanity checking
+            // TODO: getIndex that is called once every term is rather expensive as it does sanity checking
             // that is not necessary. This is an issue when having many elements
             sameElement.addItem(convertExpression(term));
         }
@@ -703,7 +703,7 @@ public class YqlParser implements Parser {
         assertHasFunctionName(ast, PHRASE);
 
         if (getAnnotation(ast, ORIGIN, Map.class, null, ORIGIN_DESCRIPTION, false) != null) {
-            return instantiatePhraseSegmentItem(field, ast, false);
+            return instantiateSegmentItem(field, ast, false);
         }
 
         PhraseItem phrase = new PhraseItem();
@@ -717,7 +717,7 @@ public class YqlParser implements Parser {
                     if (getAnnotation(word, ORIGIN, Map.class, null, ORIGIN_DESCRIPTION, false) == null) {
                         phrase.addItem(instantiatePhraseItem(field, word));
                     } else {
-                        phrase.addItem(instantiatePhraseSegmentItem(field, word, true));
+                        phrase.addItem(instantiateSegmentItem(field, word, true));
                     }
                     break;
                 case ALTERNATIVES:
@@ -733,9 +733,10 @@ public class YqlParser implements Parser {
         return leafStyleSettings(ast, phrase);
     }
 
-    private Item instantiatePhraseSegmentItem(String field, OperatorNode<ExpressionOperator> ast, boolean forcePhrase) {
+    private Item instantiateSegmentItem(String field, OperatorNode<ExpressionOperator> ast, boolean forcePhrase) {
         Substring origin = getSubstring(ast);
-        Boolean stem = getAnnotation(ast, STEM, Boolean.class, Boolean.TRUE, STEM_DESCRIPTION);
+        Boolean stem = getAnnotation(ast, STEM, Boolean.class, Boolean.TRUE, STEM_DESCRIPTION) ||
+                       shouldDisableFurtherTokenProcessing(ast);
         Boolean andSegmenting = getAnnotation(ast, AND_SEGMENTING, Boolean.class, Boolean.FALSE,
                                               "setting for whether to force using AND for segments on and off");
         SegmentItem phrase;
@@ -1649,18 +1650,31 @@ public class YqlParser implements Parser {
     }
 
     private WordItem instantiateWordItem(String word, String field, boolean fromQuery, OperatorNode<ExpressionOperator> ast) {
-        var wordItem = new WordItem(word, field, fromQuery);
+        var item = new WordItem(word, field, fromQuery);
+        if (shouldDisableFurtherTokenProcessing(ast)) {
+            item.setStemmed(true);
+            item.setNormalizable(false);
+            item.setLowercased(true);
+        }
+        return item;
+    }
+
+    private PhraseSegmentItem instantiatePhraseSegmentItem(String word, String field, boolean fromQuery, OperatorNode<ExpressionOperator> ast) {
+        var item = new PhraseSegmentItem(word, fromQuery, false);
+        item.setIndexName(field);
+        if (shouldDisableFurtherTokenProcessing(ast))
+            item.setStemmed(true); // Block items are stemmed as a whole, so disabling must be at this level
+        return item;
+    }
+
+    private boolean shouldDisableFurtherTokenProcessing(OperatorNode<ExpressionOperator> ast) {
+        // tokenization==linguistics --> all processing is done by one linguistics invocation,
+        // so disable stemming, normalizing and lowercasing
         if (userQuery != null && userQuery.properties().getBoolean(modelTypeIsYqlDefault)) {
             QueryType queryType = buildQueryType(ast);
-            if (queryType.getTokenization() == QueryType.Tokenization.linguistics) {
-                // tokenization==linguistics --> all processing is done by one linguistics invocation,
-                // so disable further processing of this word
-                wordItem.setStemmed(true);
-                wordItem.setNormalizable(false);
-                wordItem.setLowercased(true);
-            }
+            return queryType.getTokenization() == QueryType.Tokenization.linguistics;
         }
-        return wordItem;
+        return false;
     }
 
     private boolean shouldSegment(String field, boolean fromQuery) {
@@ -1682,8 +1696,7 @@ public class YqlParser implements Parser {
         } else if (segments.size() == 1 || !phraseSegmentChildSupported(parent)) {
             wordItem = instantiateWordItem(segments.get(0), fromQuery, ast);
         } else {
-            wordItem = new PhraseSegmentItem(toSegment, fromQuery, false);
-            ((PhraseSegmentItem) wordItem).setIndexName(field);
+            wordItem = instantiatePhraseSegmentItem(toSegment, field, fromQuery, ast);
             for (String s : segments) {
                 WordItem segment = instantiateWordItem(s, fromQuery, ast);
                 prepareWord(field, ast, segment);
