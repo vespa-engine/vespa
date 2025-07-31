@@ -6,27 +6,18 @@
 #include <algorithm>
 #include <cassert>
 
-// 0 => static dispatch (single target)
-// 1 => dynamic dispatch (multiple targets)
-// TODO remove static dispatch
-#define VESPA_HWY_DYNAMIC 1
-
-#if VESPA_HWY_DYNAMIC
-#  undef HWY_TARGET_INCLUDE
-#  define HWY_TARGET_INCLUDE "vespa/vespalib/hwaccelerated/highway.cpp"
-#  include <hwy/foreach_target.h>
-#endif // VESPA_HWY_DYNAMIC
+// This file will be recursively included into itself with different target
+// compilation parameters. See the Highway docs.
+#undef HWY_TARGET_INCLUDE
+#define HWY_TARGET_INCLUDE "vespa/vespalib/hwaccelerated/highway.cpp"
+#include <hwy/foreach_target.h>
 
 #include "hwy_kernel-inl.h"
 #include <hwy/contrib/dot/dot-inl.h>
 
-#if VESPA_HWY_DYNAMIC
 HWY_BEFORE_NAMESPACE();
 namespace vespalib::hwaccelerated { // NOLINT: must nest namespaces
 namespace HWY_NAMESPACE {
-#else
-namespace vespalib::hwaccelerated {
-#endif // VESPA_HWY_DYNAMIC
 
 namespace hn = hwy::HWY_NAMESPACE;
 
@@ -260,13 +251,9 @@ const HwyTargetAccelerator& HwyTargetAccelerator::target_instance() noexcept {
     return instance;
 }
 
-#if VESPA_HWY_DYNAMIC
 }  // namespace HWY_NAMESPACE
 }  // namespace vespalib::hwaccelerated
 HWY_AFTER_NAMESPACE();
-#else
-}  // namespace vespalib::hwaccelerated
-#endif // VESPA_HWY_DYNAMIC
 
 #if HWY_ONCE
 
@@ -314,15 +301,14 @@ std::vector<const IAccelerated*> enumerate_supported_hwy_targets() {
 
 } // anon ns
 
-std::span<const IAccelerated*> Highway::supported_targets() {
-    static std::vector<const IAccelerated*> targets = enumerate_supported_hwy_targets();
+std::span<const IAccelerated* const> Highway::supported_targets() {
+    static const std::vector<const IAccelerated*> targets = enumerate_supported_hwy_targets();
     return targets;
 }
 
 const IAccelerated& Highway::best_target() noexcept {
     return *supported_targets().front();
 }
-
 
 } // namespace vespalib::hwaccelerated
 

@@ -5,13 +5,9 @@
 
 #include <hwy/highway.h>
 
-#if VESPA_HWY_DYNAMIC
 HWY_BEFORE_NAMESPACE();
 namespace vespalib::hwaccelerated { // NOLINT: must nest namespaces
 namespace HWY_NAMESPACE {
-#else
-namespace vespalib::hwaccelerated {
-#endif // VESPA_HWY_DYNAMIC
 
 namespace hn = hwy::HWY_NAMESPACE;
 
@@ -754,10 +750,7 @@ compute_chunked_sum(F&& fn, const T* HWY_RESTRICT lhs, const T* HWY_RESTRICT rhs
     return sum;
 }
 
-#if VESPA_HWY_DYNAMIC
+
 }  // namespace HWY_NAMESPACE
 }  // namespace vespalib::hwaccelerated
 HWY_AFTER_NAMESPACE();
-#else
-}  // namespace vespalib::hwaccelerated
-#endif // VESPA_HWY_DYNAMIC
