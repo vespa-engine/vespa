@@ -1214,7 +1214,7 @@ public class RankProfile implements Cloneable {
             }
             List<FeatureList> addIfMissing = new ArrayList<>();
             for (String input : needInputs) {
-                if (input.startsWith("constant(") || input.startsWith("query(")) {
+                if (input.startsWith("constant(") || input.startsWith("query(") || input.equals("relevanceScore")) {
                     continue;
                 }
                 try {
