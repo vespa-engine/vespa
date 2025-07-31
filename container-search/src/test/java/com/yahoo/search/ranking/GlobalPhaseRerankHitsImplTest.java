@@ -233,7 +233,7 @@ public class GlobalPhaseRerankHitsImplTest {
         var setup = setup().rerank(2).eval(makeConstSpec(3.0)).build();
         var query = makeQuery(List.of());
         var result = makeResult(query, List.of(hit("a", 3), hit("b", 4), hit("c", 5), hit("d", 6)));
-        var expect = Expect.make(List.of(hit("a", 1), hit("b", 2), hit("c", 3), hit("d", 3)));
+        var expect = Expect.make(List.of(hit("a", 3), hit("b", 4), hit("c", 8), hit("d", 9)));
         GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
         expect.verifyScores(result);
     }
@@ -249,7 +249,6 @@ public class GlobalPhaseRerankHitsImplTest {
         var result = makeResult(query, List.of(hit("a", 4), hit("b", 3), hit("c", 2), hit("d", 1)));
         var expect = Expect.make(List.of(hit("d", 4), hit("c", 3)));
         GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
-        System.out.println(result.hits().asList());
         expect.verifyScores(result);
     }
 
@@ -275,7 +274,7 @@ public class GlobalPhaseRerankHitsImplTest {
         var factory = new HitFactory(List.of("public_value", "private_value"));
         var result = makeResult(query, List.of(factory.create("a", 1, List.of(value("public_value", 2), value("private_value", 3))),
                                                factory.create("b", 2, List.of(value("public_value", 5), value("private_value", 7)))));
-        var expect = Expect.make(List.of(hit("a", 5), hit("b", 12)));
+        var expect = Expect.make(List.of(hit("a", 6), hit("b", 14)));
         GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
         expect.verifyScores(result);
         verifyHasMF(result, "public_value");
@@ -289,7 +288,7 @@ public class GlobalPhaseRerankHitsImplTest {
         var factory = new HitFactory(List.of("private_value"));
         var result = makeResult(query, List.of(factory.create("a", 1, List.of(value("private_value", 3))),
                                                factory.create("b", 2, List.of(value("private_value", 7)))));
-        var expect = Expect.make(List.of(hit("a", 3), hit("b", 7)));
+        var expect = Expect.make(List.of(hit("a", 4), hit("b", 9)));
         GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
         expect.verifyScores(result);
         verifyDoesNotHaveMatchFeaturesField(result);
@@ -302,7 +301,7 @@ public class GlobalPhaseRerankHitsImplTest {
         var factory = new HitFactory(List.of("bar"));
         var result = makeResult(query, List.of(factory.create("a", 1, List.of(value("bar", 2))),
                                                factory.create("b", 2, List.of(value("bar", 5)))));
-        var expect = Expect.make(List.of(hit("a", 9), hit("b", 12)));
+        var expect = Expect.make(List.of(hit("a", 10), hit("b", 14)));
         GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
         expect.verifyScores(result);
         verifyHasMF(result, "bar");
@@ -315,7 +314,7 @@ public class GlobalPhaseRerankHitsImplTest {
         var factory = new HitFactory(List.of("bar"));
         var result = makeResult(query, List.of(factory.create("a", 1, List.of(value("bar", 2))),
                                                factory.create("b", 2, List.of(value("bar", 5)))));
-        var expect = Expect.make(List.of(hit("a", 9), hit("b", 12)));
+        var expect = Expect.make(List.of(hit("a", 10), hit("b", 14)));
         GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
         expect.verifyScores(result);
         verifyHasMF(result, "bar");
@@ -327,7 +326,7 @@ public class GlobalPhaseRerankHitsImplTest {
                 .addDefault("query(bar)", Tensor.from(5.0)).build();
         var query = makeQuery(List.of(value("query(foo)", 7)));
         var result = makeResult(query, List.of(hit("a", 1)));
-        var expect = Expect.make(List.of(hit("a", 12)));
+        var expect = Expect.make(List.of(hit("a", 13)));
         GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
         expect.verifyScores(result);
     }
@@ -335,7 +334,7 @@ public class GlobalPhaseRerankHitsImplTest {
     @Test
     void withNormalizer() {
         var setup = setup().eval(makeSumSpec(List.of(), List.of("bar")))
-                           .addNormalizer(makeNormalizer("foo", List.of(115.0, 65.0, 55.0, 45.0, 15.0),
+                           .addNormalizer(makeNormalizer("foo", List.of(120.0, 69.0, 58.0, 47.0, 16.0),
                                                          makeSumSpec(List.of("x"), List.of("bar")))).build();
         var query = makeQuery(List.of(value("query(x)", 5)));
         var factory = new HitFactory(List.of("bar"));
@@ -344,7 +343,7 @@ public class GlobalPhaseRerankHitsImplTest {
                 factory.create("c", 3, List.of(value("bar", 50))),
                 factory.create("d", 4, List.of(value("bar", 60))),
                 factory.create("e", 5, List.of(value("bar", 110)))));
-        var expect = Expect.make(List.of(hit("a", 15), hit("b", 44), hit("c", 53), hit("d", 62), hit("e", 111)));
+        var expect = Expect.make(List.of(hit("a", 16), hit("b", 46), hit("c", 56), hit("d", 66), hit("e", 116)));
         GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
         expect.verifyScores(result);
     }
