@@ -6,13 +6,10 @@
 #include <hwy/highway.h>
 
 #if VESPA_HWY_DYNAMIC
-// noexcept not supported for dynamic dispatch target functions
-#define VESPA_HWY_NOEXCEPT
 HWY_BEFORE_NAMESPACE();
 namespace vespalib::hwaccelerated { // NOLINT: must nest namespaces
 namespace HWY_NAMESPACE {
 #else
-#define VESPA_HWY_NOEXCEPT noexcept
 namespace vespalib::hwaccelerated {
 #endif // VESPA_HWY_DYNAMIC
 

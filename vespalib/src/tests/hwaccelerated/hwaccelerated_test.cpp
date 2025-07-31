@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
-#include <vespa/vespalib/hwaccelerated/hwy_impl.h>
+#include <vespa/vespalib/hwaccelerated/highway.h>
 #include <vespa/log/log.h>
 LOG_SETUP("hwaccelerated_test");
 
@@ -33,6 +33,13 @@ void verifyEuclideanDistance(const hwaccelerated::IAccelerated & accel, size_t t
     }
 }
 
+void for_each_hwy_target(auto&& fn) {
+    const auto hwy_targets = hwaccelerated::Highway::supported_targets();
+    for (const auto* t : hwy_targets) {
+        fn(*t);
+    }
+}
+
 void
 verifyEuclideanDistance(const hwaccelerated::IAccelerated & accelerator, size_t testLength) {
     verifyEuclideanDistance<int8_t, double>(accelerator, testLength, 0.0);
@@ -44,6 +51,9 @@ TEST(HWAcceleratedTest, test_euclidean_distance) {
     constexpr size_t TEST_LENGTH = 140000; // must be longer than 64k
     GTEST_DO(verifyEuclideanDistance(*hwaccelerated::IAccelerated::create_platform_baseline_accelerator(), TEST_LENGTH));
     GTEST_DO(verifyEuclideanDistance(hwaccelerated::IAccelerated::getAccelerator(), TEST_LENGTH));
+    for_each_hwy_target([](const hwaccelerated::IAccelerated& hwy_accel) {
+        GTEST_DO(verifyEuclideanDistance(hwy_accel, TEST_LENGTH));
+    });
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
