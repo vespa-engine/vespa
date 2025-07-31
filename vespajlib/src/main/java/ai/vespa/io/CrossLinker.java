@@ -3,6 +3,7 @@ package ai.vespa.io;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.TreeSet;
@@ -15,6 +16,13 @@ import java.util.TreeSet;
 public class CrossLinker {
 
     private final boolean verbose;
+    int numDirsSynced = 0;
+    int numFilesLinked = 0;
+    int numFilesCopied = 0;
+    int numNonRegularFiles = 0;
+    int numConflicts = 0;
+    int numAlreadyPresent = 0;
+    int numCopyFailures = 0;
 
     public CrossLinker() { this(false); }
     public CrossLinker(boolean verbose) { this.verbose = verbose; }
@@ -45,26 +53,44 @@ public class CrossLinker {
                 crossLink(src, dst);
             } else {
                 System.err.println("cannot sync directory " + src + " <-> non-directory " + dst);
+                ++numConflicts;
             }
         } else if (Files.isDirectory(dst)) {
             System.err.println("cannot sync non-directory " + src + " <-> directory " + dst);
+            ++numConflicts;
         }
         // else: assume already OK
+        ++numAlreadyPresent;
     }
 
-    void linkOrCopy(Path src, Path dst) throws IOException {
+    void linkOrCopy(Path src, Path dst) {
+        if (! Files.isRegularFile(src, LinkOption.NOFOLLOW_LINKS)) {
+            ++numNonRegularFiles;
+            return;
+        }
         try {
             Path ok = Files.createLink(dst, src);
+            ++numFilesLinked;
             if (verbose) System.out.println("link " + src + " -> " + ok);
             return;
-        } catch (Exception e) {
+        } catch (IOException e) {
             // should maybe log error first time
         }
-        Files.copy(src, dst);
-        if (verbose) System.out.println("copy " + src + " -> " + dst);
+        try {
+            Path tmp = Files.createTempFile(dst.getParent(), "tmp-", ".tmp");
+            Files.delete(tmp);
+            Files.copy(src, tmp);
+            Path ok = Files.move(tmp, dst);
+            ++numFilesCopied;
+            if (verbose) System.out.println("copy " + src + " -> " + dst);
+        } catch (IOException e) {
+            System.err.println("[IGNORED " + e + "] Could not copy " + src + " -> " + dst);
+            ++numCopyFailures;
+        }
     }
 
     void crossLink(Path src, Path dst) throws IOException {
+        ++numDirsSynced;
         Path a = Files.createDirectories(src);
         Path b = Files.createDirectories(dst);
         Set<Path> aSet = entries(a);
@@ -91,6 +117,23 @@ public class CrossLinker {
                 linkOrCopy(bSub, aSub);
             }
         }
+    }
+
+    void dumpAndResetStats() {
+        System.err.println("Synced " + numDirsSynced + " directories:");
+        System.err.println("  -  files linked: " + numFilesLinked);
+        System.err.println("  -  files copied: " + numFilesCopied);
+        System.err.println("  -  non-regular files skipped: " + numNonRegularFiles);
+        System.err.println("  -  dir/file conflicts skipped: " + numConflicts);
+        System.err.println("  -  files already present skipped: " + numAlreadyPresent);
+        System.err.println("  -  failures to link or copy: " + numCopyFailures);
+        numDirsSynced = 0;
+        numFilesLinked = 0;
+        numFilesCopied = 0;
+        numNonRegularFiles = 0;
+        numConflicts = 0;
+        numAlreadyPresent = 0;
+        numCopyFailures = 0;
     }
 
 }

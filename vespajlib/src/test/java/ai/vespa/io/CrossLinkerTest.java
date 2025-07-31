@@ -41,7 +41,6 @@ class CrossLinkerTest {
     CrossLinker linker;
     int mult = 1;
 
-
     @BeforeEach
     void setup() throws IOException {
         this.tmpOne = mkTemp("one");
@@ -98,25 +97,61 @@ class CrossLinkerTest {
 
     @Test
     void replicates_one_way() throws IOException {
+        System.err.println(">>> replicates_one_way >>>");
         fill(tmpOne, 3, 2);
         rm_r(tmpTwo);
         linker.crossLink(tmpOne, tmpTwo);
         checkEqTrees();
+        linker.dumpAndResetStats();
+        System.err.println("<<< replicates_one_way <<<");
     }
 
     @Test
     void replicates_both_ways() throws IOException {
+        System.err.println(">>> replicates_both_ways >>>");
         fill(tmpOne, 2, 3);
         this.mult = 17;
         fill(tmpTwo, 2, 3);
         linker.crossLink(tmpOne, tmpTwo);
         checkEqTrees();
+        linker.dumpAndResetStats();
+        System.err.println("<<< replicates_both_ways <<<");
+    }
+
+    @Test
+    void can_skip_replicates() throws IOException {
+        System.err.println(">>> can_skip_replicates >>>");
+        fill(tmpOne, 2, 4);
+        fill(tmpTwo, 2, 4);
+        linker.crossLink(tmpOne, tmpTwo);
+        checkEqTrees();
+        linker.dumpAndResetStats();
+        System.err.println("<<<  can_skip_replicates <<<");
     }
 
     @Test
     void skips_clashing() throws IOException {
+        System.err.println(">>> skips_clashing >>>");
         fill(tmpOne, 2, 4);
         fill(tmpTwo, 3, 3);
         linker.crossLink(tmpOne, tmpTwo);
+        linker.dumpAndResetStats();
+        System.err.println("<<< skips_clashing <<<");
     }
+
+    /* insert empty USB stick for this test:
+    @Test
+    void can_copy() throws IOException {
+        System.err.println(">>> can_copy >>>");
+        fill(tmpOne, 2, 3);
+        this.mult = 17;
+        tmpTwo = Files.createTempDirectory(Path.of("/Volumes/NO NAME"), "two");
+        fill(tmpTwo, 2, 3);
+        linker = new CrossLinker(true);
+        linker.crossLink(tmpOne, tmpTwo);
+        checkEqTrees();
+        linker.dumpAndResetStats();
+        System.err.println("<<< can_copy <<<");
+    }
+    */
 }
