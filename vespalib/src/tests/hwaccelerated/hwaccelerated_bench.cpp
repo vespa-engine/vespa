@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
-#include <vespa/vespalib/hwaccelerated/hwy_impl.h>
+#include <vespa/vespalib/hwaccelerated/highway.h>
 #include <vespa/vespalib/util/time.h>
-#include <hwy/targets.h> // TODO temp
 #include <cinttypes>
 
 using namespace vespalib;
+
+using hwaccelerated::IAccelerated;
+using hwaccelerated::Highway;
 
 template<typename T>
 std::vector<T> createAndFill(size_t sz) {
@@ -26,7 +28,7 @@ benchmark_fn(Fn f, size_t sz, size_t count) {
     steady_time start = steady_clock::now();
     double sumOfSums(0);
     for (size_t j(0); j < count; j++) {
-        double sum = f(&a[0], &b[0], sz);
+        double sum = f(a.data(), b.data(), sz);
         sumOfSums += sum;
     }
     duration elapsed = steady_clock::now() - start;
@@ -35,7 +37,7 @@ benchmark_fn(Fn f, size_t sz, size_t count) {
 }
 
 void
-benchmark_squared_euclidean_distance(const hwaccelerated::IAccelerated& accelerator, size_t sz, size_t count) {
+benchmark_squared_euclidean_distance(const IAccelerated& accelerator, size_t sz, size_t count) {
     auto euclidean_dist_fn = [&accelerator](const auto* lhs, const auto* rhs, size_t my_sz) {
         return accelerator.squaredEuclideanDistance(lhs, rhs, my_sz);
     };
@@ -50,7 +52,7 @@ benchmark_squared_euclidean_distance(const hwaccelerated::IAccelerated& accelera
 }
 
 void
-benchmark_dot_product(const hwaccelerated::IAccelerated& accelerator, size_t sz, size_t count) {
+benchmark_dot_product(const IAccelerated& accelerator, size_t sz, size_t count) {
     auto dot_product_fn = [&accelerator](const auto* lhs, const auto* rhs, size_t my_sz) {
         return accelerator.dotProduct(lhs, rhs, my_sz);
     };
@@ -65,7 +67,7 @@ benchmark_dot_product(const hwaccelerated::IAccelerated& accelerator, size_t sz,
 }
 
 void
-benchmark_popcount(const hwaccelerated::IAccelerated& accelerator, size_t sz, size_t count) {
+benchmark_popcount(const IAccelerated& accelerator, size_t sz, size_t count) {
     auto popcount_fn = [&accelerator](const auto* lhs, const auto* rhs, size_t my_sz) {
         (void)rhs; // ... a little bit sneaky
         return accelerator.populationCount(lhs, my_sz);
@@ -75,11 +77,10 @@ benchmark_popcount(const hwaccelerated::IAccelerated& accelerator, size_t sz, si
 }
 
 void for_each_hwy_target(auto&& fn) {
-    for (auto target : hwy::SupportedAndGeneratedTargets()) {
-        hwy::SetSupportedTargetsForTest(target);
-        fn();
+    const auto hwy_targets = Highway::supported_targets();
+    for (const auto* t : hwy_targets) {
+        fn(*t);
     }
-    hwy::SetSupportedTargetsForTest(0);
 }
 
 int main(int argc, char *argv[]) {
@@ -91,20 +92,17 @@ int main(int argc, char *argv[]) {
     if (argc > 2) {
         count = atol(argv[2]);
     }
-    auto baseline_accel      = hwaccelerated::IAccelerated::create_platform_baseline_accelerator();
-    const auto& native_accel = hwaccelerated::IAccelerated::getAccelerator();
-    // On x64 we require AVX2 as a baseline, so don't bother wasting time testing SSSE3/SSE4.
-    // Ideally we would not even build these targets. No effect on Aarch64.
-    hwy::DisableTargets(HWY_SSSE3 | HWY_SSE4);
+    auto baseline_accel      = IAccelerated::create_platform_baseline_accelerator();
+    const auto& native_accel = IAccelerated::getAccelerator();
 
     printf("%s %d %d\n", argv[0], length, count);
     printf("Squared Euclidean Distance - Baseline (%s)\n", baseline_accel->target_name());
     benchmark_squared_euclidean_distance(*baseline_accel, length, count);
     printf("Squared Euclidean Distance - Optimized for this CPU (%s)\n", native_accel.target_name());
     benchmark_squared_euclidean_distance(native_accel, length, count);
-    for_each_hwy_target([&] {
-        printf("Squared Euclidean Distance - Highway (%s)\n", hwaccelerated::HwyAccelerator().target_name());
-        benchmark_squared_euclidean_distance(hwaccelerated::HwyAccelerator(), length, count);
+    for_each_hwy_target([&](const IAccelerated& hwy_accel) {
+        printf("Squared Euclidean Distance - Highway (%s)\n", hwy_accel.target_name());
+        benchmark_squared_euclidean_distance(hwy_accel, length, count);
     });
 
     printf("\n");
@@ -112,9 +110,9 @@ int main(int argc, char *argv[]) {
     benchmark_dot_product(*baseline_accel, length, count);
     printf("Dot Product - Optimized for this CPU (%s)\n", native_accel.target_name());
     benchmark_dot_product(native_accel, length, count);
-    for_each_hwy_target([&] {
-        printf("Dot Product - Highway (%s)\n", hwaccelerated::HwyAccelerator().target_name());
-        benchmark_dot_product(hwaccelerated::HwyAccelerator(), length, count);
+    for_each_hwy_target([&](const IAccelerated& hwy_accel) {
+        printf("Dot Product - Highway (%s)\n", hwy_accel.target_name());
+        benchmark_dot_product(hwy_accel, length, count);
     });
 
     printf("\n");
@@ -122,9 +120,9 @@ int main(int argc, char *argv[]) {
     benchmark_popcount(*baseline_accel, length, count);
     printf("Popcount - Optimized for this CPU (%s)\n", native_accel.target_name());
     benchmark_popcount(native_accel, length, count);
-    for_each_hwy_target([&] {
-        printf("Popcount - Highway (%s)\n", hwaccelerated::HwyAccelerator().target_name());
-        benchmark_popcount(hwaccelerated::HwyAccelerator(), length, count);
+    for_each_hwy_target([&](const IAccelerated& hwy_accel) {
+        printf("Popcount - Highway (%s)\n", hwy_accel.target_name());
+        benchmark_popcount(hwy_accel, length, count);
     });
 
     return 0;

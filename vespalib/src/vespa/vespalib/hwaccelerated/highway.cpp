@@ -1,16 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "hwy_impl.h"
+#include "highway.h"
+#include "platform_generic.h"
 #include <hwy/base.h>
+#include <algorithm>
 #include <cassert>
 
 // 0 => static dispatch (single target)
 // 1 => dynamic dispatch (multiple targets)
+// TODO remove static dispatch
 #define VESPA_HWY_DYNAMIC 1
 
 #if VESPA_HWY_DYNAMIC
 #  undef HWY_TARGET_INCLUDE
-#  define HWY_TARGET_INCLUDE "vespa/vespalib/hwaccelerated/hwy_impl.cpp"
+#  define HWY_TARGET_INCLUDE "vespa/vespalib/hwaccelerated/highway.cpp"
 #  include <hwy/foreach_target.h>
 #endif // VESPA_HWY_DYNAMIC
 
@@ -18,49 +21,48 @@
 #include <hwy/contrib/dot/dot-inl.h>
 
 #if VESPA_HWY_DYNAMIC
-// noexcept not supported for dynamic dispatch target functions
-#define VESPA_HWY_NOEXCEPT
 HWY_BEFORE_NAMESPACE();
 namespace vespalib::hwaccelerated { // NOLINT: must nest namespaces
 namespace HWY_NAMESPACE {
 #else
-#define VESPA_HWY_NOEXCEPT noexcept
 namespace vespalib::hwaccelerated {
 #endif // VESPA_HWY_DYNAMIC
 
 namespace hn = hwy::HWY_NAMESPACE;
 
-template <typename T> //requires (hwy::IsFloat<T>() || hwy::IsSame<T, hwy::bfloat16_t>>())
-HWY_INLINE T
+template <typename T, typename R = T>
+requires (hwy::IsFloat<T>() || hwy::IsSame<T, hwy::bfloat16_t>())
+HWY_INLINE R
 my_hwy_dot_impl(const T* HWY_RESTRICT a, const T* HWY_RESTRICT b, const size_t sz) noexcept {
     const hn::ScalableTag<T> d;
-    return hwy::ConvertScalarTo<T>(hn::Dot::Compute<0>(d, a, b, sz));
+    return hwy::ConvertScalarTo<R>(hn::Dot::Compute<0>(d, a, b, sz));
 }
 
-HWY_NOINLINE float
-my_hwy_dot_float(const float* HWY_RESTRICT a, const float* HWY_RESTRICT b, const size_t sz) VESPA_HWY_NOEXCEPT {
+float
+my_hwy_dot_float(const float* HWY_RESTRICT a, const float* HWY_RESTRICT b, const size_t sz) noexcept {
     return my_hwy_dot_impl(a, b, sz);
 }
 
-HWY_NOINLINE float
-my_hwy_dot_bf16(const BFloat16* HWY_RESTRICT a, const BFloat16* HWY_RESTRICT b, const size_t sz) VESPA_HWY_NOEXCEPT {
+float
+my_hwy_dot_bf16(const BFloat16* HWY_RESTRICT a, const BFloat16* HWY_RESTRICT b, const size_t sz) noexcept {
     // Highway already comes with dot product kernels supporting BF16, so use these.
     static_assert(sizeof(BFloat16)  == sizeof(hwy::bfloat16_t));
     static_assert(alignof(BFloat16) == alignof(hwy::bfloat16_t));
 
     const auto* a_bf16 = reinterpret_cast<const hwy::bfloat16_t*>(a);
     const auto* b_bf16 = reinterpret_cast<const hwy::bfloat16_t*>(b);
-    return my_hwy_dot_impl(a_bf16, b_bf16, sz);
+    // Although our input parameters are BF16, the returned value must be a float to avoid losing precision.
+    return my_hwy_dot_impl<hwy::bfloat16_t, float>(a_bf16, b_bf16, sz);
 }
 
-HWY_NOINLINE double
-my_hwy_dot_double(const double* HWY_RESTRICT a, const double* HWY_RESTRICT b, const size_t sz) VESPA_HWY_NOEXCEPT {
+double
+my_hwy_dot_double(const double* HWY_RESTRICT a, const double* HWY_RESTRICT b, const size_t sz) noexcept {
     return my_hwy_dot_impl(a, b, sz);
 }
 
 template <typename T> requires (hwy::IsFloat<T>())
-HWY_NOINLINE double
-my_hwy_square_euclidean_distance_unrolled_impl(const T* HWY_RESTRICT a, const T* HWY_RESTRICT b, const size_t sz) VESPA_HWY_NOEXCEPT {
+double
+my_hwy_square_euclidean_distance_unrolled_impl(const T* HWY_RESTRICT a, const T* HWY_RESTRICT b, const size_t sz) noexcept {
     const hn::ScalableTag<T> d;
     const auto kernel_fn = [](auto lhs, auto rhs, auto& accu) noexcept {
         const auto sub = hn::Sub(lhs, rhs);
@@ -70,10 +72,10 @@ my_hwy_square_euclidean_distance_unrolled_impl(const T* HWY_RESTRICT a, const T*
     return MyKernel::pairwise(d, d, a, b, sz, hn::Zero(d), kernel_fn, VecAdd(), LaneReduceSum());
 }
 
-HWY_NOINLINE double
+double
 my_hwy_bf16_square_euclidean_distance_unrolled(const BFloat16* HWY_RESTRICT a,
                                                const BFloat16* HWY_RESTRICT b,
-                                               const size_t sz) VESPA_HWY_NOEXCEPT
+                                               const size_t sz) noexcept
 {
     static_assert(sizeof(BFloat16)  == sizeof(hwy::bfloat16_t));
     static_assert(alignof(BFloat16) == alignof(hwy::bfloat16_t));
@@ -101,7 +103,7 @@ my_hwy_bf16_square_euclidean_distance_unrolled(const BFloat16* HWY_RESTRICT a,
 
 // Important: `sz` should be low enough that the intermediate i32 sum does not overflow!
 HWY_NOINLINE int32_t
-sub_mul_add_i8s_via_i16_to_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) {
+sub_mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) {
     const hn::ScalableTag<int8_t>                  d8;
     const hn::Repartition<int16_t, decltype(d8)>  d16;
     const hn::Repartition<int32_t, decltype(d16)> d32;
@@ -116,27 +118,27 @@ sub_mul_add_i8s_via_i16_to_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_R
     return MyKernel::pairwise(d8, d32, a, b, sz, hn::Zero(d32), kernel_fn, VecAdd(), LaneReduceSum());
 }
 
-HWY_NOINLINE double
-my_hwy_square_euclidean_distance_i8(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) VESPA_HWY_NOEXCEPT {
+double
+my_hwy_square_euclidean_distance_i8(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) noexcept {
     // If we cannot possibly overflow intermediate i32 accumulators we can directly
     // compute the distance without requiring any chunking. Max chunk size is defined
     // by the number of worst-case sums of -128**2 that can fit into an i32.
     constexpr size_t max_n_per_chunk = INT32_MAX / (INT8_MIN*INT8_MIN);
-    return compute_chunked_sum<max_n_per_chunk, double>(sub_mul_add_i8s_via_i16_to_i32, a, b, sz);
+    return compute_chunked_sum<max_n_per_chunk, double>(sub_mul_add_i8_to_i32, a, b, sz);
 }
 
-HWY_NOINLINE double
-my_hwy_square_euclidean_distance_float_unrolled(const float* HWY_RESTRICT a, const float* HWY_RESTRICT b, const size_t sz) VESPA_HWY_NOEXCEPT {
+double
+my_hwy_square_euclidean_distance_float_unrolled(const float* HWY_RESTRICT a, const float* HWY_RESTRICT b, const size_t sz) noexcept {
     return my_hwy_square_euclidean_distance_unrolled_impl(a, b, sz);
 }
 
-HWY_NOINLINE double
-my_hwy_square_euclidean_distance_double_unrolled(const double* HWY_RESTRICT a, const double* HWY_RESTRICT b, const size_t sz) VESPA_HWY_NOEXCEPT {
+double
+my_hwy_square_euclidean_distance_double_unrolled(const double* HWY_RESTRICT a, const double* HWY_RESTRICT b, const size_t sz) noexcept {
     return my_hwy_square_euclidean_distance_unrolled_impl(a, b, sz);
 }
 
-HWY_NOINLINE size_t
-my_hwy_popcount(const uint64_t* a, const size_t sz) VESPA_HWY_NOEXCEPT {
+size_t
+my_hwy_popcount(const uint64_t* a, const size_t sz) noexcept {
     // TODO have a way to explicitly disable fallbacks for benchmarking purposes
 #if HWY_TARGET != HWY_AVX2 && HWY_TARGET != HWY_AVX3
     const hn::ScalableTag<uint64_t> d;
@@ -155,7 +157,7 @@ my_hwy_popcount(const uint64_t* a, const size_t sz) VESPA_HWY_NOEXCEPT {
 #if HWY_TARGET != HWY_NEON
 
 HWY_NOINLINE int32_t
-mul_add_i8_as_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) noexcept {
+mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) noexcept {
     const hn::ScalableTag<int8_t>                 d8;
     const hn::Repartition<int32_t, decltype(d8)> d32;
     const auto kernel_fn = [d32](auto lhs_i8, auto rhs_i8, auto& accu) noexcept {
@@ -177,7 +179,7 @@ mul_add_i8_as_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, co
 // what the compiler auto-vectorizer is capable of conjuring up, since it does not seem to
 // generate _fused_ mul+adds.
 HWY_NOINLINE int32_t
-mul_add_i8_as_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) noexcept {
+mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) noexcept {
     const hn::ScalableTag<int8_t>                  d8;
     const hn::Repartition<int16_t, decltype(d8)>  d16;
     const hn::Repartition<int32_t, decltype(d16)> d32;
@@ -197,18 +199,65 @@ mul_add_i8_as_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, co
 
 #endif // HWY_NEON
 
-HWY_NOINLINE int64_t
-my_hwy_i8_dot_product(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) VESPA_HWY_NOEXCEPT {
+int64_t
+my_hwy_i8_dot_product(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) noexcept {
     // If we cannot possibly overflow intermediate i32 accumulators we can directly
     // compute the dot product without requiring any chunking. Max chunk size is defined
     // by the number of worst-case sums of i8 multiplications (-128**2) that can fit
     // into a single i32 accumulator.
     constexpr size_t max_n_per_chunk = INT32_MAX / (INT8_MIN*INT8_MIN);
-    return compute_chunked_sum<max_n_per_chunk, int64_t>(mul_add_i8_as_i32, a, b, sz);
+    return compute_chunked_sum<max_n_per_chunk, int64_t>(mul_add_i8_to_i32, a, b, sz);
 }
 
-const char* my_hwy_target_name() VESPA_HWY_NOEXCEPT {
+const char* my_hwy_target_name() noexcept {
     return hwy::TargetName(HWY_TARGET);
+}
+
+// Since we already do a virtual dispatch via the IAccelerated interface, avoid needing an
+// additional per-function dispatch step via Highway's function tables by creating a concrete
+// implementation class per target.
+class HwyTargetAccelerator final : public PlatformGenericAccelerator {
+public:
+    ~HwyTargetAccelerator() override = default;
+    float dotProduct(const float* a, const float* b, size_t sz) const noexcept override {
+        // TODO figure out why Highway dot product is faster for shorter vectors (1000), but
+        //  seemingly _slower_ for longer vectors (4000)... õ_o Probably due to the massively
+        //  unrolled hand-squeezed assembly kernels in CBLAS.
+        return my_hwy_dot_float(a, b, sz);
+    }
+    float dotProduct(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept override {
+        return my_hwy_dot_bf16(a, b, sz);
+    }
+    double dotProduct(const double* a, const double* b, size_t sz) const noexcept override {
+        return my_hwy_dot_double(a, b, sz);
+    }
+    int64_t dotProduct(const int8_t* a, const int8_t* b, size_t sz) const noexcept override {
+        return my_hwy_i8_dot_product(a, b, sz);
+    }
+    size_t populationCount(const uint64_t* a, size_t sz) const noexcept override {
+        return my_hwy_popcount(a, sz);
+    }
+    double squaredEuclideanDistance(const int8_t* a, const int8_t* b, size_t sz) const noexcept override {
+        return my_hwy_square_euclidean_distance_i8(a, b, sz);
+    }
+    double squaredEuclideanDistance(const float* a, const float* b, size_t sz) const noexcept override {
+        return my_hwy_square_euclidean_distance_float_unrolled(a, b, sz);
+    }
+    double squaredEuclideanDistance(const double* a, const double* b, size_t sz) const noexcept override {
+        return my_hwy_square_euclidean_distance_double_unrolled(a, b, sz);
+    }
+    double squaredEuclideanDistance(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept override {
+        return my_hwy_bf16_square_euclidean_distance_unrolled(a, b, sz);
+    }
+    const char* target_name() const noexcept override {
+        return my_hwy_target_name();
+    }
+    [[nodiscard]] static const HwyTargetAccelerator& target_instance() noexcept;
+};
+
+const HwyTargetAccelerator& HwyTargetAccelerator::target_instance() noexcept {
+    static HwyTargetAccelerator instance;
+    return instance;
 }
 
 #if VESPA_HWY_DYNAMIC
@@ -223,105 +272,57 @@ HWY_AFTER_NAMESPACE();
 
 namespace vespalib::hwaccelerated {
 
-#if VESPA_HWY_DYNAMIC
+#define VESPA_HWY_ADD_SUPPORTED_IMPL_VISITOR(hwy_target, hwy_ns) \
+    if ((supported_targets & hwy_target) != 0) { \
+        target_id_and_impl.emplace_back(hwy_target, &hwy_ns::HwyTargetAccelerator::target_instance()); \
+    }
 
-HWY_EXPORT(my_hwy_dot_float);
-HWY_EXPORT(my_hwy_dot_bf16);
-HWY_EXPORT(my_hwy_dot_double);
-HWY_EXPORT(my_hwy_popcount);
-HWY_EXPORT(my_hwy_square_euclidean_distance_float_unrolled);
-HWY_EXPORT(my_hwy_square_euclidean_distance_double_unrolled);
-HWY_EXPORT(my_hwy_square_euclidean_distance_i8);
-HWY_EXPORT(my_hwy_bf16_square_euclidean_distance_unrolled);
-HWY_EXPORT(my_hwy_i8_dot_product);
-HWY_EXPORT(my_hwy_target_name);
+namespace {
 
-float HwyAccelerator::dotProduct(const float* a, const float* b, size_t sz) const noexcept {
-    return HWY_DYNAMIC_DISPATCH(my_hwy_dot_float)(a, b, sz);
+// The "best" supported target will be the first element in the vector.
+std::vector<const IAccelerated*> enumerate_supported_hwy_targets() {
+    // On x64 we require AVX2 as a baseline, so don't bother wasting time with SSSE3/SSE4.
+    // Ideally we would not even build these targets. No effect on Aarch64.
+    hwy::DisableTargets(HWY_SSSE3 | HWY_SSE4);
+    const uint64_t supported_targets = hwy::SupportedTargets();
+
+    std::vector<std::pair<uint64_t, const IAccelerated*>> target_id_and_impl;
+    // Visits _compile-time_ supported targets in _alphabetical_ (i.e. not preferred) order.
+    // Intersect these with the _run-time_ supported targets and keep track of their target IDs.
+    // Since lower target IDs are considered more preferred, we then post-sort the list in
+    // preference order.
+    HWY_VISIT_TARGETS(VESPA_HWY_ADD_SUPPORTED_IMPL_VISITOR);
+    std::ranges::sort(target_id_and_impl, [](const auto& lhs, const auto& rhs) noexcept {
+        return lhs.first < rhs.first;
+    });
+    // We might get a duplicate output due to HWY_VISIT_TARGETS including the fallback static
+    // target, which is likely equal to another target. Remove dupes to avoid having to deal
+    // with this at a higher level.
+    auto to_erase = std::ranges::unique(target_id_and_impl, [](const auto& lhs, const auto& rhs) noexcept {
+        return lhs.first == rhs.first;
+    });
+    target_id_and_impl.erase(to_erase.begin(), to_erase.end());
+    assert(!target_id_and_impl.empty()); // Must be at least a fallback target
+
+    std::vector<const IAccelerated*> preferred_target_order;
+    preferred_target_order.reserve(target_id_and_impl.size());
+    for (const auto& elem : target_id_and_impl) {
+        preferred_target_order.emplace_back(elem.second);
+    }
+    return preferred_target_order;
 }
 
-float HwyAccelerator::dotProduct(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept {
-    return HWY_DYNAMIC_DISPATCH(my_hwy_dot_bf16)(a, b, sz);
+} // anon ns
+
+std::span<const IAccelerated*> Highway::supported_targets() {
+    static std::vector<const IAccelerated*> targets = enumerate_supported_hwy_targets();
+    return targets;
 }
 
-double HwyAccelerator::dotProduct(const double* a, const double* b, size_t sz) const noexcept {
-    return HWY_DYNAMIC_DISPATCH(my_hwy_dot_double)(a, b, sz);
+const IAccelerated& Highway::best_target() noexcept {
+    return *supported_targets().front();
 }
 
-int64_t HwyAccelerator::dotProduct(const int8_t* a, const int8_t* b, size_t sz) const noexcept {
-    // return N_NEON_BF16::my_hwy_i8_dot_product(a, b, sz); // Mac M1 has dotproduct, but not BF16, but this doesn't use BF16
-    return HWY_DYNAMIC_DISPATCH(my_hwy_i8_dot_product)(a, b, sz);
-}
-
-size_t HwyAccelerator::populationCount(const uint64_t *a, size_t sz) const noexcept {
-    return HWY_DYNAMIC_DISPATCH(my_hwy_popcount)(a, sz);
-}
-
-double HwyAccelerator::squaredEuclideanDistance(const int8_t* a, const int8_t* b, size_t sz) const noexcept {
-    return HWY_DYNAMIC_DISPATCH(my_hwy_square_euclidean_distance_i8)(a, b, sz);
-}
-
-double HwyAccelerator::squaredEuclideanDistance(const float* a, const float* b, size_t sz) const noexcept {
-    return HWY_DYNAMIC_DISPATCH(my_hwy_square_euclidean_distance_float_unrolled)(a, b, sz);
-}
-
-double HwyAccelerator::squaredEuclideanDistance(const double* a, const double* b, size_t sz) const noexcept {
-    return HWY_DYNAMIC_DISPATCH(my_hwy_square_euclidean_distance_double_unrolled)(a, b, sz);
-}
-
-double HwyAccelerator::squaredEuclideanDistance(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept {
-    return HWY_DYNAMIC_DISPATCH(my_hwy_bf16_square_euclidean_distance_unrolled)(a, b, sz);
-}
-
-const char* HwyAccelerator::target_name() const noexcept {
-    return HWY_DYNAMIC_DISPATCH(my_hwy_target_name)();
-}
-
-#else // if VESPA_HWY_DYNAMIC
-
-// TODO figure out why Highway dot product is faster for shorter vectors (1000), but
-//  seemingly _slower_ for longer vectors (4000)... õ_o
-float HwyAccelerator::dotProduct(const float* a, const float* b, size_t sz) const noexcept {
-    return my_hwy_dot_float(a, b, sz);
-}
-
-float HwyAccelerator::dotProduct(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept {
-    return my_hwy_dot_bf16(a, b, sz);
-}
-
-double HwyAccelerator::dotProduct(const double* a, const double* b, size_t sz) const noexcept {
-    return my_hwy_dot_double(a, b, sz);
-}
-
-int64_t HwyAccelerator::dotProduct(const int8_t * a, const int8_t* b, size_t sz) const noexcept {
-    return my_hwy_i8_dot_product(a, b, sz);
-}
-
-size_t HwyAccelerator::populationCount(const uint64_t* a, size_t sz) const noexcept {
-    return my_hwy_popcount(a, sz);
-}
-
-double HwyAccelerator::squaredEuclideanDistance(const int8_t* a, const int8_t* b, size_t sz) const noexcept {
-    return my_hwy_square_euclidean_distance_i8(a, b, sz);
-}
-
-double HwyAccelerator::squaredEuclideanDistance(const float* a, const float* b, size_t sz) const noexcept {
-    return my_hwy_square_euclidean_distance_float_unrolled(a, b, sz);
-}
-
-double HwyAccelerator::squaredEuclideanDistance(const double* a, const double* b, size_t sz) const noexcept {
-    return my_hwy_square_euclidean_distance_double_unrolled(a, b, sz);
-}
-
-double HwyAccelerator::squaredEuclideanDistance(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept {
-    return my_hwy_bf16_square_euclidean_distance_unrolled(a, b, sz);
-}
-
-const char* HwyAccelerator::target_name() const noexcept {
-    return return hwy::TargetName(HWY_TARGET);
-}
-
-#endif // VESPA_HWY_DYNAMIC
 
 } // namespace vespalib::hwaccelerated
 
