@@ -31,7 +31,7 @@ private:
     static constexpr uint16_t float_to_bits(float value) noexcept {
         TwoU16 both{0,0};
         static_assert(sizeof(TwoU16) == sizeof(float));
-        memcpy(&both, &value, sizeof(float));
+        both = std::bit_cast<TwoU16>(value);
         if constexpr (native_endian == std::endian::big) {
             return both.u1;
         } else {
@@ -53,7 +53,7 @@ private:
         }
         float result = 0.0;
         static_assert(sizeof(TwoU16) == sizeof(float));
-        memcpy(&result, &both, sizeof(float));
+        result = std::bit_cast<float>(both);
         return result;
     }
 public:
