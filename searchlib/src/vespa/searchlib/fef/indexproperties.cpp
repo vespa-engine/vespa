@@ -510,7 +510,7 @@ FilterFirstUpperLimit::lookup(const Properties &props, double defaultValue)
 
 const std::string FilterFirstExploration::NAME("vespa.matching.nns.filter_first_exploration");
 
-const double FilterFirstExploration::DEFAULT_VALUE(0.01);
+const double FilterFirstExploration::DEFAULT_VALUE(0.3);
 
 double
 FilterFirstExploration::lookup(const Properties &props)

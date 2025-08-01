@@ -6,11 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import ai.vespa.schemals.context.ParseContext;
@@ -24,7 +22,8 @@ public class YQLParserTest {
 
     ParseResult parseString(String input, String fileName) throws Exception {
         ParseContext context = Utils.createTestContext(input, fileName);
-        context.useVespaGroupingIdentifiers();
+        context.useGeneralIdentifers();
+        context.useYqlAndGroupingIdentifiers();
         return YQLDocument.parseContent(context);
     }
 
@@ -195,6 +194,7 @@ public class YQLParserTest {
             "select * from sources * where ({stem: false}(foo contains \"a\" and bar contains \"b\")) or foo contains ({stem: false}\"c\")",
             "select * from sources * where foo contains @animal and foo contains phrase(@animal, @syntaxExample, @animal)",
             "select * from sources * where sddocname contains 'purchase' | all(group(customer) each(output(sum(price))))",
+            "select * from sources * where true | all(group(customer) filter(and(regex(\"foo\", bar), or(not(regex(\"baz\", a)), regex(\"b\", b)))) each(output(sum(price))))",
         };
 
         Stream<String> queryStream = Stream.concat(Arrays.stream(queries), Arrays.stream(groupingQueries));
@@ -208,6 +208,7 @@ public class YQLParserTest {
     Stream<DynamicTest> InvalidQuery() throws Exception {
         var queries = new TestWithError[] {
             new TestWithError(1, "seletc *"),
+            new TestWithError(1, "select * from sources * where true | all(group(foo) filter(regex(\"*\", field)))"),
             // new TestWithError(1, "select * from sources * where true | all(group(a) order(attr * count()) each(output(count())) )"),
         };
 

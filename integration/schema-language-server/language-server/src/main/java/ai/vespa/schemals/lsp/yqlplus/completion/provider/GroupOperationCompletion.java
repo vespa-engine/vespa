@@ -32,7 +32,7 @@ public class GroupOperationCompletion implements CompletionProvider {
         add(CompletionUtils.constructSnippet("output", "output($1)$0"));
         add(CompletionUtils.constructSnippet("precision", "precision(${1:number})$0"));
         add(CompletionUtils.constructSnippet("where", "where($1)$0"));
-        add(CompletionUtils.constructSnippet("filter", "filter(regex(\"$1\", $2))$0"));
+        add(CompletionUtils.constructSnippet("filter", "filter($0)"));
     }};
 
     private final static List<CompletionItem> allEachCompletionItems = new ArrayList<>() {{

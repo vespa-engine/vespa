@@ -539,7 +539,7 @@ rank-profile feature_logging {
     @Test
     void filter_first_exploration_is_configurable() throws ParseException {
 	verifyFilterFirstExploration(null);
-	verifyFilterFirstExploration(0.012);
+	verifyFilterFirstExploration(0.35);
     }
 
     private void verifyFilterFirstExploration(Double filterFirstExploration) throws ParseException {

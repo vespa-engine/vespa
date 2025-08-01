@@ -1515,6 +1515,7 @@
       "public java.lang.String stringValue()",
       "public boolean isFromQuery()",
       "public boolean isStemmed()",
+      "public void setStemmed(boolean)",
       "public void lock()",
       "public boolean isLocked()",
       "public int getNumWords()",
@@ -2633,6 +2634,20 @@
       "public com.yahoo.search.grouping.request.AndFunction copy()",
       "public static com.yahoo.search.grouping.request.AndFunction newInstance(java.util.List)",
       "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.grouping.request.AndPredicate" : {
+    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.util.List)",
+      "public java.util.List getArgs()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.FilterExpression copy()"
     ],
     "fields" : [ ]
   },
@@ -3772,6 +3787,20 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.NotPredicate" : {
+    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.grouping.request.FilterExpression)",
+      "public com.yahoo.search.grouping.request.FilterExpression getExpression()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.FilterExpression copy()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.grouping.request.NowFunction" : {
     "superClass" : "com.yahoo.search.grouping.request.FunctionNode",
     "interfaces" : [ ],
@@ -3796,6 +3825,20 @@
       "public com.yahoo.search.grouping.request.OrFunction copy()",
       "public static com.yahoo.search.grouping.request.OrFunction newInstance(java.util.List)",
       "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.grouping.request.OrPredicate" : {
+    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.util.List)",
+      "public java.util.List getArgs()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.FilterExpression copy()"
     ],
     "fields" : [ ]
   },

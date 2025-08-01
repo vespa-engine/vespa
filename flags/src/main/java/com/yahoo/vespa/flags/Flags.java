@@ -137,14 +137,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
-            List.of("olaa"), "2022-09-23", "2025-08-01",
+            List.of("olaa"), "2022-09-23", "2025-11-01",
             "Whether an OpenTelemetry collector should be enabled",
             "Takes effect at next tick",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
             "otelcol-logs", List.of(), String.class,
-            List.of("olaa"), "2024-01-15", "2025-08-01",
+            List.of("olaa"), "2024-01-15", "2025-11-01",
             "Determines log files handled by the OpenTelemetry collector",
             "Takes effect at next tick",
             TENANT_ID, APPLICATION, INSTANCE_ID
@@ -152,7 +152,7 @@ public class Flags {
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
-            List.of("vekterli"), "2022-11-03", "2025-08-01",
+            List.of("vekterli"), "2022-11-03", "2025-12-01",
             "Specifies which public key to use for core dump encryption.",
             "Takes effect on the next tick.",
             NODE_TYPE, HOSTNAME);
@@ -227,7 +227,7 @@ public class Flags {
 
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,
-            List.of("olaa"), "2024-04-03", "2025-08-01",
+            List.of("olaa"), "2024-04-03", "2025-11-01",
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
@@ -241,14 +241,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag MONITORING_JWT = defineFeatureFlag(
             "monitoring-jwt", false,
-            List.of("olaa"), "2024-07-05", "2025-08-01",
+            List.of("olaa"), "2024-07-05", "2025-11-01",
             "Whether a monitoring JWT should be issued by the controller",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL);
 
     public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
             "snapshots-enabled", false,
-            List.of("olaa"), "2024-10-22", "2025-08-01",
+            List.of("olaa"), "2024-10-22", "2025-11-01",
             "Whether node snapshots should be created when host storage is discarded",
             "Takes effect immediately");
 
@@ -346,7 +346,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag AZURE_IPV6 = defineFeatureFlag(
             "azure-ipv6", false,
-            List.of("olaa"), "2025-06-10", "2025-08-10",
+            List.of("olaa"), "2025-06-10", "2025-11-01",
             "Whether Azure hosts should be provisioned with IPv6 addresses",
             "Takes effect immediately"
     );

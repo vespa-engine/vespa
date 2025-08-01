@@ -510,7 +510,7 @@ HnswIndex<type>::search_layer_filter_first_helper(const BoundDistanceFunction &d
             if (dist_to_input < (1.0 + exploration_slack) * limit_dist) {
                 candidates.emplace(neighbor_nodeid, neighbor_ref, dist_to_input);
 
-                if (dist_to_input < limit_dist && filter_wrapper.check(neighbor_docid)) {
+                if (dist_to_input < limit_dist) {
                     // exploreNeighborhood only returns nodes that pass the filter, no need to check that here
                     best_neighbors.emplace(neighbor_nodeid, neighbor_docid, neighbor_ref, dist_to_input);
                     if (trace_file) *trace_file << std::format("Adding {} to candidates and best neighbors", neighbor_nodeid);
@@ -570,8 +570,8 @@ HnswIndex<type>::exploreNeighborhood(HnswTraversalCandidate &cand, std::deque<ui
     }
     found_progress = found.size();
 
-    // Explore 3-hop neighbors, but only if we have not found enough nodes yet (one quarter of the desired amount)
-    if (static_cast<double>(todo.size()) < exploration * (max_neighbors_to_find * max_neighbors_to_find * max_neighbors_to_find)) {
+    // Explore 3-hop neighbors, but only if the 2-hop neighborhood is small, i.e., we are in a rather sparse part of the graph.
+    if (static_cast<double>(todo.size()) < exploration * (max_neighbors_to_find * max_neighbors_to_find)) {
         if (trace_file) *trace_file << "3-hop visited:";
         exploreNeighborhoodByOneHop(todo, found, visited, level, filter_wrapper, nodeid_limit, max_neighbors_to_find, trace_file);
         if (trace_file) *trace_file << "\n";

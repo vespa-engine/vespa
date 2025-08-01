@@ -48,13 +48,18 @@ class HitRescorer {
         return newScore;
     }
 
+    public static final String RELEVANCE_SCORE = "relevanceScore";
+
     private static double evalScorer(WrappedHit wrapped, Evaluator scorer, List<MatchFeatureInput> fromMF) {
         for (var argSpec : fromMF) {
+            String name = argSpec.inputName();
             var asTensor = wrapped.getTensor(argSpec.matchFeatureName());
             if (asTensor != null) {
-                scorer.bind(argSpec.inputName(), asTensor);
+                scorer.bind(name, asTensor);
+            } else if (name.equals(RELEVANCE_SCORE)) {
+                scorer.bind(name, Tensor.from(wrapped.getScore()));
             } else {
-                logger.warning("Missing match-feature for Evaluator argument: " + argSpec.inputName());
+                logger.warning("Missing match-feature for Evaluator argument: " + name);
                 return 0.0;
             }
         }

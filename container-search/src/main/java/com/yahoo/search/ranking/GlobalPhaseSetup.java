@@ -128,7 +128,10 @@ class GlobalPhaseSetup {
                     fromQuery.add(queryFeatureName);
                 } else if (availableNormalizers.contains(input)) {
                     usedNormalizers.add(input);
-                } else if (availableMatchFeatures.contains(input)) {
+                } else if (availableMatchFeatures.contains(input) ||
+                            // per-hit pseudo match feature:
+                           input.equals(HitRescorer.RELEVANCE_SCORE))
+                {
                     String mfName = renamedFeatures.getOrDefault(input, input);
                     fromMF.add(new MatchFeatureInput(input, mfName));
                 } else if (renamedFeatures.containsValue(input)) {

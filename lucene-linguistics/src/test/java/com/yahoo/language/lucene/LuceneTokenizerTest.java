@@ -232,6 +232,33 @@ public class LuceneTokenizerTest {
     }
 
     @Test
+    public void testChineseLanguage() {
+        LuceneAnalysisConfig zhConfig = new LuceneAnalysisConfig.Builder()
+                                                .configDir(Optional.of(FileReference.mockFileReferenceForUnitTesting(new File("."))))
+                                                .analysis(
+                                                        Map.of("zh", // Should apply to both zh-hans and zh-hant
+                                                               new LuceneAnalysisConfig.Analysis.Builder().tokenFilters(List.of(
+                                                                       new LuceneAnalysisConfig
+                                                                                   .Analysis
+                                                                                   .TokenFilters
+                                                                                   .Builder()
+                                                                               .name("stop")
+                                                                               .conf("words", "stopwords.txt"))))
+                                                         ).build();
+        LuceneLinguistics linguistics = new LuceneLinguistics(zhConfig, new ComponentRegistry<>());
+
+        // Default processing, for comparison
+        var english = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, false, true);
+        assertEquals(List.of("dog", "cat"), tokenStrings(linguistics.getTokenizer().tokenize("Dogs and Cats", english)));
+
+        var simplified = new LinguisticsParameters(Language.CHINESE_SIMPLIFIED, StemMode.ALL, false, true);
+        assertEquals(List.of("Dogs", "Cats"), tokenStrings(linguistics.getTokenizer().tokenize("Dogs and Cats", simplified)));
+
+        var traditional = new LinguisticsParameters(Language.CHINESE_TRADITIONAL, StemMode.ALL, false, true);
+        assertEquals(List.of("Dogs", "Cats"), tokenStrings(linguistics.getTokenizer().tokenize("Dogs and Cats", traditional)));
+    }
+
+    @Test
     public void testOptionalPath() {
         var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, false, true);
         String languageCode = Language.ENGLISH.languageCode();

@@ -271,7 +271,11 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
                 if (!entry.isDirectory() && entry.getName().startsWith(documentationPath.getFileName().toString())) {
-                    Path destination = documentationPath.getParent().resolve(entry.getName());
+                    Path extractionDir = documentationPath.getParent();
+                    Path destination = extractionDir.resolve(entry.getName()).normalize();
+                    if (!destination.startsWith(extractionDir)) {
+                        throw new IOException("Zip entry is outside of the target dir: " + entry.getName());
+                    }
                     Files.createDirectories(destination.getParent());
                     try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(entry.getName())) {
                         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));

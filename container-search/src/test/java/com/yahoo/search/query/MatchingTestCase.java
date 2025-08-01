@@ -37,7 +37,7 @@ public class MatchingTestCase {
                 "&ranking.matching.postFilterThreshold=0.8" +
                 "&ranking.matching.approximateThreshold=0.3" +
                 "&ranking.matching.filterFirstThreshold=0.2" +
-                "&ranking.matching.filterFirstExploration=0.012" +
+                "&ranking.matching.filterFirstExploration=0.35" +
                 "&ranking.matching.explorationSlack=0.09" +
                 "&ranking.matching.targetHitsMaxAdjustmentFactor=2.5" +
                 "&ranking.matching.filterThreshold=0.7" +
@@ -51,7 +51,7 @@ public class MatchingTestCase {
         assertEquals(Double.valueOf(0.8), query.getRanking().getMatching().getPostFilterThreshold());
         assertEquals(Double.valueOf(0.3), query.getRanking().getMatching().getApproximateThreshold());
         assertEquals(Double.valueOf(0.2), query.getRanking().getMatching().getFilterFirstThreshold());
-        assertEquals(Double.valueOf(0.012), query.getRanking().getMatching().getFilterFirstExploration());
+        assertEquals(Double.valueOf(0.35), query.getRanking().getMatching().getFilterFirstExploration());
         assertEquals(Double.valueOf(0.09), query.getRanking().getMatching().getExplorationSlack());
         assertEquals(Double.valueOf(2.5), query.getRanking().getMatching().getTargetHitsMaxAdjustmentFactor());
         assertEquals(Double.valueOf(0.7), query.getRanking().getMatching().getFilterThreshold());
@@ -67,7 +67,7 @@ public class MatchingTestCase {
         assertEquals("0.8", query.getRanking().getProperties().get("vespa.matching.global_filter.upper_limit").get(0));
         assertEquals("0.3", query.getRanking().getProperties().get("vespa.matching.global_filter.lower_limit").get(0));
         assertEquals("0.2", query.getRanking().getProperties().get("vespa.matching.nns.filter_first_upper_limit").get(0));
-        assertEquals("0.012", query.getRanking().getProperties().get("vespa.matching.nns.filter_first_exploration").get(0));
+        assertEquals("0.35", query.getRanking().getProperties().get("vespa.matching.nns.filter_first_exploration").get(0));
         assertEquals("0.09", query.getRanking().getProperties().get("vespa.matching.nns.exploration_slack").get(0));
         assertEquals("2.5", query.getRanking().getProperties().get("vespa.matching.nns.target_hits_max_adjustment_factor").get(0));
         assertEquals("0.7", query.getRanking().getProperties().get("vespa.matching.filter_threshold").get(0));

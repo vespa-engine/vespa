@@ -11,7 +11,7 @@
   "categories": [
     "Programming Languages",
     "Snippets",
-    "Other" 
+    "Other"
   ],
   "keywords": [
     "Vespa",
@@ -19,7 +19,7 @@
     "YQL"
   ],
   "repository": {
-    "type": "git",  
+    "type": "git",
     "url": "https://github.com/vespa-engine/vespa"
   },
   "icon": "images/icon.png",
@@ -91,7 +91,7 @@
   "devDependencies": {
     "@types/hasbin": "^1.2.2",
     "@types/mocha": "^10.0.6",
-    "@types/node": "20.x",
+    "@types/node": "^20.19.9",
     "@types/vscode": "^1.72.0",
     "@typescript-eslint/eslint-plugin": "^7.11.0",
     "@typescript-eslint/parser": "^7.11.0",

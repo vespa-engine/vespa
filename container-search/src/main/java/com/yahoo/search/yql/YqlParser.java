@@ -74,9 +74,11 @@ import com.yahoo.prelude.query.WeightedSetItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.processing.IllegalInputException;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.request.GroupingOperation;
+import com.yahoo.search.query.Model;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.QueryType;
 import com.yahoo.search.query.Sorting;
@@ -207,6 +209,12 @@ public class YqlParser implements Parser {
     public static final String MAX_EDIT_DISTANCE = "maxEditDistance";
     public static final String PREFIX_LENGTH = "prefixLength";
 
+    private static final CompoundName modelType = CompoundName.fromComponents(Model.MODEL, Model.TYPE);
+    private static final CompoundName modelTypeAlias = CompoundName.from("type");
+    private static final CompoundName modelTypeComposite = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.COMPOSITE);
+    private static final CompoundName modelTypeTokenization = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.TOKENIZATION);
+    private static final CompoundName modelTypeSyntax = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.SYNTAX);
+    private static final CompoundName modelTypeIsYqlDefault = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.IS_YQL_DEFAULT);
 
     private final IndexFacts indexFacts;
     private final List<ConnectedItem> connectedItems = new ArrayList<>();
@@ -683,7 +691,7 @@ public class YqlParser implements Parser {
         // All terms below sameElement are relative to this.
         IndexNameExpander prev = swapIndexCreator(new PrefixExpander(field));
         for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
-            // TODO getIndex that is called once every term is rather expensive as it does sanity checking
+            // TODO: getIndex that is called once every term is rather expensive as it does sanity checking
             // that is not necessary. This is an issue when having many elements
             sameElement.addItem(convertExpression(term));
         }
@@ -695,7 +703,7 @@ public class YqlParser implements Parser {
         assertHasFunctionName(ast, PHRASE);
 
         if (getAnnotation(ast, ORIGIN, Map.class, null, ORIGIN_DESCRIPTION, false) != null) {
-            return instantiatePhraseSegmentItem(field, ast, false);
+            return instantiateSegmentItem(field, ast, false);
         }
 
         PhraseItem phrase = new PhraseItem();
@@ -709,7 +717,7 @@ public class YqlParser implements Parser {
                     if (getAnnotation(word, ORIGIN, Map.class, null, ORIGIN_DESCRIPTION, false) == null) {
                         phrase.addItem(instantiatePhraseItem(field, word));
                     } else {
-                        phrase.addItem(instantiatePhraseSegmentItem(field, word, true));
+                        phrase.addItem(instantiateSegmentItem(field, word, true));
                     }
                     break;
                 case ALTERNATIVES:
@@ -725,9 +733,10 @@ public class YqlParser implements Parser {
         return leafStyleSettings(ast, phrase);
     }
 
-    private Item instantiatePhraseSegmentItem(String field, OperatorNode<ExpressionOperator> ast, boolean forcePhrase) {
+    private Item instantiateSegmentItem(String field, OperatorNode<ExpressionOperator> ast, boolean forcePhrase) {
         Substring origin = getSubstring(ast);
-        Boolean stem = getAnnotation(ast, STEM, Boolean.class, Boolean.TRUE, STEM_DESCRIPTION);
+        Boolean stem = getAnnotation(ast, STEM, Boolean.class, Boolean.TRUE, STEM_DESCRIPTION) ||
+                       shouldDisableFurtherTokenProcessing(ast);
         Boolean andSegmenting = getAnnotation(ast, AND_SEGMENTING, Boolean.class, Boolean.FALSE,
                                               "setting for whether to force using AND for segments on and off");
         SegmentItem phrase;
@@ -746,7 +755,7 @@ public class YqlParser implements Parser {
 
         if (words != null && words.size() > 0) {
             for (String word : words) {
-                phrase.addItem(new WordItem(word, field, true));
+                phrase.addItem(instantiateWordItem(word, field, true, ast));
             }
         } else {
             for (OperatorNode<ExpressionOperator> word : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
@@ -862,6 +871,13 @@ public class YqlParser implements Parser {
                     weakAndItem.setN(targetNumHits);
                 }
             }
+            if ((queryType.getComposite() == QueryType.Composite.near || queryType.getComposite() == QueryType.Composite.oNear)
+                && item instanceof NearItem nearItem) {
+                Integer distance = getAnnotation(ast, DISTANCE, Integer.class, null, "'distance' for near/oNear");
+                if (distance != null) {
+                    nearItem.setDistance(distance);
+                }
+            }
         }
 
         return item;
@@ -870,11 +886,11 @@ public class YqlParser implements Parser {
     private QueryType buildQueryType(OperatorNode<ExpressionOperator> ast) {
         var queryType = QueryType.from(Query.Type.WEAKAND);
         if (userQuery != null) {
-            queryType = QueryType.from(userQuery.properties().getString("query.type"));
-            queryType = queryType.setComposite(userQuery.properties().getString("query.type.composite"));
-            queryType = queryType.setTokenization(userQuery.properties().getString("query.type.tokenization"));
-            queryType = queryType.setSyntax(userQuery.properties().getString("query.type.syntax"));
-            queryType = queryType.setYqlDefault(userQuery.properties().getBoolean("query.type.isYqlDefault"));
+            queryType = QueryType.from(userQuery.properties().getString(modelType, userQuery.properties().getString(modelTypeAlias)));
+            queryType = queryType.setComposite(userQuery.properties().getString(modelTypeComposite));
+            queryType = queryType.setTokenization(userQuery.properties().getString(modelTypeTokenization));
+            queryType = queryType.setSyntax(userQuery.properties().getString(modelTypeSyntax));
+            queryType = queryType.setYqlDefault(userQuery.properties().getBoolean(modelTypeIsYqlDefault));
         }
         if ( ! queryType.isYqlDefault())
             queryType = QueryType.from(Query.Type.WEAKAND);
@@ -1616,17 +1632,49 @@ public class YqlParser implements Parser {
                                           Boolean.class, Boolean.TRUE, IMPLICIT_TRANSFORMS_DESCRIPTION);
         switch (segmentPolicy) {
             case NEVER:
-                return new WordItem(wordData, fromQuery);
+                return instantiateWordItem(wordData, fromQuery, ast);
             case POSSIBLY:
                 if (shouldSegment(field, fromQuery) && ! grammar.equals(USER_INPUT_GRAMMAR_RAW))
                     return segment(field, ast, wordData, fromQuery, parent, language);
                 else
-                    return new WordItem(wordData, fromQuery);
+                    return instantiateWordItem(wordData, fromQuery, ast);
             case ALWAYS:
                 return segment(field, ast, wordData, fromQuery, parent, language);
             default:
                 throw new IllegalArgumentException("Unexpected segmenting rule: " + segmentPolicy);
         }
+    }
+
+    private WordItem instantiateWordItem(String word, boolean fromQuery, OperatorNode<ExpressionOperator> ast) {
+        return instantiateWordItem(word, null, fromQuery, ast);
+    }
+
+    private WordItem instantiateWordItem(String word, String field, boolean fromQuery, OperatorNode<ExpressionOperator> ast) {
+        var item = new WordItem(word, field, fromQuery);
+        if (shouldDisableFurtherTokenProcessing(ast)) {
+            item.setStemmed(true);
+            item.setNormalizable(false);
+            item.setLowercased(true);
+        }
+        return item;
+    }
+
+    private PhraseSegmentItem instantiatePhraseSegmentItem(String word, String field, boolean fromQuery, OperatorNode<ExpressionOperator> ast) {
+        var item = new PhraseSegmentItem(word, fromQuery, false);
+        item.setIndexName(field);
+        if (shouldDisableFurtherTokenProcessing(ast))
+            item.setStemmed(true); // Block items are stemmed as a whole, so disabling must be at this level
+        return item;
+    }
+
+    private boolean shouldDisableFurtherTokenProcessing(OperatorNode<ExpressionOperator> ast) {
+        // tokenization==linguistics --> all processing is done by one linguistics invocation,
+        // so disable stemming, normalizing and lowercasing
+        if (userQuery != null && userQuery.properties().getBoolean(modelTypeIsYqlDefault)) {
+            QueryType queryType = buildQueryType(ast);
+            return queryType.getTokenization() == QueryType.Tokenization.linguistics;
+        }
+        return false;
     }
 
     private boolean shouldSegment(String field, boolean fromQuery) {
@@ -1644,14 +1692,13 @@ public class YqlParser implements Parser {
         List<String> segments = segmenter.segment(toSegment, usedLanguage);
         TaggableItem wordItem;
         if (segments.isEmpty()) {
-            wordItem = new WordItem(wordData, fromQuery);
+            wordItem = instantiateWordItem(wordData, fromQuery, ast);
         } else if (segments.size() == 1 || !phraseSegmentChildSupported(parent)) {
-            wordItem = new WordItem(segments.get(0), fromQuery);
+            wordItem = instantiateWordItem(segments.get(0), fromQuery, ast);
         } else {
-            wordItem = new PhraseSegmentItem(toSegment, fromQuery, false);
-            ((PhraseSegmentItem) wordItem).setIndexName(field);
+            wordItem = instantiatePhraseSegmentItem(toSegment, field, fromQuery, ast);
             for (String s : segments) {
-                WordItem segment = new WordItem(s, fromQuery);
+                WordItem segment = instantiateWordItem(s, fromQuery, ast);
                 prepareWord(field, ast, segment);
                 ((PhraseSegmentItem) wordItem).addItem(segment);
             }

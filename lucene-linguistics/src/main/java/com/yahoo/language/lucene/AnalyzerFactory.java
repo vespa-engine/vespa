@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 /**
@@ -77,22 +78,15 @@ class AnalyzerFactory {
     }
 
     private Analyzer createAnalyzer(AnalyzerKey analyzerKey) {
-        LuceneAnalysisConfig.Analysis analysis = analysisConfig(analyzerKey);
-        if (null != analysis) {
-            log.config("Creating analyzer for " + analyzerKey + " from config");
-            return createAnalyzer(analyzerKey, analysis);
-        }
-        Analyzer analyzerFromComponents = fromComponents(analyzerKey);
-        if (null != analyzerFromComponents) {
-            log.config("Using analyzer for " + analyzerKey + " from components");
-            return analyzerFromComponents;
-        }
-        if (null != defaultAnalyzers.get(analyzerKey.language())) {
-            log.config("Using Analyzer for " + analyzerKey + " from a list of default language analyzers");
-            return defaultAnalyzers.get(analyzerKey.language());
-        }
-        // set the default analyzer for the language
-        log.config("StandardAnalyzer is used for " + analyzerKey);
+        Analyzer analyzer = analysisConfig(analyzerKey);
+        if (analyzer != null) return analyzer;
+
+        analyzer = fromComponents(analyzerKey);
+        if (analyzer != null) return analyzer;
+
+        analyzer = defaultAnalyzers.get(analyzerKey.language());
+        if (analyzer != null) return analyzer;
+
         return defaultAnalyzer;
     }
 
@@ -100,9 +94,8 @@ class AnalyzerFactory {
      * First, checks if more specific (language + stemMode) analysis is configured.
      * Second, checks if analysis is configured only for a languageCode.
      */
-    private LuceneAnalysisConfig.Analysis analysisConfig(AnalyzerKey analyzerKey) {
-        LuceneAnalysisConfig.Analysis analysis = config.analysis(analyzerKey.languageCodeAndStemMode());
-        return (null != analysis) ? analysis : config.analysis(analyzerKey.languageCode());
+    private Analyzer analysisConfig(AnalyzerKey analyzerKey) {
+        return lookup(analyzerKey, key -> createAnalyzer(analyzerKey, config.analysis(key)));
     }
 
     /**
@@ -110,12 +103,26 @@ class AnalyzerFactory {
      * Second, checks if Analyzer is configured only for a languageCode.
      */
     private Analyzer fromComponents(AnalyzerKey analyzerKey) {
-        Analyzer analyzer = analyzerComponents.getComponent(analyzerKey.languageCodeAndStemMode());
-        return (null != analyzer) ? analyzer : analyzerComponents.getComponent(analyzerKey.languageCode());
+        return lookup(analyzerKey, key -> analyzerComponents.getComponent(key));
+    }
+
+    private Analyzer lookup(AnalyzerKey key, Function<String, Analyzer> analyzerMap) {
+        var analyzer = analyzerMap.apply(key.languageCodeAndStemMode());
+        if (analyzer != null) return analyzer;
+
+        analyzer = analyzerMap.apply(key.generalizedLanguageCodeAndStemMode());
+        if (analyzer != null) return analyzer;
+
+        analyzer = analyzerMap.apply(key.languageCode());
+        if (analyzer != null) return analyzer;
+
+        analyzer = analyzerMap.apply(key.generalizedLanguageCode());
+        return analyzer;
     }
 
     private Analyzer createAnalyzer(AnalyzerKey analyzerKey, LuceneAnalysisConfig.Analysis analysis) {
         try {
+            if (analysis == null) return null;
             CustomAnalyzer.Builder builder = config.configDir()
                     // Root config directory for all analysis components in the application package
                     .map(CustomAnalyzer::builder)
@@ -186,10 +193,20 @@ class AnalyzerFactory {
          * The `/` is used so that it doesn't conflict with ComponentRegistry keys.
          */
         public String languageCodeAndStemMode() {
-            return language.languageCode() + "/" + stemMode.toString();
+            return languageCode() + "/" + stemMode.toString();
+        }
+
+        public String generalizedLanguageCodeAndStemMode() {
+            return generalizedLanguageCode() + "/" + stemMode.toString();
         }
 
         public String languageCode() {
+            return language.languageCode();
+        }
+
+        public String generalizedLanguageCode() {
+            if (language == Language.CHINESE_SIMPLIFIED || language == Language.CHINESE_TRADITIONAL)
+                return "zh";
             return language.languageCode();
         }
 

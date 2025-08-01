@@ -249,7 +249,6 @@ public class GlobalPhaseRerankHitsImplTest {
         var result = makeResult(query, List.of(hit("a", 4), hit("b", 3), hit("c", 2), hit("d", 1)));
         var expect = Expect.make(List.of(hit("d", 4), hit("c", 3)));
         GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
-        System.out.println(result.hits().asList());
         expect.verifyScores(result);
     }
 
@@ -345,6 +344,18 @@ public class GlobalPhaseRerankHitsImplTest {
                 factory.create("d", 4, List.of(value("bar", 60))),
                 factory.create("e", 5, List.of(value("bar", 110)))));
         var expect = Expect.make(List.of(hit("a", 15), hit("b", 44), hit("c", 53), hit("d", 62), hit("e", 111)));
+        GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
+        expect.verifyScores(result);
+    }
+
+    @Test
+    void useCurrentRelevanceScore() {
+        var setup = setup().eval(makeSumSpec(List.of(), List.of("foo", "relevanceScore"))).build();
+        var query = makeQuery(List.of());
+        var factory = new HitFactory(List.of("foo"));
+        var result = makeResult(query, List.of(factory.create("a", 3, List.of(value("foo", 3))),
+                                               factory.create("b", 2, List.of(value("foo", 7)))));
+        var expect = Expect.make(List.of(hit("b", 9), hit("a", 6)));
         GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
         expect.verifyScores(result);
     }

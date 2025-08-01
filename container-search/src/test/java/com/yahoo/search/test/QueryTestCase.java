@@ -26,6 +26,7 @@ import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
@@ -49,8 +50,6 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.yql.MinimalQueryInserter;
-import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -1270,28 +1269,66 @@ public class QueryTestCase {
     @Test
     void testMainQueryTypeDefaults() {
         var profile = new QueryProfile("test");
-        profile.set("query.type", "any", null);
-        profile.set("query.type.isYqlDefault", "true", null);
+        profile.set("model.type", "any", null);
+        profile.set("model.type.isYqlDefault", "true", null);
         var query = new Query(httpEncode("?yql=select * from sources * where userInput(@q)" +
                                          "&q=a b"),
                               profile.compile(null));
         Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
-        if (r.hits().getError() != null)
-            System.out.println(r.hits().getError());
         assertEquals("OR default:a default:b", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testLinguisticsModeWithPhraseSegment() {
+        var profile = new QueryProfile("test");
+        profile.set("model.type", "linguistics", null);
+        profile.set("model.type.isYqlDefault", "true", null);
+        var query = new Query(httpEncode("?yql=select * from sources * where default contains '10,000'"),
+                              profile.compile(null));
+        Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
+        assertEquals("select * from sources * where default contains ({origin: {original: \"10,000\", offset: 0, length: 6}, stem: false}phrase(\"10\", \"000\"))",
+                     query.yqlRepresentation());
+
+        var phrase = (PhraseSegmentItem)query.getModel().getQueryTree().getRoot();
+        // Further token processing is disabled due to type=linguistics applied by default to all terms
+        assertTrue(phrase.isStemmed());
+    }
+
+    @Test
+    void testMainQueryTypeDefaultsWithAlias() {
+        var query = new Query(httpEncode("?yql=select * from sources * where userInput(@q)" +
+                                         "&q=a b&type=any&model.type.isYqlDefault=true"), null);
+        Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
+        assertEquals("OR default:a default:b", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testQueryTypeDefaultsApplyToContainsNotJustUserQuery() {
+        var profile = new QueryProfile("test");
+        profile.set("model.type", "linguistics", null);
+        profile.set("model.type.isYqlDefault", "true", null);
+        var query = new Query(httpEncode("?yql=select * from sources * where default contains 'a' and default contains 'b'"),
+                              profile.compile(null));
+        Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
+        assertEquals("AND default:a default:b", query.getModel().getQueryTree().toString());
+        for (Item child : ((CompositeItem)query.getModel().getQueryTree().getRoot()).items()) {
+            WordItem word = (WordItem)child;
+            // Further token processing is disabled due to type=linguistics applied by default to all terms
+            assertTrue(word.isStemmed());
+            assertFalse(word.isNormalizable());
+            assertTrue(word.isLowercased());
+        }
     }
 
     @Test
     void testDetailQueryTypeDefaults() {
         var profile = new QueryProfile("test");
-        profile.set("query.type.composite", "or", null);
-        profile.set("query.type.isYqlDefault", "true", null);
+        profile.set("model.type.composite", "or", null);
+        profile.set("model.type.isYqlDefault", "true", null);
         var query = new Query(httpEncode("?yql=select * from sources * where userInput(@q)" +
                                          "&q=a b"),
                               profile.compile(null));
         Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
-        if (r.hits().getError() != null)
-            System.out.println(r.hits().getError());
         assertEquals("OR default:a default:b", query.getModel().getQueryTree().toString());
     }
 
@@ -1326,7 +1363,7 @@ public class QueryTestCase {
 
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfile profile = new QueryProfile("default");
-        profile.set("query.type", "all", registry);
+        profile.set("model.type", "all", registry);
         registry.register(profile);
         CompiledQueryProfileRegistry cRegistry = registry.compile();
         Query q = new Query(httpEncode("?query=a b -c&model.type=linguistics"), cRegistry.findQueryProfile("default"));
