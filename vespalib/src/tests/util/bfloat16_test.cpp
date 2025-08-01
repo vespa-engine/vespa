@@ -108,6 +108,11 @@ TEST(BFloat16Test, traits_check) {
         EXPECT_TRUE(std::has_unique_object_representations<BFloat16>::value);
 }
 
+TEST(BFloat16Test, conversion_is_constexpr) {
+    static_assert(BFloat16(10).get_bits()  == 16672u);
+    static_assert(BFloat16(123).get_bits() == 17142u);
+}
+
 static std::string hexdump(const void *p, size_t sz) {
     char tmpbuf[10];
     if (sz == 2) {
