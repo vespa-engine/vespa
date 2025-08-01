@@ -472,7 +472,7 @@ private:
     static void verify(const IAccelerated & accelerated) {
         verifyDotproduct<float>(accelerated);
         verifyDotproduct<double>(accelerated);
-        verifyDotproduct<int8_t>(accelerated);
+        verifyDotproduct<int8_t>(accelerated); // FIXME this can't be right, uses intermediate sum type of i8...?
         verifyDotproduct<int32_t>(accelerated);
         verifyDotproduct<int64_t>(accelerated);
         verifyEuclideanDistance<int8_t>(accelerated);
