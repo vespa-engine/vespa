@@ -1069,7 +1069,7 @@ std::vector<NearestNeighborIndex::Neighbor>
 HnswIndex<type>::top_k_by_docid(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter *filter, bool low_hit_ratio, double exploration,
                                 uint32_t explore_k, double exploration_slack, const vespalib::Doom& doom, double distance_threshold) const
 {
-    std::ofstream trace_file(std::format("/home/bragevik/trace_{}.log", trace_id++), std::ios::trunc);
+    std::ofstream trace_file(std::format("{}/trace_{}.log", std::getenv("HOME"), trace_id++), std::ios::trunc);
     SearchBestNeighbors candidates = top_k_candidates(df, std::max(k, explore_k), exploration_slack, filter, low_hit_ratio, exploration, doom, &trace_file);
     auto result = candidates.get_neighbors(k, distance_threshold);
 
