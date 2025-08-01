@@ -205,9 +205,9 @@ public class StemmingSearcher extends Searcher {
         if (segments.isEmpty()) return blockAsItem;
 
         String indexName = current.getIndexName();
-        Substring substring = getOffsets(current);
+        Substring origin = getOffsets(current);
         if (segments.size() == 1) {
-            TaggableItem w = singleWordSegment(current, segments.get(0), index, substring, context.insidePhrase);
+            TaggableItem w = singleWordSegment(current, segments.get(0), index, origin, context.insidePhrase);
             setMetaData(current, context.reverseConnectivity, w);
             return (Item)w;
         }
@@ -218,7 +218,7 @@ public class StemmingSearcher extends Searcher {
             composite = chooseComposite(current, ((Item) current).getParent(), indexName);
 
         for (StemList segment : segments) {
-            TaggableItem w = singleWordSegment(current, segment, index, substring, context.insidePhrase);
+            TaggableItem w = singleWordSegment(current, segment, index, origin, context.insidePhrase);
 
             if (composite instanceof AndSegmentItem) {
                 setSignificanceAndDocumentFrequency(w, current);
@@ -299,7 +299,7 @@ public class StemmingSearcher extends Searcher {
     private TaggableItem singleWordSegment(BlockItem current,
                                            StemList segment,
                                            Index index,
-                                           Substring substring,
+                                           Substring origin,
                                            boolean insidePhrase) {
         String indexName = current.getIndexName();
         if (!insidePhrase && ((index.getLiteralBoost() || index.getStemMode() == StemMode.ALL))) {
@@ -308,12 +308,12 @@ public class StemmingSearcher extends Searcher {
             for (String term : segment) {
                 terms.add(new Alternative(term, 0.7d));
             }
-            WordAlternativesItem alternatives = new WordAlternativesItem(indexName, current.isFromQuery(), substring, terms);
+            WordAlternativesItem alternatives = new WordAlternativesItem(indexName, current.isFromQuery(), origin, terms);
             if (alternatives.getAlternatives().size() > 1) {
                 return alternatives;
             }
         }
-        return singleStemSegment((Item) current, segment.get(0), indexName, substring);
+        return singleStemSegment((Item) current, segment.get(0), indexName, origin);
     }
 
     private void setMetaData(BlockItem current, Map<Item, TaggableItem> reverseConnectivity, TaggableItem replacement) {
@@ -328,8 +328,8 @@ public class StemmingSearcher extends Searcher {
     }
 
     private WordItem singleStemSegment(Item blockAsItem, String stem, String indexName,
-                                       Substring substring) {
-        WordItem replacement = new WordItem(stem, indexName, true, substring);
+                                       Substring origin) {
+        WordItem replacement = new WordItem(stem, indexName, true, origin);
         replacement.setStemmed(true);
         copyAttributes(blockAsItem, replacement);
         return replacement;

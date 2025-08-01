@@ -23,8 +23,12 @@ import com.yahoo.geo.DistanceParser;
 import com.yahoo.geo.ParsedDegree;
 import com.yahoo.language.Language;
 import com.yahoo.language.detect.Detector;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.Normalizer;
 import com.yahoo.language.process.Segmenter;
+import com.yahoo.language.process.StemMode;
+import com.yahoo.language.process.Token;
+import com.yahoo.language.process.Tokenizer;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Location;
 import com.yahoo.prelude.query.AndItem;
@@ -222,6 +226,7 @@ public class YqlParser implements Parser {
     private final Map<Integer, TaggableItem> identifiedItems = LazyMap.newHashMap();
     private final Normalizer normalizer;
     private final Segmenter segmenter;
+    private final Tokenizer tokenizer;
     private final Detector detector;
     private final Set<String> yqlSources = LazySet.newHashSet();
     private final Set<String> yqlSummaryFields = LazySet.newHashSet();
@@ -266,6 +271,7 @@ public class YqlParser implements Parser {
         indexFacts = environment.getIndexFacts();
         normalizer = environment.getLinguistics().getNormalizer();
         segmenter = environment.getLinguistics().getSegmenter();
+        tokenizer = environment.getLinguistics().getTokenizer();
         detector = environment.getLinguistics().getDetector();
         this.environment = environment;
     }
@@ -1685,26 +1691,46 @@ public class YqlParser implements Parser {
                                  boolean fromQuery, Class<?> parent, Language language) {
         String toSegment = wordData;
         Substring substring = getSubstring(ast);
-        Language usedLanguage = language == null ? currentlyParsing.getLanguage() : language;
-        if (substring != null) {
+        if (substring != null)
             toSegment = substring.getValue();
+        List<String> segments = segment(ast, toSegment, language);
+        return itemFromSegments(segments, field, ast, wordData, toSegment, fromQuery, parent);
+    }
+
+    private List<String> segment(OperatorNode<ExpressionOperator> ast, String toSegment, Language language) {
+        Language usedLanguage = language == null ? currentlyParsing.getLanguage() : language;
+        if (shouldDisableFurtherTokenProcessing(ast)) { // then tokenize here
+            // These parameters should be ignored by the linguistics component in linguistics mode
+            var parameters = new LinguisticsParameters(usedLanguage, StemMode.BEST, true, true);
+            List<String> segments = new ArrayList<>();
+            for (Token token : tokenizer.tokenize(toSegment, parameters)) {
+                if (token.isIndexable())
+                    segments.add(token.getTokenString());
+            }
+            return segments;
         }
-        List<String> segments = segmenter.segment(toSegment, usedLanguage);
-        TaggableItem wordItem;
+        else {
+            return segmenter.segment(toSegment, usedLanguage);
+        }
+    }
+
+    private TaggableItem itemFromSegments(List<String> segments, String field, OperatorNode<ExpressionOperator> ast,
+                                          String wordData, String originalText,
+                                          boolean fromQuery, Class<?> parent) {
         if (segments.isEmpty()) {
-            wordItem = instantiateWordItem(wordData, fromQuery, ast);
+            return instantiateWordItem(wordData, fromQuery, ast); // TODO: This should use originalText?
         } else if (segments.size() == 1 || !phraseSegmentChildSupported(parent)) {
-            wordItem = instantiateWordItem(segments.get(0), fromQuery, ast);
+            return instantiateWordItem(segments.get(0), fromQuery, ast);
         } else {
-            wordItem = instantiatePhraseSegmentItem(toSegment, field, fromQuery, ast);
+            var item = instantiatePhraseSegmentItem(originalText, field, fromQuery, ast);
             for (String s : segments) {
                 WordItem segment = instantiateWordItem(s, fromQuery, ast);
                 prepareWord(field, ast, segment);
-                ((PhraseSegmentItem) wordItem).addItem(segment);
+                item.addItem(segment);
             }
-            ((PhraseSegmentItem) wordItem).lock();
+            item.lock();
+            return item;
         }
-        return wordItem;
     }
 
     private boolean phraseSegmentChildSupported(Class<?> parent) {

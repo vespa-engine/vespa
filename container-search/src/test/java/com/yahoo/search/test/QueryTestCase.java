@@ -1279,6 +1279,24 @@ public class QueryTestCase {
     }
 
     @Test
+    void testLinguisticsModeWithSingleTerm() {
+        var profile = new QueryProfile("test");
+        profile.set("model.type", "linguistics", null);
+        profile.set("model.type.isYqlDefault", "true", null);
+        var query = new Query(httpEncode("?yql=select * from sources * where default contains 'Cars'"),
+                              profile.compile(null));
+        Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
+        assertEquals("select * from sources * where default contains ({stem: false, normalizeCase: false, accentDrop: false}\"car\")",
+                     query.yqlRepresentation());
+
+        var word = (WordItem)query.getModel().getQueryTree().getRoot();
+        // Further token processing is disabled due to type=linguistics applied by default to all terms
+        assertTrue(word.isStemmed());
+        assertFalse(word.isNormalizable());
+        assertTrue(word.isLowercased());
+    }
+
+    @Test
     void testLinguisticsModeWithPhraseSegment() {
         var profile = new QueryProfile("test");
         profile.set("model.type", "linguistics", null);
