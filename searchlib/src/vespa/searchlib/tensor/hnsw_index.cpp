@@ -20,6 +20,7 @@
 #include <vespa/log/log.h>
 #include <iostream>
 #include <fstream>
+#include <stack>
 
 LOG_SETUP(".searchlib.tensor.hnsw_index");
 
@@ -1071,6 +1072,18 @@ HnswIndex<type>::top_k_by_docid(uint32_t k, const BoundDistanceFunction &df, con
     std::ofstream trace_file(std::format("/home/bragevik/trace_{}.log", trace_id++), std::ios::trunc);
     SearchBestNeighbors candidates = top_k_candidates(df, std::max(k, explore_k), exploration_slack, filter, low_hit_ratio, exploration, doom, &trace_file);
     auto result = candidates.get_neighbors(k, distance_threshold);
+
+    std::stack<int32_t> node_ids;
+    while (!candidates.empty()) {
+        node_ids.push(candidates.top().nodeid);
+        candidates.pop();
+    }
+    trace_file << std::format("Found closest {} nodes:", k);
+    while (!node_ids.empty()) {
+        trace_file << std::format(" {},", node_ids.top());
+        node_ids.pop();
+    }
+    trace_file << "\n";
     std::sort(result.begin(), result.end(), NeighborsByDocId());
     trace_file.close();
     return result;
@@ -1121,16 +1134,6 @@ HnswIndex<type>::top_k_candidates(const BoundDistanceFunction &df, uint32_t k, d
         if (trace_file) *trace_file << "Using hnsw-default\n";
         search_layer(df, k, exploration_slack, best_neighbors, 0, &doom, filter, trace_file);
     }
-    if (trace_file) {
-        *trace_file << std::format("Found closest {} nodes:", k);
-        for (const auto &node : best_neighbors.peek()) {
-            *trace_file << std::format(" {},", node.nodeid);
-        }
-        *trace_file << "\n";
-        *trace_file << std::format("Closest node: {}\n", best_neighbors.top().nodeid);
-    }
-
-
     return best_neighbors;
 }
 
