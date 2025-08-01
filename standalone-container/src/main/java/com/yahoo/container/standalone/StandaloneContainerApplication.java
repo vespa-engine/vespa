@@ -43,6 +43,8 @@ import org.w3c.dom.Element;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -154,6 +156,10 @@ public class StandaloneContainerApplication implements Application {
         try {
             com.yahoo.container.Container.get().setCustomFileAcquirer(distributedFiles);
             com.yahoo.container.Container.get().disableUrlDownloader();
+            // Ignore output to stdout
+            System.setOut(new PrintStream(new OutputStream() {
+                public void write(int b) { }
+            }));
             configuredApplication.start();
         } catch (Exception e) {
             com.yahoo.container.Container.resetInstance();
