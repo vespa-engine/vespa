@@ -122,6 +122,7 @@ public class NGramSearcher extends Searcher {
         String index = ((HasIndexItem)term).getIndexName();
         CompositeItem gramsItem = createGramRoot((HasIndexItem)term, query);
         gramsItem.setIndexName(index);
+        gramsItem.setWeight(term.getWeight());
         Substring origin = ((BlockItem)term).getOrigin();
         for (Iterator<GramSplitter.Gram> i = getGramSplitter().split(text, gramSize); i.hasNext(); ) {
             GramSplitter.Gram gram = i.next();
