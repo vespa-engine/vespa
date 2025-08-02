@@ -150,8 +150,9 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
     }
 
     static void assertEqualFiles(String correctFileName, String checkFileName, boolean orderMatters) throws IOException {
-        // Set updateOnAssert to true if you want update the files with correct answer.
-        assertConfigFiles(correctFileName, checkFileName, orderMatters, false);
+        // Set the system property 'updateExpectedFiles' to true to update the expected files
+        // Example: mvn verify -DupdateExpectedFiles=true
+        assertConfigFiles(correctFileName, checkFileName, orderMatters, Boolean.getBoolean("updateExpectedFiles"));
     }
 
     void deleteContent(File dir) {
