@@ -191,6 +191,12 @@ public class NGramSearcherTestCase {
         }
     }
 
+    @Test
+    void testWeightsArePreserved() {
+        assertEquals("WEAKAND(100) (AND gram2:ab!200 gram2:bc!200)!200", search("?query=gram2:abc!200&gram.match=all"));
+        assertEquals("WEAKAND(100) gram2:\"ab bc\"!200", search("?query=gram2:abc!200&gram.match=phrase"));
+    }
+
     String search(String query) {
         Query q = new Query(query);
         createExecution().search(q);
