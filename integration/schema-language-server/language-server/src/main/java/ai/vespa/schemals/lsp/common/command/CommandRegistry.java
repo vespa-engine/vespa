@@ -14,8 +14,10 @@ import ai.vespa.schemals.lsp.common.command.commandtypes.DocumentParse;
 import ai.vespa.schemals.lsp.common.command.commandtypes.RunVespaQuery;
 import ai.vespa.schemals.lsp.common.command.commandtypes.FindDocument;
 import ai.vespa.schemals.lsp.common.command.commandtypes.GetDefinedSchemas;
+import ai.vespa.schemals.lsp.common.command.commandtypes.GetSchemaFields;
 import ai.vespa.schemals.lsp.common.command.commandtypes.SchemaCommand;
 import ai.vespa.schemals.lsp.common.command.commandtypes.SetupWorkspace;
+import ai.vespa.schemals.lsp.common.command.commandtypes.WriteYQLQuery;
 import ai.vespa.schemals.lsp.common.command.commandtypes.HasSetupWorkspace;
 
 /**
@@ -32,7 +34,8 @@ public class CommandRegistry {
              * Sends a window/showDocument request to the client.
              *
              * Parameters:
-             * fileURI: String -- path to document 
+             * fileURI: String -- uri or relative path to document. If fileURI is not an URI
+             *                    it is interpreted as a relative path from workspace root.
              *
              * Return value:
              * null
@@ -133,9 +136,42 @@ public class CommandRegistry {
         },
         GET_DEFINED_SCHEMAS {
             /*
+             * Get a list of schema names known to the language server ( i.e. in the workspace ).
+             *
+             * Parameters:
+             *
+             * Return value:
+             * List<String> -- the schema names.
              */
             public String title() { return "Get defined schemas"; }
             public SchemaCommand construct() { return new GetDefinedSchemas(); }
+        },
+        GET_SCHEMA_FIELDS {
+            /*
+             * Get a list of the fields belonging to a schema. The schema has to exist.
+             *
+             * Parameters:
+             * schemaName: String -- The name of the schema to query for fields
+             *
+             * Return value:
+             * List<List<String>> -- List of pairs of field name and stringified field type.
+             */
+            public String title() { return "Get schema fields"; }
+            public SchemaCommand construct() { return new GetSchemaFields(); }
+        },
+        WRITE_YQL_QUERY {
+            /*
+             * Write an YQL query to a file. Overwrite if a query exists in the same file.
+             *
+             * Parameters:
+             * filePath: String -- The path of the file to write to.
+             * query: String -- The yql query to write
+             *
+             * Return value:
+             * null
+             */
+            public String title() { return "Write YQL query"; }
+            public SchemaCommand construct() { return new WriteYQLQuery(); }
         }
     }
 
