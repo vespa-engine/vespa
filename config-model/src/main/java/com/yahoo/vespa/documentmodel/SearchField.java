@@ -12,11 +12,11 @@ import java.util.List;
  */
 public class SearchField extends Field {
 
-    /// Indicate if field shall be stored in memory for attribute usage.
+    // Indicate if field shall be stored in memory for attribute usage.
     private boolean attribute = false;
-    /// Indicate if the field is Vespa indexed.
+    // Indicate if the field is Vespa indexed.
     private boolean indexed = false;
-    /// Indication to backend on how much optimization should be done.
+    // Indication to backend on how much optimization should be done.
 
     /**
      * This is a representation of features to generate for this field.

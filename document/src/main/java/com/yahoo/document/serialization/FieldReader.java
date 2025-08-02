@@ -1,7 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- *
- */
 package com.yahoo.document.serialization;
 
 import com.yahoo.document.Document;
@@ -29,7 +26,7 @@ import com.yahoo.vespa.objects.FieldBase;
 
 
 /**
- * @author <a href="mailto:ravishar@yahoo-inc.com">ravishar</a>
+ * @author Ravi Sharma
  *
  */
 public interface FieldReader extends Deserializer {

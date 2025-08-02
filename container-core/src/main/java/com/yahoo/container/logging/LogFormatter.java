@@ -77,7 +77,7 @@ public class LogFormatter extends Formatter {
                 );
     }
 
-    /**
+    /*
      * Public support methods
      */
 

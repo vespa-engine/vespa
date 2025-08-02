@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package ai.vespa.modelintegration.evaluator;
 
 import java.util.Objects;
@@ -17,7 +16,7 @@ public record OnnxEvaluatorOptions(
         int intraOpThreads,
         int gpuDeviceNumber,
         boolean gpuDeviceRequired,
-        /** Optional runtime specific raw config */Optional<String> rawConfig) {
+        /* Optional runtime specific raw config */Optional<String> rawConfig) {
 
 
     public OnnxEvaluatorOptions {

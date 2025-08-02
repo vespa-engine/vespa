@@ -466,7 +466,6 @@ public class VespaXMLFieldReader extends VespaXMLReader implements FieldReader {
         value.deserialize(field instanceof Field ? (Field)field : null, this);
     }
 
-    /***********************************************************************/
     /*                   UNUSED METHODS                                    */
     /***********************************************************************/
 
