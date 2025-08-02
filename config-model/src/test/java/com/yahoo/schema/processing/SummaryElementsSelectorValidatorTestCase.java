@@ -5,19 +5,27 @@ import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
-import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
+import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * @author geirst
+ * @author Geir Storli
  */
 public class SummaryElementsSelectorValidatorTestCase {
+
+    private DeployLoggerStub deployLogger = new DeployLoggerStub();
+
+    @BeforeEach
+    public void setup() {
+        deployLogger = new DeployLoggerStub();
+    }
 
     @Test
     void complex_field_with_some_struct_field_attributes_gets_default_transform() throws ParseException {
@@ -157,7 +165,7 @@ public class SummaryElementsSelectorValidatorTestCase {
     }
 
     @Test
-    void unsupported_matched_elements_only_field_type_throws() throws ParseException {
+    void unsupported_matched_elements_only_field_type_throws() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             buildSearch(joinLines("field my_field type string {",
                     "  indexing: summary",
@@ -172,7 +180,7 @@ public class SummaryElementsSelectorValidatorTestCase {
     }
 
     @Test
-    void unsupported_select_elements_by_field_type_throws() throws ParseException {
+    void unsupported_select_elements_by_field_type_throws() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             buildSearch(joinLines("field my_field type string {",
                     "  indexing: summary",
@@ -190,6 +198,69 @@ public class SummaryElementsSelectorValidatorTestCase {
             "Supported field types are: array of primitive, weighted set of primitive, " +
             "array of simple struct, map of primitive type to simple struct, " +
             "and map of primitive type to primitive type"));
+    }
+
+    @Test
+    void select_elements_by_referencing_non_existing_summary_feature_logs() throws ParseException {
+        // Should fail, as 'dist_scores' is not defined as a summary feature
+        buildSearch("""
+                      field text type array<string> {
+                        indexing: summary
+                      }
+                      field pos type tensor<float>(chunk{},xy[2]) {
+                        indexing: attribute
+                      }
+                      """,
+                      """
+                      document-summary default {
+                        summary text {
+                          select-elements-by: dist_scores
+                        }
+                      }
+                      rank-profile default {
+                        inputs {
+                          query(qpos) tensor<float>(xy[2])
+                        }
+                        function dist_scores() {
+                          expression: 1/(1+euclidean_distance(query(qpos), attribute(pos), xy))
+                        }
+                      }
+                      """);
+        var message = deployLogger.getLast().message;
+        assertTrue(message.contains("For schema 'test', document-summary 'default', summary field 'text': " +
+                                    "select-elements-by summary feature 'dist_scores' is not defined for source field 'text'."),
+                   message);
+
+
+        // Should work (no logging), as 'dist_scores' is defined as a summary feature now
+        deployLogger.entries.clear();
+        buildSearch("""
+                      field text type array<string> {
+                        indexing: summary
+                      }
+                      field pos type tensor<float>(chunk{},xy[2]) {
+                        indexing: attribute
+                      }
+                    """,
+                    """
+                    document-summary default {
+                      summary text {
+                        select-elements-by: dist_scores
+                      }
+                    }
+                    rank-profile default {
+                      inputs {
+                        query(qpos) tensor<float>(xy[2])
+                      }
+                      function dist_scores() {
+                        expression: 1/(1+euclidean_distance(query(qpos), attribute(pos), xy))
+                      }
+                      summary-features {
+                        dist_scores
+                      }
+                    }
+                    """);
+        assertEquals(0, deployLogger.entries.size());
     }
 
     private void assertSummaryField(String fieldContent, String fieldName, SummaryTransform expTransform,
@@ -212,7 +283,7 @@ public class SummaryElementsSelectorValidatorTestCase {
     }
 
     private Schema buildSearch(String field, String summary) throws ParseException {
-        var builder = new ApplicationBuilder(new RankProfileRegistry());
+        var builder = new ApplicationBuilder(deployLogger, new RankProfileRegistry());
         builder.addSchema(joinLines("search test {",
                                     "  document test {",
                                     "    struct elem {",
