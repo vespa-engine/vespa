@@ -535,7 +535,7 @@ public class JSONStringTestCase {
         }
     }
 
-    /*** here is some json for you
+    /* here is some json for you
     
          [{"asf":"here is 1st simple string field",
          "map":[{"key":"one key string","value":["one value string","embedded array"]},
@@ -547,7 +547,7 @@ public class JSONStringTestCase {
          "sf2":"here is 4th simple string field"},
          ]
     
-    ***/
+    */
 
     /*** and here is some corresponding XML
      

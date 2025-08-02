@@ -1,13 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * Class representing a data field in the result set.  a data field
- * is basically the same thing as a string field, only that we
- * treat it like a raw buffer.  Well we SHOULD.  we don't actually
- * do so.  yet.  we should probably do some defensive copying and
- * return a ByteBuffer...hmm...
- *
- */
-
 package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.prelude.hitfield.RawData;
@@ -15,6 +6,12 @@ import com.yahoo.data.access.simple.Value;
 import com.yahoo.data.access.Inspector;
 
 /**
+ * Class representing a data field in the result set.  a data field
+ * is basically the same thing as a string field, only that we
+ * treat it like a raw buffer.  Well we SHOULD.  we don't actually
+ * do so.  yet.  we should probably do some defensive copying and
+ * return a ByteBuffer...hmm...
+ *
  * @author Bjørn Borud
  */
 public class DataField extends DocsumField {
