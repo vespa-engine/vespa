@@ -14,7 +14,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.SharedHosts;
-import com.yahoo.config.provision.Zone;
 
 import java.io.File;
 import java.lang.annotation.ElementType;
@@ -135,7 +134,6 @@ public interface ModelContext {
         AthenzDomain tenantSecretDomain();
         String athenzDnsSuffix();
         boolean hostedVespa();
-        default Zone zone() { return Zone.defaultZone(); }
         Set<ContainerEndpoint> endpoints();
         boolean isBootstrap();
         boolean isFirstTimeDeployment();

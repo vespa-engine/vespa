@@ -1382,7 +1382,6 @@
       "public abstract com.yahoo.config.provision.AthenzDomain tenantSecretDomain()",
       "public abstract java.lang.String athenzDnsSuffix()",
       "public abstract boolean hostedVespa()",
-      "public com.yahoo.config.provision.Zone zone()",
       "public abstract java.util.Set endpoints()",
       "public abstract boolean isBootstrap()",
       "public abstract boolean isFirstTimeDeployment()",
