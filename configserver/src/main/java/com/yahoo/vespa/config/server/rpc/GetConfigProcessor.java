@@ -21,12 +21,10 @@ import com.yahoo.vespa.config.server.UnknownConfigDefinitionException;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.ErrorCode.APPLICATION_NOT_LOADED;
-import static com.yahoo.vespa.config.ErrorCode.UNKNOWN_VESPA_VERSION;
 import static com.yahoo.vespa.config.protocol.SlimeConfigResponse.fromConfigPayload;
 
 /**
@@ -54,7 +52,7 @@ class GetConfigProcessor implements Runnable {
     private void respond(JRTServerConfigRequest request) {
         Request req = request.getRequest();
         if (req.isError()) {
-            Level logLevel = Set.of(APPLICATION_NOT_LOADED, UNKNOWN_VESPA_VERSION).contains(req.errorCode()) ? Level.FINE : Level.INFO;
+            Level logLevel = req.errorCode() == APPLICATION_NOT_LOADED ? Level.FINE : Level.INFO;
             log.log(logLevel, () -> logPre + req.errorMessage());
         }
         rpcServer.respond(request);
