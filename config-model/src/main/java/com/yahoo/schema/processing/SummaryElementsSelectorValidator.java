@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.ComplexAttributeFieldUtils;
@@ -14,12 +15,15 @@ import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+import java.util.Set;
+import java.util.logging.Level;
+
 import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isSupportedComplexField;
 
 /**
  * Iterates all summary fields with 'matched-elements-only' or 'select-elements-by' and validates that the field type is supported.
  *
- * @author geirst
+ * @author Geir Storli
  */
 public class SummaryElementsSelectorValidator extends Processor {
 
@@ -53,26 +57,43 @@ public class SummaryElementsSelectorValidator extends Processor {
                         "array of simple struct, map of primitive type to simple struct, " +
                         "and map of primitive type to primitive type");
             }
+            verifySelectElementsBy(summary, field, sourceField);
         }
         // else case is handled in SummaryFieldsMustHaveValidSource
     }
 
+    private void verifySelectElementsBy(DocumentSummary summary, SummaryField field, ImmutableSDField sourceField) {
+        if (field.getElementsSelector().getSelect() != SummaryElementsSelector.Select.BY_SUMMARY_FEATURE) return;
+
+        var summaryFeatureName = field.getElementsSelector().getSummaryFeature();
+        var found = rankProfileRegistry.all()
+                                       .stream()
+                                       .map(RankProfile::getSummaryFeatures)
+                                       .flatMap(Set::stream)
+                                       .anyMatch(s -> s.getName().equals(summaryFeatureName));
+        if (!found) {
+            var message = formatError(schema, summary, field, "select-elements-by summary feature '" + summaryFeatureName +
+                    "' is not defined for source field '" + sourceField.getName() + "'.");
+            // Just log a warning for now, as this is not a critical error, consider always throwing an exception later
+            // throw new IllegalArgumentException(formatError(schema, summary, field, message));
+            deployLogger.logApplicationPackage(Level.WARNING, message);
+        }
+    }
+
     private boolean isSupportedMultiValueField(ImmutableSDField sourceField) {
         var type = sourceField.getDataType();
-        return (isArrayOfPrimitiveType(type) || isWeightedsetOfPrimitiveType(type));
+        return (isArrayOfPrimitiveType(type) || isWeightedSetOfPrimitiveType(type));
     }
 
     private boolean isArrayOfPrimitiveType(DataType type) {
-        if (type instanceof ArrayDataType) {
-            var arrayType = (ArrayDataType) type;
+        if (type instanceof ArrayDataType arrayType) {
             return ComplexAttributeFieldUtils.isPrimitiveType(arrayType.getNestedType());
         }
         return false;
     }
 
-    private boolean isWeightedsetOfPrimitiveType(DataType type) {
-        if (type instanceof WeightedSetDataType) {
-            var wsetType = (WeightedSetDataType) type;
+    private boolean isWeightedSetOfPrimitiveType(DataType type) {
+        if (type instanceof WeightedSetDataType wsetType) {
             return ComplexAttributeFieldUtils.isPrimitiveType(wsetType.getNestedType());
         }
         return false;
