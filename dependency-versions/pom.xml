@@ -72,12 +72,6 @@
         <athenz.vespa.version>1.11.63</athenz.vespa.version>
         <!-- Athenz END -->
 
-        <!-- WARNING: If you change curator version, you also need to update
-                 zkfacade/src/main/java/org/apache/curator/**/package-info.java
-             using something like
-                 find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
-                     xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
-        -->
         <aws-sdk2.vespa.version>2.27.4</aws-sdk2.vespa.version>
         <bouncycastle.vespa.version>1.78.1</bouncycastle.vespa.version>
         <byte-buddy.vespa.version>1.14.18</byte-buddy.vespa.version>
@@ -93,7 +87,13 @@
         <commons.math3.vespa.version>3.6.1</commons.math3.vespa.version>
         <commons-compress.vespa.version>1.27.0</commons-compress.vespa.version>
         <commons-cli.vespa.version>1.9.0</commons-cli.vespa.version>
-        <curator.vespa.version>5.7.0</curator.vespa.version>
+	 <!-- WARNING: If you change curator version, you might need to update
+                 zkfacade/src/main/java/org/apache/curator/**/package-info.java
+             using something like
+                 find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
+                     xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
+        -->
+        <curator.vespa.version>5.8.0</curator.vespa.version>
         <dropwizard.metrics.vespa.version>4.2.26</dropwizard.metrics.vespa.version> <!-- ZK 3.9.x requires this -->
         <eclipse-angus.vespa.version>2.0.2</eclipse-angus.vespa.version>
         <eclipse-collections.vespa.version>11.1.0</eclipse-collections.vespa.version>

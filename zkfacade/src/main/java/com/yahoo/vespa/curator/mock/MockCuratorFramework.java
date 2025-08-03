@@ -261,6 +261,9 @@ public class MockCuratorFramework implements CuratorFramework  {
     public SchemaSet getSchemaSet() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
 
     @Override
+    public boolean compressionEnabled() { return false; }
+
+    @Override
     public CompletableFuture<Void> postSafeNotify(Object monitorHolder) { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
 
     @Override
@@ -970,6 +973,9 @@ public class MockCuratorFramework implements CuratorFramework  {
         }
 
         @Override
+        public CreateBackgroundModeStatACLable uncompressed() { return null; }
+
+        @Override
         public CreateProtectACLCreateModePathAndBytesable<String> storingStatIn(Stat stat) {
             return null;
         }
@@ -1131,6 +1137,9 @@ public class MockCuratorFramework implements CuratorFramework  {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
 
+        @Override
+        public GetDataWatchBackgroundStatable undecompressed() { return null; }
+
         public byte[] forPath(String path) throws Exception {
             return getData(path, null, fileSystem.root());
         }
@@ -1199,6 +1208,9 @@ public class MockCuratorFramework implements CuratorFramework  {
         public SetDataBackgroundVersionable compressed() {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
+
+        @Override
+        public SetDataBackgroundVersionable uncompressed() { return null; }
 
         @Override
         public BackgroundPathAndBytesable<Stat> withVersion(int i) {
@@ -1334,6 +1346,9 @@ public class MockCuratorFramework implements CuratorFramework  {
             }
 
             @Override
+            public ACLCreateModePathAndBytesable<CuratorTransactionBridge> uncompressed() { return null; }
+
+            @Override
             public ACLPathAndBytesable<CuratorTransactionBridge> withMode(CreateMode createMode) {
                 this.createMode = createMode;
                 return this;
@@ -1391,6 +1406,9 @@ public class MockCuratorFramework implements CuratorFramework  {
             public VersionPathAndBytesable<CuratorTransactionBridge> compressed() {
                 throw new UnsupportedOperationException("Not implemented in MockCurator");
             }
+
+            @Override
+            public VersionPathAndBytesable<CuratorTransactionBridge> uncompressed() { return null; }
 
             @Override
             public PathAndBytesable<CuratorTransactionBridge> withVersion(int i) {
