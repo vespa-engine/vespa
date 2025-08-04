@@ -23,11 +23,15 @@ public class CrossLinker {
     int numConflicts = 0;
     int numAlreadyPresent = 0;
     int numCopyFailures = 0;
+    long startTimeNanos = 0;
 
     public CrossLinker() { this(false); }
     public CrossLinker(boolean verbose) { this.verbose = verbose; }
 
     public void crossLink(String srcDir, String dstDir) {
+        if (startTimeNanos == 0) {
+            startTimeNanos = System.nanoTime();
+        }
         try {
             Path src = Path.of(srcDir);
             Path dst = Path.of(dstDir);
@@ -58,9 +62,10 @@ public class CrossLinker {
         } else if (Files.isDirectory(dst)) {
             System.err.println("cannot sync non-directory " + src + " <-> directory " + dst);
             ++numConflicts;
+        } else {
+            // assume already OK
+            ++numAlreadyPresent;
         }
-        // else: assume already OK
-        ++numAlreadyPresent;
     }
 
     void linkOrCopy(Path src, Path dst) {
@@ -89,7 +94,7 @@ public class CrossLinker {
         }
     }
 
-    void crossLink(Path src, Path dst) throws IOException {
+    private void crossLink(Path src, Path dst) throws IOException {
         ++numDirsSynced;
         Path a = Files.createDirectories(src);
         Path b = Files.createDirectories(dst);
@@ -120,7 +125,10 @@ public class CrossLinker {
     }
 
     public void dumpAndResetStats() {
-        System.err.println("Synced " + numDirsSynced + " directories:");
+        long currTimeNanos = System.nanoTime();
+        long millis = (currTimeNanos - startTimeNanos) / 1_000_000;
+        float seconds = millis / 1000.0f;
+        System.err.println("Synced " + numDirsSynced + " directories in " + seconds + " seconds:");
         if (numFilesLinked > 0)
             System.err.println("  -  files linked: " + numFilesLinked);
         if (numFilesCopied > 0)
@@ -133,6 +141,7 @@ public class CrossLinker {
             System.err.println("  -  files already present skipped: " + numAlreadyPresent);
         if (numCopyFailures > 0)
             System.err.println("  -  failures to link or copy: " + numCopyFailures);
+        startTimeNanos = 0;
         numDirsSynced = 0;
         numFilesLinked = 0;
         numFilesCopied = 0;
