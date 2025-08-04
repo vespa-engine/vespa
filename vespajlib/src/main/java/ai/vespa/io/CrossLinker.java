@@ -58,9 +58,10 @@ public class CrossLinker {
         } else if (Files.isDirectory(dst)) {
             System.err.println("cannot sync non-directory " + src + " <-> directory " + dst);
             ++numConflicts;
+        } else {
+            // assume already OK
+            ++numAlreadyPresent;
         }
-        // else: assume already OK
-        ++numAlreadyPresent;
     }
 
     void linkOrCopy(Path src, Path dst) {
