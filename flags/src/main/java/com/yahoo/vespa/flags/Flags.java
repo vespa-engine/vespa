@@ -300,7 +300,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DEFER_OS_UPGRADE = defineFeatureFlag(
             "defer-os-upgrade", false,
-            List.of("olaa"), "2025-04-09", "2025-08-01",
+            List.of("olaa"), "2025-04-09", "2025-11-01",
             "Whether OS upgrade should be deferred",
             "Takes effect immediately",
             CLOUD_ACCOUNT
