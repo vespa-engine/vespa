@@ -15,13 +15,15 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.ast.onnxModelInSchema;
 import ai.vespa.schemals.parser.rankingexpression.ast.rankPropertyFeature;
 import ai.vespa.schemals.parser.rankingexpression.ast.unaryFunctionName;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.BuiltInFunctions;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.GenericFunction;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
+import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode.RankNodeType;
 
@@ -175,6 +177,10 @@ public class RankExpressionSymbolResolver {
         add(SymbolType.TENSOR_DIMENSION_INDEXED);
     }};
 
+    private static boolean isInsideOnnxModelInSchema(Node node) {
+        return CSTUtils.findASTClassAncestor(node, onnxModelInSchema.class) != null;
+    }
+
     private static void resolveReference(RankNode referenceNode, ParseContext context, List<Diagnostic> diagnostics) {
 
         if (referenceNode.getSymbolType() != SymbolType.TYPE_UNKNOWN) {
@@ -189,6 +195,15 @@ public class RankExpressionSymbolResolver {
         Symbol reference = referenceNode.getSymbol();
 
         Optional<Symbol> definition = Optional.empty();
+
+        if (isInsideOnnxModelInSchema(referenceNode.getSchemaNode())) {
+            // onnx-model blocks outside any rank-profile are problematic,
+            // because they can reference functions from a rank-profile (outside scope).
+            // We don't have any good way of handling it, but onnx-model outside a profile 
+            // is deprecated anyways.
+            reference.setStatus(SymbolStatus.INVALID);
+            return;
+        }
 
         if (!referenceNode.getArgumentListExists()) {
             // This can be a parameter
