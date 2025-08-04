@@ -8958,6 +8958,7 @@
     "methods" : [
       "public java.lang.String name()",
       "public java.util.Map fields()",
+      "public java.util.Map fieldSets()",
       "public java.util.Map rankProfiles()",
       "public java.util.Map documentSummaries()",
       "public java.util.Optional fieldInfo(java.lang.String)",
