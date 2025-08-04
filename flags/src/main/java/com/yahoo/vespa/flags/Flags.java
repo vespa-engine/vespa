@@ -261,14 +261,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENFORCE_EMAIL_DOMAIN_SSO = defineFeatureFlag(
             "enforce-email-domain-sso", false,
-            List.of("eirik"), "2024-11-07", "2025-08-01",
+            List.of("eirik"), "2024-11-07", "2025-11-01",
             "Enforce SSO login for an email domain",
             "Takes effect immediately",
             CONSOLE_USER_EMAIL);
 
     public static final UnboundListFlag<String> RESTRICT_USERS_TO_DOMAIN = defineListFlag(
             "restrict-users-to-domain", List.of(), String.class,
-            List.of("eirik"), "2024-11-07", "2025-08-01",
+            List.of("eirik"), "2024-11-07", "2025-11-01",
             "Only allow adding specific email domains as user to tenant",
             "Takes effect immediately",
             TENANT_ID);
