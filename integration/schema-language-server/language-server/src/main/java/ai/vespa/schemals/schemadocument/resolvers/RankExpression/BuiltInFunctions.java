@@ -142,7 +142,10 @@ public class BuiltInFunctions {
         ), Set.of(
             "", // empty not actually allowed, but here for completion
             "firstPosition", 
-            "occurences"
+            "lastPosition",
+            "occurrences",
+            "weight",
+            "exactness"
         ))));
 
         put("matchCount", new GenericFunction("mathCount", new FunctionSignature(new FieldArgument(FieldType.STRING, FieldArgument.IndexAttributeType))));
