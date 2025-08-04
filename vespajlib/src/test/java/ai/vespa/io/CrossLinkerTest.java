@@ -100,7 +100,7 @@ class CrossLinkerTest {
         System.err.println(">>> replicates_one_way >>>");
         fill(tmpOne, 3, 2);
         rm_r(tmpTwo);
-        linker.crossLink(tmpOne, tmpTwo);
+        linker.crossLink(tmpOne.toString(), tmpTwo.toString());
         checkEqTrees();
         linker.dumpAndResetStats();
         System.err.println("<<< replicates_one_way <<<");
@@ -112,7 +112,7 @@ class CrossLinkerTest {
         fill(tmpOne, 2, 3);
         this.mult = 17;
         fill(tmpTwo, 2, 3);
-        linker.crossLink(tmpOne, tmpTwo);
+        linker.crossLink(tmpOne.toString(), tmpTwo.toString());
         checkEqTrees();
         linker.dumpAndResetStats();
         System.err.println("<<< replicates_both_ways <<<");
@@ -123,7 +123,7 @@ class CrossLinkerTest {
         System.err.println(">>> can_skip_replicates >>>");
         fill(tmpOne, 2, 4);
         fill(tmpTwo, 2, 4);
-        linker.crossLink(tmpOne, tmpTwo);
+        linker.crossLink(tmpOne.toString(), tmpTwo.toString());
         checkEqTrees();
         linker.dumpAndResetStats();
         System.err.println("<<<  can_skip_replicates <<<");
@@ -134,7 +134,7 @@ class CrossLinkerTest {
         System.err.println(">>> skips_clashing >>>");
         fill(tmpOne, 2, 4);
         fill(tmpTwo, 3, 3);
-        linker.crossLink(tmpOne, tmpTwo);
+        linker.crossLink(tmpOne.toString(), tmpTwo.toString());
         linker.dumpAndResetStats();
         System.err.println("<<< skips_clashing <<<");
     }
