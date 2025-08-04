@@ -45,6 +45,7 @@ public class Schema {
 
     public String name() { return name; }
     public Map<String, Field> fields() { return fields; }
+    public Map<String, FieldSet> fieldSets() { return fieldSets; }
     public Map<String, RankProfile> rankProfiles() { return rankProfiles; }
     public Map<String, DocumentSummary> documentSummaries() { return documentSummaries; }
 
