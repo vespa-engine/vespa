@@ -1,2 +1,2 @@
-- Added support for 'elementwise' rank feature.
-- Improved ranking expression analysis and diagnostics.
+- Add some missing rank feature properties.
+- Fixed minor bugs.
