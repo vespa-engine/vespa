@@ -176,7 +176,7 @@ INJECT SchemaParser:
         int startSplit = lastConsumedToken.getEndOffset();
         int leadingStripped = startSplit - lastConsumedToken.getPrevious().getBeginOffset();
 
-        int braceLevel = (multiline ? 1 : 0); 
+        int braceLevel = (multiline ? 1 : 0);
 
         while (nextTokenType() != TokenType.EOF) {
             if (!multiline && nextTokenType() == TokenType.NL) break;
@@ -188,9 +188,9 @@ INJECT SchemaParser:
             if (nextTokenType() == TokenType.RBRACE) {
                 --braceLevel;
             }
-            
+
             if (multiline && braceLevel <= 0) {
-                // break before consuming token so that 
+                // break before consuming token so that
                 // the parser can consume it.
                 break;
             }
@@ -2004,7 +2004,7 @@ void onnxModelInput(OnnxModel onnxModel) :
     Token inputToken = null;
     Node sourceFeatureNode;
 }
-    ( (inputToken = <INPUT>) (name = onnxModelIOName()) <COLON> sourceFeatureNode = consumedFeatureListElm(false) ) 
+    ( (inputToken = <INPUT>) (name = onnxModelIOName()) <COLON> sourceFeatureNode = consumedFeatureListElm(false) )
     {
         String sourceExpressionString = ((consumedFeatureListElm)sourceFeatureNode).getFeatureList();
         sourceFeatureNode.setBeginOffset(sourceFeatureNode.getBeginOffset() - sourceExpressionString.length());
@@ -2045,39 +2045,39 @@ void onnxModelItem(OnnxModel onnxModel) :
 }
 
     (
-        (path = fileItem()) 
+        (path = fileItem())
             {
                 try {
                     onnxModel.setFileName(path);
                 } catch (IllegalArgumentException ex) {
                     lastConsumedToken.addIllegalArgumentException(ex);
                 }
-            } 
-        | (uriInOnnxModel(onnxModel)) 
-        | <GPU_DEVICE> <COLON> num = integerElm() 
+            }
+        | (uriInOnnxModel(onnxModel))
+        | <GPU_DEVICE> <COLON> num = integerElm()
             {
                 try {
                     onnxModel.setGpuDevice(num, false);
                 } catch (IllegalArgumentException ex) {
                     lastConsumedToken.addIllegalArgumentException(ex);
                 }
-            } 
-        | <INTRAOP_THREADS> <COLON> num = integerElm() 
+            }
+        | <INTRAOP_THREADS> <COLON> num = integerElm()
             {
                 try {
                     onnxModel.setStatelessIntraOpThreads(num);
                 } catch (IllegalArgumentException ex) {
                     lastConsumedToken.addIllegalArgumentException(ex);
                 }
-            } 
-        | <INTEROP_THREADS> <COLON> num = integerElm() 
+            }
+        | <INTEROP_THREADS> <COLON> num = integerElm()
             {
                 try {
                     onnxModel.setStatelessInterOpThreads(num);
                 } catch (IllegalArgumentException ex) {
                     lastConsumedToken.addIllegalArgumentException(ex);
                 }
-            } 
+            }
         | <EXECUTION_MODE> <COLON> (
             <PARALLEL> {
                 try {
@@ -2085,15 +2085,15 @@ void onnxModelItem(OnnxModel onnxModel) :
                 } catch (IllegalArgumentException ex) {
                     lastConsumedToken.addIllegalArgumentException(ex);
                 }
-            } 
+            }
             | <SEQUENTIAL> {
                 try {
                     onnxModel.setStatelessExecutionMode("sequential");
                 } catch (IllegalArgumentException ex) {
                     lastConsumedToken.addIllegalArgumentException(ex);
                 }
-            } 
-        ) 
+            }
+        )
         | onnxModelInput(onnxModel)
         | onnxModelOutput(onnxModel)
     )
@@ -2148,8 +2148,8 @@ void uriInOnnxModel(OnnxModel onnxModel) :
    Token uriToken;
 }
 
-  (<URI> { uriToken = lastConsumedToken; } <COLON> ( <URI_PATH> ) { path = lastConsumedToken.toString(); } (<NL>)*) 
-{ 
+  (<URI> { uriToken = lastConsumedToken; } <COLON> ( <URI_PATH> ) { path = lastConsumedToken.toString(); } (<NL>)*)
+{
     try {
         onnxModel.setUri(path);
     } catch (IllegalArgumentException ex) {
@@ -2606,21 +2606,27 @@ void featureListElm(ParsedRankProfile profile) :
 void summaryFeaturesElm(ParsedRankProfile profile) :
 {
     String features;
-    String inherited = null;
+    String inheritName;
+    List<String> inherited = new ArrayList<>();
     Node featureListNode = null;
 }
 
     (<SUMMARY_FEATURES> (
         (<COLON> featureListNode = consumedFeatureListElm(false) ) |
         (openLbrace() featureListNode = consumedFeatureListElm(true) <RBRACE> ) |
-        (<INHERITS> inherited = identifierWithDashStr() openLbrace() featureListNode = consumedFeatureListElm(true) <RBRACE> )
+        (<INHERITS>
+            inheritName = identifierWithDashStr() { inherited.add(inheritName); }
+            (<COMMA>
+                inheritName = identifierWithDashStr() { inherited.add(inheritName); }
+            )*
+            openLbrace()
+            featureListNode = consumedFeatureListElm(true)
+         <RBRACE>)
     ))
     {
         features = ((consumedFeatureListElm)featureListNode).getFeatureList();
         featureListNode.setBeginOffset(featureListNode.getBeginOffset() - features.length());
-        if (inherited != null) {
-            profile.setInheritedSummaryFeatures(inherited);
-        }
+        profile.setInheritedSummaryFeatures(inherited);
     }
 ;
 
@@ -2699,21 +2705,27 @@ void filterThreshold(ParsedRankProfile profile) :
 void matchFeaturesElm(ParsedRankProfile profile) :
 {
     String features;
-    String inherited = null;
+    String inheritName;
+    List<String> inherited = new ArrayList<>();
     Node featureListNode;
 }
 
     ( <MATCH_FEATURES> (
         (<COLON> featureListNode = consumedFeatureListElm(false) ) |
         (openLbrace() featureListNode = consumedFeatureListElm(true) <RBRACE> ) |
-        (<INHERITS> inherited = identifierWithDashStr() openLbrace() featureListNode = consumedFeatureListElm(true) <RBRACE> )
+        (<INHERITS>
+            inheritName = identifierWithDashStr() { inherited.add(inheritName); }
+            (<COMMA>
+                inheritName = identifierWithDashStr() { inherited.add(inheritName); }
+            )*
+            openLbrace()
+            featureListNode = consumedFeatureListElm(true)
+         <RBRACE>)
     ))
     {
         features = ((consumedFeatureListElm)featureListNode).getFeatureList();
         featureListNode.setBeginOffset(featureListNode.getBeginOffset() - features.length());
-        if (inherited != null) {
-            profile.setInheritedMatchFeatures(inherited);
-        }
+        profile.setInheritedMatchFeatures(inherited);
     }
 ;
 
@@ -3282,10 +3294,10 @@ void importField(ParsedSchema schema) :
  * Since the call to consumeRankingExpression eats tokens without the parser knowing about it,
  * we need to manipulate the offsets of the resulting node in order for the CST to be correct.
  *
- * However, when a call to a production returns, the generated parser will 'close its scope', 
+ * However, when a call to a production returns, the generated parser will 'close its scope',
  * which means among other things setting a begin/end offset for the node. Therefore,
  * if we had registered the offsets in the body of this production, the parser would simply overwrite them.
- * 
+ *
  * Returning the production node itself allows for manipulating the offsets after scope closing,
  * allowing the manipulated offsets to propagate upwards in the tree.
  */
@@ -3550,13 +3562,13 @@ Boolean bool() :
 /** Consumes an integer token and returns its numeric value. */
 int integerElm() : { }
 
-    <INTEGER> { 
-        try { 
-            return Integer.parseInt(lastConsumedToken.toString()); 
+    <INTEGER> {
+        try {
+            return Integer.parseInt(lastConsumedToken.toString());
         } catch (NumberFormatException ex) {
             lastConsumedToken.addIllegalArgumentException(
                 new IllegalArgumentException(
-                    "Expected an integer literal, got \"" 
+                    "Expected an integer literal, got \""
                     + lastConsumedToken.toString().trim()
                     + "\""
                 )
