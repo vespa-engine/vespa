@@ -55,6 +55,12 @@ public class Flags {
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
+    public static final UnboundBooleanFlag LOCKED_GCP_PROVISION = defineFeatureFlag(
+            "locked-gcp-provision", false,
+            List.of("hakonhall"), "2025-08-05", "2025-10-05",
+            "Whether to provision GCP hosts under the application- and unallocated- locks, even though it takes ~1m.",
+            "Takes effect on next host being provisioned");
+
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
             List.of("hmusum"), "2020-12-02", "2025-12-01",
