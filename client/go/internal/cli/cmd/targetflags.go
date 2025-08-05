@@ -190,12 +190,8 @@ func (cf *TargetFlags) GetTargetWithOptions(opts targetOptions) (vespa.Target, e
 	}
 
 	// Check if target type is supported
-	unsupported := (opts.supportedType == cloudTargetOnly && targetType.name != vespa.TargetCloud && targetType.name != vespa.TargetHosted) ||
-		(opts.supportedType == localTargetOnly && targetType.name != vespa.TargetLocal && targetType.name != vespa.TargetCustom)
-	if unsupported {
-		return nil, errHint(fmt.Errorf("command does not support %s target", targetType.name),
-			"to switch target run the following:",
-			"$ vespa config set target cloud")
+	if err := validateTargetTypeSupport(targetType.name, opts.supportedType); err != nil {
+		return nil, err
 	}
 
 	// Create target directly based on type

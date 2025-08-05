@@ -514,12 +514,8 @@ func (c *CLI) targetTypeWithFlags(targetTypeRestriction int, flags *TargetFlags)
 			return targetType{}, err
 		}
 	}
-	unsupported := (targetTypeRestriction == cloudTargetOnly && tt.name != vespa.TargetCloud && tt.name != vespa.TargetHosted) ||
-		(targetTypeRestriction == localTargetOnly && tt.name != vespa.TargetLocal && tt.name != vespa.TargetCustom)
-	if unsupported {
-		return targetType{}, errHint(fmt.Errorf("command does not support %s target", tt.name),
-			"to switch target run the following:",
-			"$ vespa config set target cloud")
+	if err := validateTargetTypeSupport(tt.name, targetTypeRestriction); err != nil {
+		return targetType{}, err
 	}
 	return tt, nil
 }
@@ -787,4 +783,22 @@ func (c *CLI) applicationPackageFrom(args []string, options vespa.PackageOptions
 		return vespa.ApplicationPackage{}, fmt.Errorf("expected 0 or 1 arguments, got %d", len(args))
 	}
 	return vespa.FindApplicationPackage(path, options)
+}
+
+// validateTargetTypeSupport checks if the target type is supported by the given restriction and returns an appropriate error if not.
+func validateTargetTypeSupport(targetTypeName string, supportedType int) error {
+	unsupported := (supportedType == cloudTargetOnly && targetTypeName != vespa.TargetCloud && targetTypeName != vespa.TargetHosted) ||
+		(supportedType == localTargetOnly && targetTypeName != vespa.TargetLocal && targetTypeName != vespa.TargetCustom)
+	if unsupported {
+		var recommendedTarget string
+		if supportedType == cloudTargetOnly {
+			recommendedTarget = "cloud"
+		} else if supportedType == localTargetOnly {
+			recommendedTarget = "local"
+		}
+		return errHint(fmt.Errorf("command does not support %s target", targetTypeName),
+			"to switch target run the following:",
+			fmt.Sprintf("$ vespa config set target %s", recommendedTarget))
+	}
+	return nil
 }
