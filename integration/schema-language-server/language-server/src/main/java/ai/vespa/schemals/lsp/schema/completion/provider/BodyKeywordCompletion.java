@@ -34,6 +34,7 @@ import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.secondPhase;
+import ai.vespa.schemals.parser.ast.significanceElm;
 import ai.vespa.schemals.parser.ast.sortingElm;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldElm;
@@ -120,34 +121,35 @@ public class BodyKeywordCompletion implements CompletionProvider {
 
         put(rankProfile.class, List.of(
             FixedKeywordBodies.STRICT.getColonSnippet(false),
-            CompletionUtils.constructSnippet("diversity", "diversity {\n\tattribute: $1\n\tmin-groups: $0\n}"),
-            CompletionUtils.constructSnippet("match-phase", "match-phase {\n\tattribute: $1\n\torder: $2\n\tmax-hits: $3\n}"),
-            CompletionUtils.constructSnippet("first-phase", "first-phase {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("second-phase", "second-phase {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("global-phase", "global-phase {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("function", "function $1() {\n\texpression: $0\n}"),
-            CompletionUtils.constructSnippet("inputs", "inputs {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("constants", "constants {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("onnx-model", "onnx-model $1 {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("rank-properties", "rank-properties {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("match-features", "match-features: $0", "match-features:"),
-            CompletionUtils.constructSnippet("match-features", "match-features {\n\t$0\n}", "match-features {}"),
-            CompletionUtils.constructSnippet("mutate", "mutate {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("summary-features", "summary-features: $0", "summary-features:"),
-            CompletionUtils.constructSnippet("summary-features", "summary-features {\n\t$0\n}", "summary-features {}"),
-            CompletionUtils.constructSnippet("rank-features", "rank-features: $0", "rank-features:"),
-            CompletionUtils.constructSnippet("rank-features", "rank-features {\n\t$0\n}", "rank-features {}"),
-            CompletionUtils.constructSnippet("num-threads-per-search", "num-threads-per-search: $0"),
-            CompletionUtils.constructSnippet("num-search-partitions", "num-search-partitions: $0"),
-            CompletionUtils.constructSnippet("min-hits-per-thread", "min-hits-per-thread: $0"),
-            CompletionUtils.constructSnippet("termwise-limit", "termwise-limit: $0"),
-            CompletionUtils.constructSnippet("post-filter-threshold", "post-filter-threshold: $0"),
             CompletionUtils.constructSnippet("approximate-threshold", "approximate-threshold: $0"),
-            CompletionUtils.constructSnippet("filter-first-threshold", "filter-first-threshold: $0"),
-            CompletionUtils.constructSnippet("filter-first-exploration", "filter-first-exploration: $0"),
+            CompletionUtils.constructSnippet("constants", "constants {\n\t$0\n}"),
+            CompletionUtils.constructSnippet("diversity", "diversity {\n\tattribute: $1\n\tmin-groups: $0\n}"),
             CompletionUtils.constructSnippet("exploration-slack", "exploration-slack: $0"),
-            CompletionUtils.constructSnippet("target-hits-max-adjustment-factor", "target-hits-max-adjustment-factor: $0"),
+            CompletionUtils.constructSnippet("filter-first-exploration", "filter-first-exploration: $0"),
+            CompletionUtils.constructSnippet("filter-first-threshold", "filter-first-threshold: $0"),
             CompletionUtils.constructSnippet("filter-threshold", "filter-threshold: $0"),
+            CompletionUtils.constructSnippet("first-phase", "first-phase {\n\t$0\n}"),
+            CompletionUtils.constructSnippet("function", "function $1() {\n\texpression: $0\n}"),
+            CompletionUtils.constructSnippet("global-phase", "global-phase {\n\t$0\n}"),
+            CompletionUtils.constructSnippet("inputs", "inputs {\n\t$0\n}"),
+            CompletionUtils.constructSnippet("match-features", "match-features {\n\t$0\n}", "match-features {}"),
+            CompletionUtils.constructSnippet("match-features", "match-features: $0", "match-features:"),
+            CompletionUtils.constructSnippet("match-phase", "match-phase {\n\tattribute: $1\n\torder: $2\n\tmax-hits: $3\n}"),
+            CompletionUtils.constructSnippet("min-hits-per-thread", "min-hits-per-thread: $0"),
+            CompletionUtils.constructSnippet("mutate", "mutate {\n\t$0\n}"),
+            CompletionUtils.constructSnippet("num-search-partitions", "num-search-partitions: $0"),
+            CompletionUtils.constructSnippet("num-threads-per-search", "num-threads-per-search: $0"),
+            CompletionUtils.constructSnippet("onnx-model", "onnx-model $1 {\n\t$0\n}"),
+            CompletionUtils.constructSnippet("post-filter-threshold", "post-filter-threshold: $0"),
+            CompletionUtils.constructSnippet("rank-features", "rank-features {\n\t$0\n}", "rank-features {}"),
+            CompletionUtils.constructSnippet("rank-features", "rank-features: $0", "rank-features:"),
+            CompletionUtils.constructSnippet("rank-properties", "rank-properties {\n\t$0\n}"),
+            CompletionUtils.constructSnippet("second-phase", "second-phase {\n\t$0\n}"),
+            CompletionUtils.constructSnippet("significance", "significance {\n\tuse-model: ${1|true,false|}\n}"),
+            CompletionUtils.constructSnippet("summary-features", "summary-features {\n\t$0\n}", "summary-features {}"),
+            CompletionUtils.constructSnippet("summary-features", "summary-features: $0", "summary-features:"),
+            CompletionUtils.constructSnippet("target-hits-max-adjustment-factor", "target-hits-max-adjustment-factor: $0"),
+            CompletionUtils.constructSnippet("termwise-limit", "termwise-limit: $0"),
 
             CompletionUtils.constructBasic("ignore-default-rank-features"),
             FixedKeywordBodies.RANK.getColonSnippet(true),
@@ -157,6 +159,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
         ));
 
         put(RootRankProfile.class, get(rankProfile.class));
+
 
         put(firstPhase.class, List.of(
             CompletionUtils.constructSnippet("expression", "expression: $0", "expression:"),
@@ -194,6 +197,10 @@ public class BodyKeywordCompletion implements CompletionProvider {
             FixedKeywordBodies.MATCH.getColonSnippet(),
             FixedKeywordBodies.MATCH.getBodySnippet(),
             CompletionUtils.constructSnippet("query-command", "query-command: ")
+        ));
+
+        put(significanceElm.class, List.of(
+            CompletionUtils.constructSnippet("use-model", "use-model: ${1|true,false|}")
         ));
 
         put(FixedKeywordBodies.MATCH.parentASTClass(), FixedKeywordBodies.MATCH.completionItems());
