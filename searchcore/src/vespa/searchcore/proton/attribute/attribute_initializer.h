@@ -57,7 +57,7 @@ public:
     AttributeInitializerResult init() const;
     const std::optional<uint64_t>& getCurrentSerialNum() const noexcept { return _currentSerialNum; }
     size_t get_transient_memory_usage() const;
-    void registerInProgressReporter(initializer::IInitializationProgressReporter &reporter);
+    AttributeInitializationProgressReporter::SP getProgressReporter() const { return _progressReporter; }
 };
 
 } // namespace proton

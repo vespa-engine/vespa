@@ -284,9 +284,4 @@ AttributeInitializer::get_transient_memory_usage() const
     return 0u;
 }
 
-void
-AttributeInitializer::registerInProgressReporter(initializer::IInitializationProgressReporter &reporter) {
-    reporter.registerSubReporter(_progressReporter);
-}
-
 } // namespace proton

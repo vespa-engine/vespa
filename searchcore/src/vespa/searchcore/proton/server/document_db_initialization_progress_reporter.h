@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/initializer/initializer_task.h>
-#include <shared_mutex>
+#include <vespa/searchcore/proton/initializer/iinitialization_progress_reporter.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <shared_mutex>
+#include <vector>
 
 namespace proton {
 
@@ -21,7 +22,7 @@ private:
 public:
     DocumentDBInitializationProgressReporter(const std::string &name, DocumentDB &documentDB);
     void reportProgress(const vespalib::slime::Inserter &inserter) const override;
-    void registerSubReporter(const IInitializationProgressReporter::SP &reporter) override;
+    std::vector<IInitializationProgressReporter::SP>& getAttributeProgressReporters() { return _attributes; };
 };
 
 } // namespace proton

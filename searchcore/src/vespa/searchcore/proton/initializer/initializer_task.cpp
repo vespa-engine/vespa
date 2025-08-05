@@ -25,9 +25,9 @@ InitializerTask::get_transient_memory_usage() const
 }
 
 void
-InitializerTask::registerInProgressReporter(IInitializationProgressReporter &reporter) {
+InitializerTask::acceptVisitor(InitializerTaskVisitor &visitor) {
     for (SP &task : _dependencies) {
-        task->registerInProgressReporter(reporter);
+        task->acceptVisitor(visitor);
     }
 }
 

@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchcore/proton/initializer/initializer_task.h>
+#include <vespa/searchcore/proton/initializer/iinitialization_progress_reporter.h>
 #include <shared_mutex>
 
 namespace proton {
