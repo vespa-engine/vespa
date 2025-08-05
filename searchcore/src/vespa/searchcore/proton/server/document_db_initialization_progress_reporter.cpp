@@ -61,9 +61,4 @@ void DocumentDBInitializationProgressReporter::reportProgress(const vespalib::sl
     }
 }
 
-void DocumentDBInitializationProgressReporter::registerSubReporter(const IInitializationProgressReporter::SP &reporter) {
-    std::unique_lock<std::shared_mutex> guard(_mutex);
-    _attributes.push_back(reporter);
-}
-
 }
