@@ -9,7 +9,7 @@
 namespace proton {
 
 namespace {
-    std::string timepointToString(search::attribute::InitializationStatus::time_point tp) {
+    std::string timepointToString(search::attribute::AttributeInitializationStatus::time_point tp) {
        time_t secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
        uint32_t usecs_part = std::chrono::duration_cast<std::chrono::microseconds>(tp.time_since_epoch()).count() % 1000000;
        return std::format("{}.{:06}", secs, usecs_part);
@@ -39,18 +39,18 @@ void AttributeInitializationStatusWrapper::reportInitializationStatus(const vesp
     if (!_attr) {
         cursor.setString("status", "queued");
     } else {
-        const search::InitializationStatus &status = _attr->getInitializationStatus();
+        const search::AttributeInitializationStatus &status = _attr->getInitializationStatus();
 
-        cursor.setString("status", search::InitializationStatus::stateToString(status.getState()));
+        cursor.setString("status", search::AttributeInitializationStatus::stateToString(status.getState()));
 
-        if (status.getState() != search::attribute::InitializationStatus::State::QUEUED) {
+        if (status.getState() != search::attribute::AttributeInitializationStatus::State::QUEUED) {
             cursor.setString("loading_started", timepointToString(status.getStartTime()));
 
             if (status.getReprocessingStartTime() >= status.getStartTime()) {
                 cursor.setString("reprocessing_started",timepointToString(status.getReprocessingStartTime()));
             }
 
-            if (status.getState() == search::attribute::InitializationStatus::State::REPROCESSING) {
+            if (status.getState() == search::attribute::AttributeInitializationStatus::State::REPROCESSING) {
                 cursor.setDouble("reprocessing_progress",  status.getReprocessingPercentage());
             }
 

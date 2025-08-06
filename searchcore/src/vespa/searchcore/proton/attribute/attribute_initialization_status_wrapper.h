@@ -17,8 +17,8 @@ public:
     void setAttributeVector(const search::AttributeVector::SP &attr);
     bool hasAttributeVector() const;
 
-    const search::attribute::InitializationStatus& getInitializationStatus() const { return _attr->getInitializationStatus(); };
-    search::attribute::InitializationStatus& getInitializationStatus() { return _attr->getInitializationStatus(); }
+    const search::attribute::AttributeInitializationStatus& getInitializationStatus() const { return _attr->getInitializationStatus(); };
+    search::attribute::AttributeInitializationStatus& getInitializationStatus() { return _attr->getInitializationStatus(); }
 
     void reportInitializationStatus(const vespalib::slime::Inserter &inserter) const;
 

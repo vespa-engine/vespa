@@ -7,7 +7,7 @@
 
 namespace search::attribute {
 
-class InitializationStatus {
+class AttributeInitializationStatus {
 public:
     enum State {
         QUEUED,
@@ -18,7 +18,7 @@ public:
     static std::string stateToString(State state);
     using time_point = std::chrono::system_clock::time_point;
 
-    InitializationStatus();
+    AttributeInitializationStatus();
 
     void startLoading();
     void startReprocessing();
