@@ -8,7 +8,6 @@
 #include "resource_usage_forwarder.h"
 #include "document_db_config_owner.h"
 #include "document_db_initialization_status.h"
-#include "document_db_initialization_progress_reporter.h"
 #include "documentdb_metrics_updater.h"
 #include "documentsubdbcollection.h"
 #include "executorthreadingservice.h"
@@ -19,6 +18,7 @@
 #include "maintenancecontroller.h"
 #include "threading_service_config.h"
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
+#include <vespa/searchcore/proton/attribute/attribute_initialization_status_wrapper.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
@@ -146,8 +146,10 @@ private:
     DocumentDBJobTrackers                            _jobTrackers;
     std::shared_ptr<IBucketStateCalculator>          _calc;
     DocumentDBMetricsUpdater                         _metricsUpdater;
-    DocumentDBInitializationStatus                   _initializationStatus;
-    DocumentDBInitializationProgressReporter         _initializationProgressReporter;
+
+    DocumentDBInitializationStatus                        _initializationStatus;
+    mutable std::shared_mutex                             _initializationMutex;  // protects vector below
+    std::vector<AttributeInitializationStatusWrapper::SP> _attributeInitializationStatus;
 
     void registerReference();
     void setActiveConfig(DocumentDBConfigSP config);
@@ -433,8 +435,7 @@ public:
     const DDBState& get_state() const noexcept { return _state; }
 
     const DocumentDBInitializationStatus& getInitializationStatus() const { return _initializationStatus; }
-    const DocumentDBInitializationProgressReporter& getInitializationProgressReporter() const { return _initializationProgressReporter; }
-    DocumentDBInitializationProgressReporter& getInitializationProgressReporter() { return _initializationProgressReporter; }
+    void getInitializationStatus(const vespalib::slime::Inserter &inserter) const;
 };
 
 } // namespace proton

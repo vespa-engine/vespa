@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/net/http/initialization_progress_producer.h>
+#include <vespa/vespalib/net/http/initialization_status_producer.h>
 #include <vespa/vespalib/net/http/json_get_handler.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
 #include <map>
@@ -13,9 +13,9 @@ namespace proton {
 class InitializationHandler : public vespalib::JsonGetHandler
 {
 private:
-    vespalib::InitializationProgressProducer &_initializationProgressProducer;
+    vespalib::InitializationStatusProducer &_initializationStatusProducer;
 public:
-    InitializationHandler(vespalib::InitializationProgressProducer &initializationProgressProducer);
+    InitializationHandler(vespalib::InitializationStatusProducer &initializationStatusProducer);
     Response get(const std::string &host,
                  const std::string &path,
                  const std::map<std::string,std::string> &params,

@@ -1,8 +1,6 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchcore_attribute STATIC
     SOURCES
-    attribute_initialization_progress_reporter_collecting_visitor.cpp
-    attribute_initialization_progress_reporter.cpp
     address_space_usage_stats.cpp
     attribute_aspect_delayer.cpp
     attribute_collection_spec.cpp
@@ -11,6 +9,8 @@ vespa_add_library(searchcore_attribute STATIC
     attribute_directory.cpp
     attribute_executor.cpp
     attribute_factory.cpp
+    attribute_initialization_status_wrapper_collector.cpp
+    attribute_initialization_status_wrapper.cpp
     attribute_initializer.cpp
     attribute_initializer_result.cpp
     attribute_manager_explorer.cpp

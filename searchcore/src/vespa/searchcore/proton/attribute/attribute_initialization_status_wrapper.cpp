@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attribute_initialization_progress_reporter.h"
+#include "attribute_initialization_status_wrapper.h"
 
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/data/slime/cursor.h>
@@ -16,17 +16,22 @@ namespace {
     }
 }
 
-AttributeInitializationProgressReporter::AttributeInitializationProgressReporter(const std::string &name) :
+AttributeInitializationStatusWrapper::AttributeInitializationStatusWrapper(const std::string &name) :
     _name(name)
     {
 }
 
-void AttributeInitializationProgressReporter::setAttributeVector(const search::AttributeVector::SP &attr) {
+void AttributeInitializationStatusWrapper::setAttributeVector(const search::AttributeVector::SP &attr) {
     std::unique_lock<std::shared_mutex> guard(_mutex);
     _attr = attr;
 }
 
-void AttributeInitializationProgressReporter::reportProgress(const vespalib::slime::Inserter &inserter) const {
+bool AttributeInitializationStatusWrapper::hasAttributeVector() const {
+    std::unique_lock<std::shared_mutex> guard(_mutex);
+    return _attr != nullptr;
+}
+
+void AttributeInitializationStatusWrapper::reportProgress(const vespalib::slime::Inserter &inserter) const {
     std::shared_lock<std::shared_mutex> guard(_mutex);
     vespalib::slime::Cursor &cursor = inserter.insertObject();
     cursor.setString("name", _name);

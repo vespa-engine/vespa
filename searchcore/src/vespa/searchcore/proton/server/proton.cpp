@@ -1214,7 +1214,7 @@ Proton::getMetricManager() {
     return _metricsEngine->getManager();
 }
 
-void Proton::getProgress(const vespalib::slime::Inserter &inserter) const {
+void Proton::getInitializationStatus(const vespalib::slime::Inserter &inserter) const {
     std::shared_lock<std::shared_mutex> guard(_mutex);
 
     vespalib::slime::Cursor &cursor = inserter.insertObject();
@@ -1225,7 +1225,7 @@ void Proton::getProgress(const vespalib::slime::Inserter &inserter) const {
     vespalib::slime::ArrayInserter arrayInserter(dbArrayCursor);
 
     for (const auto &kv : _documentDBMap) {
-        kv.second->getInitializationProgressReporter().reportProgress(arrayInserter);
+        kv.second->getInitializationStatus(arrayInserter);
     }
 }
 
