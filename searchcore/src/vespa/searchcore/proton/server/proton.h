@@ -9,10 +9,10 @@
 #include "i_proton_configurer_owner.h"
 #include "idocumentdbowner.h"
 #include "initialization_handler.h"
-#include "initialization_status.h"
 #include "memory_flush_config_updater.h"
 #include "proton_config_fetcher.h"
 #include "proton_configurer.h"
+#include "proton_initialization_status.h"
 #include "rpc_hooks.h"
 #include "shared_threading_service.h"
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
@@ -119,7 +119,7 @@ private:
     HealthAdapter                          _healthAdapter;
     vespalib::GenericStateHandler          _genericStateHandler;
     InitializationHandler                  _initializationHandler;
-    InitializationStatus                   _initializationStatus;
+    ProtonInitializationStatus             _initializationStatus;
     vespalib::JsonHandlerRepo::Token::UP   _initializationBindToken;
     vespalib::JsonHandlerRepo::Token::UP   _initializationRootToken;
     vespalib::JsonHandlerRepo::Token::UP   _customComponentBindToken;

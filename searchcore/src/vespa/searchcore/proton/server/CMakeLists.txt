@@ -63,7 +63,6 @@ vespa_add_library(searchcore_server STATIC
     ifeedview.cpp
     initialize_threads_calculator.cpp
     initialization_handler.cpp
-    initialization_status.cpp
     ireplayconfig.cpp
     job_tracked_maintenance_job.cpp
     lid_space_compaction_handler.cpp
@@ -93,6 +92,7 @@ vespa_add_library(searchcore_server STATIC
     proton_config_snapshot.cpp
     proton_configurer.cpp
     proton_disk_layout.cpp
+    proton_initialization_status.cpp
     proton_thread_pools_explorer.cpp
     pruneremoveddocumentsjob.cpp
     putdonecontext.cpp

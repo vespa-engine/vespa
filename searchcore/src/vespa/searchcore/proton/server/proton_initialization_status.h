@@ -7,7 +7,7 @@
 
 namespace proton {
 
-class InitializationStatus {
+class ProtonInitializationStatus {
 public:
     using time_point = std::chrono::system_clock::time_point;
 
