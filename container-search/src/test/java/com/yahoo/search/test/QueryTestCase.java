@@ -12,8 +12,11 @@ import com.yahoo.language.opennlp.OpenNlpLinguistics;
 import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
+import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleDetector;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.language.simple.SimpleToken;
+import com.yahoo.language.simple.SimpleTokenizer;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
@@ -29,6 +32,7 @@ import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.WeakAndItem;
+import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.CJKSearcher;
 import com.yahoo.processing.request.CompoundName;
@@ -1297,6 +1301,24 @@ public class QueryTestCase {
     }
 
     @Test
+    void testLinguisticsModeWithMultipleTokens() {
+        var profile = new QueryProfile("test");
+        profile.set("model.type", "linguistics", null);
+        profile.set("model.type.isYqlDefault", "true", null);
+        var query = new Query(httpEncode("?yql=select * from sources * where default contains 'color'"),
+                              profile.compile(null));
+
+        var mockLinguistics = new MockTokenizerLinguistics();
+        Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub(null, mockLinguistics)).search(query);
+        assertEquals("select * from sources * where default contains ({origin: {original: \"color\", offset: 0, length: 5}}alternatives({\"color\": 1.0, \"colour\": 1.0}))",
+                     query.yqlRepresentation());
+
+        var alternativesItem = (WordAlternativesItem)query.getModel().getQueryTree().getRoot();
+        // Further token processing is disabled due to type=linguistics applied by default to all terms
+        assertTrue(alternativesItem.isStemmed());
+    }
+
+    @Test
     void testLinguisticsModeWithPhraseSegment() {
         var profile = new QueryProfile("test");
         profile.set("model.type", "linguistics", null);
@@ -1420,7 +1442,7 @@ public class QueryTestCase {
             sd.addIndex(tokenIndex);
         }
         IndexFacts indexFacts = new IndexFacts(new IndexModel(sd));
-        MockLinguistics mockLinguistics = new MockLinguistics();
+        var mockLinguistics = new MockDetectorLinguistics();
         q.getModel().setExecution(new Execution(Execution.Context.createContextStub(indexFacts, mockLinguistics)));
         q.getModel().getQueryTree(); // cause parsing
         assertEquals(expectedDetectionText, mockLinguistics.detector.lastDetectionText);
@@ -1438,8 +1460,30 @@ public class QueryTestCase {
         }
     }
 
+    private static class MockTokenizerLinguistics extends SimpleLinguistics {
+
+        @Override
+        public Tokenizer getTokenizer() { return new MockTokenizer(); }
+
+        @Override
+        public boolean equals(Linguistics other) { return (other instanceof MockTokenizerLinguistics); }
+
+    }
+
+    private static class MockTokenizer extends SimpleTokenizer {
+
+        @Override
+        public Iterable<Token> tokenize(String input, LinguisticsParameters parameters) {
+            if (input.equals("color"))
+                return List.of(SimpleToken.fromStems("color", List.of("color", "colour")));
+            else
+                return super.tokenize(input, parameters);
+        }
+
+    }
+
     /** A linguistics instance which records the last language detection text passed to it */
-    private static class MockLinguistics extends SimpleLinguistics {
+    private static class MockDetectorLinguistics extends SimpleLinguistics {
 
         final MockDetector detector = new MockDetector();
 
@@ -1447,7 +1491,7 @@ public class QueryTestCase {
         public Detector getDetector() { return detector; }
 
         @Override
-        public boolean equals(Linguistics other) { return (other instanceof MockLinguistics); }
+        public boolean equals(Linguistics other) { return (other instanceof MockDetectorLinguistics); }
     }
 
     private static class MockDetector extends SimpleDetector {
