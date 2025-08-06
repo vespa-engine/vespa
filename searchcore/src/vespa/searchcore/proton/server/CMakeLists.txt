@@ -19,7 +19,6 @@ vespa_add_library(searchcore_server STATIC
     document_db_directory_holder.cpp
     document_db_explorer.cpp
     document_db_flush_config.cpp
-    document_db_initialization_progress_reporter.cpp
     document_db_initialization_status.cpp
     document_db_maintenance_config.cpp
     document_db_reconfig.cpp

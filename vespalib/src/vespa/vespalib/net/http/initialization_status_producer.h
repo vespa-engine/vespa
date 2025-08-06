@@ -6,9 +6,9 @@
 
 namespace vespalib {
 
-    struct InitializationProgressProducer {
-        virtual ~InitializationProgressProducer() = default;
-        virtual void getProgress(const vespalib::slime::Inserter &inserter) const = 0;
-    };
+struct InitializationStatusProducer {
+    virtual ~InitializationStatusProducer() = default;
+    virtual void getInitializationStatus(const vespalib::slime::Inserter &inserter) const = 0;
+};
 
 } // namespace vespalib

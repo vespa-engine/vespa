@@ -4,7 +4,7 @@
 #include "attributedisklayout.h"
 #include "attribute_directory.h"
 #include "i_attribute_factory.h"
-#include "attribute_initialization_progress_reporter.h"
+#include "attribute_initialization_status_wrapper.h"
 #include "attribute_transient_memory_calculator.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/memory_usage_logger.h>
@@ -176,7 +176,7 @@ AttributeInitializer::tryLoadAttribute() const
     search::SerialNum serialNum = _attrDir->getFlushedSerialNum();
     std::string attrFileName = _attrDir->getAttributeFileName(serialNum);
     AttributeVector::SP attr = _factory.create(attrFileName, _spec.getConfig());
-    _progressReporter->setAttributeVector(attr);
+    _initializationStatusWrapper->setAttributeVector(attr);
     if (serialNum != 0 && _header) {
         if (!_header_ok) {
             setupEmptyAttribute(attr, serialNum, *_header);
@@ -236,7 +236,7 @@ AttributeVector::SP
 AttributeInitializer::createAndSetupEmptyAttribute() const
 {
     AttributeVector::SP attr = _factory.create(_attrDir->getAttrName(), _spec.getConfig());
-    _progressReporter->setAttributeVector(attr);
+    _initializationStatusWrapper->setAttributeVector(attr);
     _factory.setupEmpty(attr, _currentSerialNum);
     return attr;
 }
@@ -255,7 +255,7 @@ AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirect
       _shared_executor(shared_executor),
       _header(),
       _header_ok(false),
-      _progressReporter(std::make_shared<AttributeInitializationProgressReporter>(_spec.getName()))
+      _initializationStatusWrapper(std::make_shared<AttributeInitializationStatusWrapper>(_spec.getName()))
 {
     if (_currentSerialNum.has_value()) {
         readHeader();

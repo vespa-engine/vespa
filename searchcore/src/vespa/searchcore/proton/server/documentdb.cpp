@@ -16,7 +16,7 @@
 #include "replay_throttling_policy.h"
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/metrics/updatehook.h>
-#include <vespa/searchcore/proton/attribute/attribute_initialization_progress_reporter_collecting_visitor.h>
+#include <vespa/searchcore/proton/attribute/attribute_initialization_status_wrapper_collector.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
@@ -36,6 +36,9 @@
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/searchreply.h>
+#include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -214,8 +217,7 @@ DocumentDB::DocumentDB(const std::string &baseDir,
       _maintenanceController(shared_service.transport(), _writeService.master(), _refCount, _docTypeName),
       _jobTrackers(),
       _calc(),
-      _metricsUpdater(_subDBs, _writeService, _jobTrackers, _writeFilter, *_feedHandler),
-      _initializationProgressReporter(_docTypeName.getName(), *this)
+      _metricsUpdater(_subDBs, _writeService, _jobTrackers, _writeFilter, *_feedHandler)
 {
     assert(configSnapshot);
 
@@ -312,8 +314,11 @@ DocumentDB::initManagers()
     DocumentDBConfig::SP configSnapshot(_initConfigSnapshot);
     _initConfigSnapshot.reset();
     InitializerTask::SP rootTask = _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum, _indexCfg);
-    AttributeInitializationProgressReporterCollectingVisitor visitor(_initializationProgressReporter.getAttributeProgressReporters());
-    rootTask->acceptVisitor(visitor);
+    {
+        std::shared_lock<std::shared_mutex> guard(_initializationMutex);
+        AttributeInitializationStatusWrapperCollector visitor(_attributeInitializationStatus);
+        rootTask->acceptVisitor(visitor);
+    }
     InitializeThreads initializeThreads = _initializeThreads;
     _initializeThreads.reset();
     std::shared_ptr<TaskRunner> taskRunner(std::make_shared<TaskRunner>(*initializeThreads));
@@ -1124,6 +1129,50 @@ DocumentDB::set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener
 matching::SessionManager &
 DocumentDB::session_manager() {
     return _owner.session_manager();
+}
+
+void DocumentDB::getInitializationStatus(const vespalib::slime::Inserter &inserter) const {
+    std::shared_lock<std::shared_mutex> guard(_initializationMutex);
+
+    vespalib::slime::Cursor &dbCursor = inserter.insertObject();
+    dbCursor.setString("name", _docTypeName.getName());
+
+    DocumentDBInitializationStatus::State state = _initializationStatus.getState();
+    dbCursor.setString("state", DocumentDBInitializationStatus::stateToString(state));
+
+    // Add loading progress
+    vespalib::slime::Cursor &subdbCursor = dbCursor.setObject("ready_subdb");
+
+    vespalib::slime::Cursor &loadedCursor = subdbCursor.setArray("loaded_attributes");
+    vespalib::slime::ArrayInserter loadedArrayInserter(loadedCursor);
+
+    vespalib::slime::Cursor &loadingCursor = subdbCursor.setArray("loading_attributes");
+    vespalib::slime::ArrayInserter loadingArrayInserter(loadingCursor);
+
+    vespalib::slime::Cursor &queuedCursor = subdbCursor.setArray("queued_attributes");
+    vespalib::slime::ArrayInserter queuedArrayInserter(queuedCursor);
+
+    for (const auto &attribute: _attributeInitializationStatus) {
+        if (!attribute->hasAttributeVector()) {
+            attribute->reportProgress(queuedArrayInserter);
+
+        } else {
+            const search::attribute::InitializationStatus& status = attribute->getInitializationStatus();
+
+            if (status.getState() == search::attribute::InitializationStatus::State::QUEUED) {
+                attribute->reportProgress(queuedArrayInserter);
+
+            } else if (status.getState() == search::attribute::InitializationStatus::State::LOADED) {
+                attribute->reportProgress(loadedArrayInserter);
+
+            } else { // loading or reprocessing
+                attribute->reportProgress(loadingArrayInserter);
+            }
+        }
+    }
+
+    // Add replay progress
+    dbCursor.setDouble("replay_progress", _feedHandler->getReplayProgress());
 }
 
 } // namespace proton
