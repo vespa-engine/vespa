@@ -20,7 +20,7 @@ public:
     const search::attribute::InitializationStatus& getInitializationStatus() const { return _attr->getInitializationStatus(); };
     search::attribute::InitializationStatus& getInitializationStatus() { return _attr->getInitializationStatus(); }
 
-    void reportProgress(const vespalib::slime::Inserter &inserter) const;
+    void reportInitializationStatus(const vespalib::slime::Inserter &inserter) const;
 
 private:
     mutable std::shared_mutex _mutex;

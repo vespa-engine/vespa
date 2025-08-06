@@ -31,7 +31,7 @@ bool AttributeInitializationStatusWrapper::hasAttributeVector() const {
     return _attr != nullptr;
 }
 
-void AttributeInitializationStatusWrapper::reportProgress(const vespalib::slime::Inserter &inserter) const {
+void AttributeInitializationStatusWrapper::reportInitializationStatus(const vespalib::slime::Inserter &inserter) const {
     std::shared_lock<std::shared_mutex> guard(_mutex);
     vespalib::slime::Cursor &cursor = inserter.insertObject();
     cursor.setString("name", _name);

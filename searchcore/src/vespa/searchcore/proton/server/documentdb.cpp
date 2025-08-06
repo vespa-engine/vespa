@@ -1154,19 +1154,19 @@ void DocumentDB::getInitializationStatus(const vespalib::slime::Inserter &insert
 
     for (const auto &attribute: _attributeInitializationStatus) {
         if (!attribute->hasAttributeVector()) {
-            attribute->reportProgress(queuedArrayInserter);
+            attribute->reportInitializationStatus(queuedArrayInserter);
 
         } else {
             const search::attribute::InitializationStatus& status = attribute->getInitializationStatus();
 
             if (status.getState() == search::attribute::InitializationStatus::State::QUEUED) {
-                attribute->reportProgress(queuedArrayInserter);
+                attribute->reportInitializationStatus(queuedArrayInserter);
 
             } else if (status.getState() == search::attribute::InitializationStatus::State::LOADED) {
-                attribute->reportProgress(loadedArrayInserter);
+                attribute->reportInitializationStatus(loadedArrayInserter);
 
             } else { // loading or reprocessing
-                attribute->reportProgress(loadingArrayInserter);
+                attribute->reportInitializationStatus(loadingArrayInserter);
             }
         }
     }
