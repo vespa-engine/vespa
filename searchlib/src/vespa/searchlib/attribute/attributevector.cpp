@@ -20,10 +20,13 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/util/file_settings.h>
+#include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <chrono>
 #include <thread>
 #include <filesystem>
 
@@ -79,6 +82,12 @@ make_memory_allocator(const std::string& name, const search::attribute::Config& 
 bool
 exists(std::string_view name) {
     return fs::exists(fs::path(name)); 
+}
+
+std::string timepointToString(search::attribute::AttributeInitializationStatus::time_point tp) {
+    time_t secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
+    uint32_t usecs_part = std::chrono::duration_cast<std::chrono::microseconds>(tp.time_since_epoch()).count() % 1000000;
+    return std::format("{}.{:06}", secs, usecs_part);
 }
 
 }
@@ -756,5 +765,33 @@ AttributeVector::set_size_on_disk(const IAttributeSaveTarget& target)
 template bool AttributeVector::append<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &, int32_t, bool);
 template bool AttributeVector::update<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &);
 template bool AttributeVector::remove<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &, int32_t);
+
+void AttributeVector::reportInitializationStatus(const vespalib::slime::Inserter &inserter) const {
+    vespalib::slime::Cursor &cursor = inserter.insertObject();
+    cursor.setString("name", getName());
+
+    cursor.setString("status", search::AttributeInitializationStatus::stateToString(_initializationStatus.getState()));
+
+    if (_initializationStatus.getState() != search::attribute::AttributeInitializationStatus::State::QUEUED) {
+        cursor.setString("loading_started", timepointToString(_initializationStatus.getStartTime()));
+
+        if (_initializationStatus.getReprocessingStartTime() >= _initializationStatus.getStartTime()) {
+            cursor.setString("reprocessing_started",timepointToString(_initializationStatus.getReprocessingStartTime()));
+        }
+
+        if (_initializationStatus.getState() == search::attribute::AttributeInitializationStatus::State::REPROCESSING) {
+            cursor.setDouble("reprocessing_progress",  _initializationStatus.getReprocessingPercentage());
+        }
+
+        if (_initializationStatus.getReprocessingPercentage() > 0.0f &&
+                _initializationStatus.getReprocessingEndTime() >= _initializationStatus.getReprocessingStartTime()) {
+            cursor.setString("reprocessing_finished", timepointToString(_initializationStatus.getReprocessingEndTime()));
+                }
+
+        if (_initializationStatus.getEndTime() >= _initializationStatus.getStartTime()) {
+            cursor.setString("loading_finished", timepointToString(_initializationStatus.getEndTime()));
+        }
+    }
+}
 
 }

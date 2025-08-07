@@ -1153,20 +1153,25 @@ void DocumentDB::getInitializationStatus(const vespalib::slime::Inserter &insert
     vespalib::slime::ArrayInserter queuedArrayInserter(queuedCursor);
 
     for (const auto &attribute: _attributeInitializationStatus) {
-        if (!attribute->hasAttributeVector()) {
-            attribute->reportInitializationStatus(queuedArrayInserter);
+
+        search::AttributeVector::SP attributeVector = attribute->getAttributeVector();
+
+        if (!attributeVector) {
+            vespalib::slime::Cursor &cursor = queuedArrayInserter.insertObject();
+            cursor.setString("name", attribute->getName());
+            cursor.setString("status", "queued");
 
         } else {
-            const search::attribute::AttributeInitializationStatus& status = attribute->getInitializationStatus();
+            const search::attribute::AttributeInitializationStatus& status = attributeVector->getInitializationStatus();
 
             if (status.getState() == search::attribute::AttributeInitializationStatus::State::QUEUED) {
-                attribute->reportInitializationStatus(queuedArrayInserter);
+                attributeVector->reportInitializationStatus(queuedArrayInserter);
 
             } else if (status.getState() == search::attribute::AttributeInitializationStatus::State::LOADED) {
-                attribute->reportInitializationStatus(loadedArrayInserter);
+                attributeVector->reportInitializationStatus(loadedArrayInserter);
 
             } else { // loading or reprocessing
-                attribute->reportInitializationStatus(loadingArrayInserter);
+                attributeVector->reportInitializationStatus(loadingArrayInserter);
             }
         }
     }

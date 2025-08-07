@@ -517,6 +517,8 @@ public:
     std::chrono::steady_clock::duration last_flush_duration() const noexcept {
         return std::chrono::steady_clock::duration(_last_flush_duration.load(std::memory_order_relaxed));
     }
+
+    void reportInitializationStatus(const vespalib::slime::Inserter &inserter) const;
 };
 
 }
