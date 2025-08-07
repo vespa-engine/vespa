@@ -3,17 +3,17 @@
 #pragma once
 
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
-#include "attribute_initialization_status_wrapper.h"
+#include "attribute_vector_wrapper.h"
 #include "attribute_initializer.h"
 
 namespace proton {
 
-class AttributeInitializationStatusWrapperCollector : public initializer::InitializerTaskVisitor {
+class AttributeVectorWrapperCollector : public initializer::InitializerTaskVisitor {
 private:
-    std::vector<AttributeInitializationStatusWrapper::SP>& _attributes;
+    std::vector<AttributeVectorWrapper::SP>& _attributes;
 
 public:
-    AttributeInitializationStatusWrapperCollector(std::vector<AttributeInitializationStatusWrapper::SP>& attributes);
+    AttributeVectorWrapperCollector(std::vector<AttributeVectorWrapper::SP>& attributes);
     void visitAttributeInitializer(AttributeInitializer& attributeInitializer) override;
 };
 

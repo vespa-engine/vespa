@@ -7,10 +7,10 @@
 
 namespace proton {
 
-class AttributeInitializationStatusWrapper {
+class AttributeVectorWrapper {
 public:
-    using SP = std::shared_ptr<AttributeInitializationStatusWrapper>;
-    explicit AttributeInitializationStatusWrapper(const std::string &name);
+    using SP = std::shared_ptr<AttributeVectorWrapper>;
+    explicit AttributeVectorWrapper(const std::string &name);
 
     const std::string& getName() const { return _name; }
 
