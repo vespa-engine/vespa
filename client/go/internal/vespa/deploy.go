@@ -563,11 +563,12 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResu
 }
 
 func checkResponse(req *http.Request, response *http.Response) error {
-	if response.StatusCode == 401 || response.StatusCode == 403 {
+	switch {
+	case response.StatusCode == 401 || response.StatusCode == 403:
 		return fmt.Errorf("deployment failed: %w (status %d)\n%s", ErrUnauthorized, response.StatusCode, ioutil.ReaderToJSON(response.Body))
-	} else if response.StatusCode/100 == 4 {
+	case response.StatusCode/100 == 4:
 		return fmt.Errorf("invalid application package (status %d)\n%s", response.StatusCode, extractError(response.Body))
-	} else if response.StatusCode != 200 {
+	case response.StatusCode != 200:
 		return fmt.Errorf("error from deploy API at %s (status %d):\n%s", req.URL.Host, response.StatusCode, ioutil.ReaderToJSON(response.Body))
 	}
 	return nil

@@ -54,10 +54,10 @@ func (v AmountOfMemory) AsJvmSpec() string {
 	val := v.ToKB()
 	suffix := "k"
 	if val%PowerOfTwo10 == 0 {
-		val = val / PowerOfTwo10
+		val /= PowerOfTwo10
 		suffix = "m"
 		if val%PowerOfTwo10 == 0 {
-			val = val / PowerOfTwo10
+			val /= PowerOfTwo10
 			suffix = "g"
 		}
 	}
@@ -69,7 +69,7 @@ func (v AmountOfMemory) String() string {
 	idx := 0
 	suffix := [9]string{"bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
 	for val > 0 && (val%PowerOfTwo10 == 0) {
-		val = val / PowerOfTwo10
+		val /= PowerOfTwo10
 		idx++
 	}
 	return fmt.Sprintf("{%d %s}", val, suffix[idx])

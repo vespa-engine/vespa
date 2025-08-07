@@ -95,13 +95,14 @@ func (d *Dispatcher) logResult(op documentOp, retry bool) {
 	msg.WriteString(" ")
 	msg.WriteString(doc.Id.String())
 	if !result.Success() {
-		if retry {
+		switch {
+		case retry:
 			msg.WriteString(": retrying")
-		} else if op.attempts > 1 {
+		case op.attempts > 1:
 			msg.WriteString(": giving up after ")
 			msg.WriteString(strconv.Itoa(maxAttempts))
 			msg.WriteString(" attempts")
-		} else {
+		default:
 			msg.WriteString(": not retryable")
 		}
 	}
@@ -109,14 +110,15 @@ func (d *Dispatcher) logResult(op documentOp, retry bool) {
 }
 
 func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
-	if result.Success() {
+	switch {
+	case result.Success():
 		d.throttler.Success()
 		d.circuitBreaker.Success()
 		return false
-	} else if result.HTTPStatus == 429 {
+	case result.HTTPStatus == 429:
 		d.throttler.Throttled(d.inflightCount.Load())
 		return true
-	} else if result.Err != nil || result.HTTPStatus == 503 {
+	case result.Err != nil || result.HTTPStatus == 503:
 		d.circuitBreaker.Failure()
 		if op.attempts < maxAttempts {
 			return true

@@ -34,7 +34,7 @@ func applyPlusMinus(val string, target plusMinusFlag) error {
 	val = strings.ReplaceAll(val, "+", ",+")
 	if target.unchanged() {
 		// user wants to reset flags?
-		if minus == false && plus == false {
+		if !minus && !plus {
 			for k := range target.flags() {
 				target.flags()[k] = false
 			}

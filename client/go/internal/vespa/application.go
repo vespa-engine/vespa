@@ -137,11 +137,7 @@ func (ap *ApplicationPackage) Validate() error {
 func isZip(filename string) bool { return filepath.Ext(filename) == ".zip" }
 
 func alwaysIgnore(filename string) bool {
-	switch filepath.Base(filename) {
-	case ".DS_Store":
-		return true
-	}
-	return false
+	return filepath.Base(filename) == ".DS_Store"
 }
 
 func zipDir(dir string, destination string, ignores *ignore.List) error {

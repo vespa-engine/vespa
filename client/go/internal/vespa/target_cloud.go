@@ -116,7 +116,8 @@ func (t *cloudTarget) DeployService() (*Service, error) {
 
 func (t *cloudTarget) ContainerServices(timeout time.Duration) ([]*Service, error) {
 	var clusterTargets map[string][]clusterTarget
-	if t.deploymentOptions.CustomURL != "" {
+	switch {
+	case t.deploymentOptions.CustomURL != "":
 		// Custom URL is always preferred
 		clusterTargets = map[string][]clusterTarget{
 			"": {
@@ -124,7 +125,7 @@ func (t *cloudTarget) ContainerServices(timeout time.Duration) ([]*Service, erro
 				clusterTarget{URL: t.deploymentOptions.CustomURL, AuthMethod: "token"},
 			},
 		}
-	} else if t.deploymentOptions.ClusterURLs != nil {
+	case t.deploymentOptions.ClusterURLs != nil:
 		// ... then endpoints specified through environment
 		clusterTargets = make(map[string][]clusterTarget)
 		for cluster, url := range t.deploymentOptions.ClusterURLs {
@@ -133,7 +134,7 @@ func (t *cloudTarget) ContainerServices(timeout time.Duration) ([]*Service, erro
 				{URL: url, AuthMethod: "token"},
 			}
 		}
-	} else {
+	default:
 		// ... then discovered endpoints
 		endpoints, err := t.discoverEndpoints(timeout)
 		if err != nil {

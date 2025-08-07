@@ -219,7 +219,7 @@ func shellQuote(s string) string {
 			l++
 			nq = true
 		case ch == '\'' || ch == '\\':
-			l = l + 4
+			l += 4
 			nq = true
 		default:
 			l++
@@ -227,7 +227,7 @@ func shellQuote(s string) string {
 		}
 	}
 	if nq {
-		l = l + 2
+		l += 2
 	}
 	res := make([]rune, l)
 	i := 0

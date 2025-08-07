@@ -96,18 +96,19 @@ func ParseId(serialized string) (Id, error) {
 	userSpecific := rest[1]
 	var number *int64
 	group := ""
-	if strings.HasPrefix(options, "n=") {
+	switch {
+	case strings.HasPrefix(options, "n="):
 		n, err := strconv.ParseInt(options[2:], 10, 64)
 		if err != nil {
 			return Id{}, parseError(serialized)
 		}
 		number = &n
-	} else if strings.HasPrefix(options, "g=") {
+	case strings.HasPrefix(options, "g="):
 		group = options[2:]
 		if len(group) == 0 {
 			return Id{}, parseError(serialized)
 		}
-	} else if options != "" {
+	case options != "":
 		return Id{}, parseError(serialized)
 	}
 	if userSpecific == "" {

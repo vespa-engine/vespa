@@ -65,13 +65,14 @@ func vespa_cg2get_impl(rootdir, limitname string) (output string, err error) {
 		value, err := readLineFrom(path + limitname)
 		trace.Debug("read from", path+limitname, "=>", value)
 		if err == nil {
-			if value == "max" {
+			switch {
+			case value == "max":
 				// nop
-			} else if min_value == "max" {
+			case min_value == "max":
 				min_value = value
-			} else if len(value) < len(min_value) {
+			case len(value) < len(min_value):
 				min_value = value
-			} else if len(value) == len(min_value) && value < min_value {
+			case len(value) == len(min_value) && value < min_value:
 				min_value = value
 			}
 		}

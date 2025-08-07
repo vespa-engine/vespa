@@ -286,11 +286,12 @@ func loadConfigFrom(dir string, environment map[string]string, flags map[string]
 	}
 	f, err := os.Open(filepath.Join(dir, configFile))
 	var cfg *config.Config
-	if os.IsNotExist(err) {
+	switch {
+	case os.IsNotExist(err):
 		cfg = config.New()
-	} else if err != nil {
+	case err != nil:
 		return nil, err
-	} else {
+	default:
 		defer f.Close()
 		cfg, err = config.Read(f)
 		if err != nil {

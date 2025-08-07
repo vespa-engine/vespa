@@ -123,7 +123,7 @@ func TestSingleTest(t *testing.T) {
 func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
 	apiKey, err := vespa.CreateAPIKey()
 	require.Nil(t, err)
-	certDir := filepath.Join(t.TempDir())
+	certDir := t.TempDir()
 	keyFile := filepath.Join(certDir, "key")
 	certFile := filepath.Join(certDir, "cert")
 	kp, err := vespa.CreateKeyPair()
