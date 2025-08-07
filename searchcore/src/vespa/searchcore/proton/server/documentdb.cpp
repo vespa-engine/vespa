@@ -1149,7 +1149,20 @@ void DocumentDB::getInitializationStatus(const vespalib::slime::Inserter &insert
     DocumentDBInitializationStatus::State state = _initializationStatus.getState();
     dbCursor.setString("state", DocumentDBInitializationStatus::stateToString(state));
 
+    // Add replay progress
+    if (_initializationStatus.getState() > DocumentDBInitializationStatus::State::LOAD) {
+        dbCursor.setString("replay_progress", std::format("{:.6f}", _feedHandler->getReplayProgress()));
+    }
+
     dbCursor.setString("start_time", timepointToString(_initializationStatus.getStartTime()));
+
+    if (_initializationStatus.getState() > DocumentDBInitializationStatus::State::LOAD) {
+        dbCursor.setString("replay_start_time", timepointToString(_initializationStatus.getReplayStartTime()));
+    }
+
+    if (_initializationStatus.getState() > DocumentDBInitializationStatus::State::REPLAYING) {
+        dbCursor.setString("replay_end_time", timepointToString(_initializationStatus.getReplayEndTime()));
+    }
 
     if (_initializationStatus.getState() == DocumentDBInitializationStatus::State::READY) {
         dbCursor.setString("end_time", timepointToString(_initializationStatus.getEndTime()));
@@ -1189,16 +1202,6 @@ void DocumentDB::getInitializationStatus(const vespalib::slime::Inserter &insert
                 attributeVector->reportInitializationStatus(loadingArrayInserter);
             }
         }
-    }
-
-    // Add replay progress
-    if (_initializationStatus.getState() > DocumentDBInitializationStatus::State::LOAD) {
-        dbCursor.setString("replay_progress", std::format("{:.6f}", _feedHandler->getReplayProgress()));
-        dbCursor.setString("replay_start_time", timepointToString(_initializationStatus.getReplayStartTime()));
-    }
-
-    if (_initializationStatus.getState() > DocumentDBInitializationStatus::State::REPLAYING) {
-        dbCursor.setString("replay_end_time", timepointToString(_initializationStatus.getReplayEndTime()));
     }
 }
 
