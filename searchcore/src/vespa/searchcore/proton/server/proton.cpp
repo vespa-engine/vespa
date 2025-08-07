@@ -477,6 +477,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _isInitializing = false;
     _protonConfigurer.setAllowReconfig(true);
     _initComplete = true;
+    _initializationStatus.endInitialization();
 }
 
 BootstrapConfig::SP
@@ -1218,8 +1219,13 @@ void Proton::getInitializationStatus(const vespalib::slime::Inserter &inserter) 
     std::shared_lock<std::shared_mutex> guard(_mutex);
 
     vespalib::slime::Cursor &cursor = inserter.insertObject();
+    cursor.setString("status", ProtonInitializationStatus::stateToString(_initializationStatus.getState()));
     cursor.setString("start_time", timepointToString(_initializationStatus.getStartTime()));
     cursor.setString("current_time", timepointToString(std::chrono::system_clock::now()));
+
+    if (_initializationStatus.getState() == ProtonInitializationStatus::FINISHED) {
+        cursor.setString("end_time", timepointToString(_initializationStatus.getEndTime()));
+    }
 
     vespalib::slime::Cursor &dbArrayCursor = cursor.setArray("dbs");
     vespalib::slime::ArrayInserter arrayInserter(dbArrayCursor);

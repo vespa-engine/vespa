@@ -9,15 +9,30 @@ namespace proton {
 
 class ProtonInitializationStatus {
 public:
+    enum State {
+        INITIALIZING,
+        FINISHED
+    };
+    static std::string stateToString(State state);
     using time_point = std::chrono::system_clock::time_point;
 
 private:
     mutable std::shared_mutex _mutex;
-    time_point _startTime;
+    time_point _start_time;
+    time_point _end_time;
+
+    State _state;
 
 public:
+    ProtonInitializationStatus();
+
+    State getState() const;
+
     void startInitialization();
+    void endInitialization();
+
     time_point getStartTime() const;
+    time_point getEndTime() const;
 };
 
 }
