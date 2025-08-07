@@ -4,7 +4,7 @@
 
 #include "attribute_spec.h"
 #include "attribute_initializer_result.h"
-#include "attribute_initialization_status_wrapper.h"
+#include "attribute_vector_wrapper.h"
 #include <vespa/searchlib/common/serialnum.h>
 #include <optional>
 #include <string>
@@ -35,7 +35,7 @@ private:
     vespalib::Executor             &_shared_executor;
     std::unique_ptr<const search::attribute::AttributeHeader> _header;
     bool                            _header_ok;
-    AttributeInitializationStatusWrapper::SP _initializationStatusWrapper;
+    AttributeVectorWrapper::SP _attributeVectorWrapper;
 
     void readHeader();
 
@@ -57,7 +57,7 @@ public:
     AttributeInitializerResult init() const;
     const std::optional<uint64_t>& getCurrentSerialNum() const noexcept { return _currentSerialNum; }
     size_t get_transient_memory_usage() const;
-    AttributeInitializationStatusWrapper::SP getInitializationStatusWrapper() const { return _initializationStatusWrapper; }
+    AttributeVectorWrapper::SP getAttributeVectorWrapper() const { return _attributeVectorWrapper; }
 };
 
 } // namespace proton

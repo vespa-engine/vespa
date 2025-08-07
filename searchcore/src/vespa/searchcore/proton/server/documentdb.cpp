@@ -16,7 +16,7 @@
 #include "replay_throttling_policy.h"
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/metrics/updatehook.h>
-#include <vespa/searchcore/proton/attribute/attribute_initialization_status_wrapper_collector.h>
+#include <vespa/searchcore/proton/attribute/attribute_vector_wrapper_collector.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
@@ -316,7 +316,7 @@ DocumentDB::initManagers()
     InitializerTask::SP rootTask = _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum, _indexCfg);
     {
         std::shared_lock<std::shared_mutex> guard(_initializationMutex);
-        AttributeInitializationStatusWrapperCollector visitor(_attributeInitializationStatus);
+        AttributeVectorWrapperCollector visitor(_attributeInitializationStatus);
         rootTask->acceptVisitor(visitor);
     }
     InitializeThreads initializeThreads = _initializeThreads;

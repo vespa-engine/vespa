@@ -9,8 +9,6 @@ vespa_add_library(searchcore_attribute STATIC
     attribute_directory.cpp
     attribute_executor.cpp
     attribute_factory.cpp
-    attribute_initialization_status_wrapper_collector.cpp
-    attribute_initialization_status_wrapper.cpp
     attribute_initializer.cpp
     attribute_initializer_result.cpp
     attribute_manager_explorer.cpp
@@ -26,6 +24,8 @@ vespa_add_library(searchcore_attribute STATIC
     attribute_usage_sampler_functor.cpp
     attribute_usage_stats.cpp
     attribute_vector_explorer.cpp
+    attribute_vector_wrapper_collector.cpp
+    attribute_vector_wrapper.cpp
     attribute_writer.cpp
     attribute_writer_explorer.cpp
     attributedisklayout.cpp
