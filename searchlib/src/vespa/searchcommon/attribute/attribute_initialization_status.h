@@ -31,6 +31,7 @@ public:
     time_point getEndTime() const;
     time_point getReprocessingStartTime() const;
     time_point getReprocessingEndTime() const;
+    bool didReprocess() const;
     float getReprocessingPercentage() const;
 
 private:
@@ -43,6 +44,7 @@ private:
     time_point _reprocessing_end_time;
     time_point _end_time;
 
+    bool _didReprocess;
     float _reprocessing_percentage;
 };
 

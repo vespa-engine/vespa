@@ -11,7 +11,7 @@ class ProtonInitializationStatus {
 public:
     enum State {
         INITIALIZING,
-        FINISHED
+        READY
     };
     static std::string stateToString(State state);
     using time_point = std::chrono::system_clock::time_point;

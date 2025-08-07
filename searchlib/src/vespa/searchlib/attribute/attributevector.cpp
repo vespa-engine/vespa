@@ -774,23 +774,20 @@ void AttributeVector::reportInitializationStatus(const vespalib::slime::Inserter
 
     if (_initializationStatus.getState() != search::attribute::AttributeInitializationStatus::State::QUEUED) {
         cursor.setString("loading_started", timepointToString(_initializationStatus.getStartTime()));
+    }
 
-        if (_initializationStatus.getReprocessingStartTime() >= _initializationStatus.getStartTime()) {
-            cursor.setString("reprocessing_started",timepointToString(_initializationStatus.getReprocessingStartTime()));
-        }
+    if (_initializationStatus.didReprocess()) {
+        cursor.setString("reprocessing_progress",  std::format("{:.6f}", _initializationStatus.getReprocessingPercentage()));
+        cursor.setString("reprocessing_started",timepointToString(_initializationStatus.getReprocessingStartTime()));
+    }
 
-        if (_initializationStatus.getState() == search::attribute::AttributeInitializationStatus::State::REPROCESSING) {
-            cursor.setDouble("reprocessing_progress",  _initializationStatus.getReprocessingPercentage());
-        }
+    if (_initializationStatus.didReprocess() &&
+            _initializationStatus.getReprocessingEndTime() >= _initializationStatus.getReprocessingStartTime()) {
+        cursor.setString("reprocessing_finished", timepointToString(_initializationStatus.getReprocessingEndTime()));
+    }
 
-        if (_initializationStatus.getReprocessingPercentage() > 0.0f &&
-                _initializationStatus.getReprocessingEndTime() >= _initializationStatus.getReprocessingStartTime()) {
-            cursor.setString("reprocessing_finished", timepointToString(_initializationStatus.getReprocessingEndTime()));
-                }
-
-        if (_initializationStatus.getEndTime() >= _initializationStatus.getStartTime()) {
-            cursor.setString("loading_finished", timepointToString(_initializationStatus.getEndTime()));
-        }
+    if (_initializationStatus.getState() == search::attribute::AttributeInitializationStatus::State::LOADED) {
+        cursor.setString("loading_finished", timepointToString(_initializationStatus.getEndTime()));
     }
 }
 

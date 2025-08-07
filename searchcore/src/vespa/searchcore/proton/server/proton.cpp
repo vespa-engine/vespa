@@ -1219,11 +1219,11 @@ void Proton::getInitializationStatus(const vespalib::slime::Inserter &inserter) 
     std::shared_lock<std::shared_mutex> guard(_mutex);
 
     vespalib::slime::Cursor &cursor = inserter.insertObject();
-    cursor.setString("status", ProtonInitializationStatus::stateToString(_initializationStatus.getState()));
-    cursor.setString("start_time", timepointToString(_initializationStatus.getStartTime()));
+    cursor.setString("state", ProtonInitializationStatus::stateToString(_initializationStatus.getState()));
     cursor.setString("current_time", timepointToString(std::chrono::system_clock::now()));
+    cursor.setString("start_time", timepointToString(_initializationStatus.getStartTime()));
 
-    if (_initializationStatus.getState() == ProtonInitializationStatus::FINISHED) {
+    if (_initializationStatus.getState() == ProtonInitializationStatus::READY) {
         cursor.setString("end_time", timepointToString(_initializationStatus.getEndTime()));
     }
 

@@ -10,8 +10,8 @@ std::string ProtonInitializationStatus::stateToString(State state) {
     switch (state) {
         case State::INITIALIZING:
             return "initializing";
-        case State::FINISHED:
-            return "finished";
+        case State::READY:
+            return "ready";
     }
 
     return "initializing";
@@ -34,7 +34,7 @@ void ProtonInitializationStatus::startInitialization() {
 void ProtonInitializationStatus::endInitialization() {
     std::unique_lock<std::shared_mutex> guard(_mutex);
     _end_time = std::chrono::system_clock::now();
-    _state = State::FINISHED;
+    _state = State::READY;
 }
 
 ProtonInitializationStatus::time_point ProtonInitializationStatus::getStartTime() const {
