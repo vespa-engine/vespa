@@ -227,7 +227,7 @@ func copyCertificate(tlsOptions vespa.TLSOptions, cli *CLI, pkg vespa.Applicatio
 		return errHint(fmt.Errorf("could not read certificate file: %w", err))
 	}
 	dstPath := filepath.Join(pkg.Path, "security", "clients.pem")
-	if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dstPath), 0o755); err != nil {
 		return fmt.Errorf("could not create security directory: %w", err)
 	}
 	err = ioutil.AtomicWriteFile(dstPath, data)

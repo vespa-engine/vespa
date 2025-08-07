@@ -91,7 +91,7 @@ dist-win64: GOOS=windows
 dist-win64: GOARCH=amd64
 
 $(DIST_TARGETS): DIST_NAME=vespa-cli_$(VERSION)_$(GOOS)_$(GOARCH)
-$(DIST_TARGETS): dist-version setenv manpages
+$(DIST_TARGETS): checkfmt dist-version setenv manpages
 $(DIST_TARGETS):
 	mkdir -p $(DIST)/$(DIST_NAME)/bin
 	env CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -o $(DIST)/$(DIST_NAME)/bin $(GO_FLAGS) \
@@ -149,7 +149,7 @@ test: setenv
 	mkdir -p $(GO_TMPDIR) && GOTMPDIR=$(GO_TMPDIR) go test ./...
 
 checkfmt:
-	@sh -c "test -z $$(gofmt -l .)" || { echo "one or more files need to be formatted: try make fmt to fix this automatically"; exit 1; }
+	@sh -c "test -z $$(gofumpt -l .)" || { echo "one or more files need to be formatted: try make fmt to fix this automatically"; exit 1; }
 
 fmt:
 	gofmt -w .

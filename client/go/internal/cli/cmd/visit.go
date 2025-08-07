@@ -88,9 +88,7 @@ func (v *visitArgs) dumpDocuments(documents []DocumentBlob) {
 var totalDocCount int
 
 func newVisitCmd(cli *CLI) *cobra.Command {
-	var (
-		vArgs visitArgs
-	)
+	var vArgs visitArgs
 	cmd := &cobra.Command{
 		Use:   "visit",
 		Short: "Retrieve and print all documents from Vespa",
@@ -198,9 +196,7 @@ func checkArguments(vArgs visitArgs) (res OperationResult) {
 	}
 	for _, b := range vArgs.bucketSpaces {
 		switch b {
-		case
-			"default",
-			"global":
+		case "default", "global":
 			// Do nothing
 		default:
 			return Failure("Invalid 'bucket-space' argument '" + b + "', must be 'default' or 'global'")
@@ -314,7 +310,7 @@ func probeVisit(vArgs *visitArgs, service *vespa.Service) []string {
 
 func runVisit(vArgs *visitArgs, service *vespa.Service) (res OperationResult) {
 	vArgs.debugPrint(fmt.Sprintf("trying to visit: '%s'", vArgs.contentCluster))
-	var totalDocuments = 0
+	totalDocuments := 0
 	var continuationToken string
 	for {
 		var vvo *VespaVisitOutput

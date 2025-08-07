@@ -35,7 +35,7 @@ func applyPlusMinus(val string, target plusMinusFlag) error {
 	if target.unchanged() {
 		// user wants to reset flags?
 		if minus == false && plus == false {
-			for k, _ := range target.flags() {
+			for k := range target.flags() {
 				target.flags()[k] = false
 			}
 		}
@@ -54,7 +54,7 @@ func applyPlusMinus(val string, target plusMinusFlag) error {
 			continue
 		}
 		if k == "all" {
-			for k, _ := range target.flags() {
+			for k := range target.flags() {
 				target.flags()[k] = changeTo
 			}
 		} else if _, ok := target.flags()[k]; !ok {
