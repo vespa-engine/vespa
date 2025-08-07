@@ -772,17 +772,19 @@ void AttributeVector::reportInitializationStatus(const vespalib::slime::Inserter
 
     cursor.setString("status", search::AttributeInitializationStatus::stateToString(_initializationStatus.getState()));
 
-    if (_initializationStatus.getState() != search::attribute::AttributeInitializationStatus::State::QUEUED) {
+    if (_initializationStatus.getState() >= search::attribute::AttributeInitializationStatus::State::REPROCESSING && _initializationStatus.didReprocess()) {
+        cursor.setString("reprocessing_progress",  std::format("{:.6f}", _initializationStatus.getReprocessingPercentage()));
+    }
+
+    if (_initializationStatus.getState() > search::attribute::AttributeInitializationStatus::State::QUEUED) {
         cursor.setString("loading_started", timepointToString(_initializationStatus.getStartTime()));
     }
 
-    if (_initializationStatus.didReprocess()) {
-        cursor.setString("reprocessing_progress",  std::format("{:.6f}", _initializationStatus.getReprocessingPercentage()));
+    if (_initializationStatus.getState() >= search::attribute::AttributeInitializationStatus::State::REPROCESSING && _initializationStatus.didReprocess()) {
         cursor.setString("reprocessing_started",timepointToString(_initializationStatus.getReprocessingStartTime()));
     }
 
-    if (_initializationStatus.didReprocess() &&
-            _initializationStatus.getReprocessingEndTime() >= _initializationStatus.getReprocessingStartTime()) {
+    if (_initializationStatus.getState() >= search::attribute::AttributeInitializationStatus::State::REPROCESSING_FINISHED && _initializationStatus.didReprocess()) {
         cursor.setString("reprocessing_finished", timepointToString(_initializationStatus.getReprocessingEndTime()));
     }
 
