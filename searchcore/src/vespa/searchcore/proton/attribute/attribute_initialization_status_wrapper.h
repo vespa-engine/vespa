@@ -15,12 +15,7 @@ public:
     const std::string& getName() const { return _name; }
 
     void setAttributeVector(const search::AttributeVector::SP &attr);
-    bool hasAttributeVector() const;
-
-    const search::attribute::AttributeInitializationStatus& getInitializationStatus() const { return _attr->getInitializationStatus(); };
-    search::attribute::AttributeInitializationStatus& getInitializationStatus() { return _attr->getInitializationStatus(); }
-
-    void reportInitializationStatus(const vespalib::slime::Inserter &inserter) const;
+    search::AttributeVector::SP getAttributeVector() const;
 
 private:
     mutable std::shared_mutex _mutex;
