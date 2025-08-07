@@ -23,6 +23,7 @@ std::string AttributeInitializationStatus::stateToString(State state) {
 
 AttributeInitializationStatus::AttributeInitializationStatus() :
     _state(State::QUEUED),
+    _didReprocess(false),
     _reprocessing_percentage(0.0f)
 {
 }
@@ -39,6 +40,7 @@ void AttributeInitializationStatus::startReprocessing() {
 
     _state = State::REPROCESSING;
     _reprocessing_start_time = std::chrono::system_clock::now();
+    _didReprocess = true;
     _reprocessing_percentage = 0.0f;
 }
 
@@ -91,6 +93,11 @@ AttributeInitializationStatus::time_point AttributeInitializationStatus::getRepr
     std::shared_lock<std::shared_mutex> guard(_mutex);
 
     return _reprocessing_end_time;
+}
+
+bool AttributeInitializationStatus::didReprocess() const {
+    std::shared_lock<std::shared_mutex> guard(_mutex);
+    return _didReprocess;
 }
 
 float AttributeInitializationStatus::getReprocessingPercentage() const {

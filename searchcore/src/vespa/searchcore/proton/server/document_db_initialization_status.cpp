@@ -12,6 +12,8 @@ std::string DocumentDBInitializationStatus::stateToString(State state) {
             return "load";
         case State::REPLAYING:
             return "replaying";
+        case State::REPLAY_FINISHED:
+            return "replay_finished";
         case State::READY:
             return "ready";
         }
@@ -31,25 +33,49 @@ DocumentDBInitializationStatus::State DocumentDBInitializationStatus::getState()
 void DocumentDBInitializationStatus::startInitialization() {
     std::unique_lock<std::shared_mutex> guard(_mutex);
 
-    _startTime = std::chrono::system_clock::now();
+    _start_time = std::chrono::system_clock::now();
 }
 
 DocumentDBInitializationStatus::time_point DocumentDBInitializationStatus::getStartTime() const {
     std::shared_lock<std::shared_mutex> guard(_mutex);
 
-    return _startTime;
+    return _start_time;
+}
+
+DocumentDBInitializationStatus::time_point DocumentDBInitializationStatus::getEndTime() const {
+    std::shared_lock<std::shared_mutex> guard(_mutex);
+
+    return _end_time;
+}
+
+DocumentDBInitializationStatus::time_point DocumentDBInitializationStatus::getReplayStartTime() const {
+    std::shared_lock<std::shared_mutex> guard(_mutex);
+
+    return _replay_start_time;
+}
+
+DocumentDBInitializationStatus::time_point DocumentDBInitializationStatus::getReplayEndTime() const {
+    std::shared_lock<std::shared_mutex> guard(_mutex);
+
+    return _replay_end_time;
 }
 
 void DocumentDBInitializationStatus::startReplay() {
     std::unique_lock<std::shared_mutex> guard(_mutex);
-
     _state = State::REPLAYING;
+    _replay_start_time = std::chrono::system_clock::now();
+}
+
+void DocumentDBInitializationStatus::finishReplay() {
+    std::unique_lock<std::shared_mutex> guard(_mutex);
+    _state = State::REPLAY_FINISHED;
+    _replay_end_time = std::chrono::system_clock::now();
 }
 
 void DocumentDBInitializationStatus::finishInitialization() {
     std::unique_lock<std::shared_mutex> guard(_mutex);
-
     _state = State::READY;
+    _end_time = std::chrono::system_clock::now();
 }
 
 }

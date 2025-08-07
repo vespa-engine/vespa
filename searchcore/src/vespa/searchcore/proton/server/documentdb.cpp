@@ -120,6 +120,12 @@ forceCommitAndWait(IFeedView & feedView, SerialNum serialNum, T keepAlive) {
     gate.await();
 }
 
+std::string timepointToString(DocumentDBInitializationStatus::time_point tp) {
+    time_t secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
+    uint32_t usecs_part = std::chrono::duration_cast<std::chrono::microseconds>(tp.time_since_epoch()).count() % 1000000;
+    return std::format("{}.{:06}", secs, usecs_part);
+}
+
 }
 
 template <typename FunctionType>
@@ -220,6 +226,8 @@ DocumentDB::DocumentDB(const std::string &baseDir,
       _metricsUpdater(_subDBs, _writeService, _jobTrackers, _writeFilter, *_feedHandler)
 {
     assert(configSnapshot);
+
+    _initializationStatus.startInitialization();
 
     LOG(debug, "DocumentDB(%s): Creating database in directory '%s'", _docTypeName.toString().c_str(), _baseDir.c_str());
 
@@ -740,6 +748,7 @@ DocumentDB::startTransactionLogReplay()
                                       newestFlushedSerial,
                                       *_config_store,
                                       _owner.shared_replay_throttler());
+    _initializationStatus.finishReplay();
     _initGate.countDown();
 
     LOG(debug, "DocumentDB(%s): Database started.", _docTypeName.toString().c_str());
@@ -1140,6 +1149,12 @@ void DocumentDB::getInitializationStatus(const vespalib::slime::Inserter &insert
     DocumentDBInitializationStatus::State state = _initializationStatus.getState();
     dbCursor.setString("state", DocumentDBInitializationStatus::stateToString(state));
 
+    dbCursor.setString("start_time", timepointToString(_initializationStatus.getStartTime()));
+
+    if (_initializationStatus.getState() == DocumentDBInitializationStatus::State::READY) {
+        dbCursor.setString("end_time", timepointToString(_initializationStatus.getEndTime()));
+    }
+
     // Add loading progress
     vespalib::slime::Cursor &subdbCursor = dbCursor.setObject("ready_subdb");
 
@@ -1177,7 +1192,14 @@ void DocumentDB::getInitializationStatus(const vespalib::slime::Inserter &insert
     }
 
     // Add replay progress
-    dbCursor.setDouble("replay_progress", _feedHandler->getReplayProgress());
+    if (_initializationStatus.getState() > DocumentDBInitializationStatus::State::LOAD) {
+        dbCursor.setString("replay_progress", std::format("{:.6f}", _feedHandler->getReplayProgress()));
+        dbCursor.setString("replay_start_time", timepointToString(_initializationStatus.getReplayStartTime()));
+    }
+
+    if (_initializationStatus.getState() > DocumentDBInitializationStatus::State::REPLAYING) {
+        dbCursor.setString("replay_end_time", timepointToString(_initializationStatus.getReplayEndTime()));
+    }
 }
 
 } // namespace proton
