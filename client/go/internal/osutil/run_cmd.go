@@ -36,9 +36,8 @@ func analyzeError(err error) string {
 		return ""
 	}
 	msg := "died with signal: " + status.Signal().String()
-	switch status.Signal() {
-	case syscall.SIGILL:
-		msg = msg + " (you probably have an older CPU than required, see https://docs.vespa.ai/en/operations-selfhosted/cpu-support.html)"
+	if status.Signal() == syscall.SIGILL {
+		msg += " (you probably have an older CPU than required, see https://docs.vespa.ai/en/operations-selfhosted/cpu-support.html)"
 	}
 	return msg
 }

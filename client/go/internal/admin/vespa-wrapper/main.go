@@ -27,8 +27,13 @@ func basename(s string) string {
 }
 
 func main() {
-	defer handleSimplePanic()
-
+	exitCode := 0
+	defer func() {
+		handleSimplePanic()
+		if exitCode != 0 {
+			os.Exit(exitCode)
+		}
+	}()
 	action := basename(os.Args[0])
 	if action == "vespa-wrapper" && len(os.Args) > 1 {
 		action = os.Args[1]
@@ -43,39 +48,37 @@ func main() {
 	_ = vespa.FindAndVerifyVespaHome()
 	switch action {
 	case "vespa-stop-services":
-		os.Exit(services.VespaStopServices())
+		exitCode = services.VespaStopServices()
 	case "vespa-start-services":
-		os.Exit(services.VespaStartServices())
+		exitCode = services.VespaStartServices()
 	case "start-services":
-		os.Exit(services.StartServices())
+		exitCode = services.StartServices()
 	case "just-run-configproxy":
-		os.Exit(services.JustRunConfigproxy())
+		exitCode = services.JustRunConfigproxy()
 	case "vespa-start-configserver":
-		os.Exit(configserver.StartConfigserverEtc())
+		exitCode = configserver.StartConfigserverEtc()
 	case "just-start-configserver":
-		os.Exit(configserver.JustStartConfigserver())
+		exitCode = configserver.JustStartConfigserver()
 	case "vespa-start-container-daemon":
-		os.Exit(jvm.RunApplicationContainer(os.Args[1:]))
+		exitCode = jvm.RunApplicationContainer(os.Args[1:])
 	case "run-standalone-container":
-		os.Exit(standalone.StartStandaloneContainer(os.Args[1:]))
+		exitCode = standalone.StartStandaloneContainer(os.Args[1:])
 	case "start-c-binary":
-		os.Exit(startcbinary.Run(os.Args[1:]))
+		exitCode = startcbinary.Run(os.Args[1:])
 	case "export-env":
 		vespa.ExportDefaultEnvToSh()
 	case "security-env", "vespa-security-env":
 		vespa.ExportSecurityEnvToSh()
 	case "ipv6-only":
-		if vespa.HasOnlyIpV6() {
-			os.Exit(0)
-		} else {
-			os.Exit(1)
+		if !vespa.HasOnlyIpV6() {
+			exitCode = 1
 		}
 	case "detect-hostname":
 		myName, err := vespa.FindOurHostname()
 		fmt.Println(myName)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+			exitCode = 1
 		}
 	case "vespa-deploy":
 		cobra := deploy.NewDeployCmd()
@@ -93,11 +96,12 @@ func main() {
 		services.VerifyAvailableMemory()
 	default:
 		if startcbinary.IsCandidate(os.Args[0]) {
-			os.Exit(startcbinary.Run(os.Args))
+			exitCode = startcbinary.Run(os.Args)
+		} else {
+			fmt.Fprintf(os.Stderr, "unknown action '%s'\n", action)
+			fmt.Fprintln(os.Stderr, "actions: export-env, ipv6-only, security-env, detect-hostname")
+			fmt.Fprintln(os.Stderr, "(also: vespa-deploy, vespa-logfmt)")
 		}
-		fmt.Fprintf(os.Stderr, "unknown action '%s'\n", action)
-		fmt.Fprintln(os.Stderr, "actions: export-env, ipv6-only, security-env, detect-hostname")
-		fmt.Fprintln(os.Stderr, "(also: vespa-deploy, vespa-logfmt)")
 	}
 }
 

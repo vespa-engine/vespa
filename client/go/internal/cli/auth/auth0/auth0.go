@@ -138,13 +138,14 @@ func (a *Client) Authenticate(request *http.Request) error {
 // AccessToken returns an access token for the configured system, refreshing it if necessary.
 func (a *Client) AccessToken() (string, error) {
 	creds, ok := a.provider.Systems[a.options.SystemName]
-	if !ok {
+	switch {
+	case !ok:
 		return "", fmt.Errorf("auth0: system %s is not configured: %s", a.options.SystemName, reauthMessage)
-	} else if creds.AccessToken == "" {
+	case creds.AccessToken == "":
 		return "", fmt.Errorf("auth0: access token missing: %s", reauthMessage)
-	} else if scopesChanged(creds) {
+	case scopesChanged(creds):
 		return "", fmt.Errorf("auth0: authentication scopes changed: %s", reauthMessage)
-	} else if isExpired(creds.ExpiresAt, accessTokenExpiry) {
+	case isExpired(creds.ExpiresAt, accessTokenExpiry):
 		// check if the stored access token is expired:
 		// use the refresh token to get a new access token:
 		tr := &auth.TokenRetriever{
@@ -212,7 +213,7 @@ func (a *Client) RemoveCredentials() error {
 
 func writeConfig(provider auth0Provider, path string) error {
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0700); err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
 	version := 1
@@ -227,7 +228,7 @@ func writeConfig(provider auth0Provider, path string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, jsonConfig, 0600)
+	return os.WriteFile(path, jsonConfig, 0o600)
 }
 
 func readConfig(path string) (auth0Provider, error) {

@@ -46,7 +46,7 @@ func logMessage(l outputLevel, msg string) {
 		level = "spam"
 	}
 	if !strings.HasSuffix(msg, "\n") {
-		msg = msg + "\n"
+		msg += "\n"
 	}
 	fmt.Fprintf(out, "%.6f\t%s\t%d\t%s\t%s\t%s\t%s",
 		unixTime, hostname, pid, service, component, level, msg)

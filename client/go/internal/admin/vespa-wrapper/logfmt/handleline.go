@@ -121,11 +121,12 @@ func handleLineVespa(opts *Options, fields *logFields) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if opts.showField("usecs") {
+		switch {
+		case opts.showField("usecs"):
 			buf.WriteString(timestamp.Format("[2006-01-02 15:04:05.000000] "))
-		} else if opts.showField("msecs") {
+		case opts.showField("msecs"):
 			buf.WriteString(timestamp.Format("[2006-01-02 15:04:05.000] "))
-		} else {
+		default:
 			buf.WriteString(timestamp.Format("[2006-01-02 15:04:05] "))
 		}
 	} else if opts.showField("time") {

@@ -20,19 +20,20 @@ func looksLikeNumber(s string) bool {
 
 func RunPrepare(opts *Options, args []string) (err error) {
 	var response string
-	if len(args) == 0 {
+	switch {
+	case len(args) == 0:
 		// prepare last upload
 		sessId := getSessionIdFromFile(opts.Tenant)
 		response, err = doPrepare(opts, sessId)
-	} else if isFileOrDir(args[0]) {
+	case isFileOrDir(args[0]):
 		err := RunUpload(opts, args)
 		if err != nil {
 			return err
 		}
 		return RunPrepare(opts, []string{})
-	} else if looksLikeNumber(args[0]) {
+	case looksLikeNumber(args[0]):
 		response, err = doPrepare(opts, args[0])
-	} else {
+	default:
 		err = fmt.Errorf("Command failed. No directory or zip file found: '%s'", args[0])
 	}
 	if err != nil {

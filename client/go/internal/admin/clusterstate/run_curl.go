@@ -55,6 +55,9 @@ func curlGet(url string, output io.Writer) error {
 
 func curlPost(url string, input []byte) (string, error) {
 	cmd, err := curlCommand(url, commonCurlArgs())
+	if err != nil {
+		return "", err
+	}
 	cmd.Method = "POST"
 	cmd.Header("Content-Type", "application/json")
 	cmd.WithBodyInput(bytes.NewReader(input))

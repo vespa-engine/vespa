@@ -122,14 +122,15 @@ func (c *Client) writeDocumentPath(id Id, buf *bytes.Buffer) {
 	buf.WriteString(url.PathEscape(id.Namespace))
 	buf.WriteString("/")
 	buf.WriteString(url.PathEscape(id.Type))
-	if id.Number != nil {
+	switch {
+	case id.Number != nil:
 		buf.WriteString("/number/")
 		n := uint64(*id.Number)
 		buf.WriteString(strconv.FormatUint(n, 10))
-	} else if id.Group != "" {
+	case id.Group != "":
 		buf.WriteString("/group/")
 		buf.WriteString(url.PathEscape(id.Group))
-	} else {
+	default:
 		buf.WriteString("/docid")
 	}
 	buf.WriteString("/")
