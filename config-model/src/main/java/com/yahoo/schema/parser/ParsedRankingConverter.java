@@ -90,8 +90,8 @@ public class ParsedRankingConverter {
         parsed.getMatchFeatures().forEach(profile::addMatchFeatures);
         parsed.getRankFeatures().forEach(profile::addRankFeatures);
         parsed.getSummaryFeatures().forEach(profile::addSummaryFeatures);
-        parsed.getInheritedMatchFeatures().ifPresent(profile::setInheritedMatchFeatures);
-        parsed.getInheritedSummaryFeatures().ifPresent(profile::setInheritedSummaryFeatures);
+        parsed.getInheritedMatchFeatures().forEach(profile::addInheritedMatchFeatures);
+        parsed.getInheritedSummaryFeatures().forEach(profile::addInheritedSummaryFeatures);
         if (parsed.getIgnoreDefaultRankFeatures())
             profile.setIgnoreDefaultRankFeatures(true);
 

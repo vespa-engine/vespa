@@ -719,18 +719,18 @@ public class YqlParser implements Parser {
             if (word.getOperator() == ExpressionOperator.CALL) {
                 List<String> names = word.getArgument(0);
                 switch (names.get(0)) {
-                case PHRASE:
-                    if (getAnnotation(word, ORIGIN, Map.class, null, ORIGIN_DESCRIPTION, false) == null) {
-                        phrase.addItem(instantiatePhraseItem(field, word));
-                    } else {
-                        phrase.addItem(instantiateSegmentItem(field, word, true));
-                    }
-                    break;
-                case ALTERNATIVES:
-                    phrase.addItem(instantiateWordAlternativesItem(field, word));
-                    break;
-                default:
-                    throw new IllegalArgumentException("Expected phrase or word alternatives, got " + names.get(0));
+                    case PHRASE:
+                        if (getAnnotation(word, ORIGIN, Map.class, null, ORIGIN_DESCRIPTION, false) == null) {
+                            phrase.addItem(instantiatePhraseItem(field, word));
+                        } else {
+                            phrase.addItem(instantiateSegmentItem(field, word, true));
+                        }
+                        break;
+                    case ALTERNATIVES:
+                        phrase.addItem(instantiateWordAlternativesItem(field, word));
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Expected phrase or word alternatives, got " + names.get(0));
                 }
             } else {
                 phrase.addItem(instantiateWordItem(field, word, phrase.getClass()));
@@ -1638,12 +1638,12 @@ public class YqlParser implements Parser {
                                           Boolean.class, Boolean.TRUE, IMPLICIT_TRANSFORMS_DESCRIPTION);
         switch (segmentPolicy) {
             case NEVER:
-                return instantiateWordItem(wordData, fromQuery, ast);
+                return instantiateWordItem(wordData, field, fromQuery, ast);
             case POSSIBLY:
                 if (shouldSegment(field, fromQuery) && ! grammar.equals(USER_INPUT_GRAMMAR_RAW))
                     return segment(field, ast, wordData, fromQuery, parent, language);
                 else
-                    return instantiateWordItem(wordData, fromQuery, ast);
+                    return instantiateWordItem(wordData, field, fromQuery, ast);
             case ALWAYS:
                 return segment(field, ast, wordData, fromQuery, parent, language);
             default:
@@ -1651,8 +1651,17 @@ public class YqlParser implements Parser {
         }
     }
 
-    private WordItem instantiateWordItem(String word, boolean fromQuery, OperatorNode<ExpressionOperator> ast) {
-        return instantiateWordItem(word, null, fromQuery, ast);
+    private TermItem instantiateWordItem(Token token, String field, String origin, boolean fromQuery, OperatorNode<ExpressionOperator> ast) {
+        if (token.getNumStems() == 1) {
+            return instantiateWordItem(token.getTokenString(), field, fromQuery, ast);
+        }
+        else {
+            List<WordAlternativesItem.Alternative> alternatives = new ArrayList<>(token.getNumStems());
+            for (int i = 0; i < token.getNumStems(); i++) {
+                alternatives.add(new WordAlternativesItem.Alternative(token.getStem(i), 1.0));
+            }
+            return new WordAlternativesItem(field, fromQuery, new Substring(origin), alternatives);
+        }
     }
 
     private WordItem instantiateWordItem(String word, String field, boolean fromQuery, OperatorNode<ExpressionOperator> ast) {
@@ -1693,38 +1702,50 @@ public class YqlParser implements Parser {
         Substring substring = getSubstring(ast);
         if (substring != null)
             toSegment = substring.getValue();
-        List<String> segments = segment(ast, toSegment, language);
-        return itemFromSegments(segments, field, ast, wordData, toSegment, fromQuery, parent);
-    }
 
-    private List<String> segment(OperatorNode<ExpressionOperator> ast, String toSegment, Language language) {
         Language usedLanguage = language == null ? currentlyParsing.getLanguage() : language;
-        if (shouldDisableFurtherTokenProcessing(ast)) { // then tokenize here
-            // These parameters should be ignored by the linguistics component in linguistics mode
-            var parameters = new LinguisticsParameters(usedLanguage, StemMode.BEST, true, true);
-            List<String> segments = new ArrayList<>();
-            for (Token token : tokenizer.tokenize(toSegment, parameters)) {
-                if (token.isIndexable())
-                    segments.add(token.getTokenString());
+
+        if (shouldDisableFurtherTokenProcessing(ast))
+            return tokenize(field, ast, wordData, toSegment, fromQuery, parent, usedLanguage);
+        else
+            return segment(field, ast, wordData, toSegment, fromQuery, parent, usedLanguage);
+    }
+
+    private TaggableItem segment(String field, OperatorNode<ExpressionOperator> ast, String wordData, String toSegment, boolean fromQuery, Class<?> parent, Language language) {
+        List<String> segments = segmenter.segment(toSegment, language);
+        if (segments.isEmpty()) {
+            return instantiateWordItem(wordData, field, fromQuery, ast); // TODO: This should use toSegment?
+        } else if (segments.size() == 1 || !phraseSegmentChildSupported(parent)) {
+            return instantiateWordItem(segments.get(0), field, fromQuery, ast);
+        } else {
+            var item = instantiatePhraseSegmentItem(toSegment, field, fromQuery, ast);
+            for (String s : segments) {
+                WordItem segment = instantiateWordItem(s, field, fromQuery, ast);
+                prepareWord(field, ast, segment);
+                item.addItem(segment);
             }
-            return segments;
-        }
-        else {
-            return segmenter.segment(toSegment, usedLanguage);
+            item.lock();
+            return item;
         }
     }
 
-    private TaggableItem itemFromSegments(List<String> segments, String field, OperatorNode<ExpressionOperator> ast,
-                                          String wordData, String originalText,
-                                          boolean fromQuery, Class<?> parent) {
-        if (segments.isEmpty()) {
-            return instantiateWordItem(wordData, fromQuery, ast); // TODO: This should use originalText?
-        } else if (segments.size() == 1 || !phraseSegmentChildSupported(parent)) {
-            return instantiateWordItem(segments.get(0), fromQuery, ast);
+    private TaggableItem tokenize(String field, OperatorNode<ExpressionOperator> ast, String wordData, String toSegment, boolean fromQuery, Class<?> parent, Language language) {
+        // These parameters should be ignored by the linguistics component in linguistics mode
+        var parameters = new LinguisticsParameters(language, StemMode.BEST, true, true);
+        List<Token> tokens = new ArrayList<>();
+        for (Token token : tokenizer.tokenize(toSegment, parameters)) {
+            if (token.isIndexable())
+                tokens.add(token);
+        }
+
+        if (tokens.isEmpty()) {
+            return instantiateWordItem(wordData, field, fromQuery, ast); // TODO: This should use toSegment?
+        } else if (tokens.size() == 1 || !phraseSegmentChildSupported(parent)) {
+            return instantiateWordItem(tokens.get(0), field, toSegment, fromQuery, ast);
         } else {
-            var item = instantiatePhraseSegmentItem(originalText, field, fromQuery, ast);
-            for (String s : segments) {
-                WordItem segment = instantiateWordItem(s, fromQuery, ast);
+            var item = instantiatePhraseSegmentItem(toSegment, field, fromQuery, ast);
+            for (Token token : tokens) {
+                TermItem segment = instantiateWordItem(token, field, toSegment, fromQuery, ast);
                 prepareWord(field, ast, segment);
                 item.addItem(segment);
             }
@@ -1745,7 +1766,7 @@ public class YqlParser implements Parser {
         return parent == EquivItem.class;
     }
 
-    private void prepareWord(String field, OperatorNode<ExpressionOperator> ast, WordItem wordItem) {
+    private void prepareWord(String field, OperatorNode<ExpressionOperator> ast, TermItem wordItem) {
         wordItem.setIndexName(field);
         wordStyleSettings(ast, wordItem);
     }
@@ -1960,7 +1981,7 @@ public class YqlParser implements Parser {
         }
     }
 
-    private void wordStyleSettings(OperatorNode<ExpressionOperator> ast, WordItem out) {
+    private void wordStyleSettings(OperatorNode<ExpressionOperator> ast, TermItem out) {
         Substring origin = getSubstring(ast);
         if (origin != null) {
             out.setOrigin(origin);
@@ -1968,14 +1989,6 @@ public class YqlParser implements Parser {
         Boolean usePositionData = getAnnotation(ast, USE_POSITION_DATA, Boolean.class, null, USE_POSITION_DATA_DESCRIPTION);
         if (usePositionData != null) {
             out.setPositionData(usePositionData);
-        }
-        Boolean stem = getAnnotation(ast, STEM, Boolean.class, null, STEM_DESCRIPTION);
-        if (stem != null) {
-            out.setStemmed(!stem);
-        }
-        Boolean normalizeCase = getAnnotation(ast, NORMALIZE_CASE, Boolean.class, null, NORMALIZE_CASE_DESCRIPTION);
-        if (normalizeCase != null) {
-            out.setLowercased(!normalizeCase);
         }
         Boolean accentDrop = getAnnotation(ast, ACCENT_DROP, Boolean.class, null, ACCENT_DROP_DESCRIPTION);
         if (accentDrop != null) {
@@ -1988,6 +2001,16 @@ public class YqlParser implements Parser {
                 out.setSegmentingRule(SegmentingRule.BOOLEAN_AND);
             } else {
                 out.setSegmentingRule(SegmentingRule.PHRASE);
+            }
+        }
+        if (out instanceof WordItem word) {
+            Boolean stem = getAnnotation(ast, STEM, Boolean.class, null, STEM_DESCRIPTION);
+            if (stem != null) {
+                word.setStemmed(!stem);
+            }
+            Boolean normalizeCase = getAnnotation(ast, NORMALIZE_CASE, Boolean.class, null, NORMALIZE_CASE_DESCRIPTION);
+            if (normalizeCase != null) {
+                word.setLowercased(!normalizeCase);
             }
         }
     }

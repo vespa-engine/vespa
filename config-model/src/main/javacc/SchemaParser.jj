@@ -313,11 +313,11 @@ TOKEN :
 | < MULTI_THREADED_INDEXING: "multi-threaded-indexing" >
 | < MATCHFEATURES_SL: "match-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < MATCHFEATURES_ML: "match-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
-| < MATCHFEATURES_ML_INHERITS: "match-features inherits " (<IDENTIFIER_WITH_DASH>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < MATCHFEATURES_ML_INHERITS: "match-features inherits " (<IDENTIFIER_WITH_DASH> ("," (" ")* <IDENTIFIER_WITH_DASH>)* ) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < SELECT_ELEMENTS_BY_SL: "select-elements-by" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
-| < SUMMARYFEATURES_ML_INHERITS: "summary-features inherits " (<IDENTIFIER_WITH_DASH>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < SUMMARYFEATURES_ML_INHERITS: "summary-features inherits " (<IDENTIFIER_WITH_DASH> ("," (" ")* <IDENTIFIER_WITH_DASH>)* ) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < RANKFEATURES_SL: "rank-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < RANKFEATURES_ML: "rank-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* ("\n")? >
@@ -2162,10 +2162,9 @@ void summaryFeatures(ParsedRankProfile profile) :
       <SUMMARYFEATURES_ML> { features = token.image.substring(token.image.indexOf("{") + 1,
                                                               token.image.lastIndexOf("}")).trim(); } |
       <SUMMARYFEATURES_ML_INHERITS> {
-          int inheritsIndex = token.image.indexOf("inherits ");
-          String rest = token.image.substring(inheritsIndex + "inherits ".length());
-          profile.setInheritedSummaryFeatures(rest.substring(0, rest.indexOf(" ")).trim());
-          features = token.image.substring(token.image.indexOf("{") + 1, token.image.lastIndexOf("}")).trim();
+          MlInheritsSplit split = new MlInheritsSplit(token.image);
+          profile.setInheritedSummaryFeatures(split.inherits);
+          features = split.features;
       }
     )
     {
@@ -2259,10 +2258,9 @@ void matchFeatures(ParsedRankProfile profile) :
       <MATCHFEATURES_ML> { features = token.image.substring(token.image.indexOf("{") + 1,
                                                               token.image.lastIndexOf("}")).trim(); } |
       <MATCHFEATURES_ML_INHERITS> {
-          int inheritsIndex = token.image.indexOf("inherits ");
-          String rest = token.image.substring(inheritsIndex + "inherits ".length());
-          profile.setInheritedMatchFeatures(rest.substring(0, rest.indexOf(" ")).trim());
-          features = token.image.substring(token.image.indexOf("{") + 1, token.image.lastIndexOf("}")).trim();
+          MlInheritsSplit split = new MlInheritsSplit(token.image);
+          profile.setInheritedMatchFeatures(split.inherits);
+          features = split.features;
       }
     )
     {

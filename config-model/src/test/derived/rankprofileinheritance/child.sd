@@ -50,4 +50,20 @@ schema child {
     match-features { }
   }
 
+  rank-profile profile7 inherits profile1, profile2 {
+    match-features inherits profile1 {
+      attribute(field3)
+    }
+    summary-features inherits profile1, profile2 {
+      attribute(field3)
+    }
+  }
+
+  rank-profile profile8 inherits profile1, profile2 {
+    match-features inherits profile1, profile2 {
+    }
+    summary-features inherits profile2 {
+    }
+  }
+
 }

@@ -21,12 +21,15 @@ type AmountOfMemory struct {
 func BytesOfMemory(v int64) AmountOfMemory {
 	return AmountOfMemory{numBytes: v}
 }
+
 func KiloBytesOfMemory(v int64) AmountOfMemory {
 	return BytesOfMemory(v * PowerOfTwo10)
 }
+
 func MegaBytesOfMemory(v int) AmountOfMemory {
 	return BytesOfMemory(int64(v) * PowerOfTwo20)
 }
+
 func GigaBytesOfMemory(v int) AmountOfMemory {
 	return BytesOfMemory(int64(v) * PowerOfTwo30)
 }
@@ -34,23 +37,27 @@ func GigaBytesOfMemory(v int) AmountOfMemory {
 func (v AmountOfMemory) ToBytes() int64 {
 	return v.numBytes
 }
+
 func (v AmountOfMemory) ToKB() int64 {
 	return v.numBytes / PowerOfTwo10
 }
+
 func (v AmountOfMemory) ToMB() int {
 	return int(v.numBytes / PowerOfTwo20)
 }
+
 func (v AmountOfMemory) ToGB() int {
 	return int(v.numBytes / PowerOfTwo30)
 }
+
 func (v AmountOfMemory) AsJvmSpec() string {
 	val := v.ToKB()
 	suffix := "k"
 	if val%PowerOfTwo10 == 0 {
-		val = val / PowerOfTwo10
+		val /= PowerOfTwo10
 		suffix = "m"
 		if val%PowerOfTwo10 == 0 {
-			val = val / PowerOfTwo10
+			val /= PowerOfTwo10
 			suffix = "g"
 		}
 	}
@@ -62,7 +69,7 @@ func (v AmountOfMemory) String() string {
 	idx := 0
 	suffix := [9]string{"bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
 	for val > 0 && (val%PowerOfTwo10 == 0) {
-		val = val / PowerOfTwo10
+		val /= PowerOfTwo10
 		idx++
 	}
 	return fmt.Sprintf("{%d %s}", val, suffix[idx])

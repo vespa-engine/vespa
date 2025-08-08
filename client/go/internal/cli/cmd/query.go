@@ -181,7 +181,8 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter, tar
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode == 200 {
+	switch {
+	case response.StatusCode == 200:
 		var output io.Writer = cli.Stdout
 		if opts.profile {
 			profileFile, err := os.Create(opts.profileFile)
@@ -195,13 +196,13 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter, tar
 		if err := printResponse(response.Body, response.Header.Get("Content-Type"), opts.format, output); err != nil {
 			return err
 		}
-	} else if response.StatusCode/100 == 4 {
+	case response.StatusCode/100 == 4:
 		err := fmt.Errorf("invalid query: %s\n%s", response.Status, ioutil.ReaderToJSON(response.Body))
 		if response.StatusCode == 403 && authMethod == "token" {
 			return errHint(err, "Make sure the VESPA_CLI_DATA_PLANE_TOKEN environment variable is set to a valid token")
 		}
 		return err
-	} else {
+	default:
 		return fmt.Errorf("%s from container at %s\n%s", response.Status, color.CyanString(url.Host), ioutil.ReaderToJSON(response.Body))
 	}
 	return nil
@@ -225,10 +226,11 @@ type printOptions struct {
 }
 
 func printResponseBody(body io.Reader, options printOptions, output io.Writer) error {
-	if options.plainStream {
+	switch {
+	case options.plainStream:
 		_, err := io.Copy(output, body)
 		return err
-	} else if options.tokenStream {
+	case options.tokenStream:
 		bufSize := 1024 * 1024 // Handle events up to this size
 		dec := sse.NewDecoderSize(body, bufSize)
 		writingLine := false
@@ -263,11 +265,11 @@ func printResponseBody(body io.Reader, options printOptions, output io.Writer) e
 			}
 		}
 		return nil
-	} else if options.parseJSON {
+	case options.parseJSON:
 		text := ioutil.ReaderToJSON(body) // Optimistic, returns body as the raw string if it cannot be parsed to JSON
 		fmt.Fprintln(output, text)
 		return nil
-	} else {
+	default:
 		b, err := io.ReadAll(body)
 		if err != nil {
 			return err

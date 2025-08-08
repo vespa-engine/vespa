@@ -32,9 +32,7 @@ const (
 )
 
 func NewGetNodeStateCmd() *cobra.Command {
-	var (
-		curOptions Options
-	)
+	var curOptions Options
 	cmd := &cobra.Command{
 		Use:               "vespa-get-node-state [-h] [-v] [-c cluster] [-t type] [-i index]",
 		Short:             "Get the state of a node.",

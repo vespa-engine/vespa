@@ -91,7 +91,7 @@ func doApiKey(cli *CLI, targetFlags *TargetFlags, overwriteKey bool, args []stri
 	if err != nil {
 		return fmt.Errorf("could not create api key: %w", err)
 	}
-	if err := os.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
+	if err := os.WriteFile(apiKeyFile, apiKey, 0o600); err == nil {
 		cli.printSuccess("Developer private key for tenant ", color.CyanString(app.Tenant), " written to '", apiKeyFile, "'")
 		return printPublicKey(system, apiKeyFile, app.Tenant)
 	} else {

@@ -8,8 +8,10 @@ import (
 	"github.com/zalando/go-keyring"
 )
 
-type realKeyring struct{}
-type dummyKeyring struct{}
+type (
+	realKeyring  struct{}
+	dummyKeyring struct{}
+)
 
 func NewKeyring() SecretStore {
 	return NewKeyringWithOptions(false)
@@ -43,7 +45,7 @@ func dummyRingFileName(namespace, key string) (string, error) {
 		return "", err
 	}
 	home := userHome + "/.vespa"
-	if err := os.MkdirAll(home, 0700); err != nil {
+	if err := os.MkdirAll(home, 0o700); err != nil {
 		return "", err
 	}
 	return home + "/keyring." + namespace + "." + key, nil
@@ -55,7 +57,7 @@ func (k *dummyKeyring) Set(namespace, key, value string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(fn, []byte(value), 0400)
+	return os.WriteFile(fn, []byte(value), 0o400)
 }
 
 // Get gets a value for the given namespace and key.

@@ -212,10 +212,11 @@ func ParseNodeCount(s string) (int, int, error) {
 	parseErr := fmt.Errorf("invalid node count: %q", s)
 	min, max := 0, 0
 	n, err := strconv.Atoi(s)
-	if err == nil {
+	switch {
+	case err == nil:
 		min = n
 		max = n
-	} else if strings.HasPrefix(s, "[") && strings.HasSuffix(s, "]") {
+	case strings.HasPrefix(s, "[") && strings.HasSuffix(s, "]"):
 		parts := strings.Split(s[1:len(s)-1], ",")
 		if len(parts) != 2 {
 			return 0, 0, parseErr
@@ -228,7 +229,7 @@ func ParseNodeCount(s string) (int, int, error) {
 		if err != nil {
 			return 0, 0, parseErr
 		}
-	} else {
+	default:
 		return 0, 0, parseErr
 	}
 

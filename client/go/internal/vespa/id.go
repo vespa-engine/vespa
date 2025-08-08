@@ -24,11 +24,12 @@ func IdToURLPath(documentId string) (string, error) {
 
 	var group string
 	var number string
-	if strings.HasPrefix(attribute, "g=") {
+	switch {
+	case strings.HasPrefix(attribute, "g="):
 		group = attribute[2:]
-	} else if strings.HasPrefix(attribute, "n=") {
+	case strings.HasPrefix(attribute, "n="):
 		number = attribute[2:]
-	} else if attribute != "" {
+	case attribute != "":
 		return "", errors.New(formatAdvice + ": Attribute must be g=<string> or n=<integer>")
 	}
 

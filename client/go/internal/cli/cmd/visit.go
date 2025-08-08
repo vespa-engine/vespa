@@ -88,9 +88,7 @@ func (v *visitArgs) dumpDocuments(documents []DocumentBlob) {
 var totalDocCount int
 
 func newVisitCmd(cli *CLI) *cobra.Command {
-	var (
-		vArgs      visitArgs
-	)
+	var vArgs visitArgs
 	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "visit",
@@ -200,9 +198,7 @@ func checkArguments(vArgs visitArgs) (res OperationResult) {
 	}
 	for _, b := range vArgs.bucketSpaces {
 		switch b {
-		case
-			"default",
-			"global":
+		case "default", "global":
 			// Do nothing
 		default:
 			return Failure("Invalid 'bucket-space' argument '" + b + "', must be 'default' or 'global'")
@@ -316,7 +312,7 @@ func probeVisit(vArgs *visitArgs, service *vespa.Service) []string {
 
 func runVisit(vArgs *visitArgs, service *vespa.Service) (res OperationResult) {
 	vArgs.debugPrint(fmt.Sprintf("trying to visit: '%s'", vArgs.contentCluster))
-	var totalDocuments = 0
+	totalDocuments := 0
 	var continuationToken string
 	for {
 		var vvo *VespaVisitOutput
@@ -363,32 +359,32 @@ func quoteArgForUrl(arg string) string {
 func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*VespaVisitOutput, OperationResult) {
 	urlPath := service.BaseURL + "/document/v1/?cluster=" + quoteArgForUrl(vArgs.contentCluster)
 	if vArgs.fieldSet != "" {
-		urlPath = urlPath + "&fieldSet=" + quoteArgForUrl(vArgs.fieldSet)
+		urlPath += "&fieldSet=" + quoteArgForUrl(vArgs.fieldSet)
 	}
 	if vArgs.selection != "" {
-		urlPath = urlPath + "&selection=" + quoteArgForUrl(vArgs.selection)
+		urlPath += "&selection=" + quoteArgForUrl(vArgs.selection)
 	}
 	if contToken != "" {
-		urlPath = urlPath + "&continuation=" + contToken
+		urlPath += "&continuation=" + contToken
 	}
 	if vArgs.chunkCount > 0 {
-		urlPath = urlPath + fmt.Sprintf("&wantedDocumentCount=%d", vArgs.chunkCount)
+		urlPath += fmt.Sprintf("&wantedDocumentCount=%d", vArgs.chunkCount)
 	}
 	if vArgs.from != "" {
 		fromSeconds, _ := getEpoch(vArgs.from)
-		urlPath = urlPath + fmt.Sprintf("&fromTimestamp=%d", fromSeconds*1000000)
+		urlPath += fmt.Sprintf("&fromTimestamp=%d", fromSeconds*1000000)
 	}
 	if vArgs.to != "" {
 		toSeconds, _ := getEpoch(vArgs.to)
-		urlPath = urlPath + fmt.Sprintf("&toTimestamp=%d", toSeconds*1000000)
+		urlPath += fmt.Sprintf("&toTimestamp=%d", toSeconds*1000000)
 	}
 	if vArgs.slices > 0 {
-		urlPath = urlPath + fmt.Sprintf("&slices=%d&sliceId=%d", vArgs.slices, vArgs.sliceId)
+		urlPath += fmt.Sprintf("&slices=%d&sliceId=%d", vArgs.slices, vArgs.sliceId)
 	}
 	if vArgs.bucketSpace != "" {
-		urlPath = urlPath + "&bucketSpace=" + vArgs.bucketSpace
+		urlPath += "&bucketSpace=" + vArgs.bucketSpace
 	}
-	urlPath = urlPath + fmt.Sprintf("&stream=%t", vArgs.stream)
+	urlPath += fmt.Sprintf("&stream=%t", vArgs.stream)
 	url, urlParseError := url.Parse(urlPath)
 	if urlParseError != nil {
 		return nil, Failure("Invalid request path: '" + urlPath + "': " + urlParseError.Error())
@@ -405,7 +401,8 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	}
 	defer response.Body.Close()
 	vvo, err := parseVisitOutput(response.Body)
-	if response.StatusCode == 200 {
+	switch {
+	case response.StatusCode == 200:
 		if err == nil {
 			totalDocCount += vvo.DocumentCount
 			if vvo.DocumentCount != len(vvo.Documents) {
@@ -418,9 +415,9 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 		} else {
 			return nil, Failure("error reading response: " + err.Error())
 		}
-	} else if response.StatusCode/100 == 4 {
+	case response.StatusCode/100 == 4:
 		return vvo, FailureWithPayload("Invalid document operation: "+response.Status, ioutil.ReaderToJSON(response.Body))
-	} else {
+	default:
 		return vvo, FailureWithPayload(service.Description()+" at "+request.URL.Host+": "+response.Status, ioutil.ReaderToJSON(response.Body))
 	}
 }

@@ -36,11 +36,12 @@ func (p *Spec) ConfigureVespaMalloc() {
 		return
 	}
 	var useFile string
-	if p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC_DST) {
+	switch {
+	case p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC_DST):
 		useFile = vespaMallocLib("libvespamallocdst16.so")
-	} else if p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC_D) {
+	case p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC_D):
 		useFile = vespaMallocLib("libvespamallocd.so")
-	} else if p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC) {
+	case p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC):
 		useFile = vespaMallocLib("libvespamalloc.so")
 	}
 	trace.Trace("use file:", useFile)

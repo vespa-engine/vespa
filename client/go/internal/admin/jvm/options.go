@@ -28,8 +28,8 @@ func NewOptions(c Container) *Options {
 	fixSpec := osutil.FixSpec{
 		UserId:   vespaUid,
 		GroupId:  vespaGid,
-		DirMode:  0755,
-		FileMode: 0644,
+		DirMode:  0o755,
+		FileMode: 0o644,
 	}
 	return &Options{
 		container:   c,

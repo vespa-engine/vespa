@@ -82,7 +82,6 @@ func doLogin(cli *CLI, cmd *cobra.Command, useFileStorage bool) error {
 		res, err = a.Authenticator.Wait(ctx, state)
 		return err
 	})
-
 	if err != nil {
 		switch err.Error() {
 		case "600":

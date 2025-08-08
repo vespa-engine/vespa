@@ -48,8 +48,8 @@ public class ParsedRankProfile extends ParsedBlock {
     private MatchPhaseSettings matchPhase = null;
     private DiversitySettings diversity = null;
     private String firstPhaseExpression = null;
-    private String inheritedSummaryFeatures = null;
-    private String inheritedMatchFeatures = null;
+    private List<String> inheritedSummaryFeatures = new ArrayList<>();
+    private List<String> inheritedMatchFeatures = new ArrayList<>();
     private String secondPhaseExpression = null;
     private Boolean strict = null;
     private Boolean useSignificanceModel = null;
@@ -97,7 +97,7 @@ public class ParsedRankProfile extends ParsedBlock {
     Optional<MatchPhaseSettings> getMatchPhase() { return Optional.ofNullable(this.matchPhase); }
     Optional<DiversitySettings> getDiversity() { return Optional.ofNullable(this.diversity); }
     Optional<String> getFirstPhaseExpression() { return Optional.ofNullable(this.firstPhaseExpression); }
-    Optional<String> getInheritedMatchFeatures() { return Optional.ofNullable(this.inheritedMatchFeatures); }
+    List<String> getInheritedMatchFeatures() { return List.copyOf(this.inheritedMatchFeatures); }
     List<ParsedRankFunction> getFunctions() { return List.copyOf(functions.values()); }
     List<MutateOperation> getMutateOperations() { return List.copyOf(mutateOperations); }
     List<String> getInherited() { return List.copyOf(inherited); }
@@ -115,7 +115,7 @@ public class ParsedRankProfile extends ParsedBlock {
     Map<Reference, RankProfile.Input> getInputs() { return Collections.unmodifiableMap(inputs); }
     List<OnnxModel> getOnnxModels() { return List.copyOf(onnxModels); }
 
-    Optional<String> getInheritedSummaryFeatures() { return Optional.ofNullable(this.inheritedSummaryFeatures); }
+    List<String> getInheritedSummaryFeatures() { return List.copyOf(this.inheritedSummaryFeatures); }
     Optional<String> getSecondPhaseExpression() { return Optional.ofNullable(this.secondPhaseExpression); }
     Optional<Boolean> isStrict() { return Optional.ofNullable(this.strict); }
 
@@ -132,9 +132,8 @@ public class ParsedRankProfile extends ParsedBlock {
 
     public void inherit(String other) { inherited.add(other); }
 
-    public void setInheritedSummaryFeatures(String other) {
-        verifyThat(inheritedSummaryFeatures == null, "already inherits summary-features");
-        this.inheritedSummaryFeatures = other;
+    public void setInheritedSummaryFeatures(List<String> others) {
+        this.inheritedSummaryFeatures.addAll(others);
     }
 
     public void add(RankProfile.Constant constant) {
@@ -199,8 +198,8 @@ public class ParsedRankProfile extends ParsedBlock {
         this.ignoreDefaultRankFeatures = value;
     }
 
-    public void setInheritedMatchFeatures(String other) {
-        this.inheritedMatchFeatures = other;
+    public void setInheritedMatchFeatures(List<String> others) {
+        this.inheritedMatchFeatures.addAll(others);
     }
 
     public void setKeepRankCount(int count) {

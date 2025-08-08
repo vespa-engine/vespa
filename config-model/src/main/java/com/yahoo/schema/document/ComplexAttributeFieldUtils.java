@@ -9,7 +9,7 @@ import com.yahoo.document.StructDataType;
 /**
  * Utils used to check whether a complex field supports being represented as struct field attributes.
  *
- * Currently we support:
+ * Currently, we support:
  *   - array of simple struct
  *   - map of primitive type to simple struct
  *   - map of primitive type to primitive type
@@ -28,8 +28,7 @@ public class ComplexAttributeFieldUtils {
     }
 
     public static boolean isArrayOfSimpleStruct(ImmutableSDField field) {
-        if (field.getDataType() instanceof ArrayDataType) {
-            ArrayDataType arrayType = (ArrayDataType)field.getDataType();
+        if (field.getDataType() instanceof ArrayDataType arrayType) {
             return isStructWithPrimitiveStructFieldAttributes(arrayType.getNestedType(), field);
         } else {
             return false;
@@ -37,8 +36,7 @@ public class ComplexAttributeFieldUtils {
     }
 
     public static boolean isMapOfSimpleStruct(ImmutableSDField field) {
-        if (field.getDataType() instanceof MapDataType) {
-            MapDataType mapType = (MapDataType)field.getDataType();
+        if (field.getDataType() instanceof MapDataType mapType) {
             return isPrimitiveType(mapType.getKeyType()) &&
                     isStructWithPrimitiveStructFieldAttributes(mapType.getValueType(),
                             field.getStructField("value"));
@@ -48,8 +46,7 @@ public class ComplexAttributeFieldUtils {
     }
 
     public static boolean isMapOfPrimitiveType(ImmutableSDField field) {
-        if (field.getDataType() instanceof MapDataType) {
-            MapDataType mapType = (MapDataType)field.getDataType();
+        if (field.getDataType() instanceof MapDataType mapType) {
             return isPrimitiveType(mapType.getKeyType()) &&
                     isPrimitiveType(mapType.getValueType());
         } else {
