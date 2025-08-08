@@ -179,7 +179,11 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         IndexedTensor tokenEmbeddings = (IndexedTensor) evaluator.evaluate(inputs).get(outputName);
         long[] resultShape = tokenEmbeddings.shape();
         //shape batch, sequence, embedding dimensionality
-        if (resultShape.length != 3) {
+        if (resultShape.length == 2) {
+            if (poolingStrategy != PoolingStrategy.NONE) {
+                throw new IllegalArgumentException("Expected pooling-strategy 'none' with 2 output dimensions");
+            }
+        } else if (resultShape.length != 3) {
             throw new IllegalArgumentException("Expected 3 output dimensions for output name '" +
                                                outputName + "': [batch, sequence, embedding], got " + resultShape.length);
         }

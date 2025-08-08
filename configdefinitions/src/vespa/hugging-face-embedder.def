@@ -24,7 +24,7 @@ prependDocument string default=""
 # Normalize tensors from tokenizer
 normalize bool default=false
 
-poolingStrategy enum { cls, mean } default=mean
+poolingStrategy enum { cls, mean, none } default=mean
 
 # Settings for ONNX model evaluation
 transformerExecutionMode enum { parallel, sequential } default=sequential
