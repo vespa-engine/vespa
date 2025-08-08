@@ -38,7 +38,6 @@ type queryOptions struct {
 
 func newQueryCmd(cli *CLI) *cobra.Command {
 	opts := queryOptions{}
-	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "query query-parameters",
 		Short: "Issue a query to Vespa",
@@ -59,7 +58,7 @@ can be set by the syntax [parameter-name]=[value].`,
 				return fmt.Errorf("requires at least 1 arg")
 			}
 			waiter := cli.waiter(time.Duration(opts.waitSecs)*time.Second, cmd)
-			return query(cli, args, &opts, waiter, targetFlags)
+			return query(cli, args, &opts, waiter)
 		},
 	}
 	cmd.Flags().BoolVarP(&opts.printCurl, "verbose", "v", false, "Print the equivalent curl command for the query")
@@ -71,7 +70,6 @@ can be set by the syntax [parameter-name]=[value].`,
 	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "", "vespa_query_profile_result.json", "Profiling result file")
 	cmd.Flags().MarkHidden("profile")
 	cmd.Flags().MarkHidden("profile-file")
-	targetFlags.AddFlags(cmd)
 	cli.bindWaitFlag(cmd, 0, &opts.waitSecs)
 	return cmd
 }
@@ -98,8 +96,8 @@ func printCurl(stderr io.Writer, req *http.Request, postFile string, service *ve
 	return err
 }
 
-func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter, targetFlags *TargetFlags) error {
-	target, err := targetFlags.GetTarget(anyTarget)
+func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) error {
+	target, err := cli.target(targetOptions{})
 	if err != nil {
 		return err
 	}

@@ -16,7 +16,6 @@ import (
 
 func newAPIKeyCmd(cli *CLI) *cobra.Command {
 	var overwriteKey bool
-	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "api-key",
 		Short: "Create a new developer key for headless authentication with Vespa Cloud control plane",
@@ -51,30 +50,22 @@ See https://docs.vespa.ai/en/cloud/security/guide.html for more details about de
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return doApiKey(cli, targetFlags, overwriteKey, args)
+			return doApiKey(cli, overwriteKey, args)
 		},
 	}
 	cmd.Flags().BoolVarP(&overwriteKey, "force", "f", false, "Force overwrite of existing developer key")
-	targetFlags.AddApplicationFlag(cmd)
-	targetFlags.AddTargetFlag(cmd)
+	cmd.MarkPersistentFlagRequired(applicationFlag)
 	return cmd
 }
 
-func doApiKey(cli *CLI, targetFlags *TargetFlags, overwriteKey bool, args []string) error {
-	targetType, err := cli.targetTypeWithFlags(cloudTargetOnly, targetFlags)
+func doApiKey(cli *CLI, overwriteKey bool, args []string) error {
+	targetType, err := cli.targetType(cloudTargetOnly)
 	if err != nil {
 		return err
 	}
-
-	// Validate that application is provided (either via flag or config)
-	applicationString := targetFlags.Application()
-	if applicationString == "" {
-		return errHint(fmt.Errorf("no application specified"), "Try the --"+applicationFlag+" flag")
-	}
-
-	app, err := vespa.ApplicationFromString(applicationString)
+	app, err := cli.config.application()
 	if err != nil {
-		return errHint(err, "application format is <tenant>.<app>[.<instance>]")
+		return err
 	}
 	system, err := cli.system(targetType.name)
 	if err != nil {

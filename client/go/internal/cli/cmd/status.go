@@ -22,7 +22,6 @@ func newStatusCmd(cli *CLI) *cobra.Command {
 		waitSecs int
 		format   string
 	)
-	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use: "status",
 		Aliases: []string{
@@ -43,8 +42,8 @@ $ vepsa status --format plain --cluster mycluster`,
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cluster := targetFlags.Cluster()
-			t, err := targetFlags.GetTarget(anyTarget)
+			cluster := cli.config.cluster()
+			t, err := cli.target(targetOptions{})
 			if err != nil {
 				return err
 			}
@@ -80,7 +79,6 @@ $ vepsa status --format plain --cluster mycluster`,
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
 	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable) or 'plain' (cluster URL only)")
-	targetFlags.AddFlags(cmd)
 	return cmd
 }
 
@@ -113,7 +111,6 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 		waitSecs int
 		format   string
 	)
-	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:               "deploy",
 		Short:             "Show status of the Vespa deploy service",
@@ -122,7 +119,7 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			t, err := targetFlags.GetTarget(anyTarget)
+			t, err := cli.target(targetOptions{})
 			if err != nil {
 				return err
 			}
@@ -142,13 +139,11 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
 	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable text) or 'plain' (cluster URL only)")
-	targetFlags.AddFlags(cmd)
 	return cmd
 }
 
 func newStatusDeploymentCmd(cli *CLI) *cobra.Command {
 	var waitSecs int
-	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "deployment",
 		Short: "Show status of a Vespa deployment",
@@ -175,7 +170,7 @@ $ vespa status deployment -t local [session-id] --wait 600
 				}
 				wantedID = n
 			}
-			t, err := targetFlags.GetTargetWithOptions(targetOptions{logLevel: "none"})
+			t, err := cli.target(targetOptions{logLevel: "none"})
 			if err != nil {
 				return err
 			}
@@ -201,7 +196,6 @@ $ vespa status deployment -t local [session-id] --wait 600
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
-	targetFlags.AddFlags(cmd)
 	return cmd
 }
 

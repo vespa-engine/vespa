@@ -28,7 +28,6 @@ import (
 
 func newTestCmd(cli *CLI) *cobra.Command {
 	var waitSecs int
-	targetFlags := NewTargetFlagsWithCLI(cli)
 	testCmd := &cobra.Command{
 		Use:   "test test-directory-or-file",
 		Short: "Run a test suite, or a single test",
@@ -44,7 +43,7 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
-			count, failed, err := runTests(cli, args[0], false, waiter, targetFlags)
+			count, failed, err := runTests(cli, args[0], false, waiter)
 			if err != nil {
 				return err
 			}
@@ -68,12 +67,11 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 			}
 		},
 	}
-	targetFlags.AddFlags(testCmd)
 	cli.bindWaitFlag(testCmd, 0, &waitSecs)
 	return testCmd
 }
 
-func runTests(cli *CLI, rootPath string, dryRun bool, waiter *Waiter, targetFlags *TargetFlags) (int, []string, error) {
+func runTests(cli *CLI, rootPath string, dryRun bool, waiter *Waiter) (int, []string, error) {
 	count := 0
 	failed := make([]string, 0)
 	if stat, err := os.Stat(rootPath); err != nil {
@@ -83,7 +81,7 @@ func runTests(cli *CLI, rootPath string, dryRun bool, waiter *Waiter, targetFlag
 		if err != nil {
 			return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/testing")
 		}
-		context := testContext{testsPath: rootPath, dryRun: dryRun, cli: cli, targetFlags: targetFlags, clusters: map[string]*vespa.Service{}}
+		context := testContext{testsPath: rootPath, dryRun: dryRun, cli: cli, clusters: map[string]*vespa.Service{}}
 		previousFailed := false
 		for _, test := range tests {
 			if !test.IsDir() && filepath.Ext(test.Name()) == ".json" {
@@ -104,7 +102,7 @@ func runTests(cli *CLI, rootPath string, dryRun bool, waiter *Waiter, targetFlag
 			}
 		}
 	} else if strings.HasSuffix(stat.Name(), ".json") {
-		failure, err := runTest(rootPath, testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun, cli: cli, targetFlags: targetFlags, clusters: map[string]*vespa.Service{}}, waiter)
+		failure, err := runTest(rootPath, testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun, cli: cli, clusters: map[string]*vespa.Service{}}, waiter)
 		if err != nil {
 			return 0, nil, err
 		}
@@ -490,14 +488,13 @@ type testContext struct {
 	lazyTarget vespa.Target
 	testsPath  string
 	dryRun     bool
-	targetFlags *TargetFlags
 	// Cache of services by their cluster name
 	clusters map[string]*vespa.Service
 }
 
 func (t *testContext) target() (vespa.Target, error) {
 	if t.lazyTarget == nil {
-		target, err := t.targetFlags.GetTarget(anyTarget)
+		target, err := t.cli.target(targetOptions{})
 		if err != nil {
 			return nil, err
 		}
