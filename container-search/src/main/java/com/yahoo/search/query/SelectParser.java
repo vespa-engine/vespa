@@ -943,18 +943,19 @@ public class SelectParser implements Parser {
         };
     }
 
-    private Item instantiateWordItem(String field, String key, Inspector value) {
-        var children = childMap(value);
+    private Item instantiateWordItem(String field, String key, Inspector node) {
+        var children = childMap(node);
         if (children.size() < 2)
             throw new IllegalArgumentException("Expected at least 2 children of '" + key + "', but got " + children.size());
 
         String wordData = children.get(1).asString();
-        return instantiateWordItem(field, wordData, key, value, false, decideParsingLanguage(value, wordData));
+        return instantiateWordItem(field, wordData, node, false);
     }
 
-    private Item instantiateWordItem(String field, String rawWord, String key, Inspector value, boolean exactMatch, Language language) {
+    private Item instantiateWordItem(String field, String rawWord, Inspector node, boolean exactMatch) {
         String wordData = rawWord;
-        HashMap<String, Inspector> annotations = getAnnotationMap(value);
+        Language language = decideParsingLanguage(node, wordData);
+        HashMap<String, Inspector> annotations = getAnnotationMap(node);
 
         if (getBoolAnnotation(NFKC, annotations, Boolean.FALSE)) {
             // NOTE: If this is set to FALSE (default), we will still NFKC normalize text data
@@ -983,11 +984,11 @@ public class SelectParser implements Parser {
             wordItem = new WordItem(wordData, fromQuery);
         }
 
-        prepareWord(field, value, wordItem);
+        prepareWord(field, node, wordItem);
         if (language != Language.ENGLISH)
             wordItem.setLanguage(language);
 
-        return leafStyleSettings(getAnnotations(value), wordItem);
+        return leafStyleSettings(getAnnotations(node), wordItem);
     }
 
     private Language decideParsingLanguage(Inspector value, String wordData) {
@@ -1094,7 +1095,7 @@ public class SelectParser implements Parser {
 
         for (Inspector word :  children.values()) {
             if (word.type() == STRING)
-                phrase.addItem(new WordItem(word.asString()));
+                phrase.addItem(instantiateWordItem(field, word.asString(), word, false));
             else if (word.type() == OBJECT && word.field(PHRASE).valid())
                 phrase.addItem(instantiatePhraseItem(field, key, getChildren(word)));
         }

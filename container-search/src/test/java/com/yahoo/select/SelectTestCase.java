@@ -40,6 +40,7 @@ import com.yahoo.search.query.SelectParser;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.yql.VespaGroupingStep;
+import com.yahoo.search.yql.VespaSerializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -103,6 +104,14 @@ public class SelectTestCase {
         arrayNode.add("default").add("foo");
         json.set("contains", arrayNode);
         assertParse(json.toString(), "default:foo");
+    }
+
+    @Test
+    void testStemmingPhrase() {
+        QueryTree parsed = parseWhere("{'contains': ['default', {'phrase': ['Registered', 'Nurse']}]}");
+        Query query = new Query();
+        query.getModel().getQueryTree().setRoot(parsed.getRoot());
+        assertEquals("default contains phrase(\"Registered\", \"Nurse\")", VespaSerializer.serialize(query));
     }
 
     @Test
