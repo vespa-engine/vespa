@@ -176,6 +176,12 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testStemmingPhrase() {
+        QueryTree parsed = parse("select * from sources wiki where default contains phrase('Registered', 'Nurse')");
+        assertEquals("default contains phrase(\"Registered\", \"Nurse\")", VespaSerializer.serialize(parsed));
+    }
+
+    @Test
     void testHitLimit() {
         assertParse("select artist_name, track_name, track_uri from sources * where (myField contains ({prefix:true}\"m\") and ({hitLimit: 5000, descending: true}range(static_score,0,Infinity))) limit 30 offset 0",
                 "AND myField:m* static_score:[0;;-5000]");
