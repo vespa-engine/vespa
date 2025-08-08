@@ -6,7 +6,6 @@ import (
 )
 
 func newFetchCmd(cli *CLI) *cobra.Command {
-	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "fetch [path]",
 		Short: "Download a deployed application package",
@@ -23,7 +22,7 @@ $ vespa fetch -t cloud mycloudapp.zip
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := targetFlags.GetTarget(anyTarget)
+			target, err := cli.target(targetOptions{})
 			if err != nil {
 				return err
 			}
@@ -42,6 +41,5 @@ $ vespa fetch -t cloud mycloudapp.zip
 			return nil
 		},
 	}
-	targetFlags.AddFlags(cmd)
 	return cmd
 }

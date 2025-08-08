@@ -25,7 +25,6 @@ func newDeployCmd(cli *CLI) *cobra.Command {
 		versionArg  string
 		copyCert    bool
 	)
-	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "deploy [application-directory-or-file]",
 		Short: "Deploy (prepare and activate) an application package",
@@ -60,7 +59,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			if err != nil {
 				return err
 			}
-			target, err := targetFlags.GetTargetWithOptions(targetOptions{logLevel: logLevelArg})
+			target, err := cli.target(targetOptions{logLevel: logLevelArg})
 			if err != nil {
 				return err
 			}
@@ -115,7 +114,6 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 	cmd.Flags().StringVarP(&logLevelArg, "log-level", "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)
 	cmd.Flags().StringVarP(&versionArg, "version", "V", "", `Override the Vespa runtime version to use in Vespa Cloud`)
 	cmd.Flags().BoolVarP(&copyCert, "add-cert", "A", false, `Copy certificate of the configured application to the current application package`)
-	targetFlags.AddFlags(cmd)
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
 	return cmd
 }

@@ -29,7 +29,6 @@ $ vespa application show -a <tenant>.<application>`,
 
 func newApplicationListCmd(cli *CLI) *cobra.Command {
 	var listAllApplications bool
-	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List all application for a given tenant",
@@ -38,17 +37,12 @@ The applications are listed without any extra information. In the format <tenant
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.targetWithFlags(targetOptions{noCertificate: true, supportedType: cloudTargetOnly}, targetFlags)
+			target, err := cli.target(targetOptions{noCertificate: true, supportedType: cloudTargetOnly})
 			if err != nil {
 				return err
 			}
 
-			// Use TargetFlags application instead of config
-			applicationString := targetFlags.Application()
-			if applicationString == "" {
-				return fmt.Errorf("no application specified")
-			}
-			appId, err := vespa.ApplicationFromString(applicationString)
+			appId, err := cli.config.application()
 			if err != nil {
 				return err
 			}
@@ -69,7 +63,7 @@ The applications are listed without any extra information. In the format <tenant
 					Application: app.Application,
 					Instance:    "",
 				}, target) {
-					fmt.Fprintf(cli.Stdout, "%s\n", appId)
+					fmt.Printf("%s\n", appId)
 					seen[appId] = true
 				}
 			}
@@ -78,8 +72,6 @@ The applications are listed without any extra information. In the format <tenant
 		},
 	}
 	cmd.PersistentFlags().BoolVarP(&listAllApplications, "list-all-applications", "A", false, "List all applications, not just the active ones")
-	targetFlags.AddTargetFlag(cmd)
-	targetFlags.AddApplicationFlag(cmd)
 	return cmd
 }
 
@@ -99,7 +91,6 @@ func activeApplication(id vespa.ApplicationID, target vespa.Target) bool {
 func newApplicationShowCmd(cli *CLI) *cobra.Command {
 	var format string
 	var listAllInstances bool
-	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:               "show",
 		Short:             "Show information about a given application",
@@ -109,20 +100,14 @@ func newApplicationShowCmd(cli *CLI) *cobra.Command {
 		Example: `$ vespa application show -a <tenant>.<application>
 $ vespa application show -a <tenant>.<application> --format plain`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.targetWithFlags(targetOptions{noCertificate: true, supportedType: cloudTargetOnly}, targetFlags)
+			target, err := cli.target(targetOptions{noCertificate: true, supportedType: cloudTargetOnly})
 			if err != nil {
 				return err
 			}
 			if target.Type() != vespa.TargetCloud && target.Type() != vespa.TargetHosted {
 				return fmt.Errorf("application show does not support %s target", target.Type())
 			}
-
-			// Use TargetFlags application instead of config
-			applicationString := targetFlags.Application()
-			if applicationString == "" {
-				return fmt.Errorf("no application specified")
-			}
-			appId, err := vespa.ApplicationFromString(applicationString)
+			appId, err := cli.config.application()
 			if err != nil {
 				return err
 			}
@@ -133,15 +118,15 @@ $ vespa application show -a <tenant>.<application> --format plain`,
 			if format == "plain" {
 				for _, instance := range application.Instances {
 					for _, deployment := range instance.Deployments {
-						fmt.Fprintf(cli.Stdout, "%s.%s.%s %s.%s\n", appId.Tenant, appId.Application, instance.Instance, deployment.Environment, deployment.Region)
+						fmt.Printf("%s.%s.%s %s.%s\n", appId.Tenant, appId.Application, instance.Instance, deployment.Environment, deployment.Region)
 					}
 				}
 			} else {
 				for _, instance := range application.Instances {
 					if listAllInstances || len(instance.Deployments) > 0 {
-						fmt.Fprintf(cli.Stdout, "%s.%s.%s:\n", appId.Tenant, appId.Application, instance.Instance)
+						fmt.Printf("%s.%s.%s:\n", appId.Tenant, appId.Application, instance.Instance)
 						for _, deployment := range instance.Deployments {
-							fmt.Fprintf(cli.Stdout, "  %s.%s\n", deployment.Environment, deployment.Region)
+							fmt.Printf("  %s.%s\n", deployment.Environment, deployment.Region)
 						}
 					}
 				}
@@ -151,7 +136,5 @@ $ vespa application show -a <tenant>.<application> --format plain`,
 	}
 	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable) or 'plain'")
 	cmd.PersistentFlags().BoolVarP(&listAllInstances, "list-all-instances", "A", false, "List all instances, not just the active ones")
-	targetFlags.AddTargetFlag(cmd)
-	targetFlags.AddApplicationFlag(cmd)
 	return cmd
 }

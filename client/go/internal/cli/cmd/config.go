@@ -126,7 +126,6 @@ dev.aws-us-east-1c, dev.gcp-us-central1-f, perf.aws-us-east-1c`,
 
 func newConfigSetCmd(cli *CLI) *cobra.Command {
 	var localArg bool
-	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "set option-name value",
 		Short: "Set a configuration option.",
@@ -163,13 +162,11 @@ $ vespa config set --local zone perf.us-north-1`,
 		},
 	}
 	cmd.Flags().BoolVarP(&localArg, "local", "l", false, "Write option to local configuration, i.e. for the current application")
-	targetFlags.AddFlags(cmd)
 	return cmd
 }
 
 func newConfigUnsetCmd(cli *CLI) *cobra.Command {
 	var localArg bool
-	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "unset option-name",
 		Short: "Unset a configuration option.",
@@ -200,13 +197,11 @@ $ vespa config unset --local application`,
 		},
 	}
 	cmd.Flags().BoolVarP(&localArg, "local", "l", false, "Unset option in local configuration, i.e. for the current application")
-	targetFlags.AddFlags(cmd)
 	return cmd
 }
 
 func newConfigGetCmd(cli *CLI) *cobra.Command {
 	var localArg bool
-	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "get [option-name]",
 		Short: "Show given configuration option, or all configuration options",
@@ -231,37 +226,17 @@ $ vespa config get --local`,
 				}
 				config = cli.config.local
 			}
-
-			// Create a temporary config with TargetFlags values added to flags
-			tempConfig := &Config{
-				homeDir:     config.homeDir,
-				cacheDir:    config.cacheDir,
-				environment: config.environment,
-				local:       config.local,
-				flags:       make(map[string]*pflag.Flag),
-				config:      config.config,
-			}
-
-			// Copy existing flags
-			for k, v := range config.flags {
-				tempConfig.flags[k] = v
-			}
-
-			// Add TargetFlags values to override
-			targetFlags.AddFlagsToConfig(cmd, tempConfig.flags)
-
 			if len(args) == 0 { // Print all values
-				for _, option := range tempConfig.list(!localArg) {
-					tempConfig.printOption(option)
+				for _, option := range config.list(!localArg) {
+					config.printOption(option)
 				}
 			} else {
-				return tempConfig.printOption(args[0])
+				return config.printOption(args[0])
 			}
 			return nil
 		},
 	}
 	cmd.Flags().BoolVarP(&localArg, "local", "l", false, "Show only local configuration, if any")
-	targetFlags.AddFlags(cmd)
 	return cmd
 }
 
