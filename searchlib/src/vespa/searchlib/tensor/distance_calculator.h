@@ -67,7 +67,7 @@ public:
         if (has_single_subspace) {
             auto cells = _attr_tensor.get_vector(docid, 0);
             if ( cells.non_existing_attribute_value() ) [[unlikely]] {
-                return std::numeric_limits<double>::max();
+                return std::numeric_limits<double>::infinity();
             }
             return _dist_fun->calc_with_limit(cells, limit);
         } else {
