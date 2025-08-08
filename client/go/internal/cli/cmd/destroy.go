@@ -11,6 +11,7 @@ import (
 
 func newDestroyCmd(cli *CLI) *cobra.Command {
 	force := false
+	targetFlags := NewTargetFlagsWithCLI(cli)
 	cmd := &cobra.Command{
 		Use:   "destroy",
 		Short: "Remove a deployed Vespa application and its data",
@@ -36,7 +37,7 @@ $ vespa destroy --force`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.target(targetOptions{supportedType: cloudTargetOnly})
+			target, err := targetFlags.GetTarget(cloudTargetOnly)
 			if err != nil {
 				return err
 			}
@@ -61,5 +62,6 @@ $ vespa destroy --force`,
 		},
 	}
 	cmd.PersistentFlags().BoolVar(&force, "force", false, "Disable confirmation (default false)")
+	targetFlags.AddFlags(cmd)
 	return cmd
 }

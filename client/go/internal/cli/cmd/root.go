@@ -28,14 +28,9 @@ import (
 )
 
 const (
-	applicationFlag = "application"
-	instanceFlag    = "instance"
-	clusterFlag     = "cluster"
-	zoneFlag        = "zone"
-	targetFlag      = "target"
-	colorFlag       = "color"
-	quietFlag       = "quiet"
-	debugModeFlag   = "debug"
+	colorFlag     = "color"
+	quietFlag     = "quiet"
+	debugModeFlag = "debug"
 
 	anyTarget = iota
 	localTargetOnly
@@ -294,20 +289,11 @@ func (c *CLI) configureOutput(cmd *cobra.Command, args []string) error {
 
 func (c *CLI) configureFlags() map[string]*pflag.Flag {
 	var (
-		target      string
-		application string
-		instance    string
-		cluster     string
-		zone        string
-		color       string
-		quiet       bool
-		debugMode   bool
+		color     string
+		quiet     bool
+		debugMode bool
 	)
-	c.cmd.PersistentFlags().StringVarP(&target, targetFlag, "t", "local", `The target platform to use. Must be "local", "cloud", "hosted" or an URL`)
-	c.cmd.PersistentFlags().StringVarP(&application, applicationFlag, "a", "", `The application to use (cloud only). Format "tenant.application.instance" - instance is optional`)
-	c.cmd.PersistentFlags().StringVarP(&instance, instanceFlag, "i", "", "The instance of the application to use (cloud only)")
-	c.cmd.PersistentFlags().StringVarP(&cluster, clusterFlag, "C", "", "The container cluster to use. This is only required for applications with multiple clusters")
-	c.cmd.PersistentFlags().StringVarP(&zone, zoneFlag, "z", "", "The zone to use. This defaults to a dev zone (cloud only)")
+	// Only add truly global flags here.
 	c.cmd.PersistentFlags().StringVarP(&color, colorFlag, "c", "auto", `Whether to use colors in output. Must be "auto", "never", or "always"`)
 	c.cmd.PersistentFlags().BoolVarP(&quiet, quietFlag, "q", false, "Print only errors")
 	c.cmd.PersistentFlags().BoolVar(&debugMode, debugModeFlag, false, `Print debugging output`)
@@ -317,6 +303,16 @@ func (c *CLI) configureFlags() map[string]*pflag.Flag {
 	c.cmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
 		flags[flag.Name] = flag
 	})
+
+	// Add cloud interaction flags to the config system's known flags, even though they're not global anymore.
+	// This allows the config system to recognize them as valid configuration options.
+	targetFlags := TargetFlags{}
+	tempCmd := &cobra.Command{}
+	targetFlags.AddFlags(tempCmd)
+	tempCmd.Flags().VisitAll(func(flag *pflag.Flag) {
+		flags[flag.Name] = flag
+	})
+
 	return flags
 }
 
@@ -455,7 +451,13 @@ func (c *CLI) waiter(timeout time.Duration, cmd *cobra.Command) *Waiter {
 
 // target creates a target according the configuration of this CLI and given opts.
 func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
-	targetType, err := c.targetType(opts.supportedType)
+	return c.targetWithFlags(opts, nil)
+}
+
+// targetWithFlags creates a target using TargetFlags values when provided, falling back to config when not.
+// This solves the flag inheritance problem globally by allowing commands to pass their TargetFlags instance.
+func (c *CLI) targetWithFlags(opts targetOptions, flags *TargetFlags) (vespa.Target, error) {
+	targetType, err := c.targetTypeWithFlags(opts.supportedType, flags)
 	if err != nil {
 		return nil, err
 	}
@@ -464,7 +466,7 @@ func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
 	case vespa.TargetLocal, vespa.TargetCustom:
 		target, err = c.createCustomTarget(targetType.name, targetType.url)
 	case vespa.TargetCloud, vespa.TargetHosted:
-		target, err = c.createCloudTarget(targetType.name, opts, targetType.url)
+		target, err = c.createCloudTargetWithFlags(targetType.name, opts, targetType.url, flags)
 	default:
 		return nil, errHint(fmt.Errorf("invalid target: %s", targetType), "Valid targets are 'local', 'cloud', 'hosted' or an URL")
 	}
@@ -485,10 +487,24 @@ func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
 
 // targetType resolves the real target type and its custom URL (if any)
 func (c *CLI) targetType(targetTypeRestriction int) (targetType, error) {
-	v, err := c.config.targetOrURL()
-	if err != nil {
-		return targetType{}, err
+	return c.targetTypeWithFlags(targetTypeRestriction, nil)
+}
+
+// targetTypeWithFlags resolves target type using TargetFlags when provided, falling back to config when not.
+func (c *CLI) targetTypeWithFlags(targetTypeRestriction int, flags *TargetFlags) (targetType, error) {
+	var v string
+	var err error
+
+	// Use TargetFlags value if provided, otherwise fall back to config
+	if flags != nil {
+		v = flags.Target()
+	} else {
+		v, err = c.config.targetOrURL()
+		if err != nil {
+			return targetType{}, err
+		}
 	}
+
 	tt := targetType{name: v}
 	if strings.HasPrefix(tt.name, "http://") || strings.HasPrefix(tt.name, "https://") {
 		tt.url = tt.name
@@ -497,12 +513,8 @@ func (c *CLI) targetType(targetTypeRestriction int) (targetType, error) {
 			return targetType{}, err
 		}
 	}
-	unsupported := (targetTypeRestriction == cloudTargetOnly && tt.name != vespa.TargetCloud && tt.name != vespa.TargetHosted) ||
-		(targetTypeRestriction == localTargetOnly && tt.name != vespa.TargetLocal && tt.name != vespa.TargetCustom)
-	if unsupported {
-		return targetType{}, errHint(fmt.Errorf("command does not support %s target", tt.name),
-			"to switch target run the following:",
-			"$ vespa config set target cloud")
+	if err := validateTargetTypeSupport(tt.name, targetTypeRestriction); err != nil {
+		return targetType{}, err
 	}
 	return tt, nil
 }
@@ -628,6 +640,45 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions, customURL
 	return vespa.CloudTarget(c.httpClient, apiAuth, deploymentAuth, apiOptions, deploymentOptions, logOptions, c.retryInterval)
 }
 
+// createCloudTargetWithFlags creates a cloud target that uses TargetFlags values when provided
+func (c *CLI) createCloudTargetWithFlags(targetType string, opts targetOptions, customURL string, flags *TargetFlags) (vespa.Target, error) {
+	// If no flags provided, use the original method
+	if flags == nil {
+		return c.createCloudTarget(targetType, opts, customURL)
+	}
+
+	// Use TargetFlags values by temporarily overriding config
+	originalValues := make(map[string]string)
+	configOverrides := map[string]string{
+		applicationFlag: flags.Application(),
+		instanceFlag:    flags.Instance(),
+		zoneFlag:        flags.Zone(),
+	}
+
+	// Store original values and set TargetFlags values
+	for key, value := range configOverrides {
+		if value != "" {
+			originalValues[key], _ = c.config.get(key)
+			_ = c.config.set(key, value)
+		}
+	}
+
+	// Create the target using the original method (which now sees the TargetFlags values in config)
+	target, err := c.createCloudTarget(targetType, opts, customURL)
+
+	// Restore original values
+	for key, originalValue := range originalValues {
+		if originalValue != "" {
+			_ = c.config.set(key, originalValue)
+		} else {
+			// If there was no original value, unset it
+			_ = c.config.unset(key)
+		}
+	}
+
+	return target, err
+}
+
 // system returns the appropiate system for the target configured in this CLI.
 func (c *CLI) system(targetType string) (vespa.System, error) {
 	name := c.Environment["VESPA_CLI_CLOUD_SYSTEM"]
@@ -731,4 +782,22 @@ func (c *CLI) applicationPackageFrom(args []string, options vespa.PackageOptions
 		return vespa.ApplicationPackage{}, fmt.Errorf("expected 0 or 1 arguments, got %d", len(args))
 	}
 	return vespa.FindApplicationPackage(path, options)
+}
+
+// validateTargetTypeSupport checks if the target type is supported by the given restriction and returns an appropriate error if not.
+func validateTargetTypeSupport(targetTypeName string, supportedType int) error {
+	unsupported := (supportedType == cloudTargetOnly && targetTypeName != vespa.TargetCloud && targetTypeName != vespa.TargetHosted) ||
+		(supportedType == localTargetOnly && targetTypeName != vespa.TargetLocal && targetTypeName != vespa.TargetCustom)
+	if unsupported {
+		var recommendedTarget string
+		if supportedType == cloudTargetOnly {
+			recommendedTarget = "cloud"
+		} else if supportedType == localTargetOnly {
+			recommendedTarget = "local"
+		}
+		return errHint(fmt.Errorf("command does not support %s target", targetTypeName),
+			"to switch target run the following:",
+			fmt.Sprintf("$ vespa config set target %s", recommendedTarget))
+	}
+	return nil
 }
