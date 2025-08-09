@@ -74,7 +74,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 
 
 /**
- * Application package derived from local files, i.e. during deploy.
+ * Application package derived from local files, i.e. on deployment.
  * Construct using {@link com.yahoo.config.model.application.provider.FilesApplicationPackage#fromFile(java.io.File)} or
  * {@link com.yahoo.config.model.application.provider.FilesApplicationPackage#fromFileWithDeployData(java.io.File, DeployData)}.
  *
@@ -109,46 +109,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     private DeploymentSpec deploymentSpec = null;
 
-    /** Creates from a directory with source files included */
-    public static FilesApplicationPackage fromFile(File appDir) {
-        return fromFile(appDir, false);
-    }
-
-    /**
-     * Returns an application package object based on the given application dir
-     *
-     * @param appDir application package directory
-     * @param includeSourceFiles read files from source directories /src/main and src/test in addition
-     *                           to the application package location. This is useful during development
-     *                           to be able to run tests without a complete build first.
-     * @return an Application package instance
-     */
-    public static FilesApplicationPackage fromFile(File appDir, boolean includeSourceFiles) {
-        return new Builder(appDir).preprocessedDir(applicationFile(appDir, preprocessed))
-                                  .includeSourceFiles(includeSourceFiles)
-                                  .build();
-    }
-
-    /** Creates package from a local directory, typically deploy app   */
-    public static FilesApplicationPackage fromFileWithDeployData(File appDir, DeployData deployData) {
-        return fromFileWithDeployData(appDir, deployData, false);
-    }
-
-    /** Creates package from a local directory, typically deploy app   */
-    public static FilesApplicationPackage fromFileWithDeployData(File appDir,
-                                                                 DeployData deployData,
-                                                                 boolean includeSourceFiles) {
-        return new Builder(appDir).includeSourceFiles(includeSourceFiles).deployData(deployData).build();
-    }
-
-    private static ApplicationMetaData metaDataFromDeployData(File appDir, DeployData deployData) {
-        return new ApplicationMetaData(deployData.getDeployTimestamp(),
-                                       deployData.isInternalRedeploy(),
-                                       deployData.getApplicationId(),
-                                       computeCheckSum(appDir),
-                                       deployData.getGeneration(),
-                                       deployData.getCurrentlyActiveGeneration());
-    }
+    private final List<ApplicationPackage> inherited;
 
     /**
      * New package from given path on local file system. Retrieves config definition files from
@@ -159,7 +120,11 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
      * @param metaData metadata for this application package
      * @param includeSourceFiles include files from source dirs
      */
-    private FilesApplicationPackage(File appDir, File preprocessedDir, ApplicationMetaData metaData, boolean includeSourceFiles) {
+    private FilesApplicationPackage(File appDir,
+                                    File preprocessedDir,
+                                    ApplicationMetaData metaData,
+                                    boolean includeSourceFiles,
+                                    List<ApplicationPackage> inherited) {
         verifyAppDir(appDir);
         this.includeSourceFiles = includeSourceFiles;
         this.appDir = appDir;
@@ -169,6 +134,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         addUserIncludeDirs();
         this.metaData = metaData;
         this.transformerFactory = XML.createTransformerFactory();
+        this.inherited = List.copyOf(inherited);
     }
 
     @Override
@@ -292,11 +258,8 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     private void addIncludeDir(Node includeNode) {
-        if (! (includeNode instanceof Element))
-            return;
-        Element include = (Element) includeNode;
-        if (! include.hasAttribute(IncludeDirs.DIR))
-            return;
+        if (! (includeNode instanceof Element include)) return;
+        if (! include.hasAttribute(IncludeDirs.DIR)) return;
         String dir = include.getAttribute(IncludeDirs.DIR);
         validateIncludeDir(dir);
         IncludeDirs.validateFilesInIncludedDir(dir, include.getParentNode(), this);
@@ -721,11 +684,9 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         }
     }
 
-    private static final int MD5_BUFFER_SIZE = 65536;
-
     private static void addToDigest(InputStream is, MessageDigest digest) throws IOException {
         if (is == null) return;
-        byte[] buffer = new byte[MD5_BUFFER_SIZE];
+        byte[] buffer = new byte[65536];
         int i;
         do {
             i = is.read(buffer);
@@ -733,6 +694,38 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                 digest.update(buffer, 0, i);
             }
         } while(i != -1);
+    }
+
+    /** Creates from a directory with source files included */
+    public static FilesApplicationPackage fromFile(File appDir) {
+        return fromFile(appDir, false);
+    }
+
+    /**
+     * Returns an application package object based on the given application dir
+     *
+     * @param appDir application package directory
+     * @param includeSourceFiles read files from source directories /src/main and src/test in addition
+     *                           to the application package location. This is useful during development
+     *                           to be able to run tests without a complete build first.
+     * @return an Application package instance
+     */
+    public static FilesApplicationPackage fromFile(File appDir, boolean includeSourceFiles) {
+        return new Builder(appDir).preprocessedDir(applicationFile(appDir, preprocessed))
+                                  .includeSourceFiles(includeSourceFiles)
+                                  .build();
+    }
+
+    /** Creates package from a local directory, typically deploy app   */
+    public static FilesApplicationPackage fromFileWithDeployData(File appDir, DeployData deployData) {
+        return fromFileWithDeployData(appDir, deployData, false);
+    }
+
+    /** Creates package from a local directory, typically deploy app   */
+    public static FilesApplicationPackage fromFileWithDeployData(File appDir,
+                                                                 DeployData deployData,
+                                                                 boolean includeSourceFiles) {
+        return new Builder(appDir).includeSourceFiles(includeSourceFiles).deployData(deployData).build();
     }
 
     /**
@@ -745,6 +738,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         private Optional<File> preprocessedDir = Optional.empty();
         private Optional<ApplicationMetaData> metaData = Optional.empty();
         private boolean includeSourceFiles = false;
+        private List<ApplicationPackage> inherited = new ArrayList<>();
 
         public Builder(File appDir) {
             this.appDir = appDir;
@@ -765,9 +759,15 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             return this;
         }
 
+        public Builder setInherited(List<ApplicationPackage> inherited) {
+            this.inherited = inherited;
+            return this;
+        }
+
         public FilesApplicationPackage build() {
             return new FilesApplicationPackage(appDir, preprocessedDir.orElse(applicationFile(appDir, preprocessed)),
-                                               metaData.orElse(readMetaData(appDir)), includeSourceFiles);
+                                               metaData.orElse(readMetaData(appDir)), includeSourceFiles,
+                                               inherited);
         }
 
     }
@@ -809,9 +809,10 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     static {
         // Note: Directories intentionally not validated: MODELS_DIR (custom models can contain files with any extension)
 
-        // TODO: Files that according to doc (https://docs.vespa.ai/en/reference/schema-reference.html) can be anywhere in the application package:
-        //   constant tensors (.json, .json.lz4)
-        //   onnx model files (.onnx)
+        // TODO: Files that according to doc (https://docs.vespa.ai/en/reference/schema-reference.html)
+        //       can be anywhere in the application package:
+        //       - constant tensors (.json, .json.lz4)
+        //       - onnx model files (.onnx)
         validFileExtensions = Map.ofEntries(
                 Map.entry(Path.fromString(COMPONENT_DIR), Set.of(".jar")),
                 Map.entry(CONSTANTS_DIR, Set.of(".json", ".json.lz4")),
@@ -865,6 +866,15 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
         return (relativeDirectory.startsWith(schemasPath + "/")
                 || relativeDirectory.startsWith(searchDefinitionsPath + "/"));
+    }
+
+    private static ApplicationMetaData metaDataFromDeployData(File appDir, DeployData deployData) {
+        return new ApplicationMetaData(deployData.getDeployTimestamp(),
+                                       deployData.isInternalRedeploy(),
+                                       deployData.getApplicationId(),
+                                       computeCheckSum(appDir),
+                                       deployData.getGeneration(),
+                                       deployData.getCurrentlyActiveGeneration());
     }
 
 }

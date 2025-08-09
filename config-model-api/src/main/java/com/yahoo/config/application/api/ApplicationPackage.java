@@ -20,8 +20,8 @@ import java.util.Optional;
 import java.util.jar.JarEntry;
 
 /**
- * Represents an application package, that is, used as input when creating a VespaModel and as
- * a general reference to all contents in an application.
+ * Represents an application package; a complete specification of an application, that is used to
+ * build a config model.
  *
  * @author Vegard Havdal
  */
@@ -89,13 +89,11 @@ public interface ApplicationPackage {
      * Returns the include dirs given by the user in the services.xml file.
      */
     default List<String> getUserIncludeDirs() {
-        throw new UnsupportedOperationException(
-                "This application package does not have special handling for user include dirs.");
+        throw new UnsupportedOperationException("This application package does not have special handling for user include dirs.");
     }
 
     default void validateIncludeDir(String dirName) {
-        throw new UnsupportedOperationException("" +
-                "This application package does not support validation of include dirs.");
+        throw new UnsupportedOperationException("This application package does not support validation of include dirs.");
     }
 
     /**
