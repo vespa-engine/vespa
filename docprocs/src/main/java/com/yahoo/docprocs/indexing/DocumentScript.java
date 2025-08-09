@@ -45,13 +45,13 @@ public class DocumentScript {
 
     public ScriptExpression getExpression() { return expression; }
 
-    public Document execute(FieldValuesFactory fieldValuesFactory, Document document) {
+    public Document execute(FieldValuesFactory fieldValuesFactory, Document document, boolean isReindexing) {
         for (var i = document.iterator(); i.hasNext(); ) {
             Map.Entry<Field, FieldValue> entry = i.next();
             requireThatFieldIsDeclaredInDocument(entry.getKey());
             removeAnyLinguisticsSpanTree(entry.getValue());
         }
-        return expression.execute(fieldValuesFactory, document);
+        return expression.execute(fieldValuesFactory, document, isReindexing);
     }
 
     public DocumentUpdate execute(FieldValuesFactory fieldValuesFactory, DocumentUpdate update) {
