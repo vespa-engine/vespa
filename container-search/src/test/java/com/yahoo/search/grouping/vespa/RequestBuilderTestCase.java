@@ -25,6 +25,7 @@ import com.yahoo.searchlib.expression.ExpressionNode;
 import com.yahoo.searchlib.expression.FilterExpressionNode;
 import com.yahoo.searchlib.expression.NotPredicateNode;
 import com.yahoo.searchlib.expression.OrPredicateNode;
+import com.yahoo.searchlib.expression.RangePredicateNode;
 import com.yahoo.searchlib.expression.RegexPredicateNode;
 import com.yahoo.searchlib.expression.StrCatFunctionNode;
 import com.yahoo.searchlib.expression.StringResultNode;
@@ -836,6 +837,14 @@ public class RequestBuilderTestCase {
     }
 
     @Test
+    void require_that_range_filter_layout_is_correct() {
+        assertLayout("all(group(a) filter(range(2020, 2021, a)) each(output(count())))",
+                "[[{ Attribute, filter = [Range [2020.000000, 2021.000000, true, false, Attribute]], result = [Count] }]]");
+        assertLayout("all(group(a) filter(range(0, 100, true, true, a)) each(output(count())))",
+                "[[{ Attribute, filter = [Range [0.000000, 100.000000, true, true, Attribute]], result = [Count] }]]");
+    }
+
+    @Test
     void require_that_filter_predicate_layout_is_correct() {
         assertLayout("all(group(a) filter(not(regex(\".*suffix$\", a))) each(output(count())))",
                 "[[{ Attribute, filter = [Not [Regex [Attribute]]], result = [Count] }]]");
@@ -1104,6 +1113,13 @@ public class RequestBuilderTestCase {
             if (filterExp instanceof RegexPredicateNode rpn) {
                 var simpleName = rpn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
                 return "Regex [%s]".formatted(simpleName);
+            } else if (filterExp instanceof RangePredicateNode rpn) {
+                var lower = rpn.getLower().doubleValue();
+                var upper = rpn.getUpper().doubleValue();
+                var lowerInclusive = rpn.getLowerInclusive() ? "true" : "false";
+                var upperInclusive = rpn.getUpperInclusive() ? "true" : "false";
+                var expression = rpn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
+                return "Range [%f, %f, %s, %s, %s]".formatted(lower, upper, lowerInclusive, upperInclusive, expression);
             } else if (filterExp instanceof NotPredicateNode npn) {
                 var simpleName = npn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
                 return "Not [%s]".formatted(simpleName);

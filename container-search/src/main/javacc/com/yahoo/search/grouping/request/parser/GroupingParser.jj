@@ -141,6 +141,7 @@ TOKEN :
     <POW: "pow"> |
     <PRECISION: "precision"> |
     <PREDEFINED: "predefined"> |
+    <RANGE: "range"> |
     <REGEX: "regex"> |
     <RELEVANCE: "relevance"> |
     <REVERSE: "reverse"> |
@@ -330,6 +331,7 @@ FilterExpression filterExp(GroupingOperation grp) :
 }
 {
     ( (exp = regexPredicate(grp)) |
+      (exp = rangePredicate(grp)) |
       (exp = notPredicate(grp))   |
       (exp = orPredicate(grp))    |
       (exp = andPredicate(grp)))
@@ -960,6 +962,19 @@ RegexPredicate regexPredicate(GroupingOperation grp) :
     { return new RegexPredicate(pattern, exp); }
 }
 
+RangePredicate rangePredicate(GroupingOperation grp) :
+{
+    Number lower;
+    Number upper;
+    BooleanValue lowerInclusive = new BooleanValue(true);
+    BooleanValue upperInclusive = new BooleanValue(false);
+    GroupingExpression exp;
+}
+{
+    <RANGE> lbrace() lower = number() comma() upper = number() comma() (lowerInclusive = booleanValue() comma() upperInclusive = booleanValue() comma() )? exp = exp(grp) rbrace()
+    { return new RangePredicate(lower, upper, lowerInclusive.getValue(), upperInclusive.getValue(), exp); }
+}
+
 NotPredicate notPredicate(GroupingOperation grp) :
 {
     FilterExpression exp;
@@ -1111,6 +1126,7 @@ String identifier() :
         <POW> |
         <PRECISION> |
         <PREDEFINED> |
+        <RANGE> |
         <REGEX> |
         <RELEVANCE> |
         <REVERSE> |
