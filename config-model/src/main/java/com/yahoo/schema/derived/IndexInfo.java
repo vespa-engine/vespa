@@ -233,8 +233,7 @@ public class IndexInfo extends Derived {
     }
 
     private boolean isTypeOrNested(ImmutableSDField field, DataType type) {
-        return field.getDataType().equals(type) || field.getDataType().equals(DataType.getArray(type)) ||
-               field.getDataType().equals(DataType.getWeightedSet(type));
+        return type.equals(field.getDataType()) || type.equals(field.getDataType().getNestedType());
     }
 
     private boolean isUriField(ImmutableSDField field) {
