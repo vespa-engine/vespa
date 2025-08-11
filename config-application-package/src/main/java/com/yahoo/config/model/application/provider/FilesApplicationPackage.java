@@ -109,7 +109,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     private DeploymentSpec deploymentSpec = null;
 
-    private final List<ApplicationPackage> inherited;
+    private final List<FilesApplicationPackage> inherited;
 
     /**
      * New package from given path on local file system. Retrieves config definition files from
@@ -124,7 +124,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                     File preprocessedDir,
                                     ApplicationMetaData metaData,
                                     boolean includeSourceFiles,
-                                    List<ApplicationPackage> inherited) {
+                                    List<FilesApplicationPackage> inherited) {
         verifyAppDir(appDir);
         this.includeSourceFiles = includeSourceFiles;
         this.appDir = appDir;
@@ -158,10 +158,10 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     private List<NamedReader> getFiles(Path relativePath, String namePrefix, String suffix, boolean recurse) {
         try {
-            List<NamedReader> readers=new ArrayList<>();
             File dir = applicationFile(appDir, relativePath);
-            if ( ! dir.isDirectory()) return readers;
+            if ( ! dir.isDirectory()) return List.of();
 
+            Set<NamedReader> readers = new LinkedHashSet<>();
             File[] files = dir.listFiles();
             if (files != null) {
                 for (File file : files) {
@@ -174,7 +174,11 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                     }
                 }
             }
-            return readers;
+
+            for (var inheritedPackage : inherited)
+                readers.addAll(inheritedPackage.getFiles(relativePath, namePrefix, suffix, recurse));
+
+            return List.copyOf(readers);
         }
         catch (IOException e) {
             throw new RuntimeException("Could not open (all) files in '" + relativePath + "'",e);
@@ -738,7 +742,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         private Optional<File> preprocessedDir = Optional.empty();
         private Optional<ApplicationMetaData> metaData = Optional.empty();
         private boolean includeSourceFiles = false;
-        private List<ApplicationPackage> inherited = new ArrayList<>();
+        private List<FilesApplicationPackage> inherited = new ArrayList<>();
 
         public Builder(File appDir) {
             this.appDir = appDir;
@@ -759,7 +763,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             return this;
         }
 
-        public Builder setInherited(List<ApplicationPackage> inherited) {
+        public Builder setInherited(List<FilesApplicationPackage> inherited) {
             this.inherited = inherited;
             return this;
         }
