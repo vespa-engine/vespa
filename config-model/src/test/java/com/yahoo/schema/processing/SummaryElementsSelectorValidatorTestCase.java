@@ -13,7 +13,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Geir Storli
@@ -203,37 +205,35 @@ public class SummaryElementsSelectorValidatorTestCase {
     @Test
     void select_elements_by_referencing_non_existing_summary_feature_logs() throws ParseException {
         // Should fail, as 'dist_scores' is not defined as a summary feature
-        buildSearch("""
-                      field text type array<string> {
-                        indexing: summary
-                      }
-                      field pos type tensor<float>(chunk{},xy[2]) {
-                        indexing: attribute
-                      }
-                      """,
-                      """
-                      document-summary default {
-                        summary text {
-                          select-elements-by: dist_scores
-                        }
-                      }
-                      rank-profile default {
-                        inputs {
-                          query(qpos) tensor<float>(xy[2])
-                        }
-                        function dist_scores() {
-                          expression: 1/(1+euclidean_distance(query(qpos), attribute(pos), xy))
-                        }
-                      }
-                      """);
-        var message = deployLogger.getLast().message;
-        assertTrue(message.contains("For schema 'test', document-summary 'default', summary field 'text': " +
+        var exception = assertThrows(IllegalArgumentException.class, () ->
+                buildSearch("""
+                  field text type array<string> {
+                    indexing: summary
+                  }
+                  field pos type tensor<float>(chunk{},xy[2]) {
+                    indexing: attribute
+                  }
+                  """,
+                                                                                         """
+                  document-summary default {
+                    summary text {
+                      select-elements-by: dist_scores
+                    }
+                  }
+                  rank-profile default {
+                    inputs {
+                      query(qpos) tensor<float>(xy[2])
+                    }
+                    function dist_scores() {
+                      expression: 1/(1+euclidean_distance(query(qpos), attribute(pos), xy))
+                    }
+                  }
+                  """));
+        assertTrue(exception.getMessage().contains("For schema 'test', document-summary 'default', summary field 'text': " +
                                     "select-elements-by summary feature 'dist_scores' is not defined for source field 'text'."),
-                   message);
+                   exception.getMessage());
 
-
-        // Should work (no logging), as 'dist_scores' is defined as a summary feature now
-        deployLogger.entries.clear();
+        // Should work, as 'dist_scores' is now defined as a summary feature
         buildSearch("""
                       field text type array<string> {
                         indexing: summary
@@ -260,7 +260,6 @@ public class SummaryElementsSelectorValidatorTestCase {
                       }
                     }
                     """);
-        assertEquals(0, deployLogger.entries.size());
     }
 
     private void assertSummaryField(String fieldContent, String fieldName, SummaryTransform expTransform,
