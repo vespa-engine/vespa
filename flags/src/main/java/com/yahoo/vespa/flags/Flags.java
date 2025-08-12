@@ -384,6 +384,15 @@ public class Flags {
             "Takes effect at next deployment of the application",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag USE_VESPA_NODE_CTL = defineFeatureFlag(
+            "use-vespa-node-ctl", true,
+            List.of("hmusum"), "2025-08-12", "2025-10-01",
+            "Whether to use vespa-node-ctl to start, stop, restart, suspend and resume services " +
+            "or do this directly from host-admin.",
+            "Takes effect at next tick",
+            HOSTNAME
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
