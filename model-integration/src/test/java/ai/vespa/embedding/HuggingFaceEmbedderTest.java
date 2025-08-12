@@ -181,6 +181,33 @@ public class HuggingFaceEmbedderTest {
         assertEquals("Represent this text: This is a test",  queryResult);
     }
 
+    @Test
+    public void testSentenceEmbedder() {
+        String input = "This is a test with lots of input text here";
+        var context = new Embedder.Context("schema.indexing");
+        Tensor result = getSentenceEmbedder().embed(input, context, TensorType.fromSpec(("tensor<float>(x[3])")));
+        assertEquals("tensor<float>(x[3]):[2013.0, 4587.0, 2987.5]", result.toAbbreviatedString());
+    }
+
+    private static HuggingFaceEmbedder getSentenceEmbedder() {
+        String vocabPath = "src/test/models/onnx/transformer/real_tokenizer.json";
+        String modelPath = "src/test/models/onnx/transformer/mock_sentence_embedder.onnx";
+        assumeTrue(OnnxRuntime.isRuntimeAvailable(modelPath));
+        HuggingFaceEmbedderConfig.Builder builder = new HuggingFaceEmbedderConfig.Builder();
+        builder.tokenizerPath(ModelReference.valueOf(vocabPath));
+        builder.transformerModel(ModelReference.valueOf(modelPath));
+        builder.transformerOutput("sentence_embedding");
+        builder.poolingStrategy(com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig.PoolingStrategy.Enum.none);
+        builder.transformerGpuDevice(-1);
+        var mockModelPathHelper = new MockModelPathHelper();
+        HuggingFaceEmbedder huggingFaceEmbedder = new HuggingFaceEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build(), mockModelPathHelper);
+        assertTrue(mockModelPathHelper.invokedPaths.containsAll(Set.of(
+                "src/test/models/onnx/transformer/real_tokenizer.json",
+                "src/test/models/onnx/transformer/mock_sentence_embedder.onnx"
+        )));
+        return huggingFaceEmbedder;
+    }
+
     private static HuggingFaceEmbedder getEmbedder() {
         String vocabPath = "src/test/models/onnx/transformer/real_tokenizer.json";
         String modelPath = "src/test/models/onnx/transformer/embedding_model.onnx";

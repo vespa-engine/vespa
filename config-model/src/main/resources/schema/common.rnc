@@ -163,7 +163,7 @@ OnnxModelExecutionParams =
     # Should probably be converted to a 'path' only element before being an official feature.
     element internal-onnx-config-file { ModelReference }?
 
-EmbedderPoolingStrategy = element pooling-strategy { "cls" | "mean" }?
+EmbedderPoolingStrategy = element pooling-strategy { "cls" | "mean" | "none" }?
 
 StartOfSequence = element transformer-start-sequence-token { xsd:integer }?
 EndOfSequence = element transformer-end-sequence-token { xsd:integer }?
