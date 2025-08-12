@@ -20,11 +20,14 @@ FloatBucketResultNode::hash() const
 int
 FloatBucketResultNode::onCmp(const Identifiable &b) const
 {
+    const auto &other = static_cast<const FloatBucketResultNode &>(b);
     double f1(_from);
-    double f2(static_cast<const FloatBucketResultNode &>(b)._from);
+    double f2(other._from);
 
-    if (std::isnan(f1)) {
+    if (std::isnan(f1)) [[unlikely]] {
         return std::isnan(f2) ? 0 : -1;
+    } else if (std::isnan(f2)) [[unlikely]] {
+        return 1;
     } else {
         if (f1 < f2) {
             return -1;
@@ -32,7 +35,7 @@ FloatBucketResultNode::onCmp(const Identifiable &b) const
             return 1;
         } else {
             double t1(_to);
-            double t2(static_cast<const FloatBucketResultNode &>(b)._to);
+            double t2(other._to);
             if (std::isnan(t2)) {
                 return 1;
             } else {

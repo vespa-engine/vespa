@@ -88,6 +88,15 @@ public class FloatBucketResultNode extends BucketResultNode {
         FloatBucketResultNode b = (FloatBucketResultNode)rhs;
         double f1 = from;
         double f2 = b.from;
+        if (Double.isNaN(f1)) {
+            if (Double.isNaN(f2)) {
+                return 0;
+            }
+            return -1;
+        }
+        if (Double.isNaN(f2)) {
+            return 1;
+        }
         if (f1 < f2) {
             return -1;
         } else if (f1 > f2) {
@@ -95,6 +104,9 @@ public class FloatBucketResultNode extends BucketResultNode {
         } else {
             double t1 = to;
             double t2 = b.to;
+            if (Double.isNaN(t2)) {
+                return 1;
+            }
             if (t1 < t2) {
                 return -1;
             } else if (t1 > t2) {
