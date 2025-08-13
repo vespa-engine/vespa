@@ -48,14 +48,10 @@ FloatBucketResultNode::onCmp(const Identifiable &b) const
         } else if (std::isnan(t2)) {
             LOG(warning, "Unexpected limits FloatBucketResultNode: [%g,%g>", f2, t2);
             return 1;
-        } else {
-            // this should not be possible
-            LOG(error, "BAD comparisons in FloatBucketResultNode: [%g,%g> cannot be compared with [%g,%g>", f1, t1, f2, t2);
-            return 0;
         }
     }
     // at least one of f1,f2 is NaN
-    if (std::isnan(f1)) {
+    else if (std::isnan(f1)) {
         if (! std::isnan(t1)) {
             LOG(warning, "Unexpected limits FloatBucketResultNode: [%g,%g>", f1, t1);
         }
@@ -76,13 +72,13 @@ FloatBucketResultNode::onCmp(const Identifiable &b) const
         }
         return -1;
     }
-    if (std::isnan(f2)) {
+    else if (std::isnan(f2)) {
         if (! std::isnan(t2)) {
             LOG(warning, "Unexpected limits FloatBucketResultNode: [%g,%g>", f2, t2);
         }
         return 1;
     }
-    // this should not be possible
+    // this should not be possible - consider assert
     LOG(error, "BAD comparisons in FloatBucketResultNode: [%g,%g> cannot be compared with [%g,%g>", f1, t1, f2, t2);
     return 0;
 }
