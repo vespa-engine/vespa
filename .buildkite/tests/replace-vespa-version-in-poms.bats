@@ -25,6 +25,17 @@ teardown() {
   unset VESPA_VERSION
 }
 
+# Helper function to verify file content
+verify_file_content() {
+  local file="$1"
+  local expected="$2"
+  local actual_content
+  local expected_content
+  actual_content=$(cat "$file" | tr -d '[:space:]')
+  expected_content=$(echo "$expected" | tr -d '[:space:]')
+  assert_equal "$actual_content" "$expected_content"
+}
+
 @test "Replace Vespa version in pom.xml files" {
   local test_dir="$BATS_TEST_TMPDIR/test-replace-vespa-version"
 
@@ -78,17 +89,6 @@ EOF
 
   assert_success
   verify_file_content "$test_dir/pom.xml" "<project><vespaversion>1.0</vespaversion></project>"
-}
-
-# Helper function to verify file content
-verify_file_content() {
-  local file="$1"
-  local expected="$2"
-  local actual_content
-  local expected_content
-  actual_content=$(cat "$file" | tr -d '[:space:]')
-  expected_content=$(echo "$expected" | tr -d '[:space:]')
-  assert_equal "$actual_content" "$expected_content"
 }
 
 @test "No pom.xml files found" {
