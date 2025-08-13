@@ -314,6 +314,14 @@ public class Location implements Cloneable {
         }
     }
 
+    public String bbInDegrees() {
+        return "" +
+                (y1 * 0.000001) + ", " +
+                (x1 * 0.000001) + ", " +
+                (y2 * 0.000001) + ", " +
+                (x2 * 0.000001);
+    }
+
     /**
      * Obtain degrees latitude (North-South direction); negative numbers are degrees South.
      * Expected range is [-90.0,+90.0] only.

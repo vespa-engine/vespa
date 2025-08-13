@@ -17,6 +17,7 @@ import static com.yahoo.search.yql.YqlParser.END_ANCHOR;
 import static com.yahoo.search.yql.YqlParser.EQUIV;
 import static com.yahoo.search.yql.YqlParser.FILTER;
 import static com.yahoo.search.yql.YqlParser.FUZZY;
+import static com.yahoo.search.yql.YqlParser.GEO_BOUNDING_BOX;
 import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
 import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
 import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
@@ -799,13 +800,19 @@ public class VespaSerializer {
             if (!annotations.isEmpty()) {
                 destination.append("({").append(annotations).append("}");
             }
-            destination.append(GEO_LOCATION).append('(');
-            destination.append(item.getIndexName()).append(", ");
             var loc = item.getLocation();
-            destination.append(loc.degNS()).append(", ");
-            destination.append(loc.degEW()).append(", ");
-            destination.append('"').append(loc.degRadius()).append(" deg").append('"');
-            destination.append(')');
+            if (loc.isGeoCircle()) {
+                destination.append(GEO_LOCATION).append('(');
+                destination.append(item.getIndexName()).append(", ");
+                destination.append(loc.degNS()).append(", ");
+                destination.append(loc.degEW()).append(", ");
+                destination.append('"').append(loc.degRadius()).append(" deg").append('"');
+                destination.append(')');
+            } else if (loc.hasBoundingBox()) {
+                destination.append(GEO_BOUNDING_BOX).append('(');
+                destination.append(item.getIndexName()).append(", ");
+                destination.append(loc.bbInDegrees()).append(')');
+            }
             return false;
         }
     }

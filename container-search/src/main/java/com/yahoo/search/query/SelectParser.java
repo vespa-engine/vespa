@@ -91,6 +91,7 @@ import static com.yahoo.search.yql.YqlParser.DOT_PRODUCT;
 import static com.yahoo.search.yql.YqlParser.EQUIV;
 import static com.yahoo.search.yql.YqlParser.FILTER;
 import static com.yahoo.search.yql.YqlParser.FUZZY;
+import static com.yahoo.search.yql.YqlParser.GEO_BOUNDING_BOX;
 import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
 import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
 import static com.yahoo.search.yql.YqlParser.HNSW_EXPLORE_ADDITIONAL_HITS;
@@ -153,7 +154,7 @@ public class SelectParser implements Parser {
     private final Normalizer normalizer;
     private IndexFacts.Session indexFactsSession;
 
-    private static final List<String> FUNCTION_CALLS = List.of(WAND, WEIGHTED_SET, DOT_PRODUCT, GEO_LOCATION, NEAREST_NEIGHBOR, PREDICATE, RANK, WEAK_AND);
+    private static final List<String> FUNCTION_CALLS = List.of(WAND, WEIGHTED_SET, DOT_PRODUCT, GEO_BOUNDING_BOX, GEO_LOCATION, NEAREST_NEIGHBOR, PREDICATE, RANK, WEAK_AND);
 
     public SelectParser(ParserEnvironment environment) {
         indexFacts = environment.getIndexFacts();
@@ -271,6 +272,7 @@ public class SelectParser implements Parser {
             case WAND -> buildWand(key, value);
             case WEIGHTED_SET -> buildWeightedSet(key, value);
             case DOT_PRODUCT -> buildDotProduct(key, value);
+            case GEO_BOUNDING_BOX -> buildGeoBoundingBox(key, value);
             case GEO_LOCATION -> buildGeoLocation(key, value);
             case NEAREST_NEIGHBOR -> buildNearestNeighbor(key, value);
             case PREDICATE -> buildPredicate(key, value);
@@ -406,6 +408,19 @@ public class SelectParser implements Parser {
         return orItem;
     }
 
+    private Item buildGeoBoundingBox(String key, Inspector value) {
+        System.err.println("buildGeoBoundingBox: value=" + value);
+        String field = value.entry(0).asString();
+        var coord_1 = value.entry(1).asDouble();
+        var coord_2 = value.entry(2).asDouble();
+        var coord_3 = value.entry(3).asDouble();
+        var coord_4 = value.entry(4).asDouble();
+        var loc = new Location();
+        loc.setBoundingBox(coord_3, coord_1, coord_4, coord_2);
+        var item = new GeoLocationItem(loc, field);
+        return item;
+    }
+
     private Item buildGeoLocation(String key, Inspector value) {
         HashMap<Integer, Inspector> children = childMap(value);
         Preconditions.checkArgument(children.size() == 4, "Expected 4 arguments, got %s.", children.size());
@@ -468,7 +483,7 @@ public class SelectParser implements Parser {
                 }
                 if (HNSW_EXPLORE_ADDITIONAL_HITS.equals(annotation_name)) {
                     int hnswExploreAdditionalHits = (int)(annotation_value.asDouble());
-                    item.setHnswExploreAdditionalHits(hnswExploreAdditionalHits);                    
+                    item.setHnswExploreAdditionalHits(hnswExploreAdditionalHits);
                 }
                 if (APPROXIMATE.equals(annotation_name)) {
                     boolean allowApproximate = annotation_value.asBool();

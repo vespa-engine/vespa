@@ -144,6 +144,11 @@ public class VespaSerializerTestCase {
     }
 
     @Test
+    void testGeoBoundingBox() {
+        parseAndConfirm("geoBoundingBox(workplace, -63.418417, -10.433033, 63.5, 10.5)");
+    }
+
+    @Test
     void testNear() {
         parseAndConfirm("title contains near(\"a\", \"b\")");
         parseAndConfirm("title contains ({distance: 50}near(\"a\", \"b\"))");
