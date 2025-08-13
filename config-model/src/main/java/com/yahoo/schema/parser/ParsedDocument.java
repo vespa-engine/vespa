@@ -10,12 +10,14 @@ import java.util.Map;
  * This class holds the extracted information after parsing a
  * "document" block in a schema (.sd) file, using simple data
  * structures as far as possible.  Do not put advanced logic here!
+ *
  * @author arnej27959
- **/
+ */
 public class ParsedDocument extends ParsedBlock {
+
     private final List<String> inherited = new ArrayList<>();
-    private final Map<String, ParsedDocument> resolvedInherits = new LinkedHashMap();
-    private final Map<String, ParsedDocument> resolvedReferences = new LinkedHashMap();
+    private final Map<String, ParsedDocument> resolvedInherits = new LinkedHashMap<>();
+    private final Map<String, ParsedDocument> resolvedReferences = new LinkedHashMap<>();
     private final Map<String, ParsedField> docFields = new LinkedHashMap<>();
     private final Map<String, ParsedStruct> docStructs = new LinkedHashMap<>();
     private final Map<String, ParsedAnnotation> docAnnotations = new LinkedHashMap<>();
@@ -39,7 +41,7 @@ public class ParsedDocument extends ParsedBlock {
         all.addAll(getResolvedReferences());
         return all;
     }
-    List<ParsedField> getFields() { return List.copyOf(docFields.values()); }
+    Map<String, ParsedField> getFields() { return docFields; }
     List<ParsedStruct> getStructs() { return List.copyOf(docStructs.values()); }
     ParsedStruct getStruct(String name) { return docStructs.get(name); }
     ParsedAnnotation getAnnotation(String name) { return docAnnotations.get(name); }

@@ -103,7 +103,9 @@ public class ParsedSchema extends ParsedBlock {
 
     public void addField(ParsedField field) {
         String fieldName = field.name();
-        verifyThat(! extraFields.containsKey(fieldName), "already has field", fieldName);
+        verifyThat(! extraFields.containsKey(fieldName), "duplicate", fieldName);
+        verifyThat(myDocument == null || ! myDocument.getFields().containsKey(fieldName),
+                   "duplicate " + field + ": Also defined as a document field");
         extraFields.put(fieldName, field);
     }
 
