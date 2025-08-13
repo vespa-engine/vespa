@@ -38,7 +38,7 @@ public:
     size_t hash() const override;
     int onCmp(const Identifiable & b) const override;
     int contains(const FloatBucketResultNode & b) const;
-    int contains(double v) const { return (v < _from) ? 1 : (v >= _to) ? -1 : 0; }
+    int contains(double v) const { return (v < _from) ? 1 : ((v < _to) ? 0 : -1); }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     FloatBucketResultNode &setRange(double from, double to) {
         _from = from;
@@ -51,4 +51,3 @@ public:
 
 }
 }
-
