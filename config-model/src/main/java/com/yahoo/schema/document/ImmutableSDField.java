@@ -95,7 +95,9 @@ public interface ImmutableSDField {
     /** Returns a {@link Field} representation (which is sadly not immutable) */
     Field asField();
 
+    /** Returns true if this is a document field (not a synthetic field), or a mutable attribute. */
     boolean hasFullIndexingDocprocRights();
+
     int getWeight();
     int getLiteralBoost();
     RankType getRankType();

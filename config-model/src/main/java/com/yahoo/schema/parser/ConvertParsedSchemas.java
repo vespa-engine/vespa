@@ -118,7 +118,7 @@ public class ConvertParsedSchemas {
         for (var annotation : parsed.getAnnotations()) {
             fieldConverter.convertAnnotation(schema, document, annotation);
         }
-        for (var field : parsed.getFields()) {
+        for (var field : parsed.getFields().values()) {
             var sdf = fieldConverter.convertDocumentField(schema, document, field);
             if (field.hasIdOverride()) {
                 document.setFieldId(sdf, field.idOverride());

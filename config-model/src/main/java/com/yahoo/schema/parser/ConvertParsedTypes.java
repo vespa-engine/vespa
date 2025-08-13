@@ -144,7 +144,7 @@ public class ConvertParsedTypes {
             var docToFill = documentsFromSchemas.get(doc.name());
             Map<String, Collection<String>> fieldSets = new HashMap<>();
             List<String> inDocFields = new ArrayList<>();
-            for (var docField : doc.getFields()) {
+            for (var docField : doc.getFields().values()) {
                 String name = docField.name();
                 var t = resolveFromContext(docField.getType(), doc);
                 var f = new com.yahoo.document.Field(docField.name(), t);
