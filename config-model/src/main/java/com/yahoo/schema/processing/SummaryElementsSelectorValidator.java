@@ -69,7 +69,7 @@ public class SummaryElementsSelectorValidator extends Processor {
                                        .stream()
                                        .map(RankProfile::getSummaryFeatures)
                                        .flatMap(Set::stream)
-                                       .anyMatch(s -> s.getName().equals(summaryFeatureName));
+                                       .anyMatch(s -> s.toString().equals(summaryFeatureName));
         if (!found) {
             var message = formatError(schema, summary, field, "select-elements-by summary feature '" + summaryFeatureName +
                     "' is not defined for source field '" + sourceField.getName() + "'.");
