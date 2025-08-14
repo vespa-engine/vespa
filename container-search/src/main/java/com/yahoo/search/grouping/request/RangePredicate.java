@@ -18,10 +18,10 @@ public class RangePredicate extends FilterExpression {
     private final GroupingExpression expression;
 
     public RangePredicate(Number lower, Number upper, GroupingExpression expression) {
-        this(lower, upper, true, false, expression);
+        this(lower, upper, expression, true, false);
     }
 
-    public RangePredicate(Number lower, Number upper, boolean lowerInclusive, boolean upperInclusive, GroupingExpression expression) {
+    public RangePredicate(Number lower, Number upper, GroupingExpression expression, boolean lowerInclusive, boolean upperInclusive) {
         this.lower = lower;
         this.upper = upper;
         this.lowerInclusive = lowerInclusive;
@@ -37,11 +37,11 @@ public class RangePredicate extends FilterExpression {
 
     @Override
     public String toString() {
-        return "range(%s, %s, %b, %b, %s)".formatted(lower, upper, lowerInclusive, upperInclusive, expression);
+        return "range(%s, %s, %s, %b, %b)".formatted(lower, upper, expression, lowerInclusive, upperInclusive);
     }
 
     @Override
     public FilterExpression copy() {
-        return new RangePredicate(lower, upper, lowerInclusive, upperInclusive, expression.copy());
+        return new RangePredicate(lower, upper, expression.copy(), lowerInclusive, upperInclusive);
     }
 }

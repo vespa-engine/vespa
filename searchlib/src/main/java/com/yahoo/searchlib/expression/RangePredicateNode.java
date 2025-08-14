@@ -25,25 +25,25 @@ public class RangePredicateNode extends FilterExpressionNode {
 
     public RangePredicateNode() {}
 
-    public RangePredicateNode(Number lower, Number upper, boolean lowerInclusive, boolean upperInclusive, ExpressionNode expression) {
+    public RangePredicateNode(Number lower, Number upper,ExpressionNode expression, boolean lowerInclusive, boolean upperInclusive) {
         this.lower = lower;
         this.upper = upper;
         this.lowerInclusive = lowerInclusive;
         this.upperInclusive = upperInclusive;
         this.expression = expression;
     }
+
     public Number getLower() { return lower; }
     public Number getUpper() { return upper; }
     public boolean getLowerInclusive() { return lowerInclusive; }
     public boolean getUpperInclusive() { return upperInclusive; }
     public Optional<ExpressionNode> getExpression() { return Optional.ofNullable(expression); }
 
-
     @Override protected int onGetClassId() { return classId; }
 
     @Override
     public RangePredicateNode clone() {
-        return new RangePredicateNode(lower, upper, lowerInclusive, upperInclusive, expression != null ? expression.clone() : null);
+        return new RangePredicateNode(lower, upper, expression != null ? expression.clone() : null, lowerInclusive, upperInclusive);
     }
 
     @Override

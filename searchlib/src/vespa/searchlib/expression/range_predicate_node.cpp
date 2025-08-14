@@ -66,7 +66,7 @@ RangePredicateNode::RangePredicateNode(const RangePredicateNode&) = default;
 
 RangePredicateNode& RangePredicateNode::operator=(const RangePredicateNode&) = default;
 
-RangePredicateNode::RangePredicateNode(double lower, double upper, bool lower_inclusive, bool upper_inclusive, ExpressionNode::UP input)
+RangePredicateNode::RangePredicateNode(double lower, double upper, ExpressionNode::UP input, bool lower_inclusive, bool upper_inclusive)
   : _lower(lower),
     _upper(upper),
     _lower_inclusive(lower_inclusive),

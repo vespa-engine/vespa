@@ -966,13 +966,13 @@ RangePredicate rangePredicate(GroupingOperation grp) :
 {
     Number lower;
     Number upper;
+    GroupingExpression exp;
     BooleanValue lowerInclusive = new BooleanValue(true);
     BooleanValue upperInclusive = new BooleanValue(false);
-    GroupingExpression exp;
 }
 {
-    <RANGE> lbrace() lower = number() comma() upper = number() comma() (lowerInclusive = booleanValue() comma() upperInclusive = booleanValue() comma() )? exp = exp(grp) rbrace()
-    { return new RangePredicate(lower, upper, lowerInclusive.getValue(), upperInclusive.getValue(), exp); }
+    <RANGE> lbrace() lower = number() comma() upper = number() comma() exp = exp(grp) [ comma()  lowerInclusive = booleanValue() comma() upperInclusive = booleanValue() ] rbrace()
+    { return new RangePredicate(lower, upper, exp, lowerInclusive.getValue(), upperInclusive.getValue()); }
 }
 
 NotPredicate notPredicate(GroupingOperation grp) :

@@ -3864,7 +3864,7 @@
     ],
     "methods" : [
       "public void <init>(java.lang.Number, java.lang.Number, com.yahoo.search.grouping.request.GroupingExpression)",
-      "public void <init>(java.lang.Number, java.lang.Number, boolean, boolean, com.yahoo.search.grouping.request.GroupingExpression)",
+      "public void <init>(java.lang.Number, java.lang.Number, com.yahoo.search.grouping.request.GroupingExpression, boolean, boolean)",
       "public java.lang.Number getLower()",
       "public java.lang.Number getUpper()",
       "public boolean getLowerInclusive()",

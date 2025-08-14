@@ -32,8 +32,8 @@ public:
     static std::unique_ptr<FilterPredicateNode> make_regex(const std::string& regex_value,
                                                            std::unique_ptr<ExpressionNode> result_node);
 
-    static std::unique_ptr<FilterPredicateNode> make_range(double lower, double upper, bool lower_inclusive, bool upper_inclusive,
-                                                           std::unique_ptr<ExpressionNode> result_node);
+    static std::unique_ptr<FilterPredicateNode> make_range(double lower, double upper, std::unique_ptr<ExpressionNode> result_node,
+                                                           bool lower_inclusive, bool upper_inclusive);
 
     static std::unique_ptr<FilterPredicateNode> make_not(std::unique_ptr<FilterPredicateNode> filter_node);
 
@@ -66,9 +66,9 @@ std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_regex(const 
     return std::make_unique<RegexPredicateNode>(regex_value, std::move(result_node));
 }
 
-std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_range(double lower, double upper, bool lower_inclusive, bool upper_inclusive,
-                                                                          std::unique_ptr<ExpressionNode> result_node) {
-    return std::make_unique<RangePredicateNode>(lower, upper, lower_inclusive, upper_inclusive, std::move(result_node));
+std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_range(double lower, double upper, std::unique_ptr<ExpressionNode> result_node,
+                                                                          bool lower_inclusive, bool upper_inclusive) {
+    return std::make_unique<RangePredicateNode>(lower, upper, std::move(result_node), lower_inclusive, upper_inclusive);
 }
 
 std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_not(std::unique_ptr<FilterPredicateNode> filter_node) {
@@ -104,31 +104,31 @@ TEST_F(FilterPredicateNodesTest, test_regex_match) {
 }
 
 TEST_F(FilterPredicateNodesTest, test_range_match_inside_range) {
-    EXPECT_TRUE(set_node(make_range(0,100,false,false, make_result(6.0))).evaluate());
-    EXPECT_TRUE(set_node(make_range(0,100,true,false, make_result(6.0))).evaluate());
-    EXPECT_TRUE(set_node(make_range(0,100,false,true, make_result(6.0))).evaluate());
-    EXPECT_TRUE(set_node(make_range(0,100,true,true, make_result(6.0))).evaluate());
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(6.0), false, false)).evaluate());
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(6.0), true,  false)).evaluate());
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(6.0), false, true)).evaluate());
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(6.0), true,  true)).evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_range_match_outside_range) {
-    EXPECT_FALSE(set_node(make_range(50,100,false,false, make_result(6.0))).evaluate());
-    EXPECT_FALSE(set_node(make_range(50,100,true,false, make_result(6.0))).evaluate());
-    EXPECT_FALSE(set_node(make_range(50,100,false,true, make_result(6.0))).evaluate());
-    EXPECT_FALSE(set_node(make_range(50,100,true,true, make_result(6.0))).evaluate());
-    EXPECT_FALSE(set_node(make_range(50,100,false,false, make_result(101.0))).evaluate());
-    EXPECT_FALSE(set_node(make_range(50,100,true,false, make_result(101.0))).evaluate());
-    EXPECT_FALSE(set_node(make_range(50,100,false,true, make_result(101.0))).evaluate());
-    EXPECT_FALSE(set_node(make_range(50,100,true,true, make_result(101.0))).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0),   false, false)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0),   true,  false)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0),   false, true)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0),   true,  true)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(101.0), false, false)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(101.0), true,  false)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(101.0), false, true)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(101.0), true,  true)).evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_range_match_lower_bound) {
-    EXPECT_TRUE(set_node(make_range(0,100,true,false, make_result(0.0))).evaluate());
-    EXPECT_FALSE(set_node(make_range(0,100,false,false, make_result(0.0))).evaluate());
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(0.0),  true, false)).evaluate());
+    EXPECT_FALSE(set_node(make_range(0, 100, make_result(0.0), false, false)).evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_range_match_upper_bound) {
-    EXPECT_FALSE(set_node(make_range(0,100,true,false, make_result(100.0))).evaluate());
-    EXPECT_TRUE(set_node(make_range(0,100,true,true, make_result(100.0))).evaluate());
+    EXPECT_FALSE(set_node(make_range(0, 100, make_result(100.0), true,  false)).evaluate());
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(100.0),  true,  true)).evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_not_predicate) {

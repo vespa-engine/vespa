@@ -839,9 +839,9 @@ public class RequestBuilderTestCase {
     @Test
     void require_that_range_filter_layout_is_correct() {
         assertLayout("all(group(a) filter(range(2020, 2021, a)) each(output(count())))",
-                "[[{ Attribute, filter = [Range [2020.000000, 2021.000000, true, false, Attribute]], result = [Count] }]]");
-        assertLayout("all(group(a) filter(range(0, 100, true, true, a)) each(output(count())))",
-                "[[{ Attribute, filter = [Range [0.000000, 100.000000, true, true, Attribute]], result = [Count] }]]");
+                "[[{ Attribute, filter = [Range [2020.000000, 2021.000000, Attribute, true, false]], result = [Count] }]]");
+        assertLayout("all(group(a) filter(range(0, 100, a, true, true)) each(output(count())))",
+                "[[{ Attribute, filter = [Range [0.000000, 100.000000, Attribute, true, true]], result = [Count] }]]");
     }
 
     @Test
@@ -1119,7 +1119,7 @@ public class RequestBuilderTestCase {
                 var lowerInclusive = rpn.getLowerInclusive() ? "true" : "false";
                 var upperInclusive = rpn.getUpperInclusive() ? "true" : "false";
                 var expression = rpn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
-                return "Range [%f, %f, %s, %s, %s]".formatted(lower, upper, lowerInclusive, upperInclusive, expression);
+                return "Range [%f, %f, %s, %s, %s]".formatted(lower, upper, expression, lowerInclusive, upperInclusive);
             } else if (filterExp instanceof NotPredicateNode npn) {
                 var simpleName = npn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
                 return "Not [%s]".formatted(simpleName);

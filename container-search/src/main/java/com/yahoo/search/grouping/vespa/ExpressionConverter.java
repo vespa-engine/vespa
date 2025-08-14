@@ -264,7 +264,7 @@ class ExpressionConverter {
         if (expression instanceof RegexPredicate rp) {
             return new RegexPredicateNode(rp.getPattern(), toExpressionNode(rp.getExpression()));
         } else if (expression instanceof RangePredicate rp) {
-            return new RangePredicateNode(rp.getLower(), rp.getUpper(), rp.getLowerInclusive(), rp.getUpperInclusive(), toExpressionNode(rp.getExpression()));
+            return new RangePredicateNode(rp.getLower(), rp.getUpper(), toExpressionNode(rp.getExpression()), rp.getLowerInclusive(), rp.getUpperInclusive());
         } else if (expression instanceof NotPredicate np) {
             return new NotPredicateNode(toFilterExpressionNode(np.getExpression()));
         } else if (expression instanceof OrPredicate op) {
