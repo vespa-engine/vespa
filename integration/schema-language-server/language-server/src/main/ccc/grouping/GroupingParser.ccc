@@ -196,6 +196,7 @@ TOKEN :
     <POW: "pow"> |
     <PRECISION: "precision"> |
     <PREDEFINED: "predefined"> |
+    <RANGE: "range"> |
     <REGEX: "regex"> |
     <RELEVANCE: "relevance"> |
     <REVERSE: "reverse"> |
