@@ -328,6 +328,14 @@ public class Flags {
             TENANT_ID
     );
 
+    public static final UnboundBooleanFlag CONSOLE_DATA_PLANE_ACCESS = defineFeatureFlag(
+            "console-data-plane-access", false,
+            List.of("laura"), "2025-08-15", "2025-12-01",
+            "Temporary flag to enable console data plane access for testing purposes. Can be removed when full feature goes live",
+            "Takes effect immediately",
+            TENANT_ID
+    );
+
     public static final UnboundBooleanFlag USE_TRITON = defineFeatureFlag(
             "use-triton", false,
             List.of("bjorncs"), "2025-04-30", "2026-01-04",
@@ -388,7 +396,7 @@ public class Flags {
             "use-vespa-node-ctl", true,
             List.of("hmusum"), "2025-08-12", "2025-10-01",
             "Whether to use vespa-node-ctl to start, stop, restart, suspend and resume services " +
-            "or do this directly from host-admin.",
+                    "or do this directly from host-admin.",
             "Takes effect at next tick",
             HOSTNAME
     );
