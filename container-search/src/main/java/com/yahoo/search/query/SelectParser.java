@@ -409,14 +409,14 @@ public class SelectParser implements Parser {
     }
 
     private Item buildGeoBoundingBox(String key, Inspector value) {
-        System.err.println("buildGeoBoundingBox: value=" + value);
         String field = value.entry(0).asString();
         var coord_1 = value.entry(1).asDouble();
         var coord_2 = value.entry(2).asDouble();
         var coord_3 = value.entry(3).asDouble();
         var coord_4 = value.entry(4).asDouble();
-        var loc = new Location();
-        loc.setBoundingBox(coord_3, coord_1, coord_4, coord_2);
+        var swCorner = new Location.Point(coord_1, coord_2);
+        var neCorner = new Location.Point(coord_3, coord_4);
+        var loc = Location.fromBoundingBox(swCorner, neCorner);
         var item = new GeoLocationItem(loc, field);
         return item;
     }
@@ -428,28 +428,29 @@ public class SelectParser implements Parser {
         var arg1 = children.get(1);
         var arg2 = children.get(2);
         var arg3 = children.get(3);
-        var loc = new Location();
         if (arg3.type() != Type.STRING) {
            throw new IllegalArgumentException("Invalid geoLocation radius type "+arg3.type()+" for "+arg3);
         }
         double radius = DistanceParser.parse(arg3.asString());
+        Location.Point center;
         if (arg1.type() == Type.STRING && arg2.type() == Type.STRING) {
             var c1input = children.get(1).asString();
             var c2input = children.get(2).asString();
             var coord_1 = ParsedDegree.fromString(c1input, true, false);
             var coord_2 = ParsedDegree.fromString(c2input, false, true);
             if (coord_1.isLatitude && coord_2.isLongitude) {
-                loc.setGeoCircle(coord_1.degrees, coord_2.degrees, radius);
+                center = new Location.Point(coord_1.degrees, coord_2.degrees);
             } else if (coord_2.isLatitude && coord_1.isLongitude) {
-                loc.setGeoCircle(coord_2.degrees, coord_1.degrees, radius);
+                center = new Location.Point(coord_2.degrees, coord_1.degrees);
             } else {
                 throw new IllegalArgumentException("Invalid geoLocation coordinates '"+c1input+"' and '"+c2input+"'");
             }
         } else if (arg1.type() == Type.DOUBLE && arg2.type() == Type.DOUBLE) {
-            loc.setGeoCircle(arg1.asDouble(), arg2.asDouble(), radius);
+            center = new Location.Point(arg1.asDouble(), arg2.asDouble());
         } else {
             throw new IllegalArgumentException("Invalid geoLocation coordinate types "+arg1.type()+" and "+arg2.type());
         }
+        var loc = Location.fromGeoCircle(center, radius);
         var item = new GeoLocationItem(loc, field);
         Inspector annotations = getAnnotations(value);
         if (annotations != null){

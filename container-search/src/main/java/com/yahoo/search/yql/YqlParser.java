@@ -478,8 +478,9 @@ public class YqlParser implements Parser {
         var coord_2 = degreesFromArg(args.get(2), false);
         var coord_3 = degreesFromArg(args.get(3), true);
         var coord_4 = degreesFromArg(args.get(4), false);
-        var loc = new Location();
-        loc.setBoundingBox(coord_3.degrees, coord_1.degrees, coord_4.degrees, coord_2.degrees);
+        var swCorner = new Location.Point(coord_1.degrees, coord_2.degrees);
+        var neCorner = new Location.Point(coord_3.degrees, coord_4.degrees);
+        var loc = Location.fromBoundingBox(swCorner, neCorner);
         var item = new GeoLocationItem(loc, field);
         return item;
     }
@@ -491,14 +492,15 @@ public class YqlParser implements Parser {
         var coord_1 = degreesFromArg(args.get(1), true);
         var coord_2 = degreesFromArg(args.get(2), false);
         double radius = DistanceParser.parse(fetchLiteral(args.get(3)));
-        var loc = new Location();
+        Location.Point center;
         if (coord_1.isLatitude && coord_2.isLongitude) {
-            loc.setGeoCircle(coord_1.degrees, coord_2.degrees, radius);
+            center = new Location.Point(coord_1.degrees, coord_2.degrees);
         } else if (coord_2.isLatitude && coord_1.isLongitude) {
-            loc.setGeoCircle(coord_2.degrees, coord_1.degrees, radius);
+            center = new Location.Point(coord_2.degrees, coord_1.degrees);
         } else {
             throw new IllegalArgumentException("Invalid geoLocation coordinates '"+coord_1+"' and '"+coord_2+"'");
         }
+        var loc = Location.fromGeoCircle(center, radius);
         var item = new GeoLocationItem(loc, field);
         String label = getAnnotation(ast, LABEL, String.class, null, "item label");
         if (label != null) {
