@@ -333,7 +333,7 @@ public class Flags {
             List.of("laura"), "2025-08-15", "2025-12-01",
             "Temporary flag to enable console data plane access for testing purposes. Can be removed when full feature goes live",
             "Takes effect immediately",
-            TENANT_ID
+            TENANT_ID, CONSOLE_USER_EMAIL
     );
 
     public static final UnboundBooleanFlag USE_TRITON = defineFeatureFlag(
