@@ -846,14 +846,57 @@ public class RequestBuilderTestCase {
 
     @Test
     void require_that_filter_predicate_layout_is_correct() {
-        assertLayout("all(group(a) filter(not(regex(\".*suffix$\", a))) each(output(count())))",
+        // Not[Regex]
+        assertLayout("all(group(a) filter(not regex(\".*suffix$\", a)) each(output(count())))",
                 "[[{ Attribute, filter = [Not [Regex [Attribute]]], result = [Count] }]]");
-        assertLayout("all(group(a) filter(or(regex(\".*suffix$\", a),regex(\".*suffix$\", b))) each(output(count())))",
+
+        // Or[Regex, Regex]
+        assertLayout("all(group(a) filter(regex(\".*suffix$\", a) or regex(\".*suffix$\", b)) each(output(count())))",
                 "[[{ Attribute, filter = [Or [Regex [Attribute], Regex [Attribute]]], result = [Count] }]]");
-        assertLayout("all(group(a) filter(and(regex(\".*suffix$\", a),regex(\".*suffix$\", b))) each(output(count())))",
+
+        // And[Regex, Regex]
+        assertLayout("all(group(a) filter(regex(\".*suffix$\", a) and regex(\".*suffix$\", b)) each(output(count())))",
                 "[[{ Attribute, filter = [And [Regex [Attribute], Regex [Attribute]]], result = [Count] }]]");
-        assertLayout("all(group(a) filter(and(or(regex(\".*suffix$\", a),regex(\".*suffix$\", b)), not(regex(\".*suffix$\", c)))) each(output(count())))",
+
+        // NOT binds to atom before AND
+        assertLayout("all(group(a) filter(not regex(\".*suffix$\", a) and regex(\".*suffix$\", b)) each(output(count())))",
+                "[[{ Attribute, filter = [And [Not [Regex [Attribute]], Regex [Attribute]]], result = [Count] }]]");
+
+        // Parentheses force (A OR B) to bind before AND
+        assertLayout("all(group(a) filter((regex(\".*suffix$\", a) or regex(\".*suffix$\", b)) and not regex(\".*suffix$\", c)) each(output(count())))",
                 "[[{ Attribute, filter = [And [Or [Regex [Attribute], Regex [Attribute]], Not [Regex [Attribute]]]], result = [Count] }]]");
+
+        // Parentheses force (NOT A OR B) to bind before AND
+        assertLayout("all(group(a) filter(not (regex(\".*suffix$\", a) or regex(\".*suffix$\", b)) and regex(\".*suffix$\", c)) each(output(count())))",
+                "[[{ Attribute, filter = [And [Not [Or [Regex [Attribute], Regex [Attribute]]], Regex [Attribute]]], result = [Count] }]]");
+
+        // Precedence check: NOT > AND > OR
+        assertLayout("all(group(a) filter(not regex(\".*suffix$\", a) or regex(\".*suffix$\", b) and regex(\".*suffix$\", c)) each(output(count())))",
+                "[[{ Attribute, filter = [Or [Not [Regex [Attribute]], And [Regex [Attribute], Regex [Attribute]]]], result = [Count] }]]");
+
+        // Parentheses override
+        assertLayout("all(group(a) filter((not regex(\".*suffix$\", a) or regex(\".*suffix$\", b)) and regex(\".*suffix$\", c)) each(output(count())))",
+                "[[{ Attribute, filter = [And [Or [Not [Regex [Attribute]], Regex [Attribute]], Regex [Attribute]]], result = [Count] }]]");
+
+        // Chain OR flattening
+        assertLayout("all(group(a) filter(regex(\".*suffix$\", a) or regex(\".*suffix$\", b) or regex(\".*suffix$\", c)) each(output(count())))",
+                "[[{ Attribute, filter = [Or [Regex [Attribute], Regex [Attribute], Regex [Attribute]]], result = [Count] }]]");
+
+        // Chain AND flattening
+        assertLayout("all(group(a) filter(regex(\".*suffix$\", a) and regex(\".*suffix$\", b) and regex(\".*suffix$\", c)) each(output(count())))",
+                "[[{ Attribute, filter = [And [Regex [Attribute], Regex [Attribute], Regex [Attribute]]], result = [Count] }]]");
+
+        // Mix AND/OR without parentheses
+        assertLayout("all(group(a) filter(regex(\".*suffix$\", a) or regex(\".*suffix$\", b) and regex(\".*suffix$\", c) or regex(\".*suffix$\", d)) each(output(count())))",
+                "[[{ Attribute, filter = [Or [Regex [Attribute], And [Regex [Attribute], Regex [Attribute]], Regex [Attribute]]], result = [Count] }]]");
+
+        // AND around OR groups
+        assertLayout("all(group(a) filter(regex(\".*suffix$\", a) and (regex(\".*suffix$\", b) or regex(\".*suffix$\", c)) and regex(\".*suffix$\", d)) each(output(count())))",
+                "[[{ Attribute, filter = [And [Regex [Attribute], Or [Regex [Attribute], Regex [Attribute]], Regex [Attribute]]], result = [Count] }]]");
+
+        // Double NOT
+        assertLayout("all(group(a) filter(not not regex(\".*suffix$\", a)) each(output(count())))",
+                "[[{ Attribute, filter = [Not [Not [Regex [Attribute]]]], result = [Count] }]]");
     }
 
     private static void assertTotalGroupsAndSummaries(long expected, String query) {
