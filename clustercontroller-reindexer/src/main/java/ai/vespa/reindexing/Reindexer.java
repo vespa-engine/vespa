@@ -35,10 +35,10 @@ import static java.util.logging.Level.WARNING;
 
 /**
  * Progresses reindexing efforts by creating visitor sessions against its own content cluster,
- * which send documents straight to storage — via indexing if the document type has "index" mode.
+ * which send documents straight to storage or via indexing if the document type has "index" mode.
  * The {@link #reindex} method blocks until shutdown is called, or until no more reindexing is left to do.
  *
- * @author jonmv
+ * @author Jon Marius Venstad
  */
 class Reindexer {
 
