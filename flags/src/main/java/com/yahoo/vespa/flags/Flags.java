@@ -396,7 +396,7 @@ public class Flags {
             "use-vespa-node-ctl", true,
             List.of("hmusum"), "2025-08-12", "2025-10-01",
             "Whether to use vespa-node-ctl to start, stop, restart, suspend and resume services " +
-                    "or do this directly from host-admin.",
+            "or do this directly from host-admin.",
             "Takes effect at next tick",
             HOSTNAME
     );
