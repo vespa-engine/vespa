@@ -5,6 +5,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 /**
  * Helper class to implement unit tests that should produce the same result in different implementations.
@@ -37,10 +40,14 @@ public abstract class CrossPlatformTestFactory {
     }
 
     public void recordTestResults() throws Exception {
-        File results = new File(directory, name + ".java.results");
+        String target = directory + "/" + name + ".java.results";
+        String tmpName = target + ".tmp";
+        File results = new File(tmpName);
         try (FileWriter fw = new FileWriter(results)) {
             fw.write(serialize());
         }
+        Files.move(Path.of(tmpName), Path.of(target),
+                   StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
     }
 
     public abstract String serialize();
