@@ -35,8 +35,13 @@ public class NamedReader extends Reader {
         return name;
     }
 
-    // The rest is reader method implementations which delegates to the wrapped reader
+    // Need to override static methods in Reader to return NamedReader instances
+    public static Reader of(java.lang.CharSequence charSequence) {
+        return new NamedReader("of", new java.io.StringReader(charSequence.toString()));
+    }
     public static Reader nullReader() { return new NamedReader("nullReader", Reader.nullReader()); }
+
+    // The rest is reader method implementations which delegates to the wrapped reader
     @Override
     public int read(CharBuffer charBuffer) throws IOException { return reader.read(charBuffer); }
     @Override
