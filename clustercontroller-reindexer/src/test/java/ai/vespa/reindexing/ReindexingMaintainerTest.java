@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * @author jonmv
+ * @author Jon Marius Venstad
  */
 class ReindexingMaintainerTest {
 

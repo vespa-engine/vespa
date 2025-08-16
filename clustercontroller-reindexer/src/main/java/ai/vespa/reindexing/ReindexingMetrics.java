@@ -5,8 +5,6 @@ import ai.vespa.metrics.ClusterControllerMetrics;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.jdisc.Metric;
 
-import java.time.Clock;
-import java.util.EnumSet;
 import java.util.Map;
 
 import static ai.vespa.reindexing.Reindexing.State.SUCCESSFUL;
@@ -14,7 +12,7 @@ import static ai.vespa.reindexing.Reindexing.State.SUCCESSFUL;
 /**
  * Metrics for reindexing in a content cluster.
  *
- * @author jonmv
+ * @author Jon Marius Venstad
  */
 class ReindexingMetrics {
 

@@ -31,7 +31,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 /**
  * Allows inspecting reindexing status over HTTP.
  *
- * @author jonmv
+ * @author Jon Marius Venstad
  */
 public class ReindexingV1ApiHandler extends ThreadedHttpRequestHandler implements CapabilityRequiringRequestHandler {
 

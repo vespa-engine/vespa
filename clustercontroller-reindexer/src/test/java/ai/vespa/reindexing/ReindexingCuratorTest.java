@@ -14,7 +14,7 @@ import java.time.Instant;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * @author jonmv
+ * @author Jon Marius Venstad
  */
 class ReindexingCuratorTest {
 

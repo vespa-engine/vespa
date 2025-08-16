@@ -16,7 +16,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 /**
  * Reindexing status per document type.
  *
- * @author jonmv
+ * @author Jon Marius Venstad
  */
 public class Reindexing {
 
