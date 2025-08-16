@@ -74,7 +74,7 @@
 
         <aws-sdk2.vespa.version>2.27.4</aws-sdk2.vespa.version>
         <bouncycastle.vespa.version>1.78.1</bouncycastle.vespa.version>
-        <byte-buddy.vespa.version>1.14.18</byte-buddy.vespa.version>
+        <byte-buddy.vespa.version>1.17.6</byte-buddy.vespa.version>
         <checker-qual.vespa.version>3.38.0</checker-qual.vespa.version>
         <commons-beanutils.vespa.version>1.9.4</commons-beanutils.vespa.version>
         <commons-codec.vespa.version>1.17.1</commons-codec.vespa.version>
