@@ -38,6 +38,7 @@ vespa_add_library(searchlib_expression OBJECT
     rawresultnode.cpp
     floatresultnode.cpp
     integerresultnode.cpp
+    range_predicate_node.cpp
     regex_predicate_node.cpp
     not_predicate_node.cpp
     multi_arg_predicate_node.cpp

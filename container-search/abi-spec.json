@@ -3856,6 +3856,25 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.RangePredicate" : {
+    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.Number, java.lang.Number, com.yahoo.search.grouping.request.GroupingExpression)",
+      "public void <init>(java.lang.Number, java.lang.Number, com.yahoo.search.grouping.request.GroupingExpression, boolean, boolean)",
+      "public java.lang.Number getLower()",
+      "public java.lang.Number getUpper()",
+      "public boolean getLowerInclusive()",
+      "public boolean getUpperInclusive()",
+      "public com.yahoo.search.grouping.request.GroupingExpression getExpression()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.FilterExpression copy()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.grouping.request.RawBucket" : {
     "superClass" : "com.yahoo.search.grouping.request.BucketValue",
     "interfaces" : [ ],

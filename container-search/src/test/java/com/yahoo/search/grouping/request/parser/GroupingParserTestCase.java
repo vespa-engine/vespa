@@ -116,6 +116,7 @@ public class GroupingParserTestCase {
                 "pow",
                 "precision",
                 "predefined",
+                "range",
                 "regex",
                 "relevance",
                 "reverse",
@@ -633,6 +634,13 @@ public class GroupingParserTestCase {
                 () -> assertParse("all(group(foo) filter(regex(\"(stringinparentheses)?\", foo)) each(output(count())))"),
                 () -> assertParse("all(group(foo) filter(regex(\"[a-zA-Z_]+characterclass\", foo)) each(output(count())))"),
                 () -> assertParse("all(group(foo) filter(regex(\"中文\", foo)) each(output(count())))"));
+
+        assertAll("filter with range",
+                () -> assertParse("all(group(foo) filter(range(1990, 2012, foo)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(range(1990, 2012, foo, false, false)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(range(1990, 2012, foo, true, false)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(range(1990, 2012, foo, false, true)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(range(1990, 2012, foo, true, true)) each(output(count())))"));
 
         assertAll("filter with alias",
                 () -> assertParse(

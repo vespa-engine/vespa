@@ -4,8 +4,10 @@
 #include <vespa/searchlib/expression/constantnode.h>
 #include <vespa/searchlib/expression/stringresultnode.h>
 #include <vespa/searchlib/expression/filter_predicate_node.h>
+#include <vespa/searchlib/expression/floatresultnode.h>
 #include <vespa/searchlib/expression/not_predicate_node.h>
 #include <vespa/searchlib/expression/or_predicate_node.h>
+#include <vespa/searchlib/expression/range_predicate_node.h>
 #include <vespa/searchlib/expression/regex_predicate_node.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -30,6 +32,9 @@ public:
     static std::unique_ptr<FilterPredicateNode> make_regex(const std::string& regex_value,
                                                            std::unique_ptr<ExpressionNode> result_node);
 
+    static std::unique_ptr<FilterPredicateNode> make_range(double lower, double upper, std::unique_ptr<ExpressionNode> result_node,
+                                                           bool lower_inclusive, bool upper_inclusive);
+
     static std::unique_ptr<FilterPredicateNode> make_not(std::unique_ptr<FilterPredicateNode> filter_node);
 
     template<typename... Nodes>
@@ -39,6 +44,8 @@ public:
     static std::unique_ptr<FilterPredicateNode> make_and(Nodes... nodes);
 
     static std::unique_ptr<ExpressionNode> make_result(const std::string& value);
+
+    static std::unique_ptr<ExpressionNode> make_result(double value);
 };
 
 FilterPredicateNodesTest::FilterPredicateNodesTest() = default;
@@ -57,6 +64,11 @@ FilterPredicateNodesTest& FilterPredicateNodesTest::set_node(std::unique_ptr<Fil
 std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_regex(const std::string& regex_value,
                                                                           std::unique_ptr<ExpressionNode> result_node) {
     return std::make_unique<RegexPredicateNode>(regex_value, std::move(result_node));
+}
+
+std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_range(double lower, double upper, std::unique_ptr<ExpressionNode> result_node,
+                                                                          bool lower_inclusive, bool upper_inclusive) {
+    return std::make_unique<RangePredicateNode>(lower, upper, std::move(result_node), lower_inclusive, upper_inclusive);
 }
 
 std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_not(std::unique_ptr<FilterPredicateNode> filter_node) {
@@ -81,10 +93,42 @@ std::unique_ptr<ExpressionNode> FilterPredicateNodesTest::make_result(const std:
     return std::make_unique<ConstantNode>(std::make_unique<StringResultNode>(value));
 }
 
+std::unique_ptr<ExpressionNode> FilterPredicateNodesTest::make_result(double value) {
+    return std::make_unique<ConstantNode>(std::make_unique<FloatResultNode>(value));
+}
+
 TEST_F(FilterPredicateNodesTest, test_regex_match) {
     EXPECT_TRUE(set_node(make_regex("foo.*", make_result("foobar"))).evaluate());
     EXPECT_FALSE(set_node(make_regex("foo", make_result("foobar"))).evaluate());
     EXPECT_FALSE(set_node(make_regex("bar", make_result("foobar"))).evaluate());
+}
+
+TEST_F(FilterPredicateNodesTest, test_range_match_inside_range) {
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(6.0), false, false)).evaluate());
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(6.0), true,  false)).evaluate());
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(6.0), false, true)).evaluate());
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(6.0), true,  true)).evaluate());
+}
+
+TEST_F(FilterPredicateNodesTest, test_range_match_outside_range) {
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0),   false, false)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0),   true,  false)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0),   false, true)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0),   true,  true)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(101.0), false, false)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(101.0), true,  false)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(101.0), false, true)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(101.0), true,  true)).evaluate());
+}
+
+TEST_F(FilterPredicateNodesTest, test_range_match_lower_bound) {
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(0.0),  true, false)).evaluate());
+    EXPECT_FALSE(set_node(make_range(0, 100, make_result(0.0), false, false)).evaluate());
+}
+
+TEST_F(FilterPredicateNodesTest, test_range_match_upper_bound) {
+    EXPECT_FALSE(set_node(make_range(0, 100, make_result(100.0), true,  false)).evaluate());
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(100.0),  true,  true)).evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_not_predicate) {

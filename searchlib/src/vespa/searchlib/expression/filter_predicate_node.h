@@ -8,6 +8,9 @@
 
 namespace search::expression {
 
+/**
+ * Base class for filter nodes in grouping.
+ **/
 class FilterPredicateNode : public vespalib::Identifiable
 {
 public:
@@ -20,6 +23,9 @@ public:
     virtual bool allow(const document::Document &, HitRank) = 0;
 };
 
+/**
+ * A filter in grouping that is always true.
+ **/
 class TruePredicateNode : public FilterPredicateNode {
 public:
     // DECLARE_IDENTIFIABLE_NS2(search, expression, TruePredicateNode);
