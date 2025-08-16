@@ -174,6 +174,7 @@ public class YqlParser implements Parser {
     public static final String EQUIV = "equiv";
     public static final String FILTER = "filter";
     public static final String FREQUENCY = "frequency";
+    public static final String GEO_BOUNDING_BOX = "geoBoundingBox";
     public static final String GEO_LOCATION = "geoLocation";
     public static final String HIT_LIMIT = "hitLimit";
     public static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits";
@@ -400,6 +401,7 @@ public class YqlParser implements Parser {
             case WAND -> buildWand(ast);
             case WEIGHTED_SET -> buildWeightedSet(ast);
             case DOT_PRODUCT -> buildDotProduct(ast);
+            case GEO_BOUNDING_BOX -> buildGeoBoundingBox(ast);
             case GEO_LOCATION -> buildGeoLocation(ast);
             case NEAREST_NEIGHBOR -> buildNearestNeighbor(ast);
             case PREDICATE -> buildPredicate(ast);
@@ -468,6 +470,21 @@ public class YqlParser implements Parser {
         return ParsedDegree.fromString(arg.toString(), first, !first);
     }
 
+    private Item buildGeoBoundingBox(OperatorNode<ExpressionOperator> ast) {
+        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
+        Preconditions.checkArgument(args.size() == 5, "Expected 5 arguments, got %s.", args.size());
+        String field = fetchFieldName(args.get(0));
+        var coord_1 = degreesFromArg(args.get(1), true);
+        var coord_2 = degreesFromArg(args.get(2), false);
+        var coord_3 = degreesFromArg(args.get(3), true);
+        var coord_4 = degreesFromArg(args.get(4), false);
+        var swCorner = new Location.Point(coord_1.degrees, coord_2.degrees);
+        var neCorner = new Location.Point(coord_3.degrees, coord_4.degrees);
+        var loc = Location.fromBoundingBox(swCorner, neCorner);
+        var item = new GeoLocationItem(loc, field);
+        return item;
+    }
+
     private Item buildGeoLocation(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 4, "Expected 4 arguments, got %s.", args.size());
@@ -475,14 +492,15 @@ public class YqlParser implements Parser {
         var coord_1 = degreesFromArg(args.get(1), true);
         var coord_2 = degreesFromArg(args.get(2), false);
         double radius = DistanceParser.parse(fetchLiteral(args.get(3)));
-        var loc = new Location();
+        Location.Point center;
         if (coord_1.isLatitude && coord_2.isLongitude) {
-            loc.setGeoCircle(coord_1.degrees, coord_2.degrees, radius);
+            center = new Location.Point(coord_1.degrees, coord_2.degrees);
         } else if (coord_2.isLatitude && coord_1.isLongitude) {
-            loc.setGeoCircle(coord_2.degrees, coord_1.degrees, radius);
+            center = new Location.Point(coord_2.degrees, coord_1.degrees);
         } else {
             throw new IllegalArgumentException("Invalid geoLocation coordinates '"+coord_1+"' and '"+coord_2+"'");
         }
+        var loc = Location.fromGeoCircle(center, radius);
         var item = new GeoLocationItem(loc, field);
         String label = getAnnotation(ast, LABEL, String.class, null, "item label");
         if (label != null) {

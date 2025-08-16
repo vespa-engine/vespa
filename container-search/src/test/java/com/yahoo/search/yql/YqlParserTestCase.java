@@ -765,6 +765,12 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testGeoBoundingBox() {
+        assertParse("select foo from bar where geoBoundingBox('workplace', -63.418, -10.433, 63.5, 10.5)",
+                    "GEO_LOCATION workplace:[2,-10433000,-63418000,10500000,63500000]");
+    }
+
+    @Test
     void testNearestNeighbor() {
         assertParse("select foo from bar where nearestNeighbor(semantic_embedding, my_vector);",
                 "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=0}");
