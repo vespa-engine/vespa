@@ -329,7 +329,7 @@ export FACTORY_VESPA_VERSION=%{version}
 export PATH="%{_prefix}-deps/bin:$PATH"
 
 %if 0%{?_use_mvn_wrapper}
-mvn -B wrapper:wrapper -Dmaven=3.9.9 -N
+sh bootstrap.sh wrapper
 %global _mvn_cmd $(pwd)/mvnw
 %else
 %global _mvn_cmd mvn
