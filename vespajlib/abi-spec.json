@@ -334,6 +334,7 @@
       "public java.lang.String getName()",
       "public java.io.Reader getReader()",
       "public java.lang.String toString()",
+      "public static java.io.Reader of(java.lang.CharSequence)",
       "public static java.io.Reader nullReader()",
       "public int read(java.nio.CharBuffer)",
       "public int read()",
