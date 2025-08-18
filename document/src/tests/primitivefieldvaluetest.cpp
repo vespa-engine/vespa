@@ -3,6 +3,7 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <limits>
@@ -122,7 +123,7 @@ void deserialize(nbostream & stream, T &value) {
             EXPECT_EQ(largest, t);
 
             // Catch errors and say what type there were trouble with.
-        } catch (std::exception& e) {
+        } catch (vespalib::Exception& e) {
             std::cerr << "\nFailed for type " << *smallest.getDataType()
                       << "\n";
             throw;
@@ -340,44 +341,46 @@ TEST(PrimitiveFieldValueTest, testNumerics)
         // (as unsigned char is not always handled as a number)
     b1 = "0xff";
     EXPECT_EQ(-1, (int) b1.getValue());
+    b1 = "0x007f";
+    EXPECT_EQ(127, (int) b1.getValue());
+    b1 = "-128";
+    EXPECT_EQ(-128, (int) b1.getValue());
     b1 = "53";
     EXPECT_EQ(53, (int) b1.getValue());
     EXPECT_EQ(std::string("53"), b1.getAsString());
 
-    try{
+    try {
         b1 = "-129";
         FAIL() << "Expected -129 to be invalid byte";
-    } catch (std::exception& e) {}
+    } catch (vespalib::Exception& e) {}
     try{
         b1 = "256";
         FAIL() << "Expected 256 to be invalid byte";
-    } catch (std::exception& e) {}
+    } catch (vespalib::Exception& e) {}
     try{
         s1 = "-32769";
         FAIL() << "Expected -32769 to be invalid short";
-    } catch (std::exception& e) {}
+    } catch (vespalib::Exception& e) {}
     try{
         s1 = "65536";
         FAIL() << "Expected 65536 to be invalid short";
-    } catch (std::exception& e) {}
+    } catch (vespalib::Exception& e) {}
     try{
         i1 = "-2147483649";
-        // Ignore failing test for now.
-        // FAIL() << "Expected -2147483649 to be invalid int";
-    } catch (std::exception& e) {}
+        FAIL() << "Expected -2147483649 to be invalid int";
+    } catch (vespalib::Exception& e) {}
     try{
         i1 = "4294967296";
         FAIL() << "Expected 4294967296 to be invalid int";
-    } catch (std::exception& e) {}
+    } catch (vespalib::Exception& e) {}
     try{
         l1 = "-9223372036854775809";
-        // Ignore failing test for now.
-        // FAIL() << "Expected -9223372036854775809 to be invalid long";
-    } catch (std::exception& e) {}
+        FAIL() << "Expected -9223372036854775809 to be invalid long";
+    } catch (vespalib::Exception& e) {}
     try{
         l1 = "18446744073709551616";
         FAIL() << "Expected 18446744073709551616 to be invalid long";
-    } catch (std::exception& e) {}
+    } catch (vespalib::Exception& e) {}
 }
 
 } // document

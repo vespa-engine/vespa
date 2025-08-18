@@ -3,8 +3,9 @@
 #include "parametervalidator.h"
 #include "fieldtype.h"
 #include "fieldinfo.h"
+#include <vespa/vespalib/stllike/lexical_cast.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <boost/lexical_cast.hpp>
 
 using vespalib::make_string;
 
@@ -95,10 +96,10 @@ void
 ParameterValidator::validateNumber(ParameterType::Enum type, size_t i, Result & result)
 {
     try {
-        double doubleVal = boost::lexical_cast<double>(_params[i]);
+        double doubleVal = vespalib::lexical_cast<double>(_params[i]);
         int64_t intVal = static_cast<int64_t>(doubleVal);
         result.addParameter(Parameter(type, _params[i]).setInteger(intVal).setDouble(doubleVal));
-    } catch (const boost::bad_lexical_cast &) {
+    } catch (const vespalib::IllegalArgumentException &) {
         throw ValidateException(make_string("Param[%zu]: Could not convert '%s' to a number", i, _params[i].c_str()));
     }
 }

@@ -2,13 +2,13 @@
 
 #include "statusmetricconsumer.h"
 #include <vespa/storageframework/generic/clock/clock.h>
-#include <boost/lexical_cast.hpp>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/textwriter.h>
 #include <vespa/metrics/prometheus_writer.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/lexical_cast.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".status.metricreporter");
@@ -74,7 +74,7 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
 
     if (path.hasAttribute("interval")) {
         // Grab the snapshot we want to view more of
-        int32_t intervalS(boost::lexical_cast<int32_t>(path.getAttribute("interval")));
+        int32_t intervalS(vespalib::lexical_cast<int32_t>(path.getAttribute("interval")));
         metrics::MetricLockGuard metricLock(_manager.getMetricLock());
         std::unique_ptr<metrics::MetricSnapshot> generated;
         const metrics::MetricSnapshot* snapshot;
