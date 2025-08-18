@@ -28,9 +28,9 @@ public class AndPredicate extends FilterExpression {
 
     @Override
     public String toString() {
-        return args.stream()
+        return "(" + args.stream()
                 .map(Object::toString)
-                .collect(Collectors.joining(" and "));
+                .collect(Collectors.joining(" and ")) + ")";
     }
 
     @Override

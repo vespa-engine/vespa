@@ -28,9 +28,9 @@ public class OrPredicate extends FilterExpression {
 
     @Override
     public String toString() {
-        return args.stream()
+        return "(" + args.stream()
                 .map(Object::toString)
-                .collect(Collectors.joining(" or "));
+                .collect(Collectors.joining(" or ")) + ")";
     }
 
     @Override

@@ -25,7 +25,7 @@ public class NotPredicate extends FilterExpression {
 
     @Override
     public String toString() {
-        return "not %s".formatted(expression);
+        return "(not %s".formatted(expression) + ")";
     }
 
     @Override
