@@ -6,15 +6,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
-public record SidecarResources(Double maxCpu, Double minCpu, Double memoryGiB, String gpu) {
+public record SidecarResources(double maxCpu, double minCpu, double memoryGiB, String gpu) {
     // 0.0 means unlimited, gpu = null means no GPU
     public static SidecarResources DEFAULT = new SidecarResources(0.0, 0.0, 0.0, null);
 
     public SidecarResources {
-        maxCpu = maxCpu == null ? 0.0 : maxCpu;
-        minCpu = minCpu == null ? 0.0 : minCpu;
-        memoryGiB = memoryGiB == null ? 0.0 : memoryGiB;
-
         if (maxCpu < 0) {
             throw new IllegalArgumentException("maxCpu must be non-negative, actual %s".formatted(maxCpu));
         }
