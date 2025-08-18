@@ -384,4 +384,92 @@ public class SidecarsTest {
             new Sidecar(1, "test", "   ", null, null, null, null);
         });
     }
+
+    @Test
+    void testGpuValidationWithValidValues() {
+        // Test null GPU (no GPU)
+        var resources1 = new SidecarResources(1.0, 0.5, 2.0, null);
+        assertEquals(null, resources1.gpu());
+
+        // Test "all" GPU
+        var resources2 = new SidecarResources(1.0, 0.5, 2.0, "all");
+        assertEquals("all", resources2.gpu());
+
+        // Test single device index
+        var resources3 = new SidecarResources(1.0, 0.5, 2.0, "0");
+        assertEquals("0", resources3.gpu());
+
+        // Test multiple device indexes
+        var resources4 = new SidecarResources(1.0, 0.5, 2.0, "0,1,2");
+        assertEquals("0,1,2", resources4.gpu());
+
+        // Test with spaces around indexes
+        var resources5 = new SidecarResources(1.0, 0.5, 2.0, " 0 , 1 , 2 ");
+        assertEquals(" 0 , 1 , 2 ", resources5.gpu());
+    }
+
+    @Test
+    void testGpuValidationFailsWithNegativeIndexes() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 0.5, 2.0, "-1");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 0.5, 2.0, "0,-1");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 0.5, 2.0, "-1,0,1");
+        });
+    }
+
+    @Test
+    void testGpuValidationFailsWithDuplicateIndexes() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 0.5, 2.0, "0,0");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 0.5, 2.0, "0,1,0");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 0.5, 2.0, "1,2,3,1");
+        });
+    }
+
+    @Test
+    void testGpuValidationFailsWithInvalidFormats() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 0.5, 2.0, "invalid");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 0.5, 2.0, "0,invalid");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 0.5, 2.0, "0.5");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 0.5, 2.0, "");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 0.5, 2.0, ",0");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 0.5, 2.0, "0,");
+        });
+        
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 0.5, 2.0, "1,2,");
+        });
+        
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 0.5, 2.0, "0,1,2,");
+        });
+    }
 }

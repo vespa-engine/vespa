@@ -4,6 +4,8 @@ package com.yahoo.vespa.flags.custom;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.HashSet;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 public record SidecarResources(double maxCpu, double minCpu, double memoryGiB, String gpu) {
@@ -23,9 +25,39 @@ public record SidecarResources(double maxCpu, double minCpu, double memoryGiB, S
             throw new IllegalArgumentException(
                     "maxCpu must be greater than or equal to minCpu, actual %s and %s".formatted(maxCpu, minCpu));
         }
-        
+
         if (memoryGiB < 0) {
             throw new IllegalArgumentException("memoryGiB must be non-negative, actual %s".formatted(memoryGiB));
+        }
+
+        if (gpu != null && !gpu.equals("all")) {
+            try {
+                var indexes = new HashSet<Integer>();
+
+                for (var indexStr : gpu.split(",", -1)) {
+                    var trimmed = indexStr.trim();
+
+                    if (trimmed.isEmpty()) {
+                        throw new IllegalArgumentException(
+                                "GPU device indexes can't be empty, actual: %s".formatted(gpu));
+                    }
+
+                    int index = Integer.parseInt(trimmed);
+
+                    if (index < 0) {
+                        throw new IllegalArgumentException(
+                                "GPU device indexes must be non-negative, actual: %s".formatted(gpu));
+                    }
+
+                    if (!indexes.add(index)) {
+                        throw new IllegalArgumentException("GPU device indexes contain duplicates: %s".formatted(gpu));
+                    }
+                }
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(
+                        "GPU must be null, \"all\", or comma-separated list of device indexes, actual: %s".formatted(
+                                gpu));
+            }
         }
     }
 }
