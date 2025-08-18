@@ -4,25 +4,23 @@ package com.yahoo.vespa.flags.custom;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
-public record Sidecars(
-        List<Sidecar> sidecars
-) {
+public record Sidecars(List<Sidecar> sidecars) {
     public Sidecars {
         if (sidecars == null) {
             sidecars = List.of();
         }
-        
-        Set<Integer> uniqueIds = sidecars.stream()
-                .map(Sidecar::id)
-                .collect(Collectors.toSet());
-        if (uniqueIds.size() != sidecars.size()) {
-            throw new IllegalArgumentException("Sidecar IDs must be unique");
+
+        var ids = sidecars.stream().map(Sidecar::id).toList();
+        var uniqueIds = new HashSet<>(ids);
+        if (ids.size() != uniqueIds.size()) {
+            throw new IllegalArgumentException("Sidecar IDs must be unique, actual: %s".formatted(
+                    ids.stream().map(String::valueOf).collect(Collectors.joining(", "))));
         }
     }
 

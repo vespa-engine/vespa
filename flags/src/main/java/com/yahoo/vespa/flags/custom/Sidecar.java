@@ -24,7 +24,7 @@ public record Sidecar(
         List<String> command) {
     public Sidecar {
         if (id < 0 || id > 99) {
-            throw new IllegalArgumentException("Sidecar id must be between 0 and 99");
+            throw new IllegalArgumentException("Sidecar id must be between 0 and 99, actual: %s".formatted(id));
         }
         
         if (name == null || name.isBlank()) {
