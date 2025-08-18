@@ -5,6 +5,4 @@ vespa_add_library(vespa_searchsummary
     $<TARGET_OBJECTS:searchsummary_docsummary>
     $<TARGET_OBJECTS:searchsummary_juniper>
     INSTALL lib64
-    DEPENDS
-    z
 )
