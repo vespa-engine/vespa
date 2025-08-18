@@ -330,11 +330,7 @@ FilterExpression filterExp(GroupingOperation grp) :
     FilterExpression exp;
 }
 {
-    ( (exp = regexPredicate(grp)) |
-      (exp = rangePredicate(grp)) |
-      (exp = notPredicate(grp))   |
-      (exp = orPredicate(grp))    |
-      (exp = andPredicate(grp)))
+    ( (exp = orPredicate(grp)))
     { return exp; }
 }
 
@@ -952,6 +948,17 @@ XorBitFunction xorBitFunction(GroupingOperation grp) :
     { return new XorBitFunction(exp, num.intValue()); }
 }
 
+FilterExpression filterPrimary(GroupingOperation grp) :
+{
+    FilterExpression f;
+}
+{
+    (( lbrace() f = filterExp(grp) rbrace() ) |
+    ( f = regexPredicate(grp) )              |
+    ( f = rangePredicate(grp) ))
+    { return f; }
+}
+
 RegexPredicate regexPredicate(GroupingOperation grp) :
 {
     String pattern;
@@ -975,33 +982,41 @@ RangePredicate rangePredicate(GroupingOperation grp) :
     { return new RangePredicate(lower, upper, exp, lowerInclusive.getValue(), upperInclusive.getValue()); }
 }
 
-NotPredicate notPredicate(GroupingOperation grp) :
+FilterExpression orPredicate(GroupingOperation grp) :
 {
-    FilterExpression exp;
+    FilterExpression left, right;
+    java.util.List<FilterExpression> args = new java.util.ArrayList<FilterExpression>();
 }
 {
-    <NOT> lbrace() exp = filterExp(grp) rbrace()
-    { return new NotPredicate(exp); }
-}
-
-OrPredicate orPredicate(GroupingOperation grp) :
-{
-    FilterExpression exp;
-    List<FilterExpression> args = new ArrayList<FilterExpression>();
-}
-{
-    <OR> lbrace() ( exp = filterExp(grp) { args.add(exp); } ( comma() exp = filterExp(grp) { args.add(exp); } )+ ) rbrace()
-    { return new OrPredicate(args); }
+    ( left = andPredicate(grp) ( <OR> space() right = andPredicate(grp) { args.add(right); } )* )
+    {
+        if (args.isEmpty()) return left;
+        args.add(0, left);
+        return new OrPredicate(args);
+    }
 }
 
-AndPredicate andPredicate(GroupingOperation grp) :
+FilterExpression andPredicate(GroupingOperation grp) :
 {
-    FilterExpression exp;
-    List<FilterExpression> args = new ArrayList<FilterExpression>();
+    FilterExpression left, right;
+    java.util.List<FilterExpression> args = new java.util.ArrayList<FilterExpression>();
 }
 {
-    <AND> lbrace() ( exp = filterExp(grp) { args.add(exp); } ( comma() exp = filterExp(grp) { args.add(exp); } )+ ) rbrace()
-    { return new AndPredicate(args); }
+    ( left = notPredicate(grp) ( <AND> space() right = notPredicate(grp) { args.add(right); } )* )
+    {
+        if (args.isEmpty()) return left;
+        args.add(0, left);
+        return new AndPredicate(args);
+    }
+}
+
+FilterExpression notPredicate(GroupingOperation grp) :
+{
+    FilterExpression inner;
+}
+{
+    ( <NOT> space() inner = notPredicate(grp) ) { return new NotPredicate(inner); }
+  | ( inner = filterPrimary(grp) )               { return inner; }
 }
 
 void bucket(GroupingOperation grp, BucketResolver resolver) :

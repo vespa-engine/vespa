@@ -648,10 +648,10 @@ public class GroupingParserTestCase {
                         "all(group(foo) filter(regex(\".*mysubstring.*\", foo)) each(output(count())))"));
 
         assertAll("filter with predicates",
-                () -> assertParse("all(group(foo) filter(not(regex(\"mybar\", foo))) each(output(count())))"),
-                () -> assertParse("all(group(foo) filter(or(regex(\"mybar\", foo), regex(\"mybaz\", foo), regex(\"myfoo\", boz))) each(output(count())))"),
-                () -> assertParse("all(group(foo) filter(and(regex(\"mybar\", foo), regex(\"mybaz\", foo), regex(\"myfoo\", boz))) each(output(count())))"),
-                () -> assertParse("all(group(foo) filter(and(or(regex(\"mybar\", foo), not(regex(\"mybaz\", foo))), regex(\"myfoo\", boz))) each(output(count())))"));
+                () -> assertParse("all(group(foo) filter(not regex(\"mybar\", foo)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(regex(\"mybar\", foo) or regex(\"mybaz\", foo) or regex(\"myfoo\", boz)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(regex(\"mybar\", foo) and regex(\"mybaz\", foo) and regex(\"myfoo\", boz)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter((regex(\"mybar\", foo) or not regex(\"mybaz\", foo)) and regex(\"myfoo\", boz)) each(output(count())))"));
     }
 
     // --------------------------------------------------------------------------------
