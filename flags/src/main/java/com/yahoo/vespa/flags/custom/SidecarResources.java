@@ -21,11 +21,6 @@ public record SidecarResources(double maxCpu, double minCpu, double memoryGiB, S
             throw new IllegalArgumentException("minCpu must be non-negative, actual %s".formatted(minCpu));
         }
 
-        if (maxCpu < minCpu) {
-            throw new IllegalArgumentException(
-                    "maxCpu must be greater than or equal to minCpu, actual %s and %s".formatted(maxCpu, minCpu));
-        }
-
         if (memoryGiB < 0) {
             throw new IllegalArgumentException("memoryGiB must be non-negative, actual %s".formatted(memoryGiB));
         }

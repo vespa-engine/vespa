@@ -22,8 +22,11 @@ public record Sidecar(
         List<String> volumeMounts,
         Map<String, String> envs,
         List<String> command) {
+    private static final int MIN_ID = 0;
+    private static final int MAX_ID = 99;
+    
     public Sidecar {
-        if (id < 0 || id > 99) {
+        if (id < MIN_ID || id > MAX_ID) {
             throw new IllegalArgumentException("Sidecar id must be between 0 and 99, actual: %s".formatted(id));
         }
         
