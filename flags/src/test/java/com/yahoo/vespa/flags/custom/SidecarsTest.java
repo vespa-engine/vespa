@@ -20,7 +20,7 @@ public class SidecarsTest {
                         1,
                         "triton",
                         "nvcr.io/nvidia/tritonserver:25.03-py3v",
-                        new SidecarResources(1.0, 8.0, 4.0, "all"),
+                        new SidecarResources(8.0, 1.0, 4.0, "all"),
                         List.of("/models"),
                         Map.of("ORT_LOGGING_LEVEL_FATAL", "4"),
                         List.of(
@@ -35,7 +35,7 @@ public class SidecarsTest {
                         2,
                         "triton",
                         "vllm/vllm-openai:latest",
-                        new SidecarResources(1.0, 4.0, 2.0, "all"),
+                        new SidecarResources(4.0, 1.0, 2.0, "all"),
                         List.of("/root/.cache/huggingface"),
                         Map.of("HUGGING_FACE_HUB_TOKEN", "<secret>"),
                         List.of("vllm", "serve", "--model", "mistralai/Mistral-7B-v0.1")
@@ -51,8 +51,8 @@ public class SidecarsTest {
                     "name" : "triton",
                     "image" : "nvcr.io/nvidia/tritonserver:25.03-py3v",
                     "resources" : {
-                      "maxCpu" : 1.0,
-                      "minCpu" : 8.0,
+                      "maxCpu" : 8.0,
+                      "minCpu" : 1.0,
                       "memoryGiB" : 4.0,
                       "gpu" : "all"
                     },
@@ -66,8 +66,8 @@ public class SidecarsTest {
                     "name" : "triton",
                     "image" : "vllm/vllm-openai:latest",
                     "resources" : {
-                      "maxCpu" : 1.0,
-                      "minCpu" : 4.0,
+                      "maxCpu" : 4.0,
+                      "minCpu" : 1.0,
                       "memoryGiB" : 2.0,
                       "gpu" : "all"
                     },
@@ -91,8 +91,8 @@ public class SidecarsTest {
                     "name" : "triton",
                     "image" : "nvcr.io/nvidia/tritonserver:25.03-py3v",
                     "resources" : {
-                      "maxCpu" : 1.0,
-                      "minCpu" : 8.0,
+                      "maxCpu" : 8.0,
+                      "minCpu" : 1.0,
                       "memoryGiB" : 4.0,
                       "gpu" : "all"
                     },
@@ -111,7 +111,7 @@ public class SidecarsTest {
                 1,
                 "triton",
                 "nvcr.io/nvidia/tritonserver:25.03-py3v",
-                new SidecarResources(1.0, 8.0, 4.0, "all"),
+                new SidecarResources(8.0, 1.0, 4.0, "all"),
                 List.of("/models"),
                 Map.of("ORT_LOGGING_LEVEL_FATAL", "4"),
                 List.of("tritonserver", "--log-verbose=1")
