@@ -472,4 +472,70 @@ public class SidecarsTest {
             new SidecarResources(1.0, 0.5, 2.0, "0,1,2,");
         });
     }
+
+    @Test
+    void testCpuValidationWithValidValues() {
+        // Test valid CPU values
+        var resources1 = new SidecarResources(2.0, 1.0, 4.0, null);
+        assertEquals(2.0, resources1.maxCpu());
+        assertEquals(1.0, resources1.minCpu());
+
+        // Test zero values (unlimited)
+        var resources2 = new SidecarResources(0.0, 0.0, 2.0, null);
+        assertEquals(0.0, resources2.maxCpu());
+        assertEquals(0.0, resources2.minCpu());
+
+        // Test maxCpu equals minCpu
+        var resources3 = new SidecarResources(1.5, 1.5, 2.0, null);
+        assertEquals(1.5, resources3.maxCpu());
+        assertEquals(1.5, resources3.minCpu());
+
+        // Test zero maxCpu with non-zero minCpu (allowed)
+        var resources4 = new SidecarResources(0.0, 1.0, 2.0, null);
+        assertEquals(0.0, resources4.maxCpu());
+        assertEquals(1.0, resources4.minCpu());
+
+        // Test non-zero maxCpu with zero minCpu (allowed)
+        var resources5 = new SidecarResources(2.0, 0.0, 2.0, null);
+        assertEquals(2.0, resources5.maxCpu());
+        assertEquals(0.0, resources5.minCpu());
+    }
+
+    @Test
+    void testCpuValidationFailsWithNegativeMaxCpu() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(-1.0, 0.5, 2.0, null);
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(-0.1, 1.0, 2.0, null);
+        });
+    }
+
+    @Test
+    void testCpuValidationFailsWithNegativeMinCpu() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(2.0, -1.0, 2.0, null);
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, -0.5, 2.0, null);
+        });
+    }
+
+    @Test
+    void testCpuValidationFailsWhenMaxCpuLessThanMinCpu() {
+        // Both non-zero and maxCpu < minCpu should fail
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 2.0, 2.0, null);
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(0.5, 1.5, 2.0, null);
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SidecarResources(1.0, 1.1, 2.0, null);
+        });
+    }
 }
