@@ -2,11 +2,11 @@
 
 #include "nodestate.h"
 
-#include <boost/lexical_cast.hpp>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <sstream>
 #include <string>
 
@@ -75,7 +75,7 @@ NodeState::NodeState(std::string_view serialized, const NodeType* type)
                 if (_type != nullptr && *type != NodeType::STORAGE) break;
                 if (key.size() > 1) break;
                 try {
-                    setMinUsedBits(boost::lexical_cast<uint32_t>(value));
+                    setMinUsedBits(vespalib::lexical_cast<uint32_t>(value));
                 } catch (...) {
                     throw IllegalArgumentException("Illegal used bits '" + std::string(value) + "'. Used bits must be a positive"
                                                    " integer ", VESPA_STRLOC);
@@ -89,7 +89,7 @@ NodeState::NodeState(std::string_view serialized, const NodeType* type)
                 if (key.size() > 1) break;
                 if (_type != nullptr && *type != NodeType::STORAGE) break;
                 try {
-                    setCapacity(boost::lexical_cast<double>(value));
+                    setCapacity(vespalib::lexical_cast<double>(value));
                 } catch (...) {
                     throw IllegalArgumentException("Illegal capacity '" + std::string(value) + "'. Capacity must be a positive"
                                                    " floating point number", VESPA_STRLOC);
@@ -98,7 +98,7 @@ NodeState::NodeState(std::string_view serialized, const NodeType* type)
             case 'i':
                 if (key.size() > 1) break;
                 try {
-                    setInitProgress(boost::lexical_cast<double>(value));
+                    setInitProgress(vespalib::lexical_cast<double>(value));
                 } catch (...) {
                     throw IllegalArgumentException("Illegal init progress '" + std::string(value) + "'. Init progress must be a"
                                                    " floating point number from 0.0 to 1.0", VESPA_STRLOC);
@@ -107,7 +107,7 @@ NodeState::NodeState(std::string_view serialized, const NodeType* type)
             case 't':
                 if (key.size() > 1) break;
                 try {
-                    setStartTimestamp(boost::lexical_cast<uint64_t>(value));
+                    setStartTimestamp(vespalib::lexical_cast<uint64_t>(value));
                 } catch (...) {
                     throw IllegalArgumentException("Illegal start timestamp '" + std::string(value) + "'. Start timestamp must be"
                                                    " 0 or positive long.", VESPA_STRLOC);

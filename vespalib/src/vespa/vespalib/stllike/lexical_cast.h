@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace vespalib {
 
@@ -11,8 +12,10 @@ T lexical_cast(const std::string_view s)
     T v;
     asciistream is(s);
     is >> v;
+    if (! is.empty()) {
+        throw IllegalArgumentException("Failed decoding number from: " + std::string(s));
+    }
     return v;
 }
 
 }
-

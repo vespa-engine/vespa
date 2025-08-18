@@ -7,7 +7,6 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <boost/numeric/conversion/cast.hpp>
 #include <ostream>
 
 #include <vespa/log/log.h>
@@ -151,8 +150,6 @@ AssignExpressionIteratorHandler::doModify(FieldValue& fv) {
             }
         } catch (const vespalib::IllegalArgumentException&) {
             // Divide by zero does not modify the document field
-            return ModificationStatus::NOT_MODIFIED;
-        } catch (const boost::bad_numeric_cast&) {
             // Underflow/overflow does not modify
             return ModificationStatus::NOT_MODIFIED;
         }
