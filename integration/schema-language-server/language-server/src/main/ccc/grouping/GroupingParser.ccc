@@ -381,10 +381,7 @@ FilterExpression filterExp(GroupingOperation grp) :
 {
     FilterExpression exp;
 }
-    ( (exp = regexPredicate(grp)) |
-      (exp = notPredicate(grp))   |
-      (exp = orPredicate(grp))    |
-      (exp = andPredicate(grp)))
+    ( exp = orPredicate(grp) )
     { return exp; }
 ;
 
@@ -1002,6 +999,21 @@ XorBitFunction xorBitFunction(GroupingOperation grp) :
     { return new XorBitFunction(exp, num.intValue()); }
 ;
 
+FilterExpression filterPrimary(GroupingOperation grp) :
+{
+    FilterExpression f;
+}
+(
+    ( lbraceElm f = filterExp(grp) rbraceElm ) |
+    ( f = regexPredicate(grp) )                |
+    ( f = rangePredicate(grp) )
+)
+{
+    return f;
+}
+;
+
+
 RegexPredicate regexPredicate(GroupingOperation grp) :
 {
     String pattern;
@@ -1020,30 +1032,61 @@ RegexPredicate regexPredicate(GroupingOperation grp) :
     }
 ;
 
-NotPredicate notPredicate(GroupingOperation grp) :
+RangePredicate rangePredicate(GroupingOperation grp) :
 {
-    FilterExpression exp;
+    Number lower;
+    Number upper;
+    GroupingExpression exp;
+    BooleanValue lowerInclusive = new BooleanValue(true);
+    BooleanValue upperInclusive = new BooleanValue(false);
 }
-    ( <NOT> lbraceElm exp = filterExp(grp) rbraceElm )
-    { return new NotPredicate(exp); }
+    (
+        <RANGE> lbraceElm lower = number commaElm upper = number commaElm exp = expElm(grp)
+        [ commaElm lowerInclusive = booleanValue commaElm upperInclusive = booleanValue ] rbraceElm
+    )
+{
+    return new RangePredicate(lower, upper, exp, lowerInclusive.getValue(), upperInclusive.getValue());
+}
 ;
 
-OrPredicate orPredicate(GroupingOperation grp) :
+FilterExpression orPredicate(GroupingOperation grp) :
 {
-    FilterExpression exp;
+    FilterExpression left, right;
     List<FilterExpression> args = new ArrayList<FilterExpression>();
 }
-    ( <OR> lbraceElm ( exp = filterExp(grp) { args.add(exp); } ( commaElm exp = filterExp(grp) { args.add(exp); } )+ ) rbraceElm )
-    { return new OrPredicate(args); }
+    ( left = andPredicate(grp) ( <OR> spaceElm right = andPredicate(grp) {
+        args.add(right);
+    } )* )
+    {
+        if (args.isEmpty()) return left;
+        args.add(0, left);
+        return new OrPredicate(args);
+    }
 ;
 
-AndPredicate andPredicate(GroupingOperation grp) :
+FilterExpression andPredicate(GroupingOperation grp) :
 {
-    FilterExpression exp;
+    FilterExpression left, right;
     List<FilterExpression> args = new ArrayList<FilterExpression>();
 }
-    ( <AND> lbraceElm ( exp = filterExp(grp) { args.add(exp); } ( commaElm exp = filterExp(grp) { args.add(exp); } )+ ) rbraceElm )
-    { return new AndPredicate(args); }
+    ( left = notPredicate(grp) ( <AND> spaceElm right = notPredicate(grp) {
+        args.add(right);
+    } )* )
+    {
+        if (args.isEmpty()) return left;
+        args.add(0, left);
+        return new AndPredicate(args);
+    }
+;
+
+FilterExpression notPredicate(GroupingOperation grp) :
+{
+    FilterExpression inner;
+}
+    ( <NOT> spaceElm inner = notPredicate(grp) {
+        return new NotPredicate(inner);
+    } ) | ( inner = filterPrimary(grp) )
+    { return inner; }
 ;
 
 bucketElm(GroupingOperation grp, BucketResolver resolver) :
@@ -1164,6 +1207,8 @@ String identifierStr :
         <POW> |
         <PRECISION> |
         <PREDEFINED> |
+        <RANGE> |
+        <REGEX> |
         <RELEVANCE> |
         <REVERSE> |
         <SIN> |

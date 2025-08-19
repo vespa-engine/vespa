@@ -6,6 +6,8 @@ import java.util.List;
 import org.eclipse.lsp4j.SemanticTokenTypes;
 import org.eclipse.lsp4j.SemanticTokens;
 
+import com.yahoo.collections.Pair;
+
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.lsp.common.semantictokens.CommonSemanticTokens;
@@ -29,11 +31,9 @@ public class YQLPlusSemanticTokens {
         Class<?> nodeClass = node.getASTClass();
         String tokenString = YQLPlusSemanticTokenConfig.tokensMap.get(nodeClass);
         if (tokenString != null) {
-            int tokenType = CommonSemanticTokens.getType(tokenString);
-            ret.add(new SemanticTokenMarker(tokenType, node));
+            ret.add(new SemanticTokenMarker(tokenString, node));
         } else if (YQLPlusSemanticTokenConfig.keywordTokens.contains(nodeClass)) {
-            int keywordType = CommonSemanticTokens.getType(SemanticTokenTypes.Keyword);
-            ret.add(new SemanticTokenMarker(keywordType, node));
+            ret.add(new SemanticTokenMarker(SemanticTokenTypes.Keyword, node));
         } else if (node.getASTClass() != pipeline_step.class) {
             for (Node child : node) {
                 ret.addAll(traverseCST(child.getYQLNode(), logger));
@@ -44,17 +44,27 @@ public class YQLPlusSemanticTokens {
     }
 
     private static List<SemanticTokenMarker> traverseGroupingLanguage(YQLNode node, ClientLogger logger) {
-        List<SemanticTokenMarker> ret = new ArrayList<>();
 
         Class<?> nodeClass = node.getASTClass();
         String tokenString = VespaGroupingSemanticToken.tokensMap.get(nodeClass);
         if (tokenString != null) {
-            int tokenType = CommonSemanticTokens.getType(tokenString);
-            ret.add(new SemanticTokenMarker(tokenType, node));
-        } else {
-            for (Node child : node) {
-                ret.addAll(traverseCST(child.getYQLNode(), logger));
+            return SemanticTokenMarker.GetAsList(tokenString, node);
+        } 
+
+        Node parent = node.getParent();
+        if (parent != null) {
+            Class<?> parentClass = parent.getASTClass();
+            var key = new Pair<>(nodeClass, parentClass);
+            tokenString = VespaGroupingSemanticToken.tokensMapWithParent.get(key);
+
+            if (tokenString != null) {
+                return SemanticTokenMarker.GetAsList(tokenString, node);
             }
+        }
+
+        List<SemanticTokenMarker> ret = new ArrayList<>();
+        for (Node child : node) {
+            ret.addAll(traverseCST(child.getYQLNode(), logger));
         }
 
         return ret;
