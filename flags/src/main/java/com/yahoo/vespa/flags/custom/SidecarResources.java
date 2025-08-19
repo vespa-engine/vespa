@@ -1,17 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.custom;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.HashSet;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
-public record SidecarResources(double maxCpu, double minCpu, double memoryGiB, String gpu) {
+public record SidecarResources(
+        @JsonProperty("maxCpu") double maxCpu, 
+        @JsonProperty("minCpu") double minCpu, 
+        @JsonProperty("memoryGiB") double memoryGiB, 
+        @JsonProperty("gpu") String gpu) {
     // 0.0 means unlimited, gpu = null means no GPU
     public static SidecarResources DEFAULT = new SidecarResources(0.0, 0.0, 0.0, null);
 
+    @JsonCreator
     public SidecarResources {
         if (maxCpu < 0) {
             throw new IllegalArgumentException("maxCpu must be non-negative, actual %s".formatted(maxCpu));
