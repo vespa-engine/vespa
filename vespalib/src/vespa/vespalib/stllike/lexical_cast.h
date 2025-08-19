@@ -9,13 +9,22 @@ namespace vespalib {
 template <typename T>
 T lexical_cast(const std::string_view s)
 {
-    T v;
-    asciistream is(s);
-    is >> v;
-    if (! is.empty()) {
-        throw IllegalArgumentException("Failed decoding number from: " + std::string(s));
+    const char *fp = s.data();
+    const char *lp = fp + s.size();
+    T val;
+    if constexpr (std::is_integral_v<T>) {
+        auto res = std::from_chars(fp, lp, val);
+        if (res.ec == std::errc{} && res.ptr == lp) [[likely]] {
+            return val;
+        }
+    } else {
+        asciistream is(s);
+        is >> val;
+        if (is.empty()) [[likely]] {
+            return val;
+        }
     }
-    return v;
+    throw IllegalArgumentException("Failed decoding number from string: " + std::string(s));
 }
 
 }
