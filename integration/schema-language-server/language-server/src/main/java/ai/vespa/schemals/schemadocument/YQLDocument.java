@@ -88,7 +88,6 @@ public class YQLDocument implements DocumentManager {
 
         if (parseResult.CST.isPresent()) {
             CST = parseResult.CST.get();
-            YQLUtils.printTree(logger, CST);
         }
     }
 
