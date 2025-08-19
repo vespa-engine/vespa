@@ -5,6 +5,9 @@ import java.util.Map;
 
 import org.eclipse.lsp4j.SemanticTokenTypes;
 
+import com.yahoo.collections.Pair;
+import com.yahoo.search.cluster.Hasher;
+
 import ai.vespa.schemals.parser.grouping.ast.*;
 
 class VespaGroupingSemanticToken {
@@ -70,9 +73,6 @@ class VespaGroupingSemanticToken {
         put(ALL.class, SemanticTokenTypes.Keyword);
         put(EACH.class, SemanticTokenTypes.Keyword);
 
-        put(AND.class, logicalFilter);
-        put(OR.class, logicalFilter);
-        put(NOT.class, logicalFilter);
 
         put(GROUP.class, operationBodyFunction);
         put(ACCURACY.class, operationBodyFunction);
@@ -131,5 +131,14 @@ class VespaGroupingSemanticToken {
         put(ZCURVE.class, SemanticTokenTypes.Class);
         put(X.class, SemanticTokenTypes.Method);
         put(Y.class, SemanticTokenTypes.Method);
+    }};
+
+    static final Map<Pair<Class<?>, Class<?>>, String> tokensMapWithParent = new HashMap<>() {{
+        put(new Pair<>(AND.class, andPredicate.class), logicalFilter);
+        put(new Pair<>(OR.class, orPredicate.class), logicalFilter);
+        put(new Pair<>(NOT.class, notPredicate.class), logicalFilter);
+
+        put(new Pair<>(AND.class, andFunction.class), simpleExpressions);
+        put(new Pair<>(OR.class, orFunction.class), simpleExpressions);
     }};
 }

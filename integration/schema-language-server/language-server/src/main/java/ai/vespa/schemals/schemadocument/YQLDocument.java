@@ -21,6 +21,7 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.YQLNode;
+import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class YQLDocument implements DocumentManager {
 
@@ -87,6 +88,7 @@ public class YQLDocument implements DocumentManager {
 
         if (parseResult.CST.isPresent()) {
             CST = parseResult.CST.get();
+            YQLUtils.printTree(logger, CST);
         }
     }
 
