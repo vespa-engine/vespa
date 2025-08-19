@@ -2,103 +2,48 @@
 package com.yahoo.vespa.flags.custom;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Defines properties for sidecar flag.
  *
- * @author glabashnik
+ * @author glebashnik
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Sidecar {
-    private final String name;
-    private final String image;
-    private final SidecarQuota quota;
-    private final List<String> volumeMounts;
-    private final Map<String, String> envs;
-    private final List<String> command;
-
+@JsonInclude(value = JsonInclude.Include.NON_NULL)
+public record Sidecar(
+        @JsonProperty("id") int id,
+        @JsonProperty("name") String name,
+        @JsonProperty("image") String image,
+        @JsonProperty("resources") SidecarResources resources,
+        @JsonProperty("volumeMounts") List<String> volumeMounts,
+        @JsonProperty("envs") Map<String, String> envs,
+        @JsonProperty("command") List<String> command) {
+    private static final int MIN_ID = 0;
+    private static final int MAX_ID = 99;
+    
     @JsonCreator
-    public Sidecar(
-            @JsonProperty("name") String name,
-            @JsonProperty("image") String image,
-            @JsonProperty("quota") SidecarQuota quota,
-            @JsonProperty("volumeMounts") List<String> volumeMounts,
-            @JsonProperty("envs") Map<String, String> envs,
-            @JsonProperty("command") List<String> command) {
-        this.name = name;
-        this.image = image;
-        this.quota = quota;
-        this.volumeMounts = volumeMounts;
-        this.envs = envs;
-        this.command = command;
-    }
-
-    @JsonGetter("name")
-    public String getName() {
-        return name;
-    }
-
-    @JsonGetter("image")
-    public String getImage() {
-        return image;
-    }
-
-    @JsonGetter("quota")
-    public SidecarQuota getQuota() {
-        return quota;
-    }
-
-    @JsonGetter("volumeMounts")
-    public List<String> getVolumeMounts() {
-        return volumeMounts;
-    }
-
-    @JsonGetter("envs")
-    public Map<String, String> getEnvs() {
-        return envs;
-    }
-
-    @JsonGetter("command")
-    public List<String> getCommand() {
-        return command;
-    }
-
-    @Override
-    public String toString() {
-        return "Sidecar{name='%s', image='%s', quota=%s, volumeMounts={%s}, envs=[%s], command=[%s]}"
-                .formatted(
-                        name,
-                        image,
-                        quota,
-                        volumeMounts.stream().map("'%s'"::formatted).collect(Collectors.joining(", ")),
-                        envs.entrySet().stream()
-                                .map(entry -> "%s='%s'".formatted(entry.getKey(), entry.getValue()))
-                                .collect(Collectors.joining(", ")),
-                        command.stream().map("'%s'"::formatted).collect(Collectors.joining(", ")));
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        var that = (Sidecar) o;
-        return Objects.equals(image, that.image)
-                && Objects.equals(quota, that.quota)
-                && Objects.equals(volumeMounts, that.volumeMounts)
-                && Objects.equals(envs, that.envs)
-                && Objects.equals(command, that.command);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(image, quota);
+    public Sidecar {
+        if (id < MIN_ID || id > MAX_ID) {
+            throw new IllegalArgumentException("Sidecar id must be between 0 and 99, actual: %s".formatted(id));
+        }
+        
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Sidecar name must be specified");
+        }
+        
+        if (image == null || image.isBlank()) {
+            throw new IllegalArgumentException("Sidecar image must be specified");
+        }
+        
+        resources = resources == null ? SidecarResources.DEFAULT : resources;
+        volumeMounts = volumeMounts == null ? List.of() : volumeMounts;
+        envs = envs == null ? Map.of() : envs;
+        command = command == null ? List.of() : command;
     }
 }
