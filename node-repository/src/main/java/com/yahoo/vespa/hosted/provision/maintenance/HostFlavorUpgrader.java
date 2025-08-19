@@ -52,6 +52,7 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
 
     @Override
     protected double maintain() {
+        log.log(Level.INFO, () -> "Running HostFlavorUpgrader");
         if (!nodeRepository().zone().cloud().dynamicProvisioning()) return 1.0; // Not relevant in zones with static capacity
         if (nodeRepository().zone().environment().isTest()) return 1.0; // Short-lived deployments
         if (!nodeRepository().nodes().isWorking()) return 0.0;
@@ -79,7 +80,6 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
             Predicate<NodeResources> realHostResourcesWithinLimits =
                     resources -> nodeRepository().nodeResourceLimits().isWithinRealLimits(resources, allocation.membership().cluster());
             if (!hostProvisioner.canUpgradeFlavor(parent.get(), node, realHostResourcesWithinLimits)) continue;
-            if (parent.get().status().wantToUpgradeFlavor() && allocation.membership().retired()) continue; // Already upgrading
 
             boolean redeployed = false;
             boolean deploymentValid = false;
