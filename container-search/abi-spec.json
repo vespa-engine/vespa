@@ -1487,7 +1487,6 @@
       "protected void encodeThis(java.nio.ByteBuffer)",
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "protected void appendBodyString(java.lang.StringBuilder)",
-      "protected void adding(com.yahoo.prelude.query.Item)",
       "public java.util.Optional extractSingleChild()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",

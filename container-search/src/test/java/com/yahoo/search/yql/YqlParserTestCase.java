@@ -24,6 +24,7 @@ import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.RegExpItem;
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.Substring;
@@ -422,6 +423,12 @@ public class YqlParserTestCase {
                 "baz:{key:a value.f2:10}");
         assertCanonicalParse("select foo from bar where baz contains sameElement(key contains \"a\")",
                 "baz.key:a");
+    }
+
+    @Test
+    void testSameElementWithNestedAnd() {
+        assertParse("select * from sources * where myStringArray contains sameElement('a' and 'b' and near('c', 'd'))",
+                    "myStringArray:{AND a b (NEAR(2) c d)}");
     }
 
     @Test
@@ -1294,7 +1301,7 @@ public class YqlParserTestCase {
         assertParseFail("select * from sources * where nofield in ('a', 25L)",
                 new IllegalArgumentException("Field 'nofield' does not exist."));
         assertParseFail("select * from sources * where field not in (25)",
-                new IllegalArgumentException("Expected AND, CALL, CONTAINS, EQ, GT, GTEQ, IN, LT, LTEQ or OR, got NOT_IN."));
+                new IllegalArgumentException("Expected AND, OR, EQ, LT, GT, LTEQ, GTEQ, CONTAINS, MATCHES, CALL, LITERAL, NOT or IN, got NOT_IN."));
         assertParseFail("select * from sources * where float in (25)",
                 new IllegalArgumentException("The in operator is only supported for integer and string fields. " +
                         "The field float is not of these types"));

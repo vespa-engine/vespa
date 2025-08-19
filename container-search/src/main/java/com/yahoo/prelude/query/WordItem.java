@@ -109,7 +109,7 @@ public class WordItem extends TermItem {
      */
     @Override
     public String getRawWord() {
-        if (getOrigin()!=null) return getOrigin().getValue();
+        if (getOrigin() != null) return getOrigin().getValue();
         return word;
     }
 
