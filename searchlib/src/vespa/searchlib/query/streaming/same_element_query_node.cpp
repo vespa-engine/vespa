@@ -24,6 +24,9 @@ SameElementQueryNode::evaluateHits(HitList & hl) const
 {
     hl.clear();
     const auto & children = get_terms();
+    if (children.size() == 1) {
+        return children.front()->evaluateHits(hl);
+    }
     for (auto& child : children) {
         if ( ! child->evaluate() ) {
             return hl;
