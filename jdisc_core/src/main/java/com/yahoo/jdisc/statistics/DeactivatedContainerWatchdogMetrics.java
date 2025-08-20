@@ -9,7 +9,7 @@ import com.yahoo.jdisc.core.ActiveContainer;
  *
  * @author bjorncs
  */
-public interface ContainerWatchdogMetrics {
+public interface DeactivatedContainerWatchdogMetrics {
 
     String TOTAL_DEACTIVATED_CONTAINERS = "jdisc.deactivated_containers.total";
 

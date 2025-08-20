@@ -3,7 +3,7 @@ package com.yahoo.jdisc.core;
 
 import com.yahoo.concurrent.Threads;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
+import com.yahoo.jdisc.statistics.DeactivatedContainerWatchdogMetrics;
 import com.yahoo.lang.MutableInteger;
 import org.apache.felix.framework.BundleWiringImpl;
 import org.osgi.framework.Bundle;
@@ -31,12 +31,12 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
-class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
+class DeactivatedContainerWatchdog implements DeactivatedContainerWatchdogMetrics, AutoCloseable {
 
     static final Duration GRACE_PERIOD = Duration.ofMinutes(30);
     static final Duration CONTAINER_CHECK_PERIOD = Duration.ofMinutes(1);
 
-    private static final Logger log = Logger.getLogger(ContainerWatchdog.class.getName());
+    private static final Logger log = Logger.getLogger(DeactivatedContainerWatchdog.class.getName());
 
     private final Object monitor = new Object();
     private final List<DeactivatedContainer> deactivatedContainers = new LinkedList<>();
@@ -50,12 +50,12 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
     private ScheduledFuture<?> containerMontoringTask;
 
 
-    ContainerWatchdog() {
+    DeactivatedContainerWatchdog() {
         this(Clock.systemUTC(), true);
     }
 
     /* For unit testing only */
-    ContainerWatchdog(Clock clock, boolean enableScheduler) {
+    DeactivatedContainerWatchdog(Clock clock, boolean enableScheduler) {
         this.clock = clock;
         this.enableScheduler = enableScheduler;
     }
@@ -197,7 +197,7 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
             }
             // Find threads which Runnable is a class from an uninstalled bundle
             // This may create false positives
-            b = getTargetFieldOfThread(t).flatMap(ContainerWatchdog::hasClassloaderForUninstalledBundle).orElse(null);
+            b = getTargetFieldOfThread(t).flatMap(DeactivatedContainerWatchdog::hasClassloaderForUninstalledBundle).orElse(null);
             if (b != null) {
                 staleThreads.add(new ThreadDetails(t, b));
             }

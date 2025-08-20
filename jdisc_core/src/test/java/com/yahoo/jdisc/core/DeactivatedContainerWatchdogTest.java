@@ -15,14 +15,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author bjorncs
  */
-public class ContainerWatchdogTest {
+public class DeactivatedContainerWatchdogTest {
 
     @Test
     void watchdog_counts_stale_container() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ManualClock clock = new ManualClock(Instant.EPOCH);
         DummyMetric metric = new DummyMetric();
-        ContainerWatchdog watchdog = new ContainerWatchdog(clock, false);
+        DeactivatedContainerWatchdog watchdog = new DeactivatedContainerWatchdog(clock, false);
 
         ActiveContainer containerInstance = new ActiveContainer(driver.newContainerBuilder());
         assertEquals(1, containerInstance.resourcePool().retainCount());
@@ -34,7 +34,7 @@ public class ContainerWatchdogTest {
         watchdog.onContainerActivation(null);
         assertEquals(1, runMonitorStepAndGetStaleContainerCount(watchdog, metric));
 
-        clock.advance(ContainerWatchdog.GRACE_PERIOD);
+        clock.advance(DeactivatedContainerWatchdog.GRACE_PERIOD);
         assertEquals(1, runMonitorStepAndGetStaleContainerCount(watchdog, metric));
         assertEquals(1, containerInstance.resourcePool().retainCount());
 
@@ -43,7 +43,7 @@ public class ContainerWatchdogTest {
         assertEquals(0, containerInstance.resourcePool().retainCount());
     }
 
-    private static int runMonitorStepAndGetStaleContainerCount(ContainerWatchdog watchdog, DummyMetric metric) {
+    private static int runMonitorStepAndGetStaleContainerCount(DeactivatedContainerWatchdog watchdog, DummyMetric metric) {
         watchdog.monitorDeactivatedContainers();
         watchdog.emitMetrics(metric);
         return metric.value;

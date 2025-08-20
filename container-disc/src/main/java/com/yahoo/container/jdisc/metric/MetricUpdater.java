@@ -2,11 +2,10 @@
 package com.yahoo.container.jdisc.metric;
 
 import ai.vespa.metrics.ContainerMetrics;
-import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
+import com.yahoo.jdisc.statistics.DeactivatedContainerWatchdogMetrics;
 import com.yahoo.nativec.NativeHeap;
 import com.yahoo.security.tls.TlsMetrics;
 
@@ -48,11 +47,11 @@ public class MetricUpdater extends AbstractComponent {
     private final Scheduler scheduler;
 
     @Inject
-    public MetricUpdater(Metric metric, ContainerWatchdogMetrics containerWatchdogMetrics) {
+    public MetricUpdater(Metric metric, DeactivatedContainerWatchdogMetrics containerWatchdogMetrics) {
         this(new TimerScheduler(), metric, containerWatchdogMetrics);
     }
 
-    MetricUpdater(Scheduler scheduler, Metric metric, ContainerWatchdogMetrics containerWatchdogMetrics) {
+    MetricUpdater(Scheduler scheduler, Metric metric, DeactivatedContainerWatchdogMetrics containerWatchdogMetrics) {
         this.scheduler = scheduler;
         scheduler.schedule(new UpdaterTask(metric, containerWatchdogMetrics), Duration.ofSeconds(10));
     }
@@ -101,13 +100,13 @@ public class MetricUpdater extends AbstractComponent {
 
         private final Runtime runtime = Runtime.getRuntime();
         private final Metric metric;
-        private final ContainerWatchdogMetrics containerWatchdogMetrics;
+        private final DeactivatedContainerWatchdogMetrics containerWatchdogMetrics;
         private final GarbageCollectionMetrics garbageCollectionMetrics;
         private final JrtMetrics jrtMetrics;
         private final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
         private TlsMetrics.Snapshot tlsMetricsSnapshot = TlsMetrics.Snapshot.EMPTY;
 
-        public UpdaterTask(Metric metric, ContainerWatchdogMetrics containerWatchdogMetrics) {
+        public UpdaterTask(Metric metric, DeactivatedContainerWatchdogMetrics containerWatchdogMetrics) {
             this.metric = metric;
             this.containerWatchdogMetrics = containerWatchdogMetrics;
             this.garbageCollectionMetrics = new GarbageCollectionMetrics(Clock.systemUTC());
