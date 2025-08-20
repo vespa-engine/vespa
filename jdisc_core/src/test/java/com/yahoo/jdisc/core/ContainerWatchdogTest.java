@@ -24,26 +24,23 @@ public class ContainerWatchdogTest {
         DummyMetric metric = new DummyMetric();
         ContainerWatchdog watchdog = new ContainerWatchdog(clock, false);
 
-        ActiveContainer containerWithoutRetainedResources = new ActiveContainer(driver.newContainerBuilder());
+        ActiveContainer containerInstance = new ActiveContainer(driver.newContainerBuilder());
+        assertEquals(1, containerInstance.resourcePool().retainCount());
 
-        watchdog.onContainerActivation(containerWithoutRetainedResources);
+        watchdog.onContainerActivation(containerInstance);
         assertEquals(0, runMonitorStepAndGetStaleContainerCount(watchdog, metric));
 
         clock.advance(Duration.ofHours(1));
         watchdog.onContainerActivation(null);
-        assertEquals(0, runMonitorStepAndGetStaleContainerCount(watchdog, metric));
+        assertEquals(1, runMonitorStepAndGetStaleContainerCount(watchdog, metric));
 
         clock.advance(ContainerWatchdog.GRACE_PERIOD);
-        assertEquals(0, runMonitorStepAndGetStaleContainerCount(watchdog, metric));
+        assertEquals(1, runMonitorStepAndGetStaleContainerCount(watchdog, metric));
+        assertEquals(1, containerInstance.resourcePool().retainCount());
 
         clock.advance(Duration.ofSeconds(1));
-        assertEquals(1, runMonitorStepAndGetStaleContainerCount(watchdog, metric));
-
-        containerWithoutRetainedResources.release();
-        assertEquals(1, runMonitorStepAndGetStaleContainerCount(watchdog, metric));
-
-        containerWithoutRetainedResources.shutdown().close();
         assertEquals(0, runMonitorStepAndGetStaleContainerCount(watchdog, metric));
+        assertEquals(0, containerInstance.resourcePool().retainCount());
     }
 
     private static int runMonitorStepAndGetStaleContainerCount(ContainerWatchdog watchdog, DummyMetric metric) {
