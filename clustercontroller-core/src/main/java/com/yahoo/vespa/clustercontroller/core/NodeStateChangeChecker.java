@@ -46,6 +46,7 @@ import static java.util.logging.Level.FINE;
  * Checks if a node can be upgraded.
  *
  * @author Haakon Dybdahl
+ * @author hmusum
  */
 public class NodeStateChangeChecker {
 
@@ -204,24 +205,15 @@ public class NodeStateChangeChecker {
         return allow();
     }
 
-    private Result canSetStateMaintenanceTemporarily(StorageNodeInfo nodeInfo, ClusterState clusterState,
-                                                     String newDescription) {
-        var result = checkIfStateSetWithDifferentDescription(nodeInfo, newDescription);
+    private Result canSetStateMaintenanceTemporarily(StorageNodeInfo nodeInfo, ClusterState clusterState, String description) {
+        var result = checkIfStateSetWithDifferentDescription(nodeInfo, description);
         if (result.notAllowed())
             return result;
 
         if (isGroupedSetup()) {
-            if (maxNumberOfGroupsAllowedToBeDown == -1) {
-                result = checkIfAnotherNodeInAnotherGroupHasWantedState(nodeInfo);
-                if (result.notAllowed())
-                    return result;
-                if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription))
-                    return allow();
-            } else {
-                var optionalResult = checkIfOtherNodesHaveWantedState(nodeInfo, newDescription, clusterState);
-                if (optionalResult.isPresent())
-                    return optionalResult.get();
-            }
+            var r = checkGroupedSetup(nodeInfo, clusterState, description);
+            if (r.isPresent())
+                return r.get();
         } else {
             result = otherNodeHasWantedState(nodeInfo);
             if (result.notAllowed())
@@ -246,6 +238,20 @@ public class NodeStateChangeChecker {
         }
 
         return allow();
+    }
+
+    private Optional<Result> checkGroupedSetup(StorageNodeInfo nodeInfo, ClusterState clusterState, String description) {
+        Result result;
+        if (maxNumberOfGroupsAllowedToBeDown == -1) {
+            result = checkIfAnotherNodeInAnotherGroupHasWantedState(nodeInfo);
+            if (result.notAllowed())
+                return Optional.of(result);
+            if (anotherNodeInGroupAlreadyAllowed(nodeInfo, description))
+                return Optional.of(allow());
+        } else {
+            return checkIfOtherNodesHaveWantedState(nodeInfo, description, clusterState);
+        }
+        return Optional.empty();
     }
 
     private boolean isGroupedSetup() {
@@ -286,27 +292,27 @@ public class NodeStateChangeChecker {
 
     /**
      * Returns an optional Result, where return value is:
-     * - No wanted state for other nodes, return Optional.empty
+     * - No wanted state for other nodes, return Optional.empty()
      * - Wanted state for nodes/groups are not UP:
      * - if less than maxNumberOfGroupsAllowedToBeDown: return Optional.of(allowed)
      *      else: if node is in group with nodes already down: return Optional.of(allowed), else Optional.of(disallowed)
      */
-    private Optional<Result> checkIfOtherNodesHaveWantedState(StorageNodeInfo nodeInfo, String newDescription, ClusterState clusterState) {
+    private Optional<Result> checkIfOtherNodesHaveWantedState(StorageNodeInfo nodeInfo, String description, ClusterState clusterState) {
         Node node = nodeInfo.getNode();
 
         Set<Integer> groupsWithNodesWantedStateNotUp = groupsWithUserWantedStateNotUp();
-        if (groupsWithNodesWantedStateNotUp.size() == 0) {
+        if (groupsWithNodesWantedStateNotUp.isEmpty()) {
             log.log(FINE, "groupsWithNodesWantedStateNotUp=0");
             return Optional.empty();
         }
 
-        Set<Integer> groupsWithSameStateAndDescription = groupsWithSameStateAndDescription(MAINTENANCE, newDescription);
+        Set<Integer> groupsWithSameStateAndDescription = groupsWithSameStateAndDescription(MAINTENANCE, description);
         if (aGroupContainsNode(groupsWithSameStateAndDescription, node)) {
             log.log(FINE, "Node is in group with same state and description, allow");
             return Optional.of(allow());
         }
         // There are groups with nodes not up, but with another description, probably operator set
-        if (groupsWithSameStateAndDescription.size() == 0) {
+        if (groupsWithSameStateAndDescription.isEmpty()) {
             return Optional.of(disallow("Wanted state already set for another node in groups: " +
                                         sortSetIntoList(groupsWithNodesWantedStateNotUp)));
         }
