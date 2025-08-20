@@ -41,18 +41,6 @@ public class SameElementItem extends NonReducibleCompositeItem {
     }
 
     @Override
-    public Optional<Item> extractSingleChild() {
-        if (getItemCount() == 1) {
-            if (getItem(0) instanceof SimpleIndexedItem child) {
-                if ( ! child.getIndexName().isEmpty())
-                    child.setIndexName(getFieldName() + "." + child.getIndexName());
-            }
-            return Optional.of(getItem(0));
-        }
-        return Optional.empty();
-    }
-    
-    @Override
     public ItemType getItemType() {
         return ItemType.SAME_ELEMENT;
     }
