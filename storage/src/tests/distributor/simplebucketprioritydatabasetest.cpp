@@ -90,7 +90,7 @@ TEST_F(SimpleBucketPriorityDatabaseTest, iterate_over_multiple_buckets_with_mult
     PrioritizedBucket lastBucket(makeDocumentBucket(BucketId()), Priority::PRIORITY_LIMIT);
     for (int i = 0; i < 5; ++i) {
         ASSERT_TRUE(iter != _queue.end());
-        ASSERT_FALSE(iter->moreImportantThan(lastBucket));
+        ASSERT_FALSE((*iter).moreImportantThan(lastBucket));
         lastBucket = *iter;
         ++iter;
     }

@@ -3,7 +3,6 @@
 
 #include "prioritizedbucket.h"
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <boost/iterator/iterator_facade.hpp>
 
 namespace storage::distributor {
 
@@ -21,26 +20,30 @@ protected:
 
     using ConstIteratorImplPtr = std::unique_ptr<ConstIteratorImpl>;
 public:
-    class ConstIterator
-        : public boost::iterator_facade<
-              ConstIterator,
-              PrioritizedBucket const,
-              boost::forward_traversal_tag,
-              PrioritizedBucket
-        >
+    class ConstIterator final
     {
         ConstIteratorImplPtr _impl;
     public:
+        using difference_type = std::ptrdiff_t;
+        using value_type = PrioritizedBucket const;
+        using pointer = value_type *;
+        using reference = value_type;
+        using iterator_category = std::input_iterator_tag;
+
         explicit ConstIterator(ConstIteratorImplPtr impl) noexcept
             : _impl(std::move(impl))
         {}
+        const PrioritizedBucket operator* () const noexcept { return dereference(); }
+        void operator++() noexcept { increment(); }
+        void operator++(int) noexcept { increment(); }
+        bool operator== (const ConstIterator& other) const noexcept {
+            return equal(other);
+        }
         ConstIterator(const ConstIterator &) = delete;
         ConstIterator(ConstIterator &&) noexcept = default;
 
-        virtual ~ConstIterator() = default;
+        ~ConstIterator() = default;
     private:
-        friend class boost::iterator_core_access;
-
         void increment() noexcept {
             _impl->increment();
         }
@@ -57,11 +60,10 @@ public:
     using const_iterator = ConstIterator;
 
     virtual ~BucketPriorityDatabase() = default;
-    
+
     virtual const_iterator begin() const = 0;
     virtual const_iterator end() const = 0;
     virtual void setPriority(const PrioritizedBucket&) = 0;
 };
 
 }
-
