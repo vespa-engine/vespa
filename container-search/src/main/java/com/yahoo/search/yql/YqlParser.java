@@ -315,7 +315,7 @@ public class YqlParser implements Parser {
                                     filterPart.getArguments().length);
         populateYqlSources(filterPart.getArgument(0));
         OperatorNode<ExpressionOperator> filterExpression = filterPart.getArgument(1);
-        Item root = convertExpression(filterExpression);
+        Item root = convertExpression(filterExpression, null);
         connectItems();
         userQuery = null;
         return new QueryTree(root);
@@ -336,8 +336,9 @@ public class YqlParser implements Parser {
         }
         else {
             throw newUnexpectedArgumentException(filterArgs.getOperator(),
-                    SequenceOperator.SCAN, SequenceOperator.ALL,
-                    SequenceOperator.MULTISOURCE);
+                                                 SequenceOperator.SCAN,
+                                                 SequenceOperator.ALL,
+                                                 SequenceOperator.MULTISOURCE);
         }
         joinDocTypesFromUserQueryAndYql();
     }
@@ -361,12 +362,11 @@ public class YqlParser implements Parser {
         }
     }
 
-    private Item convertExpression(OperatorNode<ExpressionOperator> ast) {
+    private Item convertExpression(OperatorNode<ExpressionOperator> ast, String currentField) {
         try {
-
             annotationStack.addFirst(ast);
             return switch (ast.getOperator()) {
-                case AND -> buildAnd(ast);
+                case AND -> buildAnd(ast, currentField);
                 case OR -> buildOr(ast);
                 case EQ -> buildEquals(ast);
                 case LT -> buildLessThan(ast);
@@ -375,26 +375,36 @@ public class YqlParser implements Parser {
                 case GTEQ -> buildGreaterThanOrEquals(ast);
                 case CONTAINS -> buildTermSearch(ast);
                 case MATCHES -> buildRegExpSearch(ast);
-                case CALL -> buildFunctionCall(ast);
-                case LITERAL -> buildLiteral(ast);
+                case CALL -> buildFunctionCallOrCompositeLeaf(ast, currentField);
+                case LITERAL -> buildLiteralOrNested(ast, currentField);
                 case NOT -> buildNot(ast);
                 case IN -> buildIn(ast);
                 default -> throw newUnexpectedArgumentException(ast.getOperator(),
-                                                                ExpressionOperator.AND, ExpressionOperator.CALL,
-                                                                ExpressionOperator.CONTAINS, ExpressionOperator.EQ,
-                                                                ExpressionOperator.GT, ExpressionOperator.GTEQ,
-                                                                ExpressionOperator.IN,
-                                                                ExpressionOperator.LT, ExpressionOperator.LTEQ,
-                                                                ExpressionOperator.OR);
+                                                                ExpressionOperator.AND,
+                                                                ExpressionOperator.OR,
+                                                                ExpressionOperator.EQ,
+                                                                ExpressionOperator.LT,
+                                                                ExpressionOperator.GT,
+                                                                ExpressionOperator.LTEQ,
+                                                                ExpressionOperator.GTEQ,
+                                                                ExpressionOperator.CONTAINS,
+                                                                ExpressionOperator.MATCHES,
+                                                                ExpressionOperator.CALL,
+                                                                ExpressionOperator.LITERAL,
+                                                                ExpressionOperator.NOT,
+                                                                ExpressionOperator.IN);
             };
         } finally {
             annotationStack.removeFirst();
         }
     }
 
-    private Item buildFunctionCall(OperatorNode<ExpressionOperator> ast) {
+    private Item buildFunctionCallOrCompositeLeaf(OperatorNode<ExpressionOperator> ast, String currentField) {
         List<String> names = ast.getArgument(0);
         Preconditions.checkArgument(names.size() == 1, "Expected 1 name, got %s.", names.size());
+        if (currentField != null) {
+            return instantiateCompositeLeaf("", ast);
+        }
         return switch (names.get(0)) {
             case USER_QUERY -> fetchUserQuery();
             case RANGE -> buildRange(ast);
@@ -409,16 +419,27 @@ public class YqlParser implements Parser {
             case WEAK_AND -> buildWeakAnd(ast);
             case USER_INPUT -> buildUserInput(ast);
             case NON_EMPTY -> ensureNonEmpty(ast);
-            default -> throw newUnexpectedArgumentException(names.get(0), DOT_PRODUCT, GEO_LOCATION, NEAREST_NEIGHBOR,
-                                                            RANGE, RANK, USER_QUERY, WAND, WEAK_AND, WEIGHTED_SET,
-                                                            PREDICATE, USER_INPUT, NON_EMPTY);
+            default -> throw newUnexpectedArgumentException(names.get(0),
+                                                            USER_QUERY,
+                                                            RANGE,
+                                                            WAND,
+                                                            WEIGHTED_SET,
+                                                            DOT_PRODUCT,
+                                                            GEO_BOUNDING_BOX,
+                                                            GEO_LOCATION,
+                                                            NEAREST_NEIGHBOR,
+                                                            PREDICATE,
+                                                            RANK,
+                                                            WEAK_AND,
+                                                            USER_INPUT,
+                                                            NON_EMPTY);
         };
     }
 
     private Item ensureNonEmpty(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 1, "Expected 1 arguments, got %s.", args.size());
-        Item item = convertExpression(args.get(0));
+        Item item = convertExpression(args.get(0), null);
         ToolBox.visit(noEmptyTerms, item);
         return item;
     }
@@ -509,15 +530,18 @@ public class YqlParser implements Parser {
         return item;
     }
 
-    private Item buildLiteral(OperatorNode<ExpressionOperator> ast) {
-        var literal = ast.getArgument(0);
-        if (Boolean.TRUE.equals(literal)) {
+    private Item buildLiteralOrNested(OperatorNode<ExpressionOperator> ast, String currentField) {
+        var literalOrNested = ast.getArgument(0);
+        if (Boolean.TRUE.equals(literalOrNested)) {
             return new TrueItem();
         }
-        if (Boolean.FALSE.equals(literal)) {
+        else if (Boolean.FALSE.equals(literalOrNested)) {
             return new FalseItem();
         }
-        throw newUnexpectedArgumentException(literal, Boolean.FALSE, Boolean.TRUE);
+        else if (currentField != null) {
+            return instantiateWordItem("", ast, null);
+        }
+        throw newUnexpectedArgumentException(literalOrNested, ExpressionOperator.LITERAL);
     }
 
     private Item buildNearestNeighbor(OperatorNode<ExpressionOperator> ast) {
@@ -717,7 +741,7 @@ public class YqlParser implements Parser {
         for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
             // TODO: getIndex that is called once every term is rather expensive as it does sanity checking
             // that is not necessary. This is an issue when having many elements
-            sameElement.addItem(convertExpression(term));
+            sameElement.addItem(convertExpression(term, field));
         }
         swapIndexCreator(prev);
         return sameElement;
@@ -1280,10 +1304,10 @@ public class YqlParser implements Parser {
         return node.getOperator() == ExpressionOperator.READ_FIELD || node.getOperator() == ExpressionOperator.PROPREF;
     }
 
-    private CompositeItem buildAnd(OperatorNode<ExpressionOperator> ast) {
+    private CompositeItem buildAnd(OperatorNode<ExpressionOperator> ast, String currentField) {
         AndItem andItem = new AndItem();
         NotItem notItem = new NotItem();
-        convertVarArgsAnd(ast, 0, andItem, notItem);
+        convertVarArgsAnd(ast, 0, andItem, notItem, currentField);
         if (notItem.getItemCount() == 0) {
             return andItem;
         }
@@ -1298,7 +1322,7 @@ public class YqlParser implements Parser {
     /** Build a "pure" not, without any positive terms. */
     private CompositeItem buildNot(OperatorNode<ExpressionOperator> ast) {
         NotItem notItem = new NotItem();
-        notItem.addNegativeItem(convertExpression(ast.getArgument(0)));
+        notItem.addNegativeItem(convertExpression(ast.getArgument(0), null));
         return notItem;
     }
 
@@ -1328,21 +1352,22 @@ public class YqlParser implements Parser {
         Iterable<OperatorNode<ExpressionOperator>> args = ast.getArgument(argIdx);
         for (OperatorNode<ExpressionOperator> arg : args) {
             assertHasOperator(arg, ExpressionOperator.class);
-            out.addItem(convertExpression(arg));
+            out.addItem(convertExpression(arg, null));
         }
         return out;
     }
 
-    private void convertVarArgsAnd(OperatorNode<ExpressionOperator> ast, int argIdx, AndItem outAnd, NotItem outNot) {
+    private void convertVarArgsAnd(OperatorNode<ExpressionOperator> ast, int argIdx, AndItem outAnd, NotItem outNot,
+                                   String currentField) {
         Iterable<OperatorNode<ExpressionOperator>> args = ast.getArgument(argIdx);
         for (OperatorNode<ExpressionOperator> arg : args) {
             assertHasOperator(arg, ExpressionOperator.class);
             if (arg.getOperator() == ExpressionOperator.NOT) {
                 OperatorNode<ExpressionOperator> exp = arg.getArgument(0);
                 assertHasOperator(exp, ExpressionOperator.class);
-                outNot.addNegativeItem(convertExpression(exp));
+                outNot.addNegativeItem(convertExpression(exp, currentField));
             } else {
-                outAnd.addItem(convertExpression(arg));
+                outAnd.addItem(convertExpression(arg, currentField));
             }
         }
     }
