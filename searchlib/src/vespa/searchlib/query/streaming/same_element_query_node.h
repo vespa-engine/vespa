@@ -19,6 +19,10 @@ public:
     void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env) override;
     bool multi_index_terms() const noexcept override;
     bool is_same_element_query_node() const noexcept override;
+    SameElementQueryNode* as_same_element_query_node() noexcept override;
+    const SameElementQueryNode* as_same_element_query_node() const noexcept override;
+    void get_hidden_leaves(QueryTermList & tl);
+    void get_hidden_leaves(ConstQueryTermList & tl) const;
 };
 
 }
