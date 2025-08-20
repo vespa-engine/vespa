@@ -52,7 +52,7 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
 
     @Override
     protected double maintain() {
-        log.log(Level.INFO, () -> "Running HostFlavorUpgrader");
+        log.log(Level.INFO, "Running HostFlavorUpgrader");
         if (!nodeRepository().zone().cloud().dynamicProvisioning()) return 1.0; // Not relevant in zones with static capacity
         if (nodeRepository().zone().environment().isTest()) return 1.0; // Short-lived deployments
         if (!nodeRepository().nodes().isWorking()) return 0.0;
@@ -66,7 +66,6 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
         NodeList activeNodes = allNodes.nodeType(NodeType.tenant)
                                        .state(Node.State.active)
                                        .shuffle(random); // Shuffle to avoid getting stuck trying to upgrade the same host
-        Set<String> exhaustedFlavors = new HashSet<>();
         for (var node : activeNodes) {
             Optional<Node> parent = allNodes.parentOf(node);
             if (parent.isEmpty()) continue;
@@ -75,7 +74,6 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
             // retiring nodes on shared hosts
             if (parent.get().exclusiveToApplicationId().isEmpty()) continue;
 
-            if (exhaustedFlavors.contains(parent.get().flavor().name())) continue;
             Allocation allocation = node.allocation().get();
             Predicate<NodeResources> realHostResourcesWithinLimits =
                     resources -> nodeRepository().nodeResourceLimits().isWithinRealLimits(resources, allocation.membership().cluster());
@@ -95,13 +93,13 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
                 return 1.0;
             } catch (NodeAllocationException e) {
                // Fine, no capacity for upgrade
-                exhaustedFlavors.add(parent.get().flavor().name());
             } finally {
                 if (deploymentValid && !redeployed) { // Cancel upgrade if redeploy failed
                     upgradeFlavor(parent.get(), false);
                 }
             }
         }
+        log.log(Level.INFO, "HostFlavorUpgrader ended successfully");
         return 1.0;
     }
 

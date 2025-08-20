@@ -69,11 +69,11 @@ class HostFlavorUpgraderTest {
                            .matching(node -> node.status().wantToUpgradeFlavor() || node.status().wantToRetire()),
                      "No hosts marked for upgrade or retirement");
 
-        // First provision request fails, but we only try once for the same flavor
+        // First provision request fails
         hostProvisioner.with(Behaviour.failProvisionRequest, 1);
         assertEquals(1, upgrader.maintain());
         NodeList nodes = tester.nodeRepository().nodes().list();
-        assertEquals(0, nodes.matching(node -> node.status().wantToUpgradeFlavor()).size());
+        assertEquals(1, nodes.matching(node -> node.status().wantToUpgradeFlavor()).size());
 
         // Second succeeds and a replacement host starts provisioning
         assertEquals(1, upgrader.maintain());
