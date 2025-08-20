@@ -428,7 +428,7 @@ public class YqlParserTestCase {
     @Test
     void testSameElementWithNestedAnd() {
         assertParse("select * from sources * where myStringArray contains sameElement('a' and 'b' and near('c', 'd'))",
-                    "myStringArray:{AND a b (NEAR(2) c d)}");
+                    "myStringArray:{(AND a b (NEAR(2) c d))}");
     }
 
     @Test

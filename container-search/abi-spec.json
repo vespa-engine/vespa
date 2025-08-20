@@ -9380,6 +9380,18 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.searchers.ValidateSameElementSearcher" : {
+    "superClass" : "com.yahoo.search.Searcher",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.statistics.ElapsedTime" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
