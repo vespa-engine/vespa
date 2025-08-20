@@ -104,7 +104,8 @@ public class QueryRewrite {
         NotItem theOnlyNot = null;
         for (int i = 0; i < parent.getItemCount(); i++) {
             Item child = parent.getItem(i);
-            if (child instanceof NotItem thisNot) {
+            if (child instanceof NotItem) {
+                NotItem thisNot = (NotItem) child;
                 parent.setItem(i, thisNot.getPositiveItem());
                 if (theOnlyNot == null) {
                     theOnlyNot = thisNot;
@@ -220,9 +221,10 @@ public class QueryRewrite {
     }
     
     private static Item collapseSingleComposites(Item item) {
-        if (!(item instanceof CompositeItem parent)) {
+        if (!(item instanceof CompositeItem)) {
             return item;
         }
+        CompositeItem parent = (CompositeItem)item;
         int numChildren = parent.getItemCount();
         for (int i = 0; i < numChildren; ++i) {
             Item oldChild = parent.getItem(i);
@@ -235,7 +237,8 @@ public class QueryRewrite {
     }
 
     private static Item rewriteSddocname(Item item) {
-        if (item instanceof CompositeItem parent) {
+        if (item instanceof CompositeItem) {
+            CompositeItem parent = (CompositeItem)item;
             for (int i = 0, len = parent.getItemCount(); i < len; ++i) {
                 Item oldChild = parent.getItem(i);
                 Item newChild = rewriteSddocname(oldChild);
@@ -243,7 +246,8 @@ public class QueryRewrite {
                     parent.setItem(i, newChild);
                 }
             }
-        } else if (item instanceof SimpleIndexedItem oldItem) {
+        } else if (item instanceof SimpleIndexedItem) {
+            SimpleIndexedItem oldItem = (SimpleIndexedItem)item;
             if (Hit.SDDOCNAME_FIELD.equals(oldItem.getIndexName())) {
                 SubstringItem newItem = new SubstringItem(oldItem.getIndexedString());
                 newItem.setIndexName("[documentmetastore]");

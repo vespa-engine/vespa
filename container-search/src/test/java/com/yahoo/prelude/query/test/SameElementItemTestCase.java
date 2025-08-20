@@ -67,4 +67,27 @@ public class SameElementItemTestCase {
         }
     }
 
+    private void verifyExtractSingle(TermItem term) {
+        String subFieldName = term.getIndexName();
+        SameElementItem s = new SameElementItem("structa");
+        s.addItem(term);
+        Optional<Item> single =s.extractSingleChild();
+        assertTrue(single.isPresent());
+        assertEquals(((TermItem)single.get()).getIndexName(), s.getFieldName() + "." + subFieldName);
+    }
+
+    @Test
+    void requireExtractSingleItemToExtractSingles() {
+        verifyExtractSingle(new WordItem("b", "f1"));
+        verifyExtractSingle(new IntItem("7", "f1"));
+    }
+
+    @Test
+    void requireExtractSingleItemToExtractSinglesOnly() {
+        SameElementItem s = new SameElementItem("structa");
+        s.addItem(new WordItem("b", "f1"));
+        s.addItem(new WordItem("c", "f2"));
+        assertTrue(s.extractSingleChild().isEmpty());
+    }
+
 }

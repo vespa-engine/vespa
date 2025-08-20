@@ -1068,7 +1068,7 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public final java.util.Optional extractSingleChild()"
+      "public java.util.Optional extractSingleChild()"
     ],
     "fields" : [ ]
   },
@@ -1487,6 +1487,7 @@
       "protected void encodeThis(java.nio.ByteBuffer)",
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "protected void appendBodyString(java.lang.StringBuilder)",
+      "public java.util.Optional extractSingleChild()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public java.lang.String getFieldName()",
