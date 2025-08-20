@@ -4,6 +4,7 @@
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
+#include <vespa/searchlib/query/streaming/same_element_query_node.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vsm/searcher/boolfieldsearcher.h>
@@ -226,6 +227,15 @@ FieldSearchSpecMap::buildFieldsInQuery(const Query & query) const
     query.getLeaves(qtl);
 
     for (const auto & term : qtl) {
+        auto* same_element_query_node = term->as_same_element_query_node();
+        if (same_element_query_node != nullptr) {
+            ConstQueryTermList same_element_terms;
+            same_element_query_node->get_hidden_leaves(same_element_terms);
+            for (const auto& subterm : same_element_terms) {
+                addFieldsFromIndex(subterm->index(), fieldsInQuery);
+            }
+            continue;
+        }
         auto multi_term = term->as_multi_term();
         if (multi_term != nullptr && multi_term->multi_index_terms()) {
             for (const auto& subterm : multi_term->get_terms()) {
