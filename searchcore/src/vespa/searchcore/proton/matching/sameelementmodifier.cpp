@@ -5,22 +5,49 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".matching.sameelementmodifier");
 
+using search::query::Term;
+
 namespace proton::matching {
 
-void
-SameElementModifier::visit(ProtonNodeTypes::SameElement &n) {
-    if (n.getView().empty()) return;
+class SameElementDescendantModifier : public search::query::TemplateTermVisitor<SameElementDescendantModifier, ProtonNodeTypes>
+{
+    const std::string& _same_element_view;
+public:
+    SameElementDescendantModifier(const std::string& same_element_view);
+    ~SameElementDescendantModifier();
+    void visit_term(Term& term);
+    template <class TermNode>
+    void visitTerm(TermNode &n) { visit_term(n); }
+};
 
-    std::string prefix = n.getView() + ".";
+
+SameElementDescendantModifier::SameElementDescendantModifier(const std::string& same_element_view)
+    : _same_element_view(same_element_view)
+{
+}
+
+SameElementDescendantModifier::~SameElementDescendantModifier() = default;
+
+void
+SameElementDescendantModifier::visit_term(Term& term)
+{
+    if (term.getView().empty()) {
+        term.setView(_same_element_view);
+    } else {
+        term.setView(_same_element_view + "." + term.getView());
+    }
+}
+
+void
+SameElementModifier::visit(ProtonNodeTypes::SameElement &n)
+{
+    if (n.getView().empty()) {
+        return;
+    }
+    SameElementDescendantModifier descendant_modifier(n.getView());
     for (search::query::Node * child : n.getChildren()) {
-        search::query::TermNode * term  = dynamic_cast<search::query::TermNode *>(child);
-        if (term != nullptr) {
-            term->setView(prefix + term->getView());
-        } else {
-            LOG(error, "Required a search::query::TermNode. Got %s", vespalib::getClassName(*child).c_str());
-        }
+        child->accept(descendant_modifier);
     }
 }
 
 }
-
