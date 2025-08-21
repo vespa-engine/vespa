@@ -106,7 +106,7 @@ void MatchObject::add_queryterm(QueryTerm* nt) {
     _qt.push_back(nt);
     nt->idx = _qt.size() - 1;
 
-    _qt_byname.Insert(*(reinterpret_cast<const queryterm_hashtable::keytype*>(nt->ucs4_term())), nt);
+    _qt_byname.Insert(*(nt->ucs4_term()), nt);
 
     LOG(debug, "MatchObject: adding term '%s'", nt->term());
 }
@@ -208,7 +208,7 @@ QueryTerm* match_iterator::first_match(Token& token) {
         _term = token.token;
     }
 
-    queryterm_hashtable::keytype termval = *(reinterpret_cast<const queryterm_hashtable::keytype*>(term));
+    queryterm_hashtable::keytype termval = *term;
     queryterm_hashtable::keytype keyval = termval;
     if (LOG_WOULD_LOG(spam)) {
         char utf8term[1024];
