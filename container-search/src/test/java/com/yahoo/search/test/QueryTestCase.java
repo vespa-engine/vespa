@@ -1302,20 +1302,36 @@ public class QueryTestCase {
 
     @Test
     void testLinguisticsModeWithMultipleTokens() {
-        var profile = new QueryProfile("test");
-        profile.set("model.type", "linguistics", null);
-        profile.set("model.type.isYqlDefault", "true", null);
-        var query = new Query(httpEncode("?yql=select * from sources * where default contains 'color'"),
-                              profile.compile(null));
-
         var mockLinguistics = new MockTokenizerLinguistics();
-        Result r = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub(null, mockLinguistics)).search(query);
-        assertEquals("select * from sources * where default contains ({origin: {original: \"color\", offset: 0, length: 5}}alternatives({\"color\": 1.0, \"colour\": 1.0}))",
-                     query.yqlRepresentation());
 
-        var alternativesItem = (WordAlternativesItem)query.getModel().getQueryTree().getRoot();
-        // Further token processing is disabled due to type=linguistics applied by default to all terms
-        assertTrue(alternativesItem.isStemmed());
+        var profile = new QueryProfile("test");
+        profile.set("model.type", "linguistics", null); // disables further processing
+        profile.set("model.type.isYqlDefault", "true", null);
+        {
+            String parsedYql = parse("select * from sources * where default contains 'color'",
+                                     mockLinguistics,
+                                     profile);
+            assertEquals("select * from sources * where default contains ({origin: {original: \"color\", offset: 0, length: 5}}alternatives({\"color\": 1.0, \"colour\": 1.0}))",
+                         parsedYql);
+            assertEquals(parsedYql, parse(parsedYql, mockLinguistics, profile),
+                         "Re-parsing yield the same output");
+        }
+
+        {
+            String parsedYql = parse("select * from sources * where default contains near('color', 'red')",
+                                     mockLinguistics,
+                                     profile);
+            assertEquals("select * from sources * where default contains near(({origin: {original: \"color\", offset: 0, length: 5}}alternatives({\"color\": 1.0, \"colour\": 1.0})), ({stem: false, normalizeCase: false, accentDrop: false}\"red\"))",
+                         parsedYql);
+            assertEquals(parsedYql, parse(parsedYql, mockLinguistics, profile),
+                         "Re-parsing yield the same output");
+        }
+    }
+
+    private String parse(String yql, Linguistics linguistics, QueryProfile profile) {
+        var query = new Query(httpEncode("?yql=" + yql), profile.compile(null));
+        new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub(null, linguistics)).search(query);
+        return query.yqlRepresentation();
     }
 
     @Test

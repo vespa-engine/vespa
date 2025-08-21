@@ -54,15 +54,9 @@ public class UserInputTestCase {
     public void testNear() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql", "select * from sources * where ({grammar.syntax:'none',grammar.tokenization:'linguistics',grammar.composite:'near'}userInput('Noëlᛁ continuation'))");
-        Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where default contains near(\"noel\\u16C1\", \"continuation\")", query.yqlRepresentation());
-        for (Item child : ((CompositeItem)query.getModel().getQueryTree().getRoot()).items()) {
-            WordItem word = (WordItem)child;
-            // Further token processing is disabled due to type=linguistics applied by default to all terms
-            assertTrue(word.isStemmed());
-            assertFalse(word.isNormalizable());
-            assertTrue(word.isLowercased());
-        }
+        // Further token processing is disabled due to type=linguistics applied by default to all terms
+        assertEquals("select * from sources * where default contains near(({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"noel\\u16C1\"), ({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"continuation\"))",
+                     searchAndAssertNoErrors(builder).yqlRepresentation());
     }
 
     @Test
@@ -70,11 +64,13 @@ public class UserInputTestCase {
         URIBuilder builder = searchUri();
         builder.setParameter("yql", "select * from sources * where ({grammar.syntax:'none',grammar.tokenization:'linguistics',grammar.composite:'near',distance:3}userInput('a b'))");
         Query near = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where default contains ({distance: 3}near(\"a\", \"b\"))", near.yqlRepresentation());
+        assertEquals("select * from sources * where default contains ({distance: 3}near(({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"a\"), ({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"b\")))",
+                     near.yqlRepresentation());
 
         builder.setParameter("yql", "select * from sources * where ({grammar.syntax:'none',grammar.tokenization:'linguistics',grammar.composite:'oNear',distance:4}userInput('a b'))");
         Query oNear = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where default contains ({distance: 4}onear(\"a\", \"b\"))", oNear.yqlRepresentation());
+        assertEquals("select * from sources * where default contains ({distance: 4}onear(({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"a\"), ({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"b\")))",
+                     oNear.yqlRepresentation());
     }
 
     @Test
