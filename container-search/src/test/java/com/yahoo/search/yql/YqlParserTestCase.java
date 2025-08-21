@@ -417,6 +417,8 @@ public class YqlParserTestCase {
                 "baz:{f1:a f2:b}");
         assertParse("select foo from bar where baz contains sameElement(f1 contains \"a\", f2 = 10)",
                 "baz:{f1:a f2:10}");
+        assertCanonicalParse("select foo from bar where baz contains sameElement(range(f1, 10, 20))",
+                             "baz:{f1:[10;20]}");
         assertParse("select foo from bar where baz contains sameElement(key contains \"a\", value.f2 = 10)",
                 "baz:{key:a value.f2:10}");
         assertCanonicalParse("select foo from bar where baz contains sameElement(key contains \"a\", value.f2 = 10)",

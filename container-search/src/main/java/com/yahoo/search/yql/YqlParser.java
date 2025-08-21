@@ -402,38 +402,40 @@ public class YqlParser implements Parser {
     private Item buildFunctionCallOrCompositeLeaf(OperatorNode<ExpressionOperator> ast, String currentField) {
         List<String> names = ast.getArgument(0);
         Preconditions.checkArgument(names.size() == 1, "Expected 1 name, got %s.", names.size());
-        if (currentField != null) {
-            return instantiateCompositeLeaf("", ast);
+        switch (names.get(0)) {
+            case USER_QUERY: return fetchUserQuery();
+            case RANGE: return buildRange(ast);
+            case WAND: return buildWand(ast);
+            case WEIGHTED_SET: return buildWeightedSet(ast);
+            case DOT_PRODUCT: return buildDotProduct(ast);
+            case GEO_BOUNDING_BOX: return buildGeoBoundingBox(ast);
+            case GEO_LOCATION: return buildGeoLocation(ast);
+            case NEAREST_NEIGHBOR: return buildNearestNeighbor(ast);
+            case PREDICATE: return buildPredicate(ast);
+            case RANK: return buildRank(ast);
+            case WEAK_AND: return buildWeakAnd(ast);
+            case USER_INPUT: return buildUserInput(ast);
+            case NON_EMPTY: return ensureNonEmpty(ast);
+            default: {
+                if (currentField != null)
+                    return instantiateCompositeLeaf("", ast); // Match in a sameElement array
+                else
+                    throw newUnexpectedArgumentException(names.get(0),
+                                                         USER_QUERY,
+                                                         RANGE,
+                                                         WAND,
+                                                         WEIGHTED_SET,
+                                                         DOT_PRODUCT,
+                                                         GEO_BOUNDING_BOX,
+                                                         GEO_LOCATION,
+                                                         NEAREST_NEIGHBOR,
+                                                         PREDICATE,
+                                                         RANK,
+                                                         WEAK_AND,
+                                                         USER_INPUT,
+                                                         NON_EMPTY);
+            }
         }
-        return switch (names.get(0)) {
-            case USER_QUERY -> fetchUserQuery();
-            case RANGE -> buildRange(ast);
-            case WAND -> buildWand(ast);
-            case WEIGHTED_SET -> buildWeightedSet(ast);
-            case DOT_PRODUCT -> buildDotProduct(ast);
-            case GEO_BOUNDING_BOX -> buildGeoBoundingBox(ast);
-            case GEO_LOCATION -> buildGeoLocation(ast);
-            case NEAREST_NEIGHBOR -> buildNearestNeighbor(ast);
-            case PREDICATE -> buildPredicate(ast);
-            case RANK -> buildRank(ast);
-            case WEAK_AND -> buildWeakAnd(ast);
-            case USER_INPUT -> buildUserInput(ast);
-            case NON_EMPTY -> ensureNonEmpty(ast);
-            default -> throw newUnexpectedArgumentException(names.get(0),
-                                                            USER_QUERY,
-                                                            RANGE,
-                                                            WAND,
-                                                            WEIGHTED_SET,
-                                                            DOT_PRODUCT,
-                                                            GEO_BOUNDING_BOX,
-                                                            GEO_LOCATION,
-                                                            NEAREST_NEIGHBOR,
-                                                            PREDICATE,
-                                                            RANK,
-                                                            WEAK_AND,
-                                                            USER_INPUT,
-                                                            NON_EMPTY);
-        };
     }
 
     private Item ensureNonEmpty(OperatorNode<ExpressionOperator> ast) {
