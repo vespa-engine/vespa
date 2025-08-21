@@ -2,6 +2,7 @@
 #include "query.h"
 #include "near_query_node.h"
 #include "onear_query_node.h"
+#include "query_builder.h"
 #include "same_element_query_node.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
@@ -24,7 +25,7 @@ QueryConnector::QueryConnector(const char * opName) noexcept
 }
 
 void
-QueryConnector::addChild(QueryNode::UP child) {
+QueryConnector::addChild(std::unique_ptr<QueryNode> child) {
     _children.push_back(std::move(child));
 }
 
@@ -174,7 +175,7 @@ Query::build(const QueryNodeResultFactory & factory, std::string_view queryRep)
 {
     search::SimpleQueryStackDumpIterator stack(queryRep);
     if (stack.next()) {
-        _root = QueryNode::Build(nullptr, factory, stack, true);
+        _root = QueryBuilder().build(nullptr, factory, stack, true);
     }
     return valid();
 }
