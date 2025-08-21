@@ -37,7 +37,7 @@ public:
         ITEM_MULTI_TERM            =   7,
         ITEM_PREFIXTERM            =   8,
         ITEM_SUBSTRINGTERM         =   9,
-        ITEM_ANY                   =   10,
+        // not used ITEM_ANY       =   10,
         ITEM_NEAR                  =   11,
         ITEM_ONEAR                 =   12,
         ITEM_SUFFIXTERM            =   13,
