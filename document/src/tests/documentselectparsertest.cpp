@@ -32,6 +32,7 @@
 #include <vespa/document/select/parse_utils.h>
 #include <vespa/document/select/parser_limits.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/casts.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <limits>
 
@@ -1296,26 +1297,10 @@ TEST_F(DocumentSelectParserTest, testDocumentIdsInRemoves)
     PARSE("testdoctype1 and testdoctype1.headerval == 0", DocumentId("id:ns:testdoctype1::1"), Invalid);
 }
 
-namespace {
-
-#if defined(__cpp_char8_t)
-const char *
-char_from_u8(const char8_t * p) {
-    return reinterpret_cast<const char *>(p);
-}
-#else
-const char *
-char_from_u8(const char * p) {
-    return p;
-}
-#endif
-
-}
-
 TEST_F(DocumentSelectParserTest, testUtf8)
 {
     createDocs();
-    std::string utf8name = char_from_u8(u8"H\u00e5kon");
+    std::string utf8name = u8"Håkon"_C;
     EXPECT_EQ(size_t(6), utf8name.size());
 
     /// \todo TODO (was warning):  UTF8 test for glob/regex support in selection language disabled. Known not to work

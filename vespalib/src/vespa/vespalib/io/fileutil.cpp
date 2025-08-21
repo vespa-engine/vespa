@@ -283,7 +283,7 @@ listDirectory(const std::string & path)
     DirectoryList result;
     if (dir) {
         while ((entry = readdir(dir))) {
-            std::string name(reinterpret_cast<const char*>(&entry->d_name));
+            std::string name(entry->d_name);
             assert(!name.empty());
             if (name[0] == '.' && (name.size() == 1
                                    || (name.size() == 2 && name[1] == '.')))

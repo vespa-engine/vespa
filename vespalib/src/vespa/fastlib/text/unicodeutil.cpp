@@ -64,7 +64,7 @@ Fast_UnicodeUtil::utf8cmp(const char *s1, const ucs4_t *s2) noexcept
     ucs4_t i1;
     ucs4_t i2;
 
-    const unsigned char *ps1 = reinterpret_cast<const unsigned char *>(s1);
+    const unsigned char *ps1 = char_p_cast<unsigned char>(s1);
     do {
         i1 = GetUTF8Char(ps1);
         i2 = *s2++;
@@ -91,7 +91,7 @@ Fast_UnicodeUtil::ucs4copy(ucs4_t *dst, const char *src) noexcept
 {
     ucs4_t i;
     ucs4_t *p;
-    const unsigned char *psrc = reinterpret_cast<const unsigned char *>(src);
+    const unsigned char *psrc = char_p_cast<unsigned char>(src);
 
     p = dst;
     while ((i = GetUTF8Char(psrc)) != 0) {

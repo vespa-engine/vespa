@@ -3,6 +3,7 @@
 #include "testenv.h"
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+#include <vespa/vespalib/util/casts.h>
 #include <map>
 #include <cctype>
 #include <vespa/fastos/file.h>
@@ -227,22 +228,8 @@ void test_dump(const char* s, unsigned int len) {
     }
 }
 
-namespace {
-
-#if defined(__cpp_char8_t)
-const char* char_from_u8(const char8_t* p) {
-    return reinterpret_cast<const char*>(p);
-}
-#else
-const char* char_from_u8(const char* p) {
-    return p;
-}
-#endif
-
-} // namespace
-
 void TestUTF8(unsigned int size) {
-    const char* s = char_from_u8(u8"\u00e5pent s\u00f8k\u00e6\u00f8\u00e5\u00e6\u00f8\u00e5\u00e6\u00f8\u00e5");
+    const char* s = u8"åpent søkæøåæøåæøå"_C;
     const unsigned char* p = (const unsigned char*)s;
 
     int moved = 0;
@@ -321,23 +308,20 @@ void test_summary(Matcher& m, const char* content, size_t content_len, int size,
 }
 
 TEST(AuxTest, testUTF8context) {
-    const char*          iso_cont = char_from_u8(u8"AND(m\u00b5ss,fast,s\u00f8kemotor,\u00e5relang)");
+    const char*          iso_cont = u8"AND(mµss,fast,søkemotor,årelang)"_C;
     juniper::QueryParser q(iso_cont);
     juniper::QueryHandle qh(q, nullptr);
 
     // some content
-    std::string s(
-        char_from_u8(u8"Fast leverer s\u00d8kemotorer og andre nyttige ting for \u00e5 finne frem p\u00e5 "));
-    s.append(char_from_u8(u8"internett. Teknologien er basert p\u00e5 \u00c5relang"));
+    std::string s(u8"Fast leverer sØkemotorer og andre nyttige ting for å finne frem på "_C);
+    s.append(u8"internett. Teknologien er basert på Årelang"_C);
     s += juniper::separators::unit_separator_string;
-    s.append(char_from_u8(u8"norsk innsats og forskning i"));
+    s.append(u8"norsk innsats og forskning i"_C);
     s += juniper::separators::group_separator_string;
-    s.append(
-        char_from_u8(u8"trondheimsmilj\u00f8et. M\u00b5ss med denne nye funksjonaliteten for \u00e5 vise frem"));
+    s.append(u8"trondheimsmiljøet. Mµss med denne nye funksjonaliteten for å vise frem"_C);
     s += juniper::separators::unit_separator_string;
-    s.append(
-        char_from_u8(u8" beste forekomst av s\u00f8ket med s\u00f8kemotor til brukeren blir det enda bedre. "));
-    s.append(char_from_u8(u8"Hvis bare UTF8-kodingen virker som den skal for tegn som tar mer enn \u00e9n byte."));
+    s.append(u8" beste forekomst av søket med søkemotor til brukeren blir det enda bedre. "_C);
+    s.append(u8"Hvis bare UTF8-kodingen virker som den skal for tegn som tar mer enn én byte."_C);
 
     auto res = juniper::Analyse(*juniper::TestConfig, qh, s.c_str(), s.size(), 0);
     EXPECT_TRUE(static_cast<bool>(res));

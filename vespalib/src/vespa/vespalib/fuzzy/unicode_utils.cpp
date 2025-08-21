@@ -3,6 +3,7 @@
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/casts.h>
 #include <stdexcept>
 
 namespace vespalib::fuzzy {
@@ -37,7 +38,7 @@ std::vector<uint32_t> utf8_string_to_utf32(std::string_view str) {
 }
 
 std::vector<uint32_t> utf8_string_to_utf32(std::u8string_view u8str) {
-    return utf8_string_to_utf32(std::string_view(reinterpret_cast<const char*>(u8str.data()), u8str.size()));
+    return utf8_string_to_utf32(std::string_view(char_p_cast<char>(u8str.data()), u8str.size()));
 }
 
 std::string utf32_string_to_utf8(std::span<const uint32_t> u32str) {
@@ -129,7 +130,7 @@ namespace {
 void append_utf32_char(std::string& out_str, uint32_t u32_char) {
     unsigned char u8buf[4];
     uint8_t u8bytes = encode_utf8_char(u32_char, u8buf);
-    out_str.append(reinterpret_cast<const char*>(u8buf), u8bytes);
+    out_str.append(char_p_cast<char>(u8buf), u8bytes);
 }
 
 }
