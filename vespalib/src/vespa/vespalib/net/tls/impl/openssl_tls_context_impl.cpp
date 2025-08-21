@@ -7,6 +7,7 @@
 #include <vespa/vespalib/crypto/openssl_typedefs.h>
 #include <vespa/vespalib/net/tls/statistics.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
+#include <vespa/vespalib/util/casts.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <mutex>
 #include <vector>
@@ -357,7 +358,7 @@ bool fill_certificate_common_name(::X509* cert, PeerCredentials& creds) {
         }
         ::ASN1_STRING* cn_asn1 = ::X509_NAME_ENTRY_get_data(entry);
         if ((cn_asn1 != nullptr) && (cn_asn1->data != nullptr) && (cn_asn1->length > 0)) {
-            const auto* data = reinterpret_cast<const char*>(cn_asn1->data);
+            const auto* data = char_p_cast<char>(cn_asn1->data);
             const auto size  = static_cast<size_t>(cn_asn1->length);
             if (has_embedded_nulls(data, size)) {
                 LOG(warning, "Got X509 peer certificate with embedded nulls in CN field");
@@ -379,9 +380,9 @@ struct GeneralNamesDeleter {
 std::string get_ia5_string(const ASN1_IA5STRING* ia5_str) {
     if ((ia5_str->type == V_ASN1_IA5STRING) && (ia5_str->data != nullptr) && (ia5_str->length > 0)) {
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
-        const char* data  = reinterpret_cast<const char*>(::ASN1_STRING_get0_data(ia5_str));
+        const char* data  = char_p_cast<char>(::ASN1_STRING_get0_data(ia5_str));
 #else
-        const char* data  = reinterpret_cast<const char*>(::ASN1_STRING_data(ia5_str));
+        const char* data  = char_p_cast<char>(::ASN1_STRING_data(ia5_str));
 #endif
         const auto length = static_cast<size_t>(::ASN1_STRING_length(ia5_str));
         if (has_embedded_nulls(data, length)) {
