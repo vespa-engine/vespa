@@ -38,6 +38,7 @@ bool possibleFloat(const QueryTerm & qt, const QueryTerm::string & term) {
 }
 
 QueryBuilder::QueryBuilder()
+    : _same_element_view()
 {
 }
 
@@ -108,12 +109,13 @@ QueryBuilder::build(const QueryNode * parent, const QueryNodeResultFactory& fact
             if (index.empty()) {
                 if ((type == ParseItem::ITEM_PURE_WEIGHTED_STRING) || (type == ParseItem::ITEM_PURE_WEIGHTED_LONG)) {
                     index = parent->getIndex();
+                } else if (_same_element_view.has_value() && !_same_element_view.value().empty()) {
+                    index = _same_element_view.value();
                 } else {
                     index = SimpleQueryStackDumpIterator::DEFAULT_INDEX;
                 }
-            }
-            if (dynamic_cast<const SameElementQueryNode *>(parent) != nullptr) {
-                index = parent->getIndex() + "." + index;
+            } else if (_same_element_view.has_value() && !_same_element_view.value().empty()) {
+                index = _same_element_view.value() + "." + index;
             }
             TermType sTerm = ParseItem::toTermType(type);
             QueryTerm::string ssTerm;
@@ -336,6 +338,7 @@ std::unique_ptr<QueryNode>
 QueryBuilder::build_same_element_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
 {
     auto sen = std::make_unique<SameElementQueryNode>(factory.create(), queryRep.index_as_string(), queryRep.getArity());
+    _same_element_view = queryRep.index_as_string();
     auto arity = queryRep.getArity();
     sen->setWeight(queryRep.GetWeight());
     sen->setUniqueId(queryRep.getUniqueId());
@@ -346,6 +349,7 @@ QueryBuilder::build_same_element_term(const QueryNodeResultFactory& factory, Sim
         assert(qt);
         sen->add_term(std::move(qt));
     }
+    _same_element_view.reset();
     return sen;
 }
 
