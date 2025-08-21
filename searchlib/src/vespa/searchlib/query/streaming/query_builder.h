@@ -4,6 +4,7 @@
 
 #include <vespa/searchlib/query/query_normalization.h>
 #include <memory>
+#include <optional>
 
 namespace search { class SimpleQueryStackDumpIterator; }
 
@@ -27,6 +28,7 @@ class QueryBuilder {
     std::unique_ptr<QueryNode> build_same_element_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep);
     static void skip_unknown(SimpleQueryStackDumpIterator& queryRep);
 
+    std::optional<std::string> _same_element_view;
 public:
     QueryBuilder();
     ~QueryBuilder();
