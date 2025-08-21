@@ -146,6 +146,8 @@ org.apache.curator:curator-client:${curator.vespa.version}
 org.apache.curator:curator-framework:${curator.vespa.version}
 org.apache.curator:curator-recipes:${curator.vespa.version}
 org.apache.curator:curator-test:${curator.vespa.version}
+org.apache.datasketches:datasketches-java:${org.apache.datasketches.vespa.version}
+org.apache.datasketches:datasketches-memory:${org.apache.datasketches.memory.vespa.version}
 org.apache.felix:org.apache.felix.framework:${felix.vespa.version}
 org.apache.felix:org.apache.felix.log:${felix.log.vespa.version}
 org.apache.httpcomponents.client5:httpclient5:${apache.httpclient5.vespa.version}
