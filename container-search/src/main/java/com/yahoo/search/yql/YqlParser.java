@@ -900,16 +900,15 @@ public class YqlParser implements Parser {
         String defaultIndex = getAnnotation(ast, USER_INPUT_DEFAULT_INDEX,
                                             String.class, "default", "default index for user input terms");
         Language language = decideParsingLanguage(ast, wordData);
-        Item item;
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        Query.Type.WEAKAND.toString(), "The overall query type of the user input");
         if (USER_INPUT_GRAMMAR_RAW.equals(grammar)) {
-            item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, true, language);
+            return instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, true, language);
         } else if (USER_INPUT_GRAMMAR_SEGMENT.equals(grammar)) {
-            item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language);
+            return instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language);
         } else {
             QueryType queryType = buildQueryType(ast);
-            item = parseUserInput(queryType, defaultIndex, wordData, language, allowEmpty);
+            Item item = parseUserInput(queryType, defaultIndex, wordData, language, allowEmpty);
             propagateUserInputAnnotationsRecursively(ast, item);
 
             // Set grammar-specific annotations
@@ -926,9 +925,8 @@ public class YqlParser implements Parser {
                     nearItem.setDistance(distance);
                 }
             }
+            return item;
         }
-
-        return item;
     }
 
     private QueryType buildQueryType(OperatorNode<ExpressionOperator> ast) {
@@ -1000,7 +998,7 @@ public class YqlParser implements Parser {
                                                .addSources(docTypes)
                                                .setLanguage(language)
                                                .setDefaultIndexName(defaultIndex)).getRoot();
-        // the null check should be unnecessary, but is there to avoid having to suppress null warnings
+
         if ( ! allowNullItem && (item == null || item instanceof NullItem))
             throw new IllegalArgumentException("Parsing '" + wordData + "' only resulted in NullItem.");
 
