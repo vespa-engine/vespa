@@ -1312,7 +1312,7 @@ public class QueryTestCase {
             String parsedYql = parse("select * from sources * where default contains 'color'",
                                      mockLinguistics,
                                      profile);
-            assertEquals("select * from sources * where default contains ({origin: {original: \"color\", offset: 0, length: 5}}alternatives({\"color\": 1.0, \"colour\": 1.0}))",
+            assertEquals("select * from sources * where default contains ({origin: {original: \"color\", offset: 0, length: 5}, normalizeCase: false, accentDrop: false}alternatives({\"color\": 1.0, \"colour\": 1.0}))",
                          parsedYql);
             assertEquals(parsedYql, parse(parsedYql, mockLinguistics, profile),
                          "Re-parsing yield the same output");
@@ -1322,7 +1322,7 @@ public class QueryTestCase {
             String parsedYql = parse("select * from sources * where default contains near('color', 'red')",
                                      mockLinguistics,
                                      profile);
-            assertEquals("select * from sources * where default contains near(({origin: {original: \"color\", offset: 0, length: 5}}alternatives({\"color\": 1.0, \"colour\": 1.0})), ({stem: false, normalizeCase: false, accentDrop: false}\"red\"))",
+            assertEquals("select * from sources * where default contains near(({origin: {original: \"color\", offset: 0, length: 5}, normalizeCase: false, accentDrop: false}alternatives({\"color\": 1.0, \"colour\": 1.0})), ({stem: false, normalizeCase: false, accentDrop: false}\"red\"))",
                          parsedYql);
             assertEquals(parsedYql, parse(parsedYql, mockLinguistics, profile),
                          "Re-parsing yield the same output");
@@ -1340,7 +1340,7 @@ public class QueryTestCase {
             String parsedYql = parse("select * from sources * where userInput('color')",
                                      mockLinguistics,
                                      profile);
-            assertEquals("select * from sources * where weakAnd(default contains ({origin: {original: \"color\", offset: 0, length: 5}}alternatives({\"color\": 1.0, \"colour\": 1.0})))",
+            assertEquals("select * from sources * where weakAnd(default contains ({origin: {original: \"color\", offset: 0, length: 5}, normalizeCase: false, accentDrop: false}alternatives({\"color\": 1.0, \"colour\": 1.0})))",
                          parsedYql);
             assertEquals(parsedYql, parse(parsedYql, mockLinguistics, profile),
                          "Re-parsing yield the same output");
@@ -1350,7 +1350,7 @@ public class QueryTestCase {
             String parsedYql = parse("select * from sources * where ({grammar.composite:'near'}userInput('color red'))",
                                      mockLinguistics,
                                      profile);
-            assertEquals("select * from sources * where default contains near(({origin: {original: \"color\", offset: 0, length: 5}}alternatives({\"color\": 1.0, \"colour\": 1.0})), ({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"red\"))",
+            assertEquals("select * from sources * where default contains near(({origin: {original: \"color\", offset: 0, length: 5}, normalizeCase: false, accentDrop: false}alternatives({\"color\": 1.0, \"colour\": 1.0})), ({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"red\"))",
                          parsedYql);
             assertEquals(parsedYql, parse(parsedYql, mockLinguistics, profile),
                          "Re-parsing yield the same output");

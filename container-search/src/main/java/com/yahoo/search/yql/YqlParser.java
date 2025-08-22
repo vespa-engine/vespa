@@ -1557,22 +1557,30 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(args.get(0).getOperator() == ExpressionOperator.MAP, "Expected MAP, got %s.",
                                     args.get(0).getOperator());
 
-        List<WordAlternativesItem.Alternative> terms = new ArrayList<>();
+        List<WordAlternativesItem.Alternative> alternatives = new ArrayList<>();
         List<String> keys = args.get(0).getArgument(0);
         List<OperatorNode<ExpressionOperator>> values = args.get(0).getArgument(1);
         for (int i = 0; i < keys.size(); ++i) {
             OperatorNode<ExpressionOperator> value = values.get(i);
             if (value.getOperator() != ExpressionOperator.LITERAL)
                 throw newUnexpectedArgumentException(value.getOperator(), ExpressionOperator.LITERAL);
-
             String term = keys.get(i);
             double exactness = value.getArgument(0, Double.class);
-            terms.add(new WordAlternativesItem.Alternative(term, exactness));
+            alternatives.add(new WordAlternativesItem.Alternative(term, exactness));
         }
-        Substring origin = getSubstring(ast);
         Boolean isFromQuery = getAnnotation(ast, IMPLICIT_TRANSFORMS, Boolean.class, Boolean.TRUE,
                                             IMPLICIT_TRANSFORMS_DESCRIPTION);
-        return leafStyleSettings(ast, new WordAlternativesItem(field, isFromQuery, origin, terms));
+        return instantiateWordAlternativesItem(alternatives, field, getSubstring(ast), isFromQuery, ast);
+    }
+
+    private WordAlternativesItem instantiateWordAlternativesItem(List<WordAlternativesItem.Alternative> alternatives, String field,
+                                                 Substring origin, boolean isFromQuery, OperatorNode<ExpressionOperator> ast) {
+        var alternativesItem = new WordAlternativesItem(field, isFromQuery, origin, alternatives);
+        if (shouldDisableFurtherTokenProcessing(ast)) {
+            alternativesItem.setNormalizable(false);
+            alternativesItem.setLowercased(true);
+        }
+        return leafStyleSettings(ast, alternativesItem);
     }
 
     private UriItem instantiateUriItem(String field, OperatorNode<ExpressionOperator> ast) {
@@ -1701,7 +1709,7 @@ public class YqlParser implements Parser {
             for (int i = 0; i < token.getNumStems(); i++) {
                 alternatives.add(new WordAlternativesItem.Alternative(token.getStem(i), 1.0));
             }
-            return new WordAlternativesItem(field, fromQuery, new Substring(origin), alternatives);
+            return instantiateWordAlternativesItem(alternatives, field, new Substring(origin), fromQuery, ast);
         }
     }
 
