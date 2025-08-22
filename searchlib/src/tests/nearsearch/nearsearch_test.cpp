@@ -10,6 +10,7 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <optional>
 #include <vector>
 
 #include <vespa/log/log.h>
@@ -17,6 +18,7 @@ LOG_SETUP("nearsearch_test");
 
 using search::fef::ElementGap;
 using search::queryeval::IElementGapInspector;
+using search::queryeval::NearSearchBase;
 using search::queryeval::test::MockElementGapInspector;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -134,6 +136,7 @@ MyQuery::~MyQuery() = default;
 class NearSearchTest : public ::testing::Test {
 protected:
     void testNearSearch(MyQuery &query, uint32_t matchId, const std::string& label);
+    void test_near_search(MyQuery &query, uint32_t matchId, std::optional<std::vector<uint32_t>> element_ids, const std::string& label);
 
     NearSearchTest();
     ~NearSearchTest() override;
@@ -240,8 +243,24 @@ TEST_F(NearSearchTest, repeated_terms)
     }
 }
 
+TEST_F(NearSearchTest, get_element_ids)
+{
+    MyTerm foo({69}, {{3, 5, {2}}, {7, 5, {2}}});
+    MyTerm bar({69, 70, 71}, {{3, 5, {4}}, {7, 5, {0}}});
+    test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, {{3, 7}}, "near 61");
+    test_near_search(MyQuery(true, 4).addTerm(foo).addTerm(bar), 69, {{3}}, "onear 61");
+    test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, {{3, 7}}, "near 62");
+    test_near_search(MyQuery(true, 4).addTerm(bar).addTerm(foo), 69, {{7}}, "onear 62");
+}
+
 void
 NearSearchTest::testNearSearch(MyQuery &query, uint32_t matchId, const std::string& label)
+{
+    test_near_search(query, matchId, std::nullopt, label);
+}
+
+void
+NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId, std::optional<std::vector<uint32_t>> exp_element_ids, const std::string& label)
 {
     SCOPED_TRACE(vespalib::make_string("%s - %u", label.c_str(), matchId));
     search::queryeval::IntermediateBlueprint *near_b = nullptr;
@@ -268,6 +287,13 @@ NearSearchTest::testNearSearch(MyQuery &query, uint32_t matchId, const std::stri
         uint32_t docId = near->getDocId();
         if (docId == matchId) {
             foundMatch = true;
+            if (exp_element_ids.has_value()) {
+                std::vector<uint32_t> act_element_ids;
+                auto* mynear = dynamic_cast<NearSearchBase*>(near.get());
+                ASSERT_NE(nullptr, mynear);
+                mynear->get_element_ids(docId, act_element_ids);
+                EXPECT_EQ(act_element_ids, exp_element_ids.value());
+            }
         } else {
             FAIL() << "Document " << docId << " matched unexpectedly.";
         }
