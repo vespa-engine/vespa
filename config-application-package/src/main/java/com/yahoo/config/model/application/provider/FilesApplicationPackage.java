@@ -126,6 +126,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                     boolean includeSourceFiles,
                                     List<FilesApplicationPackage> inherited) {
         verifyAppDir(appDir);
+        this.inherited = List.copyOf(inherited);
         this.includeSourceFiles = includeSourceFiles;
         this.appDir = appDir;
         this.preprocessedDir = preprocessedDir;
@@ -134,7 +135,6 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         addUserIncludeDirs();
         this.metaData = metaData;
         this.transformerFactory = XML.createTransformerFactory();
-        this.inherited = List.copyOf(inherited);
     }
 
     @Override
@@ -305,13 +305,12 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             addAllDefsFromConfigDir(defs, new File("src/main/resources/configdefinitions"));
             addAllDefsFromConfigDir(defs, new File("src/test/resources/configdefinitions"));
         }
-        addAllDefsFromBundles(defs, getComponents(appDir));
+        addAllDefsFromBundles(defs, getBundles(appDir));
         return defs;
     }
 
-    private void addAllDefsFromBundles(Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs, List<Component> components) {
-        for (Component component : components) {
-            Bundle bundle = component.getBundle();
+    private void addAllDefsFromBundles(Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs, List<Bundle> bundles) {
+        for (Bundle bundle : bundles) {
             for (final Bundle.DefEntry def : bundle.getDefEntries()) {
                 final ConfigDefinitionKey defKey = new ConfigDefinitionKey(def.defName, def.defNamespace);
                 if (!defs.containsKey(defKey)) {
@@ -410,8 +409,8 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     // Only for use by deploy processor
-    public static List<Component> getComponents(File appDir) {
-        return components(appDir, Component::new);
+    public static List<Bundle> getBundles(File appDir) {
+        return components(appDir, (bundle, __) -> bundle);
     }
 
     private static List<ComponentInfo> getComponentsInfo(File appDir) {
@@ -431,7 +430,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         return getComponentsInfo(appDir);
     }
 
-    public List<Component> getComponents() { return getComponents(appDir); }
+    public List<Bundle> getBundles() { return getBundles(appDir); }
 
     public File getAppDir() throws IOException { return appDir.getCanonicalFile(); }
 
@@ -455,17 +454,6 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             // Not a big deal, return default
             return defaultMetaData;
         }
-    }
-
-    /** Represents a component in the application package. Immutable. */
-    public record Component(Bundle bundle, ComponentInfo info) {
-
-        public List<Bundle.DefEntry> getDefEntries() {
-            return bundle.getDefEntries();
-        }
-
-        public Bundle getBundle() { return bundle; }
-
     }
 
     /**
@@ -602,18 +590,13 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         ConfigDefinitionDir defDir = new ConfigDefinitionDir(destination);
         // Copy the user's def files from components.
         List<Bundle> bundlesAdded = new ArrayList<>();
-        for (Component component : getComponents(appSubDirs.root())) {
-            Bundle bundle = component.getBundle();
+        for (Bundle bundle : getBundles(appSubDirs.root())) {
             defDir.addConfigDefinitionsFromBundle(bundle, bundlesAdded);
             bundlesAdded.add(bundle);
         }
     }
 
-    /**
-     * Computes an md5 hash of the contents of the application package
-     *
-     * @return an md5sum of the application package
-     */
+    /** Computes an md5 hash of the contents of the application package. */
     private static String computeCheckSum(File appDir) {
         MessageDigest md5;
         try {

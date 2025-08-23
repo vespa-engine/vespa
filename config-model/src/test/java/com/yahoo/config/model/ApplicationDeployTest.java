@@ -75,11 +75,11 @@ public class ApplicationDeployTest {
                         new File(TEST_SCHEMAS_DIR + "pc.sd"),
                         new File(TEST_SCHEMAS_DIR + "product.sd"),
                         new File(TEST_SCHEMAS_DIR + "sock.sd")),
-                new HashSet<>(tester.app().getSearchDefinitionFiles()));
+                new HashSet<>(tester.app().getSchemaFiles()));
 
-        List<FilesApplicationPackage.Component> components = tester.app().getComponents();
-        assertEquals(1, components.size());
-        Map<String, Bundle.DefEntry> defEntriesByName = defEntries2map(components.get(0).getDefEntries());
+        List<Bundle> bundles = tester.app().getBundles();
+        assertEquals(1, bundles.size());
+        Map<String, Bundle.DefEntry> defEntriesByName = defEntries2map(bundles.get(0).getDefEntries());
         assertEquals(5, defEntriesByName.size());
 
         Bundle.DefEntry def1 = defEntriesByName.get("test-namespace");
@@ -298,7 +298,7 @@ public class ApplicationDeployTest {
     @Test
     void testInvalidJar() {
         try {
-            FilesApplicationPackage.getComponents(new File("src/test/cfg/application/validation/invalidjar_app"));
+            FilesApplicationPackage.getBundles(new File("src/test/cfg/application/validation/invalidjar_app"));
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Error opening jar file 'invalid.jar'. Please check that this is a valid jar file",
