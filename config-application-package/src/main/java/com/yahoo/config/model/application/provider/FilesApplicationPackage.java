@@ -148,13 +148,11 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     @Override
     public ApplicationFile getFile(Path path) {
         File file = (path.isRoot() ? appDir : applicationFile(appDir, path.getRelative()));
-        return new FilesApplicationFile(path, file);
+        return new FilesApplicationFile(path, file); // AH: Opprett den som eksisterer (omn noen)
     }
 
     @Override
-    public ApplicationMetaData getMetaData() {
-        return metaData;
-    }
+    public ApplicationMetaData getMetaData() { return metaData; }
 
     private List<NamedReader> getFiles(Path relativePath, String namePrefix, String suffix, boolean recurse) {
         try {
@@ -187,15 +185,12 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     private void verifyAppDir(File appDir) {
         Objects.requireNonNull(appDir, "Path cannot be null");
-        if ( ! appDir.exists()) {
+        if ( ! appDir.exists())
             throw new IllegalArgumentException("Path '" + appDir + "' does not exist");
-        }
-        if ( ! appDir.isDirectory()) {
+        if ( ! appDir.isDirectory())
             throw new IllegalArgumentException("Path '" + appDir + "' is not a directory");
-        }
-        if (! appDir.canRead()){
+        if (! appDir.canRead())
             throw new IllegalArgumentException("Cannot read from application directory '" + appDir + "'");
-        }
     }
 
     @Override
@@ -267,20 +262,19 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         String dir = include.getAttribute(IncludeDirs.DIR);
         validateIncludeDir(dir);
         IncludeDirs.validateFilesInIncludedDir(dir, include.getParentNode(), this);
-        log.log(Level.FINE, () -> "Adding user include dir '" + dir + "'");
         userIncludeDirs.add(dir);
     }
 
     @Override
     public void validateIncludeDir(String dirName) {
-        IncludeDirs.validateIncludeDir(dirName, this);
+        IncludeDirs.validateIncludeDir(dirName, this); // AH: Verifies it exists, so must check parent
     }
 
     @Override
     public Collection<NamedReader> getSchemas() {
         Set<NamedReader> ret = new LinkedHashSet<>();
         try {
-            for (File f : getSearchDefinitionFiles()) {
+            for (File f : getSchemaFiles()) {
                 ret.add(new NamedReader(f.getName(), new FileReader(f)));
             }
         } catch (Exception e) {
@@ -297,7 +291,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
      */
     private Reader retrieveConfigDefReader(File defPath) {
         try {
-            return new NamedReader(defPath.getPath(), new FileReader(defPath));
+            return new NamedReader(defPath.getPath(), new FileReader(defPath)); // AH: Check if exists or get from parent
         } catch (IOException e) {
             throw new IllegalArgumentException("Could not read config definition file '" + defPath + "'", e);
         }
@@ -339,17 +333,16 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     private void addAllDefsFromConfigDir(Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs, File configDefsDir) {
-        if (! configDefsDir.isDirectory()) return;
+        if (! configDefsDir.isDirectory()) return; // AH: Check parent
 
-        log.log(Level.FINE, () -> "Getting all config definitions from '" + configDefsDir + "'");
+        // AH: Merge with parents
         for (File def : configDefsDir.listFiles((File dir, String name) -> name.matches(".*\\.def"))) {
             String[] nv = def.getName().split("\\.def");
             ConfigDefinitionKey key;
             try {
                 key = ConfigUtils.createConfigDefinitionKeyFromDefFile(def);
             } catch (IOException e) {
-                e.printStackTrace(); // TODO: Fix
-                break;
+                throw new RuntimeException("Could not read " + def, e);
             }
             if (key.getNamespace().isEmpty())
                 throw new IllegalArgumentException("Config definition '" + def + "' has no namespace");
@@ -397,7 +390,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         }
     }
 
-    static List<File> getSearchDefinitionFiles(File appDir) {
+    static List<File> getSchemaFiles(File appDir) {
         List<File> schemaFiles = new ArrayList<>();
 
         File sdDir = applicationFile(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
@@ -408,11 +401,12 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         if (sdDir.isDirectory())
             schemaFiles.addAll(List.of(sdDir.listFiles((dir, name) -> validSchemaFilename(name))));
 
+        // AH: Add from parents
         return schemaFiles;
     }
 
-    public List<File> getSearchDefinitionFiles() {
-        return getSearchDefinitionFiles(appDir);
+    public List<File> getSchemaFiles() {
+        return getSchemaFiles(appDir);
     }
 
     // Only for use by deploy processor
@@ -437,18 +431,9 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         return getComponentsInfo(appDir);
     }
 
-    /**
-     * Returns a list of all components in this package.
-     *
-     * @return A list of components.
-     */
-    public List<Component> getComponents() {
-        return getComponents(appDir);
-    }
+    public List<Component> getComponents() { return getComponents(appDir); }
 
-    public File getAppDir() throws IOException {
-        return appDir.getCanonicalFile();
-    }
+    public File getAppDir() throws IOException { return appDir.getCanonicalFile(); }
 
     private static ApplicationMetaData readMetaData(File appDir) {
         String originalAppDir = preprocessed.equals(appDir.getName()) ? appDir.getParentFile().getName() : appDir.getName();
@@ -472,26 +457,14 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         }
     }
 
-    /**
-     * Represents a component in the application package. Immutable.
-     */
-    public static class Component {
-
-        public final ComponentInfo info;
-        private final Bundle bundle;
-
-        public Component(Bundle bundle, ComponentInfo info) {
-            this.bundle = bundle;
-            this.info = info;
-        }
+    /** Represents a component in the application package. Immutable. */
+    public record Component(Bundle bundle, ComponentInfo info) {
 
         public List<Bundle.DefEntry> getDefEntries() {
             return bundle.getDefEntries();
         }
 
-        public Bundle getBundle() {
-            return bundle;
-        }
+        public Bundle getBundle() { return bundle; }
 
     }
 
@@ -572,7 +545,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                 transformerFactory.newTransformer().transform(new DOMSource(document), new StreamResult(outputStream));
             }
         } catch (TransformerException | ParserConfigurationException | SAXException e) {
-            throw new RuntimeException("Error preprocessing " + inputXml.getAbsolutePath() + ": " + e.getMessage(), e);
+            throw new RuntimeException("Error preprocessing " + inputXml.getPath() + ": " + e.getMessage(), e);
         }
     }
 
@@ -700,6 +673,111 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         } while(i != -1);
     }
 
+    static File applicationFile(File parent, String path) {
+        return applicationFile(parent, Path.fromString(path));
+    }
+
+    static File applicationFile(File parent, Path path) {
+        File file = new File(parent, path.getRelative());
+        if ( ! file.getAbsolutePath().startsWith(parent.getAbsolutePath()))
+            throw new IllegalArgumentException(file + " is not a child of " + parent);
+        // AH: Get from parent if non-existing
+        return file;
+    }
+
+    /* Validates that files in application dir and subdirectories have a known extension */
+    public void validateFileExtensions() {
+        validFileExtensions.forEach((subDir, __) -> validateInDir(subDir.toFile().toPath()));
+    }
+
+    private void validateInDir(java.nio.file.Path subDir) {
+        java.nio.file.Path path = appDir.toPath().resolve(subDir);
+        File subDirectory = path.toFile();
+        if ( ! subDirectory.exists() || ! subDirectory.isDirectory()) return;
+
+        try (var filesInPath = Files.list(path)) {
+            filesInPath.forEach(filePath -> {
+                if (filePath.toFile().isDirectory())
+                    validateInDir(appDir.toPath().relativize(filePath));
+                else
+                    validateFileExtensions(filePath);
+            });
+        } catch (IOException e) {
+            log.log(Level.WARNING, "Unable to list files in " + subDirectory, e);
+        }
+    }
+
+    static {
+        // Note: Directories intentionally not validated: MODELS_DIR (custom models can contain files with any extension)
+
+        // TODO: Files that according to doc (https://docs.vespa.ai/en/reference/schema-reference.html)
+        //       can be anywhere in the application package:
+        //       - constant tensors (.json, .json.lz4)
+        //       - onnx model files (.onnx)
+        validFileExtensions = Map.ofEntries(
+                Map.entry(Path.fromString(COMPONENT_DIR), Set.of(".jar")),
+                Map.entry(CONSTANTS_DIR, Set.of(".json", ".json.lz4")),
+                Map.entry(Path.fromString(DOCPROCCHAINS_DIR), Set.of(".xml")),
+                Map.entry(PAGE_TEMPLATES_DIR, Set.of(".xml")),
+                Map.entry(Path.fromString(PROCESSORCHAINS_DIR), Set.of(".xml")),
+                Map.entry(QUERY_PROFILES_DIR, Set.of(".xml")),
+                Map.entry(QUERY_PROFILE_TYPES_DIR, Set.of(".xml")),
+                Map.entry(Path.fromString(ROUTINGTABLES_DIR), Set.of(".xml")),
+                Map.entry(RULES_DIR, Set.of(RULES_NAME_SUFFIX)),
+                // Note: Might have rank profiles in subdirs: [schema-name]/[rank-profile].profile
+                Map.entry(SCHEMAS_DIR, Set.of(SD_NAME_SUFFIX, RANKEXPRESSION_NAME_SUFFIX, RANKPROFILE_NAME_SUFFIX)),
+                Map.entry(Path.fromString(SEARCHCHAINS_DIR), Set.of(".xml")),
+                // Note: Might have rank profiles in subdirs: [schema-name]/[rank-profile].profile
+                Map.entry(SEARCH_DEFINITIONS_DIR, Set.of(SD_NAME_SUFFIX, RANKEXPRESSION_NAME_SUFFIX, RANKPROFILE_NAME_SUFFIX)),
+                Map.entry(SECURITY_DIR, Set.of(".pem")));
+    }
+
+    private void validateFileExtensions(java.nio.file.Path pathToFile) {
+        Set<String> allowedExtensions = findAllowedExtensions(appDir.toPath().relativize(pathToFile).getParent());
+        String fileName = pathToFile.toFile().getName();
+        if (allowedExtensions.stream().noneMatch(fileName::endsWith)) {
+            String message = "File in application package with unknown extension: " +
+                             appDir.toPath().relativize(pathToFile.getParent()).resolve(fileName) +
+                             ", please delete or move file to another directory.";
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    private Set<String> findAllowedExtensions(java.nio.file.Path relativeDirectory) {
+        Set<String> validExtensions = new HashSet<>();
+        validExtensions.add(".gitignore");
+
+        // Special case, since subdirs in schemas/ can have any name
+        if (isSchemasSubDir(relativeDirectory))
+            validExtensions.add(RANKPROFILE_NAME_SUFFIX);
+        else
+            validExtensions.addAll(validFileExtensions.entrySet().stream()
+                                                      .filter(entry -> entry.getKey()
+                                                                            .equals(Path.fromString(relativeDirectory.toString())))
+                                                      .map(Map.Entry::getValue)
+                                                      .findFirst()
+                                                      .orElse(Set.of()));
+        return validExtensions;
+    }
+
+    private boolean isSchemasSubDir(java.nio.file.Path relativeDirectory) {
+        java.nio.file.Path schemasPath = SCHEMAS_DIR.toFile().toPath().getName(0);
+        java.nio.file.Path searchDefinitionsPath = SEARCH_DEFINITIONS_DIR.toFile().toPath().getName(0);
+        if (List.of(schemasPath, searchDefinitionsPath).contains(relativeDirectory)) return false;
+
+        return (relativeDirectory.startsWith(schemasPath + "/")
+                || relativeDirectory.startsWith(searchDefinitionsPath + "/"));
+    }
+
+    private static ApplicationMetaData metaDataFromDeployData(File appDir, DeployData deployData) {
+        return new ApplicationMetaData(deployData.getDeployTimestamp(),
+                                       deployData.isInternalRedeploy(),
+                                       deployData.getApplicationId(),
+                                       computeCheckSum(appDir),
+                                       deployData.getGeneration(),
+                                       deployData.getCurrentlyActiveGeneration());
+    }
+
     /** Creates from a directory with source files included */
     public static FilesApplicationPackage fromFile(File appDir) {
         return fromFile(appDir, false);
@@ -774,111 +852,6 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                                inherited);
         }
 
-    }
-
-    static File applicationFile(File parent, String path) {
-        return applicationFile(parent, Path.fromString(path));
-    }
-
-    static File applicationFile(File parent, Path path) {
-        File file = new File(parent, path.getRelative());
-        if ( ! file.getAbsolutePath().startsWith(parent.getAbsolutePath()))
-            throw new IllegalArgumentException(file + " is not a child of " + parent);
-
-        return file;
-    }
-
-    /* Validates that files in application dir and subdirectories have a known extension */
-    public void validateFileExtensions() {
-        validFileExtensions.forEach((subDir, __) -> validateInDir(subDir.toFile().toPath()));
-    }
-
-    private void validateInDir(java.nio.file.Path subDir) {
-        java.nio.file.Path path = appDir.toPath().resolve(subDir);
-        File subDirectory = path.toFile();
-        if ( ! subDirectory.exists() || ! subDirectory.isDirectory()) return;
-
-        try (var filesInPath = Files.list(path)) {
-            filesInPath.forEach(filePath -> {
-                if (filePath.toFile().isDirectory())
-                    validateInDir(appDir.toPath().relativize(filePath));
-                else
-                    validateFileExtensions(filePath);
-            });
-        } catch (IOException e) {
-            log.log(Level.WARNING, "Unable to list files in " + subDirectory, e);
-        }
-    }
-
-    static {
-        // Note: Directories intentionally not validated: MODELS_DIR (custom models can contain files with any extension)
-
-        // TODO: Files that according to doc (https://docs.vespa.ai/en/reference/schema-reference.html)
-        //       can be anywhere in the application package:
-        //       - constant tensors (.json, .json.lz4)
-        //       - onnx model files (.onnx)
-        validFileExtensions = Map.ofEntries(
-                Map.entry(Path.fromString(COMPONENT_DIR), Set.of(".jar")),
-                Map.entry(CONSTANTS_DIR, Set.of(".json", ".json.lz4")),
-                Map.entry(Path.fromString(DOCPROCCHAINS_DIR), Set.of(".xml")),
-                Map.entry(PAGE_TEMPLATES_DIR, Set.of(".xml")),
-                Map.entry(Path.fromString(PROCESSORCHAINS_DIR), Set.of(".xml")),
-                Map.entry(QUERY_PROFILES_DIR, Set.of(".xml")),
-                Map.entry(QUERY_PROFILE_TYPES_DIR, Set.of(".xml")),
-                Map.entry(Path.fromString(ROUTINGTABLES_DIR), Set.of(".xml")),
-                Map.entry(RULES_DIR, Set.of(RULES_NAME_SUFFIX)),
-                // Note: Might have rank profiles in subdirs: [schema-name]/[rank-profile].profile
-                Map.entry(SCHEMAS_DIR, Set.of(SD_NAME_SUFFIX, RANKEXPRESSION_NAME_SUFFIX, RANKPROFILE_NAME_SUFFIX)),
-                Map.entry(Path.fromString(SEARCHCHAINS_DIR), Set.of(".xml")),
-                // Note: Might have rank profiles in subdirs: [schema-name]/[rank-profile].profile
-                Map.entry(SEARCH_DEFINITIONS_DIR, Set.of(SD_NAME_SUFFIX, RANKEXPRESSION_NAME_SUFFIX, RANKPROFILE_NAME_SUFFIX)),
-                Map.entry(SECURITY_DIR, Set.of(".pem")));
-    }
-
-    private void validateFileExtensions(java.nio.file.Path pathToFile) {
-        Set<String> allowedExtensions = findAllowedExtensions(appDir.toPath().relativize(pathToFile).getParent());
-        log.log(Level.FINE, "Checking " + pathToFile + " against " + allowedExtensions);
-        String fileName = pathToFile.toFile().getName();
-        if (allowedExtensions.stream().noneMatch(fileName::endsWith)) {
-            String message = "File in application package with unknown extension: " +
-                    appDir.toPath().relativize(pathToFile.getParent()).resolve(fileName) + ", please delete or move file to another directory.";
-            throw new IllegalArgumentException(message);
-        }
-    }
-
-    private Set<String> findAllowedExtensions(java.nio.file.Path relativeDirectory) {
-        Set<String> validExtensions = new HashSet<>();
-        validExtensions.add(".gitignore");
-
-        // Special case, since subdirs in schemas/ can have any name
-        if (isSchemasSubDir(relativeDirectory))
-            validExtensions.add(RANKPROFILE_NAME_SUFFIX);
-        else
-            validExtensions.addAll(validFileExtensions.entrySet().stream()
-                                                      .filter(entry -> entry.getKey()
-                                                                            .equals(Path.fromString(relativeDirectory.toString())))
-                                                      .map(Map.Entry::getValue)
-                                                      .findFirst()
-                                                      .orElse(Set.of()));
-        return validExtensions;
-    }
-
-    private boolean isSchemasSubDir(java.nio.file.Path relativeDirectory) {
-        java.nio.file.Path schemasPath = SCHEMAS_DIR.toFile().toPath().getName(0);
-        java.nio.file.Path searchDefinitionsPath = SEARCH_DEFINITIONS_DIR.toFile().toPath().getName(0);
-        if (List.of(schemasPath, searchDefinitionsPath).contains(relativeDirectory)) return false;
-
-        return (relativeDirectory.startsWith(schemasPath + "/")
-                || relativeDirectory.startsWith(searchDefinitionsPath + "/"));
-    }
-
-    private static ApplicationMetaData metaDataFromDeployData(File appDir, DeployData deployData) {
-        return new ApplicationMetaData(deployData.getDeployTimestamp(),
-                                       deployData.isInternalRedeploy(),
-                                       deployData.getApplicationId(),
-                                       computeCheckSum(appDir),
-                                       deployData.getGeneration(),
-                                       deployData.getCurrentlyActiveGeneration());
     }
 
 }
