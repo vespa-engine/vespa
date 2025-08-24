@@ -80,8 +80,10 @@ class ApplicationPackagePreprocessor {
                                                       ApplicationPackage.SERVICES,
                                                       ApplicationPackage.HOSTS,
                                                       ApplicationPackage.CONFIG_DEFINITIONS_DIR).contains(name));
-        preprocessXML(FilesApplicationPackage.fileUnder(dir, Path.fromString(ApplicationPackage.SERVICES)), applicationPackage.getServicesFile(), zone);
-        preprocessXML(FilesApplicationPackage.fileUnder(dir, Path.fromString(ApplicationPackage.HOSTS)), applicationPackage.getHostsFile(), zone);
+        preprocessXML(FilesApplicationPackage.fileUnder(dir, Path.fromString(ApplicationPackage.SERVICES)),
+                      applicationPackage.applicationFile(ApplicationPackage.SERVICES), zone);
+        preprocessXML(FilesApplicationPackage.fileUnder(dir, Path.fromString(ApplicationPackage.HOSTS)),
+                      applicationPackage.applicationFile(ApplicationPackage.HOSTS), zone);
     }
 
     private void preprocessXML(File destination, File inputXml, Zone zone) throws IOException {
@@ -106,7 +108,7 @@ class ApplicationPackagePreprocessor {
     }
 
     private void validateServicesFile() throws IOException {
-        File servicesFile = applicationPackage.getServicesFile();
+        File servicesFile = applicationPackage.applicationFile(ApplicationPackage.SERVICES);
         if ( ! servicesFile.exists())
             throw new IllegalArgumentException(ApplicationPackage.SERVICES + " does not exist in application package. " +
                                                "There are " + filesInApplicationPackage() + " files in the directory");

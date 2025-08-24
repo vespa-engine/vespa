@@ -58,6 +58,7 @@ public interface ApplicationPackage {
     Path PAGE_TEMPLATES_DIR= Path.fromString("page-templates");
     Path RULES_DIR = Path.fromString("rules");
 
+    Path APPLICATION_DEFINITION_FILE = Path.fromString("application.xml");
     Path DEPLOYMENT_FILE = Path.fromString("deployment.xml");
     Path VALIDATION_OVERRIDES = Path.fromString("validation-overrides.xml");
 
@@ -144,8 +145,7 @@ public interface ApplicationPackage {
     /** Returns handle for the file containing client certificate authorities */
     default ApplicationFile getClientSecurityFile() { return getFile(SECURITY_DIR.append("clients.pem")); }
 
-    String getHostSource();
-    String getServicesSource();
+    Optional<Reader> getApplicationDefinition();
 
     Optional<Reader> getDeployment();
 

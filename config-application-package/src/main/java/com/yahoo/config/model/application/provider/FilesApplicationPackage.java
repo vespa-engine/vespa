@@ -168,7 +168,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     @Override
     public Reader getHosts() {
         try {
-            File hostsFile = getHostsFile();
+            File hostsFile = applicationFile(HOSTS);
             if (!hostsFile.exists()) return null;
             return new FileReader(hostsFile);
         } catch (Exception e) {
@@ -177,22 +177,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     @Override
-    public String getHostSource() {
-        return getHostsFile().getPath();
-    }
-
-    File getHostsFile() {
-        return applicationFile(HOSTS);
-    }
-
-    @Override
-    public String getServicesSource() {
-        return getServicesFile().getPath();
-    }
-
-    File getServicesFile() {
-        return applicationFile(SERVICES);
-    }
+    public Optional<Reader> getApplicationDefinition() { return optionalFile(APPLICATION_DEFINITION_FILE); }
 
     @Override
     public Optional<Reader> getDeployment() { return optionalFile(DEPLOYMENT_FILE); }
@@ -344,7 +329,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     @Override
     public Reader getServices() {
         try {
-            return new FileReader(getServicesSource());
+            return new FileReader(applicationFile(SERVICES).getPath());
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
@@ -476,7 +461,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         return preprocessor.preprocess(zone);
     }
 
-    private File applicationFile(String path) {
+    File applicationFile(String path) {
         return applicationFile(Path.fromString(path));
     }
 
@@ -484,7 +469,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
      * Returns this file from the first (depth first, left right) application package in the inheritance hierarchy
      * where it exists, or from this if it doesn't exist in any.
      */
-    private File applicationFile(Path path) {
+    File applicationFile(Path path) {
         File file = fileUnder(appDir, path);
         if (file.exists()) return file;
         for (var inheritedPackage : inherited) {
