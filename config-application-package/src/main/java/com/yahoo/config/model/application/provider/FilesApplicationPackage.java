@@ -516,31 +516,6 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         }
     }
 
-    static {
-        // Note: Directories intentionally not validated: MODELS_DIR (custom models can contain files with any extension)
-
-        // TODO: Files that according to doc (https://docs.vespa.ai/en/reference/schema-reference.html)
-        //       can be anywhere in the application package:
-        //       - constant tensors (.json, .json.lz4)
-        //       - onnx model files (.onnx)
-        validFileExtensions = Map.ofEntries(
-                Map.entry(Path.fromString(COMPONENT_DIR), Set.of(".jar")),
-                Map.entry(CONSTANTS_DIR, Set.of(".json", ".json.lz4")),
-                Map.entry(Path.fromString(DOCPROCCHAINS_DIR), Set.of(".xml")),
-                Map.entry(PAGE_TEMPLATES_DIR, Set.of(".xml")),
-                Map.entry(Path.fromString(PROCESSORCHAINS_DIR), Set.of(".xml")),
-                Map.entry(QUERY_PROFILES_DIR, Set.of(".xml")),
-                Map.entry(QUERY_PROFILE_TYPES_DIR, Set.of(".xml")),
-                Map.entry(Path.fromString(ROUTINGTABLES_DIR), Set.of(".xml")),
-                Map.entry(RULES_DIR, Set.of(RULES_NAME_SUFFIX)),
-                // Note: Might have rank profiles in subdirs: [schema-name]/[rank-profile].profile
-                Map.entry(SCHEMAS_DIR, Set.of(SD_NAME_SUFFIX, RANKEXPRESSION_NAME_SUFFIX, RANKPROFILE_NAME_SUFFIX)),
-                Map.entry(Path.fromString(SEARCHCHAINS_DIR), Set.of(".xml")),
-                // Note: Might have rank profiles in subdirs: [schema-name]/[rank-profile].profile
-                Map.entry(SEARCH_DEFINITIONS_DIR, Set.of(SD_NAME_SUFFIX, RANKEXPRESSION_NAME_SUFFIX, RANKPROFILE_NAME_SUFFIX)),
-                Map.entry(SECURITY_DIR, Set.of(".pem")));
-    }
-
     private void validateFileExtensions(java.nio.file.Path pathToFile) {
         Set<String> allowedExtensions = findAllowedExtensions(appDir.toPath().relativize(pathToFile).getParent());
         String fileName = pathToFile.toFile().getName();
@@ -590,13 +565,29 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         return file;
     }
 
-    private static ApplicationMetaData metaDataFromDeployData(File appDir, DeployData deployData) {
-        return new ApplicationMetaData(deployData.getDeployTimestamp(),
-                                       deployData.isInternalRedeploy(),
-                                       deployData.getApplicationId(),
-                                       new ApplicationChecksum(appDir).asString(),
-                                       deployData.getGeneration(),
-                                       deployData.getCurrentlyActiveGeneration());
+    static {
+        // Note: Directories intentionally not validated: MODELS_DIR (custom models can contain files with any extension)
+
+        // TODO: Files that according to doc (https://docs.vespa.ai/en/reference/schema-reference.html)
+        //       can be anywhere in the application package:
+        //       - constant tensors (.json, .json.lz4)
+        //       - onnx model files (.onnx)
+        validFileExtensions = Map.ofEntries(
+                Map.entry(Path.fromString(COMPONENT_DIR), Set.of(".jar")),
+                Map.entry(CONSTANTS_DIR, Set.of(".json", ".json.lz4")),
+                Map.entry(Path.fromString(DOCPROCCHAINS_DIR), Set.of(".xml")),
+                Map.entry(PAGE_TEMPLATES_DIR, Set.of(".xml")),
+                Map.entry(Path.fromString(PROCESSORCHAINS_DIR), Set.of(".xml")),
+                Map.entry(QUERY_PROFILES_DIR, Set.of(".xml")),
+                Map.entry(QUERY_PROFILE_TYPES_DIR, Set.of(".xml")),
+                Map.entry(Path.fromString(ROUTINGTABLES_DIR), Set.of(".xml")),
+                Map.entry(RULES_DIR, Set.of(RULES_NAME_SUFFIX)),
+                // Note: Might have rank profiles in subdirs: [schema-name]/[rank-profile].profile
+                Map.entry(SCHEMAS_DIR, Set.of(SD_NAME_SUFFIX, RANKEXPRESSION_NAME_SUFFIX, RANKPROFILE_NAME_SUFFIX)),
+                Map.entry(Path.fromString(SEARCHCHAINS_DIR), Set.of(".xml")),
+                // Note: Might have rank profiles in subdirs: [schema-name]/[rank-profile].profile
+                Map.entry(SEARCH_DEFINITIONS_DIR, Set.of(SD_NAME_SUFFIX, RANKEXPRESSION_NAME_SUFFIX, RANKPROFILE_NAME_SUFFIX)),
+                Map.entry(SECURITY_DIR, Set.of(".pem")));
     }
 
     /** Creates from a directory with source files included */
@@ -652,7 +643,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         }
 
         public Builder deployData(DeployData deployData) {
-            this.metaData = Optional.of(metaDataFromDeployData(appDir, deployData));
+            this.metaData = Optional.of(deployData.toMetaData(appDir));
             return this;
         }
 
