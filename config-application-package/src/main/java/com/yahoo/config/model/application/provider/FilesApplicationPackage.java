@@ -568,7 +568,17 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         return applicationFile(Path.fromString(path));
     }
 
+    /**
+     * Returns this file from the first (depth first, left right) application package in the inheritance hierarchy
+     * where it exists, or from this if it doesn't exist in any.
+     */
     private File applicationFile(Path path) {
+        File file = fileUnder(appDir, path);
+        if (file.exists()) return file;
+        for (var inheritedPackage : inherited) {
+            file = applicationFile(path);
+            if (file.exists()) return file;
+        }
         return fileUnder(appDir, path);
     }
 
