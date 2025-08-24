@@ -902,16 +902,15 @@ public class YqlParser implements Parser {
         String defaultIndex = getAnnotation(ast, USER_INPUT_DEFAULT_INDEX,
                                             String.class, "default", "default index for user input terms");
         Language language = decideParsingLanguage(ast, wordData);
-        Item item;
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        Query.Type.WEAKAND.toString(), "The overall query type of the user input");
         if (USER_INPUT_GRAMMAR_RAW.equals(grammar)) {
-            item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, true, language);
+            return instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, true, language);
         } else if (USER_INPUT_GRAMMAR_SEGMENT.equals(grammar)) {
-            item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language);
+            return instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language);
         } else {
             QueryType queryType = buildQueryType(ast);
-            item = parseUserInput(queryType, defaultIndex, wordData, language, allowEmpty);
+            Item item = parseUserInput(queryType, defaultIndex, wordData, language, allowEmpty);
             propagateUserInputAnnotationsRecursively(ast, item);
 
             // Set grammar-specific annotations
@@ -928,9 +927,8 @@ public class YqlParser implements Parser {
                     nearItem.setDistance(distance);
                 }
             }
+            return item;
         }
-
-        return item;
     }
 
     private QueryType buildQueryType(OperatorNode<ExpressionOperator> ast) {
@@ -1002,7 +1000,7 @@ public class YqlParser implements Parser {
                                                .addSources(docTypes)
                                                .setLanguage(language)
                                                .setDefaultIndexName(defaultIndex)).getRoot();
-        // the null check should be unnecessary, but is there to avoid having to suppress null warnings
+
         if ( ! allowNullItem && (item == null || item instanceof NullItem))
             throw new IllegalArgumentException("Parsing '" + wordData + "' only resulted in NullItem.");
 
@@ -1561,22 +1559,30 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(args.get(0).getOperator() == ExpressionOperator.MAP, "Expected MAP, got %s.",
                                     args.get(0).getOperator());
 
-        List<WordAlternativesItem.Alternative> terms = new ArrayList<>();
+        List<WordAlternativesItem.Alternative> alternatives = new ArrayList<>();
         List<String> keys = args.get(0).getArgument(0);
         List<OperatorNode<ExpressionOperator>> values = args.get(0).getArgument(1);
         for (int i = 0; i < keys.size(); ++i) {
             OperatorNode<ExpressionOperator> value = values.get(i);
             if (value.getOperator() != ExpressionOperator.LITERAL)
                 throw newUnexpectedArgumentException(value.getOperator(), ExpressionOperator.LITERAL);
-
             String term = keys.get(i);
             double exactness = value.getArgument(0, Double.class);
-            terms.add(new WordAlternativesItem.Alternative(term, exactness));
+            alternatives.add(new WordAlternativesItem.Alternative(term, exactness));
         }
-        Substring origin = getSubstring(ast);
         Boolean isFromQuery = getAnnotation(ast, IMPLICIT_TRANSFORMS, Boolean.class, Boolean.TRUE,
                                             IMPLICIT_TRANSFORMS_DESCRIPTION);
-        return leafStyleSettings(ast, new WordAlternativesItem(field, isFromQuery, origin, terms));
+        return instantiateWordAlternativesItem(alternatives, field, getSubstring(ast), isFromQuery, ast);
+    }
+
+    private WordAlternativesItem instantiateWordAlternativesItem(List<WordAlternativesItem.Alternative> alternatives, String field,
+                                                 Substring origin, boolean isFromQuery, OperatorNode<ExpressionOperator> ast) {
+        var alternativesItem = new WordAlternativesItem(field, isFromQuery, origin, alternatives);
+        if (shouldDisableFurtherTokenProcessing(ast)) {
+            alternativesItem.setNormalizable(false);
+            alternativesItem.setLowercased(true);
+        }
+        return leafStyleSettings(ast, alternativesItem);
     }
 
     private UriItem instantiateUriItem(String field, OperatorNode<ExpressionOperator> ast) {
@@ -1705,7 +1711,7 @@ public class YqlParser implements Parser {
             for (int i = 0; i < token.getNumStems(); i++) {
                 alternatives.add(new WordAlternativesItem.Alternative(token.getStem(i), 1.0));
             }
-            return new WordAlternativesItem(field, fromQuery, new Substring(origin), alternatives);
+            return instantiateWordAlternativesItem(alternatives, field, new Substring(origin), fromQuery, ast);
         }
     }
 
