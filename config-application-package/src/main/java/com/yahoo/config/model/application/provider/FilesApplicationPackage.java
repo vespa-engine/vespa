@@ -666,6 +666,11 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                 || relativeDirectory.startsWith(searchDefinitionsPath + "/"));
     }
 
+    @Override
+    public String toString() {
+        return "application package '" + appDir + "'";
+    }
+
     private static File fileUnder(File root, Path path) {
         File file = new File(root, path.getRelative());
         if ( ! file.getAbsolutePath().startsWith(root.getAbsolutePath()))

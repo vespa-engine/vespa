@@ -36,7 +36,7 @@ public class ApplicationPackageXmlFilesValidator {
     }
 
     public void checkApplication() throws IOException {
-        validate(validators.servicesXmlValidator(), servicesFileName());
+        validateOptional(validators.servicesXmlValidator(), FilesApplicationPackage.SERVICES);
         validateOptional(validators.hostsXmlValidator(), FilesApplicationPackage.HOSTS);
         validateOptional(validators.deploymentXmlValidator(), FilesApplicationPackage.DEPLOYMENT_FILE.getName());
         validateOptional(validators.validationOverridesXmlValidator(), FilesApplicationPackage.VALIDATION_OVERRIDES.getName());
@@ -60,15 +60,6 @@ public class ApplicationPackageXmlFilesValidator {
 
     private void validate(SchemaValidator validator, String filename) throws IOException {
         validator.validate(appDirs.file(filename));
-    }
-
-    private String servicesFileName() {
-        String servicesFile = FilesApplicationPackage.SERVICES;
-        if ( ! appDirs.file(servicesFile).exists()) {
-            throw new IllegalArgumentException("Application package in " + appDirs.root() +
-                                               " must contain " + FilesApplicationPackage.SERVICES);
-        }
-        return servicesFile;
     }
 
     private void validateRouting(Tuple2<File, String> directory) throws IOException {
