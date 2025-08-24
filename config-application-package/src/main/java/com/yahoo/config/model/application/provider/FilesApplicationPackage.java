@@ -60,7 +60,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -391,19 +390,13 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     // Only for use by deploy processor
     public static List<Bundle> getBundles(File appDir) {
-        return components(appDir, (bundle, __) -> bundle);
+        return Bundle.getBundles(applicationFile(appDir, COMPONENT_DIR));
     }
 
     private static List<ComponentInfo> getComponentsInfo(File appDir) {
-        return components(appDir, (__, info) -> info);
-    }
-
-    private static <T> List<T> components(File appDir, BiFunction<Bundle, ComponentInfo, T> toValue) {
-        List<T> components = new ArrayList<>();
-        for (Bundle bundle : Bundle.getBundles(applicationFile(appDir, COMPONENT_DIR))) {
-            components.add(toValue.apply(bundle, new ComponentInfo(Path.fromString(COMPONENT_DIR).append(bundle.getFile().getName()).getRelative())));
-        }
-        return components;
+        return getBundles(appDir).stream()
+                                 .map(bundle -> new ComponentInfo(Path.fromString(COMPONENT_DIR).append(bundle.getFile().getName()).getRelative()))
+                                 .toList();
     }
 
     @Override
