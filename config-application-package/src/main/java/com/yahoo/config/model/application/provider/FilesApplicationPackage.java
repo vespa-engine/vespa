@@ -113,19 +113,19 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
      * @param includeSourceFiles include files from source dirs
      */
     private FilesApplicationPackage(File appDir,
-                                    File preprocessedDir,
-                                    ApplicationMetaData metaData,
+                                    Optional<File> preprocessedDir,
+                                    Optional<ApplicationMetaData> metaData,
                                     boolean includeSourceFiles,
                                     List<FilesApplicationPackage> inherited) {
         verifyAppDir(appDir);
+        this.appDir = appDir;
         this.inherited = List.copyOf(inherited);
         this.includeSourceFiles = includeSourceFiles;
-        this.appDir = appDir;
-        this.preprocessedDir = preprocessedDir;
+        this.preprocessedDir = preprocessedDir.orElse(applicationFile(preprocessed));
+        this.metaData = metaData.orElse(readMetaData(appDir));
         appSubDirs = new AppSubDirs(appDir);
-        configDefsDir = applicationFile(appDir, CONFIG_DEFINITIONS_DIR);
+        configDefsDir = applicationFile(CONFIG_DEFINITIONS_DIR);
         addUserIncludeDirs();
-        this.metaData = metaData;
         this.transformerFactory = XML.createTransformerFactory();
     }
 
@@ -139,7 +139,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     @Override
     public ApplicationFile getFile(Path path) {
-        File file = (path.isRoot() ? appDir : applicationFile(appDir, path.getRelative()));
+        File file = (path.isRoot() ? appDir : applicationFile(path.getRelative()));
         return new FilesApplicationFile(path, file);
     }
 
@@ -148,7 +148,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     private List<NamedReader> getFiles(Path relativePath, String namePrefix, String suffix, boolean recurse) {
         try {
-            File dir = applicationFile(appDir, relativePath);
+            File dir = applicationFile(relativePath);
             if ( ! dir.isDirectory()) return List.of();
 
             Set<NamedReader> readers = new LinkedHashSet<>();
@@ -202,7 +202,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     private File getHostsFile() {
-        return applicationFile(appDir, HOSTS);
+        return applicationFile(HOSTS);
     }
 
     @Override
@@ -211,7 +211,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     private File getServicesFile() {
-        return applicationFile(appDir, SERVICES);
+        return applicationFile(SERVICES);
     }
 
     @Override
@@ -259,7 +259,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     @Override
     public void validateIncludeDir(String dirName) {
-        IncludeDirs.validateIncludeDir(dirName, this); // AH: Verifies it exists, so must check parent
+        IncludeDirs.validateIncludeDir(dirName, this);
     }
 
     @Override
@@ -297,11 +297,11 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             addAllDefsFromConfigDirInThis(defs, new File("src/main/resources/configdefinitions"));
             addAllDefsFromConfigDirInThis(defs, new File("src/test/resources/configdefinitions"));
         }
-        addAllDefsFromBundles(defs, getBundles(appDir));
+        addAllDefsFromBundles(defs, getBundles());
 
         for (var inheritedPackage : inherited) {
             inheritedPackage.addAllDefsFromConfigDirInThis(defs, configDefsDir);
-            inheritedPackage.addAllDefsFromBundles(defs, getBundles(appDir));
+            inheritedPackage.addAllDefsFromBundles(defs, getBundles());
         }
         return defs;
     }
@@ -370,33 +370,29 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         }
     }
 
-    static List<File> getSchemaFiles(File appDir) {
+    public List<File> getSchemaFiles() {
         List<File> schemaFiles = new ArrayList<>();
 
-        File sdDir = applicationFile(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
+        File sdDir = applicationFile(SEARCH_DEFINITIONS_DIR.getRelative());
         if (sdDir.isDirectory())
             schemaFiles.addAll(List.of(sdDir.listFiles((dir, name) -> validSchemaFilename(name))));
 
-        sdDir = applicationFile(appDir, SCHEMAS_DIR.getRelative());
+        sdDir = applicationFile(SCHEMAS_DIR.getRelative());
         if (sdDir.isDirectory())
             schemaFiles.addAll(List.of(sdDir.listFiles((dir, name) -> validSchemaFilename(name))));
 
         return schemaFiles;
     }
 
-    public List<File> getSchemaFiles() {
-        return getSchemaFiles(appDir);
-    }
-
     // Only for use by deploy processor
-    public static List<Bundle> getBundles(File appDir) {
-        return Bundle.getBundles(applicationFile(appDir, COMPONENT_DIR));
+    public List<Bundle> getBundles() {
+        return Bundle.getBundles(applicationFile(COMPONENT_DIR));
     }
 
-    private static List<ComponentInfo> getComponentsInfo(File appDir) {
-        return getBundles(appDir).stream()
-                                 .map(bundle -> new ComponentInfo(Path.fromString(COMPONENT_DIR).append(bundle.getFile().getName()).getRelative()))
-                                 .toList();
+    private List<ComponentInfo> getComponentsInfo(File appDir) {
+        return getBundles().stream()
+                           .map(bundle -> new ComponentInfo(Path.fromString(COMPONENT_DIR).append(bundle.getFile().getName()).getRelative()))
+                           .toList();
     }
 
     @Override
@@ -404,11 +400,9 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         return getComponentsInfo(appDir);
     }
 
-    public List<Bundle> getBundles() { return getBundles(appDir); }
-
     public File getAppDir() throws IOException { return appDir.getCanonicalFile(); }
 
-    private static ApplicationMetaData readMetaData(File appDir) {
+    private ApplicationMetaData readMetaData(File appDir) {
         String originalAppDir = preprocessed.equals(appDir.getName()) ? appDir.getParentFile().getName() : appDir.getName();
         ApplicationMetaData defaultMetaData = new ApplicationMetaData(0L,
                                                                       false,
@@ -418,7 +412,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                                                       "",
                                                                       0L,
                                                                       0L);
-        File metaFile = applicationFile(appDir, META_FILE_NAME);
+        File metaFile = applicationFile(META_FILE_NAME);
         if ( ! metaFile.exists()) {
             return defaultMetaData;
         }
@@ -453,16 +447,16 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             throw new IllegalArgumentException("Absolute path to ranking expression file is not allowed: " + name);
 
         Path path = Path.fromString(name);
-        File expressionFile = applicationFile(appDir, SCHEMAS_DIR.append(path));
+        File expressionFile = applicationFile(SCHEMAS_DIR.append(path));
         if ( ! expressionFile.exists()) {
-            expressionFile = applicationFile(appDir, SEARCH_DEFINITIONS_DIR.append(path));
+            expressionFile = applicationFile(SEARCH_DEFINITIONS_DIR.append(path));
         }
         return expressionFile;
     }
 
     @Override
     public File getFileReference(Path pathRelativeToAppDir) {
-        return applicationFile(appDir, pathRelativeToAppDir.getRelative());
+        return applicationFile(pathRelativeToAppDir.getRelative());
     }
 
     @Override
@@ -480,7 +474,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     @Override
     public void writeMetaData() {
-        File metaFile = applicationFile(appDir, META_FILE_NAME);
+        File metaFile = applicationFile(META_FILE_NAME);
         IOUtils.writeFile(metaFile, metaData.asJsonBytes());
     }
 
@@ -540,8 +534,8 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         validateServicesFile();
         IOUtils.copyDirectory(appDir, dir, - 1,
                               (__, name) -> ! List.of(preprocessed, SERVICES, HOSTS, CONFIG_DEFINITIONS_DIR).contains(name));
-        preprocessXML(applicationFile(dir, SERVICES), getServicesFile(), zone);
-        preprocessXML(applicationFile(dir, HOSTS), getHostsFile(), zone);
+        preprocessXML(fileUnder(dir, Path.fromString(SERVICES)), getServicesFile(), zone);
+        preprocessXML(fileUnder(dir, Path.fromString(HOSTS)), getHostsFile(), zone);
     }
 
     private void validateServicesFile() throws IOException {
@@ -564,22 +558,18 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         ConfigDefinitionDir defDir = new ConfigDefinitionDir(destination);
         // Copy the user's def files from components.
         List<Bundle> bundlesAdded = new ArrayList<>();
-        for (Bundle bundle : getBundles(appSubDirs.root())) {
+        for (Bundle bundle : getBundles()) {
             defDir.addConfigDefinitionsFromBundle(bundle, bundlesAdded);
             bundlesAdded.add(bundle);
         }
     }
 
-    static File applicationFile(File parent, String path) {
-        return applicationFile(parent, Path.fromString(path));
+    private File applicationFile(String path) {
+        return applicationFile(Path.fromString(path));
     }
 
-    static File applicationFile(File parent, Path path) {
-        File file = new File(parent, path.getRelative());
-        if ( ! file.getAbsolutePath().startsWith(parent.getAbsolutePath()))
-            throw new IllegalArgumentException(file + " is not a child of " + parent);
-        // AH: Get from parent if non-existing
-        return file;
+    private File applicationFile(Path path) {
+        return fileUnder(appDir, path);
     }
 
     /* Validates that files in application dir and subdirectories have a known extension */
@@ -666,6 +656,13 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                 || relativeDirectory.startsWith(searchDefinitionsPath + "/"));
     }
 
+    private static File fileUnder(File root, Path path) {
+        File file = new File(root, path.getRelative());
+        if ( ! file.getAbsolutePath().startsWith(root.getAbsolutePath()))
+            throw new IllegalArgumentException(file + " is not a child of " + root);
+        return file;
+    }
+
     private static ApplicationMetaData metaDataFromDeployData(File appDir, DeployData deployData) {
         return new ApplicationMetaData(deployData.getDeployTimestamp(),
                                        deployData.isInternalRedeploy(),
@@ -683,14 +680,13 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     /**
      * Returns an application package object based on the given application dir
      *
-     * @param appDir application package directory
      * @param includeSourceFiles read files from source directories /src/main and src/test in addition
      *                           to the application package location. This is useful during development
      *                           to be able to run tests without a complete build first.
      * @return an Application package instance
      */
     public static FilesApplicationPackage fromFile(File appDir, boolean includeSourceFiles) {
-        return new Builder(appDir).preprocessedDir(applicationFile(appDir, preprocessed))
+        return new Builder(appDir).preprocessedDir(fileUnder(appDir, Path.fromString(preprocessed)))
                                   .includeSourceFiles(includeSourceFiles)
                                   .build();
     }
@@ -744,9 +740,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         }
 
         public FilesApplicationPackage build() {
-            return new FilesApplicationPackage(appDir, preprocessedDir.orElse(applicationFile(appDir, preprocessed)),
-                                               metaData.orElse(readMetaData(appDir)), includeSourceFiles,
-                                               inherited);
+            return new FilesApplicationPackage(appDir, preprocessedDir, metaData, includeSourceFiles, inherited);
         }
 
     }

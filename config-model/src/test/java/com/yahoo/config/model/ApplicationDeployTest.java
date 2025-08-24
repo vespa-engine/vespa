@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -63,7 +64,7 @@ public class ApplicationDeployTest {
                 case "sock":
                     break;
                 case "product":
-                    assertTrue(schema instanceof DocumentOnlySchema);
+                    assertInstanceOf(DocumentOnlySchema.class, schema);
                     assertEquals(DataType.STRING, schema.getDocument().getField("title").getDataType());
                     break;
                 default:
@@ -298,11 +299,11 @@ public class ApplicationDeployTest {
     @Test
     void testInvalidJar() {
         try {
-            FilesApplicationPackage.getBundles(new File("src/test/cfg/application/validation/invalidjar_app"));
+            FilesApplicationPackage.fromFile(new File("src/test/cfg/application/validation/invalidjar_app")).getBundles();
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Error opening jar file 'invalid.jar'. Please check that this is a valid jar file",
-                    e.getMessage());
+                         e.getMessage());
         }
     }
 
