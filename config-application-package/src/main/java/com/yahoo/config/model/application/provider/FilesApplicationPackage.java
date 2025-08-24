@@ -20,11 +20,9 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.io.HexDump;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
-import com.yahoo.text.Utf8;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
@@ -42,18 +40,15 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -69,9 +64,7 @@ import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.text.Lowercase.toLowerCase;
 import static com.yahoo.yolean.Exceptions.uncheck;
-
 
 /**
  * Application package derived from local files, i.e. on deployment.
@@ -148,7 +141,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     @Override
     public ApplicationFile getFile(Path path) {
         File file = (path.isRoot() ? appDir : applicationFile(appDir, path.getRelative()));
-        return new FilesApplicationFile(path, file); // AH: Opprett den som eksisterer (omn noen)
+        return new FilesApplicationFile(path, file);
     }
 
     @Override
@@ -289,9 +282,9 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
      * @param defPath the path to the application package
      * @return the reader of this config definition
      */
-    private Reader retrieveConfigDefReader(File defPath) {
+    private Reader retrieveConfigDefReaderFromThis(File defPath) {
         try {
-            return new NamedReader(defPath.getPath(), new FileReader(defPath)); // AH: Check if exists or get from parent
+            return new NamedReader(defPath.getPath(), new FileReader(defPath));
         } catch (IOException e) {
             throw new IllegalArgumentException("Could not read config definition file '" + defPath + "'", e);
         }
@@ -300,12 +293,17 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     @Override
     public Map<ConfigDefinitionKey, UnparsedConfigDefinition> getAllExistingConfigDefs() {
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs = new LinkedHashMap<>();
-        addAllDefsFromConfigDir(defs, configDefsDir);
+        addAllDefsFromConfigDirInThis(defs, configDefsDir);
         if (includeSourceFiles) { // allow running from source, assuming mvn file project layout
-            addAllDefsFromConfigDir(defs, new File("src/main/resources/configdefinitions"));
-            addAllDefsFromConfigDir(defs, new File("src/test/resources/configdefinitions"));
+            addAllDefsFromConfigDirInThis(defs, new File("src/main/resources/configdefinitions"));
+            addAllDefsFromConfigDirInThis(defs, new File("src/test/resources/configdefinitions"));
         }
         addAllDefsFromBundles(defs, getBundles(appDir));
+
+        for (var inheritedPackage : inherited) {
+            inheritedPackage.addAllDefsFromConfigDirInThis(defs, configDefsDir);
+            inheritedPackage.addAllDefsFromBundles(defs, getBundles(appDir));
+        }
         return defs;
     }
 
@@ -331,12 +329,10 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         }
     }
 
-    private void addAllDefsFromConfigDir(Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs, File configDefsDir) {
-        if (! configDefsDir.isDirectory()) return; // AH: Check parent
+    private void addAllDefsFromConfigDirInThis(Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs, File configDefsDir) {
+        if (! configDefsDir.isDirectory()) return;
 
-        // AH: Merge with parents
         for (File def : configDefsDir.listFiles((File dir, String name) -> name.matches(".*\\.def"))) {
-            String[] nv = def.getName().split("\\.def");
             ConfigDefinitionKey key;
             try {
                 key = ConfigUtils.createConfigDefinitionKeyFromDefFile(def);
@@ -346,37 +342,23 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             if (key.getNamespace().isEmpty())
                 throw new IllegalArgumentException("Config definition '" + def + "' has no namespace");
 
-            if (defs.containsKey(key)) {
-                if (nv[0].contains(".")) {
-                    log.log(Level.INFO, "Two config definitions found for the same name and namespace: " + key +
-                                           ". The file '" + def + "' will take precedence");
-                } else {
-                    log.log(Level.INFO, "Two config definitions found for the same name and namespace: " + key +
-                                           ". Skipping '" + def + "', as it does not contain namespace in filename");
-                    continue; // skip
-                }
-            }
-
+            if (defs.containsKey(key)) continue; // first take precedence
             defs.put(key, new UnparsedConfigDefinition() {
                 @Override
                 public ConfigDefinition parse() {
-                    DefParser parser = new DefParser(key.getName(), retrieveConfigDefReader(def));
+                    DefParser parser = new DefParser(key.getName(), retrieveConfigDefReaderFromThis(def));
                     return ConfigDefinitionBuilder.createConfigDefinition(parser.getTree());
                 }
 
                 @Override
                 public String getUnparsedContent() {
-                    return readConfigDefinition(def);
+                    try (Reader reader = retrieveConfigDefReaderFromThis(def)) {
+                        return IOUtils.readAll(reader);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Error reading config definition '" + def + "'", e);
+                    }
                 }
             });
-        }
-    }
-
-    private String readConfigDefinition(File defPath) {
-        try (Reader reader = retrieveConfigDefReader(defPath)) {
-            return IOUtils.readAll(reader);
-        } catch (IOException e) {
-            throw new RuntimeException("Error reading config definition '" + defPath + "'", e);
         }
     }
 
@@ -400,7 +382,6 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         if (sdDir.isDirectory())
             schemaFiles.addAll(List.of(sdDir.listFiles((dir, name) -> validSchemaFilename(name))));
 
-        // AH: Add from parents
         return schemaFiles;
     }
 
@@ -596,66 +577,6 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         }
     }
 
-    /** Computes an md5 hash of the contents of the application package. */
-    private static String computeCheckSum(File appDir) {
-        MessageDigest md5;
-        try {
-            md5 = MessageDigest.getInstance("MD5");
-            for (File file : appDir.listFiles((dir, name) -> !name.equals(EXT_DIR) && !name.startsWith("."))) {
-                addPathToDigest(file, "", md5, true, false);
-            }
-            return toLowerCase(HexDump.toHexString(md5.digest()));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
-    /**
-     * Adds the given path to the digest, or does nothing if path is neither file nor dir
-     *
-     * @param path path to add to message digest
-     * @param suffix only files with this suffix are considered
-     * @param digest the {link @MessageDigest} to add the file paths to
-     * @param recursive whether to recursively find children in the paths
-     * @param fullPathNames whether to include the full paths in checksum or only the names
-     * @throws java.io.IOException if adding path to digest fails when reading files from path
-     */
-    private static void addPathToDigest(File path, String suffix, MessageDigest digest, boolean recursive, boolean fullPathNames) throws IOException {
-        if (!path.exists()) return;
-        if (fullPathNames) {
-            digest.update(path.getPath().getBytes(Utf8.getCharset()));
-        } else {
-            digest.update(path.getName().getBytes(Utf8.getCharset()));
-        }
-        if (path.isFile()) {
-            FileInputStream is = new FileInputStream(path);
-            addToDigest(is, digest);
-            is.close();
-        } else if (path.isDirectory()) {
-            final File[] files = path.listFiles();
-            if (files != null) {
-                for (File elem : files) {
-                    if ((elem.isDirectory() && recursive) || elem.getName().endsWith(suffix)) {
-                        addPathToDigest(elem, suffix, digest, recursive, fullPathNames);
-                    }
-                }
-            }
-        }
-    }
-
-    private static void addToDigest(InputStream is, MessageDigest digest) throws IOException {
-        if (is == null) return;
-        byte[] buffer = new byte[65536];
-        int i;
-        do {
-            i = is.read(buffer);
-            if (i > 0) {
-                digest.update(buffer, 0, i);
-            }
-        } while(i != -1);
-    }
-
     static File applicationFile(File parent, String path) {
         return applicationFile(parent, Path.fromString(path));
     }
@@ -756,7 +677,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         return new ApplicationMetaData(deployData.getDeployTimestamp(),
                                        deployData.isInternalRedeploy(),
                                        deployData.getApplicationId(),
-                                       computeCheckSum(appDir),
+                                       new ApplicationChecksum(appDir).asString(),
                                        deployData.getGeneration(),
                                        deployData.getCurrentlyActiveGeneration());
     }
