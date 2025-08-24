@@ -3,9 +3,7 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import com.yahoo.config.application.ConfigDefinitionDir;
 import com.yahoo.config.application.Xml;
-import com.yahoo.config.application.XmlPreProcessor;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -23,7 +21,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
-import com.yahoo.text.XML;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -32,22 +29,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.nio.file.AccessDeniedException;
-import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -60,10 +48,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Application package derived from local files, i.e. on deployment.
@@ -85,23 +69,21 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
      */
     public static final String preprocessed = ".preprocessed";
 
-    private static final Logger log = Logger.getLogger(FilesApplicationPackage.class.getName());
     private static final String META_FILE_NAME = ".applicationMetaData";
     private static final Map<Path, Set<String>> validFileExtensions;
 
     private final File appDir;
-    private final File preprocessedDir;
     private final File configDefsDir;
-    private final AppSubDirs appSubDirs;
     // NOTE: these directories exist in the original user app, but their locations are given in 'services.xml'
     private final List<String> userIncludeDirs = new ArrayList<>();
     private final ApplicationMetaData metaData;
     private final boolean includeSourceFiles;
-    private final TransformerFactory transformerFactory;
 
     private DeploymentSpec deploymentSpec = null;
 
     private final List<FilesApplicationPackage> inherited;
+
+    private final ApplicationPackagePreprocessor preprocessor;
 
     /**
      * New package from given path on local file system. Retrieves config definition files from
@@ -121,12 +103,10 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         this.appDir = appDir;
         this.inherited = List.copyOf(inherited);
         this.includeSourceFiles = includeSourceFiles;
-        this.preprocessedDir = preprocessedDir.orElse(applicationFile(preprocessed));
         this.metaData = metaData.orElse(readMetaData(appDir));
-        appSubDirs = new AppSubDirs(appDir);
         configDefsDir = applicationFile(CONFIG_DEFINITIONS_DIR);
         addUserIncludeDirs();
-        this.transformerFactory = XML.createTransformerFactory();
+        this.preprocessor = new ApplicationPackagePreprocessor(this, preprocessedDir, includeSourceFiles);
     }
 
     @Override
@@ -201,7 +181,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         return getHostsFile().getPath();
     }
 
-    private File getHostsFile() {
+    File getHostsFile() {
         return applicationFile(HOSTS);
     }
 
@@ -210,7 +190,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         return getServicesFile().getPath();
     }
 
-    private File getServicesFile() {
+    File getServicesFile() {
         return applicationFile(SERVICES);
     }
 
@@ -400,7 +380,14 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         return getComponentsInfo(appDir);
     }
 
-    public File getAppDir() throws IOException { return appDir.getCanonicalFile(); }
+    public File getAppDir() {
+        try {
+            return appDir.getCanonicalFile();
+        }
+        catch (IOException e) {
+            throw new RuntimeException("Could not access " + appDir, e);
+        }
+    }
 
     private ApplicationMetaData readMetaData(File appDir) {
         String originalAppDir = preprocessed.equals(appDir.getName()) ? appDir.getParentFile().getName() : appDir.getName();
@@ -484,84 +471,9 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         return deploymentSpec = parseDeploymentSpec(false);
     }
 
-    private void preprocessXML(File destination, File inputXml, Zone zone) throws IOException {
-        if ( ! inputXml.exists()) return;
-        try {
-            InstanceName instance = metaData.getApplicationId().instance();
-            Document document = new XmlPreProcessor(appDir,
-                                                    inputXml,
-                                                    instance,
-                                                    zone.environment(),
-                                                    zone.region(),
-                                                    zone.cloud().name(),
-                                                    getDeploymentSpec().tags(instance, zone.environment()))
-                    .run();
-
-            try (FileOutputStream outputStream = new FileOutputStream(destination)) {
-                transformerFactory.newTransformer().transform(new DOMSource(document), new StreamResult(outputStream));
-            }
-        } catch (TransformerException | ParserConfigurationException | SAXException e) {
-            throw new RuntimeException("Error preprocessing " + inputXml.getPath() + ": " + e.getMessage(), e);
-        }
-    }
-
     @Override
     public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
-        java.nio.file.Path tempDir = null;
-        try {
-            tempDir = Files.createTempDirectory(appDir.getParentFile().toPath(), "preprocess-tempdir");
-            preprocess(appDir, tempDir.toFile(), zone);
-            IOUtils.recursiveDeleteDir(preprocessedDir);
-            // Use 'move' to make sure we do this atomically, important to avoid writing only partial content e.g.
-            // when shutting down.
-            // Temp directory needs to be on the same file system as appDir for 'move' to work,
-            // if it fails (with DirectoryNotEmptyException (!)) we need to use 'copy' instead
-            // (this will always be the case for the application package for a standalone container).
-            Files.move(tempDir, preprocessedDir.toPath());
-            tempDir = null;
-        } catch (AccessDeniedException | DirectoryNotEmptyException e) {
-            preprocess(appDir, preprocessedDir, zone);
-        } finally {
-            if (tempDir != null)
-                IOUtils.recursiveDeleteDir(tempDir.toFile());
-        }
-        FilesApplicationPackage preprocessedApp = fromFile(preprocessedDir, includeSourceFiles);
-        preprocessedApp.copyUserDefsIntoApplication();
-        return preprocessedApp;
-    }
-
-    private void preprocess(File appDir, File dir, Zone zone) throws IOException {
-        validateServicesFile();
-        IOUtils.copyDirectory(appDir, dir, - 1,
-                              (__, name) -> ! List.of(preprocessed, SERVICES, HOSTS, CONFIG_DEFINITIONS_DIR).contains(name));
-        preprocessXML(fileUnder(dir, Path.fromString(SERVICES)), getServicesFile(), zone);
-        preprocessXML(fileUnder(dir, Path.fromString(HOSTS)), getHostsFile(), zone);
-    }
-
-    private void validateServicesFile() throws IOException {
-        File servicesFile = getServicesFile();
-        if ( ! servicesFile.exists())
-            throw new IllegalArgumentException(SERVICES + " does not exist in application package. " +
-                                               "There are " + filesInApplicationPackage() + " files in the directory");
-        if (IOUtils.readFile(servicesFile).isEmpty())
-            throw new IllegalArgumentException(SERVICES + " in application package is empty. " +
-                                               "There are " + filesInApplicationPackage() + " files in the directory");
-    }
-
-    private long filesInApplicationPackage() {
-        return uncheck(() -> { try (var files = Files.list(appDir.toPath())) { return files.count(); } });
-    }
-
-    private void copyUserDefsIntoApplication() {
-        File destination = appSubDirs.configDefs();
-        destination.mkdir();
-        ConfigDefinitionDir defDir = new ConfigDefinitionDir(destination);
-        // Copy the user's def files from components.
-        List<Bundle> bundlesAdded = new ArrayList<>();
-        for (Bundle bundle : getBundles()) {
-            defDir.addConfigDefinitionsFromBundle(bundle, bundlesAdded);
-            bundlesAdded.add(bundle);
-        }
+        return preprocessor.preprocess(zone);
     }
 
     private File applicationFile(String path) {
@@ -576,7 +488,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         File file = fileUnder(appDir, path);
         if (file.exists()) return file;
         for (var inheritedPackage : inherited) {
-            file = applicationFile(path);
+            file = inheritedPackage.applicationFile(path);
             if (file.exists()) return file;
         }
         return fileUnder(appDir, path);
@@ -600,7 +512,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                     validateFileExtensions(filePath);
             });
         } catch (IOException e) {
-            log.log(Level.WARNING, "Unable to list files in " + subDirectory, e);
+            throw new RuntimeException("Unable to list files in '" + subDirectory + "'", e);
         }
     }
 
@@ -671,7 +583,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         return "application package '" + appDir + "'";
     }
 
-    private static File fileUnder(File root, Path path) {
+    static File fileUnder(File root, Path path) {
         File file = new File(root, path.getRelative());
         if ( ! file.getAbsolutePath().startsWith(root.getAbsolutePath()))
             throw new IllegalArgumentException(file + " is not a child of " + root);
