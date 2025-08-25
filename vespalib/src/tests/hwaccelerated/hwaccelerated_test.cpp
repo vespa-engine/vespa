@@ -9,8 +9,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("hwaccelerated_test");
 
-using namespace vespalib;
-
+namespace vespalib::hwaccelerated {
 // TODO reconcile run-time startup verification in `iaccelerated.cpp` with what's in here!
 //  Ideally we want to run our tests on hardware that has enough bells and whistles in terms
 //  of supported targets that we don't have to re-run the same vectorization checks literally
@@ -39,7 +38,7 @@ create_and_fill_lhs_rhs(size_t sz) {
 }
 
 template <typename T>
-void verify_euclidean_distance(std::span<const hwaccelerated::IAccelerated*> accels, size_t test_length, double approx_factor) {
+void verify_euclidean_distance(std::span<const IAccelerated*> accels, size_t test_length, double approx_factor) {
     auto [a, b] = create_and_fill_lhs_rhs<T>(test_length);
     for (size_t j = 0; j < 32; j++) {
         double sum = 0; // Assume a double has sufficient precision for all test inputs/outputs
@@ -56,7 +55,7 @@ void verify_euclidean_distance(std::span<const hwaccelerated::IAccelerated*> acc
 }
 
 template <typename T>
-void verify_dot_product(std::span<const hwaccelerated::IAccelerated*> accels, size_t test_length, double approx_factor) {
+void verify_dot_product(std::span<const IAccelerated*> accels, size_t test_length, double approx_factor) {
     auto [a, b] = create_and_fill_lhs_rhs<T>(test_length);
     for (size_t j = 0; j < 32; j++) {
         double sum = 0; // Assume a double has sufficient precision for all test inputs/outputs
@@ -71,23 +70,27 @@ void verify_dot_product(std::span<const hwaccelerated::IAccelerated*> accels, si
     }
 }
 
-const hwaccelerated::IAccelerated* baseline_accelerator() {
-    static auto baseline = hwaccelerated::IAccelerated::create_platform_baseline_accelerator();
+const IAccelerated* baseline_accelerator() {
+    static auto baseline = IAccelerated::create_platform_baseline_accelerator();
     return baseline.get();
 }
 
-std::vector<const hwaccelerated::IAccelerated*> all_accelerators_to_test() {
-    std::vector<const hwaccelerated::IAccelerated*> accels;
-    accels.emplace_back(baseline_accelerator());
-    accels.emplace_back(&hwaccelerated::IAccelerated::getAccelerator());
-    const auto hwy_targets = hwaccelerated::Highway::supported_targets();
-    for (const auto* t : hwy_targets) {
-        accels.emplace_back(t);
+void fill_highway_accelerators(std::vector<const IAccelerated*>& accels) {
+    static auto hwy_targets = Highway::create_supported_targets();
+    for (const auto& t : hwy_targets) {
+        accels.emplace_back(t.get());
     }
+}
+
+std::vector<const IAccelerated*> all_accelerators_to_test() {
+    std::vector<const IAccelerated*> accels;
+    accels.emplace_back(baseline_accelerator());
+    accels.emplace_back(&IAccelerated::getAccelerator());
+    fill_highway_accelerators(accels);
     return accels;
 }
 
-void verify_euclidean_distance(std::span<const hwaccelerated::IAccelerated*> accelerators, size_t testLength) {
+void verify_euclidean_distance(std::span<const IAccelerated*> accelerators, size_t testLength) {
     verify_euclidean_distance<int8_t>(accelerators, testLength, 0.0);
     verify_euclidean_distance<float>(accelerators, testLength, 0.0001); // Small deviation requiring EXPECT_APPROX
     verify_euclidean_distance<BFloat16>(accelerators, testLength, 0.001f); // Reduced BF16 precision requires more slack
@@ -102,7 +105,7 @@ TEST(HwAcceleratedTest, euclidean_distance_impls_match_source_of_truth) {
     }
 }
 
-void verify_dot_product(std::span<const hwaccelerated::IAccelerated*> accelerators, size_t testLength) {
+void verify_dot_product(std::span<const IAccelerated*> accelerators, size_t testLength) {
     verify_dot_product<int8_t>(accelerators, testLength, 0.0);
     verify_dot_product<int16_t>(accelerators, testLength, 0.0);
     verify_dot_product<int32_t>(accelerators, testLength, 0.0);
@@ -119,5 +122,7 @@ TEST(HwAcceleratedTest, dot_product_impls_match_source_of_truth) {
         GTEST_DO(verify_dot_product(accelerators, test_length));
     }
 }
+
+} // vespalib::hwaccelerated
 
 GTEST_MAIN_RUN_ALL_TESTS()

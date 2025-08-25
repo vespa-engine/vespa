@@ -264,13 +264,11 @@ public:
     const char* target_name() const noexcept override {
         return my_hwy_target_name();
     }
-    [[nodiscard]] static const HwyTargetAccelerator& target_instance() noexcept;
-};
 
-const HwyTargetAccelerator& HwyTargetAccelerator::target_instance() noexcept {
-    static HwyTargetAccelerator instance;
-    return instance;
-}
+    [[nodiscard]] static std::unique_ptr<IAccelerated> create_instance() {
+        return std::make_unique<HwyTargetAccelerator>();
+    }
+};
 
 }  // namespace HWY_NAMESPACE
 }  // namespace vespalib::hwaccelerated
@@ -282,19 +280,17 @@ namespace vespalib::hwaccelerated {
 
 #define VESPA_HWY_ADD_SUPPORTED_IMPL_VISITOR(hwy_target, hwy_ns) \
     if ((supported_targets & hwy_target) != 0) { \
-        target_id_and_impl.emplace_back(hwy_target, &hwy_ns::HwyTargetAccelerator::target_instance()); \
+        target_id_and_impl.emplace_back(hwy_target, hwy_ns::HwyTargetAccelerator::create_instance()); \
     }
 
-namespace {
-
 // The "best" supported target will be the first element in the vector.
-std::vector<const IAccelerated*> enumerate_supported_hwy_targets() {
+std::vector<std::unique_ptr<IAccelerated>> Highway::create_supported_targets() {
     // On x64 we require AVX2 as a baseline, so don't bother wasting time with SSSE3/SSE4.
     // Ideally we would not even build these targets. No effect on Aarch64.
     hwy::DisableTargets(HWY_SSSE3 | HWY_SSE4);
     const uint64_t supported_targets = hwy::SupportedTargets();
 
-    std::vector<std::pair<uint64_t, const IAccelerated*>> target_id_and_impl;
+    std::vector<std::pair<uint64_t, std::unique_ptr<IAccelerated>>> target_id_and_impl;
     // Visits _compile-time_ supported targets in _alphabetical_ (i.e. not preferred) order.
     // Intersect these with the _run-time_ supported targets and keep track of their target IDs.
     // Since lower target IDs are considered more preferred, we then post-sort the list in
@@ -312,23 +308,16 @@ std::vector<const IAccelerated*> enumerate_supported_hwy_targets() {
     target_id_and_impl.erase(to_erase.begin(), to_erase.end());
     assert(!target_id_and_impl.empty()); // Must be at least a fallback target
 
-    std::vector<const IAccelerated*> preferred_target_order;
+    std::vector<std::unique_ptr<IAccelerated>> preferred_target_order;
     preferred_target_order.reserve(target_id_and_impl.size());
-    for (const auto& elem : target_id_and_impl) {
-        preferred_target_order.emplace_back(elem.second);
+    for (auto& elem : target_id_and_impl) {
+        preferred_target_order.emplace_back(std::move(elem.second));
     }
     return preferred_target_order;
 }
 
-} // anon ns
-
-std::span<const IAccelerated* const> Highway::supported_targets() {
-    static const std::vector<const IAccelerated*> targets = enumerate_supported_hwy_targets();
-    return targets;
-}
-
-const IAccelerated& Highway::best_target() noexcept {
-    return *supported_targets().front();
+std::unique_ptr<IAccelerated> Highway::create_best_target() {
+    return std::move(create_supported_targets().front());
 }
 
 } // namespace vespalib::hwaccelerated

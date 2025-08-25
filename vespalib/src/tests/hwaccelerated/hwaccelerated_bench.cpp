@@ -77,8 +77,8 @@ benchmark_popcount(const IAccelerated& accelerator, size_t sz, size_t count) {
 }
 
 void for_each_hwy_target(auto&& fn) {
-    const auto hwy_targets = Highway::supported_targets();
-    for (const auto* t : hwy_targets) {
+    const auto hwy_targets = Highway::create_supported_targets();
+    for (const auto& t : hwy_targets) {
         fn(*t);
     }
 }
