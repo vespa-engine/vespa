@@ -163,7 +163,7 @@ public:
                                   unsigned int residue,
                                   const fef::TermFieldMatchDataArray &matchData);
 
-    ~FakeFilterOccZCBArrayIterator();
+    ~FakeFilterOccZCBArrayIterator() override;
 
     void doUnpack(uint32_t docId) override;
     void doSeek(uint32_t docId) override;

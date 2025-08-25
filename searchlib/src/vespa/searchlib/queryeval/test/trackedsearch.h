@@ -66,6 +66,7 @@ public:
     TrackedSearch(const std::string &name, SearchHistory &hist, SearchIterator *search)
         : _name(name), _history(hist), _matchData(), _search(search), _minMaxPostingInfo()
     { setDocId(_search->getDocId()); }
+    ~TrackedSearch() override;
 
     const PostingInfo *getPostingInfo() const override {
         return _minMaxPostingInfo.get();

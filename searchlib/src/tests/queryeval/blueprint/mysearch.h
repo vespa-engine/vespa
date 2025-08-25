@@ -42,6 +42,7 @@ public:
       : MultiSearch(std::move(children)),
         _tag(tag), _isLeaf(false), _isStrict(strict),
         _match(), _md(md) {}
+    ~MySearch() override;
 
     MySearch &add(SearchIterator *search) {
         _children.emplace_back(search);
@@ -95,9 +96,9 @@ public:
         MultiSearch::visitMembers(visitor);
         visit(visitor, "_handles",  _handles);
     }
-
-    ~MySearch() override {}
 };
+
+MySearch::~MySearch() = default;
 
 //-----------------------------------------------------------------------------
 

@@ -119,6 +119,7 @@ public:
                uint32_t window,
                const IElementGapInspector& element_gap_inspector,
                bool strict = true);
+    ~NearSearch() override;
     void get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids) override;
 };
 
@@ -155,6 +156,7 @@ public:
                 uint32_t window,
                 const IElementGapInspector& element_gap_inspector,
                 bool strict = true);
+    ~ONearSearch() override;
 
     void get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids) override;
 };

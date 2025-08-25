@@ -26,6 +26,7 @@ struct TestIterator : public SearchIterator
           _useInfo(useInfo),
           _unpackDocId(0)
     {}
+    ~TestIterator() override;
     void doSeek(uint32_t docId) override {
         (void) docId;
     }
@@ -40,6 +41,8 @@ struct TestIterator : public SearchIterator
         return std::make_unique<TestIterator>(maxWeight, termWeight, useInfo);
     }
 };
+
+TestIterator::~TestIterator() = default;
 
 TEST(WeakAndScorersTest, require_that_DotProductScorer_calculates_max_score)
 {
