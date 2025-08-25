@@ -3,6 +3,7 @@ vespa_add_executable(searchlib_weak_and_test_app TEST
     SOURCES
     weak_and_test.cpp
     DEPENDS
+    searchlib_queryeval_test
     vespa_searchlib
     searchlib_test
 )
