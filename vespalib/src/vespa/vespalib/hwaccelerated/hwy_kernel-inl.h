@@ -79,7 +79,7 @@ void dispatch(FnAccuArity<1>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec,
 template <size_t Idx, typename KernelFn, typename LhsT, typename RhsT, typename AccuV>
 HWY_INLINE
 void dispatch_pairwise(FnAccuArity<1>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs,
-                      AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3) noexcept
+                       AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3) noexcept
 {
     constexpr size_t my_idx = Idx % 4;
     if constexpr (my_idx == 0) {

@@ -23,19 +23,28 @@ namespace hn = hwy::HWY_NAMESPACE;
 
 template <typename T, typename R = T>
 requires (hwy::IsFloat<T>() || hwy::IsSame<T, hwy::bfloat16_t>())
-HWY_INLINE R
-my_hwy_dot_impl(const T* HWY_RESTRICT a, const T* HWY_RESTRICT b, const size_t sz) noexcept {
+HWY_INLINE
+R my_hwy_dot_impl(const T* HWY_RESTRICT a,
+                  const T* HWY_RESTRICT b,
+                  const size_t sz) noexcept
+{
     const hn::ScalableTag<T> d;
     return hwy::ConvertScalarTo<R>(hn::Dot::Compute<0>(d, a, b, sz));
 }
 
-float
-my_hwy_dot_float(const float* HWY_RESTRICT a, const float* HWY_RESTRICT b, const size_t sz) noexcept {
+HWY_INLINE
+float my_hwy_dot_float(const float* HWY_RESTRICT a,
+                       const float* HWY_RESTRICT b,
+                       const size_t sz) noexcept
+{
     return my_hwy_dot_impl(a, b, sz);
 }
 
-float
-my_hwy_dot_bf16(const BFloat16* HWY_RESTRICT a, const BFloat16* HWY_RESTRICT b, const size_t sz) noexcept {
+HWY_INLINE
+float my_hwy_dot_bf16(const BFloat16* HWY_RESTRICT a,
+                      const BFloat16* HWY_RESTRICT b,
+                      const size_t sz) noexcept
+{
     // Highway already comes with dot product kernels supporting BF16, so use these.
     static_assert(sizeof(BFloat16)  == sizeof(hwy::bfloat16_t));
     static_assert(alignof(BFloat16) == alignof(hwy::bfloat16_t));
@@ -46,14 +55,20 @@ my_hwy_dot_bf16(const BFloat16* HWY_RESTRICT a, const BFloat16* HWY_RESTRICT b, 
     return my_hwy_dot_impl<hwy::bfloat16_t, float>(a_bf16, b_bf16, sz);
 }
 
-double
-my_hwy_dot_double(const double* HWY_RESTRICT a, const double* HWY_RESTRICT b, const size_t sz) noexcept {
+HWY_INLINE
+double my_hwy_dot_double(const double* HWY_RESTRICT a,
+                         const double* HWY_RESTRICT b,
+                         const size_t sz) noexcept
+{
     return my_hwy_dot_impl(a, b, sz);
 }
 
 template <typename T> requires (hwy::IsFloat<T>())
-double
-my_hwy_square_euclidean_distance_unrolled_impl(const T* HWY_RESTRICT a, const T* HWY_RESTRICT b, const size_t sz) noexcept {
+HWY_INLINE
+double my_hwy_square_euclidean_distance(const T* HWY_RESTRICT a,
+                                        const T* HWY_RESTRICT b,
+                                        const size_t sz) noexcept
+{
     const hn::ScalableTag<T> d;
     const auto kernel_fn = [](auto lhs, auto rhs, auto& accu) noexcept {
         const auto sub = hn::Sub(lhs, rhs);
@@ -63,10 +78,10 @@ my_hwy_square_euclidean_distance_unrolled_impl(const T* HWY_RESTRICT a, const T*
     return MyKernel::pairwise(d, d, a, b, sz, hn::Zero(d), kernel_fn, VecAdd(), LaneReduceSum());
 }
 
-double
-my_hwy_bf16_square_euclidean_distance_unrolled(const BFloat16* HWY_RESTRICT a,
-                                               const BFloat16* HWY_RESTRICT b,
-                                               const size_t sz) noexcept
+HWY_INLINE
+double my_hwy_square_euclidean_distance_bf16(const BFloat16* HWY_RESTRICT a,
+                                             const BFloat16* HWY_RESTRICT b,
+                                             const size_t sz) noexcept
 {
     static_assert(sizeof(BFloat16)  == sizeof(hwy::bfloat16_t));
     static_assert(alignof(BFloat16) == alignof(hwy::bfloat16_t));
@@ -93,8 +108,11 @@ my_hwy_bf16_square_euclidean_distance_unrolled(const BFloat16* HWY_RESTRICT a,
 }
 
 // Important: `sz` should be low enough that the intermediate i32 sum does not overflow!
-HWY_NOINLINE int32_t
-sub_mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) {
+HWY_NOINLINE
+int32_t sub_mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a,
+                              const int8_t* HWY_RESTRICT b,
+                              const size_t sz)
+{
     const hn::ScalableTag<int8_t>                  d8;
     const hn::Repartition<int16_t, decltype(d8)>  d16;
     const hn::Repartition<int32_t, decltype(d16)> d32;
@@ -109,8 +127,11 @@ sub_mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b
     return MyKernel::pairwise(d8, d32, a, b, sz, hn::Zero(d32), kernel_fn, VecAdd(), LaneReduceSum());
 }
 
-double
-my_hwy_square_euclidean_distance_i8(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) noexcept {
+HWY_INLINE
+double my_hwy_square_euclidean_distance_int8(const int8_t* HWY_RESTRICT a,
+                                             const int8_t* HWY_RESTRICT b,
+                                             const size_t sz) noexcept
+{
     // If we cannot possibly overflow intermediate i32 accumulators we can directly
     // compute the distance without requiring any chunking. Max chunk size is defined
     // by the number of worst-case sums of -128**2 that can fit into an i32.
@@ -118,18 +139,8 @@ my_hwy_square_euclidean_distance_i8(const int8_t* HWY_RESTRICT a, const int8_t* 
     return compute_chunked_sum<max_n_per_chunk, double>(sub_mul_add_i8_to_i32, a, b, sz);
 }
 
-double
-my_hwy_square_euclidean_distance_float_unrolled(const float* HWY_RESTRICT a, const float* HWY_RESTRICT b, const size_t sz) noexcept {
-    return my_hwy_square_euclidean_distance_unrolled_impl(a, b, sz);
-}
-
-double
-my_hwy_square_euclidean_distance_double_unrolled(const double* HWY_RESTRICT a, const double* HWY_RESTRICT b, const size_t sz) noexcept {
-    return my_hwy_square_euclidean_distance_unrolled_impl(a, b, sz);
-}
-
-size_t
-my_hwy_popcount(const uint64_t* a, const size_t sz) noexcept {
+HWY_INLINE
+size_t my_hwy_popcount(const uint64_t* a, const size_t sz) noexcept {
     // TODO have a way to explicitly disable fallbacks for benchmarking purposes
 #if HWY_TARGET != HWY_AVX2 && HWY_TARGET != HWY_AVX3
     const hn::ScalableTag<uint64_t> d;
@@ -147,8 +158,11 @@ my_hwy_popcount(const uint64_t* a, const size_t sz) noexcept {
 
 #if HWY_TARGET != HWY_NEON
 
-HWY_NOINLINE int32_t
-mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) noexcept {
+HWY_INLINE
+int32_t mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a,
+                          const int8_t* HWY_RESTRICT b,
+                          const size_t sz) noexcept
+{
     const hn::ScalableTag<int8_t>                 d8;
     const hn::Repartition<int32_t, decltype(d8)> d32;
     const auto kernel_fn = [d32](auto lhs_i8, auto rhs_i8, auto& accu) noexcept {
@@ -169,8 +183,11 @@ mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, co
 // how we do i8 Euclidean distance computations). This brings the performance slightly beyond
 // what the compiler auto-vectorizer is capable of conjuring up, since it does not seem to
 // generate _fused_ mul+adds.
-HWY_NOINLINE int32_t
-mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) noexcept {
+HWY_INLINE
+int32_t mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a,
+                          const int8_t* HWY_RESTRICT b,
+                          const size_t sz) noexcept
+{
     const hn::ScalableTag<int8_t>                  d8;
     const hn::Repartition<int16_t, decltype(d8)>  d16;
     const hn::Repartition<int32_t, decltype(d16)> d32;
@@ -190,8 +207,11 @@ mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, co
 
 #endif // HWY_NEON
 
-int64_t
-my_hwy_i8_dot_product(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b, const size_t sz) noexcept {
+HWY_INLINE
+int64_t my_hwy_dot_int8(const int8_t* HWY_RESTRICT a,
+                        const int8_t* HWY_RESTRICT b,
+                        const size_t sz) noexcept
+{
     // If we cannot possibly overflow intermediate i32 accumulators we can directly
     // compute the dot product without requiring any chunking. Max chunk size is defined
     // by the number of worst-case sums of i8 multiplications (-128**2) that can fit
@@ -200,6 +220,7 @@ my_hwy_i8_dot_product(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT b
     return compute_chunked_sum<max_n_per_chunk, int64_t>(mul_add_i8_to_i32, a, b, sz);
 }
 
+HWY_INLINE
 const char* my_hwy_target_name() noexcept {
     return hwy::TargetName(HWY_TARGET);
 }
@@ -223,22 +244,22 @@ public:
         return my_hwy_dot_double(a, b, sz);
     }
     int64_t dotProduct(const int8_t* a, const int8_t* b, size_t sz) const noexcept override {
-        return my_hwy_i8_dot_product(a, b, sz);
+        return my_hwy_dot_int8(a, b, sz);
     }
     size_t populationCount(const uint64_t* a, size_t sz) const noexcept override {
         return my_hwy_popcount(a, sz);
     }
     double squaredEuclideanDistance(const int8_t* a, const int8_t* b, size_t sz) const noexcept override {
-        return my_hwy_square_euclidean_distance_i8(a, b, sz);
+        return my_hwy_square_euclidean_distance_int8(a, b, sz);
     }
     double squaredEuclideanDistance(const float* a, const float* b, size_t sz) const noexcept override {
-        return my_hwy_square_euclidean_distance_float_unrolled(a, b, sz);
+        return my_hwy_square_euclidean_distance(a, b, sz);
     }
     double squaredEuclideanDistance(const double* a, const double* b, size_t sz) const noexcept override {
-        return my_hwy_square_euclidean_distance_double_unrolled(a, b, sz);
+        return my_hwy_square_euclidean_distance(a, b, sz);
     }
     double squaredEuclideanDistance(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept override {
-        return my_hwy_bf16_square_euclidean_distance_unrolled(a, b, sz);
+        return my_hwy_square_euclidean_distance_bf16(a, b, sz);
     }
     const char* target_name() const noexcept override {
         return my_hwy_target_name();
