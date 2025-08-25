@@ -25,6 +25,7 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -39,15 +40,18 @@ class ApplicationPackagePreprocessor {
     private final File preprocessedDir;
     private final AppSubDirs appSubDirs;
     private final boolean includeSourceFiles;
+    private final Map<String, FilesApplicationPackage> inheritableApplications;
 
     ApplicationPackagePreprocessor(FilesApplicationPackage applicationPackage,
                                    Optional<File> preprocessedDir,
-                                   boolean includeSourceFiles) {
+                                   boolean includeSourceFiles,
+                                   Map<String, FilesApplicationPackage> inheritableApplications) {
         this.applicationPackage = applicationPackage;
         this.includeSourceFiles = includeSourceFiles;
         this.preprocessedDir = preprocessedDir.orElse(FilesApplicationPackage.fileUnder(applicationPackage.getAppDir(),
                                                                                         Path.fromString(FilesApplicationPackage.preprocessed)));
         this.appSubDirs = new AppSubDirs(applicationPackage.getAppDir());
+        this.inheritableApplications = inheritableApplications;
     }
 
     public ApplicationPackage preprocess(Zone zone) throws IOException {
@@ -69,7 +73,8 @@ class ApplicationPackagePreprocessor {
             if (tempDir != null)
                 IOUtils.recursiveDeleteDir(tempDir.toFile());
         }
-        FilesApplicationPackage preprocessedApp = FilesApplicationPackage.fromFile(preprocessedDir, includeSourceFiles);
+        FilesApplicationPackage preprocessedApp = FilesApplicationPackage.fromDir(preprocessedDir, includeSourceFiles,
+                                                                                  inheritableApplications);
         copyUserDefsIntoApplication();
         return preprocessedApp;
     }

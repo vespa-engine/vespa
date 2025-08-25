@@ -7,7 +7,9 @@ import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -27,8 +29,15 @@ public class ApplicationDefinition {
 
     public List<String> inherited() { return inherited; }
 
-    public List<FilesApplicationPackage> resolveInherited() {
-        return List.of(); // TODO
+    public List<FilesApplicationPackage> resolveInherited(Map<String, FilesApplicationPackage> inheritableApplications) {
+        List<FilesApplicationPackage> inheritedPackages = new ArrayList<>();
+        for (String inheritedId : inherited) {
+            var inheritedPackage = inheritableApplications.get(inheritedId);
+            if (inheritedPackage == null)
+                throw new IllegalArgumentException("Inherited application '" + inheritedId + "' does not exist. " +
+                                                   "Available applications: " + inheritableApplications.keySet());
+        }
+        return inheritedPackages;
     }
 
     public static ApplicationDefinition empty() {

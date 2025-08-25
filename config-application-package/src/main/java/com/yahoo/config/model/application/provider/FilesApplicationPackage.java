@@ -40,6 +40,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -51,8 +52,6 @@ import java.util.Set;
 
 /**
  * Application package derived from local files, i.e. on deployment.
- * Construct using {@link com.yahoo.config.model.application.provider.FilesApplicationPackage#fromFile(java.io.File)} or
- * {@link com.yahoo.config.model.application.provider.FilesApplicationPackage#fromFileWithDeployData(java.io.File, DeployData)}.
  *
  * @author Vegard Havdal
  */
@@ -97,16 +96,17 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     private FilesApplicationPackage(File appDir,
                                     Optional<File> preprocessedDir,
                                     Optional<ApplicationMetaData> metaData,
-                                    boolean includeSourceFiles) {
+                                    boolean includeSourceFiles,
+                                    Map<String, FilesApplicationPackage> inheritableApplications) {
         verifyAppDir(appDir);
         this.appDir = appDir;
         this.includeSourceFiles = includeSourceFiles;
         this.applicationDefinition = new ApplicationDefinition.XmlReader().read(getApplicationDefinition());
-        this.inherited = applicationDefinition.resolveInherited();
+        this.inherited = applicationDefinition.resolveInherited(inheritableApplications);
         this.metaData = metaData.orElse(readMetaData(appDir));
         configDefsDir = applicationFile(CONFIG_DEFINITIONS_DIR);
         addUserIncludeDirs();
-        this.preprocessor = new ApplicationPackagePreprocessor(this, preprocessedDir, includeSourceFiles);
+        this.preprocessor = new ApplicationPackagePreprocessor(this, preprocessedDir, includeSourceFiles, inheritableApplications);
     }
 
     @Override
@@ -582,8 +582,9 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     /** Creates from a directory with source files included */
-    public static FilesApplicationPackage fromFile(File appDir) {
-        return fromFile(appDir, false);
+    public static FilesApplicationPackage fromDir(File appDir,
+                                                  Map<String, FilesApplicationPackage> inheritableApplications) {
+        return fromDir(appDir, false, inheritableApplications);
     }
 
     /**
@@ -594,21 +595,26 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
      *                           to be able to run tests without a complete build first.
      * @return an Application package instance
      */
-    public static FilesApplicationPackage fromFile(File appDir, boolean includeSourceFiles) {
+    public static FilesApplicationPackage fromDir(File appDir,
+                                                  boolean includeSourceFiles,
+                                                  Map<String, FilesApplicationPackage> inheritableApplications) {
         return new Builder(appDir).preprocessedDir(fileUnder(appDir, Path.fromString(preprocessed)))
                                   .includeSourceFiles(includeSourceFiles)
                                   .build();
     }
 
     /** Creates package from a local directory, typically deploy app   */
-    public static FilesApplicationPackage fromFileWithDeployData(File appDir, DeployData deployData) {
-        return fromFileWithDeployData(appDir, deployData, false);
+    public static FilesApplicationPackage fromDir(File appDir,
+                                                  DeployData deployData,
+                                                  Map<String, FilesApplicationPackage> inheritableApplications) {
+        return fromDir(appDir, deployData, false, inheritableApplications);
     }
 
     /** Creates package from a local directory, typically deploy app   */
-    public static FilesApplicationPackage fromFileWithDeployData(File appDir,
-                                                                 DeployData deployData,
-                                                                 boolean includeSourceFiles) {
+    public static FilesApplicationPackage fromDir(File appDir,
+                                                  DeployData deployData,
+                                                  boolean includeSourceFiles,
+                                                  Map<String, FilesApplicationPackage> inheritableApplications) {
         return new Builder(appDir).includeSourceFiles(includeSourceFiles).deployData(deployData).build();
     }
 
@@ -622,6 +628,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         private Optional<File> preprocessedDir = Optional.empty();
         private Optional<ApplicationMetaData> metaData = Optional.empty();
         private boolean includeSourceFiles = false;
+        private Map<String, FilesApplicationPackage> inheritableApplications = new HashMap<>();
 
         public Builder(File appDir) {
             this.appDir = appDir;
@@ -642,8 +649,13 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             return this;
         }
 
+        public Builder inheritableApplications(Map<String, FilesApplicationPackage> inheritableApplications) {
+            this.inheritableApplications = Map.copyOf(inheritableApplications);
+            return this;
+        }
+
         public FilesApplicationPackage build() {
-            return new FilesApplicationPackage(appDir, preprocessedDir, metaData, includeSourceFiles);
+            return new FilesApplicationPackage(appDir, preprocessedDir, metaData, includeSourceFiles, inheritableApplications);
         }
 
     }

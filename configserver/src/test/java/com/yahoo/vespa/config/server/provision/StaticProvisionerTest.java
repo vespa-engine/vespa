@@ -19,6 +19,7 @@ import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -30,7 +31,7 @@ public class StaticProvisionerTest {
 
     @Test
     public void sameHostsAreProvisioned() throws IOException, SAXException {
-        ApplicationPackage app = FilesApplicationPackage.fromFile(new File("src/test/apps/hosted"));
+        ApplicationPackage app = FilesApplicationPackage.fromDir(new File("src/test/apps/hosted"), Map.of());
         InMemoryProvisioner inMemoryHostProvisioner = new InMemoryProvisioner(false, false, "host1.yahoo.com", "host2.yahoo.com", "host3.yahoo.com", "host4.yahoo.com");
         VespaModel firstModel = createModel(app, inMemoryHostProvisioner);
 

@@ -22,6 +22,7 @@ import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ConfigActivationListener;
 import com.yahoo.vespa.config.server.ConfigServerDB;
+import com.yahoo.vespa.config.server.application.ApplicationRepo;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
@@ -122,6 +123,7 @@ public class TenantRepository {
     private final ZookeeperServerConfig zookeeperServerConfig;
     private final List<EndpointCertificateSecretStore> endpointCertificateSecretStores;
     private final OnnxModelCost onnxModelCost;
+    private final ApplicationRepo inheritableApplications;
 
     /**
      * Creates a new tenant repository
@@ -142,7 +144,8 @@ public class TenantRepository {
                             ZookeeperServerConfig zookeeperServerConfig,
                             FileDirectory fileDirectory,
                             OnnxModelCost onnxModelCost,
-                            ComponentRegistry<EndpointCertificateSecretStore> endpointCertificateSecretStores) {
+                            ComponentRegistry<EndpointCertificateSecretStore> endpointCertificateSecretStores,
+                            ApplicationRepo applicationRepo) {
         this(hostRegistry,
              curator,
              metrics,
@@ -162,7 +165,8 @@ public class TenantRepository {
              tenantListener,
              zookeeperServerConfig,
              onnxModelCost,
-             endpointCertificateSecretStores.allComponents());
+             endpointCertificateSecretStores.allComponents(),
+             applicationRepo);
     }
 
     public TenantRepository(HostRegistry hostRegistry,
@@ -184,7 +188,8 @@ public class TenantRepository {
                             TenantListener tenantListener,
                             ZookeeperServerConfig zookeeperServerConfig,
                             OnnxModelCost onnxModelCost,
-                            List<EndpointCertificateSecretStore> endpointCertificateSecretStores) {
+                            List<EndpointCertificateSecretStore> endpointCertificateSecretStores,
+                            ApplicationRepo inheritableApplications) {
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
         this.curator = curator;
@@ -205,6 +210,7 @@ public class TenantRepository {
         this.tenantListener = tenantListener;
         this.zookeeperServerConfig = zookeeperServerConfig;
         this.endpointCertificateSecretStores = endpointCertificateSecretStores;
+        this.inheritableApplications = inheritableApplications;
         // This we should control with a feature flag.
         this.deployHelperExecutor = createModelBuilderExecutor();
         this.onnxModelCost = onnxModelCost;
@@ -380,7 +386,8 @@ public class TenantRepository {
                                                                     configDefinitionRepo,
                                                                     zookeeperServerConfig.juteMaxBuffer(),
                                                                     onnxModelCost,
-                                                                    endpointCertificateSecretStores);
+                                                                    endpointCertificateSecretStores,
+                                                                    inheritableApplications);
         log.log(Level.FINE, "Adding tenant '" + tenantName + "'" + ", created " + created +
                             ". Bootstrapping in " + Duration.between(start, clock.instant()));
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, created);

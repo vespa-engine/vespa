@@ -13,6 +13,7 @@ import com.yahoo.vespa.config.server.ConfigActivationListener;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
+import com.yahoo.vespa.config.server.application.ApplicationRepo;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
@@ -28,6 +29,7 @@ import com.yahoo.vespa.model.VespaModelFactory;
 
 import java.time.Clock;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -68,7 +70,8 @@ public class TestTenantRepository extends TenantRepository {
               tenantListener,
               new ZookeeperServerConfig.Builder().myid(0).build(),
               OnnxModelCost.disabled(),
-              List.of(new DefaultEndpointCertificateSecretStore(secretStore)));
+              List.of(new DefaultEndpointCertificateSecretStore(secretStore)),
+              new ApplicationRepo());
     }
 
     public static class Builder {
