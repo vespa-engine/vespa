@@ -79,9 +79,9 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     private final ApplicationMetaData metaData;
     private final boolean includeSourceFiles;
 
-    private DeploymentSpec deploymentSpec = null;
-
+    private ApplicationDefinition applicationDefinition;
     private final List<FilesApplicationPackage> inherited;
+    private DeploymentSpec deploymentSpec = null;
 
     private final ApplicationPackagePreprocessor preprocessor;
 
@@ -97,12 +97,12 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     private FilesApplicationPackage(File appDir,
                                     Optional<File> preprocessedDir,
                                     Optional<ApplicationMetaData> metaData,
-                                    boolean includeSourceFiles,
-                                    List<FilesApplicationPackage> inherited) {
+                                    boolean includeSourceFiles) {
         verifyAppDir(appDir);
         this.appDir = appDir;
-        this.inherited = List.copyOf(inherited);
         this.includeSourceFiles = includeSourceFiles;
+        this.applicationDefinition = new ApplicationDefinition.XmlReader().read(getApplicationDefinition());
+        this.inherited = applicationDefinition.resolveInherited();
         this.metaData = metaData.orElse(readMetaData(appDir));
         configDefsDir = applicationFile(CONFIG_DEFINITIONS_DIR);
         addUserIncludeDirs();
@@ -120,6 +120,11 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     @Override
     public ApplicationFile getFile(Path path) {
         File file = (path.isRoot() ? appDir : applicationFile(path.getRelative()));
+        return new FilesApplicationFile(path, file);
+    }
+
+    public ApplicationFile getFileInThis(Path path) {
+        File file = (path.isRoot() ? appDir : fileUnder(appDir, Path.fromString(path.getRelative())));
         return new FilesApplicationFile(path, file);
     }
 
@@ -177,17 +182,18 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     @Override
-    public Optional<Reader> getApplicationDefinition() { return optionalFile(APPLICATION_DEFINITION_FILE); }
+    public Optional<Reader> getApplicationDefinition() { return asOptionalReader(getFileInThis(APPLICATION_DEFINITION_FILE)); }
 
     @Override
-    public Optional<Reader> getDeployment() { return optionalFile(DEPLOYMENT_FILE); }
+    public Optional<Reader> getDeployment() { return asOptionalReader(getFile(DEPLOYMENT_FILE)); }
 
     @Override
-    public Optional<Reader> getValidationOverrides() { return optionalFile(VALIDATION_OVERRIDES); }
+    public Optional<Reader> getValidationOverrides() { return asOptionalReader(getFile(VALIDATION_OVERRIDES)); }
 
-    private Optional<Reader> optionalFile(Path filePath) {
+    private Optional<Reader> asOptionalReader(ApplicationFile file) {
         try {
-            return Optional.of(getFile(filePath).createReader());
+            if ( ! file.exists()) return Optional.empty();
+            return Optional.of(file.createReader());
         } catch (FileNotFoundException e) {
             return Optional.empty();
         }
@@ -616,7 +622,6 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         private Optional<File> preprocessedDir = Optional.empty();
         private Optional<ApplicationMetaData> metaData = Optional.empty();
         private boolean includeSourceFiles = false;
-        private List<FilesApplicationPackage> inherited = new ArrayList<>();
 
         public Builder(File appDir) {
             this.appDir = appDir;
@@ -637,13 +642,8 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             return this;
         }
 
-        public Builder setInherited(List<FilesApplicationPackage> inherited) {
-            this.inherited = inherited;
-            return this;
-        }
-
         public FilesApplicationPackage build() {
-            return new FilesApplicationPackage(appDir, preprocessedDir, metaData, includeSourceFiles, inherited);
+            return new FilesApplicationPackage(appDir, preprocessedDir, metaData, includeSourceFiles);
         }
 
     }
