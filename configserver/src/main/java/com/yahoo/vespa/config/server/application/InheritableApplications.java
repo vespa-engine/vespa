@@ -46,7 +46,7 @@ public class InheritableApplications {
 
         public InheritableApplications importFrom(File dir) {
             if (!dir.exists() || !dir.isDirectory()) {
-                log.info("Inherited application directory '" + dir + "' does not exist: No applications can be inherited");
+                log.warning("Inherited application directory '" + dir.getAbsolutePath() + "' does not exist: No applications can be inherited");
                 return InheritableApplications.empty();
             }
             Map<String, FilesApplicationPackage> inheritable = new HashMap<>();
