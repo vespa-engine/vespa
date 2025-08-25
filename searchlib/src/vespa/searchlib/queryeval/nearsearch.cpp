@@ -191,6 +191,8 @@ NearSearch::NearSearch(Children terms,
     setup_fields(window, element_gap_inspector, _matchers, data, getChildren().size());
 }
 
+NearSearch::~NearSearch() = default;
+
 namespace {
 
 struct PosIter {
@@ -316,6 +318,8 @@ ONearSearch::ONearSearch(Children terms,
 {
     setup_fields(window, element_gap_inspector, _matchers, data, getChildren().size());
 }
+
+ONearSearch::~ONearSearch() = default;
 
 template <typename MatchResult>
 void

@@ -31,6 +31,7 @@ public:
           _idx(0),
           _last_abstract_dist(0.0)
     {}
+    ~NeighborVectorIterator() override;
 
     void initRange(uint32_t begin_id, uint32_t end_id) override {
         SearchIterator::initRange(begin_id, end_id);
@@ -60,6 +61,8 @@ public:
 
     Trinary is_strict() const override { return Trinary::True; }
 };
+
+NeighborVectorIterator::~NeighborVectorIterator() = default;
 
 std::unique_ptr<NnsIndexIterator>
 NnsIndexIterator::create(

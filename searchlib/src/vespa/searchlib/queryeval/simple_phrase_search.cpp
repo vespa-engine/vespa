@@ -180,6 +180,8 @@ SimplePhraseSearch::SimplePhraseSearch(Children children,
     assert(getChildren().size() == _eval_order.size());
 }
 
+SimplePhraseSearch::~SimplePhraseSearch() = default;
+
 void
 SimplePhraseSearch::doSeek(uint32_t doc_id) {
     phraseSeek(doc_id);

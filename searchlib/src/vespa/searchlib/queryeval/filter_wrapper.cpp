@@ -5,6 +5,8 @@
 
 namespace search::queryeval {
 
+FilterWrapper::~FilterWrapper() = default;
+
 void
 FilterWrapper::visitMembers(vespalib::ObjectVisitor &visitor) const
 {

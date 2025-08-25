@@ -64,6 +64,9 @@ AttributePostingListIteratorT(const attribute::ISearchContext &baseSearchCtx,
 }
 
 template <typename PL>
+AttributePostingListIteratorT<PL>::~AttributePostingListIteratorT() = default;
+
+template <typename PL>
 void AttributePostingListIteratorT<PL>::initRange(uint32_t begin, uint32_t end) {
     AttributePostingListIterator::initRange(begin, end);
     _iterator.lower_bound(begin);
@@ -86,6 +89,9 @@ FilterAttributePostingListIteratorT(const attribute::ISearchContext &baseSearchC
     setupPostingInfo();
     _matchPosition->setElementWeight(1);
 }
+
+template <typename PL>
+FilterAttributePostingListIteratorT<PL>::~FilterAttributePostingListIteratorT() = default;
 
 template <typename PL>
 void  FilterAttributePostingListIteratorT<PL>::initRange(uint32_t begin, uint32_t end) {
@@ -293,6 +299,8 @@ AttributeIteratorT<SC>::AttributeIteratorT(const SC &concreteSearchCtx, fef::Ter
       _concreteSearchCtx(concreteSearchCtx)
 { }
 
+template <typename SC>
+AttributeIteratorT<SC>::~AttributeIteratorT() = default;
 
 template <typename SC>
 FilterAttributeIteratorT<SC>::FilterAttributeIteratorT(const SC &concreteSearchCtx, fef::TermFieldMatchData *matchData)
@@ -300,6 +308,11 @@ FilterAttributeIteratorT<SC>::FilterAttributeIteratorT(const SC &concreteSearchC
       _concreteSearchCtx(concreteSearchCtx)
 { }
 
+template <typename SC>
+FilterAttributeIteratorT<SC>::~FilterAttributeIteratorT() = default;
+
+template <typename SC>
+FlagAttributeIteratorStrict<SC>::~FlagAttributeIteratorStrict() = default;
 
 template <typename SC>
 void
@@ -328,6 +341,9 @@ FlagAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
         setAtEnd();
     }
 }
+
+template <typename SC>
+FlagAttributeIteratorT<SC>::~FlagAttributeIteratorT() = default;
 
 template <typename SC>
 void
@@ -436,6 +452,9 @@ AttributeIteratorStrict<SC>::doSeek(uint32_t docId)
     }
     setAtEnd();
 }
+
+template <typename SC>
+FilterAttributeIteratorStrict<SC>::~FilterAttributeIteratorStrict() = default;
 
 template <typename SC>
 void

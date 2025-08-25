@@ -4,6 +4,8 @@
 
 namespace search::queryeval {
 
+RankSearch::~RankSearch() = default;
+
 void
 RankSearch::doSeek(uint32_t docid)
 {
@@ -33,7 +35,10 @@ public:
      * @param children the search objects we are rank'ing
      **/
     RankSearchStrict(Children children) : RankSearch(std::move(children)) { }
+    ~RankSearchStrict() override;
 };
+
+RankSearchStrict::~RankSearchStrict() = default;
 
 SearchIterator::UP
 RankSearchStrict::andWith(UP filter, uint32_t estimate)

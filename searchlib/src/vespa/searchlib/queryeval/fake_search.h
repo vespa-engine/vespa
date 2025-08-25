@@ -30,6 +30,7 @@ public:
                const std::string &term,
                const FakeResult &res,
                fef::TermFieldMatchDataArray tfmda);
+    ~FakeSearch() override;
     void attr_ctx(const attribute::ISearchContext *ctx) { _ctx = ctx; }
     bool is_attr() const { return (_ctx != nullptr); }
     void doSeek(uint32_t docid) override;

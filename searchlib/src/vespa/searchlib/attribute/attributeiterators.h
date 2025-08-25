@@ -98,6 +98,7 @@ protected:
 
 public:
     AttributeIteratorT(const SC &concreteSearchCtx, fef::TermFieldMatchData *matchData);
+    ~AttributeIteratorT() override;
     bool seekFast(uint32_t docId) const { return matches(docId); }
 };
 
@@ -117,6 +118,7 @@ protected:
 
 public:
     FilterAttributeIteratorT(const SC &concreteSearchCtx, fef::TermFieldMatchData *matchData);
+    ~FilterAttributeIteratorT() override;
     bool seekFast(uint32_t docId) const { return matches(docId); }
 };
 
@@ -163,6 +165,7 @@ public:
     FilterAttributeIteratorStrict(const SC &concreteSearchCtx, fef::TermFieldMatchData *matchData)
         : FilterAttributeIteratorT<SC>(concreteSearchCtx, matchData)
     { }
+    ~FilterAttributeIteratorStrict() override;
 };
 
 /**
@@ -228,6 +231,7 @@ public:
     AttributePostingListIteratorT(const attribute::ISearchContext &baseSearchCtx,
                                   fef::TermFieldMatchData *matchData,
                                   Args &&... args);
+    ~AttributePostingListIteratorT() override;
 };
 
 template <typename PL>
@@ -258,6 +262,7 @@ private:
 public:
     template <typename... Args>
     FilterAttributePostingListIteratorT(const attribute::ISearchContext &baseSearchCtx, fef::TermFieldMatchData *matchData, Args &&... args);
+    ~FilterAttributePostingListIteratorT() override;
 };
 
 
@@ -345,6 +350,7 @@ public:
         : FlagAttributeIterator(concreteSearchCtx, matchData),
           _concreteSearchCtx(concreteSearchCtx)
     { }
+    ~FlagAttributeIteratorT() override;
 
     void initRange(uint32_t begin, uint32_t end) override {
         FlagAttributeIterator::initRange(begin, end);
@@ -371,6 +377,7 @@ public:
     FlagAttributeIteratorStrict(const SC &concreteSearchCtx, fef::TermFieldMatchData *matchData)
         : FlagAttributeIteratorT<SC>(concreteSearchCtx, matchData)
     { }
+    ~FlagAttributeIteratorStrict() override;
 };
 
 }

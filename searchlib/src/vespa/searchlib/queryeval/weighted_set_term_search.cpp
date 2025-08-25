@@ -130,6 +130,7 @@ public:
             _tmd.reservePositions(_children.size());
         }
     }
+    ~WeightedSetTermSearchImpl() override;
 
     void doSeek(uint32_t docId) override {
         while (_data_stash < _data_end) {
@@ -198,6 +199,9 @@ public:
         }
     }
 };
+
+template <UnpackType unpack_type, typename HEAP, typename Traits>
+WeightedSetTermSearchImpl<unpack_type,HEAP,Traits>::~WeightedSetTermSearchImpl() = default;
 
 template <typename HeapType, typename Traits>
 SearchIterator::UP

@@ -123,6 +123,7 @@ struct MockSearch : public SearchIterator {
     int seekCnt;
     int _initial;
     explicit MockSearch(uint32_t initial) : SearchIterator(), seekCnt(0), _initial(initial) { }
+    ~MockSearch() override;
     void initRange(uint32_t begin, uint32_t end) override {
         SearchIterator::initRange(begin, end);
         setDocId(_initial);
@@ -133,6 +134,8 @@ struct MockSearch : public SearchIterator {
     }
     void doUnpack(uint32_t) override {}
 };
+
+MockSearch::~MockSearch() = default;
 
 struct MockFixture {
     MockSearch *mock;
