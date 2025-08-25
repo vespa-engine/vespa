@@ -50,8 +50,25 @@ public class InheritableApplications {
                 return InheritableApplications.empty();
             }
             Map<String, FilesApplicationPackage> inheritable = new HashMap<>();
-            // TODO
+            for (File namespaceDir : dir.listFiles()) {
+                if ( ! namespaceDir.isDirectory()) continue;
+                inheritable.putAll(importNamespaceFrom(namespaceDir));
+            }
             return new InheritableApplications(inheritable);
+        }
+
+        private Map<String, FilesApplicationPackage> importNamespaceFrom(File namespaceDir) {
+            Map<String, FilesApplicationPackage> inheritable = new HashMap<>();
+            for (File applicationDir : namespaceDir.listFiles()) {
+                if ( ! applicationDir.isDirectory()) continue;
+                inheritable.put(namespaceDir.getName() + "." + applicationDir.getName(),
+                                importApplicationFrom(applicationDir));
+            }
+            return inheritable;
+        }
+
+        private FilesApplicationPackage importApplicationFrom(File applicationDir) {
+            return FilesApplicationPackage.fromDir(applicationDir, Map.of()); // TODO: 2-pass to allow multilevel inheritance
         }
 
     }
