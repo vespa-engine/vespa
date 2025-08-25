@@ -23,7 +23,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.InheritableApplications;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
@@ -141,7 +141,7 @@ public class SessionRepository {
     private final int maxNodeSize;
     private final BooleanFlag writeSessionData;
     private final BooleanFlag readSessionData;
-    private final ApplicationRepo inheritableApplications;
+    private final InheritableApplications inheritableApplications;
 
     public SessionRepository(TenantName tenantName,
                              TenantApplications tenantApplications,
@@ -162,7 +162,7 @@ public class SessionRepository {
                              int maxNodeSize,
                              OnnxModelCost onnxModelCost,
                              List<EndpointCertificateSecretStore> endpointCertificateSecretStores,
-                             ApplicationRepo inheritableApplications) {
+                             InheritableApplications inheritableApplications) {
         this.tenantName = tenantName;
         this.onnxModelCost = onnxModelCost;
         this.endpointCertificateSecretStores = endpointCertificateSecretStores;
