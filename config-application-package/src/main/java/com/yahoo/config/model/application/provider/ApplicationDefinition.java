@@ -36,6 +36,7 @@ public class ApplicationDefinition {
             if (inheritedPackage == null)
                 throw new IllegalArgumentException("Inherited application '" + inheritedId + "' does not exist. " +
                                                    "Available applications: " + inheritableApplications.keySet());
+            inheritedPackages.add(inheritedPackage);
         }
         return inheritedPackages;
     }

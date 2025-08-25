@@ -38,7 +38,6 @@ public class SchemaValidators {
     private static final String containerIncludeXmlSchemaName = "container-include.rnc";
     private static final String routingStandaloneXmlSchemaName = "routing-standalone.rnc";
 
-
     private final SchemaValidator servicesXmlValidator;
     private final SchemaValidator hostsXmlValidator;
     private final SchemaValidator deploymentXmlValidator;

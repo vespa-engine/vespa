@@ -600,6 +600,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                                   Map<String, FilesApplicationPackage> inheritableApplications) {
         return new Builder(appDir).preprocessedDir(fileUnder(appDir, Path.fromString(preprocessed)))
                                   .includeSourceFiles(includeSourceFiles)
+                                  .inheritableApplications(inheritableApplications)
                                   .build();
     }
 
