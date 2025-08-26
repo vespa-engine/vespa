@@ -10,7 +10,6 @@ import com.yahoo.schema.Schema;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Helper for tests using a file application package
@@ -24,7 +23,7 @@ public class ApplicationPackageTester {
     private ApplicationPackageTester(String applicationPackageDir, boolean validate) {
         try {
             FilesApplicationPackage applicationPackage =
-                    FilesApplicationPackage.fromDir(new File(applicationPackageDir), Map.of());
+                    FilesApplicationPackage.fromFile(new File(applicationPackageDir));
             if (validate) {
                 ApplicationPackageXmlFilesValidator validator =
                         ApplicationPackageXmlFilesValidator.create(new File(applicationPackageDir), new Version(6));

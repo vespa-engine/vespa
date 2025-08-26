@@ -35,7 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 
-import static com.yahoo.config.model.application.provider.FilesApplicationPackage.fromDir;
+import static com.yahoo.config.model.application.provider.FilesApplicationPackage.fromFileWithDeployData;
 import static com.yahoo.config.provision.serialization.AllocatedHostsSerializer.fromJson;
 import static com.yahoo.vespa.config.server.session.SessionZooKeeperClient.getSessionPath;
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.DEFCONFIGS_ZK_SUBPATH;
@@ -63,13 +63,12 @@ public class ZooKeeperDeployerTest {
     public void setupZK() throws IOException {
         zk = new MockCurator();
         ZooKeeperDeployer.Client zkc = new ZooKeeperDeployer.Client(zk, new BaseDeployLogger(), appPath);
-        ApplicationPackage app = fromDir(new File("src/test/apps/zkfeed"),
-                                         new DeployData(ApplicationId.from("default", "appName", "default"),
-                                                        1345L,
-                                                        true,
-                                                        3L,
-                                                        2L),
-                                         Map.of());
+        ApplicationPackage app = fromFileWithDeployData(new File("src/test/apps/zkfeed"),
+                                                        new DeployData(ApplicationId.from("default", "appName", "default"),
+                                                                       1345L,
+                                                                       true,
+                                                                       3L,
+                                                                       2L));
         Map<Version, FileRegistry> fileRegistries = createFileRegistries();
         app.writeMetaData();
         zkc.initialize();
@@ -88,8 +87,8 @@ public class ZooKeeperDeployerTest {
             e.printStackTrace();
             fail();
         }
-        deploy(FilesApplicationPackage.fromDir(new File("src/test/apps/content"), Map.of()), curator, 1);
-        deploy(FilesApplicationPackage.fromDir(new File("src/test/apps/content"), Map.of()), curator, 2);
+        deploy(FilesApplicationPackage.fromFile(new File("src/test/apps/content")), curator, 1);
+        deploy(FilesApplicationPackage.fromFile(new File("src/test/apps/content")), curator, 2);
     }
 
     private Map<Version, FileRegistry> createFileRegistries() {

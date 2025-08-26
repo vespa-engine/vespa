@@ -43,7 +43,6 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -152,7 +151,7 @@ public class TenantApplicationsTest {
     private static ApplicationVersions createApplicationVersions(ApplicationId id, Version version) throws IOException, SAXException {
         VespaModel model = new VespaModel(new NullConfigModelRegistry(),
                                           new DeployState.Builder().wantedNodeVespaVersion(version)
-                                                                   .applicationPackage(FilesApplicationPackage.fromDir(new File("src/test/apps/app"), Map.of()))
+                                                                   .applicationPackage(FilesApplicationPackage.fromFile(new File("src/test/apps/app")))
                                                                    .build());
         return ApplicationVersions.from(new Application(model,
                                                         new ServerCache(),
@@ -210,7 +209,7 @@ public class TenantApplicationsTest {
         TenantApplications applications = createTenantApplications(TenantName.defaultName(), curator, configserverConfig, new MockConfigActivationListener(), new InMemoryFlagSource());
         assertFalse(applications.hasApplication(ApplicationId.defaultId(), Optional.of(vespaVersion)));
 
-        VespaModel model = new VespaModel(FilesApplicationPackage.fromDir(new File("src/test/apps/app"), Map.of()));
+        VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
         ApplicationId applicationId = ApplicationId.defaultId();
         applications.createApplication(applicationId);
         writeActiveTransaction(applications, applicationId, 1);
