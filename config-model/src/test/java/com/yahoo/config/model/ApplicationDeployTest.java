@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -63,7 +64,7 @@ public class ApplicationDeployTest {
                 case "sock":
                     break;
                 case "product":
-                    assertTrue(schema instanceof DocumentOnlySchema);
+                    assertInstanceOf(DocumentOnlySchema.class, schema);
                     assertEquals(DataType.STRING, schema.getDocument().getField("title").getDataType());
                     break;
                 default:
@@ -75,11 +76,11 @@ public class ApplicationDeployTest {
                         new File(TEST_SCHEMAS_DIR + "pc.sd"),
                         new File(TEST_SCHEMAS_DIR + "product.sd"),
                         new File(TEST_SCHEMAS_DIR + "sock.sd")),
-                new HashSet<>(tester.app().getSearchDefinitionFiles()));
+                new HashSet<>(tester.app().getSchemaFiles()));
 
-        List<FilesApplicationPackage.Component> components = tester.app().getComponents();
-        assertEquals(1, components.size());
-        Map<String, Bundle.DefEntry> defEntriesByName = defEntries2map(components.get(0).getDefEntries());
+        List<Bundle> bundles = tester.app().getBundles();
+        assertEquals(1, bundles.size());
+        Map<String, Bundle.DefEntry> defEntriesByName = defEntries2map(bundles.get(0).getDefEntries());
         assertEquals(5, defEntriesByName.size());
 
         Bundle.DefEntry def1 = defEntriesByName.get("test-namespace");
@@ -144,7 +145,7 @@ public class ApplicationDeployTest {
 
         IOUtils.writeFile(new File(appDir, "services.xml"), services, false);
         try {
-            FilesApplicationPackage.fromFile(appDir);
+            FilesApplicationPackage.fromDir(appDir, Map.of());
             fail("Expected exception due to non-existent include dir");
         } catch (IllegalArgumentException e) {
             assertEquals("Cannot include directory 'non-existent', as it does not exist. Directory must reside in application package, and path must be given relative to application package.",
@@ -219,7 +220,7 @@ public class ApplicationDeployTest {
     @Test
     void testConfigDefinitionsFromJars() {
         String appName = "src/test/cfg//application/app1";
-        FilesApplicationPackage app = FilesApplicationPackage.fromFile(new File(appName), false);
+        FilesApplicationPackage app = FilesApplicationPackage.fromDir(new File(appName), false, Map.of());
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs = app.getAllExistingConfigDefs();
         assertEquals(5, defs.size());
     }
@@ -235,9 +236,9 @@ public class ApplicationDeployTest {
                                                false,
                                                1337L,
                                                3L);
-        FilesApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(tmp, deployData);
+        FilesApplicationPackage app = FilesApplicationPackage.fromDir(tmp, deployData, Map.of());
         app.writeMetaData();
-        FilesApplicationPackage newApp = FilesApplicationPackage.fromFileWithDeployData(tmp, deployData);
+        FilesApplicationPackage newApp = FilesApplicationPackage.fromDir(tmp, deployData, Map.of());
         ApplicationMetaData meta = newApp.getMetaData();
         assertEquals(applicationId, meta.getApplicationId());
         assertEquals(13L, (long) meta.getDeployTimestamp());
@@ -247,12 +248,12 @@ public class ApplicationDeployTest {
         assertNotNull(checksum);
 
         assertTrue((new File(tmp, "hosts.xml")).delete());
-        FilesApplicationPackage app2 = FilesApplicationPackage.fromFileWithDeployData(tmp, deployData);
+        FilesApplicationPackage app2 = FilesApplicationPackage.fromDir(tmp, deployData, Map.of());
         String app2Checksum = app2.getMetaData().getChecksum();
         assertNotEquals(checksum, app2Checksum);
 
         assertTrue((new File(tmp, "files/foo.json")).delete());
-        FilesApplicationPackage app3 = FilesApplicationPackage.fromFileWithDeployData(tmp, deployData);
+        FilesApplicationPackage app3 = FilesApplicationPackage.fromDir(tmp, deployData, Map.of());
         String app3Checksum = app3.getMetaData().getChecksum();
         assertNotEquals(app2Checksum, app3Checksum);
     }
@@ -298,11 +299,11 @@ public class ApplicationDeployTest {
     @Test
     void testInvalidJar() {
         try {
-            FilesApplicationPackage.getComponents(new File("src/test/cfg/application/validation/invalidjar_app"));
+            FilesApplicationPackage.fromDir(new File("src/test/cfg/application/validation/invalidjar_app"), Map.of()).getBundles();
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Error opening jar file 'invalid.jar'. Please check that this is a valid jar file",
-                    e.getMessage());
+                         e.getMessage());
         }
     }
 
@@ -315,7 +316,7 @@ public class ApplicationDeployTest {
     @Test
     void testConfigDefinitionsAndNamespaces() {
         final File appDir = new File("src/test/cfg/application/configdeftest");
-        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
+        FilesApplicationPackage app = FilesApplicationPackage.fromDir(appDir, Map.of());
 
         DeployState deployState = new DeployState.Builder().applicationPackage(app).build();
 
