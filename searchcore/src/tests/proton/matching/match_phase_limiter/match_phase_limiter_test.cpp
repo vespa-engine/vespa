@@ -78,7 +78,8 @@ struct MockBlueprint : SimpleLeafBlueprint {
         : SimpleLeafBlueprint(spec_in), spec(spec_in), term(std::move(term_in))
     {
         setEstimate(HitEstimate(756, false));
-    }    
+    }
+    ~MockBlueprint() override;
     search::queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         return default_flow_stats(docid_limit, 756, 0);
     }
@@ -97,6 +98,8 @@ struct MockBlueprint : SimpleLeafBlueprint {
         postings_fetched = true;
     }
 };
+
+MockBlueprint::~MockBlueprint() = default;
 
 struct MockSearchable : Searchable {
     size_t create_cnt = 0;

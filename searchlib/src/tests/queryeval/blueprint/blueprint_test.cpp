@@ -27,6 +27,7 @@ private:
         return AnyFlow::create<OrFlow>(in_flow);
     }
 public:
+    ~MyOr() override;
     FlowStats calculate_flow_stats(uint32_t) const final {
         return {OrFlow::estimate_of(get_children()),
                 OrFlow::cost_of(get_children(), false),
@@ -56,6 +57,7 @@ public:
     MyOr& add(Blueprint &n) { addChild(UP(&n)); return *this; }
 };
 
+MyOr::~MyOr() = default;
 
 class OtherOr : public OrBlueprint
 {
@@ -130,6 +132,7 @@ struct MyTerm : SimpleLeafBlueprint {
     MyTerm(FieldSpecBase field, uint32_t hitEstimate) : SimpleLeafBlueprint(field) {
         setEstimate(HitEstimate(hitEstimate, false));
     }
+    ~MyTerm() override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         return default_flow_stats(docid_limit, getState().estimate().estHits, 0);
     }
@@ -140,6 +143,8 @@ struct MyTerm : SimpleLeafBlueprint {
         return create_default_filter(constraint);
     }
 };
+
+MyTerm::~MyTerm() = default;
 
 //-----------------------------------------------------------------------------
 

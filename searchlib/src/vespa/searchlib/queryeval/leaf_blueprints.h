@@ -19,6 +19,7 @@ public:
     EmptyBlueprint(FieldSpecBaseList fields);
     EmptyBlueprint(FieldSpecBase field) : SimpleLeafBlueprint(field) {}
     EmptyBlueprint() = default;
+    ~EmptyBlueprint() override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
     EmptyBlueprint *as_empty() noexcept final override { return this; }
@@ -30,6 +31,7 @@ protected:
     SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda) const override;
 public:
     AlwaysTrueBlueprint();
+    ~AlwaysTrueBlueprint() override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
     const AlwaysTrueBlueprint *asAlwaysTrue() const noexcept override { return this; }

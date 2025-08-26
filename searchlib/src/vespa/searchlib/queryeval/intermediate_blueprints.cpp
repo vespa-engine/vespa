@@ -87,6 +87,8 @@ need_normal_features_for_children(const IntermediateBlueprint &blueprint, fef::M
 
 //-----------------------------------------------------------------------------
 
+AndNotBlueprint::~AndNotBlueprint() = default;
+
 FlowStats
 AndNotBlueprint::calculate_flow_stats(uint32_t) const
 {
@@ -215,6 +217,8 @@ AndNotBlueprint::my_flow(InFlow in_flow) const
 }
 
 //-----------------------------------------------------------------------------
+
+AndBlueprint::~AndBlueprint() = default;
 
 FlowStats
 AndBlueprint::calculate_flow_stats(uint32_t) const {
@@ -564,6 +568,8 @@ WeakAndBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept
 
 //-----------------------------------------------------------------------------
 
+NearBlueprint::~NearBlueprint() = default;
+
 AnyFlow
 NearBlueprint::my_flow(InFlow in_flow) const
 {
@@ -629,6 +635,8 @@ NearBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 
 //-----------------------------------------------------------------------------
 
+ONearBlueprint::~ONearBlueprint() = default;
+
 AnyFlow
 ONearBlueprint::my_flow(InFlow in_flow) const
 {
@@ -691,6 +699,8 @@ ONearBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 }
 
 //-----------------------------------------------------------------------------
+
+RankBlueprint::~RankBlueprint() = default;
 
 FlowStats
 RankBlueprint::calculate_flow_stats(uint32_t) const {
