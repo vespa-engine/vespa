@@ -16,7 +16,6 @@ import com.yahoo.vespa.model.application.validation.Validation;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * For testing purposes only
@@ -42,7 +41,7 @@ public class VespaModelCreatorWithFilePkg {
 
     public VespaModelCreatorWithFilePkg(File directory, ConfigModelRegistry configModelRegistry) {
         this.configModelRegistry = configModelRegistry;
-        this.applicationPkg = FilesApplicationPackage.fromDir(directory, Map.of());
+        this.applicationPkg = FilesApplicationPackage.fromFile(directory);
     }
 
     public VespaModel create() {

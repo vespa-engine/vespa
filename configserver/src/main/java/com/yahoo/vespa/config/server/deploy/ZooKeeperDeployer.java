@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
-import static com.yahoo.config.application.api.ApplicationPackage.APPLICATION_DEFINITION_FILE;
 import static com.yahoo.config.application.api.ApplicationPackage.DEPLOYMENT_FILE;
 import static com.yahoo.config.application.api.ApplicationPackage.DOCPROCCHAINS_DIR;
 import static com.yahoo.config.application.api.ApplicationPackage.HOSTS;
@@ -160,7 +159,6 @@ public class ZooKeeperDeployer {
          */
         private void writeSomeOf(ApplicationPackage app) throws IOException {
             // TODO: We should have a way of doing this which doesn't require repeating all the content
-            writeFile(app.getFile(Path.fromString(APPLICATION_DEFINITION_FILE.getName())), getZooKeeperAppPath(USERAPP_ZK_SUBPATH));
             writeFile(app.getFile(Path.fromString(SERVICES)), getZooKeeperAppPath(USERAPP_ZK_SUBPATH));
             writeFile(app.getFile(Path.fromString(HOSTS)), getZooKeeperAppPath(USERAPP_ZK_SUBPATH));
             writeFile(app.getFile(Path.fromString(DEPLOYMENT_FILE.getName())), getZooKeeperAppPath(USERAPP_ZK_SUBPATH));

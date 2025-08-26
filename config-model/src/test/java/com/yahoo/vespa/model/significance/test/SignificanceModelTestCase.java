@@ -21,7 +21,6 @@ import com.yahoo.vespa.model.container.component.SignificanceModelRegistry;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -92,7 +91,7 @@ public class SignificanceModelTestCase {
     }
 
     private VespaModel loadModel(Path path, boolean hosted) throws Exception {
-        FilesApplicationPackage applicationPackage = FilesApplicationPackage.fromDir(path.toFile(), Map.of());
+        FilesApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(path.toFile());
         TestProperties properties = new TestProperties().setHostedVespa(hosted);
         DeployState state = new DeployState.Builder()
                 .properties(properties)
@@ -144,3 +143,4 @@ public class SignificanceModelTestCase {
         );
     }
 }
+

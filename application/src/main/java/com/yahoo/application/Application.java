@@ -144,7 +144,7 @@ public final class Application implements AutoCloseable {
                                                            new XGBoostImporter(),
                                                            new LightGBMImporter());
             DeployState deployState = new DeployState.Builder()
-                    .applicationPackage(FilesApplicationPackage.fromDir(path.toFile(), true, Map.of()))
+                    .applicationPackage(FilesApplicationPackage.fromFile(path.toFile(), true))
                     .modelImporters(modelImporters)
                     .deployLogger((level, s) -> { })
                     .accessLoggingEnabledByDefault(false)

@@ -401,8 +401,7 @@ public class RankingExpressionWithOnnxTestCase {
         StoringApplicationPackage(Path applicationPackageWritableRoot, String queryProfile, String queryProfileType) {
             super(new File(applicationPackageWritableRoot.toString()),
                   null, null, List.of(), Map.of(), null,
-                  null, null, null,
-                  false, queryProfile, queryProfileType, TenantName.defaultName());
+                  null, null, false, queryProfile, queryProfileType, TenantName.defaultName());
         }
 
         @Override

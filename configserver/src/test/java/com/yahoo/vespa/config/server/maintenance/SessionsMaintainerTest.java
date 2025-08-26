@@ -24,7 +24,6 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.yahoo.vespa.config.server.session.Session.Status.PREPARE;
 import static com.yahoo.vespa.config.server.session.Session.Status.UNKNOWN;
@@ -233,7 +232,7 @@ public class SessionsMaintainerTest {
                                            sessionId, applicationRepository.configserverConfig());
         var localSession = new LocalSession(tenantName,
                                             sessionId,
-                                            FilesApplicationPackage.fromDir(testApp, Map.of()),
+                                            FilesApplicationPackage.fromFile(testApp),
                                             sessionZooKeeperClient);
         sessionRepository.addLocalSession(localSession);
     }
