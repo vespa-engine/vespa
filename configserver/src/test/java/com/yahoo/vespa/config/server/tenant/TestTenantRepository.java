@@ -13,6 +13,7 @@ import com.yahoo.vespa.config.server.ConfigActivationListener;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
+import com.yahoo.vespa.config.server.application.InheritableApplications;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
@@ -68,7 +69,8 @@ public class TestTenantRepository extends TenantRepository {
               tenantListener,
               new ZookeeperServerConfig.Builder().myid(0).build(),
               OnnxModelCost.disabled(),
-              List.of(new DefaultEndpointCertificateSecretStore(secretStore)));
+              List.of(new DefaultEndpointCertificateSecretStore(secretStore)),
+              InheritableApplications.empty());
     }
 
     public static class Builder {
