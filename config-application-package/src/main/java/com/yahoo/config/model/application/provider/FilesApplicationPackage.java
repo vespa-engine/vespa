@@ -625,7 +625,10 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                                   DeployData deployData,
                                                   boolean includeSourceFiles,
                                                   Map<String, FilesApplicationPackage> inheritableApplications) {
-        return new Builder(appDir).includeSourceFiles(includeSourceFiles).deployData(deployData).build();
+        return new Builder(appDir).includeSourceFiles(includeSourceFiles)
+                                  .deployData(deployData)
+                                  .inheritableApplications(inheritableApplications)
+                                  .build();
     }
 
     /**
