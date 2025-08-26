@@ -31,5 +31,5 @@ public enum Agent {
     SwitchRebalancer,
     HostEncrypter,
     HostFlavorUpgrader,
-
+    KubernetesHostReadier
 }

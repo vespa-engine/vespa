@@ -153,6 +153,9 @@ public record IP() {
             return verify(List.of(node), allNodes, zone).asList().get(0);
         }
 
+        public boolean isEmpty() {
+            return this.equals(EMPTY);
+        }
     }
 
     /** A list of IP addresses and their protocol */
