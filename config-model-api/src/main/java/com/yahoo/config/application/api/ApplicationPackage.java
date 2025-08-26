@@ -27,7 +27,7 @@ import java.util.jar.JarEntry;
  */
 public interface ApplicationPackage {
 
-    // Caution!! If you add something here it must probably also be added to ZooKeeperClient.write(applicationPackage)
+    // Caution!! If you add something here it must probably also be added to ZooKeeperDeployer.writeSomeOf(applicationPackage)
 
     String HOSTS = "hosts.xml";
     String SERVICES = "services.xml";
