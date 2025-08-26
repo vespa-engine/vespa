@@ -916,8 +916,8 @@ public class VespaSerializer {
         }
 
         static boolean serialize(StringBuilder destination, WordAlternativesItem alternatives, boolean includeField) {
+            int initLen = 0;
             StringBuilder annotations = new StringBuilder(leafAnnotations(alternatives));
-            int initLen = annotations.length();
 
             if (alternatives.isLowercased()) {
                 VespaSerializer.comma(annotations, initLen);
