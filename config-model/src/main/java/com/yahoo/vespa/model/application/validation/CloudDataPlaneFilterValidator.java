@@ -23,7 +23,7 @@ public class CloudDataPlaneFilterValidator implements Validator {
     @Override
     public void validate(Context context) {
         if (!context.deployState().isHosted()) return;
-        if (!context.deployState().zone().system().isPublic()) return;
+        if (!context.deployState().zone().system().isPublicLike()) return;
 
         validateUniqueCertificates(context);
     }
