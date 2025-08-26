@@ -63,6 +63,9 @@ public enum SystemName {
     /** Whether the system is similar to Public, e.g. PublicCd. */
     public boolean isPublicLike() { return this == Public || this == PublicCd; }
 
+    // TODO Vespa 9: remove. Use isPublicLike() instead.
+    @Deprecated(forRemoval = true, since = "2025-08-26") public boolean isPublic() { return isPublicLike(); }
+
     public boolean isMainLike() { return this == main || this == cd; }
 
     public boolean isKubernetes() { return this == kubernetes; }
