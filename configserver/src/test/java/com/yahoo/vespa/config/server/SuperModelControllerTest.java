@@ -52,7 +52,7 @@ public class SuperModelControllerTest {
         File testApp = new File("src/test/resources/deploy/app");
         ApplicationId app = ApplicationId.from(TenantName.from("a"),
                                                ApplicationName.from("foo"), InstanceName.defaultName());
-        models.put(app, new ApplicationInfo(app, 4L, new VespaModel(FilesApplicationPackage.fromFile(testApp))));
+        models.put(app, new ApplicationInfo(app, 4L, new VespaModel(FilesApplicationPackage.fromDir(testApp, Map.of()))));
         SuperModel superModel = new SuperModel(models, true);
         handler = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone()),
                                            new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
@@ -114,7 +114,7 @@ public class SuperModelControllerTest {
 
     private DeployState createDeployState(File applicationPackage, ApplicationId applicationId) {
         return new DeployState.Builder()
-                .applicationPackage(FilesApplicationPackage.fromFile(applicationPackage))
+                .applicationPackage(FilesApplicationPackage.fromDir(applicationPackage, Map.of()))
                 .properties(new TestProperties().setApplicationId(applicationId))
                 .build();
     }

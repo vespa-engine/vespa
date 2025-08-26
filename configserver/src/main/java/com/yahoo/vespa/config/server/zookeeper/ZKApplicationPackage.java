@@ -226,14 +226,7 @@ public class ZKApplicationPackage extends AbstractApplicationPackage {
     }
 
     @Override
-    public String getHostSource() {
-        return "zookeeper hosts file";
-    }
-
-    @Override
-    public String getServicesSource() {
-        return "zookeeper services file";
-    }
+    public Optional<Reader> getApplicationDefinition() { return optionalFile(APPLICATION_DEFINITION_FILE.getName()); }
 
     @Override
     public Optional<Reader> getDeployment() { return optionalFile(DEPLOYMENT_FILE.getName()); }

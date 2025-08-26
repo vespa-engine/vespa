@@ -1,0 +1,11 @@
+schema doc {
+
+    document doc {
+
+        field additionalField type int {
+            indexing: attribute
+        }
+
+    }
+
+}
