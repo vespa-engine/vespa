@@ -248,6 +248,10 @@ public class NodeStateChangeChecker {
                 return Optional.of(result);
             if (anotherNodeInGroupAlreadyAllowed(nodeInfo, description))
                 return Optional.of(allow());
+        } else if (maxNumberOfGroupsAllowedToBeDown == 0) {
+            result = otherNodeHasWantedState(nodeInfo);
+            if (result.notAllowed())
+                return Optional.of(result);
         } else {
             return checkIfOtherNodesHaveWantedState(nodeInfo, description, clusterState);
         }
@@ -390,16 +394,17 @@ public class NodeStateChangeChecker {
             int index = configuredNode.index();
             if (index == nodeInfo.getNodeIndex()) continue;
 
+            var message = maxNumberOfGroupsAllowedToBeDown == 0
+                    ? "At most one node can have a wanted state: Other %s %d has wanted state %s"
+                    : "At most one node can have a wanted state when #groups = 1: Other %s %d has wanted state %s";
             State storageNodeWantedState = clusterInfo.getStorageNodeInfo(index).getUserWantedState().getState();
             if (storageNodeWantedState != UP) {
-                return disallow("At most one node can have a wanted state when #groups = 1: Other storage node " +
-                                index + " has wanted state " + storageNodeWantedState);
+                return disallow(message.formatted("storage node", index, storageNodeWantedState));
             }
 
             State distributorWantedState = clusterInfo.getDistributorNodeInfo(index).getUserWantedState().getState();
             if (distributorWantedState != UP) {
-                return disallow("At most one node can have a wanted state when #groups = 1: Other distributor " +
-                                index + " has wanted state " + distributorWantedState);
+                return disallow(message.formatted("distributor", index, distributorWantedState));
             }
         }
 

@@ -212,6 +212,42 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
+    void testMaintenanceAllowedFor2Of4GroupsOneNodeAtATime() {
+        int maxNumberOfGroupsAllowedToBeDown = 0;
+        // 2 groups with 2 nodes in each group
+        var cluster = createCluster(4, 2, maxNumberOfGroupsAllowedToBeDown);
+        setAllNodesUp(cluster, HostInfo.createHostInfo(createDistributorHostInfo(4, 5, 6)));
+
+        // All nodes up, set a storage node in group 0 to maintenance
+        {
+            int nodeIndex = 0;
+            settingToMaintenanceIsAllowed(nodeIndex, cluster, defaultAllUpClusterState());
+            setStorageNodeWantedStateToMaintenance(cluster, nodeIndex);
+        }
+
+        // One node in group 0 in maintenance, try to set another storage node in group 0 to maintenance, should fail
+        {
+            ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
+                    "version:%d distributor:4 storage:4 .0.s:m",
+                    currentClusterStateVersion));
+            int nodeIndex = 1;
+            settingToMaintenanceIsNotAllowed(nodeIndex, cluster, clusterStateWith0InMaintenance,
+                                             "At most one node can have a wanted state: Other storage node 0 has wanted state Maintenance");
+        }
+
+        // One node in group 0 in maintenance, try to set a storage node in group 1 to maintenance, should also fail
+        {
+            ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
+                    "version:%d distributor:4 storage:4 .0.s:m",
+                    currentClusterStateVersion));
+            int nodeIndex = 2;
+            settingToMaintenanceIsNotAllowed(nodeIndex, cluster, clusterStateWith0InMaintenance,
+                                             "At most one node can have a wanted state: Other storage node 0 has wanted state Maintenance");
+        }
+
+    }
+
+    @Test
     void testMaintenanceAllowedFor2Of4Groups8Nodes() {
         int maxNumberOfGroupsAllowedToBeDown = 2;
         // 4 groups with 2 nodes in each group
