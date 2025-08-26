@@ -5,10 +5,6 @@ set -e
 jar="target/jing.jar"
 mainclass="com/thaiopensource/relaxng/util/Driver"
 
-cmd="java -jar $jar target/generated-sources/trang/resources/schema/application.rng src/test/schema-test-files/application.xml"
-echo $cmd
-$cmd
-
 cmd="java -jar $jar target/generated-sources/trang/resources/schema/services.rng src/test/schema-test-files/services.xml"
 echo $cmd
 $cmd

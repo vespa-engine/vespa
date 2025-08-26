@@ -39,7 +39,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -75,7 +74,7 @@ public class ApplicationTest {
     public void setupHandler() throws IOException, SAXException {
         File testApp = new File("src/test/apps/app");
         ServerCache cache = createCacheAndAddContent();
-        VespaModel model = new VespaModel(FilesApplicationPackage.fromDir(testApp, Map.of()));
+        VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(testApp));
         ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("foo").build();
         handler = new Application(model, cache, 1L, new Version(1, 2, 3),
                                   new MetricUpdater(Metrics.createTestMetrics(), Metrics.createDimensions(applicationId)), applicationId);

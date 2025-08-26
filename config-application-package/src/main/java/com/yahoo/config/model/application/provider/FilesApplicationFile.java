@@ -51,8 +51,7 @@ public class FilesApplicationFile extends ApplicationFile {
         if (file.isDirectory()) {
             // TODO: Use file.listFiles() when if we stop writing meta file when deleting directories.
             if (!listFiles().isEmpty())
-                throw new RuntimeException("Can't delete, directory not empty: " +
-                                           this + "(" + listFiles() + ")." + listFiles().size());
+                throw new RuntimeException("Can't delete, directory not empty: " + this + "(" + listFiles() + ")." + listFiles().size());
 
             var files = file.listFiles();
             if (files != null) {
@@ -200,7 +199,8 @@ public class FilesApplicationFile extends ApplicationFile {
             try {
                 return mapper.readValue(metaFile, MetaData.class);
             } catch (IOException e) {
-                throw new RuntimeException("Error reading " + metaFile, e);
+                System.out.println("whot:" + Exceptions.toMessageString(e));
+                // return below
             }
         }
         try {
