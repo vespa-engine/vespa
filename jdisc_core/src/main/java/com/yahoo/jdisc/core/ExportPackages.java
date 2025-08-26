@@ -59,6 +59,9 @@ public class ExportPackages {
            .append("javax.inject;version=1.0.0, ")  // TODO Vespa 9: remove. Included in guice, but not exported. Needed by container-jersey.
            .append("org.aopalliance.intercept, ")
            .append("org.aopalliance.aop");
+        if (Runtime.version().feature() == 17 || Runtime.version().feature() == 18) {
+            out.append(", jdk.incubator.foreign"); // TODO Vespa 9: remove - required for https://openjdk.org/jeps/412 using Apache Datasketches-memory
+        }
 
         for (int i = 1; i < jars.length; ++i) {
             String exports = getExportedPackages(jars[i]);
