@@ -36,6 +36,4 @@ std::string getStackTrace(int ignoreTop, void* const* stack, int size);
  */
 int getStackTraceFrames(void** framesOut, int maxFrames);
 
-
 }
-

@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <absl/debugging/stacktrace.h>
 #include <execinfo.h>
 #include <csignal>
 #include <cstdlib>
@@ -46,9 +47,8 @@ demangleBacktraceLine(const std::string& line)
 
 }
 
-int
-vespalib::getStackTraceFrames(void** framesOut, int maxFrames) {
-    return backtrace(framesOut, maxFrames);
+int vespalib::getStackTraceFrames(void** framesOut, int maxFrames) {
+    return absl::GetStackTrace(framesOut, maxFrames, 0);
 }
 
 std::string
