@@ -500,6 +500,7 @@ public class NodeSerializer {
             case "HostEncrypter" -> Agent.HostEncrypter;
             case "ParkedExpirer" -> Agent.ParkedExpirer;
             case "HostFlavorUpgrader" -> Agent.HostFlavorUpgrader;
+            case "KubernetesHostReadier" -> Agent.KubernetesHostReadier;
             default -> throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
         };
     }
@@ -526,6 +527,7 @@ public class NodeSerializer {
             case HostEncrypter -> "HostEncrypter";
             case ParkedExpirer -> "ParkedExpirer";
             case HostFlavorUpgrader -> "HostFlavorUpgrader";
+            case KubernetesHostReadier -> "KubernetesHostReadier";
         };
     }
 
