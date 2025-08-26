@@ -1,0 +1,4 @@
+<application>
+    <inherits>internal.text-search</inherits>
+    <inherits>internal.recommendation</inherits>
+</application>

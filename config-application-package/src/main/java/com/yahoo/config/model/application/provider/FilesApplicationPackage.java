@@ -342,17 +342,26 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     public List<File> getSchemaFiles() {
-        List<File> schemaFiles = new ArrayList<>();
+        Map<String, File> schemaFiles = new HashMap<>();
 
         File sdDir = applicationFile(SEARCH_DEFINITIONS_DIR.getRelative());
-        if (sdDir.isDirectory())
-            schemaFiles.addAll(List.of(sdDir.listFiles((dir, name) -> validSchemaFilename(name))));
+        if (sdDir.isDirectory()) {
+            for (File schemaFile : List.of(sdDir.listFiles((dir, name) -> validSchemaFilename(name))))
+                schemaFiles.putIfAbsent(schemaFile.getName(), schemaFile);
+        }
 
         sdDir = applicationFile(SCHEMAS_DIR.getRelative());
-        if (sdDir.isDirectory())
-            schemaFiles.addAll(List.of(sdDir.listFiles((dir, name) -> validSchemaFilename(name))));
+        if (sdDir.isDirectory()) {
+            for (File schemaFile : List.of(sdDir.listFiles((dir, name) -> validSchemaFilename(name))))
+                schemaFiles.putIfAbsent(schemaFile.getName(), schemaFile);
+        }
 
-        return schemaFiles;
+        for (var inheritedPackage : inherited) {
+            for (File schemaFile : inheritedPackage.getSchemaFiles())
+                schemaFiles.putIfAbsent(schemaFile.getName(), schemaFile);
+        }
+
+        return new ArrayList<>(schemaFiles.values());
     }
 
     // Only for use by deploy processor
