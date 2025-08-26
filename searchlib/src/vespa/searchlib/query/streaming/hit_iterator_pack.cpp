@@ -7,24 +7,27 @@ namespace search::streaming {
 
 HitIteratorPack::HitIteratorPack(const QueryNodeList& children)
     : _iterators(),
+      _hit_lists(),
       _field_element(std::make_pair(0, 0))
 {
     auto num_children = children.size();
     _iterators.reserve(num_children);
+    _hit_lists.reserve(num_children);
     for (auto& child : children) {
-        auto& curr = dynamic_cast<const QueryTerm&>(*child);
-        _iterators.emplace_back(curr.getHitList());
+        _iterators.emplace_back(child->evaluateHits(_hit_lists.emplace_back()));
     }
 }
 
 HitIteratorPack::HitIteratorPack(const std::vector<std::unique_ptr<QueryTerm>>& children)
     : _iterators(),
+      _hit_lists(),
       _field_element(std::make_pair(0, 0))
 {
     auto num_children = children.size();
     _iterators.reserve(num_children);
+    _hit_lists.reserve(num_children);
     for (auto& child : children) {
-        _iterators.emplace_back(child->getHitList());
+        _iterators.emplace_back(child->evaluateHits(_hit_lists.emplace_back()));
     }
 }
 
