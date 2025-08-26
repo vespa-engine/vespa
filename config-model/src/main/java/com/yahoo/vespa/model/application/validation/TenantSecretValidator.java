@@ -17,7 +17,7 @@ public class TenantSecretValidator implements Validator {
     @Override
     public void validate(Validation.Context context) {
         if ( ! context.deployState().isHosted()) return;
-        if ( ! context.deployState().zone().system().isPublic()) return;
+        if ( ! context.deployState().zone().system().isPublicLike()) return;
 
         for (ApplicationContainerCluster cluster : context.model().getContainerClusters().values()) {
 

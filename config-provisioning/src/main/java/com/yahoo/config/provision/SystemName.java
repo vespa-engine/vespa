@@ -10,35 +10,31 @@ import java.util.stream.Stream;
 /**
  * Systems in hosted Vespa
  *
- * @author mpolden
+ * @author Martin Polden
+ * @author bjorncs
  */
 public enum SystemName {
 
     /** Continuous deployment system */
-    cd(false, true),
+    cd,
 
     /** Production system */
-    main(false, false),
+    main,
 
     /** System accessible to the public */
-    Public(true, false),
+    Public,
 
     /** Continuous deployment system for testing the Public system */
-    PublicCd(true, true),
+    PublicCd,
 
     /** Local development system */
-    dev(false, false);
+    dev,
 
-    private final boolean isPublic;
-    private final boolean isCd;
-
-    SystemName(boolean isPublic, boolean isCd) {
-        this.isPublic = isPublic;
-        this.isCd = isCd;
-    }
+    /** Kubernetes */
+    kubernetes;
 
     public static SystemName defaultSystem() {
-        return main;
+        return main; // TODO the default shouldn't be main but rather a 'default' system
     }
 
     public static SystemName from(String value) {
@@ -48,6 +44,7 @@ public enum SystemName {
             case "main" -> main;
             case "public" -> Public;
             case "publiccd" -> PublicCd;
+            case "kubernetes" -> kubernetes;
             default -> throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
         };
     }
@@ -59,14 +56,19 @@ public enum SystemName {
             case main -> "main";
             case Public -> "public";
             case PublicCd -> "publiccd";
+            case kubernetes -> "kubernetes";
         };
     }
 
     /** Whether the system is similar to Public, e.g. PublicCd. */
-    public boolean isPublic() { return isPublic; }
+    public boolean isPublicLike() { return this == Public || this == PublicCd; }
+
+    public boolean isMainLike() { return this == main || this == cd; }
+
+    public boolean isKubernetes() { return this == kubernetes; }
 
     /** Whether the system is used for continuous deployment. */
-    public boolean isCd() { return isCd; }
+    public boolean isCd() { return this == cd || this == PublicCd; }
 
     public static Set<SystemName> all() { return EnumSet.allOf(SystemName.class); }
 
@@ -74,6 +76,7 @@ public enum SystemName {
         return Stream.of(values()).filter(predicate).collect(Collectors.toUnmodifiableSet());
     }
 
+    /** Managed systems hosted by Vespa.ai */
     public static Set<SystemName> hostedVespa() { return EnumSet.of(main, cd, Public, PublicCd); }
 
 }
