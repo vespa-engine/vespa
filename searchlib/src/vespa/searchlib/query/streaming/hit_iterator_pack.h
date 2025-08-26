@@ -16,11 +16,14 @@ class HitIteratorPack
     using iterator = typename std::vector<HitIterator>::iterator;
     using FieldElement = HitIterator::FieldElement;
     std::vector<HitIterator> _iterators;
+    std::vector<HitList> _hit_lists;
     FieldElement _field_element;
 public:
     explicit HitIteratorPack(const QueryNodeList& children);
     explicit HitIteratorPack(const std::vector<std::unique_ptr<QueryTerm>>& children);
+    HitIteratorPack(const HitIteratorPack&) = delete;
     ~HitIteratorPack();
+    HitIteratorPack& operator=(const HitIteratorPack&) = delete;
     FieldElement& get_field_element_ref() noexcept { return _field_element; }
     HitIterator& front() noexcept { return _iterators.front(); }
     iterator begin() noexcept { return _iterators.begin(); }
