@@ -23,7 +23,6 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.InheritableApplications;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
@@ -125,7 +124,7 @@ public class SessionRepository {
     private final Metrics metrics;
     private final MetricUpdater metricUpdater;
     private final Curator.DirectoryCache directoryCache;
-    private final TenantApplications tenantApplications;
+    private final TenantApplications applicationRepo;
     private final SessionPreparer sessionPreparer;
     private final Path sessionsPath;
     private final TenantName tenantName;
@@ -141,10 +140,9 @@ public class SessionRepository {
     private final int maxNodeSize;
     private final BooleanFlag writeSessionData;
     private final BooleanFlag readSessionData;
-    private final InheritableApplications inheritableApplications;
 
     public SessionRepository(TenantName tenantName,
-                             TenantApplications tenantApplications,
+                             TenantApplications applicationRepo,
                              SessionPreparer sessionPreparer,
                              Curator curator,
                              Metrics metrics,
@@ -161,8 +159,7 @@ public class SessionRepository {
                              ConfigDefinitionRepo configDefinitionRepo,
                              int maxNodeSize,
                              OnnxModelCost onnxModelCost,
-                             List<EndpointCertificateSecretStore> endpointCertificateSecretStores,
-                             InheritableApplications inheritableApplications) {
+                             List<EndpointCertificateSecretStore> endpointCertificateSecretStores) {
         this.tenantName = tenantName;
         this.onnxModelCost = onnxModelCost;
         this.endpointCertificateSecretStores = endpointCertificateSecretStores;
@@ -174,7 +171,7 @@ public class SessionRepository {
         this.fileDistributionFactory = fileDistributionFactory;
         this.flagSource = flagSource;
         this.tenantFileSystemDirs = new TenantFileSystemDirs(configServerDB, tenantName);
-        this.tenantApplications = tenantApplications;
+        this.applicationRepo = applicationRepo;
         this.sessionPreparer = sessionPreparer;
         this.metrics = metrics;
         this.metricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
@@ -187,7 +184,6 @@ public class SessionRepository {
         this.maxNodeSize = maxNodeSize;
         this.writeSessionData = Flags.WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
         this.readSessionData = Flags.READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
-        this.inheritableApplications = inheritableApplications;
 
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -239,7 +235,7 @@ public class SessionRepository {
     private LocalSession getSessionFromFile(long sessionId) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
-        ApplicationPackage applicationPackage = FilesApplicationPackage.fromDir(sessionDir, inheritableApplications.toMap());
+        ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
         return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
     }
 
@@ -262,7 +258,7 @@ public class SessionRepository {
         });
 
         ApplicationId applicationId = params.getApplicationId();
-        tenantApplications.createApplication(applicationId); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
+        applicationRepo.createApplication(applicationId); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
         logger.log(Level.FINE, "Created application " + applicationId);
         long sessionId = session.getSessionId();
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
@@ -271,13 +267,13 @@ public class SessionRepository {
                 : Optional.of(sessionZooKeeperClient.createPrepareWaiter());
         Optional<ApplicationVersions> activeApplicationVersions = activeApplicationVersions(applicationId);
         try (var transaction = new CuratorTransaction(curator)) {
-            tenantApplications.createWritePrepareTransaction(transaction,
-                                                             applicationId,
-                                                             sessionId,
-                                                             getActiveSessionId(applicationId))
+            applicationRepo.createWritePrepareTransaction(transaction,
+                                                          applicationId,
+                                                          sessionId,
+                                                          getActiveSessionId(applicationId))
                     .commit();
         }
-        ConfigChangeActions actions = sessionPreparer.prepare(tenantApplications, logger, params,
+        ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo, logger, params,
                                                               activeApplicationVersions, now, getSessionAppDir(sessionId),
                                                               session.getApplicationPackage(), sessionZooKeeperClient)
                 .getConfigChangeActions();
@@ -307,7 +303,7 @@ public class SessionRepository {
                                                             timeoutBudget,
                                                             deployLogger,
                                                             created);
-        tenantApplications.createApplication(applicationId);
+        applicationRepo.createApplication(applicationId);
         write(existingSession, session, applicationId, created);
         return session;
     }
@@ -326,7 +322,7 @@ public class SessionRepository {
                                                             DeployLogger deployLogger) {
         LocalSession session = createSessionFromApplication(applicationDirectory, applicationId, false, timeoutBudget,
                                             deployLogger, clock.instant());
-        tenantApplications.createApplication(applicationId);
+        applicationRepo.createApplication(applicationId);
         return session;
     }
 
@@ -454,18 +450,18 @@ public class SessionRepository {
 
         CompletionWaiter waiter = createSessionZooKeeperClient(sessionId).getActiveWaiter();
         log.log(Level.FINE, () -> session.logPre() + "Activating " + sessionId);
-        tenantApplications.activateApplication(ensureApplicationLoaded(session), sessionId);
+        applicationRepo.activateApplication(ensureApplicationLoaded(session), sessionId);
         log.log(Level.FINE, () -> session.logPre() + "Notifying " + waiter);
         notifyCompletion(waiter);
         log.log(Level.INFO, session.logPre() + "Session activated: " + sessionId);
     }
 
     private void loadSessionIfActive(RemoteSession session) {
-        for (ApplicationId applicationId : tenantApplications.activeApplications()) {
-            Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
+        for (ApplicationId applicationId : applicationRepo.activeApplications()) {
+            Optional<Long> activeSession = applicationRepo.activeSessionOf(applicationId);
             if (activeSession.isPresent() && activeSession.get() == session.getSessionId()) {
                 log.log(Level.FINE, () -> "Found active application for session " + session.getSessionId() + " , loading it");
-                tenantApplications.activateApplication(ensureApplicationLoaded(session), session.getSessionId());
+                applicationRepo.activateApplication(ensureApplicationLoaded(session), session.getSessionId());
                 log.log(Level.INFO, session.logPre() + "Application activated successfully: " + applicationId + " (generation " + session.getSessionId() + ")");
                 return;
             }
@@ -690,7 +686,7 @@ public class SessionRepository {
     }
 
     private ApplicationLock lockApplication(Optional<ApplicationId> applicationId) {
-        return applicationId.map(id -> new ApplicationLock(Optional.of(tenantApplications.lock(id))))
+        return applicationId.map(id -> new ApplicationLock(Optional.of(applicationRepo.lock(id))))
                 .orElseGet(() -> new ApplicationLock(Optional.empty()));
     }
 
@@ -778,12 +774,11 @@ public class SessionRepository {
                                                  long sessionId,
                                                  Optional<Long> currentlyActiveSessionId,
                                                  boolean internalRedeploy,
-                                                 Optional<DeployLogger> deployLogger,
-                                                 Map<String, FilesApplicationPackage> inheritableApplications) {
+                                                 Optional<DeployLogger> deployLogger) {
         long deployTimestamp = System.currentTimeMillis();
         DeployData deployData = new DeployData(applicationId, deployTimestamp, internalRedeploy,
                                                sessionId, currentlyActiveSessionId.orElse(nonExistingActiveSessionId));
-        FilesApplicationPackage app = FilesApplicationPackage.fromDir(configApplicationDir, deployData, inheritableApplications);
+        FilesApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
         validateFileExtensions(applicationId, deployLogger, app);
 
         return app;
@@ -846,15 +841,14 @@ public class SessionRepository {
                                                                       sessionId,
                                                                       activeSessionId,
                                                                       internalRedeploy,
-                                                                      deployLogger,
-                                                                      inheritableApplications.toMap());
+                                                                      deployLogger);
             applicationPackage.writeMetaData();
             return applicationPackage;
         }
     }
 
     public Optional<ApplicationVersions> activeApplicationVersions(ApplicationId appId) {
-        return tenantApplications.activeSessionOf(appId).flatMap(this::activeApplicationVersions);
+        return applicationRepo.activeSessionOf(appId).flatMap(this::activeApplicationVersions);
     }
 
     private Optional<ApplicationVersions> activeApplicationVersions(long sessionId) {
@@ -923,7 +917,7 @@ public class SessionRepository {
      */
     void createSessionFromId(long sessionId) {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
-        var applicationPackage = FilesApplicationPackage.fromDir(sessionDir, inheritableApplications.toMap());
+        ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
         createLocalSession(sessionId, applicationPackage);
     }
 
@@ -939,7 +933,7 @@ public class SessionRepository {
      * the session id the remote session will also be created.
      */
     public void createLocalSessionFromDistributedApplicationPackage(long sessionId) {
-        if (tenantApplications.sessionExistsInFileSystem(sessionId)) {
+        if (applicationRepo.sessionExistsInFileSystem(sessionId)) {
             log.log(Level.FINE, () -> "Local session for session id " + sessionId + " already exists");
             createSessionFromId(sessionId);
             return;
@@ -961,7 +955,7 @@ public class SessionRepository {
     }
 
     private Optional<Long> getActiveSessionId(ApplicationId applicationId) {
-        return tenantApplications.activeSessionOf(applicationId);
+        return applicationRepo.activeSessionOf(applicationId);
     }
 
     private long getNextSessionId() {
@@ -1052,7 +1046,7 @@ public class SessionRepository {
 
     public Transaction createActivateTransaction(Session session) {
         Transaction transaction = createSetStatusTransaction(session, ACTIVATE);
-        transaction.add(tenantApplications.createWriteActiveTransaction(transaction, session.getApplicationId(), session.getSessionId()).operations());
+        transaction.add(applicationRepo.createWriteActiveTransaction(transaction, session.getApplicationId(), session.getSessionId()).operations());
         return transaction;
     }
 

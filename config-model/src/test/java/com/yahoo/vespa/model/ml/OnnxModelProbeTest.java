@@ -21,7 +21,7 @@ public class OnnxModelProbeTest {
         Path appDir = Path.fromString("src/test/cfg/application/onnx_probe");
         Path storedAppDir = appDir.append("copy");
         try {
-            FilesApplicationPackage app = FilesApplicationPackage.fromDir(appDir.toFile(), Map.of());
+            FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir.toFile());
             Path modelPath = Path.fromString("files/dynamic_model.onnx");
             String output = "out";
             Map<String, TensorType> inputTypes = Map.of(
@@ -42,7 +42,7 @@ public class OnnxModelProbeTest {
             storedAppDir.toFile().mkdirs();
             IOUtils.copyDirectory(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                     storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-            app = FilesApplicationPackage.fromDir(storedAppDir.toFile(), Map.of());
+            app = FilesApplicationPackage.fromFile(storedAppDir.toFile());
             outputType = OnnxModelProbe.probeModel(app, modelPath, output, inputTypes);
             assertEquals(outputType, expected);
 
