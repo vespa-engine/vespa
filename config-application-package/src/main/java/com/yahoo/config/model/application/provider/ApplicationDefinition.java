@@ -8,6 +8,7 @@ import org.w3c.dom.Element;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,15 +63,13 @@ public class ApplicationDefinition {
 
         public ApplicationDefinition read(String xmlForm) {
             Element root = XML.getDocument(xmlForm).getDocumentElement();
-            if ( ! root.getTagName().equals(applicationTag))
-                illegal("The root tag must be <application>");
-
-            List<String> inherited = XML.getChildren(root, "inherits").stream().map(XML::getValue).toList();
-            return new ApplicationDefinition(inherited);
+            return new ApplicationDefinition(readInherited(root));
         }
 
-        private static IllegalArgumentException illegal(String message) {
-            throw new IllegalArgumentException(message);
+        private List<String> readInherited(Element root) {
+            Element inherits = XML.getChild(root, "inherits");
+            if (inherits == null) return List.of();
+            return Arrays.stream(XML.getValue(inherits).split(" ")).map(String::trim).toList();
         }
 
     }
