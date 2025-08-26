@@ -20,17 +20,18 @@ public class NameFieldCheckTestCase extends AbstractSchemaTestCase {
     void testNameField() {
         try {
             ApplicationBuilder.createFromString(
-                    "search simple {\n" +
-                            "  document name-check {\n" +
-                            "    field title type string {\n" +
-                            "      indexing: summary | index\n" +
-                            "    }\n" +
-                            "    # reserved name, should trigger error\n" +
-                            "    field sddocname type string {\n" +
-                            "      indexing: index\n" +
-                            "    }\n" +
-                            "  }\n" +
-                            "}");
+                    """
+                    search simple {
+                      document name-check {
+                        field title type string {
+                          indexing: summary | index
+                        }
+                        # reserved name, should trigger error
+                        field sddocname type string {
+                          indexing: index
+                        }
+                      }
+                    }""");
             fail("Should throw exception.");
         } catch (Exception expected) {
             // Success
@@ -38,50 +39,30 @@ public class NameFieldCheckTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    void testDuplicateNamesInSearchDifferentType() {
+    void testCaseSensitiveDuplicate() {
         try {
             ApplicationBuilder.createFromString(
-                    "search duplicatenamesinsearch {\n" +
-                            "  document {\n" +
-                            "    field grpphotoids64 type string { }\n" +
-                            "  }\n" +
-                            "  field grpphotoids64 type array<long> {\n" +
-                            "    indexing: input grpphotoids64 | split \" \" | for_each {\n" +
-                            "      base64decode } | attribute\n" +
-                            "  }\n" +
-                            "}");
+                    """
+                    search myDoc {
+                      document {
+                        field foo type int {
+                          indexing: attribute
+                        }
+                        field fOo type string {
+                          indexing: index
+                        }
+                      }
+                    }""");
             fail("Should throw exception.");
         } catch (Exception e) {
-            assertEquals("For schema 'duplicatenamesinsearch', field 'grpphotoids64': " +
-                    "Incompatible types. Expected Array<long> for index field 'grpphotoids64', got string.", e.getMessage());
-        }
-    }
-
-    @Test
-    void testDuplicateNamesInDoc() {
-        try {
-            ApplicationBuilder.createFromString(
-                    "search duplicatenamesindoc {\n" +
-                            "  document {\n" +
-                            "    field foo type int {\n" +
-                            "      indexing: attribute\n" +
-                            "    }\n" +
-                            "    field fOo type string {\n" +
-                            "      indexing: index\n" +
-                            "    }\n" +
-                            "  }\n" +
-                            "}");
-            fail("Should throw exception.");
-        } catch (Exception e) {
-            assertTrue(e.getMessage().matches(".*Duplicate.*"));
+            assertEquals("document 'myDoc' error: Duplicate (case insensitively) field 'fOo' in document type 'myDoc'",
+                         e.getMessage());
         }
     }
 
     @Test
     void testDuplicateNameButDifferentDocumentTypes() throws ParseException {
-        /*
-         * Based on example from https://github.com/vespa-engine/vespa/issues/33088
-         */
+         // Based on example from https://github.com/vespa-engine/vespa/issues/33088
         var parent = """
                 schema cities {
                     document cities {

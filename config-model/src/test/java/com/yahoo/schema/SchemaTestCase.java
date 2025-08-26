@@ -664,6 +664,35 @@ public class SchemaTestCase {
         new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
     }
 
+    @Test
+    void testDuplicateField() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field duplicated type string {
+                        }
+                
+                    }
+                
+                    field duplicated type string {
+                    }
+
+                }""";
+
+        try {
+            ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+            builder.addSchema(schema);
+            fail("Should have failed");
+        }
+        catch (Exception e) {
+            assertEquals("schema 'doc' error: duplicate field 'duplicated': Also defined as a document field",
+                         e.getMessage());
+        }
+    }
+
     private void assertInheritedFromParent(Schema schema, RankProfileRegistry rankProfileRegistry) {
         assertEquals("pf1", schema.fieldSets().userFieldSets().get("parent_set").getFieldNames().stream().findFirst().get());
         assertEquals(Stemming.NONE, schema.getStemming());

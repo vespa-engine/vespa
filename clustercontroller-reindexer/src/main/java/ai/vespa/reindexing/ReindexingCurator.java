@@ -28,7 +28,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 /**
  * Reads and writes status of initiated reindexing jobs.
  *
- * @author jonmv
+ * @author Jon Marius Venstad
  */
 public class ReindexingCurator implements Closeable {
 
@@ -152,29 +152,28 @@ public class ReindexingCurator implements Closeable {
         }
 
         private static String toString(Reindexing.State state) {
-            switch (state) {
-                case READY: return "ready";
-                case RUNNING: return "running";
-                case SUCCESSFUL: return "successful";
-                case FAILED: return "failed";
-                default: throw new IllegalArgumentException("Unexpected state '" + state + "'");
-            }
+            return switch (state) {
+                case READY -> "ready";
+                case RUNNING -> "running";
+                case SUCCESSFUL -> "successful";
+                case FAILED -> "failed";
+            };
         }
 
         private static Reindexing.State toState(String value) {
-            switch (value) {
-                case "ready": return Reindexing.State.READY;
-                case "running": return Reindexing.State.RUNNING;
-                case "successful": return Reindexing.State.SUCCESSFUL;
-                case "failed": return Reindexing.State.FAILED;
-                default: throw new IllegalArgumentException("Unknown state '" + value + "'");
-            }
+            return switch (value) {
+                case "ready" -> Reindexing.State.READY;
+                case "running" -> Reindexing.State.RUNNING;
+                case "successful" -> Reindexing.State.SUCCESSFUL;
+                case "failed" -> Reindexing.State.FAILED;
+                default -> throw new IllegalArgumentException("Unknown state '" + value + "'");
+            };
         }
 
     }
 
     /** Indicates that taking the reindexing lock failed within the allotted time. */
-    static class ReindexingLockException extends Exception {
+    public static class ReindexingLockException extends Exception {
 
         ReindexingLockException(UncheckedTimeoutException cause) {
             super("Failed to obtain the reindexing lock", cause);

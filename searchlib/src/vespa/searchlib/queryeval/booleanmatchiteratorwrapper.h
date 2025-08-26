@@ -47,6 +47,7 @@ public:
      * @param match term match data used by the internal iterator
      **/
     BooleanMatchIteratorWrapper(SearchIterator::UP search, const fef::TermFieldMatchDataArray &matchData);
+    ~BooleanMatchIteratorWrapper() override;
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 };

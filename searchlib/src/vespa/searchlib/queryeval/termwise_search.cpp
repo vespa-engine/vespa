@@ -20,6 +20,7 @@ struct TermwiseSearch : public SearchIterator {
 
     TermwiseSearch(SearchIterator::UP search_in)
         : search(std::move(search_in)), result(), my_beginid(0), my_first_hit(0) {}
+    ~TermwiseSearch() override;
 
     Trinary is_strict() const override { return IS_STRICT ? Trinary::True : Trinary::False; }
     void initRange(uint32_t beginid, uint32_t endid) override {
@@ -52,6 +53,9 @@ struct TermwiseSearch : public SearchIterator {
         visit(visitor, "strict", IS_STRICT);
     }
 };
+
+template <bool IS_STRICT>
+TermwiseSearch<IS_STRICT>::~TermwiseSearch() = default;
 
 SearchIterator::UP
 make_termwise(SearchIterator::UP search, bool strict)

@@ -31,8 +31,6 @@ public class WordItem extends TermItem {
     /** The word as it should be searched, never null */
     private String word;
 
-    private boolean lowercased = false;
-
     public WordItem(String word) {
         this(word, "");
     }
@@ -109,7 +107,7 @@ public class WordItem extends TermItem {
      */
     @Override
     public String getRawWord() {
-        if (getOrigin()!=null) return getOrigin().getValue();
+        if (getOrigin() != null) return getOrigin().getValue();
         return word;
     }
 
@@ -124,14 +122,6 @@ public class WordItem extends TermItem {
 
     public void setFromSegmented(boolean fromSegmented) {
         this.fromSegmented = fromSegmented;
-    }
-
-    public boolean isLowercased() {
-        return lowercased;
-    }
-
-    public void setLowercased(boolean lowercased) {
-        this.lowercased = lowercased;
     }
 
     public int getSegmentIndex() {
@@ -155,13 +145,12 @@ public class WordItem extends TermItem {
         if ( this.fromSegmented != other.fromSegmented) return false;
         if ( this.segmentIndex != other.segmentIndex) return false;
         if ( ! Objects.equals(this.word, other.word)) return false;
-        if ( this.lowercased != other.lowercased) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), words, stemmed, fromSegmented, segmentIndex, word, lowercased);
+        return Objects.hash(super.hashCode(), words, stemmed, fromSegmented, segmentIndex, word);
     }
 
     @Override

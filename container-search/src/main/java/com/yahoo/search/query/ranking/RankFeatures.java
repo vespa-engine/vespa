@@ -97,7 +97,7 @@ public class RankFeatures implements Cloneable {
         if (feature instanceof Double) return Optional.of(Tensor.from((Double)feature));
         throw new IllegalArgumentException("Expected '" + name + "' to be a tensor, but it is a string." +
                                            " Unless you set this to a string in code, this is because '" + name +
-                                           "' is not defined in the schema for the chosen rank profile, " +
+                                           "' is not defined in the schema for the chosen rank profile (" + parent.getProfile() + "), " +
                                            "see https://docs.vespa.ai/en/tensor-user-guide.html#querying-with-tensors." +
                                            " The full string value is '" + feature + "'.");
     }

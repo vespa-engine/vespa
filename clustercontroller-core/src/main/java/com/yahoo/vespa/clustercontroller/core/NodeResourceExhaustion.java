@@ -59,10 +59,14 @@ public class NodeResourceExhaustion {
     }
 
     public String toShorthandDescription() {
-        return String.format(Locale.US, "%s%s %.1f%% > %.1f%%",
-                resourceType,
-                (resourceUsage.getName() != null ? ":" + resourceUsage.getName() : ""),
-                resourceUsage.getUsage() * 100.0, limit.configuredLimit * 100.0);
+        var extraInfo = limit.isBlocked() && limit.noiseLevel() > 0.001
+                ? "(effective limit, used until feed unblocked)"
+                : "";
+        return String.format(Locale.US, "%s%s %.1f%% > %.1f%% %s",
+                             resourceType,
+                             (resourceUsage.getName() != null ? ":" + resourceUsage.getName() : ""),
+                             resourceUsage.getUsage() * 100.0, limit.effectiveLimit() * 100.0,
+                             extraInfo);
     }
 
     private String makeDescriptionPrefix() {

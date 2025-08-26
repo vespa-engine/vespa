@@ -24,9 +24,7 @@
   },
   "icon": "images/icon.png",
   "activationEvents": [
-    "onLanguage:xml",
-    "onLanguage:vespaSchema",
-    "onLanguage:vespaYQL"
+    "onLanguage:xml"
   ],
   "main": "./dist/extension.js",
   "contributes": {

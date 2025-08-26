@@ -33,6 +33,8 @@ BooleanMatchIteratorWrapper::BooleanMatchIteratorWrapper(
     }
 }
 
+BooleanMatchIteratorWrapper::~BooleanMatchIteratorWrapper() = default;
+
 void
 BooleanMatchIteratorWrapper::visitMembers(vespalib::ObjectVisitor &visitor) const
 {

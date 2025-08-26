@@ -8,6 +8,9 @@
 namespace search::expression {
 
 /**
+ * Implements regex filter in grouping expressions.
+ *
+ * Checks if the expression matches the regex string provided.
  **/
 class RegexPredicateNode : public FilterPredicateNode {
 private:

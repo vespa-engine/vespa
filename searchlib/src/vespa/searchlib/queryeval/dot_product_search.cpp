@@ -69,6 +69,7 @@ public:
             _tmd.setRawScore(TermFieldMatchData::invalidId(), 0.0);
         }
     }
+    ~DotProductSearchImpl() override;
 
     void doSeek(uint32_t docId) override {
         while (_data_stash < _data_end) {
@@ -116,6 +117,9 @@ public:
     void visitMembers(vespalib::ObjectVisitor &) const override {}
 };
 
+template <typename HEAP, typename IteratorPack>
+DotProductSearchImpl<HEAP,IteratorPack>::~DotProductSearchImpl() = default;
+
 class SingleTermDotProductSearch : public DotProductSearch {
 public:
     SingleTermDotProductSearch(TermFieldMatchData &tmd, SearchIterator::UP child,
@@ -126,6 +130,7 @@ public:
           _weight(weight),
           _md(std::move(md))
     { }
+    ~SingleTermDotProductSearch() override;
 private:
     void doSeek(uint32_t docid) override {
         _child->doSeek(docid);
@@ -148,6 +153,8 @@ private:
     feature_t                 _weight;
     MatchData::UP             _md;
 };
+
+SingleTermDotProductSearch::~SingleTermDotProductSearch() = default;
 
 //-----------------------------------------------------------------------------
 

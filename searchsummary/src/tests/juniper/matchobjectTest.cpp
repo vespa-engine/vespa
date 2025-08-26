@@ -196,17 +196,6 @@ TEST(MatchObjectTest, testParams) {
         //        c: Completeness req'ed
         EXPECT_EQ(stk, "Node<a:2,o,l:1,v,c>[a:100,b:100]");
     }
-
-    {
-        // Check that ANY works.
-        TestQuery    q("ANY(a,b)");
-        QueryHandle& qh = q._qhandle;
-        std::string  stk;
-        qh.MatchObj()->Query()->Dump(stk);
-        // Expect l:1 == limit:1 o: ordered, v: Validity check of keywords needed,
-        //        c: Completeness req'ed
-        EXPECT_EQ(stk, "Node<a:2>[a:100,b:100]");
-    }
 }
 
 int main(int argc, char **argv) {

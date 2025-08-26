@@ -1068,7 +1068,7 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public java.util.Optional extractSingleChild()"
+      "public final java.util.Optional extractSingleChild()"
     ],
     "fields" : [ ]
   },
@@ -1487,8 +1487,6 @@
       "protected void encodeThis(java.nio.ByteBuffer)",
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "protected void appendBodyString(java.lang.StringBuilder)",
-      "protected void adding(com.yahoo.prelude.query.Item)",
-      "public java.util.Optional extractSingleChild()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public java.lang.String getFieldName()",
@@ -1764,6 +1762,8 @@
       "public int getTermCount()",
       "public boolean isNormalizable()",
       "public void setNormalizable(boolean)",
+      "public boolean isLowercased()",
+      "public void setLowercased(boolean)",
       "public com.yahoo.prelude.query.SegmentingRule getSegmentingRule()",
       "public void setSegmentingRule(com.yahoo.prelude.query.SegmentingRule)",
       "public boolean equals(java.lang.Object)",
@@ -2026,8 +2026,6 @@
       "public void setStemmed(boolean)",
       "public boolean isFromSegmented()",
       "public void setFromSegmented(boolean)",
-      "public boolean isLowercased()",
-      "public void setLowercased(boolean)",
       "public int getSegmentIndex()",
       "public void setSegmentIndex(int)",
       "protected void appendHeadingString(java.lang.StringBuilder)",
@@ -3853,6 +3851,25 @@
       "protected void <init>(java.lang.String, java.lang.Integer, com.yahoo.search.grouping.request.GroupingExpression, java.util.List)",
       "public int getNumBuckets()",
       "public com.yahoo.search.grouping.request.BucketValue getBucket(int)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.grouping.request.RangePredicate" : {
+    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.Number, java.lang.Number, com.yahoo.search.grouping.request.GroupingExpression)",
+      "public void <init>(java.lang.Number, java.lang.Number, com.yahoo.search.grouping.request.GroupingExpression, boolean, boolean)",
+      "public java.lang.Number getLower()",
+      "public java.lang.Number getUpper()",
+      "public boolean getLowerInclusive()",
+      "public boolean getUpperInclusive()",
+      "public com.yahoo.search.grouping.request.GroupingExpression getExpression()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.FilterExpression copy()"
     ],
     "fields" : [ ]
   },
@@ -9359,6 +9376,18 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.vespa.config.search.AttributesConfig)",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.searchers.ValidateSameElementSearcher" : {
+    "superClass" : "com.yahoo.search.Searcher",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
       "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
     ],
     "fields" : [ ]

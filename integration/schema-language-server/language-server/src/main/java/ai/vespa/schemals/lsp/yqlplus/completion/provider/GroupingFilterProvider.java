@@ -3,7 +3,6 @@ package ai.vespa.schemals.lsp.yqlplus.completion.provider;
 import java.util.List;
 
 import org.eclipse.lsp4j.CompletionItem;
-import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
@@ -29,9 +28,10 @@ public class GroupingFilterProvider implements CompletionProvider {
 
         return List.of(
             CompletionUtils.constructSnippet("regex", "regex(\"$1\", $2)"),
-            CompletionUtils.constructSnippet("and", "and($0)"),
-            CompletionUtils.constructSnippet("or", "or($0)"),
-            CompletionUtils.constructSnippet("not", "not($0)")
+            CompletionUtils.constructSnippet("range", "range($1, $2, $3)"),
+            CompletionUtils.constructBasic("or"),
+            CompletionUtils.constructBasic("and"),
+            CompletionUtils.constructBasic("not")
         );
     }
 }

@@ -3,6 +3,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
+import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
@@ -12,12 +13,12 @@ import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
-import com.yahoo.vespa.indexinglanguage.DocumentFieldValues;
 import com.yahoo.vespa.indexinglanguage.DocumentFieldTypes;
+import com.yahoo.vespa.indexinglanguage.DocumentFieldValues;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
+import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.ScriptParser;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
-import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.UpdateFieldValues;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
@@ -194,18 +195,27 @@ public abstract class Expression extends Selectable {
     }
 
     public final Document execute(FieldValuesFactory factory, Document doc) {
-        return execute(factory.asFieldValues(doc));
+        return execute(factory.asFieldValues(doc), doc.getId());
     }
 
-    public final Document execute(DocumentFieldValues adapter) {
-        execute((FieldValues)adapter);
+    public Document execute(FieldValuesFactory factory, Document doc, boolean isReindexing) {
+        var adapter = factory.asFieldValues(doc);
+        var ctx = new ExecutionContext(adapter)
+                .setDocumentId(doc.getId());
+        if (isReindexing) ctx.setReindexingOperation();
+        execute(ctx);
+        return adapter.getFullOutput();
+    }
+
+    public final Document execute(DocumentFieldValues adapter, DocumentId docId) {
+        execute((FieldValues)adapter, docId);
         return adapter.getFullOutput();
     }
 
     public static DocumentUpdate execute(Expression expression, FieldValuesFactory factory, DocumentUpdate update) {
         DocumentUpdate result = null;
         for (UpdateFieldValues adapter : factory.asFieldValues(update)) {
-            DocumentUpdate output = adapter.getExpression(expression).execute(adapter);
+            DocumentUpdate output = adapter.getExpression(expression).execute(adapter, update.getId());
             if (output == null) {
                 // ignore
             } else if (result != null) {
@@ -220,13 +230,17 @@ public abstract class Expression extends Selectable {
         return result;
     }
 
-    public final DocumentUpdate execute(UpdateFieldValues adapter) {
-        execute((FieldValues)adapter);
+    public final DocumentUpdate execute(UpdateFieldValues adapter, DocumentId docId) {
+        execute((FieldValues)adapter, docId);
         return adapter.getOutput();
     }
 
-    public final FieldValue execute(FieldValues adapter) {
-        return execute(new ExecutionContext(adapter));
+    public final FieldValue execute(FieldValues adapter) { return execute(adapter, null); }
+
+    public FieldValue execute(FieldValues adapter, DocumentId docId) {
+        var ctx = new ExecutionContext(adapter);
+        if (docId != null) ctx.setDocumentId(docId);
+        return execute(ctx);
     }
 
     public final FieldValue execute(ExecutionContext context) {

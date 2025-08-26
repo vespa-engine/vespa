@@ -24,6 +24,7 @@ import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.RegExpItem;
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.Substring;
@@ -416,12 +417,20 @@ public class YqlParserTestCase {
                 "baz:{f1:a f2:b}");
         assertParse("select foo from bar where baz contains sameElement(f1 contains \"a\", f2 = 10)",
                 "baz:{f1:a f2:10}");
+        assertCanonicalParse("select foo from bar where baz contains sameElement(range(f1, 10, 20))",
+                             "baz:{f1:[10;20]}");
         assertParse("select foo from bar where baz contains sameElement(key contains \"a\", value.f2 = 10)",
                 "baz:{key:a value.f2:10}");
         assertCanonicalParse("select foo from bar where baz contains sameElement(key contains \"a\", value.f2 = 10)",
                 "baz:{key:a value.f2:10}");
         assertCanonicalParse("select foo from bar where baz contains sameElement(key contains \"a\")",
-                "baz.key:a");
+                "baz:{key:a}");
+    }
+
+    @Test
+    void testSameElementWithNestedAnd() {
+        assertParse("select * from sources * where myStringArray contains sameElement('a' and 'b' and near('c', 'd'))",
+                    "myStringArray:{(AND a b (NEAR(2) c d))}");
     }
 
     @Test
@@ -762,6 +771,12 @@ public class YqlParserTestCase {
                 "GEO_LOCATION workplace:(2,-34000000,-12000000,-1,0,1,0,4201111954)");
         assertParse("select * from test_index where geoLocation(coordinate, 0.000010, 0.000010, \"10.000000 km\")",
                 "GEO_LOCATION coordinate:(2,10,10,90133,0,1,0,4294967294)");
+    }
+
+    @Test
+    void testGeoBoundingBox() {
+        assertParse("select foo from bar where geoBoundingBox('workplace', -63.418, -10.433, 63.5, 10.5)",
+                    "GEO_LOCATION workplace:[2,-10433000,-63418000,10500000,63500000]");
     }
 
     @Test
@@ -1288,7 +1303,7 @@ public class YqlParserTestCase {
         assertParseFail("select * from sources * where nofield in ('a', 25L)",
                 new IllegalArgumentException("Field 'nofield' does not exist."));
         assertParseFail("select * from sources * where field not in (25)",
-                new IllegalArgumentException("Expected AND, CALL, CONTAINS, EQ, GT, GTEQ, IN, LT, LTEQ or OR, got NOT_IN."));
+                new IllegalArgumentException("Expected AND, OR, EQ, LT, GT, LTEQ, GTEQ, CONTAINS, MATCHES, CALL, LITERAL, NOT or IN, got NOT_IN."));
         assertParseFail("select * from sources * where float in (25)",
                 new IllegalArgumentException("The in operator is only supported for integer and string fields. " +
                         "The field float is not of these types"));
@@ -1493,7 +1508,7 @@ public class YqlParserTestCase {
         Query q = new Query();
         q.getModel().getQueryTree().setRoot(qt.getRoot());
         QueryRewrite.collapseSingleComposites(q);
-        assertEquals(q.getModel().getQueryTree().toString(), expectedQueryTree);
+        assertEquals(expectedQueryTree, q.getModel().getQueryTree().toString());
     }
 
     private QueryTree assertParseFail(String yqlQuery, Throwable expectedException) {

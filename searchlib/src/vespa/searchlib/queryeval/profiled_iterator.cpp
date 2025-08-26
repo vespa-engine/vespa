@@ -46,6 +46,8 @@ std::unique_ptr<SearchIterator> create(Profiler &profiler,
 
 }
 
+ProfiledIterator::~ProfiledIterator() = default;
+
 void
 ProfiledIterator::initRange(uint32_t begin_id, uint32_t end_id)
 {

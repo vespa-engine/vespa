@@ -265,7 +265,7 @@ public class SchemaParserTestCase {
                         "  }",
                         "}");
         ParsedSchema schema = parseString(input);
-        var field = schema.getDocument().getFields().get(0);
+        var field = schema.getDocument().getFields().get("bar");
         assertEquals("bar", field.name());
         assertEquals(11, field.matchSettings().getMaxTermOccurrences().get());
     }
@@ -282,7 +282,7 @@ public class SchemaParserTestCase {
                         "  }",
                         "}");
         ParsedSchema schema = parseString(input);
-        var field = schema.getDocument().getFields().get(0);
+        var field = schema.getDocument().getFields().get("bar");
         assertEquals("bar", field.name());
         assertEquals(11, field.matchSettings().getMaxTokenLength().get());
     }

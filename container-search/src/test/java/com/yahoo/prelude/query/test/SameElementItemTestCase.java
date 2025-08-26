@@ -40,19 +40,6 @@ public class SameElementItemTestCase {
     }
 
     @Test
-    void requireAllChildrenHaveStructMemberNameSet() {
-        try {
-            SameElementItem s = new SameElementItem("structa");
-            s.addItem(new WordItem("b", "f1"));
-            s.addItem(new WordItem("c"));
-            fail("Expected exception");
-        }
-        catch (IllegalArgumentException e) { // success
-            assertEquals("Struct fieldname can not be empty", e.getMessage());
-        }
-    }
-
-    @Test
     void requireAllowCommonPrefix() {
         SameElementItem s = new SameElementItem("structa");
         s.addItem(new WordItem("b", "f1"));
@@ -78,55 +65,6 @@ public class SameElementItemTestCase {
         catch (IllegalArgumentException e) { // Success
             assertEquals("The word of a word item can not be empty", e.getMessage());
         }
-    }
-
-    @Test
-    void requireNoChildrenAreWordAlternatives() {
-        try {
-            SameElementItem s = new SameElementItem("structa");
-            s.addItem(new AndItem());
-            fail("Expected exception");
-        }
-        catch (IllegalArgumentException e) { // Success
-            assertEquals("Child item (AND ) should be an instance of class com.yahoo.prelude.query.TermItem but is class com.yahoo.prelude.query.AndItem",
-                    e.getMessage());
-        }
-    }
-
-    @Test
-    void requireAllChildrenAreTermItems() {
-        try {
-            SameElementItem s = new SameElementItem("structa");
-            s.addItem(new WordAlternativesItem("test", true, new Substring("origin"), List.of(new WordAlternativesItem.Alternative("a", 0.3))));
-            fail("Expected exception");
-        }
-        catch (IllegalArgumentException e) { // Success
-            assertEquals("Child item WORD_ALTERNATIVES test:[ a(0.3) ] should NOT be an instance of class com.yahoo.prelude.query.WordAlternativesItem but is class com.yahoo.prelude.query.WordAlternativesItem",
-                    e.getMessage());
-        }
-    }
-
-    private void verifyExtractSingle(TermItem term) {
-        String subFieldName = term.getIndexName();
-        SameElementItem s = new SameElementItem("structa");
-        s.addItem(term);
-        Optional<Item> single =s.extractSingleChild();
-        assertTrue(single.isPresent());
-        assertEquals(((TermItem)single.get()).getIndexName(), s.getFieldName() + "." + subFieldName);
-    }
-
-    @Test
-    void requireExtractSingleItemToExtractSingles() {
-        verifyExtractSingle(new WordItem("b", "f1"));
-        verifyExtractSingle(new IntItem("7", "f1"));
-    }
-
-    @Test
-    void requireExtractSingleItemToExtractSinglesOnly() {
-        SameElementItem s = new SameElementItem("structa");
-        s.addItem(new WordItem("b", "f1"));
-        s.addItem(new WordItem("c", "f2"));
-        assertTrue(s.extractSingleChild().isEmpty());
     }
 
 }

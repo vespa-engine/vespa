@@ -22,7 +22,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * @author jonmv
+ * @author Jon Marius Venstad
  */
 class ReindexingV1ApiTest {
 
@@ -86,7 +86,6 @@ class ReindexingV1ApiTest {
         assertEquals("{\"error-code\":\"NOT_FOUND\",\"message\":\"Nothing at /reindexing/v1/moo\"}",
                      response.readAll());
         assertEquals(404, response.getStatus());
-
     }
 
 }

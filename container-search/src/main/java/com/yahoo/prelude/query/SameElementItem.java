@@ -36,37 +36,10 @@ public class SameElementItem extends NonReducibleCompositeItem {
     protected void appendBodyString(StringBuilder buffer) {
         buffer.append(fieldName).append(':');
         buffer.append('{');
-        for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
-            TermItem term = (TermItem) i.next();
-            buffer.append(term.getIndexName()).append(':').append(term.getIndexedString());
-            if (i.hasNext()) {
-                buffer.append(' ');
-            }
-        }
+        super.appendBodyString(buffer);
         buffer.append('}');
     }
 
-    @Override
-    protected void adding(Item item) {
-        super.adding(item);
-        // TODO: See if we can require only SimpleIndexedItem instead of TermItem
-        Validator.ensureInstanceOf("Child item", item, TermItem.class);
-        Validator.ensureNotInstanceOf("Child item", item, WordAlternativesItem.class);
-        TermItem asTerm = (TermItem) item;
-        Validator.ensureNonEmpty("Struct fieldname", asTerm.getIndexName());
-        Validator.ensureNonEmpty("Query term", asTerm.getIndexedString());
-    }
-
-    @Override
-    public Optional<Item> extractSingleChild() {
-        if (getItemCount() == 1) {
-            SimpleIndexedItem child = (SimpleIndexedItem)getItem(0);
-            child.setIndexName(getFieldName() + "." + child.getIndexName());
-            return Optional.of(child);
-        }
-        return Optional.empty();
-    }
-    
     @Override
     public ItemType getItemType() {
         return ItemType.SAME_ELEMENT;

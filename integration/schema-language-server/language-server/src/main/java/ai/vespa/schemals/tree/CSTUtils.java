@@ -309,6 +309,14 @@ public class CSTUtils {
         }
     }
 
+    public static Node getRoot(Node node) {
+        Node ret = node;
+        while (ret.getParent() != null) {
+            ret = ret.getParent();
+        }
+        return ret;
+    }
+
     private static String schemaNodeString(SchemaNode node) {
 
         String ret = node.getClassLeafIdentifierString();

@@ -43,7 +43,10 @@ public:
           _store(store)
     {
     }
+    ~GidAllSearchIterator() override;
 };
+
+GidAllSearchIterator::~GidAllSearchIterator() = default;
 
 class GidStrictAllSearchIterator : public GidAllSearchIterator
 {
@@ -73,7 +76,10 @@ public:
           _numDocs(store.getNumDocs())
     {
     }
+    ~GidStrictAllSearchIterator() override;
 };
+
+GidStrictAllSearchIterator::~GidStrictAllSearchIterator() = default;
 
 class GidSearchIterator : public GidAllSearchIterator
 {
@@ -97,7 +103,10 @@ public:
           _gid(gid)
     {
     }
+    ~GidSearchIterator() override;
 };
+
+GidSearchIterator::~GidSearchIterator() = default;
 
 }
 

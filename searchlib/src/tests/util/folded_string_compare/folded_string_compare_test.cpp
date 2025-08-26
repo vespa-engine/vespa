@@ -4,6 +4,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
+#include <vespa/vespalib/util/casts.h>
 #include <algorithm>
 #include <string>
 
@@ -150,14 +151,6 @@ TEST_F(FoldedStringCompareTest, compare)
     EXPECT_EQ((StringVec{"BAR", "bar", "FOO", "foo"}), words);
 }
 
-namespace {
-
-const char* char_from_u8(const char8_t* p) {
-    return reinterpret_cast<const char*>(p);
-}
-
-}
-
 TEST_F(FoldedStringCompareTest, compare_prefix)
 {
     EXPECT_EQ(1, compare_prefix("ba", "BAR", 2));
@@ -165,7 +158,7 @@ TEST_F(FoldedStringCompareTest, compare_prefix)
     EXPECT_EQ(-1, compare_prefix("ba", "FOO", 2));
     EXPECT_EQ(-1, compare_prefix("BA", "foo", 2));
     // Verify that we don't mix number of bytes versus number of code points
-    EXPECT_EQ(1, compare_prefix(char_from_u8(u8"å"), char_from_u8(u8"Å"), 1));
+    EXPECT_EQ(1, compare_prefix(u8"å"_C, u8"Å"_C, 1));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

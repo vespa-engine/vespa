@@ -33,7 +33,8 @@ public class DiversitySettingsValidator extends Processor {
         new AttributeValidator(schema.getName(), rankProfile.name(),
                                schema.getAttribute(attributeName), attributeName).validate();
         if ((rankProfile.getMatchPhase() == null) && (rankProfile.getSecondPhaseRanking() == null)) {
-            throw new IllegalArgumentException("In schema '" + schema.getName() + "', rank-profile '" + rankProfile.name() + "': 'diversity' requires either 'match-phase' or 'second-phase' to be specified.");
+            throw new IllegalArgumentException("In " + schema + ", rank-profile '" + rankProfile.name() +
+                                               "': 'diversity' requires either 'match-phase' or 'second-phase' to be specified.");
         }
     }
 
@@ -44,11 +45,10 @@ public class DiversitySettingsValidator extends Processor {
         }
 
         protected void validateThatAttributeIsSingleAndNotPredicate() {
-            if ( ! attribute.getCollectionType().equals(Attribute.CollectionType.SINGLE) ||
-                 attribute.getType().equals(Attribute.Type.PREDICATE))
-            {
-                failValidation("must be single value numeric, or enumerated attribute, but it is '"
-                               + attribute.getDataType().getName() + "'");
+            if ( ! attribute.getCollectionType().equals(Attribute.CollectionType.SINGLE)
+                 || attribute.getType().equals(Attribute.Type.PREDICATE)) {
+                failValidation("must be single value numeric, or enumerated attribute, but it is '" +
+                               attribute.getDataType().getName() + "'");
             }
         }
 

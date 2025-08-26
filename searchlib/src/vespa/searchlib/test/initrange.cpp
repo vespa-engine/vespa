@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "initrange.h"
+#include "docid_iterator.h"
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/truesearch.h>
@@ -9,48 +10,6 @@ namespace search::test {
 
 using namespace search::queryeval;
 using std::make_unique;
-
-class DocIdIterator : public SearchIterator
-{
-public:
-    DocIdIterator(const InitRangeVerifier::DocIds & docIds, bool strict) :
-        _strict(strict),
-        _currIndex(0),
-        _docIds(docIds)
-    { }
-
-    void initRange(uint32_t beginId, uint32_t endId) override {
-        SearchIterator::initRange(beginId, endId);
-        _currIndex = 0;
-        if (_strict) {
-            doSeek(beginId);
-        }
-    }
-
-    void doSeek(uint32_t docId) override {
-        while ((_currIndex < _docIds.size()) && (_docIds[_currIndex] < docId)) {
-            _currIndex++;
-        }
-        if ((_currIndex < _docIds.size()) && (_docIds[_currIndex] < getEndId())) {
-            if (_docIds[_currIndex] == docId || _strict) {
-                setDocId(_docIds[_currIndex]);
-            }
-        } else {
-            setAtEnd();
-        }
-    }
-
-    void doUnpack(uint32_t docid) override { (void) docid; }
-
-    vespalib::Trinary is_strict() const override {
-        return _strict ? vespalib::Trinary::True : vespalib::Trinary::False;
-    }
-
-private:
-    const bool _strict;
-    uint32_t   _currIndex;
-    const InitRangeVerifier::DocIds _docIds;
-};
 
 InitRangeVerifier::InitRangeVerifier() :
     _trueTfmd(),

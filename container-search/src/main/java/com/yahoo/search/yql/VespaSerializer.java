@@ -17,6 +17,7 @@ import static com.yahoo.search.yql.YqlParser.END_ANCHOR;
 import static com.yahoo.search.yql.YqlParser.EQUIV;
 import static com.yahoo.search.yql.YqlParser.FILTER;
 import static com.yahoo.search.yql.YqlParser.FUZZY;
+import static com.yahoo.search.yql.YqlParser.GEO_BOUNDING_BOX;
 import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
 import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
 import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
@@ -70,6 +71,7 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.BoolItem;
+import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.FalseItem;
@@ -102,6 +104,7 @@ import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.TaggableItem;
+import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.prelude.query.ToolBox.QueryVisitor;
 import com.yahoo.prelude.query.TrueItem;
@@ -272,32 +275,14 @@ public class VespaSerializer {
 
         @Override
         boolean serialize(StringBuilder destination, NearItem item) {
-            String annotations = nearAnnotations(item);
-
             destination.append(getIndexName(item.getItem(0))).append(" contains ");
-            if (!annotations.isEmpty()) {
-                destination.append('(').append(annotations);
-            }
-            destination.append(NEAR).append('(');
-            int initLen = destination.length();
-            for (ListIterator<Item> i = item.getItemIterator(); i.hasNext();) {
-                WordItem close = (WordItem) i.next();
-                if (destination.length() > initLen) {
-                    destination.append(", ");
-                }
-                destination.append('"');
-                escape(close.getIndexedString(), destination).append('"');
-            }
-            destination.append(')');
-            if (!annotations.isEmpty()) {
-                destination.append(')');
-            }
+            serializeItemListWithoutField(NEAR, item, nearAnnotations(item), destination);
             return false;
         }
 
         static String nearAnnotations(NearItem n) {
             if (n.getDistance() != NearItem.defaultDistance) {
-                return "{" + DISTANCE + ": " + n.getDistance() + "}";
+                return DISTANCE + ": " + n.getDistance();
             } else {
                 return "";
             }
@@ -315,12 +300,12 @@ public class VespaSerializer {
             String annotations = uriAnnotations(uriItem);
 
             destination.append(uriItem.getIndexName()).append(" contains ");
-            if (annotations.length() > 0)
+            if (!annotations.isEmpty())
                 destination.append('(').append(annotations);
             destination.append(URI).append("(\"");
             destination.append(uriItem.getArgumentString());
             destination.append("\")");
-            if (annotations.length() > 0)
+            if (!annotations.isEmpty())
                 destination.append(')');
             return false;
         }
@@ -593,26 +578,8 @@ public class VespaSerializer {
 
         @Override
         boolean serialize(StringBuilder destination, ONearItem item) {
-            String annotations = NearSerializer.nearAnnotations(item);
-
             destination.append(getIndexName(item.getItem(0))).append(" contains ");
-            if (!annotations.isEmpty()) {
-                destination.append('(').append(annotations);
-            }
-            destination.append(ONEAR).append('(');
-            int initLen = destination.length();
-            for (ListIterator<Item> i = item.getItemIterator(); i.hasNext();) {
-                WordItem close = (WordItem) i.next();
-                if (destination.length() > initLen) {
-                    destination.append(", ");
-                }
-                destination.append('"');
-                escape(close.getIndexedString(), destination).append('"');
-            }
-            destination.append(')');
-            if (!annotations.isEmpty()) {
-                destination.append(')');
-            }
+            serializeItemListWithoutField(ONEAR, item, NearSerializer.nearAnnotations(item), destination);
             return false;
         }
 
@@ -710,32 +677,9 @@ public class VespaSerializer {
         }
 
         static boolean serialize(StringBuilder destination, PhraseItem phrase, boolean includeField) {
-            String annotations = leafAnnotations(phrase);
-
             if (includeField)
                 destination.append(normalizeIndexName(phrase.getIndexName())).append(" contains ");
-            if (!annotations.isEmpty())
-                destination.append("({").append(annotations).append("}");
-
-            destination.append(PHRASE).append('(');
-            for (int i = 0; i < phrase.getItemCount(); ++i) {
-                if (i > 0)
-                    destination.append(", ");
-                Item current = phrase.getItem(i);
-                if (current instanceof WordItem word) {
-                    WordSerializer.serializeWordWithoutIndex(destination, word);
-                } else if (current instanceof PhraseSegmentItem phraseSegment) {
-                    PhraseSegmentSerializer.serialize(destination, phraseSegment, false);
-                } else if (current instanceof WordAlternativesItem) {
-                    WordAlternativesSerializer.serialize(destination, (WordAlternativesItem) current, false);
-                } else {
-                    throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName() +
-                                                       " in phrases not implemented, please report this as a bug.");
-                }
-            }
-            destination.append(')');
-            if (!annotations.isEmpty())
-                destination.append(')');
+            serializeItemListWithoutField(PHRASE, phrase, leafAnnotations(phrase), destination);
             return false;
         }
 
@@ -799,13 +743,19 @@ public class VespaSerializer {
             if (!annotations.isEmpty()) {
                 destination.append("({").append(annotations).append("}");
             }
-            destination.append(GEO_LOCATION).append('(');
-            destination.append(item.getIndexName()).append(", ");
             var loc = item.getLocation();
-            destination.append(loc.degNS()).append(", ");
-            destination.append(loc.degEW()).append(", ");
-            destination.append('"').append(loc.degRadius()).append(" deg").append('"');
-            destination.append(')');
+            if (loc.isGeoCircle()) {
+                destination.append(GEO_LOCATION).append('(');
+                destination.append(item.getIndexName()).append(", ");
+                destination.append(loc.degNS()).append(", ");
+                destination.append(loc.degEW()).append(", ");
+                destination.append('"').append(loc.degRadius()).append(" deg").append('"');
+                destination.append(')');
+            } else if (loc.hasBoundingBox()) {
+                destination.append(GEO_BOUNDING_BOX).append('(');
+                destination.append(item.getIndexName()).append(", ");
+                destination.append(loc.bbInDegrees()).append(')');
+            }
             return false;
         }
     }
@@ -966,7 +916,18 @@ public class VespaSerializer {
         }
 
         static boolean serialize(StringBuilder destination, WordAlternativesItem alternatives, boolean includeField) {
-            String annotations = leafAnnotations(alternatives);
+            StringBuilder annotations = new StringBuilder(leafAnnotations(alternatives));
+            int initLen = annotations.length();
+
+            if (alternatives.isLowercased()) {
+                VespaSerializer.comma(annotations, initLen);
+                annotations.append(NORMALIZE_CASE).append(": false");
+            }
+            if ( ! alternatives.isNormalizable()) {
+                VespaSerializer.comma(annotations, initLen);
+                annotations.append(ACCENT_DROP).append(": false");
+            }
+
             Substring origin = alternatives.getOrigin();
             boolean isFromQuery = alternatives.isFromQuery();
             boolean needsAnnotations = !annotations.isEmpty() || origin != null || !isFromQuery;
@@ -977,7 +938,8 @@ public class VespaSerializer {
 
             if (needsAnnotations) {
                 destination.append("({");
-                int initLen = destination.length();
+
+                initLen = destination.length();
 
                 if (origin != null) {
                     String image = origin.getSuperstring();
@@ -998,7 +960,7 @@ public class VespaSerializer {
             }
 
             destination.append(ALTERNATIVES).append("({");
-            int initLen = destination.length();
+            initLen = destination.length();
             List<WordAlternativesItem.Alternative> sortedAlternatives = new ArrayList<>(alternatives.getAlternatives());
             // ensure most precise forms first
             sortedAlternatives.sort((x, y) -> Double.compare(y.exactness, x.exactness));
@@ -1174,21 +1136,12 @@ public class VespaSerializer {
 
         private static String wordAnnotations(WordItem item) {
             Substring origin = item.getOrigin();
-            boolean usePositionData = item.usePositionData();
-            boolean stemmed = item.isStemmed();
-            boolean lowercased = item.isLowercased();
-            boolean accentDrop = item.isNormalizable();
-            SegmentingRule andSegmenting = item.getSegmentingRule();
-            boolean isFromQuery = item.isFromQuery();
             StringBuilder annotation = new StringBuilder();
-            boolean prefix = item instanceof PrefixItem;
-            boolean suffix = item instanceof SuffixItem;
-            boolean substring = item instanceof SubstringItem;
             int initLen = annotation.length();
+
             String image;
             int offset;
             int length;
-
             if (origin == null) {
                 image = item.getRawWord();
                 offset = 0;
@@ -1202,39 +1155,39 @@ public class VespaSerializer {
             if (!image.substring(offset, offset + length).equals(item.getIndexedString())) {
                 VespaSerializer.serializeOrigin(annotation, image, offset, length);
             }
-            if ( ! usePositionData) {
+            if ( ! item.usePositionData()) {
                 VespaSerializer.comma(annotation, initLen);
                 annotation.append(USE_POSITION_DATA).append(": false");
             }
-            if (stemmed) {
+            if (item.isStemmed()) {
                 VespaSerializer.comma(annotation, initLen);
                 annotation.append(STEM).append(": false");
             }
-            if (lowercased) {
+            if (item.isLowercased()) {
                 VespaSerializer.comma(annotation, initLen);
                 annotation.append(NORMALIZE_CASE).append(": false");
             }
-            if ( ! accentDrop) {
+            if ( ! item.isNormalizable()) {
                 VespaSerializer.comma(annotation, initLen);
                 annotation.append(ACCENT_DROP).append(": false");
             }
-            if (andSegmenting == SegmentingRule.BOOLEAN_AND) {
+            if (item.getSegmentingRule() == SegmentingRule.BOOLEAN_AND) {
                 VespaSerializer.comma(annotation, initLen);
                 annotation.append(AND_SEGMENTING).append(": true");
             }
-            if (!isFromQuery) {
+            if (!item.isFromQuery()) {
                 VespaSerializer.comma(annotation, initLen);
                 annotation.append(IMPLICIT_TRANSFORMS).append(": false");
             }
-            if (prefix) {
+            if (item instanceof PrefixItem) {
                 VespaSerializer.comma(annotation, initLen);
                 annotation.append(PREFIX).append(": true");
             }
-            if (suffix) {
+            if (item instanceof SuffixItem) {
                 VespaSerializer.comma(annotation, initLen);
                 annotation.append(SUFFIX).append(": true");
             }
-            if (substring) {
+            if (item instanceof SubstringItem) {
                 VespaSerializer.comma(annotation, initLen);
                 annotation.append(SUBSTRING).append(": true");
             }
@@ -1630,6 +1583,31 @@ public class VespaSerializer {
         if (!annotations.isEmpty()) {
             destination.append(')');
         }
+    }
+
+    private static void serializeItemListWithoutField(String name, CompositeItem item, String annotations,
+                                                      StringBuilder destination) {
+        if (!annotations.isEmpty())
+            destination.append("({").append(annotations).append("}");
+        destination.append(name).append('(');
+        for (int i = 0; i < item.getItemCount(); ++i) {
+            if (i > 0)
+                destination.append(", ");
+            Item current = item.getItem(i);
+            if (current instanceof WordItem word) {
+                WordSerializer.serializeWordWithoutIndex(destination, word);
+            } else if (current instanceof PhraseSegmentItem phraseSegment) {
+                PhraseSegmentSerializer.serialize(destination, phraseSegment, false);
+            } else if (current instanceof WordAlternativesItem) {
+                WordAlternativesSerializer.serialize(destination, (WordAlternativesItem) current, false);
+            } else {
+                throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName() +
+                                                   " in phrases not implemented, please report this as a bug.");
+            }
+        }
+        destination.append(')');
+        if (!annotations.isEmpty())
+            destination.append(')');
     }
 
 }

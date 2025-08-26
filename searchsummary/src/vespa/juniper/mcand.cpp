@@ -117,7 +117,7 @@ MatchCandidate::accept_state MatchCandidate::accept(MatchElement* k, QueryExpr* 
 int MatchCandidate::weight(MatchElement* me, QueryExpr* mexp) {
     QueryTerm* texp = mexp->AsTerm();
     if (texp) return mexp->_weight;
-    MatchCandidate* m = reinterpret_cast<MatchCandidate*>(me);
+    MatchCandidate* m = static_cast<MatchCandidate*>(me);
     return m->weight();
 }
 

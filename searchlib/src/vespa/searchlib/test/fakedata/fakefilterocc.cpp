@@ -100,7 +100,7 @@ public:
                                const uint32_t *arrEnd,
                                const fef::TermFieldMatchDataArray &matchData);
 
-    ~FakeFilterOccArrayIterator();
+    ~FakeFilterOccArrayIterator() override;
 
     void doUnpack(uint32_t docId) override;
     void doSeek(uint32_t docId) override;
@@ -158,11 +158,7 @@ FakeFilterOccArrayIterator::initRange(uint32_t begin, uint32_t end)
     }
 }
 
-
-FakeFilterOccArrayIterator::~FakeFilterOccArrayIterator()
-{
-}
-
+FakeFilterOccArrayIterator::~FakeFilterOccArrayIterator() = default;
 
 void
 FakeFilterOccArrayIterator::doUnpack(uint32_t docId)

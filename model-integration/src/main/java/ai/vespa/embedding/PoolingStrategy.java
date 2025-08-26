@@ -34,6 +34,16 @@ enum PoolingStrategy {
             }
             return builder.build();
         }
+    },
+    NONE {
+        @Override
+        public Tensor toSentenceEmbedding(TensorType type, Tensor tokenEmbeddings, Tensor ignored) {
+            var builder = Tensor.Builder.of(type);
+            for (int i = 0; i < type.dimensions().get(0).size().get(); i++) {
+                builder.cell(tokenEmbeddings.get(TensorAddress.of(0,i)), i);
+            }
+            return builder.build();
+        }
     };
 
     abstract Tensor toSentenceEmbedding(TensorType type, Tensor tokenEmbeddings, Tensor attentionMask);
@@ -41,6 +51,7 @@ enum PoolingStrategy {
     static PoolingStrategy fromString(String strategy) {
         return switch (strategy.toLowerCase()) {
             case "mean" -> MEAN;
+            case "none" -> NONE;
             case "cls" -> CLS;
             default -> throw new IllegalArgumentException("Unknown pooling strategy '%s'".formatted(strategy));
         };

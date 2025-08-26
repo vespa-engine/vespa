@@ -407,11 +407,12 @@ const char*
 Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf, const char *bufend, ucs4_t *dstbuf,
                                        ucs4_t *dstbufend, const char*& origstart, size_t& tokenlen) const
 {
+    using vespalib::char_p_cast;
     const char *retval = bufend;
     ucs4_t c;
     const unsigned char *p, *ep, *prev_p;
-    p = reinterpret_cast<const unsigned char *>(buf);
-    ep = reinterpret_cast<const unsigned char *>(bufend);
+    p = char_p_cast<unsigned char>(buf);
+    ep = char_p_cast<unsigned char>(bufend);
     Ucs4Dest target(dstbuf, dstbufend);
 
     // Skip characters between words
@@ -432,7 +433,7 @@ Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf, const char *bufend, ucs4
         target.terminate();
         return retval;
     }
-    origstart = reinterpret_cast<const char *>(prev_p);
+    origstart = char_p_cast<char>(prev_p);
     // Start saving word.
     target.fold(c);
 
@@ -481,7 +482,7 @@ Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf, const char *bufend, ucs4
             target.fold(c);
         }
     }
-    retval = reinterpret_cast<const char *>(p);
+    retval = char_p_cast<char>(p);
     tokenlen = target.length();
     target.terminate();
     return retval;

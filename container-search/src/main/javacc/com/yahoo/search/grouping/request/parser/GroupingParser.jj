@@ -48,14 +48,14 @@ public class GroupingParser {
 }
 
 PARSER_END(GroupingParser)
-        
+
 TOKEN :
 {
     <INTEGER: <DECIMAL> (["l","L"])? | <HEX> (["l","L"])? | <OCTAL> (["l","L"])?> |
         <#DECIMAL: ["1"-"9"] (["0"-"9"])*> |
         <#HEX: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+> |
         <#OCTAL: "0" (["0"-"7"])*> |
-    <FLOAT: (["0"-"9"])+ ("." (["0"-"9"])*)? (<EXPONENT>)? (["f","F","d","D"])?> |  
+    <FLOAT: (["0"-"9"])+ ("." (["0"-"9"])*)? (<EXPONENT>)? (["f","F","d","D"])?> |
         <#EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+>
 }
 
@@ -87,7 +87,7 @@ TOKEN :
     <RBRACKET: "]"> |
     <INF: "inf"> |
     <NEGINF: "-inf"> |
-    <STRING: ("\"" (~["\""] | "\\\"")* "\"") | 
+    <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
              ("'" (~["'"] | "\\'")* "'")> |
     <ACOS: "acos"> |
     <ACOSH: "acosh"> |
@@ -122,6 +122,7 @@ TOKEN :
     <GROUP: "group"> |
     <HINT: "hint"> |
     <HYPOT: "hypot"> |
+    <KEEP: "keep"> |
     <LOG: "log"> |
     <LOG1P: "log1p"> |
     <LOG10: "log10"> |
@@ -141,6 +142,7 @@ TOKEN :
     <POW: "pow"> |
     <PRECISION: "precision"> |
     <PREDEFINED: "predefined"> |
+    <RANGE: "range"> |
     <REGEX: "regex"> |
     <RELEVANCE: "relevance"> |
     <REVERSE: "reverse"> |
@@ -276,6 +278,7 @@ void operationBody(GroupingOperation parent) :
       ( <ALIAS>     lbrace() str = identifier() comma() exp = exp(parent) rbrace() { parent.putAlias(str, exp); }             ) |
       ( <HINT>      lbrace() str = identifier()                           rbrace() { parent.addHint(str); }                   ) |
       ( <FILTER>    lbrace() filterExp = filterExp(parent)                rbrace() { parent.setFilterBy(filterExp); }         ) |
+      ( <KEEP>      lbrace() filterExp = filterExp(parent)                rbrace() { parent.setFilterBy(filterExp); }         ) |
       ( <MAX>       lbrace() ( maxOperand = infinitePositiveValue() | maxOperand = constantValue() ) rbrace()
       {
             if (maxOperand instanceof InfiniteValue) {
@@ -329,10 +332,7 @@ FilterExpression filterExp(GroupingOperation grp) :
     FilterExpression exp;
 }
 {
-    ( (exp = regexPredicate(grp)) |
-      (exp = notPredicate(grp))   |
-      (exp = orPredicate(grp))    |
-      (exp = andPredicate(grp)))
+    ( (exp = orPredicate(grp)))
     { return exp; }
 }
 
@@ -950,6 +950,17 @@ XorBitFunction xorBitFunction(GroupingOperation grp) :
     { return new XorBitFunction(exp, num.intValue()); }
 }
 
+FilterExpression filterPrimary(GroupingOperation grp) :
+{
+    FilterExpression f;
+}
+{
+    (( lbrace() f = filterExp(grp) rbrace() ) |
+    ( f = regexPredicate(grp) )              |
+    ( f = rangePredicate(grp) ))
+    { return f; }
+}
+
 RegexPredicate regexPredicate(GroupingOperation grp) :
 {
     String pattern;
@@ -960,33 +971,54 @@ RegexPredicate regexPredicate(GroupingOperation grp) :
     { return new RegexPredicate(pattern, exp); }
 }
 
-NotPredicate notPredicate(GroupingOperation grp) :
+RangePredicate rangePredicate(GroupingOperation grp) :
 {
-    FilterExpression exp;
+    Number lower;
+    Number upper;
+    GroupingExpression exp;
+    BooleanValue lowerInclusive = new BooleanValue(true);
+    BooleanValue upperInclusive = new BooleanValue(false);
 }
 {
-    <NOT> lbrace() exp = filterExp(grp) rbrace()
-    { return new NotPredicate(exp); }
-}
-
-OrPredicate orPredicate(GroupingOperation grp) :
-{
-    FilterExpression exp;
-    List<FilterExpression> args = new ArrayList<FilterExpression>();
-}
-{
-    <OR> lbrace() ( exp = filterExp(grp) { args.add(exp); } ( comma() exp = filterExp(grp) { args.add(exp); } )+ ) rbrace()
-    { return new OrPredicate(args); }
+    <RANGE> lbrace() lower = number() comma() upper = number() comma() exp = exp(grp) [ comma()  lowerInclusive = booleanValue() comma() upperInclusive = booleanValue() ] rbrace()
+    { return new RangePredicate(lower, upper, exp, lowerInclusive.getValue(), upperInclusive.getValue()); }
 }
 
-AndPredicate andPredicate(GroupingOperation grp) :
+FilterExpression orPredicate(GroupingOperation grp) :
 {
-    FilterExpression exp;
-    List<FilterExpression> args = new ArrayList<FilterExpression>();
+    FilterExpression left, right;
+    java.util.List<FilterExpression> args = new java.util.ArrayList<FilterExpression>();
 }
 {
-    <AND> lbrace() ( exp = filterExp(grp) { args.add(exp); } ( comma() exp = filterExp(grp) { args.add(exp); } )+ ) rbrace()
-    { return new AndPredicate(args); }
+    ( left = andPredicate(grp) ( <OR> space() right = andPredicate(grp) { args.add(right); } )* )
+    {
+        if (args.isEmpty()) return left;
+        args.add(0, left);
+        return new OrPredicate(args);
+    }
+}
+
+FilterExpression andPredicate(GroupingOperation grp) :
+{
+    FilterExpression left, right;
+    java.util.List<FilterExpression> args = new java.util.ArrayList<FilterExpression>();
+}
+{
+    ( left = notPredicate(grp) ( <AND> space() right = notPredicate(grp) { args.add(right); } )* )
+    {
+        if (args.isEmpty()) return left;
+        args.add(0, left);
+        return new AndPredicate(args);
+    }
+}
+
+FilterExpression notPredicate(GroupingOperation grp) :
+{
+    FilterExpression inner;
+}
+{
+    ( <NOT> space() inner = notPredicate(grp) ) { return new NotPredicate(inner); }
+  | ( inner = filterPrimary(grp) )               { return inner; }
 }
 
 void bucket(GroupingOperation grp, BucketResolver resolver) :
@@ -1053,7 +1085,7 @@ String string() :
     { return ret; }
 }
 
-String identifier() : 
+String identifier() :
 {
     String ret;
 }
@@ -1092,6 +1124,7 @@ String identifier() :
         <HINT> |
         <HYPOT> |
         <IDENTIFIER> |
+        <KEEP> |
         <LOG> |
         <LOG1P> |
         <LOG10> |
@@ -1111,6 +1144,7 @@ String identifier() :
         <POW> |
         <PRECISION> |
         <PREDEFINED> |
+        <RANGE> |
         <REGEX> |
         <RELEVANCE> |
         <REVERSE> |
@@ -1245,6 +1279,6 @@ void scolon() : { }
 }
 
 void space() : { }
-{ 
+{
     ( <SPACE> )*
 }

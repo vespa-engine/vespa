@@ -169,7 +169,9 @@ public class PosSearcher extends Searcher {
 
     private static void parseBoundingBox(String bb, Location target) {
         BoundingBoxParser parser = new BoundingBoxParser(bb);
-        target.setBoundingBox(parser.n, parser.s, parser.e, parser.w);
+        var swCorner = new Location.Point(parser.s, parser.w);
+        var neCorner = new Location.Point(parser.n, parser.e);
+        target.setBoundingBox(swCorner, neCorner);
     }
 
 }

@@ -5,6 +5,9 @@ import java.util.Map;
 
 import org.eclipse.lsp4j.SemanticTokenTypes;
 
+import com.yahoo.collections.Pair;
+import com.yahoo.search.cluster.Hasher;
+
 import ai.vespa.schemals.parser.grouping.ast.*;
 
 class VespaGroupingSemanticToken {
@@ -13,6 +16,7 @@ class VespaGroupingSemanticToken {
     private static final String mathFunctionType = SemanticTokenTypes.Method;
     private static final String operationBodyFunction = SemanticTokenTypes.Function;
     private static final String simpleExpressions = SemanticTokenTypes.Macro;
+    private static final String logicalFilter = SemanticTokenTypes.Operator;
 
     static final Map<Class<?>, String> tokensMap = new HashMap<Class<?>, String>() {{
         put(identifierStr.class, SemanticTokenTypes.Variable);
@@ -69,6 +73,7 @@ class VespaGroupingSemanticToken {
         put(ALL.class, SemanticTokenTypes.Keyword);
         put(EACH.class, SemanticTokenTypes.Keyword);
 
+
         put(GROUP.class, operationBodyFunction);
         put(ACCURACY.class, operationBodyFunction);
         put(ALIAS.class, operationBodyFunction);
@@ -84,7 +89,6 @@ class VespaGroupingSemanticToken {
         put(AT.class, SemanticTokenTypes.Keyword);
 
         put(ADD.class, simpleExpressions);
-        put(AND.class, simpleExpressions);
         put(ALIAS.class, simpleExpressions); // TODO: Verify that this is a function
         put(ATTRIBUTE.class, simpleExpressions);
         put(AVG.class, simpleExpressions);
@@ -101,9 +105,7 @@ class VespaGroupingSemanticToken {
         put(MUL.class, simpleExpressions);
         put(NEG.class, simpleExpressions);
         put(NORMALIZESUBJECT.class, simpleExpressions);
-        put(NOT.class, simpleExpressions);
         put(NOW.class, simpleExpressions);
-        put(OR.class, simpleExpressions);
         put(PREDEFINED.class, simpleExpressions);
         put(RELEVANCE.class, simpleExpressions);
         put(REVERSE.class, simpleExpressions);
@@ -124,9 +126,19 @@ class VespaGroupingSemanticToken {
         put(XOR.class, simpleExpressions);
         put(XORBIT.class, simpleExpressions);
         put(REGEX.class, simpleExpressions);
+        put(RANGE.class, simpleExpressions);
 
         put(ZCURVE.class, SemanticTokenTypes.Class);
         put(X.class, SemanticTokenTypes.Method);
         put(Y.class, SemanticTokenTypes.Method);
+    }};
+
+    static final Map<Pair<Class<?>, Class<?>>, String> tokensMapWithParent = new HashMap<>() {{
+        put(new Pair<>(AND.class, andPredicate.class), logicalFilter);
+        put(new Pair<>(OR.class, orPredicate.class), logicalFilter);
+        put(new Pair<>(NOT.class, notPredicate.class), logicalFilter);
+
+        put(new Pair<>(AND.class, andFunction.class), simpleExpressions);
+        put(new Pair<>(OR.class, orFunction.class), simpleExpressions);
     }};
 }

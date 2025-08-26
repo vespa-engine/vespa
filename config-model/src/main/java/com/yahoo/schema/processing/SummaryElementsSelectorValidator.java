@@ -16,7 +16,6 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.Set;
-import java.util.logging.Level;
 
 import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isSupportedComplexField;
 
@@ -70,13 +69,11 @@ public class SummaryElementsSelectorValidator extends Processor {
                                        .stream()
                                        .map(RankProfile::getSummaryFeatures)
                                        .flatMap(Set::stream)
-                                       .anyMatch(s -> s.getName().equals(summaryFeatureName));
+                                       .anyMatch(s -> s.toString().equals(summaryFeatureName));
         if (!found) {
             var message = formatError(schema, summary, field, "select-elements-by summary feature '" + summaryFeatureName +
                     "' is not defined for source field '" + sourceField.getName() + "'.");
-            // Just log a warning for now, as this is not a critical error, consider always throwing an exception later
-            // throw new IllegalArgumentException(formatError(schema, summary, field, message));
-            deployLogger.logApplicationPackage(Level.WARNING, message);
+            throw new IllegalArgumentException(formatError(schema, summary, field, message));
         }
     }
 

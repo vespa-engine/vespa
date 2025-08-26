@@ -2,17 +2,37 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace vespalib {
 
+/**
+ * convert a string to a number, with range checking.
+ *
+ * Note that this is not bug compatible with
+ * boost::lexical_cast, since it actually works
+ * like you would expect to do lexical_cast<int8_t>.
+ */
 template <typename T>
-T lexical_cast(const std::string_view s)
+T lexical_cast(const std::string_view s, int base=10)
 {
-    T v;
-    asciistream is(s);
-    is >> v;
-    return v;
+    const char *fp = s.data();
+    const char *lp = fp + s.size();
+    T val;
+    if constexpr (std::is_integral_v<T>) {
+        // TODO: use this implementation for floating point types as well
+        auto res = std::from_chars(fp, lp, val, base);
+        if (res.ec == std::errc{} && res.ptr == lp) [[likely]] {
+            return val;
+        }
+    } else {
+        asciistream is(s);
+        is >> val;
+        if (is.empty()) [[likely]] {
+            return val;
+        }
+    }
+    throw IllegalArgumentException("Failed decoding number from string: " + std::string(s));
 }
 
 }
-

@@ -1,29 +1,29 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.linguistics;
 
+import com.yahoo.document.DocumentId;
 import com.yahoo.document.annotation.Annotation;
 import com.yahoo.document.annotation.AnnotationTypes;
 import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.LinguisticsParameters;
-import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.TokenType;
 import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.language.simple.SimpleToken;
-
 import org.junit.Test;
 import org.mockito.Mockito;
 
-
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -261,6 +261,47 @@ public class LinguisticsAnnotatorTestCase {
             }
             assertAnnotations(expected, input.toString(), tokens);
         }
+    }
+
+    @Test
+    public void requireThatBinaryDataIsNotAnnotated() {
+        var config = new AnnotatorConfig()
+                .setMaxReplacementCharacters(10)
+                .setMaxReplacementCharactersRatio(0.1d);
+        var annotator = new LinguisticsAnnotator(new SimpleLinguistics(), config);
+
+        Predicate<String> isAnnotated =
+                txt -> annotator.annotate(new StringFieldValue(txt), new DocumentId("id:this:foobar::1"), false);
+
+        assertTrue(isAnnotated.test("\uFFFD".repeat(10) + "a".repeat(90))); // Up to 10 replacement characters allowed
+        assertTrue(isAnnotated.test("\uFFFD".repeat(11) + "a".repeat(100))); // Up to 10% being replacement characters allowed
+        var exception = assertThrows(IllegalArgumentException.class, () -> isAnnotated.test("\uFFFD".repeat(11) + "a".repeat(90))); // Above both limits, so no annotations
+        var expectedMsg = "Invalid document 'id:this:foobar::1': some text of length 101 is classified as binary data" +
+                " as it contains 11 Unicode replacement characters. " +
+                "(max-replacement-character-ratio=10%, max-replacement-characters=10)";
+        assertEquals(expectedMsg, exception.getMessage());
+    }
+
+    @Test
+    public void requireReindexingBinaryDataSilentlyDropsAnnotations() {
+        var config = new AnnotatorConfig()
+                .setMaxReplacementCharacters(1)
+                .setMaxReplacementCharactersRatio(0.01d);
+        var annotator = new LinguisticsAnnotator(new SimpleLinguistics(), config);
+
+        Predicate<Boolean> isAnnotated =
+                isReindexingOperation -> annotator.annotate(
+                        new StringFieldValue("\uFFFD".repeat(2)),
+                        new DocumentId("id:this:foobar::1"),
+                        isReindexingOperation);
+
+        var exception = assertThrows(IllegalArgumentException.class, () -> isAnnotated.test(false)); // Not reindexing, so exception
+        var expectedMsg = "Invalid document 'id:this:foobar::1': some text of length 2 is classified as binary data" +
+                " as it contains 2 Unicode replacement characters. " +
+                "(max-replacement-character-ratio=1%, max-replacement-characters=1)";
+        assertEquals(expectedMsg, exception.getMessage());
+
+        assertFalse(isAnnotated.test(true)); // Reindexing, so no exception, but no annotations either
     }
 
     // --------------------------------------------------------------------------------

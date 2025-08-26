@@ -8,12 +8,16 @@ import java.util.StringTokenizer;
 
 /**
  * Location data for a geographical query.
- * This is mutable and clonable. It's identifty is decided by its content.
+ * This is mutable and clonable. Its identity is decided by its content.
  *
  * @author Steinar Knutsen
  * @author arnej27959
  */
 public class Location implements Cloneable {
+
+    // latitude (degrees): negative for South; positive for North
+    // longitude (degrees): negative for West; positive for East
+    public record Point(double latitude, double longitude) {}
 
     // 1 or 2
     private int dimensions = 0;
@@ -35,10 +39,23 @@ public class Location implements Cloneable {
 
     private String attribute;
 
+    public static Location fromBoundingBox(Point swCorner, Point neCorner) {
+        var l = new Location();
+        l.setBoundingBox(swCorner, neCorner);
+        return l;
+    }
+
+    public static Location fromGeoCircle(Point center, double radius_in_degrees) {
+        var l = new Location();
+        l.setGeoCircle(center.latitude(), center.longitude(), radius_in_degrees);
+        return l;
+    }
+
     public boolean hasDimensions() {
         return dimensions != 0;
     }
 
+    // deprecated
     public void setDimensions(int d) {
         if (hasDimensions() && dimensions != d)
             throw new IllegalStateException("already has dimensions " + dimensions + ", cannot change to " + d);
@@ -53,14 +70,20 @@ public class Location implements Cloneable {
     }
 
     // input data are degrees n/e (if positive) or s/w (if negative)
+    // deprecated
     public void setBoundingBox(double n, double s, double e, double w) {
+        setBoundingBox(new Point(s, w), new Point(n, e));
+    }
+
+    // deprecated
+    public void setBoundingBox(Point swCorner, Point neCorner) {
         setDimensions(2);
         if (hasBoundingBox())
             throw new IllegalStateException("Can only set bounding box once");
-        int px1 = (int) (Math.round(w * 1000000));
-        int px2 = (int) (Math.round(e * 1000000));
-        int py1 = (int) (Math.round(s * 1000000));
-        int py2 = (int) (Math.round(n * 1000000));
+        int px1 = (int) (Math.round(swCorner.longitude() * 1000000));
+        int px2 = (int) (Math.round(neCorner.longitude() * 1000000));
+        int py1 = (int) (Math.round(swCorner.latitude() * 1000000));
+        int py2 = (int) (Math.round(neCorner.latitude() * 1000000));
         if (px1 > px2)
             throw new IllegalArgumentException("Cannot have w > e");
         this.x1 = px1;
@@ -85,6 +108,12 @@ public class Location implements Cloneable {
         this.aspect = (long) (cosLatRadians * 4294967295L);
     }
 
+    // deprecated
+    public void setGeoCircle(Point center, double radius_in_degrees) {
+        setGeoCircle(center.latitude(), center.longitude(), radius_in_degrees);
+    }
+
+    // deprecated
     public void setGeoCircle(double ns, double ew, double radius_in_degrees) {
         setDimensions(2);
         if (isGeoCircle())
@@ -105,6 +134,7 @@ public class Location implements Cloneable {
         adjustAspect();
     }
 
+    // deprecated
     public void setXyCircle(int px, int py, int radius_in_units) {
         setDimensions(2);
         if (isGeoCircle())
@@ -171,8 +201,10 @@ public class Location implements Cloneable {
             parseRectangle(theRest);
     }
 
+    // deprecated
     public Location() {}
 
+    // deprecated
     public Location(String rawLocation) {
         int attributeSepPos = rawLocation.indexOf(':');
         String locationSpec = rawLocation;
@@ -295,6 +327,7 @@ public class Location implements Cloneable {
     public String getAttribute() {
         return attribute;
     }
+    // deprecated
     public void setAttribute(String attributeName) {
         attribute = attributeName;
     }
@@ -312,6 +345,14 @@ public class Location implements Cloneable {
         if (!isGeoCircle()) {
             throw new IllegalArgumentException("only geo circles support this api");
         }
+    }
+
+    public String bbInDegrees() {
+        return "" +
+                (y1 * 0.000001) + ", " +
+                (x1 * 0.000001) + ", " +
+                (y2 * 0.000001) + ", " +
+                (x2 * 0.000001);
     }
 
     /**

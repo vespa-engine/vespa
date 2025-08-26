@@ -68,6 +68,7 @@ import com.yahoo.search.grouping.request.NowFunction;
 import com.yahoo.search.grouping.request.OrFunction;
 import com.yahoo.search.grouping.request.OrPredicate;
 import com.yahoo.search.grouping.request.PredefinedFunction;
+import com.yahoo.search.grouping.request.RangePredicate;
 import com.yahoo.search.grouping.request.RawValue;
 import com.yahoo.search.grouping.request.RegexPredicate;
 import com.yahoo.search.grouping.request.RelevanceValue;
@@ -140,6 +141,7 @@ import com.yahoo.searchlib.expression.NumElemFunctionNode;
 import com.yahoo.searchlib.expression.OrFunctionNode;
 import com.yahoo.searchlib.expression.OrPredicateNode;
 import com.yahoo.searchlib.expression.RangeBucketPreDefFunctionNode;
+import com.yahoo.searchlib.expression.RangePredicateNode;
 import com.yahoo.searchlib.expression.RawBucketResultNode;
 import com.yahoo.searchlib.expression.RawBucketResultNodeVector;
 import com.yahoo.searchlib.expression.RawResultNode;
@@ -261,7 +263,9 @@ class ExpressionConverter {
     public FilterExpressionNode toFilterExpressionNode(FilterExpression expression) {
         if (expression instanceof RegexPredicate rp) {
             return new RegexPredicateNode(rp.getPattern(), toExpressionNode(rp.getExpression()));
-        }  else if (expression instanceof NotPredicate np) {
+        } else if (expression instanceof RangePredicate rp) {
+            return new RangePredicateNode(rp.getLower(), rp.getUpper(), toExpressionNode(rp.getExpression()), rp.getLowerInclusive(), rp.getUpperInclusive());
+        } else if (expression instanceof NotPredicate np) {
             return new NotPredicateNode(toFilterExpressionNode(np.getExpression()));
         } else if (expression instanceof OrPredicate op) {
             var args = op.getArgs().stream().map(this::toFilterExpressionNode).toList();

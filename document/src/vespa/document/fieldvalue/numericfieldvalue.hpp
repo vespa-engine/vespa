@@ -6,10 +6,8 @@
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/lexical_cast.h>
-#include <boost/cast.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/numeric/conversion/cast.hpp>
 #include <vespa/vespalib/util/exceptions.h>
+#include <charconv>
 
 namespace document {
 
@@ -78,44 +76,45 @@ template<typename Number>
 FieldValue&
 NumericFieldValue<Number>::operator=(std::string_view value)
 {
-        // Lexical cast doesn't allow hex syntax we use in XML,
-        // so detect these in front.
+    const char *lastp = value.data() + value.size();
+
+    // Lexical cast doesn't allow hex syntax we use in XML,
+    // so detect these in front.
     if ((value.size() > 2) && (value[0] == '0') && ((value[1] | 0x20) == 'x')) {
-        char* endp;
         // It is safe to assume that all hex numbers can be contained within
         // 64 bit unsigned value.
-        // FIXME C++17 range-safe from_chars() instead of strtoull()
-        unsigned long long val = strtoull(value.data(), &endp, 16);
-        if (*endp == '\0') {
-                // Allow numbers to be specified in range max signed to max
-                // unsigned. These become negative numbers.
+        uint64_t val = vespalib::lexical_cast<uint64_t>({value.data() + 2, lastp}, 16);
+        // Allow numbers to be specified in range max signed to max
+        // unsigned. These become negative numbers.
+        _value = static_cast<Number>(val);
+        return *this;
+    } else if constexpr (std::is_integral_v<Number>) {
+        if (sizeof(Number) == sizeof(int8_t)) {
+            int val = vespalib::lexical_cast<int>(value);
+            if (val < -128 || val > 255) {
+                throw vespalib::IllegalArgumentException(
+                        "Value of byte must be in the range -128 to 255", VESPA_STRLOC);
+            }
             _value = static_cast<Number>(val);
             return *this;
-        }
-    }
-    if (sizeof(Number) == sizeof(int8_t)) {
-        int val = vespalib::lexical_cast<int>(value);
-        if (val < -128 || val > 255) {
-            throw vespalib::IllegalArgumentException(
-                "Value of byte must be in the range -128 to 255", VESPA_STRLOC);
-        }
-        _value = static_cast<Number>(val);
-    } else {
-        try{
-            _value = boost::lexical_cast<Number>(value);
-        } catch (boost::bad_lexical_cast& e) {
-            // If bad cast is thrown due to value being bigger than max positive
-            // signed value, but less than max positive unsigned value,
-            // use this workaround to try to convert it to signed.
-            if (sizeof(Number) == sizeof(uint32_t)) {
-                _value = boost::numeric_cast<Number>(
-                        static_cast<int32_t>(boost::lexical_cast<uint32_t>(value)));
-            } else {
-                _value = boost::numeric_cast<Number>(
-                        static_cast<int64_t>(boost::lexical_cast<uint64_t>(value)));
+        } else {
+            if constexpr(std::is_signed_v<Number>) {
+                // handle unsigned input first:
+                using TMP = std::make_unsigned<Number>::type;
+                TMP tmp;
+                // use from_chars to allow fall through for result out of range
+                auto res = std::from_chars(value.data(), lastp, tmp);
+                if (res.ec == std::errc{} && res.ptr == lastp) {
+                    // Allow numbers to be specified in range max signed to max
+                    // unsigned. These become negative numbers.
+                    _value = static_cast<Number>(tmp);
+                    return *this;
+                }
             }
+            // fallthrough
         }
     }
+    _value = vespalib::lexical_cast<Number>(value);
     return *this;
 }
 
@@ -168,4 +167,3 @@ NumericFieldValue<Number>::getAsString() const
 }
 
 } // document
-

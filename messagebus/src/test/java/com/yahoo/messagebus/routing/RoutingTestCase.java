@@ -15,8 +15,6 @@ import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.SourceSession;
 import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.Trace;
-import com.yahoo.messagebus.network.Identity;
-import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.routing.test.CustomPolicy;
 import com.yahoo.messagebus.routing.test.CustomPolicyFactory;
@@ -32,8 +30,6 @@ import org.junit.jupiter.api.Test;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -42,8 +38,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Simon Thoresen Hult
  */
 public class RoutingTestCase {
-
-    static final Logger log = Logger.getLogger(RoutingTestCase.class.getName());
 
     static Slobrok slobrok;
     static RetryTransientErrorsPolicy retryPolicy;
@@ -833,11 +827,9 @@ public class RoutingTestCase {
         assertTrue(reply.getError(0).getMessage().contains("69"));
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Utilities
-    //
-    ////////////////////////////////////////////////////////////////////////////////
+    /**
+     * Utilities
+     */
 
     private static Message createMessage(String msg) {
         SimpleMessage ret = new SimpleMessage(msg);

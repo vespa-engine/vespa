@@ -621,6 +621,12 @@ public class SelectTestCase {
     }
 
     @Test
+    void testGeoBoundingBox() {
+        assertParse("{ \"geoBoundingBox\": [ \"workplace\", -63.418, -10.433, 63.500, 10.500 ] }",
+                    "GEO_LOCATION workplace:[2,-10433000,-63418000,10500000,63500000]");
+    }
+
+    @Test
     void testNearestNeighbor() {
         assertParse("{ \"nearestNeighbor\": [ \"f1field\", \"q2prop\" ] }",
                 "NEAREST_NEIGHBOR {field=f1field,queryTensorName=q2prop,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=0}");

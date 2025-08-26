@@ -306,6 +306,7 @@ public:
         _accumRemove(0),
         _accumInsert(0)
     { }
+    ~TestInsertRemoveSearch() override;
     void onRemove(size_t index) override { _accumRemove += index; }
     void onInsert(size_t index) override { _accumInsert += index; }
     size_t _accumRemove;
@@ -313,6 +314,8 @@ public:
 private:
     void doSeek(uint32_t docid) override { (void) docid; }
 };
+
+TestInsertRemoveSearch::~TestInsertRemoveSearch() = default;
 
 struct MultiSearchRemoveTest {
     static SearchIterator::UP remove(MultiSearch &ms, size_t idx) { return ms.remove(idx); }

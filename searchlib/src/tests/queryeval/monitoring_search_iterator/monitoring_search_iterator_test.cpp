@@ -23,6 +23,7 @@ struct HistorySearchIterator : public SearchIterator
     SearchHistory _history;
     mutable bool  _getPostingInfoCalled;
     HistorySearchIterator() : _history(), _getPostingInfoCalled(false) {}
+    ~HistorySearchIterator() override;
     void doSeek(uint32_t docId) override {
         _history.seek("x", docId);
         setDocId(docId);
@@ -33,6 +34,8 @@ struct HistorySearchIterator : public SearchIterator
         return nullptr;
     }
 };
+
+HistorySearchIterator::~HistorySearchIterator() = default;
 
 struct SimpleFixture
 {

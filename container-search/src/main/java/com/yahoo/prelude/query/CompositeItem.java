@@ -202,7 +202,7 @@ public abstract class CompositeItem extends Item {
 
     /** Composite items should be parenthized when not on the top level */
     protected boolean shouldParenthesize() {
-        return getParent()!= null && ! (getParent() instanceof QueryTree);
+        return getParent() != null && ! (getParent() instanceof QueryTree);
     }
 
     /** Returns a deep copy of this item */

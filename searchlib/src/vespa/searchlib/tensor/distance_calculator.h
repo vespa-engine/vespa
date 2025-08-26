@@ -67,12 +67,12 @@ public:
         if (has_single_subspace) {
             auto cells = _attr_tensor.get_vector(docid, 0);
             if ( cells.non_existing_attribute_value() ) [[unlikely]] {
-                return std::numeric_limits<double>::max();
+                return std::numeric_limits<double>::infinity();
             }
             return _dist_fun->calc_with_limit(cells, limit);
         } else {
             auto vectors = _attr_tensor.get_vectors(docid);
-            double result = std::numeric_limits<double>::max();
+            double result = std::numeric_limits<double>::infinity();
             for (uint32_t i = 0; i < vectors.subspaces(); ++i) {
                 double distance = _dist_fun->calc_with_limit(vectors.cells(i), limit);
                 result = std::min(result, distance);

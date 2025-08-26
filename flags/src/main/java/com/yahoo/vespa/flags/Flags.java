@@ -313,8 +313,8 @@ public class Flags {
     );
     
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
-            "sidecars-for-test", Sidecars.createDisabled(), Sidecars.class,
-            List.of("glebashnik"), "2025-04-25", "2025-09-01",
+            "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
+            List.of("glebashnik"), "2025-04-25", "2025-10-01",
             "Specifies configuration for sidecars to testing provisioning",
             "Takes effect at redeployment",
             APPLICATION
@@ -326,6 +326,14 @@ public class Flags {
             "Whether to create tenant specific roles",
             "Takes effect immediately",
             TENANT_ID
+    );
+
+    public static final UnboundBooleanFlag CONSOLE_DATA_PLANE_ACCESS = defineFeatureFlag(
+            "console-data-plane-access", false,
+            List.of("laura"), "2025-08-15", "2025-12-01",
+            "Temporary flag to enable console data plane access for testing purposes. Can be removed when full feature goes live",
+            "Takes effect immediately",
+            TENANT_ID, CONSOLE_USER_EMAIL
     );
 
     public static final UnboundBooleanFlag USE_TRITON = defineFeatureFlag(
@@ -383,6 +391,15 @@ public class Flags {
             "The max outstanding move operations a maintenance job can have before being blocked.",
             "Takes effect at next deployment of the application",
             INSTANCE_ID);
+
+    public static final UnboundBooleanFlag USE_VESPA_NODE_CTL = defineFeatureFlag(
+            "use-vespa-node-ctl", true,
+            List.of("hmusum"), "2025-08-12", "2025-10-01",
+            "Whether to use vespa-node-ctl to start, stop, restart, suspend and resume services " +
+            "or do this directly from host-admin.",
+            "Takes effect at next tick",
+            HOSTNAME
+    );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

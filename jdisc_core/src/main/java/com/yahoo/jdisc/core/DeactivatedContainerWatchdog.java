@@ -3,7 +3,7 @@ package com.yahoo.jdisc.core;
 
 import com.yahoo.concurrent.Threads;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
+import com.yahoo.jdisc.statistics.DeactivatedContainerWatchdogMetrics;
 import com.yahoo.lang.MutableInteger;
 import org.apache.felix.framework.BundleWiringImpl;
 import org.osgi.framework.Bundle;
@@ -31,13 +31,12 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
-class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
+class DeactivatedContainerWatchdog implements DeactivatedContainerWatchdogMetrics, AutoCloseable {
 
-    static final Duration GRACE_PERIOD = Duration.ofMinutes(5);
-    static final Duration UPDATE_PERIOD = Duration.ofMinutes(5);
-    static final Duration CONTAINER_CHECK_PERIOD = Duration.ofSeconds(1);
+    static final Duration GRACE_PERIOD = Duration.ofMinutes(30);
+    static final Duration CONTAINER_CHECK_PERIOD = Duration.ofMinutes(1);
 
-    private static final Logger log = Logger.getLogger(ContainerWatchdog.class.getName());
+    private static final Logger log = Logger.getLogger(DeactivatedContainerWatchdog.class.getName());
 
     private final Object monitor = new Object();
     private final List<DeactivatedContainer> deactivatedContainers = new LinkedList<>();
@@ -47,20 +46,17 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
     private ScheduledExecutorService scheduler;
     private ActiveContainer currentContainer;
     private Instant currentContainerActivationTime;
-    private int numStaleContainers;
-    private Instant lastLogTime;
     private ScheduledFuture<?> threadMonitoringTask;
     private ScheduledFuture<?> containerMontoringTask;
 
 
-    ContainerWatchdog() {
+    DeactivatedContainerWatchdog() {
         this(Clock.systemUTC(), true);
     }
 
     /* For unit testing only */
-    ContainerWatchdog(Clock clock, boolean enableScheduler) {
+    DeactivatedContainerWatchdog(Clock clock, boolean enableScheduler) {
         this.clock = clock;
-        this.lastLogTime = clock.instant();
         this.enableScheduler = enableScheduler;
     }
 
@@ -85,7 +81,7 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
     public void emitMetrics(Metric metric) {
         int numStaleContainers;
         synchronized (monitor) {
-            numStaleContainers = this.numStaleContainers;
+            numStaleContainers = deactivatedContainers.size();
         }
         metric.set(TOTAL_DEACTIVATED_CONTAINERS, numStaleContainers, null);
     }
@@ -119,8 +115,9 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
     }
 
     private String removalMsg(DeactivatedContainer container) {
-        return String.format("Removing deactivated container: instance=%s, activated=%s, deactivated=%s",
-                               container.instance, container.timeActivated, container.timeDeactivated);
+        return String.format(
+                "Removing deactivated container as all references are released: instance=%s, activated=%s, deactivated=%s",
+                container.instance, container.timeActivated, container.timeDeactivated);
     }
 
     private String regularMsg(DeactivatedContainer container, int refCount) {
@@ -131,26 +128,39 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
 
     void monitorDeactivatedContainers() {
         synchronized (monitor) {
-            int numStaleContainer = 0;
             Iterator<DeactivatedContainer> iterator = deactivatedContainers.iterator();
-            boolean timeToLogAgain = clock.instant().isAfter(lastLogTime.plus(UPDATE_PERIOD));
             while (iterator.hasNext()) {
                 DeactivatedContainer container = iterator.next();
                 int refCount = container.instance.retainCount();
                 if (refCount == 0) {
-                    log.fine(removalMsg(container));
+                    log.fine(() -> removalMsg(container));
+                    iterator.remove();
+                } else if (isPastGracePeriod(container)) {
+                    log.fine(() ->
+                            String.format(
+                                    "Destroying stale deactivated container: instance=%s, activated=%s, deactivated=%s, ref-count=%d",
+                                    container.instance, container.timeActivated, container.timeDeactivated, refCount));
+                    // Destroying the container even though there are requests or other entities still having references to the server.
+                    // Since it's way past the typical operation timeout, it's a big chance that the entity will not progress anymore.
+                    // If that should happen though, it may lead to spurious exceptions if the container is used after it being destroyed.
+                    //
+                    // The benefits of explicit destruction:
+                    // 1) Frees up resources that were held by the container.
+                    // 2) Less nagging in logs about an issue that is extremely difficult for an end-user to debug.
+                    //
+                    // Downsides:
+                    // 1) It's harder to debug the cause of a stale container instance,
+                    //    as a JVM heap dump will not contain the smoking gun unless it's created within the grace period.
+                    try {
+                        container.instance.destroy();
+                    } catch (Exception e) {
+                        log.log(Level.FINE, e, () -> "Exception thrown while destroying stale deactivated container");
+                    }
                     iterator.remove();
                 } else {
-                    if (isPastGracePeriod(container)) {
-                        ++numStaleContainer;
-                        if (timeToLogAgain) {
-                            log.warning(regularMsg(container, refCount));
-                            lastLogTime = clock.instant();
-                        }
-                    }
+                    log.fine(() -> regularMsg(container, refCount));
                 }
             }
-            this.numStaleContainers = numStaleContainer;
         }
     }
 
@@ -187,7 +197,7 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
             }
             // Find threads which Runnable is a class from an uninstalled bundle
             // This may create false positives
-            b = getTargetFieldOfThread(t).flatMap(ContainerWatchdog::hasClassloaderForUninstalledBundle).orElse(null);
+            b = getTargetFieldOfThread(t).flatMap(DeactivatedContainerWatchdog::hasClassloaderForUninstalledBundle).orElse(null);
             if (b != null) {
                 staleThreads.add(new ThreadDetails(t, b));
             }

@@ -27,9 +27,9 @@ public:
     static std::unique_ptr<QueryConnector> create(ParseItem::ItemType type, const QueryNodeResultFactory& factory);
     virtual bool isFlattenable(ParseItem::ItemType type) const { (void) type; return false; }
     const QueryNodeList & getChildren() const { return _children; }
-    virtual void addChild(QueryNode::UP child);
+    virtual void addChild(std::unique_ptr<QueryNode> child);
     size_t size() const { return _children.size(); }
-    const QueryNode::UP & operator [](size_t index) const { return _children[index]; }
+    const std::unique_ptr<QueryNode> & operator [](size_t index) const { return _children[index]; }
 private:
     std::string _opName;
     std::string _index;
@@ -129,9 +129,9 @@ public:
     bool valid() const { return _root.get() != nullptr; }
     const QueryNode & getRoot() const { return *_root; }
     QueryNode & getRoot() { return *_root; }
-    static QueryNode::UP steal(Query && query) { return std::move(query._root); }
+    static std::unique_ptr<QueryNode> steal(Query && query) { return std::move(query._root); }
 private:
-    QueryNode::UP _root;
+    std::unique_ptr<QueryNode> _root;
 };
 
 }

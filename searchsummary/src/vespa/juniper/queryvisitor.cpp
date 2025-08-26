@@ -108,14 +108,6 @@ bool QueryVisitor::VisitOR(const QueryItem*, int arity) {
     return true;
 }
 
-bool QueryVisitor::VisitANY(const QueryItem*, int arity) {
-    LOG(debug, "juniper: VisitANY[%d]", arity);
-    auto* node = new QueryNode(arity, -1);
-    node->_options = _qhandle->_options | X_ANY;
-    insert(node);
-    return true;
-}
-
 bool QueryVisitor::VisitNEAR(const QueryItem*, int arity, int limit) {
     LOG(debug, "juniper: VisitNEAR(%d)[%d]", limit, arity);
     auto* node = new QueryNode(arity, -1);

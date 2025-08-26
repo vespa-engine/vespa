@@ -38,7 +38,7 @@ INJECT GroupingParser:
         return new NegFunction(exp);
     }
 
-    
+
 }
 
 INJECT GroupingParserLexer:
@@ -104,13 +104,13 @@ INJECT Token :
     }
 
 }
-        
+
 TOKEN :
     <INTEGER: <DECIMAL> (["l","L"])? | <HEX> (["l","L"])? | <OCTAL> (["l","L"])?> |
         <#DECIMAL: ["1"-"9"] (["0"-"9"])*> |
         <#HEX: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+> |
         <#OCTAL: "0" (["0"-"7"])*> |
-    <FLOAT: (["0"-"9"])+ ("." (["0"-"9"])*)? (<EXPONENT>)? (["f","F","d","D"])?> |  
+    <FLOAT: (["0"-"9"])+ ("." (["0"-"9"])*)? (<EXPONENT>)? (["f","F","d","D"])?> |
         <#EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+>
 ;
 
@@ -142,7 +142,7 @@ TOKEN :
     <RBRACKET: "]"> |
     <INF: "inf"> |
     <NEGINF: "-inf"> |
-    <STRING: ("\"" (~["\""] | "\\\"")* "\"") | 
+    <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
              ("'" (~["'"] | "\\'")* "'")> |
     <ACOS: "acos"> |
     <ACOSH: "acosh"> |
@@ -177,6 +177,7 @@ TOKEN :
     <GROUP: "group"> |
     <HINT: "hint"> |
     <HYPOT: "hypot"> |
+    <KEEP: "keep"> |
     <LOG: "log"> |
     <LOG1P: "log1p"> |
     <LOG10: "log10"> |
@@ -196,6 +197,7 @@ TOKEN :
     <POW: "pow"> |
     <PRECISION: "precision"> |
     <PREDEFINED: "predefined"> |
+    <RANGE: "range"> |
     <REGEX: "regex"> |
     <RELEVANCE: "relevance"> |
     <REVERSE: "reverse"> |
@@ -328,6 +330,7 @@ operationBody(GroupingOperation parent) :
       ( <ALIAS>     lbraceElm str = identifierStr commaElm exp = expElm(parent) rbraceElm { parent.putAlias(str, exp); }             ) |
       ( <HINT>      lbraceElm str = identifierStr                           rbraceElm { parent.addHint(str); }                   ) |
       ( <FILTER>    lbraceElm filterExp = filterExp(parent)                 rbraceElm { parent.setFilterBy(filterExp); }        ) |
+      ( <KEEP>      lbraceElm filterExp = filterExp(parent)                 rbraceElm { parent.setFilterBy(filterExp); }        ) |
       ( <MAX>       lbraceElm ( maxOperand = infinitePositiveValue | maxOperand = constantValue ) rbraceElm
       {
             if (maxOperand instanceof InfiniteValue) {
@@ -380,10 +383,7 @@ FilterExpression filterExp(GroupingOperation grp) :
 {
     FilterExpression exp;
 }
-    ( (exp = regexPredicate(grp)) |
-      (exp = notPredicate(grp))   |
-      (exp = orPredicate(grp))    |
-      (exp = andPredicate(grp)))
+    ( exp = orPredicate(grp) )
     { return exp; }
 ;
 
@@ -1001,6 +1001,21 @@ XorBitFunction xorBitFunction(GroupingOperation grp) :
     { return new XorBitFunction(exp, num.intValue()); }
 ;
 
+FilterExpression filterPrimary(GroupingOperation grp) :
+{
+    FilterExpression f;
+}
+(
+    ( lbraceElm f = filterExp(grp) rbraceElm ) |
+    ( f = regexPredicate(grp) )                |
+    ( f = rangePredicate(grp) )
+)
+{
+    return f;
+}
+;
+
+
 RegexPredicate regexPredicate(GroupingOperation grp) :
 {
     String pattern;
@@ -1008,9 +1023,9 @@ RegexPredicate regexPredicate(GroupingOperation grp) :
     Token stringToken;
 }
     ( <REGEX> lbraceElm pattern = stringElm { stringToken = lastConsumedToken; } commaElm exp = expElm(grp) rbraceElm )
-    { 
+    {
         try {
-            return new RegexPredicate(pattern, exp); 
+            return new RegexPredicate(pattern, exp);
         } catch (IllegalArgumentException ex) {
             // This can happen if the regex is not valid
             stringToken.addIllegalArgumentException(ex);
@@ -1019,30 +1034,61 @@ RegexPredicate regexPredicate(GroupingOperation grp) :
     }
 ;
 
-NotPredicate notPredicate(GroupingOperation grp) :
+RangePredicate rangePredicate(GroupingOperation grp) :
 {
-    FilterExpression exp;
+    Number lower;
+    Number upper;
+    GroupingExpression exp;
+    BooleanValue lowerInclusive = new BooleanValue(true);
+    BooleanValue upperInclusive = new BooleanValue(false);
 }
-    ( <NOT> lbraceElm exp = filterExp(grp) rbraceElm )
-    { return new NotPredicate(exp); }
+    (
+        <RANGE> lbraceElm lower = number commaElm upper = number commaElm exp = expElm(grp)
+        [ commaElm lowerInclusive = booleanValue commaElm upperInclusive = booleanValue ] rbraceElm
+    )
+{
+    return new RangePredicate(lower, upper, exp, lowerInclusive.getValue(), upperInclusive.getValue());
+}
 ;
 
-OrPredicate orPredicate(GroupingOperation grp) :
+FilterExpression orPredicate(GroupingOperation grp) :
 {
-    FilterExpression exp;
+    FilterExpression left, right;
     List<FilterExpression> args = new ArrayList<FilterExpression>();
 }
-    ( <OR> lbraceElm ( exp = filterExp(grp) { args.add(exp); } ( commaElm exp = filterExp(grp) { args.add(exp); } )+ ) rbraceElm )
-    { return new OrPredicate(args); }
+    ( left = andPredicate(grp) ( <OR> spaceElm right = andPredicate(grp) {
+        args.add(right);
+    } )* )
+    {
+        if (args.isEmpty()) return left;
+        args.add(0, left);
+        return new OrPredicate(args);
+    }
 ;
 
-AndPredicate andPredicate(GroupingOperation grp) :
+FilterExpression andPredicate(GroupingOperation grp) :
 {
-    FilterExpression exp;
+    FilterExpression left, right;
     List<FilterExpression> args = new ArrayList<FilterExpression>();
 }
-    ( <AND> lbraceElm ( exp = filterExp(grp) { args.add(exp); } ( commaElm exp = filterExp(grp) { args.add(exp); } )+ ) rbraceElm )
-    { return new AndPredicate(args); }
+    ( left = notPredicate(grp) ( <AND> spaceElm right = notPredicate(grp) {
+        args.add(right);
+    } )* )
+    {
+        if (args.isEmpty()) return left;
+        args.add(0, left);
+        return new AndPredicate(args);
+    }
+;
+
+FilterExpression notPredicate(GroupingOperation grp) :
+{
+    FilterExpression inner;
+}
+    ( <NOT> spaceElm inner = notPredicate(grp) {
+        return new NotPredicate(inner);
+    } ) | ( inner = filterPrimary(grp) )
+    { return inner; }
 ;
 
 bucketElm(GroupingOperation grp, BucketResolver resolver) :
@@ -1107,7 +1153,7 @@ String stringElm :
 ;
 
 
-String identifierStr : 
+String identifierStr :
 {
     String ret;
 }
@@ -1138,12 +1184,14 @@ String identifierStr :
         <DOCIDNSSPECIFIC> |
         <EACH> |
         <EXP> |
+        <FILTER> |
         <FIXEDWIDTH> |
         <FLOOR> |
         <GROUP> |
         <HINT> |
         <HYPOT> |
         <IDENTIFIER> |
+        <KEEP> |
         <LOG> |
         <LOG1P> |
         <LOG10> |
@@ -1163,6 +1211,8 @@ String identifierStr :
         <POW> |
         <PRECISION> |
         <PREDEFINED> |
+        <RANGE> |
+        <REGEX> |
         <RELEVANCE> |
         <REVERSE> |
         <SIN> |
@@ -1258,8 +1308,6 @@ subElm :
 scolonElm :
     ( <SCOLON> spaceElm )
 ;
-spaceElm : 
+spaceElm :
     ( <SPACE> )*
 ;
-
-

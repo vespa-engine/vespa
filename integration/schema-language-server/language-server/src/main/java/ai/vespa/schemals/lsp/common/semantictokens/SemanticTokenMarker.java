@@ -24,6 +24,16 @@ public class SemanticTokenMarker {
         this.range = range;
     }
 
+    public SemanticTokenMarker(String tokenString, Node node) {
+        this(CommonSemanticTokens.getType(tokenString), node);
+    }
+
+    public static List<SemanticTokenMarker> GetAsList(String tokenString, Node node) {
+        return new ArrayList<SemanticTokenMarker>() {{
+            add(new SemanticTokenMarker(tokenString, node));
+        }};
+    }
+
     public Range getRange() { return range; }
 
     public void addModifier(String modifier) {

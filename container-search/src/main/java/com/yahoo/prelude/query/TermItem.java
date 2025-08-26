@@ -20,6 +20,8 @@ public abstract class TermItem extends SimpleIndexedItem implements BlockItem {
     /** Whether accent dropping should be performed */
     private boolean normalizable = true;
 
+    private boolean lowercased = false;
+
     /** The substring which is the raw form of the source of this token, or null if none. */
     private Substring origin;
 
@@ -112,6 +114,10 @@ public abstract class TermItem extends SimpleIndexedItem implements BlockItem {
      */
     public void setNormalizable(boolean normalizable) { this.normalizable = normalizable; }
 
+    public boolean isLowercased() { return lowercased; }
+
+    public void setLowercased(boolean lowercased) { this.lowercased = lowercased; }
+
     @Override
     public SegmentingRule getSegmentingRule() { return segmentingRule; }
 
@@ -123,13 +129,14 @@ public abstract class TermItem extends SimpleIndexedItem implements BlockItem {
         var other = (TermItem)o;
         if ( this.isFromQuery != other.isFromQuery) return false;
         if ( this.normalizable != other.normalizable) return false;
+        if ( this.lowercased != other.lowercased) return false;
         if ( this.segmentingRule != other.segmentingRule) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), isFromQuery, normalizable, segmentingRule);
+        return Objects.hash(super.hashCode(), isFromQuery, normalizable, segmentingRule, lowercased);
     }
 
 }
