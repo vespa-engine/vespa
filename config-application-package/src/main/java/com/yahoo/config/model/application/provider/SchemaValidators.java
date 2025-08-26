@@ -31,6 +31,7 @@ public class SchemaValidators {
     private static final String schemaDirBase = System.getProperty("java.io.tmpdir", File.separator + "tmp" + File.separator + "vespa");
     private static final Logger log = Logger.getLogger(SchemaValidators.class.getName());
 
+    private static final String applicationXmlSchemaName = "application.rnc";
     private static final String servicesXmlSchemaName = "services.rnc";
     private static final String hostsXmlSchemaName = "hosts.rnc";
     private static final String deploymentXmlSchemaName = "deployment.rnc";
@@ -38,6 +39,7 @@ public class SchemaValidators {
     private static final String containerIncludeXmlSchemaName = "container-include.rnc";
     private static final String routingStandaloneXmlSchemaName = "routing-standalone.rnc";
 
+    private final SchemaValidator applicationXmlValidator;
     private final SchemaValidator servicesXmlValidator;
     private final SchemaValidator hostsXmlValidator;
     private final SchemaValidator deploymentXmlValidator;
@@ -54,6 +56,7 @@ public class SchemaValidators {
         File schemaDir = null;
         try {
             schemaDir = saveSchemasFromJar(new File(SchemaValidators.schemaDirBase), vespaVersion);
+            applicationXmlValidator = createValidator(schemaDir, applicationXmlSchemaName);
             servicesXmlValidator = createValidator(schemaDir, servicesXmlSchemaName);
             hostsXmlValidator = createValidator(schemaDir, hostsXmlSchemaName);
             deploymentXmlValidator = createValidator(schemaDir, deploymentXmlSchemaName);
@@ -68,29 +71,13 @@ public class SchemaValidators {
         }
     }
 
-    public SchemaValidator servicesXmlValidator() {
-        return servicesXmlValidator;
-    }
-
-    public SchemaValidator hostsXmlValidator() {
-        return hostsXmlValidator;
-    }
-
-    public SchemaValidator deploymentXmlValidator() {
-        return deploymentXmlValidator;
-    }
-
-    SchemaValidator validationOverridesXmlValidator() {
-        return validationOverridesXmlValidator;
-    }
-
-    SchemaValidator containerIncludeXmlValidator() {
-        return containerIncludeXmlValidator;
-    }
-
-    SchemaValidator routingStandaloneXmlValidator() {
-        return routingStandaloneXmlValidator;
-    }
+    SchemaValidator applicationXmlValidator() { return applicationXmlValidator; }
+    public SchemaValidator servicesXmlValidator() { return servicesXmlValidator; }
+    public SchemaValidator hostsXmlValidator() { return hostsXmlValidator; }
+    public SchemaValidator deploymentXmlValidator() { return deploymentXmlValidator; }
+    SchemaValidator validationOverridesXmlValidator() { return validationOverridesXmlValidator; }
+    SchemaValidator containerIncludeXmlValidator() { return containerIncludeXmlValidator; }
+    SchemaValidator routingStandaloneXmlValidator() { return routingStandaloneXmlValidator; }
 
     /**
      * Looks for schema files in config-model.jar and saves them in a temp dir. Uses schema files

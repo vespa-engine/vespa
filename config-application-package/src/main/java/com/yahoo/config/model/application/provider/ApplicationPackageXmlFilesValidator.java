@@ -36,10 +36,11 @@ public class ApplicationPackageXmlFilesValidator {
     }
 
     public void checkApplication() throws IOException {
-        validateOptional(validators.servicesXmlValidator(), FilesApplicationPackage.SERVICES);
-        validateOptional(validators.hostsXmlValidator(), FilesApplicationPackage.HOSTS);
-        validateOptional(validators.deploymentXmlValidator(), FilesApplicationPackage.DEPLOYMENT_FILE.getName());
-        validateOptional(validators.validationOverridesXmlValidator(), FilesApplicationPackage.VALIDATION_OVERRIDES.getName());
+        validateOptional(validators.applicationXmlValidator(), ApplicationPackage.APPLICATION_DEFINITION_FILE.getName());
+        validateOptional(validators.servicesXmlValidator(), ApplicationPackage.SERVICES);
+        validateOptional(validators.hostsXmlValidator(), ApplicationPackage.HOSTS);
+        validateOptional(validators.deploymentXmlValidator(), ApplicationPackage.DEPLOYMENT_FILE.getName());
+        validateOptional(validators.validationOverridesXmlValidator(), ApplicationPackage.VALIDATION_OVERRIDES.getName());
         validateRouting(appDirs.routingTables());
     }
 
