@@ -31,10 +31,6 @@ public final class AppSubDirs {
         return new File(root.first, subPath);
     }
 
-    public File root() {
-        return root.first;
-    }
-
     public File configDefs() {
         return configDefs.first;
     }
