@@ -20,8 +20,6 @@ import java.util.Optional;
  */
 public class ApplicationDefinition {
 
-    private static final String applicationTag = "application";
-
     private final List<String> inherited;
 
     private ApplicationDefinition(List<String> inherited) {
