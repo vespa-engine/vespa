@@ -245,6 +245,7 @@ public class BuiltInFunctions {
         put("firstPhase", new GenericFunction("firstPhase"));
         put("secondPhase", new GenericFunction("secondPhase"));
         put("firstPhaseRank", new GenericFunction("firstPhaseRank"));
+        put("relevanceScore", new GenericFunction("relevanceScore"));
 
         put("nativeFieldMatch", new GenericFunction("nativeFieldMatch", List.of(
             new FunctionSignature(),
