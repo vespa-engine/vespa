@@ -27,7 +27,7 @@ public class Exclusivity {
      */
     public boolean allocation(ClusterSpec clusterSpec) {
         return clusterSpec.isExclusive() ||
-               ( clusterSpec.type().isContainer() && zone.system().isPublic() && !zone.environment().isTest() ) ||
+               ( clusterSpec.type().isContainer() && zone.system().isPublicLike() && !zone.environment().isTest() ) ||
                ( !zone.cloud().allowHostSharing() && !sharedHost.supportsClusterType(clusterSpec.type()));
     }
 

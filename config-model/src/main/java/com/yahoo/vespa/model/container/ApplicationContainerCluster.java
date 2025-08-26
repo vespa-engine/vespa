@@ -205,7 +205,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             addPlatformBundle(PlatformBundles.absoluteBundlePath("vespa-testrunner-components"));
             addPlatformBundle(PlatformBundles.absoluteBundlePath("vespa-osgi-testrunner"));
             addPlatformBundle(PlatformBundles.absoluteBundlePath("tenant-cd-api"));
-            if(deployState.zone().system().isPublic()) {
+            if(deployState.zone().system().isPublicLike()) {
                 addPlatformBundle(PlatformBundles.absoluteBundlePath("cloud-tenant-cd"));
             }
         }

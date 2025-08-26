@@ -34,7 +34,7 @@ public class UrlConfigValidator implements Validator {
         if (hasS3UrlInConfig(cluster)) {
             // TODO: Would be even better if we could add which config/field the url is set for in the error message
             String message = "Found s3:// urls in config for container cluster " + cluster.getName();
-            if ( ! context.deployState().zone().system().isPublic())
+            if ( ! context.deployState().zone().system().isPublicLike())
                 context.illegal(message + ". This is only supported in public systems");
             else if ( ! isExclusive)
                 context.illegal(message + ". Nodes in the cluster need to be 'exclusive'," +

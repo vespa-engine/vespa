@@ -246,7 +246,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if ( ! deployState.isHosted()) return;
         // Always add platform bundle. Cannot be controlled by a feature flag as platform bundle cannot change.
         cluster.addPlatformBundle(PlatformBundles.absoluteBundlePath("jdisc-cloud-aws"));
-        if (deployState.zone().system().isPublic()) {
+        if (deployState.zone().system().isPublicLike()) {
             BindingPattern bindingPattern = SystemBindingPattern.fromHttpPath("/validate-secret-store");
             Handler handler = new Handler(
                     new ComponentModel("com.yahoo.jdisc.cloud.aws.AwsParameterStoreValidationHandler", null, "jdisc-cloud-aws", null));
@@ -301,7 +301,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addSecrets(ApplicationContainerCluster cluster, Element spec, DeployState deployState) {
-        if ( ! deployState.isHosted() || ! cluster.getZone().system().isPublic())
+        if ( ! deployState.isHosted() || ! cluster.getZone().system().isPublicLike())
             return;
         Element secretsElement = XML.getChild(spec, "secrets");
         if (secretsElement != null) {
@@ -340,7 +340,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addCloudSecretStore(ApplicationContainerCluster cluster, Element secretStoreElement, DeployState deployState) {
         if ( ! deployState.isHosted()) return;
-        if ( ! cluster.getZone().system().isPublic())
+        if ( ! cluster.getZone().system().isPublicLike())
             throw new IllegalArgumentException("Cloud secret store is not supported in non-public system, see the documentation");
         CloudSecretStore cloudSecretStore = new CloudSecretStore();
         Map<String, TenantSecretStore> secretStoresByName = deployState.getProperties().tenantSecretStores()
@@ -369,7 +369,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addAthenzServiceIdentityProvider(ApplicationContainerCluster cluster, ConfigModelContext context) {
         if ( ! context.getDeployState().isHosted()) return;
-        if ( ! context.getDeployState().zone().system().isPublic()) return; // Non-public is handled by deployment spec config.
+        if ( ! context.getDeployState().zone().system().isPublicLike()) return; // Non-public is handled by deployment spec config.
         var appContext = context.getDeployState().zone().environment().isManuallyDeployed() ? "sandbox" : "production";
         addIdentityProvider(cluster,
                             context.getDeployState().getProperties().configServerSpecs(),
@@ -510,7 +510,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private static void addCloudDataPlaneFilter(DeployState deployState, ApplicationContainerCluster cluster) {
-        if (!deployState.isHosted() || !deployState.zone().system().isPublic()) return;
+        if (!deployState.isHosted() || !deployState.zone().system().isPublicLike()) return;
 
         var dataplanePort = getMtlsDataplanePort(deployState);
         // Setup secure filter chain
@@ -543,7 +543,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     protected void addClients(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
-        if (!deployState.isHosted() || !deployState.zone().system().isPublic()) return;
+        if (!deployState.isHosted() || !deployState.zone().system().isPublicLike()) return;
 
         List<Client> clients;
         Element clientsElement = XML.getChild(spec, "clients");
@@ -671,7 +671,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .flatMap(endpoint -> endpoint.names().stream())
                     .collect(Collectors.toSet());
             builder.knownServerNames(mtlsEndpointNames);
-            boolean isPublic = state.zone().system().isPublic();
+            boolean isPublic = state.zone().system().isPublicLike();
             List<X509Certificate> clientCertificates = getClientCertificates(cluster);
             if (isPublic) {
                 if (clientCertificates.isEmpty())
@@ -1575,6 +1575,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private static boolean enableTokenSupport(DeployState state) {
         Set<ContainerEndpoint> tokenEndpoints = tokenEndpoints(state);
-        return state.isHosted() && state.zone().system().isPublic() && ! tokenEndpoints.isEmpty();
+        return state.isHosted() && state.zone().system().isPublicLike() && ! tokenEndpoints.isEmpty();
     }
 }

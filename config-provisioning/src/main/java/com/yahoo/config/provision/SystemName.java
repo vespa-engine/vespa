@@ -10,7 +10,8 @@ import java.util.stream.Stream;
 /**
  * Systems in hosted Vespa
  *
- * @author mpolden
+ * @author Martin Polden
+ * @author bjorncs
  */
 public enum SystemName {
 
@@ -33,7 +34,7 @@ public enum SystemName {
     kubernetes;
 
     public static SystemName defaultSystem() {
-        return main;
+        return main; // TODO the default shouldn't be main but rather a 'default' system
     }
 
     public static SystemName from(String value) {
@@ -60,7 +61,9 @@ public enum SystemName {
     }
 
     /** Whether the system is similar to Public, e.g. PublicCd. */
-    public boolean isPublic() { return this == Public || this == PublicCd; }
+    public boolean isPublicLike() { return this == Public || this == PublicCd; }
+
+    public boolean isMainLike() { return this == main || this == cd; }
 
     public boolean isKubernetes() { return this == kubernetes; }
 
