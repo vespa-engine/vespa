@@ -15,6 +15,22 @@
   <artifactId>container-search-and-docproc</artifactId>
   <version>8-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
+
+  <properties>
+    <ffm.import/>
+  </properties>
+
+  <profiles>
+    <profile>
+      <!-- Required for datasketches-memory on JDK17/JDK18 used by searchlib -->
+      <id>ffm-import-incubator</id>
+      <activation><jdk>[17,19)</jdk></activation>
+      <properties>
+        <ffm.import>jdk.incubator.foreign</ffm.import>
+      </properties>
+    </profile>
+  </profiles>
+
   <dependencies>
 
     <!-- COMPILE scope -->
@@ -243,6 +259,8 @@
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
         <configuration>
+          <!-- 'jdk.incubator.foreign' required for datasketches-memory on JDK17 -->
+          <importPackage>${ffm.import}</importPackage>
           <bundleType>CORE</bundleType>
         </configuration>
       </plugin>
