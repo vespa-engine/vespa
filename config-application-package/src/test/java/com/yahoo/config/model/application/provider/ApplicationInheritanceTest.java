@@ -23,12 +23,12 @@ public class ApplicationInheritanceTest {
 
     @Test
     public void testInheritance() throws IOException {
-        var textSearchApp = FilesApplicationPackage.fromDir(new File("src/test/resources/inheritable-apps/internal/text-search"),
+        var textSearchApp = FilesApplicationPackage.fromDir(new File(inheritableAppDir + "internal/text-search"),
                                                             Map.of());
 
         Map<String, FilesApplicationPackage> inheritableApps = new HashMap<>();
         inheritableApps.put("internal.text-search", textSearchApp);
-        var app1 = FilesApplicationPackage.fromDir(new File("src/test/resources/inheriting-app1"),
+        var app1 = FilesApplicationPackage.fromDir(new File(resourcesDir + "inheriting-app1"),
                                                              inheritableApps);
         assertEquals(IOUtils.readFile(new File(inheritableAppDir + "internal/text-search/services.xml")),
                      IOUtils.readAll(app1.getServices()));
@@ -38,13 +38,29 @@ public class ApplicationInheritanceTest {
     }
 
     @Test
+    public void testInheritanceWithOverride() throws IOException { // TODO: Allow and enforce inheritance of parent doc schema
+        var textSearchApp = FilesApplicationPackage.fromDir(new File(inheritableAppDir + "internal/text-search"),
+                                                            Map.of());
+
+        Map<String, FilesApplicationPackage> inheritableApps = new HashMap<>();
+        inheritableApps.put("internal.text-search", textSearchApp);
+        var app2 = FilesApplicationPackage.fromDir(new File(resourcesDir + "inheriting-app2"),
+                                                   inheritableApps);
+        assertEquals(IOUtils.readFile(new File(inheritableAppDir + "internal/text-search/services.xml")),
+                     IOUtils.readAll(app2.getServices()));
+        assertEquals(1, app2.getSchemas().size());
+        assertEquals(IOUtils.readFile(new File(resourcesDir + "inheriting-app2/schemas/doc.sd")),
+                     IOUtils.readAll(app2.getSchemas().iterator().next().getReader()));
+    }
+
+    @Test
     public void testNonExistingInheritance() {
         try {
-            var textSearchApp = FilesApplicationPackage.fromDir(new File("src/test/resources/inheritable-apps/internal/text-search"),
+            var textSearchApp = FilesApplicationPackage.fromDir(new File(inheritableAppDir + "internal/text-search"),
                                                                 Map.of());
             Map<String, FilesApplicationPackage> inheritableApps = new HashMap<>();
             inheritableApps.put("internal.not-text-search", textSearchApp);
-            FilesApplicationPackage.fromDir(new File("src/test/resources/inheriting-app1"), inheritableApps);
+            FilesApplicationPackage.fromDir(new File(resourcesDir + "inheriting-app1"), inheritableApps);
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
