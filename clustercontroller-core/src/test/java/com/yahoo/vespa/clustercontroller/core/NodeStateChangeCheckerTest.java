@@ -160,7 +160,7 @@ public class NodeStateChangeCheckerTest {
                                            clusterStateWith0InMaintenance, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.allowed());
         assertFalse(result.isAlreadySet());
-        assertEquals("At most one node can have a wanted state when #groups = 1: Other storage node 0 has wanted state Maintenance",
+        assertEquals("At most one node can have a wanted state: Other storage node 0 has wanted state Maintenance",
                      result.reason());
     }
 
@@ -347,7 +347,7 @@ public class NodeStateChangeCheckerTest {
                 currentClusterStateVersion));
 
         settingToMaintenanceIsNotAllowed(1, cluster, clusterStateWith0InMaintenance,
-                                         "At most one node can have a wanted state when #groups = 1: Other distributor 0 has wanted state Down");
+                                         "At most one node can have a wanted state: Other distributor 0 has wanted state Down");
     }
 
     @ParameterizedTest
