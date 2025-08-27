@@ -48,7 +48,7 @@ demangleBacktraceLine(const std::string& line)
 }
 
 int vespalib::getStackTraceFrames(void** framesOut, int maxFrames) {
-    return absl::GetStackTrace(framesOut, maxFrames, 0);
+    return backtrace(framesOut, maxFrames);
 }
 
 std::string
