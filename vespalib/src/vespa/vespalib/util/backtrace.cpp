@@ -3,7 +3,6 @@
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <absl/debugging/stacktrace.h>
 #include <execinfo.h>
 #include <csignal>
 #include <cstdlib>
