@@ -20,6 +20,7 @@ import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.searchlib.aggregation.HitsAggregationResult;
 import com.yahoo.searchlib.aggregation.MaxAggregationResult;
 import com.yahoo.searchlib.aggregation.MinAggregationResult;
+import com.yahoo.searchlib.aggregation.QuantileAggregationResult;
 import com.yahoo.searchlib.aggregation.SumAggregationResult;
 import com.yahoo.searchlib.aggregation.XorAggregationResult;
 import com.yahoo.searchlib.aggregation.hll.SparseSketch;
@@ -79,6 +80,7 @@ public class ResultBuilderTestCase {
     void requireThatAllExpressionNodesCanBeConverted() {
         assertResult("0", new AverageAggregationResult(new IntegerResultNode(6), 9));
         assertResult("69", new CountAggregationResult(69));
+        assertResult("69.0", new QuantileAggregationResult(0.5).updateSketch(69));
         assertResult("69", new MaxAggregationResult(new IntegerResultNode(69)));
         assertResult("69", new MinAggregationResult(new IntegerResultNode(69)));
         assertResult("69", new SumAggregationResult(new IntegerResultNode(69)));
