@@ -428,7 +428,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     /** Returns whether the deployment in given deploy state should have endpoints */
     private static boolean configureEndpoints(DeployState deployState) {
-        if (!deployState.isHosted()) return false;
+        // TODO(bjorncs|onurkaracali|morioramdenbourg, 2025-08-27) handle endpoints for K8s
+        if (!deployState.isHosted() || deployState.zone().system().isKubernetes()) return false;
         if (deployState.getProperties().applicationId().instance().isTester()) return false;
         if (deployState.getProperties().applicationId().tenant().equals(HOSTED_VESPA)) return false;
         return true;
