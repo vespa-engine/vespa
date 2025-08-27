@@ -43,6 +43,7 @@ class TrueNode : public QueryConnector
 {
 public:
     TrueNode() noexcept : QueryConnector("AND") { }
+    ~TrueNode() override;
     bool evaluate() const override;
 };
 
@@ -51,6 +52,7 @@ class FalseNode : public QueryConnector
 {
 public:
     FalseNode() noexcept : QueryConnector("AND") { }
+    ~FalseNode() override;
     bool evaluate() const override;
 };
 
@@ -62,6 +64,7 @@ class AndQueryNode : public QueryConnector
 public:
     AndQueryNode() noexcept : QueryConnector("AND") { }
     explicit AndQueryNode(const char * opName) noexcept : QueryConnector(opName) { }
+    ~AndQueryNode() override;
     bool evaluate() const override;
     bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_AND; }
 };
@@ -73,6 +76,7 @@ class AndNotQueryNode : public QueryConnector
 {
 public:
     AndNotQueryNode() noexcept : QueryConnector("ANDNOT") { }
+    ~AndNotQueryNode() override;
     bool evaluate() const override;
     bool isFlattenable(ParseItem::ItemType) const override { return false; }
 };
@@ -85,6 +89,7 @@ class OrQueryNode : public QueryConnector
 public:
     OrQueryNode() noexcept : QueryConnector("OR") { }
     explicit OrQueryNode(const char * opName) noexcept : QueryConnector(opName) { }
+    ~OrQueryNode() override;
     bool evaluate() const override;
     bool isFlattenable(ParseItem::ItemType type) const override {
         return (type == ParseItem::ITEM_OR) ||
@@ -100,6 +105,7 @@ class RankWithQueryNode : public QueryConnector
 public:
     RankWithQueryNode() noexcept : QueryConnector("RANK") { }
     explicit RankWithQueryNode(const char * opName) noexcept : QueryConnector(opName) { }
+    ~RankWithQueryNode() override;
     bool evaluate() const override;
 };
 
@@ -116,6 +122,11 @@ class Query
 public:
     Query();
     Query(const QueryNodeResultFactory & factory, std::string_view queryRep);
+    Query(const Query&) = delete;
+    Query(Query&&) noexcept;
+    ~Query();
+    Query& operator=(const Query&) = delete;
+    Query& operator=(Query&&) noexcept;
     /// Will build the query tree
     bool build(const QueryNodeResultFactory & factory, std::string_view queryRep);
     /// Will clear the results from the querytree.

@@ -103,15 +103,21 @@ QueryConnector::create(ParseItem::ItemType type, const QueryNodeResultFactory& f
     }
 }
 
+TrueNode::~TrueNode() = default;
+
 bool
 TrueNode::evaluate() const
 {
     return true;
 }
 
+FalseNode::~FalseNode() = default;
+
 bool FalseNode::evaluate() const {
     return false;
 }
+
+AndQueryNode::~AndQueryNode() = default;
 
 bool
 AndQueryNode::evaluate() const
@@ -121,6 +127,8 @@ AndQueryNode::evaluate() const
     }
     return true;
 }
+
+AndNotQueryNode::~AndNotQueryNode() = default;
 
 bool
 AndNotQueryNode::evaluate() const {
@@ -136,6 +144,8 @@ AndNotQueryNode::evaluate() const {
     return false;
 }
 
+OrQueryNode::~OrQueryNode() = default;
+
 bool
 OrQueryNode::evaluate() const {
     for (const auto & qn : getChildren()) {
@@ -143,6 +153,8 @@ OrQueryNode::evaluate() const {
     }
     return false;
 }
+
+RankWithQueryNode::~RankWithQueryNode() = default;
 
 bool
 RankWithQueryNode::evaluate() const {
@@ -164,6 +176,12 @@ Query::Query(const QueryNodeResultFactory & factory, std::string_view queryRep)
 {
     build(factory, queryRep);
 }
+
+Query::Query(Query&&) noexcept = default;
+
+Query::~Query() = default;
+
+Query& Query::operator=(Query&&) noexcept = default;
 
 bool
 Query::evaluate() const {
