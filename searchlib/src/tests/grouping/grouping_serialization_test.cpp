@@ -4,6 +4,7 @@
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
+#include <vespa/searchlib/aggregation/quantile_aggregation_result.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <vespa/searchlib/expression/getymumchecksumfunctionnode.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
@@ -239,6 +240,12 @@ TEST(GroupingSerializationTest, testAggregatorResults) {
     stddev.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(67)))
             .aggregate(DocId(42), HitRank(21));
     f.checkObject(stddev);
+    QuantileAggregationResult quantile;
+    quantile.set_quantiles({0.5});
+    quantile.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(6))).aggregate(DocId(42), HitRank(21));
+    quantile.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(7))).aggregate(DocId(43), HitRank(21));
+    quantile.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(8))).aggregate(DocId(45), HitRank(21));
+    f.checkObject(quantile);
 }
 
 TEST(GroupingSerializationTest, testHitList) {
