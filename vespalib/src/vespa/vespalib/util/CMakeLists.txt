@@ -47,6 +47,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     jsonexception.cpp
     jsonstream.cpp
     jsonwriter.cpp
+    kll_sketch.cpp
     latch.cpp
     left_right_heap.cpp
     limited_thread_bundle_wrapper.cpp
