@@ -38,7 +38,6 @@ class ApplicationPackagePreprocessor {
     private final FilesApplicationPackage applicationPackage;
     private final TransformerFactory transformerFactory = XML.createTransformerFactory();
     private final File preprocessedDir;
-    private final AppSubDirs appSubDirs;
     private final boolean includeSourceFiles;
     private final Map<String, FilesApplicationPackage> inheritableApplications;
 
@@ -50,7 +49,6 @@ class ApplicationPackagePreprocessor {
         this.includeSourceFiles = includeSourceFiles;
         this.preprocessedDir = preprocessedDir.orElse(FilesApplicationPackage.fileUnder(applicationPackage.getAppDir(),
                                                                                         Path.fromString(FilesApplicationPackage.preprocessed)));
-        this.appSubDirs = new AppSubDirs(applicationPackage.getAppDir());
         this.inheritableApplications = inheritableApplications;
     }
 
@@ -75,7 +73,7 @@ class ApplicationPackagePreprocessor {
         }
         FilesApplicationPackage preprocessedApp = FilesApplicationPackage.fromDir(preprocessedDir, includeSourceFiles,
                                                                                   inheritableApplications);
-        copyUserDefsIntoApplication();
+        copyUserDefsIntoApplication(preprocessedApp);
         return preprocessedApp;
     }
 
@@ -123,8 +121,12 @@ class ApplicationPackagePreprocessor {
                                                "There are " + filesInApplicationPackage() + " files in the directory");
     }
 
-    private void copyUserDefsIntoApplication() {
-        File destination = appSubDirs.configDefs();
+    private long filesInApplicationPackage() {
+        return uncheck(() -> { try (var files = Files.list(applicationPackage.getAppDir().toPath())) { return files.count(); } });
+    }
+
+    private static void copyUserDefsIntoApplication(FilesApplicationPackage applicationPackage) {
+        File destination = new AppSubDirs(applicationPackage.getAppDir()).configDefs();
         destination.mkdir();
         ConfigDefinitionDir defDir = new ConfigDefinitionDir(destination);
         // Copy the user's def files from components.
@@ -133,10 +135,6 @@ class ApplicationPackagePreprocessor {
             defDir.addConfigDefinitionsFromBundle(bundle, bundlesAdded);
             bundlesAdded.add(bundle);
         }
-    }
-
-    private long filesInApplicationPackage() {
-        return uncheck(() -> { try (var files = Files.list(applicationPackage.getAppDir().toPath())) { return files.count(); } });
     }
 
 }
