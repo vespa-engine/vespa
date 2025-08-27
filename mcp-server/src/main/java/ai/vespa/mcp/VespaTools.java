@@ -30,7 +30,7 @@ import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 
-import org.apache.log4j.Logger;
+import java.util.logging.Logger;
 
 /**
  * VespaTools provides MCP-compatible access to Vespa search functionality.
