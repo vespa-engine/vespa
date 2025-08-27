@@ -224,7 +224,7 @@
                             <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         </systemPropertyVariables>
                         <trimStackTrace>false</trimStackTrace>
-                        <argLine>-Djava.io.tmpdir=${project.build.directory}</argLine>
+                        <argLine>-Djava.io.tmpdir=${project.build.directory} ${ffm.args}</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -339,6 +339,20 @@
         </pluginManagement>
     </build>
     <profiles>
+        <profile>
+            <id>ffm-incubator</id>
+            <activation><jdk>[17,19)</jdk></activation>
+            <properties>
+                <ffm.args>--add-modules jdk.incubator.foreign</ffm.args>
+            </properties>
+        </profile>
+        <profile>
+            <id>ffm-preview</id>
+            <activation><jdk>[19,22)</jdk></activation>
+            <properties>
+                <ffm.args>--enable-preview --enable-native-access=ALL-UNNAMED</ffm.args>
+            </properties>
+        </profile>
         <profile>
             <id>attach-sources</id>
             <activation>
@@ -1393,6 +1407,7 @@
     <properties>
         <doclint>all</doclint>
         <test.hide>true</test.hide>
+        <ffm.args/>
 
         <vespaClients.jdk.releaseVersion>11</vespaClients.jdk.releaseVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
