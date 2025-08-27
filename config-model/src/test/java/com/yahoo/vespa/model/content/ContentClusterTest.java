@@ -1692,11 +1692,8 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(0.875, config2.writefilter().memorylimit(), 0.001);
     }
 
-    private long inferTxnLogReplayMemoryLimitFromFlag(Long flagValueOrNull) {
+    private long txnLogReplayMemoryLimitFromFlag() {
         var props = new TestProperties();
-        if (flagValueOrNull != null) {
-            props.setSearchCoreTransactionLogReplaySoftMemoryLimit(flagValueOrNull);
-        }
         VespaModel model = createEnd2EndOneNode(props);
         ContentCluster cc = model.getContentClusters().get("storage");
         var builder = new ProtonConfig.Builder();
@@ -1707,10 +1704,7 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     void search_node_transaction_log_replay_memory_limit_is_configurable_via_feature_flag() {
-        assertEquals(-3L,       inferTxnLogReplayMemoryLimitFromFlag(null));
-        assertEquals( 0L,       inferTxnLogReplayMemoryLimitFromFlag(0L));
-        assertEquals(-10L,      inferTxnLogReplayMemoryLimitFromFlag(-10L));
-        assertEquals( 1234567L, inferTxnLogReplayMemoryLimitFromFlag(1234567L));
+        assertEquals(-3L, txnLogReplayMemoryLimitFromFlag());
     }
 
 

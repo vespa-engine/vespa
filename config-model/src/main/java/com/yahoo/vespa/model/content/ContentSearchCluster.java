@@ -65,7 +65,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final double defaultFeedConcurrency;
     private final double defaultFeedNiceness;
     private final boolean forwardIssuesToQrs;
-    private final long transactionLogReplaySoftMemoryLimit;
     private final int searchCoreMaxOutstandingMoveOps;
     private final int searchNodeInitializerThreads;
 
@@ -154,7 +153,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
         this.defaultFeedNiceness = featureFlags.feedNiceness();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
-        this.transactionLogReplaySoftMemoryLimit = featureFlags.searchCoreTransactionLogReplaySoftMemoryLimit();
         this.searchCoreMaxOutstandingMoveOps = featureFlags.searchCoreMaxOutstandingMoveOps();
         this.searchNodeInitializerThreads = searchNodeInitializeThreads;
     }
@@ -340,7 +338,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         builder.flush.memory.each.diskbloatfactor(DEFAULT_DISK_BLOAT);
         builder.summary.log.chunk.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
         builder.summary.log.compact.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
-        builder.replay_throttling_policy.memory_usage_soft_limit_bytes(transactionLogReplaySoftMemoryLimit);
         builder.maintenancejobs.maxoutstandingmoveops(searchCoreMaxOutstandingMoveOps);
         builder.forward_issues(forwardIssuesToQrs);
 
