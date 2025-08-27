@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.testutils;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.InfraDeployer;
+import com.yahoo.config.provision.NodeType;
 
 import java.util.Optional;
 
@@ -15,4 +16,7 @@ public class MockInfraDeployer implements InfraDeployer {
 
     @Override
     public void activateAllSupportedInfraApplications(boolean propagateException) { }
+
+    @Override public void readied(NodeType type) {}
+    @Override public void close() {}
 }

@@ -40,7 +40,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.backup.Snapshot;
-import com.yahoo.vespa.hosted.provision.maintenance.InfraApplicationRedeployer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
@@ -82,7 +81,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
     private final NodeFlavors nodeFlavors;
-    private final InfraApplicationRedeployer infraApplicationRedeployer;
+    private final InfraDeployer infraDeployer;
 
     @Inject
     public NodesV2ApiHandler(Context parentCtx, Orchestrator orchestrator, NodeRepository nodeRepository,
@@ -91,7 +90,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;
         this.nodeFlavors = flavors;
-        this.infraApplicationRedeployer = new InfraApplicationRedeployer(infraDeployer, nodeRepository);
+        this.infraDeployer = infraDeployer;
     }
 
     @Override
@@ -152,7 +151,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         // Check paths to disallow illegal state changes
         if (path.matches("/nodes/v2/state/ready/{hostname}")) {
             if (nodeRepository.nodes().markNodeAvailableForNewAllocation(path.get("hostname"), agent(request), "Readied through the nodes/v2 API"))
-                infraApplicationRedeployer.readied(nodeRepository.nodes().node(path.get("hostname")).get().type());
+                infraDeployer.readied(nodeRepository.nodes().node(path.get("hostname")).get().type());
             return new MessageResponse("Moved " + path.get("hostname") + " to " + Node.State.ready);
         }
         else if (path.matches("/nodes/v2/state/failed/{hostname}")) {
@@ -585,7 +584,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     @Override
     public void destroy() {
         super.destroy();
-        infraApplicationRedeployer.close();
+        infraDeployer.close();
     }
 
 }
