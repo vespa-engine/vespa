@@ -9,6 +9,8 @@ using vespalib::PriorityQueue;
 
 namespace search::streaming {
 
+NearQueryNode::~NearQueryNode() = default;
+
 bool
 NearQueryNode::evaluate() const
 {
