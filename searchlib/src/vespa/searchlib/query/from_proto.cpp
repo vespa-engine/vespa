@@ -16,17 +16,17 @@ using namespace searchlib::searchprotocol::protobuf;
 namespace search {
 namespace {
 
-void walk(const QueryStackItem &item, std::vector<const QueryStackItem *>& target);
+void walk(const QueryTreeItem &item, std::vector<const QueryTreeItem *>& target);
 
 template<typename T>
-void walk_children(const T& t, std::vector<const QueryStackItem *>& target) {
+void walk_children(const T& t, std::vector<const QueryTreeItem *>& target) {
     for (const auto& child : t) {
         walk(child, target);
     }
 }
 
-void walk(const QueryStackItem &item, std::vector<const QueryStackItem *>& target) {
-    using IC = QueryStackItem::ItemCase;
+void walk(const QueryTreeItem &item, std::vector<const QueryTreeItem *>& target) {
+    using IC = QueryTreeItem::ItemCase;
     target.push_back(&item);
     switch (item.item_case()) {
     case IC::kItemOr:
@@ -390,8 +390,8 @@ bool handle(const ItemNumericIn& item, QueryStackIterator::Data& _d) {
 
 } // namespace
 
-bool ProtoStackIterator::handle_item(const QueryStackItem& qsi) {
-    using IC = QueryStackItem::ItemCase;
+bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
+    using IC = QueryTreeItem::ItemCase;
     switch (qsi.item_case()) {
 
     case IC::kItemTrue:
@@ -478,18 +478,18 @@ bool ProtoStackIterator::handle_item(const QueryStackItem& qsi) {
     return false;
 }
 
-ProtoStackIterator::~ProtoStackIterator() = default;
+ProtoTreeIterator::~ProtoTreeIterator() = default;
 
-ProtoStackIterator::ProtoStackIterator(const ProtoQueryStack& proto_stack)
-  : _stack(proto_stack),
+ProtoTreeIterator::ProtoTreeIterator(const ProtoQueryTree& proto_query_tree)
+  : _proto(proto_query_tree),
     _items(),
     _pos(0),
     _serialized_term()
 {
-    walk(proto_stack.root(), _items);
+    walk(_proto.root(), _items);
 }
 
-bool ProtoStackIterator::next() {
+bool ProtoTreeIterator::next() {
     if (_pos < _items.size()) {
         return handle_item(*_items[_pos++]);
     }

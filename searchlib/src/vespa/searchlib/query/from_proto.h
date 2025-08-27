@@ -7,19 +7,19 @@
 
 namespace search {
 
-class ProtoStackIterator : public QueryStackIterator {
+class ProtoTreeIterator : public QueryStackIterator {
 public:
-    using ProtoQueryStack = ::searchlib::searchprotocol::protobuf::QueryStack;
-    using StackItem = ::searchlib::searchprotocol::protobuf::QueryStackItem;
-    explicit ProtoStackIterator(const ProtoQueryStack& proto_stack);
-    ~ProtoStackIterator();
+    using ProtoQueryTree = ::searchlib::searchprotocol::protobuf::QueryTree;
+    using TreeItem = ::searchlib::searchprotocol::protobuf::QueryTreeItem;
+    explicit ProtoTreeIterator(const ProtoQueryTree& proto_query_tree);
+    ~ProtoTreeIterator();
     bool next() override;
 private:
-    const ProtoQueryStack& _stack;
-    std::vector<const StackItem *> _items;
+    const ProtoQueryTree& _proto;
+    std::vector<const TreeItem *> _items;
     uint32_t _pos;
     std::string _serialized_term;
-    bool handle_item(const StackItem& item);
+    bool handle_item(const TreeItem& item);
 };
 
 }
