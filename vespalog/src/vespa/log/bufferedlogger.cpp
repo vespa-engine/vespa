@@ -2,17 +2,14 @@
 
 #include "bufferedlogger.h"
 #include "internal.h"
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/identity.hpp>
-#include <boost/multi_index/mem_fun.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
 
+#include <cstdarg>
 #include <iomanip>
+#include <map>
+#include <set>
+#include <mutex>
 #include <sstream>
 #include <vector>
-#include <cstdarg>
-#include <mutex>
 
 using namespace std::literals::chrono_literals;
 
@@ -31,12 +28,13 @@ public:
 
     /** Struct keeping information about log message. */
     struct Entry {
+        uint64_t number = 0;
         Logger::LogLevel _level;
         std::string _file;
         int _line;
         std::string _token;
         std::string _message;
-        uint32_t _count;
+        mutable uint32_t _count;
         system_time _timestamp;
         Logger* _logger;
 
@@ -57,34 +55,73 @@ public:
         std::string toString() const;
     };
 
-    typedef boost::multi_index_container<
-        Entry,
-        boost::multi_index::indexed_by<
-            boost::multi_index::sequenced<>, // Timestamp sorted
-            boost::multi_index::ordered_unique<
-                boost::multi_index::identity<Entry>
-            >
-        >
-    > LogCacheFront;
-    typedef boost::multi_index_container<
-        Entry,
-        boost::multi_index::indexed_by<
-            boost::multi_index::sequenced<>, // Timestamp sorted
-            boost::multi_index::ordered_unique<
-                boost::multi_index::identity<Entry>
-            >,
-            boost::multi_index::ordered_non_unique<
-                boost::multi_index::const_mem_fun<
-                    Entry, system_time, &Entry::getAgeFactor
-                >
-            >
-        >
-    > LogCacheBack;
+    struct Cache {
+        uint64_t _nextNumber = 1;
+        using Entries = std::set<Entry>;
+        using EntryOrder = std::map<uint64_t, Entries::iterator>;
 
-    /** Entry container indexes on insert order and token. */
-    LogCacheFront _cacheFront;
-    /** Entry container indexed on insert order, token and age function. */
-    LogCacheBack _cacheBack;
+        Entries _entry_map;
+        EntryOrder _entry_order;
+        const Entry& getOrAdd(Entry& entry) {
+            entry.number = _nextNumber;
+            auto [iter, added] = _entry_map.emplace(entry);
+            if (added) {
+                fprintf(stderr, "new entry %zd token '%s'\n", entry.number, entry._token.c_str());
+                _entry_order[_nextNumber++] = iter;
+                fprintf(stderr, "sizes %zd / %zd\n", _entry_map.size(), _entry_order.size());
+                fprintf(stderr, "added: %p\n", &*iter);
+            } else {
+                fprintf(stderr, "already have %zd for token '%s'\n", iter->number, entry._token.c_str());
+            }
+            return *iter;
+        }
+
+        void remove(const Entry& entry) {
+            remove(entry.number);
+        }
+        void remove(uint64_t number) {
+            fprintf(stderr, "try remove number %zd\n", number);
+            auto place = _entry_order.find(number);
+            if (place != _entry_order.end()) {
+                fprintf(stderr, "remove token '%s'\n", place->second->_token.c_str());
+                _entry_map.erase(place->second);
+                _entry_order.erase(place);
+                fprintf(stderr, "sizes %zd / %zd\n", _entry_map.size(), _entry_order.size());
+            }
+        }
+
+        struct iterator {
+            EntryOrder::iterator place;
+            const Entry& operator* () {
+                // fprintf(stderr, "op * : %p\n", &place->second->second);
+                return *place->second;
+            }
+            const Entry* operator-> () {
+                // fprintf(stderr, "op -> : %p\n", &place->second->second);
+                return &*place->second;
+            }
+            iterator& operator++() { ++place; return *this; }
+            bool operator== (const iterator& other) { return place == other.place; }
+            bool operator!= (const iterator& other) { return place != other.place; }
+        };
+
+        iterator begin() {
+            return iterator(_entry_order.begin());
+        }
+        iterator end() {
+            return iterator(_entry_order.end());
+        }
+
+        void clear() {
+               fprintf(stderr, "clear, sizes %zd / %zd\n", _entry_map.size(), _entry_order.size());
+            _entry_order.clear();
+            _entry_map.clear();
+        }
+        size_t size() const { return _entry_map.size(); }
+    };
+
+    /** Entry container, lookup by token or iterate insertion order */
+    Cache _cache;
 
     uint32_t _maxCacheSize;
     duration _maxEntryAge;
@@ -93,7 +130,7 @@ public:
     void flush();
 
     /** Gives all current content of log buffer. Useful for debugging. */
-    std::string toString() const;
+    std::string toString();
 
     /**
      * Flush parts of cache, so we're below max size and only have messages of
@@ -137,7 +174,7 @@ BackingBuffer::Entry::Entry(Logger::LogLevel level, const char* file, int line,
       _line(line),
       _token(token),
       _message(msg),
-      _count(1),
+      _count(0),
       _timestamp(timestamp),
       _logger(&l)
 {
@@ -152,7 +189,7 @@ BackingBuffer::Entry::~Entry() = default;
 bool
 BackingBuffer::Entry::operator==(const Entry& entry) const
 {
-    return (_token == entry._token);
+    return (_logger == entry._logger && _token == entry._token);
 }
 
 bool
@@ -186,8 +223,7 @@ BackingBuffer::Entry::getAgeFactor() const
 BackingBuffer::BackingBuffer()
     : _timer(new Timer),
       _mutex(),
-      _cacheFront(),
-      _cacheBack(),
+      _cache(),
       _maxCacheSize(VESPA_LOG_LOGBUFFERSIZE),
       _maxEntryAge(VESPA_LOG_LOGENTRYMAXAGE * 1000 * 1000)
 {
@@ -206,17 +242,6 @@ BufferedLogger::~BufferedLogger()
 }
 
 namespace {
-
-typedef boost::multi_index::nth_index<
-        BackingBuffer::LogCacheFront, 0>::type LogCacheFrontTimestamp;
-typedef boost::multi_index::nth_index<
-        BackingBuffer::LogCacheFront, 1>::type LogCacheFrontToken;
-typedef boost::multi_index::nth_index<
-        BackingBuffer::LogCacheBack, 0>::type LogCacheBackTimestamp;
-typedef boost::multi_index::nth_index<
-        BackingBuffer::LogCacheBack, 1>::type LogCacheBackToken;
-typedef boost::multi_index::nth_index<
-        BackingBuffer::LogCacheBack, 2>::type LogCacheBackAge;
 
 struct TimeStampWrapper : public Timer {
     TimeStampWrapper(system_time timeStamp) : _timeStamp(timeStamp) {}
@@ -252,23 +277,14 @@ BackingBuffer::logImpl(Logger& l, Logger::LogLevel level,
                        const std::string& token,
                        const std::string& message)
 {
-    Entry entry(level, file, line, token, message, _timer->getTimestamp(), l);
+    Entry newEntry(level, file, line, token, message, _timer->getTimestamp(), l);
 
     std::lock_guard<std::mutex> guard(_mutex);
-    LogCacheFrontToken::iterator it1 = _cacheFront.get<1>().find(entry);
-    LogCacheBackToken::iterator it2 = _cacheBack.get<1>().find(entry);
-    if (it1 != _cacheFront.get<1>().end()) {
-        Entry copy(*it1);
-        ++copy._count;
-        _cacheFront.get<1>().replace(it1, copy);
-    } else if (it2 != _cacheBack.get<1>().end()) {
-        Entry copy(*it2);
-        ++copy._count;
-        _cacheBack.get<1>().replace(it2, copy);
-    } else {
-            // If entry didn't already exist, add it to the cache and log it
+    const Entry &entry = _cache.getOrAdd(newEntry);
+       fprintf(stderr, "entry %zd with count %d\n", entry.number, entry._count);
+    if (entry._count++ == 0) {
+        // If entry didn't already exist, log it
         l.doLogCore(TimeStampWrapper(entry._timestamp), level, file, line, message.c_str(), message.size());
-        _cacheFront.push_back(entry);
     }
     trimCache(entry._timestamp);
 }
@@ -276,15 +292,12 @@ BackingBuffer::logImpl(Logger& l, Logger::LogLevel level,
 void
 BackingBuffer::flush()
 {
+       fprintf(stderr, "flush\n");
     std::lock_guard<std::mutex> guard(_mutex);
-    for (const auto & entry : _cacheBack) {
+    for (const auto & entry : _cache) {
         log(entry);
     }
-    _cacheBack.clear();
-    for (const auto & entry : _cacheFront) {
-        log(entry);
-    }
-    _cacheFront.clear();
+    _cache.clear();
 }
 
 void
@@ -295,29 +308,42 @@ BufferedLogger::flush() {
 void
 BackingBuffer::trimCache(system_time currentTime)
 {
+    double s = count_s(currentTime.time_since_epoch());
+    std::vector<uint64_t> removeList;
+    for (const auto & entry : _cache) {
         // Remove entries that have been in here too long.
-    while (!_cacheBack.empty() &&
-           _cacheBack.front()._timestamp + _maxEntryAge < currentTime)
-    {
-        log(_cacheBack.front());
-        _cacheBack.pop_front();
+        if (entry._timestamp + _maxEntryAge < currentTime) {
+            fprintf(stderr, "at %f, remove cause of max entry age: %zd\n", s, entry.number);
+            log(entry);
+            removeList.push_back(entry.number);
+        } else {
+            fprintf(stderr, "no more old entries\n");
+            break;
+        }
     }
-    while (!_cacheFront.empty() &&
-           _cacheFront.front()._timestamp + _maxEntryAge < currentTime)
-    {
-        log(_cacheFront.front());
-        _cacheFront.pop_front();
+    for (uint64_t number : removeList) {
+        _cache.remove(number);
     }
-        // If cache front is larger than half max size, move to back.
-    for (uint32_t i = _cacheFront.size(); i > _maxCacheSize / 2; --i) {
-        Entry e(_cacheFront.front());
-        _cacheFront.pop_front();
-        _cacheBack.push_back(e);
-    }
-        // Remove entries from back based on count modified age.
-    for (uint32_t i = _cacheFront.size() + _cacheBack.size(); i > _maxCacheSize; --i) {
-        log(*_cacheBack.get<2>().begin());
-        _cacheBack.get<2>().erase(_cacheBack.get<2>().begin());
+    if (_cache.size() > _maxCacheSize) {
+        fprintf(stderr, "remove %zd > %d\n", _cache.size(), _maxCacheSize);
+        long toRemove = _cache.size() - _maxCacheSize;
+        long numCheck = _cache.size() - (_maxCacheSize / 2);
+        fprintf(stderr, "remove %ld\n", toRemove);
+        std::map<system_time, const Entry *> byAgeFactor;
+        for (const auto & entry : _cache) {
+            system_time adjusted = entry.getAgeFactor();
+            byAgeFactor[adjusted] = &entry;
+            // fprintf(stderr, "x[a] = %p\n", &entry);
+            if (numCheck-- == 0) break;
+        }
+        auto iter = byAgeFactor.begin();
+        while (iter != byAgeFactor.end() && toRemove-- > 0) {
+            fprintf(stderr, "at %f, remove cause using byAgeFactor: %zd\n", s, iter->second->number);
+            log(*iter->second);
+            _cache.remove(iter->second->number);
+            ++iter;
+            fprintf(stderr, "remove %ld\n", toRemove);
+        }
     }
 }
 
@@ -342,16 +368,12 @@ BackingBuffer::log(const Entry& e) const
 }
 
 std::string
-BackingBuffer::toString() const
+BackingBuffer::toString()
 {
     std::ostringstream ost;
-    ost << "Front log cache content:\n";
+    ost << "Cache content:\n";
     std::lock_guard<std::mutex> guard(_mutex);
-    for (const auto & entry : _cacheFront) {
-        ost << "  " << entry.toString() << "\n";
-    }
-    ost << "Back log cache content:\n";
-    for (const auto & entry : _cacheBack) {
+    for (const auto & entry : _cache) {
         ost << "  " << entry.toString() << "\n";
     }
     return ost.str();
