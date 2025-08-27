@@ -118,33 +118,40 @@ message MonitorReply {
     int64 target_active_docs = 5;
 }
 
+// to replace old query stack serialization:
+message QueryTree {
+    QueryTreeItem root = 1;
+}
+
+// placeholders:
 message ItemTrue {
 }
 message ItemFalse {
 }
 
+// simple intermediate nodes:
 message ItemOr {
-    repeated QueryStackItem children = 1;
+    repeated QueryTreeItem children = 1;
 }
 message ItemAnd {
-    repeated QueryStackItem children = 1;
+    repeated QueryTreeItem children = 1;
 }
 message ItemAndNot {
-    repeated QueryStackItem children = 1;
+    repeated QueryTreeItem children = 1;
 }
 message ItemRank {
-    repeated QueryStackItem children = 1;
+    repeated QueryTreeItem children = 1;
 }
-
 message ItemNear {
     int32 distance = 1;
-    repeated QueryStackItem children = 2;
+    repeated QueryTreeItem children = 2;
 }
 message ItemOnear {
     int32 distance = 1;
-    repeated QueryStackItem children = 2;
+    repeated QueryTreeItem children = 2;
 }
 
+// simple nodes (should be not really be items, only for backwards compatibility)
 message ItemPureWeightedString {
     int32 weight = 1;
     string value = 2;
@@ -157,9 +164,10 @@ message ItemPureWeightedLong {
 message ItemWeakAnd {
     string index = 1;
     uint32 target_num_hits = 2;
-    repeated QueryStackItem children = 3;
+    repeated QueryTreeItem children = 3;
 }
 
+// common properties for terms:
 message TermItemProperties {
     string index = 1;
     optional int32 item_weight = 2;
@@ -169,6 +177,7 @@ message TermItemProperties {
     bool do_not_highlight = 6;
     bool is_special_token = 7;
 }
+// simple word-like terms:
 message ItemWordTerm {
     TermItemProperties properties = 1;
     string word = 2;
@@ -181,6 +190,35 @@ message ItemFloatingPointTerm {
     TermItemProperties properties = 1;
     double number = 2;
 }
+message ItemPrefixTerm {
+    TermItemProperties properties = 1;
+    string word = 2;
+}
+message ItemSubstringTerm {
+    TermItemProperties properties = 1;
+    string word = 2;
+}
+message ItemSuffixTerm {
+    TermItemProperties properties = 1;
+    string word = 2;
+}
+message ItemRegexp {
+    TermItemProperties properties = 1;
+    string regexp = 2;
+}
+message ItemExactStringTerm {
+    TermItemProperties properties = 1;
+    string word = 2;
+}
+message ItemFuzzy {
+    TermItemProperties properties = 1;
+    string word = 2;
+    uint32 max_edit_distance = 3;
+    uint32 prefix_lock_length = 4;
+    bool prefix_match = 5;
+}
+
+// numeric ranges
 message ItemIntegerRangeTerm {
     TermItemProperties properties = 1;
     int64 lower_limit = 2;
@@ -209,45 +247,37 @@ message ItemFloatingPointRangeTerm {
     uint32 diversity_max_per_group = 12;
     uint32 diversity_cutoff_groups = 13;
 }
-message ItemPhrase {
+
+// multi-terms:
+message ItemStringIn {
     TermItemProperties properties = 1;
-    repeated QueryStackItem children = 2;
+    repeated string words = 2;
 }
-message ItemPrefixTerm {
+message ItemNumericIn {
     TermItemProperties properties = 1;
-    string word = 2;
-}
-message ItemSubstringTerm {
-    TermItemProperties properties = 1;
-    string word = 2;
-}
-message ItemSuffixTerm {
-    TermItemProperties properties = 1;
-    string word = 2;
-}
-message ItemEquiv {
-    TermItemProperties properties = 1;
-    repeated QueryStackItem children = 2;
+    repeated int64 numbers = 2;
 }
 message ItemWeightedSet {
     TermItemProperties properties = 1;
     // repeated ItemPureWeightedLong weighted_longs = 2;
     // repeated ItemPureWeightedString weighted_strings = 3;
-    repeated QueryStackItem children = 2;
-}
-message ItemExactStringTerm {
-    TermItemProperties properties = 1;
-    string word = 2;
-}
-message ItemSameElement {
-    TermItemProperties properties = 1;
-    repeated QueryStackItem children = 2;
+    repeated QueryTreeItem children = 2;
 }
 message ItemDotProduct {
     TermItemProperties properties = 1;
     // repeated ItemPureWeightedLong weighted_longs = 2;
     // repeated ItemPureWeightedString weighted_strings = 3;
-    repeated QueryStackItem children = 2;
+    repeated QueryTreeItem children = 2;
+}
+
+// more complex multi-terms:
+message ItemEquiv {
+    TermItemProperties properties = 1;
+    repeated QueryTreeItem children = 2;
+}
+message ItemWordAlternatives {
+    TermItemProperties properties = 1;
+    repeated QueryTreeItem children = 2;
 }
 message ItemWand {
     TermItemProperties properties = 1;
@@ -256,31 +286,20 @@ message ItemWand {
     double threshold_boost_factor = 4;
     // repeated ItemPureWeightedLong weighted_longs = 5;
     // repeated ItemPureWeightedString weighted_strings = 6;
-    repeated QueryStackItem children = 5;
+    repeated QueryTreeItem children = 5;
 }
-message PredicateFeature {
-    string key = 1;
-    string value = 2;
-    uint64 sub_queries = 3;
-}
-message PredicateRangeFeature {
-    string key = 1;
-    uint64 value = 2;
-    uint64 sub_queries = 4;
-}
-message ItemPredicateQuery {
+
+// complex intermediates:
+message ItemPhrase {
     TermItemProperties properties = 1;
-    repeated PredicateFeature features = 2;
-    repeated PredicateRangeFeature range_features = 3;
+    repeated QueryTreeItem children = 2;
 }
-message ItemRegexp {
+message ItemSameElement {
     TermItemProperties properties = 1;
-    string regexp = 2;
+    repeated QueryTreeItem children = 2;
 }
-message ItemWordAlternatives {
-    TermItemProperties properties = 1;
-    repeated QueryStackItem children = 2;
-}
+
+// special-purpose leaf nodes:
 message ItemNearestNeighbor {
     TermItemProperties properties = 1;
     string query_tensor_name = 2;
@@ -292,34 +311,34 @@ message ItemNearestNeighbor {
 }
 message ItemGeoLocationTerm {
     TermItemProperties properties = 1;
-    double latitude = 2;
-    double longitude = 3;
-    double radius = 4;
+    bool hasGeoCircle = 2;
+    bool hasBoundingBox = 3;
+    double latitude = 4;
+    double longitude = 5;
+    double radius = 6;
+    double s = 7;
+    double w = 8;
+    double n = 9;
+    double e = 10;
 }
-message ItemGeoBoundingBoxTerm {
+message ItemPredicateQuery {
     TermItemProperties properties = 1;
-    double s = 2;
-    double w = 3;
-    double n = 4;
-    double e = 5;
+    repeated PredicateFeature features = 2;
+    repeated PredicateRangeFeature range_features = 3;
 }
-message ItemFuzzy {
-    TermItemProperties properties = 1;
-    string word = 2;
-    uint32 max_edit_distance = 3;
-    uint32 prefix_lock_length = 4;
-    bool prefix_match = 5;
+message PredicateFeature {
+    string key = 1;
+    string value = 2;
+    uint64 sub_queries = 3;
 }
-message ItemStringIn {
-    TermItemProperties properties = 1;
-    repeated string words = 2;
-}
-message ItemNumericIn {
-    TermItemProperties properties = 1;
-    repeated int64 numbers = 2;
+message PredicateRangeFeature {
+    string key = 1;
+    uint64 value = 2;
+    uint64 sub_queries = 4;
 }
 
-message QueryStackItem {
+// generic item:
+message QueryTreeItem {
     oneof item {
         ItemOr item_or = 1;
         ItemAnd item_and = 2;
@@ -358,8 +377,4 @@ message QueryStackItem {
         ItemIntegerRangeTerm item_integer_range_term = 35;
         ItemFloatingPointRangeTerm item_floating_point_range_term = 36;
     }
-}
-
-message QueryStack {
-    QueryStackItem root = 1;
 }
