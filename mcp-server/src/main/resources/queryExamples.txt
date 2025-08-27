@@ -4,7 +4,7 @@ The example queries demonstrate how to transform Command-line queries into the f
 - A Map params 
 
 # Note: The examples are based on the Vespa application and schemas used in the news tutorial.
-Most likely the Vespa application will be different so the example queries is ment for demonstration purposes only for the Mcp client.
+Most likely the Vespa application will be different so the example queries is meant for demonstration purposes only for the Mcp client.
 The MCP client would need to adapt the queries to the specific application and schemas it is working with.
 For other queries use the getDocumentation tool to find relevant documentation on Vespa's query language, as the examples are not covering all possible queries.
 
