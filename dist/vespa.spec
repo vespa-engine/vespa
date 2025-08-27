@@ -474,6 +474,7 @@ fi
 %dir %{_prefix}/conf
 %{_prefix}/conf/configserver
 %{_prefix}/conf/configserver-app
+%{_prefix}/conf/inheritable-apps/**
 %exclude %{_prefix}/conf/configserver-app/components/config-model-fat.jar
 %exclude %{_prefix}/conf/configserver-app/config-models.xml
 %dir %{_prefix}/conf/logd
