@@ -337,6 +337,7 @@ struct VerifyMatchData {
         VerifyMatchData &vmd;
         MyBlueprint(VerifyMatchData &vmd_in, FieldSpecBase spec_in)
             : SimpleLeafBlueprint(spec_in), vmd(vmd_in) {}
+        ~MyBlueprint() override;
         [[nodiscard]] SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override {
             EXPECT_EQ(tfmda.size(), 1u);
             EXPECT_TRUE(tfmda[0] != nullptr);
@@ -361,6 +362,8 @@ struct VerifyMatchData {
         return std::make_unique<MyBlueprint>(*this, spec);
     }
 };
+
+VerifyMatchData::MyBlueprint::~MyBlueprint() = default;
 
 TEST(WeightedSetTermTest, require_that_children_get_a_common_yet_separate_term_field_match_data)
 {

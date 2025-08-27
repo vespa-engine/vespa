@@ -109,6 +109,7 @@ class MyLeaf : public SimpleLeafBlueprint
     double _cost = 1.0;
 
 public:
+    ~MyLeaf() override;
     SearchIterator::UP
     createLeafSearch(const TFMDA &tfmda) const override
     {
@@ -146,6 +147,8 @@ public:
         return create_default_filter(constraint);
     }
 };
+
+MyLeaf::~MyLeaf() = default;
 
 //-----------------------------------------------------------------------------
 

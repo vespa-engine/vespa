@@ -371,6 +371,7 @@ public:
         _sc = _a.getSearch(std::make_unique<search::QueryTermSimple>("1", search::QueryTermSimple::Type::WORD),
                            SearchContextParams().useBitVector(true));
     }
+    ~DummySingleValueBitNumericAttributeBlueprint() override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         auto est = _sc->calc_hit_estimate();
         return est.is_unknown()
@@ -392,6 +393,7 @@ private:
     mutable TermFieldMatchData _tfmd;
 };
 
+DummySingleValueBitNumericAttributeBlueprint::~DummySingleValueBitNumericAttributeBlueprint() = default;
 
 TEST(QueryEvalTest, test_andnot)
 {

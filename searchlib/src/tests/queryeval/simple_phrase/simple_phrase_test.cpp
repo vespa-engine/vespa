@@ -35,6 +35,7 @@ struct MyTerm : public search::queryeval::SimpleLeafBlueprint {
     {
         setEstimate(HitEstimate(hits, (hits == 0)));
     }
+    ~MyTerm() override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         return default_flow_stats(docid_limit, getState().estimate().estHits, 0);
     }
@@ -45,6 +46,8 @@ struct MyTerm : public search::queryeval::SimpleLeafBlueprint {
         return create_default_filter(constraint);
     }
 };
+
+MyTerm::~MyTerm() = default;
 
 const string field = "field";
 const uint32_t fieldId = 1;

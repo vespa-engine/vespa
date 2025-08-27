@@ -59,6 +59,8 @@ DiskTermBlueprint::DiskTermBlueprint(FieldSpec field,
                             _lookupRes.counts._numDocs == 0));
 }
 
+DiskTermBlueprint::~DiskTermBlueprint() = default;
+
 void
 DiskTermBlueprint::log_bitvector_read() const
 {

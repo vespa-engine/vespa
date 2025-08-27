@@ -269,6 +269,7 @@ public:
         HitEstimate estimate(_posting_itr.size(), !_posting_itr.valid());
         setEstimate(estimate);
     }
+    ~MemoryTermBlueprint() override;
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         double rel_est = abs_to_rel_est(_posting_itr.size(), docid_limit);
@@ -300,6 +301,9 @@ public:
         visit(visitor, "query_term", _query_term);
     }
 };
+
+template <bool interleaved_features>
+MemoryTermBlueprint<interleaved_features>::~MemoryTermBlueprint() = default;
 
 }
 
