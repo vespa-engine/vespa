@@ -3,7 +3,6 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import com.yahoo.config.application.ConfigDefinitionDir;
 import com.yahoo.config.application.Xml;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
