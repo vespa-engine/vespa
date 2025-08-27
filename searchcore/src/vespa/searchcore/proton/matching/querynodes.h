@@ -105,7 +105,7 @@ ProtonTermBase<Base>::~ProtonTermBase() = default;
 template <typename Base>
 struct ProtonTerm final : public ProtonTermBase<Base> {
     using ProtonTermBase<Base>::ProtonTermBase;
-    ~ProtonTerm();
+    ~ProtonTerm() override;
 };
 
 template <typename Base>
