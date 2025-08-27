@@ -3854,6 +3854,20 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.QuantileAggregator" : {
+    "superClass" : "com.yahoo.search.grouping.request.AggregatorNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(double, com.yahoo.search.grouping.request.GroupingExpression)",
+      "public double getQuantile()",
+      "public com.yahoo.search.grouping.request.QuantileAggregator copy()",
+      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.grouping.request.RangePredicate" : {
     "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
     "interfaces" : [ ],
