@@ -15,6 +15,7 @@ import java.util.List;
  * Helper methods for directories included from services.xml in a &lt;include dir=''/&gt; element.
  *
  * @author gjoranv
+ * @since 5.1.19
  */
 public class IncludeDirs {
 

@@ -19,7 +19,6 @@ import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.application.InheritableApplications;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
@@ -234,8 +233,7 @@ public class TenantRepositoryTest {
                   new MockTenantListener(),
                   new ZookeeperServerConfig.Builder().myid(0).build(),
                   OnnxModelCost.disabled(),
-                  List.of(new DefaultEndpointCertificateSecretStore(mockSecretStore)),
-                  InheritableApplications.empty());
+                  List.of(new DefaultEndpointCertificateSecretStore(mockSecretStore)));
         }
 
         @Override

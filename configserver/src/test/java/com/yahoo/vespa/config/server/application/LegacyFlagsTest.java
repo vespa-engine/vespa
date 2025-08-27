@@ -28,7 +28,6 @@ import com.yahoo.document.config.DocumentmanagerConfig;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -44,7 +43,7 @@ public class LegacyFlagsTest {
     @Test
     public void testThatLegacyOverridesWork() throws Exception {
         File testApp = new File("src/test/apps/legacy-flag");
-        var appPkg = FilesApplicationPackage.fromDir(testApp, Map.of());
+        var appPkg = FilesApplicationPackage.fromFile(testApp);
         var flag = Flags.USE_V8_GEO_POSITIONS.bindTo(LegacyFlags.from(appPkg, new InMemoryFlagSource()));
         assertTrue(flag.value());
         /* rest here tests that having a "legacy" XML tag doesn't break other things, but without actually using it: */
