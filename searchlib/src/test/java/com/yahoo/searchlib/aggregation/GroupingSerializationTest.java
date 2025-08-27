@@ -60,6 +60,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.fail;
 
@@ -72,7 +73,7 @@ import static org.junit.Assert.fail;
 public class GroupingSerializationTest {
 
     // Flip flag to update spec files instead of asserting against them.
-    private static final boolean UPDATE_SPEC = false;
+    private static final boolean UPDATE_SPEC = Boolean.getBoolean("updateExpectedFiles");
 
     @BeforeClass
     public static void forceLoadingOfSerializableClasses() {
@@ -204,6 +205,11 @@ public class GroupingSerializationTest {
                     .setExpression(new ConstantNode(new IntegerResultNode(67))));
             t.assertMatch(new StandardDeviationAggregationResult(1, 67, 67 * 67)
                     .setExpression(new ConstantNode(new IntegerResultNode(67))));
+            t.assertMatch(new QuantileAggregationResult(List.of(0.5))
+                    .updateSketch(6)
+                    .updateSketch(7)
+                    .updateSketch(8)
+                    .setExpression(new ConstantNode(new IntegerResultNode(8))));
         }
     }
 
