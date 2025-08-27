@@ -20,28 +20,21 @@ protected:
 
     using ConstIteratorImplPtr = std::unique_ptr<ConstIteratorImpl>;
 public:
+    // Note: does not fulfill LegacyIterator requirements.
     class ConstIterator final
     {
         ConstIteratorImplPtr _impl;
     public:
-        using difference_type = std::ptrdiff_t;
-        using value_type = PrioritizedBucket const;
-        using pointer = value_type *;
-        using reference = value_type;
-        using iterator_category = std::input_iterator_tag;
-
         explicit ConstIterator(ConstIteratorImplPtr impl) noexcept
             : _impl(std::move(impl))
         {}
         const PrioritizedBucket operator* () const noexcept { return dereference(); }
         void operator++() noexcept { increment(); }
-        void operator++(int) noexcept { increment(); }
         bool operator== (const ConstIterator& other) const noexcept {
             return equal(other);
         }
         ConstIterator(const ConstIterator &) = delete;
         ConstIterator(ConstIterator &&) noexcept = default;
-
         ~ConstIterator() = default;
     private:
         void increment() noexcept {
