@@ -36,7 +36,8 @@ public class Dns {
     }
 
     public static Set<RecordType> recordTypesFor(IP.Version ipVersion, NodeType hostType, CloudName cloudName, boolean enclave, boolean allowReverse, boolean azureIpv6Enabled) {
-
+        // TODO(bjorncs|onurkaracali|morioramdenbourg, 2025-08-27) determine which DNS records should be validated for k8s
+        if (cloudName == CloudName.DEFAULT) return Set.of();
         if (cloudName == CloudName.AZURE && !azureIpv6Enabled) {
             return ipVersion.is6() ? EnumSet.noneOf(RecordType.class) :
                     // Each Azure enclave and cfg host and child gets one private 10.* address and one public address.
@@ -45,6 +46,7 @@ public class Dns {
                     enclave || hostType == confighost ? EnumSet.of(RecordType.FORWARD, RecordType.PUBLIC_FORWARD) :
                             EnumSet.of(RecordType.FORWARD);
         }
+
 
         if (cloudName == CloudName.AWS || cloudName == CloudName.GCP || cloudName == CloudName.AZURE) {
             if (enclave) {
