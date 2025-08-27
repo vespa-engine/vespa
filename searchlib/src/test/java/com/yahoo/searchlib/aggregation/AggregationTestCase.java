@@ -60,6 +60,22 @@ public class AggregationTestCase {
     }
 
     @Test
+    public void testQuantileAggregationResult() {
+        double delta = 0.1;
+        QuantileAggregationResult a = new QuantileAggregationResult(0.5);
+        a.setExpression(new AttributeNode("attributeA"));
+        assertEquals(a.getQuantile(), 0.5, delta);
+        assertEquals(a.getValue(), 0.0, delta);
+
+        QuantileAggregationResult b = (QuantileAggregationResult)serializeDeserialize(a);
+        assertEquals(b.getQuantile(), 0.5, delta);
+        assertEquals(a.getValue(), 0.0, delta);
+        b.merge(a);
+        assertEquals(b.getQuantile(), 0.5, delta);
+        assertEquals(a.getValue(), 0.0, delta);
+    }
+
+    @Test
     public void testMinAggregationResult() {
         MinAggregationResult a = new MinAggregationResult(new IntegerResultNode(6));
         a.setExpression(new AttributeNode("attributeA"));
