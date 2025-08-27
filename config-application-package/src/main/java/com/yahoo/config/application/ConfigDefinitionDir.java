@@ -37,7 +37,7 @@ public class ConfigDefinitionDir {
                 throw new IllegalArgumentException("Refusing to write config definition outside of " + defDir.getAbsolutePath() +
                         " (got " + outFile.getAbsolutePath() + ")");
             }
-            OutputStream out = new FileOutputStream(outFile); FileNotFoundException:
+            OutputStream out = new FileOutputStream(outFile);
             out.write(def.contents.getBytes());
             out.close();
         }
