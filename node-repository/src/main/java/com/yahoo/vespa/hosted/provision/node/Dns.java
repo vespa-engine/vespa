@@ -31,6 +31,8 @@ public class Dns {
     }
 
     public static Set<RecordType> recordTypesFor(IP.Version ipVersion, NodeType hostType, CloudName cloudName, boolean enclave, boolean allowReverse) {
+        // TODO(bjorncs|onurkaracali|morioramdenbourg, 2025-08-27) determine which DNS records should be validated for k8s
+        if (cloudName == CloudName.DEFAULT) return Set.of();
 
         if (cloudName == CloudName.AWS || cloudName == CloudName.GCP || cloudName == CloudName.AZURE) {
             if (enclave) {
