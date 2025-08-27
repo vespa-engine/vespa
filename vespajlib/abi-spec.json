@@ -333,8 +333,6 @@
       "public void <init>(java.lang.String, java.io.Reader)",
       "public java.lang.String getName()",
       "public java.io.Reader getReader()",
-      "public int hashCode()",
-      "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()",
       "public static java.io.Reader of(java.lang.CharSequence)",
       "public static java.io.Reader nullReader()",
@@ -349,8 +347,7 @@
       "public void reset()",
       "public void close()",
       "public long transferTo(java.io.Writer)",
-      "public static void closeAll(java.util.List)",
-      "public static java.io.Reader nullReader()"
+      "public static void closeAll(java.util.List)"
     ],
     "fields" : [ ]
   },

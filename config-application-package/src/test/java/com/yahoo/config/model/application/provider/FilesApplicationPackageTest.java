@@ -14,8 +14,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Map;
 
+import static com.yahoo.config.model.application.provider.FilesApplicationPackage.applicationFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
@@ -36,7 +36,7 @@ public class FilesApplicationPackageTest {
         IOUtils.copyDirectory(new File("src/test/resources/multienvapp"), appDir);
         assertTrue(new File(appDir, "services.xml").exists());
         assertTrue(new File(appDir, "hosts.xml").exists());
-        FilesApplicationPackage app = FilesApplicationPackage.fromDir(appDir, Map.of());
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
 
         ApplicationPackage processed = app.preprocess(new Zone(Environment.dev, RegionName.defaultName()),
                                                       new BaseDeployLogger());
@@ -82,7 +82,7 @@ public class FilesApplicationPackageTest {
     public void testDeploymentXmlNotAvailable()  {
         File appDir = new File("src/test/resources/multienvapp");
         assertFalse(new File(appDir, "deployment.xml").exists());
-        FilesApplicationPackage app = FilesApplicationPackage.fromDir(appDir, Map.of());
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         assertFalse(app.getDeployment().isPresent());
         assertTrue(app.getDeploymentSpec().isEmpty());
     }
@@ -92,7 +92,7 @@ public class FilesApplicationPackageTest {
         File appDir = new File("src/test/resources/app-with-deployment");
         final File deployment = new File(appDir, "deployment.xml");
         assertTrue(deployment.exists());
-        FilesApplicationPackage app = FilesApplicationPackage.fromDir(appDir, Map.of());
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         assertTrue(app.getDeployment().isPresent());
         assertFalse(app.getDeploymentSpec().isEmpty());
         assertFalse(app.getMajorVersion().isPresent());
@@ -104,7 +104,7 @@ public class FilesApplicationPackageTest {
         File appDir = new File("src/test/resources/app-pinning-major-version");
         final File deployment = new File(appDir, "deployment.xml");
         assertTrue(deployment.exists());
-        FilesApplicationPackage app = FilesApplicationPackage.fromDir(appDir, Map.of());
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         assertTrue(app.getDeployment().isPresent());
         assertTrue(app.getMajorVersion().isPresent());
         assertEquals(6, (int)app.getMajorVersion().get());
@@ -114,7 +114,7 @@ public class FilesApplicationPackageTest {
     @Test
     public void testLegacyOverrides() {
         File appDir = new File("src/test/resources/app-legacy-overrides");
-        ApplicationPackage app = FilesApplicationPackage.fromDir(appDir, Map.of());
+        ApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         var overrides = app.legacyOverrides();
         assertEquals(2, overrides.size());
         assertEquals("something here", overrides.get("foo-bar"));
@@ -126,7 +126,7 @@ public class FilesApplicationPackageTest {
         File appDir = temporaryFolder.newFolder();
         IOUtils.copyDirectory(new File("src/test/resources/multienvapp"), appDir);
         Files.delete(new File(appDir, "services.xml").toPath());
-        FilesApplicationPackage app = FilesApplicationPackage.fromDir(appDir, Map.of());
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         var exception = assertThrows(IllegalArgumentException.class,
                                      () -> app.preprocess(new Zone(Environment.dev, RegionName.defaultName()), new BaseDeployLogger()));
         String message = exception.getMessage();
@@ -135,16 +135,31 @@ public class FilesApplicationPackageTest {
     }
 
     @Test
+    public void testApplicationFile() {
+        applicationFile(new File("foo"), "");
+        applicationFile(new File("foo"), "bar");
+        applicationFile(new File(new File(""), ""), "");
+        assertEquals("/ is not a child of ",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> applicationFile(new File(""), ""))
+                             .getMessage());
+        assertEquals("'..' is not allowed in path",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> applicationFile(new File("foo"), ".."))
+                             .getMessage());
+    }
+
+    @Test
     public void testValidFileExtensions() {
         File appDir = new File("src/test/resources/app-with-deployment");
-        FilesApplicationPackage app = FilesApplicationPackage.fromDir(appDir, Map.of());
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         app.validateFileExtensions();
     }
 
     @Test
     public void testInvalidFileExtensions() {
         File appDir = new File("src/test/resources/app-with-invalid-files-in-subdir");
-        FilesApplicationPackage app = FilesApplicationPackage.fromDir(appDir, Map.of());
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         try {
             app.validateFileExtensions();
             fail("expected an exception");
@@ -158,7 +173,7 @@ public class FilesApplicationPackageTest {
     @Test
     public void testInvalidFileExtensionInSubDirOfSubDir() {
         File appDir = new File("src/test/resources/app-with-files-with-invalid-extension-in-subdir-of-subdir/");
-        FilesApplicationPackage app = FilesApplicationPackage.fromDir(appDir, Map.of());
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         try {
             app.validateFileExtensions();
             fail("expected an exception");

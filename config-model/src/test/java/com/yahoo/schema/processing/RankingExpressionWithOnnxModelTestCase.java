@@ -14,8 +14,6 @@ import com.yahoo.vespa.model.search.DocumentDatabase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -52,7 +50,7 @@ public class RankingExpressionWithOnnxModelTestCase {
     }
 
     private VespaModel loadModel(Path path) throws Exception {
-        FilesApplicationPackage applicationPackage = FilesApplicationPackage.fromDir(path.toFile(), Map.of());
+        FilesApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(path.toFile());
         DeployState state = new DeployState.Builder().applicationPackage(applicationPackage).build();
         return new VespaModel(state);
     }
