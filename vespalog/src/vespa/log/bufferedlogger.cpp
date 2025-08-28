@@ -152,7 +152,7 @@ BackingBuffer::Entry::~Entry() = default;
 bool
 BackingBuffer::Entry::operator==(const Entry& entry) const
 {
-    return (_token == entry._token);
+    return (_logger == entry._logger && _token == entry._token);
 }
 
 bool
