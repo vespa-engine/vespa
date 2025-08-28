@@ -2457,6 +2457,60 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void test1NodePerGroupAllowedDown() {
+        String servicesXml =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                        "<services>" +
+                        "  <container version='1.0' id='qrs'>" +
+                        "     <nodes count='1'/>" +
+                        "  </container>" +
+                        "  <content version='1.0' id='content'>" +
+                        "     <coverage-policy>%s</coverage-policy>" +
+                        "     <redundancy>1</redundancy>" +
+                        "     <documents>" +
+                        "       <document type='type1' mode='index'/>" +
+                        "     </documents>" +
+                        "    <nodes count='2' groups='2'/>" +
+                        "    %s" +
+                        "  </content>" +
+                        "</services>";
+        {
+            VespaModelTester tester = new VespaModelTester();
+            tester.addHosts(6);
+            VespaModel model = tester.createModel(servicesXml.formatted("node", ""), true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties()));
+
+            var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
+            model.getConfig(fleetControllerConfigBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-content-configurer");
+            assertEquals(0, fleetControllerConfigBuilder.build().max_number_of_groups_allowed_to_be_down());
+        }
+
+        {
+            VespaModelTester tester = new VespaModelTester();
+            tester.addHosts(6);
+            VespaModel model = tester.createModel(servicesXml.formatted("group", ""), true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties()));
+
+            var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
+            model.getConfig(fleetControllerConfigBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-content-configurer");
+            assertEquals(-1, fleetControllerConfigBuilder.build().max_number_of_groups_allowed_to_be_down());
+        }
+
+        {
+            VespaModelTester tester = new VespaModelTester();
+            tester.addHosts(6);
+            assertThrows(IllegalArgumentException.class, () ->
+            tester.createModel(servicesXml.formatted("node",
+                                                     """
+                                                     <tuning>
+                                                       <cluster-controller>
+                                                         <groups-allowed-down-ratio>0.5</groups-allowed-down-ratio>
+                                                       </cluster-controller>
+                                                     </tuning>
+                                                     """),
+                               true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties())));
+        }
+    }
+
+    @Test
     public void containerWithZooKeeperSuboptimalNodeCountDuringRetirement() {
         String servicesXml =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
