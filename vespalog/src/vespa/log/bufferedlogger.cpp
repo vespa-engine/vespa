@@ -18,6 +18,78 @@ using namespace std::literals::chrono_literals;
 
 namespace ns_log {
 
+namespace {
+
+// Let each hit count for 5 seconds
+duration global_countFactor = VESPA_LOG_COUNTAGEFACTOR * 1s;
+
+// Don't let tokens from different loggers match each other, but
+// if in the same logger, you should have full control. Overlapping
+// tokens if you want is a feature.
+struct EntryKey {
+    Logger* _logger;
+    std::string _token;
+    std::strong_ordering operator<=>(const EntryKey& entry) const = default;
+};
+
+/** Struct keeping information about log message. */
+struct Entry : EntryKey {
+    Logger::LogLevel _level;
+    std::string _file;
+    int _line;
+    std::string _message;
+    uint32_t _count;
+    system_time _timestamp;
+
+    Entry(const Entry &);
+    Entry & operator=(const Entry &);
+    Entry(Entry &&) noexcept;
+    Entry & operator=(Entry &&) noexcept;
+    Entry(Logger::LogLevel level, const char* file, int line,
+          const std::string& token, const std::string& message,
+          system_time timestamp, Logger&);
+    ~Entry();
+
+    system_time getAgeFactor() const;
+
+    std::string toString() const;
+};
+
+Entry::Entry(Logger::LogLevel level, const char* file, int line,
+                             const std::string& token, const std::string& msg,
+                             system_time timestamp, Logger& l)
+  : EntryKey(&l, token),
+    _level(level),
+    _file(file),
+    _line(line),
+    _message(msg),
+    _count(1),
+    _timestamp(timestamp)
+{
+}
+
+Entry::Entry(const Entry &) = default;
+Entry & Entry::operator =(const Entry &) = default;
+Entry::~Entry() = default;
+
+std::string
+Entry::toString() const
+{
+    std::ostringstream ost;
+    ost << "Entry(" << _level << ", " << _file << ":" << _line << ": "
+        << _message << " [" << _token << "], count " << _count
+        << ", timestamp " << count_us(_timestamp.time_since_epoch()) << ")";
+    return ost.str();
+}
+
+system_time
+Entry::getAgeFactor() const
+{
+    return _timestamp + global_countFactor * _count;
+}
+
+}
+
 // implementation details for BufferedLogger
 class BackingBuffer {
     BackingBuffer(const BackingBuffer & rhs);
@@ -27,39 +99,6 @@ public:
     /** Lock needed to access cache. */
     mutable std::mutex _mutex;
 
-    static duration _countFactor;
-
-    // Don't let tokens from different loggers match each other, but
-    // if in the same logger, you should have full control. Overlapping
-    // tokens if you want is a feature.
-    struct EntryKey {
-        Logger* _logger;
-        std::string _token;
-        std::strong_ordering operator<=>(const EntryKey& entry) const = default;
-    };
-
-    /** Struct keeping information about log message. */
-    struct Entry : EntryKey {
-        Logger::LogLevel _level;
-        std::string _file;
-        int _line;
-        std::string _message;
-        uint32_t _count;
-        system_time _timestamp;
-
-        Entry(const Entry &);
-        Entry & operator=(const Entry &);
-        Entry(Entry &&) noexcept;
-        Entry & operator=(Entry &&) noexcept;
-        Entry(Logger::LogLevel level, const char* file, int line,
-              const std::string& token, const std::string& message,
-              system_time timestamp, Logger&);
-        ~Entry();
-
-        system_time getAgeFactor() const;
-
-        std::string toString() const;
-    };
 
     typedef boost::multi_index_container<
         Entry,
@@ -129,44 +168,6 @@ public:
                  const std::string& message);
 
 };
-
-// Let each hit count for 5 seconds
-duration BackingBuffer::_countFactor = VESPA_LOG_COUNTAGEFACTOR * 1s;
-
-BackingBuffer::Entry::Entry(Logger::LogLevel level, const char* file, int line,
-                             const std::string& token, const std::string& msg,
-                             system_time timestamp, Logger& l)
-  : EntryKey(&l, token),
-    _level(level),
-    _file(file),
-    _line(line),
-    _message(msg),
-    _count(1),
-    _timestamp(timestamp)
-{
-}
-
-BackingBuffer::Entry::Entry(const Entry &) = default;
-BackingBuffer::Entry & BackingBuffer::Entry::operator =(const Entry &) = default;
-BackingBuffer::Entry::Entry(Entry &&) noexcept = default;
-BackingBuffer::Entry & BackingBuffer::Entry::operator=(Entry &&) noexcept = default;
-BackingBuffer::Entry::~Entry() = default;
-
-std::string
-BackingBuffer::Entry::toString() const
-{
-    std::ostringstream ost;
-    ost << "Entry(" << _level << ", " << _file << ":" << _line << ": "
-        << _message << " [" << _token << "], count " << _count
-        << ", timestamp " << count_us(_timestamp.time_since_epoch()) << ")";
-    return ost.str();
-}
-
-system_time
-BackingBuffer::Entry::getAgeFactor() const
-{
-    return _timestamp + _countFactor * _count;
-}
 
 BackingBuffer::BackingBuffer()
     : _timer(new Timer),
@@ -353,9 +354,10 @@ BufferedLogger::setMaxEntryAge(uint64_t seconds) {
     _backing->_maxEntryAge = std::chrono::seconds(seconds);
 }
 
+// only used for unit tests:
 void
 BufferedLogger::setCountFactor(uint64_t seconds) {
-    _backing->_countFactor = std::chrono::seconds(seconds);
+    global_countFactor = std::chrono::seconds(seconds);
 }
 
 /** Set a fake timer to use for log messages. Used in unit testing. */
