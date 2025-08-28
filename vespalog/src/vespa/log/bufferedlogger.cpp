@@ -29,8 +29,8 @@ duration global_countFactor = VESPA_LOG_COUNTAGEFACTOR * 1s;
 // if in the same logger, you should have full control. Overlapping
 // tokens if you want is a feature.
 struct EntryKey {
-    Logger* _logger;
-    std::string _token;
+    Logger* const _logger;
+    const std::string _token;
     std::strong_ordering operator<=>(const EntryKey& entry) const = default;
 };
 
@@ -44,9 +44,9 @@ struct PayLoad {
 
 /** Struct keeping information about log message. */
 struct Entry : EntryKey {
-    uint64_t sequenceId;
-    mutable uint32_t _count = 0;
-    PayLoad payload;
+    uint64_t sequenceId = 0;
+    uint32_t _count = 0;
+    const PayLoad payload;
 
     Entry(const Entry &);
     Entry & operator=(const Entry &);
@@ -111,19 +111,19 @@ Entry::getAgeFactor() const
 
 struct Cache {
     uint64_t _nextSequenceId = 1;
-    using Entries = std::set<Entry>;
+    using Entries = std::map<EntryKey, Entry>;
     using EntryOrder = std::map<uint64_t, Entries::iterator>;
 
     Entries _entry_map;
     EntryOrder _entry_order;
 
-    const Entry& getOrAdd(Entry& entry) {
+    Entry& getOrAdd(Entry& entry) {
         entry.sequenceId = _nextSequenceId;
-        auto [iter, added] = _entry_map.emplace(entry);
+        auto [iter, added] = _entry_map.try_emplace(entry, entry);
         if (added) {
             _entry_order[_nextSequenceId++] = iter;
         }
-        return *iter;
+        return iter->second;
     }
 
     void remove(uint64_t sequenceId) {
@@ -137,7 +137,8 @@ struct Cache {
     struct iterator {
         EntryOrder::iterator place;
         const Entry& operator* () {
-            return *place->second;
+            // place -> pair<uint64_t, Entries::iterator> -> pair<EntryKey, Entry>
+            return place->second->second;
         }
         iterator& operator++() { ++place; return *this; }
         bool operator== (const iterator& other) { return place == other.place; }
@@ -262,7 +263,7 @@ void BackingBuffer::logImpl(Logger& l, Logger::LogLevel level,
     Entry newEntry(level, file, line, token, message, _timer->getTimestamp(), l);
 
     std::lock_guard<std::mutex> guard(_mutex);
-    const Entry &entry = _cache.getOrAdd(newEntry);
+    Entry &entry = _cache.getOrAdd(newEntry);
     if (entry._count++ == 0) {
         // If entry didn't already exist, log it
         TimeStampWrapper wrapper(entry.payload.timestamp);
