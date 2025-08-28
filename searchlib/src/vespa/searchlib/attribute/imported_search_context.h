@@ -104,6 +104,8 @@ public:
         return *_target_search_context;
     }
     uint32_t get_committed_docid_limit() const noexcept override;
+    void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) const override;
+    void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) const override;
 };
 
 }
