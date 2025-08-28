@@ -285,7 +285,6 @@ void BufferedLogger::flush() {
 }
 
 void BackingBuffer::trimCache(system_time currentTime) {
-    // double s = count_s(currentTime.time_since_epoch());
     std::vector<uint64_t> removeList;
     for (const auto & entry : _cache) {
         // Remove entries that have been in here too long.
@@ -301,23 +300,23 @@ void BackingBuffer::trimCache(system_time currentTime) {
     for (uint64_t sequenceId : removeList) {
         _cache.remove(sequenceId);
     }
-    if (_cache.size() > _maxCacheSize) {
-        fprintf(stderr, "remove %zd > %d\n", _cache.size(), _maxCacheSize);
-        long toRemove = _cache.size() - _maxCacheSize;
-        long numCheck = _cache.size() - (_maxCacheSize / 2);
-        fprintf(stderr, "remove %ld\n", toRemove);
-        std::map<system_time, const Entry *> byAgeFactor;
+    // could really be if, since we trim each time we add to cache
+    while (_cache.size() > _maxCacheSize) {
+        // the newest entries are immune to removal:
+        size_t immune = (_maxCacheSize / 2);
+        size_t numToCheck = _cache.size() - immune;
+        system_time oldest;
+        const Entry *toRemove = nullptr;
         for (const auto & entry : _cache) {
             system_time adjusted = entry.getAgeFactor();
-            byAgeFactor[adjusted] = &entry;
-            if (numCheck-- == 0) break;
+            if (toRemove == nullptr || adjusted < oldest) {
+                oldest = adjusted;
+                toRemove = &entry;
+            }
+            if (--numToCheck == 0) break;
         }
-        auto iter = byAgeFactor.begin();
-        while (iter != byAgeFactor.end() && toRemove-- > 0) {
-            logIfRepeated(*iter->second);
-            _cache.remove(iter->second->sequenceId);
-            ++iter;
-        }
+        logIfRepeated(*toRemove);
+        _cache.remove(toRemove->sequenceId);
     }
 }
 
