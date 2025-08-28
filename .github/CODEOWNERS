@@ -35,7 +35,6 @@
 ./config-lib/* @gjoranv
 ./lowercasing_test/* @bjorncs
 ./vespa-3party-bundles/* @gjoranv
-./node-repository/* @hakonhall
 ./config-class-plugin/* @hmusum
 ./searchcore/src/vespa/searchcore/proton/reprocessing/* @toregge
 ./searchcore/src/vespa/searchcore/proton/persistenceengine/* @vekterli
