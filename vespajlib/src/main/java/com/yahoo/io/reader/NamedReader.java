@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.io.reader;
 
-import com.yahoo.api.annotations.Beta;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -10,11 +8,10 @@ import java.nio.CharBuffer;
 import java.util.List;
 
 /**
- * A reader with a name. All reader methods are delegated to the wrapped reader.
+ * A reader identified by a name. All reader methods are delegated to the wrapped reader.
  *
  * @author bratseth
  */
-@Beta
 public class NamedReader extends Reader {
 
     private final String name;
@@ -29,17 +26,21 @@ public class NamedReader extends Reader {
 
     public Reader getReader() { return reader; }
 
-    /** Returns the name */
     @Override
-    public String toString() {
-        return name;
+    public int hashCode() { return name.hashCode(); }
+
+    @Override
+    public boolean equals(Object o) {
+        if (! (o instanceof NamedReader other)) return false;
+        return other.name.equals(this.name);
     }
 
+    @Override
+    public String toString() { return name; }
     // Need to override static methods in Reader to return NamedReader instances
     public static Reader of(java.lang.CharSequence charSequence) {
         return new NamedReader("of", new java.io.StringReader(charSequence.toString()));
     }
-    public static Reader nullReader() { return new NamedReader("nullReader", Reader.nullReader()); }
 
     // The rest is reader method implementations which delegates to the wrapped reader
     @Override
@@ -77,5 +78,7 @@ public class NamedReader extends Reader {
             }
         }
     }
+
+    public static Reader nullReader() { return new NamedReader("nullReader", Reader.nullReader()); }
 
 }

@@ -8,7 +8,7 @@ outputdir=../../target/generated-sources/trang/resources/schema
 
 trangjar=../../target/trang.jar
 
-outputs="services hosts container-include deployment validation-overrides"
+outputs="application services hosts container-include deployment validation-overrides"
 
 gen_xsd() {
     echo "Generating XML schema: $1.rnc -> $1.rng -> $1.xsd"

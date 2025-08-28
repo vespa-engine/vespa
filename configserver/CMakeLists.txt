@@ -8,6 +8,7 @@ vespa_install_script(src/main/sh/stop-configserver libexec/vespa)
 
 install(DIRECTORY src/main/resources/logd DESTINATION conf)
 install(DIRECTORY src/main/resources/configserver-app DESTINATION conf)
+install(DIRECTORY src/main/resources/inheritable-apps DESTINATION conf)
 install(DIRECTORY DESTINATION conf/configserver)
 
 install(DIRECTORY DESTINATION conf/configserver-app/components)

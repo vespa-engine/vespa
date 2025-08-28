@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -113,7 +114,7 @@ public class SuperModelRequestHandlerTest {
     private ApplicationVersions createApp(ApplicationId applicationId, long generation) throws IOException, SAXException {
         return ApplicationVersions.from(
                 new TestApplication(
-                        new VespaModel(FilesApplicationPackage.fromFile(testApp)),
+                        new VespaModel(FilesApplicationPackage.fromDir(testApp, Map.of())),
                         new ServerCache(),
                         generation,
                         applicationId));

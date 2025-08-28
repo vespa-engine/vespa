@@ -117,7 +117,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"glebashnik"}) default Object sidecarsForTest() { return null; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean useTriton() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default long searchCoreTransactionLogReplaySoftMemoryLimit() { return -3; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default boolean useNewPrepareForRestart() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.573.1") default boolean useNewPrepareForRestart() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchNodeInitializerThreads() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
     }

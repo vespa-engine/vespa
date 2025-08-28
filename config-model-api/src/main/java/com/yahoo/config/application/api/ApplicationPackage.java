@@ -20,14 +20,14 @@ import java.util.Optional;
 import java.util.jar.JarEntry;
 
 /**
- * Represents an application package, that is, used as input when creating a VespaModel and as
- * a general reference to all contents in an application.
+ * Represents an application package; a complete specification of an application, that is used to
+ * build a config model.
  *
  * @author Vegard Havdal
  */
 public interface ApplicationPackage {
 
-    // Caution!! If you add something here it must probably also be added to ZooKeeperClient.write(applicationPackage)
+    // Caution!! If you add something here it must probably also be added to ZooKeeperDeployer.writeSomeOf(applicationPackage)
 
     String HOSTS = "hosts.xml";
     String SERVICES = "services.xml";
@@ -58,6 +58,7 @@ public interface ApplicationPackage {
     Path PAGE_TEMPLATES_DIR= Path.fromString("page-templates");
     Path RULES_DIR = Path.fromString("rules");
 
+    Path APPLICATION_DEFINITION_FILE = Path.fromString("application.xml");
     Path DEPLOYMENT_FILE = Path.fromString("deployment.xml");
     Path VALIDATION_OVERRIDES = Path.fromString("validation-overrides.xml");
 
@@ -89,13 +90,11 @@ public interface ApplicationPackage {
      * Returns the include dirs given by the user in the services.xml file.
      */
     default List<String> getUserIncludeDirs() {
-        throw new UnsupportedOperationException(
-                "This application package does not have special handling for user include dirs.");
+        throw new UnsupportedOperationException("This application package does not have special handling for user include dirs.");
     }
 
     default void validateIncludeDir(String dirName) {
-        throw new UnsupportedOperationException("" +
-                "This application package does not support validation of include dirs.");
+        throw new UnsupportedOperationException("This application package does not support validation of include dirs.");
     }
 
     /**
@@ -146,8 +145,7 @@ public interface ApplicationPackage {
     /** Returns handle for the file containing client certificate authorities */
     default ApplicationFile getClientSecurityFile() { return getFile(SECURITY_DIR.append("clients.pem")); }
 
-    String getHostSource();
-    String getServicesSource();
+    Optional<Reader> getApplicationDefinition();
 
     Optional<Reader> getDeployment();
 

@@ -41,17 +41,12 @@ public abstract class AbstractApplicationPackage implements ApplicationPackage {
         return result;
     }
 
-    public static boolean validSchemaFilename(String fn) {
-        if (! fn.endsWith(SD_NAME_SUFFIX)) {
-            return false;
-        }
-        int lastSlash = fn.lastIndexOf('/');
-        if (lastSlash >= 0) {
-            fn = fn.substring(lastSlash+1);
-        }
-        if (fn.startsWith(".")) {
-            return false;
-        }
+    public static boolean validSchemaFilename(String name) {
+        if (! name.endsWith(SD_NAME_SUFFIX)) return false;
+        int lastSlash = name.lastIndexOf('/');
+        if (lastSlash >= 0)
+            name = name.substring(lastSlash+1);
+        if (name.startsWith(".")) return false;
         return true;
     }
 
