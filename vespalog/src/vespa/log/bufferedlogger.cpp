@@ -231,10 +231,9 @@ struct TimeStampWrapper : public Timer {
 
 }
 
-void
-BufferedLogger::doLog(Logger& l, Logger::LogLevel level,
-                      const char *file, int line,
-                      const std::string& mytoken, const char *fmt, ...)
+void BufferedLogger::doLog(Logger& l, Logger::LogLevel level,
+                           const char *file, int line,
+                           const std::string& mytoken, const char *fmt, ...)
 {
     std::string token(mytoken);
     va_list args;
@@ -250,11 +249,10 @@ BufferedLogger::doLog(Logger& l, Logger::LogLevel level,
     _backing->logImpl(l, level, file, line, token, message);
 }
 
-void
-BackingBuffer::logImpl(Logger& l, Logger::LogLevel level,
-                       const char *file, int line,
-                       const std::string& token,
-                       const std::string& message)
+void BackingBuffer::logImpl(Logger& l, Logger::LogLevel level,
+                            const char *file, int line,
+                            const std::string& token,
+                            const std::string& message)
 {
     Entry entry(level, file, line, token, message, _timer->getTimestamp(), l);
 
@@ -278,9 +276,7 @@ BackingBuffer::logImpl(Logger& l, Logger::LogLevel level,
     trimCache(entry.payload.timestamp);
 }
 
-void
-BackingBuffer::flush()
-{
+void BackingBuffer::flush() {
     std::lock_guard<std::mutex> guard(_mutex);
     for (const auto & entry : _cacheBack) {
         logIfRepeated(entry);
@@ -292,14 +288,11 @@ BackingBuffer::flush()
     _cacheFront.clear();
 }
 
-void
-BufferedLogger::flush() {
+void BufferedLogger::flush() {
     _backing->flush();
 }
 
-void
-BackingBuffer::trimCache(system_time currentTime)
-{
+void BackingBuffer::trimCache(system_time currentTime) {
     // Remove entries that have been in here too long.
     while (!_cacheBack.empty() &&
            _cacheBack.front().payload.timestamp + _maxEntryAge < currentTime)
@@ -326,24 +319,18 @@ BackingBuffer::trimCache(system_time currentTime)
     }
 }
 
-void
-BufferedLogger::trimCache()
-{
+void BufferedLogger::trimCache() {
     _backing->trimCache();
 }
 
-void
-BackingBuffer::logIfRepeated(const Entry& e) const
-{
+void BackingBuffer::logIfRepeated(const Entry& e) const {
     if (e._count > 1) {
         std::string msg = e.repeatedMessage();
         e.log(*_timer, msg);
     }
 }
 
-std::string
-BackingBuffer::toString() const
-{
+std::string BackingBuffer::toString() const {
     std::ostringstream ost;
     ost << "Front log cache content:\n";
     std::lock_guard<std::mutex> guard(_mutex);
@@ -357,33 +344,25 @@ BackingBuffer::toString() const
     return ost.str();
 }
 
-
-void
-BufferedLogger::setMaxCacheSize(uint32_t size) {
+void BufferedLogger::setMaxCacheSize(uint32_t size) {
     _backing->_maxCacheSize = size;
 }
 
-void
-BufferedLogger::setMaxEntryAge(uint64_t seconds) {
+void BufferedLogger::setMaxEntryAge(uint64_t seconds) {
     _backing->_maxEntryAge = std::chrono::seconds(seconds);
 }
 
 // only used for unit tests:
-void
-BufferedLogger::setCountFactor(uint64_t seconds) {
+void BufferedLogger::setCountFactor(uint64_t seconds) {
     global_countFactor = std::chrono::seconds(seconds);
 }
 
 /** Set a fake timer to use for log messages. Used in unit testing. */
-void
-BufferedLogger::setTimer(std::unique_ptr<Timer> timer)
-{
+void BufferedLogger::setTimer(std::unique_ptr<Timer> timer) {
     _backing->_timer = std::move(timer);
 }
 
-BufferedLogger&
-BufferedLogger::instance()
-{
+BufferedLogger& BufferedLogger::instance() {
     static BufferedLogger logger;
     return logger;
 }
