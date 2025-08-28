@@ -29,16 +29,23 @@ public:
 
     static duration _countFactor;
 
+    // Don't let tokens from different loggers match each other, but
+    // if in the same logger, you should have full control. Overlapping
+    // tokens if you want is a feature.
+    struct EntryKey {
+        Logger* _logger;
+        std::string _token;
+        std::strong_ordering operator<=>(const EntryKey& entry) const = default;
+    };
+
     /** Struct keeping information about log message. */
-    struct Entry {
+    struct Entry : EntryKey {
         Logger::LogLevel _level;
         std::string _file;
         int _line;
-        std::string _token;
         std::string _message;
         uint32_t _count;
         system_time _timestamp;
-        Logger* _logger;
 
         Entry(const Entry &);
         Entry & operator=(const Entry &);
@@ -48,9 +55,6 @@ public:
               const std::string& token, const std::string& message,
               system_time timestamp, Logger&);
         ~Entry();
-
-        bool operator==(const Entry& entry) const;
-        bool operator<(const Entry& entry) const;
 
         system_time getAgeFactor() const;
 
@@ -62,7 +66,7 @@ public:
         boost::multi_index::indexed_by<
             boost::multi_index::sequenced<>, // Timestamp sorted
             boost::multi_index::ordered_unique<
-                boost::multi_index::identity<Entry>
+                boost::multi_index::identity<EntryKey>
             >
         >
     > LogCacheFront;
@@ -71,7 +75,7 @@ public:
         boost::multi_index::indexed_by<
             boost::multi_index::sequenced<>, // Timestamp sorted
             boost::multi_index::ordered_unique<
-                boost::multi_index::identity<Entry>
+                boost::multi_index::identity<EntryKey>
             >,
             boost::multi_index::ordered_non_unique<
                 boost::multi_index::const_mem_fun<
@@ -132,14 +136,13 @@ duration BackingBuffer::_countFactor = VESPA_LOG_COUNTAGEFACTOR * 1s;
 BackingBuffer::Entry::Entry(Logger::LogLevel level, const char* file, int line,
                              const std::string& token, const std::string& msg,
                              system_time timestamp, Logger& l)
-    : _level(level),
-      _file(file),
-      _line(line),
-      _token(token),
-      _message(msg),
-      _count(1),
-      _timestamp(timestamp),
-      _logger(&l)
+  : EntryKey(&l, token),
+    _level(level),
+    _file(file),
+    _line(line),
+    _message(msg),
+    _count(1),
+    _timestamp(timestamp)
 {
 }
 
@@ -148,24 +151,6 @@ BackingBuffer::Entry & BackingBuffer::Entry::operator =(const Entry &) = default
 BackingBuffer::Entry::Entry(Entry &&) noexcept = default;
 BackingBuffer::Entry & BackingBuffer::Entry::operator=(Entry &&) noexcept = default;
 BackingBuffer::Entry::~Entry() = default;
-
-bool
-BackingBuffer::Entry::operator==(const Entry& entry) const
-{
-    return (_logger == entry._logger && _token == entry._token);
-}
-
-bool
-BackingBuffer::Entry::operator<(const Entry& entry) const
-{
-        // Don't let tokens from different loggers match each other
-    if (_logger != entry._logger) {
-        return _logger < entry._logger;
-    }
-        // If in the same logger, you should have full control. Overlapping
-        // tokens if you want is a feature.
-    return (_token < entry._token);
-}
 
 std::string
 BackingBuffer::Entry::toString() const
