@@ -57,6 +57,25 @@ struct Entry : EntryKey {
     system_time getAgeFactor() const;
 
     std::string toString() const;
+
+    std::string repeatedMessage() const {
+        auto time_since_epoch = payload.timestamp.time_since_epoch();
+        auto s = count_s(time_since_epoch);
+        auto us = count_us(time_since_epoch) % 1000000;
+        std::ostringstream ost;
+        ost << payload.message << " (Repeated " << (_count - 1)
+            << " times since " << s << "."
+            << std::setw(6) << std::setfill('0') << us
+            << ")";
+        return ost.str();
+    }
+
+    void log(Timer &timer, const std::string& msg) const {
+        _logger->doLogCore(timer,
+                           payload.level, payload.file.c_str(), payload.line,
+                           msg.c_str(), msg.size());
+    }
+
 };
 
 Entry::Entry(Logger::LogLevel level, const char* file, int line,
@@ -98,7 +117,6 @@ public:
     std::unique_ptr<Timer> _timer;
     /** Lock needed to access cache. */
     mutable std::mutex _mutex;
-
 
     typedef boost::multi_index_container<
         Entry,
@@ -157,7 +175,7 @@ public:
      * Log a given entry to underlying logger. Used when removing from cache.
      * Calling this, _mutex should already be locked.
      */
-    void log(const Entry& e) const;
+    void logIfRepeated(const Entry& e) const;
 
     BackingBuffer();
     ~BackingBuffer();
@@ -253,7 +271,8 @@ BackingBuffer::logImpl(Logger& l, Logger::LogLevel level,
         _cacheBack.get<1>().replace(it2, copy);
     } else {
         // If entry didn't already exist, add it to the cache and log it
-        l.doLogCore(TimeStampWrapper(entry.payload.timestamp), level, file, line, message.c_str(), message.size());
+        TimeStampWrapper wrapper(entry.payload.timestamp);
+        entry.log(wrapper, message);
         _cacheFront.push_back(entry);
     }
     trimCache(entry.payload.timestamp);
@@ -264,11 +283,11 @@ BackingBuffer::flush()
 {
     std::lock_guard<std::mutex> guard(_mutex);
     for (const auto & entry : _cacheBack) {
-        log(entry);
+        logIfRepeated(entry);
     }
     _cacheBack.clear();
     for (const auto & entry : _cacheFront) {
-        log(entry);
+        logIfRepeated(entry);
     }
     _cacheFront.clear();
 }
@@ -285,13 +304,13 @@ BackingBuffer::trimCache(system_time currentTime)
     while (!_cacheBack.empty() &&
            _cacheBack.front().payload.timestamp + _maxEntryAge < currentTime)
     {
-        log(_cacheBack.front());
+        logIfRepeated(_cacheBack.front());
         _cacheBack.pop_front();
     }
     while (!_cacheFront.empty() &&
            _cacheFront.front().payload.timestamp + _maxEntryAge < currentTime)
     {
-        log(_cacheFront.front());
+        logIfRepeated(_cacheFront.front());
         _cacheFront.pop_front();
     }
     // If cache front is larger than half max size, move to back.
@@ -302,7 +321,7 @@ BackingBuffer::trimCache(system_time currentTime)
     }
     // Remove entries from back based on count modified age.
     for (uint32_t i = _cacheFront.size() + _cacheBack.size(); i > _maxCacheSize; --i) {
-        log(*_cacheBack.get<2>().begin());
+        logIfRepeated(*_cacheBack.get<2>().begin());
         _cacheBack.get<2>().erase(_cacheBack.get<2>().begin());
     }
 }
@@ -314,16 +333,11 @@ BufferedLogger::trimCache()
 }
 
 void
-BackingBuffer::log(const Entry& e) const
+BackingBuffer::logIfRepeated(const Entry& e) const
 {
     if (e._count > 1) {
-        std::ostringstream ost;
-        ost << e.payload.message << " (Repeated " << (e._count - 1)
-            << " times since " << count_s(e.payload.timestamp.time_since_epoch()) << "."
-            << std::setw(6) << std::setfill('0') << (count_us(e.payload.timestamp.time_since_epoch()) % 1000000)
-            << ")";
-        e._logger->doLogCore(*_timer, e.payload.level, e.payload.file.c_str(),
-                             e.payload.line, ost.str().c_str(), ost.str().size());
+        std::string msg = e.repeatedMessage();
+        e.log(*_timer, msg);
     }
 }
 
