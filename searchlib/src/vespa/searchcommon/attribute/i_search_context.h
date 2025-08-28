@@ -6,6 +6,7 @@
 #include <vespa/searchcommon/common/range.h>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace search::fef { class TermFieldMatchData; }
 namespace search::queryeval {
@@ -76,6 +77,10 @@ public:
      * created.
      */
     virtual uint32_t get_committed_docid_limit() const noexcept = 0;
+
+    // Get element ids. Might call unpack. Assumes element_ids is cleared by caller.
+    virtual void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) const;
+    virtual void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) const;
 };
 
 }
