@@ -32,14 +32,18 @@ struct EntryKey {
     std::strong_ordering operator<=>(const EntryKey& entry) const = default;
 };
 
+struct PayLoad {
+    Logger::LogLevel level;
+    std::string file;
+    int line;
+    std::string message;
+    system_time timestamp;
+};
+
 /** Struct keeping information about log message. */
 struct Entry : EntryKey {
-    Logger::LogLevel _level;
-    std::string _file;
-    int _line;
-    std::string _message;
     uint32_t _count;
-    system_time _timestamp;
+    PayLoad payload;
 
     Entry(const Entry &);
     Entry & operator=(const Entry &);
@@ -56,15 +60,11 @@ struct Entry : EntryKey {
 };
 
 Entry::Entry(Logger::LogLevel level, const char* file, int line,
-                             const std::string& token, const std::string& msg,
-                             system_time timestamp, Logger& l)
+             const std::string& token, const std::string& msg,
+             system_time timestamp, Logger& l)
   : EntryKey(&l, token),
-    _level(level),
-    _file(file),
-    _line(line),
-    _message(msg),
     _count(1),
-    _timestamp(timestamp)
+    payload(level, file, line, msg, timestamp)
 {
 }
 
@@ -76,19 +76,19 @@ std::string
 Entry::toString() const
 {
     std::ostringstream ost;
-    ost << "Entry(" << _level << ", " << _file << ":" << _line << ": "
-        << _message << " [" << _token << "], count " << _count
-        << ", timestamp " << count_us(_timestamp.time_since_epoch()) << ")";
+    ost << "Entry(" << payload.level << ", " << payload.file << ":" << payload.line << ": "
+        << payload.message << " [" << _token << "], count " << _count
+        << ", timestamp " << count_us(payload.timestamp.time_since_epoch()) << ")";
     return ost.str();
 }
 
 system_time
 Entry::getAgeFactor() const
 {
-    return _timestamp + global_countFactor * _count;
+    return payload.timestamp + global_countFactor * _count;
 }
 
-}
+} // namespace <unnamed>
 
 // implementation details for BufferedLogger
 class BackingBuffer {
@@ -170,12 +170,12 @@ public:
 };
 
 BackingBuffer::BackingBuffer()
-    : _timer(new Timer),
-      _mutex(),
-      _cacheFront(),
-      _cacheBack(),
-      _maxCacheSize(VESPA_LOG_LOGBUFFERSIZE),
-      _maxEntryAge(VESPA_LOG_LOGENTRYMAXAGE * 1000 * 1000)
+  : _timer(new Timer),
+    _mutex(),
+    _cacheFront(),
+    _cacheBack(),
+    _maxCacheSize(VESPA_LOG_LOGBUFFERSIZE),
+    _maxEntryAge(VESPA_LOG_LOGENTRYMAXAGE * 1000 * 1000)
 {
 }
 
@@ -252,11 +252,11 @@ BackingBuffer::logImpl(Logger& l, Logger::LogLevel level,
         ++copy._count;
         _cacheBack.get<1>().replace(it2, copy);
     } else {
-            // If entry didn't already exist, add it to the cache and log it
-        l.doLogCore(TimeStampWrapper(entry._timestamp), level, file, line, message.c_str(), message.size());
+        // If entry didn't already exist, add it to the cache and log it
+        l.doLogCore(TimeStampWrapper(entry.payload.timestamp), level, file, line, message.c_str(), message.size());
         _cacheFront.push_back(entry);
     }
-    trimCache(entry._timestamp);
+    trimCache(entry.payload.timestamp);
 }
 
 void
@@ -281,26 +281,26 @@ BufferedLogger::flush() {
 void
 BackingBuffer::trimCache(system_time currentTime)
 {
-        // Remove entries that have been in here too long.
+    // Remove entries that have been in here too long.
     while (!_cacheBack.empty() &&
-           _cacheBack.front()._timestamp + _maxEntryAge < currentTime)
+           _cacheBack.front().payload.timestamp + _maxEntryAge < currentTime)
     {
         log(_cacheBack.front());
         _cacheBack.pop_front();
     }
     while (!_cacheFront.empty() &&
-           _cacheFront.front()._timestamp + _maxEntryAge < currentTime)
+           _cacheFront.front().payload.timestamp + _maxEntryAge < currentTime)
     {
         log(_cacheFront.front());
         _cacheFront.pop_front();
     }
-        // If cache front is larger than half max size, move to back.
+    // If cache front is larger than half max size, move to back.
     for (uint32_t i = _cacheFront.size(); i > _maxCacheSize / 2; --i) {
         Entry e(_cacheFront.front());
         _cacheFront.pop_front();
         _cacheBack.push_back(e);
     }
-        // Remove entries from back based on count modified age.
+    // Remove entries from back based on count modified age.
     for (uint32_t i = _cacheFront.size() + _cacheBack.size(); i > _maxCacheSize; --i) {
         log(*_cacheBack.get<2>().begin());
         _cacheBack.get<2>().erase(_cacheBack.get<2>().begin());
@@ -318,12 +318,12 @@ BackingBuffer::log(const Entry& e) const
 {
     if (e._count > 1) {
         std::ostringstream ost;
-        ost << e._message << " (Repeated " << (e._count - 1)
-            << " times since " << count_s(e._timestamp.time_since_epoch()) << "."
-            << std::setw(6) << std::setfill('0') << (count_us(e._timestamp.time_since_epoch()) % 1000000)
+        ost << e.payload.message << " (Repeated " << (e._count - 1)
+            << " times since " << count_s(e.payload.timestamp.time_since_epoch()) << "."
+            << std::setw(6) << std::setfill('0') << (count_us(e.payload.timestamp.time_since_epoch()) % 1000000)
             << ")";
-        e._logger->doLogCore(*_timer, e._level, e._file.c_str(),
-                             e._line, ost.str().c_str(), ost.str().size());
+        e._logger->doLogCore(*_timer, e.payload.level, e.payload.file.c_str(),
+                             e.payload.line, ost.str().c_str(), ost.str().size());
     }
 }
 
