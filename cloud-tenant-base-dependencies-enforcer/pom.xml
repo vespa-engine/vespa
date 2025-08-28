@@ -183,16 +183,16 @@
                                         <include>org.bouncycastle:bcpkix-jdk18on:${bouncycastle.vespa.version}:test</include>
                                         <include>org.bouncycastle:bcprov-jdk18on:${bouncycastle.vespa.version}:test</include>
                                         <include>org.bouncycastle:bcutil-jdk18on:${bouncycastle.vespa.version}:test</include>
-                                        <include>org.eclipse.jetty.http2:jetty-http2-client-transport:jar:${jetty.vespa.version}:test</include>
-                                        <include>org.eclipse.jetty.http2:jetty-http2-client:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty.http2:jetty-http2-client-transport:jar:${jetty.client.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty.http2:jetty-http2-client:${jetty.client.vespa.version}:test</include>
                                         <include>org.eclipse.jetty.http2:jetty-http2-common:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty.http2:jetty-http2-hpack:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty.http2:jetty-http2-server:${jetty.vespa.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-alpn-client:${jetty.vespa.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-alpn-java-client:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-alpn-client:${jetty.client.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-alpn-java-client:${jetty.client.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-alpn-java-server:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-alpn-server:${jetty.vespa.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-client:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-client:${jetty.client.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-http:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-io:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-jmx:${jetty.vespa.version}:test</include>
