@@ -84,7 +84,6 @@ public:
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void doSeek(uint32_t docId) override;
-    virtual void get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids) = 0;
 };
 
 /**

@@ -4,6 +4,7 @@
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/priority_queue.h>
 #include <algorithm>
+#include <cassert>
 #include <limits>
 #include <map>
 
@@ -300,7 +301,7 @@ void
 NearSearch::get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids)
 {
     // Retrieve the elements that matched
-    element_ids.clear();
+    assert(element_ids.empty());
     ElementIdMatchResult match_result(element_ids);
     for (auto& matcher : _matchers) {
         matcher.match(docId, match_result);
@@ -414,7 +415,7 @@ void
 ONearSearch::get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids)
 {
     // Retrieve the elements that matched
-    element_ids.clear();
+    assert(element_ids.empty());
     ElementIdMatchResult match_result(element_ids);
     for (auto& matcher : _matchers) {
         matcher.match(docId, match_result);

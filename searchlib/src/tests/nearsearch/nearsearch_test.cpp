@@ -135,8 +135,9 @@ MyQuery::~MyQuery() = default;
 
 class NearSearchTest : public ::testing::Test {
 protected:
-    void testNearSearch(MyQuery &query, uint32_t matchId, const std::string& label);
-    void test_near_search(MyQuery &query, uint32_t matchId, std::optional<std::vector<uint32_t>> element_ids, const std::string& label);
+    void testNearSearch(MyQuery& query, uint32_t matchId, const std::string& label);
+    void test_near_search(MyQuery& query, uint32_t matchId, std::optional<std::vector<uint32_t>> exp_element_ids,
+                          std::optional<std::vector<uint32_t>> and_element_ids, const std::string& label);
 
     NearSearchTest();
     ~NearSearchTest() override;
@@ -247,20 +248,41 @@ TEST_F(NearSearchTest, get_element_ids)
 {
     MyTerm foo({69}, {{3, 5, {2}}, {7, 5, {2}}});
     MyTerm bar({69, 70, 71}, {{3, 5, {4}}, {7, 5, {0}}});
-    test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, {{3, 7}}, "near 61");
-    test_near_search(MyQuery(true, 4).addTerm(foo).addTerm(bar), 69, {{3}}, "onear 61");
-    test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, {{3, 7}}, "near 62");
-    test_near_search(MyQuery(true, 4).addTerm(bar).addTerm(foo), 69, {{7}}, "onear 62");
+    test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, {{3, 7}}, {}, "near 61");
+    test_near_search(MyQuery(true, 4).addTerm(foo).addTerm(bar), 69, {{3}}, {}, "onear 61");
+    test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, {{3, 7}}, {}, "near 62");
+    test_near_search(MyQuery(true, 4).addTerm(bar).addTerm(foo), 69, {{7}}, {}, "onear 62");
+}
+
+TEST_F(NearSearchTest, and_element_ids_into)
+{
+    MyTerm foo({69}, {{3, 5, {2}}, {7, 5, {2}}});
+    MyTerm bar({69, 70, 71}, {{3, 5, {4}}, {7, 5, {0}}});
+    const std::vector<uint32_t> no_element_ids;
+    test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, {{3, 7}}, {{1, 3, 5, 7, 9}}, "near 711");
+    test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, {{3}}, {{1, 3, 5, 9}}, "near 712");
+    test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, {{7}}, {{1, 5, 7, 9}}, "near 713");
+    test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, no_element_ids, {{1, 5, 9}}, "near 714");
+    test_near_search(MyQuery(true, 4).addTerm(foo).addTerm(bar), 69, {{3}}, {{1, 3, 5, 7, 9}}, "onear 711");
+    test_near_search(MyQuery(true, 4).addTerm(foo).addTerm(bar), 69, no_element_ids, {{1, 5, 7, 9}}, "onear 713");
+    test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, {{3, 7}}, {{1, 3, 5, 7, 9}}, "near 721");
+    test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, {{3}}, {{1, 3, 5, 9}}, "near 722");
+    test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, {{7}}, {{1, 5, 7, 9}}, "near 723");
+    test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, no_element_ids, {{1, 5, 9}}, "near 724");
+    test_near_search(MyQuery(true, 4).addTerm(bar).addTerm(foo), 69, {{7}}, {{1, 3, 5, 7, 9}}, "onear 721");
+    test_near_search(MyQuery(true, 4).addTerm(bar).addTerm(foo), 69, no_element_ids, {{1, 3, 5, 9}}, "onear 722");
 }
 
 void
 NearSearchTest::testNearSearch(MyQuery &query, uint32_t matchId, const std::string& label)
 {
-    test_near_search(query, matchId, std::nullopt, label);
+    test_near_search(query, matchId, std::nullopt, std::nullopt, label);
 }
 
 void
-NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId, std::optional<std::vector<uint32_t>> exp_element_ids, const std::string& label)
+NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId,
+                                 std::optional<std::vector<uint32_t>> exp_element_ids,
+                                 std::optional<std::vector<uint32_t>> and_element_ids, const std::string &label)
 {
     SCOPED_TRACE(vespalib::make_string("%s - %u", label.c_str(), matchId));
     search::queryeval::IntermediateBlueprint *near_b = nullptr;
@@ -289,9 +311,12 @@ NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId, std::optional
             foundMatch = true;
             if (exp_element_ids.has_value()) {
                 std::vector<uint32_t> act_element_ids;
-                auto* mynear = dynamic_cast<NearSearchBase*>(near.get());
-                ASSERT_NE(nullptr, mynear);
-                mynear->get_element_ids(docId, act_element_ids);
+                if (and_element_ids.has_value()) {
+                    act_element_ids = and_element_ids.value();
+                    near->and_element_ids_into(docId, act_element_ids);
+                } else {
+                    near->get_element_ids(docId, act_element_ids);
+                }
                 EXPECT_EQ(act_element_ids, exp_element_ids.value());
             }
         } else {
