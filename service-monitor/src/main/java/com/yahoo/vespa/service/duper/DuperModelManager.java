@@ -59,18 +59,19 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
 
     @Inject
     public DuperModelManager(ConfigserverConfig configServerConfig, SuperModelProvider superModelProvider) {
-        this(configServerConfig.multitenant(),
+        this(configServerConfig.multitenant() || configServerConfig.hostedVespa(),
                 configServerConfig.serverNodeType() == ConfigserverConfig.ServerNodeType.Enum.controller,
              superModelProvider, new DuperModel());
     }
 
     /** Non-private for testing */
-    public DuperModelManager(boolean multitenant, boolean isController, SuperModelProvider superModelProvider,
+    public DuperModelManager(boolean multitenantOrHosted, boolean isController, SuperModelProvider superModelProvider,
                              DuperModel duperModel) {
         this.duperModel = duperModel;
 
-        if (multitenant) {
+        if (multitenantOrHosted) {
             supportedInfraApplications =
+                    // Note: proxyHostApplication only required for main/cd
                     (isController ?
                             Stream.of(controllerHostApplication, controllerApplication) :
                             Stream.of(configServerHostApplication, configServerApplication, proxyHostApplication, tenantHostApplication)
