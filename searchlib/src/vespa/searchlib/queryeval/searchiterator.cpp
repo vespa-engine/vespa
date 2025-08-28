@@ -10,6 +10,8 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
+#include <algorithm>
+#include <cassert>
 
 namespace search::queryeval {
 
@@ -131,6 +133,27 @@ SearchIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
 void
 SearchIterator::transform_children(std::function<SearchIterator::UP(SearchIterator::UP)>)
 {
+}
+
+void
+SearchIterator::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    (void) docid;
+    assert(element_ids.empty());
+}
+
+void
+SearchIterator::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    if (element_ids.empty()) {
+        return;
+    }
+    std::vector<uint32_t> temp_element_ids;
+    std::vector<uint32_t> result;
+    get_element_ids(docid, temp_element_ids);
+    std::set_intersection(element_ids.begin(), element_ids.end(), temp_element_ids.begin(), temp_element_ids.end(),
+                          std::back_inserter(result));
+    std::swap(result, element_ids);
 }
 
 } // search::queryeval
