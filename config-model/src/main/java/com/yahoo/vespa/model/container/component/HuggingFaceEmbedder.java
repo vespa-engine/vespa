@@ -53,7 +53,7 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
         modelRef = model.modelReference();
         vocabRef = Model.fromXmlOrImplicitlyFromOnnxModel(state, xml, model, "tokenizer-model", Set.of(HF_TOKENIZER)).modelReference();
         configRef = getChildValue(xml, "internal-onnx-config-file")
-                .filter(String::isBlank)
+                .filter(value -> !value.isBlank())
                 .map(value -> state.getFileRegistry().addFile(value))
                 .orElse(null);
         maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
