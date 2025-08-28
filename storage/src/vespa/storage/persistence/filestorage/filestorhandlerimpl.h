@@ -67,6 +67,38 @@ public:
         }
     };
 
+    struct MyPriorityQueue {
+        struct Entry {
+            uint64_t sequenceId;
+            MessageEntry entry;
+        };
+        using EntryMap = std::map<uint64_t, Entry>;
+        EntryMap mainMap;
+        struct ByPriCmp {
+            const EntryMap &map;
+            bool operator() (uint64_t a, uint64_t b) {
+                const auto & ea = map.find(a)->second.entry._priority;
+                const auto & eb = map.find(b)->second.entry._priority;
+                if (ea < eb) return true;
+                if (eb < ea) return false;
+                return a < b;
+            }
+        };
+        struct ByBucketCmp {
+            const EntryMap &map;
+            bool operator() (uint64_t a, uint64_t b) {
+                const auto & ea = map.find(a)->second.entry._bucket;
+                const auto & eb = map.find(b)->second.entry._bucket;
+                if (ea < eb) return true;
+                if (eb < ea) return false;
+                return a < b;
+            }
+        };
+        std::set<uint64_t, ByPriCmp> byPri;
+        std::set<uint64_t, ByBucketCmp> byBucket;
+        MyPriorityQueue() : mainMap(), byPri(ByPriCmp(mainMap)), byBucket(ByBucketCmp(mainMap)) {}
+    };
+
     // ordered_non_unique shall preserve insertion order as iteration order of equal keys, but this is rather magical...
     using PriorityOrder = bmi::ordered_non_unique<bmi::identity<MessageEntry>>;
     using BucketOrder   = bmi::ordered_non_unique<bmi::member<MessageEntry, document::Bucket, &MessageEntry::_bucket>>;
