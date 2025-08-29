@@ -280,7 +280,7 @@ public:
         }
         size_t get_cached_queue_size() const { return _cached_queue_size.load_relaxed(); }
         void unsafe_update_cached_queue_size() {
-            _cached_queue_size.store_relaxed(_my_queue->size());
+            _cached_queue_size.store_relaxed(_queue->size());
         }
 
         void release(const document::Bucket & bucket, api::LockingRequirements reqOfReleasedLock,
@@ -299,25 +299,25 @@ public:
 
         [[nodiscard]] std::shared_ptr<FileStorHandler::BucketLockInterface> lock(const document::Bucket & bucket, api::LockingRequirements lockReq);
         void failOperations(const document::Bucket & bucket, const api::ReturnCode & code);
-        void emplace_back(MessageEntry&& entry) { _my_queue->emplace_back(std::move(entry)); }
+        void emplace_back(MessageEntry&& entry) { _queue->emplace_back(std::move(entry)); }
         [[nodiscard]] FileStorHandler::LockedMessage getNextMessage(vespalib::steady_time deadline);
         [[nodiscard]] FileStorHandler::LockedMessageBatch next_message_batch(vespalib::steady_time now, vespalib::steady_time deadline);
         void dumpQueue(std::ostream & os) const;
         void dumpActiveHtml(std::ostream & os) const;
         void dumpQueueHtml(std::ostream & os) const;
         [[nodiscard]] std::mutex & exposeLock() { return *_lock; }
-        [[nodiscard]] PriorityIdx & exposePriorityIdx() { return _my_queue->_priority_index; }
-        [[nodiscard]] BucketIdx & exposeBucketIdx() { return _my_queue->_bucket_index; }
-        [[nodiscard]] const PriorityIdx & exposePriorityIdx() const { return _my_queue->_priority_index; }
-        [[nodiscard]] const BucketIdx & exposeBucketIdx() const { return _my_queue->_bucket_index; }
+        [[nodiscard]] PriorityIdx & exposePriorityIdx() { return _queue->_priority_index; }
+        [[nodiscard]] BucketIdx & exposeBucketIdx() { return _queue->_bucket_index; }
+        [[nodiscard]] const PriorityIdx & exposePriorityIdx() const { return _queue->_priority_index; }
+        [[nodiscard]] const BucketIdx & exposeBucketIdx() const { return _queue->_bucket_index; }
         void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
         [[nodiscard]] ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const;
     private:
         void update_cached_queue_size(const std::lock_guard<std::mutex> &) {
-            _cached_queue_size.store_relaxed(_my_queue->size());
+            _cached_queue_size.store_relaxed(_queue->size());
         }
         void update_cached_queue_size(const std::unique_lock<std::mutex> &) {
-            _cached_queue_size.store_relaxed(_my_queue->size());
+            _cached_queue_size.store_relaxed(_queue->size());
         }
         [[nodiscard]] bool hasActive(monitor_guard & monitor, const AbortBucketOperationsCommand& cmd) const;
         [[nodiscard]] FileStorHandler::LockedMessage get_next_async_message(monitor_guard& guard);
@@ -339,7 +339,7 @@ public:
         FileStorStripeMetrics          *_metrics;
         std::unique_ptr<std::mutex>                _lock;
         std::unique_ptr<std::condition_variable>   _cond;
-        std::unique_ptr<MyPriorityQueue> _my_queue;
+        std::unique_ptr<MyPriorityQueue> _queue;
         atomic_size_t                   _cached_queue_size;
         LockedBuckets                   _lockedBuckets;
         uint32_t                        _active_maintenance_ops;

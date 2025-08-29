@@ -940,8 +940,8 @@ FileStorHandlerImpl::Stripe::Stripe(const FileStorHandlerImpl & owner, MessageSe
       _metrics(nullptr),
       _lock(std::make_unique<std::mutex>()),
       _cond(std::make_unique<std::condition_variable>()),
-      _my_queue(std::make_unique<MyPriorityQueue>()),
-      _cached_queue_size(_my_queue->size()),
+      _queue(std::make_unique<MyPriorityQueue>()),
+      _cached_queue_size(_queue->size()),
       _lockedBuckets(),
       _active_maintenance_ops(0),
       _active_operations_stats()
@@ -1229,7 +1229,7 @@ FileStorHandlerImpl::Stripe::schedule(MessageEntry messageEntry)
 {
     {
         std::lock_guard guard(*_lock);
-        _my_queue->emplace_back(std::move(messageEntry));
+        _queue->emplace_back(std::move(messageEntry));
         update_cached_queue_size(guard);
     }
     _cond->notify_one();
@@ -1240,7 +1240,7 @@ FileStorHandler::LockedMessage
 FileStorHandlerImpl::Stripe::schedule_and_get_next_async_message(MessageEntry entry)
 {
     std::unique_lock guard(*_lock);
-    _my_queue->emplace_back(std::move(entry));
+    _queue->emplace_back(std::move(entry));
     update_cached_queue_size(guard);
     auto lockedMessage = get_next_async_message(guard);
     if ( ! lockedMessage.msg) {
@@ -1253,8 +1253,8 @@ void
 FileStorHandlerImpl::Stripe::flush()
 {
     std::unique_lock guard(*_lock);
-    while (!(_my_queue->empty() && _lockedBuckets.empty())) {
-        LOG(debug, "Still %ld in queue and %ld locked buckets", _my_queue->size(), _lockedBuckets.size());
+    while (!(_queue->empty() && _lockedBuckets.empty())) {
+        LOG(debug, "Still %ld in queue and %ld locked buckets", _queue->size(), _lockedBuckets.size());
         _cond->wait_for(guard, 100ms);
     }
 }
