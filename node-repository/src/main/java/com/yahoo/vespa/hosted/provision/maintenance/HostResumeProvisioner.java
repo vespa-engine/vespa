@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
@@ -86,7 +87,9 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
 
     private void setIpConfig(Node host, HostIpConfig hostIpConfig) {
         if (hostIpConfig.isEmpty()) return;
-        hostIpConfig.asMap().forEach((hostname, ipConfig) ->
+
+        var ipsToVerify = shouldVerifyPublicIp(host) ? hostIpConfig.asMap() : hostIpConfig.publicAsMap();
+        ipsToVerify.forEach((hostname, ipConfig) ->
                 verifyDns(hostname, host.type(), host.cloudAccount(), ipConfig));
 
         nodeRepository().nodes().performOnRecursively(NodeList.of(host), __ -> true, nodes -> {
@@ -108,6 +111,11 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
         for (String ipAddress : ipConfig.primary()) {
             Dns.verify(hostname, ipAddress, hostType, nodeRepository().nameResolver(), cloudAccount, nodeRepository().zone());
         }
+    }
+
+    private boolean shouldVerifyPublicIp(Node host) {
+        return nodeRepository().zone().cloud().name() == CloudName.AZURE &&
+                host.cloudAccount().isEnclave(nodeRepository().zone());
     }
 
 }
