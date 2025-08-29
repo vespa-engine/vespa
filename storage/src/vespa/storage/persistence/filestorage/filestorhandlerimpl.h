@@ -100,7 +100,6 @@ public:
 
         uint64_t _next_sequence_id = 1;
         EntryMap _main_map;
-        // BySeqSet _ordered_sequence_ids;
         ByPriSet _sequence_ids_by_priority;
         ByBucketSet _sequence_ids_by_bucket;
 
@@ -111,7 +110,6 @@ public:
             auto [iter, added] = _main_map.try_emplace(seq_id, std::move(entry));
             assert(added);
             MapEntry& me = *iter;
-            // _ordered_sequence_ids.insert(seq_id);
             _sequence_ids_by_priority.insert(&me);
             _sequence_ids_by_bucket.insert(&me);
         }
@@ -122,7 +120,6 @@ public:
             MapEntry& me = *iter;
             _sequence_ids_by_bucket.erase(&me);
             _sequence_ids_by_priority.erase(&me);
-            // _ordered_sequence_ids.erase(sequence_id);
             _main_map.erase(iter);
         }
 
@@ -153,10 +150,6 @@ public:
         };
         using iterator = ordered_iterator<EntryMap, BySeqSet::const_iterator>;
         using const_iterator = ordered_iterator<const EntryMap, BySeqSet::const_iterator>;
-        // iterator begin() { return iterator(_main_map, _ordered_sequence_ids.begin()); }
-        // iterator end() { return iterator(_main_map, _ordered_sequence_ids.end()); }
-        // const_iterator begin() const { return const_iterator(_main_map, _ordered_sequence_ids.begin()); }
-        // const_iterator end() const { return const_iterator(_main_map, _ordered_sequence_ids.end()); }
         struct PriorityIdx {
             using iterator = ordered_iterator<EntryMap, ByPriSet::const_iterator>;
             using const_iterator = ordered_iterator<const EntryMap, ByPriSet::const_iterator>;
@@ -215,7 +208,6 @@ public:
         BucketIdx _bucket_index;
         PriorityQueue()
           : _main_map(),
-            // _ordered_sequence_ids(),
             _sequence_ids_by_priority(ByPriCmp(_main_map)),
             _sequence_ids_by_bucket(ByBucketCmp(_main_map)),
             _priority_index(*this),
