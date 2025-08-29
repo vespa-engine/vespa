@@ -88,6 +88,8 @@ FileStorHandlerImpl::~FileStorHandlerImpl()
     waitUntilNoLocks();
 }
 
+FileStorHandlerImpl::MyPriorityQueue::~MyPriorityQueue() = default;
+
 void
 FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, std::shared_ptr<MergeStatus> status)
 {
@@ -778,7 +780,7 @@ FileStorHandlerImpl::remapQueueNoLock(const RemapInfo& source, std::vector<Remap
             assert(bucket == source.bucket || std::find_if(targets.begin(), targets.end(), [bucket](auto* e){
                 return e->bucket == bucket;
             }) != targets.end());
-            stripe(bucket).exposeQueue().emplace_back(std::move(entry));
+            stripe(bucket).emplace_back(std::move(entry));
         }
     }
     stripe(source.bucket).unsafe_update_cached_queue_size();
@@ -851,7 +853,7 @@ FileStorHandlerImpl::Stripe::failOperations(const document::Bucket &bucket, cons
 {
     std::lock_guard guard(*_lock);
 
-    BucketIdx& idx(bmi::get<2>(*_queue));
+    BucketIdx& idx(_my_queue->_bucket_index);
     std::pair<BucketIdx::iterator, BucketIdx::iterator> range(idx.equal_range(bucket));
 
     for (auto iter = range.first; iter != range.second;) {
@@ -938,8 +940,8 @@ FileStorHandlerImpl::Stripe::Stripe(const FileStorHandlerImpl & owner, MessageSe
       _metrics(nullptr),
       _lock(std::make_unique<std::mutex>()),
       _cond(std::make_unique<std::condition_variable>()),
-      _queue(std::make_unique<PriorityQueue>()),
-      _cached_queue_size(_queue->size()),
+      _my_queue(std::make_unique<MyPriorityQueue>()),
+      _cached_queue_size(_my_queue->size()),
       _lockedBuckets(),
       _active_maintenance_ops(0),
       _active_operations_stats()
@@ -980,7 +982,7 @@ FileStorHandlerImpl::Stripe::next_message_impl(monitor_guard& guard, vespalib::s
     // second attempt. This is key to allowing the run loop to register
     // ticks at regular intervals while not busy-waiting.
     for (int attempt = 0; (attempt < 2) && !_owner.isPaused(); ++attempt) {
-        PriorityIdx& idx(bmi::get<1>(*_queue));
+        PriorityIdx& idx(_my_queue->_priority_index);
         PriorityIdx::iterator iter(idx.begin()), end(idx.end());
         bool was_throttled = false;
 
@@ -1075,7 +1077,7 @@ FileStorHandlerImpl::Stripe::fill_feed_op_batch(monitor_guard& guard, LockedMess
 {
     assert(batch.size() == 1);
     assert(guard.owns_lock());
-    BucketIdx& idx = bmi::get<2>(*_queue);
+    BucketIdx& idx(_my_queue->_bucket_index);
     auto bucket_msgs = idx.equal_range(batch.lock->getBucket());
     // Process in FIFO order (_not_ priority order) until we hit the end, a non-batchable operation
     // (implicit pipeline stall since bucket set might change) or can't get another throttle token.
@@ -1128,7 +1130,7 @@ FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
     if (_owner.isPaused()) {
         return {};
     }
-    PriorityIdx& idx(bmi::get<1>(*_queue));
+    PriorityIdx& idx(_my_queue->_priority_index);
     PriorityIdx::iterator iter(idx.begin()), end(idx.end());
 
     while ((iter != end) && operationIsInhibited(guard, iter->_bucket, *iter->_command)) {
@@ -1208,11 +1210,13 @@ FileStorHandlerImpl::Stripe::abort(std::vector<std::shared_ptr<api::StorageReply
                                    const AbortBucketOperationsCommand& cmd)
 {
     std::lock_guard lockGuard(*_lock);
-    for (auto it(_queue->begin()); it != _queue->end();) {
-        api::StorageMessage& msg(*it->_command);
-        if (messageMayBeAborted(msg) && cmd.shouldAbort(it->_bucket)) {
+    PriorityIdx& idx(_my_queue->_priority_index);
+    for (auto it = idx.begin(); it != idx.end();) {
+        MessageEntry &entry = *it;
+        api::StorageMessage& msg(*entry._command);
+        if (messageMayBeAborted(msg) && cmd.shouldAbort(entry._bucket)) {
             aborted.emplace_back(static_cast<api::StorageCommand&>(msg).makeReply());
-            it = _queue->erase(it);
+            it = idx.erase(it);
         } else {
             ++it;
         }
@@ -1225,7 +1229,7 @@ FileStorHandlerImpl::Stripe::schedule(MessageEntry messageEntry)
 {
     {
         std::lock_guard guard(*_lock);
-        _queue->emplace_back(std::move(messageEntry));
+        _my_queue->emplace_back(std::move(messageEntry));
         update_cached_queue_size(guard);
     }
     _cond->notify_one();
@@ -1236,7 +1240,7 @@ FileStorHandler::LockedMessage
 FileStorHandlerImpl::Stripe::schedule_and_get_next_async_message(MessageEntry entry)
 {
     std::unique_lock guard(*_lock);
-    _queue->emplace_back(std::move(entry));
+    _my_queue->emplace_back(std::move(entry));
     update_cached_queue_size(guard);
     auto lockedMessage = get_next_async_message(guard);
     if ( ! lockedMessage.msg) {
@@ -1249,8 +1253,8 @@ void
 FileStorHandlerImpl::Stripe::flush()
 {
     std::unique_lock guard(*_lock);
-    while (!(_queue->empty() && _lockedBuckets.empty())) {
-        LOG(debug, "Still %ld in queue and %ld locked buckets", _queue->size(), _lockedBuckets.size());
+    while (!(_my_queue->empty() && _lockedBuckets.empty())) {
+        LOG(debug, "Still %ld in queue and %ld locked buckets", _my_queue->size(), _lockedBuckets.size());
         _cond->wait_for(guard, 100ms);
     }
 }
@@ -1470,7 +1474,7 @@ FileStorHandlerImpl::Stripe::dumpQueueHtml(std::ostream & os) const
 {
     std::lock_guard guard(*_lock);
 
-    const PriorityIdx& idx = bmi::get<1>(*_queue);
+    const PriorityIdx& idx(_my_queue->_priority_index);
     for (const auto & entry : idx) {
         os << "<li>" << xml_content_escaped(entry._command->toString()) << " (priority: "
            << static_cast<int>(entry._command->getPriority()) << ")</li>\n";
@@ -1511,7 +1515,7 @@ FileStorHandlerImpl::Stripe::dumpQueue(std::ostream & os) const
 {
     std::lock_guard guard(*_lock);
 
-    const PriorityIdx& idx = bmi::get<1>(*_queue);
+    const PriorityIdx& idx(_my_queue->_priority_index);
     for (const auto & entry : idx) {
         os << entry._bucket.getBucketId() << ": "
            << xml_content_escaped(entry._command->toString())

@@ -22,11 +22,6 @@
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/identity.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
@@ -39,8 +34,6 @@ class FileStorDiskMetrics;
 class FileStorStripeMetrics;
 class StorBucketDatabase;
 class AbortBucketOperationsCommand;
-
-namespace bmi = boost::multi_index;
 
 class FileStorHandlerImpl final
     : private framework::MetricUpdateHook,
@@ -70,42 +63,167 @@ public:
     struct MyPriorityQueue {
         struct Entry {
             uint64_t sequenceId;
-            MessageEntry entry;
+            MessageEntry msg;
         };
-        using EntryMap = std::map<uint64_t, Entry>;
-        EntryMap mainMap;
-        struct ByPriCmp {
+        using EntryMap = std::unordered_map<uint64_t, Entry>;
+        using EntryCmp = bool(*)(const Entry&, const Entry&);
+        template<EntryCmp cmp> struct OrderCmp {
+            using is_transparent = std::true_type;
             const EntryMap &map;
-            bool operator() (uint64_t a, uint64_t b) {
-                const auto & ea = map.find(a)->second.entry._priority;
-                const auto & eb = map.find(b)->second.entry._priority;
-                if (ea < eb) return true;
-                if (eb < ea) return false;
+            bool operator() (uint64_t a, uint64_t b) const {
+                const auto & ea = map.find(a)->second;
+                const auto & eb = map.find(b)->second;
+                if (cmp(ea, eb)) return true;
+                if (cmp(eb, ea)) return false;
                 return a < b;
             }
-        };
-        struct ByBucketCmp {
-            const EntryMap &map;
-            bool operator() (uint64_t a, uint64_t b) {
-                const auto & ea = map.find(a)->second.entry._bucket;
-                const auto & eb = map.find(b)->second.entry._bucket;
-                if (ea < eb) return true;
-                if (eb < ea) return false;
-                return a < b;
+            template<typename T>
+            bool operator() (uint64_t a, const T& b) const {
+                return b.cvt(a) < b.cvt();
+            }
+            template<typename T>
+            bool operator() (const T& a, uint64_t b) const {
+                return a.cvt() < a.cvt(b);
             }
         };
-        std::set<uint64_t, ByPriCmp> byPri;
-        std::set<uint64_t, ByBucketCmp> byBucket;
-        MyPriorityQueue() : mainMap(), byPri(ByPriCmp(mainMap)), byBucket(ByBucketCmp(mainMap)) {}
+        static bool compareByPriority(const Entry& a, const Entry&b) {
+            return a.msg._priority < b.msg._priority;
+        }
+        static bool compareByBucket(const Entry& a, const Entry&b) {
+            return a.msg._bucket < b.msg._bucket;
+        }
+        using ByPriCmp = OrderCmp<compareByPriority>;
+        using ByBucketCmp = OrderCmp<compareByBucket>;
+
+        using BySeqSet = std::set<uint64_t>;
+        using ByPriSet = std::set<uint64_t, ByPriCmp>;
+        using ByBucketSet = std::set<uint64_t, ByBucketCmp>;
+
+        uint64_t _next_sequence_id = 1;
+        EntryMap _main_map;
+        BySeqSet _ordered_sequence_ids;
+        ByPriSet _sequence_ids_by_priority;
+        ByBucketSet _sequence_ids_by_bucket;
+
+        size_t size() const { return _main_map.size(); }
+        bool empty() const { return _main_map.empty(); }
+        void emplace_back(MessageEntry&& entry) {
+            uint64_t seq_id = _next_sequence_id++;
+            Entry tmp(seq_id, std::move(entry));
+            auto [iter, added] = _main_map.try_emplace(seq_id, std::move(tmp));
+            assert(added);
+            _ordered_sequence_ids.insert(seq_id);
+            _sequence_ids_by_priority.insert(seq_id);
+            _sequence_ids_by_bucket.insert(seq_id);
+        }
+
+        void remove(uint64_t sequence_id) {
+            _sequence_ids_by_bucket.erase(sequence_id);
+            _sequence_ids_by_priority.erase(sequence_id);
+            _ordered_sequence_ids.erase(sequence_id);
+            auto iter = _main_map.find(sequence_id);
+            assert(iter != _main_map.end());
+            _main_map.erase(iter);
+        }
+
+        template<typename M, typename I> struct ordered_iterator {
+            using difference_type = std::ptrdiff_t;
+            using value_type = MessageEntry;
+            using pointer = value_type *;
+            using reference = value_type&;
+            using iterator_category = std::input_iterator_tag;
+
+            M &_map;
+            I _place;
+            auto& operator* () { return _map.find(*_place)->second.msg; };
+            auto* operator-> () { return &_map.find(*_place)->second.msg; };
+            void operator++() { ++_place; }
+            bool operator==(const ordered_iterator& other) {
+                return _place == other._place;
+            }
+            bool operator!=(const ordered_iterator& other) {
+                return _place != other._place;
+            }
+            ordered_iterator(M &m, I p) : _map(m), _place(p) {}
+            ordered_iterator(const ordered_iterator&) = default;
+            void operator= (const ordered_iterator& other) {
+                assert(&_map == &other._map);
+                _place = other._place;
+            }
+        };
+        using iterator = ordered_iterator<EntryMap, BySeqSet::const_iterator>;
+        using const_iterator = ordered_iterator<const EntryMap, BySeqSet::const_iterator>;
+        // iterator begin() { return iterator(_main_map, _ordered_sequence_ids.begin()); }
+        // iterator end() { return iterator(_main_map, _ordered_sequence_ids.end()); }
+        // const_iterator begin() const { return const_iterator(_main_map, _ordered_sequence_ids.begin()); }
+        // const_iterator end() const { return const_iterator(_main_map, _ordered_sequence_ids.end()); }
+        struct PriorityIdx {
+            using iterator = ordered_iterator<EntryMap, ByPriSet::const_iterator>;
+            using const_iterator = ordered_iterator<const EntryMap, ByPriSet::const_iterator>;
+            MyPriorityQueue& _q;
+            iterator begin() { return iterator(_q._main_map, _q._sequence_ids_by_priority.begin()); }
+            iterator end() { return iterator(_q._main_map, _q._sequence_ids_by_priority.end()); }
+            const_iterator begin() const { return const_iterator(_q._main_map, _q._sequence_ids_by_priority.begin()); }
+            const_iterator end() const { return const_iterator(_q._main_map, _q._sequence_ids_by_priority.end()); }
+            iterator erase(iterator it) {
+                uint64_t seq_id = *it._place;
+                ++it;
+                _q.remove(seq_id);
+                return it;
+            }
+        };
+        struct BucketIdx {
+            using iterator = ordered_iterator<EntryMap, ByBucketSet::const_iterator>;
+            using const_iterator = ordered_iterator<const EntryMap, ByBucketSet::const_iterator>;
+            MyPriorityQueue& _q;
+            iterator begin() { return iterator(_q._main_map, _q._sequence_ids_by_bucket.begin()); }
+            iterator end() { return iterator(_q._main_map, _q._sequence_ids_by_bucket.end()); }
+            const_iterator begin() const { return const_iterator(_q._main_map, _q._sequence_ids_by_bucket.begin()); }
+            const_iterator end() const { return const_iterator(_q._main_map, _q._sequence_ids_by_bucket.end()); }
+            struct BucketCompare {
+                const EntryMap &map;
+                const document::Bucket &bucket;
+                const document::Bucket& cvt(uint64_t seq_id) const {
+                    return map.find(seq_id)->second.msg._bucket;
+                }
+                const document::Bucket& cvt() const { return bucket; }
+            };
+            std::pair<iterator, iterator> equal_range(const document::Bucket &bucket) {
+                BucketCompare cmp(_q._main_map, bucket);
+                auto inner_range = _q._sequence_ids_by_bucket.equal_range(cmp);
+                return std::make_pair(iterator(_q._main_map, inner_range.first),
+                                      iterator(_q._main_map, inner_range.second));
+            }
+            void erase(iterator from, iterator to) {
+                for (auto it = from._place; it != to._place; ) {
+                    uint64_t seq_id = *it;
+                    ++it;
+                    _q.remove(seq_id);
+                }
+            }
+            iterator erase(iterator it) {
+                uint64_t seq_id = *it._place;
+                ++it;
+                _q.remove(seq_id);
+                return it;
+            }
+        };
+
+        PriorityIdx _priority_index;
+        BucketIdx _bucket_index;
+        MyPriorityQueue()
+          : _main_map(),
+            _ordered_sequence_ids(),
+            _sequence_ids_by_priority(ByPriCmp(_main_map)),
+            _sequence_ids_by_bucket(ByBucketCmp(_main_map)),
+            _priority_index(*this),
+            _bucket_index(*this)
+        {}
+        ~MyPriorityQueue();
     };
 
-    // ordered_non_unique shall preserve insertion order as iteration order of equal keys, but this is rather magical...
-    using PriorityOrder = bmi::ordered_non_unique<bmi::identity<MessageEntry>>;
-    using BucketOrder   = bmi::ordered_non_unique<bmi::member<MessageEntry, document::Bucket, &MessageEntry::_bucket>>;
-    using PriorityQueue = bmi::multi_index_container<MessageEntry, bmi::indexed_by<bmi::sequenced<>, PriorityOrder, BucketOrder>>;
-    using PriorityIdx   = bmi::nth_index<PriorityQueue, 1>::type;
-    using BucketIdx     = bmi::nth_index<PriorityQueue, 2>::type;
-
+    using PriorityIdx = MyPriorityQueue::PriorityIdx;
+    using BucketIdx = MyPriorityQueue::BucketIdx;
     using Clock = std::chrono::steady_clock;
     using monitor_guard = std::unique_lock<std::mutex>;
     using atomic_size_t = vespalib::datastore::AtomicValueWrapper<size_t>;
@@ -167,7 +285,7 @@ public:
         }
         size_t get_cached_queue_size() const { return _cached_queue_size.load_relaxed(); }
         void unsafe_update_cached_queue_size() {
-            _cached_queue_size.store_relaxed(_queue->size());
+            _cached_queue_size.store_relaxed(_my_queue->size());
         }
 
         void release(const document::Bucket & bucket, api::LockingRequirements reqOfReleasedLock,
@@ -186,23 +304,23 @@ public:
 
         [[nodiscard]] std::shared_ptr<FileStorHandler::BucketLockInterface> lock(const document::Bucket & bucket, api::LockingRequirements lockReq);
         void failOperations(const document::Bucket & bucket, const api::ReturnCode & code);
-
+        void emplace_back(MessageEntry&& entry) { _my_queue->emplace_back(std::move(entry)); }
         [[nodiscard]] FileStorHandler::LockedMessage getNextMessage(vespalib::steady_time deadline);
         [[nodiscard]] FileStorHandler::LockedMessageBatch next_message_batch(vespalib::steady_time now, vespalib::steady_time deadline);
         void dumpQueue(std::ostream & os) const;
         void dumpActiveHtml(std::ostream & os) const;
         void dumpQueueHtml(std::ostream & os) const;
         [[nodiscard]] std::mutex & exposeLock() { return *_lock; }
-        [[nodiscard]] PriorityQueue & exposeQueue() { return *_queue; }
-        [[nodiscard]] BucketIdx & exposeBucketIdx() { return bmi::get<2>(*_queue); }
+
+        [[nodiscard]] BucketIdx & exposeBucketIdx() { return _my_queue->_bucket_index; }
         void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
         [[nodiscard]] ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const;
     private:
         void update_cached_queue_size(const std::lock_guard<std::mutex> &) {
-            _cached_queue_size.store_relaxed(_queue->size());
+            _cached_queue_size.store_relaxed(_my_queue->size());
         }
         void update_cached_queue_size(const std::unique_lock<std::mutex> &) {
-            _cached_queue_size.store_relaxed(_queue->size());
+            _cached_queue_size.store_relaxed(_my_queue->size());
         }
         [[nodiscard]] bool hasActive(monitor_guard & monitor, const AbortBucketOperationsCommand& cmd) const;
         [[nodiscard]] FileStorHandler::LockedMessage get_next_async_message(monitor_guard& guard);
@@ -224,7 +342,8 @@ public:
         FileStorStripeMetrics          *_metrics;
         std::unique_ptr<std::mutex>                _lock;
         std::unique_ptr<std::condition_variable>   _cond;
-        std::unique_ptr<PriorityQueue>  _queue;
+        // std::unique_ptr<PriorityQueue>  _queue;
+        std::unique_ptr<MyPriorityQueue> _my_queue;
         atomic_size_t                   _cached_queue_size;
         LockedBuckets                   _lockedBuckets;
         uint32_t                        _active_maintenance_ops;
