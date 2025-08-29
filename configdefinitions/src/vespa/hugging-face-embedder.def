@@ -33,6 +33,5 @@ transformerIntraOpThreads int default=-4
 # GPU device id, -1 for CPU
 transformerGpuDevice      int default=0
 
-# Model config path, e.g for Triton specific configuration
-# Internal and undocumented for now.
+# Path to model config file, e.g. for Triton. Internal and undocumented for now.
 internalModelConfigPath  path optional

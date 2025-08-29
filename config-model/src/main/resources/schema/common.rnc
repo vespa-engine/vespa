@@ -159,8 +159,7 @@ OnnxModelExecutionParams =
     element onnx-interop-threads { xsd:integer }? &
     element onnx-intraop-threads { xsd:integer }? &
     element onnx-gpu-device { xsd:integer }? &
-    # Path to model config file, e.g for Triton specific configuration
-    # Internal and undocumented for now.
+    # Path to model config file, e.g. for Triton. Internal and undocumented for now.
     element internal-model-config-path { xsd:string }?
 
 EmbedderPoolingStrategy = element pooling-strategy { "cls" | "mean" | "none" }?
