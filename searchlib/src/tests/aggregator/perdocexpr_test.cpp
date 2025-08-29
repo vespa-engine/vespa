@@ -3,6 +3,7 @@
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
+#include <vespa/searchlib/aggregation/quantile_aggregation_result.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -259,6 +260,71 @@ TEST(PerDocExprTest, require_that_StandardDeviationAggregationResult_aggregates_
     EXPECT_NEAR(131.875, aggr.getSum(), 0.01);
     EXPECT_NEAR(10959.8, aggr.getSumOfSquared(), 0.1);
     EXPECT_NEAR(41.5, aggr.getRank().getFloat(), 0.1);
+}
+
+TEST(PerDocExprTest, require_that_QuantileAggregationResult_can_be_merged) {
+    QuantileAggregationResult aggr1;
+    aggr1.set_quantile(0.5);
+    aggr1.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(5))).aggregate(DocId(42), HitRank(21));
+    aggr1.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(6))).aggregate(DocId(43), HitRank(21));
+    aggr1.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(7))).aggregate(DocId(44), HitRank(21));
+
+    QuantileAggregationResult aggr2;
+    aggr2.set_quantile(0.5);
+    aggr2.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(9))).aggregate(DocId(45), HitRank(8));
+    aggr2.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(46), HitRank(8));
+
+    aggr1.merge(aggr2);
+    EXPECT_EQ(0.5, aggr1.quantile());
+    EXPECT_NEAR(7, aggr1.value().getFloat(), 0.1);
+}
+
+TEST(PerDocExprTest, require_that_QuantileAggregationResult_can_be_serialized) {
+    QuantileAggregationResult aggr1;
+    aggr1.set_quantile(0.5);
+    aggr1.setExpression(MU<ConstantNode>(MU<FloatResultNode>(5))).aggregate(DocId(42), HitRank(21));
+    aggr1.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(6))).aggregate(DocId(43), HitRank(21));
+    aggr1.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(7))).aggregate(DocId(44), HitRank(21));
+
+    nbostream os;
+    NBOSerializer nos(os);
+    nos << aggr1;
+    Identifiable::UP obj = Identifiable::create(nos);
+    auto *aggr2 = dynamic_cast<QuantileAggregationResult *>(obj.get());
+    ASSERT_TRUE(aggr2);
+    EXPECT_TRUE(os.empty());
+    EXPECT_EQ(aggr1.quantile(), aggr2->quantile());
+    EXPECT_NEAR(aggr1.value().getFloat(), aggr2->value().getFloat(), 0.1);
+}
+
+TEST(PerDocExprTest, require_that_QuantileAggregationResult_rank_is_the_quantile) {
+    QuantileAggregationResult aggr;
+    aggr.set_quantile(0.5);
+    aggr.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(5))).aggregate(DocId(42), HitRank(21));
+    aggr.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(6))).aggregate(DocId(43), HitRank(21));
+    aggr.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(7))).aggregate(DocId(44), HitRank(21));
+
+    EXPECT_NEAR(6, aggr.getRank().getFloat(), 0.01);
+}
+
+TEST(PerDocExprTest, require_that_QuantileAggregationResult_aggregates_multiple_other_than_median_correctly) {
+    QuantileAggregationResult aggr;
+    aggr.set_quantile(0.9);
+    for (int i = 1; i <= 10; i++) {
+        aggr.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(i))).aggregate(DocId(40 + i), HitRank(21));
+    }
+
+    EXPECT_EQ(0.9, aggr.quantile());
+    EXPECT_NEAR(9.0, aggr.value().getFloat(), 0.1);
+}
+
+TEST(PerDocExprTest, require_that_QuantileAggregationResult_aggregates_multi_value_expression_correctly) {
+    QuantileAggregationResult aggr;
+    aggr.set_quantile(0.5);
+    aggr.setExpression(createVectorFloat(std::vector<double>({5, 6, 7}))).aggregate(DocId(42), HitRank(21));
+
+    EXPECT_EQ(0.5, aggr.quantile());
+    EXPECT_NEAR(6.0, aggr.value().getFloat(), 0.1);
 }
 
 void testAdd(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
