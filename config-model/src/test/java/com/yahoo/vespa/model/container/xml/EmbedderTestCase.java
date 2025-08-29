@@ -77,7 +77,16 @@ public class EmbedderTestCase {
                               "Unknown model id 'my_model_id' on 'model'",
                               true);
     }
-
+    
+    @Test
+    void testHuggingfaceEmbedderWithTransformerOnnxConfigFile() throws Exception {
+        var model = loadModel(Path.fromString("src/test/cfg/application/embed_triton/"), true);
+        var cluster = model.getContainerClusters().get("container");
+        var embedderCfg = assertHuggingfaceEmbedderComponentPresent(cluster);
+        assertTrue(embedderCfg.internalModelConfigPath().isPresent());
+        assertEquals("files/config.pbtxt", embedderCfg.internalModelConfigPath().get().toString());
+    }
+    
     @Test
     void huggingfaceEmbedder_selfhosted() throws Exception {
         var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), false);

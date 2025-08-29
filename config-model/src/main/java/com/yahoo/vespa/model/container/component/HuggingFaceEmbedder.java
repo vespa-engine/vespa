@@ -52,7 +52,7 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
                 getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new));
         modelRef = model.modelReference();
         vocabRef = Model.fromXmlOrImplicitlyFromOnnxModel(state, xml, model, "tokenizer-model", Set.of(HF_TOKENIZER)).modelReference();
-        configRef = getChildValue(xml, "internal-onnx-config-file")
+        configRef = getChildValue(xml, "internal-model-config-path")
                 .filter(value -> !value.isBlank())
                 .map(value -> state.getFileRegistry().addFile(value))
                 .orElse(null);
@@ -75,7 +75,7 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
     @Override
     public void getConfig(HuggingFaceEmbedderConfig.Builder b) {
         b.transformerModel(modelRef).tokenizerPath(vocabRef);
-        if (configRef != null) b.transformerOnnxConfigPath(Optional.ofNullable(configRef));
+        if (configRef != null) b.internalModelConfigPath(Optional.ofNullable(configRef));
         if (maxTokens != null) b.transformerMaxTokens(maxTokens);
         if (transformerInputIds != null) b.transformerInputIds(transformerInputIds);
         if (transformerAttentionMask != null) b.transformerAttentionMask(transformerAttentionMask);

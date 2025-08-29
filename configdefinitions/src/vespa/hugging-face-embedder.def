@@ -33,5 +33,6 @@ transformerIntraOpThreads int default=-4
 # GPU device id, -1 for CPU
 transformerGpuDevice      int default=0
 
-# Internal ONNX config file, e.g for Triton specific configuration
-transformerOnnxConfigPath  path optional
+# Model config path, e.g for Triton specific configuration
+# Internal and undocumented for now.
+internalModelConfigPath  path optional
