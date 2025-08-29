@@ -94,7 +94,7 @@ public:
         using ByPriCmp = OrderCmp<compareByPriority>;
         using ByBucketCmp = OrderCmp<compareByBucket>;
 
-        using BySeqSet = std::set<uint64_t>;
+        // using BySeqSet = std::set<uint64_t>;
         using ByPriSet = std::set<const MapEntry *, ByPriCmp>;
         using ByBucketSet = std::set<const MapEntry *, ByBucketCmp>;
 
@@ -148,16 +148,11 @@ public:
                 _place = other._place;
             }
         };
-        using iterator = ordered_iterator<EntryMap, BySeqSet::const_iterator>;
-        using const_iterator = ordered_iterator<const EntryMap, BySeqSet::const_iterator>;
         struct PriorityIdx {
-            using iterator = ordered_iterator<EntryMap, ByPriSet::const_iterator>;
-            using const_iterator = ordered_iterator<const EntryMap, ByPriSet::const_iterator>;
+            using iterator = ordered_iterator<const EntryMap, ByPriSet::const_iterator>;
             PriorityQueue& _q;
-            iterator begin() { return iterator(_q._main_map, _q._sequence_ids_by_priority.begin()); }
-            iterator end() { return iterator(_q._main_map, _q._sequence_ids_by_priority.end()); }
-            const_iterator begin() const { return const_iterator(_q._main_map, _q._sequence_ids_by_priority.begin()); }
-            const_iterator end() const { return const_iterator(_q._main_map, _q._sequence_ids_by_priority.end()); }
+            iterator begin() const { return iterator(_q._main_map, _q._sequence_ids_by_priority.begin()); }
+            iterator end() const { return iterator(_q._main_map, _q._sequence_ids_by_priority.end()); }
             iterator erase(iterator it) {
                 const MapEntry *me = *it._place;
                 ++it;
@@ -166,13 +161,10 @@ public:
             }
         };
         struct BucketIdx {
-            using iterator = ordered_iterator<EntryMap, ByBucketSet::const_iterator>;
-            using const_iterator = ordered_iterator<const EntryMap, ByBucketSet::const_iterator>;
+            using iterator = ordered_iterator<const EntryMap, ByBucketSet::const_iterator>;
             PriorityQueue& _q;
-            iterator begin() { return iterator(_q._main_map, _q._sequence_ids_by_bucket.begin()); }
-            iterator end() { return iterator(_q._main_map, _q._sequence_ids_by_bucket.end()); }
-            const_iterator begin() const { return const_iterator(_q._main_map, _q._sequence_ids_by_bucket.begin()); }
-            const_iterator end() const { return const_iterator(_q._main_map, _q._sequence_ids_by_bucket.end()); }
+            iterator begin() const { return iterator(_q._main_map, _q._sequence_ids_by_bucket.begin()); }
+            iterator end() const { return iterator(_q._main_map, _q._sequence_ids_by_bucket.end()); }
             struct BucketCompare {
                 const EntryMap &map;
                 const document::Bucket &bucket;
