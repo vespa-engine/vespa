@@ -40,6 +40,8 @@ public:
           _matchPosition(_matchData->populate_fixed())
     { }
     Trinary is_strict() const override { return Trinary::False; }
+    void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
+    void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) override;
 };
 
 
@@ -147,6 +149,7 @@ public:
     AttributeIteratorStrict(const SC &concreteSearchCtx, fef::TermFieldMatchData * matchData)
         : AttributeIteratorT<SC>(concreteSearchCtx, matchData)
     { }
+    ~AttributeIteratorStrict() override;
 };
 
 

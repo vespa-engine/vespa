@@ -441,6 +441,9 @@ FilterAttributeIteratorT<SC>::doSeek(uint32_t docId)
 }
 
 template <typename SC>
+AttributeIteratorStrict<SC>::~AttributeIteratorStrict() = default;
+
+template <typename SC>
 void
 AttributeIteratorStrict<SC>::doSeek(uint32_t docId)
 {
