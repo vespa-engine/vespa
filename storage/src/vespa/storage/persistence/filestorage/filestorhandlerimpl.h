@@ -138,22 +138,20 @@ public:
             bool operator!=(const ordered_iterator& other) {
                 return _place != other._place;
             }
-            ordered_iterator(const EntryMap &m, I p) : _map(m), _place(p) {}
+            ordered_iterator(I p) : _place(p) {}
             ordered_iterator(const ordered_iterator&) = default;
             void operator= (const ordered_iterator& other) {
-                assert(&_map == &other._map);
                 _place = other._place;
             }
             const MapEntry* deref() const { return *_place; }
         private:
-            const EntryMap &_map;
             I _place;
         };
         struct PriorityIdx {
             using iterator = ordered_iterator<ByPriSet::const_iterator>;
             PriorityQueue& _q;
-            iterator begin() const { return iterator(_q._main_map, _q._sequence_ids_by_priority.begin()); }
-            iterator end() const { return iterator(_q._main_map, _q._sequence_ids_by_priority.end()); }
+            iterator begin() const { return iterator(_q._sequence_ids_by_priority.begin()); }
+            iterator end() const { return iterator(_q._sequence_ids_by_priority.end()); }
             iterator erase(iterator it) {
                 const MapEntry *me = it.deref();
                 ++it;
@@ -164,10 +162,9 @@ public:
         struct BucketIdx {
             using iterator = ordered_iterator<ByBucketSet::const_iterator>;
             PriorityQueue& _q;
-            iterator begin() const { return iterator(_q._main_map, _q._sequence_ids_by_bucket.begin()); }
-            iterator end() const { return iterator(_q._main_map, _q._sequence_ids_by_bucket.end()); }
+            iterator begin() const { return iterator(_q._sequence_ids_by_bucket.begin()); }
+            iterator end() const { return iterator(_q._sequence_ids_by_bucket.end()); }
             struct BucketCompare {
-                const EntryMap &map;
                 const document::Bucket &bucket;
                 const document::Bucket& cvt(const MapEntry *p) const {
                     return p->second._bucket;
@@ -175,10 +172,10 @@ public:
                 const document::Bucket& cvt() const { return bucket; }
             };
             std::pair<iterator, iterator> equal_range(const document::Bucket &bucket) {
-                BucketCompare cmp(_q._main_map, bucket);
+                BucketCompare cmp(bucket);
                 auto inner_range = _q._sequence_ids_by_bucket.equal_range(cmp);
-                return std::make_pair(iterator(_q._main_map, inner_range.first),
-                                      iterator(_q._main_map, inner_range.second));
+                return std::make_pair(iterator(inner_range.first),
+                                      iterator(inner_range.second));
             }
             void erase(iterator from, iterator to) {
                 for (auto it = from; it != to; ) {
