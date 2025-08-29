@@ -314,8 +314,10 @@ AttributeNode::EnumHandler::handle(const AttributeResult & r)
 
 void
 AttributeNode::setDocId(DocId docId) {
-    _scratchResult->setDocId(docId);
-    _needExecute = true;
+    if (_scratchResult->getDocId() != docId) {
+        _scratchResult->setDocId(docId);
+        _needExecute = true;
+    }
 }
 
 bool
