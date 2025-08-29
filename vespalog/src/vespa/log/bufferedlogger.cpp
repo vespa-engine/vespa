@@ -2,12 +2,8 @@
 
 #include "bufferedlogger.h"
 #include "internal.h"
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/identity.hpp>
-#include <boost/multi_index/mem_fun.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
 
+#include <cassert>
 #include <cstdarg>
 #include <iomanip>
 #include <map>
@@ -45,7 +41,7 @@ struct PayLoad {
 /** Struct keeping information about log message. */
 struct Entry : EntryKey {
     uint64_t sequenceId = 0;
-    uint32_t _count = 0;
+    uint32_t _count = 1;
     const PayLoad payload;
 
     Entry(const Entry &);
@@ -85,7 +81,7 @@ Entry::Entry(Logger::LogLevel level, const char* file, int line,
              const std::string& token, const std::string& msg,
              system_time timestamp, Logger& l)
   : EntryKey(&l, token),
-    _count(0),
+    _count(1),
     payload(level, file, line, msg, timestamp)
 {
 }
@@ -113,33 +109,69 @@ struct Cache {
     uint64_t _nextSequenceId = 1;
     using Entries = std::map<EntryKey, Entry>;
     using EntryOrder = std::map<uint64_t, Entries::iterator>;
+    static const Entry& deref(EntryOrder::const_iterator place) {
+        // place -> pair<uint64_t, Entries::iterator> -> pair<EntryKey, Entry>
+        return place->second->second;
+    }
+    struct ByAgeCmp {
+        const EntryOrder &map;
+        bool operator() (uint64_t a, uint64_t b) const {
+            const auto & ea = deref(map.find(a));
+            const auto & eb = deref(map.find(b));
+            system_time ta = ea.getAgeFactor();
+            system_time tb = eb.getAgeFactor();
+            if (ta < tb) return true;
+            if (tb < ta) return false;
+            return a < b;
+        }
+    };
+    using AgeOrder = std::set<uint64_t, ByAgeCmp>;
 
     Entries _entry_map;
     EntryOrder _entry_order;
+    AgeOrder _age_order;
 
-    Entry& getOrAdd(Entry& entry) {
+    Cache() : _entry_map(), _entry_order(), _age_order(ByAgeCmp(_entry_order)) {}
+
+    // Note: if the EntryKey already exists in the map,
+    // we will return the stored Entry value after
+    // incrementing its counter:
+    const Entry& getOrAdd(Entry& entry) {
         entry.sequenceId = _nextSequenceId;
         auto [iter, added] = _entry_map.try_emplace(entry, entry);
+        Entry &curEntry = iter->second;
         if (added) {
-            _entry_order[_nextSequenceId++] = iter;
+            _entry_order[_nextSequenceId] = iter;
+            _age_order.insert(_nextSequenceId);
+            ++_nextSequenceId;
+        } else {
+            // In order to add one to count, we need to remove and re-insert in age order set.
+            uint64_t oldId = curEntry.sequenceId;
+            auto it = _age_order.find(oldId);
+            assert(it != _age_order.end());
+            _age_order.erase(it);
+            curEntry._count++;
+            _age_order.insert(oldId);
         }
-        return iter->second;
+        assert(_entry_map.size() == _entry_order.size());
+        assert(_entry_order.size() == _age_order.size());
+        return curEntry;
     }
 
     void remove(uint64_t sequenceId) {
         auto place = _entry_order.find(sequenceId);
-        if (place != _entry_order.end()) {
-            _entry_map.erase(place->second);
-            _entry_order.erase(place);
-        }
+        assert(place != _entry_order.end());
+        // NB keep order of erase calls:
+        _age_order.erase(sequenceId);
+        _entry_map.erase(place->second);
+        _entry_order.erase(place);
+        assert(_entry_map.size() == _entry_order.size());
+        assert(_entry_order.size() == _age_order.size());
     }
 
     struct iterator {
         EntryOrder::iterator place;
-        const Entry& operator* () {
-            // place -> pair<uint64_t, Entries::iterator> -> pair<EntryKey, Entry>
-            return place->second->second;
-        }
+        const Entry& operator* () { return deref(place); }
         iterator& operator++() { ++place; return *this; }
         bool operator== (const iterator& other) { return place == other.place; }
         bool operator!= (const iterator& other) { return place != other.place; }
@@ -149,10 +181,23 @@ struct Cache {
     iterator end()   { return iterator(_entry_order.end()); }
 
     void clear() {
+        _age_order.clear();
         _entry_order.clear();
         _entry_map.clear();
     }
     size_t size() const { return _entry_map.size(); }
+
+    const Entry& oldestNonImmune(size_t numImmune) const {
+        uint64_t limit = _nextSequenceId - numImmune;
+        for (uint64_t seq : _age_order) {
+            if (seq < limit) {
+                auto place = _entry_order.find(seq);
+                assert(place != _entry_order.end());
+                return deref(place);
+            }
+        }
+        assert(false);
+    }
 };
 
 struct TimeStampWrapper : public Timer {
@@ -263,8 +308,8 @@ void BackingBuffer::logImpl(Logger& l, Logger::LogLevel level,
     Entry newEntry(level, file, line, token, message, _timer->getTimestamp(), l);
 
     std::lock_guard<std::mutex> guard(_mutex);
-    Entry &entry = _cache.getOrAdd(newEntry);
-    if (entry._count++ == 0) {
+    const Entry &entry = _cache.getOrAdd(newEntry);
+    if (entry._count == 1) {
         // If entry didn't already exist, log it
         TimeStampWrapper wrapper(entry.payload.timestamp);
         entry.log(wrapper, message);
@@ -301,23 +346,10 @@ void BackingBuffer::trimCache(system_time currentTime) {
     for (uint64_t sequenceId : removeList) {
         _cache.remove(sequenceId);
     }
-    // could really be if, since we trim each time we add to cache
     while (_cache.size() > _maxCacheSize) {
-        // the newest entries are immune to removal:
-        size_t immune = (_maxCacheSize / 2);
-        size_t numToCheck = _cache.size() - immune;
-        system_time oldest;
-        const Entry *toRemove = nullptr;
-        for (const auto & entry : _cache) {
-            system_time adjusted = entry.getAgeFactor();
-            if (toRemove == nullptr || adjusted < oldest) {
-                oldest = adjusted;
-                toRemove = &entry;
-            }
-            if (--numToCheck == 0) break;
-        }
-        logIfRepeated(*toRemove);
-        _cache.remove(toRemove->sequenceId);
+        const Entry& entry = _cache.oldestNonImmune(_maxCacheSize/2);
+        logIfRepeated(entry);
+        _cache.remove(entry.sequenceId);
     }
 }
 
