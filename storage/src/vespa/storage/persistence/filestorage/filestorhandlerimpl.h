@@ -61,12 +61,8 @@ public:
     };
 
     struct MyPriorityQueue {
-        struct Entry {
-            uint64_t sequenceId;
-            MessageEntry msg;
-        };
-        using EntryMap = std::unordered_map<uint64_t, Entry>;
-        using EntryCmp = bool(*)(const Entry&, const Entry&);
+        using EntryMap = std::unordered_map<uint64_t, MessageEntry>;
+        using EntryCmp = bool(*)(const MessageEntry&, const MessageEntry&);
         template<EntryCmp cmp> struct OrderCmp {
             using is_transparent = std::true_type;
             const EntryMap &map;
@@ -86,11 +82,11 @@ public:
                 return a.cvt() < a.cvt(b);
             }
         };
-        static bool compareByPriority(const Entry& a, const Entry&b) {
-            return a.msg._priority < b.msg._priority;
+        static bool compareByPriority(const MessageEntry& a, const MessageEntry&b) {
+            return a._priority < b._priority;
         }
-        static bool compareByBucket(const Entry& a, const Entry&b) {
-            return a.msg._bucket < b.msg._bucket;
+        static bool compareByBucket(const MessageEntry& a, const MessageEntry&b) {
+            return a._bucket < b._bucket;
         }
         using ByPriCmp = OrderCmp<compareByPriority>;
         using ByBucketCmp = OrderCmp<compareByBucket>;
@@ -109,8 +105,7 @@ public:
         bool empty() const { return _main_map.empty(); }
         void emplace_back(MessageEntry&& entry) {
             uint64_t seq_id = _next_sequence_id++;
-            Entry tmp(seq_id, std::move(entry));
-            auto [iter, added] = _main_map.try_emplace(seq_id, std::move(tmp));
+            auto [iter, added] = _main_map.try_emplace(seq_id, std::move(entry));
             assert(added);
             _ordered_sequence_ids.insert(seq_id);
             _sequence_ids_by_priority.insert(seq_id);
@@ -135,8 +130,8 @@ public:
 
             M &_map;
             I _place;
-            auto& operator* () { return _map.find(*_place)->second.msg; };
-            auto* operator-> () { return &_map.find(*_place)->second.msg; };
+            auto& operator* () { return _map.find(*_place)->second; };
+            auto* operator-> () { return &_map.find(*_place)->second; };
             void operator++() { ++_place; }
             bool operator==(const ordered_iterator& other) {
                 return _place == other._place;
@@ -184,7 +179,7 @@ public:
                 const EntryMap &map;
                 const document::Bucket &bucket;
                 const document::Bucket& cvt(uint64_t seq_id) const {
-                    return map.find(seq_id)->second.msg._bucket;
+                    return map.find(seq_id)->second._bucket;
                 }
                 const document::Bucket& cvt() const { return bucket; }
             };
@@ -311,8 +306,10 @@ public:
         void dumpActiveHtml(std::ostream & os) const;
         void dumpQueueHtml(std::ostream & os) const;
         [[nodiscard]] std::mutex & exposeLock() { return *_lock; }
-
+        [[nodiscard]] PriorityIdx & exposePriorityIdx() { return _my_queue->_priority_index; }
         [[nodiscard]] BucketIdx & exposeBucketIdx() { return _my_queue->_bucket_index; }
+        [[nodiscard]] const PriorityIdx & exposePriorityIdx() const { return _my_queue->_priority_index; }
+        [[nodiscard]] const BucketIdx & exposeBucketIdx() const { return _my_queue->_bucket_index; }
         void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
         [[nodiscard]] ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const;
     private:
@@ -342,7 +339,6 @@ public:
         FileStorStripeMetrics          *_metrics;
         std::unique_ptr<std::mutex>                _lock;
         std::unique_ptr<std::condition_variable>   _cond;
-        // std::unique_ptr<PriorityQueue>  _queue;
         std::unique_ptr<MyPriorityQueue> _my_queue;
         atomic_size_t                   _cached_queue_size;
         LockedBuckets                   _lockedBuckets;
