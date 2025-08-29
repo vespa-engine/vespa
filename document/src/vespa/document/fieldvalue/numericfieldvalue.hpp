@@ -8,6 +8,7 @@
 #include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <charconv>
+#include <ostream>
 
 namespace document {
 
