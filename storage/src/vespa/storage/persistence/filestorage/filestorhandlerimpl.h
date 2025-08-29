@@ -97,7 +97,7 @@ public:
 
         uint64_t _next_sequence_id = 1;
         EntryMap _main_map;
-        BySeqSet _ordered_sequence_ids;
+        // BySeqSet _ordered_sequence_ids;
         ByPriSet _sequence_ids_by_priority;
         ByBucketSet _sequence_ids_by_bucket;
 
@@ -107,7 +107,7 @@ public:
             uint64_t seq_id = _next_sequence_id++;
             auto [iter, added] = _main_map.try_emplace(seq_id, std::move(entry));
             assert(added);
-            _ordered_sequence_ids.insert(seq_id);
+            // _ordered_sequence_ids.insert(seq_id);
             _sequence_ids_by_priority.insert(seq_id);
             _sequence_ids_by_bucket.insert(seq_id);
         }
@@ -115,7 +115,7 @@ public:
         void remove(uint64_t sequence_id) {
             _sequence_ids_by_bucket.erase(sequence_id);
             _sequence_ids_by_priority.erase(sequence_id);
-            _ordered_sequence_ids.erase(sequence_id);
+            // _ordered_sequence_ids.erase(sequence_id);
             auto iter = _main_map.find(sequence_id);
             assert(iter != _main_map.end());
             _main_map.erase(iter);
@@ -208,7 +208,7 @@ public:
         BucketIdx _bucket_index;
         PriorityQueue()
           : _main_map(),
-            _ordered_sequence_ids(),
+            // _ordered_sequence_ids(),
             _sequence_ids_by_priority(ByPriCmp(_main_map)),
             _sequence_ids_by_bucket(ByBucketCmp(_main_map)),
             _priority_index(*this),
