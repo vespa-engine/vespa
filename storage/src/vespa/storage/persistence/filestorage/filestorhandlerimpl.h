@@ -63,11 +63,12 @@ public:
     struct PriorityQueue {
         using EntryMap = std::unordered_map<uint64_t, MessageEntry const>;
         using MapEntry = EntryMap::value_type;
+        using EntryPtr = const MapEntry *;
         using EntryCmp = bool(*)(const MessageEntry&, const MessageEntry&);
         template<EntryCmp cmp> struct OrderCmp {
             using is_transparent = std::true_type;
             const EntryMap &map;
-            bool operator() (const MapEntry *a, const MapEntry *b) const {
+            bool operator() (EntryPtr a, EntryPtr b) const {
                 const MessageEntry &ea = a->second;
                 const MessageEntry &eb = b->second;
                 if (cmp(ea, eb)) return true;
@@ -77,13 +78,9 @@ public:
                 return ka < kb;
             }
             template<typename T>
-            bool operator() (const MapEntry *a, const T& b) const {
-                return b.cvt(a) < b.cvt();
-            }
+            bool operator() (EntryPtr a, const T& b) const { return b.cvt(a) < b.cvt(); }
             template<typename T>
-            bool operator() (const T& a, const MapEntry *b) const {
-                return a.cvt() < a.cvt(b);
-            }
+            bool operator() (const T& a, EntryPtr b) const { return a.cvt() < a.cvt(b); }
         };
         static bool compareByPriority(const MessageEntry& a, const MessageEntry&b) {
             return a._priority < b._priority;
@@ -94,8 +91,8 @@ public:
         using ByPriCmp = OrderCmp<compareByPriority>;
         using ByBucketCmp = OrderCmp<compareByBucket>;
 
-        using ByPriSet = std::set<const MapEntry *, ByPriCmp>;
-        using ByBucketSet = std::set<const MapEntry *, ByBucketCmp>;
+        using ByPriSet = std::set<EntryPtr , ByPriCmp>;
+        using ByBucketSet = std::set<EntryPtr , ByBucketCmp>;
 
         uint64_t _next_sequence_id = 1;
         EntryMap _main_map;
@@ -108,7 +105,7 @@ public:
             uint64_t seq_id = _next_sequence_id++;
             auto [iter, added] = _main_map.try_emplace(seq_id, std::move(entry));
             assert(added);
-            MapEntry& me = *iter;
+            const MapEntry& me = *iter;
             _sequence_ids_by_priority.insert(&me);
             _sequence_ids_by_bucket.insert(&me);
         }
@@ -116,7 +113,7 @@ public:
         void remove(uint64_t sequence_id) {
             auto iter = _main_map.find(sequence_id);
             assert(iter != _main_map.end());
-            MapEntry& me = *iter;
+            const MapEntry& me = *iter;
             _sequence_ids_by_bucket.erase(&me);
             _sequence_ids_by_priority.erase(&me);
             _main_map.erase(iter);
@@ -139,21 +136,19 @@ public:
                 return _place != other._place;
             }
             ordered_iterator(I p) : _place(p) {}
-            ordered_iterator(const ordered_iterator&) = default;
-            void operator= (const ordered_iterator& other) {
-                _place = other._place;
-            }
-            const MapEntry* deref() const { return *_place; }
+            // ordered_iterator(const ordered_iterator&) = default;
+            // ordered_iterator& operator= (const ordered_iterator& other) = default;
+            EntryPtr deref() const { return *_place; }
         private:
             I _place;
         };
         struct PriorityIdx {
             using iterator = ordered_iterator<ByPriSet::const_iterator>;
             PriorityQueue& _q;
-            iterator begin() const { return iterator(_q._sequence_ids_by_priority.begin()); }
-            iterator end() const { return iterator(_q._sequence_ids_by_priority.end()); }
+            iterator begin() const { return _q._sequence_ids_by_priority.begin(); }
+            iterator end() const { return _q._sequence_ids_by_priority.end(); }
             iterator erase(iterator it) {
-                const MapEntry *me = it.deref();
+                EntryPtr me = it.deref();
                 ++it;
                 _q.remove(me->first);
                 return it;
@@ -162,35 +157,33 @@ public:
         struct BucketIdx {
             using iterator = ordered_iterator<ByBucketSet::const_iterator>;
             PriorityQueue& _q;
-            iterator begin() const { return iterator(_q._sequence_ids_by_bucket.begin()); }
-            iterator end() const { return iterator(_q._sequence_ids_by_bucket.end()); }
-            struct BucketCompare {
-                const document::Bucket &bucket;
-                const document::Bucket& cvt(const MapEntry *p) const {
-                    return p->second._bucket;
+            iterator begin() const { return _q._sequence_ids_by_bucket.begin(); }
+            iterator end() const { return _q._sequence_ids_by_bucket.end(); }
+            iterator erase(iterator it) {
+                EntryPtr me = it.deref();
+                uint64_t seq_id = me->first;
+                ++it;
+                _q.remove(seq_id);
+                return it;
+            }
+            void erase(iterator from, iterator to) {
+                for (auto it = from; it != to; ) {
+                    EntryPtr me = it.deref();
+                    uint64_t seq_id = me->first;
+                    ++it;
+                    _q.remove(seq_id);
                 }
+            }
+            struct BucketCompare {
+                const document::Bucket& bucket;
                 const document::Bucket& cvt() const { return bucket; }
+                const document::Bucket& cvt(EntryPtr p) const { return p->second._bucket; }
             };
             std::pair<iterator, iterator> equal_range(const document::Bucket &bucket) {
                 BucketCompare cmp(bucket);
                 auto inner_range = _q._sequence_ids_by_bucket.equal_range(cmp);
                 return std::make_pair(iterator(inner_range.first),
                                       iterator(inner_range.second));
-            }
-            void erase(iterator from, iterator to) {
-                for (auto it = from; it != to; ) {
-                    const MapEntry *me = it.deref();
-                    uint64_t seq_id = me->first;
-                    ++it;
-                    _q.remove(seq_id);
-                }
-            }
-            iterator erase(iterator it) {
-                const MapEntry *me = it.deref();
-                uint64_t seq_id = me->first;
-                ++it;
-                _q.remove(seq_id);
-                return it;
             }
         };
 
