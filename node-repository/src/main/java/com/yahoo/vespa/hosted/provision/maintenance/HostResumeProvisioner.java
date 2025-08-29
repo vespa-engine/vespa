@@ -88,7 +88,7 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
     private void setIpConfig(Node host, HostIpConfig hostIpConfig) {
         if (hostIpConfig.isEmpty()) return;
 
-        var ipsToVerify = shouldVerifyPublicIp(host) ? hostIpConfig.asMap() : hostIpConfig.publicAsMap();
+        var ipsToVerify = shouldVerifyPublicIp(host) ? hostIpConfig.publicAsMap() : hostIpConfig.asMap();
         ipsToVerify.forEach((hostname, ipConfig) ->
                 verifyDns(hostname, host.type(), host.cloudAccount(), ipConfig));
 
