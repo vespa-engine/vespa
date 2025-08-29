@@ -101,7 +101,7 @@ public:
 
         size_t size() const { return _main_map.size(); }
         bool empty() const { return _main_map.empty(); }
-        void emplace_back(MessageEntry&& entry) {
+        void emplace_back(MessageEntry entry) {
             uint64_t seq_id = _next_sequence_id++;
             auto [iter, added] = _main_map.try_emplace(seq_id, std::move(entry));
             assert(added);
@@ -277,7 +277,7 @@ public:
 
         [[nodiscard]] std::shared_ptr<FileStorHandler::BucketLockInterface> lock(const document::Bucket & bucket, api::LockingRequirements lockReq);
         void failOperations(const document::Bucket & bucket, const api::ReturnCode & code);
-        void emplace_back(MessageEntry&& entry) { _queue->emplace_back(std::move(entry)); }
+        void queue_emplace(MessageEntry entry) { _queue->emplace_back(std::move(entry)); }
         [[nodiscard]] FileStorHandler::LockedMessage getNextMessage(vespalib::steady_time deadline);
         [[nodiscard]] FileStorHandler::LockedMessageBatch next_message_batch(vespalib::steady_time now, vespalib::steady_time deadline);
         void dumpQueue(std::ostream & os) const;
@@ -317,7 +317,7 @@ public:
         FileStorStripeMetrics          *_metrics;
         std::unique_ptr<std::mutex>                _lock;
         std::unique_ptr<std::condition_variable>   _cond;
-        std::unique_ptr<PriorityQueue> _queue;
+        std::unique_ptr<PriorityQueue>  _queue;
         atomic_size_t                   _cached_queue_size;
         LockedBuckets                   _lockedBuckets;
         uint32_t                        _active_maintenance_ops;

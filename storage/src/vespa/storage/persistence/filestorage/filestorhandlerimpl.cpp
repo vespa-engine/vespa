@@ -780,7 +780,7 @@ FileStorHandlerImpl::remapQueueNoLock(const RemapInfo& source, std::vector<Remap
             assert(bucket == source.bucket || std::find_if(targets.begin(), targets.end(), [bucket](auto* e){
                 return e->bucket == bucket;
             }) != targets.end());
-            stripe(bucket).emplace_back(std::move(entry));
+            stripe(bucket).queue_emplace(std::move(entry));
         }
     }
     stripe(source.bucket).unsafe_update_cached_queue_size();
