@@ -88,7 +88,7 @@ FileStorHandlerImpl::~FileStorHandlerImpl()
     waitUntilNoLocks();
 }
 
-FileStorHandlerImpl::MyPriorityQueue::~MyPriorityQueue() = default;
+FileStorHandlerImpl::PriorityQueue::~PriorityQueue() = default;
 
 void
 FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, std::shared_ptr<MergeStatus> status)
@@ -940,7 +940,7 @@ FileStorHandlerImpl::Stripe::Stripe(const FileStorHandlerImpl & owner, MessageSe
       _metrics(nullptr),
       _lock(std::make_unique<std::mutex>()),
       _cond(std::make_unique<std::condition_variable>()),
-      _queue(std::make_unique<MyPriorityQueue>()),
+      _queue(std::make_unique<PriorityQueue>()),
       _cached_queue_size(_queue->size()),
       _lockedBuckets(),
       _active_maintenance_ops(0),

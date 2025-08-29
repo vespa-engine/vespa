@@ -60,7 +60,7 @@ public:
         }
     };
 
-    struct MyPriorityQueue {
+    struct PriorityQueue {
         using EntryMap = std::unordered_map<uint64_t, MessageEntry>;
         using EntryCmp = bool(*)(const MessageEntry&, const MessageEntry&);
         template<EntryCmp cmp> struct OrderCmp {
@@ -155,7 +155,7 @@ public:
         struct PriorityIdx {
             using iterator = ordered_iterator<EntryMap, ByPriSet::const_iterator>;
             using const_iterator = ordered_iterator<const EntryMap, ByPriSet::const_iterator>;
-            MyPriorityQueue& _q;
+            PriorityQueue& _q;
             iterator begin() { return iterator(_q._main_map, _q._sequence_ids_by_priority.begin()); }
             iterator end() { return iterator(_q._main_map, _q._sequence_ids_by_priority.end()); }
             const_iterator begin() const { return const_iterator(_q._main_map, _q._sequence_ids_by_priority.begin()); }
@@ -170,7 +170,7 @@ public:
         struct BucketIdx {
             using iterator = ordered_iterator<EntryMap, ByBucketSet::const_iterator>;
             using const_iterator = ordered_iterator<const EntryMap, ByBucketSet::const_iterator>;
-            MyPriorityQueue& _q;
+            PriorityQueue& _q;
             iterator begin() { return iterator(_q._main_map, _q._sequence_ids_by_bucket.begin()); }
             iterator end() { return iterator(_q._main_map, _q._sequence_ids_by_bucket.end()); }
             const_iterator begin() const { return const_iterator(_q._main_map, _q._sequence_ids_by_bucket.begin()); }
@@ -206,7 +206,7 @@ public:
 
         PriorityIdx _priority_index;
         BucketIdx _bucket_index;
-        MyPriorityQueue()
+        PriorityQueue()
           : _main_map(),
             _ordered_sequence_ids(),
             _sequence_ids_by_priority(ByPriCmp(_main_map)),
@@ -214,11 +214,11 @@ public:
             _priority_index(*this),
             _bucket_index(*this)
         {}
-        ~MyPriorityQueue();
+        ~PriorityQueue();
     };
 
-    using PriorityIdx = MyPriorityQueue::PriorityIdx;
-    using BucketIdx = MyPriorityQueue::BucketIdx;
+    using PriorityIdx = PriorityQueue::PriorityIdx;
+    using BucketIdx = PriorityQueue::BucketIdx;
     using Clock = std::chrono::steady_clock;
     using monitor_guard = std::unique_lock<std::mutex>;
     using atomic_size_t = vespalib::datastore::AtomicValueWrapper<size_t>;
@@ -339,7 +339,7 @@ public:
         FileStorStripeMetrics          *_metrics;
         std::unique_ptr<std::mutex>                _lock;
         std::unique_ptr<std::condition_variable>   _cond;
-        std::unique_ptr<MyPriorityQueue> _queue;
+        std::unique_ptr<PriorityQueue> _queue;
         atomic_size_t                   _cached_queue_size;
         LockedBuckets                   _lockedBuckets;
         uint32_t                        _active_maintenance_ops;
