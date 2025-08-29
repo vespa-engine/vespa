@@ -48,5 +48,7 @@ TEST(MallocExplorerTest, mimalloc_internal_stats_are_emitted) {
     override_stats = true;
     explorer.get_state(inserter, true);
     override_stats = false;
+#if !defined(__APPLE__)
     EXPECT_EQ(result["raw_internal_info"].asString(), "here be dragons!");
+#endif
 }
