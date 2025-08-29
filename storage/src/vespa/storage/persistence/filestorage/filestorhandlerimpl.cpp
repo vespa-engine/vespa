@@ -1212,7 +1212,7 @@ FileStorHandlerImpl::Stripe::abort(std::vector<std::shared_ptr<api::StorageReply
     std::lock_guard lockGuard(*_lock);
     PriorityIdx& idx = exposePriorityIdx();
     for (auto it = idx.begin(); it != idx.end();) {
-        MessageEntry &entry = *it;
+        const MessageEntry &entry = *it;
         api::StorageMessage& msg(*entry._command);
         if (messageMayBeAborted(msg) && cmd.shouldAbort(entry._bucket)) {
             aborted.emplace_back(static_cast<api::StorageCommand&>(msg).makeReply());
