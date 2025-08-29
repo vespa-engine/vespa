@@ -128,15 +128,19 @@ Content = element content {
     Documents? &
     ContentNodes? &
     TopGroup? &
-    Controllers?
+    Controllers? &
+    CoveragePolicy?
     # Contains experimental feature switches
     #Experimental?
 }
 
-Controllers =
-  element controllers {
+Controllers = element controllers {
     OptionalDedicatedNodes
-  }
+}
+
+CoveragePolicy = element coverage-policy {
+    xsd:string "group" | xsd:string "node"
+}
 
 ContentSearch = element search {
     element query-timeout { xsd:double { minInclusive = "0" } }? &

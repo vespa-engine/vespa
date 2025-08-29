@@ -373,4 +373,15 @@ ImportedSearchContext::get_committed_docid_limit() const noexcept
     return _targetLids.size();
 }
 
+void
+ImportedSearchContext::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) const
+{
+    return _target_search_context->get_element_ids(getTargetLid(docid), element_ids);
+}
+void
+ImportedSearchContext::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) const
+{
+    return _target_search_context->and_element_ids_into(getTargetLid(docid), element_ids);
+}
+
 }

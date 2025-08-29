@@ -13,6 +13,36 @@
   <packaging>jar</packaging>
   <version>8-SNAPSHOT</version>
 
+  <dependencyManagement>
+    <dependencies>
+      <!--
+       Jetty 12.0.23 and later has a regression where the client neither
+       returns a response nor exception in some scenarios (e.g. server is down).
+       Forcing all transitive dependencies to use the client specific version.
+       -->
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-http</artifactId>
+        <version>${jetty.client.vespa.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-util</artifactId>
+        <version>${jetty.client.vespa.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-io</artifactId>
+        <version>${jetty.client.vespa.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty.http2</groupId>
+        <artifactId>jetty-http2-common</artifactId>
+        <version>${jetty.client.vespa.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <!-- compile scope -->
     <dependency>
@@ -94,6 +124,36 @@
                 <argument>${project.build.directory}/generated-sources/vespa-version/ai/vespa/feed/client/impl/Vespa.java</argument>
               </arguments>
               <sourceRoot>${project.build.directory}/generated-sources/vespa-version</sourceRoot>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin.vespa.version}</version>
+        <executions>
+          <execution>
+            <!-- See comment in dependencyManagement above -->
+            <id>enforce-jetty-version-consistency</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <dependencyConvergence>
+                  <uniqueVersions>false</uniqueVersions>
+                </dependencyConvergence>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>org.eclipse.jetty*:*</exclude>
+                  </excludes>
+                  <includes>
+                    <include>org.eclipse.jetty*:*:${jetty.client.vespa.version}</include>
+                  </includes>
+                  <message>All client Jetty dependencies must use version ${jetty.client.vespa.version}</message>
+                </bannedDependencies>
+              </rules>
             </configuration>
           </execution>
         </executions>

@@ -34,6 +34,7 @@
     <nodes count="[10,20]" flavor="large" groups="[1,3]" group-size="[1,2]" vespamalloc-debug-stacktrace="proton">
       <resources vcpu="[3.0, 4]" memory="[32000.0Mb, 33Gb]" disk="[300 Gb, 1Tb]"/>
     </nodes>
+    <coverage-policy>group</coverage-policy>
   </content>
 
 </services>

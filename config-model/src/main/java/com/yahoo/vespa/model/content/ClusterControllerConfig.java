@@ -48,7 +48,8 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
             var tuningConfig = new ClusterControllerTuningBuilder(clusterControllerTuning,
                                                                   minNodeRatioPerGroup,
                                                                   bucketSplittingMinimumBits,
-                                                                  numberOfLeafGroups)
+                                                                  numberOfLeafGroups,
+                                                                  clusterElement)
                     .build();
 
             return new ClusterControllerConfig(ancestor, clusterName, tuningConfig, resourceLimits);
@@ -92,7 +93,7 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
         tuning.minStorageUpRatio.ifPresent(builder::min_storage_up_ratio);
         tuning.minSplitBits.ifPresent(builder::ideal_distribution_bits);
         tuning.minNodeRatioPerGroup.ifPresent(builder::min_node_ratio_per_group);
-        tuning.maxGroupsAllowedDown.ifPresent(builder::max_number_of_groups_allowed_to_be_down);
+        builder.max_number_of_groups_allowed_to_be_down(tuning.maxGroupsAllowedDown().orElse(-1));
 
         resourceLimits.getConfig(builder);
     }
@@ -114,9 +115,11 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
         ClusterControllerTuningBuilder(ModelElement tuning,
                                        Optional<Double> minNodeRatioPerGroup,
                                        Optional<Integer> bucketSplittingMinimumBits,
-                                       int numberOfLeafGroups) {
+                                       int numberOfLeafGroups,
+                                       ModelElement cluster) {
             this.minSplitBits = bucketSplittingMinimumBits;
             this.minNodeRatioPerGroup = minNodeRatioPerGroup;
+            CoveragePolicy coveragePolicy = coveragePolicy(cluster);
             if (tuning == null) {
                 this.initProgressTime = Optional.empty();
                 this.transitionTime = Optional.empty();
@@ -124,7 +127,8 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
                 this.stableStateTimePeriod = Optional.empty();
                 this.minDistributorUpRatio = Optional.empty();
                 this.minStorageUpRatio = Optional.empty();
-                this.maxGroupsAllowedDown = Optional.empty();
+                this.maxGroupsAllowedDown = coveragePolicy.policy().equals(CoveragePolicy.Policy.GROUP)
+                        ? Optional.empty() : Optional.of(0);
             }
             else {
                 this.initProgressTime = Optional.ofNullable(tuning.childAsDuration("init-progress-time"));
@@ -133,23 +137,33 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
                 this.stableStateTimePeriod = Optional.ofNullable(tuning.childAsDuration("stable-state-period"));
                 this.minDistributorUpRatio = Optional.ofNullable(tuning.childAsDouble("min-distributor-up-ratio"));
                 this.minStorageUpRatio = Optional.ofNullable(tuning.childAsDouble("min-storage-up-ratio"));
-                this.maxGroupsAllowedDown = maxGroupsAllowedDown(tuning, numberOfLeafGroups);
+                this.maxGroupsAllowedDown = maxGroupsAllowedDown(tuning, numberOfLeafGroups, coveragePolicy);
             }
         }
 
 
-        private static Optional<Integer> maxGroupsAllowedDown(ModelElement tuning, int numberOfLeafGroups) {
+        private static Optional<Integer> maxGroupsAllowedDown(ModelElement tuning, int numberOfLeafGroups, CoveragePolicy coveragePolicy) {
             var groupsAllowedDownRatio = tuning.childAsDouble("groups-allowed-down-ratio");
 
             if (groupsAllowedDownRatio != null) {
                 if (groupsAllowedDownRatio < 0 || groupsAllowedDownRatio > 1)
                     throw new IllegalArgumentException("groups-allowed-down-ratio must be between 0 and 1, got " + groupsAllowedDownRatio);
 
+                if (coveragePolicy.policy() == CoveragePolicy.Policy.NODE)
+                    throw new IllegalArgumentException("Cannot set groups-allowed-down-ratio when coverage-policy is 'node'");
+
                 var maxGroupsAllowedDown = Math.max(1, (int) Math.floor(groupsAllowedDownRatio * numberOfLeafGroups));
                 return Optional.of(maxGroupsAllowedDown);
             }
 
-            return Optional.empty();
+            return (coveragePolicy.policy().equals(CoveragePolicy.Policy.GROUP))
+                    ? Optional.empty() : Optional.of(0);
+        }
+
+        private static CoveragePolicy coveragePolicy(ModelElement content) {
+            var policy = Optional.ofNullable(content.childAsString("coverage-policy"));
+            return policy.map(s -> new CoveragePolicy(CoveragePolicy.Policy.valueOf(s.toUpperCase())))
+                         .orElseGet(CoveragePolicy::group);
         }
 
         private ClusterControllerTuning build() {

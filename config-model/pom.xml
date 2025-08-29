@@ -406,57 +406,11 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy-stuff</id>
-            <!-- append to the generate-sources phase, since it needs to be done before src/main/Makefile is run. -->
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>copy</goal>
-            </goals>
-            <configuration>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>com.thaiopensource</groupId>
-                  <artifactId>jing</artifactId>
-                  <version>20091111</version>
-                  <type>jar</type>
-                  <overWrite>true</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                  <destFileName>jing.jar</destFileName>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>com.thaiopensource</groupId>
-                  <artifactId>trang</artifactId>
-                  <version>20091111</version>
-                  <type>jar</type>
-                  <overWrite>true</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                  <destFileName>trang.jar</destFileName>
-                </artifactItem>
-              </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <!--  process schema files -->
+
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <executions>
-          <execution>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <phase>generate-sources</phase>
-            <configuration>
-              <executable>./make-xsd-files.sh</executable>
-              <workingDirectory>src/main/</workingDirectory>
-            </configuration>
-          </execution>
           <execution>
             <id>generate-vtag</id>
             <phase>generate-sources</phase>
@@ -472,16 +426,6 @@
               </arguments>
               <sourceRoot>${project.build.directory}/generated-sources/vtag</sourceRoot>
               <classpathScope>compile</classpathScope>
-            </configuration>
-          </execution>
-          <execution>
-            <id>test-schema-files</id>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <phase>test</phase>
-            <configuration>
-              <executable>src/test/sh/test-schema.sh</executable>
             </configuration>
           </execution>
         </executions>
