@@ -204,9 +204,11 @@ public class GroupingSerializationTest {
                     .setExpression(new ConstantNode(new IntegerResultNode(67))));
             t.assertMatch(new StandardDeviationAggregationResult(1, 67, 67 * 67)
                     .setExpression(new ConstantNode(new IntegerResultNode(67))));
-            t.assertMatch(new QuantileAggregationResult(0.9)
+            t.assertMatch(new QuantileAggregationResult(0.5)
+                    .updateSketch(6)
                     .updateSketch(7)
-                    .setExpression(new AttributeNode("attributeA")));
+                    .updateSketch(8)
+                    .setExpression(new ConstantNode(new IntegerResultNode(8))));
         }
     }
 
