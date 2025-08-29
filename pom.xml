@@ -100,7 +100,6 @@
         <module>metrics-proxy</module>
         <module>model-evaluation</module>
         <module>model-integration</module>
-        <module>node-repository</module>
         <module>opennlp-linguistics</module>
         <module>orchestrator-restapi</module>
         <module>orchestrator</module>

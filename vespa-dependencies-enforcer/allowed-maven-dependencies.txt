@@ -270,7 +270,6 @@ org.ow2.asm:asm-commons:${asm.vespa.version}
 org.ow2.asm:asm-tree:${asm.vespa.version}
 org.ow2.asm:asm-util:${asm.vespa.version}
 org.ow2.asm:asm:${asm.vespa.version}
-org.questdb:questdb:${questdb.vespa.version}
 org.reactivestreams:reactive-streams:1.0.4
 org.relaxng:jing:20220510
 org.rnorth.duct-tape:duct-tape:1.0.8

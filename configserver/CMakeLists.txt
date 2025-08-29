@@ -20,7 +20,6 @@ install_symlink(lib/jars/http-client-jar-with-dependencies.jar conf/configserver
 install_symlink(lib/jars/orchestrator-jar-with-dependencies.jar conf/configserver-app/components/orchestrator.jar)
 install_symlink(lib/jars/service-monitor-jar-with-dependencies.jar conf/configserver-app/components/service-monitor.jar)
 install_symlink(lib/jars/application-model-jar-with-dependencies.jar conf/configserver-app/components/application-model.jar)
-install_symlink(lib/jars/node-repository-jar-with-dependencies.jar conf/configserver-app/components/node-repository.jar)
 install_symlink(lib/jars/zookeeper-server-jar-with-dependencies.jar conf/configserver-app/components/zookeeper-server.jar)
 install_symlink(conf/configserver-app/components lib/jars/config-models)
 install(DIRECTORY DESTINATION var/zookeeper)

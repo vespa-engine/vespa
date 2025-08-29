@@ -503,7 +503,6 @@ fi
 %{_prefix}/lib/jars/http-client-jar-with-dependencies.jar
 %{_prefix}/lib/jars/logserver-jar-with-dependencies.jar
 %{_prefix}/lib/jars/metrics-proxy-jar-with-dependencies.jar
-%{_prefix}/lib/jars/node-repository-jar-with-dependencies.jar
 %{_prefix}/lib/jars/orchestrator-jar-with-dependencies.jar
 %{_prefix}/lib/jars/predicate-search-jar-with-dependencies.jar
 %{_prefix}/lib/jars/searchlib.jar
