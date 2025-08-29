@@ -121,7 +121,8 @@ ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool s
         return std::make_unique<EmptySearch>();
     }
     if (_searchCacheLookup) {
-        return BitVectorIterator::create(_searchCacheLookup->bitVector.get(), _searchCacheLookup->docIdLimit, *matchData, strict);
+        return BitVectorIterator::create(_searchCacheLookup->bitVector.get(), _searchCacheLookup->docIdLimit,
+                                         *matchData, this, strict, false, false);
     }
     if (_merger.hasArray()) {
         if (_merger.emptyArray()) {
@@ -139,7 +140,8 @@ ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool s
             }
         }
     } else if (_merger.hasBitVector()) {
-        return BitVectorIterator::create(_merger.getBitVector(), _merger.getDocIdLimit(), *matchData, strict);
+        return BitVectorIterator::create(_merger.getBitVector(), _merger.getDocIdLimit(), *matchData, this,
+                                         strict, false, false);
     }
     if (_params.useBitVector()) {
         if (!strict) {
