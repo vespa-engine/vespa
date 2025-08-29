@@ -94,7 +94,6 @@ public:
         using ByPriCmp = OrderCmp<compareByPriority>;
         using ByBucketCmp = OrderCmp<compareByBucket>;
 
-        // using BySeqSet = std::set<uint64_t>;
         using ByPriSet = std::set<const MapEntry *, ByPriCmp>;
         using ByBucketSet = std::set<const MapEntry *, ByBucketCmp>;
 
@@ -123,17 +122,15 @@ public:
             _main_map.erase(iter);
         }
 
-        template<typename M, typename I> struct ordered_iterator {
+        template<typename I> struct ordered_iterator {
             using difference_type = std::ptrdiff_t;
-            using value_type = MessageEntry;
+            using value_type = const MessageEntry;
             using pointer = value_type *;
             using reference = value_type&;
             using iterator_category = std::input_iterator_tag;
 
-            M &_map;
-            I _place;
-            auto& operator* () { return (*_place)->second; };
-            auto* operator-> () { return &((*_place)->second); };
+            reference operator* () { return deref()->second; };
+            pointer operator-> () { return &deref()->second; };
             void operator++() { ++_place; }
             bool operator==(const ordered_iterator& other) {
                 return _place == other._place;
@@ -141,27 +138,31 @@ public:
             bool operator!=(const ordered_iterator& other) {
                 return _place != other._place;
             }
-            ordered_iterator(M &m, I p) : _map(m), _place(p) {}
+            ordered_iterator(const EntryMap &m, I p) : _map(m), _place(p) {}
             ordered_iterator(const ordered_iterator&) = default;
             void operator= (const ordered_iterator& other) {
                 assert(&_map == &other._map);
                 _place = other._place;
             }
+            const MapEntry* deref() const { return *_place; }
+        private:
+            const EntryMap &_map;
+            I _place;
         };
         struct PriorityIdx {
-            using iterator = ordered_iterator<const EntryMap, ByPriSet::const_iterator>;
+            using iterator = ordered_iterator<ByPriSet::const_iterator>;
             PriorityQueue& _q;
             iterator begin() const { return iterator(_q._main_map, _q._sequence_ids_by_priority.begin()); }
             iterator end() const { return iterator(_q._main_map, _q._sequence_ids_by_priority.end()); }
             iterator erase(iterator it) {
-                const MapEntry *me = *it._place;
+                const MapEntry *me = it.deref();
                 ++it;
                 _q.remove(me->first);
                 return it;
             }
         };
         struct BucketIdx {
-            using iterator = ordered_iterator<const EntryMap, ByBucketSet::const_iterator>;
+            using iterator = ordered_iterator<ByBucketSet::const_iterator>;
             PriorityQueue& _q;
             iterator begin() const { return iterator(_q._main_map, _q._sequence_ids_by_bucket.begin()); }
             iterator end() const { return iterator(_q._main_map, _q._sequence_ids_by_bucket.end()); }
@@ -180,15 +181,15 @@ public:
                                       iterator(_q._main_map, inner_range.second));
             }
             void erase(iterator from, iterator to) {
-                for (auto it = from._place; it != to._place; ) {
-                    const MapEntry *me = *it;
+                for (auto it = from; it != to; ) {
+                    const MapEntry *me = it.deref();
                     uint64_t seq_id = me->first;
                     ++it;
                     _q.remove(seq_id);
                 }
             }
             iterator erase(iterator it) {
-                const MapEntry *me = *it._place;
+                const MapEntry *me = it.deref();
                 uint64_t seq_id = me->first;
                 ++it;
                 _q.remove(seq_id);
