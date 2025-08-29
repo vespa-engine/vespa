@@ -91,8 +91,8 @@ public:
         using ByPriCmp = OrderCmp<compareByPriority>;
         using ByBucketCmp = OrderCmp<compareByBucket>;
 
-        using ByPriSet = std::set<EntryPtr , ByPriCmp>;
-        using ByBucketSet = std::set<EntryPtr , ByBucketCmp>;
+        using ByPriSet = std::set<EntryPtr, ByPriCmp>;
+        using ByBucketSet = std::set<EntryPtr, ByBucketCmp>;
 
         uint64_t _next_sequence_id = 1;
         EntryMap _main_map;
@@ -148,9 +148,9 @@ public:
             iterator begin() const { return _q._sequence_ids_by_priority.begin(); }
             iterator end() const { return _q._sequence_ids_by_priority.end(); }
             iterator erase(iterator it) {
-                EntryPtr me = it.deref();
+                EntryPtr p = it.deref();
                 ++it;
-                _q.remove(me->first);
+                _q.remove(p->first);
                 return it;
             }
         };
@@ -160,18 +160,14 @@ public:
             iterator begin() const { return _q._sequence_ids_by_bucket.begin(); }
             iterator end() const { return _q._sequence_ids_by_bucket.end(); }
             iterator erase(iterator it) {
-                EntryPtr me = it.deref();
-                uint64_t seq_id = me->first;
+                EntryPtr p = it.deref();
                 ++it;
-                _q.remove(seq_id);
+                _q.remove(p->first);
                 return it;
             }
-            void erase(iterator from, iterator to) {
-                for (auto it = from; it != to; ) {
-                    EntryPtr me = it.deref();
-                    uint64_t seq_id = me->first;
-                    ++it;
-                    _q.remove(seq_id);
+            void erase(iterator it, iterator to) {
+                while (it != to) {
+                    it = erase(it);
                 }
             }
             struct BucketCompare {
