@@ -93,7 +93,7 @@ VisitorManager::onClose()
 {
     {
         std::lock_guard sync(_visitorLock);
-        for (auto& enqueued : _visitorQueue) {
+        for (const auto& enqueued : _visitorQueue) {
             auto reply = std::make_shared<api::CreateVisitorReply>(*enqueued._command);
             reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node."));
             sendUp(reply);
