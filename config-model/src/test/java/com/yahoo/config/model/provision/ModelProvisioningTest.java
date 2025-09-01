@@ -39,6 +39,7 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.test.VespaModelTester;
+import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
@@ -2508,6 +2509,38 @@ public class ModelProvisioningTest {
                                                      """),
                                true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties())));
         }
+    }
+
+    @Test
+    public void test2GroupsDefaultCoveragePolicy() {
+        String servicesXml =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                        "<services>" +
+                        "  <container version='1.0' id='qrs'>" +
+                        "     <nodes count='1'/>" +
+                        "  </container>" +
+                        "  <content version='1.0' id='content'>" +
+                        "     <coverage-policy>group</coverage-policy>" +
+                        "     <redundancy>1</redundancy>" +
+                        "     <documents>" +
+                        "       <document type='type1' mode='index'/>" +
+                        "     </documents>" +
+                        "    <nodes count='2' groups='2'/>" +
+                        "  </content>" +
+                        "</services>";
+
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(6);
+        DeployLoggerStub logger = new DeployLoggerStub();
+        tester.createModel(servicesXml, true, deployStateWithClusterEndpoints("qrs")
+                .properties(new TestProperties())
+                .deployLogger(logger));
+
+        assertEquals("Coverage policy is 'group', but with 2 groups in the cluster all load" +
+                             " will be placed on 1 group when the other group" +
+                             " is allowed to be down when doing maintenance or upgrades." +
+                             " This might lead to overload. See https://docs.vespa.ai/en/reference/services-content.html#coverage-policy.",
+                     logger.entries.get(0).message);
     }
 
     @Test
