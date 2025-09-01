@@ -127,7 +127,7 @@
 ./searchlib/src/vespa/searchlib/query/tree/* @havardpe
 ./searchlib/src/vespa/searchlib/queryeval/* @havardpe
 ./searchlib/src/vespa/searchlib/test/* @toregge
-./searchlib/src/vespa/searchlib/transactionlog/* @tegge
+./searchlib/src/vespa/searchlib/transactionlog/* @toregge
 ./searchsummary/* @toregge
 ./security-utils/* @bjorncs
 ./service-monitor/* @hakonhall
