@@ -109,15 +109,8 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             // Attempt to perform the autoscaling immediately, and log it regardless
             if (autoscaling != null && autoscaling.resources().isPresent() && !current.equals(autoscaling.resources().get())) {
                 redeploy = true;
-                logAutoscaling(current, autoscaling.resources().get(), applicationId, clusterNodes.not().retired());
-                if (logDetails) {
-                    log.info("Autoscaling data for " + applicationId.toFullString() + ", clusterId " + clusterId.value() + ":"
-                            + "\n\tmetrics().cpuCostPerQuery(): " + autoscaling.metrics().cpuCostPerQuery()
-                            + "\n\tmetrics().queryRate(): " + autoscaling.metrics().queryRate()
-                            + "\n\tmetrics().growthRateHeadroom(): " + autoscaling.metrics().growthRateHeadroom()
-                            + "\n\tpeak(): " + autoscaling.peak().toString()
-                            + "\n\tideal(): " + autoscaling.ideal().toString());
-                }
+                updateAutoscalingMetrics(applicationId, clusterNodes, cluster);
+                logAutoscaling(current, autoscaling.resources().get(), applicationId, clusterNodes.not().retired(), clusterId, autoscaling, cluster, logDetails);
             }
         }
         catch (ApplicationLockException e) {
@@ -164,11 +157,32 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         return cluster.with(event.withCompletion(completionTime));
     }
 
-    private void logAutoscaling(ClusterResources from, ClusterResources to, ApplicationId application, NodeList clusterNodes) {
+    private void logAutoscaling(ClusterResources from, ClusterResources to, ApplicationId application, NodeList clusterNodes, ClusterSpec.Id clusterId, Autoscaling autoscaling, Cluster cluster, boolean logDetails) {
         log.info("Autoscaling " + application + " " + clusterNodes.clusterSpec() + ":" +
                  "\nfrom " + toString(from) + "\nto   " + toString(to));
-        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALED.baseName(), 1,
-                   metric.createContext(dimensions(application, clusterNodes.clusterSpec())));
+        logAutoscalingDetails(application, clusterId, logDetails, autoscaling, cluster);
+    }
+
+    private void logAutoscalingDetails(ApplicationId application, ClusterSpec.Id clusterId, boolean logDetails, Autoscaling autoscaling, Cluster cluster) {
+        if (logDetails) {
+            log.info("Autoscaling data for " + application.toFullString() + ", clusterId " + clusterId.value() + ":"
+                    + "\n\tmetrics().cpuCostPerQuery(): " + autoscaling.metrics().cpuCostPerQuery()
+                    + "\n\tmetrics().queryRate(): " + autoscaling.metrics().queryRate()
+                    + "\n\tmetrics().growthRateHeadroom(): " + autoscaling.metrics().growthRateHeadroom()
+                    + "\n\tpeak(): " + autoscaling.peak().toString()
+                    + "\n\tideal(): " + autoscaling.ideal().toString()
+                    + "\n\tcluster.scalingDuration().toSeconds(): " + cluster.scalingDuration().toSeconds());
+        }
+    }
+
+    private void updateAutoscalingMetrics(ApplicationId applicationId, NodeList clusterNodes, Cluster cluster) {
+        Metric.Context context = context(applicationId, clusterNodes);
+        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALED.baseName(), 1, context);
+        metric.add(ConfigServerMetrics.AUTOSCALE_SCALING_DURATION.baseName(), cluster.scalingDuration().toSeconds(), context);
+    }
+
+    private Metric.Context context(ApplicationId applicationId, NodeList clusterNodes) {
+        return metric.createContext(dimensions(applicationId, clusterNodes.clusterSpec()));
     }
 
     private static Map<String, String> dimensions(ApplicationId application, ClusterSpec clusterSpec) {
