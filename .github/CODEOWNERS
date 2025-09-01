@@ -96,7 +96,7 @@
 ./searchcore/src/vespa/searchcore/proton/docsummary/* @toregge
 ./searchcore/src/vespa/searchcore/proton/documentmetastore/* @toregge
 ./searchcore/src/vespa/searchcore/proton/feedoperation/* @vekterli
-./searchcore/src/vespa/searchcore/proton/flushengine/* @tegge
+./searchcore/src/vespa/searchcore/proton/flushengine/* @toregge
 ./searchcore/src/vespa/searchcore/proton/index/* @toregge
 ./searchcore/src/vespa/searchcore/proton/matchengine/* @havardpe
 ./searchcore/src/vespa/searchcore/proton/matching/* @havardpe
@@ -127,7 +127,7 @@
 ./searchlib/src/vespa/searchlib/query/tree/* @havardpe
 ./searchlib/src/vespa/searchlib/queryeval/* @havardpe
 ./searchlib/src/vespa/searchlib/test/* @toregge
-./searchlib/src/vespa/searchlib/transactionlog/* @tegge
+./searchlib/src/vespa/searchlib/transactionlog/* @toregge
 ./searchsummary/* @toregge
 ./security-utils/* @bjorncs
 ./service-monitor/* @hakonhall
