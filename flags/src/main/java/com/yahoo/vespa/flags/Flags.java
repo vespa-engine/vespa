@@ -50,7 +50,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
-            List.of("hakonhall"), "2025-03-19", "2025-09-01",
+            List.of("hakonhall"), "2025-03-19", "2025-10-01",
             "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
@@ -165,13 +165,13 @@ public class Flags {
 
     public static final UnboundListFlag<String> ZONAL_WEIGHTED_ENDPOINT_RECORDS = defineListFlag(
             "zonal-weighted-endpoint-records", List.of(), String.class,
-            List.of("hmusum"), "2023-12-15", "2025-09-01",
+            List.of("hmusum"), "2023-12-15", "2025-10-01",
             "A list of weighted (application) endpoint fqdns for which we should use zonal endpoints as targets, not LBs.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
             "weighted-endpoint-record-ttl", List.of(), String.class,
-            List.of("hmusum"), "2023-05-16", "2025-09-01",
+            List.of("hmusum"), "2023-05-16", "2025-10-01",
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
@@ -190,21 +190,21 @@ public class Flags {
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2025-09-01",
+            List.of("andreer"), "2023-08-21", "2025-10-01",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
             "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2025-09-01",
+            List.of("andreer"), "2023-08-28", "2025-10-01",
             "Always use IPv6 target groups for load balancers in aws",
             "Takes effect on next load-balancer provisioning",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
             "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2025-09-01",
+            List.of("andreer"), "2023-08-28", "2025-10-01",
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
@@ -226,7 +226,7 @@ public class Flags {
 
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
-            List.of("andreer", "olaa"), "2023-10-06", "2025-09-01",
+            List.of("andreer", "olaa"), "2023-10-06", "2025-10-01",
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
             TENANT_ID, APPLICATION, INSTANCE_ID);
@@ -288,7 +288,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY = defineIntFlag(
             "max-content-node-maintenance-op-concurrency", -1,
-            List.of("vekterli"), "2025-03-07", "2025-09-01",
+            List.of("vekterli"), "2025-03-07", "2025-10-01",
             "Sets the maximum concurrency for maintenance-related operations on content nodes. " +
             "Only intended as a manual emergency brake feature if a system is suddenly incapable of handling " +
             "regular maintenance pressure.",
@@ -322,7 +322,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag CREATE_TENANT_ROLES = defineFeatureFlag(
             "create-tenant-roles", true,
-            List.of("andreer"), "2025-04-28", "2025-09-01",
+            List.of("andreer"), "2025-04-28", "2025-10-01",
             "Whether to create tenant specific roles",
             "Takes effect immediately",
             TENANT_ID
@@ -345,7 +345,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
             "delete-tenant-roles", false,
-            List.of("andreer"), "2025-05-05", "2025-09-01",
+            List.of("andreer"), "2025-05-05", "2025-10-01",
             "Whether to delete tenant specific roles",
             "Role deletion happens when tenant is next processed by TenantRoleMaintainer",
             TENANT_ID
@@ -367,7 +367,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NEW_PREPARE_FOR_RESTART_METHOD = defineFeatureFlag(
             "use-new-prepare-for-restart-method", false,
-            List.of("hmusum"), "2025-06-17", "2025-09-01",
+            List.of("hmusum"), "2025-06-17", "2025-10-01",
             "Whether to use new logic and new RPC method to do prepareForRestart for content nodes",
             "Takes effect at next tick",
             HOSTNAME
