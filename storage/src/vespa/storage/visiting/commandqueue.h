@@ -40,10 +40,10 @@ public:
                      vespalib::steady_time deadline,
                      uint64_t sequenceId,
                      PriorityType priority)
-            : _command(cmd),
-              _deadline(deadline),
-              _sequenceId(sequenceId),
-              _priority(priority)
+          : _command(cmd),
+            _deadline(deadline),
+            _sequenceId(sequenceId),
+            _priority(priority)
         {}
 
         // Sort on both priority and sequence ID
@@ -70,16 +70,16 @@ private:
     using timelist = typename boost::multi_index::nth_index<CommandList, 1>::type;
 
     const framework::Clock& _clock;
-    mutable CommandList     _commands;
+    CommandList             _commands;
     uint64_t                _sequenceId;
     std::atomic<size_t>     _cached_size;
 
 public:
-    using iterator = typename CommandList::iterator;
-    using reverse_iterator = typename CommandList::reverse_iterator;
-    using const_iterator = typename CommandList::const_iterator;
+    using iterator               = typename CommandList::iterator;
+    using reverse_iterator       = typename CommandList::reverse_iterator;
+    using const_iterator         = typename CommandList::const_iterator;
     using const_reverse_iterator = typename CommandList::const_reverse_iterator;
-    using const_titerator = typename timelist::const_iterator;
+    using const_titerator        = typename timelist::const_iterator;
 
     explicit CommandQueue(const framework::Clock& clock)
         : _clock(clock),
@@ -121,7 +121,7 @@ public:
 
 private:
     void update_cached_size() noexcept {
-        _cached_size.store(_commands.size(), std::memory_order_relaxed);
+        _cached_size.store(size(), std::memory_order_relaxed);
     }
 };
 
@@ -131,7 +131,7 @@ std::pair<std::shared_ptr<Command>, vespalib::steady_time>
 CommandQueue<Command>::releaseNextCommand()
 {
     std::pair<std::shared_ptr<Command>, vespalib::steady_time> retVal;
-    if (!_commands.empty()) {
+    if (!empty()) {
         iterator first = _commands.begin();
         retVal.first = first->_command;
         retVal.second = first->_deadline;
@@ -145,7 +145,7 @@ template<class Command>
 std::shared_ptr<Command>
 CommandQueue<Command>::peekNextCommand() const
 {
-    if (!_commands.empty()) {
+    if (!empty()) {
         const_iterator first = _commands.begin();
         return first->_command;
     } else {
@@ -168,10 +168,13 @@ CommandQueue<Command>::releaseTimedOut()
 {
     std::vector<CommandEntry> timed_out;
     auto now = _clock.getMonotonicTime();
-    while (!empty() && (tbegin()->_deadline <= now)) {
-        timed_out.emplace_back(*tbegin());
+    while (!empty()) {
+        auto iter = tbegin();
+        if (iter->_deadline > now)
+            break;
+        timed_out.emplace_back(*iter);
         timelist& tl = boost::multi_index::get<1>(_commands);
-        tl.erase(tbegin());
+        tl.erase(iter);
     }
     update_cached_size();
     return timed_out;
@@ -181,7 +184,8 @@ template <class Command>
 std::pair<std::shared_ptr<Command>, vespalib::steady_time>
 CommandQueue<Command>::releaseLowestPriorityCommand()
 {
-    if (!_commands.empty()) {
+    if (!empty()) {
+        // NOTE: works only for this special case:
         iterator last = (++_commands.rbegin()).base();
         auto deadline = last->_deadline;
         std::shared_ptr<Command> cmd(last->_command);
@@ -197,7 +201,7 @@ template <class Command>
 std::shared_ptr<Command>
 CommandQueue<Command>::peekLowestPriorityCommand() const
 {
-    if (!_commands.empty()) {
+    if (!empty()) {
         const_reverse_iterator last = _commands.rbegin();
         return last->_command;
     } else {
