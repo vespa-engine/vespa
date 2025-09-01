@@ -96,7 +96,7 @@
 ./searchcore/src/vespa/searchcore/proton/docsummary/* @toregge
 ./searchcore/src/vespa/searchcore/proton/documentmetastore/* @toregge
 ./searchcore/src/vespa/searchcore/proton/feedoperation/* @vekterli
-./searchcore/src/vespa/searchcore/proton/flushengine/* @tegge
+./searchcore/src/vespa/searchcore/proton/flushengine/* @toregge
 ./searchcore/src/vespa/searchcore/proton/index/* @toregge
 ./searchcore/src/vespa/searchcore/proton/matchengine/* @havardpe
 ./searchcore/src/vespa/searchcore/proton/matching/* @havardpe
