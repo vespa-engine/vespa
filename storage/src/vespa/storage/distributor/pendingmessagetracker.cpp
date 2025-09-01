@@ -11,6 +11,8 @@ LOG_SETUP(".pendingmessages");
 
 namespace storage::distributor {
 
+PendingMessageTracker::Messages::~Messages() = default;
+
 PendingMessageTracker::PendingMessageTracker(framework::ComponentRegister& cr, uint32_t stripe_index)
     : framework::HtmlStatusReporter(vespalib::make_string("pendingmessages%u", stripe_index),
                                     vespalib::make_string("Pending messages to storage nodes (stripe %u)", stripe_index)),
@@ -87,8 +89,8 @@ PendingMessageTracker::clearMessagesForNode(uint16_t node)
 {
     std::vector<std::unique_ptr<DeferredTask>> tasks_to_abort;
     std::unique_lock guard(_lock);
-    auto& idx = boost::multi_index::get<IndexByNodeAndBucket>(_messages);
-    auto range = pairAsRange(idx.equal_range(boost::make_tuple(node)));
+    auto& idx = _messages.byNodeAndBucketIdx;
+    auto range = pairAsRange(idx.equal_range(NodeKey(node)));
 
     std::vector<uint64_t> erased_ids;
     for (auto& entry : range) {
@@ -115,7 +117,7 @@ PendingMessageTracker::enumerate_matching_pending_bucket_ops(
         const std::function<void(uint64_t)>& msg_id_callback) const
 {
     std::lock_guard guard(_lock);
-    const auto& idx = boost::multi_index::get<IndexByBucketAndType>(_messages);
+    const auto& idx = _messages.byBucketAndTypeIdx;
     auto iter = idx.begin();
     const auto last = idx.end();
     while (iter != last) {
@@ -161,7 +163,7 @@ PendingMessageTracker::reply(const api::StorageReply& r)
     uint64_t msgId = r.getMsgId();
 
     std::unique_lock guard(_lock);
-    auto& msgs = boost::multi_index::get<IndexByMessageId>(_messages);
+    auto& msgs = _messages.byMessageIdSet;
     auto iter = msgs.find(msgId);
     if (iter != msgs.end()) {
         bucket = iter->bucket;
@@ -172,7 +174,7 @@ PendingMessageTracker::reply(const api::StorageReply& r)
         if (code == api::ReturnCode::BUSY || code == api::ReturnCode::TIMEOUT) {
             _nodeInfo.setBusy(node_index, _nodeBusyDuration);
         }
-        msgs.erase(msgId);
+        _messages.remove(*iter);
         auto deferred_tasks = get_deferred_ops_if_bucket_writes_drained(bucket);
         // Deferred tasks may try to send messages, which in turn will invoke the PendingMessageTracker.
         // To avoid deadlocking, we run the tasks outside the lock.
@@ -226,8 +228,8 @@ bool range_is_empty_or_only_has_read_ops(const Range& range) noexcept {
 bool
 PendingMessageTracker::bucket_has_no_pending_write_ops(const document::Bucket& bucket) const noexcept
 {
-    auto& bucket_idx = boost::multi_index::get<IndexByBucketAndType>(_messages);
-    auto pending_tasks_for_bucket = bucket_idx.equal_range(bucket);
+    auto& bucket_idx = _messages.byBucketAndTypeIdx;
+    auto pending_tasks_for_bucket = bucket_idx.equal_range(BucketKey(bucket));
     return range_is_empty_or_only_has_read_ops(pending_tasks_for_bucket);
 }
 
@@ -294,9 +296,8 @@ void
 PendingMessageTracker::checkPendingMessages(uint16_t node, const document::Bucket& bucket, Checker& checker) const
 {
     std::lock_guard guard(_lock);
-    const auto& msgs = boost::multi_index::get<IndexByNodeAndBucket>(_messages);
-
-    auto range = pairAsRange(msgs.equal_range(boost::make_tuple(node, bucket)));
+    const auto& msgs = _messages.byNodeAndBucketIdx;
+    auto range = pairAsRange(msgs.equal_range(NodeBucketKey(node, bucket)));
     runCheckerOnRange(checker, range);
 }
 
@@ -304,9 +305,9 @@ void
 PendingMessageTracker::checkPendingMessages(const document::Bucket& bucket, Checker& checker) const
 {
     std::lock_guard guard(_lock);
-    const auto& msgs = boost::multi_index::get<IndexByBucketAndType>(_messages);
+    const auto& msgs = _messages.byBucketAndTypeIdx;
 
-    auto range = pairAsRange(msgs.equal_range(boost::make_tuple(bucket)));
+    auto range = pairAsRange(msgs.equal_range(BucketKey(bucket)));
     runCheckerOnRange(checker, range);
 }
 
@@ -314,9 +315,8 @@ bool
 PendingMessageTracker::hasPendingMessage(uint16_t node, const document::Bucket& bucket, uint32_t messageType) const
 {
     std::lock_guard guard(_lock);
-    const auto& msgs = boost::multi_index::get<IndexByNodeAndBucket>(_messages);
-
-    auto range = msgs.equal_range(boost::make_tuple(node, bucket, messageType));
+    const auto& msgs = _messages.byNodeAndBucketIdx;
+    auto range = msgs.equal_range(NodeBucketTypeKey(node, bucket, messageType));
     return (range.first != range.second);
 }
 
@@ -331,7 +331,7 @@ void
 PendingMessageTracker::getStatusPerBucket(std::ostream& out) const
 {
     std::lock_guard guard(_lock);
-    const auto& msgs = boost::multi_index::get<IndexByNodeAndBucket>(_messages);
+    const auto& msgs = _messages.byNodeAndBucketIdx;
     using BucketMap = std::map<document::Bucket, std::vector<std::string>>;
     BucketMap perBucketMsgs;
     for (const auto& msg : msgs) {
@@ -360,7 +360,7 @@ void
 PendingMessageTracker::getStatusPerNode(std::ostream& out) const
 {
     std::lock_guard guard(_lock);
-    const auto& msgs = boost::multi_index::get<IndexByNodeAndBucket>(_messages);
+    const auto& msgs = _messages.byNodeAndBucketIdx;
     int lastNode = -1;
     for (const auto& node : msgs) {
         if (node.nodeIdx != lastNode) {
