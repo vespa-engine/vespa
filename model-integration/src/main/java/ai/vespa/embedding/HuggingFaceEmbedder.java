@@ -29,25 +29,84 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     private static final Logger log = Logger.getLogger(HuggingFaceEmbedder.class.getName());
 
     private final Embedder.Runtime runtime;
-    private final String inputIdsName;
-    private final String attentionMaskName;
-    private final String tokenTypeIdsName;
-    private final String outputName;
+    private final ModelAnalysis analysis;
     private final boolean normalize;
     private final HuggingFaceTokenizer tokenizer;
     private final OnnxEvaluator evaluator;
-    private final PoolingStrategy poolingStrategy;
-
     private final String prependQuery;
-
     private final String prependDocument;
+
+    record ModelAnalysis(int numInputs,
+                         String inputIdsName,
+                         String attentionMaskName,
+                         String tokenTypeIdsName,
+                         String outputName,
+                         int outputDimensions,
+                         PoolingStrategy poolingStrategy)
+    {
+        boolean useAttentionMask() { return ! attentionMaskName.isEmpty(); }
+        boolean useTokenTypeIds() { return ! tokenTypeIdsName.isEmpty(); }
+    }
+
+    static ModelAnalysis analyze(OnnxEvaluator evaluator, HuggingFaceEmbedderConfig config) {
+        Map<String, TensorType> inputs = evaluator.getInputInfo();
+        int numInputs = inputs.size();
+        String inputIdsName = config.transformerInputIds();
+        String attentionMaskName = "";
+        String tokenTypeIdsName = "";
+        validateName(inputs, inputIdsName, "input");
+        // some new models have only 1 input
+        if (numInputs > 1) {
+            attentionMaskName = config.transformerAttentionMask();
+            validateName(inputs, attentionMaskName, "input");
+            // newer models have only 2 inputs (they do not use token type IDs)
+            if (numInputs > 2) {
+                tokenTypeIdsName = config.transformerTokenTypeIds();
+                validateName(inputs, tokenTypeIdsName, "input");
+                if (numInputs > 3) {
+                    throw new IllegalArgumentException("Model needs more than 3 inputs: " + inputs.keySet());
+                }
+            }
+        }
+        Map<String, TensorType> outputs = evaluator.getOutputInfo();
+        String outputName = config.transformerOutput();
+        validateName(outputs, outputName, "output");
+        int outputDimensions = outputs.get(outputName).dimensions().size();
+        var poolingStrategy = PoolingStrategy.fromString(config.poolingStrategy().toString());
+        if (outputDimensions == 2) {
+            if (poolingStrategy != PoolingStrategy.NONE) {
+                throw new IllegalArgumentException("Expected pooling-strategy 'none' with 2 output dimensions");
+            }
+        } else if (outputDimensions == 3) {
+            if (poolingStrategy == PoolingStrategy.NONE) {
+                throw new IllegalArgumentException("Unexpected pooling-strategy 'none' with 3 output dimensions");
+            }
+        } else {
+            throw new IllegalArgumentException("Expected 2 or 3 output dimensions for '" + outputName + "', but got type: " + outputs.get(outputName));
+        }
+        return new ModelAnalysis(numInputs,
+                                 inputIdsName,
+                                 attentionMaskName,
+                                 tokenTypeIdsName,
+                                 outputName,
+                                 outputDimensions,
+                                 poolingStrategy);
+    }
 
     @Inject
     public HuggingFaceEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, HuggingFaceEmbedderConfig config, ModelPathHelper modelHelper) {
         this.runtime = runtime;
-        inputIdsName = config.transformerInputIds();
-        attentionMaskName = config.transformerAttentionMask();
-        outputName = config.transformerOutput();
+        var optionsBuilder = new OnnxEvaluatorOptions.Builder()
+                .setExecutionMode(config.transformerExecutionMode().toString())
+                .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads());
+        if (config.transformerGpuDevice() >= 0)
+            optionsBuilder.setGpuDevice(config.transformerGpuDevice());
+
+        var onnxOpts = optionsBuilder.build();
+        var resolver = new OnnxExternalDataResolver(modelHelper);
+        evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxOpts);
+
+        this.analysis = analyze(evaluator, config);
         normalize = config.normalize();
         prependQuery = config.prependQuery();
         prependDocument = config.prependDocument();
@@ -66,41 +125,6 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
             builder.setTruncation(true).setMaxLength(maxLength);
         }
         this.tokenizer = builder.build();
-        poolingStrategy = PoolingStrategy.fromString(config.poolingStrategy().toString());
-        var optionsBuilder = new OnnxEvaluatorOptions.Builder()
-                .setExecutionMode(config.transformerExecutionMode().toString())
-                .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads());
-        if (config.transformerGpuDevice() >= 0)
-            optionsBuilder.setGpuDevice(config.transformerGpuDevice());
-
-        var onnxOpts = optionsBuilder.build();
-        var resolver = new OnnxExternalDataResolver(modelHelper);
-        evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxOpts);
-        tokenTypeIdsName = detectTokenTypeIds(config, evaluator);
-        validateModel();
-    }
-
-    private static String detectTokenTypeIds(HuggingFaceEmbedderConfig config, OnnxEvaluator evaluator) {
-        String configured = config.transformerTokenTypeIds();
-        Map<String, TensorType> inputs = evaluator.getInputInfo();
-        if (inputs.size() < 3) {
-            // newer models have only 2 inputs (they do not use token type IDs)
-            return "";
-        } else {
-            // could detect fallback from inputs here, currently set as default in .def file
-            return configured;
-        }
-    }
-
-    private void validateModel() {
-        Map<String, TensorType> inputs = evaluator.getInputInfo();
-        validateName(inputs, inputIdsName, "input");
-        validateName(inputs, attentionMaskName, "input");
-        if (!tokenTypeIdsName.isEmpty()) {
-            validateName(inputs, tokenTypeIdsName, "input");
-        }
-        Map<String, TensorType> outputs = evaluator.getOutputInfo();
-        validateName(outputs, outputName, "output");
     }
 
     private static void validateName(Map<String, TensorType> types, String name, String type) {
@@ -138,8 +162,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         if (targetType.valueType() == TensorType.Value.INT8) {
             return binaryQuantization(embeddingResult, targetType);
         } else {
-            Tensor result = poolingStrategy.toSentenceEmbedding(targetType, tokenEmbeddings, embeddingResult.attentionMask);
-            return  normalize ? EmbeddingNormalizer.normalize(result, targetType) : result;
+            Tensor result = analysis.poolingStrategy.toSentenceEmbedding(targetType, tokenEmbeddings, embeddingResult.attentionMask);
+            return normalize ? EmbeddingNormalizer.normalize(result, targetType) : result;
         }
     }
 
@@ -163,29 +187,28 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         var start = System.nanoTime();
         var encoding = tokenizer.encode(text, context.getLanguage());
         runtime.sampleSequenceLength(encoding.ids().size(), context);
-        Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1");
-        Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1");
-        Tensor tokenTypeIds = tokenTypeIdsName.isEmpty() ? null : createTensorRepresentation(encoding.typeIds(), "d1");
-
+        Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1").expand("d0");
+        Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1").expand("d0");
         Map<String, Tensor> inputs;
-        if (tokenTypeIdsName.isEmpty() || tokenTypeIds.isEmpty()) {
-            inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
-                    attentionMaskName, attentionMask.expand("d0"));
+        if (analysis.useAttentionMask()) {
+             if (analysis.useTokenTypeIds()) {
+                 Tensor tokenTypeIds = createTensorRepresentation(encoding.typeIds(), "d1").expand("d0");
+                 inputs = Map.of(analysis.inputIdsName(), inputSequence,
+                                 analysis.attentionMaskName(), attentionMask,
+                                 analysis.tokenTypeIdsName(), tokenTypeIds);
+             } else {
+                 inputs = Map.of(analysis.inputIdsName(), inputSequence,
+                                 analysis.attentionMaskName, attentionMask);
+             }
         } else {
-            inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
-                    attentionMaskName, attentionMask.expand("d0"),
-                    tokenTypeIdsName, tokenTypeIds.expand("d0"));
+            inputs = Map.of(analysis.inputIdsName(), inputSequence);
         }
-        IndexedTensor tokenEmbeddings = (IndexedTensor) evaluator.evaluate(inputs).get(outputName);
+        IndexedTensor tokenEmbeddings = (IndexedTensor) evaluator.evaluate(inputs).get(analysis.outputName());
         long[] resultShape = tokenEmbeddings.shape();
-        //shape batch, sequence, embedding dimensionality
-        if (resultShape.length == 2) {
-            if (poolingStrategy != PoolingStrategy.NONE) {
-                throw new IllegalArgumentException("Expected pooling-strategy 'none' with 2 output dimensions");
-            }
-        } else if (resultShape.length != 3) {
-            throw new IllegalArgumentException("Expected 3 output dimensions for output name '" +
-                                               outputName + "': [batch, sequence, embedding], got " + resultShape.length);
+        // shape should have batch, sequence, embedding dimensionality
+        if (resultShape.length != analysis.outputDimensions()) {
+            throw new IllegalArgumentException("Expected " + analysis.outputDimensions + " output dimensions for output name '" +
+                                               analysis.outputName() + "': [batch, sequence, embedding], got " + resultShape.length);
         }
         runtime.sampleEmbeddingLatency((System.nanoTime() - start)/1_000_000d, context);
         return new HFEmbeddingResult(tokenEmbeddings, attentionMask, context.getEmbedderId());
@@ -203,8 +226,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         TensorType poolingType = new TensorType.Builder(TensorType.Value.FLOAT).
                                          indexed(targetType.indexedSubtype().dimensions().get(0).name(), targetUnpackagedDimensions)
                                          .build();
-        Tensor result = poolingStrategy.toSentenceEmbedding(poolingType, embeddingResult.output(), embeddingResult.attentionMask());
-        result = normalize? EmbeddingNormalizer.normalize(result, poolingType) : result;
+        Tensor result = analysis.poolingStrategy().toSentenceEmbedding(poolingType, embeddingResult.output(), embeddingResult.attentionMask());
+        result = normalize ? EmbeddingNormalizer.normalize(result, poolingType) : result;
         Tensor packedResult = Tensors.packBits(result);
         if ( ! packedResult.type().equals(targetType))
             throw new IllegalStateException("Expected pack_bits to produce " + targetType + ", but got " + packedResult.type());
