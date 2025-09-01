@@ -53,6 +53,8 @@ SameElementSearch::SameElementSearch(fef::TermFieldMatchData &tfmd,
     assert(!_children.empty());
 }
 
+SameElementSearch::~SameElementSearch() = default;
+
 void
 SameElementSearch::initRange(uint32_t begin_id, uint32_t end_id)
 {

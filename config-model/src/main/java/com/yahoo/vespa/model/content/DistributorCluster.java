@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.content;
 
 import ai.vespa.metrics.DistributorMetrics;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
@@ -17,6 +18,8 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import org.w3c.dom.Element;
 
 import java.util.logging.Logger;
+
+import static java.util.logging.Level.WARNING;
 
 /**
  * Generates distributor-specific configuration.
@@ -100,7 +103,9 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
             var featureFlags = deployState.getProperties().featureFlags();
             int maxInhibitedGroups = featureFlags.maxActivationInhibitedOutOfSyncGroups();
             int contentLayerMetadataFeatureLevel = featureFlags.contentLayerMetadataFeatureLevel();
-            int maxDocumentOperationSizeMib = maxDocumentSizeInMib(featureFlags.maxDistributorDocumentOperationSizeMib(), clusterElement);
+            int maxDocumentOperationSizeMib = maxDocumentSizeInMib(featureFlags.maxDistributorDocumentOperationSizeMib(),
+                                                                   clusterElement,
+                                                                   deployState.getDeployLogger());
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
@@ -171,7 +176,7 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
         return parent.getName();
     }
 
-    private static int maxDocumentSizeInMib(int featureFlagValue, ModelElement clusterElement) {
+    private static int maxDocumentSizeInMib(int featureFlagValue, ModelElement clusterElement, DeployLogger deployLogger) {
         var tuning = clusterElement.child("tuning");
         if (tuning == null) return featureFlagValue;
         var maxSize = tuning.child("max-document-size");
@@ -180,13 +185,14 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
         var configuredValue = maxSize.asString();
         int maxDocumentSize = featureFlagValue;
         if (configuredValue != null && ! configuredValue.isEmpty()) {
-            // The value has units, but the config expects it in MiB, extract the value and convert
-            double value = BinaryUnit.valueOf(configuredValue) / 1024 / 1024;
-            if (value < 1.0)
+            // The configured value has units, but the config expects it in MiB, extract the value and convert
+            maxDocumentSize = (int) (BinaryUnit.valueOf(configuredValue) / 1024 / 1024);
+            if (maxDocumentSize < 1 || maxDocumentSize > 2048)
                 throw new IllegalArgumentException("Invalid max-document-size value '" + configuredValue + "': Value must be between 1 MiB and 2048 MiB");
-            maxDocumentSize = (int) value;
-            if (maxDocumentSize > 2048)
-                throw new IllegalArgumentException("Invalid max-document-size value '" + configuredValue + "': Value must be between 1 MiB and 2048 MiB");
+            if (maxDocumentSize > 128)
+                deployLogger.log(WARNING, "max-document-size value is set to '" + configuredValue +
+                        "', setting this above 128 MiB is strongly discouraged, as it may cause major performance issues. " +
+                        "See https://docs.vespa.ai/en/reference/services-content.html#max-document-size");
         }
         return maxDocumentSize;
     }

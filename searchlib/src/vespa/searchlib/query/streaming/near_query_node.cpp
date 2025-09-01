@@ -9,18 +9,21 @@ using vespalib::PriorityQueue;
 
 namespace search::streaming {
 
+NearQueryNode::~NearQueryNode() = default;
+
 bool
 NearQueryNode::evaluate() const
 {
     PriorityQueue<HitIterator> queue;
+    std::vector<HitList> hit_lists;
     HitKey max_key(0, 0, 0);
     auto& children = getChildren();
     if (children.empty()) {
         return false; // No terms
     }
+    hit_lists.reserve(children.size());
     for (auto& child : children) {
-        auto& curr = dynamic_cast<const QueryTerm&>(*child);
-        auto& hit_list = curr.getHitList();
+        auto& hit_list = child->evaluateHits(hit_lists.emplace_back());
         if (hit_list.empty()) {
             return false; // Empty term
         }

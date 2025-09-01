@@ -33,6 +33,9 @@ ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit
 }
 
 template <bool bigEndian, bool dynamic_k>
+ZcRareWordPosOccIterator<bigEndian, dynamic_k>::~ZcRareWordPosOccIterator() = default;
+
+template <bool bigEndian, bool dynamic_k>
 ZcPosOccIterator<bigEndian, dynamic_k>::
 ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
                  bool decode_normal_features, bool decode_interleaved_features,
@@ -48,6 +51,9 @@ ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
     assert(!this->_matchData.valid() || (fieldsParams->getNumFields() == this->_matchData.size()));
     _decodeContext = &_decodeContextReal;
 }
+
+template <bool bigEndian, bool dynamic_k>
+ZcPosOccIterator<bigEndian, dynamic_k>::~ZcPosOccIterator() = default;
 
 template <bool bigEndian>
 std::unique_ptr<search::queryeval::SearchIterator>

@@ -17,6 +17,18 @@ AttributeIteratorBase::visitMembers(vespalib::ObjectVisitor &visitor) const
 }
 
 void
+AttributeIteratorBase::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    _baseSearchCtx.get_element_ids(docid, element_ids);
+}
+
+void
+AttributeIteratorBase::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    _baseSearchCtx.and_element_ids_into(docid, element_ids);
+}
+
+void
 AttributeIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     AttributeIteratorBase::visitMembers(visitor);

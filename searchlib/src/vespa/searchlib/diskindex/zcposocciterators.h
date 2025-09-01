@@ -24,6 +24,7 @@ public:
                              bool unpack_normal_features, bool unpack_interleaved_features,
                              const bitcompression::PosOccFieldsParams *fieldsParams,
                              fef::TermFieldMatchDataArray matchData);
+    ~ZcRareWordPosOccIterator() override;
 };
 
 
@@ -43,6 +44,7 @@ public:
                      uint32_t minChunkDocs, const index::PostingListCounts &counts,
                      const bitcompression::PosOccFieldsParams *fieldsParams,
                      fef::TermFieldMatchDataArray matchData);
+    ~ZcPosOccIterator() override;
 };
 
 std::unique_ptr<search::queryeval::SearchIterator>

@@ -397,6 +397,10 @@ public:
     // Transform all children using the given function. This is used
     // for deep decoration when doing match profiling.
     virtual void transform_children(std::function<SearchIterator::UP(SearchIterator::UP)> f);
+
+    // Get element ids. Might call unpack. Assumes element_ids is cleared by caller.
+    virtual void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids);
+    virtual void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids);
 };
 
 }

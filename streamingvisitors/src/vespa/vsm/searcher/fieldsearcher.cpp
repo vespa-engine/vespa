@@ -4,6 +4,7 @@
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
+#include <vespa/searchlib/query/streaming/same_element_query_node.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <cassert>
 
@@ -192,6 +193,15 @@ FieldSearcher::init()
 void
 FieldIdTSearcherMap::prepare_term(const DocumentTypeIndexFieldMapT& difm, QueryTerm* qt, FieldIdT fid, vespalib::hash_set<const void*>& seen, QueryTermList& onlyInIndex)
 {
+    auto* same_element_query_node = qt->as_same_element_query_node();
+    if (same_element_query_node != nullptr) {
+        QueryTermList same_element_terms;
+        same_element_query_node->get_hidden_leaves(same_element_terms);
+        for (auto& subterm : same_element_terms) {
+            prepare_term(difm, subterm, fid, seen, onlyInIndex);
+        }
+        return;
+    }
     auto multi_term = qt->as_multi_term();
     if (multi_term != nullptr && multi_term->multi_index_terms()) {
         for (auto& subterm : multi_term->get_terms()) {

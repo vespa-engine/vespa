@@ -47,6 +47,7 @@ public:
                        fef::TermFieldMatchDataArray childMatch,
                        std::vector<uint32_t> eval_order,
                        fef::TermFieldMatchData &tmd, bool strict);
+    ~SimplePhraseSearch() override;
     void doSeek(uint32_t doc_id) override;
     void doUnpack(uint32_t doc_id) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;

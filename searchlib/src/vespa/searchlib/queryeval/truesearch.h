@@ -21,7 +21,7 @@ private:
 
 public:
     TrueSearch(fef::TermFieldMatchData & tfmd);
-    ~TrueSearch();
+    ~TrueSearch() override;
 };
 
 }

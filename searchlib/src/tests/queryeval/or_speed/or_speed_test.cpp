@@ -87,6 +87,7 @@ struct ArrayIterator : SearchIterator {
         }
         my_match_data.reset(0);
     }
+    ~ArrayIterator() override;
     void initRange(uint32_t begin, uint32_t end) final {
         SearchIterator::initRange(begin, end);
         my_offset = 0;
@@ -112,6 +113,9 @@ struct ArrayIterator : SearchIterator {
     Trinary is_strict() const final { return Trinary::True; }
     void doUnpack(uint32_t docId) final { my_match_data.resetOnlyDocId(docId); }
 };
+
+template <bool strict>
+ArrayIterator<strict>::~ArrayIterator() = default;
 
 struct OrSetup {
     uint32_t                          docid_limit;

@@ -14,6 +14,7 @@ import org.w3c.dom.Document;
 
 import javax.xml.transform.TransformerException;
 import java.io.File;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -110,7 +111,7 @@ public class HostedOverrideProcessorComplexTest {
     }
 
     private void assertOverride(InstanceName instance, Environment environment, RegionName region, CloudName cloud, String expected) throws TransformerException {
-        ApplicationPackage app = FilesApplicationPackage.fromFile(new File(servicesFile).getParentFile());
+        ApplicationPackage app = FilesApplicationPackage.fromDir(new File(servicesFile).getParentFile(), Map.of());
         Document inputDoc = Xml.getDocument(app.getServices());
         Tags tags = app.getDeploymentSpec().tags(instance, environment);
         Document newDoc = new OverrideProcessor(instance, environment, region, cloud, tags).process(inputDoc);

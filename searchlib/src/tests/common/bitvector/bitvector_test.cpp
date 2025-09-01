@@ -807,7 +807,7 @@ bool check_full_term_field_match_data_reset_on_unpack(bool strict, bool full_res
     AllocatedBitVector bv(10);
     bv.setBit(5);
     fef::TermFieldMatchData tfmd;
-    auto iterator = BitVectorIterator::create(&bv, bv.size(), tfmd, strict, false, full_reset);
+    auto iterator = BitVectorIterator::create(&bv, bv.size(), tfmd, nullptr, strict, false, full_reset);
     tfmd.setNumOccs(10);
     iterator->initRange(1, bv.size());
     iterator->unpack(5);

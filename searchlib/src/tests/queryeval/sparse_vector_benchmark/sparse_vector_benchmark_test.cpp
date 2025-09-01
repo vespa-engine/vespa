@@ -160,6 +160,7 @@ struct ModSearch : SearchIterator {
     uint32_t step;
     uint32_t limit;
     ModSearch(uint32_t step_in, uint32_t limit_in) : step(step_in), limit(limit_in) { setDocId(step); }
+    ~ModSearch() override;
     void doSeek(uint32_t docid) override {
         assert(docid > getDocId());
         uint32_t hit = (docid / step) * step;
@@ -175,6 +176,8 @@ struct ModSearch : SearchIterator {
     }
     void doUnpack(uint32_t) override {}
 };
+
+ModSearch::~ModSearch() = default;
 
 struct ModSearchFactory : ChildFactory {
     uint32_t bias;

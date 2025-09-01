@@ -42,6 +42,7 @@ public:
       : MultiSearch(std::move(children)),
         _tag(tag), _isLeaf(false), _isStrict(strict),
         _match(), _md(md) {}
+    ~MySearch() override;
 
     MySearch &add(SearchIterator *search) {
         _children.emplace_back(search);
@@ -95,9 +96,9 @@ public:
         MultiSearch::visitMembers(visitor);
         visit(visitor, "_handles",  _handles);
     }
-
-    ~MySearch() override {}
 };
+
+MySearch::~MySearch() = default;
 
 //-----------------------------------------------------------------------------
 
@@ -108,6 +109,7 @@ class MyLeaf : public SimpleLeafBlueprint
     double _cost = 1.0;
 
 public:
+    ~MyLeaf() override;
     SearchIterator::UP
     createLeafSearch(const TFMDA &tfmda) const override
     {
@@ -145,6 +147,8 @@ public:
         return create_default_filter(constraint);
     }
 };
+
+MyLeaf::~MyLeaf() = default;
 
 //-----------------------------------------------------------------------------
 

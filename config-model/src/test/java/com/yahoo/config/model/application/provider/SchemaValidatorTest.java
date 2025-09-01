@@ -3,6 +3,7 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
 import com.yahoo.vespa.config.VespaVersion;
+import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -94,5 +95,38 @@ public class SchemaValidatorTest {
                 "8:  <admin version='2.0'>\n" +
                 "9:    <adminserver hostalias='node1'>\n" +
                 "10:  </admin>\n";
+    }
+
+    @Test
+    void verifyValidFiles() throws Exception {
+        justValidate("application.rnc", "application.xml");
+        justValidate("application.rnc", "application.xml");
+        justValidate("services.rnc", "services.xml");
+        justValidate("services.rnc", "standalone-container.xml");
+        justValidate("services.rnc", "services-hosted.xml");
+        justValidate("services.rnc", "services-hosted-infrastructure.xml");
+        justValidate("deployment.rnc", "deployment.xml");
+        justValidate("deployment.rnc", "deployment-with-instances.xml");
+        justValidate("validation-overrides.rnc", "validation-overrides.xml");
+    }
+
+    @Test
+    void verifyInvalidFile() throws Exception {
+        Throwable exception = assertThrows(RuntimeException.class, () -> {
+                justValidate("services.rnc", "services-bad-vespamalloc.xml");
+            });
+        assertTrue(exception.getMessage().contains("error in services-bad-vespamalloc.xml: value of attribute \"no-vespamalloc\" is invalid"));
+    }
+
+    private void justValidate(String rnc, String xml) throws Exception {
+        String rncPre = "src/main/resources/schema/";
+        String xmlPre = "src/test/schema-test-files/";
+        var validator = fromRnc(new File(rncPre + rnc));
+        validator.validate(new File(xmlPre + xml));
+    }
+
+    private SchemaValidator fromRnc(File rncFile) throws Exception {
+        DeployLoggerStub logger = new DeployLoggerStub();
+        return new SchemaValidator(rncFile, logger);
     }
 }

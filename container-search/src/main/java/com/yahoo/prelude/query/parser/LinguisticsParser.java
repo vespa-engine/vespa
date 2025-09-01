@@ -8,11 +8,16 @@ import com.yahoo.language.process.TokenType;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.WeakAndItem;
+import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.yahoo.prelude.query.parser.Token.Kind.NUMBER;
 import static com.yahoo.prelude.query.parser.Token.Kind.WORD;
@@ -56,12 +61,20 @@ public final class LinguisticsParser extends AbstractParser {
         if (token.getType() == TokenType.NUMERIC) {
             item = new IntItem(token.getTokenString());
         }
-        else {
+        else if (token.getNumStems() == 1) {
             WordItem word = new WordItem(token.getTokenString());
             word.setStemmed(true); // Disable downstream stemming
             word.setNormalizable(false); // Disable downstream normalizing
             word.setLowercased(true); // Disable downstream lowercasing
             item = word;
+        }
+        else {
+            List<WordAlternativesItem.Alternative> alternatives = new ArrayList<>();
+            for (int i = 0; i < token.getNumStems(); i++)
+                alternatives.add(new WordAlternativesItem.Alternative(token.getStem(i), 1.0));
+            item = new WordAlternativesItem(defaultIndex, true, new Substring(token.getOrig()), alternatives);
+            item.setNormalizable(false); // Disable downstream normalizing
+            item.setLowercased(true); // Disable downstream lowercasing
         }
         item.setIndexName(defaultIndex);
         return item;

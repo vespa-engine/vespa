@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "programoptions.h"
+#include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <boost/lexical_cast.hpp>
 #include <cassert>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".programoptions");
@@ -47,8 +48,8 @@ template<typename Number>
 void ProgramOptions::NumberOptionParser<Number>::set(const std::vector<std::string>& arguments)
 {
     try{
-        _number = boost::lexical_cast<Number>(arguments[0]);
-    } catch (const boost::bad_lexical_cast& e) {
+        _number = vespalib::lexical_cast<Number>(arguments[0]);
+    } catch (const vespalib::IllegalArgumentException& e) {
         std::ostringstream ost;
         ost << "The argument '" << arguments[0]
             << "' can not be interpreted as a number of type "
@@ -606,7 +607,7 @@ ProgramOptions::addArgument(std::shared_ptr<OptionParser> arg)
                 "Argument '" + arg->_names[0] + "' cannot follow a list "
                 "argument that will consume all remaining arguments.",
                 VESPA_STRLOC);
-        
+
     }
     _arguments.push_back(arg);
     return *arg;

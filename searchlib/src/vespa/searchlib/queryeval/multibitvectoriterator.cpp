@@ -124,6 +124,7 @@ public:
             }
         }
     }
+    ~MultiBitVectorIterator() override;
     void initRange(uint32_t beginId, uint32_t endId) override {
         MultiBitVectorIteratorBase::initRange(beginId, endId);
         _mbv.reset();
@@ -143,6 +144,7 @@ public:
     explicit MultiBitVectorIteratorStrict(MultiSearch::Children children)
         : MultiBitVectorIterator<Update>(std::move(children))
     { }
+    ~MultiBitVectorIteratorStrict() override = default;
 private:
     void doSeek(uint32_t docId) override {
         docId = this->_mbv.strictSeek(docId);
@@ -154,6 +156,9 @@ private:
     }
     Trinary is_strict() const override { return Trinary::True; }
 };
+
+template<typename Update>
+MultiBitVectorIterator<Update>::~MultiBitVectorIterator() = default;
 
 template<typename Update>
 void

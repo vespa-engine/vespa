@@ -39,6 +39,7 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.test.VespaModelTester;
+import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
@@ -2454,6 +2455,92 @@ public class ModelProvisioningTest {
         var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
         model.getConfig(fleetControllerConfigBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-content-configurer");
         assertEquals(2, fleetControllerConfigBuilder.build().max_number_of_groups_allowed_to_be_down());
+    }
+
+    @Test
+    public void test1NodePerGroupAllowedDown() {
+        String servicesXml =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                        "<services>" +
+                        "  <container version='1.0' id='qrs'>" +
+                        "     <nodes count='1'/>" +
+                        "  </container>" +
+                        "  <content version='1.0' id='content'>" +
+                        "     <coverage-policy>%s</coverage-policy>" +
+                        "     <redundancy>1</redundancy>" +
+                        "     <documents>" +
+                        "       <document type='type1' mode='index'/>" +
+                        "     </documents>" +
+                        "    <nodes count='2' groups='2'/>" +
+                        "    %s" +
+                        "  </content>" +
+                        "</services>";
+        {
+            VespaModelTester tester = new VespaModelTester();
+            tester.addHosts(6);
+            VespaModel model = tester.createModel(servicesXml.formatted("node", ""), true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties()));
+
+            var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
+            model.getConfig(fleetControllerConfigBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-content-configurer");
+            assertEquals(0, fleetControllerConfigBuilder.build().max_number_of_groups_allowed_to_be_down());
+        }
+
+        {
+            VespaModelTester tester = new VespaModelTester();
+            tester.addHosts(6);
+            VespaModel model = tester.createModel(servicesXml.formatted("group", ""), true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties()));
+
+            var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
+            model.getConfig(fleetControllerConfigBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-content-configurer");
+            assertEquals(-1, fleetControllerConfigBuilder.build().max_number_of_groups_allowed_to_be_down());
+        }
+
+        {
+            VespaModelTester tester = new VespaModelTester();
+            tester.addHosts(6);
+            assertThrows(IllegalArgumentException.class, () ->
+            tester.createModel(servicesXml.formatted("node",
+                                                     """
+                                                     <tuning>
+                                                       <cluster-controller>
+                                                         <groups-allowed-down-ratio>0.5</groups-allowed-down-ratio>
+                                                       </cluster-controller>
+                                                     </tuning>
+                                                     """),
+                               true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties())));
+        }
+    }
+
+    @Test
+    public void test2GroupsDefaultCoveragePolicy() {
+        String servicesXml =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                        "<services>" +
+                        "  <container version='1.0' id='qrs'>" +
+                        "     <nodes count='1'/>" +
+                        "  </container>" +
+                        "  <content version='1.0' id='content'>" +
+                        "     <coverage-policy>group</coverage-policy>" +
+                        "     <redundancy>1</redundancy>" +
+                        "     <documents>" +
+                        "       <document type='type1' mode='index'/>" +
+                        "     </documents>" +
+                        "    <nodes count='2' groups='2'/>" +
+                        "  </content>" +
+                        "</services>";
+
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(6);
+        DeployLoggerStub logger = new DeployLoggerStub();
+        tester.createModel(servicesXml, true, deployStateWithClusterEndpoints("qrs")
+                .properties(new TestProperties())
+                .deployLogger(logger));
+
+        assertEquals("Coverage policy is 'group', but with 2 groups in the cluster all load" +
+                             " will be placed on 1 group when the other group" +
+                             " is allowed to be down when doing maintenance or upgrades." +
+                             " This might lead to overload. See https://docs.vespa.ai/en/reference/services-content.html#coverage-policy.",
+                     logger.entries.get(0).message);
     }
 
     @Test

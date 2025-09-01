@@ -35,7 +35,7 @@ public:
     Trinary is_strict() const override { return _strict ? Trinary::True : Trinary::False; }
     void initRange(uint32_t begin_id, uint32_t end_id) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    ~SimpleSearch();
+    ~SimpleSearch() override;
 };
 
 }

@@ -123,7 +123,7 @@ public class VespaCliTestRunner implements TestRunner {
         ProcessBuilder builder = new ProcessBuilder("vespa", "test", suitePath.get().toAbsolutePath().toString(),
                                                     "--application", config.application().toFullString(),
                                                     "--zone", config.zone().value(),
-                                                    "--target", config.system().isPublic() ? "cloud" : "hosted");
+                                                    "--target", config.system().isPublicLike() ? "cloud" : "hosted");
         builder.redirectErrorStream(true);
         // The CI environment variables tells Vespa CLI to omit certain warnings that do not apply to CI environments
         builder.environment().put("CI", "true");
@@ -143,7 +143,7 @@ public class VespaCliTestRunner implements TestRunner {
     private Credentials getCredentials(TestConfig config) {
         final Path privateKeyFile;
         final Path certificateFile;
-        if (config.system().isPublic()) {
+        if (config.system().isPublicLike()) {
             privateKeyFile = artifactsPath.resolve("key");
             certificateFile = artifactsPath.resolve("cert");
         } else {

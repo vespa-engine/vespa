@@ -48,6 +48,7 @@ public:
                       const FieldIndex& field_index,
                       const std::string& query_term,
                       index::DictionaryLookupResult lookupRes);
+    ~DiskTermBlueprint() override;
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     

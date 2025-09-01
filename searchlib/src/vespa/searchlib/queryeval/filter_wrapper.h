@@ -29,6 +29,7 @@ public:
             _tfmda.add(&_unused_md[i]);
         }
     }
+    ~FilterWrapper() override;
     const fef::TermFieldMatchDataArray& tfmda() const { return _tfmda; }
     void wrap(std::unique_ptr<SearchIterator> wrapped) {
         _wrapped_search = std::move(wrapped);

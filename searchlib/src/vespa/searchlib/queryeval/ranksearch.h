@@ -21,6 +21,7 @@ protected:
      * @param children the search objects we are rank'ing
      **/
     RankSearch(Children children) : MultiSearch(std::move(children)) { }
+    ~RankSearch() override;
 
 public:
     static SearchIterator::UP create(ChildrenIterators children, bool strict);

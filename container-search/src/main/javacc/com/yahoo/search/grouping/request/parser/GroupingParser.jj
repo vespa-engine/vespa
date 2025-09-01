@@ -48,14 +48,14 @@ public class GroupingParser {
 }
 
 PARSER_END(GroupingParser)
-        
+
 TOKEN :
 {
     <INTEGER: <DECIMAL> (["l","L"])? | <HEX> (["l","L"])? | <OCTAL> (["l","L"])?> |
         <#DECIMAL: ["1"-"9"] (["0"-"9"])*> |
         <#HEX: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+> |
         <#OCTAL: "0" (["0"-"7"])*> |
-    <FLOAT: (["0"-"9"])+ ("." (["0"-"9"])*)? (<EXPONENT>)? (["f","F","d","D"])?> |  
+    <FLOAT: (["0"-"9"])+ ("." (["0"-"9"])*)? (<EXPONENT>)? (["f","F","d","D"])?> |
         <#EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+>
 }
 
@@ -87,7 +87,7 @@ TOKEN :
     <RBRACKET: "]"> |
     <INF: "inf"> |
     <NEGINF: "-inf"> |
-    <STRING: ("\"" (~["\""] | "\\\"")* "\"") | 
+    <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
              ("'" (~["'"] | "\\'")* "'")> |
     <ACOS: "acos"> |
     <ACOSH: "acosh"> |
@@ -122,6 +122,7 @@ TOKEN :
     <GROUP: "group"> |
     <HINT: "hint"> |
     <HYPOT: "hypot"> |
+    <KEEP: "keep"> |
     <LOG: "log"> |
     <LOG1P: "log1p"> |
     <LOG10: "log10"> |
@@ -277,6 +278,7 @@ void operationBody(GroupingOperation parent) :
       ( <ALIAS>     lbrace() str = identifier() comma() exp = exp(parent) rbrace() { parent.putAlias(str, exp); }             ) |
       ( <HINT>      lbrace() str = identifier()                           rbrace() { parent.addHint(str); }                   ) |
       ( <FILTER>    lbrace() filterExp = filterExp(parent)                rbrace() { parent.setFilterBy(filterExp); }         ) |
+      ( <KEEP>      lbrace() filterExp = filterExp(parent)                rbrace() { parent.setFilterBy(filterExp); }         ) |
       ( <MAX>       lbrace() ( maxOperand = infinitePositiveValue() | maxOperand = constantValue() ) rbrace()
       {
             if (maxOperand instanceof InfiniteValue) {
@@ -1083,7 +1085,7 @@ String string() :
     { return ret; }
 }
 
-String identifier() : 
+String identifier() :
 {
     String ret;
 }
@@ -1122,6 +1124,7 @@ String identifier() :
         <HINT> |
         <HYPOT> |
         <IDENTIFIER> |
+        <KEEP> |
         <LOG> |
         <LOG1P> |
         <LOG10> |
@@ -1276,6 +1279,6 @@ void scolon() : { }
 }
 
 void space() : { }
-{ 
+{
     ( <SPACE> )*
 }

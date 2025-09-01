@@ -8,11 +8,13 @@
 #include <cctype>
 #include <cinttypes>
 #include <vespa/fastlib/text/unicodeutil.h>
+#include <vespa/vespalib/util/casts.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.sumdesc");
 
 using namespace juniper::separators;
+using vespalib::char_p_cast;
 
 /** SummaryDesc: A class of objects describing a query highlight
  *  dynamic summary based on the current state of the provided
@@ -95,7 +97,7 @@ bool il_ann_terminator_char(const unsigned char* s) {
  * beginning of the next/last word)
  * @return The number of bytes moved
  */
-int complete_word(unsigned char* start, ssize_t length, const unsigned char*& ptr, off_t increment) {
+int complete_word(const unsigned char* start, ssize_t length, const unsigned char*& ptr, off_t increment) {
     bool (*chartest)(const unsigned char*);
     int                  moved = 0;
     bool                 whitespace_elim = false;
@@ -455,7 +457,7 @@ bool SummaryDesc::word_connector(const unsigned char* s) {
  * legal connector characters.
  * @return The number of bytes moved
  */
-int SummaryDesc::complete_extended_token(unsigned char* start, ssize_t length, const unsigned char*& ptr,
+int SummaryDesc::complete_extended_token(const unsigned char* start, ssize_t length, const unsigned char*& ptr,
                                          off_t increment) {
     int                  moved = 0;
     const unsigned char* old_ptr = nullptr;
@@ -593,10 +595,10 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes, const Sum
          * word/starting space tokens (only if previous segment is not
          * adjacent!)
          */
-        const unsigned char* ptr = reinterpret_cast<const unsigned char*>(&buffer[pos]);
+        const unsigned char* ptr = char_p_cast<unsigned char>(&buffer[pos]);
         if (!d._highlight && start_cont && prev_end < pos) {
             // Complete beginning word by extending the prefix
-            unsigned char* b = reinterpret_cast<unsigned char*>(const_cast<char*>(buffer));
+            const unsigned char* b = char_p_cast<unsigned char>(buffer);
             int            moved = complete_extended_token(b, bytes, ptr, -1);
             pos -= moved;
             len += moved;
@@ -609,14 +611,14 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes, const Sum
          * space tokens but only in the cases where the next segment
          * is not adjacent.
          */
-        ptr = reinterpret_cast<const unsigned char*>(&buffer[pos + len]);
+        ptr = char_p_cast<unsigned char>(&buffer[pos + len]);
         if (!d._highlight && next_pos > pos + len && pos + len < static_cast<ssize_t>(bytes)) {
             int max_len = std::min(static_cast<off_t>(bytes), next_pos);
             // complete word at the end (these strings are either
             // ... in the start or the end or not at all, but overlap
             // is taken care of in the next loop..  Complete end of
             // word by appending at the end
-            unsigned char* b = reinterpret_cast<unsigned char*>(const_cast<char*>(buffer));
+            const unsigned char* b = char_p_cast<unsigned char>(buffer);
             int            moved = complete_extended_token(b, max_len, ptr, +1);
             len += moved;
             if ((pos + len) >= next_pos) {

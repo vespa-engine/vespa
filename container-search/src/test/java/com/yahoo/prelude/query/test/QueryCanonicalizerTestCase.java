@@ -31,11 +31,17 @@ public class QueryCanonicalizerTestCase {
     }
 
     @Test
-    void testSingleLevelSingleItemNonReducibleComposite() {
+    void testSingleLevelSingleItemNonReducibleWeakAndItem() {
         CompositeItem root = new WeakAndItem();
-
         root.addItem(new WordItem("word"));
         assertCanonicalized("WEAKAND(100) word", null, root);
+    }
+
+    @Test
+    void testSingleLevelSingleItemNonReducibleSameElementItem() {
+        CompositeItem root = new SameElementItem("field");
+        root.addItem(new WordItem("word"));
+        assertCanonicalized("field:{word}", null, root);
     }
 
     @Test

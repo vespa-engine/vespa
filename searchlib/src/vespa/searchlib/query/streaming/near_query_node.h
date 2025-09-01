@@ -38,6 +38,7 @@ public:
           _distance(0),
           _element_gap_inspector(element_gap_inspector)
     { }
+    ~NearQueryNode() override;
     bool evaluate() const override;
     void distance(size_t dist)       { _distance = dist; }
     size_t distance()          const { return _distance; }

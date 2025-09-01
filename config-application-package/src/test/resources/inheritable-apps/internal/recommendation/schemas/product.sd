@@ -1,0 +1,17 @@
+schema product {
+
+    document product {
+
+        field popularity type float {
+            indexing: attribute
+        }
+
+    }
+
+    rank-profile default {
+        first-phase {
+            expression: attribute(popularity)
+        }
+    }
+
+}

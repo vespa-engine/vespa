@@ -26,6 +26,7 @@ public:
               fef::MatchData::UP inputMatchData,
               const fef::TermMatchDataMerger::Inputs &inputs,
               const fef::TermFieldMatchDataArray &outputs);
+    ~EquivImpl() override;
 };
 
 template<bool strict, typename Parent>
@@ -40,6 +41,9 @@ EquivImpl<strict, Parent>::EquivImpl(MultiSearch::Children children,
     _valid(outputs.valid())
 {
 }
+
+template<bool strict, typename Parent>
+EquivImpl<strict, Parent>::~EquivImpl() = default;
 
 template<bool strict, typename Parent>
 void

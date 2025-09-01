@@ -694,3 +694,13 @@
    fun:call_init
    ...
 }
+{
+   onnxruntime-1.22 cpuinfo_arm suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:cpuinfo_arm_linux_init
+   ...
+   fun:_ZN11onnxruntime9CPUIDInfoC1Ev
+   ...
+}

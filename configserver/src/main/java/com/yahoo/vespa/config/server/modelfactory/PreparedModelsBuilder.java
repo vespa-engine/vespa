@@ -169,13 +169,9 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     }
 
     private Optional<File> getAppDir(ApplicationPackage applicationPackage) {
-        try {
-            return applicationPackage instanceof FilesApplicationPackage ?
-                   Optional.of(((FilesApplicationPackage) applicationPackage).getAppDir()) :
-                   Optional.empty();
-        } catch (IOException e) {
-            throw new RuntimeException("Could not find app dir", e);
-        }
+        return applicationPackage instanceof FilesApplicationPackage ?
+                       Optional.of(((FilesApplicationPackage) applicationPackage).getAppDir()) :
+                       Optional.empty();
     }
 
     private void validateModelHosts(HostValidator hostValidator, ApplicationId applicationId, Model model) {

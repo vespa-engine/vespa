@@ -114,10 +114,6 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
             if (!v->VisitPHRASE(&item, iterator.getArity()))
                 rc = skipItem(&iterator);
             break;
-        case search::ParseItem::ITEM_ANY:
-            if (!v->VisitANY(&item, iterator.getArity()))
-                rc = skipItem(&iterator);
-            break;
         case search::ParseItem::ITEM_NEAR:
             if (!v->VisitNEAR(&item, iterator.getArity(),iterator.getNearDistance()))
                 rc = skipItem(&iterator);

@@ -50,6 +50,7 @@ public:
       : OrSearch(std::move(children)),
         _unpacker(unpacker)
     { }
+    ~OrLikeSearch() override;
 private:
     void onRemove(size_t index) override {
         _unpacker.onRemove(index);
@@ -65,6 +66,9 @@ private:
     }
     Unpack _unpacker;
 };
+
+template <bool strict, typename Unpack>
+OrLikeSearch<strict,Unpack>::~OrLikeSearch() = default;
 
 template <typename Unpack, typename HEAP, typename ref_t>
 class StrictHeapOrSearch : public OrSearch
@@ -145,6 +149,7 @@ public:
     }
     Trinary is_strict() const final { return Trinary::True; }
 };
+
 template <typename Unpack, typename HEAP, typename ref_t>
 StrictHeapOrSearch<Unpack, HEAP, ref_t>::~StrictHeapOrSearch() = default;
 

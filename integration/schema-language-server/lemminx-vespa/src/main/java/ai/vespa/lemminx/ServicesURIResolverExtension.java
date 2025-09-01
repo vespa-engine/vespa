@@ -6,8 +6,9 @@ import java.util.logging.Logger;
 import org.eclipse.lemminx.uriresolver.URIResolverExtension;
 
 public class ServicesURIResolverExtension implements URIResolverExtension {
+
     private static final Logger logger = Logger.getLogger(ServicesURIResolverExtension.class.getName());
-    private String resourceURI;
+    private final String resourceURI;
 
     public ServicesURIResolverExtension(Path serverPath) { 
         resourceURI = serverPath.resolve("resources").resolve("schema").resolve("services.rng").toUri().toString();
@@ -16,12 +17,12 @@ public class ServicesURIResolverExtension implements URIResolverExtension {
 
     @Override
     public String resolve(String baseLocation, String publicId, String systemId) {
-        if (baseLocation != null && baseLocation.endsWith("services.xml")) {
-            return resourceURI;
-        } else return null;
+        if (baseLocation == null || ! baseLocation.endsWith("services.xml")) return null;
+        return resourceURI;
     }
 
     public String getSchemaURI() {
         return resourceURI;
     }
+
 }

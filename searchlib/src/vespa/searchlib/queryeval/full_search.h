@@ -25,7 +25,7 @@ private:
 
 public:
     FullSearch();
-    ~FullSearch();
+    ~FullSearch() override;
 };
 
 }

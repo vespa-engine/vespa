@@ -121,7 +121,8 @@ ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool s
         return std::make_unique<EmptySearch>();
     }
     if (_searchCacheLookup) {
-        return BitVectorIterator::create(_searchCacheLookup->bitVector.get(), _searchCacheLookup->docIdLimit, *matchData, strict);
+        return BitVectorIterator::create(_searchCacheLookup->bitVector.get(), _searchCacheLookup->docIdLimit,
+                                         *matchData, this, strict, false, false);
     }
     if (_merger.hasArray()) {
         if (_merger.emptyArray()) {
@@ -139,7 +140,8 @@ ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool s
             }
         }
     } else if (_merger.hasBitVector()) {
-        return BitVectorIterator::create(_merger.getBitVector(), _merger.getDocIdLimit(), *matchData, strict);
+        return BitVectorIterator::create(_merger.getBitVector(), _merger.getDocIdLimit(), *matchData, this,
+                                         strict, false, false);
     }
     if (_params.useBitVector()) {
         if (!strict) {
@@ -371,6 +373,17 @@ uint32_t
 ImportedSearchContext::get_committed_docid_limit() const noexcept
 {
     return _targetLids.size();
+}
+
+void
+ImportedSearchContext::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) const
+{
+    return _target_search_context->get_element_ids(getTargetLid(docid), element_ids);
+}
+void
+ImportedSearchContext::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) const
+{
+    return _target_search_context->and_element_ids_into(getTargetLid(docid), element_ids);
 }
 
 }

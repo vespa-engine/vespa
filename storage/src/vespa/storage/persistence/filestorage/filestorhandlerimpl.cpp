@@ -778,7 +778,7 @@ FileStorHandlerImpl::remapQueueNoLock(const RemapInfo& source, std::vector<Remap
             assert(bucket == source.bucket || std::find_if(targets.begin(), targets.end(), [bucket](auto* e){
                 return e->bucket == bucket;
             }) != targets.end());
-            stripe(bucket).exposeQueue().emplace_back(std::move(entry));
+            stripe(bucket).queue_emplace(std::move(entry));
         }
     }
     stripe(source.bucket).unsafe_update_cached_queue_size();
@@ -1208,11 +1208,12 @@ FileStorHandlerImpl::Stripe::abort(std::vector<std::shared_ptr<api::StorageReply
                                    const AbortBucketOperationsCommand& cmd)
 {
     std::lock_guard lockGuard(*_lock);
-    for (auto it(_queue->begin()); it != _queue->end();) {
+    PriorityIdx& idx(bmi::get<1>(*_queue));
+    for (auto it = idx.begin(); it != idx.end();) {
         api::StorageMessage& msg(*it->_command);
         if (messageMayBeAborted(msg) && cmd.shouldAbort(it->_bucket)) {
             aborted.emplace_back(static_cast<api::StorageCommand&>(msg).makeReply());
-            it = _queue->erase(it);
+            it = idx.erase(it);
         } else {
             ++it;
         }

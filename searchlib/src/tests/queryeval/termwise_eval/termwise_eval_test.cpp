@@ -30,6 +30,7 @@ struct MyTerm : public SearchIterator {
     std::vector<uint32_t> hits;
     MyTerm(const std::vector<uint32_t> &hits_in, bool is_strict_in)
         : pos(0), is_strict(is_strict_in), hits(hits_in) {}
+    ~MyTerm() override;
     void initRange(uint32_t beginid, uint32_t endid) override {
         pos = 0;
         SearchIterator::initRange(beginid, endid);
@@ -61,6 +62,8 @@ struct MyTerm : public SearchIterator {
         visit(visitor, "strict", is_strict);
     }
 };
+
+MyTerm::~MyTerm() = default;
 
 struct MyBlueprint : SimpleLeafBlueprint {
     std::vector<uint32_t> hits;

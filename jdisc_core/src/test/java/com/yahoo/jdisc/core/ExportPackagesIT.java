@@ -54,6 +54,22 @@ public class ExportPackagesIT {
 
     private static final List<String> newPackagesInJava21 = List.of("java.lang.foreign");
     private static final List<String> removedPackagesInJava21 = List.of("com.sun.jarsigner");
+    private static final List<String> newPackagesInJava22 = List.of(
+            "java.lang.classfile",
+            "java.lang.classfile.attribute",
+            "java.lang.classfile.constantpool",
+            "java.lang.classfile.instruction",
+            "java.lang.classfile.components"
+    );
+    private static final List<String> removedPackagesInJava22 = List.of();
+    private static final List<String> newPackagesInJava23 = List.of();
+    private static final List<String> removedPackagesInJava23 = List.of();
+    private static final List<String> newPackagesInJava24 = List.of(
+            "jdk.management"
+    );
+    private static final List<String> removedPackagesInJava24 = List.of(
+            "java.lang.classfile.components"
+    );
 
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("([^;,]+);\\s*version=\"([^\"]*)\"(?:,\\s*([^;,]+);\\s*uses:=\"([^\"]*)\")?");
 
@@ -128,6 +144,17 @@ public class ExportPackagesIT {
         if (Runtime.version().feature() >= 21) {
             expectedPackages = expectedPackages.removePackages(removedPackagesInJava21)
                     .addPackages(newPackagesInJava21);
+        }
+        if (Runtime.version().feature() >= 22) {
+            expectedPackages = expectedPackages.removePackages(removedPackagesInJava22)
+                    .addPackages(newPackagesInJava22);
+        }
+        if (Runtime.version().feature() >= 23) {
+            expectedPackages = expectedPackages.removePackages(removedPackagesInJava23)
+                    .addPackages(newPackagesInJava23);
+        }
+        if (Runtime.version().feature() >= 24) {
+            expectedPackages = expectedPackages.removePackages(removedPackagesInJava24).addPackages(newPackagesInJava24);
         }
         var actualPackages = parsePackages(actualValue).removeJavaVersion();
 

@@ -67,7 +67,7 @@ public:
                              const vespalib::Doom& doom);
     NearestNeighborBlueprint(const NearestNeighborBlueprint&) = delete;
     NearestNeighborBlueprint& operator=(const NearestNeighborBlueprint&) = delete;
-    ~NearestNeighborBlueprint();
+    ~NearestNeighborBlueprint() override;
     const tensor::ITensorAttribute& get_attribute_tensor() const { return _attr_tensor; }
     const vespalib::eval::Value& get_query_tensor() const { return _query_tensor; }
     uint32_t get_target_hits() const { return _target_hits; }

@@ -59,6 +59,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     private final List<String> schemas;
     private final Map<Path, MockApplicationFile> files;
     private final String schemaDir;
+    private final Optional<String> applicationDefinitionString;
     private final Optional<String> deploymentSpecString;
     private final Optional<String> validationOverrides;
     private final boolean failOnValidateXml;
@@ -71,7 +72,8 @@ public class MockApplicationPackage implements ApplicationPackage {
     protected MockApplicationPackage(File root, String hosts, String services, List<String> schemas,
                                      Map<Path, MockApplicationFile> files,
                                      String schemaDir,
-                                     String deploymentSpec, String validationOverrides, boolean failOnValidateXml,
+                                     String applicationDefinitionString, String deploymentSpec, String validationOverrides,
+                                     boolean failOnValidateXml,
                                      String queryProfile, String queryProfileType, TenantName tenantName) {
         this.root = root;
         this.hostsS = hosts;
@@ -79,6 +81,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         this.schemas = schemas;
         this.files = files;
         this.schemaDir = schemaDir;
+        this.applicationDefinitionString = Optional.ofNullable(applicationDefinitionString);
         this.deploymentSpecString = Optional.ofNullable(deploymentSpec);
         this.validationOverrides = Optional.ofNullable(validationOverrides);
         this.failOnValidateXml = failOnValidateXml;
@@ -183,13 +186,8 @@ public class MockApplicationPackage implements ApplicationPackage {
     }
 
     @Override
-    public String getHostSource() {
-        return "mock source";
-    }
-
-    @Override
-    public String getServicesSource() {
-        return "mock source";
+    public Optional<Reader> getApplicationDefinition() {
+        return applicationDefinitionString.map(StringReader::new);
     }
 
     @Override
@@ -243,6 +241,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         private List<String> schemas = List.of();
         private Map<Path, MockApplicationFile> files = new LinkedHashMap<>();
         private String schemaDir = null;
+        private String applicationDefinition = null;
         private String deploymentSpec = null;
         private String validationOverrides = null;
         private boolean failOnValidateXml = false;
@@ -301,6 +300,11 @@ public class MockApplicationPackage implements ApplicationPackage {
             return this;
         }
 
+        public Builder withApplicationDefinition(String applicationDefinition) {
+            this.applicationDefinition = applicationDefinition;
+            return this;
+        }
+
         public Builder withDeploymentSpec(String deploymentSpec) {
             this.deploymentSpec = deploymentSpec;
             return this;
@@ -333,7 +337,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
         public ApplicationPackage build() {
             return new MockApplicationPackage(root, hosts, services, schemas, files, schemaDir,
-                                              deploymentSpec, validationOverrides, failOnValidateXml,
+                                              applicationDefinition, deploymentSpec, validationOverrides, failOnValidateXml,
                                               queryProfile, queryProfileType, tenantName);
         }
     }

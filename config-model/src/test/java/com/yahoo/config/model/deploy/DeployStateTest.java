@@ -68,7 +68,7 @@ public class DeployStateTest {
         defs.put(new ConfigDefinitionKey("foo", "bar"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("foo", new String[]{"namespace=bar", "foo int default=0"}));
         defs.put(new ConfigDefinitionKey("test2", "a.b"),
                 new com.yahoo.vespa.config.buildergen.ConfigDefinition("namespace-in-filename", new String[]{"namespace=a.b", "doubleVal double default=1.0"}));
-        ApplicationPackage app = FilesApplicationPackage.fromFile(new File("src/test/cfg//application/app1"));
+        ApplicationPackage app = FilesApplicationPackage.fromDir(new File("src/test/cfg//application/app1"), Map.of());
         DeployState state = createDeployState(app, defs);
 
         assertNotNull(state.getConfigDefinition(new ConfigDefinitionKey("foo", "bar")));
@@ -85,7 +85,7 @@ public class DeployStateTest {
         defs.put(new ConfigDefinitionKey("test2", "a.b"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("test2", new String[]{"namespace=a.b", "doubleVal double default=1.0"}));
         //defs.put(new ConfigDefinitionKey("test2", "c.d"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("test2", new String[]{"namespace=c.d", "doubleVal double default=1.0"}));
         defs.put(new ConfigDefinitionKey("test3", "xyzzy"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("test3", new String[]{"namespace=xyzzy", "message string"}));
-        ApplicationPackage app = FilesApplicationPackage.fromFile(new File("src/test/cfg//application/app1"));
+        ApplicationPackage app = FilesApplicationPackage.fromDir(new File("src/test/cfg//application/app1"), Map.of());
         DeployState state = createDeployState(app, defs);
 
         assertNotNull(state.getConfigDefinition(new ConfigDefinitionKey("test2", "a.b")));
@@ -119,4 +119,3 @@ public class DeployStateTest {
     }
 
 }
-

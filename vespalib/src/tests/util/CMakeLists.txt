@@ -7,6 +7,7 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     gtest_runner.cpp
     bfloat16_test.cpp
     bits_test.cpp
+    casts_test.cpp
     cgroup_resource_limits_test.cpp
     crc_test.cpp
     crypto_test.cpp

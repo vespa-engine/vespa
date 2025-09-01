@@ -77,7 +77,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean logserverOtelCol = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
     private int maxDistributorDocumentOperationSizeMib = -1;
-    private long searchCoreTransactionLogReplaySoftMemoryLimit = -3;
     private int searchCoreMaxOutstandingMoveOps = 100;
     private boolean useNewPrepareForRestart = false;
     private Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
@@ -132,7 +131,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
     @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
-    @Override public long searchCoreTransactionLogReplaySoftMemoryLimit() { return searchCoreTransactionLogReplaySoftMemoryLimit; }
     @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
     @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
     @Override public int searchNodeInitializerThreads() { return 0; }
@@ -339,11 +337,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setMaxDistributorDocumentOperationSizeMib(int maxSizeMib) {
         this.maxDistributorDocumentOperationSizeMib = maxSizeMib;
-        return this;
-    }
-
-    public TestProperties setSearchCoreTransactionLogReplaySoftMemoryLimit(long limit) {
-        this.searchCoreTransactionLogReplaySoftMemoryLimit = limit;
         return this;
     }
 

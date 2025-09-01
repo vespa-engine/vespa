@@ -34,7 +34,7 @@ class ConsumersConfigGenerator {
                          combineConsumers(defaultConsumer, allConsumers.get(MetricsConsumer.vespa.id())));
         allConsumers.put(MetricsConsumer.autoscaling.id(), MetricsConsumer.autoscaling);
 
-        if (systemName.isPublic())
+        if (systemName.isPublicLike())
             allConsumers.put(MetricsConsumer.vespaCloud.id(), MetricsConsumer.vespaCloud);
 
         return allConsumers.values().stream()

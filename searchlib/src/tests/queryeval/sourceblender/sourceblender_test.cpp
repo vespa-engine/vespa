@@ -36,8 +36,11 @@ protected:
 
 public:
     explicit UnpackChecker(SearchIterator *search) : _search(search), _unpacked() {}
+    ~UnpackChecker() override;
     const SimpleResult &getUnpacked() const { return _unpacked; }
 };
+
+UnpackChecker::~UnpackChecker() = default;
 
 class MySelector : public search::FixedSourceSelector
 {

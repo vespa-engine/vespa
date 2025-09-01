@@ -76,7 +76,6 @@ QueryParser::QueryParser(const char* query_string)
     _reached_end(false) {
     _op_to_type["AND"] = TOK_NORM_OP;
     _op_to_type["OR"] = TOK_NORM_OP;
-    _op_to_type["ANY"] = TOK_NORM_OP;
     _op_to_type["RANK"] = TOK_NORM_OP;
     _op_to_type["ANDNOT"] = TOK_NORM_OP;
     _op_to_type["PHRASE"] = TOK_NORM_OP;
@@ -140,8 +139,6 @@ void QueryParser::trav(QueryItem* e_abstract) const {
         _v->VisitAND(e, e->arity());
     else if (e->_name.compare("OR") == 0)
         _v->VisitOR(e, e->arity());
-    else if (e->_name.compare("ANY") == 0)
-        _v->VisitANY(e, e->arity());
     else if (e->_name.compare("ANDNOT") == 0)
         _v->VisitANDNOT(e, e->arity());
     else if (e->_name.compare("RANK") == 0)

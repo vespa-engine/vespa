@@ -11,7 +11,9 @@
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/vespalib/util/casts.h>
 #include <vespa/vespalib/util/featureset.h>
+
 
 using document::DataType;
 using document::DocumentTypeRepo;
@@ -598,7 +600,7 @@ TEST_F(Messages60Test, testVisitorInfoMessage) {
     tmp.getFinishedBuckets().push_back(document::BucketId(16, 1));
     tmp.getFinishedBuckets().push_back(document::BucketId(16, 2));
     tmp.getFinishedBuckets().push_back(document::BucketId(16, 4));
-    string utf8 = "error message: \u00e6\u00c6\u00f8\u00d8\u00e5\u00c5\u00f6\u00d6";
+    string utf8 = u8"error message: æÆøØåÅöÖ"_C;
     tmp.setErrorMessage(utf8);
 
     EXPECT_EQ(MESSAGE_BASE_LENGTH + 67u, serialize("VisitorInfoMessage", tmp));

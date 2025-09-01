@@ -11,6 +11,7 @@ namespace search::queryeval::test {
 struct EagerChild : public SearchIterator
 {
     EagerChild(uint32_t initial) : SearchIterator() { setDocId(initial); }
+    ~EagerChild() override;
     void doSeek(uint32_t) override { setAtEnd(); }
     void doUnpack(uint32_t) override {}
 };

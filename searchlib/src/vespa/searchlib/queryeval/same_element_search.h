@@ -36,6 +36,7 @@ public:
                       fef::MatchData::UP md,
                       std::vector<ElementIterator::UP> children,
                       bool strict);
+    ~SameElementSearch() override;
     void initRange(uint32_t begin_id, uint32_t end_id) override;
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t docid) override;

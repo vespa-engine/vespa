@@ -2,6 +2,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "casts.h"
 
 namespace vespalib {
 
@@ -98,7 +99,7 @@ public:
                          uint32_t initval) {
         uint32_t a,b,c,len;
         const unsigned char *k;
-        k = reinterpret_cast<const unsigned char *>(orig_k);
+        k = char_p_cast<unsigned char>(orig_k);
 
         /* Set up the internal state */
         len = length;
@@ -149,4 +150,3 @@ public:
 };
 
 }
-

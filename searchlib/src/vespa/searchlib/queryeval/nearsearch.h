@@ -96,7 +96,8 @@ private:
     {
         Matcher(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in)
             : MatcherBase(win, element_gap, fieldId, in) {}
-        bool match(uint32_t docId);
+        template <typename MatchResult>
+        void match(uint32_t docId, MatchResult& result);
     };
 
     std::vector<Matcher> _matchers;
@@ -117,6 +118,8 @@ public:
                uint32_t window,
                const IElementGapInspector& element_gap_inspector,
                bool strict = true);
+    ~NearSearch() override;
+    void get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids) override;
 };
 
 /**
@@ -130,7 +133,8 @@ private:
     {
         Matcher(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in)
             : MatcherBase(win, element_gap, fieldId, in) {}
-        bool match(uint32_t docId);
+        template <typename MatchResult>
+        void match(uint32_t docId, MatchResult& match_result);
     };
 
     std::vector<Matcher> _matchers;
@@ -151,7 +155,9 @@ public:
                 uint32_t window,
                 const IElementGapInspector& element_gap_inspector,
                 bool strict = true);
+    ~ONearSearch() override;
 
+    void get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids) override;
 };
 
 }

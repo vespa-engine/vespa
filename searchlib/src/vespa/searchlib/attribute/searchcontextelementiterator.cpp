@@ -9,27 +9,15 @@ using search::fef::TermFieldMatchDataPosition;
 namespace search::attribute {
 
 void
-SearchContextElementIterator::getElementIds(uint32_t docId, std::vector<uint32_t> & elementIds) {
-    int32_t weight(0);
-    for (int32_t id = _searchContext.find(docId, 0, weight); id >= 0; id = _searchContext.find(docId, id+1, weight)) {
-        elementIds.push_back(id);
-    }
+SearchContextElementIterator::getElementIds(uint32_t docId, std::vector<uint32_t> & elementIds)
+{
+    _searchContext.get_element_ids(docId, elementIds);
 }
+
 void
-SearchContextElementIterator::mergeElementIds(uint32_t docId, std::vector<uint32_t> & elementIds) {
-    size_t toKeep(0);
-    int32_t id(-1);
-    int32_t weight(0);
-    for (int32_t candidate : elementIds) {
-        if (candidate > id) {
-            id = _searchContext.find(docId, candidate, weight);
-            if (id < 0) break;
-        }
-        if (id == candidate) {
-            elementIds[toKeep++] = candidate;
-        }
-    }
-    elementIds.resize(toKeep);
+SearchContextElementIterator::mergeElementIds(uint32_t docId, std::vector<uint32_t> & elementIds)
+{
+    _searchContext.and_element_ids_into(docId, elementIds);
 }
 
 SearchContextElementIterator::SearchContextElementIterator(queryeval::SearchIterator::UP search, const ISearchContext & sc)

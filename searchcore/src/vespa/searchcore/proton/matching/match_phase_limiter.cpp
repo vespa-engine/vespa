@@ -23,7 +23,8 @@ public:
                       std::move(PRE_FILTER ? search : limiter))
     {
     }
-    void doUnpack(uint32_t docId) override { 
+    ~LimitedSearchT() override;
+    void doUnpack(uint32_t docId) override {
         if (PRE_FILTER) {
             getSecond().doUnpack(docId);
         } else {
@@ -31,6 +32,9 @@ public:
         }
     }
 };
+
+template <bool PRE_FILTER>
+LimitedSearchT<PRE_FILTER>::~LimitedSearchT() = default;
 
 } // namespace proton::matching::<unnamed>
 

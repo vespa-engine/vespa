@@ -123,6 +123,7 @@ struct MockSearch : public SearchIterator {
     int seekCnt;
     int _initial;
     explicit MockSearch(uint32_t initial) : SearchIterator(), seekCnt(0), _initial(initial) { }
+    ~MockSearch() override;
     void initRange(uint32_t begin, uint32_t end) override {
         SearchIterator::initRange(begin, end);
         setDocId(_initial);
@@ -133,6 +134,8 @@ struct MockSearch : public SearchIterator {
     }
     void doUnpack(uint32_t) override {}
 };
+
+MockSearch::~MockSearch() = default;
 
 struct MockFixture {
     MockSearch *mock;
@@ -334,6 +337,7 @@ struct VerifyMatchData {
         VerifyMatchData &vmd;
         MyBlueprint(VerifyMatchData &vmd_in, FieldSpecBase spec_in)
             : SimpleLeafBlueprint(spec_in), vmd(vmd_in) {}
+        ~MyBlueprint() override;
         [[nodiscard]] SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override {
             EXPECT_EQ(tfmda.size(), 1u);
             EXPECT_TRUE(tfmda[0] != nullptr);
@@ -358,6 +362,8 @@ struct VerifyMatchData {
         return std::make_unique<MyBlueprint>(*this, spec);
     }
 };
+
+VerifyMatchData::MyBlueprint::~MyBlueprint() = default;
 
 TEST(WeightedSetTermTest, require_that_children_get_a_common_yet_separate_term_field_match_data)
 {

@@ -16,12 +16,16 @@ public:
     SourceBlenderSearchNonStrict(std::unique_ptr<Iterator> sourceSelector, const Children &children)
         : SourceBlenderSearch(std::move(sourceSelector), children)
     {}
+    ~SourceBlenderSearchNonStrict() override;
 };
+
+SourceBlenderSearchNonStrict::~SourceBlenderSearchNonStrict() = default;
 
 class SourceBlenderSearchStrict : public SourceBlenderSearch
 {
 public:
     SourceBlenderSearchStrict(std::unique_ptr<Iterator> sourceSelector, const Children &children);
+    ~SourceBlenderSearchStrict() override;
 private:
     VESPA_DLL_LOCAL void advance() __attribute__((noinline));
     vespalib::Array<SearchIterator *>  _nextChildren;
@@ -38,6 +42,8 @@ SourceBlenderSearchStrict::SourceBlenderSearchStrict(
 {
     _nextChildren.reserve(children.size());
 }
+
+SourceBlenderSearchStrict::~SourceBlenderSearchStrict() = default;
 
 void
 SourceBlenderSearch::doSeek(uint32_t docid)

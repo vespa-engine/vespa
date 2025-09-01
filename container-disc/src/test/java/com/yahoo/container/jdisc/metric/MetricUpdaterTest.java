@@ -2,7 +2,7 @@
 package com.yahoo.container.jdisc.metric;
 
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
+import com.yahoo.jdisc.statistics.DeactivatedContainerWatchdogMetrics;
 import org.junit.jupiter.api.Test;
 
 import java.lang.management.ManagementFactory;
@@ -24,7 +24,7 @@ public class MetricUpdaterTest {
         int gcCount = ManagementFactory.getGarbageCollectorMXBeans().size();
 
         Metric metric = mock(Metric.class);
-        ContainerWatchdogMetrics containerWatchdogMetrics = mock(ContainerWatchdogMetrics.class);
+        DeactivatedContainerWatchdogMetrics containerWatchdogMetrics = mock(DeactivatedContainerWatchdogMetrics.class);
         new MetricUpdater(new MockScheduler(), metric, containerWatchdogMetrics);
         verify(containerWatchdogMetrics, times(1)).emitMetrics(any());
         verify(metric, times(14 + 2 * gcCount)).set(anyString(), any(), any());

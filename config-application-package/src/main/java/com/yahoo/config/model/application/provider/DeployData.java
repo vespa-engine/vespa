@@ -1,7 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.application.provider;
 
+import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.provision.ApplicationId;
+
+import java.io.File;
 
 /**
  * Data generated or computed during deployment
@@ -43,5 +46,14 @@ public class DeployData {
     public long getCurrentlyActiveGeneration() { return currentlyActiveGeneration; }
 
     public ApplicationId getApplicationId() { return applicationId; }
+
+    ApplicationMetaData toMetaData(File appDir) {
+        return new ApplicationMetaData(getDeployTimestamp(),
+                                       isInternalRedeploy(),
+                                       getApplicationId(),
+                                       new ApplicationChecksum(appDir).asString(),
+                                       getGeneration(),
+                                       getCurrentlyActiveGeneration());
+    }
 
 }

@@ -29,7 +29,7 @@ public:
     AttributeWeightedSetBlueprint(const AttributeWeightedSetBlueprint &) = delete;
     AttributeWeightedSetBlueprint &operator=(const AttributeWeightedSetBlueprint &) = delete;
     AttributeWeightedSetBlueprint(const queryeval::FieldSpec &field, const IAttributeVector & attr);
-    ~AttributeWeightedSetBlueprint();
+    ~AttributeWeightedSetBlueprint() override;
     void addToken(std::unique_ptr<ISearchContext> context, int32_t weight);
     void sort(queryeval::InFlow in_flow) override;
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override;

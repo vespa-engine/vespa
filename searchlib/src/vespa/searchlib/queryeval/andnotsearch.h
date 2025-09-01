@@ -27,6 +27,7 @@ protected:
     explicit AndNotSearch(MultiSearch::Children children) : MultiSearch(std::move(children)) { }
 
 public:
+    ~AndNotSearch() override;
     static std::unique_ptr<SearchIterator> create(ChildrenIterators children, bool strict);
 
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;

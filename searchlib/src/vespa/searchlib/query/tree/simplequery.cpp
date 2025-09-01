@@ -18,6 +18,8 @@ SimpleONear::~SimpleONear() = default;
 
 SimpleOr::~SimpleOr() = default;
 
+SimpleWeakAnd::~SimpleWeakAnd() = default;
+
 SimpleEquiv::~SimpleEquiv() = default;
 
 SimplePhrase::~SimplePhrase() = default;

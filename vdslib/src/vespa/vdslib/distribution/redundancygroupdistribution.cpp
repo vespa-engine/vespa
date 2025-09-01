@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "redundancygroupdistribution.h"
+#include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <boost/lexical_cast.hpp>
 #include <algorithm>
 #include <cassert>
 #include <string>
+#include <ostream>
 
 namespace storage::lib {
 
@@ -59,7 +60,7 @@ namespace {
             if (*it == "*") {
                 result.push_back(0);
             } else {
-                result.push_back(boost::lexical_cast<uint16_t>(*it));
+                result.push_back(vespalib::lexical_cast<uint16_t>(*it));
             }
         }
         return result;

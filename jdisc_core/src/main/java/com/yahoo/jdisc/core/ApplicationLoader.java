@@ -15,7 +15,7 @@ import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.application.OsgiHeader;
 import com.yahoo.jdisc.service.ContainerNotReadyException;
 import com.yahoo.jdisc.service.CurrentContainer;
-import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
+import com.yahoo.jdisc.statistics.DeactivatedContainerWatchdogMetrics;
 import com.yahoo.log.LogSetup;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -42,7 +42,7 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
     private final AtomicReference<ActiveContainer> containerRef = new AtomicReference<>();
     private final Object appLock = new Object();
     private final List<Bundle> appBundles = new ArrayList<>();
-    private final ContainerWatchdog watchdog = new ContainerWatchdog();
+    private final DeactivatedContainerWatchdog watchdog = new DeactivatedContainerWatchdog();
     private Application application;
     private ApplicationInUseTracker applicationInUseTracker;
 
@@ -214,7 +214,7 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
         }
     }
 
-    public ContainerWatchdogMetrics getContainerWatchdogMetrics() {
+    public DeactivatedContainerWatchdogMetrics getContainerWatchdogMetrics() {
         return watchdog;
     }
 

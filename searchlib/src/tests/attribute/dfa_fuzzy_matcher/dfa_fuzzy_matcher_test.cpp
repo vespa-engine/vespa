@@ -6,6 +6,7 @@
 #include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
 #include <vespa/vespalib/fuzzy/levenshtein_dfa.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/casts.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <algorithm>
@@ -36,14 +37,6 @@ using StringEnumStore = EnumStoreT<const char*>;
 using DictionaryEntry = std::pair<std::string, size_t>;
 using RawDictionary = std::vector<DictionaryEntry>;
 using StringVector = std::vector<std::string>;
-
-namespace {
-
-const char* char_from_u8(const char8_t* p) {
-    return reinterpret_cast<const char*>(p);
-}
-
-}
 
 RawDictionary
 read_dictionary()
@@ -296,7 +289,7 @@ TEST_P(DfaFuzzyMatcherTest, fuzzy_match_in_dictionary_with_prefix_lock_length)
     bool cased = GetParam()._cased;
     StringVector words = { "board", "boat", "bob", "door", "food", "foot", "football", "foothill",
                            "for", "forbid", "force", "ford", "forearm", "forecast", "forest", "H", "HA", "h", "ha",
-                           char_from_u8(u8"Ørn"), char_from_u8(u8"øre"), char_from_u8(u8"Ås"), char_from_u8(u8"ås")};
+                           u8"Ørn"_C, u8"øre"_C, u8"Ås"_C, u8"ås"_C};
     populate_dictionary(words);
     expect_prefix_matches("a", 1, {});
     expect_prefix_matches("b", 1, {"bob"});
@@ -315,15 +308,15 @@ TEST_P(DfaFuzzyMatcherTest, fuzzy_match_in_dictionary_with_prefix_lock_length)
     expect_prefix_matches("z", 1, {});
     if (cased) {
         expect_prefix_matches("h", 1, {"h", "ha"});
-        expect_prefix_matches(char_from_u8(u8"Ø"), 1, {char_from_u8(u8"Ørn")});
-        expect_prefix_matches(char_from_u8(u8"ø"), 1, {char_from_u8(u8"øre")});
-        expect_prefix_matches(char_from_u8(u8"å"), 1, {char_from_u8(u8"ås")});
+        expect_prefix_matches(u8"Ø"_C, 1, {u8"Ørn"_C});
+        expect_prefix_matches(u8"ø"_C, 1, {u8"øre"_C});
+        expect_prefix_matches(u8"å"_C, 1, {u8"ås"_C});
         /* Corner case: prefix length > target length means exact match */
         expect_prefix_matches("h", 2, {"h"});
     } else {
         expect_prefix_matches("h", 1, {"H", "h", "HA", "ha"});
-        expect_prefix_matches(char_from_u8(u8"ø"), 1, {char_from_u8(u8"øre"), char_from_u8(u8"Ørn")});
-        expect_prefix_matches(char_from_u8(u8"å"), 1, {char_from_u8(u8"Ås"), char_from_u8(u8"ås")});
+        expect_prefix_matches(u8"ø"_C, 1, {u8"øre"_C, u8"Ørn"_C});
+        expect_prefix_matches(u8"å"_C, 1, {u8"Ås"_C, u8"ås"_C});
         /* Corner case: prefix length > target length means exact match */
         expect_prefix_matches("h", 2, {"H", "h"});
     }
@@ -404,4 +397,3 @@ main(int argc, char** argv)
     }
     return RUN_ALL_TESTS();
 }
-

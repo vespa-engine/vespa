@@ -11,6 +11,7 @@ import com.yahoo.vespa.config.search.RankProfilesConfig;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -23,7 +24,7 @@ public class RankProfileRegistryTest {
 
     @Test
     void testRankProfileInheritance() {
-        TestRoot root = new TestDriver().buildModel(FilesApplicationPackage.fromFile(new File(TESTDIR)));
+        TestRoot root = new TestDriver().buildModel(FilesApplicationPackage.fromDir(new File(TESTDIR), Map.of()));
         RankProfilesConfig left = root.getConfig(RankProfilesConfig.class, "inherit/search/cluster.inherit/left");
         RankProfilesConfig right = root.getConfig(RankProfilesConfig.class, "inherit/search/cluster.inherit/right");
         assertEquals(3, left.rankprofile().size());

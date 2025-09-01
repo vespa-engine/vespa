@@ -172,7 +172,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private List<Client> clients = List.of();
 
     public ContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity) {
-        this(parent, configSubId, clusterId, deployState, zooKeeperLocalhostAffinity, 1);
+        this(parent, configSubId, clusterId, deployState, zooKeeperLocalhostAffinity, 4);
     }
 
     public ContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity, int defaultPoolNumThreads) {

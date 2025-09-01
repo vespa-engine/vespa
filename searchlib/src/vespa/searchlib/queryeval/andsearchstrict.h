@@ -26,12 +26,16 @@ public:
         : AndSearchNoStrict<Unpack>(std::move(children), unpacker)
     {
     }
+    ~AndSearchStrict() override;
 
     void initRange(uint32_t beginid, uint32_t endid) override {
         AndSearchNoStrict<Unpack>::initRange(beginid, endid);
         advance<false>(0);
     }
 };
+
+template<typename Unpack>
+AndSearchStrict<Unpack>::~AndSearchStrict() = default;
 
 template<typename Unpack>
 template<bool doSeekOnly>

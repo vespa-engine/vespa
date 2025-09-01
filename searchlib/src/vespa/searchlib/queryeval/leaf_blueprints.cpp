@@ -33,6 +33,8 @@ EmptyBlueprint::EmptyBlueprint(FieldSpecBaseList fields)
 {
 }
 
+EmptyBlueprint::~EmptyBlueprint() = default;
+
 FlowStats
 AlwaysTrueBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 {
@@ -51,10 +53,13 @@ AlwaysTrueBlueprint::createFilterSearchImpl(FilterConstraint /* constraint */) c
     return std::make_unique<FullSearch>();
 }
 
-AlwaysTrueBlueprint::AlwaysTrueBlueprint() : SimpleLeafBlueprint()
+AlwaysTrueBlueprint::AlwaysTrueBlueprint()
+    : SimpleLeafBlueprint()
 {
     setEstimate(HitEstimate(search::endDocId, false));
 }
+
+AlwaysTrueBlueprint::~AlwaysTrueBlueprint() = default;
 
 //-----------------------------------------------------------------------------
 

@@ -142,7 +142,6 @@ bool SimpleQueryStackDumpIterator::readNext() {
     case ParseItem::ITEM_AND:
     case ParseItem::ITEM_NOT:
     case ParseItem::ITEM_RANK:
-    case ParseItem::ITEM_ANY:
         _currArity = readCompressedPositiveInt(p);
         _curr_index_name = std::string_view();
         _curr_term = std::string_view();

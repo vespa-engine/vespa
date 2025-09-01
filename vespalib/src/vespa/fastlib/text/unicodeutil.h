@@ -9,9 +9,12 @@
 #include <sys/types.h>
 
 #include <vespa/vespalib/text/lowercase.h>
+#include <vespa/vespalib/util/casts.h>
 
 /** ucs4_t is the type of the 4-byte UCS4 characters */
 using ucs4_t = uint32_t;
+
+using vespalib::char_p_cast;
 
 /**
  * Utility class for unicode character handling.
@@ -63,9 +66,9 @@ public:
      */
     static ucs4_t GetUTF8Char(const unsigned char *& src) noexcept;
     static ucs4_t GetUTF8Char(const char *& src) noexcept {
-        const unsigned char *temp = reinterpret_cast<const unsigned char *>(src);
+        const unsigned char *temp = char_p_cast<unsigned char>(src);
         ucs4_t res = GetUTF8Char(temp);
-        src = reinterpret_cast<const char *>(temp);
+        src = char_p_cast<char>(temp);
         return res;
     }
 
@@ -199,9 +202,9 @@ public:
 
     // this is really an alias of the above function
     static ucs4_t GetUTF8CharNonAscii(const char *&src) noexcept {
-        unsigned const char *temp = reinterpret_cast<unsigned const char *>(src);
+        unsigned const char *temp = char_p_cast<unsigned char>(src);
         ucs4_t res = GetUTF8CharNonAscii(temp);
-        src = reinterpret_cast<const char *>(temp);
+        src = char_p_cast<char>(temp);
         return res;
     }
 };

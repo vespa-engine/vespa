@@ -77,6 +77,7 @@ public:
     {
         _localScores.reserve(_matchParams.scoresAdjustFrequency);
     }
+    ~WeakAndSearchLR() override;
     size_t get_num_terms() const override { return _terms.size(); }
     int32_t get_term_weight(size_t idx) const override { return _terms.weight(idx); }
     score_t get_max_score(size_t idx) const override { return _terms.maxScore(idx); }
@@ -117,6 +118,9 @@ public:
     }
     Trinary is_strict() const override { return IS_STRICT ? Trinary::True : Trinary::False; }
 };
+
+template <typename FutureHeap, typename PastHeap, bool IS_STRICT>
+WeakAndSearchLR<FutureHeap,PastHeap,IS_STRICT>::~WeakAndSearchLR() = default;
 
 //-----------------------------------------------------------------------------
 

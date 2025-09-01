@@ -108,8 +108,12 @@ public:
     using ParentType::getUnpacked;
     using ParentType::setUnpacked;
 
+    ~PostingIterator() override;
     void doUnpack(uint32_t docId) override;
 };
+
+template <bool interleaved_features, bool unpack_normal_features, bool unpack_interleaved_features>
+PostingIterator<interleaved_features, unpack_normal_features, unpack_interleaved_features>::~PostingIterator() = default;
 
 template <bool interleaved_features, bool unpack_normal_features, bool unpack_interleaved_features>
 void

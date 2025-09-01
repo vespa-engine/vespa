@@ -6,6 +6,8 @@
 
 namespace search::queryeval {
 
+AndNotSearch::~AndNotSearch() = default;
+
 void
 AndNotSearch::doSeek(uint32_t docid)
 {

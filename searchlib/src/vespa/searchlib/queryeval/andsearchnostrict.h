@@ -25,6 +25,7 @@ public:
         AndSearch(std::move(children)),
         _unpacker(unpacker)
     { }
+    ~AndSearchNoStrict() override;
 
 protected:
     void doSeek(uint32_t docid) override {
@@ -54,5 +55,8 @@ protected:
 private:
     Unpack _unpacker;
 };
+
+template <typename Unpack>
+AndSearchNoStrict<Unpack>::~AndSearchNoStrict() = default;
 
 }

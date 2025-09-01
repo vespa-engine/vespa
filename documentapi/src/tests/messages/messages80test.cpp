@@ -8,6 +8,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/documentapi/documentapi.h>
+#include <vespa/vespalib/util/casts.h>
 #include <vespa/vespalib/util/featureset.h>
 #include <array>
 
@@ -627,7 +628,7 @@ TEST_F(Messages80Test, test_visitor_info_message) {
     tmp.getFinishedBuckets().emplace_back(16, 1);
     tmp.getFinishedBuckets().emplace_back(16, 2);
     tmp.getFinishedBuckets().emplace_back(16, 4);
-    string utf8 = "error message: \u00e6\u00c6\u00f8\u00d8\u00e5\u00c5\u00f6\u00d6"; // FIXME utf-8 literal
+    string utf8 = u8"error message: æÆøØåÅöÖ"_C;
     tmp.setErrorMessage(utf8);
 
     serialize("VisitorInfoMessage", tmp);

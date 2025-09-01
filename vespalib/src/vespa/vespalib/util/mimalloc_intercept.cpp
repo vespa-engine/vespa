@@ -21,9 +21,11 @@ using namespace std::chrono_literals;
 
 extern "C" {
 
+#if !defined(__APPLE__)
 // From https://microsoft.github.io/mimalloc/group__extended.html
 typedef void mi_error_fun(int err, void* arg);
 void mi_register_error(mi_error_fun* err_fn, void* arg) __attribute__((weak));
+#endif
 
 }
 
@@ -122,9 +124,11 @@ public:
     MiMallocAutoRegisterErrorHandler() {
         // If there's no `libmimalloc.so` preloaded, `mi_register_error` will be nullptr
         // since it's a weakly resolved symbol. In that case, do nothing.
+#if !defined(__APPLE__)
         if (mi_register_error) {
             mi_register_error(terminate_on_mi_malloc_failure, nullptr);
         }
+#endif
     }
 };
 

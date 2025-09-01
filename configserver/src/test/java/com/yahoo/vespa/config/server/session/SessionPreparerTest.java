@@ -405,7 +405,7 @@ public class SessionPreparerTest {
     private FilesApplicationPackage getApplicationPackage(File testFile) throws IOException {
         File appDir = folder.newFolder();
         IOUtils.copyDirectory(testFile, appDir);
-        return FilesApplicationPackage.fromFile(appDir);
+        return FilesApplicationPackage.fromDir(appDir, Map.of());
     }
 
     private DeployHandlerLogger getLogger() {

@@ -39,6 +39,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -223,7 +224,7 @@ public class EmbedderTestCase {
     }
 
     private VespaModel loadModel(Path path, boolean hosted) throws Exception {
-        FilesApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(path.toFile());
+        FilesApplicationPackage applicationPackage = FilesApplicationPackage.fromDir(path.toFile(), Map.of());
         TestProperties properties = new TestProperties().setHostedVespa(hosted);
         DeployState state = new DeployState.Builder()
                 .properties(properties)

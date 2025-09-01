@@ -16,6 +16,7 @@ public:
     explicit ONearQueryNode(const search::queryeval::IElementGapInspector& element_gap_inspector) noexcept
         : NearQueryNode("ONEAR", element_gap_inspector)
     { }
+    ~ONearQueryNode() override;
     bool evaluate() const override;
 };
 

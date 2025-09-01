@@ -25,7 +25,7 @@ protected:
 
 public:
     EmptySearch();
-    ~EmptySearch();
+    ~EmptySearch() override;
 };
 
 }

@@ -78,6 +78,8 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
         return termination;
     }
 
+    ResourcePool resourcePool() { return resourceReferences; }
+
     public Injector guiceInjector() {
         return guiceInjector;
     }

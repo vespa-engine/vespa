@@ -30,6 +30,7 @@ public:
           _iterator(attr.create(dict_entry.posting_idx)),
           _postingInfo(queryeval::MinMaxPostingInfo(dict_entry.min_weight, dict_entry.max_weight))
     { }
+    ~DocidWithWeightSearchIterator() override;
     void initRange(uint32_t begin, uint32_t end) override {
         SearchIterator::initRange(begin, end);
         _iterator.lower_bound(begin);

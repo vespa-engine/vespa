@@ -60,11 +60,14 @@ struct MockSearch : SearchIterator {
           _strict(strict_in ? vespalib::Trinary::True : vespalib::Trinary::False),
           tfmda(std::move(tfmda_in)),
           postings_fetched(postings_fetched_in) {}
+    ~MockSearch() override;
     void doSeek(uint32_t docid) override { last_seek = docid; setDocId(docid); }
     void doUnpack(uint32_t docid) override { last_unpack = docid; }
     vespalib::Trinary is_strict() const override { return _strict; } 
     bool strict() const { return (is_strict() == vespalib::Trinary::True); }
 };
+
+MockSearch::~MockSearch() = default;
 
 struct MockBlueprint : SimpleLeafBlueprint {
     FieldSpec spec;
@@ -75,7 +78,8 @@ struct MockBlueprint : SimpleLeafBlueprint {
         : SimpleLeafBlueprint(spec_in), spec(spec_in), term(std::move(term_in))
     {
         setEstimate(HitEstimate(756, false));
-    }    
+    }
+    ~MockBlueprint() override;
     search::queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         return default_flow_stats(docid_limit, 756, 0);
     }
@@ -94,6 +98,8 @@ struct MockBlueprint : SimpleLeafBlueprint {
         postings_fetched = true;
     }
 };
+
+MockBlueprint::~MockBlueprint() = default;
 
 struct MockSearchable : Searchable {
     size_t create_cnt = 0;

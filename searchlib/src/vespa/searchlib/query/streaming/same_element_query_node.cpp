@@ -24,6 +24,9 @@ SameElementQueryNode::evaluateHits(HitList & hl) const
 {
     hl.clear();
     const auto & children = get_terms();
+    if (children.size() == 1) {
+        return children.front()->evaluateHits(hl);
+    }
     for (auto& child : children) {
         if ( ! child->evaluate() ) {
             return hl;
@@ -98,6 +101,36 @@ bool
 SameElementQueryNode::is_same_element_query_node() const noexcept
 {
     return true;
+}
+
+SameElementQueryNode*
+SameElementQueryNode::as_same_element_query_node() noexcept
+{
+    return this;
+}
+
+const SameElementQueryNode*
+SameElementQueryNode::as_same_element_query_node() const noexcept
+{
+    return this;
+}
+
+void
+SameElementQueryNode::get_hidden_leaves(QueryTermList & tl)
+{
+    auto& terms = get_terms();
+    for (auto& term : terms) {
+        term->getLeaves(tl);
+    }
+}
+
+void
+SameElementQueryNode::get_hidden_leaves(ConstQueryTermList & tl) const
+{
+    auto& terms = get_terms();
+    for (auto& term : terms) {
+        term->getLeaves(tl);
+    }
 }
 
 }

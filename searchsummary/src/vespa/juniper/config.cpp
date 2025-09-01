@@ -8,6 +8,9 @@
 #include "SummaryConfig.h"
 #include <cstdlib>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/casts.h>
+
+using vespalib::char_p_cast;
 
 namespace juniper {
 
@@ -37,7 +40,7 @@ Config::Config(const char* config_name, const Juniper& juniper)
     size_t               max_match_candidates = atoi(GetProp("matcher.max_match_candidates", "1000"));
     const char*          seps = GetProp("dynsum.separators", separators.c_str());
     const unsigned char* cons =
-        reinterpret_cast<const unsigned char*>(GetProp("dynsum.connectors", separators.c_str()));
+        char_p_cast<unsigned char>(GetProp("dynsum.connectors", separators.c_str()));
     double proximity_factor = vespalib::locale::c::strtod(GetProp("proximity.factor", "0.25"), nullptr);
     // Silently convert to something sensible
     if (proximity_factor > 1E8 || proximity_factor < 0) proximity_factor = 0.25;

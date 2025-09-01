@@ -19,6 +19,8 @@ FakeSearch::FakeSearch(const std::string &tag, const std::string &field,
     assert(_tfmda.size() == 1);
 }
 
+FakeSearch::~FakeSearch() = default;
+
 void
 FakeSearch::doSeek(uint32_t docid)
 {

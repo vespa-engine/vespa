@@ -610,7 +610,7 @@ public:
                                              uint32_t lastDocId,
                                              const search::fef::TermFieldMatchDataArray &matchData);
 
-    ~FakeFilterOccEGCompressed64ArrayIterator();
+    ~FakeFilterOccEGCompressed64ArrayIterator() override;
 
     void doUnpack(uint32_t docId) override;
     void doSeek(uint32_t docId) override;
@@ -843,8 +843,7 @@ public:
             const std::string &name,
             const fef::TermFieldMatchDataArray &matchData);
 
-    ~FakeFilterOccEGCompressed64SkipArrayIterator();
-
+    ~FakeFilterOccEGCompressed64SkipArrayIterator() override;
 
     void doL4SkipSeek(uint32_t docid);
     void doL3SkipSeek(uint32_t docid); 

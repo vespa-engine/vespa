@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "openssl_crypto_impl.h"
 #include <vespa/vespalib/crypto/crypto_exception.h>
+#include <vespa/vespalib/util/casts.h>
 #include <cassert>
 #include <openssl/bn.h>
 #include <openssl/rand.h>
@@ -182,7 +183,7 @@ set_name_entry_if_non_empty(::X509_NAME& name, const char* field, std::string_vi
         return;
     }
     assert(entry.size() <= INT_MAX);
-    auto* entry_buf = reinterpret_cast<const unsigned char*>(entry.data());
+    auto* entry_buf = char_p_cast<unsigned char>(entry.data());
     auto entry_len  = static_cast<int>(entry.size());
     if (::X509_NAME_add_entry_by_txt(&name, field, MBSTRING_UTF8, entry_buf, entry_len, -1, 0) != 1) {
         throw CryptoException("X509_NAME_add_entry_by_txt");

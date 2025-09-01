@@ -10,6 +10,7 @@
 #include <vespa/searchlib/attribute/enumstore.hpp>
 #include <vespa/searchlib/attribute/single_string_enum_search_context.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/casts.h>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -458,14 +459,6 @@ TEST_F(StringAttributeTest, test_uncased_match) {
     EXPECT_FALSE(helper.isMatch("Xy"));
 }
 
-namespace {
-
-const char* char_from_u8(const char8_t* p) {
-    return reinterpret_cast<const char*>(p);
-}
-
-}
-
 TEST_F(StringAttributeTest, test_uncased_prefix_match) {
     QueryTermUCS4 xyz("xyz", QueryTermSimple::Type::PREFIXTERM);
     StringSearchHelper helper(xyz, false);
@@ -478,12 +471,12 @@ TEST_F(StringAttributeTest, test_uncased_prefix_match) {
     EXPECT_TRUE(helper.isMatch("xyz"));
     EXPECT_TRUE(helper.isMatch("XyZ"));
     EXPECT_FALSE(helper.isMatch("Xy"));
-    QueryTermUCS4 aa(char_from_u8(u8"å"), QueryTermSimple::Type::PREFIXTERM);
+    QueryTermUCS4 aa(u8"å"_C, QueryTermSimple::Type::PREFIXTERM);
     StringSearchHelper aa_helper(aa, false);
     EXPECT_FALSE(aa_helper.isMatch("alle"));
-    EXPECT_TRUE(aa_helper.isMatch(char_from_u8(u8"ås")));
-    EXPECT_TRUE(aa_helper.isMatch(char_from_u8(u8"Ås")));
-    EXPECT_FALSE(aa_helper.isMatch(char_from_u8(u8"Ørn")));
+    EXPECT_TRUE(aa_helper.isMatch(u8"ås"_C));
+    EXPECT_TRUE(aa_helper.isMatch(u8"Ås"_C));
+    EXPECT_FALSE(aa_helper.isMatch(u8"Ørn"_C));
 }
 
 TEST_F(StringAttributeTest, test_cased_match) {
@@ -513,12 +506,12 @@ TEST_F(StringAttributeTest, test_cased_prefix_match) {
     EXPECT_FALSE(helper.isMatch("Xyz"));
     EXPECT_TRUE(helper.isMatch("XyZ"));
     EXPECT_FALSE(helper.isMatch("Xy"));
-    QueryTermUCS4 aa(char_from_u8(u8"å"), QueryTermSimple::Type::PREFIXTERM);
+    QueryTermUCS4 aa(u8"å"_C, QueryTermSimple::Type::PREFIXTERM);
     StringSearchHelper aa_helper(aa, true);
     EXPECT_FALSE(aa_helper.isMatch("alle"));
-    EXPECT_TRUE(aa_helper.isMatch(char_from_u8(u8"ås")));
-    EXPECT_FALSE(aa_helper.isMatch(char_from_u8(u8"Ås")));
-    EXPECT_FALSE(aa_helper.isMatch(char_from_u8(u8"Ørn")));
+    EXPECT_TRUE(aa_helper.isMatch(u8"ås"_C));
+    EXPECT_FALSE(aa_helper.isMatch(u8"Ås"_C));
+    EXPECT_FALSE(aa_helper.isMatch(u8"Ørn"_C));
 }
 
 TEST_F(StringAttributeTest, test_uncased_regex_match) {

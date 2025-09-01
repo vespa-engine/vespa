@@ -41,6 +41,7 @@ struct SimpleWeakAnd : WeakAnd {
     SimpleWeakAnd(uint32_t targetNumHits, std::string view) :
         WeakAnd(targetNumHits, std::string(std::move(view)))
     {}
+    ~SimpleWeakAnd() override;
 };
 struct SimpleEquiv : Equiv {
     SimpleEquiv(int32_t id, Weight weight)

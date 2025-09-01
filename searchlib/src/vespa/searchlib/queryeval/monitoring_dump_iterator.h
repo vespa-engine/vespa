@@ -16,7 +16,7 @@ private:
 
 public:
     MonitoringDumpIterator(MonitoringSearchIterator::UP iterator);
-    ~MonitoringDumpIterator();
+    ~MonitoringDumpIterator() override;
 
     // Overrides SearchIterator
     void doSeek(uint32_t docId) override;

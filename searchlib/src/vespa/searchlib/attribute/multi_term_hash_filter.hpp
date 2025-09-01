@@ -20,6 +20,9 @@ MultiTermHashFilter<WrapperType>::MultiTermHashFilter(fef::TermFieldMatchData& t
 }
 
 template <typename WrapperType>
+MultiTermHashFilter<WrapperType>::~MultiTermHashFilter() = default;
+
+template <typename WrapperType>
 void
 MultiTermHashFilter<WrapperType>::and_hits_into(BitVector& result, uint32_t begin_id)
 {

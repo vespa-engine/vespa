@@ -31,7 +31,7 @@ public class SemanticRulesTest {
     @Test
     void semanticRulesTest() throws ParseException {
         SemanticRuleBuilder ruleBuilder = new SemanticRuleBuilder();
-        SemanticRules rules = ruleBuilder.build(FilesApplicationPackage.fromFile(new File(root)));
+        SemanticRules rules = ruleBuilder.build(FilesApplicationPackage.fromDir(new File(root), Map.of()));
         SemanticRulesConfig.Builder configBuilder = new SemanticRulesConfig.Builder();
         rules.getConfig(configBuilder);
         SemanticRulesConfig config = new SemanticRulesConfig(configBuilder);
@@ -48,7 +48,7 @@ public class SemanticRulesTest {
     @Test
     void rulesWithErrors() {
         try {
-            new SemanticRuleBuilder().build(FilesApplicationPackage.fromFile(new File(rootWithErrors)));
+            new SemanticRuleBuilder().build(FilesApplicationPackage.fromDir(new File(rootWithErrors), Map.of()));
             fail("should fail with IllegalArgumentException, so that it is reported to the user as an error in application package");
         } catch (IllegalArgumentException e) {
             assertEquals("com.yahoo.prelude.semantics.parser.ParseException: Could not parse rule 'invalid'", e.getMessage());
@@ -58,7 +58,7 @@ public class SemanticRulesTest {
     @Test
     void rulesWithDuplicateDefault() {
         try {
-            new SemanticRuleBuilder().build(FilesApplicationPackage.fromFile(new File(rootWithDuplicateDefault)));
+            new SemanticRuleBuilder().build(FilesApplicationPackage.fromDir(new File(rootWithDuplicateDefault), Map.of()));
             fail("should fail with IllegalArgumentException, so that it is reported to the user as an error in application package");
         } catch (IllegalArgumentException e) {
             assertEquals("Rules [one, other] are both marked as the default rule, there can only be one", e.getMessage());

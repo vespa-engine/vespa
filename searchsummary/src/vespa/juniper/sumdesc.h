@@ -71,7 +71,7 @@ protected:
 
     bool overlap(MatchCandidate* m);
     bool word_connector(const unsigned char* s);
-    int  complete_extended_token(unsigned char* start, ssize_t length, const unsigned char*& ptr, off_t increment);
+    int  complete_extended_token(const unsigned char* start, ssize_t length, const unsigned char*& ptr, off_t increment);
 
 private:
     /* desired net printout length */

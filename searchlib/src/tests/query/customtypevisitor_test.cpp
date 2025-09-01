@@ -21,40 +21,181 @@ struct InitTerm : Base {
     InitTerm() : Base(typename Base::Type(), "view", 0, Weight(0)) {}
 };
 
-struct MyAnd : And {};
-struct MyAndNot : AndNot {};
-struct MyEquiv : Equiv {};
-struct MyNear : Near { MyNear() : Near(1) {} };
-struct MyONear : ONear { MyONear() : ONear(1) {} };
-struct MyOr : Or {};
-struct MyPhrase : Phrase { MyPhrase() : Phrase("view", 0, Weight(42)) {} };
-struct MySameElement : SameElement { MySameElement() : SameElement("view", 0, Weight(42)) {} };
-struct MyRank : Rank {};
-struct MyNumberTerm : InitTerm<NumberTerm>  {};
-struct MyLocationTerm : InitTerm<LocationTerm> {};
-struct MyPrefixTerm : InitTerm<PrefixTerm>  {};
-struct MyRangeTerm : InitTerm<RangeTerm> {};
-struct MyStringTerm : InitTerm<StringTerm>  {};
-struct MySubstrTerm : InitTerm<SubstringTerm>  {};
-struct MySuffixTerm : InitTerm<SuffixTerm>  {};
-struct MyFuzzyTerm : FuzzyTerm { MyFuzzyTerm(): FuzzyTerm("term", "view", 0, Weight(0), 2, 0, false) {} };
-struct MyWeakAnd : WeakAnd { MyWeakAnd() : WeakAnd(1234, "view") {} };
-struct MyWeightedSetTerm : WeightedSetTerm { MyWeightedSetTerm() : WeightedSetTerm(0, "view", 0, Weight(42)) {} };
-struct MyDotProduct : DotProduct { MyDotProduct() : DotProduct(0, "view", 0, Weight(42)) {} };
-struct MyWandTerm : WandTerm { MyWandTerm() : WandTerm(0, "view", 0, Weight(42), 57, 67, 77.7) {} };
-struct MyPredicateQuery : InitTerm<PredicateQuery> {};
-struct MyRegExpTerm : InitTerm<RegExpTerm>  {};
+struct MyAnd : And {
+    ~MyAnd() override;
+};
+
+struct MyAndNot : AndNot {
+    ~MyAndNot() override;
+};
+
+struct MyEquiv : Equiv {
+    ~MyEquiv() override;
+};
+
+struct MyNear : Near {
+    MyNear() : Near(1) {}
+    ~MyNear() override;
+};
+
+struct MyONear : ONear {
+    MyONear() : ONear(1) {}
+    ~MyONear() override;
+};
+
+struct MyOr : Or {
+    ~MyOr() override;
+};
+
+struct MyPhrase : Phrase {
+    MyPhrase() : Phrase("view", 0, Weight(42)) {}
+    ~MyPhrase() override;
+};
+
+struct MySameElement : SameElement {
+    MySameElement() : SameElement("view", 0, Weight(42)) {}
+    ~MySameElement() override;
+};
+
+struct MyRank : Rank {
+    ~MyRank() override;
+};
+
+struct MyNumberTerm : InitTerm<NumberTerm>  {
+    ~MyNumberTerm() override;
+};
+
+struct MyLocationTerm : InitTerm<LocationTerm> {
+    ~MyLocationTerm() override;
+};
+
+struct MyPrefixTerm : InitTerm<PrefixTerm>  {
+    ~MyPrefixTerm() override;
+};
+
+struct MyRangeTerm : InitTerm<RangeTerm> {
+    ~MyRangeTerm() override;
+};
+
+struct MyStringTerm : InitTerm<StringTerm> {
+    ~MyStringTerm() override;
+};
+
+struct MySubstrTerm : InitTerm<SubstringTerm> {
+    ~MySubstrTerm() override;
+};
+
+struct MySuffixTerm : InitTerm<SuffixTerm>  {
+    ~MySuffixTerm() override;
+};
+
+struct MyFuzzyTerm : FuzzyTerm {
+    MyFuzzyTerm() : FuzzyTerm("term", "view", 0, Weight(0), 2, 0, false) {}
+    ~MyFuzzyTerm() override;
+};
+
+struct MyWeakAnd : WeakAnd {
+    MyWeakAnd() : WeakAnd(1234, "view") {}
+    ~MyWeakAnd() override;
+};
+
+struct MyWeightedSetTerm : WeightedSetTerm {
+    MyWeightedSetTerm() : WeightedSetTerm(0, "view", 0, Weight(42)) {}
+    ~MyWeightedSetTerm() override;
+};
+
+struct MyDotProduct : DotProduct {
+    MyDotProduct() : DotProduct(0, "view", 0, Weight(42)) {}
+    ~MyDotProduct() override;
+};
+
+struct MyWandTerm : WandTerm {
+    MyWandTerm() : WandTerm(0, "view", 0, Weight(42), 57, 67, 77.7) {}
+    ~MyWandTerm() override;
+};
+
+struct MyPredicateQuery : InitTerm<PredicateQuery> {
+    ~MyPredicateQuery() override;
+};
+
+struct MyRegExpTerm : InitTerm<RegExpTerm> {
+    ~MyRegExpTerm() override;
+};
+
 struct MyNearestNeighborTerm : NearestNeighborTerm {
     MyNearestNeighborTerm() : NearestNeighborTerm("qt", "fn", 0, Weight(42), 10, true, 666, 1234.5) {}
+    ~MyNearestNeighborTerm() override;
 };
-struct MyTrue : TrueQueryNode {};
-struct MyFalse : FalseQueryNode {};
+
+struct MyTrue : TrueQueryNode {
+    ~MyTrue() override;
+};
+
+struct MyFalse : FalseQueryNode {
+    ~MyFalse() override;
+};
+
 struct MyInTerm : InTerm {
     MyInTerm()
         : InTerm(std::make_unique<StringTermVector>(0), MultiTerm::Type::STRING, "view", 0, Weight(0))
     {
     }
+    ~MyInTerm() override;
 };
+
+MyAnd::~MyAnd() = default;
+
+MyAndNot::~MyAndNot() = default;
+
+MyEquiv::~MyEquiv() = default;
+
+MyNear::~MyNear() = default;
+
+MyONear::~MyONear() = default;
+
+MyOr::~MyOr() = default;
+
+MyPhrase::~MyPhrase() = default;
+
+MySameElement::~MySameElement() = default;
+
+MyRank::~MyRank() = default;
+
+MyNumberTerm::~MyNumberTerm() = default;
+
+MyLocationTerm::~MyLocationTerm() = default;
+
+MyPrefixTerm::~MyPrefixTerm() = default;
+
+MyRangeTerm::~MyRangeTerm() = default;
+
+MyStringTerm::~MyStringTerm() = default;
+
+MySubstrTerm::~MySubstrTerm() = default;
+
+MySuffixTerm::~MySuffixTerm() = default;
+
+MyFuzzyTerm::~MyFuzzyTerm() = default;
+
+MyWeakAnd::~MyWeakAnd() = default;
+
+MyWeightedSetTerm::~MyWeightedSetTerm() = default;
+
+MyDotProduct::~MyDotProduct() = default;
+
+MyWandTerm::~MyWandTerm() = default;
+
+MyPredicateQuery::~MyPredicateQuery() = default;
+
+MyRegExpTerm::~MyRegExpTerm() = default;
+
+MyNearestNeighborTerm::~MyNearestNeighborTerm() = default;
+
+MyTrue::~MyTrue() = default;
+
+MyFalse::~MyFalse() = default;
+
+MyInTerm::~MyInTerm() = default;
 
 struct MyQueryNodeTypes {
     using And = MyAnd;

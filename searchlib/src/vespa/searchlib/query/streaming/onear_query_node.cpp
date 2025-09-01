@@ -6,6 +6,8 @@
 
 namespace search::streaming {
 
+ONearQueryNode::~ONearQueryNode() = default;
+
 bool
 ONearQueryNode::evaluate() const
 {

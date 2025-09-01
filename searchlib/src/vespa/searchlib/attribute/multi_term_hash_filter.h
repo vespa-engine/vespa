@@ -35,6 +35,7 @@ public:
     MultiTermHashFilter(fef::TermFieldMatchData& tfmd,
                         WrapperType attr,
                         TokenMap&& map);
+    ~MultiTermHashFilter() override;
 
     void and_hits_into(BitVector& result, uint32_t begin_id) override;
     void doSeek(uint32_t docId) override;

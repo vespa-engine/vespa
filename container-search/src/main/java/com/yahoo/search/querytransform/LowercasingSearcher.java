@@ -136,9 +136,8 @@ public abstract class LowercasingSearcher extends Searcher {
     }
 
     private void lowerCase(WordAlternativesItem alternatives, IndexFacts.Session indexFacts) {
-        if (!syntheticLowerCaseCheck(alternatives.getIndexName(), indexFacts, alternatives.isFromQuery())) {
-            return;
-        }
+        if (alternatives.isLowercased()) return;
+        if ( ! syntheticLowerCaseCheck(alternatives.getIndexName(), indexFacts, alternatives.isFromQuery())) return;
         for (WordAlternativesItem.Alternative term : alternatives.getAlternatives()) {
             String lowerCased = toLowerCase(term.word);
             alternatives.addTerm(lowerCased, term.exactness * .7d);

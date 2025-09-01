@@ -24,7 +24,6 @@ public:
 
     bool VisitAND(const QueryItem* item, int arity) override;
     bool VisitOR(const QueryItem* item, int arity) override;
-    bool VisitANY(const QueryItem* item, int arity) override;
     bool VisitNEAR(const QueryItem* item, int arity, int limit) override;
     bool VisitWITHIN(const QueryItem* item, int arity, int limit) override;
     bool VisitRANK(const QueryItem* item, int arity) override;

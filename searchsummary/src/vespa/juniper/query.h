@@ -80,14 +80,6 @@ public:
      */
     virtual bool VisitOR(const QueryItem* item, int arity) = 0;
 
-    /** To be called upon by IQuery::Traverse visiting an AND query item
-     * @param item The (opaque to IQueryVisitor) item that is visited
-     * @param arity The number of children of this item
-     * @return if false, caller should skip calling this element's children visitors,
-     *   otherwise caller should proceed as normal
-     */
-    virtual bool VisitANY(const QueryItem* item, int arity) = 0;
-
     /** To be called upon by IQuery::Traverse visiting a NEAR query item
      * @param item The (opaque to IQueryVisitor) item that is visited
      * @param arity The number of children of this item

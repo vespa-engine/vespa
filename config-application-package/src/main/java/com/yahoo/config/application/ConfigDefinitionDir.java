@@ -32,7 +32,7 @@ public class ConfigDefinitionDir {
             checkUserDefConflict(bundle, def, bundlesAdded);
             String defFilename = def.defNamespace + "." + def.defName + ".def";
             File outFile = new File(defDir, defFilename);
-            // Zip Slip fix: ensure output file path is within defDir
+            // Ensure output file path is within defDir
             if (!outFile.toPath().normalize().startsWith(defDir.toPath().normalize())) {
                 throw new IllegalArgumentException("Refusing to write config definition outside of " + defDir.getAbsolutePath() +
                         " (got " + outFile.getAbsolutePath() + ")");

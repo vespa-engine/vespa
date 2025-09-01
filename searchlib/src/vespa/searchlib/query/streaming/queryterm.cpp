@@ -165,4 +165,16 @@ QueryTerm::is_same_element_query_node() const noexcept
     return false;
 }
 
+SameElementQueryNode*
+QueryTerm::as_same_element_query_node() noexcept
+{
+    return nullptr;
+}
+
+const SameElementQueryNode*
+QueryTerm::as_same_element_query_node() const noexcept
+{
+    return nullptr;
+}
+
 }

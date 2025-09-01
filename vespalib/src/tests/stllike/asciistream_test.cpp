@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/locale/c.h>
@@ -572,6 +573,144 @@ TEST(AsciistreamTest, test_ascii_stream)
     verifyBothWays<uint32_t>(7, "7", "uint32_t");
     verifyBothWays<int64_t>(7, "7", "int64_t");
     verifyBothWays<uint64_t>(7, "7", "uint64_t");
+}
+
+
+template<typename T>
+void lexCastValid(T expect, std::string_view input) {
+    SCOPED_TRACE(input);
+    // fprintf(stderr, "lexical cast should pass: >>%.*s<<\n", (int)input.size(), input.data());
+    T got = vespalib::lexical_cast<T>(input);
+    EXPECT_EQ(expect, got);
+}
+
+template<typename T>
+void lexCastInvalid(std::string_view input) {
+    SCOPED_TRACE(input);
+    // fprintf(stderr, "lexical cast should fail: >>%.*s<<\n", (int)input.size(), input.data());
+    EXPECT_THROW(vespalib::lexical_cast<T>(input), vespalib::Exception);
+}
+
+
+std::string_view fsv(float v) {
+    static char buf[100];
+    auto res = std::to_chars(buf, buf+100, v);
+    return std::string_view(buf, res.ptr);
+}
+std::string_view dsv(double v) {
+    static char buf[100];
+    auto res = std::to_chars(buf, buf+100, v);
+    return std::string_view(buf, res.ptr);
+}
+
+
+TEST(LexicalCastTest, test_valid_casts)
+{
+    lexCastValid<int8_t>(0, "0");
+    lexCastValid<int8_t>(7, "7");
+    lexCastValid<int8_t>(11, "011");
+    lexCastValid<int8_t>(-7, "-7");
+    lexCastValid<int8_t>(127, "127");
+    lexCastValid<int8_t>(-128, "-128");
+
+    lexCastValid<uint8_t>(0, "0");
+    lexCastValid<uint8_t>(127, "127");
+    lexCastValid<uint8_t>(128, "128");
+    lexCastValid<uint8_t>(255, "255");
+
+    lexCastValid<int16_t>(0, "0");
+    lexCastValid<int16_t>(42, "42");
+    lexCastValid<int16_t>(32767, "32767");
+    lexCastValid<int16_t>(-1, "-1");
+    lexCastValid<int16_t>(-32768, "-32768");
+
+    lexCastValid<uint16_t>(0, "0");
+    lexCastValid<uint16_t>(42, "42");
+    lexCastValid<uint16_t>(32768, "32768");
+    lexCastValid<uint16_t>(65535, "65535");
+
+    lexCastValid<int32_t>(0, "0");
+    lexCastValid<int32_t>(-1, "-1");
+    lexCastValid<int32_t>(2147483647, "2147483647");
+    lexCastValid<int32_t>(-2147483648, "-2147483648");
+
+    lexCastValid<uint32_t>(0, "0");
+    lexCastValid<uint32_t>(12345, "12345");
+    lexCastValid<uint32_t>(4294967295u, "4294967295");
+
+    lexCastValid<int64_t>(0, "0");
+    lexCastValid<int64_t>(-1, "-1");
+    lexCastValid<int64_t>(9223372036854775807L, "9223372036854775807");
+    lexCastValid<int64_t>(-1L-9223372036854775807L, "-9223372036854775808");
+
+    lexCastValid<uint64_t>(0, "0");
+    lexCastValid<uint64_t>(9223372036854775808UL, "9223372036854775808");
+    lexCastValid<uint64_t>(18446744073709551615UL, "18446744073709551615");
+
+    float dnmFlt = std::numeric_limits<float>::denorm_min();
+    float minFlt = std::numeric_limits<float>::min();
+    float maxFlt = std::numeric_limits<float>::max();
+    float infFlt = std::numeric_limits<float>::infinity();
+
+    lexCastValid<float>(0.0f, "0");
+    lexCastValid<float>(0.0f, "0.0");
+    lexCastValid<float>(1.0f, "1");
+    lexCastValid<float>(1.0f, "1.000");
+    lexCastValid<float>(-1.0f, "-1");
+    lexCastValid<float>(minFlt, fsv(FLT_MIN));
+    lexCastValid<float>(dnmFlt, fsv(FLT_TRUE_MIN));
+    lexCastValid<float>(maxFlt, fsv(FLT_MAX));
+    lexCastValid<float>(infFlt, "inf");
+    lexCastValid<float>(-minFlt, fsv(-FLT_MIN));
+    lexCastValid<float>(-dnmFlt, fsv(-FLT_TRUE_MIN));
+    lexCastValid<float>(-maxFlt, fsv(-FLT_MAX));
+    lexCastValid<float>(-infFlt, "-inf");
+
+    double dnmDbl = std::numeric_limits<double>::denorm_min();
+    double maxDbl = std::numeric_limits<double>::max();
+    double minDbl = std::numeric_limits<double>::min();
+    double infDbl = std::numeric_limits<double>::infinity();
+
+    lexCastValid<double>(0.0, "0");
+    lexCastValid<double>(0.0, "0.0");
+    lexCastValid<double>(1.0, "1");
+    lexCastValid<double>(1.0, "1.000");
+    lexCastValid<double>(-1.0, "-1");
+
+    lexCastValid<double>(minDbl, dsv(DBL_MIN));
+    lexCastValid<double>(dnmDbl, dsv(DBL_TRUE_MIN));
+    lexCastValid<double>(maxDbl, dsv(DBL_MAX));
+    lexCastValid<double>(infDbl, "inf");
+    lexCastValid<double>(-minDbl, dsv(-DBL_MIN));
+    lexCastValid<double>(-dnmDbl, dsv(-DBL_TRUE_MIN));
+    lexCastValid<double>(-maxDbl, dsv(-DBL_MAX));
+    lexCastValid<double>(-infDbl, "-inf");
+}
+
+TEST(LexicalCastTest, test_invalid_casts)
+{
+    lexCastInvalid<int8_t>("-129");
+    lexCastInvalid<int8_t>("128");
+    lexCastInvalid<uint8_t>("-1");
+    lexCastInvalid<uint8_t>("256");
+    lexCastInvalid<int16_t>("-32769");
+    lexCastInvalid<int16_t>("32768");
+    lexCastInvalid<uint16_t>("-1");
+    lexCastInvalid<uint16_t>("65536");
+    lexCastInvalid<int32_t>("-2147483649");
+    lexCastInvalid<int32_t>("2147483648");
+    lexCastInvalid<uint32_t>("-1");
+    lexCastInvalid<uint32_t>("4294967296");
+    lexCastInvalid<int64_t>("-9223372036854775809");
+    lexCastInvalid<int64_t>("9223372036854775808");
+    lexCastInvalid<uint64_t>("-1");
+    lexCastInvalid<uint64_t>("18446744073709551616");
+
+    lexCastInvalid<int8_t>("0.0");
+    lexCastInvalid<int8_t>("0x0");
+    lexCastInvalid<int8_t>("0a");
+    lexCastInvalid<uint8_t>("1.0");
+    lexCastInvalid<uint8_t>("1f");
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
