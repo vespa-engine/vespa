@@ -75,6 +75,7 @@
 ./logforwarder/* @arnej27959
 ./logserver/* @arnej27959
 ./lowercasing_test/* @bjorncs
+./mcp-server/* @bjorncs @glebashnik
 ./messagebus/* @hmusum
 ./messagebus_test/* @hmusum
 ./metrics-proxy/* @gjoranv
@@ -167,3 +168,4 @@
 ./zookeeper-command-line-client/* @hmusum
 ./zookeeper-common/* @hmusum
 ./zookeeper-server/* @hmusum
+
