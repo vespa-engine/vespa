@@ -139,19 +139,19 @@ public:
         private:
             I _place;
         };
-        struct ConstPriorityIdx {
+        struct ConstPriorityIdxView {
             using iterator = ordered_iterator<ByPriSet::const_iterator, const MapEntry>;
             const PriorityQueue& _q;
             iterator begin() const { return _q._sequence_ids_by_priority.begin(); }
             iterator end() const { return _q._sequence_ids_by_priority.end(); }
-            ConstPriorityIdx(PriorityQueue& q) : _q(q) {}
+            ConstPriorityIdxView(PriorityQueue& q) : _q(q) {}
         };
-        struct PriorityIdx {
+        struct PriorityIdxView {
             using iterator = ordered_iterator<ByPriSet::iterator, MapEntry>;
             PriorityQueue& _q;
             iterator begin() const { return _q._sequence_ids_by_priority.begin(); }
             iterator end() const { return _q._sequence_ids_by_priority.end(); }
-            PriorityIdx(PriorityQueue& q) : _q(q) {}
+            PriorityIdxView(PriorityQueue& q) : _q(q) {}
             iterator erase(iterator it) {
                 EntryPtr p = it.deref();
                 ++it;
@@ -159,12 +159,12 @@ public:
                 return it;
             }
         };
-        struct BucketIdx {
+        struct BucketIdxView {
             using iterator = ordered_iterator<ByBucketSet::const_iterator, MapEntry>;
             PriorityQueue& _q;
             iterator begin() const { return _q._sequence_ids_by_bucket.begin(); }
             iterator end() const { return _q._sequence_ids_by_bucket.end(); }
-            BucketIdx(PriorityQueue& q) : _q(q) {}
+            BucketIdxView(PriorityQueue& q) : _q(q) {}
             iterator erase(iterator it) {
                 EntryPtr p = it.deref();
                 ++it;
@@ -197,9 +197,9 @@ public:
         ~PriorityQueue();
     };
 
-    using ConstPriorityIdx = PriorityQueue::ConstPriorityIdx;
-    using PriorityIdx = PriorityQueue::PriorityIdx;
-    using BucketIdx = PriorityQueue::BucketIdx;
+    using ConstPriorityIdxView = PriorityQueue::ConstPriorityIdxView;
+    using PriorityIdxView = PriorityQueue::PriorityIdxView;
+    using BucketIdxView = PriorityQueue::BucketIdxView;
     using Clock = std::chrono::steady_clock;
     using monitor_guard = std::unique_lock<std::mutex>;
     using atomic_size_t = vespalib::datastore::AtomicValueWrapper<size_t>;
@@ -287,9 +287,9 @@ public:
         void dumpQueueHtml(std::ostream & os) const;
         [[nodiscard]] std::mutex & exposeLock() { return *_lock; }
         void queue_emplace(MessageEntry entry) { _queue->emplace_back(std::move(entry)); }
-        [[nodiscard]] BucketIdx exposeBucketIdx() { return BucketIdx(*_queue); }
-        [[nodiscard]] PriorityIdx exposePriorityIdx() { return PriorityIdx(*_queue); }
-        [[nodiscard]] ConstPriorityIdx exposePriorityIdx() const { return ConstPriorityIdx(*_queue); }
+        [[nodiscard]] BucketIdxView exposeBucketIdxView() { return BucketIdxView(*_queue); }
+        [[nodiscard]] PriorityIdxView exposePriorityIdxView() { return PriorityIdxView(*_queue); }
+        [[nodiscard]] ConstPriorityIdxView exposePriorityIdxView() const { return ConstPriorityIdxView(*_queue); }
         void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
         [[nodiscard]] ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const;
     private:
@@ -310,8 +310,8 @@ public:
 
         // Precondition: the bucket used by `iter`s operation is not locked in a way that conflicts
         // with its locking requirements.
-        [[nodiscard]] FileStorHandler::LockedMessage getMessage(monitor_guard & guard, PriorityIdx & idx,
-                                                                PriorityIdx::iterator iter,
+        [[nodiscard]] FileStorHandler::LockedMessage getMessage(monitor_guard & guard, PriorityIdxView & idx,
+                                                                PriorityIdxView::iterator iter,
                                                                 ThrottleToken throttle_token);
         using LockedBuckets = vespalib::hash_map<document::Bucket, MultiLockEntry, document::Bucket::hash>;
         const FileStorHandlerImpl      &_owner;
