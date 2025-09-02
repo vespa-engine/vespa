@@ -1,4 +1,32 @@
 {
+  "com.yahoo.data.JsonProducer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
+      "public java.lang.String toJson()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.data.XmlProducer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract java.lang.StringBuilder writeXML(java.lang.StringBuilder)",
+      "public java.lang.String toXML()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.data.access.ArrayTraverser" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
