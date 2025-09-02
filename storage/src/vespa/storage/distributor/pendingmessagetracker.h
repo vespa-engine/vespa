@@ -162,22 +162,22 @@ private:
         [[nodiscard]] std::string toHtml() const;
 
         // make it easy to implement comparison operators:
-        operator NodeBucketTypeIdKey() const {
+        operator NodeBucketTypeIdKey() const noexcept {
             return NodeBucketTypeIdKey(nodeIdx, bucket, msgType, msgId);
         }
-        operator NodeBucketTypeKey() const {
+        operator NodeBucketTypeKey() const noexcept {
             return NodeBucketTypeKey(nodeIdx, bucket, msgType);
         }
-        operator NodeBucketKey() const {
+        operator NodeBucketKey() const noexcept {
             return NodeBucketKey(nodeIdx, bucket);
         }
-        operator NodeKey() const {
+        operator NodeKey() const noexcept {
             return NodeKey(nodeIdx);
         }
-        operator BucketTypeNodeIdKey() const {
+        operator BucketTypeNodeIdKey() const noexcept {
             return BucketTypeNodeIdKey(bucket, msgType, nodeIdx, msgId);
         }
-        operator BucketKey() const {
+        operator BucketKey() const noexcept {
             return BucketKey(bucket);
         }
     };
@@ -185,13 +185,13 @@ private:
     // comparator using just the 64-bit unique msgId:
     struct MessageIdKey {
         using is_transparent = std::true_type;
-        bool operator() (const MessageEntry &a, const MessageEntry &b) const {
+        bool operator() (const MessageEntry &a, const MessageEntry &b) const noexcept {
             return a.msgId < b.msgId;
         }
-        bool operator() (const MessageEntry &a, uint64_t b) const {
+        bool operator() (const MessageEntry &a, uint64_t b) const noexcept {
             return a.msgId < b;
         }
-        bool operator() (uint64_t a, const MessageEntry &b) const {
+        bool operator() (uint64_t a, const MessageEntry &b) const noexcept {
             return a < b.msgId;
         }
     };
@@ -203,14 +203,14 @@ private:
      */
     struct NodeBucketTypeIdComparator {
         using is_transparent = std::true_type;
-        bool operator() (const MessageEntry *a, const MessageEntry *b) const {
+        bool operator() (const MessageEntry *a, const MessageEntry *b) const noexcept {
             NodeBucketTypeIdKey ka(*a);
             NodeBucketTypeIdKey kb(*b);
             return ka < kb;
         }
         // allow compare both ways with partial Key tuples:
-        template<typename T> bool operator() (const MessageEntry * a, const T& b) const { return T(*a) < b; }
-        template<typename T> bool operator() (const T& a, const MessageEntry * b) const { return a < T(*b); }
+        template<typename T> bool operator() (const MessageEntry * a, const T& b) const noexcept { return T(*a) < b; }
+        template<typename T> bool operator() (const T& a, const MessageEntry * b) const noexcept { return a < T(*b); }
     };
 
     // We also have an index keyed no bucket id+type+node
@@ -218,20 +218,20 @@ private:
     // so maybe it could be simplified
     struct BucketTypeNodeIdComparator {
         using is_transparent = std::true_type;
-        bool operator() (const MessageEntry *a, const MessageEntry *b) const {
+        bool operator() (const MessageEntry *a, const MessageEntry *b) const noexcept {
             BucketTypeNodeIdKey ka(*a);
             BucketTypeNodeIdKey kb(*b);
             return ka < kb;
         }
         // allow compare both ways with partial Key tuples:
-        template<typename T> bool operator() (const MessageEntry * a, const T& b) const { return T(*a) < b; }
-        template<typename T> bool operator() (const T& a, const MessageEntry * b) const { return a < T(*b); }
+        template<typename T> bool operator() (const MessageEntry * a, const T& b) const noexcept { return T(*a) < b; }
+        template<typename T> bool operator() (const T& a, const MessageEntry * b) const noexcept { return a < T(*b); }
     };
 
     // wraps an iterator for std::set<MessageEntry *>, hiding the extra indirection
     template<typename I> struct wrap_set_iterator : public I {
-        auto * operator-> () const { return I::operator*(); }
-        auto & operator* () const { return *I::operator*(); }
+        auto * operator-> () const noexcept { return I::operator*(); }
+        auto & operator* () const noexcept { return *I::operator*(); }
     };
 
     // multi-index container:
@@ -265,12 +265,12 @@ private:
         struct IndexByNodeAndBucket {
             using iterator = wrap_set_iterator<ByNodeAndBucketSet::const_iterator>;
             Messages& _m;
-            auto begin() const { return iterator(_m.byNodeAndBucketSet.begin()); }
-            auto end()   const { return iterator(_m.byNodeAndBucketSet.end()); }
+            auto begin() const noexcept { return iterator(_m.byNodeAndBucketSet.begin()); }
+            auto end()   const noexcept { return iterator(_m.byNodeAndBucketSet.end()); }
 
             IndexByNodeAndBucket(Messages& m) : _m(m) {}
             template<typename Key>
-            std::pair<iterator, iterator> equal_range(Key key) const {
+            std::pair<iterator, iterator> equal_range(Key key) const noexcept {
                 auto inner_range = _m.byNodeAndBucketSet.equal_range(key);
                 return std::make_pair(iterator(inner_range.first),
                                       iterator(inner_range.second));
@@ -292,9 +292,9 @@ private:
         struct IndexByBucketAndType {
             using iterator = wrap_set_iterator<ByBucketAndTypeSet::const_iterator>;
             Messages& _m;
-            auto begin() const { return iterator(_m.byBucketAndTypeSet.begin()); }
-            auto end()   const { return iterator(_m.byBucketAndTypeSet.end()); }
-            std::pair<iterator, iterator> equal_range(BucketKey key) const {
+            auto begin() const noexcept { return iterator(_m.byBucketAndTypeSet.begin()); }
+            auto end()   const noexcept { return iterator(_m.byBucketAndTypeSet.end()); }
+            std::pair<iterator, iterator> equal_range(BucketKey key) const noexcept {
                 auto inner_range = _m.byBucketAndTypeSet.equal_range(key);
                 return std::make_pair(iterator(inner_range.first),
                                       iterator(inner_range.second));
@@ -319,7 +319,7 @@ private:
         ByBucketAndTypeSet   byBucketAndTypeSet;
     public:
         // index wrappers:
-        const MainSet& byMessageId() const { return byMessageIdSet; }
+        const MainSet& byMessageId() const noexcept { return byMessageIdSet; }
         IndexByNodeAndBucket byNodeAndBucketIdx;
         IndexByBucketAndType byBucketAndTypeIdx;
     };
