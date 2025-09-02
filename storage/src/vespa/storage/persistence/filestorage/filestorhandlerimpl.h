@@ -44,14 +44,21 @@ public:
     struct MessageEntry {
         std::shared_ptr<api::StorageMessage> _command;
         metrics::MetricTimer _timer;
-        document::Bucket _bucket;
-        uint8_t _priority;
+        const document::Bucket _bucket;
+        const uint8_t _priority;
+
+        MessageEntry(std::shared_ptr<api::StorageMessage> cmd,
+                     metrics::MetricTimer timer,
+                     const document::Bucket& bucket,
+                     uint8_t priority)
+          : _command(std::move(cmd)), _timer(timer), _bucket(bucket), _priority(priority)
+        {}
 
         MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd,
                      const document::Bucket& bucket,
                      vespalib::steady_time scheduled_at_time);
         MessageEntry(MessageEntry&&) noexcept;
-        MessageEntry(const MessageEntry&) noexcept;
+        MessageEntry(const MessageEntry&) = delete;
         MessageEntry& operator=(const MessageEntry&) = delete;
         ~MessageEntry();
 

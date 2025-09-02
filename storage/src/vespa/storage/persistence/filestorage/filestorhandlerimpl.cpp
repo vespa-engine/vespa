@@ -775,12 +775,12 @@ FileStorHandlerImpl::remapQueueNoLock(const RemapInfo& source, std::vector<Remap
                 _messageSender.sendReply(rep);
             }
         } else {
-            entry._bucket = bucket;
+            MessageEntry mapped(std::move(entry._command), entry._timer, bucket, entry._priority);
             // Move to correct disk queue if needed
             assert(bucket == source.bucket || std::find_if(targets.begin(), targets.end(), [bucket](auto* e){
                 return e->bucket == bucket;
             }) != targets.end());
-            stripe(bucket).queue_emplace(std::move(entry));
+            stripe(bucket).queue_emplace(std::move(mapped));
         }
     }
     stripe(source.bucket).unsafe_update_cached_queue_size();
@@ -899,14 +899,6 @@ FileStorHandlerImpl::MessageEntry::MessageEntry(const std::shared_ptr<api::Stora
       _timer(scheduled_at_time),
       _bucket(bucket),
       _priority(cmd->getPriority())
-{ }
-
-
-FileStorHandlerImpl::MessageEntry::MessageEntry(const MessageEntry& entry) noexcept
-    : _command(entry._command),
-      _timer(entry._timer),
-      _bucket(entry._bucket),
-      _priority(entry._priority)
 { }
 
 
