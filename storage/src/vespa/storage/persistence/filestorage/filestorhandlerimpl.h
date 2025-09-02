@@ -91,11 +91,6 @@ public:
         using ByPriSet = std::set<EntryPtr, ByPriCmp>;
         using ByBucketSet = std::set<EntryPtr, ByBucketCmp>;
 
-        uint64_t _next_sequence_id = 1;
-        EntryMap _main_map;
-        ByPriSet _sequence_ids_by_priority;
-        ByBucketSet _sequence_ids_by_bucket;
-
         size_t size() const { return _main_map.size(); }
         bool empty() const { return _main_map.empty(); }
         void emplace_back(MessageEntry entry) {
@@ -195,6 +190,12 @@ public:
             _sequence_ids_by_bucket()
         {}
         ~PriorityQueue();
+
+    private:
+        uint64_t _next_sequence_id = 1;
+        EntryMap _main_map;
+        ByPriSet _sequence_ids_by_priority;
+        ByBucketSet _sequence_ids_by_bucket;
     };
 
     using ConstPriorityIdxView = PriorityQueue::ConstPriorityIdxView;
