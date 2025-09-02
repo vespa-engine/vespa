@@ -378,15 +378,15 @@ message QueryTreeItem {
 
         ItemStringIn item_string_in = 23;
         ItemNumericIn item_numeric_in = 24;
-        ItemWeightedSetOfString item_weighted_set_string = 25;
-        ItemWeightedSetOfLong item_weighted_set_long = 26;
-        ItemDotProductOfString item_dot_product_string = 27;
-        ItemDotProductOfLong item_dot_product_long = 28;
+        ItemWeightedSetOfString item_weighted_set_of_string = 25;
+        ItemWeightedSetOfLong item_weighted_set_of_long = 26;
+        ItemDotProductOfString item_dot_product_of_string = 27;
+        ItemDotProductOfLong item_dot_product_of_long = 28;
 
         ItemEquiv item_equiv = 29;
         ItemWordAlternatives item_word_alternatives = 30;
-        ItemStringWand item_wand = 31;
-        ItemLongWand item_wand = 32;
+        ItemStringWand item_string_wand = 31;
+        ItemLongWand item_long_wand = 32;
 
         ItemPhrase item_phrase = 33;
         ItemSameElement item_same_element = 34;

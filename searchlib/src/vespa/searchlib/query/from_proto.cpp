@@ -16,18 +16,41 @@ using namespace searchlib::searchprotocol::protobuf;
 namespace search {
 namespace {
 
-void walk(const QueryTreeItem &item, std::vector<const QueryTreeItem *>& target);
+using TreeItem = ProtoTreeIterator::TreeItem;
+
+// void walk(TreeItem item, std::vector<TreeItem>& target);
+void walk(const QueryTreeItem &item, std::vector<TreeItem>& target);
+void walk(const ItemPureWeightedString &item, std::vector<TreeItem>& target) {
+    target.push_back(TreeItem(&item));
+}
+void walk(const ItemPureWeightedLong &item, std::vector<TreeItem>& target) {
+    target.push_back(TreeItem(&item));
+}
 
 template<typename T>
-void walk_children(const T& t, std::vector<const QueryTreeItem *>& target) {
+void walk_children(const T& t, std::vector<TreeItem>& target) {
     for (const auto& child : t) {
         walk(child, target);
     }
 }
 
-void walk(const QueryTreeItem &item, std::vector<const QueryTreeItem *>& target) {
+/*
+void walk(TreeItem item, std::vector<TreeItem>& target) {
+    target.push_back(item);
+    switch (item.index()) {
+    case 0:
+        return walk(*std::get<0>(item), target);
+    case 1:
+    case 2:
+        return;
+    default:
+        abort();
+    }
+}
+*/
+
+void walk(const QueryTreeItem &item, std::vector<TreeItem>& target) {
     using IC = QueryTreeItem::ItemCase;
-    target.push_back(&item);
     switch (item.item_case()) {
     case IC::kItemOr:
         return walk_children(item.item_or().children(), target);
@@ -47,14 +70,20 @@ void walk(const QueryTreeItem &item, std::vector<const QueryTreeItem *>& target)
         return walk_children(item.item_phrase().children(), target);
     case IC::kItemEquiv:
         return walk_children(item.item_equiv().children(), target);
-    case IC::kItemWeightedSet:
-        return walk_children(item.item_weighted_set().children(), target);
+    case IC::kItemWeightedSetOfString:
+        return walk_children(item.item_weighted_set_of_string().weighted_strings(), target);
+    case IC::kItemWeightedSetOfLong:
+        return walk_children(item.item_weighted_set_of_long().weighted_longs(), target);
     case IC::kItemSameElement:
         return walk_children(item.item_same_element().children(), target);
-    case IC::kItemDotProduct:
-        return walk_children(item.item_dot_product().children(), target);
-    case IC::kItemWand:
-        return walk_children(item.item_wand().children(), target);
+    case IC::kItemDotProductOfString:
+        return walk_children(item.item_dot_product_of_string().weighted_strings(), target);
+    case IC::kItemDotProductOfLong:
+        return walk_children(item.item_dot_product_of_long().weighted_longs(), target);
+    case IC::kItemStringWand:
+        return walk_children(item.item_string_wand().weighted_strings(), target);
+    case IC::kItemLongWand:
+        return walk_children(item.item_long_wand().weighted_longs(), target);
     case IC::kItemWordAlternatives:
         return walk_children(item.item_word_alternatives().children(), target);
     default:
@@ -183,10 +212,17 @@ bool handle(const ItemWordAlternatives& item, QueryStackIterator::Data& _d) {
     return true;
 }
 
-bool handle(const ItemWeightedSet& item, QueryStackIterator::Data& _d) {
+bool handle(const ItemWeightedSetOfString& item, QueryStackIterator::Data& _d) {
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_WEIGHTED_SET;
-    _d.arity = item.children_size();
+    _d.arity = item.weighted_strings_size();
+    return true;
+}
+
+bool handle(const ItemWeightedSetOfLong& item, QueryStackIterator::Data& _d) {
+    fillTermProperties(item.properties(), _d);
+    _d.itemType = ParseItem::ItemType::ITEM_WEIGHTED_SET;
+    _d.arity = item.weighted_longs_size();
     return true;
 }
 
@@ -282,17 +318,34 @@ bool handle(const ItemSameElement& item, QueryStackIterator::Data& _d) {
     return true;
 }
 
-bool handle(const ItemDotProduct& item, QueryStackIterator::Data& _d) {
+bool handle(const ItemDotProductOfString& item, QueryStackIterator::Data& _d) {
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_DOT_PRODUCT;
-    _d.arity = item.children_size();
+    _d.arity = item.weighted_strings_size();
     return true;
 }
 
-bool handle(const ItemWand& item, QueryStackIterator::Data& _d) {
+bool handle(const ItemDotProductOfLong& item, QueryStackIterator::Data& _d) {
+    fillTermProperties(item.properties(), _d);
+    _d.itemType = ParseItem::ItemType::ITEM_DOT_PRODUCT;
+    _d.arity = item.weighted_longs_size();
+    return true;
+}
+
+bool handle(const ItemStringWand& item, QueryStackIterator::Data& _d) {
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_WAND;
-    _d.arity = item.children_size();
+    _d.arity = item.weighted_strings_size();
+    _d.targetHits = item.target_num_hits();
+    _d.scoreThreshold = item.score_threshold();
+    _d.thresholdBoostFactor = item.threshold_boost_factor();
+    return true;
+}
+
+bool handle(const ItemLongWand& item, QueryStackIterator::Data& _d) {
+    fillTermProperties(item.properties(), _d);
+    _d.itemType = ParseItem::ItemType::ITEM_WAND;
+    _d.arity = item.weighted_longs_size();
     _d.targetHits = item.target_num_hits();
     _d.scoreThreshold = item.score_threshold();
     _d.thresholdBoostFactor = item.threshold_boost_factor();
@@ -390,6 +443,19 @@ bool handle(const ItemNumericIn& item, QueryStackIterator::Data& _d) {
 
 } // namespace
 
+bool ProtoTreeIterator::handle_item(TreeItem item) {
+    switch (item.index()) {
+    case 0:
+        return handle_item(*std::get<0>(item));
+    case 1:
+        return handle(*std::get<1>(item), _d);
+    case 2:
+        return handle(*std::get<2>(item), _d);
+    default:
+        abort();
+    }
+}
+
 bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
     using IC = QueryTreeItem::ItemCase;
     switch (qsi.item_case()) {
@@ -429,10 +495,14 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
         return handle(qsi.item_word_alternatives(), _d);
     case IC::kItemSameElement:
         return handle(qsi.item_same_element(), _d);
-    case IC::kItemDotProduct:
-        return handle(qsi.item_dot_product(), _d);
-    case IC::kItemWand:
-        return handle(qsi.item_wand(), _d);
+    case IC::kItemDotProductOfString:
+        return handle(qsi.item_dot_product_of_string(), _d);
+    case IC::kItemDotProductOfLong:
+        return handle(qsi.item_dot_product_of_long(), _d);
+    case IC::kItemStringWand:
+        return handle(qsi.item_string_wand(), _d);
+    case IC::kItemLongWand:
+        return handle(qsi.item_long_wand(), _d);
 
     case IC::kItemWordTerm:
         return handle(qsi.item_word_term(), _d);
@@ -463,8 +533,10 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
     case IC::kItemFloatingPointRangeTerm:
         return handle(qsi.item_floating_point_range_term(), _d, _serialized_term);
 
-    case IC::kItemWeightedSet:
-        return handle(qsi.item_weighted_set(), _d);
+    case IC::kItemWeightedSetOfString:
+        return handle(qsi.item_weighted_set_of_string(), _d);
+    case IC::kItemWeightedSetOfLong:
+        return handle(qsi.item_weighted_set_of_long(), _d);
     case IC::kItemPredicateQuery:
         return handle(qsi.item_predicate_query(), _d);
     case IC::kItemNearestNeighbor:
@@ -480,7 +552,7 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
 
 ProtoTreeIterator::~ProtoTreeIterator() = default;
 
-ProtoTreeIterator::ProtoTreeIterator(const ProtoQueryTree& proto_query_tree)
+ProtoTreeIterator::ProtoTreeIterator(const ProtobufQueryTree& proto_query_tree)
   : _proto(proto_query_tree),
     _items(),
     _pos(0),
@@ -491,7 +563,7 @@ ProtoTreeIterator::ProtoTreeIterator(const ProtoQueryTree& proto_query_tree)
 
 bool ProtoTreeIterator::next() {
     if (_pos < _items.size()) {
-        return handle_item(*_items[_pos++]);
+        return handle_item(_items[_pos++]);
     }
     return false;
 }
