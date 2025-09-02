@@ -30,12 +30,17 @@ public class CapacityPoliciesTest {
         }
 
         {
-            int contentNodes = 51;
+            int contentNodes = 49;
+            assertClusterControllerMemory(1.5, contentNodes);
+        }
+
+        {
+            int contentNodes = 50;
             assertClusterControllerMemory(1.65, contentNodes);
         }
 
         {
-            int contentNodes = 51;
+            int contentNodes = 50;
             // Explicitly defined cluster controller memory, 1.9 GiB
             assertClusterControllerMemory(1.9, contentNodes, 1.9);
         }

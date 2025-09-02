@@ -183,25 +183,26 @@ public class CapacityPolicies {
         double adjustment;
         if (isBetween(count, 0, 50)) {
             adjustment = 0;
-        } else if (isBetween(count, 51, 100)) {
+        } else if (isBetween(count, 50, 100)) {
             adjustment = 0.15;
-        } else if (isBetween(count, 101, 200)) {
+        } else if (isBetween(count, 100, 200)) {
             adjustment = 0.3;
-        } else if (isBetween(count, 201, 300)) {
+        } else if (isBetween(count, 200, 300)) {
             adjustment = 0.45;
         } else {
             adjustment = 0.6;
         }
 
         double newMemory = memory + adjustment;
-        if (count > 50) {
+        if (count >= 50) {
             log.log(INFO, "Adjusted cluster controller memory (" + count + " content nodes): " + newMemory + " GiB");
         }
         return newMemory;
     }
 
+    // is between lower (inclusive) and upper (exclusive)
     public static boolean isBetween(int x, int lower, int upper) {
-        return lower <= x && x <= upper;
+        return lower <= x && x < upper;
     }
 
     private NodeResources logserverResources(Architecture architecture) {
