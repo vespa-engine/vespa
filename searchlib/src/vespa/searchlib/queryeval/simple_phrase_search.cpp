@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "simple_phrase_search.h"
+#include "element_id_extractor.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <functional>
@@ -217,6 +218,20 @@ void
 SimplePhraseSearch::visitMembers(ObjectVisitor &visitor) const {
     AndSearch::visitMembers(visitor);
     visit(visitor, "strict", _strict);
+}
+
+void
+SimplePhraseSearch::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    unpack(docid);
+    ElementIdExtractor::get_element_ids(_tmd, docid, element_ids);
+}
+
+void
+SimplePhraseSearch::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    unpack(docid);
+    ElementIdExtractor::and_element_ids_into(_tmd, docid, element_ids);
 }
 
 }
