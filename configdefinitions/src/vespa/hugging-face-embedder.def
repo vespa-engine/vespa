@@ -34,4 +34,4 @@ transformerIntraOpThreads int default=-4
 transformerGpuDevice      int default=0
 
 # Path to model config file, e.g. for Triton. Internal and undocumented for now.
-internalModelConfigPath  path optional
+internalModelConfigPath path optional

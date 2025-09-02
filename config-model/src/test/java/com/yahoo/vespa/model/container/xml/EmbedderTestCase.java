@@ -79,7 +79,7 @@ public class EmbedderTestCase {
     }
     
     @Test
-    void testHuggingfaceEmbedderWithTransformerOnnxConfigFile() throws Exception {
+    void testHuggingfaceEmbedderWithInternalModelConfigPath() throws Exception {
         var model = loadModel(Path.fromString("src/test/cfg/application/embed_triton/"), true);
         var cluster = model.getContainerClusters().get("container");
         var embedderCfg = assertHuggingfaceEmbedderComponentPresent(cluster);

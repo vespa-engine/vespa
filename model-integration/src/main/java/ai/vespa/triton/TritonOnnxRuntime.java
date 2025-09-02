@@ -56,25 +56,27 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     /** Copies the model file to the model repository and serializes the config */
     private void copyModelToRepository(String externalModelPath, OnnxEvaluatorOptions options) {
-        var modelRepository = Defaults.getDefaults().underVespaHome(config.modelRepositoryPath());
-        var repositoryModelRoot = Paths.get(modelRepository, modelName(externalModelPath));
-        var modelVersionRoot = repositoryModelRoot.resolve("1");
-        var repositoryModelFile = modelVersionRoot.resolve("model.onnx");
-        var configFile = repositoryModelRoot.resolve("config.pbtxt");
+        var modelRepositoryPath = Defaults.getDefaults().underVespaHome(config.modelRepositoryPath());
+        var modelBasePath = Paths.get(modelRepositoryPath, modelName(externalModelPath));
+        
+        var modelVersionPath = modelBasePath.resolve("1");
+        var modelFilePath = modelVersionPath.resolve("model.onnx");
+        var modelConfigPath = modelBasePath.resolve("config.pbtxt");
+        
         try {
             // Create directory for model name and version with correct permissions
             Files.createDirectories(
-                    modelVersionRoot,
+                    modelVersionPath,
                     PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxr-x")));
 
-            Files.copy(Paths.get(externalModelPath), repositoryModelFile, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(Paths.get(externalModelPath), modelFilePath, StandardCopyOption.REPLACE_EXISTING);
             var modelConfig = options.rawConfig()
                     .orElseGet(() -> generateConfigFromEvaluatorOptions(externalModelPath, options).toString());
-            Files.writeString(configFile, modelConfig);
+            Files.writeString(modelConfigPath, modelConfig);
 
             // To ensure that the Triton can read the model files, explicitly grant world read
-            addReadPermissions(repositoryModelFile);
-            addReadPermissions(configFile);
+            addReadPermissions(modelFilePath);
+            addReadPermissions(modelConfigPath);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to copy model file to repository", e);
         }
@@ -94,8 +96,8 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         return name.substring(0, name.lastIndexOf('.'));
     }
 
-    // Generate default config based evaluator options.
-    // These are not necessarily optimal but should closely match the effective configuration for the embedded ONNX runtime.
+    // Generate a default model config based on evaluator options.
+    // These are not necqessarily optimal but should closely match the effective configuration for the embedded ONNX runtime.
     private static ModelConfigOuterClass.ModelConfig generateConfigFromEvaluatorOptions(
             String modelPaths, OnnxEvaluatorOptions options) {
         // Similar to EmbeddedOnnxRuntime.overrideOptions(), relies on Triton to fall back to CPU if GPU is not available.
@@ -111,7 +113,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                         .setKind(kind)
                         .build())
                 .setPlatform("onnxruntime_onnx")
-                .setMaxBatchSize(0)
+                .setMaxBatchSize(1) // No batching for now.
                 .putParameters("enable_mem_area", ModelConfigOuterClass.ModelParameter.newBuilder()
                         .setStringValue("0")
                         .build())
