@@ -263,25 +263,25 @@ private:
 
         // Index wrapping the set using NodeBucketTypeIdComparator
         struct IndexByNodeAndBucket {
-            using iterator = wrap_set_iterator<ByNodeAndBucketSet::const_iterator>;
+            using const_iterator = wrap_set_iterator<ByNodeAndBucketSet::const_iterator>;
             Messages& _m;
-            auto begin() const noexcept { return iterator(_m.byNodeAndBucketSet.begin()); }
-            auto end()   const noexcept { return iterator(_m.byNodeAndBucketSet.end()); }
+            auto begin() const noexcept { return const_iterator(_m.byNodeAndBucketSet.begin()); }
+            auto end()   const noexcept { return const_iterator(_m.byNodeAndBucketSet.end()); }
 
             IndexByNodeAndBucket(Messages& m) : _m(m) {}
             template<typename Key>
-            std::pair<iterator, iterator> equal_range(Key key) const noexcept {
+            std::pair<const_iterator, const_iterator> equal_range(Key key) const noexcept {
                 auto inner_range = _m.byNodeAndBucketSet.equal_range(key);
-                return std::make_pair(iterator(inner_range.first),
-                                      iterator(inner_range.second));
+                return std::make_pair(const_iterator(inner_range.first),
+                                      const_iterator(inner_range.second));
             }
-            iterator erase(iterator it) {
+            const_iterator erase(const_iterator it) {
                 const MessageEntry& entry = *it;
                 ++it;
                 _m.remove(entry);
                 return it;
             }
-            void erase(iterator it, iterator to) {
+            void erase(const_iterator it, const_iterator to) {
                 while (it != to) {
                     it = erase(it);
                 }
@@ -290,14 +290,14 @@ private:
 
         // Index wrapping the set using BucketTypeNodeIdComparator
         struct IndexByBucketAndType {
-            using iterator = wrap_set_iterator<ByBucketAndTypeSet::const_iterator>;
+            using const_iterator = wrap_set_iterator<ByBucketAndTypeSet::const_iterator>;
             Messages& _m;
-            auto begin() const noexcept { return iterator(_m.byBucketAndTypeSet.begin()); }
-            auto end()   const noexcept { return iterator(_m.byBucketAndTypeSet.end()); }
-            std::pair<iterator, iterator> equal_range(BucketKey key) const noexcept {
+            auto begin() const noexcept { return const_iterator(_m.byBucketAndTypeSet.begin()); }
+            auto end()   const noexcept { return const_iterator(_m.byBucketAndTypeSet.end()); }
+            std::pair<const_iterator, const_iterator> equal_range(BucketKey key) const noexcept {
                 auto inner_range = _m.byBucketAndTypeSet.equal_range(key);
-                return std::make_pair(iterator(inner_range.first),
-                                      iterator(inner_range.second));
+                return std::make_pair(const_iterator(inner_range.first),
+                                      const_iterator(inner_range.second));
             }
             IndexByBucketAndType(Messages& m) : _m(m) {}
         };
