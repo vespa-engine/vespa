@@ -135,10 +135,10 @@ public:
             I _place;
         };
         struct ConstPriorityIdxView {
-            using iterator = ordered_iterator<ByPriSet::const_iterator, const MapEntry>;
+            using const_iterator = ordered_iterator<ByPriSet::const_iterator, const MapEntry>;
             const PriorityQueue& _q;
-            iterator begin() const noexcept { return _q._sequence_ids_by_priority.begin(); }
-            iterator end() const noexcept { return _q._sequence_ids_by_priority.end(); }
+            const_iterator begin() const noexcept { return _q._sequence_ids_by_priority.begin(); }
+            const_iterator end() const noexcept { return _q._sequence_ids_by_priority.end(); }
             ConstPriorityIdxView(PriorityQueue& q) : _q(q) {}
         };
         struct PriorityIdxView {
