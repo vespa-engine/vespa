@@ -67,7 +67,7 @@ public:
         using EntryCmp = bool(*)(const MessageEntry&, const MessageEntry&);
         template<EntryCmp cmp> struct OrderCmp {
             using is_transparent = std::true_type;
-            bool operator() (EntryPtr a, EntryPtr b) const {
+            bool operator() (EntryPtr a, EntryPtr b) const noexcept {
                 const auto& [keyA, entryA] = *a;
                 const auto& [keyB, entryB] = *b;
                 if (cmp(entryA, entryB)) return true;
@@ -75,9 +75,9 @@ public:
                 return keyA < keyB;
             }
             template<typename T>
-            bool operator() (EntryPtr a, const T& b) const { return b.cvt(a) < b.cvt(); }
+            bool operator() (EntryPtr a, const T& b) const noexcept { return b.cvt(a) < b.cvt(); }
             template<typename T>
-            bool operator() (const T& a, EntryPtr b) const { return a.cvt() < a.cvt(b); }
+            bool operator() (const T& a, EntryPtr b) const noexcept { return a.cvt() < a.cvt(b); }
         };
         static bool compareByPriority(const MessageEntry& a, const MessageEntry&b) {
             return a._priority < b._priority;
@@ -91,8 +91,8 @@ public:
         using ByPriSet = std::set<EntryPtr, ByPriCmp>;
         using ByBucketSet = std::set<EntryPtr, ByBucketCmp>;
 
-        size_t size() const { return _main_map.size(); }
-        bool empty() const { return _main_map.empty(); }
+        size_t size() const noexcept { return _main_map.size(); }
+        bool empty() const noexcept { return _main_map.empty(); }
         void emplace_back(MessageEntry entry) {
             uint64_t seq_id = _next_sequence_id++;
             auto [iter, added] = _main_map.try_emplace(seq_id, std::move(entry));
@@ -118,34 +118,34 @@ public:
             using reference = value_type &;
             using iterator_category = std::input_iterator_tag;
 
-            reference operator* () { return deref()->second; };
-            pointer operator-> () { return &deref()->second; };
+            reference operator* () const noexcept { return deref()->second; };
+            pointer operator-> () const noexcept { return &deref()->second; };
             void operator++() { ++_place; }
-            bool operator==(const ordered_iterator& other) {
+            bool operator==(const ordered_iterator& other) const noexcept {
                 return _place == other._place;
             }
-            bool operator!=(const ordered_iterator& other) {
+            bool operator!=(const ordered_iterator& other) const noexcept {
                 return _place != other._place;
             }
             ordered_iterator(I p) : _place(p) {}
             ordered_iterator(const ordered_iterator&) = default;
             ordered_iterator& operator= (const ordered_iterator& other) = default;
-            auto deref() const { return *_place; }
+            auto deref() const noexcept { return *_place; }
         private:
             I _place;
         };
         struct ConstPriorityIdxView {
             using iterator = ordered_iterator<ByPriSet::const_iterator, const MapEntry>;
             const PriorityQueue& _q;
-            iterator begin() const { return _q._sequence_ids_by_priority.begin(); }
-            iterator end() const { return _q._sequence_ids_by_priority.end(); }
+            iterator begin() const noexcept { return _q._sequence_ids_by_priority.begin(); }
+            iterator end() const noexcept { return _q._sequence_ids_by_priority.end(); }
             ConstPriorityIdxView(PriorityQueue& q) : _q(q) {}
         };
         struct PriorityIdxView {
             using iterator = ordered_iterator<ByPriSet::iterator, MapEntry>;
             PriorityQueue& _q;
-            iterator begin() const { return _q._sequence_ids_by_priority.begin(); }
-            iterator end() const { return _q._sequence_ids_by_priority.end(); }
+            iterator begin() const noexcept { return _q._sequence_ids_by_priority.begin(); }
+            iterator end() const noexcept { return _q._sequence_ids_by_priority.end(); }
             PriorityIdxView(PriorityQueue& q) : _q(q) {}
             iterator erase(iterator it) {
                 EntryPtr p = it.deref();
@@ -157,8 +157,8 @@ public:
         struct BucketIdxView {
             using iterator = ordered_iterator<ByBucketSet::const_iterator, MapEntry>;
             PriorityQueue& _q;
-            iterator begin() const { return _q._sequence_ids_by_bucket.begin(); }
-            iterator end() const { return _q._sequence_ids_by_bucket.end(); }
+            iterator begin() const noexcept { return _q._sequence_ids_by_bucket.begin(); }
+            iterator end() const noexcept { return _q._sequence_ids_by_bucket.end(); }
             BucketIdxView(PriorityQueue& q) : _q(q) {}
             iterator erase(iterator it) {
                 EntryPtr p = it.deref();
@@ -173,8 +173,8 @@ public:
             }
             struct BucketCompare {
                 const document::Bucket& bucket;
-                const document::Bucket& cvt() const { return bucket; }
-                const document::Bucket& cvt(EntryPtr p) const { return p->second._bucket; }
+                const document::Bucket& cvt() const noexcept { return bucket; }
+                const document::Bucket& cvt(EntryPtr p) const noexcept { return p->second._bucket; }
             };
             std::pair<iterator, iterator> equal_range(const document::Bucket &bucket) {
                 BucketCompare cmp(bucket);
@@ -290,7 +290,7 @@ public:
         void queue_emplace(MessageEntry entry) { _queue->emplace_back(std::move(entry)); }
         [[nodiscard]] BucketIdxView exposeBucketIdxView() { return BucketIdxView(*_queue); }
         [[nodiscard]] PriorityIdxView exposePriorityIdxView() { return PriorityIdxView(*_queue); }
-        [[nodiscard]] ConstPriorityIdxView exposePriorityIdxView() const { return ConstPriorityIdxView(*_queue); }
+        [[nodiscard]] ConstPriorityIdxView exposePriorityIdxView() const noexcept { return ConstPriorityIdxView(*_queue); }
         void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
         [[nodiscard]] ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const;
     private:
