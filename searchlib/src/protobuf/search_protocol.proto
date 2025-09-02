@@ -349,51 +349,51 @@ message PredicateRangeFeature {
 // generic item:
 message QueryTreeItem {
     oneof item {
-        ItemTrue item_true = 29;
-        ItemFalse item_false = 30;
+        ItemTrue item_true = 1;
+        ItemFalse item_false = 2;
 
-        ItemOr item_or = 1;
-        ItemAnd item_and = 2;
-        ItemAndNot item_and_not = 3;
-        ItemRank item_rank = 4;
-        ItemNear item_near = 12;
-        ItemOnear item_onear = 13;
-        ItemWeakAnd item_weak_and = 17;
+        ItemOr item_or = 3;
+        ItemAnd item_and = 4;
+        ItemAndNot item_and_not = 5;
+        ItemRank item_rank = 6;
+        ItemNear item_near = 7;
+        ItemOnear item_onear = 8;
+        ItemWeakAnd item_weak_and = 9;
 
-        ItemPureWeightedString item_pure_weighted_string = 20;
-        ItemPureWeightedLong item_pure_weighted_long = 21;
+        ItemPureWeightedString item_pure_weighted_string = 10;
+        ItemPureWeightedLong item_pure_weighted_long = 11;
 
-        ItemWordTerm item_word_term = 5;
-        ItemIntegerTerm item_integer_term = 6;
-        ItemFloatingPointTerm item_floating_point_term = 34;
-        ItemExactStringTerm item_exactstring_term = 18;
-        ItemPrefixTerm item_prefix_term = 9;
-        ItemSuffixTerm item_suffix_term = 14;
-        ItemSubstringTerm item_substring_term = 10;
-        ItemRegexp item_regexp = 25;
-        ItemFuzzy item_fuzzy = 31;
+        ItemWordTerm item_word_term = 12;
+        ItemIntegerTerm item_integer_term = 13;
+        ItemFloatingPointTerm item_floating_point_term = 14;
+        ItemExactStringTerm item_exactstring_term = 15;
+        ItemPrefixTerm item_prefix_term = 16;
+        ItemSuffixTerm item_suffix_term = 17;
+        ItemSubstringTerm item_substring_term = 18;
+        ItemRegexp item_regexp = 19;
+        ItemFuzzy item_fuzzy = 20;
 
-        ItemIntegerRangeTerm item_integer_range_term = 35;
-        ItemFloatingPointRangeTerm item_floating_point_range_term = 36;
+        ItemIntegerRangeTerm item_integer_range_term = 21;
+        ItemFloatingPointRangeTerm item_floating_point_range_term = 22;
 
-        ItemStringIn item_string_in = 32;
-        ItemNumericIn item_numeric_in = 33;
-        ItemWeightedSetOfString item_weighted_set_string = 16;
-        ItemWeightedSetOfLong item_weighted_set_long = 16;
-        ItemDotProductOfString item_dot_product_string = 22;
-        ItemDotProductOfLong item_dot_product_long = 22;
+        ItemStringIn item_string_in = 23;
+        ItemNumericIn item_numeric_in = 24;
+        ItemWeightedSetOfString item_weighted_set_string = 25;
+        ItemWeightedSetOfLong item_weighted_set_long = 26;
+        ItemDotProductOfString item_dot_product_string = 27;
+        ItemDotProductOfLong item_dot_product_long = 28;
 
-        ItemEquiv item_equiv = 15;
-        ItemWordAlternatives item_word_alternatives = 26;
-        ItemStringWand item_wand = 23;
-        ItemLongWand item_wand = 23;
+        ItemEquiv item_equiv = 29;
+        ItemWordAlternatives item_word_alternatives = 30;
+        ItemStringWand item_wand = 31;
+        ItemLongWand item_wand = 32;
 
-        ItemPhrase item_phrase = 7;
-        ItemSameElement item_same_element = 7;
+        ItemPhrase item_phrase = 33;
+        ItemSameElement item_same_element = 34;
 
-        ItemNearestNeighbor item_nearest_neighbor = 27;
-        ItemGeoLocationTerm item_geo_location_term = 28;
-        ItemPredicateQuery item_predicate_query = 24;
+        ItemNearestNeighbor item_nearest_neighbor = 35;
+        ItemGeoLocationTerm item_geo_location_term = 36;
+        ItemPredicateQuery item_predicate_query = 37;
 
         // only used inside QRS: item_multi_term
         // not used anymore: item_any
