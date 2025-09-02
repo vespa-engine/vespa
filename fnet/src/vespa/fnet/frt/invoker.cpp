@@ -72,9 +72,23 @@ bool FRT_RPCInvoker::Invoke()
 {
     bool detached = false;
     _req->SetDetachedPT(&detached);
-    (_method->GetHandler()->*_method->GetMethod())(_req);
-    if (detached)
+    auto handler = _method->GetHandler();
+    auto& method = _method->get_method_ref();
+    if (method.index() == 1) {
+        // No handover if request is not detached
+        auto req = vespalib::ref_counted_from(*_req);
+        (handler->*std::get<1>(method))(std::move(req));
+    } else {
+        (handler->*std::get<0>(method))(_req);
+    }
+    if (detached) {
+        if (method.index() == 1) {
+            // Request was detached, drop extra ref
+            _req->internal_subref();
+            _req = nullptr;
+        }
         return false;
+    }
     HandleDone(false);
     return true;
 }
@@ -126,9 +140,20 @@ void FRT_HookInvoker::Invoke()
 {
     bool detached = false;
     _req->SetDetachedPT(&detached);
-    (_hook->GetHandler()->*_hook->GetMethod())(_req);
+    auto handler = _hook->GetHandler();
+    auto& method = _hook->get_method_ref();
+    if (method.index() == 1) {
+        // Handover
+        auto req = FRT_REFCOUNTED_REQUEST::internal_attach(_req);
+        _req = nullptr;
+        (handler->*std::get<1>(method))(std::move(req));;
+    } else {
+        (handler->*std::get<0>(method))(_req);
+    }
     assert(!detached);
-    _req->internal_subref();
+    if (method.index() == 0) {
+        _req->internal_subref();
+    }
 }
 
 void

@@ -31,7 +31,7 @@ private:
 
     void triggerFlush(FRT_RPCRequest *req);
     void prepareRestart(FRT_RPCRequest *req);
-    void prepareRestart2(FRT_RPCRequest *req);
+    void prepareRestart2(vespalib::ref_counted<FRT_RPCRequest> req);
     void reportState(FRT_RPCRequest * req) __attribute__((noinline));
     void getProtonStatus(FRT_RPCRequest * req);
 
@@ -60,7 +60,7 @@ public:
     void rpc_GetProtonStatus(FRT_RPCRequest *req);
     void rpc_triggerFlush(FRT_RPCRequest *req);
     void rpc_prepareRestart(FRT_RPCRequest *req);
-    void rpc_prepareRestart2(FRT_RPCRequest *req);
+    void rpc_prepareRestart2(vespalib::ref_counted<FRT_RPCRequest> req);
 protected:
     void open(Params & params);
 };

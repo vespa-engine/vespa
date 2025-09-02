@@ -6,6 +6,7 @@
 #include "request_access_filter.h"
 #include <memory>
 #include <string>
+#include <variant>
 #include <vector>
 
 class FRT_Values;
@@ -42,7 +43,7 @@ public:
     const char *GetName() { return _name.c_str(); }
     const char *GetParamSpec() { return _paramSpec.c_str(); }
     const char *GetReturnSpec() { return _returnSpec.c_str(); }
-    FRT_METHOD_PT GetMethod() { return _method; }
+    const FRT_METHOD_PT& get_method_ref() const noexcept { return _method; }
     FRT_Invokable *GetHandler() { return _handler; }
     const FRT_RequestAccessFilter* GetRequestAccessFilter() const noexcept { return _access_filter.get(); }
     void SetRequestAccessFilter(std::unique_ptr<FRT_RequestAccessFilter> access_filter) noexcept {

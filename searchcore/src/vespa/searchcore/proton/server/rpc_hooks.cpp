@@ -253,7 +253,7 @@ RPCHooksBase::prepareRestart(FRT_RPCRequest *req)
 }
 
 void
-RPCHooksBase::prepareRestart2(FRT_RPCRequest *req)
+RPCHooksBase::prepareRestart2(vespalib::ref_counted<FRT_RPCRequest> req)
 {
     LOG(info, "RPCHooksBase::prepareRestart2 started");
 
@@ -262,9 +262,8 @@ RPCHooksBase::prepareRestart2(FRT_RPCRequest *req)
     std::chrono::steady_clock::duration timeout = std::chrono::milliseconds(arg[1]._intval32);
 
     auto set_strategy_result = _proton.prepare_restart2(wait_strategy_id);
-    using RefCountedRpcRequest = vespalib::ref_counted<FRT_RPCRequest>;
     auto handler = std::make_shared<PrepareRestart2RpcHandler>(_detached_requests_owner,
-                                                               RefCountedRpcRequest::internal_attach(req),
+                                                               std::move(req),
                                                                set_strategy_result.lowest_strategy_id_notifier(),
                                                                _transport->GetScheduler(),
                                                                set_strategy_result.wait_strategy_id(),
@@ -343,11 +342,11 @@ RPCHooksBase::rpc_prepareRestart(FRT_RPCRequest *req)
 }
 
 void
-RPCHooksBase::rpc_prepareRestart2(FRT_RPCRequest *req)
+RPCHooksBase::rpc_prepareRestart2(vespalib::ref_counted<FRT_RPCRequest> req)
 {
     LOG(info, "RPCHooksBase::rpc_prepareRestart2 started");
     req->Detach();
-    letProtonDo(makeLambdaTask([this, req]() { prepareRestart2(req); }));
+    letProtonDo(makeLambdaTask([this, req(std::move(req))]() mutable { prepareRestart2(std::move(req)); }));
 }
 
 RPCHooks::RPCHooks(Params &params)
