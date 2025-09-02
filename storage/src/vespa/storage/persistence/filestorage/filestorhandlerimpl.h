@@ -159,13 +159,6 @@ public:
                 return it;
             }
         };
-        struct ConstBucketIdx {
-            using iterator = ordered_iterator<ByBucketSet::const_iterator, const MapEntry>;
-            const PriorityQueue& _q;
-            iterator begin() const { return _q._sequence_ids_by_bucket.begin(); }
-            iterator end() const { return _q._sequence_ids_by_bucket.end(); }
-            ConstBucketIdx(PriorityQueue& q) : _q(q) {}
-        };
         struct BucketIdx {
             using iterator = ordered_iterator<ByBucketSet::const_iterator, MapEntry>;
             PriorityQueue& _q;
@@ -205,7 +198,6 @@ public:
     };
 
     using ConstPriorityIdx = PriorityQueue::ConstPriorityIdx;
-    using ConstBucketIdx = PriorityQueue::ConstBucketIdx;
     using PriorityIdx = PriorityQueue::PriorityIdx;
     using BucketIdx = PriorityQueue::BucketIdx;
     using Clock = std::chrono::steady_clock;
@@ -297,7 +289,6 @@ public:
         void queue_emplace(MessageEntry entry) { _queue->emplace_back(std::move(entry)); }
         [[nodiscard]] BucketIdx exposeBucketIdx() { return BucketIdx(*_queue); }
         [[nodiscard]] PriorityIdx exposePriorityIdx() { return PriorityIdx(*_queue); }
-     // [[nodiscard]] ConstBucketIdx exposeBucketIdx() const { return ConstBucketIdx(*_queue); }
         [[nodiscard]] ConstPriorityIdx exposePriorityIdx() const { return ConstPriorityIdx(*_queue); }
         void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
         [[nodiscard]] ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const;
