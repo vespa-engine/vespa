@@ -24,6 +24,8 @@ public:
     RankedSearchIteratorBase(fef::TermFieldMatchDataArray matchData);
     ~RankedSearchIteratorBase() override;
     bool getUnpacked()       const { return _needUnpack == 0; }
+    void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
+    void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) override;
 };
 
 }
