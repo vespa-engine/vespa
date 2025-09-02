@@ -75,9 +75,9 @@ public:
                 return keyA < keyB;
             }
             template<typename T>
-            bool operator() (EntryPtr a, const T& b) const noexcept { return b.cvt(a) < b.cvt(); }
+            bool operator() (EntryPtr a, const T& b) const noexcept { return b.convert(a) < b.convert(); }
             template<typename T>
-            bool operator() (const T& a, EntryPtr b) const noexcept { return a.cvt() < a.cvt(b); }
+            bool operator() (const T& a, EntryPtr b) const noexcept { return a.convert() < a.convert(b); }
         };
         static bool compareByPriority(const MessageEntry& a, const MessageEntry&b) {
             return a._priority < b._priority;
@@ -173,8 +173,8 @@ public:
             }
             struct BucketCompare {
                 const document::Bucket& bucket;
-                const document::Bucket& cvt() const noexcept { return bucket; }
-                const document::Bucket& cvt(EntryPtr p) const noexcept { return p->second._bucket; }
+                const document::Bucket& convert() const noexcept { return bucket; }
+                const document::Bucket& convert(EntryPtr p) const noexcept { return p->second._bucket; }
             };
             std::pair<iterator, iterator> equal_range(const document::Bucket &bucket) {
                 BucketCompare cmp(bucket);
