@@ -150,6 +150,12 @@ message ItemOnear {
     int32 distance = 1;
     repeated QueryTreeItem children = 2;
 }
+message ItemWeakAnd {
+    string index = 1;
+    uint32 target_num_hits = 2;
+    repeated QueryTreeItem children = 3;
+}
+
 
 // simple nodes (should be not really be items, only for backwards compatibility)
 message ItemPureWeightedString {
@@ -159,12 +165,6 @@ message ItemPureWeightedString {
 message ItemPureWeightedLong {
     int32 weight = 1;
     int64 value = 2;
-}
-
-message ItemWeakAnd {
-    string index = 1;
-    uint32 target_num_hits = 2;
-    repeated QueryTreeItem children = 3;
 }
 
 // common properties for terms:
@@ -190,11 +190,11 @@ message ItemFloatingPointTerm {
     TermItemProperties properties = 1;
     double number = 2;
 }
-message ItemPrefixTerm {
+message ItemExactStringTerm {
     TermItemProperties properties = 1;
     string word = 2;
 }
-message ItemSubstringTerm {
+message ItemPrefixTerm {
     TermItemProperties properties = 1;
     string word = 2;
 }
@@ -202,13 +202,13 @@ message ItemSuffixTerm {
     TermItemProperties properties = 1;
     string word = 2;
 }
+message ItemSubstringTerm {
+    TermItemProperties properties = 1;
+    string word = 2;
+}
 message ItemRegexp {
     TermItemProperties properties = 1;
     string regexp = 2;
-}
-message ItemExactStringTerm {
-    TermItemProperties properties = 1;
-    string word = 2;
 }
 message ItemFuzzy {
     TermItemProperties properties = 1;
@@ -257,17 +257,21 @@ message ItemNumericIn {
     TermItemProperties properties = 1;
     repeated int64 numbers = 2;
 }
-message ItemWeightedSet {
+message ItemWeightedSetOfString {
     TermItemProperties properties = 1;
-    // repeated ItemPureWeightedLong weighted_longs = 2;
-    // repeated ItemPureWeightedString weighted_strings = 3;
-    repeated QueryTreeItem children = 2;
+    repeated ItemPureWeightedString weighted_strings = 2;
 }
-message ItemDotProduct {
+message ItemWeightedSetOfLong {
     TermItemProperties properties = 1;
-    // repeated ItemPureWeightedLong weighted_longs = 2;
-    // repeated ItemPureWeightedString weighted_strings = 3;
-    repeated QueryTreeItem children = 2;
+    repeated ItemPureWeightedLong weighted_longs = 2;
+}
+message ItemDotProductOfString {
+    TermItemProperties properties = 1;
+    repeated ItemPureWeightedString weighted_strings = 2;
+}
+message ItemDotProductOfLong {
+    TermItemProperties properties = 1;
+    repeated ItemPureWeightedLong weighted_longs = 2;
 }
 
 // more complex multi-terms:
@@ -279,14 +283,19 @@ message ItemWordAlternatives {
     TermItemProperties properties = 1;
     repeated QueryTreeItem children = 2;
 }
-message ItemWand {
+message ItemStringWand {
     TermItemProperties properties = 1;
     uint32 target_num_hits = 2;
     double score_threshold = 3;
     double threshold_boost_factor = 4;
-    // repeated ItemPureWeightedLong weighted_longs = 5;
-    // repeated ItemPureWeightedString weighted_strings = 6;
-    repeated QueryTreeItem children = 5;
+    repeated ItemPureWeightedString weighted_strings = 5;
+}
+message ItemLongWand {
+    TermItemProperties properties = 1;
+    uint32 target_num_hits = 2;
+    double score_threshold = 3;
+    double threshold_boost_factor = 4;
+    repeated ItemPureWeightedLong weighted_longs = 5;
 }
 
 // complex intermediates:
@@ -340,41 +349,53 @@ message PredicateRangeFeature {
 // generic item:
 message QueryTreeItem {
     oneof item {
+        ItemTrue item_true = 29;
+        ItemFalse item_false = 30;
+
         ItemOr item_or = 1;
         ItemAnd item_and = 2;
         ItemAndNot item_and_not = 3;
         ItemRank item_rank = 4;
-        ItemWordTerm item_word_term = 5;
-        ItemIntegerTerm item_integer_term = 6;
-        ItemPhrase item_phrase = 7;
-        // XXX not yet // ItemMultiTerm item_multi_term = 8;
-        ItemPrefixTerm item_prefix_term = 9;
-        ItemSubstringTerm item_substring_term = 10;
-        // item_any not used
         ItemNear item_near = 12;
         ItemOnear item_onear = 13;
-        ItemSuffixTerm item_suffix_term = 14;
-        ItemEquiv item_equiv = 15;
-        ItemWeightedSet item_weighted_set = 16;
         ItemWeakAnd item_weak_and = 17;
-        ItemExactStringTerm item_exactstring_term = 18;
-        ItemSameElement item_same_element = 19;
+
         ItemPureWeightedString item_pure_weighted_string = 20;
         ItemPureWeightedLong item_pure_weighted_long = 21;
-        ItemDotProduct item_dot_product = 22;
-        ItemWand item_wand = 23;
-        ItemPredicateQuery item_predicate_query = 24;
-        ItemRegexp item_regexp = 25;
-        ItemWordAlternatives item_word_alternatives = 26;
-        ItemNearestNeighbor item_nearest_neighbor = 27;
-        ItemGeoLocationTerm item_geo_location_term = 28;
-        ItemTrue item_true = 29;
-        ItemFalse item_false = 30;
-        ItemFuzzy item_fuzzy = 31;
-        ItemStringIn item_string_in = 32;
-        ItemNumericIn item_numeric_in = 33;
+
+        ItemWordTerm item_word_term = 5;
+        ItemIntegerTerm item_integer_term = 6;
         ItemFloatingPointTerm item_floating_point_term = 34;
+        ItemExactStringTerm item_exactstring_term = 18;
+        ItemPrefixTerm item_prefix_term = 9;
+        ItemSuffixTerm item_suffix_term = 14;
+        ItemSubstringTerm item_substring_term = 10;
+        ItemRegexp item_regexp = 25;
+        ItemFuzzy item_fuzzy = 31;
+
         ItemIntegerRangeTerm item_integer_range_term = 35;
         ItemFloatingPointRangeTerm item_floating_point_range_term = 36;
+
+        ItemStringIn item_string_in = 32;
+        ItemNumericIn item_numeric_in = 33;
+        ItemWeightedSetOfString item_weighted_set_string = 16;
+        ItemWeightedSetOfLong item_weighted_set_long = 16;
+        ItemDotProductOfString item_dot_product_string = 22;
+        ItemDotProductOfLong item_dot_product_long = 22;
+
+        ItemEquiv item_equiv = 15;
+        ItemWordAlternatives item_word_alternatives = 26;
+        ItemStringWand item_wand = 23;
+        ItemLongWand item_wand = 23;
+
+        ItemPhrase item_phrase = 7;
+        ItemSameElement item_same_element = 7;
+
+        ItemNearestNeighbor item_nearest_neighbor = 27;
+        ItemGeoLocationTerm item_geo_location_term = 28;
+        ItemPredicateQuery item_predicate_query = 24;
+
+        // only used inside QRS: item_multi_term
+        // not used anymore: item_any
     }
 }
