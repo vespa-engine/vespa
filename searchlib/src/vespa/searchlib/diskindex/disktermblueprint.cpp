@@ -150,7 +150,7 @@ DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda) const
          * then the term field match data needs a full reset during unpack to clear out values set during unpack
          * from another iterator for the same term and another disk index or memory index.
          */
-        return BitVectorIterator::create(bv, bv->size(), *tfmda[0], strict(), false, !_is_filter_field);
+        return BitVectorIterator::create(bv, bv->size(), *tfmda[0], nullptr, strict(), false, !_is_filter_field);
     }
     auto search(_field_index.create_iterator(_lookupRes, _postingHandle, tfmda));
     if (use_bitvector()) {

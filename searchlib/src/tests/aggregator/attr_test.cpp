@@ -248,6 +248,7 @@ TEST(AttrTest, testWithRelevance) {
         SCOPED_TRACE(vespalib::make_string("i=%d", i).c_str());
         EXPECT_TRUE(et.execute(0, HitRank(r)));
         EXPECT_EQ(et.getResult()->getFloat(), expect0[i]);
+        EXPECT_TRUE(et.execute(1, HitRank(r)));
     }
 
     EXPECT_TRUE(et.execute(0, HitRank(f1.doc0attr[2])));
@@ -256,21 +257,27 @@ TEST(AttrTest, testWithRelevance) {
     // docid 1
     EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[0] - 0.001)));
     EXPECT_EQ(et.getResult()->getFloat(), 0.0);
+    EXPECT_TRUE(et.execute(0, HitRank(0)));
 
     EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[0])));
     EXPECT_EQ(et.getResult()->getFloat(), 0.0);
+    EXPECT_TRUE(et.execute(0, HitRank(0)));
 
     EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[2])));
     EXPECT_EQ(et.getResult()->getFloat(), 2.0);
+    EXPECT_TRUE(et.execute(0, HitRank(0)));
                 
     EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[4])));
     EXPECT_EQ(et.getResult()->getFloat(), 4.0);
+    EXPECT_TRUE(et.execute(0, HitRank(0)));
 
     EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[10])));
     EXPECT_EQ(et.getResult()->getFloat(), 10.0);
+    EXPECT_TRUE(et.execute(0, HitRank(0)));
 
     EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[10] + 0.01)));
     EXPECT_EQ(et.getResult()->getFloat(), 10.0);
+    EXPECT_TRUE(et.execute(0, HitRank(0)));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

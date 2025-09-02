@@ -588,7 +588,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
 
             const auto now = _component.getClock().getMonotonicTime();
             for (const auto& enqueued : _visitorQueue) {
-                auto& cmd = enqueued._command;
+                const auto& cmd = enqueued._command;
                 assert(cmd);
                 out << "<li>"
                     << xml_content_escaped(cmd->getInstanceId()) << " - "

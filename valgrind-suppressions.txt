@@ -694,3 +694,24 @@
    fun:call_init
    ...
 }
+{
+   onnxruntime-1.22 cpuinfo_arm suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:cpuinfo_arm_linux_init
+   ...
+   fun:_ZN11onnxruntime9CPUIDInfoC1Ev
+   ...
+}
+{
+   almalinux 9 RE2 init suppression
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:_Znwm
+   obj:/usr/lib64/libre2.so.9.0.0
+   fun:__pthread_once_slow
+   fun:_ZN3re23RE24InitERKNS_11StringPieceERKNS0_7OptionsE
+   fun:_ZN3re23RE2C1ERKNS_11StringPieceERKNS0_7OptionsE
+   ...
+}

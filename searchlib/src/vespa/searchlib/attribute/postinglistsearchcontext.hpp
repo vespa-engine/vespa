@@ -230,11 +230,12 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
         }
         const BitVector *bv(_merger.getBitVector());
         assert(bv != nullptr);
-        return BitVectorIterator::create(bv, bv->size(), *matchData, strict);
+        return BitVectorIterator::create(bv, bv->size(), *matchData, &_baseSearchCtx, strict, false, false);
     }
     if (_uniqueValues == 1) {
         if (_bv != nullptr && (!_pidx.valid() || _useBitVector || matchData->isNotNeeded())) {
-            return BitVectorIterator::create(_bv, std::min(_bv->size(), _docIdLimit), *matchData, strict);
+            return BitVectorIterator::create(_bv, std::min(_bv->size(), _docIdLimit), *matchData, &_baseSearchCtx,
+                                             strict, false, false);
         }
         if (!_pidx.valid()) {
             return std::make_unique<EmptySearch>();

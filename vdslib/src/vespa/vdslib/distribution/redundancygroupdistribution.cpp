@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cassert>
 #include <string>
+#include <ostream>
 
 namespace storage::lib {
 

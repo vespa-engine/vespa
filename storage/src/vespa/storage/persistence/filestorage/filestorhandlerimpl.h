@@ -161,7 +161,7 @@ public:
         void dumpActiveHtml(std::ostream & os) const;
         void dumpQueueHtml(std::ostream & os) const;
         [[nodiscard]] std::mutex & exposeLock() { return *_lock; }
-        [[nodiscard]] PriorityQueue & exposeQueue() { return *_queue; }
+        void queue_emplace(MessageEntry entry) { _queue->emplace_back(std::move(entry)); }
         [[nodiscard]] BucketIdx & exposeBucketIdx() { return bmi::get<2>(*_queue); }
         void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
         [[nodiscard]] ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const;
