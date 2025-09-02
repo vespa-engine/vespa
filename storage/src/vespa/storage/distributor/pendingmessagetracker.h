@@ -301,16 +301,6 @@ private:
             }
             IndexByBucketAndType(Messages& m) : _m(m) {}
         };
-
-        // the actual contents:
-        MainSet byMessageIdSet;
-        // sets of pointers:
-        ByNodeAndBucketSet   byNodeAndBucketSet;
-        ByBucketAndTypeSet   byBucketAndTypeSet;
-        // index wrappers:
-        IndexByNodeAndBucket byNodeAndBucketIdx;
-        IndexByBucketAndType byBucketAndTypeIdx;
-
         Messages()
           : byMessageIdSet(),
             byNodeAndBucketSet(),
@@ -320,6 +310,18 @@ private:
         {}
 
         ~Messages();
+
+    private:
+        // the actual contents:
+        MainSet byMessageIdSet;
+        // sets of pointers:
+        ByNodeAndBucketSet   byNodeAndBucketSet;
+        ByBucketAndTypeSet   byBucketAndTypeSet;
+    public:
+        // index wrappers:
+        const MainSet& byMessageId() const { return byMessageIdSet; }
+        IndexByNodeAndBucket byNodeAndBucketIdx;
+        IndexByBucketAndType byBucketAndTypeIdx;
     };
 
     using DeferredBucketTaskMap = std::unordered_multimap<

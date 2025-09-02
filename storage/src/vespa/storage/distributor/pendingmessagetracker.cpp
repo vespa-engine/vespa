@@ -163,7 +163,7 @@ PendingMessageTracker::reply(const api::StorageReply& r)
     uint64_t msgId = r.getMsgId();
 
     std::unique_lock guard(_lock);
-    auto& msgs = _messages.byMessageIdSet;
+    const auto& msgs = _messages.byMessageId();
     auto iter = msgs.find(msgId);
     if (iter != msgs.end()) {
         bucket = iter->bucket;
