@@ -70,7 +70,9 @@ public class McpJdiscHandler extends ThreadedHttpRequestHandler{
         logger.info("=== RECEIVED REQUEST: " + method + " " + path + " ===");
         logger.info("=== BODY: " + new String(body, StandardCharsets.UTF_8) + " ===");
 
-        if (!path.startsWith("/mcp/")) return this.transport.createErrorResponse(404, new McpError("Not Found"));
+        if (!path.startsWith("/mcp/")) {
+            return this.transport.createErrorResponse(404, new McpError("Not Found"));
+        }
 
         return switch (method) {
             case "GET" -> this.transport.handleGet(request);
