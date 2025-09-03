@@ -11,13 +11,13 @@ namespace search::attribute {
 void
 SearchContextElementIterator::getElementIds(uint32_t docId, std::vector<uint32_t> & elementIds)
 {
-    _searchContext.get_element_ids(docId, elementIds);
+    _search->get_element_ids(docId, elementIds);
 }
 
 void
 SearchContextElementIterator::mergeElementIds(uint32_t docId, std::vector<uint32_t> & elementIds)
 {
-    _searchContext.and_element_ids_into(docId, elementIds);
+    _search->and_element_ids_into(docId, elementIds);
 }
 
 SearchContextElementIterator::SearchContextElementIterator(queryeval::SearchIterator::UP search, const ISearchContext & sc)
