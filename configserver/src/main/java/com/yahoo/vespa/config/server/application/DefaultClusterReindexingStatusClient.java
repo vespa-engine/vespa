@@ -8,7 +8,6 @@ import com.yahoo.concurrent.CompletableFutures;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.config.server.modelfactory.ModelResult;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
@@ -52,8 +51,8 @@ public class DefaultClusterReindexingStatusClient implements ClusterReindexingSt
 
     @Override
     public Map<String, ClusterReindexing> getReindexingStatus(ModelResult application) throws IOException {
-        Map<ClusterId, List<ServiceInfo>> clusters = clusterControllerClusters(application);
-        Map<ClusterId, CompletableFuture<Map<String, ClusterReindexing>>> futureStatusPerCluster = new HashMap<>();
+        Map<String, List<ServiceInfo>> clusters = clusterControllerClusters(application);
+        Map<String, CompletableFuture<Map<String, ClusterReindexing>>> futureStatusPerCluster = new HashMap<>();
         clusters.forEach((clusterId, clusterNodes) -> {
             var parallelRequests = clusterNodes.stream()
                     .map(this::getReindexingStatus)
@@ -136,11 +135,11 @@ public class DefaultClusterReindexingStatusClient implements ClusterReindexingSt
                 .orElseThrow(() -> new IllegalStateException("Cluster controller container has no container port"));
     }
 
-    private static Map<ClusterId, List<ServiceInfo>> clusterControllerClusters(ModelResult application) {
+    private static Map<String, List<ServiceInfo>> clusterControllerClusters(ModelResult application) {
         return application.getModel().getHosts().stream()
                 .flatMap(host -> host.getServices().stream())
                 .filter(service -> service.getServiceType().equals(CLUSTERCONTROLLER_CONTAINER.serviceName))
-                .collect(Collectors.groupingBy(service -> new ClusterId(service.getProperty("clustername").get())));
+                .collect(Collectors.groupingBy(service -> service.getProperty("clustername").get()));
 
     }
 

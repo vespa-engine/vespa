@@ -10,7 +10,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStreamTest;
-import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.session.Session;
@@ -81,7 +80,6 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
                 .build();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withOrchestrator(new OrchestratorMock())
                 .build();
         tenantRepository.addTenant(tenant);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
