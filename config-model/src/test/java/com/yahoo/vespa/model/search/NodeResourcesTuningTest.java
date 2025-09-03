@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.junit.jupiter.api.Test;
 
 import static com.yahoo.vespa.model.Host.memoryOverheadGb;
@@ -29,8 +28,7 @@ public class NodeResourcesTuningTest {
 
     @Test
     void require_that_hwinfo_memory_size_is_set() {
-        assertEquals(24 * GiB, configFromMemorySetting(24 + memoryOverheadGb, 0).hwinfo().memory().size());
-        assertEquals(1.9585050869E10, configFromMemorySetting(24 + memoryOverheadGb, ApplicationContainerCluster.heapSizePercentageOfTotalAvailableMemoryWhenCombinedCluster * 0.01).hwinfo().memory().size(), 1000);
+        assertEquals(24 * GiB, configFromMemorySetting(24 + memoryOverheadGb).hwinfo().memory().size());
     }
 
     @Test
@@ -124,14 +122,8 @@ public class NodeResourcesTuningTest {
 
     @Test
     void require_that_summary_cache_max_bytes_is_set_based_on_memory() {
-        assertEquals(1 * GiB / 25, configFromMemorySetting(1 + memoryOverheadGb, 0).summary().cache().maxbytes());
-        assertEquals(256 * GiB / 25, configFromMemorySetting(256 + memoryOverheadGb, 0).summary().cache().maxbytes());
-    }
-
-    @Test
-    void require_that_summary_cache_memory_is_reduced_with_combined_cluster() {
-        assertEquals(3.2641751E7, configFromMemorySetting(1 + memoryOverheadGb, ApplicationContainerCluster.heapSizePercentageOfTotalAvailableMemoryWhenCombinedCluster * 0.01).summary().cache().maxbytes(), 1000);
-        assertEquals(8.356288371E9, configFromMemorySetting(256 + memoryOverheadGb, ApplicationContainerCluster.heapSizePercentageOfTotalAvailableMemoryWhenCombinedCluster * 0.01).summary().cache().maxbytes(), 1000);
+        assertEquals(1 * GiB / 25, configFromMemorySetting(1 + memoryOverheadGb).summary().cache().maxbytes());
+        assertEquals(256 * GiB / 25, configFromMemorySetting(256 + memoryOverheadGb).summary().cache().maxbytes());
     }
 
     @Test
@@ -153,12 +145,12 @@ public class NodeResourcesTuningTest {
     }
 
     private static void assertDocumentStoreMaxFileSize(long expFileSizeBytes, int wantedMemoryGb) {
-        assertEquals(expFileSizeBytes, configFromMemorySetting(wantedMemoryGb + memoryOverheadGb, 0).summary().log().maxfilesize());
+        assertEquals(expFileSizeBytes, configFromMemorySetting(wantedMemoryGb + memoryOverheadGb).summary().log().maxfilesize());
     }
 
     private static void assertFlushStrategyMemory(long expMemoryBytes, int wantedMemoryGb) {
-        assertEquals(expMemoryBytes, configFromMemorySetting(wantedMemoryGb + memoryOverheadGb, 0).flush().memory().maxmemory());
-        assertEquals(expMemoryBytes, configFromMemorySetting(wantedMemoryGb + memoryOverheadGb, 0).flush().memory().each().maxmemory());
+        assertEquals(expMemoryBytes, configFromMemorySetting(wantedMemoryGb + memoryOverheadGb).flush().memory().maxmemory());
+        assertEquals(expMemoryBytes, configFromMemorySetting(wantedMemoryGb + memoryOverheadGb).flush().memory().each().maxmemory());
     }
 
     private static void assertFlushStrategyTlsSize(long expTlsSizeBytes, int diskGb) {
@@ -182,11 +174,11 @@ public class NodeResourcesTuningTest {
     }
 
     private static ProtonConfig configFromDiskSetting(int diskGb) {
-        return getConfig(new FlavorsConfig.Flavor.Builder().minDiskAvailableGb(diskGb), 0);
+        return getConfig(new FlavorsConfig.Flavor.Builder().minDiskAvailableGb(diskGb));
     }
 
-    private static ProtonConfig configFromMemorySetting(double memoryGb, double fractionOfMemoryReserved) {
-        return getConfig(new FlavorsConfig.Flavor.Builder().minMainMemoryAvailableGb(memoryGb), fractionOfMemoryReserved);
+    private static ProtonConfig configFromMemorySetting(double memoryGb) {
+        return getConfig(new FlavorsConfig.Flavor.Builder().minMainMemoryAvailableGb(memoryGb));
     }
 
     private static ProtonConfig configFromMemorySetting(double memoryGb, ProtonConfig.Builder builder) {
@@ -212,27 +204,16 @@ public class NodeResourcesTuningTest {
         return getConfig(flavorBuilder, new ProtonConfig.Builder());
     }
 
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, double fractionOfMemoryReserved) {
-        return getConfig(flavorBuilder, new ProtonConfig.Builder(), fractionOfMemoryReserved);
-    }
-
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder) {
-        return getConfig(flavorBuilder, protonBuilder,1);
-    }
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, double fractionOfMemoryReserved) {
-        return getConfig(flavorBuilder, protonBuilder, 1, fractionOfMemoryReserved);
+        return getConfig(flavorBuilder, protonBuilder, 1);
     }
 
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder,
+    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder,
+                                          ProtonConfig.Builder protonBuilder,
                                           int numThreadsPerSearch) {
-        return getConfig(flavorBuilder, protonBuilder, numThreadsPerSearch, 0);
-    }
-
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder,
-                                          int numThreadsPerSearch, double fractionOfMemoryReserved) {
         flavorBuilder.name("my_flavor");
         NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(),
-                numThreadsPerSearch, fractionOfMemoryReserved);
+                                                             numThreadsPerSearch);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }
