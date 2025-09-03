@@ -142,7 +142,7 @@ public class SessionPreparer {
                                                   TenantRepository.getTenantPath(applicationId.tenant()),
                                                   serverDbSessionDir, applicationPackage, sessionZooKeeperClient,
                                                   onnxModelCost, endpointCertificateSecretStores);
-        preparation.preprocess();
+        preparation.preprocess(activeApplicationVersions);
         try {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
             preparation.makeResult(allocatedHosts);
@@ -256,13 +256,15 @@ public class SessionPreparer {
             return fileReference;
         }
 
-        void preprocess() {
+        void preprocess(Optional<ApplicationVersions> activeApplicationVersions) {
             try {
                 validateXmlFeatures(applicationPackage, logger);
                 this.preprocessedApplicationPackage = applicationPackage.preprocess(zone, logger);
             } catch (IOException | RuntimeException e) {
+                var initialSession =  activeApplicationVersions.map(ApplicationVersions::applicationGeneration).map(String::valueOf).orElse("unknown");
                 throw new IllegalArgumentException("Error preprocessing application package for " + applicationId +
-                                                   ", session " + sessionZooKeeperClient.sessionId(), e);
+                                                   ", session id " + sessionZooKeeperClient.sessionId() +
+                                                   " (based on session id " + initialSession + ")", e);
             }
             checkTimeout("preprocess");
         }
