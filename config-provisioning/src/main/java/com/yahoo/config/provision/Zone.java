@@ -30,13 +30,13 @@ public class Zone {
                   .dynamicProvisioning(cloudConfig.dynamicProvisioning())
                   .allowHostSharing(cloudConfig.allowHostSharing())
                   .allowEnclave(Set.of("aws", "azure", "gcp").contains(configserverConfig.cloud()))
-                                   .requireAccessControl(cloudConfig.requireAccessControl())
-                                   .account(CloudAccount.from(cloudConfig.account()))
-                                   .snapshotPrivateKeySecretName(cloudConfig.snapshotPrivateKeySecretName())
-                                   .build(),
-                                SystemName.from(configserverConfig.system()),
-                                Environment.from(configserverConfig.environment()),
-                                RegionName.from(configserverConfig.region()));
+                  .requireAccessControl(cloudConfig.requireAccessControl())
+                  .account(CloudAccount.from(cloudConfig.account()))
+                  .snapshotPrivateKeySecretName(cloudConfig.snapshotPrivateKeySecretName())
+                  .build(),
+             SystemName.from(configserverConfig.system()),
+             Environment.from(configserverConfig.environment()),
+             RegionName.from(configserverConfig.region()));
     }
 
     /** Create from environment and region. Use for testing.  */
