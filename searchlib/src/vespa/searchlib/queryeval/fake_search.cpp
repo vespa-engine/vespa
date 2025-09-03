@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fake_search.h"
+#include "element_id_extractor.h"
 #include <vespa/searchlib/fef/termfieldmatchdataposition.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.h>
@@ -71,6 +72,28 @@ FakeSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "tag",   _tag);
     visit(visitor, "field", _field);
     visit(visitor, "term",  _term);
+}
+
+void
+FakeSearch::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    if (_ctx != nullptr) {
+        _ctx->get_element_ids(docid, element_ids);
+    } else {
+        unpack(docid);
+        ElementIdExtractor::get_element_ids(*_tfmda[0], docid, element_ids);
+    }
+}
+
+void
+FakeSearch::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    if (_ctx != nullptr) {
+        _ctx->and_element_ids_into(docid, element_ids);
+    } else {
+        unpack(docid);
+        ElementIdExtractor::and_element_ids_into(*_tfmda[0], docid, element_ids);
+    }
 }
 
 }
