@@ -128,7 +128,8 @@ ProtoConverter::search_request_from_proto(const ProtoSearchRequest &proto, Searc
     request.groupSpec.assign(proto.grouping_blob().begin(), proto.grouping_blob().end());
     request.location = proto.geo_location();
     request.stackDump.assign(proto.query_tree_blob().begin(), proto.query_tree_blob().end());
-    request.queryTree = try_convert(proto.query_tree());
+    auto xtract = const_cast<ProtoSearchRequest &>(proto);
+    request.queryTree = std::unique_ptr<SearchRequest::ProtobufQueryTree>(xtract.release_query_tree());
 }
 
 void

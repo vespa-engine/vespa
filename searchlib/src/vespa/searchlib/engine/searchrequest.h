@@ -6,7 +6,7 @@
 #include "request.h"
 #include "lazy_source.h"
 
-namespace search::query { class Node; }
+namespace searchlib::searchprotocol::protobuf { class QueryTree; }
 namespace search::engine {
 
 class SearchRequest : public Request
@@ -15,12 +15,13 @@ public:
     using UP = std::unique_ptr<SearchRequest>;
     using SP = std::shared_ptr<SearchRequest>;
     using Source = LazySource<SearchRequest>;
+    using ProtobufQueryTree = searchlib::searchprotocol::protobuf::QueryTree;
 
     uint32_t          offset;
     uint32_t          maxhits;
     std::string       sortSpec;
     std::vector<char> groupSpec;
-    std::unique_ptr<search::query::Node> queryTree;
+    std::unique_ptr<ProtobufQueryTree> queryTree;
 
     SearchRequest();
     explicit SearchRequest(RelativeTime relativeTime);
