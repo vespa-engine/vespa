@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<services>
+    <container id="container" version="1.0">
+        <nodes>
+            <node hostalias="node1"/>
+        </nodes>
+        <component id="hf-embedder" type="hugging-face-embedder">
+            <transformer-model model-id="nomic-ai-modernbert" url="https://my/url/model.onnx"/>
+            <tokenizer-vocab path="files/vocab.txt"/>
+            <transformer-output>token_embeddings</transformer-output>
+            <max-tokens>8192</max-tokens>
+            <prepend>
+                <query>search_query:</query>
+                <document>search_document:</document>
+            </prepend>
+            <internal-model-config-path>files/config.pbtxt</internal-model-config-path>
+        </component>
+    </container>
+    <config name="ai.vespa.llm.clients.triton">
+        <target>triton:8001</target>
+        <modelRepositoryPath>/sidecars/triton/models</modelRepositoryPath>
+        <modelControlMode>EXPLICIT</modelControlMode>
+    </config>
+</services>

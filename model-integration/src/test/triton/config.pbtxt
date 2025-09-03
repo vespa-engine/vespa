@@ -4,6 +4,7 @@ instance_group {
   count: 1
   kind: KIND_CPU
 }
+max_batch_size: 1
 parameters {
   key: "enable_mem_area"
   value {

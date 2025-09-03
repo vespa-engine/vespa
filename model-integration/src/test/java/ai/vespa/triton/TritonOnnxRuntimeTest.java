@@ -34,7 +34,6 @@ class TritonOnnxRuntimeTest {
 
     @Test
     void loads_model_with_config() throws IOException {
-
         var runtime = new TritonOnnxRuntime(
                 new TritonConfig.Builder()
                         .target(tritonContainer.getGrpcEndpoint())
