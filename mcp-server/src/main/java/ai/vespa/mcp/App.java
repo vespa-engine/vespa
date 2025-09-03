@@ -3,6 +3,8 @@ package ai.vespa.mcp;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -17,8 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 
-import org.apache.log4j.Logger;
-
 /**
  * Main MCP server application that exposes Vespa search functionality.
  * Configures and starts an MCP server with tools for documentation search, schema inspection, and query execution.
@@ -30,10 +30,9 @@ public class App extends AbstractComponent{
 
 
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final Logger log = Logger.getLogger(App.class.getName());
+    private static final Logger logger = Logger.getLogger(App.class.getName());
 
     // MCP transport layer for Vespa request handling
-    // private final VespaStreamableTransportProvider transportProvider;
     private final VespaStatelessTransport transport = new VespaStatelessTransport();
 
     // Core Vespa functionality exposed as MCP tools
@@ -65,7 +64,7 @@ public class App extends AbstractComponent{
         // Prompt for MCP server
         var listTools = listToolsPrompt();
 
-        log.info("Starting Vespa MCP server...");
+        logger.info("Starting Vespa MCP server...");
 
         // Create the MCP server with tools and capabilities
         McpServer.sync(transport)
@@ -80,7 +79,7 @@ public class App extends AbstractComponent{
                         .resources(queryExamples)
                         .prompts(listTools)
                         .build();
-        log.info("Vespa MCP server started");
+        logger.info("Vespa MCP server started");
     }
 
 
@@ -186,7 +185,7 @@ public class App extends AbstractComponent{
                         false
                     );
                 } catch (Exception e) {
-                    log.error("Documentation search failed", e);
+                    logger.log(Level.SEVERE, "Documentation search failed", e);
                     return new McpSchema.CallToolResult(
                        "{\"error\": \"Documentation search failed: " + e.getMessage() + "\"}",
                         true
@@ -274,7 +273,7 @@ public class App extends AbstractComponent{
                         false
                     );
                 } catch (Exception e) {
-                    log.error("Schema retrieval failed", e);
+                    logger.log(Level.SEVERE, "Schema retrieval failed", e);
                     return new McpSchema.CallToolResult(
                         "{\"error\": \"Schema retrieval failed: " + e.getMessage() + "\"}",
                         true
@@ -390,7 +389,7 @@ public class App extends AbstractComponent{
                         false
                     );
                 } catch (Exception e) {
-                    log.error("Query execution failed", e);
+                    logger.log(Level.SEVERE, "Query execution failed", e);
                     return new McpSchema.CallToolResult(
                         "{\"error\": \"Query execution failed: " + e.getMessage() + "\"}",
                         true
@@ -480,7 +479,7 @@ public class App extends AbstractComponent{
                         ))
                     );
                 } catch (Exception e) {
-                    log.error("Failed to retrieve query examples", e);
+                    logger.log(Level.SEVERE, "Failed to retrieve query examples", e);
                     return new McpSchema.ReadResourceResult(
                         List.of(new McpSchema.TextResourceContents(
                             "/resources/queryExamples",
@@ -535,7 +534,7 @@ public class App extends AbstractComponent{
                     );
 
                 } catch (Exception e) {
-                    log.error("Failed to generate list of tools", e);
+                    logger.log(Level.SEVERE, "Failed to generate list of tools", e);
                     return new McpSchema.GetPromptResult(
                         "Error generating list of tools",
                         List.of(new McpSchema.PromptMessage(
@@ -550,9 +549,9 @@ public class App extends AbstractComponent{
 
     @Override
     public void deconstruct() {
-        log.info("Deconstructing Vespa MCP server...");
+        logger.info("Deconstructing Vespa MCP server...");
         super.deconstruct();
-        log.info("Vespa MCP server deconstructed");
+        logger.info("Vespa MCP server deconstructed");
     }
 
 }
