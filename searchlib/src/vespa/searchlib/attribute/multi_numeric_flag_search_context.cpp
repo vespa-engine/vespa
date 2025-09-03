@@ -29,7 +29,7 @@ MultiNumericFlagSearchContext<T, M>::createIterator(fef::TermFieldMatchData* mat
             const AttributeVector & attr = this->attribute();
             const BitVector * bv(get_bit_vector(this->_low));
             if (bv != nullptr) {
-                return BitVectorIterator::create(bv, attr.getCommittedDocIdLimit(), *matchData, strict);
+                return BitVectorIterator::create(bv, attr.getCommittedDocIdLimit(), *matchData, this, strict, false, false);
             } else {
                 return std::make_unique<queryeval::EmptySearch>();
             }
