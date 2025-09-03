@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executor;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -14,8 +16,7 @@ import com.yahoo.component.annotation.Inject;
 
 import io.modelcontextprotocol.spec.McpError;
 
-import org.apache.log4j.Logger;
-/** 
+/**
  * JDisc handler for handling MCP requests.
  * This handler processes HTTP requests directed to the MCP endpoint, and routes them to the appropriate methods in VespaStatelessTransport.
  * @author Edvard Dingsør
@@ -23,7 +24,7 @@ import org.apache.log4j.Logger;
 */
 @SuppressWarnings("deprecation")
 public class McpJdiscHandler extends ThreadedHttpRequestHandler{
-    private static final Logger log = Logger.getLogger(McpJdiscHandler.class.getName());
+    private static final Logger logger = Logger.getLogger(McpJdiscHandler.class.getName());
 
     private final VespaStatelessTransport transport;
     
@@ -62,12 +63,12 @@ public class McpJdiscHandler extends ThreadedHttpRequestHandler{
         try{
             body = request.getData().readAllBytes();
         } catch (IOException e) {
-            log.error("Failed to read request body", e);
+            logger.log(Level.SEVERE, "Failed to read request body", e);
             return this.transport.createErrorResponse(400, new McpError("Failed to read request body"));
         }
 
-        log.debug("=== RECEIVED REQUEST: " + method + " " + path + " ===");
-        log.debug("=== BODY: " + new String(body, StandardCharsets.UTF_8) + " ===");
+        logger.info("=== RECEIVED REQUEST: " + method + " " + path + " ===");
+        logger.info("=== BODY: " + new String(body, StandardCharsets.UTF_8) + " ===");
 
         if (!path.startsWith("/mcp/")) return this.transport.createErrorResponse(404, new McpError("Not Found"));
 
