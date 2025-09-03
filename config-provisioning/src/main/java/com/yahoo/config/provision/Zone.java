@@ -7,6 +7,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.config.provisioning.CloudConfig;
 
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * The zone (environment + region) of this runtime, and some other information.
@@ -28,14 +29,14 @@ public class Zone {
                   .name(CloudName.from(configserverConfig.cloud()))
                   .dynamicProvisioning(cloudConfig.dynamicProvisioning())
                   .allowHostSharing(cloudConfig.allowHostSharing())
-                  .allowEnclave(configserverConfig.cloud().equals("aws") || configserverConfig.cloud().equals("gcp"))
-                  .requireAccessControl(cloudConfig.requireAccessControl())
-                  .account(CloudAccount.from(cloudConfig.account()))
-                  .snapshotPrivateKeySecretName(cloudConfig.snapshotPrivateKeySecretName())
-                  .build(),
-             SystemName.from(configserverConfig.system()),
-             Environment.from(configserverConfig.environment()),
-             RegionName.from(configserverConfig.region()));
+                  .allowEnclave(Set.of("aws", "azure", "gcp").contains(configserverConfig.cloud()))
+                                   .requireAccessControl(cloudConfig.requireAccessControl())
+                                   .account(CloudAccount.from(cloudConfig.account()))
+                                   .snapshotPrivateKeySecretName(cloudConfig.snapshotPrivateKeySecretName())
+                                   .build(),
+                                SystemName.from(configserverConfig.system()),
+                                Environment.from(configserverConfig.environment()),
+                                RegionName.from(configserverConfig.region()));
     }
 
     /** Create from environment and region. Use for testing.  */
