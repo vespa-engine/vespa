@@ -31,6 +31,7 @@ import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.application.ApplicationData;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
@@ -93,6 +94,7 @@ public class ApplicationRepositoryTest {
 
     private ApplicationRepository applicationRepository;
     private TenantRepository tenantRepository;
+    private OrchestratorMock orchestrator;
     private TimeoutBudget timeoutBudget;
     private Curator curator;
     private ConfigserverConfig configserverConfig;
@@ -128,9 +130,11 @@ public class ApplicationRepositoryTest {
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
+        orchestrator = new OrchestratorMock();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withConfigserverConfig(configserverConfig)
+                .withOrchestrator(orchestrator)
                 .withLogRetriever(new MockLogRetriever())
                 .withClock(clock)
                 .withFlagSource(flagSource)
@@ -167,6 +171,7 @@ public class ApplicationRepositoryTest {
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withConfigserverConfig(configserverConfig)
+                .withOrchestrator(orchestrator)
                 .withLogRetriever(new MockLogRetriever())
                 .withClock(clock)
                 .withConfigConvergenceChecker(new MockConfigConvergenceChecker(2))
@@ -182,6 +187,7 @@ public class ApplicationRepositoryTest {
     public void prepareAndActivateWithRestartWithoutProvisioner() {
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
+                .withOrchestrator(orchestrator)
                 .build();
 
         prepareAndActivate(testAppJdiscOnly);
@@ -242,6 +248,13 @@ public class ApplicationRepositoryTest {
         assertNotEquals(originalApplicationMetaData.getGeneration(), applicationMetaData.getGeneration());
     }
 
+    @Test
+    public void testSuspension() {
+        deployApp(testApp);
+        assertFalse(applicationRepository.isSuspended(applicationId()));
+        orchestrator.suspend(applicationId());
+        assertTrue(applicationRepository.isSuspended(applicationId()));
+    }
 
     @Test
     public void getLogs() throws IOException {
@@ -281,6 +294,7 @@ public class ApplicationRepositoryTest {
 
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
+                .withOrchestrator(orchestrator)
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
                 .build();
@@ -360,6 +374,7 @@ public class ApplicationRepositoryTest {
         MockMetric actual = new MockMetric();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
+                .withOrchestrator(orchestrator)
                 .withMetric(actual)
                 .withClock(new ManualClock())
                 .build();

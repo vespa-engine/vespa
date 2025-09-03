@@ -34,6 +34,7 @@ import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexing.Status;
 import com.yahoo.vespa.config.server.application.HttpProxy;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.HandlerTest;
@@ -114,6 +115,7 @@ public class ApplicationHandlerTest {
 
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
+    private OrchestratorMock orchestrator;
     private ManualClock clock;
     private List<Endpoint> expectedEndpoints;
     private Availability availability;
@@ -140,9 +142,11 @@ public class ApplicationHandlerTest {
                 .withModelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                 .build();
         tenantRepository.addTenant(mytenantName);
+        orchestrator = new OrchestratorMock();
         activeTokenFingerprints = new HashMap<>();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
+                .withOrchestrator(orchestrator)
                 .withClock(clock)
                 .withTesterClient(testerClient)
                 .withLogRetriever(logRetriever)
@@ -379,6 +383,13 @@ public class ApplicationHandlerTest {
         restart(applicationId, Zone.defaultZone());
     }
 
+    @Test
+    public void testSuspended() throws Exception {
+        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        assertSuspended(false, applicationId, Zone.defaultZone());
+        orchestrator.suspend(applicationId);
+        assertSuspended(true, applicationId, Zone.defaultZone());
+    }
 
     @Test
     public void testConverge() throws Exception {
@@ -393,6 +404,7 @@ public class ApplicationHandlerTest {
         HttpProxy mockHttpProxy = mock(HttpProxy.class);
         ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
+                .withOrchestrator(orchestrator)
                 .withTesterClient(testerClient)
                 .withHttpProxy(mockHttpProxy)
                 .build();

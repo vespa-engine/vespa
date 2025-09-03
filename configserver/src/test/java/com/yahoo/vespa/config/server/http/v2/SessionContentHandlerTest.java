@@ -10,6 +10,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -65,6 +66,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
 
         ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
+                .withOrchestrator(new OrchestratorMock())
                 .withConfigserverConfig(configserverConfig)
                 .build();
         applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId()).build());
@@ -201,6 +203,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 SessionContentHandler.testContext(),
                 new ApplicationRepository.Builder()
                         .withTenantRepository(tenantRepository)
+                        .withOrchestrator(new OrchestratorMock())
                         .withClock(Clock.systemUTC())
                         .build()
         );
