@@ -38,13 +38,11 @@ public class McpJdiscHandler extends ThreadedHttpRequestHandler{
 
     /**
      * Handles incoming HTTP requests.
-     * 
-     * @param request The HTTP request to handle.
-     * @throws UnsupportedOperationException if called without a ContentChannel.
+     * @see #handle(HttpRequest, ContentChannel) 
      */
     @Override
     public HttpResponse handle(HttpRequest request){
-        throw new UnsupportedOperationException("See #handle(HttpRequest, ContentChannel)");
+        return handle(request, null);
     }
 
     /**
@@ -54,14 +52,15 @@ public class McpJdiscHandler extends ThreadedHttpRequestHandler{
      * @param channel The ContentChannel associated with the request.
      * @return HttpResponse containing the response to the request.
      */
-    // TODO: Consider using ContentChannel ?
     @Override
     public HttpResponse handle(HttpRequest request, ContentChannel channel){
         String method = request.getMethod().toString();
         String path = request.getUri().getPath();
         byte[] body = new byte[0];
         try{
-            body = request.getData().readAllBytes();
+            if (request.getData() != null){
+                body = request.getData().readAllBytes();
+            }
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Failed to read request body", e);
             return this.transport.createErrorResponse(400, new McpError("Failed to read request body"));
