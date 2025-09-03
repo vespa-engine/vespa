@@ -5,6 +5,14 @@
 #include "tree/node.h"
 #include "tree/querybuilder.h"
 
+#include <vespa/searchlib/query/tree/integer_term_vector.h>
+#include <vespa/searchlib/query/tree/predicate_query_term.h>
+#include <vespa/searchlib/query/tree/string_term_vector.h>
+
+using search::query::IntegerTermVector;
+using search::query::PredicateQueryTerm;
+using search::query::StringTermVector;
+
 namespace search {
 
 using namespace searchlib::searchprotocol::protobuf;
@@ -13,6 +21,7 @@ template <class NodeTypes>
 class ProtoTreeConverterImpl {
     const ProtobufQueryTree& _proto;
     search::query::QueryBuilder<NodeTypes> _builder;
+    std::string_view _pureTermView;
 public:
     std::unique_ptr<query::Node> convert() const {
         bool ok = handle_item(_proto.root());
@@ -47,6 +56,26 @@ public:
         d.isSpecialTokenFlag = props.is_special_token();
         return d;
     }
+
+    bool handle(const ItemPureWeightedString& item) {
+        if (_pureTermView.empty()) {
+            return false;
+        }
+        int32_t weight = item.weight();
+        auto word = item.value();
+        auto &term = _builder.addStringTerm(word, _pureTermView, 0, weight);
+        return true;
+    }
+    bool handle(const ItemPureWeightedLong& item) {
+        if (_pureTermView.empty()) {
+            return false;
+        }
+        int32_t weight = item.weight();
+        auto word = item.value();
+        auto &term = _builder.addStringTerm(word, _pureTermView, 0, weight);
+        return true;
+    }
+
 
     bool handle(const ItemOr& item) {
         uint32_t arity = item.children_size();
@@ -113,6 +142,7 @@ public:
     }
 
     bool handle(const ItemWeakAnd& item) {
+        _pureTermView = d.view;
         uint32_t arity = item.children_size();
         uint32_t targetNumHits = item.target_num_hits();
         std::string index = item.index();
@@ -122,6 +152,7 @@ public:
                 return false;
             }
         }
+        _pureTermView = "";
         return true;
     }
 
@@ -199,6 +230,7 @@ public:
     }
     bool handle(const ItemWordAlternatives& item) {
         auto d = fillTermProperties(item.properties());
+        _pureTermView = d.view;
         uint32_t arity = item.children_size();
         _builder.addEquiv(arity, d.uniqueId, d.weight);
         for (const auto &child : item.children()) {
@@ -206,60 +238,63 @@ public:
                 return false;
             }
         }
+        _pureTermView = "";
         return true;
     }
 
     bool handle(const ItemWeightedSetOfString& item) {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_WEIGHTED_SET;
-        _d.arity = item.weighted_strings_size();
+        auto d = fillTermProperties(item.properties());
+        uint32_t arity = item.weighted_strings_size();
+        auto & ws = _builder.addWeightedSetTerm(arity, d.view, d.uniqueId, d.weight);
+        for (const auto &child : item.weighted_strings()) {
+            ws.addTerm(child.weight(), child.value());
+        }
         return true;
     }
 
     bool handle(const ItemWeightedSetOfLong& item) {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_WEIGHTED_SET;
-        _d.arity = item.weighted_longs_size();
+        auto d = fillTermProperties(item.properties());
+        uint32_t arity = item.weighted_longs_size();
+        auto & ws = _builder.addWeightedSetTerm(arity, d.view, d.uniqueId, d.weight);
+        for (const auto &child : item.weighted_longs()) {
+            ws.addTerm(child.weight(), child.value());
+        }
         return true;
     }
 
     bool handle(const ItemPhrase& item) {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_PHRASE;
-        _d.arity = item.children_size();
+        auto d = fillTermProperties(item.properties());
+        _pureTermView = d.view;
+        uint32_t arity = item.children_size();
+        auto &phrase = _builder.addPhrase(arity, d.view, d.uniqueId, d.weight);
+        for (const auto &child : item.children()) {
+            if (!handle_item(child)) {
+                return false;
+            }
+        }
+        _pureTermView = "";
         return true;
     }
 
-    bool handle(const ItemIntegerTerm& item,
-                QueryStackIterator::Data& _d,
-                std::string& tmp)
-    {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_NUMTERM;
-        _d.integerTerm = item.number();
-        tmp = std::format("{}", item.number());
-        _d.term_view = tmp;
+    bool handle(const ItemIntegerTerm& item) {
+        auto d = fillTermProperties(item.properties());
+        int64_t number = item.number();
+        std::string term = std::format("{}", number);
+        auto &t = _builder.addNumberTerm(term, d.view, d.uniqueId, d.weight);
         return true;
     }
 
-    bool handle(const ItemFloatingPointTerm& item,
-                QueryStackIterator::Data& _d,
-                std::string& tmp)
-    {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_NUMTERM;
-        tmp = std::format("{}", item.number());
-        _d.term_view = tmp;
+    bool handle(const ItemFloatingPointTerm& item) {
+        auto d = fillTermProperties(item.properties());
+        double number = item.number();
+        std::string term = std::format("{}", number);
+        auto &t = _builder.addNumberTerm(term, d.view, d.uniqueId, d.weight);
         return true;
     }
 
-    bool handle(const ItemIntegerRangeTerm& item,
-                QueryStackIterator::Data& _d,
-                std::string& tmp)
-    {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_NUMTERM;
-        tmp = std::format("[{};{}", item.lower_limit(), item.upper_limit());
+    bool handle(const ItemIntegerRangeTerm& item) {
+        auto d = fillTermProperties(item.properties());
+        std::string tmp = std::format("[{};{}", item.lower_limit(), item.upper_limit());
         if (item.has_range_limit() || item.with_diversity()) {
             tmp += std::format(";{}", item.range_limit());
             if (item.with_diversity()) {
@@ -275,20 +310,15 @@ public:
             }
         }
         tmp += "]";
-        _d.term_view = tmp;
-        tmp = std::format("[{};{}]", item.lower_limit(), item.upper_limit());
-        _d.term_view = tmp;
+
+        XXX;
         return true;
     }
-    bool handle(const ItemFloatingPointRangeTerm& item,
-                QueryStackIterator::Data& _d,
-                std::string& tmp)
-    {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_NUMTERM;
+    bool handle(const ItemFloatingPointRangeTerm& item) {
+        auto d = fillTermProperties(item.properties());
         auto b_mark = item.lower_inclusive() ? "[" : "<";
         auto e_mark = item.upper_inclusive() ? "]" : "]";
-        tmp = std::format("{}{};{}", b_mark, item.lower_limit(), item.upper_limit());
+        std::string tmp = std::format("{}{};{}", b_mark, item.lower_limit(), item.upper_limit());
         if (item.has_range_limit() || item.with_diversity()) {
             tmp += std::format(";{}", item.range_limit());
             if (item.with_diversity()) {
@@ -304,88 +334,90 @@ public:
             }
         }
         tmp += e_mark;
-        _d.term_view = tmp;
+
+        XXX;
         return true;
     }
 
     bool handle(const ItemSameElement& item) {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_SAME_ELEMENT;
-        _d.arity = item.children_size();
+        auto d = fillTermProperties(item.properties());
+        _pureTermView = d.view;
+        uint32_t arity = item.children_size();
+        XXX;
+        _pureTermView = "";
         return true;
     }
 
     bool handle(const ItemDotProductOfString& item) {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_DOT_PRODUCT;
-        _d.arity = item.weighted_strings_size();
+        auto d = fillTermProperties(item.properties());
+        uint32_t arity = item.weighted_strings_size();
+        XXX;
         return true;
     }
 
     bool handle(const ItemDotProductOfLong& item) {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_DOT_PRODUCT;
-        _d.arity = item.weighted_longs_size();
+        auto d = fillTermProperties(item.properties());
+        uint32_t arity = item.weighted_longs_size();
+        XXX;
         return true;
     }
 
     bool handle(const ItemStringWand& item) {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_WAND;
-        _d.arity = item.weighted_strings_size();
-        _d.targetHits = item.target_num_hits();
-        _d.scoreThreshold = item.score_threshold();
-        _d.thresholdBoostFactor = item.threshold_boost_factor();
+        auto d = fillTermProperties(item.properties());
+        uint32_t arity = item.weighted_strings_size();
+        uint32_t targetHits = item.target_num_hits();
+        double scoreThreshold = item.score_threshold();
+        double thresholdBoostFactor = item.threshold_boost_factor();
+        XXX;
         return true;
     }
 
     bool handle(const ItemLongWand& item) {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_WAND;
-        _d.arity = item.weighted_longs_size();
-        _d.targetHits = item.target_num_hits();
-        _d.scoreThreshold = item.score_threshold();
-        _d.thresholdBoostFactor = item.threshold_boost_factor();
+        auto d = fillTermProperties(item.properties());
+        uint32_t arity = item.weighted_longs_size();
+        uint32_t targetHits = item.target_num_hits();
+        double scoreThreshold = item.score_threshold();
+        double thresholdBoostFactor = item.threshold_boost_factor();
+        XXX;
         return true;
     }
 
     bool handle(const ItemPredicateQuery& item) {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_PREDICATE_QUERY;
-        _d.predicateQueryTerm = std::make_unique<PredicateQueryTerm>();
+        auto d = fillTermProperties(item.properties());
+
+        auto predicateQueryTerm = std::make_unique<query::PredicateQueryTerm>();
+
         for (const auto& feature : item.features()) {
             std::string key = feature.key();
             std::string value = feature.value();
             uint64_t sub_queries = feature.sub_queries();
-            _d.predicateQueryTerm->addFeature(key, value, sub_queries);
+            predicateQueryTerm->addFeature(key, value, sub_queries);
         }
         for (const auto& range : item.range_features()) {
             std::string key = range.key();
             uint64_t value = range.value();
             uint64_t sub_queries = range.sub_queries();
-            _d.predicateQueryTerm->addRangeFeature(key, value, sub_queries);
+            predicateQueryTerm->addRangeFeature(key, value, sub_queries);
         }
+        auto &t = _builder.addPredicateQuery(predicateQueryTerm, d.view, d.uniqueId, d.weight);
         return true;
     }
 
     bool handle(const ItemNearestNeighbor& item) {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_NEAREST_NEIGHBOR;
-        _d.term_view = item.query_tensor_name();
-        _d.targetHits = item.target_num_hits();
-        _d.allowApproximateFlag = item.allow_approximate();
-        _d.exploreAdditionalHits = item.explore_additional_hits();
-        _d.distanceThreshold = item.distance_threshold();
-        _d.arity = 0;
+        auto d = fillTermProperties(item.properties());
+
+        std::string_view query_tensor_name = item.query_tensor_name();
+        uint32_t targetHits = item.target_num_hits();
+        bool allowApproximateFlag = item.allow_approximate();
+        uint32_t exploreAdditionalHits = item.explore_additional_hits();
+        double distanceThreshold = item.distance_threshold();
+        XXX;
         return true;
     }
 
-// TODO geo bounding box
-    bool handle(const ItemGeoLocationTerm& item,
-                QueryStackIterator::Data& _d,
-                std::string& tmp)
-    {
-        fillTermProperties(item.properties(), _d);
+    // TODO geo bounding box
+    bool handle(const ItemGeoLocationTerm& item) {
+        auto d = fillTermProperties(item.properties());
         _d.itemType = ParseItem::ItemType::ITEM_GEO_LOCATION_TERM;
         int x = item.longitude() * 1000000;
         int y = item.latitude() * 1000000;
@@ -397,51 +429,52 @@ public:
         int64_t aspect = cosLat * 4294967295L;
         if (aspect < 0)
             aspect = 0;
-        tmp = std::format("(2,{},{},{},0,1,0,{})", x, y, radius, aspect);
-        _d.term_view = tmp;
+        std::string term = std::format("(2,{},{},{},0,1,0,{})", x, y, radius, aspect);
+        XXX;
         return true;
     }
 
 
     bool handle(const ItemStringIn& item) {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_STRING_IN;
+        auto d = fillTermProperties(item.properties());
         uint32_t num_terms = item.words_size();
         auto terms = std::make_unique<StringTermVector>(num_terms);
         for (const auto& word : item.words()) {
             terms->addTerm(word);
         }
-        _d.termVector = std::move(terms);
+        auto &t = _builder.add_in_term(terms, query::MultiTerm::Type::STRING,
+                                       d.view, d.uniqueId, d.weight);
         return true;
     }
 
     bool handle(const ItemNumericIn& item) {
-        fillTermProperties(item.properties(), _d);
-        _d.itemType = ParseItem::ItemType::ITEM_NUMERIC_IN;
+        auto d = fillTermProperties(item.properties());
         uint32_t num_terms = item.numbers_size();
         auto terms = std::make_unique<IntegerTermVector>(num_terms);
         for (int64_t number : item.numbers()) {
             terms->addTerm(number);
         }
-        _d.termVector = std::move(terms);
+        auto &t = _builder.add_in_term(terms, query::MultiTerm::Type::INTEGER,
+                                       d.view, d.uniqueId, d.weight);
         return true;
     }
 
 
     bool handle_item(const QueryTreeItem& qti) {
+        using IC = QueryTreeItem::ItemCase;
         switch (qti.item_case()) {
 
         case IC::kItemTrue:
-            builder.add_true_node();
+            _builder.add_true_node();
             return true;
         case IC::kItemFalse:
-            builder.add_false_node();
+            _builder.add_false_node();
             return true;
 
         case IC::kItemPureWeightedString:
-            return false;
+            return handle(qti.item_pure_weighted_string());
         case IC::kItemPureWeightedLong:
-            return false;
+            return handle(qti.item_pure_weighted_long());
 
         case IC::kItemOr:
             return handle(qti.item_or());
