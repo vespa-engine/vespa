@@ -626,6 +626,16 @@ public class PermanentFlags {
             "Takes effect at startup of search node",
             INSTANCE_ID);
 
+    public static final UnboundListFlag<String> IGNORE_CORE_DUMP_TYPE_WHEN_REPORTING = defineListFlag(
+            "ignore-core-dump-report-when-reporting", List.of(), String.class,
+            "Whether to ignore core dump reporting (creating or updating a Jira ticket) for the specified core dump types." +
+                    "Typically set to JVM_HEAP and/or OOM for apps that have issues in application code " +
+                    "that the customer needs to fix and we don't want to create or update a Jira issue for.",
+            "Takes effect immediately",
+            list -> Set.of("CORE_DUMP", "JVM_HEAP", "OOM").containsAll(list),
+            TENANT_ID, APPLICATION, INSTANCE_ID
+    );
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
