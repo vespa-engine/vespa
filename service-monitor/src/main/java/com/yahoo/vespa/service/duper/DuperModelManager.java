@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.service.monitor.CriticalRegion;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.DuperModelListener;
@@ -61,15 +62,19 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
     public DuperModelManager(ConfigserverConfig configServerConfig, SuperModelProvider superModelProvider) {
         this(configServerConfig.multitenant() || configServerConfig.hostedVespa(),
                 configServerConfig.serverNodeType() == ConfigserverConfig.ServerNodeType.Enum.controller,
-             superModelProvider, new DuperModel());
+             superModelProvider, new DuperModel(), SystemName.from(configServerConfig.system()));
     }
 
     /** Non-private for testing */
     public DuperModelManager(boolean multitenantOrHosted, boolean isController, SuperModelProvider superModelProvider,
-                             DuperModel duperModel) {
+                             DuperModel duperModel, SystemName system) {
         this.duperModel = duperModel;
 
-        if (multitenantOrHosted) {
+        // TODO(bjorncs|onurkaracali|morioramdenbourg, 2025-08-28) add configserver app
+        if (system.isKubernetes()) {
+            supportedInfraApplications = Stream.of(tenantHostApplication)
+                    .collect(Collectors.toUnmodifiableMap(InfraApplication::getApplicationId, Function.identity()));
+        } else if (multitenantOrHosted) {
             supportedInfraApplications =
                     // Note: proxyHostApplication only required for main/cd
                     (isController ?
