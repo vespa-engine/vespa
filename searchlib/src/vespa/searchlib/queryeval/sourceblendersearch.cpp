@@ -188,6 +188,24 @@ SourceBlenderSearch::create(std::unique_ptr<sourceselector::Iterator> sourceSele
     }
 }
 
+void
+SourceBlenderSearch::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    if (seek(docid)) {
+        _matchedChild->get_element_ids(docid, element_ids);
+    }
+}
+
+void
+SourceBlenderSearch::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    if (seek(docid)) {
+        _matchedChild->and_element_ids_into(docid, element_ids);
+    } else {
+        element_ids.clear();
+    }
+}
+
 }
 
 void visit(vespalib::ObjectVisitor &self, const std::string &name,

@@ -74,6 +74,8 @@ public:
     ~SourceBlenderSearch() override;
     void transform_children(std::function<SearchIterator::UP(SearchIterator::UP)> f) override;
     void initRange(uint32_t beginId, uint32_t endId) override;
+    void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
+    void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) override;
 };
 
 }
