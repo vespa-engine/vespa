@@ -23,22 +23,22 @@ import io.modelcontextprotocol.spec.*;
 import reactor.core.publisher.Mono;
 
 /**
- * VespaStatelessTransport is a transport implementation for a stateless MCP server.
+ * McpHttpTransport is a transport implementation for a stateless MCP server.
  * It processes HTTP requests, extracts the context, and routes the requests to the appropriate handler.
  * It also provides methods for creating HTTP responses and handling errors.
  * @author Edvard Dingsør
  */
 @SuppressWarnings("deprecation")
-public class VespaStatelessTransport implements McpStatelessServerTransport {
+public class McpHttpTransport implements McpStatelessServerTransport {
 
-    private static final Logger logger = Logger.getLogger(VespaStatelessTransport.class.getName());
+    private static final Logger logger = Logger.getLogger(McpHttpTransport.class.getName());
 
     private final ObjectMapper mapper;
     private McpStatelessServerHandler mcpHandler;
     private final McpTransportContextExtractor<HttpRequest> contextExtractor;
     private volatile boolean isClosing = false;
 
-    public VespaStatelessTransport() {
+    public McpHttpTransport() {
         this.mapper = new ObjectMapper();
         this.contextExtractor = (request, context) -> context; // Change later??
     }

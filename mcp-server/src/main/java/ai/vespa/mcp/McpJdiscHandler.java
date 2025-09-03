@@ -18,7 +18,7 @@ import io.modelcontextprotocol.spec.McpError;
 
 /**
  * JDisc handler for handling MCP requests.
- * This handler processes HTTP requests directed to the MCP endpoint, and routes them to the appropriate methods in VespaStatelessTransport.
+ * This handler processes HTTP requests directed to the MCP endpoint, and routes them to the appropriate methods in McpHttpTransport .
  * @author Edvard Dingsør
  * @author Erling Fjelstad
 */
@@ -26,12 +26,12 @@ import io.modelcontextprotocol.spec.McpError;
 public class McpJdiscHandler extends ThreadedHttpRequestHandler{
     private static final Logger logger = Logger.getLogger(McpJdiscHandler.class.getName());
 
-    private final VespaStatelessTransport transport;
+    private final McpHttpTransport  transport;
     
     @Inject
     public McpJdiscHandler(Executor executor,
                     Metric metrics,
-                    App mcpServer) {
+                    McpServerComponent  mcpServer) {
         super(executor, metrics, true);
         this.transport = mcpServer.getTransport();
     }

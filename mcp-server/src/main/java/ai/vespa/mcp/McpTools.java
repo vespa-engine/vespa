@@ -33,20 +33,20 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 
 /**
- * VespaTools provides MCP-compatible access to Vespa search functionality.
+ * McpTools provides MCP-compatible access to Vespa search functionality.
  * This class exposes Vespa's search, schema inspection, and documentation features.
  *
  * @author Erling Fjelstad
  * @author Edvard Dingsør
  */
-public class VespaTools extends AbstractComponent {
+public class McpTools extends AbstractComponent {
 
     // Static utilities for HTTP requests and JSON parsing
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     // Logging
-    private static final Logger logger = Logger.getLogger(VespaTools.class.getName());
+    private static final Logger logger = Logger.getLogger(McpTools.class.getName());
 
     // Core Vespa components injected at application startup
     private final ExecutionFactory executionFactory;
@@ -54,10 +54,11 @@ public class VespaTools extends AbstractComponent {
     private final SchemaInfo schemaInfo;
 
     private final CompiledQueryProfileRegistry queryProfileRegistry;
-
+    private static final String VESPA_DOCS_BASE_URL = "https://docs.vespa.ai";
+    private static final String VESPA_SEARCH_API_BASE_URL = "https://api.search.vespa.ai/search/";
 
     @Inject
-    public VespaTools(ExecutionFactory executionFactory, CompiledQueryProfileRegistry queryProfileRegistry) {
+    public McpTools(ExecutionFactory executionFactory, CompiledQueryProfileRegistry queryProfileRegistry) {
         this.executionFactory = executionFactory;
         this.queryProfileRegistry = queryProfileRegistry;
 
@@ -97,9 +98,6 @@ public class VespaTools extends AbstractComponent {
      * @return A map containing the search results and sources, or an error message if the search fails.
      */
     public Map<String, Object> getDocumentation(String userinput) {
-        // Base URL for Vespa's public search API
-        String baseUrl = "https://api.search.vespa.ai/search/";
-
         // Define query parameters: YQL with userInput function for semantic search
         Map<String, String> params = Map.of(
                 "yql", "select * from doc where userInput(@userinput)",
@@ -107,7 +105,7 @@ public class VespaTools extends AbstractComponent {
         );
 
         // Build the full query URL with proper encoding to handle special characters
-        StringBuilder urlBuilder = new StringBuilder(baseUrl);
+        StringBuilder urlBuilder = new StringBuilder(VESPA_SEARCH_API_BASE_URL);
         urlBuilder.append("?");
         for (Map.Entry<String, String> entry : params.entrySet()) {
             urlBuilder.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
@@ -149,7 +147,7 @@ public class VespaTools extends AbstractComponent {
 
                         if (title != null && path != null) {
                             // Convert relative path to full documentation URL
-                            String url = "https://docs.vespa.ai" + path;
+                            String url = VESPA_DOCS_BASE_URL + path;
                             sources.put(title, url);
                         }
                     }
@@ -443,7 +441,7 @@ public class VespaTools extends AbstractComponent {
      * @return A string containing the query examples, or an error message if reading fails.
      */
     String readQueryExamples() {
-        try (InputStream inputStream = App.class.getClassLoader().getResourceAsStream("queryExamples.txt")){
+        try (InputStream inputStream = McpServerComponent.class.getClassLoader().getResourceAsStream("queryExamples.txt")){
             if (inputStream == null) {
                 logger.log(Level.SEVERE, "Query examples resource not found");
                 return "Query examples resource not found";
