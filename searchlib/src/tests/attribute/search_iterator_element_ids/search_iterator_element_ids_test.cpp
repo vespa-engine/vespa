@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/attribute/searchcontextelementiterator.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -12,7 +11,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("searchcontextelementiterator_test");
+LOG_SETUP("search_iterator_element_ids_test");
 
 using namespace search::attribute;
 using namespace search;
@@ -48,26 +47,26 @@ createResult() {
 }
 
 void
-verifySeek(queryeval::ElementIterator & elemIt) {
-    elemIt.initFullRange();
-    EXPECT_FALSE(elemIt.seek(1));
-    EXPECT_TRUE(elemIt.seek(2));
-    EXPECT_FALSE(elemIt.seek(3));
-    EXPECT_TRUE(elemIt.seek(4));
-    EXPECT_FALSE(elemIt.seek(5));
+verifySeek(queryeval::SearchIterator& itr) {
+    itr.initFullRange();
+    EXPECT_FALSE(itr.seek(1));
+    EXPECT_TRUE(itr.seek(2));
+    EXPECT_FALSE(itr.seek(3));
+    EXPECT_TRUE(itr.seek(4));
+    EXPECT_FALSE(itr.seek(5));
 }
 
 void
-verifyGetElementIds(queryeval::ElementIterator & elemIt, const std::vector<std::vector<uint32_t>> & expectedALL) {
-    elemIt.initFullRange();
+verifyGetElementIds(queryeval::SearchIterator& itr, const std::vector<std::vector<uint32_t>> & expectedALL) {
+    itr.initFullRange();
     std::vector<uint32_t> elems;
     for (uint32_t docId : {1,2,3,4,5}) {
         const auto & expected = expectedALL[docId];
         elems.clear();
-        EXPECT_EQ(expected.empty(), !elemIt.seek(docId));
-        assert(expected.empty() != elemIt.seek(docId));
-        if (elemIt.seek(docId)) {
-            elemIt.getElementIds(docId, elems);
+        EXPECT_EQ(expected.empty(), !itr.seek(docId));
+        assert(expected.empty() != itr.seek(docId));
+        if (itr.seek(docId)) {
+            itr.get_element_ids(docId, elems);
             EXPECT_EQ(expected.size(), elems.size());
             EXPECT_EQ(expected, elems);
         }
@@ -75,14 +74,14 @@ verifyGetElementIds(queryeval::ElementIterator & elemIt, const std::vector<std::
 }
 
 void
-verifyMergeElementIds(queryeval::ElementIterator & elemIt, std::vector<uint32_t> initial, const std::vector<std::vector<uint32_t>> & expectedALL) {
-    elemIt.initFullRange();
+verifyMergeElementIds(queryeval::SearchIterator & itr, std::vector<uint32_t> initial, const std::vector<std::vector<uint32_t>> & expectedALL) {
+    itr.initFullRange();
     std::vector<uint32_t> elems;
     for (uint32_t docId : {1,2,3,4,5}) {
         const auto & expected = expectedALL[docId];
         elems = initial;
-        if (elemIt.seek(docId)) {
-            elemIt.mergeElementIds(docId, elems);
+        if (itr.seek(docId)) {
+            itr.and_element_ids_into(docId, elems);
             EXPECT_EQ(expected.size(), elems.size());
             EXPECT_EQ(expected, elems);
         }
@@ -90,39 +89,38 @@ verifyMergeElementIds(queryeval::ElementIterator & elemIt, std::vector<uint32_t>
 }
 
 void
-verifyElementIterator(queryeval::ElementIterator & elemIt) {
-    verifySeek(elemIt);
+verifyElementIterator(queryeval::SearchIterator& itr) {
+    verifySeek(itr);
     std::vector<std::vector<uint32_t>> expectedALL = {{}, {}, {0, 3}, {}, {0, 5}, {}};
     std::vector<std::vector<uint32_t>> expectedNONE = {{}, {}, {}, {}, {}, {}};
     std::vector<std::vector<uint32_t>> expectedSOME = {{}, {}, {3}, {}, {5}, {}};
-    verifyGetElementIds(elemIt, expectedALL);
-    verifyMergeElementIds(elemIt, {0,1,2,3,4,5}, expectedALL);
-    verifyMergeElementIds(elemIt, {}, expectedNONE);
-    verifyMergeElementIds(elemIt, {1,3,4,5}, expectedSOME);
+    verifyGetElementIds(itr, expectedALL);
+    verifyMergeElementIds(itr, {0,1,2,3,4,5}, expectedALL);
+    verifyMergeElementIds(itr, {}, expectedNONE);
+    verifyMergeElementIds(itr, {1,3,4,5}, expectedSOME);
 }
 
 }
 
-TEST(ElementIteratorTest, require_that_searchcontext)
+TEST(SearchIteratorElementIdsTest, require_that_searchcontext)
 {
     AttributeVector::SP attribute = createAndFillAttribute();
     fef::TermFieldMatchData tfmd;
 
     SearchContextParams params;
     ISearchContext::UP sc = attribute->createSearchContext(std::make_unique<QueryTermSimple>("1", QueryTermSimple::Type::WORD), params);
-    SearchContextElementIterator elemIt(sc->createIterator(&tfmd, false), *sc);
-    verifyElementIterator(elemIt);
+    auto itr = sc->createIterator(&tfmd, false);
+    verifyElementIterator(*itr);
 }
 
-TEST(ElementIteratorTest, require_that_non_searchcontext)
+TEST(SearchIteratorElementIdsTest, require_that_non_searchcontext)
 {
     fef::TermFieldMatchData tfmd;
     fef::TermFieldMatchDataArray tfmda;
     tfmda.add(&tfmd);
     queryeval::FakeResult result = createResult();
     auto search = std::make_unique<queryeval::FakeSearch>("","","", result, std::move(tfmda));
-    queryeval::ElementIteratorWrapper wrapper(std::move(search), tfmd);
-    verifyElementIterator(wrapper);
+    verifyElementIterator(*search);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

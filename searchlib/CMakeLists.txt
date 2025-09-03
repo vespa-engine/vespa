@@ -98,7 +98,7 @@ vespa_define_module(
     src/tests/attribute/save_target
     src/tests/attribute/searchable
     src/tests/attribute/searchcontext
-    src/tests/attribute/searchcontextelementiterator
+    src/tests/attribute/search_iterator_element_ids
     src/tests/attribute/sort_blob_writers
     src/tests/attribute/sourceselector
     src/tests/attribute/stringattribute
