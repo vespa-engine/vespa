@@ -5,7 +5,6 @@
 #include <vespa/searchlib/attribute/attributeiterators.h>
 #include <vespa/searchlib/attribute/flagattribute.h>
 #include <vespa/searchlib/attribute/postinglistsearchcontext.h>
-#include <vespa/searchlib/attribute/searchcontextelementiterator.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
@@ -1031,10 +1030,6 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, Search
 
     SearchBasePtr sbp = sc.createIterator(&md, strict);
     SearchIterator & search = *sbp;
-    queryeval::ElementIterator::UP elemIt;
-    if (withElementId) {
-        elemIt = std::make_unique<attribute::SearchContextElementIterator>(std::move(sbp), sc);
-    }
     search.initFullRange();
 
     std::vector<int32_t> weights(3);
@@ -1065,7 +1060,7 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, Search
     EXPECT_EQ(md.getDocId(), 2u);
     if (withElementId && attr->hasMultiValue() && !attr->hasWeightedSetType()) {
         std::vector<uint32_t> elems;
-        elemIt->getElementIds(2, elems);
+        search.get_element_ids(2, elems);
         ASSERT_EQ(2u, elems.size());
         EXPECT_EQ(0u,elems[0]);
         EXPECT_EQ(1u,elems[1]);
@@ -1078,7 +1073,7 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, Search
     EXPECT_EQ(md.getDocId(), 3u);
     if (withElementId && attr->hasMultiValue() && !attr->hasWeightedSetType()) {
         std::vector<uint32_t> elems;
-        elemIt->getElementIds(3, elems);
+        search.get_element_ids(3, elems);
         ASSERT_EQ(3u, elems.size());
         EXPECT_EQ(0u,elems[0]);
         EXPECT_EQ(1u,elems[1]);
