@@ -5,6 +5,8 @@ import java.io.OutputStream;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -20,8 +22,6 @@ import io.modelcontextprotocol.spec.*;
 
 import reactor.core.publisher.Mono;
 
-import org.apache.log4j.Logger;
-
 /**
  * VespaStatelessTransport is a transport implementation for a stateless MCP server.
  * It processes HTTP requests, extracts the context, and routes the requests to the appropriate handler.
@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 @SuppressWarnings("deprecation")
 public class VespaStatelessTransport implements McpStatelessServerTransport {
 
-    private static final Logger log = Logger.getLogger(VespaStatelessTransport.class.getName());
+    private static final Logger logger = Logger.getLogger(VespaStatelessTransport.class.getName());
 
     private final ObjectMapper mapper;
     private McpStatelessServerHandler mcpHandler;
@@ -84,7 +84,7 @@ public class VespaStatelessTransport implements McpStatelessServerTransport {
             String jsonError = mapper.writeValueAsString(error);
             return createHttpResponse(statusCode, jsonError);
         } catch (IOException e) {
-            log.error("Failed to serialize error response: " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Failed to serialize error response: " +  e.getMessage(), e);
             return createHttpResponse(500, "{\"error\":\"Internal Server Error\"}");
         }
     }
@@ -94,7 +94,7 @@ public class VespaStatelessTransport implements McpStatelessServerTransport {
      * @see #createErrorResponse(int, McpError)
      */
     public HttpResponse createErrorResponse(int statusCode, McpError error, Exception e) {
-        log.error(error.getMessage(), e);
+        logger.log(Level.SEVERE, error.getMessage(), e);
         return createErrorResponse(statusCode, error);
     }
 
@@ -120,7 +120,7 @@ public class VespaStatelessTransport implements McpStatelessServerTransport {
             return createErrorResponse(400, new McpError("Both application/json and text/event-stream must be in the Accept header"));
         }
         if (this.isClosing) {
-            log.error("POST request received while transport is closing");
+            logger.log(Level.SEVERE, "POST request received while transport is closing");
             return createErrorResponse(503, new McpError("Transport is closing, no further requests will be accepted"));
         }
         McpTransportContext context = contextExtractor.extract(request, new DefaultMcpTransportContext());
@@ -132,7 +132,7 @@ public class VespaStatelessTransport implements McpStatelessServerTransport {
                 // Hacky workaround since there is no default handler for logging/setLevel (at this time).
                 // TODO: fix this properly
                 if ("logging/setLevel".equals(jsonrpcRequest.method())) {
-                    log.info("Handling logging/setLevel request directly");
+                    logger.info("Handling logging/setLevel request directly");
                     McpSchema.JSONRPCResponse response = new McpSchema.JSONRPCResponse(
                             "2.0",
                             jsonrpcRequest.id(),
@@ -162,7 +162,7 @@ public class VespaStatelessTransport implements McpStatelessServerTransport {
                 }
             }
             else {
-                log.error("Message type must be either JSONRPCRequest or JSONRPCNotification, but was: " + message.getClass().getName());
+                logger.log(Level.SEVERE, "Message type must be either JSONRPCRequest or JSONRPCNotification, but was: " + message.getClass().getName());
                 return createErrorResponse(400, new McpError("The server only accepts jsonrpc requests and notifications"));
             }
         }

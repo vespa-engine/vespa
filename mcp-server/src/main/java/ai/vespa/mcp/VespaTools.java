@@ -12,6 +12,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,8 +32,6 @@ import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 
-import java.util.logging.Logger;
-
 /**
  * VespaTools provides MCP-compatible access to Vespa search functionality.
  * This class exposes Vespa's search, schema inspection, and documentation features.
@@ -46,7 +46,7 @@ public class VespaTools extends AbstractComponent {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     // Logging
-    private static final Logger log = Logger.getLogger(VespaTools.class.getName());
+    private static final Logger logger = Logger.getLogger(VespaTools.class.getName());
 
     // Core Vespa components injected at application startup
     private final ExecutionFactory executionFactory;
@@ -72,7 +72,7 @@ public class VespaTools extends AbstractComponent {
      * Type-safe casting helper for Map objects from JSON parsing.
      *
      * @param obj The object to cast.
-     * @return The casted object if it is a Map, or null if not.
+     * @return The cast object if it is a Map, or null if not.
      */
     @SuppressWarnings("unchecked")
     private static <T> T safeMapCast(Object obj) {return obj instanceof Map ? (T) obj : null;}
@@ -80,13 +80,13 @@ public class VespaTools extends AbstractComponent {
      * Type-safe casting helper for List objects from JSON parsing.
      *
      * @param obj The object to cast.
-     * @return The casted object if it is a List, or null if not.
+     * @return The cast object if it is a List, or null if not.
      */
     @SuppressWarnings("unchecked")
     private static <T> T safeListCast(Object obj) {return obj instanceof List ? (T) obj : null;}
 
     private Map<String, Object> error(String message, Exception e) {
-        log.error(message, e);
+        logger.log(Level.SEVERE, message, e);
         return Map.of("error", message + ": " + e.getMessage());
     }
 
@@ -168,7 +168,6 @@ public class VespaTools extends AbstractComponent {
 
     /**
      * Retrieves comprehensive schema information from the Vespa application.
-     *
      * See {@link #getSchemas(List)}.
      * @return A map of all configured schemas, where each key is the schema name and the value is its metadata.
      */
@@ -184,7 +183,7 @@ public class VespaTools extends AbstractComponent {
      * @return A map where each key is the requested schema name and the value is its metadata.
      */
     public Map<String, Object> getSchemas(List<String> schemaNames) {
-        log.info("Trying to retrieve " + schemaNames.size() + " schemas");
+        logger.info("Trying to retrieve " + schemaNames.size() + " schemas");
         try {
             Map<String, Object> result = new LinkedHashMap<>();
             Map<String, Schema> schemaMap = schemaInfo.schemas();
@@ -201,7 +200,7 @@ public class VespaTools extends AbstractComponent {
                 result.put(schemaName, schemaDetails);
                 retrievedCount++;
             }
-            log.info("Retrieved " + retrievedCount + " schemas");
+            logger.info("Retrieved " + retrievedCount + " schemas");
             return result;
         } catch (Exception e) {
             return error("Error fetching schemas", e);
@@ -318,7 +317,7 @@ public class VespaTools extends AbstractComponent {
             query.getModel().setQueryString(yql);
             query.getModel().setType(Query.Type.YQL);
 
-            log.info("Trying to execute query: yql = " + yql + ", params = " + String.valueOf(params));
+            logger.info("Trying to execute query: yql = " + yql + ", params = " + String.valueOf(params));
 
             // Execute the query through Vespa's search chain.
             Execution execution = executionFactory.newExecution(searchChain);
@@ -326,7 +325,7 @@ public class VespaTools extends AbstractComponent {
 
             // Fill result with requested information.
             execution.fill(result);
-            log.info("Query executed successfully: " + result.getTotalHitCount() + " total hits found.");
+            logger.info("Query executed successfully: " + result.getTotalHitCount() + " total hits found.");
             // Convert Vespa Result to a Map structure.
             return resultToMap(result);
         } catch (Exception e) {
@@ -446,12 +445,12 @@ public class VespaTools extends AbstractComponent {
     String readQueryExamples() {
         try (InputStream inputStream = App.class.getClassLoader().getResourceAsStream("queryExamples.txt")){
             if (inputStream == null) {
-                log.error("Query examples resource not found");
+                logger.log(Level.SEVERE, "Query examples resource not found");
                 return "Query examples resource not found";
             }
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (Exception e) {
-            log.error("Failed to read query examples resource: " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Failed to read query examples resource: " + e.getMessage(), e);
             return "Error reading query examples: " + e.getMessage();
         }
     }
