@@ -169,7 +169,7 @@ public class CapacityPolicies {
         }
 
         return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, memory, 10, 0.3),
-                                             new Version(8, 574, 5), new NodeResources(0.25, adjustedMemory, 10, 0.3)));
+                                             new Version(8, 575, 8), new NodeResources(0.25, adjustedMemory, 10, 0.3)));
     }
 
     // Adjust memory based on number of content nodes in all content clusters
