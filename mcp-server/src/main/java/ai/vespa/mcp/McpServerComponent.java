@@ -26,17 +26,17 @@ import com.yahoo.component.annotation.Inject;
  * @author Erling Fjelstad
  * @author Edvard Dingsør
  */
-public class App extends AbstractComponent{
+public class McpServerComponent extends AbstractComponent{
 
 
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final Logger logger = Logger.getLogger(App.class.getName());
+    private static final Logger logger = Logger.getLogger(McpServerComponent.class.getName());
 
     // MCP transport layer for Vespa request handling
-    private final VespaStatelessTransport transport = new VespaStatelessTransport();
+    private final McpHttpTransport transport = new McpHttpTransport();
 
     // Core Vespa functionality exposed as MCP tools
-    private final VespaTools vespaTools;
+    private final McpTools vespaTools;
 
     // List of MCP tool specifications for server capabilities
     private final List<McpStatelessServerFeatures.SyncToolSpecification> toolSpecs;
@@ -44,10 +44,10 @@ public class App extends AbstractComponent{
 
     /**
      * Initializes the MCP server with Vespa tools and starts the server.
-     * Injects VespaTools to access core functionality.
+     * Injects McpTools to access core functionality.
      */
     @Inject
-    public App(VespaTools vespaTools) {
+    public McpServerComponent(McpTools vespaTools) {
         this.vespaTools = vespaTools;
         // this.transportProvider = new VespaStreamableTransportProvider(Duration.ofSeconds(60));
         // Tools for MCP server
@@ -83,7 +83,7 @@ public class App extends AbstractComponent{
     }
 
 
-    public VespaStatelessTransport getTransport() {
+    public McpHttpTransport getTransport() {
         return this.transport;
     }
 
@@ -381,7 +381,7 @@ public class App extends AbstractComponent{
                         }
                     }
 
-                    // Execute the query using VespaTools and convert to JSON.
+                    // Execute the query using McpTools and convert to JSON.
                     String result = toJson(vespaTools.executeQuery(yql, queryProfileName, params));
 
                     return new McpSchema.CallToolResult(
