@@ -2,7 +2,7 @@
 package ai.vespa.metrics;
 
 /**
- * @author yngveaasheim
+ * @author Yngve Aasheim
  */
 public enum ConfigServerMetrics implements VespaMetrics {
 
@@ -151,6 +151,7 @@ public enum ConfigServerMetrics implements VespaMetrics {
     THROTTLED_NODE_FAILURES("throttledNodeFailures", Unit.HOST, "Number of node failures stopped due to throttling"),
     NODE_FAIL_THROTTLING("nodeFailThrottling", Unit.BINARY, "Metric indicating when node failure throttling is active. The value 1 means active, 0 means inactive"),
     CLUSTER_AUTOSCALED("clusterAutoscaled", Unit.OPERATION, "Number of times a cluster has been rescaled by the autoscaler"),
+    AUTOSCALE_SCALING_DURATION("clusterAutoscaleDuration", Unit.SECOND, "The currently predicted duration of a rescaling of this cluster"),
 
     DEPLOYMENT_PREPARE_MILLIS("deployment.prepareMillis", Unit.MILLISECOND, "Duration of deployment preparations"),
     DEPLOYMENT_ACTIVATE_MILLIS("deployment.activateMillis", Unit.MILLISECOND, "Duration of deployment activations"),
