@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
-import com.yahoo.vespa.config.server.application.ArchiveStreamReader.Options;
+import com.yahoo.vespa.archive.ArchiveStreamReader;
+import com.yahoo.vespa.archive.ArchiveStreamReader.Options;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.v2.ApplicationApiHandler;

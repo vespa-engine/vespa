@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Provisioner;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockLogRetriever;
 import com.yahoo.vespa.config.server.MockProvisioner;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -54,6 +55,7 @@ class MaintainerTester {
                 .build();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
+                .withOrchestrator(new OrchestratorMock())
                 .withLogRetriever(new MockLogRetriever())
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
