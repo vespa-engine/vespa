@@ -116,8 +116,8 @@ public class VespaStatelessTransport implements McpStatelessServerTransport {
      */
     public HttpResponse handlePost(HttpRequest request, byte[] requestBody) {
         String accept = request.getHeader("Accept");
-        if (accept == null || !accept.contains("application/json") || !accept.contains("text/event-stream")) {
-            return createErrorResponse(400, new McpError("Both application/json and text/event-stream must be in the Accept header"));
+        if (accept == null || !accept.contains("application/json")) {
+            return createErrorResponse(400, new McpError("application/json must be in the Accept header"));
         }
         if (this.isClosing) {
             logger.log(Level.SEVERE, "POST request received while transport is closing");
