@@ -24,7 +24,7 @@ public:
     bool expired() const { return getTimeLeft() <= vespalib::duration::zero(); }
 
     std::string_view getStackRef() const {
-        return std::string_view(stackDumpBlob.data(), stackDumpBlob.size());
+        return std::string_view(stackDump.data(), stackDump.size());
     }
 
     void setTraceLevel(uint32_t level, uint32_t minLevel) const {
@@ -42,7 +42,7 @@ public:
     std::string   ranking;
     std::string   location;
     PropertiesMap      propertiesMap;
-    std::vector<char>  stackDumpBlob;
+    std::vector<char>  stackDump;
     std::vector<char>  sessionId;
 private:
     mutable Trace      _trace;

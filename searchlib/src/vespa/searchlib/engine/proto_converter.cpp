@@ -8,6 +8,9 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <cinttypes>
 
+#include <vespa/searchlib/query/from_proto.h>
+
+
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.engine.proto_converter");
 
@@ -125,6 +128,7 @@ ProtoConverter::search_request_from_proto(const ProtoSearchRequest &proto, Searc
     request.groupSpec.assign(proto.grouping_blob().begin(), proto.grouping_blob().end());
     request.location = proto.geo_location();
     request.stackDump.assign(proto.query_tree_blob().begin(), proto.query_tree_blob().end());
+    request.queryTree = try_convert(proto.query_tree());
 }
 
 void

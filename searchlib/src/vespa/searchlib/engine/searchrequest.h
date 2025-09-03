@@ -6,6 +6,7 @@
 #include "request.h"
 #include "lazy_source.h"
 
+namespace search::query { class Node; }
 namespace search::engine {
 
 class SearchRequest : public Request
@@ -19,6 +20,7 @@ public:
     uint32_t          maxhits;
     std::string       sortSpec;
     std::vector<char> groupSpec;
+    std::unique_ptr<search::query::Node> queryTree;
 
     SearchRequest();
     explicit SearchRequest(RelativeTime relativeTime);

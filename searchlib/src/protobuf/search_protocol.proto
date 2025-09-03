@@ -26,6 +26,7 @@ message SearchRequest {
     bytes query_tree_blob = 17; // serialized opaquely like now, to be changed later
     int32 profile_depth = 18; // new meaning: default ProfilingParams.depth
     Profiling profiling = 19;
+    QueryTree query_tree = 20; // to replace blob above
 }
 
 message Profiling {

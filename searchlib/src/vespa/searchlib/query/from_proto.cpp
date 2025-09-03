@@ -4,12 +4,13 @@
 #include <vespa/searchlib/query/tree/integer_term_vector.h>
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
 #include <vespa/searchlib/query/tree/string_term_vector.h>
+#include <vespa/searchlib/query/tree/simplequery.h>
 #include <format>
 #include <cmath>
 
 using search::query::IntegerTermVector;
-using search::query::PredicateQueryTerm;
 using search::query::StringTermVector;
+using search::query::PredicateQueryTerm;
 
 using namespace searchlib::searchprotocol::protobuf;
 
@@ -566,6 +567,13 @@ bool ProtoTreeIterator::next() {
         return handle_item(_items[_pos++]);
     }
     return false;
+}
+
+
+std::unique_ptr<query::Node> try_convert(const ProtobufQueryTree& proto_query_tree)
+{
+    using Simple = ProtoTreeConverter<query::SimpleQueryNodeTypes>;
+    return Simple::convert(proto_query_tree);
 }
 
 }

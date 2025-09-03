@@ -2,6 +2,8 @@
 
 #include "searchrequest.h"
 
+#include <vespa/searchlib/query/tree/simplequery.h>
+
 namespace search::engine {
 
 SearchRequest::SearchRequest()

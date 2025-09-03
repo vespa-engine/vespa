@@ -38,9 +38,11 @@ namespace search {
 template <class NodeTypes>
 struct ProtoTreeConverter {
     static std::unique_ptr<query::Node> convert(const ProtobufQueryTree& proto_query_tree) {
-        return ProtoTreeConverterImpl<NodeTypes>(proto_query_tree).convert();
+        ProtoTreeConverterImpl<NodeTypes> impl(proto_query_tree);
+        return impl.convert();
     }
 };
 
+std::unique_ptr<query::Node> try_convert(const ProtobufQueryTree& proto_query_tree);
 
 }

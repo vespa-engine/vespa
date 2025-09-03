@@ -5,6 +5,7 @@
 #include "tree/node.h"
 #include "tree/querybuilder.h"
 
+#include <vespa/searchlib/common/geo_location.h>
 #include <vespa/searchlib/query/tree/integer_term_vector.h>
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
 #include <vespa/searchlib/query/tree/string_term_vector.h>
@@ -12,6 +13,7 @@
 using search::query::IntegerTermVector;
 using search::query::PredicateQueryTerm;
 using search::query::StringTermVector;
+using search::common::GeoLocation;
 
 namespace search {
 
@@ -21,9 +23,10 @@ template <class NodeTypes>
 class ProtoTreeConverterImpl {
     const ProtobufQueryTree& _proto;
     search::query::QueryBuilder<NodeTypes> _builder;
-    std::string_view _pureTermView;
+    std::string _pureTermView;
 public:
-    std::unique_ptr<query::Node> convert() const {
+    ProtoTreeConverterImpl(const ProtobufQueryTree& proto) : _proto(proto) {}
+    std::unique_ptr<query::Node> convert() {
         bool ok = handle_item(_proto.root());
         if (ok) {
             return _builder.build();
@@ -33,7 +36,7 @@ public:
     }
 
     struct DecodedTermProperties {
-        std::string_view index_view;
+        std::string index_view;
         query::Weight weight = query::Weight(100);
         uint32_t uniqueId;
         bool noRankFlag;
@@ -61,18 +64,19 @@ public:
         if (_pureTermView.empty()) {
             return false;
         }
-        int32_t weight = item.weight();
+        query::Weight weight(item.weight());
         auto word = item.value();
-        auto &term = _builder.addStringTerm(word, _pureTermView, 0, weight);
+        _builder.addStringTerm(word, _pureTermView, 0, weight);
         return true;
     }
     bool handle(const ItemPureWeightedLong& item) {
         if (_pureTermView.empty()) {
             return false;
         }
-        int32_t weight = item.weight();
-        auto word = item.value();
-        auto &term = _builder.addStringTerm(word, _pureTermView, 0, weight);
+        query::Weight weight(item.weight());
+        int64_t number = item.value();
+        std::string term = std::format("{}", number);
+        _builder.addNumberTerm(term, _pureTermView, 0, weight);
         return true;
     }
 
@@ -142,7 +146,7 @@ public:
     }
 
     bool handle(const ItemWeakAnd& item) {
-        _pureTermView = d.view;
+        _pureTermView = item.index();
         uint32_t arity = item.children_size();
         uint32_t targetNumHits = item.target_num_hits();
         std::string index = item.index();
@@ -159,7 +163,7 @@ public:
     bool handle(const ItemWordTerm& item) {
         auto d = fillTermProperties(item.properties());
         auto word = item.word();
-        auto &term = _builder.addStringTerm(word, d.view, d.uniqueId, d.weight);
+        auto &term = _builder.addStringTerm(word, d.index_view, d.uniqueId, d.weight);
         if (d.noRankFlag) term.setRanked(false);
         if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
@@ -167,7 +171,7 @@ public:
     bool handle(const ItemPrefixTerm& item) {
         auto d = fillTermProperties(item.properties());
         auto word = item.word();
-        auto &term = _builder.addPrefixTerm(word, d.view, d.uniqueId, d.weight);
+        auto &term = _builder.addPrefixTerm(word, d.index_view, d.uniqueId, d.weight);
         if (d.noRankFlag) term.setRanked(false);
         if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
@@ -175,7 +179,7 @@ public:
     bool handle(const ItemSubstringTerm& item) {
         auto d = fillTermProperties(item.properties());
         auto word = item.word();
-        auto &term = _builder.addSubstringTerm(word, d.view, d.uniqueId, d.weight);
+        auto &term = _builder.addSubstringTerm(word, d.index_view, d.uniqueId, d.weight);
         if (d.noRankFlag) term.setRanked(false);
         if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
@@ -183,7 +187,7 @@ public:
     bool handle(const ItemSuffixTerm& item) {
         auto d = fillTermProperties(item.properties());
         auto word = item.word();
-        auto &term = _builder.addSuffixTerm(word, d.view, d.uniqueId, d.weight);
+        auto &term = _builder.addSuffixTerm(word, d.index_view, d.uniqueId, d.weight);
         if (d.noRankFlag) term.setRanked(false);
         if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
@@ -191,7 +195,7 @@ public:
     bool handle(const ItemExactStringTerm& item) {
         auto d = fillTermProperties(item.properties());
         auto word = item.word();
-        auto &term = _builder.addExactStringTerm(word, d.view, d.uniqueId, d.weight);
+        auto &term = _builder.addStringTerm(word, d.index_view, d.uniqueId, d.weight);
         if (d.noRankFlag) term.setRanked(false);
         if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
@@ -199,7 +203,7 @@ public:
     bool handle(const ItemRegexp& item) {
         auto d = fillTermProperties(item.properties());
         auto regexp = item.regexp();
-        auto &term = _builder.addRegExpTerm(regexp, d.view, d.uniqueId, d.weight);
+        auto &term = _builder.addRegExpTerm(regexp, d.index_view, d.uniqueId, d.weight);
         if (d.noRankFlag) term.setRanked(false);
         if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
@@ -210,7 +214,7 @@ public:
         auto prefix_match = item.prefix_match();
         auto max_edit_distance = item.max_edit_distance();
         auto prefix_lock_length = item.prefix_lock_length();
-        auto &term = _builder.addFuzzyTerm(word, d.view, d.uniqueId, d.weight,
+        auto &term = _builder.addFuzzyTerm(word, d.index_view, d.uniqueId, d.weight,
                                            max_edit_distance, prefix_lock_length, prefix_match);
         if (d.noRankFlag) term.setRanked(false);
         if (d.noPositionDataFlag) term.setPositionData(false);
@@ -230,7 +234,7 @@ public:
     }
     bool handle(const ItemWordAlternatives& item) {
         auto d = fillTermProperties(item.properties());
-        _pureTermView = d.view;
+        _pureTermView = d.index_view;
         uint32_t arity = item.children_size();
         _builder.addEquiv(arity, d.uniqueId, d.weight);
         for (const auto &child : item.children()) {
@@ -245,9 +249,10 @@ public:
     bool handle(const ItemWeightedSetOfString& item) {
         auto d = fillTermProperties(item.properties());
         uint32_t arity = item.weighted_strings_size();
-        auto & ws = _builder.addWeightedSetTerm(arity, d.view, d.uniqueId, d.weight);
+        auto & ws = _builder.addWeightedSetTerm(arity, d.index_view, d.uniqueId, d.weight);
         for (const auto &child : item.weighted_strings()) {
-            ws.addTerm(child.weight(), child.value());
+            query::Weight weight(child.weight());
+            ws.addTerm(child.value(), weight);
         }
         return true;
     }
@@ -255,18 +260,19 @@ public:
     bool handle(const ItemWeightedSetOfLong& item) {
         auto d = fillTermProperties(item.properties());
         uint32_t arity = item.weighted_longs_size();
-        auto & ws = _builder.addWeightedSetTerm(arity, d.view, d.uniqueId, d.weight);
+        auto & ws = _builder.addWeightedSetTerm(arity, d.index_view, d.uniqueId, d.weight);
         for (const auto &child : item.weighted_longs()) {
-            ws.addTerm(child.weight(), child.value());
+            query::Weight weight(child.weight());
+            ws.addTerm(child.value(), weight);
         }
         return true;
     }
 
     bool handle(const ItemPhrase& item) {
         auto d = fillTermProperties(item.properties());
-        _pureTermView = d.view;
+        _pureTermView = d.index_view;
         uint32_t arity = item.children_size();
-        auto &phrase = _builder.addPhrase(arity, d.view, d.uniqueId, d.weight);
+        _builder.addPhrase(arity, d.index_view, d.uniqueId, d.weight);
         for (const auto &child : item.children()) {
             if (!handle_item(child)) {
                 return false;
@@ -280,7 +286,7 @@ public:
         auto d = fillTermProperties(item.properties());
         int64_t number = item.number();
         std::string term = std::format("{}", number);
-        auto &t = _builder.addNumberTerm(term, d.view, d.uniqueId, d.weight);
+        _builder.addNumberTerm(term, d.index_view, d.uniqueId, d.weight);
         return true;
     }
 
@@ -288,7 +294,7 @@ public:
         auto d = fillTermProperties(item.properties());
         double number = item.number();
         std::string term = std::format("{}", number);
-        auto &t = _builder.addNumberTerm(term, d.view, d.uniqueId, d.weight);
+        _builder.addNumberTerm(term, d.index_view, d.uniqueId, d.weight);
         return true;
     }
 
@@ -310,8 +316,7 @@ public:
             }
         }
         tmp += "]";
-
-        XXX;
+        _builder.addNumberTerm(tmp, d.index_view, d.uniqueId, d.weight);
         return true;
     }
     bool handle(const ItemFloatingPointRangeTerm& item) {
@@ -334,16 +339,20 @@ public:
             }
         }
         tmp += e_mark;
-
-        XXX;
+        _builder.addNumberTerm(tmp, d.index_view, d.uniqueId, d.weight);
         return true;
     }
 
     bool handle(const ItemSameElement& item) {
         auto d = fillTermProperties(item.properties());
-        _pureTermView = d.view;
+        _pureTermView = d.index_view;
         uint32_t arity = item.children_size();
-        XXX;
+        _builder.addSameElement(arity, d.index_view, d.uniqueId, d.weight);
+        for (const auto &child : item.children()) {
+            if (!handle_item(child)) {
+                return false;
+            }
+        }
         _pureTermView = "";
         return true;
     }
@@ -351,34 +360,50 @@ public:
     bool handle(const ItemDotProductOfString& item) {
         auto d = fillTermProperties(item.properties());
         uint32_t arity = item.weighted_strings_size();
-        XXX;
+        auto & dp = _builder.addDotProduct(arity, d.index_view, d.uniqueId, d.weight);
+        for (const auto &child : item.weighted_strings()) {
+            query::Weight weight(child.weight());
+            dp.addTerm(child.value(), weight);
+        }
         return true;
     }
 
     bool handle(const ItemDotProductOfLong& item) {
         auto d = fillTermProperties(item.properties());
         uint32_t arity = item.weighted_longs_size();
-        XXX;
+        auto & dp = _builder.addDotProduct(arity, d.index_view, d.uniqueId, d.weight);
+        for (const auto &child : item.weighted_longs()) {
+            query::Weight weight(child.weight());
+            dp.addTerm(child.value(), weight);
+        }
         return true;
     }
 
     bool handle(const ItemStringWand& item) {
         auto d = fillTermProperties(item.properties());
         uint32_t arity = item.weighted_strings_size();
-        uint32_t targetHits = item.target_num_hits();
+        uint32_t targetNumHits = item.target_num_hits();
         double scoreThreshold = item.score_threshold();
         double thresholdBoostFactor = item.threshold_boost_factor();
-        XXX;
+        auto & wand = _builder.addWandTerm(arity, d.index_view, d.uniqueId, d.weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
+        for (const auto &child : item.weighted_strings()) {
+            query::Weight weight(child.weight());
+            wand.addTerm(child.value(), weight);
+        }
         return true;
     }
 
     bool handle(const ItemLongWand& item) {
         auto d = fillTermProperties(item.properties());
         uint32_t arity = item.weighted_longs_size();
-        uint32_t targetHits = item.target_num_hits();
+        uint32_t targetNumHits = item.target_num_hits();
         double scoreThreshold = item.score_threshold();
         double thresholdBoostFactor = item.threshold_boost_factor();
-        XXX;
+        auto & wand = _builder.addWandTerm(arity, d.index_view, d.uniqueId, d.weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
+        for (const auto &child : item.weighted_longs()) {
+            query::Weight weight(child.weight());
+            wand.addTerm(child.value(), weight);
+        }
         return true;
     }
 
@@ -399,7 +424,7 @@ public:
             uint64_t sub_queries = range.sub_queries();
             predicateQueryTerm->addRangeFeature(key, value, sub_queries);
         }
-        auto &t = _builder.addPredicateQuery(predicateQueryTerm, d.view, d.uniqueId, d.weight);
+        _builder.addPredicateQuery(std::move(predicateQueryTerm), d.index_view, d.uniqueId, d.weight);
         return true;
     }
 
@@ -407,30 +432,32 @@ public:
         auto d = fillTermProperties(item.properties());
 
         std::string_view query_tensor_name = item.query_tensor_name();
-        uint32_t targetHits = item.target_num_hits();
-        bool allowApproximateFlag = item.allow_approximate();
+        uint32_t targetNumHits = item.target_num_hits();
+        bool allowApproximate = item.allow_approximate();
         uint32_t exploreAdditionalHits = item.explore_additional_hits();
         double distanceThreshold = item.distance_threshold();
-        XXX;
+        _builder.add_nearest_neighbor_term(query_tensor_name, d.index_view, d.uniqueId, d.weight,
+                                           targetNumHits, allowApproximate, exploreAdditionalHits,
+                                           distanceThreshold);
         return true;
     }
 
     // TODO geo bounding box
     bool handle(const ItemGeoLocationTerm& item) {
         auto d = fillTermProperties(item.properties());
-        _d.itemType = ParseItem::ItemType::ITEM_GEO_LOCATION_TERM;
-        int x = item.longitude() * 1000000;
-        int y = item.latitude() * 1000000;
-        int radius = item.radius() * 1000000;
+        int32_t x = item.longitude() * 1000000;
+        int32_t y = item.latitude() * 1000000;
+        GeoLocation::Point center{x, y};
+        int32_t radius = item.radius() * 1000000;
         if (radius < 0)
             radius = -1;
-        double radians = item.latitude() * M_PI / 180.0;
-        double cosLat = cos(radians);
-        int64_t aspect = cosLat * 4294967295L;
-        if (aspect < 0)
-            aspect = 0;
-        std::string term = std::format("(2,{},{},{},0,1,0,{})", x, y, radius, aspect);
-        XXX;
+        double latitudeRadians = item.latitude() * M_PI / 180.0;
+        double cosLat = cos(latitudeRadians);
+        if (cosLat < 0) cosLat = 0;
+        GeoLocation::Aspect aspect{cosLat};
+
+        GeoLocation loc(center, radius, aspect);
+        _builder.addLocationTerm(loc, d.index_view, d.uniqueId, d.weight);
         return true;
     }
 
@@ -442,8 +469,8 @@ public:
         for (const auto& word : item.words()) {
             terms->addTerm(word);
         }
-        auto &t = _builder.add_in_term(terms, query::MultiTerm::Type::STRING,
-                                       d.view, d.uniqueId, d.weight);
+        _builder.add_in_term(std::move(terms), query::MultiTerm::Type::STRING,
+                             d.index_view, d.uniqueId, d.weight);
         return true;
     }
 
@@ -454,8 +481,8 @@ public:
         for (int64_t number : item.numbers()) {
             terms->addTerm(number);
         }
-        auto &t = _builder.add_in_term(terms, query::MultiTerm::Type::INTEGER,
-                                       d.view, d.uniqueId, d.weight);
+        _builder.add_in_term(std::move(terms), query::MultiTerm::Type::INTEGER,
+                             d.index_view, d.uniqueId, d.weight);
         return true;
     }
 
