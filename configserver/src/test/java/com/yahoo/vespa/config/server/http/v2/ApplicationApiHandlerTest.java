@@ -43,7 +43,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * @author jonmv
+ * @author Jon Marius Venstad
  */
 class ApplicationApiHandlerTest {
 
@@ -183,7 +183,7 @@ class ApplicationApiHandlerTest {
                        """
                        {
                          "error-code": "BAD_REQUEST",
-                         "message": "Error preprocessing application package for test.default, session 2: services.xml does not exist in application package. There are 1 files in the directory"
+                         "message": "Error preprocessing application package for test.default, session id 2 (based on session id unknown): services.xml does not exist in application package. There are 1 files in the directory"
                        }
                        """);
     }
