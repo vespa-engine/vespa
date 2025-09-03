@@ -12,7 +12,6 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.HostFilter;
@@ -44,7 +43,6 @@ import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.http.ReindexingStatusException;
 import com.yahoo.vespa.config.server.http.v2.request.ApplicationContentRequest;
-import com.yahoo.vespa.config.server.http.v2.response.ApplicationSuspendedResponse;
 import com.yahoo.vespa.config.server.http.v2.response.DeleteApplicationResponse;
 import com.yahoo.vespa.config.server.http.v2.response.GetApplicationResponse;
 import com.yahoo.vespa.config.server.http.v2.response.QuotaUsageResponse;
@@ -108,7 +106,6 @@ public class ApplicationHandler extends HttpHandler {
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/service/{service}/{hostname}/state/v1/{*}")) return serviceStateV1(applicationId(path), path.get("service"), path.get("hostname"), path.getRest(), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/serviceconverge")) return listServiceConverge(applicationId(path), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/serviceconverge/{hostAndPort}")) return checkServiceConverge(applicationId(path), path.get("hostAndPort"), request);
-        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/suspended")) return isSuspended(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/tester/{command}")) return testerRequest(applicationId(path), path.get("command"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
@@ -227,10 +224,6 @@ public class ApplicationHandler extends HttpHandler {
 
     private HttpResponse deploymentMetrics(ApplicationId applicationId) {
         return applicationRepository.getDeploymentMetrics(applicationId);
-    }
-
-    private HttpResponse isSuspended(ApplicationId applicationId) {
-        return new ApplicationSuspendedResponse(applicationRepository.isSuspended(applicationId));
     }
 
     private HttpResponse testerRequest(ApplicationId applicationId, String command, HttpRequest request) {

@@ -14,7 +14,6 @@ import com.yahoo.slime.JsonFormat;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
@@ -80,7 +79,6 @@ public class SessionActiveHandlerTest {
         tenantRepository.addTenant(tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withOrchestrator(new OrchestratorMock())
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
                 .build();
