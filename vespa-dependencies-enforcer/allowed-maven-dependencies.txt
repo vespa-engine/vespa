@@ -283,7 +283,7 @@ org.testcontainers:testcontainers:${testcontainers.vespa.version}
 org.tukaani:xz:1.9
 org.wiremock:wiremock-standalone:${wiremock.vespa.version}
 org.xerial.snappy:snappy-java:${snappy.vespa.version}
-org.yaml:snakeyaml:${velocity.vespa.version}
+org.yaml:snakeyaml:${snakeyaml.vespa.version}
 software.amazon.awssdk:annotations:${aws-sdk2.vespa.version}
 software.amazon.awssdk:apache-client:${aws-sdk2.vespa.version}
 software.amazon.awssdk:auth:${aws-sdk2.vespa.version}
