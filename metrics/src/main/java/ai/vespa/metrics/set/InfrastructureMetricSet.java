@@ -23,7 +23,7 @@ import static ai.vespa.metrics.Suffix.sum;
 /**
  * Encapsulates vespa service metrics.
  *
- * @author yngveaasheim
+ * @author Yngve Aasheim
  */
 public class InfrastructureMetricSet {
 
@@ -128,6 +128,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.THROTTLED_NODE_FAILURES.max());
         addMetric(metrics, ConfigServerMetrics.NODE_FAIL_THROTTLING.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALED.count());
+        addMetric(metrics, ConfigServerMetrics.AUTOSCALE_SCALING_DURATION.max());
 
         addMetric(metrics, ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_SUCCESS.count());
         addMetric(metrics, ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_TIMEOUT.count());
