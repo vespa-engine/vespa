@@ -86,7 +86,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private static final TenantName HOSTED_VESPA = TenantName.from("hosted-vespa");
 
     public static final int defaultHeapSizePercentageOfAvailableMemory = 85;
-    public static final int heapSizePercentageOfTotalAvailableMemoryWhenCombinedCluster = 24;
 
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
 
@@ -244,11 +243,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         return Optional.empty();
     }
 
-    public int heapSizePercentageOfAvailable() {
-        return getHostClusterId().isPresent() ?
-                heapSizePercentageOfTotalAvailableMemoryWhenCombinedCluster :
-                heapSizePercentageOfAvailableMemory;
-    }
+    public int heapSizePercentageOfAvailable() { return heapSizePercentageOfAvailableMemory; }
 
     /** Create list of endpoints, these will be consumed later by LbServicesProducer */
     private void createEndpoints(DeployState deployState) {

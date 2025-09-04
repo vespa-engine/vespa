@@ -21,14 +21,12 @@ ElementIteratorWrapper::~ElementIteratorWrapper() = default;
 
 void
 ElementIteratorWrapper::getElementIds(uint32_t docId, std::vector<uint32_t> & elementIds) {
-    _search->unpack(docId);
-    ElementIdExtractor::get_element_ids(_tfmd, docId, elementIds);
+    _search->get_element_ids(docId, elementIds);
 }
 
 void
 ElementIteratorWrapper::mergeElementIds(uint32_t docId, std::vector<uint32_t> & elementIds) {
-    _search->unpack(docId);
-    ElementIdExtractor::and_element_ids_into(_tfmd, docId, elementIds);
+    _search->and_element_ids_into(docId, elementIds);
 }
 
 }

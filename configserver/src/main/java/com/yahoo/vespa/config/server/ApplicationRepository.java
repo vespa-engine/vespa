@@ -42,8 +42,6 @@ import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
-import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints;
 import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints.Token;
 import com.yahoo.vespa.config.server.application.ActiveTokenFingerprintsClient;
@@ -100,7 +98,6 @@ import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
-import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
@@ -160,7 +157,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Clock clock;
     private final ConfigserverConfig configserverConfig;
     private final FileDistributionStatus fileDistributionStatus = new FileDistributionStatus();
-    private final Orchestrator orchestrator;
     private final LogRetriever logRetriever;
     private final TesterClient testerClient;
     private final Metric metric;
@@ -176,7 +172,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  ConfigConvergenceChecker configConvergenceChecker,
                                  HttpProxy httpProxy,
                                  ConfigserverConfig configserverConfig,
-                                 Orchestrator orchestrator,
                                  TesterClient testerClient,
                                  HealthCheckerProvider healthCheckers,
                                  Metric metric,
@@ -189,7 +184,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              httpProxy,
              EndpointsChecker.of(healthCheckers.getHealthChecker()),
              configserverConfig,
-             orchestrator,
              new LogRetriever(),
              Clock.systemUTC(),
              testerClient,
@@ -207,7 +201,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   HttpProxy httpProxy,
                                   EndpointsChecker endpointsChecker,
                                   ConfigserverConfig configserverConfig,
-                                  Orchestrator orchestrator,
                                   LogRetriever logRetriever,
                                   Clock clock,
                                   TesterClient testerClient,
@@ -223,7 +216,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.httpProxy = Objects.requireNonNull(httpProxy);
         this.endpointsChecker = Objects.requireNonNull(endpointsChecker);
         this.configserverConfig = Objects.requireNonNull(configserverConfig);
-        this.orchestrator = Objects.requireNonNull(orchestrator);
         this.logRetriever = Objects.requireNonNull(logRetriever);
         this.clock = Objects.requireNonNull(clock);
         this.testerClient = Objects.requireNonNull(testerClient);
@@ -241,7 +233,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         private EndpointsChecker endpointsChecker = __ -> { throw new UnsupportedOperationException(); };
         private Clock clock = Clock.systemUTC();
         private ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder().build();
-        private Orchestrator orchestrator;
         private LogRetriever logRetriever = new LogRetriever();
         private TesterClient testerClient = new TesterClient();
         private Metric metric = new NullMetric();
@@ -267,11 +258,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         public Builder withConfigserverConfig(ConfigserverConfig configserverConfig) {
             this.configserverConfig = configserverConfig;
-            return this;
-        }
-
-        public Builder withOrchestrator(Orchestrator orchestrator) {
-            this.orchestrator = orchestrator;
             return this;
         }
 
@@ -323,7 +309,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              httpProxy,
                                              endpointsChecker,
                                              configserverConfig,
-                                             orchestrator,
                                              logRetriever,
                                              clock,
                                              testerClient,
@@ -654,10 +639,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         hostProvisioner.ifPresent(provisioner -> provisioner.restart(applicationId, hostFilter));
     }
 
-    public boolean isSuspended(ApplicationId application) {
-        return orchestrator.getAllSuspendedApplications().contains(application);
-    }
-
     public HttpResponse fileDistributionStatus(ApplicationId applicationId, Duration timeout) {
         return fileDistributionStatus.status(getApplication(applicationId), timeout);
     }
@@ -850,11 +831,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private String getTesterHostname(ApplicationId applicationId) {
-        String hostname = getTesterServiceInfo(applicationId).getHostName();
-        if (orchestrator.getNodeStatus(new HostName(hostname)).isSuspended())
-            throw new TesterSuspendedException("tester container is suspended");
-
-        return hostname;
+        return getTesterServiceInfo(applicationId).getHostName();
     }
 
     private int getTesterPort(ApplicationId applicationId) {
@@ -1169,7 +1146,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         // most applications under hosted-vespa are not known to the model, and it's OK for a user to get
         // logs for any host if they are authorized for the hosted-vespa tenant.
         if (hostname.isPresent() && HOSTED_VESPA_TENANT.equals(applicationId.tenant())) {
-            int port = List.of(InfrastructureApplication.CONFIG_SERVER.id(), InfrastructureApplication.CONTROLLER.id()).contains(applicationId) ? 19071 : 8080;
+            int port = List.of("zone-config-servers", "controller").contains(applicationId) ? 19071 : 8080;
             return List.of(HttpURL.create(Scheme.http, hostname.get(), port).withPath(HttpURL.Path.parse("logs")));
         }
 

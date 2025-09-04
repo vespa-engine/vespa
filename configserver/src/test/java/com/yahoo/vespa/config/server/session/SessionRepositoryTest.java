@@ -20,7 +20,6 @@ import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
-import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -34,6 +33,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
+
 import java.io.File;
 import java.time.Clock;
 import java.time.Duration;
@@ -100,7 +100,6 @@ public class SessionRepositoryTest {
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withOrchestrator(new OrchestratorMock())
                 .withFlagSource(flagSource)
                 .build();
         sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
