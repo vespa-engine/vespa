@@ -11,7 +11,6 @@ vespa_add_library(searchlib_queryeval OBJECT
     dot_product_blueprint.cpp
     dot_product_search.cpp
     element_id_extractor.cpp
-    elementiterator.cpp
     emptysearch.cpp
     equiv_blueprint.cpp
     equivsearch.cpp
