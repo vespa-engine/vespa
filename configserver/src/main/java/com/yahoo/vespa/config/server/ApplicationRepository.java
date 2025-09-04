@@ -1140,7 +1140,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private List<HttpURL> getLogServerUris(ApplicationId applicationId, Optional<DomainName> hostname) {
+    List<HttpURL> getLogServerUris(ApplicationId applicationId, Optional<DomainName> hostname) {
         // Allow to get logs from a given hostname if the application is under the hosted-vespa tenant.
         // We make no validation that the hostname is actually allocated to the given application since
         // most applications under hosted-vespa are not known to the model, and it's OK for a user to get
