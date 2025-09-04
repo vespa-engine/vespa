@@ -11,6 +11,77 @@
 
 namespace {
 
+bool couldBeValidNumber(std::string_view text) {
+    // TODO hex format support
+    bool seenSign = false;
+    bool seenDigit = false;
+    bool seenDot = false;
+    bool seenExp = false;
+    bool foundStart = false;
+    bool trailingSpaces = false;
+
+    for (char ch : text) {
+        if (ch == ' ' || ch == '\t') {
+            if (foundStart) trailingSpaces = true;
+            // skip leading and trailing spaces
+            continue;
+        } else if (trailingSpaces) {
+            // found non-space after trailing spaces
+            return false;
+        } else {
+            // found non-space after leading spaces
+            foundStart = true;
+        }
+        switch (ch) {
+        case '+':
+        case '-':
+            if (seenSign) return false;
+            seenSign = true;
+            continue;
+        case '.':
+            if (seenDot) return false;
+            seenDot = true;
+            continue;
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+            seenDigit = true;
+            continue;
+        case 'e':
+        case 'E':
+            if (seenExp) return false;
+            if (! seenDigit) return false;
+            seenExp = true;
+            seenDigit = false;
+            seenSign = false;
+            continue;
+        case 'i':
+        case 'I':
+            if (seenDigit || seenDot) return false;
+            // TODO: check for "inf"
+            return true;
+        default:
+            return false;
+        }
+    }
+    return seenDigit;
+}
+
+/*
+optional plus (``+'') or minus sign (``-'') followed by either:
+
+a decimal significand consisting of a sequence of decimal digits optionally containing a decimal-point character
+ or
+a hexadecimal significand consisting of a ``0X'' or ``0x'' followed by a sequence of hexadecimal digits optionally containing a decimal-point character.
+
+In both cases, the significand may be optionally followed by an exponent.
+An exponent consists of an ``E'' or ``e'' (for decimal constants)
+ or a ``P'' or ``p'' (for hexadecimal constants),
+ followed by an optional plus or minus sign, followed by a sequence of decimal digits.
+For decimal constants, the exponent indicates the power of 10 by which the significand should be scaled. For hexadecimal constants, the scaling is instead done by powers of 2.
+
+Alternatively, if the portion of the string following the optional plus or minus sign begins with ``INFINITY''
+*/
+
 template <typename N>
 constexpr bool isValidInteger(int64_t value) noexcept
 {
@@ -28,6 +99,10 @@ bool isFullRange(std::string_view s) noexcept {
     return (sz >= 3u) &&
            (s[0] == '<' || s[0] == '[') &&
            (s[sz-1] == '>' || s[sz-1] == ']');
+}
+bool isPartialRange(std::string_view s) noexcept {
+    return (s.size() > 2) &&
+           ((s[0] == '<') || (s[0] == '>'));
 }
 
 struct IntDecoder {
@@ -243,6 +318,22 @@ QueryTermSimple::~QueryTermSimple() = default;
 
 QueryTermSimple::NumericRange QueryTermSimple::emptyNumericRange;
 
+std::unique_ptr<QueryTermSimple::NumericRange> parsePartialRange(const std::string &term) {
+    auto result = std::make_unique<QueryTermSimple::NumericRange>();
+    std::string_view rest(term.c_str() + 1, term.size() - 1);
+    if (term[0] == '<') {
+        result->upperLimitTxt = rest;
+        result->lower_inclusive = true; // include '-Inf' or equivalent
+        return result;
+    }
+    if (term[0] == '>') {
+        result->lowerLimitTxt = rest;
+        result->upper_inclusive = true; // include '+Inf' or equivalent
+        return result;
+    }
+    return {};
+}
+
 std::unique_ptr<QueryTermSimple::NumericRange> parseFullRange(const std::string &_term) {
     auto result = std::make_unique<QueryTermSimple::NumericRange>();
     std::string_view rest(_term.c_str() + 1, _term.size() - 2);
@@ -326,8 +417,11 @@ QueryTermSimple::QueryTermSimple(const string & term_, Type type)
       _fuzzy_prefix_lock_length(0)
 {
     if (isFullRange(_term)) {
+        fprintf(stderr, "parse full range '%s'\n", _term.c_str());
         _numeric_range = parseFullRange(_term);
         _valid = bool(_numeric_range);
+    } else {
+        fprintf(stderr, "no range '%s'\n", _term.c_str());
     }
 }
 
