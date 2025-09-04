@@ -116,6 +116,7 @@ public:
     Trinary is_strict() const override { return _search->is_strict(); }
     const PostingInfo *getPostingInfo() const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
 
     const SearchIterator &getIterator() const { return *_search; }
     const Stats &getStats() const { return _stats; }
