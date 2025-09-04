@@ -4,7 +4,6 @@
 #include "same_element_search.h"
 #include "field_spec.hpp"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/attribute/searchcontextelementiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
 #include <map>
@@ -95,16 +94,10 @@ std::unique_ptr<SameElementSearch>
 SameElementBlueprint::create_same_element_search(search::fef::TermFieldMatchData& tfmd) const
 {
     fef::MatchData::UP md = _layout.createMatchData();
-    std::vector<ElementIterator::UP> children(_terms.size());
+    std::vector<std::unique_ptr<SearchIterator>> children;
+    children.reserve(_terms.size());
     for (size_t i = 0; i < _terms.size(); ++i) {
-        const State &childState = _terms[i]->getState();
-        SearchIterator::UP child = _terms[i]->createSearch(*md);
-        const attribute::ISearchContext *context = _terms[i]->get_attribute_search_context();
-        if (context == nullptr) {
-            children[i] = std::make_unique<ElementIteratorWrapper>(std::move(child), *childState.field(0).resolve(*md));
-        } else {
-            children[i] = std::make_unique<attribute::SearchContextElementIterator>(std::move(child), *context);
-        }
+        children.emplace_back(_terms[i]->createSearch(*md));
     }
     return std::make_unique<SameElementSearch>(tfmd, std::move(md), std::move(children), strict());
 }
