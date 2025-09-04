@@ -241,67 +241,102 @@ QueryTermSimple::getAsFloatTerm(float & lower, float & upper) const noexcept
 
 QueryTermSimple::~QueryTermSimple() = default;
 
-QueryTermSimple::QueryTermSimple(const string & term_, Type type)
-    : _rangeLimit(0),
-      _maxPerGroup(0),
-      _diversityCutoffGroups(std::numeric_limits<uint32_t>::max()),
-      _type(type),
-      _diversityCutoffStrict(false),
-      _valid(true),
-      _fuzzy_prefix_match(false),
-      _term(term_),
-      _diversityAttribute(),
-      _fuzzy_max_edit_distance(2),
-      _fuzzy_prefix_lock_length(0)
-{
-    if (isFullRange(_term)) {
-        string_view rest(_term.c_str() + 1, _term.size() - 2);
-        string_view parts[9];
-        size_t numParts(0);
-        while (! rest.empty() && ((numParts + 1) < NELEMS(parts))) {
-            size_t pos(rest.find(';'));
-            if (pos != std::string::npos) {
-                parts[numParts++] = rest.substr(0, pos);
-                rest = rest.substr(pos + 1);
-                if (rest.empty()) {
-                    parts[numParts++] = rest;
-                }
-            } else {
+QueryTermSimple::NumericRange QueryTermSimple::emptyNumericRange;
+
+std::unique_ptr<QueryTermSimple::NumericRange> parseFullRange(const std::string &_term) {
+    auto result = std::make_unique<QueryTermSimple::NumericRange>();
+    std::string_view rest(_term.c_str() + 1, _term.size() - 2);
+    std::string_view parts[9];
+    size_t numParts(0);
+    while (! rest.empty() && ((numParts + 1) < NELEMS(parts))) {
+        size_t pos(rest.find(';'));
+        if (pos != std::string::npos) {
+            parts[numParts++] = rest.substr(0, pos);
+            rest = rest.substr(pos + 1);
+            if (rest.empty()) {
                 parts[numParts++] = rest;
-                rest = string_view();
             }
+        } else {
+            parts[numParts++] = rest;
+            rest = std::string_view();
         }
-        _valid = (numParts >= 2) && (numParts < NELEMS(parts));
-        if (_valid && numParts > 2) {
-            _rangeLimit = static_cast<int32_t>(strtol(parts[2].data(), nullptr, 0));
-            if (numParts > 3) {
-                _valid = (numParts >= 5);
-                if (_valid) {
-                    _diversityAttribute = parts[3];
-                    _maxPerGroup = strtoul(parts[4].data(), nullptr, 0);
-                    if ((_maxPerGroup > 0) && (numParts > 5)) {
-                        char *err = nullptr;
-                        size_t cutoffGroups = strtoul(parts[5].data(), &err, 0);
-                        if ((err == nullptr) || (size_t(err - parts[5].data()) == parts[5].size())) {
-                            _diversityCutoffGroups = cutoffGroups;
-                        }
-                        if (numParts > 6) {
-                            _diversityCutoffStrict = (parts[6] == "strict");
-                            _valid = (numParts == 7);
-                        }
+    }
+    bool _valid = (numParts >= 2) && (numParts < NELEMS(parts));
+    if (_valid) {
+        result->lower_inclusive = (_term[0] == '[');
+        result->upper_inclusive = (_term[_term.size() - 1] == ']');
+        /* we really want something like this:
+        result->fpLowerLimit = strtod(parts[0].data(), nullptr);
+        result->fpUpperLimit = strtod(parts[1].data(), nullptr);
+        if (result->fpLowerLimit <=  -0x1p63) {
+            result->integerLowerLimit = std::numeric_limits<int64_t>::min();
+        }
+        else if (result->fpLowerLimit >= 0x1p63) {
+            result->integerLowerLimit = std::numeric_limits<int64_t>::max();
+        }
+        else {
+            result->integerLowerLimit = strtol(parts[0].data(), nullptr, 10);
+        }
+        if (result->fpUpperLimit <= -0x1p63) {
+            result->integerUpperLimit = std::numeric_limits<int64_t>::min();
+        }
+        else if (result->fpUpperLimit >= 0x1p63) {
+            result->integerUpperLimit = std::numeric_limits<int64_t>::max();
+        }
+        else {
+            result->integerUpperLimit = strtol(parts[1].data(), nullptr, 10);
+        }
+        */
+        result->lowerLimitTxt = parts[0];
+        result->upperLimitTxt = parts[1];
+    }
+    if (_valid && numParts > 2) {
+        result->rangeLimit = static_cast<int32_t>(strtol(parts[2].data(), nullptr, 0));
+        if (numParts > 3) {
+            _valid = (numParts >= 5);
+            if (_valid) {
+                result->diversityAttribute = parts[3];
+                result->maxPerGroup = strtoul(parts[4].data(), nullptr, 0);
+                if ((result->maxPerGroup > 0) && (numParts > 5)) {
+                    char *err = nullptr;
+                    size_t cutoffGroups = strtoul(parts[5].data(), &err, 0);
+                    if ((err == nullptr) || (size_t(err - parts[5].data()) == parts[5].size())) {
+                        result->diversityCutoffGroups = cutoffGroups;
+                    }
+                    if (numParts > 6) {
+                        result->diversityCutoffStrict = (parts[6] == "strict");
+                        _valid = (numParts == 7);
                     }
                 }
             }
         }
     }
-} 
+    if (_valid) {
+        return result;
+    }
+    return {};
+}
+
+QueryTermSimple::QueryTermSimple(const string & term_, Type type)
+    : _type(type),
+      _valid(true),
+      _fuzzy_prefix_match(false),
+      _term(term_),
+      _fuzzy_max_edit_distance(2),
+      _fuzzy_prefix_lock_length(0)
+{
+    if (isFullRange(_term)) {
+        _numeric_range = parseFullRange(_term);
+        _valid = bool(_numeric_range);
+    }
+}
 
 template <typename T, typename D>
 bool
 QueryTermSimple::getAsNumericTerm(T & lower, T & upper, D d) const noexcept
 {
     if (empty()) return false;
-
+    // TODO rewrite, use _numeric_range
     size_t sz(_term.size());
     const char *err(nullptr);
     T low(lower);
