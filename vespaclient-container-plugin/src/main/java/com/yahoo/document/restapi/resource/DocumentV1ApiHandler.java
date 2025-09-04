@@ -869,66 +869,6 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         private DispatchException(Throwable cause) { super(cause); }
     }
 
-//    static class DocumentTooLargeException extends RuntimeException {
-//        DocumentTooLargeException(long documentSizeBytes, long maxDocumentSizeBytes) {
-//            super(String.format(
-//                    "Document size %d bytes exceeds maximum size of %d bytes", documentSizeBytes,
-//                    maxDocumentSizeBytes
-//            ));
-//        }
-//    }
-
-//    class DocumentRequestSizeValidationChannel implements ContentChannel {
-//        private final ReadableContentChannel delegate = new ReadableContentChannel();
-//        private final BiConsumer<Long, InputStream> reader;
-//        private final AtomicLong bytesRead = new AtomicLong(0);
-//        private volatile boolean errorReported = false;
-//
-//        public ForwardingContentChannel(BiConsumer<Long, InputStream> reader) {
-//            this.reader = reader;
-//            this.maxDocumentSizeBytes = maxDocumentSizeBytes;
-//        }
-//
-//        /** Write is complete when we have stored the buffer — call completion handler. */
-//        @Override
-//        public void write(ByteBuffer buf, CompletionHandler handler) {
-//            try {
-//                long totalBytes = bytesRead.addAndGet(buf.remaining());
-//                if (totalBytes > this.maxDocumentSizeBytes) {
-////                    documentTooLarge(request, new DocumentTooLargeException(totalBytes, this.maxDocumentSizeBytes), handler);
-//                    throw new DocumentTooLargeException(totalBytes, this.maxDocumentSizeBytes);
-//                }
-//                delegate.write(buf, logException);
-//                handler.completed();
-//            }
-//            catch (Exception e) {
-//                handler.failed(e);
-//            }
-//        }
-//
-//        /** Close is complete when we have closed the buffer. */
-//        @Override
-//        public void close(CompletionHandler handler) {
-//            try {
-//                delegate.close(logException);
-//                if (!errorReported) {
-//                    reader.accept(bytesRead.get(), new UnsafeContentInputStream(delegate));
-//                }
-//                handler.completed();
-//            }
-//            catch (Exception e) {
-//                handler.failed(e);
-//            }
-//        }
-//
-//        @Override
-//        public void onError(Throwable error) {
-//            // Jdisc will automatically generate an error response in this scenario
-//            log.log(FINE, error, () -> "ContentChannel.onError(): " + error.getMessage());
-//            errorReported = true;
-//        }
-//    }
-
     /** Readable content channel which forwards data to a reader when closed. */
     static class ForwardingContentChannel implements ContentChannel {
         private final ReadableContentChannel delegate = new ReadableContentChannel();
