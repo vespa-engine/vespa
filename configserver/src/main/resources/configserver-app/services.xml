@@ -125,5 +125,7 @@
 
     <preprocess:include file='configserver-components.xml' required='false' />
 
+    <preprocess:include file='orchestrator.xml' required='false' />
+
   </container>
 </services>
