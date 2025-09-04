@@ -16,3 +16,6 @@ maxThrottledAge       double default=3.0
 # - If 0, allow infinite number of bytes (in other words disables the size restriction).
 # - If <0, the number of bytes as a ratio of the JVM's maximum heap size (e.g. -0.5 for 50% of max heap).
 maxThrottledBytes double default=-0.25
+
+# Maximum document POST or PUT request size in MiB, 
+maxDocumentOperationSizeMib int default=2048

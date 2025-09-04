@@ -1227,6 +1227,31 @@ public class DocumentV1ApiTest {
     }
 
     @Test
+    public void testDocumentRequestTooLarge() {
+        var executorCfg = new DocumentOperationExecutorConfig.Builder()
+                .maxDocumentOperationSizeMib(1)
+                .build();
+        var handler = new DocumentV1ApiHandler(
+                clock, Duration.ofMillis(1), metric, metrics, access, docConfig, executorCfg, clusterConfig,
+                bucketConfig
+        );
+        var driver = new RequestHandlerTestDriver(handler);
+        
+        // Create a large document that will exceed maxDocumentOperationSizeMib
+        var doc = "{\"fields\": {\"artist\": \"" + "a".repeat(2_000_000) + "\"}}";
+
+        access.session.expect(
+                (id, parameters) -> new Result(
+                        Result.ResultType.FATAL_ERROR, Result.toError(Result.ResultType.FATAL_ERROR)));
+        var response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, doc);
+        assertEquals(413, response.getStatus());
+        var message = Json.of(response.readAll()).f("message").asString();         
+        assertEquals("Document operation size 2000026 bytes exceeds maximum size of 1048576 bytes", message);
+        handler.dispatchEnqueued();
+        driver.close();
+    }
+
+    @Test
     public void testThroughput() throws InterruptedException {
         int writers = 4;
         DocumentOperationExecutorConfig executorConfig = new DocumentOperationExecutorConfig.Builder()

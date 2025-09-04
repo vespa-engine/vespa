@@ -295,6 +295,18 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
+    public static final UnboundIntFlag MAX_DOCUMENT_API_DOCUMENT_OPERATION_SIZE_MIB = defineIntFlag(
+            "max-document-api-document-operation-size-mib", 2048,
+            List.of("glebashnik"), "2025-09-04", "2026-02-01",
+            "Sets the maximum size in MiB of a document operation (Put/POST or Update/PUT) that the Document API" +
+            "will accept. This is the size of a serialized request, which can be several times larger than " +
+            "the content of the document, especially for tensors in JSON." +
+            "Document operations larger than this value result in the HTTP 413 Content Too Large response " +
+            "and will not be added to the message bus queue.",
+            "Takes effect immediately",
+            INSTANCE_ID
+    );
+    
     public static final UnboundIntFlag MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB = defineIntFlag(
             "max-distributor-document-operation-size-mib", 128,
             List.of("vekterli"), "2025-03-17", "2025-10-01",
