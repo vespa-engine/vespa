@@ -236,4 +236,11 @@ MonitoringSearchIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
     _search->visitMembers(visitor);
 }
 
+void
+MonitoringSearchIterator::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    _search->get_element_ids(docid, element_ids);
+    setDocId(_search->getDocId());
+}
+
 }
