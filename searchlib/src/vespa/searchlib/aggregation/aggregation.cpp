@@ -161,10 +161,10 @@ MaxAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
 void
 AverageAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
 {
-    if (isReady(_sum.get(), result)) {
+    if (_sum.get()) {
         return;
     }
-    _sum = createAndEnsureWanted<NumericResultNode, FloatResultNode>(result);
+    _sum = std::make_unique<FloatResultNode>();
     if ( useForInit ) {
         _sum->set(result);
     }
