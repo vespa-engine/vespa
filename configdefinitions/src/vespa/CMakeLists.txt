@@ -95,4 +95,5 @@ install_config_definition(cloud-token-data-plane-filter.def jdisc.http.filter.se
 install_config_definition(significance.def search.significance.config.significance.def)
 install_config_definition(document-operation-executor.def com.yahoo.document.restapi.document-operation-executor.def)
 install_config_definition(gguf-embedder.def ai.vespa.embedding.config.gguf-embedder.def)
+install_config_definition(routing.config.zone.def routing.config.zone.def)
 
