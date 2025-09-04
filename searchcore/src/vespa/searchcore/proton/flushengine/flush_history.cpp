@@ -5,6 +5,9 @@
 #include <algorithm>
 #include <cassert>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.flushengine.flush_history");
+
 namespace proton::flushengine {
 
 namespace {
@@ -88,6 +91,11 @@ FlushHistory::prune_draining_strategies(time_point now)
             break;
         }
         strategy.set_finish_time(now);
+        if (strategy.priority_strategy()) {
+            LOG(info, "Priority flush strategy %s id %u drained, %u flushes, %u inherited flushes",
+                strategy.name().c_str(), strategy.id(),
+                strategy.finished_flushes(), strategy.inherited_finished_flushes());
+        }
         _finished_strategies.push_back(std::move(strategy));
         _draining_strategies.erase(_draining_strategies.begin());
     }
