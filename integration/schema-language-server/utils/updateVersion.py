@@ -53,7 +53,7 @@ def main(args):
     latestVersion = latestRelease[len(VERSION_PREFIX):]
 
     #newVersion = bumpVersion(latestVersion, args[1])
-    newVersion = "2.4.5";
+    newVersion = "2.4.6";
 
     print(f"VERSION={newVersion}")
 
