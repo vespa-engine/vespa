@@ -183,7 +183,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     private final long maxThrottled;
     private final long maxThrottledAgeNS;
     private final long maxThrottledTotalBytes;
-    private final long maxDocumentOperationSizeBytes;
+    private final long maxDocumentOperationRequestSizeBytes;
     private final DocumentAccess access;
     private final AsyncSession asyncSession;
     private final Map<String, StorageCluster> clusters;
@@ -221,7 +221,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         this.maxThrottled = executorConfig.maxThrottled();
         this.maxThrottledAgeNS = (long) (executorConfig.maxThrottledAge() * 1_000_000_000.0);
         this.maxThrottledTotalBytes = calculateMaxThrottledTotalBytes(executorConfig);
-        this.maxDocumentOperationSizeBytes = (long) executorConfig.maxDocumentOperationSizeMib() * 1024 * 1024;
+        this.maxDocumentOperationRequestSizeBytes = (long) executorConfig.maxDocumentOperationRequestSizeMib() * 1024 * 1024;
 
         log.info("Operation queue: max-items=%d, max-age=%d ms, max-bytes=%s".formatted(
                 maxThrottled, Duration.ofNanos(maxThrottledAgeNS).toMillis(), BytesQuantity.ofBytes(maxThrottledTotalBytes).asPrettyString()));
@@ -491,8 +491,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         return new ForwardingContentChannel((bytesRead, in) -> {
-            if (isDocumentOperationTooLarge(bytesRead)) {
-                documentOperationTooLarge(request, bytesRead, handler);
+            if (isDocumentOperationRequestTooLarge(bytesRead)) {
+                documentOperationRequestTooLarge(request, bytesRead, handler);
             } else {
                 enqueueAndDispatch(
                         request, handler, bytesRead, () -> {
@@ -523,8 +523,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         return new ForwardingContentChannel((bytesRead, in) -> {
-            if (isDocumentOperationTooLarge(bytesRead)) {
-                documentOperationTooLarge(request, bytesRead, handler);
+            if (isDocumentOperationRequestTooLarge(bytesRead)) {
+                documentOperationRequestTooLarge(request, bytesRead, handler);
             } else {
                 enqueueAndDispatch(request, handler, bytesRead, () -> {
                     ParsedDocumentOperation parsed = parser.parseUpdate(in, path.id().toString());
@@ -584,8 +584,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         return parameters;
     }
     
-    private boolean isDocumentOperationTooLarge(long bytesRead) {
-        return bytesRead > maxDocumentOperationSizeBytes;
+    private boolean isDocumentOperationRequestTooLarge(long bytesRead) {
+        return bytesRead > maxDocumentOperationRequestSizeBytes;
     }
 
     /** Dispatches enqueued requests until one is blocked. */
@@ -788,13 +788,13 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
     }
 
-    private void documentOperationTooLarge(HttpRequest request, long bytesRead, ResponseHandler handler) {
+    private void documentOperationRequestTooLarge(HttpRequest request, long bytesRead, ResponseHandler handler) {
         loggingException(() -> {
             var message = String.format(
-                    "Document operation size %d bytes exceeds maximum size of %d bytes", bytesRead,
-                    maxDocumentOperationSizeBytes
+                    "Document operation request size %d bytes exceeds maximum size of %d bytes", bytesRead,
+                    maxDocumentOperationRequestSizeBytes
             );
-            log.log(FINE, () -> "Too large document operation " + request.getMethod() + " " + request.getUri().getRawPath() + ": " + message);
+            log.log(FINE, () -> "Too large document operation request " + request.getMethod() + " " + request.getUri().getRawPath() + ": " + message);
             JsonResponse.createWithPathAndMessage(request, message, handler, DEFAULT_TENSOR_OPTIONS)
                     .respond(Status.REQUEST_TOO_LONG);
         });

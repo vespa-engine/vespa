@@ -104,7 +104,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
     private final int documentV1QueueSize;
-    private final int maxDocumentApiDocumentOperationSizeMib;
+    private final int maxDocumentOperationRequestSizeMib;
 
     /** The heap size % of total memory available to the JVM process. */
     private final int heapSizePercentageOfAvailableMemory;
@@ -153,7 +153,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                 deployState.getApplicationPackage(), deployState.getProperties().applicationId(), ClusterSpec.Id.from(clusterId));
         logger = deployState.getDeployLogger();
         documentV1QueueSize = deployState.featureFlags().documentV1QueueSize();
-        maxDocumentApiDocumentOperationSizeMib = deployState.featureFlags().maxDocumentApiDocumentOperationSizeMib();
+        maxDocumentOperationRequestSizeMib = deployState.featureFlags().maxDocumentOperationRequestSizeMib();
     }
 
     public UserConfiguredUrls userConfiguredUrls() { return userConfiguredUrls; }
@@ -438,7 +438,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             builder.maxThrottled(documentV1QueueSize);
         }
         
-        builder.maxDocumentOperationSizeMib(maxDocumentApiDocumentOperationSizeMib);
+        builder.maxDocumentOperationRequestSizeMib(maxDocumentOperationRequestSizeMib);
     }
 
     public static class MbusParams {

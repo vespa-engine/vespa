@@ -1227,9 +1227,9 @@ public class DocumentV1ApiTest {
     }
 
     @Test
-    public void testDocumentRequestTooLarge() {
+    public void testDocumentOperationRequestTooLarge() {
         var executorCfg = new DocumentOperationExecutorConfig.Builder()
-                .maxDocumentOperationSizeMib(1)
+                .maxDocumentOperationRequestSizeMib(1)
                 .build();
         var handler = new DocumentV1ApiHandler(
                 clock, Duration.ofMillis(1), metric, metrics, access, docConfig, executorCfg, clusterConfig,
@@ -1246,7 +1246,7 @@ public class DocumentV1ApiTest {
         var response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, doc);
         assertEquals(413, response.getStatus());
         var message = Json.of(response.readAll()).f("message").asString();         
-        assertEquals("Document operation size 2000026 bytes exceeds maximum size of 1048576 bytes", message);
+        assertEquals("Document operation request size 2000026 bytes exceeds maximum size of 1048576 bytes", message);
         handler.dispatchEnqueued();
         driver.close();
     }

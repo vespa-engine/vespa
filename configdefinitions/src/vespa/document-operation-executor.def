@@ -18,4 +18,4 @@ maxThrottledAge       double default=3.0
 maxThrottledBytes double default=-0.25
 
 # Maximum document POST or PUT request size in MiB, 
-maxDocumentOperationSizeMib int default=2048
+maxDocumentOperationRequestSizeMib int default=2048
