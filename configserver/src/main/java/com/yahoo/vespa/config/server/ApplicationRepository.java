@@ -1146,7 +1146,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         // most applications under hosted-vespa are not known to the model, and it's OK for a user to get
         // logs for any host if they are authorized for the hosted-vespa tenant.
         if (hostname.isPresent() && HOSTED_VESPA_TENANT.equals(applicationId.tenant())) {
-            int port = List.of("zone-config-servers", "controller").contains(applicationId) ? 19071 : 8080;
+            int port = List.of("zone-config-servers", "controller").contains(applicationId.application().value()) ? 19071 : 8080;
             return List.of(HttpURL.create(Scheme.http, hostname.get(), port).withPath(HttpURL.Path.parse("logs")));
         }
 
