@@ -101,7 +101,6 @@ import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.PageTemplates;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.container.xml.document.DocumentFactoryBuilder;
-import com.yahoo.vespa.model.content.StorageGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -259,11 +258,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Element zooKeeper = getZooKeeper(spec);
         if (zooKeeper == null) return;
 
-        Element nodesElement = XML.getChild(spec, "nodes");
-        boolean isCombined = nodesElement != null && nodesElement.hasAttribute("of");
-        if (isCombined) {
-            throw new IllegalArgumentException("A combined cluster cannot run ZooKeeper");
-        }
         long nonRetiredNodes = cluster.getContainers().stream().filter(c -> !c.isRetired()).count();
         if (nonRetiredNodes < MIN_ZOOKEEPER_NODE_COUNT || nonRetiredNodes > MAX_ZOOKEEPER_NODE_COUNT || nonRetiredNodes % 2 == 0) {
             throw new IllegalArgumentException("Cluster with ZooKeeper needs an odd number of nodes, between " +
@@ -1076,14 +1070,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                    Element nodesElement, ConfigModelContext context) {
         if (nodesElement.hasAttribute("type")) // internal use for hosted system infrastructure nodes
             return createNodesFromNodeType(cluster, nodesElement, context);
-        else if (nodesElement.hasAttribute("of")) {// hosted node spec referencing a content cluster
-            // TODO: Remove support for combined clusters in Vespa 9
-            List<ApplicationContainer> containers = createNodesFromContentServiceReference(cluster, nodesElement, context);
-            deployLogger.logApplicationPackage(WARNING, "Declaring combined cluster with <nodes of=\"...\"> is deprecated without " +
-                                               "replacement, and the feature will be removed in Vespa 9. Use separate container and " +
-                                               "content clusters instead");
-            return containers;
-        } else if (nodesElement.hasAttribute("count")) // regular, hosted node spec
+        else if (nodesElement.hasAttribute("count")) // regular, hosted node spec
             return createNodesFromNodeCount(cluster, containerElement, nodesElement, context);
         else if (cluster.isHostedVespa()) // default to 1 if node count is not specified
             return createNodesFromNodeCount(cluster, containerElement, nodesElement, context);
@@ -1176,24 +1163,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .build();
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().hostSystem().allocateHosts(clusterSpec, Capacity.fromRequiredNodeType(type), deployLogger);
-        return createNodesFromHosts(hosts, cluster, context.getDeployState());
-    }
-    
-    private List<ApplicationContainer> createNodesFromContentServiceReference(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
-        NodesSpecification nodeSpecification;
-        try {
-            nodeSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(cluster + " contains an invalid reference", e);
-        }
-        String referenceId = nodesElement.getAttribute("of");
-        cluster.setHostClusterId(referenceId);
-
-        Map<HostResource, ClusterMembership> hosts = 
-                StorageGroup.provisionHosts(nodeSpecification,
-                                            referenceId, 
-                                            cluster.getRoot().hostSystem(),
-                                            context);
         return createNodesFromHosts(hosts, cluster, context.getDeployState());
     }
 

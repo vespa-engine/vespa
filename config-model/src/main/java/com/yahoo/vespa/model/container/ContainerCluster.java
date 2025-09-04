@@ -164,7 +164,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     /** The zone this is deployed in, or the default zone if not on hosted Vespa */
     private Zone zone;
 
-    private String hostClusterId = null;
     private String jvmGCOptions = null;
 
     private volatile boolean deferChangesUntilRestart = false;
@@ -686,15 +685,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public Map<String, String> concreteDocumentTypes() { return concreteDocumentTypes; }
-
-    public void setHostClusterId(String clusterId) { hostClusterId = clusterId; }
-
-    /**
-     * Returns the id of the content cluster which hosts this container cluster, if any.
-     * This is only set with hosted clusters where this container cluster is set up to run on the nodes
-     * of a content cluster.
-     */
-    public Optional<String> getHostClusterId() { return Optional.ofNullable(hostClusterId); }
 
     public void setJvmGCOptions(String opts) { this.jvmGCOptions = opts; }
 

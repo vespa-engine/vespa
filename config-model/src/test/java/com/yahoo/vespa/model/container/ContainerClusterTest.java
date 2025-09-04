@@ -89,7 +89,7 @@ public class ContainerClusterTest {
 
     @Test
     void search_and_docproc_bundles_are_installed_for_application_clusters_with_search() {
-        ApplicationContainerCluster cluster = newClusterWithSearch(createRoot(false), false, null);
+        ApplicationContainerCluster cluster = newClusterWithSearch(createRoot(false), null);
 
         var bundleBuilder = new PlatformBundlesConfig.Builder();
         cluster.getConfig(bundleBuilder);
@@ -113,10 +113,9 @@ public class ContainerClusterTest {
     }
 
     private void verifyHeapSizeAsPercentageOfPhysicalMemory(MockRoot root,
-                                                            boolean isCombinedCluster,
                                                             Integer explicitMemoryPercentage,
                                                             int expectedMemoryPercentage) {
-        ApplicationContainerCluster cluster = newClusterWithSearch(root, isCombinedCluster, explicitMemoryPercentage);
+        ApplicationContainerCluster cluster = newClusterWithSearch(root, explicitMemoryPercentage);
         QrStartConfig.Builder qsB = new QrStartConfig.Builder();
         cluster.getConfig(qsB);
         QrStartConfig qsC= new QrStartConfig(qsB);
@@ -128,18 +127,16 @@ public class ContainerClusterTest {
     void requireThatHeapSizeAsPercentageOfPhysicalMemoryForHostedAndNot() {
         int heapSizeInFlag = 89;
         boolean hosted = true;
-        boolean combined = true; // a cluster running on content nodes (only relevant with hosted)
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted), !combined, null, ApplicationContainerCluster.defaultHeapSizePercentageOfAvailableMemory);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag), !combined, null, heapSizeInFlag);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted),   combined, null, 24);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag),   combined, null, 24);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted), !combined, null, 0);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted, heapSizeInFlag), !combined, null, 0);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted), null, ApplicationContainerCluster.defaultHeapSizePercentageOfAvailableMemory);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag), null, heapSizeInFlag);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted), null, 85);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag), null, 89);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted),  null, 0);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted, heapSizeInFlag), null, 0);
 
         // Explicit value overrides all defaults
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag), !combined, 67, 67);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag),   combined, 68, 68);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted, heapSizeInFlag), !combined, 69, 69);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag),  67, 67);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted, heapSizeInFlag), 69, 69);
     }
 
     private void verifyJvmArgs(boolean isHosted, String expectedArgs, String jvmArgs) {
@@ -418,13 +415,11 @@ public class ContainerClusterTest {
     }
 
     private static ApplicationContainerCluster newClusterWithSearch(MockRoot root) {
-        return newClusterWithSearch(root, false, null);
+        return newClusterWithSearch(root, null);
     }
 
-    private static ApplicationContainerCluster newClusterWithSearch(MockRoot root, boolean isCombinedCluster, Integer memoryPercentage) {
+    private static ApplicationContainerCluster newClusterWithSearch(MockRoot root, Integer memoryPercentage) {
         ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", root.getDeployState());
-        if (isCombinedCluster)
-            cluster.setHostClusterId("test-content-cluster");
         cluster.setMemoryPercentage(memoryPercentage);
         cluster.setSearch(new ContainerSearch(root.getDeployState(), cluster, new SearchChains(cluster, "search-chain")));
         return cluster;

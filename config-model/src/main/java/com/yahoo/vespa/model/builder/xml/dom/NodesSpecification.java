@@ -18,7 +18,6 @@ import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
-import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -57,9 +56,6 @@ public class NodesSpecification {
     /** The repo part of a docker image (without tag), optional */
     private final Optional<DockerImage> dockerImageRepo;
 
-    /** The ID of the cluster referencing this node specification, if any */
-    private final Optional<String> combinedId;
-
     /** The cloud account to use for nodes in this spec, if any */
     private final Optional<CloudAccount> cloudAccount;
 
@@ -72,7 +68,6 @@ public class NodesSpecification {
                                boolean dedicated, Version version,
                                boolean required, boolean canFail, boolean exclusive,
                                Optional<DockerImage> dockerImageRepo,
-                               Optional<String> combinedId,
                                Optional<CloudAccount> cloudAccount,
                                boolean hasCountAttribute) {
         if (max.smallerThan(min))
@@ -98,7 +93,6 @@ public class NodesSpecification {
         this.canFail = canFail;
         this.exclusive = exclusive;
         this.dockerImageRepo = dockerImageRepo;
-        this.combinedId = combinedId;
         this.cloudAccount = cloudAccount;
         this.hasCountAttribute = hasCountAttribute;
     }
@@ -107,7 +101,6 @@ public class NodesSpecification {
                                      ModelElement nodesElement, Optional<DockerImage> dockerImageRepo,
                                      Optional<CloudAccount> cloudAccount) {
         var resolvedElement = resolveElement(nodesElement);
-        var combinedId = findCombinedId(nodesElement, resolvedElement);
         var resourceConstraints = toResourceConstraints(resolvedElement);
         boolean hasCountAttribute = resolvedElement.stringAttribute("count") != null;
         return new NodesSpecification(resourceConstraints.min,
@@ -119,7 +112,6 @@ public class NodesSpecification {
                                       canFail,
                                       resolvedElement.booleanAttribute("exclusive", false),
                                       dockerImageToUse(resolvedElement, dockerImageRepo),
-                                      combinedId,
                                       cloudAccount,
                                       hasCountAttribute);
     }
@@ -152,16 +144,6 @@ public class NodesSpecification {
     }
 
     private record ResourceConstraints(ClusterResources min, ClusterResources max, IntRange groupSize) {}
-
-    /** Returns the ID of the cluster referencing this node specification, if any */
-    private static Optional<String> findCombinedId(ModelElement nodesElement, ModelElement resolvedElement) {
-        if (resolvedElement != nodesElement) {
-            // Specification for a container cluster referencing nodes in a content cluster
-            return containerIdOf(nodesElement);
-        }
-        // Specification for a content cluster that is referenced by a container cluster
-        return containerIdReferencing(nodesElement);
-    }
 
     /** Returns a requirement for dedicated nodes taken from the given <code>nodes</code> element */
     public static NodesSpecification from(ModelElement nodesElement, ConfigModelContext context) {
@@ -204,7 +186,6 @@ public class NodesSpecification {
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
-                                      Optional.empty(),
                                       context.getDeployState().getProperties().cloudAccount(),
                                       false);
     }
@@ -220,7 +201,6 @@ public class NodesSpecification {
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
-                                      Optional.empty(),
                                       context.getDeployState().getProperties().cloudAccount(),
                                       false);
     }
@@ -247,7 +227,6 @@ public class NodesSpecification {
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
-                                      Optional.empty(),
                                       context.getDeployState().getProperties().cloudAccount(),
                                       false);
     }
@@ -290,12 +269,9 @@ public class NodesSpecification {
                                                           DeployLogger logger,
                                                           boolean stateful,
                                                           ClusterInfo info) {
-        if (combinedId.isPresent())
-            clusterType = ClusterSpec.Type.combined;
         ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId)
                                          .vespaVersion(version)
                                          .exclusive(exclusive)
-                                         .combinedId(combinedId.map(ClusterSpec.Id::from))
                                          .dockerImageRepository(dockerImageRepo)
                                          .loadBalancerSettings(zoneEndpoint)
                                          .stateful(stateful)
@@ -427,33 +403,6 @@ public class NodesSpecification {
                                                "but that service has no <nodes> element");
 
         return new ModelElement(referencedNodesElement);
-    }
-
-    /** Returns the ID of the parent container element of nodesElement, if any  */
-    private static Optional<String> containerIdOf(ModelElement nodesElement) {
-        var element = nodesElement.getXml();
-        var container = findParentByTag("container", element);
-        return container.map(el -> el.getAttribute("id"));
-    }
-
-    /** Returns the ID of the container element referencing nodesElement, if any */
-    private static Optional<String> containerIdReferencing(ModelElement nodesElement) {
-        var element = nodesElement.getXml();
-        var services = findParentByTag("services", element);
-        if (services.isEmpty()) return Optional.empty();
-
-        var content = findParentByTag("content", element);
-        if (content.isEmpty()) return Optional.empty();
-        var contentClusterId = content.get().getAttribute("id");
-        if (contentClusterId.isEmpty()) return Optional.empty();
-        for (var rootChild : XML.getChildren(services.get())) {
-            if ( ! ContainerModelBuilder.isContainerTag(rootChild)) continue;
-            var nodes = XML.getChild(rootChild, "nodes");
-            if (nodes == null) continue;
-            if (!contentClusterId.equals(nodes.getAttribute("of"))) continue;
-            return Optional.of(rootChild.getAttribute("id"));
-        }
-        return Optional.empty();
     }
 
     private static Optional<Element> findChildById(Element parent, String id) {
