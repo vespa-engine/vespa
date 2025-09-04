@@ -48,7 +48,7 @@ public class ResourceLimits implements FleetcontrollerConfig.Producer, ProtonCon
         // storage/src/vespa/storage/persistence/filestorage/service_layer_host_info_reporter.cpp
         builder.cluster_feed_block_limit.put("memory", memoryLimit.orElse(0.8));
         builder.cluster_feed_block_limit.put("disk", diskLimit.orElse(0.75));
-        builder.cluster_feed_block_limit.put("attribute-address-space", 0.89);
+        builder.cluster_feed_block_limit.put("attribute-address-space", addressSpaceLimit.orElse(0.89));
         builder.cluster_feed_block_noise_level(lowWatermarkDifference.orElse(0.0));
     }
 
