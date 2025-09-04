@@ -86,7 +86,6 @@
 ./predicate-search/* @bjorncs
 ./protocols/* @hakonhall
 ./provided-dependencies/* @gjoranv
-./routing-generator/* @oyving
 ./searchcore/* @toregge @havardpe
 ./searchcore/src/vespa/searchcore/grouping/* @havardpe
 ./searchcore/src/vespa/searchcore/proton/attribute/* @toregge
