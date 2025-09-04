@@ -46,8 +46,6 @@ using search::queryeval::AndNotSearch;
 using search::queryeval::AndSearch;
 using search::queryeval::Blueprint;
 using search::queryeval::ChildrenIterators;
-using search::queryeval::ElementIteratorWrapper;
-using search::queryeval::ElementIterator;
 using search::queryeval::EmptySearch;
 using search::queryeval::FakeRequestContext;
 using search::queryeval::FakeResult;
@@ -296,9 +294,9 @@ SearchIterator *getParent<ONear>(SearchIterator *a, SearchIterator *b) {
 template <>
 SearchIterator *getParent<SameElement>(SearchIterator *a, SearchIterator *b) {
     static TermFieldMatchData tmd;
-    std::vector<ElementIterator::UP> children;
-    children.emplace_back(std::make_unique<ElementIteratorWrapper>(SearchIterator::UP(a), tmd));
-    children.emplace_back(std::make_unique<ElementIteratorWrapper>(SearchIterator::UP(b), tmd));
+    std::vector<std::unique_ptr<SearchIterator>> children;
+    children.emplace_back(a);
+    children.emplace_back(b);
     // we only check how many term/field combinations
     // are below the SameElement parent:
     // two terms searching in one index field

@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "elementiterator.h"
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <memory>
 #include <vector>
 
@@ -23,7 +23,7 @@ private:
 
     fef::TermFieldMatchData         &_tfmd;
     fef::MatchData::UP               _md;
-    std::vector<ElementIterator::UP> _children;
+    std::vector<std::unique_ptr<SearchIterator>> _children;
     std::vector<uint32_t>            _matchingElements;
     bool                             _strict;
 
@@ -34,14 +34,14 @@ private:
 public:
     SameElementSearch(fef::TermFieldMatchData &tfmd,
                       fef::MatchData::UP md,
-                      std::vector<ElementIterator::UP> children,
+                      std::vector<std::unique_ptr<SearchIterator>> children,
                       bool strict);
     ~SameElementSearch() override;
     void initRange(uint32_t begin_id, uint32_t end_id) override;
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t docid) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const std::vector<ElementIterator::UP> &children() const { return _children; }
+    const std::vector<std::unique_ptr<SearchIterator>> &children() const { return _children; }
 
     // used during docsum fetching to identify matching elements
     // initRange must be called before use.
