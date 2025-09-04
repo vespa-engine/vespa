@@ -3826,6 +3826,21 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.QuantileAggregator" : {
+    "superClass" : "com.yahoo.search.grouping.request.AggregatorNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.util.List, com.yahoo.search.grouping.request.GroupingExpression)",
+      "public java.util.List getQuantiles()",
+      "public com.yahoo.search.grouping.request.QuantileAggregator copy()",
+      "public java.lang.String toString()",
+      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.grouping.request.RangePredicate" : {
     "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
     "interfaces" : [ ],
