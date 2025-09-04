@@ -17,13 +17,15 @@ import ai.vespa.schemals.parser.ast.LBRACE;
 import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.parser.ast.RBRACE;
 import ai.vespa.schemals.parser.ast.Root;
+import ai.vespa.schemals.parser.ast.consumedExpressionElm;
+import ai.vespa.schemals.parser.ast.consumedFeatureListElm;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.rootDocument;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
+import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaFormatting {
     /*
@@ -34,7 +36,7 @@ public class SchemaFormatting {
         List<TextEdit> result = new ArrayList<>();
         FormatPositionInformation info = new FormatPositionInformation(0, true, Optional.empty());
         FormattingOptions options = context.getOptions();
-        formatTraverse(result, root, info, options);
+        formatTraverse(result, root, info, options, context);
         if (options.isTrimTrailingWhitespace()) {
             computeTrimTrailingWhitespaceEdits(result, context.document.getCurrentContent());
         }
@@ -66,7 +68,7 @@ public class SchemaFormatting {
                 indentLevel = FormattingUtils.computeNodeIndentLevel(containing, options);
                 if (!node.isASTInstance(openLbrace.class))indentLevel++;
             }
-            formatTraverse(edits, node, new FormatPositionInformation(indentLevel, true, Optional.of(range)), options);
+            formatTraverse(edits, node, new FormatPositionInformation(indentLevel, true, Optional.of(range)), options, context);
         }
 
         return edits;
@@ -77,13 +79,15 @@ public class SchemaFormatting {
         List<TextEdit> edits, 
         Node node, 
         FormattingUtils.FormatPositionInformation info, 
-        FormattingOptions options) 
+        FormattingOptions options,
+        EventFormattingContext context) 
     {
         if (!node.isSchemaNode()) {
             // TODO: Format YQL, RankExpressions and Indexing
             return;
         }
         if (node.getLanguageType() != LanguageType.SCHEMA) return;
+        if (node.getSchemaNode().containsOtherLanguageData(LanguageType.RANK_EXPRESSION)) return;
 
         if (info.formatRange().isPresent()) {
             int nodeFirstLine = node.getRange().getStart().getLine();
@@ -94,9 +98,9 @@ public class SchemaFormatting {
         // Don't apply formatting on NL
         if (node.isASTInstance(NL.class)) return;
 
-        if (info.nodeStartsLine())
-            formatLineStartNodePosition(edits, node, info, options);
-        else
+        if (info.nodeStartsLine()) {
+            formatLineStartNodePosition(edits, node, info, options, context);
+        } else
             formatLineMiddleNodePosition(edits, node);
 
         int lbraceIndex = FormattingUtils.getNodeLbraceIndex(node);
@@ -125,19 +129,32 @@ public class SchemaFormatting {
                 edits, 
                 child, 
                 new FormatPositionInformation(indentLevel, childStartsNewLine, info.formatRange()), 
-                options
+                options,
+                context
             );
 
             if (!child.isASTInstance(NL.class))lastNonNLIndex = i;
         }
     }
 
+    // TODO: This workaround is for the more synthetic constructs that mess with the AST.
+    // Should instead try to make them cleaner
+    private static boolean shouldIgnoreStartNode(Node node) {
+        if (node.getPreviousSibling() != null) {
+            if (node.getPreviousSibling().isASTInstance(consumedFeatureListElm.class)) return true;
+            if (node.getPreviousSibling().isASTInstance(consumedExpressionElm.class)) return true;
+        }
+        return false;
+    }
+
     /*
      * Formats nodes that are supposed to be at the start of a line.
      */
-    private static void formatLineStartNodePosition(List<TextEdit> edits, Node node, FormatPositionInformation info, FormattingOptions options) {
+    private static void formatLineStartNodePosition(List<TextEdit> edits, Node node, FormatPositionInformation info, FormattingOptions options, EventFormattingContext context) {
         if (node.isASTInstance(Root.class)) return; // pseudo-element that should not be formatted
         if (FormattingUtils.isEOF(node)) return;
+
+        if (shouldIgnoreStartNode(node)) return;
 
         int indentLevel = info.indentLevel();
         if (node.isASTInstance(RBRACE.class))--indentLevel;

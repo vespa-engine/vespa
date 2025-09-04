@@ -20,7 +20,10 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.SchemaParserLexer;
 import ai.vespa.schemals.parser.ast.COLON;
+import ai.vespa.schemals.parser.ast.DOT;
 import ai.vespa.schemals.parser.ast.FIELD;
 import ai.vespa.schemals.parser.ast.annotationRefDataType;
 import ai.vespa.schemals.parser.ast.fieldRankFilter;
@@ -39,9 +42,9 @@ import ai.vespa.schemals.parser.ast.rankTypeElm;
 import ai.vespa.schemals.parser.ast.referenceType;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structFieldElm;
+import ai.vespa.schemals.parser.ast.summaryFeaturesElm;
 import ai.vespa.schemals.parser.ast.summaryInDocument;
 import ai.vespa.schemals.parser.ast.summaryItem;
-import ai.vespa.schemals.parser.ast.summaryFeaturesElm;
 import ai.vespa.schemals.parser.ast.summarySourceList;
 import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
 import ai.vespa.schemals.parser.rankingexpression.ast.LBRACE;
@@ -50,8 +53,8 @@ import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpressionSymbolResolver;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
+import ai.vespa.schemals.tree.SchemaNode;
 
 /**
  * IdentifySymbolReferences identifies symbols that are not definitions and sets the SchemaNode to contain an unresolved reference symbol
@@ -365,29 +368,51 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
         identifierNode.setSymbolStatus(SymbolStatus.UNRESOLVED);
 
 
-        // Construct a new node which will be a reference to the subfield
         int myIndex = parent.indexOf(identifierNode);
 
-        newStart += subfields[0].length() + 1; // +1 for the dot
-        newEnd += subfields[1].length() + 1;
+        {
+            // add dot node
+            newStart += subfields[0].length();
+            newEnd += 1;
 
-        identifierStr newASTNode = new identifierStr();
-        newASTNode.setTokenSource(identifierNode.getTokenSource());
-        newASTNode.setBeginOffset(identifierNode.getOriginalSchemaNode().getBeginOffset());
-        newASTNode.setEndOffset(identifierNode.getOriginalSchemaNode().getEndOffset());
+            DOT dotASTNode = new DOT(
+                TokenType.DOT, 
+                (SchemaParserLexer)identifierNode.getTokenSource(), 
+                identifierNode.getOriginalSchemaNode().getBeginOffset(),
+                identifierNode.getOriginalSchemaNode().getEndOffset()
+            );
 
-        SchemaNode newNode = new SchemaNode(newASTNode);
-        newNode.setNewStartCharacter(newStart);
-        newNode.setNewEndCharacter(newEnd);
+            SchemaNode newNode = new SchemaNode(dotASTNode);
+            newNode.setNewStartCharacter(newStart);
+            newNode.setNewEndCharacter(newEnd);
 
-        parent.insertChildAfter(myIndex, newNode);
+            parent.insertChildAfter(myIndex, newNode);
+        }
 
-        scope = CSTUtils.findScope(newNode);
+        myIndex += 1;
+        newStart += 1; // +1 for the dot
+        newEnd += subfields[1].length();
 
-        if (scope.isPresent()) {
-            newNode.setSymbol(SymbolType.SUBFIELD, context.fileURI(), scope.get());
-        } else {
-            newNode.setSymbol(SymbolType.SUBFIELD, context.fileURI());
+        {
+            // Construct a new node which will be a reference to the subfield
+            identifierStr newASTNode = new identifierStr();
+            newASTNode.setTokenSource(identifierNode.getTokenSource());
+            newASTNode.setBeginOffset(identifierNode.getOriginalSchemaNode().getBeginOffset());
+            newASTNode.setEndOffset(identifierNode.getOriginalSchemaNode().getEndOffset());
+
+            SchemaNode newNode = new SchemaNode(newASTNode);
+            newNode.setNewStartCharacter(newStart);
+            newNode.setNewEndCharacter(newEnd);
+
+            parent.insertChildAfter(myIndex, newNode);
+
+            scope = CSTUtils.findScope(newNode);
+
+            if (scope.isPresent()) {
+                newNode.setSymbol(SymbolType.SUBFIELD, context.fileURI(), scope.get());
+            } else {
+                newNode.setSymbol(SymbolType.SUBFIELD, context.fileURI());
+            }
         }
     }
 
