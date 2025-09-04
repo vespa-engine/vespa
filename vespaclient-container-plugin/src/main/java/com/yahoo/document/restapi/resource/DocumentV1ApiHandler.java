@@ -491,7 +491,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         return new ForwardingContentChannel((bytesRead, in) -> {
-            if (bytesRead > maxDocumentOperationSizeBytes) {
+            if (isDocumentOperationTooLarge(bytesRead)) {
                 documentOperationTooLarge(request, bytesRead, handler);
             } else {
                 enqueueAndDispatch(
@@ -523,7 +523,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         return new ForwardingContentChannel((bytesRead, in) -> {
-            if (bytesRead > maxDocumentOperationSizeBytes) {
+            if (isDocumentOperationTooLarge(bytesRead)) {
                 documentOperationTooLarge(request, bytesRead, handler);
             } else {
                 enqueueAndDispatch(request, handler, bytesRead, () -> {
@@ -582,6 +582,10 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                         throw new IllegalArgumentException("Unrecognized document operation parameter name '" + name + "'");
             };
         return parameters;
+    }
+    
+    private boolean isDocumentOperationTooLarge(long bytesRead) {
+        return bytesRead > maxDocumentOperationSizeBytes;
     }
 
     /** Dispatches enqueued requests until one is blocked. */
