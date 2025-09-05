@@ -243,4 +243,11 @@ MonitoringSearchIterator::get_element_ids(uint32_t docid, std::vector<uint32_t>&
     setDocId(_search->getDocId());
 }
 
+void
+MonitoringSearchIterator::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    _search->and_element_ids_into(docid, element_ids);
+    setDocId(_search->getDocId());
+}
+
 }
