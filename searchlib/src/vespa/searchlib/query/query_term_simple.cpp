@@ -60,6 +60,7 @@ bool couldBeValidNumber(std::string_view text) {
             // TODO: check for "inf"
             return true;
         default:
+            // fprintf(stderr, "non-number; bad char '%02x'\n", (int)ch);
             return false;
         }
     }
@@ -101,7 +102,7 @@ bool isFullRange(std::string_view s) noexcept {
            (s[sz-1] == '>' || s[sz-1] == ']');
 }
 bool isPartialRange(std::string_view s) noexcept {
-    return (s.size() > 2) &&
+    return (s.size() > 1) &&
            ((s[0] == '<') || (s[0] == '>'));
 }
 
@@ -321,14 +322,26 @@ QueryTermSimple::NumericRange QueryTermSimple::emptyNumericRange;
 std::unique_ptr<QueryTermSimple::NumericRange> parsePartialRange(const std::string &term) {
     auto result = std::make_unique<QueryTermSimple::NumericRange>();
     std::string_view rest(term.c_str() + 1, term.size() - 1);
-    if (term[0] == '<') {
+    if (term[0] == '<' && couldBeValidNumber(rest)) {
         result->upperLimitTxt = rest;
         result->lower_inclusive = true; // include '-Inf' or equivalent
         return result;
     }
-    if (term[0] == '>') {
+    if (term[0] == '>' && couldBeValidNumber(rest)) {
         result->lowerLimitTxt = rest;
         result->upper_inclusive = true; // include '+Inf' or equivalent
+        return result;
+    }
+    return {};
+}
+
+std::unique_ptr<QueryTermSimple::NumericRange> parseNoRange(const std::string &term) {
+    if (couldBeValidNumber(term)) {
+        auto result = std::make_unique<QueryTermSimple::NumericRange>();
+        result->lower_inclusive = true;
+        result->lowerLimitTxt = term;
+        result->upperLimitTxt = term;
+        result->upper_inclusive = true;
         return result;
     }
     return {};
@@ -352,34 +365,21 @@ std::unique_ptr<QueryTermSimple::NumericRange> parseFullRange(const std::string 
             rest = std::string_view();
         }
     }
-    bool _valid = (numParts >= 2) && (numParts < NELEMS(parts));
+    if (numParts < 2) return {};
+    if (NELEMS(parts) <= numParts) return {};
+    bool _valid = true;
+    result->lowerLimitTxt = parts[0];
+    result->upperLimitTxt = parts[1];
+    // note empty -> no limit
+    if ((! parts[0].empty()) && (! couldBeValidNumber(parts[0]))) {
+        return {};
+    }
+    if ((! parts[1].empty()) && (! couldBeValidNumber(parts[1]))) {
+        return {};
+    }
     if (_valid) {
         result->lower_inclusive = (_term[0] == '[');
         result->upper_inclusive = (_term[_term.size() - 1] == ']');
-        /* we really want something like this:
-        result->fpLowerLimit = strtod(parts[0].data(), nullptr);
-        result->fpUpperLimit = strtod(parts[1].data(), nullptr);
-        if (result->fpLowerLimit <=  -0x1p63) {
-            result->integerLowerLimit = std::numeric_limits<int64_t>::min();
-        }
-        else if (result->fpLowerLimit >= 0x1p63) {
-            result->integerLowerLimit = std::numeric_limits<int64_t>::max();
-        }
-        else {
-            result->integerLowerLimit = strtol(parts[0].data(), nullptr, 10);
-        }
-        if (result->fpUpperLimit <= -0x1p63) {
-            result->integerUpperLimit = std::numeric_limits<int64_t>::min();
-        }
-        else if (result->fpUpperLimit >= 0x1p63) {
-            result->integerUpperLimit = std::numeric_limits<int64_t>::max();
-        }
-        else {
-            result->integerUpperLimit = strtol(parts[1].data(), nullptr, 10);
-        }
-        */
-        result->lowerLimitTxt = parts[0];
-        result->upperLimitTxt = parts[1];
     }
     if (_valid && numParts > 2) {
         result->rangeLimit = static_cast<int32_t>(strtol(parts[2].data(), nullptr, 0));
@@ -417,11 +417,13 @@ QueryTermSimple::QueryTermSimple(const string & term_, Type type)
       _fuzzy_prefix_lock_length(0)
 {
     if (isFullRange(_term)) {
-        fprintf(stderr, "parse full range '%s'\n", _term.c_str());
         _numeric_range = parseFullRange(_term);
         _valid = bool(_numeric_range);
+    } else if (isPartialRange(_term)) {
+        _numeric_range = parsePartialRange(_term);
+        _valid = bool(_numeric_range);
     } else {
-        fprintf(stderr, "no range '%s'\n", _term.c_str());
+        _numeric_range = parseNoRange(_term);
     }
 }
 
@@ -429,55 +431,30 @@ template <typename T, typename D>
 bool
 QueryTermSimple::getAsNumericTerm(T & lower, T & upper, D d) const noexcept
 {
-    if (empty()) return false;
-    // TODO rewrite, use _numeric_range
-    size_t sz(_term.size());
-    const char *err(nullptr);
+    if (empty() || ! _numeric_range) return false;
     T low(lower);
     T high(upper);
-    const char * q = _term.c_str();
-    const char * qend = q + sz;
-    const char first(q[0]);
-    const char last(q[sz-1]);
-    bool isRange = (first == '<') || (first == '>') || (first == '[');
-    q += isRange ? 1 : 0;
-    T ll = d.fromstr(q, qend, &err);
-    bool valid = isValid() && ((*err == 0) || (*err == ';'));
-    if (!valid) return false;
-
-    if (*err == 0) {
-        if (first == '<') {
-            high = d.nearestDownwd(ll, lower);
-        } else if (first == '>') {
-            low = d.nearestUpward(ll, upper);
-        } else {
-            low = high = ll;
-            valid = ! isRange;
-        }
-    } else {
-        if ((first == '[') || (first == '<')) {
-            if (q != err) {
-                low = (first == '[') ? ll : d.nearestUpward(ll, upper);
-            }
-            q = err + 1;
-            T hh = d.fromstr(q, qend, &err);
-            bool hasUpperLimit(q != err);
-            if (*err == ';') {
-                err = const_cast<char *>(_term.data() + _term.size() - 1);
-            }
-            valid = (*err == last) && ((last == ']') || (last == '>'));
-            if (hasUpperLimit) {
-                high = (last == ']') ? hh : d.nearestDownwd(hh, lower);
-            }
-        } else {
-            valid = false;
-        }
+    if (_numeric_range->has_lower_limit()) {
+        const char *err(nullptr);
+        const std::string_view txt = _numeric_range->lowerLimitTxt;
+        const char * q = txt.data();
+        const char * qend = q + txt.size();
+        T ll = d.fromstr(q, qend, &err);
+        if (err != qend) return false;
+        low = _numeric_range->lower_inclusive ? ll : d.nearestUpward(ll, upper);
     }
-    if (valid) {
-        lower = low;
-        upper = high;
+    if (_numeric_range->has_upper_limit()) {
+        const char *err(nullptr);
+        const std::string_view txt = _numeric_range->upperLimitTxt;
+        const char * q = txt.data();
+        const char * qend = q + txt.size();
+        T ll = d.fromstr(q, qend, &err);
+        if (err != qend) return false;
+        high = _numeric_range->upper_inclusive ? ll : d.nearestDownwd(ll, lower);
     }
-    return valid;
+    lower = low;
+    upper = high;
+    return true;
 }
 
 std::string
@@ -486,7 +463,7 @@ QueryTermSimple::getClassName() const
     return vespalib::getClassName(*this);
 }
 
-}
+} // namespace
 
 void
 visit(vespalib::ObjectVisitor &self, const std::string &name, const search::QueryTermSimple *obj)

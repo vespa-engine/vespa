@@ -37,9 +37,6 @@ public:
 
         bool has_lower_limit() const noexcept { return ! lowerLimitTxt.empty(); }
         bool has_upper_limit() const noexcept { return ! upperLimitTxt.empty(); }
-        bool empty() const noexcept {
-            return lowerLimitTxt.empty() && upperLimitTxt.empty();
-        }
         bool just_one_value() const noexcept {
             return (lowerLimitTxt == upperLimitTxt) && lower_inclusive && upper_inclusive && has_lower_limit();
         }
