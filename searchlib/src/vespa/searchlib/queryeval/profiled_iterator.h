@@ -57,6 +57,7 @@ public:
     void or_hits_into(BitVector &result, uint32_t begin_id) override;
     void and_hits_into(BitVector &result, uint32_t begin_id) override;
     void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
+    void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     UP andWith(UP filter, uint32_t estimate) override { return _search->andWith(std::move(filter), estimate); }
     Trinary is_strict() const override { return _search->is_strict(); }
