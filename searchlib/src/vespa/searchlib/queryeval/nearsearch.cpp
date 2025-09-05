@@ -1,17 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "nearsearch.h"
 #include "i_element_gap_inspector.h"
+#include "near_search_utils.h"
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/priority_queue.h>
-#include <algorithm>
 #include <cassert>
-#include <limits>
 #include <map>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".nearsearch");
 
 using search::queryeval::IElementGapInspector;
+using search::queryeval::near_search_utils::BoolMatchResult;
+using search::queryeval::near_search_utils::ElementIdMatchResult;
 
 namespace search::queryeval {
 
@@ -45,48 +47,6 @@ calc_window_end_pos(const TermFieldMatchDataPosition& pos, uint32_t window, Elem
         return { pos.getElementId() + 1, pos.getPosition() + window - pos.getElementLen() - element_gap.value() };
     }
 }
-
-class BoolMatchResult {
-    bool _is_match;
-public:
-    BoolMatchResult()
-        : _is_match(false)
-    { }
-    void register_match(uint32_t element_id) noexcept {
-        (void) element_id;
-        _is_match = true;
-    }
-    static constexpr bool shortcut_return = true;
-    bool is_match() const noexcept { return _is_match; }
-};
-
-class ElementIdMatchResult {
-    std::vector<uint32_t>& _element_ids;
-    bool                   _need_sort;
-public:
-    ElementIdMatchResult(std::vector<uint32_t>& element_ids)
-        : _element_ids(element_ids),
-          _need_sort(false)
-    {
-    }
-    void register_match(uint32_t element_id) {
-        if (_element_ids.empty()) {
-            _element_ids.push_back(element_id);
-        } else if (_element_ids.back() != element_id) {
-            if (_element_ids.back() > element_id) {
-                _need_sort = true;
-            }
-            _element_ids.push_back(element_id);
-        }
-    }
-    static constexpr bool shortcut_return = false;
-    void maybe_sort_element_ids() {
-        if (_need_sort) {
-            std::sort(_element_ids.begin(), _element_ids.end());
-            _element_ids.resize(std::unique(_element_ids.begin(), _element_ids.end()) - _element_ids.begin());
-        }
-    }
-};
 
 } // namespace search::queryeval::<unnamed>
 
