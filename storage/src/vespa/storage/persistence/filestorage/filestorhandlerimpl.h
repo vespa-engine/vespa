@@ -22,11 +22,6 @@
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/identity.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
@@ -39,8 +34,6 @@ class FileStorDiskMetrics;
 class FileStorStripeMetrics;
 class StorBucketDatabase;
 class AbortBucketOperationsCommand;
-
-namespace bmi = boost::multi_index;
 
 class FileStorHandlerImpl final
     : private framework::MetricUpdateHook,
@@ -67,13 +60,147 @@ public:
         }
     };
 
-    // ordered_non_unique shall preserve insertion order as iteration order of equal keys, but this is rather magical...
-    using PriorityOrder = bmi::ordered_non_unique<bmi::identity<MessageEntry>>;
-    using BucketOrder   = bmi::ordered_non_unique<bmi::member<MessageEntry, document::Bucket, &MessageEntry::_bucket>>;
-    using PriorityQueue = bmi::multi_index_container<MessageEntry, bmi::indexed_by<bmi::sequenced<>, PriorityOrder, BucketOrder>>;
-    using PriorityIdx   = bmi::nth_index<PriorityQueue, 1>::type;
-    using BucketIdx     = bmi::nth_index<PriorityQueue, 2>::type;
+    struct PriorityQueue {
+        using EntryMap = std::unordered_map<uint64_t, MessageEntry>;
+        using MapEntry = EntryMap::value_type;
+        using EntryPtr = MapEntry *;
+        using EntryCmp = bool(*)(const MessageEntry&, const MessageEntry&);
+        template<EntryCmp cmp> struct OrderCmp {
+            using is_transparent = std::true_type;
+            bool operator() (EntryPtr a, EntryPtr b) const noexcept {
+                const auto& [keyA, entryA] = *a;
+                const auto& [keyB, entryB] = *b;
+                if (cmp(entryA, entryB)) return true;
+                if (cmp(entryB, entryA)) return false;
+                return keyA < keyB;
+            }
+            template<typename T>
+            bool operator() (EntryPtr a, const T& b) const noexcept { return b.convert(a) < b.convert(); }
+            template<typename T>
+            bool operator() (const T& a, EntryPtr b) const noexcept { return a.convert() < a.convert(b); }
+        };
+        static bool compareByPriority(const MessageEntry& a, const MessageEntry&b) {
+            return a._priority < b._priority;
+        }
+        static bool compareByBucket(const MessageEntry& a, const MessageEntry&b) {
+            return a._bucket < b._bucket;
+        }
+        using ByPriCmp = OrderCmp<compareByPriority>;
+        using ByBucketCmp = OrderCmp<compareByBucket>;
 
+        using ByPriSet = std::set<EntryPtr, ByPriCmp>;
+        using ByBucketSet = std::set<EntryPtr, ByBucketCmp>;
+
+        size_t size() const noexcept { return _main_map.size(); }
+        bool empty() const noexcept { return _main_map.empty(); }
+        void emplace_back(MessageEntry entry) {
+            uint64_t seq_id = _next_sequence_id++;
+            auto [iter, added] = _main_map.try_emplace(seq_id, std::move(entry));
+            assert(added);
+            MapEntry& me = *iter;
+            _sequence_ids_by_priority.insert(&me);
+            _sequence_ids_by_bucket.insert(&me);
+        }
+
+        void remove(uint64_t sequence_id) {
+            auto iter = _main_map.find(sequence_id);
+            assert(iter != _main_map.end());
+            MapEntry& me = *iter;
+            _sequence_ids_by_bucket.erase(&me);
+            _sequence_ids_by_priority.erase(&me);
+            _main_map.erase(iter);
+        }
+
+        template<typename I, typename V> struct ordered_iterator {
+            using difference_type = I::difference_type;
+            using value_type = V::second_type;
+            using pointer = value_type *;
+            using reference = value_type &;
+            using iterator_category = std::input_iterator_tag;
+
+            reference operator* () const noexcept { return deref()->second; };
+            pointer operator-> () const noexcept { return &deref()->second; };
+            void operator++() { ++_place; }
+            bool operator==(const ordered_iterator& other) const noexcept {
+                return _place == other._place;
+            }
+            bool operator!=(const ordered_iterator& other) const noexcept {
+                return _place != other._place;
+            }
+            ordered_iterator(I p) : _place(p) {}
+            ordered_iterator(const ordered_iterator&) = default;
+            ordered_iterator& operator= (const ordered_iterator& other) = default;
+            auto deref() const noexcept { return *_place; }
+        private:
+            I _place;
+        };
+        struct ConstPriorityIdxView {
+            using const_iterator = ordered_iterator<ByPriSet::const_iterator, const MapEntry>;
+            const PriorityQueue& _q;
+            const_iterator begin() const noexcept { return _q._sequence_ids_by_priority.begin(); }
+            const_iterator end() const noexcept { return _q._sequence_ids_by_priority.end(); }
+            ConstPriorityIdxView(PriorityQueue& q) : _q(q) {}
+        };
+        struct PriorityIdxView {
+            using iterator = ordered_iterator<ByPriSet::iterator, MapEntry>;
+            PriorityQueue& _q;
+            iterator begin() const noexcept { return _q._sequence_ids_by_priority.begin(); }
+            iterator end() const noexcept { return _q._sequence_ids_by_priority.end(); }
+            PriorityIdxView(PriorityQueue& q) : _q(q) {}
+            iterator erase(iterator it) {
+                EntryPtr p = it.deref();
+                ++it;
+                _q.remove(p->first);
+                return it;
+            }
+        };
+        struct BucketIdxView {
+            using iterator = ordered_iterator<ByBucketSet::const_iterator, MapEntry>;
+            PriorityQueue& _q;
+            iterator begin() const noexcept { return _q._sequence_ids_by_bucket.begin(); }
+            iterator end() const noexcept { return _q._sequence_ids_by_bucket.end(); }
+            BucketIdxView(PriorityQueue& q) : _q(q) {}
+            iterator erase(iterator it) {
+                EntryPtr p = it.deref();
+                ++it;
+                _q.remove(p->first);
+                return it;
+            }
+            void erase(iterator it, iterator to) {
+                while (it != to) {
+                    it = erase(it);
+                }
+            }
+            struct BucketCompare {
+                const document::Bucket& bucket;
+                const document::Bucket& convert() const noexcept { return bucket; }
+                const document::Bucket& convert(EntryPtr p) const noexcept { return p->second._bucket; }
+            };
+            std::pair<iterator, iterator> equal_range(const document::Bucket &bucket) {
+                BucketCompare cmp(bucket);
+                auto inner_range = _q._sequence_ids_by_bucket.equal_range(cmp);
+                return std::make_pair(iterator(inner_range.first),
+                                      iterator(inner_range.second));
+            }
+        };
+
+        PriorityQueue()
+          : _main_map(),
+            _sequence_ids_by_priority(),
+            _sequence_ids_by_bucket()
+        {}
+        ~PriorityQueue();
+
+    private:
+        uint64_t _next_sequence_id = 1;
+        EntryMap _main_map;
+        ByPriSet _sequence_ids_by_priority;
+        ByBucketSet _sequence_ids_by_bucket;
+    };
+
+    using ConstPriorityIdxView = PriorityQueue::ConstPriorityIdxView;
+    using PriorityIdxView = PriorityQueue::PriorityIdxView;
+    using BucketIdxView = PriorityQueue::BucketIdxView;
     using Clock = std::chrono::steady_clock;
     using monitor_guard = std::unique_lock<std::mutex>;
     using atomic_size_t = vespalib::datastore::AtomicValueWrapper<size_t>;
@@ -154,7 +281,6 @@ public:
 
         [[nodiscard]] std::shared_ptr<FileStorHandler::BucketLockInterface> lock(const document::Bucket & bucket, api::LockingRequirements lockReq);
         void failOperations(const document::Bucket & bucket, const api::ReturnCode & code);
-
         [[nodiscard]] FileStorHandler::LockedMessage getNextMessage(vespalib::steady_time deadline);
         [[nodiscard]] FileStorHandler::LockedMessageBatch next_message_batch(vespalib::steady_time now, vespalib::steady_time deadline);
         void dumpQueue(std::ostream & os) const;
@@ -162,7 +288,9 @@ public:
         void dumpQueueHtml(std::ostream & os) const;
         [[nodiscard]] std::mutex & exposeLock() { return *_lock; }
         void queue_emplace(MessageEntry entry) { _queue->emplace_back(std::move(entry)); }
-        [[nodiscard]] BucketIdx & exposeBucketIdx() { return bmi::get<2>(*_queue); }
+        [[nodiscard]] BucketIdxView exposeBucketIdxView() { return BucketIdxView(*_queue); }
+        [[nodiscard]] PriorityIdxView exposePriorityIdxView() { return PriorityIdxView(*_queue); }
+        [[nodiscard]] ConstPriorityIdxView exposePriorityIdxView() const noexcept { return ConstPriorityIdxView(*_queue); }
         void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
         [[nodiscard]] ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const;
     private:
@@ -183,8 +311,8 @@ public:
 
         // Precondition: the bucket used by `iter`s operation is not locked in a way that conflicts
         // with its locking requirements.
-        [[nodiscard]] FileStorHandler::LockedMessage getMessage(monitor_guard & guard, PriorityIdx & idx,
-                                                                PriorityIdx::iterator iter,
+        [[nodiscard]] FileStorHandler::LockedMessage getMessage(monitor_guard & guard, PriorityIdxView & idx,
+                                                                PriorityIdxView::iterator iter,
                                                                 ThrottleToken throttle_token);
         using LockedBuckets = vespalib::hash_map<document::Bucket, MultiLockEntry, document::Bucket::hash>;
         const FileStorHandlerImpl      &_owner;

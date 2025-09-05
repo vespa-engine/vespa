@@ -94,6 +94,13 @@ ProfiledIterator::and_hits_into(BitVector &result, uint32_t begin_id)
 }
 
 void
+ProfiledIterator::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    _search->get_element_ids(docid, element_ids);
+    setDocId(_search->getDocId());
+}
+
+void
 ProfiledIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     visit(visitor, "search", _search);

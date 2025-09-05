@@ -26,7 +26,6 @@
 
     <modules>
         <module>application</module>
-        <module>application-model</module>
         <module>bundle-plugin-test</module>
         <module>client</module>
         <module>cloud-tenant-base</module>
@@ -101,18 +100,14 @@
         <module>model-evaluation</module>
         <module>model-integration</module>
         <module>opennlp-linguistics</module>
-        <module>orchestrator-restapi</module>
-        <module>orchestrator</module>
         <module>parent</module>
         <module>predicate-search</module>
         <module>predicate-search-core</module>
         <module>provided-dependencies</module>
-        <module>routing-generator</module>
         <module>searchcore</module>
         <module>searchlib</module>
         <module>searchsummary</module>
         <module>security-utils</module>
-        <module>service-monitor</module>
         <module>socket_test</module>
         <module>standalone-container</module>
         <module>storage</module>

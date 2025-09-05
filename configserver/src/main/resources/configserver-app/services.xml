@@ -50,37 +50,7 @@
     <component id="com.yahoo.vespa.configserver.flags.ConfigServerFlagSource" bundle="configserver-flags"/>
     <component id="com.yahoo.vespa.configserver.flags.db.FlagsDbImpl" bundle="configserver-flags"/>
 
-    <component id="com.yahoo.vespa.service.slobrok.SlobrokMonitorManagerImpl" bundle="service-monitor" />
-    <component id="com.yahoo.vespa.service.health.HealthMonitorManager" bundle="service-monitor" />
-    <component id="com.yahoo.vespa.service.manager.UnionMonitorManager" bundle="service-monitor" />
-    <component id="com.yahoo.vespa.service.model.ServiceMonitorImpl" bundle="service-monitor" />
-    <component id="com.yahoo.vespa.service.duper.DuperModelManager" bundle="service-monitor" />
-    <component id="com.yahoo.vespa.orchestrator.status.ZkStatusService" bundle="orchestrator" />
-    <component id="com.yahoo.vespa.orchestrator.controller.RetryingClusterControllerClientFactory" bundle="orchestrator" />
-    <component id="com.yahoo.vespa.orchestrator.OrchestratorImpl" bundle="orchestrator">
-      <preprocess:include file="orchestrator-config.xml" required="false" />
-    </component>
-    
-    <handler id="com.yahoo.vespa.orchestrator.resources.ApplicationSuspensionRequestHandler" bundle="orchestrator">
-      <binding>http://*/orchestrator/v1/suspensions/applications</binding>
-      <binding>http://*/orchestrator/v1/suspensions/applications/*</binding>
-    </handler>
-    <handler id="com.yahoo.vespa.orchestrator.resources.HealthRequestHandler" bundle="orchestrator">
-      <binding>http://*/orchestrator/v1/health</binding>
-      <binding>http://*/orchestrator/v1/health/*</binding>
-    </handler>
-    <handler id="com.yahoo.vespa.orchestrator.resources.HostRequestHandler" bundle="orchestrator">
-      <binding>http://*/orchestrator/v1/hosts</binding>
-      <binding>http://*/orchestrator/v1/hosts/*</binding>
-    </handler>
-    <handler id="com.yahoo.vespa.orchestrator.resources.HostSuspensionRequestHandler" bundle="orchestrator">
-      <binding>http://*/orchestrator/v1/suspensions/hosts</binding>
-      <binding>http://*/orchestrator/v1/suspensions/hosts/*</binding>
-    </handler>
-    <handler id="com.yahoo.vespa.orchestrator.resources.InstanceRequestHandler" bundle="orchestrator">
-      <binding>http://*/orchestrator/v1/instances</binding>
-      <binding>http://*/orchestrator/v1/instances/*</binding>
-    </handler>
+
     <handler id='com.yahoo.vespa.config.server.http.HttpGetConfigHandler' bundle='configserver'>
       <binding>http://*/config/v1/*/*</binding>
       <binding>http://*/config/v1/*</binding>
@@ -154,6 +124,8 @@
     <preprocess:include file='configserver-config.xml' required='false' />
 
     <preprocess:include file='configserver-components.xml' required='false' />
+
+    <preprocess:include file='orchestrator.xml' required='false' />
 
   </container>
 </services>

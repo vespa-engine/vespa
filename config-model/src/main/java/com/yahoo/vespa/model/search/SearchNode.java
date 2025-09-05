@@ -63,7 +63,6 @@ public class SearchNode extends AbstractService implements
     private final String clusterName;
     private final AbstractService serviceLayerService;
     private final Tuning tuning;
-    private final double fractionOfMemoryReserved;
     private final Boolean syncTransactionLog;
 
     private ResourceLimits resourceLimits; // Not final, calculated after nodes have been allocated
@@ -76,19 +75,16 @@ public class SearchNode extends AbstractService implements
         private final ContentNode contentNode;
         private final boolean flushOnShutdown;
         private final Tuning tuning;
-        private final double fractionOfMemoryReserved;
         private final Boolean syncTransactionLog;
 
         public Builder(String name, NodeSpec nodeSpec, String clusterName, ContentNode node,
-                       boolean flushOnShutdown, Tuning tuning,
-                       double fractionOfMemoryReserved, Boolean syncTransactionLog) {
+                       boolean flushOnShutdown, Tuning tuning, Boolean syncTransactionLog) {
             this.name = name;
             this.nodeSpec = nodeSpec;
             this.clusterName = clusterName;
             this.contentNode = node;
             this.flushOnShutdown = flushOnShutdown;
             this.tuning = tuning;
-            this.fractionOfMemoryReserved = fractionOfMemoryReserved;
             this.syncTransactionLog = syncTransactionLog;
         }
 
@@ -96,29 +92,25 @@ public class SearchNode extends AbstractService implements
         protected SearchNode doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor,
                                      Element producerSpec) {
             return SearchNode.create(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName,
-                                     contentNode, flushOnShutdown, tuning, deployState.isHosted(),
-                                     fractionOfMemoryReserved, syncTransactionLog);
+                                     contentNode, flushOnShutdown, tuning, deployState.isHosted(), syncTransactionLog);
         }
 
     }
 
     public static SearchNode create(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
                                     String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
-                                    Tuning tuning, boolean isHostedVespa, double fractionOfMemoryReserved,
-                                    Boolean syncTransactionLog) {
+                                    Tuning tuning, boolean isHostedVespa, Boolean syncTransactionLog) {
         return new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService,
-                              flushOnShutdown, tuning, isHostedVespa, fractionOfMemoryReserved, syncTransactionLog);
+                              flushOnShutdown, tuning, isHostedVespa, syncTransactionLog);
     }
 
     private SearchNode(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
                        String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
-                       Tuning tuning, boolean isHostedVespa,
-                       double fractionOfMemoryReserved, Boolean syncTransactionLog) {
+                       Tuning tuning, boolean isHostedVespa, Boolean syncTransactionLog) {
         super(parent, name);
         this.distributionKey = distributionKey;
         this.serviceLayerService = serviceLayerService;
         this.isHostedVespa = isHostedVespa;
-        this.fractionOfMemoryReserved = fractionOfMemoryReserved;
         this.nodeSpec = nodeSpec;
         this.clusterName = clusterName;
         this.flushOnShutdown = flushOnShutdown;
@@ -255,7 +247,7 @@ public class SearchNode extends AbstractService implements
         Optional<NodeResources> nodeResources = getSpecifiedNodeResources();
         if (nodeResources.isPresent()) {
             int threadsPerSearch = tuning != null ? tuning.threadsPerSearch() : 1;
-            var nodeResourcesTuning = new NodeResourcesTuning(nodeResources.get(), threadsPerSearch, fractionOfMemoryReserved);
+            var nodeResourcesTuning = new NodeResourcesTuning(nodeResources.get(), threadsPerSearch);
             nodeResourcesTuning.getConfig(builder);
 
             if (tuning != null) tuning.getConfig(builder);

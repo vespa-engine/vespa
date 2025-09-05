@@ -6,12 +6,10 @@
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/searchlib/queryeval/same_element_search.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
-#include <vespa/searchlib/attribute/searchcontextelementiterator.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::fef;
 using namespace search::queryeval;
-using search::attribute::SearchContextElementIterator;
 
 void verify_elements(SameElementSearch &se, uint32_t docid, const std::initializer_list<uint32_t> list) {
     SCOPED_TRACE("verify elements, docid=" + std::to_string(docid));
@@ -139,19 +137,6 @@ TEST(SameElementTest, require_that_children_are_sorted) {
     EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).terms()[0]->getState().estimate().estHits, 2u);
     EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).terms()[1]->getState().estimate().estHits, 3u);
     EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).terms()[2]->getState().estimate().estHits, 4u);
-}
-
-TEST(SameElementTest, require_that_attribute_iterators_are_wrapped_for_element_unpacking) {
-    auto a = make_result({{5, {1,3,7}}});
-    auto b = make_result({{5, {3,5,10}}});
-    auto bp = finalize(make_blueprint({a,b}, true), false);
-    auto md = make_match_data();
-    auto search = bp->createSearch(*md);
-    auto *se = dynamic_cast<SameElementSearch*>(search.get());
-    ASSERT_TRUE(se != nullptr);
-    ASSERT_EQ(se->children().size(), 2u);
-    EXPECT_TRUE(dynamic_cast<SearchContextElementIterator*>(se->children()[0].get()) != nullptr);
-    EXPECT_TRUE(dynamic_cast<SearchContextElementIterator*>(se->children()[1].get()) != nullptr);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

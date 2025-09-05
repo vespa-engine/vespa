@@ -88,6 +88,8 @@ FileStorHandlerImpl::~FileStorHandlerImpl()
     waitUntilNoLocks();
 }
 
+FileStorHandlerImpl::PriorityQueue::~PriorityQueue() = default;
+
 void
 FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, std::shared_ptr<MergeStatus> status)
 {
@@ -734,16 +736,16 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
 void
 FileStorHandlerImpl::remapQueueNoLock(const RemapInfo& source, std::vector<RemapInfo*>& targets, Operation op)
 {
-    BucketIdx& idx(stripe(source.bucket).exposeBucketIdx());
+    BucketIdxView idx = stripe(source.bucket).exposeBucketIdxView();
     auto range(idx.equal_range(source.bucket));
 
     std::vector<MessageEntry> entriesFound;
 
     // Find all the messages for the given bucket.
-    for (BucketIdx::iterator i = range.first; i != range.second; ++i) {
+    for (BucketIdxView::iterator i = range.first; i != range.second; ++i) {
         assert(i->_bucket == source.bucket);
-
-        entriesFound.push_back(std::move(*i));
+        MessageEntry& entry = *i;
+        entriesFound.push_back(std::move(entry));
     }
 
     // Remove them
@@ -851,8 +853,8 @@ FileStorHandlerImpl::Stripe::failOperations(const document::Bucket &bucket, cons
 {
     std::lock_guard guard(*_lock);
 
-    BucketIdx& idx(bmi::get<2>(*_queue));
-    std::pair<BucketIdx::iterator, BucketIdx::iterator> range(idx.equal_range(bucket));
+    BucketIdxView idx = exposeBucketIdxView();
+    std::pair<BucketIdxView::iterator, BucketIdxView::iterator> range(idx.equal_range(bucket));
 
     for (auto iter = range.first; iter != range.second;) {
         // We want to post delete bucket to list before calling this
@@ -980,8 +982,8 @@ FileStorHandlerImpl::Stripe::next_message_impl(monitor_guard& guard, vespalib::s
     // second attempt. This is key to allowing the run loop to register
     // ticks at regular intervals while not busy-waiting.
     for (int attempt = 0; (attempt < 2) && !_owner.isPaused(); ++attempt) {
-        PriorityIdx& idx(bmi::get<1>(*_queue));
-        PriorityIdx::iterator iter(idx.begin()), end(idx.end());
+        PriorityIdxView idx = exposePriorityIdxView();
+        PriorityIdxView::iterator iter(idx.begin()), end(idx.end());
         bool was_throttled = false;
 
         while ((iter != end) && operationIsInhibited(guard, iter->_bucket, *iter->_command)) {
@@ -1075,7 +1077,7 @@ FileStorHandlerImpl::Stripe::fill_feed_op_batch(monitor_guard& guard, LockedMess
 {
     assert(batch.size() == 1);
     assert(guard.owns_lock());
-    BucketIdx& idx = bmi::get<2>(*_queue);
+    BucketIdxView idx = exposeBucketIdxView();
     auto bucket_msgs = idx.equal_range(batch.lock->getBucket());
     // Process in FIFO order (_not_ priority order) until we hit the end, a non-batchable operation
     // (implicit pipeline stall since bucket set might change) or can't get another throttle token.
@@ -1115,8 +1117,7 @@ FileStorHandlerImpl::Stripe::fill_feed_op_batch(monitor_guard& guard, LockedMess
         if (!throttle_token.valid()) {
             break;
         }
-        // Note: iterator is const; can't std::move(it->_command)
-        batch.messages.emplace_back(it->_command, std::move(throttle_token));
+        batch.messages.emplace_back(std::move(it->_command), std::move(throttle_token));
         it = idx.erase(it);
     }
     update_cached_queue_size(guard);
@@ -1128,8 +1129,8 @@ FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
     if (_owner.isPaused()) {
         return {};
     }
-    PriorityIdx& idx(bmi::get<1>(*_queue));
-    PriorityIdx::iterator iter(idx.begin()), end(idx.end());
+    PriorityIdxView idx = exposePriorityIdxView();
+    PriorityIdxView::iterator iter(idx.begin()), end(idx.end());
 
     while ((iter != end) && operationIsInhibited(guard, iter->_bucket, *iter->_command)) {
         ++iter;
@@ -1148,14 +1149,14 @@ FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
 }
 
 FileStorHandler::LockedMessage
-FileStorHandlerImpl::Stripe::getMessage(monitor_guard& guard, PriorityIdx& idx, PriorityIdx::iterator iter,
+FileStorHandlerImpl::Stripe::getMessage(monitor_guard& guard, PriorityIdxView& idx, PriorityIdxView::iterator iter,
                                         ThrottleToken throttle_token)
 {
     std::chrono::milliseconds waitTime(uint64_t(iter->_timer.stop(
             _owner._component.getClock().getMonotonicTime(),
             _metrics->averageQueueWaitingTime)));
 
-    std::shared_ptr<api::StorageMessage> msg = iter->_command; // iter is const; can't std::move()
+    std::shared_ptr<api::StorageMessage> msg = std::move(iter->_command);
     document::Bucket bucket(iter->_bucket);
     idx.erase(iter); // iter not used after this point.
     update_cached_queue_size(guard);
@@ -1208,10 +1209,11 @@ FileStorHandlerImpl::Stripe::abort(std::vector<std::shared_ptr<api::StorageReply
                                    const AbortBucketOperationsCommand& cmd)
 {
     std::lock_guard lockGuard(*_lock);
-    PriorityIdx& idx(bmi::get<1>(*_queue));
+    PriorityIdxView idx = exposePriorityIdxView();
     for (auto it = idx.begin(); it != idx.end();) {
-        api::StorageMessage& msg(*it->_command);
-        if (messageMayBeAborted(msg) && cmd.shouldAbort(it->_bucket)) {
+        const MessageEntry &entry = *it;
+        api::StorageMessage& msg(*entry._command);
+        if (messageMayBeAborted(msg) && cmd.shouldAbort(entry._bucket)) {
             aborted.emplace_back(static_cast<api::StorageCommand&>(msg).makeReply());
             it = idx.erase(it);
         } else {
@@ -1471,7 +1473,7 @@ FileStorHandlerImpl::Stripe::dumpQueueHtml(std::ostream & os) const
 {
     std::lock_guard guard(*_lock);
 
-    const PriorityIdx& idx = bmi::get<1>(*_queue);
+    ConstPriorityIdxView idx = exposePriorityIdxView();
     for (const auto & entry : idx) {
         os << "<li>" << xml_content_escaped(entry._command->toString()) << " (priority: "
            << static_cast<int>(entry._command->getPriority()) << ")</li>\n";
@@ -1511,8 +1513,7 @@ void
 FileStorHandlerImpl::Stripe::dumpQueue(std::ostream & os) const
 {
     std::lock_guard guard(*_lock);
-
-    const PriorityIdx& idx = bmi::get<1>(*_queue);
+    ConstPriorityIdxView idx = exposePriorityIdxView();
     for (const auto & entry : idx) {
         os << entry._bucket.getBucketId() << ": "
            << xml_content_escaped(entry._command->toString())

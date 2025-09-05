@@ -30,4 +30,11 @@ MonitoringDumpIterator::doUnpack(uint32_t docId)
     _search->unpack(docId);
 }
 
+void
+MonitoringDumpIterator::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    _search->get_element_ids(docid, element_ids);
+    setDocId(_search->getDocId());
+}
+
 }

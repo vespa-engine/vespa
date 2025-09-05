@@ -38,11 +38,11 @@ multiplyAdd(const T * a, const T * b, size_t sz) noexcept
     return sum;
 }
 
-template <typename T, size_t UNROLL>
-double
+template <typename AccuT, typename T, size_t UNROLL>
+AccuT
 squaredEuclideanDistanceT(const T * a, const T * b, size_t sz) noexcept
 {
-    T partial[UNROLL];
+    AccuT partial[UNROLL];
     for (size_t i(0); i < UNROLL; i++) {
         partial[i] = 0;
     }
@@ -96,6 +96,12 @@ float
 VESPA_HWACCEL_TARGET_TYPE::dotProduct(const float * a, const float * b, size_t sz) const noexcept
 {
     return cblas_sdot(sz, a, 1, b, 1);
+}
+
+float
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept
+{
+    return multiplyAdd<float, BFloat16, 4>(a, b, sz);
 }
 
 double
@@ -175,12 +181,18 @@ VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const int8_t * a, const int8
 
 double
 VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const float * a, const float * b, size_t sz) const noexcept {
-    return squaredEuclideanDistanceT<float, 16>(a, b, sz);
+    return squaredEuclideanDistanceT<float, float, 16>(a, b, sz);
 }
 
 double
 VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const double * a, const double * b, size_t sz) const noexcept {
-    return squaredEuclideanDistanceT<double, 16>(a, b, sz);
+    return squaredEuclideanDistanceT<double, double, 16>(a, b, sz);
+}
+
+double
+VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept {
+    // This is around 2x the perf of the naive loop in mixed_l2_distance.cpp
+    return squaredEuclideanDistanceT<float, BFloat16, 4>(a, b, sz);
 }
 
 void

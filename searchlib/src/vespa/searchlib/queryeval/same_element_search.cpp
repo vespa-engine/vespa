@@ -26,9 +26,9 @@ SameElementSearch::check_docid_match(uint32_t docid)
 void
 SameElementSearch::fetch_matching_elements(uint32_t docid, std::vector<uint32_t> & elems)
 {
-    _children.front()->getElementIds(docid, elems);
+    _children.front()->get_element_ids(docid, elems);
     for (auto it(_children.begin() + 1); it != _children.end();  it++) {
-        (*it)->mergeElementIds(docid, elems);
+        (*it)->and_element_ids_into(docid, elems);
     }
 }
 
@@ -42,7 +42,7 @@ SameElementSearch::check_element_match(uint32_t docid)
 
 SameElementSearch::SameElementSearch(fef::TermFieldMatchData &tfmd,
                                      fef::MatchData::UP md,
-                                     std::vector<ElementIterator::UP> children,
+                                     std::vector<std::unique_ptr<SearchIterator>> children,
                                      bool strict)
     : _tfmd(tfmd),
       _md(std::move(md)),

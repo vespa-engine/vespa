@@ -68,21 +68,15 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final int searchCoreMaxOutstandingMoveOps;
     private final int searchNodeInitializerThreads;
 
-    /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
-    private final double fractionOfMemoryReserved;
-
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<ContentSearchCluster> {
 
         private final Map<String, NewDocumentType> documentDefinitions;
         private final Set<NewDocumentType> globallyDistributedDocuments;
-        private final double fractionOfMemoryReserved;
 
         public Builder(Map<String, NewDocumentType> documentDefinitions,
-                       Set<NewDocumentType> globallyDistributedDocuments,
-                       double fractionOfMemoryReserved) {
+                       Set<NewDocumentType> globallyDistributedDocuments) {
             this.documentDefinitions = documentDefinitions;
             this.globallyDistributedDocuments = globallyDistributedDocuments;
-            this.fractionOfMemoryReserved = fractionOfMemoryReserved;
         }
 
         @Override
@@ -95,7 +89,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             var search = new ContentSearchCluster(ancestor, clusterName, deployState.getProperties().featureFlags(),
                                                   documentDefinitions, globallyDistributedDocuments,
                                                   getFlushOnShutdown(flushOnShutdownElem, deployState),
-                                                  syncTransactionLog, fractionOfMemoryReserved,
+                                                  syncTransactionLog,
                                                   deployState.getProperties().searchNodeInitializerThreads(clusterName));
 
             ModelElement tuning = clusterElem.childByPath("engine.proton.tuning");
@@ -138,7 +132,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
                                  Set<NewDocumentType> globallyDistributedDocuments,
                                  boolean flushOnShutdown,
                                  Boolean syncTransactionLog,
-                                 double fractionOfMemoryReserved,
                                  int searchNodeInitializeThreads)
     {
         super(parent, "search");
@@ -149,7 +142,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         this.flushOnShutdown = flushOnShutdown;
         this.syncTransactionLog = syncTransactionLog;
 
-        this.fractionOfMemoryReserved = fractionOfMemoryReserved;
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
         this.defaultFeedNiceness = featureFlags.feedNiceness();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
@@ -230,12 +222,12 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
                                            clusterName, node, flushOnShutdown, tuning, deployState.isHosted(),
-                                           fractionOfMemoryReserved, syncTransactionLog);
+                                           syncTransactionLog);
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState);
         } else {
             searchNode = new SearchNode.Builder("" + node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
-                                                tuning, fractionOfMemoryReserved, syncTransactionLog)
+                                                tuning, syncTransactionLog)
                     .build(deployState, parent, element.getXml());
         }
         if (searchCluster != null) {

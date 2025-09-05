@@ -7,7 +7,6 @@
 #include "field_id_to_name_mapper.h"
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
-#include <vespa/searchlib/queryeval/elementiterator.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/queryeval/matching_elements_search.h>
@@ -91,7 +90,7 @@ void find_matching_elements(const std::vector<uint32_t> &docs,
 }
 
 void find_matching_elements(const std::vector<uint32_t> &docs,
-                            search::queryeval::ElementIterator &search,
+                            SearchIterator& search,
                             const std::string &fieldName,
                             MatchingElements &result)
 {
@@ -99,7 +98,7 @@ void find_matching_elements(const std::vector<uint32_t> &docs,
     std::vector<uint32_t> matches;
     for (uint32_t doc : docs) {
         if (search.seek(doc)) {
-            search.getElementIds(doc, matches);
+            search.get_element_ids(doc, matches);
             result.add_matching_elements(doc, fieldName, matches);
             matches.clear();
         }
@@ -172,11 +171,8 @@ void FindMatchingElements::process(
         uint32_t currentField = bp.getState().field(0).getFieldId();
         const std::string& fieldName = idToName.lookup(currentField);
         if (fields.has_field(fieldName)) {
-            auto handle = bp.getState().field(0).getHandle();
-            auto * tfmd(matchData.resolveTermField(handle));
             SearchIterator::UP child = bp.createSearch(matchData);
-            auto ei = std::make_unique<search::queryeval::ElementIteratorWrapper>(std::move(child), *tfmd);
-            find_matching_elements(docs, *ei, fieldName, result);
+            find_matching_elements(docs, *child, fieldName, result);
         }
     }
 }

@@ -57,6 +57,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -246,6 +247,7 @@ public class ApplicationRepositoryTest {
     @Test
     public void getLogs() throws IOException {
         deployApp(testAppLogServerWithContainer);
+        assertCorrectLogserverUri(applicationId(), 19103);
         HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.empty(), Query.empty());
         assertEquals(200, response.getStatus());
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -254,11 +256,16 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void getLogsForHostname() {
-        ApplicationId applicationId = ApplicationId.from("hosted-vespa", "tenant-host", "default");
-        deployApp(testAppLogServerWithContainer, new PrepareParams.Builder().applicationId(applicationId).build());
-        HttpResponse response = applicationRepository.getLogs(applicationId, Optional.of(DomainName.localhost), Query.empty());
-        assertEquals(200, response.getStatus());
+    public void getLogsForConfigServer() {
+        assertCorrectLogserverUri(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), 19071);
+        assertCorrectLogserverUri(ApplicationId.from("hosted-vespa", "controller", "default"), 19071);
+        assertCorrectLogserverUri(ApplicationId.from("hosted-vespa", "tenant-host", "default"), 8080);
+    }
+
+    private void assertCorrectLogserverUri(ApplicationId applicationId, int expectedPort) {
+        var uris = applicationRepository.getLogServerUris(applicationId, Optional.of(DomainName.localhost));
+        assertEquals(1, uris.size());
+        assertEquals(URI.create("http://localhost:" + expectedPort + "/logs"), uris.get(0).asURI());
     }
 
     @Test

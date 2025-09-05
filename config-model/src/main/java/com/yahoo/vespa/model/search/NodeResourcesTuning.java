@@ -25,14 +25,10 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     public final static long GB = 1_000_000_000;
     private final NodeResources resources;
     private final int threadsPerSearch;
-    private final double fractionOfMemoryReserved;
 
-    public NodeResourcesTuning(NodeResources resources,
-                               int threadsPerSearch,
-                               double fractionOfMemoryReserved) {
+    public NodeResourcesTuning(NodeResources resources, int threadsPerSearch) {
         this.resources = resources;
         this.threadsPerSearch = threadsPerSearch;
-        this.fractionOfMemoryReserved = fractionOfMemoryReserved;
     }
 
     @Override
@@ -107,8 +103,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
 
     /** Returns the memory we can expect will be available for the content node processes */
     private double usableMemoryGb() {
-        double usableMemoryGb = resources.memoryGiB() - Host.memoryOverheadGb;
-        return usableMemoryGb * (1 - fractionOfMemoryReserved);
+        return resources.memoryGiB() - Host.memoryOverheadGb;
     }
 
 }

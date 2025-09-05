@@ -1,2 +1,2 @@
-- Add some missing rank feature properties.
-- Fixed minor bugs.
+- Support for multiple inheritance of match-features.
+- Fixed formatting bugs.

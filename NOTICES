@@ -419,3 +419,9 @@ OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Copyright (c) 2018, TensorFlow Authors. All rights reserved.
+
+----------------------------------------------------------------------
+Google Highway (https://github.com/google/highway)
+
+Google Highway is licensed under the Apache License 2.0. See LICENSE under the
+Vespa root for the full license text.

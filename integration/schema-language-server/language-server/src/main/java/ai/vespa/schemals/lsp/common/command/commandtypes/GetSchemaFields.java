@@ -9,12 +9,6 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.lsp.common.command.CommandUtils;
 import ai.vespa.schemals.tree.Node;
 
-import org.eclipse.lsp4j.jsonrpc.json.adapters.TupleTypeAdapters.TwoTypeAdapter;
-import org.eclipse.lsp4j.jsonrpc.util.ToStringBuilder;
-
-import com.google.gson.Gson;
-import com.yahoo.collections.Pair;
-
 public class GetSchemaFields implements SchemaCommand {
 
     private String schemaName;

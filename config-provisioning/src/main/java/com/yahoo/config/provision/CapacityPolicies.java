@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import static com.yahoo.config.provision.NodeResources.Architecture;
 import static com.yahoo.config.provision.NodeResources.Architecture.x86_64;
 import static java.util.Objects.requireNonNull;
+import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
 /**
@@ -196,6 +197,8 @@ public class CapacityPolicies {
         double newMemory = memory + adjustment;
         if (count >= 50) {
             log.log(INFO, "Adjusted cluster controller memory (" + count + " content nodes): " + newMemory + " GiB");
+        } else {
+            log.log(FINE, "Not adjusting cluster controller memory (" + count + " content nodes): " + newMemory + " GiB");
         }
         return newMemory;
     }

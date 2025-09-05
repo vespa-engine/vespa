@@ -127,9 +127,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             ContentCluster c = new ContentCluster(context.getParentProducer(), clusterId, documentDefinitions,
                                                   globallyDistributedDocuments, routingSelection,
                                                   deployState);
-            c.search = new ContentSearchCluster.Builder(documentDefinitions,
-                                                        globallyDistributedDocuments,
-                                                        fractionOfMemoryReserved(clusterId, containers))
+            c.search = new ContentSearchCluster.Builder(documentDefinitions, globallyDistributedDocuments)
                     .build(deployState, c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
             c.storageNodes = new StorageCluster.Builder().build(deployState, c, w3cContentElement);
@@ -269,17 +267,6 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                     c.maxNodesPerMerge = attr;
                 }
             }
-        }
-
-        /** Returns of memory reserved on a host. Memory is reserved for the jvm if the cluster is combined */
-        private double fractionOfMemoryReserved(String clusterId, Collection<ContainerModel> containers) {
-            for (ContainerModel containerModel : containers) {
-                Optional<String> hostClusterId = containerModel.getCluster().getHostClusterId();
-                if (hostClusterId.isPresent() && hostClusterId.get().equals(clusterId) && containerModel.getCluster().getMemoryPercentage().isPresent()) {
-                    return containerModel.getCluster().getMemoryPercentage().get().ofContainerAvailable() * 0.01;
-                }
-            }
-            return 0.0;
         }
 
         private void validateGroupSiblings(String cluster, StorageGroup group) {
