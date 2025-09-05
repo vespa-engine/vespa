@@ -145,6 +145,8 @@ public class FieldCollapsingSearcher extends Searcher {
         result.hits().trim(query.getOffset(), query.getHits());
         // Mark query as query with collapsing
         query.properties().set(collapse, "1");
+        if ( ! moreHitsAvailable)
+            result.setTotalHitCount(hitsAfterCollapse);
         return result;
     }
 
