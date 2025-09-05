@@ -1246,7 +1246,8 @@ public class DocumentV1ApiTest {
         var response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, doc);
         assertEquals(413, response.getStatus());
         var message = Json.of(response.readAll()).f("message").asString();         
-        assertEquals("Document operation request size 2000026 bytes exceeds maximum size of 1048576 bytes", message);
+        assertEquals("Document operation request size 2000026 bytes exceeds maximum size of 1048576 bytes. " +
+                "See https://docs.vespa.ai/en/document-v1-api-guide.html#request-size-limit", message);
         handler.dispatchEnqueued();
         driver.close();
     }

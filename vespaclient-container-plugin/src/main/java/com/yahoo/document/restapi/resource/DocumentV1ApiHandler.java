@@ -791,7 +791,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     private void documentOperationRequestTooLarge(HttpRequest request, long bytesRead, ResponseHandler handler) {
         loggingException(() -> {
             var message = String.format(
-                    "Document operation request size %d bytes exceeds maximum size of %d bytes", bytesRead,
+                    "Document operation request size %d bytes exceeds maximum size of %d bytes. " + 
+                            "See https://docs.vespa.ai/en/document-v1-api-guide.html#request-size-limit", bytesRead,
                     maxDocumentOperationRequestSizeBytes
             );
             log.log(FINE, () -> "Too large document operation request " + request.getMethod() + " " + request.getUri().getRawPath() + ": " + message);
