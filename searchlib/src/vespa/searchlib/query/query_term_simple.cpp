@@ -106,6 +106,27 @@ bool isPartialRange(std::string_view s) noexcept {
            ((s[0] == '<') || (s[0] == '>'));
 }
 
+template<typename T, typename D>
+bool convertText(std::string_view txt, T& target, bool up, bool down, T towards, D d)
+{
+    if (txt.empty())
+        return true;
+    const char * q = txt.data();
+    const char * qend = q + txt.size();
+    const char * err = nullptr;
+    T got = d.fromstr(q, qend, &err);
+    if (err != qend)
+        return false;
+    if (up) {
+        target = d.nearestUpward(got, towards);
+    } else if (down) {
+        target = d.nearestDownwd(got, towards);
+    } else {
+        target = got;
+    }
+    return true;
+}
+
 struct IntDecoder {
     static int64_t fromstr(const char * q, const char * qend, const char ** end) noexcept {
         int64_t v(0);
@@ -434,23 +455,17 @@ QueryTermSimple::getAsNumericTerm(T & lower, T & upper, D d) const noexcept
     if (empty() || ! _numeric_range) return false;
     T low(lower);
     T high(upper);
-    if (_numeric_range->has_lower_limit()) {
-        const char *err(nullptr);
-        const std::string_view txt = _numeric_range->lowerLimitTxt;
-        const char * q = txt.data();
-        const char * qend = q + txt.size();
-        T ll = d.fromstr(q, qend, &err);
-        if (err != qend) return false;
-        low = _numeric_range->lower_inclusive ? ll : d.nearestUpward(ll, upper);
+    if (! convertText(_numeric_range->lowerLimitTxt, low,
+                      ! _numeric_range->lower_inclusive, false,
+                      upper, d))
+    {
+        return false;
     }
-    if (_numeric_range->has_upper_limit()) {
-        const char *err(nullptr);
-        const std::string_view txt = _numeric_range->upperLimitTxt;
-        const char * q = txt.data();
-        const char * qend = q + txt.size();
-        T ll = d.fromstr(q, qend, &err);
-        if (err != qend) return false;
-        high = _numeric_range->upper_inclusive ? ll : d.nearestDownwd(ll, lower);
+    if (! convertText(_numeric_range->upperLimitTxt, high,
+                      false, ! _numeric_range->upper_inclusive,
+                      lower, d))
+    {
+        return false;
     }
     lower = low;
     upper = high;
