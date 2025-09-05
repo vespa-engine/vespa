@@ -232,7 +232,8 @@ void
 Query::optimize(InFlow in_flow, bool sort_by_cost)
 {
     _in_flow = in_flow;
-    auto opts = Blueprint::Options().sort_by_cost(sort_by_cost).allow_force_strict(sort_by_cost);
+    bool allow_force_strict = sort_by_cost && in_flow.strict();
+    auto opts = Blueprint::Options().sort_by_cost(sort_by_cost).allow_force_strict(allow_force_strict);
     _blueprint = Blueprint::optimize_and_sort(std::move(_blueprint), in_flow, opts);
     LOG(debug, "optimized blueprint:\n%s\n", _blueprint->asString().c_str());
 }
