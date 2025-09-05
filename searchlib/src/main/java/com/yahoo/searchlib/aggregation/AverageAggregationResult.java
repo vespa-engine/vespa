@@ -2,6 +2,7 @@
 package com.yahoo.searchlib.aggregation;
 
 import com.yahoo.searchlib.expression.IntegerResultNode;
+import com.yahoo.searchlib.expression.FloatResultNode;
 import com.yahoo.searchlib.expression.NumericResultNode;
 import com.yahoo.searchlib.expression.ResultNode;
 import com.yahoo.vespa.objects.Deserializer;
@@ -85,11 +86,9 @@ public class AverageAggregationResult extends AggregationResult {
      * @return The average result value.
      */
     public final NumericResultNode getAverage() {
-        NumericResultNode sum = (NumericResultNode)this.sum.clone();
-        if (count != 0) {
-            sum.divide(new IntegerResultNode(count));
-        }
-        return sum;
+        double sumVal = this.sum.getFloat();
+        double avg = (count == 0) ? 0.0 : (sumVal / count);
+        return new FloatResultNode(avg);
     }
 
     @Override

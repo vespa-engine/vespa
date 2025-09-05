@@ -230,7 +230,7 @@ TEST(GroupingSerializationTest, testAggregatorResults) {
                 .setResult(Int64ResultNode(7)));
     f.checkObject(AverageAggregationResult()
                 .setExpression(MU<AttributeNode>("attributeA"))
-                .setResult(Int64ResultNode(7)));
+                .setResult(FloatResultNode(7.0)));
     ExpressionCountAggregationResult expression_count;
     expression_count.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(67)))
         .aggregate(DocId(42), HitRank(21));
