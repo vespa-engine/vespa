@@ -17,6 +17,7 @@ public:
     ~PhraseQueryNode() override;
     bool evaluate() const override;
     const HitList & evaluateHits(HitList & hl) const override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
     void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env) override;
     size_t width() const override;
 };

@@ -71,6 +71,11 @@ SameElementQueryNode::evaluateHits(HitList & hl) const
 }
 
 void
+SameElementQueryNode::get_element_ids(std::vector<uint32_t>&) const
+{
+}
+
+void
 SameElementQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment&)
 {
     HitList list;
