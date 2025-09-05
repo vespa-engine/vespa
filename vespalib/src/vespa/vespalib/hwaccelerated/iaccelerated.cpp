@@ -519,6 +519,10 @@ IAccelerated::UP IAccelerated::create_platform_baseline_accelerator() {
 #endif
 }
 
+IAccelerated::UP IAccelerated::create_platform_optimal_accelerator() {
+    return create_accelerator();
+}
+
 const IAccelerated &
 IAccelerated::getAccelerator()
 {

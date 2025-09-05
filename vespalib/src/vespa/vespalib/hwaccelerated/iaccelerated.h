@@ -43,7 +43,8 @@ public:
     // Returns a static string representing the name of the underlying accelerator implementation
     [[nodiscard]] virtual const char* target_name() const noexcept { return "Unknown"; }
 
-    static IAccelerated::UP create_platform_baseline_accelerator();
+    static std::unique_ptr<IAccelerated> create_platform_baseline_accelerator();
+    static std::unique_ptr<IAccelerated> create_platform_optimal_accelerator();
 
     static const IAccelerated& getAccelerator() __attribute__((noinline));
 };

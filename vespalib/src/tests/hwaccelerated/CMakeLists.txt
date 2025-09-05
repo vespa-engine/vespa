@@ -16,3 +16,4 @@ vespa_add_executable(vespalib_hwaccelerated_bench_app
     vespalib
     vespa_hwaccelerated
 )
+vespa_add_target_external_dependency(vespalib_hwaccelerated_bench_app benchmark)
