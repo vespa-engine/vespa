@@ -338,10 +338,10 @@ QueryTermSimple::getAsFloatTerm(float & lower, float & upper) const noexcept
 
 QueryTermSimple::~QueryTermSimple() = default;
 
-QueryTermSimple::NumericRange QueryTermSimple::emptyNumericRange;
+NumericRangeSpec QueryTermSimple::emptyNumericRange;
 
-std::unique_ptr<QueryTermSimple::NumericRange> parsePartialRange(const std::string &term) {
-    auto result = std::make_unique<QueryTermSimple::NumericRange>();
+std::unique_ptr<NumericRangeSpec> parsePartialRange(const std::string &term) {
+    auto result = std::make_unique<NumericRangeSpec>();
     std::string_view rest(term.c_str() + 1, term.size() - 1);
     if (term[0] == '<' && couldBeValidNumber(rest)) {
         result->upperLimitTxt = rest;
@@ -356,9 +356,9 @@ std::unique_ptr<QueryTermSimple::NumericRange> parsePartialRange(const std::stri
     return {};
 }
 
-std::unique_ptr<QueryTermSimple::NumericRange> parseNoRange(const std::string &term) {
+std::unique_ptr<NumericRangeSpec> parseNoRange(const std::string &term) {
     if (couldBeValidNumber(term)) {
-        auto result = std::make_unique<QueryTermSimple::NumericRange>();
+        auto result = std::make_unique<NumericRangeSpec>();
         result->lower_inclusive = true;
         result->lowerLimitTxt = term;
         result->upperLimitTxt = term;
@@ -368,8 +368,8 @@ std::unique_ptr<QueryTermSimple::NumericRange> parseNoRange(const std::string &t
     return {};
 }
 
-std::unique_ptr<QueryTermSimple::NumericRange> parseFullRange(const std::string &_term) {
-    auto result = std::make_unique<QueryTermSimple::NumericRange>();
+std::unique_ptr<NumericRangeSpec> parseFullRange(const std::string &_term) {
+    auto result = std::make_unique<NumericRangeSpec>();
     std::string_view rest(_term.c_str() + 1, _term.size() - 2);
     std::string_view parts[9];
     size_t numParts(0);

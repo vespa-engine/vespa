@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "numeric_range_spec.h"
 #include "query_normalization.h"
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/util/memory.h>
@@ -18,35 +19,6 @@ public:
     using string_view = std::string_view;
     using Type = TermType;
 
-    struct NumericRange {
-        /* what we really want:
-        double           fpLowerLimit = 0;
-        double           fpUpperLimit = 0;
-        int64_t          integerLowerLimit = 0;
-        int64_t          integerUpperLimit = 0;
-        */
-        std::string_view lowerLimitTxt = "";
-        std::string_view upperLimitTxt = "";
-        bool             lower_inclusive = false;
-        bool             upper_inclusive = false;
-        bool             diversityCutoffStrict = false;
-        std::string_view diversityAttribute = "";
-        int32_t          rangeLimit = 0;
-        uint32_t         maxPerGroup = 0;
-        uint32_t         diversityCutoffGroups = std::numeric_limits<uint32_t>::max();
-
-        bool has_lower_limit() const noexcept { return ! lowerLimitTxt.empty(); }
-        bool has_upper_limit() const noexcept { return ! upperLimitTxt.empty(); }
-        bool just_one_value() const noexcept {
-            return (lowerLimitTxt == upperLimitTxt) && lower_inclusive && upper_inclusive && has_lower_limit();
-        }
-        bool has_range_limit() const noexcept { return rangeLimit != 0; }
-        bool with_diversity() const noexcept { return ! diversityAttribute.empty(); }
-        bool with_diversity_cutoff() {
-            return diversityCutoffGroups != std::numeric_limits<uint32_t>::max();
-        }
-    };
-
     template <typename N>
     struct RangeResult {
         N low;
@@ -62,7 +34,7 @@ public:
     QueryTermSimple(QueryTermSimple &&) = delete;
     QueryTermSimple & operator = (QueryTermSimple &&) = delete;
     QueryTermSimple(const string & term_, Type type);
-    QueryTermSimple(Type type, std::unique_ptr<NumericRange> range);
+    QueryTermSimple(Type type, std::unique_ptr<NumericRangeSpec> range);
     virtual ~QueryTermSimple();
 
 
@@ -99,8 +71,8 @@ public:
     const string & getTermString() const noexcept { return _term; }
 
 private:
-    static NumericRange emptyNumericRange;
-    std::unique_ptr<NumericRange> _numeric_range = {};
+    static NumericRangeSpec emptyNumericRange;
+    std::unique_ptr<NumericRangeSpec> _numeric_range = {};
     bool getRangeInternal(int64_t & low, int64_t & high) const noexcept;
     template <typename N>
     RangeResult<N> getIntegerRange() const noexcept;
@@ -114,7 +86,7 @@ private:
     string      _term;
     template <typename T, typename D>
     bool    getAsNumericTerm(T & lower, T & upper, D d) const noexcept;
-    const NumericRange& activeRange() const noexcept { return _numeric_range ? (*_numeric_range) : emptyNumericRange; }
+    const NumericRangeSpec& activeRange() const noexcept { return _numeric_range ? (*_numeric_range) : emptyNumericRange; }
 
 protected:
     uint32_t    _fuzzy_max_edit_distance;  // set in QueryTerm
