@@ -294,6 +294,9 @@ public:
     double squaredEuclideanDistance(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept override {
         return my_hwy_square_euclidean_distance_bf16(a, b, sz);
     }
+    const char* implementation_name() const noexcept override {
+        return "Highway";
+    }
     const char* target_name() const noexcept override {
         return my_hwy_target_name();
     }
