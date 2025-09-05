@@ -74,6 +74,14 @@ EquivQueryNode::evaluateHits(HitList & hl) const
 }
 
 void
+EquivQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
+{
+    HitList hit_list;
+    merge_hits_from_children(hit_list, *this);
+    get_element_ids_helper(element_ids, hit_list);
+}
+
+void
 EquivQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env)
 {
     std::vector<HitWithFieldLength> hit_list;

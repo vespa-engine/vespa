@@ -111,10 +111,21 @@ TrueNode::evaluate() const
     return true;
 }
 
+void
+TrueNode::get_element_ids(std::vector<uint32_t>&) const
+{
+}
+
 FalseNode::~FalseNode() = default;
 
-bool FalseNode::evaluate() const {
+bool FalseNode::evaluate() const
+{
     return false;
+}
+
+void
+FalseNode::get_element_ids(std::vector<uint32_t>&) const
+{
 }
 
 AndQueryNode::~AndQueryNode() = default;
@@ -126,6 +137,11 @@ AndQueryNode::evaluate() const
         if ( ! qn->evaluate() ) return false;
     }
     return true;
+}
+
+void
+AndQueryNode::get_element_ids(std::vector<uint32_t>&) const
+{
 }
 
 AndNotQueryNode::~AndNotQueryNode() = default;
@@ -144,6 +160,11 @@ AndNotQueryNode::evaluate() const {
     return false;
 }
 
+void
+AndNotQueryNode::get_element_ids(std::vector<uint32_t>&) const
+{
+}
+
 OrQueryNode::~OrQueryNode() = default;
 
 bool
@@ -152,6 +173,11 @@ OrQueryNode::evaluate() const {
         if (qn->evaluate()) return true;
     }
     return false;
+}
+
+void
+OrQueryNode::get_element_ids(std::vector<uint32_t>&) const
+{
 }
 
 RankWithQueryNode::~RankWithQueryNode() = default;
@@ -167,6 +193,11 @@ RankWithQueryNode::evaluate() const {
         first = false;
     }
     return firstOk;
+}
+
+void
+RankWithQueryNode::get_element_ids(std::vector<uint32_t>&) const
+{
 }
 
 Query::Query() = default;

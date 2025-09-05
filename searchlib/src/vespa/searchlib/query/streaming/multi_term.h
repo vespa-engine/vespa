@@ -38,6 +38,7 @@ public:
     void reset() override;
     bool evaluate() const override;
     const std::vector<std::unique_ptr<QueryTerm>>& get_terms() const noexcept { return _terms; }
+    virtual void get_element_ids(std::vector<uint32_t>& element_ids) const override = 0;
 };
 
 }

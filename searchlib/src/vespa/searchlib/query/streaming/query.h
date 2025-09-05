@@ -45,6 +45,7 @@ public:
     TrueNode() noexcept : QueryConnector("AND") { }
     ~TrueNode() override;
     bool evaluate() const override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
 };
 
 /** False operator. Matches nothing. */
@@ -54,6 +55,7 @@ public:
     FalseNode() noexcept : QueryConnector("AND") { }
     ~FalseNode() override;
     bool evaluate() const override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
 };
 
 /**
@@ -67,6 +69,7 @@ public:
     ~AndQueryNode() override;
     bool evaluate() const override;
     bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_AND; }
+    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
 };
 
 /**
@@ -79,6 +82,7 @@ public:
     ~AndNotQueryNode() override;
     bool evaluate() const override;
     bool isFlattenable(ParseItem::ItemType) const override { return false; }
+    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
 };
 
 /**
@@ -95,6 +99,7 @@ public:
         return (type == ParseItem::ITEM_OR) ||
                (type == ParseItem::ITEM_WEAK_AND);
     }
+    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
 };
 
 /**
@@ -107,6 +112,7 @@ public:
     explicit RankWithQueryNode(const char * opName) noexcept : QueryConnector(opName) { }
     ~RankWithQueryNode() override;
     bool evaluate() const override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
 };
 
 /**

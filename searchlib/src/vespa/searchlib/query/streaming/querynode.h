@@ -31,6 +31,8 @@ public:
   /// This return the hitList for this subtree. Does only give meaning in a
   /// phrase search or any other search that requires position info.
   virtual const HitList & evaluateHits(HitList & hl) const;
+  // Populate element_ids with the element ids matching the query for this subtree.
+  virtual void get_element_ids(std::vector<uint32_t>& element_ids) const = 0;
   /// Clears all the hitlists so the query tree can be reused.
   virtual void reset() = 0;
   /// Gives you all leafs of this tree.
