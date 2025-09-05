@@ -77,7 +77,7 @@ public class ResultBuilderTestCase {
 
     @Test
     void requireThatAllExpressionNodesCanBeConverted() {
-        assertResult("0", new AverageAggregationResult(new IntegerResultNode(6), 9));
+        assertResult("3.5", new AverageAggregationResult(new IntegerResultNode(7), 2));
         assertResult("69", new CountAggregationResult(69));
         assertResult("69", new MaxAggregationResult(new IntegerResultNode(69)));
         assertResult("69", new MinAggregationResult(new IntegerResultNode(69)));
