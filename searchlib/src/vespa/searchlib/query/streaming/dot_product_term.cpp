@@ -18,6 +18,11 @@ DotProductTerm::DotProductTerm(std::unique_ptr<QueryNodeResultBase> result_base,
 DotProductTerm::~DotProductTerm() = default;
 
 void
+DotProductTerm::get_element_ids(std::vector<uint32_t>&) const
+{
+}
+
+void
 DotProductTerm::build_scores(Scores& scores) const
 {
     HitList hl_store;

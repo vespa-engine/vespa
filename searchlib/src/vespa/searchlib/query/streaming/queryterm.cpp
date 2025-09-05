@@ -94,6 +94,12 @@ bool QueryTerm::evaluate()                             const { return !_hitList.
 void QueryTerm::reset()                                      { _hitList.clear(); }
 const HitList & QueryTerm::evaluateHits(HitList &) const { return _hitList; }
 
+void
+QueryTerm::get_element_ids(std::vector<uint32_t>& element_ids) const
+{
+    get_element_ids_helper(element_ids, _hitList);
+}
+
 void QueryTerm::resizeFieldId(size_t fieldNo)
 {
     if (fieldNo >= _fieldInfo.size()) {
@@ -175,6 +181,28 @@ const SameElementQueryNode*
 QueryTerm::as_same_element_query_node() const noexcept
 {
     return nullptr;
+}
+
+void
+QueryTerm::get_element_ids_helper(std::vector<uint32_t>& element_ids, const HitList& hit_list)
+{
+    if (!hit_list.empty()) { // only unpack if we have a hit
+        bool need_sort = false;
+        for (const auto &hit : hit_list) {
+            if (element_ids.empty()) {
+                element_ids.emplace_back(hit.element_id());
+            } else if (element_ids.back() != hit.element_id()) {
+                if (element_ids.back() > hit.element_id()) {
+                    need_sort = true;
+                }
+                element_ids.emplace_back(hit.element_id());
+            }
+        }
+        if (need_sort) {
+            std::sort(element_ids.begin(), element_ids.end());
+            element_ids.resize(std::unique(element_ids.begin(), element_ids.end()) - element_ids.begin());
+        }
+    }
 }
 
 }
