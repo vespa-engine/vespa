@@ -4,7 +4,9 @@
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <vespa/vespalib/hwaccelerated/highway.h>
 #include <vespa/vespalib/util/time.h>
-#include <cinttypes>
+#include <benchmark/benchmark.h>
+#include <format>
+#include <type_traits>
 
 using namespace vespalib;
 using namespace vespalib::hwaccelerated;
@@ -12,20 +14,6 @@ using namespace vespalib::hwaccelerated;
 template <typename T>
 void do_not_optimize_away(T&& t) noexcept {
     asm volatile("" : : "m"(t) : "memory"); // Clobber the value to avoid losing it to compiler optimizations
-}
-
-template <typename T, typename Fn>
-void benchmark_fn(Fn f, size_t sz, size_t n_iters) {
-    auto [a, b] = create_and_fill_lhs_rhs<T>(sz);
-    steady_time start = steady_clock::now();
-    double sumOfSums(0);
-    for (size_t j(0); j < n_iters; j++) {
-        double sum = f(a.data(), b.data(), sz);
-        sumOfSums += sum;
-    }
-    duration elapsed = steady_clock::now() - start;
-    printf("sum=%f of N=%zu and vector length=%zu took %.2f ms\n", sumOfSums, n_iters, sz,
-           std::chrono::duration<double, std::milli>(elapsed).count());
 }
 
 template <typename T, typename Fn>
@@ -46,43 +34,6 @@ void benchmark_void_fn(Fn f, size_t sz, size_t n_iters) {
     duration elapsed = steady_clock::now() - start;
     printf("N=%zu and vector length=%zu took %.2f ms\n", n_iters, sz,
            std::chrono::duration<double, std::milli>(elapsed).count());
-}
-
-void benchmark_squared_euclidean_distance(const IAccelerated& accelerator, size_t sz, size_t n_iters) {
-    auto euclidean_dist_fn = [&accelerator](const auto* lhs, const auto* rhs, size_t my_sz) {
-        return accelerator.squaredEuclideanDistance(lhs, rhs, my_sz);
-    };
-    printf("double : ");
-    benchmark_fn<double>(euclidean_dist_fn, sz, n_iters);
-    printf("float  : ");
-    benchmark_fn<float>(euclidean_dist_fn, sz, n_iters);
-    printf("BF16   : ");
-    benchmark_fn<BFloat16>(euclidean_dist_fn, sz, n_iters);
-    printf("int8_t : ");
-    benchmark_fn<int8_t>(euclidean_dist_fn, sz, n_iters);
-}
-
-void benchmark_dot_product(const IAccelerated& accelerator, size_t sz, size_t n_iters) {
-    auto dot_product_fn = [&accelerator](const auto* lhs, const auto* rhs, size_t my_sz) {
-        return accelerator.dotProduct(lhs, rhs, my_sz);
-    };
-    printf("double : ");
-    benchmark_fn<double>(dot_product_fn, sz, n_iters);
-    printf("float  : ");
-    benchmark_fn<float>(dot_product_fn, sz, n_iters);
-    printf("BF16   : ");
-    benchmark_fn<BFloat16>(dot_product_fn, sz, n_iters);
-    printf("int8_t : ");
-    benchmark_fn<int8_t>(dot_product_fn, sz, n_iters);
-}
-
-void benchmark_popcount(const IAccelerated& accelerator, size_t sz, size_t n_iters) {
-    auto popcount_fn = [&accelerator](const auto* lhs, const auto* rhs, size_t my_sz) {
-        (void)rhs; // ... a little bit sneaky
-        return accelerator.populationCount(lhs, my_sz);
-    };
-    printf("uint64_t : ");
-    benchmark_fn<uint64_t>(popcount_fn, sz, n_iters);
 }
 
 template <typename Fn>
@@ -138,39 +89,89 @@ void run_benchmark(Fn fn, const char* name, size_t sz, size_t n_iters) {
     fn(native_accel, sz, n_iters);
 }
 
-void perform_initial_warmup(size_t sz, size_t n_iters) {
-    const auto& native_accel = IAccelerated::getAccelerator();
-    // Run a single warmup run to crank up the CPU power budget enough that any downclocking
-    // should be immediately visible. Use the widest ("most optimal") available vectors (e.g.
-    // AVX-512 on x64) for this, since it's the most susceptible to throttling.
-    // So the term "warmup" in this case is fairly literal.
-    printf("Squared Euclidean Distance - Warmup round (%s)\n", native_accel.target_name());
-    benchmark_squared_euclidean_distance(native_accel, sz, n_iters);
-    printf("--------\n");
+template <typename T, typename Fn>
+void register_accel_binary_arg_benchmark(const std::string& name, std::unique_ptr<IAccelerated> accel, Fn fn) {
+    auto bench_fn = [fn, accel = std::move(accel)](benchmark::State& state) {
+        auto [a, b] = create_and_fill_lhs_rhs<T>(state.range(0));
+        for (auto _ : state) {
+            auto sum = fn(*accel, a.data(), b.data(), state.range(0));
+            benchmark::DoNotOptimize(sum);
+        }
+        state.SetBytesProcessed(sizeof(T) * state.range(0) * state.iterations() * 2); // *2 due to lhs+rhs
+    };
+    auto* bench = benchmark::RegisterBenchmark(name, std::move(bench_fn));
+    bench->RangeMultiplier(2)->Range(8, 8<<10); // TODO also with non-aligned sizes
+}
+
+template <typename> constexpr bool type_dependent_false_v = false;
+
+template <typename T>
+constexpr std::string_view type_string() noexcept {
+    if constexpr (std::is_same_v<T, int8_t>) {
+        return "int8";
+    } else if constexpr (std::is_same_v<T, int16_t>) {
+        return "int16";
+    } else if constexpr (std::is_same_v<T, int32_t>) {
+        return "int32";
+    } else if constexpr (std::is_same_v<T, BFloat16>) {
+        return "BFloat16";
+    } else if constexpr (std::is_same_v<T, float>) {
+        return "float";
+    } else if constexpr (std::is_same_v<T, double>) {
+        return "double";
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
+        return "uint64";
+    } else {
+        static_assert(type_dependent_false_v<T>, "type not known for stringification");
+        return "";
+    }
+}
+
+template <typename T, typename Fn>
+void register_benchmarks(const std::string& name, Fn fn) {
+    auto hwy_targets = Highway::create_supported_targets();
+    for (auto& t : hwy_targets) {
+        std::string hwy_name = std::format("{}/{}/Highway/{}", name, type_string<T>(), t->target_name());
+        register_accel_binary_arg_benchmark<T>(hwy_name, std::move(t), fn);
+    }
+    // TODO remove these in a Highway-by-default world:
+    auto baseline_accel = IAccelerated::create_platform_baseline_accelerator();
+    std::string baseline_name = std::format("{}/{}/Legacy/{}", name, type_string<T>(), baseline_accel->target_name());
+    register_accel_binary_arg_benchmark<T>(baseline_name, std::move(baseline_accel), fn);
+
+    auto best_autovec_accel = IAccelerated::create_platform_optimal_accelerator();
+    std::string autovec_name = std::format("{}/{}/Legacy/{}", name, type_string<T>(), best_autovec_accel->target_name());
+    register_accel_binary_arg_benchmark<T>(autovec_name, std::move(best_autovec_accel), fn);
 }
 
 int main(int argc, char *argv[]) {
-    int length = 1000;
-    int n_iters = 1000000;
-    if (argc > 1) {
-        length = atol(argv[1]);
-    }
-    if (argc > 2) {
-        n_iters = atol(argv[2]);
-    }
+    benchmark::MaybeReenterWithoutASLR(argc, argv);
 
-    printf("%s %d %d\n", argv[0], length, n_iters);
-    perform_initial_warmup(length, n_iters);
+    auto euclidean_dist_fn = [](const IAccelerated& accelerator, const auto* lhs, const auto* rhs, size_t my_sz) {
+        return accelerator.squaredEuclideanDistance(lhs, rhs, my_sz);
+    };
+    register_benchmarks<double>("Squared Euclidean Distance", euclidean_dist_fn);
+    register_benchmarks<float>("Squared Euclidean Distance", euclidean_dist_fn);
+    register_benchmarks<BFloat16>("Squared Euclidean Distance", euclidean_dist_fn);
+    register_benchmarks<int8_t>("Squared Euclidean Distance", euclidean_dist_fn);
 
-    run_benchmark(benchmark_squared_euclidean_distance, "Squared Euclidean Distance", length, n_iters);
-    run_benchmark(benchmark_dot_product, "Dot Product", length, n_iters);
-    run_benchmark(benchmark_popcount, "Popcount", length, n_iters);
-    // For bitwise ops, implicitly increase the length since they are the cheapest
-    // possible ops and also operate on byte vectors.
-    size_t bitwise_length = length * 10;
-    run_benchmark(benchmark_bitwise_and, "Bitwise AND", bitwise_length, n_iters);
-    run_benchmark(benchmark_bitwise_or, "Bitwise OR", bitwise_length, n_iters);
-    run_benchmark(benchmark_bitwise_and_not, "Bitwise AND NOT", bitwise_length, n_iters);
+    auto dot_product_fn = [](const IAccelerated& accelerator, const auto* lhs, const auto* rhs, size_t my_sz) {
+        return accelerator.dotProduct(lhs, rhs, my_sz);
+    };
+    register_benchmarks<double>("Dot Product", dot_product_fn);
+    register_benchmarks<float>("Dot Product", dot_product_fn);
+    register_benchmarks<BFloat16>("Dot Product", dot_product_fn);
+    register_benchmarks<int8_t>("Dot Product", dot_product_fn);
+
+    auto popcount_fn = [](const IAccelerated& accelerator, const auto* lhs, const auto* rhs, size_t my_sz) {
+        (void)rhs; // ... a little bit sneaky
+        return accelerator.populationCount(lhs, my_sz);
+    };
+    register_benchmarks<uint64_t>("Popcount", popcount_fn);
+
+    benchmark::Initialize(&argc, argv);
+    benchmark::RunSpecifiedBenchmarks();
+    benchmark::Shutdown();
 
     return 0;
 }
