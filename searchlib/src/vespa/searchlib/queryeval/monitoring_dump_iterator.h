@@ -27,6 +27,7 @@ public:
         SearchIterator::initRange(_search->getDocId()+1, _search->getEndId());
     }
     void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
+    void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) override;
 };
 
 }
