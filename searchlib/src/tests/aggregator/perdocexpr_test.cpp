@@ -1270,7 +1270,7 @@ TEST(PerDocExprTest, testArithmeticOperations) {
 }
 
 ExpressionNode::UP createCountAggr(int64_t initial) { return MU<CountAggregationResult>(initial); }
-ExpressionNode::UP createMinAggr(const ResultNode & initial) { return MU<MinAggregationResult>(initial); }
+ExpressionNode::UP createMinAggr(const SingleResultNode & initial) { return MU<MinAggregationResult>(initial); }
 
 constexpr int64_t I1 = 7, I2 = 3, I4 = 22;
 

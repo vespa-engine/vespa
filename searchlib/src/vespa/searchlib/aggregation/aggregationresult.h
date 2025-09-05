@@ -56,11 +56,11 @@ public:
     void aggregate(const document::Document & doc, HitRank rank);
     void aggregate(DocId docId, HitRank rank);
     AggregationResult &setExpression(ExpressionNode::UP expr);
+    // only used by unit tests:
     AggregationResult &setResult(const ResultNode::CP &result) {
         prepare(result.get(), true);
         return *this;
     }
-
     const ResultNode & getRank() const { return onGetRank(); }
     const ResultNode * getResult() const override { return &onGetRank(); }
     virtual ResultNode & getResult() { return const_cast<ResultNode &>(onGetRank()); }
