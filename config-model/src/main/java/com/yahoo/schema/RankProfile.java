@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1833,7 +1834,8 @@ public class RankProfile implements Cloneable {
         for (var inheritedProfile : inherited()) {
             all.putAll(inheritedProfile.getFeatureNormalizers());
         }
-        for (var n : featureNormalizers) {
+        // Use a copy to avoid concurrent modification exceptions, see addFeatureNormalizer() below
+        for (var n : new ArrayList<>(featureNormalizers)) {
             all.put(n.name(), n);
         }
         return all;
