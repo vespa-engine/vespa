@@ -448,6 +448,17 @@ QueryTermSimple::QueryTermSimple(const string & term_, Type type)
     }
 }
 
+QueryTermSimple::QueryTermSimple(Type type, std::unique_ptr<NumericRangeSpec> range)
+  : _type(type),
+    _valid(range),
+    _fuzzy_prefix_match(false),
+    _term("<range>"),
+    _fuzzy_max_edit_distance(0),
+    _fuzzy_prefix_lock_length(0)
+{
+    _numeric_range = std::move(range);
+}
+
 template <typename T, typename D>
 bool
 QueryTermSimple::getAsNumericTerm(T & lower, T & upper, D d) const noexcept
