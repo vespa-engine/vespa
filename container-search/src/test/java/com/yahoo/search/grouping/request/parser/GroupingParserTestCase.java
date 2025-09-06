@@ -654,6 +654,16 @@ public class GroupingParserTestCase {
                 () -> assertParse("all(group(foo) filter((regex(\"mybar\", foo) or not regex(\"mybaz\", foo)) and regex(\"myfoo\", boz)) each(output(count())))"));
     }
 
+    @Test
+    void testQuantiles() {
+        assertAll("quantiles with single number",
+                () -> assertParse("all(group(foo) each(output(quantiles([0.5], bar))))"),
+                () -> assertParse("all(group(foo) each(output(quantiles([0.9], bar))))"));
+        assertAll("quantiles with many number",
+                () -> assertParse("all(group(foo) each(output(quantiles([0.5, 0.9], bar))))"),
+                () -> assertParse("all(group(foo) each(output(quantiles([0.5, 0.9, 0.99], bar))))"));
+    }
+
     // --------------------------------------------------------------------------------
     // Utilities.
     // --------------------------------------------------------------------------------

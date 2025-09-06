@@ -1,32 +1,4 @@
 {
-  "com.yahoo.data.JsonProducer" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods" : [
-      "public abstract java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
-      "public java.lang.String toJson()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.data.XmlProducer" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods" : [
-      "public abstract java.lang.StringBuilder writeXML(java.lang.StringBuilder)",
-      "public java.lang.String toXML()"
-    ],
-    "fields" : [ ]
-  },
   "com.yahoo.prelude.hitfield.AnnotateStringFieldPart" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
@@ -3851,6 +3823,21 @@
       "protected void <init>(java.lang.String, java.lang.Integer, com.yahoo.search.grouping.request.GroupingExpression, java.util.List)",
       "public int getNumBuckets()",
       "public com.yahoo.search.grouping.request.BucketValue getBucket(int)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.grouping.request.QuantileAggregator" : {
+    "superClass" : "com.yahoo.search.grouping.request.AggregatorNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.util.List, com.yahoo.search.grouping.request.GroupingExpression)",
+      "public java.util.List getQuantiles()",
+      "public com.yahoo.search.grouping.request.QuantileAggregator copy()",
+      "public java.lang.String toString()",
+      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
     ],
     "fields" : [ ]
   },
