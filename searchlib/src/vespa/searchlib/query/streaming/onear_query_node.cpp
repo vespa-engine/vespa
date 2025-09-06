@@ -2,22 +2,35 @@
 
 #include "onear_query_node.h"
 #include "hit_iterator_pack.h"
+#include <vespa/searchlib/queryeval/near_search_utils.h>
 #include <span>
+
+using search::queryeval::near_search_utils::BoolMatchResult;
+using search::queryeval::near_search_utils::ElementIdMatchResult;
 
 namespace search::streaming {
 
 ONearQueryNode::~ONearQueryNode() = default;
 
-bool
-ONearQueryNode::evaluate() const
+template <typename MatchResult>
+void
+ONearQueryNode::evaluate_helper(MatchResult& match_result) const
 {
     HitIteratorPack itr_pack(getChildren());
     if (!itr_pack.all_valid()) {
-        return false; // No terms, or an empty term found
+        return; // No terms, or an empty term found
     }
     std::span<HitIterator> others(itr_pack.begin() + 1, itr_pack.end());
     if (others.empty()) {
-        return true; // A single term
+        auto& front = itr_pack.front();
+        while (front.valid()) {
+            match_result.register_match(front->key().element_id());
+            if constexpr (MatchResult::shortcut_return) {
+                return;
+            }
+            ++front;
+        }
+        return; // A single term
     }
     HitKey cur_term_pos(0, 0, 0);
     for (auto& front = itr_pack.front(); front.valid(); ++front) {
@@ -31,7 +44,7 @@ ONearQueryNode::evaluate() const
             while (!(prev_term_pos < it->key())) {
                 ++it;
                 if (!it.valid()) {
-                    return false;
+                    return;
                 }
             }
             cur_term_pos = it->key();
@@ -42,10 +55,29 @@ ONearQueryNode::evaluate() const
             prev_term_pos = cur_term_pos;
         }
         if (match) {
-            return true;
+            match_result.register_match(front->element_id());
+            if constexpr (MatchResult::shortcut_return) {
+                return;
+            };
         }
     }
-    return false;
+}
+
+bool
+ONearQueryNode::evaluate() const
+{
+    BoolMatchResult match_result;
+    evaluate_helper(match_result);
+    return match_result.is_match();
+}
+
+void
+ONearQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
+{
+    // Retrieve the elements that matched
+    ElementIdMatchResult match_result(element_ids);;
+    evaluate_helper(match_result);
+    match_result.maybe_sort_element_ids();
 }
 
 }

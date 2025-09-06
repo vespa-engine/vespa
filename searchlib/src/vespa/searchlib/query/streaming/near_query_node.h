@@ -14,6 +14,8 @@ class NearQueryNode : public AndQueryNode
 {
     uint32_t                   _distance;
     const search::queryeval::IElementGapInspector& _element_gap_inspector;
+    template <typename MatchResult>
+    void evaluate_helper(MatchResult& match_result) const;
 protected:
     search::fef::ElementGap get_element_gap(uint32_t field_id) const {
         return _element_gap_inspector.get_element_gap(field_id);
@@ -40,6 +42,7 @@ public:
     { }
     ~NearQueryNode() override;
     bool evaluate() const override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
     void distance(size_t dist)       { _distance = dist; }
     size_t distance()          const { return _distance; }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;

@@ -12,12 +12,15 @@ namespace search::streaming {
 */
 class ONearQueryNode : public NearQueryNode
 {
+    template <typename MatchResult>
+    void evaluate_helper(MatchResult& match_result) const;
 public:
     explicit ONearQueryNode(const search::queryeval::IElementGapInspector& element_gap_inspector) noexcept
         : NearQueryNode("ONEAR", element_gap_inspector)
     { }
     ~ONearQueryNode() override;
     bool evaluate() const override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
 };
 
 }
