@@ -16,17 +16,18 @@ OSVERSION=$2
 ALLOWED_ARCHS=("x86_64" "aarch64")
 ALLOWED_VERSIONS=("8" "9")
 
-if [[ " ${ALLOWED_ARCHS[*]} " != " $RPMARCH " ]]; then
+if [[ ! " ${ALLOWED_ARCHS[*]} " =~ " ${RPMARCH} " ]]; then
   echo "Architecture $RPMARCH not in allowed archs: ${ALLOWED_ARCHS[*]}"
   exit 1
 fi
 
-if [[ " ${ALLOWED_VERSIONS[*]} " != " $OSVERSION " ]]; then
+if [[ ! " ${ALLOWED_VERSIONS[*]} " =~ " ${OSVERSION} " ]]; then
   echo "OS version $OSVERSION not in allowed versions: ${ALLOWED_VERSIONS[*]}"
   exit 1
 fi
 
-readonly MYDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+MYDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+readonly MYDIR
 
 # Copr repo
 dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-${OSVERSION}/group_vespa-vespa-epel-${OSVERSION}.repo"
@@ -38,19 +39,23 @@ curl -1sLf "https://dl.cloudsmith.io/public/vespa/open-source-rpms/config.rpm.tx
 dnf config-manager --add-repo '/tmp/vespa-open-source-rpms.repo'
 rm -f /tmp/vespa-open-source-rpms.repo
 
-readonly COPR_PACKAGES=$(mktemp)
-trap "rm -f $COPR_PACKAGES" EXIT
-readonly DLDIR=$(mktemp -d)
-trap "rm -rf $DLDIR" EXIT
+COPR_PACKAGES=$(mktemp)
+readonly COPR_PACKAGES
+# shellcheck disable=SC2064
+trap "rm -f \"${COPR_PACKAGES}\"" EXIT
+DLDIR=$(mktemp -d)
+readonly DLDIR
+# shellcheck disable=SC2064
+trap "rm -rf \"${DLDIR}\"" EXIT
 
 cd "$DLDIR" || exit 1
 
 readonly DNF="dnf -y -q --forcearch $RPMARCH"
 
-$DNF list --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa --showduplicates 'vespa*' | grep "Available Packages" -A 100000 | tail -n +2 | sed '/\.src\ */d' | sed -E "s/\.($RPMARCH|noarch)\ */-/" | awk '{print $1}' | grep -v 8.363.17 | grep -v '.src$' > $COPR_PACKAGES
+$DNF list --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa --showduplicates 'vespa*' | grep "Available Packages" -A 100000 | tail -n +2 | sed '/\.src\ */d' | sed -E "s/\.($RPMARCH|noarch)\ */-/" | awk '{print $1}' | grep -v 8.363.17 | grep -v '.src$' > "${COPR_PACKAGES}"
 
 echo "Packages on Copr:"
-cat "$COPR_PACKAGES"
+cat "${COPR_PACKAGES}"
 echo
 
 while read -r pv; do
@@ -62,7 +67,7 @@ while read -r pv; do
       echo "$pv downloaded."
     fi
   fi
-done < "$COPR_PACKAGES"
+done < "${COPR_PACKAGES}"
 echo
 
 if ! ls ./*.rpm &> /dev/null; then
