@@ -187,6 +187,9 @@ TEST_F(EquivQueryNodeTest, test_equiv_evaluate_and_unpack)
     itr = tfmd1->begin();
     assert_tfmd_pos("tmfd1[0]", *itr, elem0, pos4, weight2, field1_element0_len);
     EXPECT_EQ(field1_len, tfmd1->getFieldLength());
+    std::vector<uint32_t> element_ids;
+    eqn.get_element_ids(element_ids);
+    EXPECT_EQ((std::vector<uint32_t>{ 0, 1 }), element_ids);
 }
 
 TEST_F(EquivQueryNodeTest, test_equiv_flattening)
