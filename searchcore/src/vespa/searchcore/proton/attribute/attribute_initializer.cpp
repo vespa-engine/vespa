@@ -179,6 +179,7 @@ AttributeInitializer::tryLoadAttribute() const
     _attributeVectorWrapper->setAttributeVector(attr);
     if (serialNum != 0 && _header) {
         if (!_header_ok) {
+            attr->getInitializationStatus().startLoading();
             setupEmptyAttribute(attr, serialNum, *_header);
             attr->getInitializationStatus().endLoading();
             return attr;
@@ -187,6 +188,7 @@ AttributeInitializer::tryLoadAttribute() const
             return AttributeVector::SP();
         }
     } else {
+        attr->getInitializationStatus().startLoading();
         _factory.setupEmpty(attr, _currentSerialNum);
         attr->getInitializationStatus().endLoading();
     }
@@ -239,6 +241,7 @@ AttributeInitializer::createAndSetupEmptyAttribute() const
 {
     AttributeVector::SP attr = _factory.create(_attrDir->getAttrName(), _spec.getConfig());
     _attributeVectorWrapper->setAttributeVector(attr);
+    attr->getInitializationStatus().startLoading();
     _factory.setupEmpty(attr, _currentSerialNum);
     attr->getInitializationStatus().endLoading();
     return attr;
