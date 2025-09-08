@@ -6,28 +6,35 @@ set -o pipefail
 set -o nounset
 set -o errexit
 
-if (( $# < 1 )); then
-    echo "Usage: $0 <RPM architecture>"
+if (( $# < 2 )); then
+    echo "Usage: $0 <RPM architecture> <OS version>"
     exit 1
 fi
 
 RPMARCH=$1
+OSVERSION=$2
 ALLOWED_ARCHS=("x86_64" "aarch64")
+ALLOWED_VERSIONS=("8" "9")
 
-if ! printf '%s\n' "${ALLOWED_ARCHS[@]}" | grep -Fxq "$RPMARCH"; then
+if [[ " ${ALLOWED_ARCHS[*]} " != " $RPMARCH " ]]; then
   echo "Architecture $RPMARCH not in allowed archs: ${ALLOWED_ARCHS[*]}"
+  exit 1
+fi
+
+if [[ " ${ALLOWED_VERSIONS[*]} " != " $OSVERSION " ]]; then
+  echo "OS version $OSVERSION not in allowed versions: ${ALLOWED_VERSIONS[*]}"
   exit 1
 fi
 
 readonly MYDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Copr repo
-dnf config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-8/group_vespa-vespa-epel-8.repo
-sed -i "s,\$basearch,$RPMARCH,g" /etc/yum.repos.d/group_vespa-vespa-epel-8.repo
+dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-${OSVERSION}/group_vespa-vespa-epel-${OSVERSION}.repo"
+sed -i "s,\$basearch,$RPMARCH,g" "/etc/yum.repos.d/group_vespa-vespa-epel-${OSVERSION}.repo"
 
 # Cloudsmith repo
 rpm --import 'https://dl.cloudsmith.io/public/vespa/open-source-rpms/gpg.0F3DA3C70D35DA7B.key'
-curl -1sLf 'https://dl.cloudsmith.io/public/vespa/open-source-rpms/config.rpm.txt?distro=el&codename=8' > /tmp/vespa-open-source-rpms.repo
+curl -1sLf "https://dl.cloudsmith.io/public/vespa/open-source-rpms/config.rpm.txt?distro=el&codename=${OSVERSION}" > /tmp/vespa-open-source-rpms.repo
 dnf config-manager --add-repo '/tmp/vespa-open-source-rpms.repo'
 rm -f /tmp/vespa-open-source-rpms.repo
 
