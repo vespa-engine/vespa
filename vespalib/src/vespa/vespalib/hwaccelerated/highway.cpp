@@ -54,19 +54,46 @@ double my_hwy_dot_double(const double* HWY_RESTRICT a,
     return my_hwy_dot_impl(a, b, sz);
 }
 
+// Although Highway comes with its own BFloat16 dot product kernel, we do not use it due
+// to some very unfortunate codegen by GCC for the code handling the edge case where
+// input vectors are shorter than the number of lanes of a single vector register.
+//
+// This is done using a loop with scalar (i.e. non-vector) conversions from the compiler
+// native `__bf16` type to `float` using `static_cast`, which one could reasonably assume
+// would be optimal (and Highway presumably does just this). However, GCC will, in a case
+// of signalling vs. quiet NaN-handling pedantry, implicitly insert a **function call**
+// to the `__extendbfsf2` library function per lhs and rhs element. This brutally destroys
+// performance on x64 AVX2+3 for very short vectors, meaning we're better off with our
+// own kernel.
+//
+// It may be noted that Clang has the expected codegen for `__bf16` -> `float` conversions,
+// i.e. a simple zero-extending left shift of 16 (see https://reviews.llvm.org/D151563).
+//
+// See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=121853 for upstream report.
 HWY_INLINE
 float my_hwy_dot_bf16(const BFloat16* HWY_RESTRICT a,
                       const BFloat16* HWY_RESTRICT b,
                       const size_t sz) noexcept
 {
-    // Highway already comes with dot product kernels supporting BF16, so use these.
     static_assert(sizeof(BFloat16)  == sizeof(hwy::bfloat16_t));
     static_assert(alignof(BFloat16) == alignof(hwy::bfloat16_t));
-
+    // We make the assumption that both vespalib::BFloat16 and hwy::bfloat16_t are POD-like
+    // wrappers around the same u16 bitwise representation, with zero padding bits, meaning
+    // we can treat them as-if identical.
     const auto* a_bf16 = reinterpret_cast<const hwy::bfloat16_t*>(a);
     const auto* b_bf16 = reinterpret_cast<const hwy::bfloat16_t*>(b);
-    // Although our input parameters are BF16, the returned value must be a float to avoid losing precision.
-    return my_hwy_dot_impl<hwy::bfloat16_t, float>(a_bf16, b_bf16, sz);
+
+    const hn::ScalableTag<hwy::bfloat16_t> dbf16;
+    // Repartition to float vector with same vector size, but different number of lanes.
+    // E.g. for a 128-bit vector of 8x BF16 lanes this becomes a 4x float lanes vector.
+    const hn::Repartition<float, decltype(dbf16)> df32;
+    // Since we're widening the element type, loading e.g. 8 lanes of BF16 in a single
+    // 128-bit vector requires us to process 2 vectors of 4 lanes of float32.
+    auto kernel_fn = [df32](auto lhs, auto rhs, auto& acc0, auto& acc1) noexcept HWY_ATTR {
+        acc0 = hn::ReorderWidenMulAccumulate(df32, lhs, rhs, acc0, acc1);
+    };
+    using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<4>, HasAccumulatorArity<2>>;
+    return MyKernel::pairwise(dbf16, df32, a_bf16, b_bf16, sz, hn::Zero(df32), kernel_fn, VecAdd(), LaneReduceSum());
 }
 
 template <typename T> requires (hwy::IsFloat<T>())
@@ -93,18 +120,13 @@ double my_hwy_square_euclidean_distance_bf16(const BFloat16* HWY_RESTRICT a,
 {
     static_assert(sizeof(BFloat16)  == sizeof(hwy::bfloat16_t));
     static_assert(alignof(BFloat16) == alignof(hwy::bfloat16_t));
-    // We make the assumption that both vespalib::BFloat16 and hwy::bfloat16_t are POD-like
-    // wrappers around the same u16 bitwise representation, with zero padding bits, meaning
-    // we can treat them as-if identical.
+
     const auto* a_bf16 = reinterpret_cast<const hwy::bfloat16_t*>(a);
     const auto* b_bf16 = reinterpret_cast<const hwy::bfloat16_t*>(b);
 
-    const hn::ScalableTag<hwy::bfloat16_t> dbf16;
-    // Repartition to float vector with same vector size, but different number of lanes.
-    // E.g. for a 128-bit vector of 8x BF16 lanes this becomes a 4x float lanes vector.
+    const hn::ScalableTag<hwy::bfloat16_t>        dbf16;
     const hn::Repartition<float, decltype(dbf16)> df;
-    // Since we're widening the element type, loading e.g. 8 lanes of BF16 in a single
-    // 128-bit vector requires us to process 2 vectors of 4 lanes of float32.
+
     auto kernel_fn = [df](auto lhs, auto rhs, auto& acc0, auto& acc1) noexcept HWY_ATTR {
         const auto sub_lo = hn::Sub(hn::PromoteLowerTo(df, lhs), hn::PromoteLowerTo(df, rhs));
         acc0 = hn::MulAdd(sub_lo, sub_lo, acc0);
