@@ -76,13 +76,32 @@ MyQueryNodeResultFactory::get_element_gap_inspector() const noexcept
     return _mock_element_gap_inspector;
 }
 
+class WrappedQuery {
+    std::unique_ptr<MyQueryNodeResultFactory> _factory; // contains element gap inspector
+    std::unique_ptr<Query>                    _query;
+public:
+    WrappedQuery(std::unique_ptr<MyQueryNodeResultFactory> factory_in, std::unique_ptr<Query> query_in);
+    ~WrappedQuery();
+    const Query& query() const noexcept { return *_query; }
+};
+
+WrappedQuery::WrappedQuery(std::unique_ptr<MyQueryNodeResultFactory> factory_in, std::unique_ptr<Query> query_in)
+    : _factory(std::move(factory_in)),
+      _query(std::move(query_in))
+{
+}
+
+WrappedQuery::~WrappedQuery() = default;
+
 class NearTest : public ::testing::TestWithParam<TestParam> {
 protected:
     std::optional<ElementGap> _element_gap_setting;
     NearTest();
     ~NearTest() override;
-    bool evaluate_query(uint32_t distance, const std::vector<std::vector<TestHit>> &hitsvv);
-    bool evaluate_query(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>> &hitsvv);
+    bool evaluate_query(uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv);
+    bool evaluate_query(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv);
+    WrappedQuery make_query(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv);
+    std::vector<uint32_t> get_element_ids(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv);
 };
 
 NearTest::NearTest()
@@ -94,13 +113,20 @@ NearTest::NearTest()
 NearTest::~NearTest() = default;
 
 bool
-NearTest::evaluate_query(uint32_t distance, const std::vector<std::vector<TestHit>> &hitsvv)
+NearTest::evaluate_query(uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv)
 {
     return evaluate_query(QueryTweak::NORMAL, distance, hitsvv);
 }
 
 bool
-NearTest::evaluate_query(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>> &hitsvv)
+NearTest::evaluate_query(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv)
+{
+    auto wrapped_query = make_query(query_tweak, distance, hitsvv);
+    return wrapped_query.query().getRoot().evaluate();
+}
+
+WrappedQuery
+NearTest::make_query(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit> >& hitsvv)
 {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     auto num_terms = hitsvv.size();
@@ -141,8 +167,8 @@ NearTest::evaluate_query(QueryTweak query_tweak, uint32_t distance, const std::v
     }
     auto node = builder.build();
     std::string stackDump = StackDumpCreator::create(*node);
-    MyQueryNodeResultFactory empty(_element_gap_setting.value_or(std::nullopt));
-    auto q = std::make_unique<Query>(empty, stackDump);
+    auto empty = std::make_unique<MyQueryNodeResultFactory>(_element_gap_setting.value_or(std::nullopt));
+    auto q = std::make_unique<Query>(*empty, stackDump);
     if (GetParam().ordered()) {
         auto& top = dynamic_cast<ONearQueryNode&>(q->getRoot());
         EXPECT_EQ(top_arity, top.size());
@@ -176,7 +202,16 @@ NearTest::evaluate_query(QueryTweak query_tweak, uint32_t distance, const std::v
             term->set_element_length(hl_idx, std::get<3>(hit));
         }
     }
-    return q->getRoot().evaluate();
+    return WrappedQuery(std::move(empty), std::move(q));
+}
+
+std::vector<uint32_t>
+NearTest::get_element_ids(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv)
+{
+    auto wrapped_query = make_query(query_tweak, distance, hitsvv);
+    std::vector<uint32_t> result;
+    wrapped_query.query().getRoot().get_element_ids(result);
+    return result;
 }
 
 TEST_P(NearTest, test_empty_near)
@@ -307,6 +342,16 @@ TEST_P(NearTest, equiv_below_near)
     EXPECT_EQ(!GetParam().ordered(), evaluate_query(QueryTweak::EQUIV, 2, hitsvv));
     EXPECT_EQ(!GetParam().ordered(), evaluate_query(QueryTweak::EQUIV, 3, hitsvv));
     EXPECT_TRUE(evaluate_query(QueryTweak::EQUIV, 4, hitsvv));
+}
+
+TEST_P(NearTest, get_element_ids)
+{
+    using IDS = std::vector<uint32_t>;
+    std::vector<std::vector<TestHit>> hitsvv({ { { 0, 3, 10, 5, 2 }, { 0, 7, 10, 5, 2} },
+                                               { { 0, 3, 10, 5, 4 }, { 0, 7, 10, 5, 0} } });
+    EXPECT_EQ((GetParam().ordered() ? IDS{ 3 } : IDS{ 3, 7 }), get_element_ids(QueryTweak::NORMAL, 4, hitsvv));
+    std::swap(hitsvv[0], hitsvv[1]);
+    EXPECT_EQ((GetParam().ordered() ? IDS{ 7 } : IDS{ 3, 7 }), get_element_ids(QueryTweak::NORMAL, 4, hitsvv));
 }
 
 auto test_values = ::testing::Values(TestParam(false), TestParam(true));
