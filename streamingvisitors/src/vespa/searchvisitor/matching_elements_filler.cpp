@@ -66,7 +66,7 @@ class Matcher
     void select_multiterm_children(const MatchingElementsFields& fields, const MultiTerm& multi_term);
     void select_query_term_node(const MatchingElementsFields& fields, const QueryTerm& term);
     void select_query_nodes(const MatchingElementsFields& fields, const QueryNode& query_node);
-    void add_matching_elements(const std::string& field_name, std::optional<FieldIdT> field_id, uint32_t doc_lid, const HitList& hit_list, MatchingElements& matching_elements);
+    void add_matching_elements(const std::string& field_name, FieldIdT field_id, uint32_t doc_lid, const HitList& hit_list, MatchingElements& matching_elements);
     void find_matching_elements(const SameElementQueryNode& same_element, uint32_t doc_lid, MatchingElements& matching_elements);
     void find_matching_elements(const SubFieldTerm& sub_field_term, uint32_t doc_lid, MatchingElements& matching_elements);
 public:
@@ -162,11 +162,11 @@ Matcher::select_query_nodes(const MatchingElementsFields& fields, const QueryNod
 }
 
 void
-Matcher::add_matching_elements(const std::string& field_name, std::optional<FieldIdT> field_id, uint32_t doc_lid, const HitList& hit_list, MatchingElements& matching_elements)
+Matcher::add_matching_elements(const std::string& field_name, FieldIdT field_id, uint32_t doc_lid, const HitList& hit_list, MatchingElements& matching_elements)
 {
     _elements.clear();
     for (auto& hit : hit_list) {
-        if (!field_id.has_value() || field_id.value() == hit.field_id()) {
+        if (field_id == hit.field_id()) {
             _elements.emplace_back(hit.element_id());
         }
     }
@@ -181,9 +181,10 @@ Matcher::add_matching_elements(const std::string& field_name, std::optional<Fiel
 void
 Matcher::find_matching_elements(const SameElementQueryNode& same_element, uint32_t doc_lid, MatchingElements& matching_elements)
 {
-    const HitList& hit_list = same_element.evaluateHits(_hit_list);
-    if (!hit_list.empty()) {
-        add_matching_elements(same_element.getIndex(), std::nullopt, doc_lid, hit_list, matching_elements);
+    _elements.clear();
+    same_element.get_element_ids(_elements);
+    if (!_elements.empty()) {
+        matching_elements.add_matching_elements(doc_lid, same_element.getIndex(), _elements);
     }
 }
 
