@@ -8,6 +8,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record AthenzDomainMeta(
         @JsonProperty("account") String account,
         @JsonProperty("gcpProject") String gcpProject,
+        @JsonProperty("azureSubscription") String azureSubscription,
+        @JsonProperty("azureTenant") String azureTenant,
+        @JsonProperty("azureClient") String azureClient,
         @JsonProperty("name") String name
 ) {
 }
