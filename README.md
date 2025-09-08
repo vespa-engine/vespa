@@ -90,7 +90,13 @@ for building Vespa, running unit tests and running system tests:
 brew install jenv mvnvm openjdk@17
 ```
 
-2. For the system Java wrappers to find this JDK, symlink it with
+2. On ARM Macs (M1, M2 etc.), install intel compatibility since [grpc isn't properly maintained](https://github.com/grpc/grpc-java/issues/7690): 
+
+```sh
+softwareupdate --install-rosetta
+```
+
+4. For the system Java wrappers to find this JDK, symlink it with
 ```sh
 sudo ln -sfn /opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-17.jdk
 ```
