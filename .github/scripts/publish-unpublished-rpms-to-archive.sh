@@ -1,8 +1,10 @@
 #!/bin/bash
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-set -euo pipefail
-set -x
+set -o xtrace
+set -o pipefail
+set -o nounset
+set -o errexit
 
 if (( $# < 1 )); then
     echo "Usage: $0 <RPM architecture>"
@@ -12,8 +14,8 @@ fi
 RPMARCH=$1
 ALLOWED_ARCHS=("x86_64" "aarch64")
 
-if [[ ! ${ALLOWED_ARCHS[@]} =~ $RPMARCH ]]; then
-  echo "Architecture $RPMARCH not in allowed archs: ${ALLOWED_ARCHS[@]}"
+if ! printf '%s\n' "${ALLOWED_ARCHS[@]}" | grep -Fxq "$RPMARCH"; then
+  echo "Architecture $RPMARCH not in allowed archs: ${ALLOWED_ARCHS[*]}"
   exit 1
 fi
 
@@ -34,35 +36,35 @@ trap "rm -f $COPR_PACKAGES" EXIT
 readonly DLDIR=$(mktemp -d)
 trap "rm -rf $DLDIR" EXIT
 
-cd $DLDIR
+cd "$DLDIR" || exit 1
 
 readonly DNF="dnf -y -q --forcearch $RPMARCH"
 
 $DNF list --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa --showduplicates 'vespa*' | grep "Available Packages" -A 100000 | tail -n +2 | sed '/\.src\ */d' | sed -E "s/\.($RPMARCH|noarch)\ */-/" | awk '{print $1}' | grep -v 8.363.17 | grep -v '.src$' > $COPR_PACKAGES
 
 echo "Packages on Copr:"
-cat $COPR_PACKAGES
+cat "$COPR_PACKAGES"
 echo
 
-for pv in $(cat $COPR_PACKAGES); do
-  if ! $DNF list --disablerepo='*' --enablerepo=vespa-open-source-rpms $pv &> /dev/null; then
+while read -r pv; do
+  if ! $DNF list --disablerepo='*' --enablerepo=vespa-open-source-rpms "$pv" &> /dev/null; then
     # Need one extra check here for noarch packages
-    if ! dnf -y -q --forcearch noarch list --disablerepo='*' --enablerepo=vespa-open-source-rpms $pv &> /dev/null; then
-      echo "$pv not found on in archive. Downloading..."
-      $DNF download --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa $pv
+    if ! dnf -y -q --forcearch noarch list --disablerepo='*' --enablerepo=vespa-open-source-rpms "$pv" &> /dev/null; then
+      echo "$pv not found in archive. Downloading..."
+      $DNF download --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa "$pv"
       echo "$pv downloaded."
     fi
   fi
-done
+done < "$COPR_PACKAGES"
 echo
 
-if ! ls *.rpm &> /dev/null; then
+if ! ls ./*.rpm &> /dev/null; then
   echo "All packages already in archive."
   exit 0
 fi
 
 echo "RPMs missing in archive:"
-ls -lh  *.rpm
+ls -lh  ./*.rpm
 echo
 
 
@@ -73,8 +75,7 @@ for rpm in *.rpm; do
   [ -e "$rpm" ] || continue
   echo "Uploading $rpm ..."
   if [ "${DRY_RUN:-false}" != "true" ]; then
-    $MYDIR/upload-rpm-to-cloudsmith.sh $rpm
-    if [ $? -ne 0 ]; then
+    if ! "$MYDIR/upload-rpm-to-cloudsmith.sh" "$rpm" ; then
       echo "Could not upload $rpm"
       UPLOAD_FAILED=true
     else
