@@ -6,7 +6,7 @@ Vespa takes the security of our platform and the data of our users very seriousl
 
 If you believe you have discovered a security vulnerability in Vespa, please report it to us responsibly through our dedicated vulnerability disclosure program. 
 
-**Please do not report security vulnerabilities through public channels like GitHub Issues.**
+**Please do not report security vulnerabilities through public channels like GitHub Issues or any other bug bounty- or vulnerability disclosure platforms other than what's referenced below.**
 
 To submit a vulnerability report, please follow the guidelines outlined on our responsible disclosure page:
 
