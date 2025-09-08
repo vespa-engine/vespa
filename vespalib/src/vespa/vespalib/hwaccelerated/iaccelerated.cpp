@@ -310,7 +310,7 @@ std::vector<T> createAndFill(size_t sz) {
     return v;
 }
 
-template<typename T>
+template <typename T, typename SumT = T>
 void
 verifyDotproduct(const IAccelerated & accel)
 {
@@ -319,11 +319,11 @@ verifyDotproduct(const IAccelerated & accel)
     std::vector<T> a = createAndFill<T>(testLength);
     std::vector<T> b = createAndFill<T>(testLength);
     for (size_t j(0); j < 0x20; j++) {
-        T sum(0);
+        SumT sum(0);
         for (size_t i(j); i < testLength; i++) {
             sum += a[i]*b[i];
         }
-        T hwComputedSum(accel.dotProduct(&a[j], &b[j], testLength - j));
+        SumT hwComputedSum(accel.dotProduct(&a[j], &b[j], testLength - j));
         if (sum != hwComputedSum) {
             fprintf(stderr, "Accelerator is not computing dotproduct correctly.\n");
             LOG_ABORT("should not be reached");
@@ -331,7 +331,7 @@ verifyDotproduct(const IAccelerated & accel)
     }
 }
 
-template<typename T>
+template <typename T, typename SumT = T>
 void
 verifyEuclideanDistance(const IAccelerated & accel) {
     const size_t testLength(255);
@@ -339,11 +339,11 @@ verifyEuclideanDistance(const IAccelerated & accel) {
     std::vector<T> a = createAndFill<T>(testLength);
     std::vector<T> b = createAndFill<T>(testLength);
     for (size_t j(0); j < 0x20; j++) {
-        T sum(0);
+        SumT sum(0);
         for (size_t i(j); i < testLength; i++) {
             sum += (a[i] - b[i]) * (a[i] - b[i]);
         }
-        T hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
+        SumT hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
         if (sum != hwComputedSum) {
             fprintf(stderr, "Accelerator is not computing euclidean distance correctly.\n");
             LOG_ABORT("should not be reached");
@@ -490,10 +490,10 @@ private:
     static void verify(const IAccelerated & accelerated) {
         verifyDotproduct<float>(accelerated);
         verifyDotproduct<double>(accelerated);
-        verifyDotproduct<int8_t>(accelerated); // FIXME this can't be right, uses intermediate sum type of i8...?
-        verifyDotproduct<int32_t>(accelerated);
+        verifyDotproduct<int8_t, int64_t>(accelerated);
+        verifyDotproduct<int32_t, int64_t>(accelerated);
         verifyDotproduct<int64_t>(accelerated);
-        verifyEuclideanDistance<int8_t>(accelerated);
+        verifyEuclideanDistance<int8_t, int64_t>(accelerated);
         verifyEuclideanDistance<float>(accelerated);
         verifyEuclideanDistance<double>(accelerated);
         verifyPopulationCount(accelerated);
