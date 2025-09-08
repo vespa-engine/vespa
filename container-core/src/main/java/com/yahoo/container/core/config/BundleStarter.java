@@ -25,6 +25,9 @@ public class BundleStarter {
                 if ( ! isFragment(bundle))
                     bundle.start();  // NOP for already ACTIVE bundles
             } catch(Exception e) {
+                System.err.println("Exception in bundle.start(): " + e);
+                e.printStackTrace();
+                System.err.println("in bundle: " + bundle);
                 throw new RuntimeException("Could not start bundle '" + bundle.getSymbolicName() + "'", e);
             }
         }

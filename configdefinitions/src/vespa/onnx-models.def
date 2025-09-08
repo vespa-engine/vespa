@@ -16,3 +16,4 @@ model[].stateless_interop_threads   int default=-1
 model[].stateless_intraop_threads   int default=-1
 model[].gpu_device                  int default=-1
 model[].gpu_device_required         bool default=false
+model[].dimension_resolving         enum { D_NUMBERS, DETECT_NAMES, DETECT_NAMES_AND_TYPES } default=D_NUMBERS

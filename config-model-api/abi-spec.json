@@ -1576,6 +1576,24 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.config.model.api.OnnxModelOptions$DimensionResolving" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static com.yahoo.config.model.api.OnnxModelOptions$DimensionResolving[] values()",
+      "public static com.yahoo.config.model.api.OnnxModelOptions$DimensionResolving valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum com.yahoo.config.model.api.OnnxModelOptions$DimensionResolving D_NUMBERS",
+      "public static final enum com.yahoo.config.model.api.OnnxModelOptions$DimensionResolving DETECT_NAMES",
+      "public static final enum com.yahoo.config.model.api.OnnxModelOptions$DimensionResolving DETECT_NAMES_AND_TYPES"
+    ]
+  },
   "com.yahoo.config.model.api.OnnxModelOptions$GpuDevice" : {
     "superClass" : "java.lang.Record",
     "interfaces" : [ ],
@@ -1605,9 +1623,10 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String, int, int, com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
-      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.model.api.OnnxModelOptions$DimensionResolving, java.util.Optional)",
       "public static com.yahoo.config.model.api.OnnxModelOptions empty()",
       "public com.yahoo.config.model.api.OnnxModelOptions withExecutionMode(java.lang.String)",
+      "public com.yahoo.config.model.api.OnnxModelOptions withDimensionResolving(java.lang.String)",
       "public com.yahoo.config.model.api.OnnxModelOptions withInterOpThreads(java.lang.Integer)",
       "public com.yahoo.config.model.api.OnnxModelOptions withIntraOpThreads(java.lang.Integer)",
       "public com.yahoo.config.model.api.OnnxModelOptions withGpuDevice(com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
@@ -1617,6 +1636,7 @@
       "public java.util.Optional executionMode()",
       "public java.util.Optional interOpThreads()",
       "public java.util.Optional intraOpThreads()",
+      "public com.yahoo.config.model.api.OnnxModelOptions$DimensionResolving dimensionResolving()",
       "public java.util.Optional gpuDevice()"
     ],
     "fields" : [ ]

@@ -210,6 +210,7 @@ public class RankProfilesConfigImporter {
                     .setExecutionMode(onnxModelConfig.stateless_execution_mode())
                     .setInterOpThreads(onnxModelConfig.stateless_interop_threads())
                     .setIntraOpThreads(onnxModelConfig.stateless_intraop_threads())
+                    .setDimensionResolving(onnxModelConfig.dimension_resolving().toString())
                     .setGpuDevice(onnxModelConfig.gpu_device(), onnxModelConfig.gpu_device_required())
                     .build();
             var m =  new OnnxModel(name, file, options, onnx);

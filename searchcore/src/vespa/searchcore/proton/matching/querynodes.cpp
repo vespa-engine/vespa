@@ -139,5 +139,15 @@ template struct ProtonTerm<search::query::InTerm>;
 ProtonEquiv::~ProtonEquiv() = default;
 ProtonSameElement::~ProtonSameElement() = default;
 ProtonNearestNeighborTerm::~ProtonNearestNeighborTerm() = default;
+ProtonNumberTerm::~ProtonNumberTerm() = default;
+
+ProtonNumberTerm::ProtonNumberTerm(const std::string & term, const std::string & view,
+                                   int32_t id, search::query::Weight weight)
+  : ProtonTermBase(term, view, id, weight),
+    rangeSpec()
+{
+    rangeSpec.initFrom(getTerm());
+}
+
 
 }

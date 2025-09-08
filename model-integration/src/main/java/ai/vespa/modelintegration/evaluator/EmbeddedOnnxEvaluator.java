@@ -8,10 +8,12 @@ import ai.onnxruntime.OrtException;
 import ai.onnxruntime.OrtSession;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import static com.yahoo.config.model.api.OnnxModelOptions.DimensionResolving;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,13 +28,22 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
     private static final Logger LOG = Logger.getLogger(EmbeddedOnnxEvaluator.class.getName());
 
     private final EmbeddedOnnxRuntime.ReferencedOrtSession session;
+    private final DimensionResolving dimensionResolving;
 
     EmbeddedOnnxEvaluator(String modelPath, OnnxEvaluatorOptions options, EmbeddedOnnxRuntime runtime) {
+        if (options == null) {
+            options = OnnxEvaluatorOptions.defaultOptions;
+        }
         session = createSession(EmbeddedOnnxRuntime.ModelPathOrData.of(modelPath), runtime, options, true);
+        dimensionResolving = options.dimensionResolving();
     }
 
     EmbeddedOnnxEvaluator(byte[] data, OnnxEvaluatorOptions options, EmbeddedOnnxRuntime runtime) {
+        if (options == null) {
+            options = OnnxEvaluatorOptions.defaultOptions;
+        }
         session = createSession(EmbeddedOnnxRuntime.ModelPathOrData.of(data), runtime, options, true);
+        dimensionResolving = options.dimensionResolving();
     }
 
     @Override
@@ -42,7 +53,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
             output = mapToInternalName(output);
             onnxInputs = TensorConverter.toOnnxTensors(inputs, EmbeddedOnnxRuntime.ortEnvironment(), session.instance());
             try (OrtSession.Result result = session.instance().run(onnxInputs, Collections.singleton(output))) {
-                return TensorConverter.toVespaTensor(result.get(0));
+                return TensorConverter.toVespaTensor(result.get(0), dimensionResolving);
             }
         } catch (OrtException e) {
             throw new RuntimeException("ONNX Runtime exception", e);
@@ -62,7 +73,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
             try (OrtSession.Result result = session.instance().run(onnxInputs)) {
                 for (Map.Entry<String, OnnxValue> output : result) {
                     String mapped = TensorConverter.asValidName(output.getKey());
-                    outputs.put(mapped, TensorConverter.toVespaTensor(output.getValue()));
+                    outputs.put(mapped, TensorConverter.toVespaTensor(output.getValue(), dimensionResolving));
                 }
                 return outputs;
             }
@@ -80,7 +91,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
         for (var info : infoMap.entrySet()) {
             String name = info.getKey();
             String ident = TensorConverter.asValidName(name);
-            TensorType t = TensorConverter.toVespaType(info.getValue().getInfo());
+            TensorType t = TensorConverter.toVespaType(info.getValue().getInfo(), dimensionResolving);
             result.put(name, new OnnxEvaluator.IdAndType(ident, t));
         }
         return result;
@@ -107,7 +118,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
     @Override
     public Map<String, TensorType> getInputInfo() {
         try {
-            return TensorConverter.toVespaTypes(session.instance().getInputInfo());
+            return TensorConverter.toVespaTypes(session.instance().getInputInfo(), dimensionResolving);
         } catch (OrtException e) {
             throw new RuntimeException("ONNX Runtime exception", e);
         }
@@ -116,7 +127,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
     @Override
     public Map<String, TensorType> getOutputInfo() {
         try {
-            return TensorConverter.toVespaTypes(session.instance().getOutputInfo());
+            return TensorConverter.toVespaTypes(session.instance().getOutputInfo(), dimensionResolving);
         } catch (OrtException e) {
             throw new RuntimeException("ONNX Runtime exception", e);
         }
@@ -138,9 +149,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
             EmbeddedOnnxRuntime runtime,
             OnnxEvaluatorOptions options,
             boolean tryCuda) {
-        if (options == null) {
-            options = OnnxEvaluatorOptions.createDefault();
-        }
+        Objects.requireNonNull(options, "options cannot be null");
         try {
             boolean loadCuda = tryCuda && options.requestingGpu();
             EmbeddedOnnxRuntime.ReferencedOrtSession session = runtime.acquireSession(model, options, loadCuda);

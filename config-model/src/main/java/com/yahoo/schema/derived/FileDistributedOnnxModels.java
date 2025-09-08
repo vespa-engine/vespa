@@ -59,6 +59,8 @@ public class FileDistributedOnnxModels {
             builder.stateless_interop_threads(model.getStatelessInterOpThreads().get());
         if (model.getStatelessIntraOpThreads().isPresent())
             builder.stateless_intraop_threads(model.getStatelessIntraOpThreads().get());
+        var convertDR = OnnxModelsConfig.Model.Dimension_resolving.Enum.valueOf(model.getDimensionResolving().toString());
+        builder.dimension_resolving(convertDR);
         if (model.getGpuDevice().isPresent()) {
             builder.gpu_device(model.getGpuDevice().get().deviceNumber());
             builder.gpu_device_required(model.getGpuDevice().get().required());

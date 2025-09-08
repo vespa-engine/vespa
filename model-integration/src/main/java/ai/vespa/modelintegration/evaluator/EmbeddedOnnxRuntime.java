@@ -43,10 +43,20 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
     private static final OrtEnvironmentResult ortEnvironment = getOrtEnvironment();
     private static final OrtSessionFactory defaultFactory = new OrtSessionFactory() {
         @Override public OrtSession create(String path, OrtSession.SessionOptions opts) throws OrtException {
-            return ortEnvironment().createSession(path, opts);
+            try {
+                return ortEnvironment().createSession(path, opts);
+            } catch (RuntimeException e) {
+                log.warning("create session " + path + " -> " + e);
+                throw e;
+            }
         }
         @Override public OrtSession create(byte[] data, OrtSession.SessionOptions opts) throws OrtException {
-            return ortEnvironment().createSession(data, opts);
+            try {
+                return ortEnvironment().createSession(data, opts);
+            } catch (RuntimeException e) {
+                log.warning("create session from data " + data.length + " -> " + e);
+                throw e;
+            }
         }
     };
 
@@ -67,21 +77,41 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
     }
 
     public OnnxEvaluator evaluatorOf(byte[] model) {
-        return new EmbeddedOnnxEvaluator(model, null, this);
+        try {
+            return new EmbeddedOnnxEvaluator(model, null, this);
+        } catch (RuntimeException e) {
+            log.warning("could not load evaluatorOf data " + model.length + " -> " + e);
+            throw e;
+        }
     }
 
     public OnnxEvaluator evaluatorOf(byte[] model, OnnxEvaluatorOptions options) {
-        return new EmbeddedOnnxEvaluator(model, overrideOptions(options), this);
+        try {
+            return new EmbeddedOnnxEvaluator(model, overrideOptions(options), this);
+        } catch (RuntimeException e) {
+            log.warning("could not load evaluatorOf data " + model.length + " -> " + e);
+            throw e;
+        }
     }
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath) {
-        return new EmbeddedOnnxEvaluator(modelPath, null, this);
+        try {
+            return new EmbeddedOnnxEvaluator(modelPath, null, this);
+        } catch (RuntimeException e) {
+            log.warning("could not load evaluatorOf " + modelPath + " -> " + e);
+            throw e;
+        }
     }
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        return new EmbeddedOnnxEvaluator(modelPath, overrideOptions(options), this);
+        try {
+            return new EmbeddedOnnxEvaluator(modelPath, overrideOptions(options), this);
+        } catch (RuntimeException e) {
+            log.warning("could not load evaluatorOf " + modelPath + " -> " + e);
+            throw e;
+        }
     }
 
     static OrtEnvironment ortEnvironment() {
@@ -111,7 +141,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
         try {
             return new OrtEnvironmentResult(OrtEnvironment.getEnvironment(), null);
         } catch (UnsatisfiedLinkError | RuntimeException | NoClassDefFoundError e) {
-            log.log(Level.FINE, e, () -> "Failed to load ONNX runtime");
+            log.log(Level.WARNING, e, () -> "Failed to load ONNX runtime");
             return new OrtEnvironmentResult(null, e);
         }
     }

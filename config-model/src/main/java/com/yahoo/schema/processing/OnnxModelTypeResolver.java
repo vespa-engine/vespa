@@ -30,10 +30,10 @@ public class OnnxModelTypeResolver extends Processor {
     public void process(boolean validate, boolean documentsOnly) {
         if (documentsOnly) return;
         for (OnnxModel onnxModel : schema.declaredOnnxModels().values())
-            onnxModel.setModelInfo(OnnxModelInfo.load(onnxModel.getFileName(), schema.applicationPackage()));
+            onnxModel.setModelInfo(OnnxModelInfo.load(onnxModel.getFileName(), schema.applicationPackage(), onnxModel.getDimensionResolving()));
         for (RankProfile profile : rankProfileRegistry.rankProfilesOf(schema)) {
             for (OnnxModel onnxModel : profile.declaredOnnxModels().values())
-                onnxModel.setModelInfo(OnnxModelInfo.load(onnxModel.getFileName(), schema.applicationPackage()));
+                onnxModel.setModelInfo(OnnxModelInfo.load(onnxModel.getFileName(), schema.applicationPackage(), onnxModel.getDimensionResolving()));
         }
     }
 

@@ -6,6 +6,7 @@
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
+#include <vespa/searchlib/query/numeric_range_spec.h>
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
@@ -140,8 +141,15 @@ struct ProtonNearestNeighborTerm : public ProtonTermBase<search::query::NearestN
     ~ProtonNearestNeighborTerm() override;
 };
 
+
+struct ProtonNumberTerm : ProtonTermBase<search::query::NumberTerm> {
+    // using ProtonTermBase<search::query::NumberTerm>::ProtonTermBase;
+    search::NumericRangeSpec rangeSpec;
+    ProtonNumberTerm(const std::string & term, const std::string & view, int32_t id, search::query::Weight weight);
+    ~ProtonNumberTerm() override;
+};
+
 using ProtonLocationTerm = ProtonTerm<search::query::LocationTerm>;
-using ProtonNumberTerm =   ProtonTerm<search::query::NumberTerm>;
 using ProtonPhrase =       ProtonTerm<search::query::Phrase>;
 
 using ProtonPrefixTerm =      ProtonTerm<search::query::PrefixTerm>;

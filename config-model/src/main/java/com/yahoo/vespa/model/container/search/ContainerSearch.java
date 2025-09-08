@@ -101,7 +101,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains> implements
                 owningCluster.addComponent(dispatcher);
             }
             for (var documentDb : searchCluster.getDocumentDbs()) {
-                if ( ! schemasWithGlobalPhase.contains(documentDb.getSchemaName())) continue;
+                // if ( ! schemasWithGlobalPhase.contains(documentDb.getSchemaName())) continue;
                 var factory = new RankProfilesEvaluatorComponent(documentDb);
                 if ( ! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
                     var onnxModels = documentDb.getDerivedConfiguration().getRankProfileList().getOnnxModels();

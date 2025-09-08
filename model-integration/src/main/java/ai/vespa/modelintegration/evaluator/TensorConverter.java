@@ -17,6 +17,7 @@ import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import static com.yahoo.config.model.api.OnnxModelOptions.DimensionResolving;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -105,7 +106,7 @@ class TensorConverter {
     interface Short2Float {
         float convert(short value);
     }
-    
+
     private static void extractTensor(FloatBuffer buffer, IndexedTensor.BoundBuilder builder, int totalSize) {
         for (int i = 0; i < totalSize; i++)
             builder.cellByDirectIndex(i, buffer.get(i));
@@ -135,12 +136,12 @@ class TensorConverter {
             builder.cellByDirectIndex(i, buffer.get(i));
     }
 
-    static Tensor toVespaTensor(OnnxValue onnxValue) {
+    static Tensor toVespaTensor(OnnxValue onnxValue, DimensionResolving dimResolve) {
         if ( ! (onnxValue instanceof OnnxTensor onnxTensor)) {
             throw new IllegalArgumentException("ONNX value is not a tensor: maps and sequences are not yet supported");
         }
         TensorInfo tensorInfo = onnxTensor.getInfo();
-        TensorType type = toVespaType(onnxTensor.getInfo());
+        TensorType type = toVespaType(onnxTensor.getInfo(), dimResolve);
         DimensionSizes sizes = DimensionSizes.of(type);
         IndexedTensor.BoundBuilder builder = (IndexedTensor.BoundBuilder) Tensor.Builder.of(type, sizes);
         long totalSizeAsLong = sizes.totalSize();
@@ -163,9 +164,9 @@ class TensorConverter {
         return builder.build();
     }
 
-    static Map<String, TensorType> toVespaTypes(Map<String, NodeInfo> infoMap) {
+    static Map<String, TensorType> toVespaTypes(Map<String, NodeInfo> infoMap, DimensionResolving dimResolve) {
         return infoMap.entrySet().stream().collect(Collectors.toMap(e -> asValidName(e.getKey()),
-                                                                    e -> toVespaType(e.getValue().getInfo())));
+                                                                    e -> toVespaType(e.getValue().getInfo(), dimResolve)));
     }
 
     static String asValidName(String name) {
@@ -182,17 +183,39 @@ class TensorConverter {
         throw new IllegalArgumentException("ONNX model has no input with name " + name);
     }
 
-    static TensorType toVespaType(ValueInfo valueInfo) {
+    static boolean useOldDimNames(DimensionResolving dimResolve) {
+        return dimResolve == DimensionResolving.D_NUMBERS;
+    }
+    static boolean detectDimTypes(DimensionResolving dimResolve) {
+        return dimResolve != DimensionResolving.DETECT_NAMES_AND_TYPES;
+    }
+
+    static String detectDimName(int i, DimensionResolving dimResolve, String dimName) {
+        if (useOldDimNames(dimResolve)
+            || (dimName == null)
+            || dimName.equals(""))
+        {
+            return "d" + i; // standard naming convention
+        } else {
+            return dimName;
+        }
+    }
+
+    static TensorType toVespaType(ValueInfo valueInfo, DimensionResolving dimResolve) {
         TensorInfo tensorInfo = toTensorInfo(valueInfo);
         TensorType.Builder builder = new TensorType.Builder(toVespaValueType(tensorInfo.onnxType));
+        String[] dimNames = tensorInfo.getDimensionNames();
         long[] shape = tensorInfo.getShape();
         for (int i = 0; i < shape.length; ++i) {
             long dimSize = shape[i];
-            String dimName = "d" + i;  // standard naming convention
-            if (dimSize > 0)
+            String dimName = detectDimName(i, dimResolve, dimNames[i]);
+            if (detectDimTypes(dimResolve) && (dimSize == 1) && (dimName == dimNames[i])) {
+                builder.mapped(dimName);
+            } else if (dimSize > 0) {
                 builder.indexed(dimName, dimSize);
-            else
+            } else {
                 builder.indexed(dimName);  // unbound dimension for dim size -1
+            }
         }
         return builder.build();
     }

@@ -6,6 +6,7 @@ import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.model.ml.OnnxModelInfo;
+import static com.yahoo.config.model.api.OnnxModelOptions.DimensionResolving;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -160,6 +161,13 @@ public class OnnxModel extends DistributableResource implements Cloneable {
 
     public Optional<Integer> getStatelessIntraOpThreads() {
         return onnxModelOptions.intraOpThreads();
+    }
+
+    public void setDimensionResolving(String value) {
+        onnxModelOptions = onnxModelOptions.withDimensionResolving(value);
+    }
+    public DimensionResolving getDimensionResolving() {
+        return onnxModelOptions.dimensionResolving();
     }
 
     public void setGpuDevice(int deviceNumber, boolean required) {

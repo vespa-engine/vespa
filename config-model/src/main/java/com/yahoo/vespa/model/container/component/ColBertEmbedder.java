@@ -8,8 +8,10 @@ import com.yahoo.embedding.ColBertEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
+import java.util.Optional;
 import java.util.Set;
 
+import static com.yahoo.config.model.api.OnnxModelOptions.DimensionResolving;
 import static com.yahoo.embedding.ColBertEmbedderConfig.TransformerExecutionMode;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
@@ -52,6 +54,7 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
                 getChildValue(xml, "onnx-execution-mode"),
                 getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt),
                 getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt),
+                DimensionResolving.D_NUMBERS,
                 getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new));
         modelRef = model.modelReference();
         vocabRef = Model.fromXmlOrImplicitlyFromOnnxModel(state, xml, model, "tokenizer-model", Set.of(HF_TOKENIZER)).modelReference();

@@ -12,6 +12,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.tensor.TensorType;
 import onnx.Onnx;
+import static com.yahoo.config.model.api.OnnxModelOptions.DimensionResolving;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -45,15 +46,19 @@ public class OnnxModelInfo {
     private final Map<String, OnnxTypeInfo> outputs;
     private final Map<String, TensorType> vespaTypes = new HashMap<>();
     private final Set<String> initializers;
+    private final DimensionResolving dimensionResolving;
 
-    private OnnxModelInfo(ApplicationPackage app, String path, Map<String, OnnxTypeInfo> inputs,
-                          Map<String, OnnxTypeInfo> outputs, Set<String> initializers, String defaultOutput) {
+    private OnnxModelInfo(ApplicationPackage app, String path,
+                          Map<String, OnnxTypeInfo> inputs,
+                          Map<String, OnnxTypeInfo> outputs,
+                          Set<String> initializers, String defaultOutput, DimensionResolving dimensionResolving) {
         this.app = app;
         this.modelPath = path;
         this.inputs = Map.copyOf(inputs);
         this.outputs = Map.copyOf(outputs);
         this.defaultOutput = defaultOutput;
         this.initializers = Set.copyOf(initializers);
+        this.dimensionResolving = dimensionResolving;
     }
 
     public String getModelPath() {
@@ -96,9 +101,12 @@ public class OnnxModelInfo {
             if (type.equals(TensorType.empty)) {
                 type = onnxTypeInfo.toVespaTensorType(symbolicSizes, unboundSizes);
             }
+            System.err.println("[OMI] with unknown dims: " + onnxName + " -> " + type);
             return type;
         }
-        return vespaTypes.computeIfAbsent(onnxName, v -> onnxTypeInfo.toVespaTensorType());
+        var result = vespaTypes.computeIfAbsent(onnxName, v -> onnxTypeInfo.toVespaTensorType());
+        System.err.println("[OMI] no unknown dims: " + onnxName + " -> " + result);
+        return result;
     }
 
     private void resolveUnknownDimensionSizes(Map<String, TensorType> inputTypes,
@@ -140,10 +148,10 @@ public class OnnxModelInfo {
         }
     }
 
-    static public OnnxModelInfo load(String path, ApplicationPackage app) {
+    static public OnnxModelInfo load(String path, ApplicationPackage app, DimensionResolving dimResolve) {
         Path pathInApplicationPackage = Path.fromString(path);
         if (app.getFile(pathInApplicationPackage).exists()) {
-            return loadFromFile(pathInApplicationPackage, app);
+            return loadFromFile(pathInApplicationPackage, app, dimResolve);
         }
         if (app.getFile(generatedModelInfoPath(pathInApplicationPackage)).exists()) {
             return loadFromGeneratedInfo(pathInApplicationPackage, app);
@@ -162,10 +170,10 @@ public class OnnxModelInfo {
         return false;
     }
 
-    static private OnnxModelInfo loadFromFile(Path path, ApplicationPackage app) {
+    static private OnnxModelInfo loadFromFile(Path path, ApplicationPackage app, DimensionResolving dimResolve) {
         try (InputStream inputStream = app.getFile(path).createInputStream()) {
             Onnx.ModelProto model = Onnx.ModelProto.parseFrom(inputStream);
-            String json = onnxModelToJson(model, path);
+            String json = onnxModelToJson(model, path, dimResolve);
             storeGeneratedInfo(json, path, app);
             return jsonToModelInfo(json, app);
 
@@ -197,7 +205,7 @@ public class OnnxModelInfo {
         return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR.append(fileName);
     }
 
-    static private String onnxModelToJson(Onnx.ModelProto model, Path path) throws IOException {
+    static private String onnxModelToJson(Onnx.ModelProto model, Path path, DimensionResolving dimResolve) throws IOException {
         var initializerNames = model.getGraph().getInitializerList().stream()
                 .map(Onnx.TensorProto::getName).collect(Collectors.toSet());
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -234,7 +242,7 @@ public class OnnxModelInfo {
             g.writeEndObject();
         }
         g.writeEndArray();
-
+        g.writeStringField("dimension_resolving", dimResolve.toString());
         g.writeEndObject();
         g.close();
         return out.toString();
@@ -247,15 +255,18 @@ public class OnnxModelInfo {
         Set<String> initializers = new HashSet<>();
         String defaultOutput = "";
 
+        var drRoot = root.get("dimension_resolving");
+        var dimResolve = (drRoot == null) ? DimensionResolving.D_NUMBERS : DimensionResolving.valueOf(drRoot.textValue());
+
         String path = null;
         if (root.has("path")) {
             path = root.get("path").textValue();
         }
         for (JsonNode input : root.get("inputs")) {
-            inputs.put(input.get("name").textValue(), jsonToTypeInfo(input));
+            inputs.put(input.get("name").textValue(), jsonToTypeInfo(input, dimResolve));
         }
         for (JsonNode output : root.get("outputs")) {
-            outputs.put(output.get("name").textValue(), jsonToTypeInfo(output));
+            outputs.put(output.get("name").textValue(), jsonToTypeInfo(output, dimResolve));
         }
         if (root.get("outputs").has(0)) {
             defaultOutput = root.get("outputs").get(0).get("name").textValue();
@@ -266,7 +277,7 @@ public class OnnxModelInfo {
                 initializers.add(initializer.get("name").textValue());
             }
         }
-        return new OnnxModelInfo(app, path, inputs, outputs, initializers, defaultOutput);
+        return new OnnxModelInfo(app, path, inputs, outputs, initializers, defaultOutput, dimResolve);
     }
 
     static private void onnxTypeToJson(JsonGenerator g, Onnx.ValueInfoProto valueInfo) throws IOException {
@@ -290,9 +301,9 @@ public class OnnxModelInfo {
         g.writeEndObject();
     }
 
-    static private OnnxTypeInfo jsonToTypeInfo(JsonNode node) {
+    static private OnnxTypeInfo jsonToTypeInfo(JsonNode node, DimensionResolving dimResolve) {
         TensorType.Value valueType = stringToValueType(node.get("type").textValue());
-        OnnxTypeInfo type = new OnnxTypeInfo(valueType);
+        OnnxTypeInfo type = new OnnxTypeInfo(valueType, dimResolve);
         for (JsonNode dim : node.get("dim")) {
             if (dim.get("type").textValue().equals("param")) {
                 type.addDimension(dim.get("size").textValue());
@@ -338,9 +349,11 @@ public class OnnxModelInfo {
     private static class OnnxTypeInfo {
         private final TensorType.Value valueType;
         private final List<OnnxDimensionInfo> dimensions = new ArrayList<>();
+        private final DimensionResolving dimResolve;
 
-        OnnxTypeInfo(TensorType.Value valueType) {
+        OnnxTypeInfo(TensorType.Value valueType, DimensionResolving dimResolve) {
             this.valueType = valueType;
+            this.dimResolve = dimResolve;
         }
 
         void addDimension(long value) {
@@ -376,6 +389,9 @@ public class OnnxModelInfo {
                 long onnxDimensionSize = onnxDimension.getSize();
                 if (onnxDimension.hasSymbolicName() && symbolicSizes != null && symbolicSizes.containsKey(onnxDimension.getSymbolicName())) {
                     onnxDimensionSize = symbolicSizes.get(onnxDimension.getSymbolicName());
+                    if (dimResolve != DimensionResolving.D_NUMBERS) {
+                        dimensionName = onnxDimension.getSymbolicName();
+                    }
                 }
                 if (onnxDimensionSize == 0 && symbolicSizes != null) {
                     // This is for the case where all symbolic dimensions have

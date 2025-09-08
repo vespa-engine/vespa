@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.modelintegration.evaluator;
 
+import static com.yahoo.config.model.api.OnnxModelOptions.DimensionResolving;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -16,17 +18,22 @@ public record OnnxEvaluatorOptions(
         int intraOpThreads,
         int gpuDeviceNumber,
         boolean gpuDeviceRequired,
+        DimensionResolving dimensionResolving,
         /* Optional runtime specific raw config */Optional<String> rawConfig) {
+
 
 
     public OnnxEvaluatorOptions {
         Objects.requireNonNull(executionMode, "executionMode cannot be null");
         Objects.requireNonNull(rawConfig, "rawConfig cannot be null");
+        Objects.requireNonNull(dimensionResolving, "dimensionResolving cannot be null");
     }
 
     public static OnnxEvaluatorOptions createDefault() {
         return new Builder().build();
     }
+
+    public static OnnxEvaluatorOptions defaultOptions = createDefault();
 
     public enum ExecutionMode {
         SEQUENTIAL,
@@ -44,6 +51,7 @@ public record OnnxEvaluatorOptions(
         private int intraOpThreads;
         private int gpuDeviceNumber;
         private boolean gpuDeviceRequired;
+        private DimensionResolving dimResolving;
         private String rawConfig;
 
         public Builder() {
@@ -53,6 +61,7 @@ public record OnnxEvaluatorOptions(
             intraOpThreads = quarterVcpu;
             gpuDeviceNumber = -1;
             gpuDeviceRequired = false;
+            dimResolving = DimensionResolving.D_NUMBERS;
             rawConfig = null;
         }
 
@@ -62,7 +71,13 @@ public record OnnxEvaluatorOptions(
             this.intraOpThreads = options.intraOpThreads();
             this.gpuDeviceNumber = options.gpuDeviceNumber();
             this.gpuDeviceRequired = options.gpuDeviceRequired();
+            this.dimResolving = options.dimensionResolving();
             this.rawConfig = options.rawConfig().orElse(null);
+        }
+
+        public Builder setDimensionResolving(String value) {
+            this.dimResolving = DimensionResolving.valueOf(value);
+            return this;
         }
 
         public Builder setExecutionMode(String mode) {
@@ -126,6 +141,7 @@ public record OnnxEvaluatorOptions(
                     intraOpThreads,
                     gpuDeviceNumber,
                     gpuDeviceRequired,
+                    dimResolving,
                     Optional.ofNullable(rawConfig));
         }
     }

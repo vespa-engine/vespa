@@ -22,6 +22,7 @@ import com.yahoo.config.model.api.ApplicationClusterInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.Provisioned;
+import static com.yahoo.config.model.api.OnnxModelOptions.DimensionResolving;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -77,6 +78,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
+import static com.yahoo.config.model.api.OnnxModelOptions.DimensionResolving;
 import static com.yahoo.text.StringUtilities.quote;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableMap;
@@ -323,7 +325,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
             modelExists = OnnxModelInfo.modelExists(path, this.applicationPackage);
         }
         if (modelExists) {
-            OnnxModelInfo onnxModelInfo = OnnxModelInfo.load(path, this.applicationPackage);
+            OnnxModelInfo onnxModelInfo = OnnxModelInfo.load(path, this.applicationPackage, DimensionResolving.D_NUMBERS);
             if (onnxModelInfo.getModelPath() != null) {
                 OnnxModel onnxModel = new OnnxModel(name, onnxModelInfo.getModelPath());
                 onnxModel.setModelInfo(onnxModelInfo);

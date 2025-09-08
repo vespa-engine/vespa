@@ -35,6 +35,8 @@ struct NumericRangeSpec {
     bool with_diversity_cutoff() const noexcept {
         return diversityCutoffGroups != std::numeric_limits<uint32_t>::max();
     }
+
+    void initFrom(const std::string &term);
 };
 
 } // namespace

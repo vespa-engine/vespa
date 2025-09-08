@@ -195,6 +195,7 @@ TOKEN :
 | < ADJUST_TARGET: "adjust-target">
 | < FILTER_THRESHOLD: "filter-threshold">
 | < INTRAOP_THREADS: "intraop-threads">
+| < DIMENSION_RESOLVING: "dimension-resolving">
 | < INTEROP_THREADS: "interop-threads">
 | < GPU_DEVICE: "gpu-device">
 | < EXECUTION_MODE: "execution-mode">
@@ -1679,6 +1680,7 @@ OnnxModel onnxModel() :
 void onnxModelItem(OnnxModel onnxModel) :
 {
     String path = null;
+    String val = null;
     int num;
 }
 {
@@ -1688,6 +1690,7 @@ void onnxModelItem(OnnxModel onnxModel) :
         <GPU_DEVICE> <COLON> num = integer() { onnxModel.setGpuDevice(num, false); } |
         <INTRAOP_THREADS> <COLON> num = integer() { onnxModel.setStatelessIntraOpThreads(num); } |
         <INTEROP_THREADS> <COLON> num = integer() { onnxModel.setStatelessInterOpThreads(num); } |
+        <DIMENSION_RESOLVING> <COLON> val = identifier() { onnxModel.setDimensionResolving(val); } |
         <EXECUTION_MODE> <COLON> ( <PARALLEL> { onnxModel.setStatelessExecutionMode("parallel"); }
                                   | <SEQUENTIAL> { onnxModel.setStatelessExecutionMode("sequential"); } ) |
         (<ONNX_INPUT_SL>) {
@@ -2875,6 +2878,7 @@ String identifierWithDash() :
     | <IGNORE_DEFAULT_RANK_FEATURES>
     | <INTEROP_THREADS>
     | <INTRAOP_THREADS>
+    | <DIMENSION_RESOLVING>
     | <KEEP_RANK_COUNT>
     | <LOWER_BOUND>
     | <MATCHED_ELEMENTS_ONLY>

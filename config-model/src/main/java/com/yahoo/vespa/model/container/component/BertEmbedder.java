@@ -8,8 +8,10 @@ import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
+import java.util.Optional;
 import java.util.Set;
 
+import static com.yahoo.config.model.api.OnnxModelOptions.DimensionResolving;
 import static com.yahoo.embedding.BertBaseEmbedderConfig.OnnxExecutionMode;
 import static com.yahoo.embedding.BertBaseEmbedderConfig.PoolingStrategy;
 import static com.yahoo.text.XML.getChildValue;
@@ -41,6 +43,7 @@ public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConf
                 getChildValue(xml, "onnx-execution-mode"),
                 getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt),
                 getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt),
+                DimensionResolving.D_NUMBERS,
                 getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new));
         modelRef = model.modelReference();
         vocabRef = Model.fromXml(state, xml, "tokenizer-vocab", Set.of(BERT_VOCAB)).orElseThrow().modelReference();

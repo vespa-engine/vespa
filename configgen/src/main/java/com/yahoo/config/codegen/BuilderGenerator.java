@@ -126,7 +126,7 @@ public class BuilderGenerator {
     private static String getBuilderSetters(CNode node) {
         List<String> elem = new ArrayList<>();
         CNode[] children = node.getChildren();
-    
+
         for (CNode child : children) {
             if (child instanceof InnerCNode && child.isArray) {
                 elem.add(BuilderSetters.innerArraySetters((InnerCNode) child));
@@ -289,6 +289,7 @@ public class BuilderGenerator {
                 if ("UrlReference".equals(bType))
                     type = bType;
                 //
+                System.err.println(String.format("gen privateSetter for '%s' bType '%s'", name, bType));
                 privateSetter = String.format("""
 
                                                       private Builder %s(String %svalue) {
