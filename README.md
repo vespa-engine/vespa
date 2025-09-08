@@ -96,12 +96,12 @@ brew install jenv mvnvm openjdk@17
 softwareupdate --install-rosetta
 ```
 
-4. For the system Java wrappers to find this JDK, symlink it with
+3. For the system Java wrappers to find this JDK, symlink it with
 ```sh
 sudo ln -sfn /opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-17.jdk
 ```
 
-3. Follow "Configure your shell" in https://www.jenv.be. Configuration is shell specific. For `zsh` use the below commands:
+4. Follow "Configure your shell" in https://www.jenv.be. Configuration is shell specific. For `zsh` use the below commands:
 ```sh
 echo 'export PATH="$HOME/.jenv/bin:$PATH"' >> ~/.zshrc
 echo 'eval "$(jenv init -)"' >> ~/.zshrc
@@ -110,12 +110,12 @@ jenv enable-plugin export
 exec $SHELL -l
 ```
 
-4. Add JDK17 to jEnv
+5. Add JDK17 to jEnv
 ```sh
 jenv add $(/usr/libexec/java_home -v 17)
 ```
 
-5. Verify configuration with Maven by executing below command in the root of the source code.
+6. Verify configuration with Maven by executing below command in the root of the source code.
    Output should refer to the JDK and Maven version specified in the [.java-version](.java-version) and [mvnvm.properties](mvnvm.properties).
 ```sh
 mvn -v
