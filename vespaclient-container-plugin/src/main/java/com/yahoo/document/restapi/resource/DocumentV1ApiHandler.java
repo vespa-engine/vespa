@@ -183,6 +183,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     private final long maxThrottled;
     private final long maxThrottledAgeNS;
     private final long maxThrottledTotalBytes;
+    private final long maxDocumentOperationRequestSizeBytes;
     private final DocumentAccess access;
     private final AsyncSession asyncSession;
     private final Map<String, StorageCluster> clusters;
@@ -204,7 +205,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                 DocumentmanagerConfig documentManagerConfig,
                                 ClusterListConfig clusterListConfig,
                                 AllClustersBucketSpacesConfig bucketSpacesConfig,
-                                DocumentOperationExecutorConfig executorConfig) {
+                                DocumentOperationExecutorConfig  executorConfig) {
         this(Clock.systemUTC(), Duration.ofSeconds(5), metric, metricReceiver, documentAccess,
              documentManagerConfig, executorConfig, clusterListConfig, bucketSpacesConfig);
     }
@@ -220,6 +221,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         this.maxThrottled = executorConfig.maxThrottled();
         this.maxThrottledAgeNS = (long) (executorConfig.maxThrottledAge() * 1_000_000_000.0);
         this.maxThrottledTotalBytes = calculateMaxThrottledTotalBytes(executorConfig);
+        this.maxDocumentOperationRequestSizeBytes = (long) executorConfig.maxDocumentOperationRequestSizeMib() * 1024 * 1024;
 
         log.info("Operation queue: max-items=%d, max-age=%d ms, max-bytes=%s".formatted(
                 maxThrottled, Duration.ofNanos(maxThrottledAgeNS).toMillis(), BytesQuantity.ofBytes(maxThrottledTotalBytes).asPrettyString()));
@@ -489,19 +491,26 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         return new ForwardingContentChannel((bytesRead, in) -> {
-            enqueueAndDispatch(request, handler, bytesRead, () -> {
-                ParsedDocumentOperation parsed = parser.parsePut(in, path.id().toString());
-                DocumentPut put = (DocumentPut)parsed.operation();
-                getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(put::setCondition);
-                getProperty(request, CREATE, booleanParser).ifPresent(put::setCreateIfNonExistent);
-                DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
-                        .withResponseHandler(response -> {
-                            outstanding.decrementAndGet();
-                            updatePutMetrics(response.outcome(), latencyOf(request), put.getCreateIfNonExistent());
-                            handleFeedOperation(path, parsed.fullyApplied(), handler, response);
-                        });
-                return () -> dispatchOperation(() -> asyncSession.put(put, parameters));
-            });
+            if (isDocumentOperationRequestTooLarge(bytesRead)) {
+                documentOperationRequestTooLarge(request, bytesRead, handler);
+            } else {
+                enqueueAndDispatch(
+                        request, handler, bytesRead, () -> {
+                            ParsedDocumentOperation parsed = parser.parsePut(in, path.id().toString());
+                            DocumentPut put = (DocumentPut) parsed.operation();
+                            getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(put::setCondition);
+                            getProperty(request, CREATE, booleanParser).ifPresent(put::setCreateIfNonExistent);
+                            DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
+                                    .withResponseHandler(response -> {
+                                        outstanding.decrementAndGet();
+                                        updatePutMetrics(
+                                                response.outcome(), latencyOf(request), put.getCreateIfNonExistent());
+                                        handleFeedOperation(path, parsed.fullyApplied(), handler, response);
+                                    });
+                            return () -> dispatchOperation(() -> asyncSession.put(put, parameters));
+                        }
+                );
+            }
         });
     }
 
@@ -514,19 +523,23 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         return new ForwardingContentChannel((bytesRead, in) -> {
-            enqueueAndDispatch(request, handler, bytesRead, () -> {
-                ParsedDocumentOperation parsed = parser.parseUpdate(in, path.id().toString());
-                DocumentUpdate update = (DocumentUpdate)parsed.operation();
-                getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(update::setCondition);
-                getProperty(request, CREATE, booleanParser).ifPresent(update::setCreateIfNonExistent);
-                DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
-                        .withResponseHandler(response -> {
-                            outstanding.decrementAndGet();
-                            updateUpdateMetrics(response.outcome(), latencyOf(request), update.getCreateIfNonExistent());
-                            handleFeedOperation(path, parsed.fullyApplied(), handler, response);
-                        });
-                return () -> dispatchOperation(() -> asyncSession.update(update, parameters));
-            });
+            if (isDocumentOperationRequestTooLarge(bytesRead)) {
+                documentOperationRequestTooLarge(request, bytesRead, handler);
+            } else {
+                enqueueAndDispatch(request, handler, bytesRead, () -> {
+                    ParsedDocumentOperation parsed = parser.parseUpdate(in, path.id().toString());
+                    DocumentUpdate update = (DocumentUpdate)parsed.operation();
+                    getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(update::setCondition);
+                    getProperty(request, CREATE, booleanParser).ifPresent(update::setCreateIfNonExistent);
+                    DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
+                            .withResponseHandler(response -> {
+                                outstanding.decrementAndGet();
+                                updateUpdateMetrics(response.outcome(), latencyOf(request), update.getCreateIfNonExistent());
+                                handleFeedOperation(path, parsed.fullyApplied(), handler, response);
+                            });
+                    return () -> dispatchOperation(() -> asyncSession.update(update, parameters));
+                });
+            }
         });
     }
 
@@ -551,7 +564,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         });
         return ignoredContent;
     }
-
+    
     private DocumentOperationParameters parametersFromRequest(HttpRequest request, String... names) {
         DocumentOperationParameters parameters = getProperty(request, TRACELEVEL, integerParser).map(parameters()::withTraceLevel)
                                                                                                 .orElse(parameters());
@@ -569,6 +582,10 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                         throw new IllegalArgumentException("Unrecognized document operation parameter name '" + name + "'");
             };
         return parameters;
+    }
+    
+    private boolean isDocumentOperationRequestTooLarge(long bytesRead) {
+        return bytesRead > maxDocumentOperationRequestSizeBytes;
     }
 
     /** Dispatches enqueued requests until one is blocked. */
@@ -771,6 +788,19 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
     }
 
+    private void documentOperationRequestTooLarge(HttpRequest request, long bytesRead, ResponseHandler handler) {
+        loggingException(() -> {
+            var message = String.format(
+                    "Document operation request size %d bytes exceeds maximum size of %d bytes. " + 
+                            "See https://docs.vespa.ai/en/document-v1-api-guide.html#request-size-limit", bytesRead,
+                    maxDocumentOperationRequestSizeBytes
+            );
+            log.log(FINE, () -> "Too large document operation request " + request.getMethod() + " " + request.getUri().getRawPath() + ": " + message);
+            JsonResponse.createWithPathAndMessage(request, message, handler, DEFAULT_TENSOR_OPTIONS)
+                    .respond(Status.REQUEST_TOO_LONG);
+        });
+    }
+
     // -------------------------------------------- Document Operations ----------------------------------------
 
     private static class Operation {
@@ -842,7 +872,6 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     /** Readable content channel which forwards data to a reader when closed. */
     static class ForwardingContentChannel implements ContentChannel {
-
         private final ReadableContentChannel delegate = new ReadableContentChannel();
         private final BiConsumer<Long, InputStream> reader;
         private final AtomicLong bytesRead = new AtomicLong(0);
@@ -1433,6 +1462,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                 case 400 -> report(DocumentOperationStatus.REQUEST_ERROR);
                 case 404 -> report(DocumentOperationStatus.NOT_FOUND);
                 case 412 -> report(DocumentOperationStatus.CONDITION_FAILED);
+                case 413 -> report(DocumentOperationStatus.DOCUMENT_TOO_LARGE);
                 case 429 -> report(DocumentOperationStatus.TOO_MANY_REQUESTS);
                 case 500,503,504,507 -> report(DocumentOperationStatus.SERVER_ERROR);
                 default -> throw new IllegalStateException("Unexpected status code '%s'".formatted(response.getStatus()));

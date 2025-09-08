@@ -1336,6 +1336,7 @@
       "public long zookeeperPreAllocSize()",
       "public int documentV1QueueSize()",
       "public int maxContentNodeMaintenanceOpConcurrency()",
+      "public int maxDocumentOperationRequestSizeMib()",
       "public int maxDistributorDocumentOperationSizeMib()",
       "public java.lang.Object sidecarsForTest()",
       "public boolean useTriton()",
