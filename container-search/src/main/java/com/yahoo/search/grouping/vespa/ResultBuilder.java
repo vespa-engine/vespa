@@ -30,6 +30,7 @@ import com.yahoo.searchlib.aggregation.Hit;
 import com.yahoo.searchlib.aggregation.HitsAggregationResult;
 import com.yahoo.searchlib.aggregation.MaxAggregationResult;
 import com.yahoo.searchlib.aggregation.MinAggregationResult;
+import com.yahoo.searchlib.aggregation.QuantileAggregationResult;
 import com.yahoo.searchlib.aggregation.RawData;
 import com.yahoo.searchlib.aggregation.StandardDeviationAggregationResult;
 import com.yahoo.searchlib.aggregation.SumAggregationResult;
@@ -256,6 +257,8 @@ class ResultBuilder {
                 return ((AverageAggregationResult)execResult).getAverage().getNumber();
             } else if (execResult instanceof CountAggregationResult) {
                 return ((CountAggregationResult)execResult).getCount();
+            } else if (execResult instanceof QuantileAggregationResult quantiles) {
+                return quantiles.getQuantileResults();
             } else if (execResult instanceof ExpressionCountAggregationResult) {
                 long count = ((ExpressionCountAggregationResult)execResult).getEstimatedUniqueCount();
                 return correctExpressionCountEstimate(count, tag);

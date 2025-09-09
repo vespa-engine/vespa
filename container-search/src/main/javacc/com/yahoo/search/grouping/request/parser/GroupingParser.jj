@@ -142,6 +142,7 @@ TOKEN :
     <POW: "pow"> |
     <PRECISION: "precision"> |
     <PREDEFINED: "predefined"> |
+    <QUANTILES: "quantiles"> |
     <RANGE: "range"> |
     <REGEX: "regex"> |
     <RELEVANCE: "relevance"> |
@@ -398,6 +399,7 @@ GroupingExpression value(GroupingOperation grp) :
                    exp = sortFunction(grp)             |
                    exp = arrayAtLookup(grp)            |
                    exp = interpolatedLookup(grp)       |
+                   exp = quantilesExpression(grp)       |
                    exp = stddevAggregator(grp)         |
                    exp = stringValue()                 |
                    exp = strCatFunction(grp)           |
@@ -619,6 +621,26 @@ GroupingExpression md5Function(GroupingOperation grp) :
 {
     ( <MD5> lbrace() exp = exp(grp) comma() num = number() rbrace() )
     { return new Md5Function(exp, num.intValue()); }
+}
+
+GroupingExpression quantilesExpression(GroupingOperation grp) :
+{
+    GroupingExpression input;
+    List<Number> qs = new ArrayList<Number>();
+    Number q;
+}
+{
+    <QUANTILES> lbrace() lbracket()
+        q = number() { qs.add(q); }
+        (
+            comma()
+            q = number() { qs.add(q); }
+        )*
+        rbracket()
+        comma()
+        input = exp(grp)
+    rbrace()
+    { return new QuantileAggregator(qs, input); }
 }
 
 GroupingExpression minExpression(GroupingOperation grp) :
@@ -1144,6 +1166,7 @@ String identifier() :
         <POW> |
         <PRECISION> |
         <PREDEFINED> |
+        <QUANTILES> |
         <RANGE> |
         <REGEX> |
         <RELEVANCE> |

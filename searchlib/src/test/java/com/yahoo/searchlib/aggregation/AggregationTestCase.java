@@ -11,6 +11,8 @@ import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -57,6 +59,91 @@ public class AggregationTestCase {
         assertEquals(b.getCount(), 7);
         b.merge(a);
         assertEquals(b.getCount(), 14);
+    }
+
+    @Test
+    public void testQuantileAggregationResultSingle() {
+        QuantileAggregationResult a = new QuantileAggregationResult(List.of(0.5));
+        a.updateSketch(4);
+        a.updateSketch(5);
+        a.updateSketch(6);
+        a.setExpression(new AttributeNode("attributeA"));
+        assertEquals(a.getQuantiles(), List.of(0.5));
+        assertEquals(a.getQuantileResults(), new QuantileAggregationResult.QuantileResult.Builder().add(0.5, 5).build());
+
+        QuantileAggregationResult b = (QuantileAggregationResult)serializeDeserialize(a);
+        assertEquals(b.getQuantiles(), List.of(0.5));
+        assertEquals(b.getQuantileResults(), new QuantileAggregationResult.QuantileResult.Builder().add(0.5, 5).build());
+
+        QuantileAggregationResult c = (QuantileAggregationResult)serializeDeserialize(a);
+        c.updateSketch(7);
+        c.updateSketch(8);
+        c.updateSketch(9);
+        c.updateSketch(10);
+        assertEquals(c.getQuantileResults(), new QuantileAggregationResult.QuantileResult.Builder().add(0.5, 7).build());
+        b.merge(c);
+        assertEquals(b.getQuantiles(), List.of(0.5));
+        assertEquals(b.getQuantileResults(), new QuantileAggregationResult.QuantileResult.Builder().add(0.5, 6).build());
+    }
+
+    @Test
+    public void testQuantileAggregationResultMulti() {
+        QuantileAggregationResult a = new QuantileAggregationResult(List.of(0.25, 0.5, 0.9));
+        a.updateSketch(4);
+        a.updateSketch(5);
+        a.updateSketch(6);
+        a.setExpression(new AttributeNode("attributeA"));
+
+        assertEquals(a.getQuantiles(), List.of(0.25, 0.5, 0.9));
+        assertEquals(
+            a.getQuantileResults(),
+            new QuantileAggregationResult.QuantileResult.Builder()
+                .add(0.25, 4)   // values: [4,5,6]
+                .add(0.5,  5)
+                .add(0.9,  6)
+                .build()
+        );
+
+        // Round-trip
+        QuantileAggregationResult b = (QuantileAggregationResult) serializeDeserialize(a);
+        assertEquals(b.getQuantiles(), List.of(0.25, 0.5, 0.9));
+        assertEquals(
+            b.getQuantileResults(),
+            new QuantileAggregationResult.QuantileResult.Builder()
+                .add(0.25, 4)
+                .add(0.5,  5)
+                .add(0.9,  6)
+                .build()
+        );
+
+        // Create C from A, then add more data
+        QuantileAggregationResult c = (QuantileAggregationResult) serializeDeserialize(a);
+        c.updateSketch(7);
+        c.updateSketch(8);
+        c.updateSketch(9);
+        c.updateSketch(10);
+
+        assertEquals(
+            c.getQuantileResults(),
+            new QuantileAggregationResult.QuantileResult.Builder()
+                .add(0.25, 5)   // values: [4,5,6,7,8,9,10]
+                .add(0.5,  7)
+                .add(0.9, 10)
+                .build()
+        );
+
+        // Merge C into B (B had [4,5,6]; C has [4..10]; merged multiset size = 10)
+        b.merge(c);
+
+        assertEquals(b.getQuantiles(), List.of(0.25, 0.5, 0.9));
+        assertEquals(
+            b.getQuantileResults(),
+            new QuantileAggregationResult.QuantileResult.Builder()
+                .add(0.25, 5)   // merged values: [4,4,5,5,6,6,7,8,9,10]
+                .add(0.5,  6)
+                .add(0.9,  9)
+                .build()
+        );
     }
 
     @Test
