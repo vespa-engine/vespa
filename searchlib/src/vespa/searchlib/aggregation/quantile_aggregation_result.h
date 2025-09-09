@@ -22,7 +22,6 @@ class QuantileAggregationResult : public AggregationResult
 
 public:
     QuantileAggregationResult();
-    explicit QuantileAggregationResult(const ResultNode::CP& result);
     ~QuantileAggregationResult() override;
     QuantileAggregationResult(const QuantileAggregationResult&);
     QuantileAggregationResult& operator=(const QuantileAggregationResult&);

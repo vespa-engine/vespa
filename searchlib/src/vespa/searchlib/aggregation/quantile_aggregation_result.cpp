@@ -5,6 +5,9 @@
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.aggregation.quantile_aggregation_result");
+
 namespace search::aggregation {
 
 using expression::ResultNodeVector;
@@ -15,10 +18,6 @@ IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, QuantileAggregationResult, Aggre
 
 QuantileAggregationResult::QuantileAggregationResult() {
     _rank.reset(new FloatResultNode(0));
-}
-
-QuantileAggregationResult::QuantileAggregationResult(const ResultNode::CP& result) {
-    setResult(result);
 }
 
 QuantileAggregationResult::~QuantileAggregationResult() = default;
@@ -40,7 +39,9 @@ void QuantileAggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) c
 
 void QuantileAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
     (void) result;
-    (void) useForInit;
+    if (useForInit) {
+        LOG(warning, "useForInit was true. Should not happen for QuantileAggregationResult.");
+    }
 }
 
 void QuantileAggregationResult::onMerge(const AggregationResult& b) {
