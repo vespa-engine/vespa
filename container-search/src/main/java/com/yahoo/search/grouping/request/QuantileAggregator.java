@@ -36,7 +36,7 @@ public class QuantileAggregator extends AggregatorNode {
      *
      * @param quantiles the quantiles to be validated.
      */
-    private List<Double> toValidateQuantiles(List<Number> quantiles) {
+    private List<Double> toValidatedQuantiles(List<Number> quantiles) {
         if (quantiles.isEmpty()) {
             throw new IllegalArgumentException("quantiles cannot be empty");
         }
