@@ -205,7 +205,7 @@ public class GroupingSerializationTest {
                     .setExpression(new ConstantNode(new IntegerResultNode(67))));
             t.assertMatch(new StandardDeviationAggregationResult(1, 67, 67 * 67)
                     .setExpression(new ConstantNode(new IntegerResultNode(67))));
-            t.assertMatch(new QuantileAggregationResult(List.of(0.5))
+            t.assertMatch(new QuantileAggregationResult(List.of(0.5, 0.9))
                     .updateSketch(6)
                     .updateSketch(7)
                     .updateSketch(8)

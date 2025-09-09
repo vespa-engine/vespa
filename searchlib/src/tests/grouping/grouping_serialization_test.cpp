@@ -240,8 +240,9 @@ TEST(GroupingSerializationTest, testAggregatorResults) {
     stddev.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(67)))
             .aggregate(DocId(42), HitRank(21));
     f.checkObject(stddev);
+
     QuantileAggregationResult quantile;
-    quantile.set_quantiles({0.5});
+    quantile.set_quantiles({0.5, 0.9});
     quantile.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(6))).aggregate(DocId(42), HitRank(21));
     quantile.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(7))).aggregate(DocId(43), HitRank(21));
     quantile.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(8))).aggregate(DocId(45), HitRank(21));
