@@ -116,11 +116,10 @@ SumAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
 }
 
 MinAggregationResult::MinAggregationResult() = default;
-MinAggregationResult::MinAggregationResult(const ResultNode::CP &result)
-    : AggregationResult()
-{
-    setResult(result);
-}
+MinAggregationResult::MinAggregationResult(const SingleResultNode & min)
+    : AggregationResult(),
+      _min(min)
+{ }
 MinAggregationResult::~MinAggregationResult() = default;
 
 void
