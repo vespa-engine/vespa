@@ -3,6 +3,8 @@
 #include "same_element_query_node.h"
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <algorithm>
+#include <span>
 
 namespace search::streaming {
 
@@ -15,72 +17,55 @@ SameElementQueryNode::~SameElementQueryNode() = default;
 
 bool
 SameElementQueryNode::evaluate() const {
-    HitList hl;
-    return ! evaluateHits(hl).empty();
+    std::vector<uint32_t> element_ids;
+    get_element_ids(element_ids);
+    return !element_ids.empty();
 }
 
 const HitList &
 SameElementQueryNode::evaluateHits(HitList & hl) const
 {
     hl.clear();
-    const auto & children = get_terms();
-    if (children.size() == 1) {
-        return children.front()->evaluateHits(hl);
-    }
-    for (auto& child : children) {
-        if ( ! child->evaluate() ) {
-            return hl;
-        }
-    }
-    HitList tmpHL;
-    unsigned int numFields = children.size();
-    unsigned int currMatchCount = 0;
-    std::vector<unsigned int> indexVector(numFields, 0);
-    auto curr = static_cast<const QueryTerm *> (children[currMatchCount].get());
-    bool exhausted( curr->evaluateHits(tmpHL).empty());
-    for (; !exhausted; ) {
-        auto next = static_cast<const QueryTerm *>(children[currMatchCount+1].get());
-        unsigned int & currIndex = indexVector[currMatchCount];
-        unsigned int & nextIndex = indexVector[currMatchCount+1];
-
-        const auto & currHit = curr->evaluateHits(tmpHL)[currIndex];
-        uint32_t currElemId = currHit.element_id();
-
-        const HitList & nextHL = next->evaluateHits(tmpHL);
-
-        size_t nextIndexMax = nextHL.size();
-        while ((nextIndex < nextIndexMax) && (nextHL[nextIndex].element_id() < currElemId)) {
-            nextIndex++;
-        }
-        if ((nextIndex < nextIndexMax) && (nextHL[nextIndex].element_id() == currElemId)) {
-            currMatchCount++;
-            if ((currMatchCount+1) == numFields) {
-                Hit h = nextHL[indexVector[currMatchCount]];
-                hl.emplace_back(h.field_id(), h.element_id(), h.element_weight(), 0);
-                currMatchCount = 0;
-                indexVector[0]++;
-            }
-        } else {
-            currMatchCount = 0;
-            indexVector[currMatchCount]++;
-        }
-        curr = static_cast<const QueryTerm *>(children[currMatchCount].get());
-        exhausted = (nextIndex >= nextIndexMax) || (indexVector[currMatchCount] >= curr->evaluateHits(tmpHL).size());
-    }
     return hl;
 }
 
 void
-SameElementQueryNode::get_element_ids(std::vector<uint32_t>&) const
+SameElementQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
 {
+    const auto & children = get_terms();
+    if (children.empty()) {
+        return;
+    }
+    for (auto& child : children) {
+        if (!child->evaluate()) {
+            return;
+        }
+    }
+    children.front()->get_element_ids(element_ids);
+    std::span<const std::unique_ptr<QueryTerm>> others(children.begin() + 1, children.end());
+    if (others.empty()) {
+        return;
+    }
+    std::vector<uint32_t> temp_element_ids;
+    std::vector<uint32_t> result;
+    for (auto& child : others) {
+        temp_element_ids.clear();
+        result.clear();
+        child->get_element_ids(temp_element_ids);
+        std::set_intersection(element_ids.begin(), element_ids.end(),
+                              temp_element_ids.begin(), temp_element_ids.end(),
+                              std::back_inserter(result));
+        std::swap(element_ids, result);
+        if (element_ids.empty()) {
+            return;
+        }
+    }
 }
 
 void
 SameElementQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment&)
 {
-    HitList list;
-    const HitList & hit_list = evaluateHits(list);
-    if (!hit_list.empty()) {
+    if (evaluate()) {
         auto num_fields = td.numFields();
         /*
          * Currently reports hit for all fields for query node instead of

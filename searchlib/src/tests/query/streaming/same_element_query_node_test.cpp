@@ -122,26 +122,10 @@ TEST(SameElementQueryNodeTest, test_same_element_evaluate)
     terms[2]->add(2, 6, 170, 17);
     HitList hits;
     sameElem->evaluateHits(hits);
-    EXPECT_EQ(4u, hits.size());
-    EXPECT_EQ(2u, hits[0].field_id());
-    EXPECT_EQ(0u, hits[0].element_id());
-    EXPECT_EQ(130, hits[0].element_weight());
-    EXPECT_EQ(0u, hits[0].position());
-
-    EXPECT_EQ(2u, hits[1].field_id());
-    EXPECT_EQ(2u, hits[1].element_id());
-    EXPECT_EQ(140, hits[1].element_weight());
-    EXPECT_EQ(0u, hits[1].position());
-
-    EXPECT_EQ(2u, hits[2].field_id());
-    EXPECT_EQ(4u, hits[2].element_id());
-    EXPECT_EQ(150, hits[2].element_weight());
-    EXPECT_EQ(0u, hits[2].position());
-
-    EXPECT_EQ(2u, hits[3].field_id());
-    EXPECT_EQ(5u, hits[3].element_id());
-    EXPECT_EQ(160, hits[3].element_weight());
-    EXPECT_EQ(0u, hits[3].position());
+    EXPECT_TRUE(hits.empty());
+    std::vector<uint32_t> element_ids;
+    sameElem->get_element_ids(element_ids);
+    EXPECT_EQ((std::vector<uint32_t>{ 0, 2, 4, 5}), element_ids);
     EXPECT_TRUE(sameElem->evaluate());
 
     SimpleTermData td;
