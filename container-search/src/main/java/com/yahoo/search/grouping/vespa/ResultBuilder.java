@@ -257,8 +257,8 @@ class ResultBuilder {
                 return ((AverageAggregationResult)execResult).getAverage().getNumber();
             } else if (execResult instanceof CountAggregationResult) {
                 return ((CountAggregationResult)execResult).getCount();
-            } else if (execResult instanceof QuantileAggregationResult) {
-                return ((QuantileAggregationResult)execResult).getQuantileResults();
+            } else if (execResult instanceof QuantileAggregationResult quantiles) {
+                return quantiles.getQuantileResults();
             } else if (execResult instanceof ExpressionCountAggregationResult) {
                 long count = ((ExpressionCountAggregationResult)execResult).getEstimatedUniqueCount();
                 return correctExpressionCountEstimate(count, tag);
