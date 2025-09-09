@@ -104,6 +104,10 @@ std::vector<QuantileAggregationResult::QuantileResult> QuantileAggregationResult
 }
 
 void QuantileAggregationResult::set_quantiles(const std::vector<double>& quantiles) {
+    if (std::ranges::any_of(quantiles, [](const double q) noexcept{ return q < 0.0 || q > 1.0; })) {
+        throw std::runtime_error("quantile value out of range (expected between 0 and 1)");
+    }
+
     _quantiles = quantiles;
 }
 
