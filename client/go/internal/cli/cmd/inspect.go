@@ -12,8 +12,9 @@ import (
 
 type inspectProfileOptions struct {
 	profileFile         string
-	selectMedianNode    bool
+	showMedianNode      bool
 	showDispatchedQuery bool
+	makePrompt          bool
 }
 
 func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
@@ -27,11 +28,14 @@ func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
 		return fmt.Errorf("profile file '%s' does not contain valid JSON", opts.profileFile)
 	}
 	context := tracedoctor.NewContext(root)
-	if opts.selectMedianNode {
-		context.SelectMedianNode()
+	if opts.showMedianNode {
+		context.ShowMedianNode()
 	}
 	if opts.showDispatchedQuery {
 		context.ShowDispatchedQuery()
+	}
+	if opts.makePrompt {
+		context.MakePrompt()
 	}
 	return context.Analyze(cli.Stdout)
 }
@@ -50,8 +54,9 @@ func newInspectProfileCmd(cli *CLI) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "f", "vespa_query_profile_result.json", "Name of the profile file to inspect")
-	cmd.Flags().BoolVar(&opts.selectMedianNode, "select-median-node", false, "Select median node for analysis (default is worst)")
+	cmd.Flags().BoolVar(&opts.showMedianNode, "show-median-node", false, "Show median node analysis")
 	cmd.Flags().BoolVar(&opts.showDispatchedQuery, "show-dispatched-query", false, "Show query sent to search nodes")
+	cmd.Flags().BoolVar(&opts.makePrompt, "make-prompt", false, "Output an AI prompt instead of human-readable analysis")
 	return cmd
 }
 
