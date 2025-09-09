@@ -44,10 +44,10 @@ public class HostRegistry implements HostValidator {
     public synchronized void verifyHosts(ApplicationId applicationId, Collection<String> newHosts) {
         for (String host : newHosts) {
             if (hostAlreadyTaken(host, applicationId)) {
-                var message = "'" + applicationId + "' tried to allocate host '" + host +
-                              "', but the host is already taken by";
-                log.log(Level.SEVERE, () -> message + "' " + host2ApplicationId.get(host) + "'");
-                throw new IllegalArgumentException(message + " another host");
+                var message = "'" + applicationId + "' tried to allocate '" + host +
+                        "', but the host is already allocated to another application";
+                log.log(Level.SEVERE, () -> message + " (' " + host2ApplicationId.get(host) + "')");
+                throw new IllegalArgumentException(message);
             }
         }
     }
