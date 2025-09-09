@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * This class represents a quantile-aggregator in a {@link GroupingExpression}. It evaluates to the quantiles that
+ * This class represents a quantile-aggregator in a {@link GroupingExpression}. It evaluates to the quantiles of
  * the contained expression evaluated to over all the inputs.
  *
  * @author johsol
