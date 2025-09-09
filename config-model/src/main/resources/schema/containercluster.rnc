@@ -5,7 +5,7 @@ ContainerCluster = element container {
     Include* &
     ContainerServices &    
     DocumentBinding* &
-    NodesOfContainerCluster? &
+    ContainerNodes? &
     ClientAuthorize?
 }
 
@@ -301,7 +301,7 @@ HttpClientApi = element http-client-api {
 
 # NODES:
 
-NodesOfContainerCluster = element nodes {
+ContainerNodes = element nodes {
     attribute jvm-options { text }? & # Remove in Vespa 9
     attribute jvm-gc-options { text }? & # Remove in Vespa 9
     attribute preload { text }? &
@@ -318,7 +318,6 @@ NodesOfContainerCluster = element nodes {
     } ? &
     (
       (
-        attribute of { xsd:string } &
         attribute required { xsd:boolean }?
       )
       |
