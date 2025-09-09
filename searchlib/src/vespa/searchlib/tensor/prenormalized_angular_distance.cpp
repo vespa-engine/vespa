@@ -62,9 +62,11 @@ public:
 template class BoundPrenormalizedAngularDistance<TemporaryVectorStore<float>>;
 template class BoundPrenormalizedAngularDistance<TemporaryVectorStore<double>>;
 template class BoundPrenormalizedAngularDistance<TemporaryVectorStore<Int8Float>>;
+template class BoundPrenormalizedAngularDistance<TemporaryVectorStore<vespalib::BFloat16>>;
 template class BoundPrenormalizedAngularDistance<ReferenceVectorStore<float>>;
 template class BoundPrenormalizedAngularDistance<ReferenceVectorStore<double>>;
 template class BoundPrenormalizedAngularDistance<ReferenceVectorStore<Int8Float>>;
+template class BoundPrenormalizedAngularDistance<ReferenceVectorStore<vespalib::BFloat16>>;
 
 template <typename FloatType>
 BoundDistanceFunction::UP
@@ -88,5 +90,6 @@ PrenormalizedAngularDistanceFunctionFactory<FloatType>::for_insertion_vector(Typ
 template class PrenormalizedAngularDistanceFunctionFactory<float>;
 template class PrenormalizedAngularDistanceFunctionFactory<double>;
 template class PrenormalizedAngularDistanceFunctionFactory<Int8Float>;
+template class PrenormalizedAngularDistanceFunctionFactory<vespalib::BFloat16>;
 
 }

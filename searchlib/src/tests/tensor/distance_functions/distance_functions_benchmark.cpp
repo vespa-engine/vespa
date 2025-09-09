@@ -75,26 +75,16 @@ void benchmark(size_t iterations, size_t elems, const DistanceFunctionFactory & 
 template<typename T>
 void benchmark(size_t iterations, size_t elems, const std::string & dist_functions) {
     if (dist_functions.find("euclid") != npos) {
-        if constexpr ( ! std::is_same<T, BFloat16>()) {
-            benchmark<T>(iterations, elems, EuclideanDistanceFunctionFactory<T>());
-        } else {
-            benchmark<BFloat16>(iterations, elems, EuclideanDistanceFunctionFactory<float>());
-        }
+        benchmark<T>(iterations, elems, EuclideanDistanceFunctionFactory<T>());
     }
     if (dist_functions.find("angular") != npos) {
-        if constexpr ( ! std::is_same<T, BFloat16>()) {
-            benchmark<T>(iterations, elems, AngularDistanceFunctionFactory<T>());
-        }
+        benchmark<T>(iterations, elems, AngularDistanceFunctionFactory<T>());
     }
     if (dist_functions.find("prenorm") != npos) {
-        if constexpr ( ! std::is_same<T, BFloat16>()) {
-            benchmark<T>(iterations, elems, PrenormalizedAngularDistanceFunctionFactory<T>());
-        }
+        benchmark<T>(iterations, elems, PrenormalizedAngularDistanceFunctionFactory<T>());
     }
     if (dist_functions.find("mips") != npos) {
-        if constexpr ( !std::is_same<T, BFloat16>()) {
-            benchmark<T>(iterations, elems, MipsDistanceFunctionFactory<T>());
-        }
+        benchmark<T>(iterations, elems, MipsDistanceFunctionFactory<T>());
     }
 }
 
