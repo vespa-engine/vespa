@@ -46,9 +46,11 @@ public:
 };
 
 template class BoundEuclideanDistance<TemporaryVectorStore<Int8Float>>;
+template class BoundEuclideanDistance<TemporaryVectorStore<vespalib::BFloat16>>;
 template class BoundEuclideanDistance<TemporaryVectorStore<float>>;
 template class BoundEuclideanDistance<TemporaryVectorStore<double>>;
 template class BoundEuclideanDistance<ReferenceVectorStore<Int8Float>>;
+template class BoundEuclideanDistance<ReferenceVectorStore<vespalib::BFloat16>>;
 template class BoundEuclideanDistance<ReferenceVectorStore<float>>;
 template class BoundEuclideanDistance<ReferenceVectorStore<double>>;
 
@@ -72,6 +74,7 @@ EuclideanDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs
 }
 
 template class EuclideanDistanceFunctionFactory<Int8Float>;
+template class EuclideanDistanceFunctionFactory<vespalib::BFloat16>;
 template class EuclideanDistanceFunctionFactory<float>;
 template class EuclideanDistanceFunctionFactory<double>;
 

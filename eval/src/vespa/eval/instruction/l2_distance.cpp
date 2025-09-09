@@ -36,17 +36,13 @@ void my_squared_l2_distance_op(InterpretedFunction::State &state, uint64_t vecto
 struct SelectOp {
     template <typename CT>
     static InterpretedFunction::op_function invoke() {
-        constexpr bool is_bfloat16 = std::is_same_v<CT, BFloat16>;
-        if constexpr (!is_bfloat16) {
-            return my_squared_l2_distance_op<CT>;
-        } else {
-            abort();
-        }
+        return my_squared_l2_distance_op<CT>;
     }
 };
 
 bool compatible_cell_types(CellType lhs, CellType rhs) {
     return ((lhs == rhs) && ((lhs == CellType::INT8) ||
+                             (lhs == CellType::BFLOAT16) ||
                              (lhs == CellType::FLOAT) ||
                              (lhs == CellType::DOUBLE)));
 }
