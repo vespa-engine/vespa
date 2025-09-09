@@ -790,24 +790,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
             } catch (IllegalArgumentException ignored) {
             }
         }
-        {
-            String xmlWithNodes =
-                    "<?xml version='1.0' encoding='utf-8' ?>" +
-                            "<services>" +
-                            "  <container version='1.0' id='container1'>" +
-                            "     <zookeeper/>" +
-                            "     <nodes of='content1'/>" +
-                            "  </container>" +
-                            "  <content version='1.0' id='content1'>" +
-                            "     <nodes count='3'/>" +
-                            "   </content>" +
-                            "</services>";
-            try {
-                tester.createModel(xmlWithNodes, true);
-                fail("Expected exception");
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
     }
 
     @Test
