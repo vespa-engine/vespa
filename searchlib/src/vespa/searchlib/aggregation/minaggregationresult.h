@@ -14,7 +14,7 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const SingleResultNode & getMin() const { return *_min; }
     MinAggregationResult();
-    MinAggregationResult(const SingleResultNode & max);
+    MinAggregationResult(const SingleResultNode & min);
     ~MinAggregationResult();
 private:
     const ResultNode & onGetRank() const override { return getMin(); }
