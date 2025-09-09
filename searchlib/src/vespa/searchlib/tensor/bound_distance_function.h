@@ -20,6 +20,7 @@ public:
     using UP = std::unique_ptr<BoundDistanceFunction>;
     using TypedCells = vespalib::eval::TypedCells;
     using Int8Float = vespalib::eval::Int8Float;
+    using BFloat16 = vespalib::BFloat16;
 
     BoundDistanceFunction() noexcept = default;
 
@@ -34,6 +35,7 @@ protected:
     static const double *cast(const double * p) { return p; }
     static const float *cast(const float * p) { return p; }
     static const int8_t *cast(const Int8Float * p) { return reinterpret_cast<const int8_t *>(p); }
+    static const BFloat16 *cast(const BFloat16* p) { return p; }
 };
 
 }
