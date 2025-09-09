@@ -26,7 +26,7 @@ public class QuantileAggregator extends AggregatorNode {
 
     private QuantileAggregator(String label, Integer level, List<Number> quantiles, GroupingExpression expression) {
         super("quantiles", label, level, expression);
-        this.quantiles = toValidateQuantiles(quantiles);
+        this.quantiles = toValidatedQuantiles(quantiles);
     }
 
     /**
