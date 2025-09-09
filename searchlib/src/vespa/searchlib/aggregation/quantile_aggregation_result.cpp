@@ -17,7 +17,7 @@ using vespalib::Deserializer;
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, QuantileAggregationResult, AggregationResult);
 
 QuantileAggregationResult::QuantileAggregationResult() {
-    _rank.reset(new FloatResultNode(0));
+    _no_rank.reset(new FloatResultNode(0));
 }
 
 QuantileAggregationResult::~QuantileAggregationResult() = default;

@@ -18,10 +18,11 @@ class QuantileAggregationResult : public AggregationResult
     std::vector<double>          _quantiles{};
     uint8_t                      _extension{}; // Leave a byte to make it easier to change the sketch in the future.
     vespalib::KLLSketch          _sketch;
-    FloatResultNode::CP          _rank; // for onGetRank()
+    FloatResultNode::CP          _no_rank; // for onGetRank()
 
 public:
     QuantileAggregationResult();
+    explicit QuantileAggregationResult(const ResultNode::CP& result);
     ~QuantileAggregationResult() override;
     QuantileAggregationResult(const QuantileAggregationResult&);
     QuantileAggregationResult& operator=(const QuantileAggregationResult&);
@@ -45,7 +46,7 @@ public:
     void update_sketch(double value);
 
 private:
-    [[nodiscard]] const ResultNode& onGetRank() const override { return *_rank; }
+    [[nodiscard]] const ResultNode& onGetRank() const override { return *_no_rank; }
     void onPrepare(const ResultNode& result, bool useForInit) override;
 };
 
