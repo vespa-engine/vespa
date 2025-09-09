@@ -50,7 +50,7 @@ public class SchemaValidatorTest {
     }
 
     @Test
-    void testXMLParseError() throws IOException {
+    void testXMLParseError() {
         Throwable exception = assertThrows(RuntimeException.class, () -> {
             SchemaValidator validator = createValidator();
             validator.validate(new StringReader(invalidServices));
@@ -65,7 +65,7 @@ public class SchemaValidatorTest {
     }
 
     @Test
-    void testXMLParseErrorWithReader() throws IOException {
+    void testXMLParseErrorWithReader() {
         Throwable exception = assertThrows(RuntimeException.class, () -> {
             SchemaValidator validator = createValidator();
             validator.validate(new StringReader(invalidServices));
@@ -74,7 +74,7 @@ public class SchemaValidatorTest {
     }
 
     @Test
-    void testXMLParseErrorFromFile() throws IOException {
+    void testXMLParseErrorFromFile() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             SchemaValidator validator = createValidator();
             validator.validate(new File("src/test/cfg/application/invalid-services-syntax/services.xml"));
@@ -111,7 +111,7 @@ public class SchemaValidatorTest {
     }
 
     @Test
-    void verifyInvalidFile() throws Exception {
+    void verifyInvalidFile() {
         Throwable exception = assertThrows(RuntimeException.class, () -> {
                 justValidate("services.rnc", "services-bad-vespamalloc.xml");
             });
