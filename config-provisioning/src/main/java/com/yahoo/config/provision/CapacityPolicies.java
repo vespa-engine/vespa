@@ -22,6 +22,7 @@ import static java.util.logging.Level.INFO;
 public class CapacityPolicies {
 
     private static final Logger log = Logger.getLogger(CapacityPolicies.class.getName());
+    private static final NodeResources MIN_KUBERNETES_RESOURCES = new NodeResources(0.5, 1, 10, 0.3);
 
     public record Tuning(Architecture adminClusterArchitecture, double logserverMemoryGiB,
                          double clusterControllerMemoryGiB, long contentNodes) {
@@ -127,7 +128,7 @@ public class CapacityPolicies {
     private NodeResources defaultResources(ClusterSpec clusterSpec) {
         var adminClusterArchitecture = tuning.adminClusterArchitecture();
         if (clusterSpec.type() == ClusterSpec.Type.admin) {
-            if (exclusivity.allocation(clusterSpec)) {
+            if (exclusivity.allocation(clusterSpec) && !zone.system().isKubernetes()) {
                 return smallestExclusiveResources().with(adminClusterArchitecture);
             }
 
@@ -222,6 +223,7 @@ public class CapacityPolicies {
 
     // The lowest amount of resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
     private NodeResources smallestExclusiveResources() {
+        if (zone.system().isKubernetes()) return MIN_KUBERNETES_RESOURCES;
         return zone.cloud().name() == CloudName.AZURE || zone.cloud().name() == CloudName.GCP
                 ? new NodeResources(2, 8, 50, 0.3)
                 : new NodeResources(0.5, 8, 50, 0.3);
@@ -229,6 +231,7 @@ public class CapacityPolicies {
 
     // The lowest amount of resources that can be shared (i.e. a matching host flavor for this exists)
     private NodeResources smallestSharedResources() {
+        if (zone.system().isKubernetes()) throw new IllegalStateException("Not expecting shared nodes in Kubernetes");
         return zone.cloud().name() == CloudName.GCP
                 ? new NodeResources(1, 4, 50, 0.3)
                 : new NodeResources(0.5, 2, 50, 0.3);

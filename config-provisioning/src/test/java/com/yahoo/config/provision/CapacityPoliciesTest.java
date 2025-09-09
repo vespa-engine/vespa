@@ -51,6 +51,19 @@ public class CapacityPoliciesTest {
         }
     }
 
+    @Test
+    void testCapacityPoliciesForKubernetes() {
+        var zone = new Zone(SystemName.kubernetes, Environment.prod, RegionName.from("foo"));
+        var clusterController = new ClusterResources(2, 1, NodeResources.unspecified());
+        var capacityPolicies = new CapacityPolicies(
+                zone, exclusivity, ApplicationId.defaultId(), new CapacityPolicies.Tuning(arm64, 1, 0, 0));
+
+        var clusterControllerMemoryGiB = capacityPolicies.specifyFully(clusterController, clusterSpec)
+                .nodeResources()
+                .memoryGiB();
+        assertEquals(1.5, clusterControllerMemoryGiB, 0.01, "Expected the default cluster controller memory size for arm64");
+    }
+
     void assertClusterControllerMemory(double expected, long contentNodes) {
         assertClusterControllerMemory(expected, contentNodes, 0.0);
     }
