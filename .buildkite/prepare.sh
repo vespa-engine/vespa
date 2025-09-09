@@ -6,7 +6,7 @@ set -x
 
 "$SOURCE_DIR/.buildkite/replace-vespa-version-in-poms.sh" "$VESPA_VERSION" "$SOURCE_DIR"
 
-cd $SOURCE_DIR
+cd "${SOURCE_DIR}" || exit 1
 find . -name "*.java" |
     awk -F/ '{print $2}' | sort -u > /tmp/list.java-modules.txt
 find . -name "package-info.java" -print0 | xargs -0 grep -HnE "@(com.yahoo.api.annotations.)?PublicApi.*"  |
