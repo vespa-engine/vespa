@@ -114,6 +114,10 @@ public class YQLParserTest {
             "all(group(a) // comment\n each(output(count())))",
             "all(group(a) /** comment **/ each(output(count())))",
             "all(group(customer) filter(regex(\"foo\", bar) and (not regex(\"baz\", a) or regex(\"b\", b))) each(output(sum(price))))",
+
+            // quantiles
+            "all(group(customer) each(output(quantiles([0.5],price))))",
+            "all(group(customer) each(output(quantiles([0.5, 0.9],price))))",
         };
 
         for (int i = 0; i < groupingQueries.length; i++) {
