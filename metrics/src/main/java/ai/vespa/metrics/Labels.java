@@ -30,6 +30,7 @@ public enum Labels {
     SERVICE("ai.vespa.service", "Vespa service name, e.g. 'container', 'distributor', 'searchnode'.", Set.of("service", "instance")),
     THREAD_POOL("ai.vespa.thread_pool", "Thread pool name.", Set.of("threadpool")),
     VERSION("ai.vespa.version", "Version of Vespa running on a node.", Set.of("vespaVersion")),
+    SIDECAR("ai.vespa.sidecar", "Sidecar name.", Set.of("sidecar")),
 
     // TODO: Add other labels used by the metrics in the summary dashboard: "api, gcName, gpu, interface, operation, protocol(verify, requestType, role, scheme, status(verify)
 
