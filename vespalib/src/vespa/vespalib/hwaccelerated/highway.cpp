@@ -38,15 +38,16 @@ namespace hn = hwy::HWY_NAMESPACE;
 // Please refer to https://google.github.io/highway/en/master/quick_reference.html
 // for the exact semantics of such functions.
 
-template <typename T, typename R = T>
-requires (hwy::IsFloat<T>() || hwy::IsSame<T, hwy::bfloat16_t>())
+template <typename TA, typename TB, typename R = TA>
+requires ((hwy::IsFloat<TA>() || hwy::IsSame<TA, hwy::bfloat16_t>()) &&
+           hwy::IsFloat<TB>() || hwy::IsSame<TB, hwy::bfloat16_t>())
 HWY_INLINE
-R my_hwy_dot_impl(const T* HWY_RESTRICT a,
-                  const T* HWY_RESTRICT b,
+R my_hwy_dot_impl(const TA* HWY_RESTRICT a,
+                  const TB* HWY_RESTRICT b,
                   const size_t sz) noexcept
 {
-    const hn::ScalableTag<T> d;
-    return hwy::ConvertScalarTo<R>(hn::Dot::Compute<0>(d, a, b, sz));
+    const hn::ScalableTag<TA> da;
+    return hwy::ConvertScalarTo<R>(hn::Dot::Compute<0>(da, a, b, sz));
 }
 
 HWY_INLINE
@@ -88,7 +89,7 @@ float my_hwy_dot_bf16(const BFloat16* HWY_RESTRICT a,
 {
     static_assert(sizeof(BFloat16)  == sizeof(hwy::bfloat16_t));
     static_assert(alignof(BFloat16) == alignof(hwy::bfloat16_t));
-    // We make the assumption that both vespalib::BFloat16 and hwy::bfloat16_t are POD-like
+    // We make the assumption that both vespalib::BFloat16 and hwvy::bfloat16_t are POD-like
     // wrappers around the same u16 bitwise representation, with zero padding bits, meaning
     // we can treat them as-if identical.
     const auto* a_bf16 = reinterpret_cast<const hwy::bfloat16_t*>(a);
@@ -105,6 +106,18 @@ float my_hwy_dot_bf16(const BFloat16* HWY_RESTRICT a,
     };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<4>, HasAccumulatorArity<2>>;
     return MyKernel::pairwise(dbf16, df32, a_bf16, b_bf16, sz, hn::Zero(df32), kernel_fn, VecAdd(), LaneReduceSum());
+}
+
+HWY_INLINE
+float my_hwy_dot_float_bf16(const float* HWY_RESTRICT a,
+                            const BFloat16* HWY_RESTRICT b,
+                            const size_t sz) noexcept
+{
+    static_assert(sizeof(BFloat16)  == sizeof(hwy::bfloat16_t));
+    static_assert(alignof(BFloat16) == alignof(hwy::bfloat16_t));
+    const auto* b_bf16 = reinterpret_cast<const hwy::bfloat16_t*>(b);
+
+    return my_hwy_dot_impl(a, b_bf16, sz);
 }
 
 template <typename T> requires (hwy::IsFloat<T>())
@@ -272,6 +285,9 @@ public:
     }
     float dotProduct(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept override {
         return my_hwy_dot_bf16(a, b, sz);
+    }
+    float dotProduct(const float* a, const BFloat16* b, size_t sz) const noexcept override {
+        return my_hwy_dot_float_bf16(a, b, sz);
     }
     double dotProduct(const double* a, const double* b, size_t sz) const noexcept override {
         return my_hwy_dot_double(a, b, sz);

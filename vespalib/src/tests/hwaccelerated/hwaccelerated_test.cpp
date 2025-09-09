@@ -34,9 +34,9 @@ void verify_euclidean_distance(std::span<const IAccelerated*> accels, size_t tes
     }
 }
 
-template <typename T>
+template <typename LhsT, typename RhsT = LhsT>
 void verify_dot_product(std::span<const IAccelerated*> accels, size_t test_length, double approx_factor) {
-    auto [a, b] = create_and_fill_lhs_rhs<T>(test_length);
+    auto [a, b] = create_and_fill_lhs_rhs<LhsT, RhsT>(test_length);
     for (size_t j = 0; j < 32; j++) {
         double sum = 0; // Assume a double has sufficient precision for all test inputs/outputs
         for (size_t i = j; i < test_length; i++) {
@@ -105,6 +105,7 @@ void verify_dot_product(std::span<const IAccelerated*> accelerators, size_t test
     verify_dot_product<int64_t>(accelerators, testLength, 0.0);
     verify_dot_product<float>(accelerators, testLength, 0.0001);
     verify_dot_product<BFloat16>(accelerators, testLength, 0.001f);
+    verify_dot_product<float, BFloat16>(accelerators, testLength, 0.001f);
     verify_dot_product<double>(accelerators, testLength, 0.0);
 }
 

@@ -18,6 +18,7 @@ class VESPA_HWACCEL_TARGET_TYPE : public IAccelerated
 public:
     float dotProduct(const float* a, const float* b, size_t sz) const noexcept override;
     float dotProduct(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept override;
+    float dotProduct(const float* a, const BFloat16* b, size_t sz) const noexcept override;
     double dotProduct(const double* a, const double* b, size_t sz) const noexcept override;
     int64_t dotProduct(const int8_t* a, const int8_t* b, size_t sz) const noexcept override;
     int64_t dotProduct(const int16_t* a, const int16_t* b, size_t sz) const noexcept override;

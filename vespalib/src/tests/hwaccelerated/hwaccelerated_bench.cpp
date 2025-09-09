@@ -89,15 +89,16 @@ void run_benchmark(Fn fn, const char* name, size_t sz, size_t n_iters) {
     fn(native_accel, sz, n_iters);
 }
 
-template <typename T, typename Fn>
+template <typename T0, typename T1, typename Fn>
 void register_accel_binary_arg_benchmark(const std::string& name, std::unique_ptr<IAccelerated> accel, Fn fn) {
     auto bench_fn = [fn, accel = std::move(accel)](benchmark::State& state) {
-        auto [a, b] = create_and_fill_lhs_rhs<T>(state.range(0));
+        auto [a, b] = create_and_fill_lhs_rhs<T0, T1>(state.range(0));
         for (auto _ : state) {
             auto sum = fn(*accel, a.data(), b.data(), state.range(0));
             benchmark::DoNotOptimize(sum);
         }
-        state.SetBytesProcessed(sizeof(T) * state.range(0) * state.iterations() * 2); // *2 due to lhs+rhs
+        state.SetBytesProcessed((sizeof(T0) * state.range(0) * state.iterations()) +
+                                (sizeof(T1) * state.range(0) * state.iterations()));
     };
     auto* bench = benchmark::RegisterBenchmark(name, std::move(bench_fn));
     bench->RangeMultiplier(2)->Range(8, 8<<10); // TODO also with non-aligned sizes
@@ -127,21 +128,21 @@ constexpr std::string_view type_string() noexcept {
     }
 }
 
-template <typename T, typename Fn>
+template <typename T0, typename T1, typename Fn>
 void register_benchmarks(const std::string& name, Fn fn) {
     auto hwy_targets = Highway::create_supported_targets();
     for (auto& t : hwy_targets) {
-        std::string hwy_name = std::format("{}/{}/Highway/{}", name, type_string<T>(), t->target_name());
-        register_accel_binary_arg_benchmark<T>(hwy_name, std::move(t), fn);
+        std::string hwy_name = std::format("{}/{}:{}/Highway/{}", name, type_string<T0>(), type_string<T1>(), t->target_name());
+        register_accel_binary_arg_benchmark<T0, T1>(hwy_name, std::move(t), fn);
     }
     // TODO remove these in a Highway-by-default world:
     auto baseline_accel = IAccelerated::create_platform_baseline_accelerator();
-    std::string baseline_name = std::format("{}/{}/Legacy/{}", name, type_string<T>(), baseline_accel->target_name());
-    register_accel_binary_arg_benchmark<T>(baseline_name, std::move(baseline_accel), fn);
+    std::string baseline_name = std::format("{}/{}:{}/Legacy/{}", name, type_string<T0>(), type_string<T1>(), baseline_accel->target_name());
+    register_accel_binary_arg_benchmark<T0, T1>(baseline_name, std::move(baseline_accel), fn);
 
     auto best_autovec_accel = IAccelerated::create_platform_optimal_accelerator();
-    std::string autovec_name = std::format("{}/{}/Legacy/{}", name, type_string<T>(), best_autovec_accel->target_name());
-    register_accel_binary_arg_benchmark<T>(autovec_name, std::move(best_autovec_accel), fn);
+    std::string autovec_name = std::format("{}/{}:{}/Legacy/{}", name, type_string<T0>(), type_string<T1>(), best_autovec_accel->target_name());
+    register_accel_binary_arg_benchmark<T0, T1>(autovec_name, std::move(best_autovec_accel), fn);
 }
 
 int main(int argc, char *argv[]) {
@@ -150,24 +151,25 @@ int main(int argc, char *argv[]) {
     auto euclidean_dist_fn = [](const IAccelerated& accelerator, const auto* lhs, const auto* rhs, size_t my_sz) {
         return accelerator.squaredEuclideanDistance(lhs, rhs, my_sz);
     };
-    register_benchmarks<double>("Squared Euclidean Distance", euclidean_dist_fn);
-    register_benchmarks<float>("Squared Euclidean Distance", euclidean_dist_fn);
-    register_benchmarks<BFloat16>("Squared Euclidean Distance", euclidean_dist_fn);
-    register_benchmarks<int8_t>("Squared Euclidean Distance", euclidean_dist_fn);
+    register_benchmarks<double, double>("Squared Euclidean Distance", euclidean_dist_fn);
+    register_benchmarks<float, float>("Squared Euclidean Distance", euclidean_dist_fn);
+    register_benchmarks<BFloat16, BFloat16>("Squared Euclidean Distance", euclidean_dist_fn);
+    register_benchmarks<int8_t, int8_t>("Squared Euclidean Distance", euclidean_dist_fn);
 
     auto dot_product_fn = [](const IAccelerated& accelerator, const auto* lhs, const auto* rhs, size_t my_sz) {
         return accelerator.dotProduct(lhs, rhs, my_sz);
     };
-    register_benchmarks<double>("Dot Product", dot_product_fn);
-    register_benchmarks<float>("Dot Product", dot_product_fn);
-    register_benchmarks<BFloat16>("Dot Product", dot_product_fn);
-    register_benchmarks<int8_t>("Dot Product", dot_product_fn);
+    register_benchmarks<double, double>("Dot Product", dot_product_fn);
+    register_benchmarks<float, float>("Dot Product", dot_product_fn);
+    register_benchmarks<BFloat16, BFloat16>("Dot Product", dot_product_fn);
+    register_benchmarks<float, BFloat16>("Dot Product", dot_product_fn);
+    register_benchmarks<int8_t, int8_t>("Dot Product", dot_product_fn);
 
     auto popcount_fn = [](const IAccelerated& accelerator, const auto* lhs, const auto* rhs, size_t my_sz) {
         (void)rhs; // ... a little bit sneaky
         return accelerator.populationCount(lhs, my_sz);
     };
-    register_benchmarks<uint64_t>("Popcount", popcount_fn);
+    register_benchmarks<uint64_t, uint64_t>("Popcount", popcount_fn);
 
     benchmark::Initialize(&argc, argv);
     benchmark::RunSpecifiedBenchmarks();

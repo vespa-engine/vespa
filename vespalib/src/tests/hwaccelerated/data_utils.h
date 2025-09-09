@@ -29,13 +29,13 @@ std::vector<T> create_and_fill(Rng& rng, size_t sz) {
     return v;
 }
 
-template <typename T>
-std::pair<std::vector<T>, std::vector<T>>
+template <typename LhsT, typename RhsT = LhsT>
+std::pair<std::vector<LhsT>, std::vector<RhsT>>
 create_and_fill_lhs_rhs(size_t sz) {
     std::minstd_rand prng;
     prng.seed(1234567);
-    std::vector<T> a = create_and_fill<T>(prng, sz);
-    std::vector<T> b = create_and_fill<T>(prng, sz);
+    std::vector<LhsT> a = create_and_fill<LhsT>(prng, sz);
+    std::vector<RhsT> b = create_and_fill<RhsT>(prng, sz);
     return {std::move(a), std::move(b)};
 }
 

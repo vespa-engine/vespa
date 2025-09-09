@@ -14,9 +14,9 @@ namespace vespalib::hwaccelerated {
 
 namespace {
 
-template <typename ACCUM, typename T, size_t UNROLL>
+template <typename ACCUM, size_t UNROLL, typename TA, typename TB = TA>
 ACCUM
-multiplyAdd(const T * a, const T * b, size_t sz) noexcept
+multiplyAdd(const TA* a, const TB* b, size_t sz) noexcept
 {
     ACCUM partial[UNROLL];
     for (size_t i(0); i < UNROLL; i++) {
@@ -101,7 +101,13 @@ VESPA_HWACCEL_TARGET_TYPE::dotProduct(const float * a, const float * b, size_t s
 float
 VESPA_HWACCEL_TARGET_TYPE::dotProduct(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept
 {
-    return multiplyAdd<float, BFloat16, 4>(a, b, sz);
+    return multiplyAdd<float, 4, BFloat16>(a, b, sz);
+}
+
+float
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const float* a, const BFloat16* b, size_t sz) const noexcept
+{
+    return multiplyAdd<float, 4, float, BFloat16>(a, b, sz);
 }
 
 double
@@ -119,18 +125,18 @@ VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int8_t * a, const int8_t * b, size_t
 int64_t
 VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int16_t * a, const int16_t * b, size_t sz) const noexcept
 {
-    return multiplyAdd<int64_t, int16_t, 8>(a, b, sz);
+    return multiplyAdd<int64_t, 8, int16_t>(a, b, sz);
 }
 int64_t
 VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int32_t * a, const int32_t * b, size_t sz) const noexcept
 {
-    return multiplyAdd<int64_t, int32_t, 8>(a, b, sz);
+    return multiplyAdd<int64_t, 8, int32_t>(a, b, sz);
 }
 
 long long
 VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int64_t * a, const int64_t * b, size_t sz) const noexcept
 {
-    return multiplyAdd<long long, int64_t, 8>(a, b, sz);
+    return multiplyAdd<long long, 8, int64_t>(a, b, sz);
 }
 
 void
