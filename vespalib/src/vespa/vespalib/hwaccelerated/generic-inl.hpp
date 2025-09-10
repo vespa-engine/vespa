@@ -49,12 +49,12 @@ squaredEuclideanDistanceT(const T * a, const T * b, size_t sz) noexcept
     size_t i(0);
     for (; i + UNROLL <= sz; i += UNROLL) {
         for (size_t j(0); j < UNROLL; j++) {
-            T d = a[i+j] - b[i+j];
+            AccuT d = a[i+j] - b[i+j];
             partial[j] += d * d;
         }
     }
     for (;i < sz; i++) {
-        T d = a[i] - b[i];
+        AccuT d = a[i] - b[i];
         partial[i%UNROLL] += d * d;
     }
     double sum(0);
