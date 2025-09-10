@@ -9,8 +9,10 @@
 namespace search::streaming {
 
 SameElementQueryNode::SameElementQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms) noexcept
-    : MultiTerm(std::move(result_base), index, num_terms)
+    : QueryTerm(std::move(result_base), "", index, Type::WORD, Normalizing::NONE),
+      _children()
 {
+    _children.reserve(num_terms);
 }
 
 SameElementQueryNode::~SameElementQueryNode() = default;
@@ -32,17 +34,16 @@ SameElementQueryNode::evaluateHits(HitList & hl) const
 void
 SameElementQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
 {
-    const auto & children = get_terms();
-    if (children.empty()) {
+    if (_children.empty()) {
         return;
     }
-    for (auto& child : children) {
+    for (auto& child : _children) {
         if (!child->evaluate()) {
             return;
         }
     }
-    children.front()->get_element_ids(element_ids);
-    std::span<const std::unique_ptr<QueryTerm>> others(children.begin() + 1, children.end());
+    _children.front()->get_element_ids(element_ids);
+    std::span<const std::unique_ptr<QueryNode>> others(_children.begin() + 1, _children.end());
     if (others.empty()) {
         return;
     }
@@ -81,10 +82,18 @@ SameElementQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td
     }
 }
 
-bool
-SameElementQueryNode::multi_index_terms() const noexcept
+void
+SameElementQueryNode::reset()
 {
-    return true;
+    for (auto& child : _children) {
+        child->reset();
+    }
+}
+
+void
+SameElementQueryNode::add_child(std::unique_ptr<QueryNode> term)
+{
+    _children.emplace_back(std::move(term));
 }
 
 bool
@@ -108,18 +117,16 @@ SameElementQueryNode::as_same_element_query_node() const noexcept
 void
 SameElementQueryNode::get_hidden_leaves(QueryTermList & tl)
 {
-    auto& terms = get_terms();
-    for (auto& term : terms) {
-        term->getLeaves(tl);
+    for (auto& child : _children) {
+        child->getLeaves(tl);
     }
 }
 
 void
 SameElementQueryNode::get_hidden_leaves(ConstQueryTermList & tl) const
 {
-    auto& terms = get_terms();
-    for (auto& term : terms) {
-        term->getLeaves(tl);
+    for (auto& child : _children) {
+        child->getLeaves(tl);
     }
 }
 
