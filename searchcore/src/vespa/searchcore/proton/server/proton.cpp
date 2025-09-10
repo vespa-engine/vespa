@@ -1227,6 +1227,25 @@ void Proton::getInitializationStatus(const vespalib::slime::Inserter &inserter) 
         cursor.setString("end_time", timepointToString(_initializationStatus.getEndTime()));
     }
 
+    // DB counts
+    int load(0), replay(0), ready(0);
+    for (const auto &kv : _documentDBMap) {
+         switch (kv.second->getInitializationStatus().getState()) {
+             case DocumentDBInitializationStatus::LOAD:
+                 load++;
+                 break;
+             case DocumentDBInitializationStatus::REPLAYING:
+                 replay++;
+                 break;
+             default:
+                 ++ready;
+         }
+    }
+    cursor.setLong("load", load);
+    cursor.setLong("replay", replay);
+    cursor.setLong("ready", ready);
+
+    // DBs
     vespalib::slime::Cursor &dbArrayCursor = cursor.setArray("dbs");
     vespalib::slime::ArrayInserter arrayInserter(dbArrayCursor);
 
