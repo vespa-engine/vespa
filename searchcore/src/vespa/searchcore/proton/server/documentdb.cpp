@@ -748,7 +748,6 @@ DocumentDB::startTransactionLogReplay()
                                       newestFlushedSerial,
                                       *_config_store,
                                       _owner.shared_replay_throttler());
-    _initializationStatus.finishReplay();
     _initGate.countDown();
 
     LOG(debug, "DocumentDB(%s): Database started.", _docTypeName.toString().c_str());
@@ -1158,10 +1157,6 @@ void DocumentDB::getInitializationStatus(const vespalib::slime::Inserter &insert
 
     if (_initializationStatus.getState() > DocumentDBInitializationStatus::State::LOAD) {
         dbCursor.setString("replay_start_time", timepointToString(_initializationStatus.getReplayStartTime()));
-    }
-
-    if (_initializationStatus.getState() > DocumentDBInitializationStatus::State::REPLAYING) {
-        dbCursor.setString("replay_end_time", timepointToString(_initializationStatus.getReplayEndTime()));
     }
 
     if (_initializationStatus.getState() == DocumentDBInitializationStatus::State::READY) {

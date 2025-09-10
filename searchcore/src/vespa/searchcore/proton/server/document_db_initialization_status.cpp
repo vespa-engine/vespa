@@ -12,8 +12,6 @@ std::string DocumentDBInitializationStatus::stateToString(State state) {
             return "load";
         case State::REPLAYING:
             return "replaying";
-        case State::REPLAY_FINISHED:
-            return "replay_finished";
         case State::READY:
             return "ready";
         }
@@ -54,22 +52,10 @@ DocumentDBInitializationStatus::time_point DocumentDBInitializationStatus::getRe
     return _replay_start_time;
 }
 
-DocumentDBInitializationStatus::time_point DocumentDBInitializationStatus::getReplayEndTime() const {
-    std::shared_lock<std::shared_mutex> guard(_mutex);
-
-    return _replay_end_time;
-}
-
 void DocumentDBInitializationStatus::startReplay() {
     std::unique_lock<std::shared_mutex> guard(_mutex);
     _state = State::REPLAYING;
     _replay_start_time = std::chrono::system_clock::now();
-}
-
-void DocumentDBInitializationStatus::finishReplay() {
-    std::unique_lock<std::shared_mutex> guard(_mutex);
-    _state = State::REPLAY_FINISHED;
-    _replay_end_time = std::chrono::system_clock::now();
 }
 
 void DocumentDBInitializationStatus::finishInitialization() {

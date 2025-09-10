@@ -12,7 +12,6 @@ public:
     enum State {
         LOAD,
         REPLAYING,
-        REPLAY_FINISHED,
         READY
     };
     static std::string stateToString(State state);
@@ -26,20 +25,17 @@ private:
     time_point _start_time;
     time_point _end_time;
     time_point _replay_start_time;
-    time_point _replay_end_time;
 
 public:
     DocumentDBInitializationStatus();
     State getState() const;
     void startInitialization();
     void startReplay();
-    void finishReplay();
     void finishInitialization();
 
     time_point getStartTime() const;
     time_point getEndTime() const;
     time_point getReplayStartTime() const;
-    time_point getReplayEndTime() const;
 };
 
 }
