@@ -5,6 +5,8 @@ package prog
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
@@ -25,6 +27,34 @@ func vespaMallocLib(suf string) string {
 	return ""
 }
 
+func fileExistsAlsoInLdLibraryPath(path string) (bool, string) {
+	// absolute or relative path
+	if _, err := os.Stat(path); err == nil {
+		return true, path
+	}
+
+	// Otherwise, search in LD_LIBRARY_PATH
+	ldPath := os.Getenv(envvars.LD_LIBRARY_PATH)
+	for _, dir := range strings.Split(ldPath, ":") {
+		fullPath := fmt.Sprintf("%s/%s", dir, path)
+		if _, err := os.Stat(fullPath); err == nil {
+			return true, fullPath
+		}
+	}
+
+	return false, ""
+}
+
+func mimallocLib() string {
+	fileName := "libmimalloc.so"
+	ok, path := fileExistsAlsoInLdLibraryPath(fileName)
+	if !ok {
+		trace.Debug("missing library:", fileName)
+	}
+	trace.Debug("found library:", path)
+	return path
+}
+
 func (p *Spec) ConfigureVespaMalloc() {
 	p.shouldUseVespaMalloc = false
 	if p.MatchesListEnv(envvars.VESPA_USE_NO_VESPAMALLOC) {
@@ -36,13 +66,21 @@ func (p *Spec) ConfigureVespaMalloc() {
 		return
 	}
 	var useFile string
-	switch {
-	case p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC_DST):
-		useFile = vespaMallocLib("libvespamallocdst16.so")
-	case p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC_D):
-		useFile = vespaMallocLib("libvespamallocd.so")
-	case p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC):
-		useFile = vespaMallocLib("libvespamalloc.so")
+
+	// TODO(johsol): Keeping this simple for now defaulting to old behaviour if not mimalloc, but in future switch on
+	//               mallocImpl for vespamalloc and variants.
+	mallocImpl := p.Getenv(envvars.VESPA_USE_MALLOC_IMPL)
+	if mallocImpl == "mimalloc" {
+		useFile = mimallocLib()
+	} else {
+		switch {
+		case p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC_DST):
+			useFile = vespaMallocLib("libvespamallocdst16.so")
+		case p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC_D):
+			useFile = vespaMallocLib("libvespamallocd.so")
+		case p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC):
+			useFile = vespaMallocLib("libvespamalloc.so")
+		}
 	}
 	trace.Trace("use file:", useFile)
 	if useFile == "" {
