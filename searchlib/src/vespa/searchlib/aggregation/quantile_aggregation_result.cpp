@@ -4,6 +4,7 @@
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
+#include <format>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.aggregation.quantile_aggregation_result");
