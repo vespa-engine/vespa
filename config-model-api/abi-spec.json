@@ -1343,7 +1343,8 @@
       "public long searchCoreTransactionLogReplaySoftMemoryLimit()",
       "public boolean useNewPrepareForRestart()",
       "public int searchNodeInitializerThreads()",
-      "public int searchCoreMaxOutstandingMoveOps()"
+      "public int searchCoreMaxOutstandingMoveOps()",
+      "public java.lang.String useMallocImpl()"
     ],
     "fields" : [ ]
   },

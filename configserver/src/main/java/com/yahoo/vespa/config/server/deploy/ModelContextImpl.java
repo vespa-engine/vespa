@@ -212,6 +212,7 @@ public class ModelContextImpl implements ModelContext {
         private final Sidecars sidecarsForTest;
         private final boolean useTriton;
         private final int searchCoreMaxOutstandingMoveOps;
+        private final String useMallocImpl;
         private final boolean useNewPrepareForRestart;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
@@ -260,6 +261,7 @@ public class ModelContextImpl implements ModelContext {
             this.sidecarsForTest = Flags.SIDECARS_FOR_TEST.bindTo(source).with(appId).with(version).value();
             this.useTriton = Flags.USE_TRITON.bindTo(source).with(appId).with(version).value();
             this.searchCoreMaxOutstandingMoveOps = Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS.bindTo(source).with(appId).with(version).value();
+            this.useMallocImpl = Flags.VESPA_USE_MALLOC_IMPL.bindTo(source).with(appId).with(version).value();
             this.useNewPrepareForRestart = Flags.USE_NEW_PREPARE_FOR_RESTART_METHOD.bindTo(source).with(appId).with(version).value();
         }
 
@@ -309,6 +311,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useTriton() { return useTriton; }
         @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
         @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
+        @Override public String useMallocImpl() { return useMallocImpl; }
     }
 
     public static class Properties implements ModelContext.Properties {
