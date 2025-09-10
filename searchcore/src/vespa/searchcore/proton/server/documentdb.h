@@ -147,8 +147,8 @@ private:
     std::shared_ptr<IBucketStateCalculator>          _calc;
     DocumentDBMetricsUpdater                         _metricsUpdater;
 
-    DocumentDBInitializationStatus                        _initializationStatus;
-    mutable std::shared_mutex                             _initializationMutex;  // protects vector below
+    DocumentDBInitializationStatus          _initializationStatus;
+    mutable std::shared_mutex               _initializationMutex;  // protects vector below
     std::vector<AttributeVectorWrapper::SP> _attributeInitializationStatus;
 
     void registerReference();
