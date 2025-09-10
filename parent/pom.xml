@@ -389,6 +389,7 @@
                         <artifactId>maven-jar-plugin</artifactId>
                         <executions>
                             <execution>
+                                <id>custom-javadoc-packaging</id>
                                 <phase>package</phase>
                                 <goals>
                                     <goal>jar</goal>
