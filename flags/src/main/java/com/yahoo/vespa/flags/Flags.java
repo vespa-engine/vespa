@@ -16,6 +16,7 @@ import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.Dimension.APPLICATION;
 import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
+import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
@@ -399,6 +400,15 @@ public class Flags {
             "or do this directly from host-admin.",
             "Takes effect at next tick",
             HOSTNAME
+    );
+
+    public static final UnboundStringFlag VESPA_USE_MALLOC_IMPL = defineStringFlag(
+            "vespa-use-malloc-impl", "",
+            List.of("hmusum", "johsol"), "2025-09-10", "2025-11-10",
+            "Which malloc implementation to use  " +
+                    "Valid values: 'vespamalloc', 'mimalloc', '' (empty string, meaning default malloc implementation).",
+            "Takes effect at next reboot of the node",
+            APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
