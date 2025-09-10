@@ -345,9 +345,7 @@ QueryBuilder::build_same_element_term(const QueryNodeResultFactory& factory, Sim
     for (size_t i = 0; i < arity; ++i) {
         queryRep.next();
         auto qn = build(sen.get(), factory, queryRep, false);
-        std::unique_ptr<QueryTerm> qt(dynamic_cast<QueryTerm*>(qn.release()));
-        assert(qt);
-        sen->add_term(std::move(qt));
+        sen->add_child(std::move(qn));
     }
     _same_element_view.reset();
     return sen;
