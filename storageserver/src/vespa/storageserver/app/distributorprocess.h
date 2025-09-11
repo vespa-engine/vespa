@@ -35,7 +35,7 @@ public:
     StorageNodeContext& getContext() override { return _context; }
     std::string getComponentName() const override { return "distributor"; }
 
-    virtual DistributorNodeContext& getDistributorContext() { return _context; }
+    DistributorNodeContext& getDistributorContext() { return _context; }
     void set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder);
 };
 
