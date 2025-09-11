@@ -82,7 +82,7 @@ public:
           bucket_executor(2),
           service()
     { }
-    ~SharedThreadingServiceTest() = default;
+    ~SharedThreadingServiceTest() override;
     void setup(double concurrency, uint32_t cpu_cores) {
         service = std::make_unique<SharedThreadingService>(
                 SharedThreadingServiceConfig::make(make_proton_config(concurrency), HwInfo::Cpu(cpu_cores)),
@@ -92,6 +92,8 @@ public:
         return dynamic_cast<SequencedTaskExecutor*>(&service->field_writer());
     }
 };
+
+SharedThreadingServiceTest::~SharedThreadingServiceTest() = default;
 
 void
 assert_executor(SequencedTaskExecutor* exec, uint32_t exp_executors, uint32_t exp_task_limit)

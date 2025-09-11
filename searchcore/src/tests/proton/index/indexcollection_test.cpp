@@ -98,9 +98,10 @@ public:
           _executor(1),
           _warmup(std::make_shared<FakeIndexSearchable>())
     {}
-    ~IndexCollectionTest() = default;
+    ~IndexCollectionTest() override;
 };
 
+IndexCollectionTest::~IndexCollectionTest() = default;
 
 TEST_F(IndexCollectionTest, searchable_can_be_appended_to_normal_collection)
 {

@@ -61,7 +61,7 @@ protected:
 
 public:
     MmapFileAllocatorTest();
-    ~MmapFileAllocatorTest();
+    ~MmapFileAllocatorTest() override;
 };
 
 MmapFileAllocatorTest::MmapFileAllocatorTest()

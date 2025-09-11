@@ -170,7 +170,7 @@ TEST(DocumentTest, testTraversing)
 class VariableIteratorHandler : public IteratorHandler {
 public:
     VariableIteratorHandler();
-    ~VariableIteratorHandler();
+    ~VariableIteratorHandler() override;
     std::string retVal;
 
     void onPrimitive(uint32_t, const Content & fv) override {

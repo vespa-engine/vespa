@@ -62,7 +62,7 @@ makeTerm(const std::string & term)
 class Verifier : public SearchIteratorVerifier {
 public:
     Verifier(FakePosting::SP fp);
-    ~Verifier();
+    ~Verifier() override;
     SearchIterator::UP create(bool strict) const override {
         (void) strict;
         return SearchIterator::UP(_fp->createIterator(_tfmda));

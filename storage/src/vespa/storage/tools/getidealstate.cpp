@@ -24,7 +24,7 @@ struct Options : public vespalib::ProgramOptions {
     bool verbose;
 
     Options(int argc, const char* const* argv);
-    ~Options();
+    ~Options() override;
 
     bool useConfig() const { return !clusterName.empty(); }
 

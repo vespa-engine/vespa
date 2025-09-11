@@ -127,7 +127,7 @@ namespace {
 class IdealNodeList : public document::Printable {
 public:
     IdealNodeList() noexcept;
-    ~IdealNodeList();
+    ~IdealNodeList() override;
 
     void push_back(const Node& node) {
         _idealNodes.push_back(node);

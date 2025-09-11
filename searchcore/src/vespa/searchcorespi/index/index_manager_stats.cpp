@@ -16,7 +16,7 @@ public:
     std::vector<index::MemoryIndexStats> _memoryIndexes;
 
     Visitor();
-    ~Visitor();
+    ~Visitor() override;
     void visit(const index::IDiskIndex &index) override {
         _diskIndexes.emplace_back(index);
     }

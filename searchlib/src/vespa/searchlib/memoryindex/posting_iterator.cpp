@@ -34,7 +34,7 @@ public:
                         const FeatureStore& feature_store,
                         uint32_t field_id,
                         fef::TermFieldMatchDataArray match_data);
-    ~PostingIteratorBase();
+    ~PostingIteratorBase() override;
 
     void doSeek(uint32_t docId) override;
     void initRange(uint32_t begin, uint32_t end) override;

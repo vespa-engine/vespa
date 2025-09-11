@@ -53,7 +53,7 @@ class GidStrictAllSearchIterator : public GidAllSearchIterator
 private:
     uint32_t _numDocs;
 
-    virtual void
+    void
     doSeek(uint32_t docId) override
     {
         if (_store.validLidFast(docId)) {

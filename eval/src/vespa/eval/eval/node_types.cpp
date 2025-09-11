@@ -49,7 +49,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     TypeResolver(const std::vector<ValueType> &params_in,
                  std::map<const Node *, ValueType> &type_map_out,
                  std::vector<std::string> &errors_out);
-    ~TypeResolver();
+    ~TypeResolver() override;
 
     const ValueType &param_type(size_t idx) {
         return state.param_type(idx);

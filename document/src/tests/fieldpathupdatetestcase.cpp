@@ -41,7 +41,7 @@ protected:
     std::shared_ptr<const DocumentTypeRepo> _repo;
     const DocumentType *_foobar_type;
     FieldPathUpdateTestCase();
-    ~FieldPathUpdateTestCase();
+    ~FieldPathUpdateTestCase() override;
 
     void SetUp() override;
     void TearDown() override;

@@ -34,7 +34,7 @@ struct DistributorBucketSpaceTest : public ::testing::Test
           bucket_space(0u)
     {
     }
-    ~DistributorBucketSpaceTest() = default;
+    ~DistributorBucketSpaceTest() override;
 
     // make normal buckets
     std::vector<BucketId> make_normal_buckets();
@@ -51,6 +51,8 @@ struct DistributorBucketSpaceTest : public ::testing::Test
     // Count deep split buckets using this distributor and service layer node 0.
     CountVector count_deep_split_buckets();
 };
+
+DistributorBucketSpaceTest::~DistributorBucketSpaceTest() = default;
 
 std::vector<BucketId>
 DistributorBucketSpaceTest::make_normal_buckets()

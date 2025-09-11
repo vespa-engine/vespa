@@ -441,7 +441,7 @@ struct DumpOperationsOptions : public BaseOptions
     SerialNum   lastSerialNum;
     std::string configDir;
     DumpOperationsOptions(int argc, const char* const* argv);
-    ~DumpOperationsOptions();
+    ~DumpOperationsOptions() override;
     static std::string command() { return "dumpoperations"; }
     std::string toString() const override {
         return vespalib::make_string("%s, domain=%s, first=%" PRIu64 ", last=%" PRIu64 ", configdir=%s",
@@ -520,7 +520,7 @@ struct DumpDocumentsOptions : public DumpOperationsOptions
     std::string format;
     bool verbose;
     DumpDocumentsOptions(int argc, const char* const* argv);
-    ~DumpDocumentsOptions();
+    ~DumpDocumentsOptions() override;
     static std::string command() { return "dumpdocuments"; }
     void parse() override {
         DumpOperationsOptions::parse();

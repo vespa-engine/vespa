@@ -254,7 +254,7 @@ public:
      * and put 'snap' after the atomics.
      */
     ConfigurableFixture() __attribute__((noinline));
-    virtual ~ConfigurableFixture() __attribute__((noinline));
+    ~ConfigurableFixture() override __attribute__((noinline));
     void configure(const ConfigSnapshot & snapshot) override {
         (void) snapshot;
         if (throwException) {

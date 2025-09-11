@@ -55,7 +55,7 @@ public:
     {
     }
 
-    ~ResourceUsageTrackerTest();
+    ~ResourceUsageTrackerTest() override;
 
     void notify(double disk_usage, double memory_usage, double transient_disk_usage = 0.0, double transient_memory_usage = 0.0)
     {

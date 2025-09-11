@@ -58,9 +58,7 @@ public:
 
     DirectTensorStoreTest() : store(ValueType::from_spec(tensor_type_spec)) {}
 
-    virtual ~DirectTensorStoreTest() {
-        store.reclaim_all_memory();
-    }
+    ~DirectTensorStoreTest() override;
 
     void expect_tensor(const Value* exp, EntryRef ref) {
         const auto* act = store.get_tensor_ptr(ref);
@@ -68,6 +66,11 @@ public:
         EXPECT_EQ(exp, act);
     }
 };
+
+DirectTensorStoreTest::~DirectTensorStoreTest()
+{
+    store.reclaim_all_memory();
+}
 
 TEST_F(DirectTensorStoreTest, can_set_and_get_tensor)
 {
