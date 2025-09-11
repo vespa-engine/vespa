@@ -3,6 +3,7 @@
 #include <vespamalloc/malloc/allocchunk.h>
 #include <vespamalloc/util/callstack.h>
 #include <vespa/vespalib/util/time.h>
+#include <cstdlib>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -134,13 +135,13 @@ int main(int argc, char **argv) {
         List *l =  List::linkOut(sharedList);
         if (!((l >= &globalList[0]) && (l < &globalList[NumBlocks]))) {
             fprintf(stderr, "not true: (l >= &globalList[0]) && (l < &globalList[NumBlocks])\n");
-            return false;
+            return EXIT_FAILURE;
         }
     }
     List *n =  List::linkOut(sharedList);
     if (!(n == nullptr)) {
         fprintf(stderr, "not true: n == nullptr\n");
-        return false;
+        return EXIT_FAILURE;
     }
 
     List::HeadPtr tmp(sharedList.load());
@@ -186,13 +187,13 @@ int main(int argc, char **argv) {
         List *l =  List::linkOut(sharedList);
         if (!((l >= &globalList[0]) && (l < &globalList[NumBlocks]))) {
             fprintf(stderr, "not true: (l >= &globalList[0]) && (l < &globalList[NumBlocks])\n");
-            return false;
+            return EXIT_FAILURE;
         }
     }
     n =  List::linkOut(sharedList);
     if (!(n == nullptr)) {
         fprintf(stderr, "not true: n == nullptr\n");
-        return false;
+        return EXIT_FAILURE;
     }
-    return 0;
+    return EXIT_SUCCESS;
 }
