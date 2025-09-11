@@ -1177,7 +1177,7 @@ void DocumentDB::getInitializationStatus(const vespalib::slime::Inserter &insert
 
     for (const auto &attribute: _attributeInitializationStatus) {
 
-        search::AttributeVector::SP attributeVector = attribute->getAttributeVector();
+        std::shared_ptr<search::AttributeVector> attributeVector = attribute->getAttributeVector();
 
         if (!attributeVector) {
             vespalib::slime::Cursor &cursor = queuedArrayInserter.insertObject();
