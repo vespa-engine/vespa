@@ -14,6 +14,7 @@
 #include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cassert>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.manager");
