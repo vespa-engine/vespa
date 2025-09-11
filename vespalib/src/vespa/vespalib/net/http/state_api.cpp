@@ -206,7 +206,7 @@ StateApi::get(const std::string &host,
         return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] {
             return respond_version();
         });
-    } else if (!_limitEndpoints) {
+    } else if (!_limitEndpoints.load()) {
         if (path == "/state/v1/health") {
             return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] { // TODO consider http_unclassified
                 return respond_health(_healthProducer);
