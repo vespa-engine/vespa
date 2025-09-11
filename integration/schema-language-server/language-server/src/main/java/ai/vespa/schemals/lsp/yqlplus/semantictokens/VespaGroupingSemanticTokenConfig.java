@@ -19,23 +19,23 @@ class VespaGroupingSemanticToken {
     private static final String logicalFilter = SemanticTokenTypes.Operator;
 
     static final Map<Class<?>, String> tokensMap = new HashMap<Class<?>, String>() {{
-        put(identifierStr.class, SemanticTokenTypes.Variable);
+        put(EQ.class, SemanticTokenTypes.Operator);
+        put(FALSE.class, SemanticTokenTypes.Type);
+        put(GT.class, SemanticTokenTypes.Operator);
+        put(INF.class, SemanticTokenTypes.Number);
         put(INFIX_ADD.class, SemanticTokenTypes.Operator);
         put(INFIX_DIV.class, SemanticTokenTypes.Operator);
         put(INFIX_MOD.class, SemanticTokenTypes.Operator);
         put(INFIX_MUL.class, SemanticTokenTypes.Operator);
         put(INFIX_SUB.class, SemanticTokenTypes.Operator);
-        put(EQ.class, SemanticTokenTypes.Operator);
         put(LT.class, SemanticTokenTypes.Operator);
-        put(GT.class, SemanticTokenTypes.Operator);
-        put(INF.class, SemanticTokenTypes.Number);
         put(NEGINF.class, SemanticTokenTypes.Number);
-        put(number.class, SemanticTokenTypes.Number);
-        put(stringElm.class, SemanticTokenTypes.String);
         put(STRING.class, SemanticTokenTypes.String);
         put(TRUE.class, SemanticTokenTypes.Type);
-        put(FALSE.class, SemanticTokenTypes.Type);
-        
+        put(identifierStr.class, SemanticTokenTypes.Variable);
+        put(number.class, SemanticTokenTypes.Number);
+        put(stringElm.class, SemanticTokenTypes.String);
+
         put(TIME.class, SemanticTokenTypes.Class);
         put(TIME_DATE.class, timeFunctionType);
         put(TIME_DAYOFMONTH.class, timeFunctionType);
@@ -47,43 +47,43 @@ class VespaGroupingSemanticToken {
         put(TIME_SECONDOFMINUTE.class, timeFunctionType);
         put(TIME_YEAR.class, timeFunctionType);
 
+        put(ACOS.class, mathFunctionType);
+        put(ACOSH.class, mathFunctionType);
+        put(ASIN.class, mathFunctionType);
+        put(ASINH.class, mathFunctionType);
+        put(ATAN.class, mathFunctionType);
+        put(ATANH.class, mathFunctionType);
+        put(CBRT.class, mathFunctionType);
+        put(COS.class, mathFunctionType);
+        put(COSH.class, mathFunctionType);
+        put(EXP.class, mathFunctionType);
+        put(FLOOR.class, mathFunctionType);
+        put(HYPOT.class, mathFunctionType);
+        put(LOG.class, mathFunctionType);
+        put(LOG10.class, mathFunctionType);
+        put(LOG1P.class, mathFunctionType);
         put(MATH.class, SemanticTokenTypes.Class);
         put(POW.class, mathFunctionType);
-        put(HYPOT.class, mathFunctionType);
-        put(EXP.class, mathFunctionType);
-        put(LOG.class, mathFunctionType);
-        put(LOG1P.class, mathFunctionType);
-        put(LOG10.class, mathFunctionType);
         put(SIN.class, mathFunctionType);
-        put(ASIN.class, mathFunctionType);
-        put(COS.class, mathFunctionType);
-        put(ACOS.class, mathFunctionType);
-        put(TAN.class, mathFunctionType);
-        put(ATAN.class, mathFunctionType);
-        put(SQRT.class, mathFunctionType);
         put(SINH.class, mathFunctionType);
-        put(ASINH.class, mathFunctionType);
-        put(COSH.class, mathFunctionType);
-        put(ACOSH.class, mathFunctionType);
+        put(SQRT.class, mathFunctionType);
+        put(TAN.class, mathFunctionType);
         put(TANH.class, mathFunctionType);
-        put(ATANH.class, mathFunctionType);
-        put(FLOOR.class, mathFunctionType);
-        put(CBRT.class, mathFunctionType);
 
         put(ALL.class, SemanticTokenTypes.Keyword);
         put(EACH.class, SemanticTokenTypes.Keyword);
 
 
-        put(GROUP.class, operationBodyFunction);
         put(ACCURACY.class, operationBodyFunction);
         put(ALIAS.class, operationBodyFunction);
+        put(FILTER.class, operationBodyFunction);
+        put(GROUP.class, operationBodyFunction);
         put(HINT.class, operationBodyFunction);
         put(MAX.class, operationBodyFunction);
         put(ORDER.class, operationBodyFunction);
         put(OUTPUT.class, operationBodyFunction);
         put(PRECISION.class, operationBodyFunction);
         put(WHERE.class, operationBodyFunction);
-        put(FILTER.class, operationBodyFunction);
 
         put(AS.class, SemanticTokenTypes.Keyword);
         put(AT.class, SemanticTokenTypes.Keyword);
@@ -98,6 +98,7 @@ class VespaGroupingSemanticToken {
         put(DEBUGWAIT.class, simpleExpressions); // TODO: Maybe add a warning on this function
         put(DOCIDNSSPECIFIC.class, simpleExpressions);
         put(FIXEDWIDTH.class, simpleExpressions);
+        put(INTERPOLATEDLOOKUP.class, simpleExpressions);
         put(MAX.class, simpleExpressions);
         put(MD5.class, simpleExpressions);
         put(MIN.class, simpleExpressions);
@@ -107,12 +108,13 @@ class VespaGroupingSemanticToken {
         put(NORMALIZESUBJECT.class, simpleExpressions);
         put(NOW.class, simpleExpressions);
         put(PREDEFINED.class, simpleExpressions);
-        put(RELEVANCE.class, simpleExpressions);
         put(QUANTILES.class, simpleExpressions);
+        put(RANGE.class, simpleExpressions);
+        put(REGEX.class, simpleExpressions);
+        put(RELEVANCE.class, simpleExpressions);
         put(REVERSE.class, simpleExpressions);
         put(SIZE.class, simpleExpressions);
         put(SORT.class, simpleExpressions);
-        put(INTERPOLATEDLOOKUP.class, simpleExpressions);
         put(STDDEV.class, simpleExpressions);
         put(STRCAT.class, simpleExpressions);
         put(STRLEN.class, simpleExpressions);
@@ -126,12 +128,10 @@ class VespaGroupingSemanticToken {
         put(UCA.class, simpleExpressions);
         put(XOR.class, simpleExpressions);
         put(XORBIT.class, simpleExpressions);
-        put(REGEX.class, simpleExpressions);
-        put(RANGE.class, simpleExpressions);
 
-        put(ZCURVE.class, SemanticTokenTypes.Class);
         put(X.class, SemanticTokenTypes.Method);
         put(Y.class, SemanticTokenTypes.Method);
+        put(ZCURVE.class, SemanticTokenTypes.Class);
     }};
 
     static final Map<Pair<Class<?>, Class<?>>, String> tokensMapWithParent = new HashMap<>() {{
