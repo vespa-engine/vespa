@@ -20,12 +20,7 @@ using namespace mbus;
 
 struct MyQueue : public RoutableQueue {
 
-    virtual ~MyQueue() {
-        while (size() > 0) {
-            Routable::UP obj = dequeue();
-            obj->getCallStack().discard();
-        }
-    }
+    ~MyQueue() override;
 
     bool checkReply(bool hasSeqId, uint64_t seqId) {
         if (size() == 0) {
@@ -81,6 +76,14 @@ struct MyQueue : public RoutableQueue {
         return ret;
     }
 };
+
+MyQueue::~MyQueue()
+{
+    while (size() > 0) {
+        Routable::UP obj = dequeue();
+        obj->getCallStack().discard();
+    }
+}
 
 // --------------------------------------------------------------------------------
 //

@@ -20,15 +20,18 @@ public:
           _source(source)
     {
     }
-    ~GetConfigTask() {
-        Kill();
-    }
+    ~GetConfigTask() override;
     void PerformTask() override {
         _source->getConfig();
     }
 private:
     FRTSource * _source;
 };
+
+GetConfigTask::~GetConfigTask()
+{
+    Kill();
+}
 
 FRTSource::FRTSource(std::shared_ptr<ConnectionFactory> connectionFactory, const FRTConfigRequestFactory & requestFactory,
                      std::unique_ptr<ConfigAgent> agent, const ConfigKey & key)

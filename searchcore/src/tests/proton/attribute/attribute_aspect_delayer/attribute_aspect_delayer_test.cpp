@@ -132,13 +132,15 @@ public:
         : _unchanged()
     {
     }
-    ~MyInspector() { }
+    ~MyInspector() override;
     void addFields(const std::vector<std::string> &fields) {
         for (const auto &field : fields) {
             _unchanged.insert(field);
         }
     }
 };
+
+MyInspector::~MyInspector() = default;
 
 }
 
@@ -154,7 +156,7 @@ public:
           _delayer()
     {
     }
-    ~DelayerTest() { }
+    ~DelayerTest() override;
     void addFields(const std::vector<std::string> &fields) {
         _inspector.addFields(fields);
     }
@@ -182,6 +184,8 @@ public:
         EXPECT_EQ(exp, summaryConfig->classes[0].fields);
     }
 };
+
+DelayerTest::~DelayerTest() = default;
 
 TEST_F(DelayerTest, require_that_empty_config_is_ok)
 {

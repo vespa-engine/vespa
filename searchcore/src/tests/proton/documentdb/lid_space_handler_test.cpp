@@ -12,7 +12,7 @@ struct HandlerTest : public ::testing::Test {
     MySubDb _subDb;
     LidSpaceCompactionHandler _handler;
     HandlerTest();
-    ~HandlerTest();
+    ~HandlerTest() override;
 };
 
 HandlerTest::HandlerTest()

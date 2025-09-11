@@ -1032,7 +1032,7 @@ public:
         _type.addField(_valueField);
         _structFieldType.addField(_valueField);
     }
-    ~StructWriterTestBase();
+    ~StructWriterTestBase() override;
 
     std::unique_ptr<StructFieldValue> makeStruct() {
         return std::make_unique<StructFieldValue>(_structFieldType);
@@ -1065,7 +1065,7 @@ public:
         addAttribute({"array.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
         _type.addField(_structArrayField);
     }
-    ~StructArrayWriterTest();
+    ~StructArrayWriterTest() override;
 
     std::unique_ptr<Document> makeDoc(int32_t value, const std::vector<int32_t> &arrayValues) {
         auto doc = makeDoc();

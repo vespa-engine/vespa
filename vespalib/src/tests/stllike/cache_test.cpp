@@ -69,7 +69,7 @@ using B = Map<uint32_t, padded_string>;
 
 struct CacheTest : Test {
     B m;
-    ~CacheTest();
+    ~CacheTest() override;
 };
 
 CacheTest::~CacheTest() = default;

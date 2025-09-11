@@ -13,7 +13,7 @@ namespace {
 class ToStringVisitor : public SpanTreeVisitor {
 public:
     ToStringVisitor();
-    ~ToStringVisitor();
+    ~ToStringVisitor() override;
     std::string str() const { return _os.str(); }
 private:
     vespalib::asciistream _os;

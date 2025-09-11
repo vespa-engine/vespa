@@ -27,9 +27,7 @@ public:
         : _gate(gate)
     { }
 
-    ~SyncTask() {
-        _gate.countDown();
-    }
+    ~SyncTask() override;
 
     void run() override { }
 
@@ -37,6 +35,11 @@ public:
         return 255;
     }
 };
+
+SyncTask::~SyncTask()
+{
+    _gate.countDown();
+}
 
 class AddRecurrentTask : public mbus::Messenger::ITask {
 private:

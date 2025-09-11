@@ -18,7 +18,7 @@ private:
     DestinationSession::UP _session;
 public:
     Server(MessageBus &bus);
-    ~Server();
+    ~Server() override;
     void handleMessage(Message::UP msg) override;
 };
 

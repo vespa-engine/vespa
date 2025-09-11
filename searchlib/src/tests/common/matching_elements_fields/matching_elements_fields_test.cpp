@@ -20,8 +20,10 @@ struct MatchingElementsFieldsTest : ::testing::Test {
         fields.add_mapping("bar", "bar.y");
         fields.add_field("baz");
     }
-    ~MatchingElementsFieldsTest() = default;
+    ~MatchingElementsFieldsTest() override;
 };
+
+MatchingElementsFieldsTest::~MatchingElementsFieldsTest() = default;
 
 TEST_F(MatchingElementsFieldsTest, require_that_field_can_be_identified) {
     EXPECT_TRUE(fields.has_field("foo"));

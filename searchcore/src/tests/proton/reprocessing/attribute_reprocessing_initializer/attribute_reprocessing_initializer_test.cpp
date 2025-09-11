@@ -163,7 +163,7 @@ public:
           _handler()
     {
     }
-    ~InitializerTest() { }
+    ~InitializerTest() override;
     void init() {
         MyIndexschemaInspector oldIndexschemaInspector(_oldCfg._schema);
         _initializer.reset(new AttributeReprocessingInitializer
@@ -210,6 +210,8 @@ public:
         }
     }
 };
+
+InitializerTest::~InitializerTest() = default;
 
 class Fixture : public InitializerTest {
     void TestBody() override {}

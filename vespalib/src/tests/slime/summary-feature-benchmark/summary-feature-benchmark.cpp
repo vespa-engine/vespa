@@ -13,7 +13,7 @@ struct MyBuffer : public Output {
     std::vector<char> data;
     size_t            used;
     MyBuffer() : data(1_Mi), used(0) {}
-    ~MyBuffer();
+    ~MyBuffer() override;
     WritableMemory reserve(size_t bytes) override {
         assert(data.size() >= (used + bytes));
         return WritableMemory(&data[used], data.size() - used);

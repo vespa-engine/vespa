@@ -35,10 +35,7 @@ protected:
     {
     }
 
-    ~LidAllocatorTest()
-    {
-        _gen_hold.reclaim_all();
-    }
+    ~LidAllocatorTest() override;
 
     uint32_t get_size() { return _allocator.getActiveLids().size(); }
 
@@ -140,6 +137,11 @@ protected:
     }
 
 };
+
+LidAllocatorTest::~LidAllocatorTest()
+{
+    _gen_hold.reclaim_all();
+}
 
 TEST_F(LidAllocatorTest, unregister_lids)
 {

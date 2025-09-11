@@ -735,7 +735,7 @@ class FakeEGCompr64LEFilterOcc : public FakeEGCompr64FilterOcc
 public:
     FakeEGCompr64LEFilterOcc(const FakeWord &fw);
 
-    ~FakeEGCompr64LEFilterOcc();
+    ~FakeEGCompr64LEFilterOcc() override;
 };
 
 
@@ -758,7 +758,7 @@ class FakeEGCompr64SkipFilterOcc : public FakeEGCompr64FilterOcc
 {
 public:
     FakeEGCompr64SkipFilterOcc(const FakeWord &fw);
-    ~FakeEGCompr64SkipFilterOcc();
+    ~FakeEGCompr64SkipFilterOcc() override;
     std::unique_ptr<search::queryeval::SearchIterator> createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 

@@ -19,7 +19,7 @@ private:
     std::string             _name;
 public:
     Server(MessageBus &bus, const std::string &name);
-    ~Server();
+    ~Server() override;
     void handleMessage(Message::UP msg) override;
     void handleReply(Reply::UP reply) override;
 };

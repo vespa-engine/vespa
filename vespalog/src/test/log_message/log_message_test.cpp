@@ -27,8 +27,10 @@ assertParseFail(std::string exp_what, std::string log_line)
 class LogMessageTest : public ::testing::Test {
 public:
     LogMessageTest() { }
-    ~LogMessageTest() { }
+    ~LogMessageTest() override;
 };
+
+LogMessageTest::~LogMessageTest() = default;
 
 TEST_F(LogMessageTest, require_that_plain_entry_is_ok)
 {
