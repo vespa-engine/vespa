@@ -22,40 +22,17 @@ namespace vespalib {
 class BFloat16 {
 private:
     uint16_t _bits;
-    struct TwoU16 {
-        uint16_t u1;
-        uint16_t u2;
-    };
 
-    template<std::endian native_endian = std::endian::native>
     static constexpr uint16_t float_to_bits(float value) noexcept {
-        TwoU16 both{0,0};
-        static_assert(sizeof(TwoU16) == sizeof(float));
-        both = std::bit_cast<TwoU16>(value);
-        if constexpr (native_endian == std::endian::big) {
-            return both.u1;
-        } else {
-            static_assert(native_endian == std::endian::little,
-                          "Unknown endian, cannot handle");
-            return both.u2;
-        }
+        const uint32_t as_u32 = std::bit_cast<uint32_t>(value);
+        return as_u32 >> 16;
     }
 
-    template<std::endian native_endian = std::endian::native>
     static constexpr float bits_to_float(uint16_t bits) noexcept {
-        TwoU16 both{0,0};
-        if constexpr (native_endian == std::endian::big) {
-            both.u1 = bits;
-        } else {
-            static_assert(native_endian == std::endian::little,
-                          "Unknown endian, cannot handle");
-            both.u2 = bits;
-        }
-        float result = 0.0;
-        static_assert(sizeof(TwoU16) == sizeof(float));
-        result = std::bit_cast<float>(both);
-        return result;
+        const uint32_t as_u32 = static_cast<uint32_t>(bits) << 16;
+        return std::bit_cast<float>(as_u32);
     }
+
 public:
     constexpr BFloat16(float value) noexcept : _bits(float_to_bits(value)) {}
     BFloat16() noexcept = default;
