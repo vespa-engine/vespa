@@ -105,6 +105,16 @@ INJECT Token :
 
 }
 
+INJECT BaseNode  :
+{
+    private IllegalArgumentException illegalArgumentException;
+    public IllegalArgumentException getIllegalArgumentException() { return illegalArgumentException; }
+
+    public void addIllegalArgumentException(IllegalArgumentException e) {
+        illegalArgumentException = e;
+    }
+}
+
 TOKEN :
     <INTEGER: <DECIMAL> (["l","L"])? | <HEX> (["l","L"])? | <OCTAL> (["l","L"])?> |
         <#DECIMAL: ["1"-"9"] (["0"-"9"])*> |
@@ -690,7 +700,14 @@ GroupingExpression quantilesExpression(GroupingOperation grp) :
         commaElm
         input = expElm(grp)
     rbraceElm)
-    { return new QuantileAggregator(qs, input); }
+    {
+        try {
+            return new QuantileAggregator(qs, input);
+        } catch (IllegalArgumentException ex) {
+            thisProduction.addIllegalArgumentException(ex);
+        }
+        return new DoubleValue(0); // Return a generic GroupingExpression
+    }
 ;
 
 GroupingExpression minExpression(GroupingOperation grp) :

@@ -100,6 +100,7 @@ class VespaGroupingSemanticToken {
         put(FIXEDWIDTH.class, simpleExpressions);
         put(MAX.class, simpleExpressions);
         put(MD5.class, simpleExpressions);
+        put(QUANTILES.class, simpleExpressions);
         put(MIN.class, simpleExpressions);
         put(MOD.class, simpleExpressions);
         put(MUL.class, simpleExpressions);
