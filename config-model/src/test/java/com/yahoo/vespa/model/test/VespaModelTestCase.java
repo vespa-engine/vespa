@@ -47,6 +47,7 @@ import java.util.logging.Level;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -342,6 +343,40 @@ public class VespaModelTestCase {
         if (! foundCorrectWarning) for (var msg : msgs) System.err.println("MSG: "+msg);
         assertTrue(msgs.size() > 0);
         assertTrue(foundCorrectWarning);
+    }
+
+    @Test
+    void testMallocImpl() throws IOException, SAXException {
+        var services = """
+                        <services version='1.0'>
+                          <container version='1.0' id='default'>
+                            <search/>
+                          </container>
+                        </services>""";
+        var app = new MockApplicationPackage.Builder().withServices(services).build();
+        var properties = new TestProperties()
+                .setHostedVespa(true)
+                .setApplicationId(ApplicationId.from("foo", "bar", "default-t"));
+
+        {
+            var deployState = new DeployState.Builder()
+                    .applicationPackage(app)
+                    .properties(properties.setUseMallocImpl("mimalloc"))
+                    .build();
+            var model = new VespaModel(new NullConfigModelRegistry(), deployState);
+            var container = model.getContainerClusters().get("default").getContainers().get(0);
+            assertEquals("mimalloc", container.getEnvVars().get("VESPA_USE_MALLOC_IMPL"));
+        }
+
+        {
+            var deployState = new DeployState.Builder()
+                    .applicationPackage(app)
+                    .properties(properties.setUseMallocImpl(""))
+                    .build();
+            var model = new VespaModel(new NullConfigModelRegistry(), deployState);
+            var container = model.getContainerClusters().get("default").getContainers().get(0);
+            assertNull(container.getEnvVars().get("VESPA_USE_MALLOC_IMPL"));
+        }
     }
 
 }

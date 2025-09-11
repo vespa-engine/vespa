@@ -144,6 +144,9 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
         for(String envVar : deployState.getProperties().environmentVariables()) {
             addEnvironmentVariable(envVar);
         }
+        if (! deployState.featureFlags().useMallocImpl().isEmpty()) {
+            addEnvironmentVariable("VESPA_USE_MALLOC_IMPL", deployState.featureFlags().useMallocImpl());
+        }
     }
 
     /**
@@ -374,7 +377,7 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
     public void setPreLoad(String preload) {
         this.preload = preload;
     }
-    /** If larger or equal to 0 it mean that explicit mmaps shall not be included in coredump.*/
+    /** If larger or equal to 0 it means that explicit mmaps shall not be included in coredump.*/
     public void setMMapNoCoreLimit(long noCoreLimit) {
         if (noCoreLimit >= 0) {
             environmentVariables.put("VESPA_MMAP_NOCORE_LIMIT", noCoreLimit);
