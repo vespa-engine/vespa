@@ -4,9 +4,10 @@
 
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include "attribute_vector_wrapper.h"
-#include "attribute_initializer.h"
 
 namespace proton {
+
+class AttributeInitializer;
 
 /**
  * Visitor that allows you to get the AttributeVectorWrappers created by the InitializerTask and its dependencies.
@@ -17,10 +18,10 @@ namespace proton {
  */
 class AttributeVectorWrapperCollector : public initializer::InitializerTaskVisitor {
 private:
-    std::vector<AttributeVectorWrapper::SP>& _attributes;
+    std::vector<std::shared_ptr<AttributeVectorWrapper>>& _attributes;
 
 public:
-    AttributeVectorWrapperCollector(std::vector<AttributeVectorWrapper::SP>& attributes);
+    AttributeVectorWrapperCollector(std::vector<std::shared_ptr<AttributeVectorWrapper>>& attributes);
     void visitAttributeInitializer(AttributeInitializer& attributeInitializer) override;
 };
 

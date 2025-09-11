@@ -2,9 +2,11 @@
 
 #include "attribute_vector_wrapper_collector.h"
 
+#include "attribute_initializer.h"
+
 namespace proton {
 
-AttributeVectorWrapperCollector::AttributeVectorWrapperCollector(std::vector<AttributeVectorWrapper::SP>& attributes)
+AttributeVectorWrapperCollector::AttributeVectorWrapperCollector(std::vector<std::shared_ptr<AttributeVectorWrapper>>& attributes)
     : _attributes(attributes) {
 }
 

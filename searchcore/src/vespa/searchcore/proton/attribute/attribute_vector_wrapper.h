@@ -3,7 +3,10 @@
 #pragma once
 
 #include <vespa/searchlib/attribute/attributevector.h>
+
+#include <memory>
 #include <shared_mutex>
+#include <string>
 
 namespace proton {
 
@@ -17,19 +20,18 @@ namespace proton {
  */
 class AttributeVectorWrapper {
 public:
-    using SP = std::shared_ptr<AttributeVectorWrapper>;
     explicit AttributeVectorWrapper(const std::string &name);
 
     const std::string& getName() const { return _name; }
 
-    void setAttributeVector(const search::AttributeVector::SP &attr);
-    search::AttributeVector::SP getAttributeVector() const;
+    void setAttributeVector(const std::shared_ptr<search::AttributeVector> &attr);
+    std::shared_ptr<search::AttributeVector> getAttributeVector() const;
 
 private:
     mutable std::shared_mutex _mutex;
 
     const std::string _name;
-    search::AttributeVector::SP _attr;
+    std::shared_ptr<search::AttributeVector> _attr;
 };
 
 } // namespace proton

@@ -28,6 +28,7 @@
 #include <vespa/vespalib/stllike/cache_stats.h>
 #include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <memory>
 #include <mutex>
 #include <condition_variable>
 
@@ -149,7 +150,7 @@ private:
 
     DocumentDBInitializationStatus          _initializationStatus;
     mutable std::shared_mutex               _initializationMutex;  // protects vector below
-    std::vector<AttributeVectorWrapper::SP> _attributeInitializationStatus;
+    std::vector<std::shared_ptr<AttributeVectorWrapper>> _attributeInitializationStatus;
 
     void registerReference();
     void setActiveConfig(DocumentDBConfigSP config);
