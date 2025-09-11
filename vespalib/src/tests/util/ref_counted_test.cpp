@@ -14,10 +14,14 @@ struct Base : enable_ref_counted {
     Base(int val_in) : val(val_in) {
         ctor_cnt.fetch_add(1, std::memory_order_relaxed);
     }
-    ~Base() {
-        dtor_cnt.fetch_add(1, std::memory_order_relaxed);
-    }
+    ~Base() override;
 };
+
+Base::~Base()
+{
+    dtor_cnt.fetch_add(1, std::memory_order_relaxed);
+}
+
 std::atomic<int> Base::ctor_cnt = 0;
 std::atomic<int> Base::dtor_cnt = 0;
 
@@ -27,10 +31,14 @@ struct Leaf : Base {
     Leaf(int val_in) : Base(val_in) {
         ctor_cnt.fetch_add(1, std::memory_order_relaxed);
     }
-    ~Leaf() {
-        dtor_cnt.fetch_add(1, std::memory_order_relaxed);
-    }
+    ~Leaf() override;
 };
+
+Leaf::~Leaf()
+{
+    dtor_cnt.fetch_add(1, std::memory_order_relaxed);
+}
+
 std::atomic<int> Leaf::ctor_cnt = 0;
 std::atomic<int> Leaf::dtor_cnt = 0;
 

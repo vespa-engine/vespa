@@ -61,9 +61,7 @@ struct MultiThreadedStripeAccessGuardTest : Test {
           _accessor(_pool)
     {}
 
-    ~MultiThreadedStripeAccessGuardTest() {
-        _pool.stop_and_join();
-    }
+    ~MultiThreadedStripeAccessGuardTest() override;
 
     void start_pool_with_stripes() {
         _pool.start({{&_stripe0, &_stripe1, &_stripe2, &_stripe3}});
@@ -86,6 +84,11 @@ struct MultiThreadedStripeAccessGuardTest : Test {
     }
 
 };
+
+MultiThreadedStripeAccessGuardTest::~MultiThreadedStripeAccessGuardTest()
+{
+    _pool.stop_and_join();
+}
 
 TEST_F(MultiThreadedStripeAccessGuardTest, remove_superfluous_buckets_aggregates_reports_across_stripes) {
     _stripe0.report = PotentialDataLossReport(20, 100);

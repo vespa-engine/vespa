@@ -60,17 +60,20 @@ private:
 
 public:
     DiskIndexSearchable(std::unique_ptr<DiskIndex> index) : _index(std::move(index)) {}
-    ~DiskIndexSearchable() {
-        std::string index_dir = _index->getIndexDir();
-        _index.reset();
-        std::filesystem::remove_all(std::filesystem::path(index_dir));
-    }
+    ~DiskIndexSearchable() override;
     std::unique_ptr<Blueprint> create_blueprint(const FieldSpec& field,
                                                 const search::query::Node& term) override {
         FakeRequestContext req_ctx;
         return _index->createBlueprint(req_ctx, field, term);
     }
 };
+
+DiskIndexSearchable::~DiskIndexSearchable()
+{
+    std::string index_dir = _index->getIndexDir();
+    _index.reset();
+    std::filesystem::remove_all(std::filesystem::path(index_dir));
+}
 
 }
 

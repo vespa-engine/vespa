@@ -41,7 +41,7 @@ protected:
     Schema schema;
 
     SchemaBuilderTest();
-    ~SchemaBuilderTest();
+    ~SchemaBuilderTest() override;
     void assert_index(std::string_view name, search::index::schema::DataType exp_dt, CollectionType exp_ct);
     void assert_all_indexes();
     void assert_attribute(std::string_view name, search::index::schema::DataType exp_dt, CollectionType exp_ct, const std::string exp_tensor_spec = "");

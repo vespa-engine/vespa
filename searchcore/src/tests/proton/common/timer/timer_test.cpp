@@ -56,10 +56,14 @@ public:
         transport.Start();
         timer = make_scheduled_executor<ScheduledT>(transport, executor);
     }
-    ~ScheduledExecutorTest() {
-        transport.ShutDown(true);
-    }
+    ~ScheduledExecutorTest() override;
 };
+
+template <typename ScheduledT>
+ScheduledExecutorTest<ScheduledT>::~ScheduledExecutorTest()
+{
+    transport.ShutDown(true);
+}
 
 using ScheduledTypes = ::testing::Types<ScheduledExecutor, ScheduledForwardExecutor>;
 

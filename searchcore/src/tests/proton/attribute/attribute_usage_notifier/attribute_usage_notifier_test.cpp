@@ -59,7 +59,7 @@ public:
     {
     }
 
-    ~AttributeUsageNotifierTest();
+    ~AttributeUsageNotifierTest() override;
 
     AttributeUsageStats get_usage() { return _listener->get_usage(); }
     size_t get_update_count() const { return _listener->get_update_count(); }

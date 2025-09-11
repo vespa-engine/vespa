@@ -109,7 +109,7 @@ class ClosestTest : public ::testing::TestWithParam<TestParam>
 {
 protected:
     ClosestTest();
-    ~ClosestTest();
+    ~ClosestTest() override;
     bool direct_tensor() const noexcept { return GetParam()._direct_tensor; }
     void assert_closest(const Labels& labels, const std::string& feature_name, const std::string& query_tensor, const TensorSpec& exp_spec);
     void assert_closest(const Labels& labels, const std::string& feature_name, const std::vector<TensorSpec>& exp_specs);
