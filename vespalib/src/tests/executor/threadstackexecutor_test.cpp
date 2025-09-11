@@ -24,9 +24,7 @@ struct MyTask : public Executor::Task {
         latch.countDown();
         gate.await();
     }
-    ~MyTask() {
-        deleteCnt.fetch_add(1);
-    }
+    ~MyTask() override;
     static void resetStats() {
         runCnt = 0;
         deleteCnt = 0;
@@ -34,6 +32,11 @@ struct MyTask : public Executor::Task {
 };
 std::atomic<uint32_t> MyTask::runCnt(0);
 std::atomic<uint32_t> MyTask::deleteCnt(0);
+
+MyTask::~MyTask()
+{
+    deleteCnt.fetch_add(1);
+}
 
 struct MyState {
     static constexpr uint32_t NUM_THREADS = 10;

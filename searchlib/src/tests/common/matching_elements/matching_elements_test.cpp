@@ -23,9 +23,10 @@ struct MatchingElementsTest : ::testing::Test {
         matches.add_matching_elements(2, "foo", vec({2, 3, 5}));
         matches.add_matching_elements(2, "bar", vec({2, 4, 5}));
     }
-    ~MatchingElementsTest() = default;
+    ~MatchingElementsTest() override;
 };
 
+MatchingElementsTest::~MatchingElementsTest() = default;
 
 TEST_F(MatchingElementsTest, require_that_added_matches_can_be_looked_up) {
     EXPECT_EQ(matches.get_matching_elements(1, "foo"), vec({1, 3, 5}));

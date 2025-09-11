@@ -252,7 +252,7 @@ struct ConsumerMetricBuilder : public MetricVisitor {
     std::list<Result> result;
 
     explicit ConsumerMetricBuilder(const Config::Consumer& c) __attribute__((noinline));
-    ~ConsumerMetricBuilder() __attribute__((noinline));
+    ~ConsumerMetricBuilder() override __attribute__((noinline));
 
     bool tagAdded(const Metric& metric) {
         for (const auto& s : _consumer.tags) {

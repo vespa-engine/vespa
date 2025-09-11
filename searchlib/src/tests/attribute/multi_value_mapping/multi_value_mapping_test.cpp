@@ -106,7 +106,7 @@ public:
         _attr = std::make_unique<AttributeType>(*_mvMapping);
         _maxSmallArraySize = _mvMapping->get_mapper().get_array_size(max_array_store_type_id);
     }
-    ~MappingTestBase() { }
+    ~MappingTestBase() override;
 
     void set(uint32_t docId, const std::vector<ElemT> &values) { _mvMapping->set(docId, values); }
     ConstArrayRef get(uint32_t docId) { return _mvMapping->get(docId); }
@@ -159,6 +159,9 @@ public:
         _attr->incGeneration();
     }
 };
+
+template <typename ElemT>
+MappingTestBase<ElemT>::~MappingTestBase() = default;
 
 using IntMappingTest = MappingTestBase<int>;
 

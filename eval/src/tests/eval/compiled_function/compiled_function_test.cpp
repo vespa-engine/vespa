@@ -89,8 +89,8 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
     bool print_fail = false;
 
     ~MyEvalTest() override;
-    virtual void next_expression(const std::vector<std::string> &param_names,
-                                 const std::string &expression) override
+    void next_expression(const std::vector<std::string> &param_names,
+                         const std::string &expression) override
     {
         auto function = Function::parse(param_names, expression);
         ASSERT_TRUE(!function->has_error());
@@ -104,10 +104,10 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
             ++fail_cnt;
         }
     }
-    virtual void handle_case(const std::vector<std::string> &param_names,
-                             const std::vector<double> &param_values,
-                             const std::string &expression,
-                             double expected_result) override
+    void handle_case(const std::vector<std::string> &param_names,
+                     const std::vector<double> &param_values,
+                     const std::string &expression,
+                     double expected_result) override
     {
         auto function = Function::parse(param_names, expression);
         ASSERT_TRUE(!function->has_error());

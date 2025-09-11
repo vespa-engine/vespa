@@ -39,7 +39,7 @@ public:
     const char * const _id;
 
     explicit TstEnv(int sbp, int myp, const char *n);
-    virtual ~TstEnv();
+    ~TstEnv() override;
 
     int MainLoop();
 
@@ -63,7 +63,7 @@ private:
     RPCHooks &operator=(const RPCHooks &); // Not used
 public:
     explicit RPCHooks(TstEnv &env);
-    virtual ~RPCHooks();
+    ~RPCHooks() override;
 
     void initRPC(FRT_Supervisor *supervisor);
 private:

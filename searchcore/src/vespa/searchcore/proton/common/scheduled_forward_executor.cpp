@@ -72,10 +72,13 @@ private:
     uint64_t                   _key;
 public:
     Registration(ScheduledForwardExecutor & executor, uint64_t key) : _executor(executor), _key(key) {}
-    ~Registration() {
-        _executor.cancel(_key);
-    }
+    ~Registration() override;
 };
+
+ScheduledForwardExecutor::Registration::~Registration()
+{
+    _executor.cancel(_key);
+}
 
 ScheduledForwardExecutor::ScheduledForwardExecutor(FNET_Transport& transport,
                                                    Executor& executor)

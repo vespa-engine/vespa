@@ -14,7 +14,7 @@ class SameElementDescendantModifier : public search::query::TemplateTermVisitor<
     const std::string& _same_element_view;
 public:
     SameElementDescendantModifier(const std::string& same_element_view);
-    ~SameElementDescendantModifier();
+    ~SameElementDescendantModifier() override;
     void visit_term(Term& term);
     template <class TermNode>
     void visitTerm(TermNode &n) { visit_term(n); }

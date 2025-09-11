@@ -31,7 +31,7 @@ class FixedSizeHashMapHeld : public vespalib::GenerationHeldBase
     std::unique_ptr<const FixedSizeHashMap> _data;
 public:
     FixedSizeHashMapHeld(size_t size, std::unique_ptr<const FixedSizeHashMap> data);
-    ~FixedSizeHashMapHeld();
+    ~FixedSizeHashMapHeld() override;
 };
 
 FixedSizeHashMapHeld::FixedSizeHashMapHeld(size_t size, std::unique_ptr<const FixedSizeHashMap> data)
@@ -53,7 +53,7 @@ struct DataStoreFixedSizeHashTest : public ::testing::Test
     vespalib::Rand48 _rnd;
 
     DataStoreFixedSizeHashTest();
-    ~DataStoreFixedSizeHashTest();
+    ~DataStoreFixedSizeHashTest() override;
     void commit();
     size_t size() const noexcept;
     void insert(uint32_t key);

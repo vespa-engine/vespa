@@ -54,8 +54,10 @@ struct Service : FRT_Invokable {
         auto &task = req->getStash().create<ReturnLater>(my_scheduler, req);
         task.Schedule(5.0);
     }
-    ~Service() = default;
+    ~Service() override;
 };
+
+Service::~Service() = default;
 
 struct Fixture {
     fnet::TransportDebugger debugger;

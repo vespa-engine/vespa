@@ -115,7 +115,7 @@ struct DataStoreShardedHashTest : public ::testing::Test
     bool _report_work;
 
     DataStoreShardedHashTest();
-    ~DataStoreShardedHashTest();
+    ~DataStoreShardedHashTest() override;
     void commit();
     void insert(uint32_t key);
     void remove(uint32_t key);

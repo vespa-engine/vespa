@@ -38,10 +38,13 @@ public:
 
     int getListenPort() { return _server->listen_port(); }
 
-    ~HTTPStatus() {
-        _root.reset();
-    };
+    ~HTTPStatus() override;
 };
+
+HTTPStatus::~HTTPStatus()
+{
+    _root.reset();
+}
 
 class Status {
 public:

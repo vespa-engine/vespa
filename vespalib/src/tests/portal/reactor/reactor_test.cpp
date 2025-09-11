@@ -69,7 +69,7 @@ struct HandlerBase : Reactor::EventHandler {
         EXPECT_EQ((read_sample != read_cnt), read);
         EXPECT_EQ((write_sample != write_cnt), write);
     }
-    ~HandlerBase();
+    ~HandlerBase() override;
 };
 HandlerBase::~HandlerBase() = default;
 
@@ -80,7 +80,7 @@ struct SimpleHandler : HandlerBase {
     {
         token = reactor.attach(*this, sockets.main.get(), read, write);
     }
-    ~SimpleHandler();
+    ~SimpleHandler() override;
 };
 SimpleHandler::~SimpleHandler() = default;
 
@@ -99,8 +99,9 @@ struct DeletingHandler : HandlerBase {
         token.reset();
         token_deleted.countDown();
     }
-    ~DeletingHandler();
+    ~DeletingHandler() override;
 };
+
 DeletingHandler::~DeletingHandler() = default;
 
 struct WaitingHandler : HandlerBase {
@@ -117,8 +118,9 @@ struct WaitingHandler : HandlerBase {
         HandlerBase::handle_event(read, write);
         exit_callback.await();
     }
-    ~WaitingHandler();
+    ~WaitingHandler() override;
 };
+
 WaitingHandler::~WaitingHandler() = default;
 
 //-----------------------------------------------------------------------------

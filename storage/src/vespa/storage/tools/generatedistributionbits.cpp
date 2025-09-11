@@ -30,7 +30,7 @@ namespace storage {
         uint32_t startAtNodeCount;
 
         Options(int argc, const char* const* argv);
-        ~Options();
+        ~Options() override;
 
         void finalize() {
             if (highRange) {

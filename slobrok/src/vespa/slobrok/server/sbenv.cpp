@@ -63,7 +63,7 @@ private:
 public:
     ConfigTask(FNET_Scheduler *sched, Configurator& configurator);
 
-    ~ConfigTask();
+    ~ConfigTask() override;
     void PerformTask() override;
 };
 

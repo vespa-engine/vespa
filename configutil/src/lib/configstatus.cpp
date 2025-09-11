@@ -27,7 +27,7 @@ struct ComponentTraverser : public vespalib::slime::ObjectTraverser
         : _configId(configId), _state(ROOT), _generations(generations)
     {}
 
-    ~ComponentTraverser();
+    ~ComponentTraverser() override;
 
     void object(const vespalib::slime::Inspector &inspector) {
         inspector.traverse(*this);
@@ -82,7 +82,7 @@ public:
     MyHttpHandler(std::string configId)
         : _json(), _error(), _configId(configId)
     {}
-    ~MyHttpHandler();
+    ~MyHttpHandler() override;
 
     void handleHeader(const vbench::string &name, const vbench::string &value) override {
         (void) name;

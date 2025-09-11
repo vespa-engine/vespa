@@ -97,7 +97,7 @@ struct MyGetHandler : public Portal::GetHandler {
     void get(Portal::GetRequest request) override {
         fun(std::move(request));
     }
-    ~MyGetHandler();
+    ~MyGetHandler() override;
 };
 MyGetHandler::~MyGetHandler() = default;
 

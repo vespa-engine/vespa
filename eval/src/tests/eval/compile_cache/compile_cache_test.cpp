@@ -32,9 +32,14 @@ struct MyExecutor : public Executor {
         }
         tasks.clear();
     }
-    ~MyExecutor() { run_tasks(); }
+    ~MyExecutor() override;
     void wakeup() override { }
 };
+
+MyExecutor::~MyExecutor()
+{
+    run_tasks();
+}
 
 //-----------------------------------------------------------------------------
 
@@ -95,8 +100,8 @@ struct CheckKeys : EvalSpec::EvalTest {
         seen_keys.insert(key);
         return seen;
     }
-    virtual void next_expression(const std::vector<std::string> &param_names,
-                                 const std::string &expression) override
+    void next_expression(const std::vector<std::string> &param_names,
+                         const std::string &expression) override
     {
         auto function = Function::parse(param_names, expression);
         if (!CompiledFunction::detect_issues(*function)) {
@@ -109,10 +114,10 @@ struct CheckKeys : EvalSpec::EvalTest {
             }
         }
     }
-    virtual void handle_case(const std::vector<std::string> &,
-                             const std::vector<double> &,
-                             const std::string &,
-                             double) override {}
+    void handle_case(const std::vector<std::string> &,
+                     const std::vector<double> &,
+                     const std::string &,
+                     double) override {}
 };
 
 CheckKeys::~CheckKeys() = default;

@@ -82,7 +82,7 @@ class MyHolder : public IConfigHolder
 {
 public:
     MyHolder() noexcept = default;
-    ~MyHolder() = default;
+    ~MyHolder() override;
 
     std::unique_ptr<ConfigUpdate> provide() override
     {
@@ -108,6 +108,7 @@ private:
     std::unique_ptr<ConfigUpdate> _update;
 };
 
+MyHolder::~MyHolder() = default;
 
 ConfigValue createValue(const std::string & myField, const std::string & xxhash64)
 {

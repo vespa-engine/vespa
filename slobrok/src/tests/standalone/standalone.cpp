@@ -15,7 +15,7 @@ private:
 
 public:
     Server(std::string name, int port);
-    ~Server();
+    ~Server() override;
     void rpc_listNamesServed(FRT_RPCRequest *req);
 };
 

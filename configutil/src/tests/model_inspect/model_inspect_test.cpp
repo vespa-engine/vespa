@@ -98,9 +98,10 @@ public:
     int listConfigId(const std::string) override { _listConfigId = true; return 0; };
     int getIndexOf(const std::string, const std::string) override { _getIndexOf = true; return 0; };
 
-    ~ModelDummy() {};
+    ~ModelDummy() override;
 };
 
+ModelDummy::~ModelDummy() = default;
 
 TEST(ModelInspectTest, yamlDump)
 {

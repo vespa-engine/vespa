@@ -215,7 +215,7 @@ public:
     }
     ~MyIntAv() override;
 
-    virtual uint32_t
+    uint32_t
     get(AttributeVector::DocId doc, largeint_t *v, uint32_t sz) const override
     {
         ++_gets;

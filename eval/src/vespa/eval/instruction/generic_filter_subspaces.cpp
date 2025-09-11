@@ -54,7 +54,7 @@ public:
             my_cells = TypedCells(&value, CellType::DOUBLE, 1);            
         }
     }
-    const ValueType &type() const final override { return my_type; }
+    const ValueType &type() const final { return my_type; }
     template <typename CT>
     void adjust(const CT *cells, size_t size) {
         if (direct) {
@@ -63,10 +63,10 @@ public:
             value = cells[0];
         }
     }
-    TypedCells cells() const final override { return my_cells; }
-    const Index &index() const final override { return TrivialIndex::get(); }
-    MemoryUsage get_memory_usage() const final override { return self_memory_usage<ParamView>(); }
-    const Value &resolve(size_t, Stash &) const final override { return *this; }
+    TypedCells cells() const final { return my_cells; }
+    const Index &index() const final { return TrivialIndex::get(); }
+    MemoryUsage get_memory_usage() const final { return self_memory_usage<ParamView>(); }
+    const Value &resolve(size_t, Stash &) const final { return *this; }
 };
 
 template <typename CT>

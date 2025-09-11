@@ -12,7 +12,7 @@ namespace {
 class DocEntryWithId final : public DocEntry {
 public:
     DocEntryWithId(Timestamp t, DocumentMetaEnum metaEnum, const DocumentId &docId);
-    ~DocEntryWithId();
+    ~DocEntryWithId() override;
     std::string toString() const override;
     const DocumentId* getDocumentId() const override { return & _documentId; }
     std::string_view getDocumentType() const override { return _documentId.getDocType(); }
@@ -24,7 +24,7 @@ private:
 class DocEntryWithTypeAndGid final : public DocEntry {
 public:
     DocEntryWithTypeAndGid(Timestamp t, DocumentMetaEnum metaEnum, std::string_view docType, GlobalId gid);
-    ~DocEntryWithTypeAndGid();
+    ~DocEntryWithTypeAndGid() override;
     std::string toString() const override;
     std::string_view getDocumentType() const override { return _type; }
     GlobalId getGid() const override { return _gid; }
@@ -44,7 +44,7 @@ public:
      * any field filtering is performed.
      */
     DocEntryWithDoc(Timestamp t, DocumentUP doc, size_t serializedDocumentSize);
-    ~DocEntryWithDoc();
+    ~DocEntryWithDoc() override;
     std::string toString() const override;
     const Document* getDocument() const override { return _document.get(); }
     const DocumentId* getDocumentId() const override { return &_document->getId(); }

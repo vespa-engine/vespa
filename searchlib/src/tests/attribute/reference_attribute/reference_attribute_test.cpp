@@ -87,7 +87,7 @@ struct ReferenceAttributeTest : public ::testing::Test {
         resetAttr();
     }
 
-    ~ReferenceAttributeTest() {}
+    ~ReferenceAttributeTest() override;
 
     AttributeVector &attr() {
         return *_attr;
@@ -217,6 +217,8 @@ struct ReferenceAttributeTest : public ::testing::Test {
         return getStatus().getNumUniqueValues();
     }
 };
+
+ReferenceAttributeTest::~ReferenceAttributeTest() = default;
 
 TEST_F(ReferenceAttributeTest, reference_attribute_can_be_instantiated)
 {

@@ -43,7 +43,7 @@ public:
         _attrs.build_string_attribute("single_str", { {"Hello World"}, {} }, CollectionType::SINGLE);
         _state._attrCtx = _attrs.mgr().createContext();
     }
-    ~AttributeTokensDFWTest() {}
+    ~AttributeTokensDFWTest() override;
 
     void setup(const std::string& field_name) {
         _writer = std::make_unique<AttributeTokensDFW>(field_name);
@@ -68,6 +68,8 @@ public:
         EXPECT_EQ(exp.slime, act);
     }
 };
+
+AttributeTokensDFWTest::~AttributeTokensDFWTest() = default;
 
 TEST_F(AttributeTokensDFWTest, outputs_slime_for_array_of_string)
 {

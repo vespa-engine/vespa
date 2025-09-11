@@ -300,7 +300,7 @@ public:
                            uint32_t numWords,
                            uint32_t minFill,
                            uint32_t maxFill);
-    virtual ~RandTextFieldGenerator();
+    ~RandTextFieldGenerator() override;
     void setup() override;
     void generateValue(vespalib::asciistream &doc, uint32_t id) override;
 };
@@ -361,7 +361,7 @@ public:
     ModTextFieldGenerator(const string &name,
                           vespalib::Rand48 &rnd,
                           const std::vector<uint32_t> &mods);
-    virtual ~ModTextFieldGenerator();
+    ~ModTextFieldGenerator() override;
     void generateValue(vespalib::asciistream &doc, uint32_t id) override;
 };
 
@@ -399,7 +399,7 @@ class IdTextFieldGenerator : public FieldGenerator
 {
 public:
     IdTextFieldGenerator(const string &name);
-    virtual ~IdTextFieldGenerator();
+    ~IdTextFieldGenerator() override;
     void generateValue(vespalib::asciistream &doc, uint32_t id) override;
 };
 
@@ -433,7 +433,7 @@ public:
                           vespalib::Rand48 &rnd,
                           uint32_t low,
                           uint32_t count);
-    virtual ~RandIntFieldGenerator();
+    ~RandIntFieldGenerator() override;
     void generateValue(vespalib::asciistream &doc, uint32_t id) override;
     bool isString() const override { return false; }
 };

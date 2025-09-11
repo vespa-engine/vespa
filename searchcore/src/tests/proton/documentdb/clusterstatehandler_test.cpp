@@ -52,9 +52,7 @@ struct ClusterStateHandlerTest : testing::Test {
     {
         _stateHandler.addClusterStateChangedHandler(&_changedHandler);
     }
-    ~ClusterStateHandlerTest() {
-        _stateHandler.removeClusterStateChangedHandler(&_changedHandler);
-    }
+    ~ClusterStateHandlerTest() override;
     const IBucketStateCalculator& set_cluster_state(const ClusterState& state) {
         _stateHandler.handleSetClusterState(state, _genericHandler);
         _exec.sync();
@@ -62,6 +60,11 @@ struct ClusterStateHandlerTest : testing::Test {
         return *_changedHandler._calc;
     }
 };
+
+ClusterStateHandlerTest::~ClusterStateHandlerTest()
+{
+    _stateHandler.removeClusterStateChangedHandler(&_changedHandler);
+}
 
 }
 

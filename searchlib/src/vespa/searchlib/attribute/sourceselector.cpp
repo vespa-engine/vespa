@@ -30,7 +30,7 @@ public:
           _parent(parent)
     { }
 
-    virtual void
+    void
     addTags(GenericHeader &header, const std::string &name) const override
     {
         using Tag = GenericHeader::Tag;

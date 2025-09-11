@@ -127,7 +127,7 @@ protected:
     int count_rotated();
 public:
     WatcherTest();
-    ~WatcherTest();
+    ~WatcherTest() override;
 };
 
 WatcherTest::WatcherTest()

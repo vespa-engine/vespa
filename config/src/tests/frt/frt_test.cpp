@@ -114,7 +114,7 @@ Response::~Response() = default;
         std::string address;
         ConnectionMock() : ConnectionMock(std::unique_ptr<Response>()) { }
         ConnectionMock(std::unique_ptr<Response> answer);
-        ~ConnectionMock();
+        ~ConnectionMock() override;
         FRT_RPCRequest * allocRPCRequest() override { return supervisor.AllocRPCRequest(); }
         void setError(int ec) override { errorCode = ec; }
         void invoke(FRT_RPCRequest * req, duration t, FRT_IRequestWait * waiter) override
@@ -143,13 +143,15 @@ Response::~Response() = default;
     struct FactoryMock : public ConnectionFactory {
         ConnectionMock * current;
         FactoryMock(ConnectionMock * c) noexcept : current(c) { }
-        ~FactoryMock() = default;
+        ~FactoryMock() override;
         Connection * getCurrent() override {
             return current;
         }
         FNET_Scheduler * getScheduler() override { return &current->scheduler; }
         void syncTransport() override { }
     };
+
+    FactoryMock::~FactoryMock() = default;
 
     struct AgentResultFixture
     {

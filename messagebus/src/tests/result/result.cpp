@@ -17,12 +17,15 @@ struct MyMessage : public SimpleMessage
     MyMessage(const string &str) : SimpleMessage(str) {
         ++ctorCnt;
     }
-    virtual ~MyMessage() {
-        ++dtorCnt;
-    }
+    ~MyMessage() override;
 };
 int MyMessage::ctorCnt = 0;
 int MyMessage::dtorCnt = 0;
+
+MyMessage::~MyMessage()
+{
+    ++dtorCnt;
+}
 
 Result
 sendOk(Message::UP msg)

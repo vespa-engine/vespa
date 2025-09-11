@@ -58,7 +58,7 @@ public:
         _attrs.build_raw_attribute("single_raw", { {as_vector("hello")}, {} });
         _state._attrCtx = _attrs.mgr().createContext();
     }
-    ~AttributeDFWTest() {}
+    ~AttributeDFWTest() override;
 
     void setup(const std::string& field_name, bool filter_elements) {
         if (filter_elements) {
@@ -100,6 +100,8 @@ public:
         expect_field(exp_slime_as_json, docid);
     }
 };
+
+AttributeDFWTest::~AttributeDFWTest() = default;
 
 TEST_F(AttributeDFWTest, outputs_slime_for_array_of_string)
 {

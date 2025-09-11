@@ -112,7 +112,7 @@ private:
     bool _invert;
     bool _valid;
     bool valid() const override { return _valid; }
-    int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override final {
+    int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const final {
         if ((elemId == 0) && (_invert != _bv.testBit(docId))) {
             weight = 1;
             return 0;
@@ -121,7 +121,7 @@ private:
         return  -1;
     }
 
-    int32_t onFind(DocId docId, int32_t elemId) const override final {
+    int32_t onFind(DocId docId, int32_t elemId) const final {
         return ((elemId == 0) && (_invert != _bv.testBit(docId))) ? 0 : -1;
     }
 

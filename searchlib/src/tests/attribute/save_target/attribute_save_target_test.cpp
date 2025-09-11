@@ -37,7 +37,7 @@ public:
           base_file_name(test_dir + "test_file")
     {
     }
-    ~SaveTargetTest() {}
+    ~SaveTargetTest() override;
     void set_header(const std::string& file_name) {
         target.setHeader(AttributeHeader(file_name));
     }
@@ -73,6 +73,8 @@ public:
         EXPECT_EQ(exp_value, act_value);
     }
 };
+
+SaveTargetTest::~SaveTargetTest() = default;
 
 class FileSaveTargetTest : public SaveTargetTest {
 public:

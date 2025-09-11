@@ -16,10 +16,10 @@
 
 using namespace fsa;
 
-class MyHits : public Detector::Hits{
+class MyHits : public Detector::Hits {
 public:
   MyHits() {};
-  ~MyHits() {};
+  ~MyHits() override;
 
   void add(const NGram &text,
            unsigned int from, int length,
@@ -29,6 +29,8 @@ public:
               << text.join(" ",from,length) << "'\n";
   }
 };
+
+MyHits::~MyHits() = default;
 
 int main(int argc, char **argv)
 {

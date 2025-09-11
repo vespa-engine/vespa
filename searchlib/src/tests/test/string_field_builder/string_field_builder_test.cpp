@@ -73,7 +73,7 @@ protected:
     DocBuilder    db;
     StringFieldBuilder sfb;
     StringFieldBuilderTest();
-    ~StringFieldBuilderTest();
+    ~StringFieldBuilderTest() override;
     std::vector<MyAnnotation> get_annotations(const StringFieldValue& val);
     void assert_annotations(std::vector<MyAnnotation> exp, const std::string& plain, const StringFieldValue& val);
 };

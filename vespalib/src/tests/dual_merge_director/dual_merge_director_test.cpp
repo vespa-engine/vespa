@@ -14,7 +14,7 @@ struct MySource : public DualMergeDirector::Source {
     std::string diff;
 
     MySource(bool a, size_t num_sources, size_t source_id);
-    ~MySource();
+    ~MySource() override;
     void merge(Source &mt) override {
         MySource &rhs = static_cast<MySource&>(mt);
         ASSERT_EQ(typeA, rhs.typeA);
@@ -47,7 +47,8 @@ MySource::MySource(bool a, size_t num_sources, size_t source_id)
         diff[source_id] = '6';
     }
 }
-MySource::~MySource() {}
+
+MySource::~MySource() = default;
 
 TEST(DualMergeDirectorTest, require_that_merging_works) {
     size_t num_threads = 64;

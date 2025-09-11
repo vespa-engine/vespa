@@ -1173,8 +1173,8 @@ struct CheckExpressions : test::EvalSpec::EvalTest {
     bool failed = false;
     size_t seen_cnt = 0;
     ~CheckExpressions() override;
-    virtual void next_expression(const std::vector<std::string> &param_names,
-                                 const std::string &expression) override
+    void next_expression(const std::vector<std::string> &param_names,
+                         const std::string &expression) override
     {
         auto function = Function::parse(param_names, expression);
         if (function->has_error()) {
@@ -1183,10 +1183,10 @@ struct CheckExpressions : test::EvalSpec::EvalTest {
         }
         ++seen_cnt;
     }
-    virtual void handle_case(const std::vector<std::string> &,
-                             const std::vector<double> &,
-                             const std::string &,
-                             double) override {}
+    void handle_case(const std::vector<std::string> &,
+                     const std::vector<double> &,
+                     const std::string &,
+                     double) override {}
 };
 
 CheckExpressions::~CheckExpressions() = default;

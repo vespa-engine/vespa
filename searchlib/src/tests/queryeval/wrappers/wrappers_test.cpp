@@ -25,9 +25,7 @@ public:
         TermFieldMatchData *_match;
     public:
         DummyItr(ObservedData &data, TermFieldMatchData *m) : _data(data), _match(m) {}
-        ~DummyItr() {
-            ++_data.dtorCnt;
-        }
+        ~DummyItr() override;
         void doSeek(uint32_t docid) override {
             ++_data.seekCnt;
             if (docid <= 10) {
@@ -79,6 +77,11 @@ protected:
         EXPECT_EQ(_data.dtorCnt, 1u);
     }
 };
+
+WrapperTest::DummyItr::~DummyItr()
+{
+    ++_data.dtorCnt;
+}
 
 TEST_F(WrapperTest, filter_wrapper)
 {
@@ -164,13 +167,15 @@ TEST_F(WrapperTest, boolean_match_iterator_wrapper)
 
 class FilterWrapperVerifier : public search::test::SearchIteratorVerifier {
 public:
-    ~FilterWrapperVerifier() {}
+    ~FilterWrapperVerifier() override;
     SearchIterator::UP create(bool strict) const override {
         auto search = std::make_unique<FilterWrapper>(1);
         search->wrap(createIterator(getExpectedDocIds(), strict));
         return search;
     }
 };
+
+FilterWrapperVerifier::~FilterWrapperVerifier() = default;
 
 TEST(FilterWrapperTest, adheres_to_search_iterator_requirements)
 {
@@ -183,10 +188,12 @@ public:
     SearchIterator::UP create(bool strict) const override {
         return std::make_unique<BooleanMatchIteratorWrapper>(createIterator(getExpectedDocIds(), strict), _tfmda);
     }
-    ~BooleanMatchIteratorWrapperVerifier() {}
+    ~BooleanMatchIteratorWrapperVerifier() override;
 private:
     mutable TermFieldMatchDataArray _tfmda;
 };
+
+BooleanMatchIteratorWrapperVerifier::~BooleanMatchIteratorWrapperVerifier() = default;
 
 TEST(BooleanMatchIteratorWrapperWrapperTest, adheres_to_search_iterator_requirements)
 {
