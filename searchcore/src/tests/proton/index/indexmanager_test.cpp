@@ -136,9 +136,7 @@ struct IndexManagerTest : public ::testing::Test {
         resetIndexManager();
     }
 
-    ~IndexManagerTest() {
-        _service.shutdown();
-    }
+    ~IndexManagerTest() override;
 
     template <class FunctionType>
     void runAsMaster(FunctionType &&function) {
@@ -198,6 +196,11 @@ struct IndexManagerTest : public ::testing::Test {
     bool has_urgent_fusion() const;
     void assert_urgent(const std::string& label, bool pending, bool flush, bool fusion);
 };
+
+IndexManagerTest:: ~IndexManagerTest()
+{
+    _service.shutdown();
+}
 
 void
 IndexManagerTest::flushIndexManager()

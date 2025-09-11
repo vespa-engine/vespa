@@ -68,7 +68,7 @@ public:
     {
     }
 
-    virtual void
+    void
     run() override
     {
         _task->run();

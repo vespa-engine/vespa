@@ -76,7 +76,7 @@ protected:
     bool _reportWork;
 
     Fixture();
-    ~Fixture();
+    ~Fixture() override;
 
     void set_read_threads(uint32_t read_threads);
 

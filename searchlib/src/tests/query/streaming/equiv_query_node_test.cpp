@@ -40,7 +40,7 @@ class EquivQueryNodeTest : public ::testing::Test
 {
 public:
     EquivQueryNodeTest();
-    ~EquivQueryNodeTest();
+    ~EquivQueryNodeTest() override;
 
     void assert_tfmd_pos(const std::string label,
                          const TermFieldMatchDataPosition &tfmd_pos,
