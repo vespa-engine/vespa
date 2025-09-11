@@ -20,13 +20,10 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/util/file_settings.h>
-#include <vespa/vespalib/data/slime/inserter.h>
-#include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <chrono>
 #include <thread>
 #include <filesystem>
 
