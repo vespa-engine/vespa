@@ -70,11 +70,9 @@ public:
 template class BoundAngularDistance<TemporaryVectorStore<float>>;
 template class BoundAngularDistance<TemporaryVectorStore<double>>;
 template class BoundAngularDistance<TemporaryVectorStore<Int8Float>>;
-template class BoundAngularDistance<TemporaryVectorStore<vespalib::BFloat16>>;
 template class BoundAngularDistance<ReferenceVectorStore<float>>;
 template class BoundAngularDistance<ReferenceVectorStore<double>>;
 template class BoundAngularDistance<ReferenceVectorStore<Int8Float>>;
-template class BoundAngularDistance<ReferenceVectorStore<vespalib::BFloat16>>;
 
 template <typename FloatType>
 BoundDistanceFunction::UP
@@ -98,6 +96,5 @@ AngularDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) 
 template class AngularDistanceFunctionFactory<float>;
 template class AngularDistanceFunctionFactory<double>;
 template class AngularDistanceFunctionFactory<Int8Float>;
-template class AngularDistanceFunctionFactory<vespalib::BFloat16>;
 
 }

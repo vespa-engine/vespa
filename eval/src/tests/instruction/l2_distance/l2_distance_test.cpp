@@ -30,7 +30,7 @@ void verify(const TensorSpec &a, const TensorSpec &b, const std::string &expr, b
 void verify_cell_types(GenSpec a, GenSpec b, const std::string &expr, bool optimized = true) {
     for (CellType act : CellTypeUtils::list_types()) {
         for (CellType bct : CellTypeUtils::list_types()) {
-            if (optimized && (act == bct)) {
+            if (optimized && (act == bct) && (act != CellType::BFLOAT16)) {
                 verify(a.cpy().cells(act), b.cpy().cells(bct), expr, true);
             } else {
                 verify(a.cpy().cells(act), b.cpy().cells(bct), expr, false);

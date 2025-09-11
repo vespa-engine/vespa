@@ -90,7 +90,6 @@ MipsDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) con
 };
 
 template class MipsDistanceFunctionFactory<Int8Float>;
-template class MipsDistanceFunctionFactory<vespalib::BFloat16>;
 template class MipsDistanceFunctionFactory<float>;
 template class MipsDistanceFunctionFactory<double>;
 
