@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/vespalib/data/slime/slime.h>
+
 #include <chrono>
 #include <shared_mutex>
 
@@ -24,7 +26,7 @@ public:
     static std::string stateToString(State state);
     using time_point = std::chrono::system_clock::time_point;
 
-    AttributeInitializationStatus();
+    AttributeInitializationStatus(const std::string &name);
 
     void startLoading();
     void startReprocessing();
@@ -32,6 +34,7 @@ public:
     void endLoading();
     void setReprocessingPercentage(float percentage);
 
+    const std::string& getName() const { return _name; }
     State getState() const;
     time_point getStartTime() const;
     time_point getEndTime() const;
@@ -40,9 +43,12 @@ public:
     bool didReprocess() const;
     float getReprocessingPercentage() const;
 
+    void reportInitializationStatus(const vespalib::slime::Inserter &inserter) const;
+
 private:
     mutable std::shared_mutex _mutex;
 
+    const std::string _name;
     State _state;
 
     time_point _start_time;

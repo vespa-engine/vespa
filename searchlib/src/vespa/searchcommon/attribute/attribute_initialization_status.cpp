@@ -4,6 +4,14 @@
 
 #include <mutex>
 
+namespace {
+std::string timepointToString(search::attribute::AttributeInitializationStatus::time_point tp) {
+    time_t secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
+    uint32_t usecs_part = std::chrono::duration_cast<std::chrono::microseconds>(tp.time_since_epoch()).count() % 1000000;
+    return std::format("{}.{:06}", secs, usecs_part);
+}
+}
+
 namespace search::attribute {
 
 std::string AttributeInitializationStatus::stateToString(State state) {
@@ -23,7 +31,8 @@ std::string AttributeInitializationStatus::stateToString(State state) {
     return "queued";
 }
 
-AttributeInitializationStatus::AttributeInitializationStatus() :
+AttributeInitializationStatus::AttributeInitializationStatus(const std::string &name) :
+    _name(name),
     _state(State::QUEUED),
     _didReprocess(false),
     _reprocessing_percentage(0.0f)
@@ -106,6 +115,33 @@ float AttributeInitializationStatus::getReprocessingPercentage() const {
     std::shared_lock<std::shared_mutex> guard(_mutex);
 
     return _reprocessing_percentage;
+}
+
+void AttributeInitializationStatus::reportInitializationStatus(const vespalib::slime::Inserter &inserter) const {
+vespalib::slime::Cursor &cursor = inserter.insertObject();
+cursor.setString("name", getName());
+
+cursor.setString("status", stateToString(getState()));
+
+if (getState() >= State::REPROCESSING && didReprocess()) {
+    cursor.setString("reprocessing_progress",  std::format("{:.6f}", getReprocessingPercentage()));
+}
+
+if (getState() > State::QUEUED) {
+    cursor.setString("loading_started", timepointToString(getStartTime()));
+}
+
+if (getState() >= State::REPROCESSING && didReprocess()) {
+    cursor.setString("reprocessing_started",timepointToString(getReprocessingStartTime()));
+}
+
+if (getState() >= State::REPROCESSING_FINISHED && didReprocess()) {
+    cursor.setString("reprocessing_finished", timepointToString(getReprocessingEndTime()));
+}
+
+if (getState() == State::LOADED) {
+    cursor.setString("loading_finished", timepointToString(getEndTime()));
+}
 }
 
 }

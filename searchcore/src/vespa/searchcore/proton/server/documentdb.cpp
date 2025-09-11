@@ -16,7 +16,8 @@
 #include "replay_throttling_policy.h"
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/metrics/updatehook.h>
-#include <vespa/searchcore/proton/attribute/attribute_vector_wrapper_collector.h>
+//#include <vespa/searchcommon/attribute/attribute_initialization_status.h>
+#include <vespa/searchcore/proton/attribute/attribute_initialization_status_collector.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
@@ -324,7 +325,7 @@ DocumentDB::initManagers()
     InitializerTask::SP rootTask = _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum, _indexCfg);
     {
         std::shared_lock<std::shared_mutex> guard(_initializationMutex);
-        AttributeVectorWrapperCollector visitor(_attributeInitializationStatus);
+        AttributeInitializationStatusCollector visitor(_attributeInitializationStatuses);
         rootTask->acceptVisitor(visitor);
     }
     InitializeThreads initializeThreads = _initializeThreads;
@@ -1175,27 +1176,16 @@ void DocumentDB::getInitializationStatus(const vespalib::slime::Inserter &insert
     vespalib::slime::Cursor &queuedCursor = subdbCursor.setArray("queued_attributes");
     vespalib::slime::ArrayInserter queuedArrayInserter(queuedCursor);
 
-    for (const auto &attribute: _attributeInitializationStatus) {
+    for (const auto &status: _attributeInitializationStatuses) {
 
-        std::shared_ptr<search::AttributeVector> attributeVector = attribute->getAttributeVector();
+        if (status->getState() == search::attribute::AttributeInitializationStatus::State::QUEUED) {
+            status->reportInitializationStatus(queuedArrayInserter);
 
-        if (!attributeVector) {
-            vespalib::slime::Cursor &cursor = queuedArrayInserter.insertObject();
-            cursor.setString("name", attribute->getName());
-            cursor.setString("status", "queued");
+        } else if (status->getState() == search::attribute::AttributeInitializationStatus::State::LOADED) {
+            status->reportInitializationStatus(loadedArrayInserter);
 
-        } else {
-            const search::attribute::AttributeInitializationStatus& status = attributeVector->getInitializationStatus();
-
-            if (status.getState() == search::attribute::AttributeInitializationStatus::State::QUEUED) {
-                attributeVector->reportInitializationStatus(queuedArrayInserter);
-
-            } else if (status.getState() == search::attribute::AttributeInitializationStatus::State::LOADED) {
-                attributeVector->reportInitializationStatus(loadedArrayInserter);
-
-            } else { // loading or reprocessing
-                attributeVector->reportInitializationStatus(loadingArrayInserter);
-            }
+        } else { // loading or reprocessing
+            status->reportInitializationStatus(loadingArrayInserter);
         }
     }
 }

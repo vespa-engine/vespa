@@ -5,11 +5,11 @@
 #include "attribute_directory.h"
 #include "i_attribute_factory.h"
 #include "attribute_transient_memory_calculator.h"
-#include "attribute_vector_wrapper.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/memory_usage_logger.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/searchcommon/attribute/attribute_initialization_status.h>
 #include <vespa/searchcommon/attribute/persistent_predicate_params.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/util/fileutil.h>
@@ -176,7 +176,7 @@ AttributeInitializer::tryLoadAttribute() const
     search::SerialNum serialNum = _attrDir->getFlushedSerialNum();
     std::string attrFileName = _attrDir->getAttributeFileName(serialNum);
     AttributeVector::SP attr = _factory.create(attrFileName, _spec.getConfig());
-    _attributeVectorWrapper->setAttributeVector(attr);
+    attr->set_initialization_status(_initialization_status);
     if (serialNum != 0 && _header) {
         if (!_header_ok) {
             attr->getInitializationStatus().startLoading();
@@ -240,7 +240,7 @@ AttributeVector::SP
 AttributeInitializer::createAndSetupEmptyAttribute() const
 {
     AttributeVector::SP attr = _factory.create(_attrDir->getAttrName(), _spec.getConfig());
-    _attributeVectorWrapper->setAttributeVector(attr);
+    attr->set_initialization_status(_initialization_status);
     attr->getInitializationStatus().startLoading();
     _factory.setupEmpty(attr, _currentSerialNum);
     attr->getInitializationStatus().endLoading();
@@ -261,7 +261,7 @@ AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirect
       _shared_executor(shared_executor),
       _header(),
       _header_ok(false),
-      _attributeVectorWrapper(std::make_shared<AttributeVectorWrapper>(_spec.getName()))
+      _initialization_status(std::make_shared<search::attribute::AttributeInitializationStatus>(_spec.getName()))
 {
     if (_currentSerialNum.has_value()) {
         readHeader();

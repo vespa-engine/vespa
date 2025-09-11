@@ -84,12 +84,6 @@ exists(std::string_view name) {
     return fs::exists(fs::path(name)); 
 }
 
-std::string timepointToString(search::attribute::AttributeInitializationStatus::time_point tp) {
-    time_t secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
-    uint32_t usecs_part = std::chrono::duration_cast<std::chrono::microseconds>(tp.time_since_epoch()).count() % 1000000;
-    return std::format("{}.{:06}", secs, usecs_part);
-}
-
 }
 
 AttributeVector::AttributeVector(std::string_view baseFileName, const Config &c)
@@ -112,7 +106,8 @@ AttributeVector::AttributeVector(std::string_view baseFileName, const Config &c)
       _nextStatUpdateTime(),
       _memory_allocator(make_memory_allocator(_baseFileName.getAttributeName(), c)),
       _size_on_disk(0),
-      _last_flush_duration(0)
+      _last_flush_duration(0),
+      _initialization_status(std::make_shared<search::attribute::AttributeInitializationStatus>(getName())) // object is only temporary
 {
 }
 
@@ -367,13 +362,13 @@ AttributeVector::load() {
 bool
 AttributeVector::load(vespalib::Executor * executor) {
     assert(!_loaded);
-    _initializationStatus.startLoading();
+    _initialization_status->startLoading();
     bool loaded = onLoad(executor);
     if (loaded) {
         commit();
         incGeneration();
         updateStat(true);
-        _initializationStatus.endLoading();
+        _initialization_status->endLoading();
     }
     _loaded = loaded;
     return _loaded;
@@ -765,32 +760,5 @@ AttributeVector::set_size_on_disk(const IAttributeSaveTarget& target)
 template bool AttributeVector::append<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &, int32_t, bool);
 template bool AttributeVector::update<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &);
 template bool AttributeVector::remove<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &, int32_t);
-
-void AttributeVector::reportInitializationStatus(const vespalib::slime::Inserter &inserter) const {
-    vespalib::slime::Cursor &cursor = inserter.insertObject();
-    cursor.setString("name", getName());
-
-    cursor.setString("status", search::AttributeInitializationStatus::stateToString(_initializationStatus.getState()));
-
-    if (_initializationStatus.getState() >= search::attribute::AttributeInitializationStatus::State::REPROCESSING && _initializationStatus.didReprocess()) {
-        cursor.setString("reprocessing_progress",  std::format("{:.6f}", _initializationStatus.getReprocessingPercentage()));
-    }
-
-    if (_initializationStatus.getState() > search::attribute::AttributeInitializationStatus::State::QUEUED) {
-        cursor.setString("loading_started", timepointToString(_initializationStatus.getStartTime()));
-    }
-
-    if (_initializationStatus.getState() >= search::attribute::AttributeInitializationStatus::State::REPROCESSING && _initializationStatus.didReprocess()) {
-        cursor.setString("reprocessing_started",timepointToString(_initializationStatus.getReprocessingStartTime()));
-    }
-
-    if (_initializationStatus.getState() >= search::attribute::AttributeInitializationStatus::State::REPROCESSING_FINISHED && _initializationStatus.didReprocess()) {
-        cursor.setString("reprocessing_finished", timepointToString(_initializationStatus.getReprocessingEndTime()));
-    }
-
-    if (_initializationStatus.getState() == search::attribute::AttributeInitializationStatus::State::LOADED) {
-        cursor.setString("loading_finished", timepointToString(_initializationStatus.getEndTime()));
-    }
-}
 
 }

@@ -6,9 +6,9 @@
 #include "changevector.h"
 #include "readable_attribute_vector.h"
 #include "basename.h"
+#include <vespa/searchcommon/attribute/attribute_initialization_status.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchcommon/attribute/attribute_initialization_status.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/searchcommon/common/range.h>
@@ -76,7 +76,6 @@ namespace search {
 
 namespace search {
 
-using search::attribute::AttributeInitializationStatus;
 using search::attribute::WeightedType;
 using search::attribute::Status;
 using document::ArithmeticValueUpdate;
@@ -312,8 +311,9 @@ public:
     const Status & getStatus() const { return _status; }
     Status & getStatus() { return _status; }
 
-    const AttributeInitializationStatus& getInitializationStatus() const { return _initializationStatus; }
-    AttributeInitializationStatus& getInitializationStatus() { return _initializationStatus; }
+    const search::attribute::AttributeInitializationStatus& getInitializationStatus() const { return *_initialization_status; }
+    search::attribute::AttributeInitializationStatus& getInitializationStatus() { return *_initialization_status; }
+    void set_initialization_status(const std::shared_ptr<search::attribute::AttributeInitializationStatus>& initialization_status) { _initialization_status = initialization_status; }
 
     AddressSpaceUsage getAddressSpaceUsage() const;
 
@@ -424,7 +424,6 @@ private:
     mutable std::shared_mutex             _enumLock;
     GenerationHandler                     _genHandler;
     GenerationHolder                      _genHolder;
-    AttributeInitializationStatus         _initializationStatus;
     Status                                _status;
     std::atomic<int>                      _highestValueCount;
     uint32_t                              _enumMax;
@@ -439,6 +438,7 @@ private:
     std::shared_ptr<vespalib::alloc::MemoryAllocator> _memory_allocator;
     std::atomic<uint64_t>                 _size_on_disk;
     std::atomic<std::chrono::steady_clock::rep> _last_flush_duration;
+    std::shared_ptr<search::attribute::AttributeInitializationStatus> _initialization_status;
 
     /// Clean up [0, firstUsed>
     virtual void reclaim_memory(generation_t oldest_used_gen);
@@ -517,8 +517,6 @@ public:
     std::chrono::steady_clock::duration last_flush_duration() const noexcept {
         return std::chrono::steady_clock::duration(_last_flush_duration.load(std::memory_order_relaxed));
     }
-
-    void reportInitializationStatus(const vespalib::slime::Inserter &inserter) const;
 };
 
 }

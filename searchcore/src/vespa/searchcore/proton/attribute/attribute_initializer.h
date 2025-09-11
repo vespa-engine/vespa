@@ -8,13 +8,15 @@
 #include <optional>
 #include <string>
 
-namespace search::attribute { class AttributeHeader; }
+namespace search::attribute {
+class AttributeHeader;
+class AttributeInitializationStatus;
+}
 namespace vespalib { class Executor; }
 
 namespace proton {
 
 class AttributeDirectory;
-class AttributeVectorWrapper;
 struct IAttributeFactory;
 
 /**
@@ -35,7 +37,7 @@ private:
     vespalib::Executor             &_shared_executor;
     std::unique_ptr<const search::attribute::AttributeHeader> _header;
     bool                            _header_ok;
-    std::shared_ptr<AttributeVectorWrapper> _attributeVectorWrapper;
+    std::shared_ptr<search::attribute::AttributeInitializationStatus> _initialization_status;
 
     void readHeader();
 
@@ -57,7 +59,7 @@ public:
     AttributeInitializerResult init() const;
     const std::optional<uint64_t>& getCurrentSerialNum() const noexcept { return _currentSerialNum; }
     size_t get_transient_memory_usage() const;
-    std::shared_ptr<AttributeVectorWrapper> getAttributeVectorWrapper() const { return _attributeVectorWrapper; }
+    std::shared_ptr<search::attribute::AttributeInitializationStatus> get_attribute_initialization_status() const { return _initialization_status; }
 };
 
 } // namespace proton

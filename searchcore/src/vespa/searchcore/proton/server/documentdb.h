@@ -18,7 +18,6 @@
 #include "maintenancecontroller.h"
 #include "threading_service_config.h"
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
-#include <vespa/searchcore/proton/attribute/attribute_vector_wrapper.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
@@ -36,7 +35,10 @@ namespace vespalib {
     struct ThreadBundle;
 }
 namespace search {
-    namespace attribute { class Interlock; }
+    namespace attribute {
+        class AttributeInitializationStatus;
+        class Interlock;
+    }
     namespace common { class FileHeaderContext; }
     namespace transactionlog {
         class TransLogClient;
@@ -150,7 +152,7 @@ private:
 
     DocumentDBInitializationStatus          _initializationStatus;
     mutable std::shared_mutex               _initializationMutex;  // protects vector below
-    std::vector<std::shared_ptr<AttributeVectorWrapper>> _attributeInitializationStatus;
+    std::vector<std::shared_ptr<search::attribute::AttributeInitializationStatus>> _attributeInitializationStatuses;
 
     void registerReference();
     void setActiveConfig(DocumentDBConfigSP config);
