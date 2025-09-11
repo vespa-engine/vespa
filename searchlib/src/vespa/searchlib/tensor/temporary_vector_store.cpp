@@ -57,7 +57,6 @@ TemporaryVectorStore<FloatType>::internal_convert(TypedCells cells, size_t offse
 }
 
 template class TemporaryVectorStore<vespalib::eval::Int8Float>;
-template class TemporaryVectorStore<vespalib::BFloat16>;
 template class TemporaryVectorStore<float>;
 template class TemporaryVectorStore<double>;
 

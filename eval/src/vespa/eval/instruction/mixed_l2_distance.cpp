@@ -27,6 +27,18 @@ double h_sq_l2<Int8Float>(const Int8Float *a, const Int8Float *b, size_t len) {
     return hw.squaredEuclideanDistance((const int8_t *)a, (const int8_t *)b, len);
 }
 
+template <>
+double h_sq_l2<BFloat16>(const BFloat16 *a, const BFloat16 *b, size_t len) {
+    float sum = 0.0;
+    for (size_t i = 0; i < len; ++i) {
+        float x = a[i];
+        float y = b[i];
+        float d = (x - y);
+        sum += d * d;
+    }
+    return sum;
+}
+
 struct MixedSqL2Param {
     const ValueType res_type;
     const size_t vec_len;
