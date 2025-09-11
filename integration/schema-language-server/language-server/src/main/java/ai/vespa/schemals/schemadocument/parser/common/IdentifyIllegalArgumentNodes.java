@@ -32,17 +32,28 @@ public class IdentifyIllegalArgumentNodes extends Identifier<Node> {
             );
         }
 
-        if (node.getLanguageType() == LanguageType.GROUPING 
-            && (node.getYQLNode().getOriginalGroupingNode() instanceof ai.vespa.schemals.parser.grouping.Token)) 
-        {
-            ai.vespa.schemals.parser.grouping.Token nodeAsGroupingToken 
-                = (ai.vespa.schemals.parser.grouping.Token)node.getYQLNode().getOriginalGroupingNode();
+        if (node.getLanguageType() == LanguageType.GROUPING) {
+            if (node.getYQLNode().getOriginalGroupingNode() instanceof ai.vespa.schemals.parser.grouping.Token) {
+                ai.vespa.schemals.parser.grouping.Token nodeAsGroupingToken 
+                    = (ai.vespa.schemals.parser.grouping.Token)node.getYQLNode().getOriginalGroupingNode();
 
-            maybeAddToDiagnostics(
-                diagnostics,
-                node,
-                nodeAsGroupingToken.getIllegalArgumentException()
-            );
+                maybeAddToDiagnostics(
+                    diagnostics,
+                    node,
+                    nodeAsGroupingToken.getIllegalArgumentException()
+                );
+            }
+
+            if (node.getYQLNode().getOriginalGroupingNode() instanceof ai.vespa.schemals.parser.grouping.ast.BaseNode) {
+                ai.vespa.schemals.parser.grouping.ast.BaseNode nodeAsBaseNode
+                    = (ai.vespa.schemals.parser.grouping.ast.BaseNode)node.getYQLNode().getOriginalGroupingNode();
+
+                maybeAddToDiagnostics(
+                    diagnostics,
+                    node,
+                    nodeAsBaseNode.getIllegalArgumentException()
+                );
+            }
         }
     }
 
