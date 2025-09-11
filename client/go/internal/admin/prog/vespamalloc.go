@@ -50,6 +50,7 @@ func mimallocLib() string {
 	ok, path := fileExistsAlsoInLdLibraryPath(fileName)
 	if !ok {
 		trace.Debug("missing library:", fileName)
+		return ""
 	}
 	trace.Debug("found library:", path)
 	return path
