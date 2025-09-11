@@ -7,6 +7,11 @@
 
 namespace search::attribute {
 
+/**
+ * Class that tracks the initialization state of an attribute and keeps timestamps of when a state was entered.
+ *
+ * Thread-safe.
+ */
 class AttributeInitializationStatus {
 public:
     enum State {

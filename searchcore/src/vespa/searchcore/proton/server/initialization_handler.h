@@ -10,6 +10,9 @@
 
 namespace proton {
 
+/**
+ * Handler for serving /state/v1/initialization.
+ */
 class InitializationHandler : public vespalib::JsonGetHandler
 {
 private:

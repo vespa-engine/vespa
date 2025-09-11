@@ -7,6 +7,11 @@
 
 namespace proton {
 
+/**
+ * Class that tracks the initialization state of a DocumentDB and keeps timestamps of when a state was entered.
+ *
+ * Thread-safe.
+ */
 class DocumentDBInitializationStatus {
 public:
     enum State {

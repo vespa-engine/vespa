@@ -8,6 +8,13 @@
 
 namespace proton {
 
+/**
+ * Visitor that allows you to get the AttributeVectorWrappers created by the InitializerTask and its dependencies.
+ *
+ * It visits all AttributeInitializers in an InitializerTask and its dependencies.
+ * For every AttributeInitializer, it collects a pointer to its AttributeVectorWrapper
+ * in the given vector.
+ */
 class AttributeVectorWrapperCollector : public initializer::InitializerTaskVisitor {
 private:
     std::vector<AttributeVectorWrapper::SP>& _attributes;

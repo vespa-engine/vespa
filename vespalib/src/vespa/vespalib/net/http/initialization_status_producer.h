@@ -6,6 +6,9 @@
 
 namespace vespalib {
 
+/**
+ * Interface for reporting initialization status into a slime.
+ */
 struct InitializationStatusProducer {
     virtual ~InitializationStatusProducer() = default;
     virtual void getInitializationStatus(const vespalib::slime::Inserter &inserter) const = 0;

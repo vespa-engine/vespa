@@ -7,6 +7,14 @@
 
 namespace proton {
 
+/**
+ * Class that stores the name of an attribute and a pointer to the corresponding AttributeVector.
+ * Intended to be used in tracking of the initialization status of an attribute, where an AttributeVectorWrapper
+ * with the name of the attribute is created in the AttributeInitializer
+ * and the AttributeVector is added later once it is created.
+ *
+ * Thread-safe.
+ */
 class AttributeVectorWrapper {
 public:
     using SP = std::shared_ptr<AttributeVectorWrapper>;
