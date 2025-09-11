@@ -118,30 +118,30 @@ float AttributeInitializationStatus::getReprocessingPercentage() const {
 }
 
 void AttributeInitializationStatus::reportInitializationStatus(const vespalib::slime::Inserter &inserter) const {
-vespalib::slime::Cursor &cursor = inserter.insertObject();
-cursor.setString("name", getName());
+    vespalib::slime::Cursor &cursor = inserter.insertObject();
+    cursor.setString("name", getName());
 
-cursor.setString("status", stateToString(getState()));
+    cursor.setString("status", stateToString(getState()));
 
-if (getState() >= State::REPROCESSING && didReprocess()) {
-    cursor.setString("reprocessing_progress",  std::format("{:.6f}", getReprocessingPercentage()));
-}
+    if (getState() >= State::REPROCESSING && didReprocess()) {
+        cursor.setString("reprocessing_progress",  std::format("{:.6f}", getReprocessingPercentage()));
+    }
 
-if (getState() > State::QUEUED) {
-    cursor.setString("loading_started", timepointToString(getStartTime()));
-}
+    if (getState() > State::QUEUED) {
+        cursor.setString("loading_started", timepointToString(getStartTime()));
+    }
 
-if (getState() >= State::REPROCESSING && didReprocess()) {
-    cursor.setString("reprocessing_started",timepointToString(getReprocessingStartTime()));
-}
+    if (getState() >= State::REPROCESSING && didReprocess()) {
+        cursor.setString("reprocessing_started",timepointToString(getReprocessingStartTime()));
+    }
 
-if (getState() >= State::REPROCESSING_FINISHED && didReprocess()) {
-    cursor.setString("reprocessing_finished", timepointToString(getReprocessingEndTime()));
-}
+    if (getState() >= State::REPROCESSING_FINISHED && didReprocess()) {
+        cursor.setString("reprocessing_finished", timepointToString(getReprocessingEndTime()));
+    }
 
-if (getState() == State::LOADED) {
-    cursor.setString("loading_finished", timepointToString(getEndTime()));
-}
+    if (getState() == State::LOADED) {
+        cursor.setString("loading_finished", timepointToString(getEndTime()));
+    }
 }
 
 }
