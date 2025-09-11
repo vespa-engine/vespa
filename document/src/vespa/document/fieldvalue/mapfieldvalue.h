@@ -29,9 +29,9 @@ private:
     std::vector<bool>  _present;
     mutable HashMapUP  _lookupMap;
 
-    virtual bool addValue(const FieldValue& fv);
-    virtual bool containsValue(const FieldValue& fv) const { return contains(fv); }
-    virtual bool removeValue(const FieldValue& fv) { return erase(fv); }
+    bool addValue(const FieldValue& fv);
+    bool containsValue(const FieldValue& fv) const { return contains(fv); }
+    bool removeValue(const FieldValue& fv) { return erase(fv); }
     bool checkAndRemove(const FieldValue& key, fieldvalue::ModificationStatus status,
                         bool wasModified, std::vector<const FieldValue*>& keysToRemove) const;
     fieldvalue::ModificationStatus onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const override;
@@ -117,9 +117,9 @@ public:
     bool contains(const FieldValue& key) const;
 
     // CollectionFieldValue methods kept for compatability's sake
-    virtual bool isEmpty() const { return _count == 0; }
-    virtual size_t size() const { return _count; }
-    virtual void clear();
+    bool isEmpty() const { return _count == 0; }
+    size_t size() const { return _count; }
+    void clear();
     void reserve(size_t sz);
     void resize(size_t sz);
 
