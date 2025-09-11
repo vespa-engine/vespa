@@ -273,8 +273,7 @@ IAccelerated::UP create_accelerator() {
     static auto target_level = EnabledTargetLevel::create_from_env_var();
     if (target_level.is_enabled(target::HIGHWAY)) {
         auto hwy_target = Highway::create_best_target();
-        // TODO drop down to debug level once the dust has settled
-        LOG(info, "Using Highway vectorization engine with target %s", hwy_target->target_name());
+        LOG(debug, "Using Highway vectorization engine with target %s", hwy_target->target_name());
         return hwy_target;
     }
 #ifdef __x86_64__
