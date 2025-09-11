@@ -20,6 +20,12 @@ func Run(args []string) int {
 		trace.Warning("missing program argument")
 		return 1
 	}
+	if doTrace := os.Getenv(envvars.TRACE_STARTUP); doTrace != "" {
+		trace.AdjustVerbosity(1)
+	}
+	if doDebug := os.Getenv(envvars.DEBUG_STARTUP); doDebug != "" {
+		trace.AdjustVerbosity(2)
+	}
 	spec := NewProgSpec(args)
 	err := vespa.LoadDefaultEnv()
 	if err != nil {
