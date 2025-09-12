@@ -7,7 +7,6 @@
 #include "ddbstate.h"
 #include "resource_usage_forwarder.h"
 #include "document_db_config_owner.h"
-#include "document_db_initialization_status.h"
 #include "documentdb_metrics_updater.h"
 #include "documentsubdbcollection.h"
 #include "executorthreadingservice.h"
@@ -150,8 +149,7 @@ private:
     std::shared_ptr<IBucketStateCalculator>          _calc;
     DocumentDBMetricsUpdater                         _metricsUpdater;
 
-    DocumentDBInitializationStatus          _initializationStatus;
-    mutable std::mutex               _initializationMutex;  // protects vector below
+    mutable std::mutex                               _initializationMutex;  // protects vector below
     std::vector<std::shared_ptr<search::attribute::AttributeInitializationStatus>> _attributeInitializationStatuses;
 
     void registerReference();
@@ -437,7 +435,6 @@ public:
     void set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener);
     const DDBState& get_state() const noexcept { return _state; }
 
-    const DocumentDBInitializationStatus& getInitializationStatus() const { return _initializationStatus; }
     void getInitializationStatus(const vespalib::slime::Inserter &inserter) const;
 };
 

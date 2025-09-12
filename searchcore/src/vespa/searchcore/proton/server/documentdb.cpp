@@ -121,7 +121,7 @@ forceCommitAndWait(IFeedView & feedView, SerialNum serialNum, T keepAlive) {
     gate.await();
 }
 
-std::string timepointToString(DocumentDBInitializationStatus::time_point tp) {
+std::string timepointToString(DDBState::time_point tp) {
     time_t secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
     uint32_t usecs_part = std::chrono::duration_cast<std::chrono::microseconds>(tp.time_since_epoch()).count() % 1000000;
     return std::format("{}.{:06}", secs, usecs_part);
@@ -227,8 +227,6 @@ DocumentDB::DocumentDB(const std::string &baseDir,
       _metricsUpdater(_subDBs, _writeService, _jobTrackers, _writeFilter, *_feedHandler)
 {
     assert(configSnapshot);
-
-    _initializationStatus.startInitialization();
 
     LOG(debug, "DocumentDB(%s): Creating database in directory '%s'", _docTypeName.toString().c_str(), _baseDir.c_str());
 
@@ -733,7 +731,6 @@ DocumentDB::waitForInitDone()
 void
 DocumentDB::startTransactionLogReplay()
 {
-    _initializationStatus.startReplay();
     // This configSnapshot is only used to reuse DocumentTypeRepo
     // and TuneFile when loading configs during replay.
     DocumentDBConfig::SP configSnapshot = getActiveConfig();
@@ -1102,7 +1099,6 @@ void
 DocumentDB::waitForOnlineState()
 {
     _state.waitForOnlineState();
-    _initializationStatus.finishInitialization();
 }
 
 std::string
@@ -1146,22 +1142,28 @@ void DocumentDB::getInitializationStatus(const vespalib::slime::Inserter &insert
     vespalib::slime::Cursor &dbCursor = inserter.insertObject();
     dbCursor.setString("name", _docTypeName.getName());
 
-    DocumentDBInitializationStatus::State state = _initializationStatus.getState();
-    dbCursor.setString("state", DocumentDBInitializationStatus::stateToString(state));
+    DDBState::State state = _state.getState();
+    std::string stateString = DDBState::getStateString(state);
+    // Make stateString lowercase
+    std::transform(stateString.begin(), stateString.end(), stateString.begin(),
+           [](unsigned char c){ return std::tolower(c); });
+    dbCursor.setString("state", stateString);
+
+    if (state >= DDBState::State::LOAD) {
+        dbCursor.setString("start_time", timepointToString(_state.getLoadTime()));
+    }
+
+    if (state >= DDBState::State::REPLAY_TRANSACTION_LOG) {
+        dbCursor.setString("replay_start_time", timepointToString(_state.getReplayTime()));
+    }
+
+    if (state >= DDBState::State::ONLINE) {
+        dbCursor.setString("end_time", timepointToString(_state.getOnlineTime()));
+    }
 
     // Add replay progress
-    if (_initializationStatus.getState() > DocumentDBInitializationStatus::State::LOAD) {
+    if (state >= DDBState::State::REPLAY_TRANSACTION_LOG) {
         dbCursor.setString("replay_progress", std::format("{:.6f}", _feedHandler->getReplayProgress()));
-    }
-
-    dbCursor.setString("start_time", timepointToString(_initializationStatus.getStartTime()));
-
-    if (_initializationStatus.getState() > DocumentDBInitializationStatus::State::LOAD) {
-        dbCursor.setString("replay_start_time", timepointToString(_initializationStatus.getReplayStartTime()));
-    }
-
-    if (_initializationStatus.getState() == DocumentDBInitializationStatus::State::READY) {
-        dbCursor.setString("end_time", timepointToString(_initializationStatus.getEndTime()));
     }
 
     // Add loading progress

@@ -1228,22 +1228,22 @@ void Proton::getInitializationStatus(const vespalib::slime::Inserter &inserter) 
     }
 
     // DB counts
-    int load(0), replay(0), ready(0);
+    int load(0), replay(0), online(0);
     for (const auto &kv : _documentDBMap) {
-         switch (kv.second->getInitializationStatus().getState()) {
-             case DocumentDBInitializationStatus::LOAD:
-                 load++;
-                 break;
-             case DocumentDBInitializationStatus::REPLAYING:
-                 replay++;
+        switch (kv.second->get_state().getState()) {
+            case DDBState::State::REPLAY_TRANSACTION_LOG:
+                ++replay;
+                break;
+            case DDBState::State::ONLINE:
+                ++online;
                  break;
              default:
-                 ++ready;
+                 ++load;
          }
     }
     cursor.setLong("load", load);
-    cursor.setLong("replay", replay);
-    cursor.setLong("ready", ready);
+    cursor.setLong("replay_transaction_log", replay);
+    cursor.setLong("online", online);
 
     // DBs
     vespalib::slime::Cursor &dbArrayCursor = cursor.setArray("dbs");
