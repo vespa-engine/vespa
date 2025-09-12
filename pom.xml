@@ -94,6 +94,7 @@
         <module>logd</module>
         <module>logserver</module>
         <module>lucene-linguistics</module>
+        <module>mcp-server</module>
         <module>messagebus</module>
         <module>metrics</module>
         <module>metrics-proxy</module>
