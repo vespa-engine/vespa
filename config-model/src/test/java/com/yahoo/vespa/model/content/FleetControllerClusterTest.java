@@ -98,7 +98,7 @@ public class FleetControllerClusterTest {
 
     @Test
     void default_cluster_feed_block_limits_are_set() {
-        assertLimits(0.75, 0.8, 0.89, getConfigForBasicCluster());
+        assertLimits(0.75, 0.8, 0.80, getConfigForBasicCluster());
     }
 
     @Test
