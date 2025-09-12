@@ -22,7 +22,7 @@ struct MyFactory : ConstantValueFactory {
         ++create_cnt;
         return std::make_unique<MyValue>(double(atoi(path.c_str())));
     }
-    ~MyFactory();
+    ~MyFactory() override;
 };
 
 MyFactory::~MyFactory() = default;

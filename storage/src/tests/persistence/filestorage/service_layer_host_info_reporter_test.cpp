@@ -40,7 +40,7 @@ struct ServiceLayerHostInfoReporterTest : ::testing::Test {
     ServiceLayerHostInfoReporter _reporter;
 
     ServiceLayerHostInfoReporterTest();
-    ~ServiceLayerHostInfoReporterTest();
+    ~ServiceLayerHostInfoReporterTest() override;
 
     void notify(double disk_usage, double memory_usage, const AttributeResourceUsage &attribute_address_space_usage)  {
         auto& listener = static_cast<spi::IResourceUsageListener&>(_reporter);

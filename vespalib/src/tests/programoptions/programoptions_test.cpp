@@ -21,7 +21,7 @@ struct MyOptions : public ProgramOptions {
     int anotherOptionalArg;
 
     MyOptions(int argc, const char *const *argv);
-    ~MyOptions();
+    ~MyOptions() override;
 };
 
 MyOptions::MyOptions(int argc, const char* const* argv)

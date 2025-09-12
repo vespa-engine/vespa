@@ -148,7 +148,7 @@ class MyRewriteVisitor : public MyVisitorBase,
 public:
     using MyVisitorBase::MyVisitorBase;
 
-    virtual void
+    void
     visit(uint32_t lid, const std::shared_ptr<Document> &doc) override;
 };
 

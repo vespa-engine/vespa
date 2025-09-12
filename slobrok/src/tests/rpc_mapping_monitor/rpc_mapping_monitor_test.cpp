@@ -39,7 +39,7 @@ struct Server : FRT_Invokable {
         rb.DefineMethod("slobrok.callback.notifyUnregistered", "s", "", FRT_METHOD(Server::rpc_notifyUnregistered), this);
         REQUIRE(frt.supervisor().Listen(0));
     }
-    ~Server() { set_last_conn(nullptr); }
+    ~Server() override;
     std::string spec() const { return fmt("tcp/%d", frt.supervisor().GetListenPort()); }
     FNET_Transport &transport() { return *frt.supervisor().GetTransport(); }
     void rpc_listNamesServed(FRT_RPCRequest *req) {
@@ -57,6 +57,11 @@ struct Server : FRT_Invokable {
     }
     void rpc_notifyUnregistered(FRT_RPCRequest *) {}
 };
+
+Server::~Server()
+{
+    set_last_conn(nullptr);
+}
 
 enum class State { ANY, UP, DOWN };
 
@@ -121,11 +126,14 @@ struct RpcMappingMonitorTest : public ::testing::Test {
         a.names.push_back(bar_a.name);
         b.names.push_back(baz_b.name);
     }
-    ~RpcMappingMonitorTest() {
-        monitor.reset();
-        debugger.detach();
-    }
+    ~RpcMappingMonitorTest() override;
 };
+
+RpcMappingMonitorTest::~RpcMappingMonitorTest()
+{
+    monitor.reset();
+    debugger.detach();
+}
 
 TEST_F(RpcMappingMonitorTest, services_can_be_monitored) {
     monitor->start(foo_a, false);

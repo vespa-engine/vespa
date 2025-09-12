@@ -418,7 +418,7 @@ struct MyTransport : public feedtoken::ITransport
     Gate _gate;
     MyTracer &_tracer;
     MyTransport(MyTracer &tracer);
-    ~MyTransport();
+    ~MyTransport() override;
     void send(ResultUP result, bool ) override {
         lastResult = std::move(result);
         _tracer.traceAck(lastResult);

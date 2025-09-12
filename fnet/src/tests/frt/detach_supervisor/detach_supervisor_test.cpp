@@ -40,11 +40,7 @@ struct RpcFixture : FRT_Invokable {
     void listen() {
         ASSERT_TRUE(orb.Listen(0));
     }
-    ~RpcFixture() {
-        if (back_conn.load() != nullptr) {
-            back_conn.load()->internal_subref();
-        }
-    }
+    ~RpcFixture() override;
     uint32_t port() const { return orb.GetListenPort(); }
     vespalib::ref_counted<FRT_Target> connect(uint32_t port) {
         return vespalib::ref_counted<FRT_Target>::internal_attach(orb.GetTarget(port));
@@ -109,6 +105,13 @@ struct RpcFixture : FRT_Invokable {
         return num_ok;
     }
 };
+
+RpcFixture::~RpcFixture()
+{
+    if (back_conn.load() != nullptr) {
+        back_conn.load()->internal_subref();
+    }
+}
 
 // test timeline:
 //
