@@ -51,3 +51,4 @@ install_manifest.txt
 .vscode
 .metadata
 /maven-wrapper
+/compile_commands.json
