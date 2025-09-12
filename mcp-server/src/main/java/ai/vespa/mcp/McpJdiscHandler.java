@@ -22,7 +22,6 @@ import io.modelcontextprotocol.spec.McpError;
  * @author Edvard Dingsør
  * @author Erling Fjelstad
 */
-@SuppressWarnings("deprecation")
 public class McpJdiscHandler extends ThreadedHttpRequestHandler{
     private static final Logger logger = Logger.getLogger(McpJdiscHandler.class.getName());
 
@@ -63,21 +62,21 @@ public class McpJdiscHandler extends ThreadedHttpRequestHandler{
             }
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Failed to read request body", e);
-            return this.transport.createErrorResponse(400, new McpError("Failed to read request body"));
+            return this.transport.createErrorResponse(400, "Failed to read request body", null);
         }
 
         logger.info("=== RECEIVED REQUEST: " + method + " " + path + " ===");
         logger.info("=== BODY: " + new String(body, StandardCharsets.UTF_8) + " ===");
 
         if (!path.startsWith("/mcp/")) {
-            return this.transport.createErrorResponse(404, new McpError("Not Found"));
+            return this.transport.createErrorResponse(404, "Not Found", null);
         }
 
         return switch (method) {
             case "GET" -> this.transport.handleGet(request);
             case "POST" -> this.transport.handlePost(request, body);
             case "DELETE" -> this.transport.handleDelete(request);
-            default -> this.transport.createErrorResponse(405, new McpError("Only GET, POST, and DELETE requests are allowed"));
+            default -> this.transport.createErrorResponse(405, "Only GET, POST, and DELETE requests are allowed", null);
         };
     }
 }
