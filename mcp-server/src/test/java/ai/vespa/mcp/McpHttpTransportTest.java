@@ -25,6 +25,8 @@ import static org.mockito.ArgumentMatchers.any;
 
 /**
  * Unit tests for the McpHttpTransport class.
+ *
+ * @author Edvard Dingsør
  */
 public class McpHttpTransportTest {
 
