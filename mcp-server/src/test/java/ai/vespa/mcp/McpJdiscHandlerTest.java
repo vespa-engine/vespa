@@ -25,6 +25,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for the McpJdiscHandler class.
+ *
+ * @author Edvard Dingsør
  */
 public class McpJdiscHandlerTest {
 
