@@ -8,8 +8,8 @@ StateServer::StateServer(int port,
                          const HealthProducer &hp,
                          MetricsProducer &mp,
                          ComponentConfigProducer &ccp,
-                         bool limitEndpoints)
-    : _api(hp, mp, ccp, limitEndpoints),
+                         bool limit_endpoints)
+    : _api(hp, mp, ccp, limit_endpoints),
       _server(port),
       _tokens()
 {

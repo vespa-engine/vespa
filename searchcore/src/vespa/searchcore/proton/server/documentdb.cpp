@@ -16,7 +16,7 @@
 #include "replay_throttling_policy.h"
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/metrics/updatehook.h>
-//#include <vespa/searchcommon/attribute/attribute_initialization_status.h>
+#include <vespa/searchcommon/attribute/attribute_initialization_status.h>
 #include <vespa/searchcore/proton/attribute/attribute_initialization_status_collector.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>

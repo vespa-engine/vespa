@@ -77,12 +77,12 @@ void render_link(JSONStringer &json, const std::string &host, const std::string 
     json.endObject();
 }
 
-std::string respond_root(const JsonHandlerRepo &repo, const std::string &host, bool limitEndpoints) {
+std::string respond_root(const JsonHandlerRepo &repo, const std::string &host, bool limit_endpoints) {
     JSONStringer json;
     json.beginObject();
     json.appendKey("resources");
     json.beginArray();
-    if (!limitEndpoints) {
+    if (!limit_endpoints) {
         for (auto path: {"/state/v1/health", "/state/v1/metrics", "/state/v1/config"}) {
             render_link(json, host, path);
         }
@@ -200,13 +200,13 @@ StateApi::get(const std::string &host,
 {
     if (path == "/state/v1/" || path == "/state/v1") {
         return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] { // TODO consider http_unclassified
-            return respond_root(_handler_repo, host, _limitEndpoints);
+            return respond_root(_handler_repo, host, _limit_endpoints.load());
         });
     } else if (path == "/state/v1/version") {
         return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] {
             return respond_version();
         });
-    } else if (!_limitEndpoints.load()) {
+    } else if (!_limit_endpoints.load()) {
         if (path == "/state/v1/health") {
             return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] { // TODO consider http_unclassified
                 return respond_health(_healthProducer);
@@ -241,7 +241,7 @@ StateApi::get(const std::string &host,
         }
     }
 
-    // None of the endpoints matched or _limitEndpoints is set: check additional endpoints
+    // None of the endpoints matched or _limit_endpoints is set: check additional endpoints
 
     // Assume this is for the nested state v1 stuff; may delegate capability check to handler later if desired.
     if (!auth_ctx.capabilities().contains(Capability::content_state_api())) {
@@ -255,11 +255,11 @@ StateApi::get(const std::string &host,
 StateApi::StateApi(const HealthProducer &hp,
                    MetricsProducer &mp,
                    ComponentConfigProducer &ccp,
-                   bool limitEndpoints)
+                   bool limit_endpoints)
     : _healthProducer(hp),
       _metricsProducer(mp),
       _componentConfigProducer(ccp),
-      _limitEndpoints(limitEndpoints)
+      _limit_endpoints(limit_endpoints)
 {
 }
 

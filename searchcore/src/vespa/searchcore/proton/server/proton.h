@@ -118,10 +118,10 @@ private:
     RPCHooks::UP                           _rpcHooks;
     HealthAdapter                          _healthAdapter;
     vespalib::GenericStateHandler          _genericStateHandler;
-    InitializationHandler                  _initializationHandler;
+    InitializationHandler                  _initialization_handler;
     ProtonInitializationStatus             _initialization_status;
-    vespalib::JsonHandlerRepo::Token::UP   _initializationBindToken;
-    vespalib::JsonHandlerRepo::Token::UP   _initializationRootToken;
+    vespalib::JsonHandlerRepo::Token::UP   _initialization_bind_token;
+    vespalib::JsonHandlerRepo::Token::UP   _initialization_root_token;
     vespalib::JsonHandlerRepo::Token::UP   _customComponentBindToken;
     vespalib::JsonHandlerRepo::Token::UP   _customComponentRootToken;
     std::unique_ptr<vespalib::StateServer> _stateServer;
@@ -249,7 +249,7 @@ public:
     std::vector<std::string> get_children_names() const override;
     std::unique_ptr<vespalib::StateExplorer> get_child(std::string_view name) const override;
 
-    void getInitializationStatus(const vespalib::slime::Inserter &inserter) const override;
+    void report_initialization_status(const vespalib::slime::Inserter &inserter) const override;
 };
 
 } // namespace proton

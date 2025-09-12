@@ -303,9 +303,9 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _rpcHooks(),
       _healthAdapter(*this),
       _genericStateHandler(CUSTOM_COMPONENT_API_PATH, *this),
-      _initializationHandler(*this),
-      _initializationBindToken(),
-      _initializationRootToken(),
+      _initialization_handler(*this),
+      _initialization_bind_token(),
+      _initialization_root_token(),
       _customComponentBindToken(),
       _customComponentRootToken(),
       _stateServer(),
@@ -431,8 +431,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                            _metricsEngine->metrics_producer(),
                                                            *this,
                                                            true);
-    _initializationBindToken = _stateServer->repo().bind(INITIALIZATION_API_PATH, _initializationHandler);
-    _initializationRootToken = _stateServer->repo().add_root_resource(INITIALIZATION_API_PATH);
+    _initialization_bind_token = _stateServer->repo().bind(INITIALIZATION_API_PATH, _initialization_handler);
+    _initialization_root_token = _stateServer->repo().add_root_resource(INITIALIZATION_API_PATH);
 
     InitializeThreadsCalculator calc(hwInfo.cpu(), protonConfig.basedir, protonConfig.initialize.threads);
     LOG(info, "Start initializing components: threads=%u, configured=%u",
@@ -453,7 +453,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _metricsEngine->start(_configUri);
 
     // Enable remaining /state/v1/ endpoints
-    _stateServer->setLimitEndpoints(false);
+    _stateServer->set_limit_endpoints(false);
 
     // Add /custom/component endpoint
     _customComponentBindToken = _stateServer->repo().bind(CUSTOM_COMPONENT_API_PATH, _genericStateHandler);
@@ -616,8 +616,8 @@ Proton::shutdown_config_fetching_and_state_exposing_components_once() noexcept
     _executor.sync();
     _customComponentRootToken.reset();
     _customComponentBindToken.reset();
-    _initializationRootToken.reset();
-    _initializationBindToken.reset();
+    _initialization_root_token.reset();
+    _initialization_bind_token.reset();
     _stateServer.reset();
     if (_metricsEngine) {
         _metricsEngine->removeMetricsHook(*_metricsHook);
@@ -1215,7 +1215,7 @@ Proton::getMetricManager() {
     return _metricsEngine->getManager();
 }
 
-void Proton::getInitializationStatus(const vespalib::slime::Inserter &inserter) const {
+void Proton::report_initialization_status(const vespalib::slime::Inserter &inserter) const {
     std::shared_lock<std::shared_mutex> guard(_mutex);
 
     ProtonInitializationStatus::State state = _initialization_status.get_state();

@@ -16,9 +16,9 @@ namespace proton {
 class InitializationHandler : public vespalib::JsonGetHandler
 {
 private:
-    vespalib::InitializationStatusProducer &_initializationStatusProducer;
+    vespalib::InitializationStatusProducer &_initialization_status_producer;
 public:
-    InitializationHandler(vespalib::InitializationStatusProducer &initializationStatusProducer);
+    InitializationHandler(vespalib::InitializationStatusProducer &initialization_status_producer);
     Response get(const std::string &host,
                  const std::string &path,
                  const std::map<std::string,std::string> &params,

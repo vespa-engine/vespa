@@ -11,7 +11,7 @@ namespace vespalib {
  */
 struct InitializationStatusProducer {
     virtual ~InitializationStatusProducer() = default;
-    virtual void getInitializationStatus(const vespalib::slime::Inserter &inserter) const = 0;
+    virtual void report_initialization_status(const vespalib::slime::Inserter &inserter) const = 0;
 };
 
 } // namespace vespalib

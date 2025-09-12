@@ -27,10 +27,10 @@ JsonGetHandler::Response cap_checked(const vespalib::net::ConnectionAuthContext 
     return JsonGetHandler::Response::make_ok_with_json(fn());
 }
 
-std::string respond_initialization(const InitializationStatusProducer &initializationStatusProducer) {
+std::string respond_initialization(const InitializationStatusProducer &initialization_status_producer) {
     vespalib::Slime slime;
     vespalib::slime::SlimeInserter inserter(slime);
-    initializationStatusProducer.getInitializationStatus(inserter);
+    initialization_status_producer.report_initialization_status(inserter);
 
     vespalib::SimpleBuffer buf;
     vespalib::slime::JsonFormat::encode(slime, buf, false);
@@ -39,8 +39,8 @@ std::string respond_initialization(const InitializationStatusProducer &initializ
 
 } // namespace proton::unnamed
 
-InitializationHandler::InitializationHandler(InitializationStatusProducer &initializationStatusProducer)
-    : _initializationStatusProducer(initializationStatusProducer)
+InitializationHandler::InitializationHandler(InitializationStatusProducer &initialization_status_producer)
+    : _initialization_status_producer(initialization_status_producer)
 {
 }
 
@@ -52,7 +52,7 @@ InitializationHandler::get(const std::string &/*host*/,
 {
     if (path == "/state/v1/initialization") {
         return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] {
-            return respond_initialization(_initializationStatusProducer);
+            return respond_initialization(_initialization_status_producer);
         });
     } else {
         // TODO Return different error (?)

@@ -26,20 +26,20 @@ private:
     MetricsProducer &_metricsProducer;
     ComponentConfigProducer &_componentConfigProducer;
     JsonHandlerRepo _handler_repo;
-    std::atomic<bool> _limitEndpoints;
+    std::atomic<bool> _limit_endpoints;
 
 public:
     StateApi(const HealthProducer &hp,
              MetricsProducer &mp,
              ComponentConfigProducer &ccp,
-             bool limitEndpoints = false);
+             bool limit_endpoints = false);
     ~StateApi() override;
     Response get(const std::string &host,
                  const std::string &path,
                  const std::map<std::string,std::string> &params,
                  const net::ConnectionAuthContext &auth_ctx) const override;
     JsonHandlerRepo &repo() { return _handler_repo; }
-    void setLimitEndpoints(bool limitEndpoints) { _limitEndpoints.store(limitEndpoints); }
+    void set_limit_endpoints(bool limit_endpoints) { _limit_endpoints.store(limit_endpoints); }
 };
 
 } // namespace vespalib
