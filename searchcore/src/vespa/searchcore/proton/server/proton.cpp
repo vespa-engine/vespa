@@ -47,6 +47,7 @@
 #include <vespa/searchlib/transactionlog/translogserverapp.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/net/http/state_server.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
@@ -90,6 +91,12 @@ using vespalib::slime::Cursor;
 namespace proton {
 
 namespace {
+
+std::string timepoint_to_string(ProtonInitializationStatus::time_point tp) {
+    time_t secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
+    uint32_t usecs_part = std::chrono::duration_cast<std::chrono::microseconds>(tp.time_since_epoch()).count() % 1000000;
+    return std::format("{}.{:06}", secs, usecs_part);
+}
 
 using search::fs4transport::FS4PersistentPacketStreamer;
 
@@ -157,6 +164,7 @@ struct MetricsUpdateHook : metrics::UpdateHook
     }
 };
 
+const std::string INITIALIZATION_API_PATH = "/state/v1/initialization";
 const std::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
 
 VESPA_THREAD_STACK_TAG(proton_close_executor);
@@ -295,6 +303,9 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _rpcHooks(),
       _healthAdapter(*this),
       _genericStateHandler(CUSTOM_COMPONENT_API_PATH, *this),
+      _initialization_handler(*this),
+      _initialization_bind_token(),
+      _initialization_root_token(),
       _customComponentBindToken(),
       _customComponentRootToken(),
       _stateServer(),
@@ -330,6 +341,7 @@ Proton::init()
 {
     assert( ! _initStarted && ! _initComplete );
     _initStarted = true;
+    _initialization_status.start_initialization();
     _protonConfigFetcher.start();
     auto configSnapshot = _protonConfigurer.getPendingConfigSnapshot();
     assert(configSnapshot);
@@ -415,6 +427,13 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     std::string fileConfigId;
     _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_shared_service->shared_raw());
 
+    _stateServer = std::make_unique<vespalib::StateServer>(protonConfig.httpport, _healthAdapter,
+                                                           _metricsEngine->metrics_producer(),
+                                                           *this,
+                                                           true);
+    _initialization_bind_token = _stateServer->repo().bind(INITIALIZATION_API_PATH, _initialization_handler);
+    _initialization_root_token = _stateServer->repo().add_root_resource(INITIALIZATION_API_PATH);
+
     InitializeThreadsCalculator calc(hwInfo.cpu(), protonConfig.basedir, protonConfig.initialize.threads);
     LOG(info, "Start initializing components: threads=%u, configured=%u",
         calc.num_threads(), protonConfig.initialize.threads);
@@ -432,8 +451,11 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     calc.init_done();
 
     _metricsEngine->start(_configUri);
-    _stateServer = std::make_unique<vespalib::StateServer>(protonConfig.httpport, _healthAdapter,
-                                                           _metricsEngine->metrics_producer(), *this);
+
+    // Enable remaining /state/v1/ endpoints
+    _stateServer->set_limit_endpoints(false);
+
+    // Add /custom/component endpoint
     _customComponentBindToken = _stateServer->repo().bind(CUSTOM_COMPONENT_API_PATH, _genericStateHandler);
     _customComponentRootToken = _stateServer->repo().add_root_resource(CUSTOM_COMPONENT_API_PATH);
 
@@ -455,6 +477,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _isInitializing = false;
     _protonConfigurer.setAllowReconfig(true);
     _initComplete = true;
+    _initialization_status.end_initialization();
 }
 
 BootstrapConfig::SP
@@ -593,6 +616,8 @@ Proton::shutdown_config_fetching_and_state_exposing_components_once() noexcept
     _executor.sync();
     _customComponentRootToken.reset();
     _customComponentBindToken.reset();
+    _initialization_root_token.reset();
+    _initialization_bind_token.reset();
     _stateServer.reset();
     if (_metricsEngine) {
         _metricsEngine->removeMetricsHook(*_metricsHook);
@@ -1188,6 +1213,47 @@ Proton::getPersistence()
 metrics::MetricManager &
 Proton::getMetricManager() {
     return _metricsEngine->getManager();
+}
+
+void Proton::report_initialization_status(const vespalib::slime::Inserter &inserter) const {
+    std::shared_lock<std::shared_mutex> guard(_mutex);
+
+    ProtonInitializationStatus::State state = _initialization_status.get_state();
+
+    vespalib::slime::Cursor &cursor = inserter.insertObject();
+    cursor.setString("state", ProtonInitializationStatus::state_to_string(state));
+    cursor.setString("current_time", timepoint_to_string(std::chrono::system_clock::now()));
+    cursor.setString("start_time", timepoint_to_string(_initialization_status.get_start_time()));
+
+    if (state == ProtonInitializationStatus::READY) {
+        cursor.setString("end_time", timepoint_to_string(_initialization_status.get_end_time()));
+    }
+
+    // DB counts
+    int load(0), replay(0), online(0);
+    for (const auto &kv : _documentDBMap) {
+        switch (kv.second->get_state().getState()) {
+            case DDBState::State::REPLAY_TRANSACTION_LOG:
+                ++replay;
+                break;
+            case DDBState::State::ONLINE:
+                ++online;
+                 break;
+             default:
+                 ++load;
+         }
+    }
+    cursor.setLong("load", load);
+    cursor.setLong("replay_transaction_log", replay);
+    cursor.setLong("online", online);
+
+    // DBs
+    vespalib::slime::Cursor &dbArrayCursor = cursor.setArray("dbs");
+    vespalib::slime::ArrayInserter arrayInserter(dbArrayCursor);
+
+    for (const auto &kv : _documentDBMap) {
+        kv.second->report_initialization_status(arrayInserter);
+    }
 }
 
 } // namespace proton

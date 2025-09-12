@@ -35,6 +35,8 @@ public:
         OK,
         NEED_RESTART
     };
+
+    using time_point = std::chrono::system_clock::time_point;
 private:
 
     std::atomic<State>       _state;
@@ -45,6 +47,10 @@ private:
     using GuardLock = std::unique_lock<Mutex>;
     Mutex     _lock;  // protects state transition
     std::condition_variable       _cond;
+
+    std::atomic<time_point> _load_time;
+    std::atomic<time_point> _online_time;
+    std::atomic<time_point> _replay_time;
 
     static std::vector<std::string> _stateNames;
     static std::vector<std::string> _configStateNames;
@@ -104,6 +110,18 @@ public:
     static std::string getConfigStateString(ConfigState configState);
     void setConfigState(ConfigState newConfigState);
     void waitForOnlineState();
+
+    time_point get_load_time() const {
+        return _load_time;
+    }
+
+    time_point get_replay_time() const {
+        return _replay_time;
+    }
+
+    time_point get_online_time() const {
+        return _online_time;
+    }
 };
 
 } // namespace proton

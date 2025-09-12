@@ -1,0 +1,17 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include <vespa/vespalib/data/slime/inserter.h>
+
+namespace vespalib {
+
+/**
+ * Interface for reporting initialization status into a slime.
+ */
+struct InitializationStatusProducer {
+    virtual ~InitializationStatusProducer() = default;
+    virtual void report_initialization_status(const vespalib::slime::Inserter &inserter) const = 0;
+};
+
+} // namespace vespalib

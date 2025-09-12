@@ -47,6 +47,10 @@ public:
     size_t get_transient_memory_usage() const override {
         return _initializer->get_transient_memory_usage();
     }
+    void accept_visitor(initializer::InitializerTaskVisitor &visitor) override {
+        visitor.visit_attribute_initializer(*_initializer);
+        InitializerTask::accept_visitor(visitor);
+    }
 };
 
 class AttributeManagerInitializerTask : public vespalib::Executor::Task

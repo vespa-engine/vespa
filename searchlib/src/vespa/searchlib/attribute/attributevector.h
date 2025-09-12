@@ -6,6 +6,7 @@
 #include "changevector.h"
 #include "readable_attribute_vector.h"
 #include "basename.h"
+#include <vespa/searchcommon/attribute/attribute_initialization_status.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
@@ -114,6 +115,7 @@ public:
     using generation_t = GenerationHandler::generation_t;
 
     ~AttributeVector() override;
+
 protected:
     /**
      * Will update statistics by calling onUpdateStat if necessary.
@@ -309,6 +311,10 @@ public:
     const Status & getStatus() const { return _status; }
     Status & getStatus() { return _status; }
 
+    const search::attribute::AttributeInitializationStatus& get_initialization_status() const { return *_initialization_status; }
+    search::attribute::AttributeInitializationStatus& get_initialization_status() { return *_initialization_status; }
+    void set_initialization_status(const std::shared_ptr<search::attribute::AttributeInitializationStatus>& initialization_status) { _initialization_status = initialization_status; }
+
     AddressSpaceUsage getAddressSpaceUsage() const;
 
     BasicType::Type getBasicType() const override final;
@@ -432,6 +438,7 @@ private:
     std::shared_ptr<vespalib::alloc::MemoryAllocator> _memory_allocator;
     std::atomic<uint64_t>                 _size_on_disk;
     std::atomic<std::chrono::steady_clock::rep> _last_flush_duration;
+    std::shared_ptr<search::attribute::AttributeInitializationStatus> _initialization_status;
 
     /// Clean up [0, firstUsed>
     virtual void reclaim_memory(generation_t oldest_used_gen);

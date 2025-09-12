@@ -8,9 +8,11 @@
 #include "health_adapter.h"
 #include "i_proton_configurer_owner.h"
 #include "idocumentdbowner.h"
+#include "initialization_handler.h"
 #include "memory_flush_config_updater.h"
 #include "proton_config_fetcher.h"
 #include "proton_configurer.h"
+#include "proton_initialization_status.h"
 #include "rpc_hooks.h"
 #include "shared_threading_service.h"
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
@@ -24,6 +26,7 @@
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/vespalib/net/http/component_config_producer.h>
 #include <vespa/vespalib/net/http/generic_state_handler.h>
+#include <vespa/vespalib/net/http/initialization_status_producer.h>
 #include <vespa/vespalib/net/http/json_get_handler.h>
 #include <vespa/vespalib/net/http/json_handler_repo.h>
 #include <vespa/vespalib/net/http/state_explorer.h>
@@ -64,6 +67,7 @@ class Proton : public IProtonConfigurerOwner,
                public StatusProducer,
                public IPersistenceEngineOwner,
                public vespalib::ComponentConfigProducer,
+               public vespalib::InitializationStatusProducer,
                public vespalib::StateExplorer
 {
 private:
@@ -114,6 +118,10 @@ private:
     RPCHooks::UP                           _rpcHooks;
     HealthAdapter                          _healthAdapter;
     vespalib::GenericStateHandler          _genericStateHandler;
+    InitializationHandler                  _initialization_handler;
+    ProtonInitializationStatus             _initialization_status;
+    vespalib::JsonHandlerRepo::Token::UP   _initialization_bind_token;
+    vespalib::JsonHandlerRepo::Token::UP   _initialization_root_token;
     vespalib::JsonHandlerRepo::Token::UP   _customComponentBindToken;
     vespalib::JsonHandlerRepo::Token::UP   _customComponentRootToken;
     std::unique_ptr<vespalib::StateServer> _stateServer;
@@ -240,6 +248,8 @@ public:
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
     std::vector<std::string> get_children_names() const override;
     std::unique_ptr<vespalib::StateExplorer> get_child(std::string_view name) const override;
+
+    void report_initialization_status(const vespalib::slime::Inserter &inserter) const override;
 };
 
 } // namespace proton

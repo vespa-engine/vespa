@@ -16,6 +16,8 @@
 #include "replay_throttling_policy.h"
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/metrics/updatehook.h>
+#include <vespa/searchcommon/attribute/attribute_initialization_status.h>
+#include <vespa/searchcore/proton/attribute/attribute_initialization_status_collector.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
@@ -35,6 +37,9 @@
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/searchreply.h>
+#include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -114,6 +119,12 @@ forceCommitAndWait(IFeedView & feedView, SerialNum serialNum, T keepAlive) {
     feedView.forceCommit(CommitParam(serialNum),
                           std::make_shared<Keep>(std::make_pair(std::move(keepAlive), std::make_shared<GateCallback>(gate))));
     gate.await();
+}
+
+std::string timepoint_to_string(DDBState::time_point tp) {
+    time_t secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
+    uint32_t usecs_part = std::chrono::duration_cast<std::chrono::microseconds>(tp.time_since_epoch()).count() % 1000000;
+    return std::format("{}.{:06}", secs, usecs_part);
 }
 
 }
@@ -310,6 +321,11 @@ DocumentDB::initManagers()
     DocumentDBConfig::SP configSnapshot(_initConfigSnapshot);
     _initConfigSnapshot.reset();
     InitializerTask::SP rootTask = _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum, _indexCfg);
+    {
+        lock_guard guard(_initialization_mutex);
+        AttributeInitializationStatusCollector visitor(_attribute_initialization_statuses);
+        rootTask->accept_visitor(visitor);
+    }
     InitializeThreads initializeThreads = _initializeThreads;
     _initializeThreads.reset();
     std::shared_ptr<TaskRunner> taskRunner(std::make_shared<TaskRunner>(*initializeThreads));
@@ -1118,6 +1134,62 @@ DocumentDB::set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener
 matching::SessionManager &
 DocumentDB::session_manager() {
     return _owner.session_manager();
+}
+
+void DocumentDB::report_initialization_status(const vespalib::slime::Inserter &inserter) const {
+    lock_guard guard(_initialization_mutex);
+
+    vespalib::slime::Cursor &db_cursor = inserter.insertObject();
+    db_cursor.setString("name", _docTypeName.getName());
+
+    DDBState::State state = _state.getState();
+    std::string state_string = DDBState::getStateString(state);
+    // Make stateString lowercase
+    std::transform(state_string.begin(), state_string.end(), state_string.begin(),
+           [](unsigned char c){ return std::tolower(c); });
+    db_cursor.setString("state", state_string);
+
+    if (state >= DDBState::State::LOAD) {
+        db_cursor.setString("start_time", timepoint_to_string(_state.get_load_time()));
+    }
+
+    if (state >= DDBState::State::REPLAY_TRANSACTION_LOG) {
+        db_cursor.setString("replay_start_time", timepoint_to_string(_state.get_replay_time()));
+    }
+
+    if (state >= DDBState::State::ONLINE) {
+        db_cursor.setString("end_time", timepoint_to_string(_state.get_online_time()));
+    }
+
+    if (state >= DDBState::State::REPLAY_TRANSACTION_LOG) {
+        db_cursor.setString("replay_progress", std::format("{:.6f}", _feedHandler->getReplayProgress()));
+    }
+
+    vespalib::slime::Cursor &subdb_cursor = db_cursor.setObject("ready_subdb");
+
+    vespalib::slime::Cursor &loaded_cursor = subdb_cursor.setArray("loaded_attributes");
+    vespalib::slime::ArrayInserter loaded_array_inserter(loaded_cursor);
+
+    vespalib::slime::Cursor &loading_cursor = subdb_cursor.setArray("loading_attributes");
+    vespalib::slime::ArrayInserter loading_array_inserter(loading_cursor);
+
+    vespalib::slime::Cursor &queued_cursor = subdb_cursor.setArray("queued_attributes");
+    vespalib::slime::ArrayInserter queued_array_inserter(queued_cursor);
+
+    for (const auto &attribute_status: _attribute_initialization_statuses) {
+
+        search::attribute::AttributeInitializationStatus::State attribute_state = attribute_status->get_state();
+
+        if (attribute_state == search::attribute::AttributeInitializationStatus::State::QUEUED) {
+            attribute_status->report_initialization_status(queued_array_inserter);
+
+        } else if (attribute_state == search::attribute::AttributeInitializationStatus::State::LOADED) {
+            attribute_status->report_initialization_status(loaded_array_inserter);
+
+        } else { // loading or reprocessing
+            attribute_status->report_initialization_status(loading_array_inserter);
+        }
+    }
 }
 
 } // namespace proton
