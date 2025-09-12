@@ -73,7 +73,8 @@ func (p *Spec) ConfigureVespaMalloc() {
 	mallocImpl := p.Getenv(envvars.VESPA_USE_MALLOC_IMPL)
 	if mallocImpl == "mimalloc" {
 		useFile = mimallocLib()
-	} else {
+	}
+	if useFile == "" {
 		switch {
 		case p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC_DST):
 			useFile = vespaMallocLib("libvespamallocdst16.so")
