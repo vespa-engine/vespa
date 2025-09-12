@@ -52,7 +52,7 @@ TEST(HttpClientTest, verify_request) {
                         }
                         SimpleBuffer actual;
                         Stream::UP stream = f1.accept(*null_crypto);
-                        ASSERT_TRUE(stream.get() != 0);
+                        ASSERT_TRUE(stream);
                         readUntil(*stream, actual, "\r\n\r\n");
                         EXPECT_TRUE(expect == actual);
                     } else {

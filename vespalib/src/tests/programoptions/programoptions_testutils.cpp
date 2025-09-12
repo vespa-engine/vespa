@@ -20,7 +20,7 @@ namespace {
 } // anonymous
 
 AppOptions::AppOptions(const std::string& optString)
-    : _argc(0), _argv(0), _source()
+    : _argc(0), _argv(nullptr), _source()
 {
     _source = splitString(optString);
     _argc = _source.size();

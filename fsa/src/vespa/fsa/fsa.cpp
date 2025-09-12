@@ -188,7 +188,7 @@ bool FSA::read(const char *file, FileAccessMethod fam)
       _size*sizeof(state_t) +
       _data_size +
       (header._has_perfect_hash?_size*sizeof(hash_t):0);
-    _mmap_addr = ::mmap((void*)0, _mmap_length, PROT_READ, MAP_SHARED, fd, 0);
+    _mmap_addr = ::mmap(nullptr, _mmap_length, PROT_READ, MAP_SHARED, fd, 0);
     if(_mmap_addr==MAP_FAILED){
       ::close(fd);
       reset();

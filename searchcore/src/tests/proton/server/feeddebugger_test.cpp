@@ -54,11 +54,11 @@ TEST(FeedDebuggerTest, require_that_setting_an_environment_variable_turns_on_lid
 
     FeedDebugger debugger;
     EXPECT_TRUE(debugger.isDebugging());
-    EXPECT_EQ(ns_log::Logger::info, debugger.getDebugLevel(1, 0));
-    EXPECT_EQ(ns_log::Logger::spam, debugger.getDebugLevel(2, 0));
-    EXPECT_EQ(ns_log::Logger::info, debugger.getDebugLevel(3, 0));
-    EXPECT_EQ(ns_log::Logger::spam, debugger.getDebugLevel(4, 0));
-    EXPECT_EQ(ns_log::Logger::info, debugger.getDebugLevel(5, 0));
+    EXPECT_EQ(ns_log::Logger::info, debugger.getDebugLevel(1, nullptr));
+    EXPECT_EQ(ns_log::Logger::spam, debugger.getDebugLevel(2, nullptr));
+    EXPECT_EQ(ns_log::Logger::info, debugger.getDebugLevel(3, nullptr));
+    EXPECT_EQ(ns_log::Logger::spam, debugger.getDebugLevel(4, nullptr));
+    EXPECT_EQ(ns_log::Logger::info, debugger.getDebugLevel(5, nullptr));
 }
 
 TEST(FeedDebuggerTest, require_that_setting_an_environment_variable_turns_on_docid_specific_debugging)

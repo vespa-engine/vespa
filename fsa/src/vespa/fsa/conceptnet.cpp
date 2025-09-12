@@ -130,7 +130,7 @@ bool ConceptNet::read(const char *datafile, FileAccessMethod fam)
       _info_size*sizeof(uint32_t) +
       _catindex_size*sizeof(uint32_t) +
       _strings_size*sizeof(char);
-    _mmap_addr = ::mmap((void*)0, _mmap_length, PROT_READ, MAP_SHARED, fd, 0);
+    _mmap_addr = ::mmap(nullptr, _mmap_length, PROT_READ, MAP_SHARED, fd, 0);
     if(_mmap_addr==MAP_FAILED){
       ::close(fd);
       reset();

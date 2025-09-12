@@ -84,7 +84,7 @@ struct Data32p {
     void init(bool inv);
 };
 
-Data32p::Data32p(size_t s) : cmp(0), size(s), values(), data() {}
+Data32p::Data32p(size_t s) : cmp(nullptr), size(s), values(), data() {}
 Data32p::~Data32p() {}
 void
 Data32p::init(bool inv) {

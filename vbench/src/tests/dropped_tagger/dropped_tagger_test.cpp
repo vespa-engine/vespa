@@ -10,7 +10,7 @@ TEST(DroppedTaggerTest, dropped_tagger) {
     auto req = std::make_unique<Request>();
     EXPECT_EQ(Request::STATUS_OK, req->status());
     f2.handle(std::move(req));
-    ASSERT_TRUE(f1.request.get() != 0);
+    ASSERT_TRUE(f1.request.get() != nullptr);
     EXPECT_EQ(Request::STATUS_DROPPED, f1.request->status());
 }
 

@@ -8,7 +8,7 @@ namespace vespalib {
 GenerationHandler::GenerationHold::GenerationHold() noexcept
     : _refCount(1),
       _generation(0),
-      _next(0)
+      _next(nullptr)
 { }
 
 GenerationHandler::GenerationHold::~GenerationHold() {
