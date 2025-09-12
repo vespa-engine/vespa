@@ -4,7 +4,6 @@
 
 #include "int8float.h"
 #include "operation.h"
-#include <vespa/vespalib/util/bfloat16.h>
 #include <vespa/vespalib/util/typify.h>
 #include <cblas.h>
 #include <cmath>
@@ -179,11 +178,6 @@ struct DotProduct<double,double> {
 template <>
 struct DotProduct<Int8Float, Int8Float> {
     static double apply(const Int8Float *lhs, const Int8Float *rhs, size_t count);
-};
-
-template <>
-struct DotProduct<BFloat16, BFloat16> {
-    static double apply(const BFloat16 *lhs, const BFloat16 *rhs, size_t count);
 };
 
 //-----------------------------------------------------------------------------
