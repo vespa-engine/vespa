@@ -149,8 +149,8 @@ private:
     std::shared_ptr<IBucketStateCalculator>          _calc;
     DocumentDBMetricsUpdater                         _metricsUpdater;
 
-    mutable std::mutex                               _initializationMutex;  // protects vector below
-    std::vector<std::shared_ptr<search::attribute::AttributeInitializationStatus>> _attributeInitializationStatuses;
+    mutable std::mutex                               _initialization_mutex;  // protects vector below
+    std::vector<std::shared_ptr<search::attribute::AttributeInitializationStatus>> _attribute_initialization_statuses;
 
     void registerReference();
     void setActiveConfig(DocumentDBConfigSP config);
@@ -435,7 +435,7 @@ public:
     void set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener);
     const DDBState& get_state() const noexcept { return _state; }
 
-    void getInitializationStatus(const vespalib::slime::Inserter &inserter) const;
+    void report_initialization_status(const vespalib::slime::Inserter &inserter) const;
 };
 
 } // namespace proton

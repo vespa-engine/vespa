@@ -92,7 +92,7 @@ namespace proton {
 
 namespace {
 
-std::string timepointToString(ProtonInitializationStatus::time_point tp) {
+std::string timepoint_to_string(ProtonInitializationStatus::time_point tp) {
     time_t secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
     uint32_t usecs_part = std::chrono::duration_cast<std::chrono::microseconds>(tp.time_since_epoch()).count() % 1000000;
     return std::format("{}.{:06}", secs, usecs_part);
@@ -341,7 +341,7 @@ Proton::init()
 {
     assert( ! _initStarted && ! _initComplete );
     _initStarted = true;
-    _initializationStatus.startInitialization();
+    _initialization_status.start_initialization();
     _protonConfigFetcher.start();
     auto configSnapshot = _protonConfigurer.getPendingConfigSnapshot();
     assert(configSnapshot);
@@ -477,7 +477,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _isInitializing = false;
     _protonConfigurer.setAllowReconfig(true);
     _initComplete = true;
-    _initializationStatus.endInitialization();
+    _initialization_status.end_initialization();
 }
 
 BootstrapConfig::SP
@@ -1218,13 +1218,15 @@ Proton::getMetricManager() {
 void Proton::getInitializationStatus(const vespalib::slime::Inserter &inserter) const {
     std::shared_lock<std::shared_mutex> guard(_mutex);
 
-    vespalib::slime::Cursor &cursor = inserter.insertObject();
-    cursor.setString("state", ProtonInitializationStatus::stateToString(_initializationStatus.getState()));
-    cursor.setString("current_time", timepointToString(std::chrono::system_clock::now()));
-    cursor.setString("start_time", timepointToString(_initializationStatus.getStartTime()));
+    ProtonInitializationStatus::State state = _initialization_status.get_state();
 
-    if (_initializationStatus.getState() == ProtonInitializationStatus::READY) {
-        cursor.setString("end_time", timepointToString(_initializationStatus.getEndTime()));
+    vespalib::slime::Cursor &cursor = inserter.insertObject();
+    cursor.setString("state", ProtonInitializationStatus::state_to_string(state));
+    cursor.setString("current_time", timepoint_to_string(std::chrono::system_clock::now()));
+    cursor.setString("start_time", timepoint_to_string(_initialization_status.get_start_time()));
+
+    if (state == ProtonInitializationStatus::READY) {
+        cursor.setString("end_time", timepoint_to_string(_initialization_status.get_end_time()));
     }
 
     // DB counts
@@ -1250,7 +1252,7 @@ void Proton::getInitializationStatus(const vespalib::slime::Inserter &inserter) 
     vespalib::slime::ArrayInserter arrayInserter(dbArrayCursor);
 
     for (const auto &kv : _documentDBMap) {
-        kv.second->getInitializationStatus(arrayInserter);
+        kv.second->report_initialization_status(arrayInserter);
     }
 }
 

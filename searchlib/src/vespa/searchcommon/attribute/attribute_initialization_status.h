@@ -23,27 +23,27 @@ public:
         REPROCESSING_FINISHED,
         LOADED
     };
-    static std::string stateToString(State state);
+    static std::string state_to_string(State state);
     using time_point = std::chrono::system_clock::time_point;
 
     AttributeInitializationStatus(const std::string &name);
 
-    void startLoading();
-    void startReprocessing();
-    void endReprocessing();
-    void endLoading();
-    void setReprocessingPercentage(float percentage);
+    void start_loading();
+    void start_reprocessing();
+    void end_reprocessing();
+    void end_loading();
+    void set_reprocessing_percentage(float percentage);
 
-    const std::string& getName() const { return _name; }
-    State getState() const;
-    time_point getStartTime() const;
-    time_point getEndTime() const;
-    time_point getReprocessingStartTime() const;
-    time_point getReprocessingEndTime() const;
-    bool didReprocess() const;
-    float getReprocessingPercentage() const;
+    const std::string& get_name() const { return _name; }
+    State get_state() const;
+    time_point get_start_time() const;
+    time_point get_end_time() const;
+    time_point get_reprocessing_start_time() const;
+    time_point get_reprocessing_end_time() const;
+    bool was_reprocessed() const;
+    float get_reprocessing_percentage() const;
 
-    void reportInitializationStatus(const vespalib::slime::Inserter &inserter) const;
+    void report_initialization_status(const vespalib::slime::Inserter &inserter) const;
 
 private:
     mutable std::mutex _mutex;
@@ -56,7 +56,7 @@ private:
     time_point _reprocessing_end_time;
     time_point _end_time;
 
-    bool _didReprocess;
+    bool _was_reprocessed;
     float _reprocessing_percentage;
 };
 

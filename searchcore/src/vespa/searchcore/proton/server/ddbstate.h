@@ -111,13 +111,15 @@ public:
     void setConfigState(ConfigState newConfigState);
     void waitForOnlineState();
 
-    time_point getLoadTime() const {
+    time_point get_load_time() const {
         return _load_time;
     }
-    time_point getReplayTime() const {
+
+    time_point get_replay_time() const {
         return _replay_time;
     }
-    time_point getOnlineTime() const {
+
+    time_point get_online_time() const {
         return _online_time;
     }
 };

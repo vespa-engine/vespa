@@ -119,7 +119,7 @@ private:
     HealthAdapter                          _healthAdapter;
     vespalib::GenericStateHandler          _genericStateHandler;
     InitializationHandler                  _initializationHandler;
-    ProtonInitializationStatus             _initializationStatus;
+    ProtonInitializationStatus             _initialization_status;
     vespalib::JsonHandlerRepo::Token::UP   _initializationBindToken;
     vespalib::JsonHandlerRepo::Token::UP   _initializationRootToken;
     vespalib::JsonHandlerRepo::Token::UP   _customComponentBindToken;

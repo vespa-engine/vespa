@@ -18,7 +18,7 @@ public:
         INITIALIZING,
         READY
     };
-    static std::string stateToString(State state);
+    static std::string state_to_string(State state);
     using time_point = std::chrono::system_clock::time_point;
 
 private:
@@ -31,13 +31,13 @@ private:
 public:
     ProtonInitializationStatus();
 
-    State getState() const;
+    State get_state() const;
 
-    void startInitialization();
-    void endInitialization();
+    void start_initialization();
+    void end_initialization();
 
-    time_point getStartTime() const;
-    time_point getEndTime() const;
+    time_point get_start_time() const;
+    time_point get_end_time() const;
 };
 
 }

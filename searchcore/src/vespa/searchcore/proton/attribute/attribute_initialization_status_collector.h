@@ -22,7 +22,7 @@ private:
 
 public:
     AttributeInitializationStatusCollector(std::vector<std::shared_ptr<search::attribute::AttributeInitializationStatus>>& initialization_statuses);
-    void visitAttributeInitializer(AttributeInitializer& attribute_initializer) override;
+    void visit_attribute_initializer(AttributeInitializer& attribute_initializer) override;
 };
 
 } // proton

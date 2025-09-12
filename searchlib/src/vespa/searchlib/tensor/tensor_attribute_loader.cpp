@@ -285,7 +285,7 @@ TensorAttributeLoader::load_tensor_store(BlobSequenceReader& reader, uint32_t do
 void
 TensorAttributeLoader::build_index(vespalib::Executor* executor, uint32_t docid_limit)
 {
-    _attr.getInitializationStatus().startReprocessing();
+    _attr.get_initialization_status().start_reprocessing();
     std::unique_ptr<IndexBuilder> builder;
     if (executor != nullptr) {
         builder = std::make_unique<ThreadedIndexBuilder>(_attr, _generation_handler, _store, *_index, *executor);
@@ -301,7 +301,7 @@ TensorAttributeLoader::build_index(vespalib::Executor* executor, uint32_t docid_
         auto ref = _ref_vector[lid].load_relaxed();
         if (ref.valid()) {
             builder->add(lid);
-            _attr.getInitializationStatus().setReprocessingPercentage(lid * 100.0 / docid_limit);
+            _attr.get_initialization_status().set_reprocessing_percentage(lid * 100.0 / docid_limit);
             auto now = vespalib::steady_clock::now();
             if (last_report + report_interval < now) {
                 Event(_attr)
@@ -317,7 +317,7 @@ TensorAttributeLoader::build_index(vespalib::Executor* executor, uint32_t docid_
             .addKV("time.elapsed.ms", vespalib::count_ms(elapsedTime))
             .log("hnsw.index.rebuild.complete");
     _attr.commit();
-    _attr.getInitializationStatus().endReprocessing();
+    _attr.get_initialization_status().end_reprocessing();
 }
 
 bool

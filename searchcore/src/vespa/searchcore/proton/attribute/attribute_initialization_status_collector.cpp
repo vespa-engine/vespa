@@ -8,7 +8,7 @@ AttributeInitializationStatusCollector::AttributeInitializationStatusCollector(s
     : _initialization_statuses(initialization_statuses) {
 }
 
-void AttributeInitializationStatusCollector::visitAttributeInitializer(AttributeInitializer& attribute_initializer) {
+void AttributeInitializationStatusCollector::visit_attribute_initializer(AttributeInitializer& attribute_initializer) {
     _initialization_statuses.push_back(attribute_initializer.get_attribute_initialization_status());
 }
 

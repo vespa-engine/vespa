@@ -121,7 +121,7 @@ forceCommitAndWait(IFeedView & feedView, SerialNum serialNum, T keepAlive) {
     gate.await();
 }
 
-std::string timepointToString(DDBState::time_point tp) {
+std::string timepoint_to_string(DDBState::time_point tp) {
     time_t secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
     uint32_t usecs_part = std::chrono::duration_cast<std::chrono::microseconds>(tp.time_since_epoch()).count() % 1000000;
     return std::format("{}.{:06}", secs, usecs_part);
@@ -322,9 +322,9 @@ DocumentDB::initManagers()
     _initConfigSnapshot.reset();
     InitializerTask::SP rootTask = _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum, _indexCfg);
     {
-        lock_guard guard(_initializationMutex);
-        AttributeInitializationStatusCollector visitor(_attributeInitializationStatuses);
-        rootTask->acceptVisitor(visitor);
+        lock_guard guard(_initialization_mutex);
+        AttributeInitializationStatusCollector visitor(_attribute_initialization_statuses);
+        rootTask->accept_visitor(visitor);
     }
     InitializeThreads initializeThreads = _initializeThreads;
     _initializeThreads.reset();
@@ -1136,58 +1136,58 @@ DocumentDB::session_manager() {
     return _owner.session_manager();
 }
 
-void DocumentDB::getInitializationStatus(const vespalib::slime::Inserter &inserter) const {
-    lock_guard guard(_initializationMutex);
+void DocumentDB::report_initialization_status(const vespalib::slime::Inserter &inserter) const {
+    lock_guard guard(_initialization_mutex);
 
-    vespalib::slime::Cursor &dbCursor = inserter.insertObject();
-    dbCursor.setString("name", _docTypeName.getName());
+    vespalib::slime::Cursor &db_cursor = inserter.insertObject();
+    db_cursor.setString("name", _docTypeName.getName());
 
     DDBState::State state = _state.getState();
-    std::string stateString = DDBState::getStateString(state);
+    std::string state_string = DDBState::getStateString(state);
     // Make stateString lowercase
-    std::transform(stateString.begin(), stateString.end(), stateString.begin(),
+    std::transform(state_string.begin(), state_string.end(), state_string.begin(),
            [](unsigned char c){ return std::tolower(c); });
-    dbCursor.setString("state", stateString);
+    db_cursor.setString("state", state_string);
 
     if (state >= DDBState::State::LOAD) {
-        dbCursor.setString("start_time", timepointToString(_state.getLoadTime()));
+        db_cursor.setString("start_time", timepoint_to_string(_state.get_load_time()));
     }
 
     if (state >= DDBState::State::REPLAY_TRANSACTION_LOG) {
-        dbCursor.setString("replay_start_time", timepointToString(_state.getReplayTime()));
+        db_cursor.setString("replay_start_time", timepoint_to_string(_state.get_replay_time()));
     }
 
     if (state >= DDBState::State::ONLINE) {
-        dbCursor.setString("end_time", timepointToString(_state.getOnlineTime()));
+        db_cursor.setString("end_time", timepoint_to_string(_state.get_online_time()));
     }
 
-    // Add replay progress
     if (state >= DDBState::State::REPLAY_TRANSACTION_LOG) {
-        dbCursor.setString("replay_progress", std::format("{:.6f}", _feedHandler->getReplayProgress()));
+        db_cursor.setString("replay_progress", std::format("{:.6f}", _feedHandler->getReplayProgress()));
     }
 
-    // Add loading progress
-    vespalib::slime::Cursor &subdbCursor = dbCursor.setObject("ready_subdb");
+    vespalib::slime::Cursor &subdb_cursor = db_cursor.setObject("ready_subdb");
 
-    vespalib::slime::Cursor &loadedCursor = subdbCursor.setArray("loaded_attributes");
-    vespalib::slime::ArrayInserter loadedArrayInserter(loadedCursor);
+    vespalib::slime::Cursor &loaded_cursor = subdb_cursor.setArray("loaded_attributes");
+    vespalib::slime::ArrayInserter loaded_array_inserter(loaded_cursor);
 
-    vespalib::slime::Cursor &loadingCursor = subdbCursor.setArray("loading_attributes");
-    vespalib::slime::ArrayInserter loadingArrayInserter(loadingCursor);
+    vespalib::slime::Cursor &loading_cursor = subdb_cursor.setArray("loading_attributes");
+    vespalib::slime::ArrayInserter loading_array_inserter(loading_cursor);
 
-    vespalib::slime::Cursor &queuedCursor = subdbCursor.setArray("queued_attributes");
-    vespalib::slime::ArrayInserter queuedArrayInserter(queuedCursor);
+    vespalib::slime::Cursor &queued_cursor = subdb_cursor.setArray("queued_attributes");
+    vespalib::slime::ArrayInserter queued_array_inserter(queued_cursor);
 
-    for (const auto &status: _attributeInitializationStatuses) {
+    for (const auto &attribute_status: _attribute_initialization_statuses) {
 
-        if (status->getState() == search::attribute::AttributeInitializationStatus::State::QUEUED) {
-            status->reportInitializationStatus(queuedArrayInserter);
+        search::attribute::AttributeInitializationStatus::State attribute_state = attribute_status->get_state();
 
-        } else if (status->getState() == search::attribute::AttributeInitializationStatus::State::LOADED) {
-            status->reportInitializationStatus(loadedArrayInserter);
+        if (attribute_state == search::attribute::AttributeInitializationStatus::State::QUEUED) {
+            attribute_status->report_initialization_status(queued_array_inserter);
+
+        } else if (attribute_state == search::attribute::AttributeInitializationStatus::State::LOADED) {
+            attribute_status->report_initialization_status(loaded_array_inserter);
 
         } else { // loading or reprocessing
-            status->reportInitializationStatus(loadingArrayInserter);
+            attribute_status->report_initialization_status(loading_array_inserter);
         }
     }
 }

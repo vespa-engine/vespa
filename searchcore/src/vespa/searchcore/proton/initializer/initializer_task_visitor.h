@@ -20,7 +20,7 @@ namespace proton::initializer {
 class InitializerTaskVisitor {
 public:
     virtual ~InitializerTaskVisitor() = default;
-    virtual void visitAttributeInitializer(AttributeInitializer& /*attributeInitializer*/) {}
+    virtual void visit_attribute_initializer(AttributeInitializer& /*attribute_initializer*/) {}
 };
 
 } // namespace proton::initializer

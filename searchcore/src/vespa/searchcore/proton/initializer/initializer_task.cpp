@@ -25,9 +25,9 @@ InitializerTask::get_transient_memory_usage() const
 }
 
 void
-InitializerTask::acceptVisitor(InitializerTaskVisitor &visitor) {
+InitializerTask::accept_visitor(InitializerTaskVisitor &visitor) {
     for (auto &task : _dependencies) {
-        task->acceptVisitor(visitor);
+        task->accept_visitor(visitor);
     }
 }
 

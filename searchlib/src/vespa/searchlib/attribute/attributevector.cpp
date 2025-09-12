@@ -359,13 +359,13 @@ AttributeVector::load() {
 bool
 AttributeVector::load(vespalib::Executor * executor) {
     assert(!_loaded);
-    _initialization_status->startLoading();
+    _initialization_status->start_loading();
     bool loaded = onLoad(executor);
     if (loaded) {
         commit();
         incGeneration();
         updateStat(true);
-        _initialization_status->endLoading();
+        _initialization_status->end_loading();
     }
     _loaded = loaded;
     return _loaded;

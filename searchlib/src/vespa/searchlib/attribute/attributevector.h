@@ -311,8 +311,8 @@ public:
     const Status & getStatus() const { return _status; }
     Status & getStatus() { return _status; }
 
-    const search::attribute::AttributeInitializationStatus& getInitializationStatus() const { return *_initialization_status; }
-    search::attribute::AttributeInitializationStatus& getInitializationStatus() { return *_initialization_status; }
+    const search::attribute::AttributeInitializationStatus& get_initialization_status() const { return *_initialization_status; }
+    search::attribute::AttributeInitializationStatus& get_initialization_status() { return *_initialization_status; }
     void set_initialization_status(const std::shared_ptr<search::attribute::AttributeInitializationStatus>& initialization_status) { _initialization_status = initialization_status; }
 
     AddressSpaceUsage getAddressSpaceUsage() const;
