@@ -66,7 +66,7 @@ const char *findVespaHome(const char *defHome) {
 const char *findVespaUser(const char *defUser) {
     const char *env = getenv("VESPA_USER");
     if (env != nullptr && *env != '\0') {
-        if (getpwnam(env) == 0) {
+        if (getpwnam(env) == nullptr) {
             fprintf(stderr, "warning\tbad VESPA_USER '%s' (ignored)\n", env);
         } else {
             return env;

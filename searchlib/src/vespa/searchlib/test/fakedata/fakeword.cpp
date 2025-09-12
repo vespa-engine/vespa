@@ -624,7 +624,7 @@ FakeWord::validate(FieldReader &fieldReader,
             auto position = features.word_positions().begin();
 
             TermFieldMatchData *tfmd = matchData[0];
-            assert(tfmd != 0);
+            assert(tfmd != nullptr);
             tfmd->reset(features.doc_id());
 
             uint32_t elementResidue = features.elements().size();

@@ -56,7 +56,7 @@ readOptionalEnvironmentVar(const char * name, size_t defaultValue) {
     if (str != nullptr) {
         char * e(nullptr);
         size_t value = strtoul(str, &e, 0);
-        if ((e == 0) || (e[0] == '\0')) {
+        if ((e == nullptr) || (e[0] == '\0')) {
             return value;
         }
         LOG(warning, "Not able to to decode %s='%s' as number. Failed at '%s'", name, str, e);

@@ -54,12 +54,12 @@ TEST(MetricSetTest, test_normal_usage)
     // Check that getMetric works, and doesn't return copy.
     LongAverageMetric* v2copy(
             dynamic_cast<LongAverageMetric*>(set.getMetric("b")));
-    ASSERT_TRUE(v2copy != 0);
+    ASSERT_TRUE(v2copy != nullptr);
     v2copy->addValue(9);
     Metric* nonExistingCopy = set.getMetric("nonexisting");
-    EXPECT_TRUE(nonExistingCopy == 0);
+    EXPECT_TRUE(nonExistingCopy == nullptr);
     nonExistingCopy = set.getMetric("non.existing");
-    EXPECT_TRUE(nonExistingCopy == 0);
+    EXPECT_TRUE(nonExistingCopy == nullptr);
 
     // Check that paths are set
     MetricSet topSet("top", {}, "");

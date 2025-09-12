@@ -172,7 +172,7 @@ void
 BucketContent::insert(DocEntry::SP e) {
     LOG(spam, "insert(%s)", e->toString().c_str());
     const DocumentId *docId(e->getDocumentId());
-    assert(docId != 0);
+    assert(docId != nullptr);
     GlobalId gid(docId->getGlobalId());
     GidMapType::iterator gidIt(_gidMap.find(gid));
 
@@ -278,7 +278,7 @@ BucketContent::eraseEntry(Timestamp t) {
     auto iter = lower_bound(_entries.begin(), _entries.end(), t, TimestampLess());
 
     if (iter != _entries.end() && iter->entry->getTimestamp() == t) {
-        assert(iter->entry->getDocumentId() != 0);
+        assert(iter->entry->getDocumentId() != nullptr);
         GidMapType::iterator gidIt = _gidMap.find(iter->entry->getDocumentId()->getGlobalId());
         assert(gidIt != _gidMap.end());
         _entries.erase(iter);
@@ -719,7 +719,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize) const
     while (!it->_leftToIterate.empty()) {
         Timestamp next(it->_leftToIterate.back());
         DocEntry::SP entry((*bc)->getEntry(next));
-        if (entry.get() != 0) {
+        if (entry) {
             uint32_t size = entry->getSize();
             if (currentSize != 0 && currentSize + size > maxByteSize) break;
             currentSize += size;
@@ -843,7 +843,7 @@ DummyPersistence::split(const Bucket& source, const Bucket& target1, const Bucke
     }
     targ1.setActive(sour.isActive());
     targ2.setActive(sour.isActive());
-    sourceGuard.reset(0);
+    sourceGuard.reset();
     LOG(debug, "erasing split source %s",
         source.toString().c_str());
     deleteBucket(source);
@@ -881,7 +881,7 @@ DummyPersistence::join(const Bucket& source1, const Bucket& source2, const Bucke
             DocEntry::SP entry(sour._entries[i].entry);
             (*targetGuard)->insert(std::move(entry));
         }
-        sourceGuard.reset(0);
+        sourceGuard.reset();
         deleteBucket(source);
     }
     (*targetGuard)->setActive(active);

@@ -49,7 +49,7 @@ public:
     UrlReader(FileReader& reader, const ClientArguments &args)
         : _reader(reader), _args(args), _restarts(0),
           _contentbufsize(0), _leftOversLen(0),
-          _contentbuf(0), _leftOvers(0)
+          _contentbuf(nullptr), _leftOvers(nullptr)
     {
         if (_args._usePostMode) {
             _contentbufsize = 16 * _args._maxLineSize;

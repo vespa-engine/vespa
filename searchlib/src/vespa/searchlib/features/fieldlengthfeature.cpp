@@ -88,7 +88,7 @@ FieldLengthBlueprint::createInstance() const
 FeatureExecutor &
 FieldLengthBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    if (_field == 0) {
+    if (_field == nullptr) {
         return stash.create<SingleValueExecutor>(fef::FieldPositionsIterator::UNKNOWN_LENGTH);
     }
     return stash.create<FieldLengthExecutor>(env, _field->id());

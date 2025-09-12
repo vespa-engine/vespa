@@ -29,13 +29,13 @@ void injectString(const Inserter &inserter, const Memory &memory) { inserter.ins
 void injectData(const Inserter &inserter, const Memory &memory) { inserter.insertData(memory); }
 void injectArray(const Inserter &inserter, const Inspector &inspector, const Inspector *guard) {
     Cursor &cursor = inserter.insertArray();
-    NestedInjector injector(cursor, (guard != 0) ? guard : &cursor);
+    NestedInjector injector(cursor, (guard != nullptr) ? guard : &cursor);
     ArrayTraverser &array_traverser = injector;
     inspector.traverse(array_traverser);
 }
 void injectObject(const Inserter &inserter, const Inspector &inspector, const Inspector *guard) {
     Cursor &cursor = inserter.insertObject();
-    NestedInjector injector(cursor, (guard != 0) ? guard : &cursor);
+    NestedInjector injector(cursor, (guard != nullptr) ? guard : &cursor);
     ObjectTraverser &object_traverser = injector;
     inspector.traverse(object_traverser);
 }
@@ -75,7 +75,7 @@ NestedInjector::field(const Memory &symbol_name, const Inspector &inspector) {
 
 void inject(const Inspector &inspector, const Inserter &inserter) {
     if (inspector.valid()) {
-        injectValue(inserter, inspector, 0);
+        injectValue(inserter, inspector, nullptr);
     }
 }
 

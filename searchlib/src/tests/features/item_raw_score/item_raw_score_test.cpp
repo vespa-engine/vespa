@@ -106,8 +106,8 @@ RankFixture::~RankFixture() = default;
 TEST(ItemRawScoreTest, require_that_blueprint_can_be_created_from_factory) {
     BlueprintFactoryFixture f;
     Blueprint::SP bp = f.factory.createBlueprint("itemRawScore");
-    EXPECT_TRUE(bp.get() != 0);
-    EXPECT_TRUE(dynamic_cast<ItemRawScoreBlueprint*>(bp.get()) != 0);
+    EXPECT_TRUE(bp.get() != nullptr);
+    EXPECT_TRUE(dynamic_cast<ItemRawScoreBlueprint*>(bp.get()) != nullptr);
 }
 
 TEST(ItemRawScoreTest, require_that_no_features_are_dumped) {

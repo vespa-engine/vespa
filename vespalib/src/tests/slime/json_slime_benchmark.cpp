@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 {
     size_t numRep(10000);
     if (argc > 1) {
-        numRep = strtoul(argv[1], 0, 0);
+        numRep = strtoul(argv[1], nullptr, 0);
     }
     std::ifstream file(TEST_PATH("large_json.txt").c_str());
     assert(file.is_open());

@@ -154,7 +154,7 @@ TEST_F(ClosestTest, require_that_blueprint_can_be_created_from_factory)
     BlueprintFactoryFixture f;
     auto bp = f.factory.createBlueprint("closest");
     EXPECT_TRUE(bp);
-    EXPECT_TRUE(dynamic_cast<ClosestBlueprint*>(bp.get()) != 0);
+    EXPECT_TRUE(dynamic_cast<ClosestBlueprint*>(bp.get()) != nullptr);
 }
 
 TEST_F(ClosestTest, require_that_no_features_are_dumped)

@@ -267,7 +267,7 @@ TEST_F(DistributionTest, test_verify_java_distributions_2)
             Cursor& e(c["result"][j]);
             ExpectedResult result;
             std::string bucketString(e["bucket"].asString().make_string());
-            char *end = 0;
+            char *end = nullptr;
             uint64_t rawBucket = strtoull(bucketString.c_str(), &end, 16);
             ASSERT_EQ(int(0), int(*end));
             result.bucket = document::BucketId(rawBucket);

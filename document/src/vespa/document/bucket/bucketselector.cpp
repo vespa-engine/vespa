@@ -174,7 +174,7 @@ BucketSelector::select(const document::select::Node& expression) const
     BucketVisitor v(_factory);
     expression.visit(v);
     return std::unique_ptr<BucketVector>(v._unknown
-            ? 0 : new BucketVector(v._buckets));
+            ? nullptr : new BucketVector(v._buckets));
 }
 
 } // document

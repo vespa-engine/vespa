@@ -169,8 +169,8 @@ TEST(ElementSimilarityFeatureTest, require_that_blueprint_can_be_created_from_fa
 {
     BlueprintFactoryFixture f;
     Blueprint::SP bp = f.factory.createBlueprint("elementSimilarity");
-    EXPECT_TRUE(bp.get() != 0);
-    EXPECT_TRUE(dynamic_cast<ElementSimilarityBlueprint*>(bp.get()) != 0);
+    EXPECT_TRUE(bp.get() != nullptr);
+    EXPECT_TRUE(dynamic_cast<ElementSimilarityBlueprint*>(bp.get()) != nullptr);
 }
 
 TEST(ElementSimilarityFeatureTest, require_that_appropriate_features_are_dumped)

@@ -11,7 +11,7 @@ TEST(ServerTaggerTest, server_tagger) {
     EXPECT_EQ("", req->server().host);
     EXPECT_EQ(0, req->server().port);
     f2.handle(std::move(req));
-    ASSERT_TRUE(f1.request.get() != 0);
+    ASSERT_TRUE(f1.request);
     EXPECT_EQ("host", f1.request->server().host);
     EXPECT_EQ(42, f1.request->server().port);
 }

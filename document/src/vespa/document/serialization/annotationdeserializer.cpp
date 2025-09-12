@@ -55,7 +55,7 @@ unique_ptr<SpanNode> AnnotationDeserializer::readSpanNode() {
     uint8_t type = readValue<uint8_t>(_stream);
     unique_ptr<SpanNode> node;
     size_t node_index = _nodes.size();
-    _nodes.push_back(0);
+    _nodes.push_back(nullptr);
     if (type == 1) {  // Span.ID
         Span * span = new Span();
         node.reset(span);
@@ -123,7 +123,7 @@ void AnnotationDeserializer::readAnnotation(Annotation & annotation) {
     }
     annotation.setType(type);
 
-    SpanNode *span_node = 0;
+    SpanNode *span_node = nullptr;
     if (features & 1) {  // has span node
         uint32_t span_node_id = getInt1_2_4Bytes(_stream);
         if (span_node_id > _nodes.size()) {

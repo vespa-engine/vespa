@@ -83,7 +83,7 @@ struct Foo : public Base
 
 Foo::~Foo() = default;
 Foo::Foo()
-        : _objMember(), _objMember2(), _objPtr(0), _list(), _list2()
+        : _objMember(), _objMember2(), _objPtr(nullptr), _list(), _list2()
 {
     _list.emplace_back();
     _list.emplace_back();

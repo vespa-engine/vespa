@@ -273,7 +273,9 @@ MirrorAPI::handleReconnect()
 void
 MirrorAPI::makeRequest()
 {
-    if (_target == 0) return;
+    if (_target == nullptr) {
+        return;
+    }
     if (_reqPending) {
         LOG(error, "cannot make new request, one is pending already");
         LOG_ABORT("should not be reached");

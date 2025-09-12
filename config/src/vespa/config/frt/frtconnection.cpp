@@ -18,7 +18,7 @@ FRTConnection::FRTConnection(const std::string& address, FRT_Supervisor& supervi
       _fatalDelay(timingValues.fatalDelay),
       _supervisor(supervisor),
       _lock(),
-      _target(0),
+      _target(nullptr),
       _suspendedUntil(),
       _suspendWarned(),
       _transientFailures(0),

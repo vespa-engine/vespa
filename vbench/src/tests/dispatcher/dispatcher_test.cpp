@@ -8,7 +8,7 @@ struct MyHandler : public Handler<int> {
     int value;
     MyHandler() : value(-1) {}
     ~MyHandler() override;
-    void handle(std::unique_ptr<int> v) override { value = (v.get() != 0) ? *v : 0; }
+    void handle(std::unique_ptr<int> v) override { value = v ? *v : 0; }
 };
 
 MyHandler::~MyHandler() = default;
