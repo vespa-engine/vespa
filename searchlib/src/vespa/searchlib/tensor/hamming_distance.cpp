@@ -49,11 +49,9 @@ public:
 };
 
 template class BoundHammingDistance<TemporaryVectorStore<Int8Float>>;
-template class BoundHammingDistance<TemporaryVectorStore<vespalib::BFloat16>>;
 template class BoundHammingDistance<TemporaryVectorStore<float>>;
 template class BoundHammingDistance<TemporaryVectorStore<double>>;
 template class BoundHammingDistance<ReferenceVectorStore<Int8Float>>;
-template class BoundHammingDistance<ReferenceVectorStore<vespalib::BFloat16>>;
 template class BoundHammingDistance<ReferenceVectorStore<float>>;
 template class BoundHammingDistance<ReferenceVectorStore<double>>;
 
@@ -77,7 +75,6 @@ HammingDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) 
 }
 
 template class HammingDistanceFunctionFactory<Int8Float>;
-template class HammingDistanceFunctionFactory<vespalib::BFloat16>;
 template class HammingDistanceFunctionFactory<float>;
 template class HammingDistanceFunctionFactory<double>;
 

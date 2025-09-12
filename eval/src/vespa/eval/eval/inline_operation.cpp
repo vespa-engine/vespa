@@ -28,8 +28,4 @@ double DotProduct<Int8Float, Int8Float>::apply(const Int8Float *lhs, const Int8F
     return static_cast<double>(accel.dotProduct(lhs_as_i8, rhs_as_i8, count));
 }
 
-double DotProduct<BFloat16, BFloat16>::apply(const BFloat16 *lhs, const BFloat16 *rhs, size_t count) {
-    return accel.dotProduct(lhs, rhs, count);
-}
-
 }
