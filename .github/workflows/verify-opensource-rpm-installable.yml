@@ -1,4 +1,4 @@
-name: Verify open source RPM installable
+name: Verify OSS RPMs
 
 on:
   workflow_dispatch:
@@ -13,11 +13,17 @@ on:
    - cron: '0 0 * * *'
 
 jobs:
-  verify-opensource-rpm-installable:
+  install:
+    name: Almalinux ${{ matrix.almalinux-major }}
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: true
+      matrix:
+        almalinux-major: [8, 9]
+
     container:
-      image: almalinux:8
+      image: almalinux:${{ matrix.almalinux-major }}
 
     steps:
       - name: Install Vespa
