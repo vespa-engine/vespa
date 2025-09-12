@@ -1,13 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.mcp;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import io.modelcontextprotocol.server.McpStatelessServerHandler;
 import io.modelcontextprotocol.server.McpTransportContext;
-import io.modelcontextprotocol.spec.McpError;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -107,19 +105,13 @@ public class McpHttpTransportTest {
                 .handleRequest(any(McpTransportContext.class), any(McpSchema.JSONRPCRequest.class));
 
         HttpResponse response = transport.handlePost(request, requestBody.getBytes(StandardCharsets.UTF_8));
-
-        // DEBUG
-        String responseBody = renderResponse(response);
-        System.out.println("Response Body: " + responseBody);
         assertEquals(200, response.getStatus());
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testCreateErrorResponse() {
         // Create an error response
-        McpError error = new McpError("Test error message");
-        HttpResponse response = transport.createErrorResponse(400, error);
+        HttpResponse response = transport.createErrorResponse(400, "Test error message", null);
         
         // Verify that a 400 Bad Request response with the error message is returned
         assertEquals(400, response.getStatus());

@@ -4,7 +4,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpRequest.Method;
-import io.modelcontextprotocol.spec.McpError;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -54,7 +54,7 @@ public class McpJdiscHandlerTest {
     @Test
     public void testInvalidPathReturns404() {
         HttpResponse mockResponse = createMockResponse(404, "{\"error\":\"Not Found\"}");
-        when(mockTransport.createErrorResponse(eq(404), any(McpError.class))).thenReturn(mockResponse);
+        when(mockTransport.createErrorResponse(eq(404), any(String.class), any())).thenReturn(mockResponse);
 
         HttpRequest request = createTestRequest(
                 "http://localhost:8080/invalid/path",
@@ -68,7 +68,7 @@ public class McpJdiscHandlerTest {
     @Test
     public void testUnsupportedMethodReturns405() {
         HttpResponse mockResponse = createMockResponse(405, "{\"error\":\"Method not allowed\"}");
-        when(mockTransport.createErrorResponse(eq(405), any(McpError.class))).thenReturn(mockResponse);
+        when(mockTransport.createErrorResponse(eq(405), any(String.class), any())).thenReturn(mockResponse);
 
         HttpRequest request = createTestRequest("http://localhost:8080/mcp/", Method.PUT);
         HttpResponse response = handler.handle(request);

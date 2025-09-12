@@ -28,7 +28,6 @@ import reactor.core.publisher.Mono;
  * It also provides methods for creating HTTP responses and handling errors.
  * @author Edvard Dingsør
  */
-@SuppressWarnings("deprecation")
 public class McpHttpTransport implements McpStatelessServerTransport {
 
     private static final Logger logger = Logger.getLogger(McpHttpTransport.class.getName());
@@ -65,7 +64,7 @@ public class McpHttpTransport implements McpStatelessServerTransport {
             public void render(OutputStream outputStream) throws IOException {
                 if (jsonText != null) {
                     headers().add("Content-Type", "application/json");
-                    headers().add("Access-Control-Allow-Origin", "*"); // TODO: change this?
+                    headers().add("Access-Control-Allow-Origin", "*");
                     outputStream.write(jsonText.getBytes(StandardCharsets.UTF_8));
                     outputStream.flush();
                 }
@@ -74,28 +73,17 @@ public class McpHttpTransport implements McpStatelessServerTransport {
     }
 
     /**
-     * Creates an error response with the given status code and error message.
+     * Creates an error response with the given status code and error message. Logs the exception.
      * @param statusCode the HTTP status code for the error response
-     * @param error the McpError object containing the error details
+     * @param errorMsg the error message to include in the response
+     * @param e the exception that caused the error (can be null)
      * @return an HttpResponse object with the specified status code and error message in JSON format
      */
-    public HttpResponse createErrorResponse(int statusCode, McpError error) {
-        try {
-            String jsonError = mapper.writeValueAsString(error);
-            return createHttpResponse(statusCode, jsonError);
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Failed to serialize error response: " +  e.getMessage(), e);
-            return createHttpResponse(500, "{\"error\":\"Internal Server Error\"}");
+    public HttpResponse createErrorResponse(int statusCode, String errorMsg, Exception e) {
+        if (e != null) {
+            logger.log(Level.SEVERE, errorMsg, e);
         }
-    }
-
-    /**
-     * Creates an error response and logs the exception.
-     * @see #createErrorResponse(int, McpError)
-     */
-    public HttpResponse createErrorResponse(int statusCode, McpError error, Exception e) {
-        logger.log(Level.SEVERE, error.getMessage(), e);
-        return createErrorResponse(statusCode, error);
+        return createHttpResponse(statusCode, errorMsg);
     }
 
     /**
@@ -117,11 +105,11 @@ public class McpHttpTransport implements McpStatelessServerTransport {
     public HttpResponse handlePost(HttpRequest request, byte[] requestBody) {
         String accept = request.getHeader("Accept");
         if (accept == null || !accept.contains("application/json")) {
-            return createErrorResponse(400, new McpError("application/json must be in the Accept header"));
+            return createErrorResponse(400, "application/json must be in the Accept header", null);
         }
         if (this.isClosing) {
             logger.log(Level.SEVERE, "POST request received while transport is closing");
-            return createErrorResponse(503, new McpError("Transport is closing, no further requests will be accepted"));
+            return createErrorResponse(503, "Transport is closing, no further requests will be accepted", null);
         }
         McpTransportContext context = contextExtractor.extract(request, new DefaultMcpTransportContext());
 
@@ -148,7 +136,7 @@ public class McpHttpTransport implements McpStatelessServerTransport {
                             .block();
                     return createHttpResponse(200, mapper.writeValueAsString(jsonrpcResponse));
                 } catch (Exception e) {
-                    return createErrorResponse(500, new McpError("Failed to handle request: " + e.getMessage()), e);
+                    return createErrorResponse(500, "Failed to handle request: " + e.getMessage(), e);
                 }
             }
             else if (message instanceof McpSchema.JSONRPCNotification jsonrpcNotification) {
@@ -158,19 +146,19 @@ public class McpHttpTransport implements McpStatelessServerTransport {
                             .block();
                     return createHttpResponse(202, null);
             } catch (Exception e) {
-                    return createErrorResponse(500, new McpError("Failed to handle notification: " + e.getMessage()), e);
+                    return createErrorResponse(500, "Failed to handle notification: " + e.getMessage(), e);
                 }
             }
             else {
                 logger.log(Level.SEVERE, "Message type must be either JSONRPCRequest or JSONRPCNotification, but was: " + message.getClass().getName());
-                return createErrorResponse(400, new McpError("The server only accepts jsonrpc requests and notifications"));
+                return createErrorResponse(400, "The server only accepts jsonrpc requests and notifications", null);
             }
         }
         catch (IllegalArgumentException | IOException e) {
-            return createErrorResponse(400, new McpError("Failed to deserialize message: " + e.getMessage()), e);
+            return createErrorResponse(400, "Failed to deserialize message: " + e.getMessage(), e);
         }
         catch (Exception e) {
-            return createErrorResponse(500, new McpError("Unexpected error handling message: " + e.getMessage()), e);
+            return createErrorResponse(500, "Unexpected error handling message: " + e.getMessage(), e);
         }
 
     }
