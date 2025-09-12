@@ -48,7 +48,7 @@ int main(int /*argc*/, char ** /*argv*/)
         struct timespec t;
         t.tv_sec  = 0;
         t.tv_nsec = 200000000;
-        nanosleep(&t, 0);
+        nanosleep(&t, nullptr);
     }
     return 0;
 }

@@ -11,7 +11,7 @@ extern void takeB(B* foo) __attribute__((noinline));
 class A
 {
 public:
-    virtual B* asB() { return 0; }
+    virtual B* asB() { return nullptr; }
     virtual ~A() = default;
 };
 
@@ -209,7 +209,7 @@ TEST(CastSpeedTest, cast_speed) {
 
 void takeB(B* foo)
 {
-    if (foo != 0) {
+    if (foo != nullptr) {
         taken++;
     }
 }

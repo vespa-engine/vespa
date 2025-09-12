@@ -17,7 +17,7 @@ BooleanMatchIteratorWrapper::doSeek(uint32_t docid)
 void
 BooleanMatchIteratorWrapper::doUnpack(uint32_t docid)
 {
-    if (_tfmdp != 0) {           // handle not having a match data (unranked, or multiple fields)
+    if (_tfmdp != nullptr) {     // handle not having a match data (unranked, or multiple fields)
         _tfmdp->reset(docid);    // unpack ensures that docid is a hit
     }
 }
@@ -26,7 +26,7 @@ BooleanMatchIteratorWrapper::BooleanMatchIteratorWrapper(
         SearchIterator::UP search,
         const fef::TermFieldMatchDataArray &matchData)
     : _search(std::move(search)),
-      _tfmdp(0)
+      _tfmdp(nullptr)
 {
     if (matchData.size() == 1) {
         _tfmdp = matchData[0];

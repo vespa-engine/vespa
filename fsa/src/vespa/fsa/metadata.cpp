@@ -90,7 +90,7 @@ bool MetaData::read(const char *datafile, FileAccessMethod fam)
 
   if(fam==FILE_ACCESS_MMAP || fam==FILE_ACCESS_MMAP_WITH_MLOCK){
     _mmap_length = sizeof(_header) + _header._size;
-    _mmap_addr = ::mmap((void*)0, _mmap_length, PROT_READ, MAP_SHARED, fd, 0);
+    _mmap_addr = ::mmap(nullptr, _mmap_length, PROT_READ, MAP_SHARED, fd, 0);
     if(_mmap_addr==MAP_FAILED){
       ::close(fd);
       reset();

@@ -17,7 +17,7 @@ main(int argc, char **argv)
             struct timespec t;
             t.tv_sec  = 0;
             t.tv_nsec = 250000000;
-            nanosleep(&t, 0);
+            nanosleep(&t, nullptr);
         }
         if ((i % 1000) == 999) {
             int percent = (i + 1) / 1000;
