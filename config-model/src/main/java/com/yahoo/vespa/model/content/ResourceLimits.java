@@ -9,7 +9,8 @@ import java.util.Optional;
 /**
  * Class tracking feed block resource limits used by a component in a content cluster (e.g. cluster controller or content node).
  *
- * @author geirst
+ * @author Geir Storli
+ * @author hmusum
  */
 public class ResourceLimits implements FleetcontrollerConfig.Producer, ProtonConfig.Producer {
 
@@ -48,7 +49,7 @@ public class ResourceLimits implements FleetcontrollerConfig.Producer, ProtonCon
         // storage/src/vespa/storage/persistence/filestorage/service_layer_host_info_reporter.cpp
         builder.cluster_feed_block_limit.put("memory", memoryLimit.orElse(0.8));
         builder.cluster_feed_block_limit.put("disk", diskLimit.orElse(0.75));
-        builder.cluster_feed_block_limit.put("attribute-address-space", addressSpaceLimit.orElse(0.89));
+        builder.cluster_feed_block_limit.put("attribute-address-space", addressSpaceLimit.orElse(0.80));
         builder.cluster_feed_block_noise_level(lowWatermarkDifference.orElse(0.0));
     }
 

@@ -260,7 +260,7 @@ public class PermanentFlags {
     );
 
     public static final UnboundDoubleFlag RESOURCE_LIMIT_ADDRESS_SPACE = defineDoubleFlag(
-            "resource-limit-address-space", 0.89,
+            "resource-limit-address-space", 0.80,
             "Resource limit (between 0.0 and 1.0) for memory address space on content nodes, used by cluster controller for when to block feed",
             "Takes effect on next deployment",
             INSTANCE_ID
