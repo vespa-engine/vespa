@@ -46,14 +46,20 @@ func fileExistsAlsoInLdLibraryPath(path string) (bool, string) {
 }
 
 func mimallocLib() string {
-	fileName := "libmimalloc.so"
-	ok, path := fileExistsAlsoInLdLibraryPath(fileName)
-	if !ok {
-		trace.Debug("missing library:", fileName)
-		return ""
+	// TODO(johsol) while resolving rpm packages for mimalloc, we check for both libmimalloc.so and libmimalloc.so.2
+	//              because currently the symlink libmimalloc.so is only available in devel image.
+	//              This is for testing.
+	fileNames := []string{"libmimalloc.so", "libmimalloc.so.2"}
+	for _, fileName := range fileNames {
+		ok, path := fileExistsAlsoInLdLibraryPath(fileName)
+		if ok {
+			trace.Debug("found library:", path)
+			return path
+		}
 	}
-	trace.Debug("found library:", path)
-	return path
+	trace.Debug("missing library:", strings.Join(fileNames, ","))
+	trace.Warning("Could not find library mimalloc.")
+	return ""
 }
 
 func (p *Spec) ConfigureVespaMalloc() {
@@ -73,7 +79,8 @@ func (p *Spec) ConfigureVespaMalloc() {
 	mallocImpl := p.Getenv(envvars.VESPA_USE_MALLOC_IMPL)
 	if mallocImpl == "mimalloc" {
 		useFile = mimallocLib()
-	} else {
+	}
+	if useFile == "" {
 		switch {
 		case p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC_DST):
 			useFile = vespaMallocLib("libvespamallocdst16.so")
