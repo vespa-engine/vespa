@@ -324,7 +324,7 @@ DocumentDB::initManagers()
     _initConfigSnapshot.reset();
     InitializerTask::SP rootTask = _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum, _indexCfg);
     {
-        std::shared_lock<std::shared_mutex> guard(_initializationMutex);
+        lock_guard guard(_initializationMutex);
         AttributeInitializationStatusCollector visitor(_attributeInitializationStatuses);
         rootTask->acceptVisitor(visitor);
     }
@@ -1141,7 +1141,7 @@ DocumentDB::session_manager() {
 }
 
 void DocumentDB::getInitializationStatus(const vespalib::slime::Inserter &inserter) const {
-    std::shared_lock<std::shared_mutex> guard(_initializationMutex);
+    lock_guard guard(_initializationMutex);
 
     vespalib::slime::Cursor &dbCursor = inserter.insertObject();
     dbCursor.setString("name", _docTypeName.getName());

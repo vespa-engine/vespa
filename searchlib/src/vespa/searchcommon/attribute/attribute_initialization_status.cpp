@@ -2,8 +2,6 @@
 
 #include "attribute_initialization_status.h"
 
-#include <mutex>
-
 namespace {
 std::string timepointToString(search::attribute::AttributeInitializationStatus::time_point tp) {
     time_t secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
@@ -40,14 +38,14 @@ AttributeInitializationStatus::AttributeInitializationStatus(const std::string &
 }
 
 void AttributeInitializationStatus::startLoading() {
-    std::unique_lock<std::shared_mutex> guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
 
     _state = State::LOADING;
     _start_time = std::chrono::system_clock::now();
 }
 
 void AttributeInitializationStatus::startReprocessing() {
-    std::unique_lock<std::shared_mutex> guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
 
     _state = State::REPROCESSING;
     _reprocessing_start_time = std::chrono::system_clock::now();
@@ -56,7 +54,7 @@ void AttributeInitializationStatus::startReprocessing() {
 }
 
 void AttributeInitializationStatus::endReprocessing() {
-    std::unique_lock<std::shared_mutex> guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
 
     _state = State::LOADING;
     _reprocessing_end_time = std::chrono::system_clock::now();
@@ -64,55 +62,55 @@ void AttributeInitializationStatus::endReprocessing() {
 }
 
 void AttributeInitializationStatus::endLoading() {
-    std::unique_lock<std::shared_mutex> guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
 
     _state = State::LOADED;
     _end_time = std::chrono::system_clock::now();
 }
 
 void AttributeInitializationStatus::setReprocessingPercentage(float percentage) {
-    std::unique_lock<std::shared_mutex> guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
 
     _reprocessing_percentage = percentage;
 }
 
 AttributeInitializationStatus::State AttributeInitializationStatus::getState() const {
-    std::shared_lock<std::shared_mutex> guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
 
     return _state;
 }
 
 AttributeInitializationStatus::time_point AttributeInitializationStatus::getStartTime() const {
-    std::shared_lock<std::shared_mutex> guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
 
     return _start_time;
 }
 
 AttributeInitializationStatus::time_point AttributeInitializationStatus::getEndTime() const {
-    std::shared_lock<std::shared_mutex> guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
 
     return _end_time;
 }
 
 AttributeInitializationStatus::time_point AttributeInitializationStatus::getReprocessingStartTime() const {
-    std::shared_lock<std::shared_mutex> guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
 
     return _reprocessing_start_time;
 }
 
 AttributeInitializationStatus::time_point AttributeInitializationStatus::getReprocessingEndTime() const {
-    std::shared_lock<std::shared_mutex> guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
 
     return _reprocessing_end_time;
 }
 
 bool AttributeInitializationStatus::didReprocess() const {
-    std::shared_lock<std::shared_mutex> guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
     return _didReprocess;
 }
 
 float AttributeInitializationStatus::getReprocessingPercentage() const {
-    std::shared_lock<std::shared_mutex> guard(_mutex);
+    std::lock_guard<std::mutex> guard(_mutex);
 
     return _reprocessing_percentage;
 }

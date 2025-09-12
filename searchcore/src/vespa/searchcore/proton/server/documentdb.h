@@ -151,7 +151,7 @@ private:
     DocumentDBMetricsUpdater                         _metricsUpdater;
 
     DocumentDBInitializationStatus          _initializationStatus;
-    mutable std::shared_mutex               _initializationMutex;  // protects vector below
+    mutable std::mutex               _initializationMutex;  // protects vector below
     std::vector<std::shared_ptr<search::attribute::AttributeInitializationStatus>> _attributeInitializationStatuses;
 
     void registerReference();

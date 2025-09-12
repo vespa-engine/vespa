@@ -5,7 +5,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 
 #include <chrono>
-#include <shared_mutex>
+#include <mutex>
 
 namespace search::attribute {
 
@@ -46,7 +46,7 @@ public:
     void reportInitializationStatus(const vespalib::slime::Inserter &inserter) const;
 
 private:
-    mutable std::shared_mutex _mutex;
+    mutable std::mutex _mutex;
 
     const std::string _name;
     State _state;

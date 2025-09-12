@@ -3,7 +3,7 @@
 #pragma once
 
 #include <chrono>
-#include <shared_mutex>
+#include <mutex>
 
 namespace proton {
 
@@ -22,7 +22,7 @@ public:
     using time_point = std::chrono::system_clock::time_point;
 
 private:
-    mutable std::shared_mutex _mutex;
+    mutable std::mutex _mutex;
     time_point _start_time;
     time_point _end_time;
 
