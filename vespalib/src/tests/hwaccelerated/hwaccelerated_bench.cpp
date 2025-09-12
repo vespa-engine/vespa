@@ -11,11 +11,6 @@
 using namespace vespalib;
 using namespace vespalib::hwaccelerated;
 
-template <typename T>
-void do_not_optimize_away(T&& t) noexcept {
-    asm volatile("" : : "m"(t) : "memory"); // Clobber the value to avoid losing it to compiler optimizations
-}
-
 template <typename T, typename Fn>
 void benchmark_void_fn(Fn f, size_t sz, size_t n_iters) {
     auto [a, b] = create_and_fill_lhs_rhs<T>(sz);
@@ -29,7 +24,7 @@ void benchmark_void_fn(Fn f, size_t sz, size_t n_iters) {
         // _Technically_ the compiler could stare into the void and realize the above
         // code has no side effects since the output is not used for anything. So just
         // to be on the safe side, clobber the final output byte.
-        do_not_optimize_away(a[a.size() - 1]);
+        benchmark::DoNotOptimize(a[a.size() - 1]);
     }
     duration elapsed = steady_clock::now() - start;
     printf("N=%zu and vector length=%zu took %.2f ms\n", n_iters, sz,
