@@ -58,7 +58,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double resourceLimitDisk = 0.75;
     private double resourceLimitMemory = 0.8;
     private double resourceLimitLowWatermarkDifference = 0.01;
-    private double resourceLimitAddressSpace = 0.89;
+    private double resourceLimitAddressSpace = 0.80;
     private int maxUnCommittedMemory = 123456;
     private boolean useV8GeoPositions = true;
     private List<String> environmentVariables = List.of();
