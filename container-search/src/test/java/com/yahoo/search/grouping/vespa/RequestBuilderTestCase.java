@@ -33,7 +33,11 @@ import com.yahoo.searchlib.expression.TimeStampFunctionNode;
 import com.yahoo.searchlib.expression.ToStringFunctionNode;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
