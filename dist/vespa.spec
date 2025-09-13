@@ -333,12 +333,12 @@ export FACTORY_VESPA_VERSION=%{version}
 export PATH="%{_prefix}-deps/bin:$PATH"
 
 %if 0%{?_use_mvn_wrapper}
-sh bootstrap.sh wrapper
+./bootstrap.sh wrapper
 %global _mvn_cmd $(pwd)/mvnw
 %else
 %global _mvn_cmd mvn
 %endif
-%{?_use_mvn_wrapper:env VESPA_MAVEN_COMMAND=%{_mvn_cmd} }sh bootstrap.sh java
+%{?_use_mvn_wrapper:env VESPA_MAVEN_COMMAND=%{_mvn_cmd} }./bootstrap.sh java
 %{_mvn_cmd} --batch-mode -nsu -T 1C install -DskipTests -Dmaven.javadoc.skip=true
 
 %{_command_cmake} -DCMAKE_INSTALL_PREFIX=%{_prefix} \
