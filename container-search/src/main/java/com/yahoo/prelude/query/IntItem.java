@@ -1,11 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Objects;
-
 
 /**
  * This represents either
@@ -198,6 +196,11 @@ public class IntItem extends TermItem {
     public final void setHitLimit(int hitLimit) {
         this.hitLimit = hitLimit;
         this.expression = toExpression(from, to, hitLimit);
+    }
+
+    /** Returns this as a wordItem */
+    public WordItem asWord() {
+        return new WordItem(stringValue(), getIndexName(), isFromQuery());
     }
 
     @Override

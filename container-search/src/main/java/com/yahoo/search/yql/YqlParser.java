@@ -1781,7 +1781,7 @@ public class YqlParser implements Parser {
     }
 
     private TaggableItem tokenize(String field, OperatorNode<ExpressionOperator> ast, String wordData, String toSegment, boolean fromQuery, Class<?> parent, Language language) {
-        // These parameters should be ignored by the linguistics component in linguistics mode
+        // We're in 'linguistics' mode, so these parameters should be ignored by the linguistics component
         var parameters = new LinguisticsParameters(language, StemMode.BEST, true, true);
         List<Token> tokens = new ArrayList<>();
         for (Token token : tokenizer.tokenize(toSegment, parameters)) {
