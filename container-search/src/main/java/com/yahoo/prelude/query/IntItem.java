@@ -4,6 +4,7 @@ package com.yahoo.prelude.query;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.util.Locale;
 import java.util.Objects;
 
 
@@ -198,6 +199,11 @@ public class IntItem extends TermItem {
     public final void setHitLimit(int hitLimit) {
         this.hitLimit = hitLimit;
         this.expression = toExpression(from, to, hitLimit);
+    }
+
+    /** Returns this as a wordItem */
+    public WordItem asWord() {
+        return new WordItem(stringValue(), getIndexName(), isFromQuery());
     }
 
     @Override

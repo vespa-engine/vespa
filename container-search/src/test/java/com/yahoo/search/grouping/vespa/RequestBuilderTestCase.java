@@ -33,10 +33,7 @@ import com.yahoo.searchlib.expression.TimeStampFunctionNode;
 import com.yahoo.searchlib.expression.ToStringFunctionNode;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -1162,7 +1159,8 @@ public class RequestBuilderTestCase {
                 var lowerInclusive = rpn.getLowerInclusive() ? "true" : "false";
                 var upperInclusive = rpn.getUpperInclusive() ? "true" : "false";
                 var expression = rpn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
-                return "Range [%f, %f, %s, %s, %s]".formatted(lower, upper, expression, lowerInclusive, upperInclusive);
+                return String.format(Locale.US, "Range [%f, %f, %s, %s, %s]",
+                                     lower, upper, expression, lowerInclusive, upperInclusive);
             } else if (filterExp instanceof NotPredicateNode npn) {
                 var simpleName = npn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
                 return "Not [%s]".formatted(simpleName);
