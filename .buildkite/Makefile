@@ -2,7 +2,6 @@
 export TOP := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
 export ARCH ?= $(shell if [[ $$(arch) == x86_64 ]]; then echo amd64; else echo arm64; fi)
-export ALMALINUX_MAJOR ?= $(shell grep -oP 'release \K[0-9]+' /etc/almalinux-release || echo 8)
 
 export LOG_DIR ?= $(shell pwd)
 export SOURCE_DIR ?= $(shell pwd)
@@ -24,7 +23,7 @@ export NUM_MVN_THREADS := $(shell echo $$(( $(NUM_CPU_LIMIT)*2/3 )))
 
 export BUILDKITE ?= false
 export BUILDKITE_PULL_REQUEST ?= true
-ifeq ($(BUILDKITE_PULL_REQUEST),false)
+ifeq ($(BUILDKITE_PULL_REQUEST),false)        
 	export VESPA_MAVEN_TARGET ?= deploy
 else
 	export VESPA_MAVEN_TARGET ?= install
