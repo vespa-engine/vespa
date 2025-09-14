@@ -18,8 +18,8 @@ func (spec *Spec) Run() error {
 		args = spec.prependNumaCtl(args)
 		prog = args[0]
 	}
-	if spec.shouldUseVespaMalloc {
-		spec.Setenv(envvars.LD_PRELOAD, spec.vespaMallocPreload)
+	if spec.shouldUseMallocImpl {
+		spec.Setenv(envvars.LD_PRELOAD, spec.mallocPreload)
 	}
 	envv := spec.EffectiveEnv()
 	return osutil.Execvpe(prog, args, envv)

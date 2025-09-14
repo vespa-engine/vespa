@@ -18,7 +18,7 @@ func startCbinary(spec *prog.Spec) int {
 	spec.ConfigureNumaCtl()
 	spec.ConfigureHugePages()
 	spec.ConfigureUseMadvise()
-	spec.ConfigureVespaMalloc()
+	spec.ConfigureMallocImpl()
 	err := spec.Run()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
