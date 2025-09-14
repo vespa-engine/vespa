@@ -8,16 +8,16 @@ import (
 )
 
 type Spec struct {
-	Program              string
-	Args                 []string
-	BaseName             string
-	Env                  map[string]string
-	numaSocket           int
-	shouldUseCallgrind   bool
-	shouldUseValgrind    bool
-	shouldUseNumaCtl     bool
-	shouldUseMallocImpl  bool
-	mallocPreload        string
+	Program             string
+	Args                []string
+	BaseName            string
+	Env                 map[string]string
+	numaSocket          int
+	shouldUseCallgrind  bool
+	shouldUseValgrind   bool
+	shouldUseNumaCtl    bool
+	shouldUseMallocImpl bool
+	mallocPreload       string
 }
 
 func NewSpec(argv []string) *Spec {
