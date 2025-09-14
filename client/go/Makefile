@@ -149,7 +149,7 @@ test: setenv
 	mkdir -p $(GO_TMPDIR) && GOTMPDIR=$(GO_TMPDIR) go test ./...
 
 checkfmt:
-	@sh -c "test -z $$(gofumpt -l .)" || { echo "one or more files need to be formatted: try make fmt to fix this automatically"; exit 1; }
+	@sh -c "test -z $$(gofmt -l .)" || { echo "one or more files need to be formatted: try make fmt to fix this automatically"; exit 1; }
 
 fmt:
 	gofmt -w .
