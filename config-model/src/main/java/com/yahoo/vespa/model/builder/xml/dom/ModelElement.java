@@ -8,6 +8,7 @@ import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.StringTokenizer;
 
 /**
@@ -20,9 +21,7 @@ public class ModelElement {
     private final Element xml;
 
     public ModelElement(Element xml) {
-        if (xml == null) throw new NullPointerException("Can not create ModelElement with null element");
-        if (xml.getNodeName() == null) throw new NullPointerException("Can not create ModelElement with unnamed element");
-        this.xml = xml;
+        this.xml = Objects.requireNonNull(xml, "Can not create ModelElement with null element");
     }
 
     public Element getXml() { return xml; }
