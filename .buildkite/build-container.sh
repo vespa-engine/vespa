@@ -12,15 +12,7 @@ if ! docker ps &> /dev/null; then
     exit 1
 fi
 
-# Detect AlmaLinux major version from current OS
-if [[ -f /etc/almalinux-release ]]; then
-  AL_MAJOR_VERSION=$(grep -oP 'release \K[0-9]+' /etc/almalinux-release | head -1)
-else
-  echo "Warning: Cannot detect AlmaLinux version, defaulting to 8"
-  AL_MAJOR_VERSION=8
-fi
-echo "Detected running AlmaLinux: $AL_MAJOR_VERSION"
-VESPA_BASE_IMAGE="el${AL_MAJOR_VERSION}"
+echo "Detected running AlmaLinux: $ALMALINUX_MAJOR"
 
 if [[ ! -d "${WORKDIR}/docker-image" ]]; then
     git clone --depth 1 https://github.com/vespa-engine/docker-image "$WORKDIR/docker-image"
@@ -32,13 +24,8 @@ cp -a "${WORKDIR}/artifacts/$ARCH/rpms" "${WORKDIR}/docker-image/"
 cd "${WORKDIR}/docker-image"
 SOURCE_GITREF=$(git rev-parse HEAD)
 
-# Set default tag to be pointing to Almalinux 8 version.
-# TODO: Update when we switch default OS
-GHCR_PREVIEW_TAG="ghcr.io/vespa-engine/vespa-preview-$ARCH:${VESPA_VERSION}"
-if [[ "$AL_MAJOR_VERSION" != "8" ]]; then
-    GHCR_PREVIEW_TAG+="-al${AL_MAJOR_VERSION}"
-fi
-
+GHCR_PREVIEW_TAG="$("${WORKDIR}/.buildkite/utils/get-container-tag.sh" "ghcr.io" "vespa-engine/vespa-preview-${ARCH}" "$VESPA_VERSION")"
+VESPA_BASE_IMAGE="el${ALMALINUX_MAJOR}"
 docker build --progress plain \
              --build-arg SOURCE_GITREF="$SOURCE_GITREF" \
              --build-arg VESPA_VERSION="$VESPA_VERSION" \
@@ -64,13 +51,7 @@ cp -a "$HOME/.m2/repository" maven-repo
 rm -rf rpms
 mv "$WORKDIR/docker-image/rpms" rpms
 
-# Set default systemtest image to use AlmaLinux 8 version
-# TODO: Update when we switch default OS
-GHCR_SYSTEMTEST_TAG="ghcr.io/vespa-engine/vespa-systemtest-preview-$ARCH:$VESPA_VERSION"
-if [[ "$AL_MAJOR_VERSION" != "8" ]]; then
-    GHCR_SYSTEMTEST_TAG+="-al${AL_MAJOR_VERSION}"
-fi
-
+GHCR_SYSTEMTEST_TAG="$("${WORKDIR}/.buildkite/utils/get-container-tag.sh" "ghcr.io" "vespa-engine/vespa-systemtest-preview-$ARCH" "$VESPA_VERSION")"
 SYSTEM_TEST_BASE_IMAGE="almalinux:${AL_MAJOR_VERSION}"
 docker build --progress=plain \
              --build-arg BASE_IMAGE="$SYSTEM_TEST_BASE_IMAGE" \
