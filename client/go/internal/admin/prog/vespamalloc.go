@@ -62,8 +62,8 @@ func mimallocLib() string {
 	return ""
 }
 
-func (p *Spec) ConfigureVespaMalloc() {
-	p.shouldUseVespaMalloc = false
+func (p *Spec) ConfigureMallocImpl() {
+	p.shouldUseMallocImpl = false
 	if p.MatchesListEnv(envvars.VESPA_USE_NO_VESPAMALLOC) {
 		trace.Trace("use no vespamalloc:", p.BaseName)
 		return
@@ -99,6 +99,6 @@ func (p *Spec) ConfigureVespaMalloc() {
 		useFile = fmt.Sprintf("%s:%s", useFile, otherFile)
 	}
 	p.ConsiderEnvFallback(envvars.VESPA_MALLOC_HUGEPAGES, envvars.VESPA_USE_HUGEPAGES)
-	p.vespaMallocPreload = useFile
-	p.shouldUseVespaMalloc = true
+	p.mallocPreload = useFile
+	p.shouldUseMallocImpl = true
 }

@@ -16,8 +16,8 @@ type Spec struct {
 	shouldUseCallgrind   bool
 	shouldUseValgrind    bool
 	shouldUseNumaCtl     bool
-	shouldUseVespaMalloc bool
-	vespaMallocPreload   string
+	shouldUseMallocImpl  bool
+	mallocPreload        string
 }
 
 func NewSpec(argv []string) *Spec {
