@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "initializer_task_visitor.h"
 #include <memory>
 #include <vector>
 
@@ -32,6 +33,7 @@ public:
     void addDependency(SP dependency);
     virtual void run() = 0;
     virtual size_t get_transient_memory_usage() const;
+    virtual void accept_visitor(InitializerTaskVisitor &visitor);
 };
 
 }
