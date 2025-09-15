@@ -117,7 +117,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxDistributorDocumentOperationSizeMib() { return 128; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default Object sidecarsForTest() { return null; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean useTriton() { return false; }
-        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.573.1") default long searchCoreTransactionLogReplaySoftMemoryLimit() { return -3; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean useNewPrepareForRestart() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchNodeInitializerThreads() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
@@ -150,15 +149,15 @@ public interface ModelContext {
 
         default List<TenantSecretStore> tenantSecretStores() { return List.of(); }
 
-        // Default setting for the gc-options attribute if not specified explicit by application
+        // Default setting for the gc-options attribute if not specified explicitly by application
         default String jvmGCOptions() { return jvmGCOptions(Optional.empty()); }
 
-        // Default setting for the gc-options attribute if not specified explicit by application
+        // Default setting for the gc-options attribute if not specified explicitly by application
         default String jvmGCOptions(Optional<ClusterSpec.Type> clusterType) {
             return jvmGCOptions(clusterType, Optional.empty());
         }
 
-        // Default setting for the gc-options attribute if not specified explicit by application
+        // Default setting for the gc-options attribute if not specified explicitly by application
         String jvmGCOptions(Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId);
         
         default int searchNodeInitializerThreads(String clusterId) { return 0; }
