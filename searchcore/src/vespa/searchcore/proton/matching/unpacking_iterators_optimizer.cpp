@@ -29,8 +29,6 @@ struct TermExpander : QueryVisitor {
                 term->setRanked(false);
                 term->setPositionData(false);
                 terms.push_back(std::move(node));
-            } else {
-                LOG(error, "Required a search::query::TermNode. Got %s", vespalib::getClassName(*node).c_str());
             }
         }
     }
