@@ -14,6 +14,8 @@ namespace proton::matching {
 class SameElementModifier : public search::query::TemplateTermVisitor<SameElementModifier, ProtonNodeTypes>
 {
 public:
+    SameElementModifier();
+    ~SameElementModifier() override;
     template <class TermNode>
     void visitTerm(TermNode &) {  }
     void visit(ProtonNodeTypes::SameElement &n) override;

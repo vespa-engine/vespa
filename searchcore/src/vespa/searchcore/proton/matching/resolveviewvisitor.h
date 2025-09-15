@@ -15,25 +15,15 @@ class ResolveViewVisitor : public search::query::TemplateTermVisitor<ResolveView
     const search::fef::IIndexEnvironment &_indexEnv;
 
 public:
-    ResolveViewVisitor(const matching::ViewResolver &resolver,
-                       const search::fef::IIndexEnvironment &indexEnv)
-        : _resolver(resolver), _indexEnv(indexEnv) {}
+    ResolveViewVisitor(const matching::ViewResolver& resolver, const search::fef::IIndexEnvironment& indexEnv);
+    ~ResolveViewVisitor() override;
 
     template <class TermNode>
-    void visitTerm(TermNode &n) { n.resolve(_resolver, _indexEnv); }
+    void visitTerm(TermNode& n) { n.resolve(_resolver, _indexEnv); }
 
-    void visit(ProtonLocationTerm &n) override;
-
-    void visit(ProtonNodeTypes::Equiv &n) override {
-        visitChildren(n);
-        n.resolveFromChildren(n.getChildren());
-    }
-
-    void visit(ProtonNodeTypes::SameElement &n) override {
-        visitChildren(n);
-        visitTerm(n);
-    }
+    void visit(ProtonLocationTerm& n) override;
+    void visit(ProtonNodeTypes::Equiv& n) override;
+    void visit(ProtonNodeTypes::SameElement &n) override;
 };
 
 }
-
