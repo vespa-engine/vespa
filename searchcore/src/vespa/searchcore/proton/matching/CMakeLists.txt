@@ -31,7 +31,6 @@ vespa_add_library(searchcore_matching STATIC
     requestcontext.cpp
     resolveviewvisitor.cpp
     result_processor.cpp
-    same_element_builder.cpp
     sameelementmodifier.cpp
     search_session.cpp
     session_manager_explorer.cpp

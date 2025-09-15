@@ -23,6 +23,7 @@ public:
     void visitTerm(TermNode& n) { n.allocateTerms(_mdl); }
 
     void visit(ProtonNodeTypes::Equiv& n) override;
+    void visit(ProtonNodeTypes::SameElement& n) override;
 };
 
 }

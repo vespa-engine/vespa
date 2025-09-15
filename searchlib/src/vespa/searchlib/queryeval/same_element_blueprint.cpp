@@ -10,11 +10,11 @@
 
 namespace search::queryeval {
 
-SameElementBlueprint::SameElementBlueprint(const FieldSpec &field, bool expensive)
+SameElementBlueprint::SameElementBlueprint(const FieldSpec &field, fef::MatchDataLayout subtree_mdl, bool expensive)
     : ComplexLeafBlueprint(field),
       _estimate(),
-      _layout(),
-      _terms(),
+      _layout(std::move(subtree_mdl)),
+      _children(),
       _field_name(field.getName())
 {
     if (expensive) {
@@ -24,23 +24,16 @@ SameElementBlueprint::SameElementBlueprint(const FieldSpec &field, bool expensiv
 
 SameElementBlueprint::~SameElementBlueprint() = default;
 
-FieldSpec
-SameElementBlueprint::getNextChildField(const std::string &field_name, uint32_t field_id)
-{
-    return {field_name, field_id, _layout.allocTermField(field_id), false};
-}
-
 void
-SameElementBlueprint::addTerm(Blueprint::UP term)
+SameElementBlueprint::add_child(Blueprint::UP child)
 {
-    const State &childState = term->getState();
-    assert(childState.numFields() == 1);
+    const State &childState = child->getState();
     HitEstimate childEst = childState.estimate();
-    if (_terms.empty() ||  (childEst < _estimate)) {
+    if (_children.empty() ||  (childEst < _estimate)) {
         _estimate = childEst;
         setEstimate(_estimate);
     }
-    _terms.push_back(std::move(term));
+    _children.push_back(std::move(child));
 }
 
 void
@@ -48,29 +41,29 @@ SameElementBlueprint::sort(InFlow in_flow)
 {
     resolve_strict(in_flow);
     auto flow = AndFlow(in_flow);
-    for (auto &term: _terms) {
-        term->sort(InFlow(flow.strict(), flow.flow()));
-        flow.add(term->estimate());
+    for (auto &child: _children) {
+        child->sort(InFlow(flow.strict(), flow.flow()));
+        flow.add(child->estimate());
     }
 }
 
 FlowStats
 SameElementBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 {
-    for (auto &term: _terms) {
-        term->update_flow_stats(docid_limit);
+    for (auto &child : _children) {
+        child->update_flow_stats(docid_limit);
     }
-    double est = AndFlow::estimate_of(_terms);
+    double est = AndFlow::estimate_of(_children);
     return {est,
-            AndFlow::cost_of(_terms, false) + est * _terms.size(),
-            AndFlow::cost_of(_terms, true) + est * _terms.size()};
+            AndFlow::cost_of(_children, false) + est * _children.size(),
+            AndFlow::cost_of(_children, true) + est * _children.size()};
 }
 
 void
 SameElementBlueprint::optimize_self(OptimizePass pass)
 {
     if (pass == OptimizePass::LAST) {
-        std::sort(_terms.begin(), _terms.end(),
+        std::sort(_children.begin(), _children.end(),
                   [](const auto &a, const auto &b) {
                       return (a->getState().estimate() < b->getState().estimate());
                   });
@@ -80,13 +73,15 @@ SameElementBlueprint::optimize_self(OptimizePass pass)
 void
 SameElementBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    if (_terms.empty()) return;
-    _terms[0]->fetchPostings(execInfo);
-    double hit_rate = execInfo.hit_rate() * _terms[0]->estimate();
-    for (size_t i = 1; i < _terms.size(); ++i) {
-        Blueprint & term = *_terms[i];
-        term.fetchPostings(ExecuteInfo::create(hit_rate, execInfo));
-        hit_rate = hit_rate * _terms[i]->estimate();
+    if (_children.empty()) {
+        return;
+    }
+    _children[0]->fetchPostings(execInfo);
+    double hit_rate = execInfo.hit_rate() * _children[0]->estimate();
+    for (size_t i = 1; i < _children.size(); ++i) {
+        Blueprint& child = *_children[i];
+        child.fetchPostings(ExecuteInfo::create(hit_rate, execInfo));
+        hit_rate = hit_rate * _children[i]->estimate();
     }
 }
 
@@ -94,12 +89,12 @@ std::unique_ptr<SameElementSearch>
 SameElementBlueprint::create_same_element_search(search::fef::TermFieldMatchData& tfmd) const
 {
     fef::MatchData::UP md = _layout.createMatchData();
-    std::vector<std::unique_ptr<SearchIterator>> children;
-    children.reserve(_terms.size());
-    for (size_t i = 0; i < _terms.size(); ++i) {
-        children.emplace_back(_terms[i]->createSearch(*md));
+    std::vector<std::unique_ptr<SearchIterator>> search_children;
+    search_children.reserve(_children.size());
+    for (size_t i = 0; i < _children.size(); ++i) {
+        search_children.emplace_back(_children[i]->createSearch(*md));
     }
-    return std::make_unique<SameElementSearch>(tfmd, std::move(md), std::move(children), strict());
+    return std::make_unique<SameElementSearch>(tfmd, std::move(md), std::move(search_children), strict());
 }
 
 SearchIterator::UP
@@ -112,14 +107,14 @@ SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArra
 SearchIterator::UP
 SameElementBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    return create_atmost_and_filter(_terms, strict(), constraint);
+    return create_atmost_and_filter(_children, strict(), constraint);
 }
 
 void
 SameElementBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     ComplexLeafBlueprint::visitMembers(visitor);
-    visit(visitor, "terms", _terms);
+    visit(visitor, "children", _children);
 }
 
 }

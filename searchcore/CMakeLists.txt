@@ -98,7 +98,6 @@ vespa_define_module(
     src/tests/proton/matching/match_phase_limiter
     src/tests/proton/matching/partial_result
     src/tests/proton/matching/request_context
-    src/tests/proton/matching/same_element_builder
     src/tests/proton/matching/unpacking_iterators_optimizer
     src/tests/proton/persistenceconformance
     src/tests/proton/persistenceengine

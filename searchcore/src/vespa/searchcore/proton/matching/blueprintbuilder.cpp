@@ -2,7 +2,6 @@
 
 #include "blueprintbuilder.h"
 #include "querynodes.h"
-#include "same_element_builder.h"
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/queryeval/create_blueprint_params.h>
@@ -10,6 +9,7 @@
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
+#include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/vespalib/util/issue.h>
 
 using namespace search::queryeval;
@@ -100,11 +100,11 @@ private:
 
     void buildSameElement(ProtonSameElement &n) {
         if (n.numFields() == 1) {
-            SameElementBuilder builder(_requestContext, _context, n.field(0).fieldSpec(), n.is_expensive());
-            for (Node *node: n.getChildren()) {
-                builder.add_child(*node);
+            auto se = std::make_unique<SameElementBlueprint>(n.field(0).fieldSpec(), n.subtree_mdl, n.is_expensive());
+            for (auto* node : n.getChildren()) {
+                se->add_child(build(_requestContext, *node, _context));
             }
-            _result = builder.build();
+            _result = std::move(se);
         } else {
             vespalib::Issue::report("SameElement operator searches in unexpected number of fields. Expected 1 but was %zu", n.numFields());
             _result = std::make_unique<EmptyBlueprint>();

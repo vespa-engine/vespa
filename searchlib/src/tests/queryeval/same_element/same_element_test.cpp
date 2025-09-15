@@ -31,14 +31,20 @@ MatchData::UP make_match_data() {
 }
 
 std::unique_ptr<SameElementBlueprint> make_blueprint(const std::vector<FakeResult> &children, bool fake_attr = false) {
-    auto result = std::make_unique<SameElementBlueprint>(make_field_spec(), false);
+    MatchDataLayout subtree_mdl;
+    std::vector<std::unique_ptr<Blueprint>> bp_children;
+    bp_children.reserve(children.size());
     for (size_t i = 0; i < children.size(); ++i) {
         uint32_t field_id = i;
         std::string field_name = vespalib::make_string("f%u", field_id);
-        FieldSpec field = result->getNextChildField(field_name, field_id);
+        FieldSpec field(field_name, field_id, subtree_mdl.allocTermField(field_id), false);
         auto fake = std::make_unique<FakeBlueprint>(field, children[i]);
         fake->is_attr(fake_attr);
-        result->addTerm(std::move(fake));
+        bp_children.emplace_back(std::move(fake));
+    }
+    auto result = std::make_unique<SameElementBlueprint>(make_field_spec(), std::move(subtree_mdl), false);
+    for (auto& fake : bp_children) {
+        result->add_child(std::move(fake));
     }
     return result;
 }
@@ -134,9 +140,9 @@ TEST(SameElementTest, require_that_children_are_sorted) {
     auto b = make_result({{5, {0}}, {5, {0}}});
     auto c = make_result({{5, {0}}, {5, {0}}, {5, {0}}, {5, {0}}});
     auto bp = finalize(make_blueprint({a,b,c}), true);
-    EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).terms()[0]->getState().estimate().estHits, 2u);
-    EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).terms()[1]->getState().estimate().estHits, 3u);
-    EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).terms()[2]->getState().estimate().estHits, 4u);
+    EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).children()[0]->getState().estimate().estHits, 2u);
+    EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).children()[1]->getState().estimate().estHits, 3u);
+    EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).children()[2]->getState().estimate().estHits, 4u);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
