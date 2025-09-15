@@ -6,10 +6,11 @@ import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Test for storage groups.
@@ -23,14 +24,15 @@ public class StorageGroupTest {
     @Test
     void testSingleGroup() {
         ContentCluster cluster = parse(
-                "<content id=\"storage\">\n" +
-                        "  <redundancy>3</redundancy>" +
-                        "  <documents/>" +
-                        "  <group>\n" +
-                        "    <node hostalias=\"mockhost\" distribution-key=\"0\"/>\n" +
-                        "    <node hostalias=\"mockhost\" distribution-key=\"1\"/>\n" +
-                        "  </group>\n" +
-                        "</content>"
+                """
+                        <content id="storage">
+                          <redundancy>3</redundancy>\
+                          <documents/>\
+                          <group>
+                            <node hostalias="mockhost" distribution-key="0"/>
+                            <node hostalias="mockhost" distribution-key="1"/>
+                          </group>
+                        </content>"""
         );
 
         assertEquals("content", cluster.getStorageCluster().getChildren().get("0").getServicePropertyString("clustertype"));
@@ -67,51 +69,53 @@ public class StorageGroupTest {
 
     @Test
     void testNestedGroupsNoDistribution() {
-        try {
-            parse(
-                    "<content version=\"1.0\" id=\"storage\">\n" +
-                            "  <group distribution-key=\"0\" name=\"base\">\n" +
-                            "    <group distribution-key=\"0\" name=\"sub1\">\n" +
-                            "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>\n" +
-                            "      <node hostalias=\"mockhost\" distribution-key=\"1\"/>\n" +
-                            "    </group>\n" +
-                            "    <group distribution-key=\"1\" name=\"sub2\">\n" +
-                            "      <node hostalias=\"mockhost\" distribution-key=\"2\"/>\n" +
-                            "      <node hostalias=\"mockhost\" distribution-key=\"3\"/>\n" +
-                            "    </group>\n" +
-                            "  </group>\n" +
-                            "</cluster>"
-            );
-            fail();
-        } catch (Exception e) {
-        }
+        var exception = assertThrows(IllegalArgumentException.class, () -> parse(
+                """
+                        <content version="1.0" id="storage">
+                          <min-redundancy>2</min-redundancy>
+                          <documents/>
+                          <group distribution-key="0" name="base">
+                            <group distribution-key="0" name="sub1">
+                              <node hostalias="mockhost" distribution-key="0"/>
+                              <node hostalias="mockhost" distribution-key="1"/>
+                            </group>
+                            <group distribution-key="1" name="sub2">
+                              <node hostalias="mockhost" distribution-key="2"/>
+                              <node hostalias="mockhost" distribution-key="3"/>
+                            </group>
+                          </group>
+                        </content>"""
+        ));
+        assertEquals("In content cluster 'storage': 'distribution' attribute is required with multiple subgroups",
+                     Exceptions.toMessageString(exception));
     }
 
     @Test
-    void testNestedGroups() throws Exception {
+    void testNestedGroups() {
         ContentCluster cluster = parse(
-                "<content version=\"1.0\" id=\"storage\">\n" +
-                        "  <redundancy>4</redundancy>" +
-                        "  <documents/>" +
-                        "  <group>\n" +
-                        "    <distribution partitions=\"1|*\"/>\n" +
-                        "    <group distribution-key=\"0\" name=\"sub1\">\n" +
-                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>\n" +
-                        "      <node hostalias=\"mockhost\" distribution-key=\"1\"/>\n" +
-                        "    </group>\n" +
-                        "    <group distribution-key=\"1\" name=\"sub2\">\n" +
-                        "      <distribution partitions=\"1|*\"/>\n" +
-                        "      <group distribution-key=\"0\" name=\"sub3\">\n" +
-                        "        <node hostalias=\"mockhost\" distribution-key=\"2\"/>\n" +
-                        "        <node hostalias=\"mockhost\" distribution-key=\"3\"/>\n" +
-                        "      </group>\n" +
-                        "      <group distribution-key=\"1\" name=\"sub4\">\n" +
-                        "        <node hostalias=\"mockhost\" distribution-key=\"4\"/>\n" +
-                        "        <node hostalias=\"mockhost\" distribution-key=\"5\"/>\n" +
-                        "      </group>\n" +
-                        "    </group>\n" +
-                        "  </group>\n" +
-                        "</content>"
+                """
+                        <content version="1.0" id="storage">
+                          <redundancy>4</redundancy>\
+                          <documents/>\
+                          <group>
+                            <distribution partitions="1|*"/>
+                            <group distribution-key="0" name="sub1">
+                              <node hostalias="mockhost" distribution-key="0"/>
+                              <node hostalias="mockhost" distribution-key="1"/>
+                            </group>
+                            <group distribution-key="1" name="sub2">
+                              <distribution partitions="1|*"/>
+                              <group distribution-key="0" name="sub3">
+                                <node hostalias="mockhost" distribution-key="2"/>
+                                <node hostalias="mockhost" distribution-key="3"/>
+                              </group>
+                              <group distribution-key="1" name="sub4">
+                                <node hostalias="mockhost" distribution-key="4"/>
+                                <node hostalias="mockhost" distribution-key="5"/>
+                              </group>
+                            </group>
+                          </group>
+                        </content>"""
         );
 
         StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
@@ -172,23 +176,24 @@ public class StorageGroupTest {
     }
 
     @Test
-    void testGroupCapacity() throws Exception {
+    void testGroupCapacity() {
         ContentCluster cluster = parse(
-                "<content version=\"1.0\" id=\"storage\">\n" +
-                        "  <redundancy>2</redundancy>" +
-                        "  <documents/>" +
-                        "  <group>\n" +
-                        "    <distribution partitions=\"1|*\"/>\n" +
-                        "    <group distribution-key=\"0\" name=\"sub1\">\n" +
-                        "      <node hostalias=\"mockhost\" capacity=\"0.5\" distribution-key=\"0\"/>\n" +
-                        "      <node hostalias=\"mockhost\" capacity=\"1.5\" distribution-key=\"1\"/>\n" +
-                        "    </group>\n" +
-                        "    <group distribution-key=\"1\" name=\"sub2\">\n" +
-                        "      <node hostalias=\"mockhost\" capacity=\"2.0\" distribution-key=\"2\"/>\n" +
-                        "      <node hostalias=\"mockhost\" capacity=\"1.5\" distribution-key=\"3\"/>\n" +
-                        "    </group>\n" +
-                        "  </group>\n" +
-                        "</content>"
+                """
+                        <content version="1.0" id="storage">
+                          <redundancy>2</redundancy>\
+                          <documents/>\
+                          <group>
+                            <distribution partitions="1|*"/>
+                            <group distribution-key="0" name="sub1">
+                              <node hostalias="mockhost" capacity="0.5" distribution-key="0"/>
+                              <node hostalias="mockhost" capacity="1.5" distribution-key="1"/>
+                            </group>
+                            <group distribution-key="1" name="sub2">
+                              <node hostalias="mockhost" capacity="2.0" distribution-key="2"/>
+                              <node hostalias="mockhost" capacity="1.5" distribution-key="3"/>
+                            </group>
+                          </group>
+                        </content>"""
         );
 
         StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
