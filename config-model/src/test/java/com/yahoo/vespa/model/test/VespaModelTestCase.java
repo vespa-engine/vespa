@@ -366,6 +366,7 @@ public class VespaModelTestCase {
             var model = new VespaModel(new NullConfigModelRegistry(), deployState);
             var container = model.getContainerClusters().get("default").getContainers().get(0);
             assertEquals("mimalloc", container.getEnvVars().get("VESPA_USE_MALLOC_IMPL"));
+            assertTrue(container.getStartupCommand().orElse("").contains("/opt/vespa-deps/lib64/libmimalloc.so.2"));
         }
 
         {
@@ -376,6 +377,7 @@ public class VespaModelTestCase {
             var model = new VespaModel(new NullConfigModelRegistry(), deployState);
             var container = model.getContainerClusters().get("default").getContainers().get(0);
             assertNull(container.getEnvVars().get("VESPA_USE_MALLOC_IMPL"));
+            assertTrue(container.getStartupCommand().orElse("").contains("lib64/vespa/malloc/libvespamalloc.so"));
         }
     }
 
