@@ -26,6 +26,7 @@
 #include <vespa/vespalib/stllike/cache_stats.h>
 #include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <memory>
 #include <mutex>
 #include <condition_variable>
 
@@ -33,7 +34,10 @@ namespace vespalib {
     struct ThreadBundle;
 }
 namespace search {
-    namespace attribute { class Interlock; }
+    namespace attribute {
+        class AttributeInitializationStatus;
+        class Interlock;
+    }
     namespace common { class FileHeaderContext; }
     namespace transactionlog {
         class TransLogClient;
@@ -144,6 +148,9 @@ private:
     DocumentDBJobTrackers                            _jobTrackers;
     std::shared_ptr<IBucketStateCalculator>          _calc;
     DocumentDBMetricsUpdater                         _metricsUpdater;
+
+    mutable std::mutex                               _initialization_mutex;  // protects vector below
+    std::vector<std::shared_ptr<search::attribute::AttributeInitializationStatus>> _attribute_initialization_statuses;
 
     void registerReference();
     void setActiveConfig(DocumentDBConfigSP config);

@@ -9,6 +9,7 @@
 #include <vespa/searchcore/proton/common/memory_usage_logger.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/searchcommon/attribute/attribute_initialization_status.h>
 #include <vespa/searchcommon/attribute/persistent_predicate_params.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/util/fileutil.h>
@@ -175,16 +176,21 @@ AttributeInitializer::tryLoadAttribute() const
     search::SerialNum serialNum = _attrDir->getFlushedSerialNum();
     std::string attrFileName = _attrDir->getAttributeFileName(serialNum);
     AttributeVector::SP attr = _factory.create(attrFileName, _spec.getConfig());
+    attr->set_initialization_status(_initialization_status);
     if (serialNum != 0 && _header) {
         if (!_header_ok) {
+            attr->get_initialization_status().start_loading();
             setupEmptyAttribute(attr, serialNum, *_header);
+            attr->get_initialization_status().end_loading();
             return attr;
         }
         if (!loadAttribute(attr, serialNum)) {
             return AttributeVector::SP();
         }
     } else {
+        attr->get_initialization_status().start_loading();
         _factory.setupEmpty(attr, _currentSerialNum);
+        attr->get_initialization_status().end_loading();
     }
     return attr;
 }
@@ -234,7 +240,10 @@ AttributeVector::SP
 AttributeInitializer::createAndSetupEmptyAttribute() const
 {
     AttributeVector::SP attr = _factory.create(_attrDir->getAttrName(), _spec.getConfig());
+    attr->set_initialization_status(_initialization_status);
+    attr->get_initialization_status().start_loading();
     _factory.setupEmpty(attr, _currentSerialNum);
+    attr->get_initialization_status().end_loading();
     return attr;
 }
 
@@ -251,7 +260,8 @@ AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirect
       _factory(factory),
       _shared_executor(shared_executor),
       _header(),
-      _header_ok(false)
+      _header_ok(false),
+      _initialization_status(std::make_shared<search::attribute::AttributeInitializationStatus>(_spec.getName()))
 {
     if (_currentSerialNum.has_value()) {
         readHeader();

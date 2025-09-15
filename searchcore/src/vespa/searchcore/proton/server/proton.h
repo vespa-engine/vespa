@@ -11,6 +11,7 @@
 #include "memory_flush_config_updater.h"
 #include "proton_config_fetcher.h"
 #include "proton_configurer.h"
+#include "proton_initialization_status.h"
 #include "rpc_hooks.h"
 #include "shared_threading_service.h"
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
@@ -114,6 +115,7 @@ private:
     RPCHooks::UP                           _rpcHooks;
     HealthAdapter                          _healthAdapter;
     vespalib::GenericStateHandler          _genericStateHandler;
+    ProtonInitializationStatus             _initialization_status;
     vespalib::JsonHandlerRepo::Token::UP   _customComponentBindToken;
     vespalib::JsonHandlerRepo::Token::UP   _customComponentRootToken;
     std::unique_ptr<vespalib::StateServer> _stateServer;

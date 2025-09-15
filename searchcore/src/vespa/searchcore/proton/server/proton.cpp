@@ -330,6 +330,7 @@ Proton::init()
 {
     assert( ! _initStarted && ! _initComplete );
     _initStarted = true;
+    _initialization_status.start_initialization();
     _protonConfigFetcher.start();
     auto configSnapshot = _protonConfigurer.getPendingConfigSnapshot();
     assert(configSnapshot);
@@ -455,6 +456,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _isInitializing = false;
     _protonConfigurer.setAllowReconfig(true);
     _initComplete = true;
+    _initialization_status.end_initialization();
 }
 
 BootstrapConfig::SP

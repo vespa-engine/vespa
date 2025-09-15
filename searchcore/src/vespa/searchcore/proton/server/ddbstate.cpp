@@ -44,6 +44,7 @@ DDBState::enterLoadState()
         return false;
     }
     assert(getState() == State::CONSTRUCT);
+    _load_time = std::chrono::system_clock::now();
     set_state(State::LOAD);
     return true;
 }
@@ -57,6 +58,7 @@ DDBState::enterReplayTransactionLogState()
         return false;
     }
     assert(getState() == State::LOAD);
+    _replay_time = std::chrono::system_clock::now();
     set_state(State::REPLAY_TRANSACTION_LOG);
     return true;
 }
@@ -110,6 +112,7 @@ DDBState::enterOnlineState()
         return false;
     }
     assert(getState() == State::REPROCESS);
+    _online_time = std::chrono::system_clock::now();
     set_state(State::ONLINE);
     _cond.notify_all();
     return true;
