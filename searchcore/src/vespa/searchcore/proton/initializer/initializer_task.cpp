@@ -24,4 +24,11 @@ InitializerTask::get_transient_memory_usage() const
     return 0u;
 }
 
+void
+InitializerTask::accept_visitor(InitializerTaskVisitor &visitor) {
+    for (auto &task : _dependencies) {
+        task->accept_visitor(visitor);
+    }
+}
+
 }
