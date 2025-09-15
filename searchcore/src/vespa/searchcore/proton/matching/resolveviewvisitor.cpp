@@ -8,8 +8,18 @@ LOG_SETUP(".proton.matching.resolveviewvisitor");
 
 namespace proton::matching {
 
+ResolveViewVisitor::ResolveViewVisitor(const matching::ViewResolver& resolver,
+                                       const search::fef::IIndexEnvironment& indexEnv)
+    : search::query::TemplateTermVisitor<ResolveViewVisitor, ProtonNodeTypes>(),
+      _resolver(resolver),
+      _indexEnv(indexEnv)
+{
+}
+
+ResolveViewVisitor::~ResolveViewVisitor() = default;
+
 void
-ResolveViewVisitor::visit(ProtonLocationTerm &n) {
+ResolveViewVisitor::visit(ProtonLocationTerm& n) {
     // if injected by query.cpp, this should work:
     n.resolve(_resolver, _indexEnv);
     if (n.numFields() == 0) {
@@ -21,6 +31,20 @@ ResolveViewVisitor::visit(ProtonLocationTerm &n) {
         LOG(debug, "ProtonLocationTerm found %zu field after view change %s -> %s",
             n.numFields(), oldView.c_str(), newView.c_str());
     }
+}
+
+void
+ResolveViewVisitor::visit(ProtonNodeTypes::Equiv& n)
+{
+    visitChildren(n);
+    n.resolveFromChildren(n.getChildren());
+}
+
+void
+ResolveViewVisitor::visit(ProtonNodeTypes::SameElement& n)
+{
+    visitChildren(n);
+    visitTerm(n);
 }
 
 } // namespace

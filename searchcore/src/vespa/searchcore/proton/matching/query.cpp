@@ -151,17 +151,22 @@ class NeedsRankingVisitor : public TemplateTermVisitor<NeedsRankingVisitor, Prot
 {
     bool _needs_ranking;
 public:
-    NeedsRankingVisitor()
-        : TemplateTermVisitor<NeedsRankingVisitor, ProtonNodeTypes>(),
-          _needs_ranking(false)
-    {
-    }
+    NeedsRankingVisitor();
+    ~NeedsRankingVisitor() override;
     template <class TermNode> void visitTerm(TermNode&) { }
     void visit(ProtonNodeTypes::WeakAnd&) override { _needs_ranking = true; }
     void visitTerm(ProtonNodeTypes::WandTerm&) { _needs_ranking = true; }
     void visitTerm(ProtonNodeTypes::NearestNeighborTerm&) { _needs_ranking = true; }
     bool needs_ranking() const noexcept { return _needs_ranking; }
 };
+
+NeedsRankingVisitor::NeedsRankingVisitor()
+    : TemplateTermVisitor<NeedsRankingVisitor, ProtonNodeTypes>(),
+      _needs_ranking(false)
+{
+}
+
+NeedsRankingVisitor::~NeedsRankingVisitor() = default;
 
 }  // namespace
 
