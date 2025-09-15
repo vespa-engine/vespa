@@ -20,4 +20,12 @@ MatchDataReserveVisitor::visit(ProtonNodeTypes::Equiv& n)
     n.allocateTerms(_mdl);
 }
 
+void
+MatchDataReserveVisitor::visit(ProtonNodeTypes::SameElement& n)
+{
+    MatchDataReserveVisitor subAllocator(n.subtree_mdl);
+    subAllocator.visitChildren(n);
+    n.allocateTerms(_mdl);
+}
+
 }
