@@ -23,6 +23,7 @@
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
+#include <vespa/vespalib/net/http/initialization_status_producer.h>
 #include <vespa/vespalib/stllike/cache_stats.h>
 #include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/vespalib/util/varholder.h>
@@ -96,6 +97,7 @@ class DocumentDB : public DocumentDBConfigOwner,
                    public IDocumentSubDBOwner,
                    public IClusterStateChangedHandler,
                    public search::transactionlog::SyncProxy,
+                   public vespalib::InitializationStatusProducer,
                    public std::enable_shared_from_this<DocumentDB>
 {
 private:
@@ -435,7 +437,7 @@ public:
     void set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener);
     const DDBState& get_state() const noexcept { return _state; }
 
-    void report_initialization_status(const vespalib::slime::Inserter &inserter) const;
+    void report_initialization_status(const vespalib::slime::Inserter &inserter) const override;
 };
 
 } // namespace proton

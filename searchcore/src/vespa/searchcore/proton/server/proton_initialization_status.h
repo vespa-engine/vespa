@@ -19,6 +19,7 @@ public:
         READY
     };
     static std::string state_to_string(State state);
+
     using time_point = std::chrono::system_clock::time_point;
 
 private:

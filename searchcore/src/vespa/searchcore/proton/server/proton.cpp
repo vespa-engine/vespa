@@ -92,12 +92,6 @@ namespace proton {
 
 namespace {
 
-std::string timepoint_to_string(ProtonInitializationStatus::time_point tp) {
-    time_t secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
-    uint32_t usecs_part = std::chrono::duration_cast<std::chrono::microseconds>(tp.time_since_epoch()).count() % 1000000;
-    return std::format("{}.{:06}", secs, usecs_part);
-}
-
 using search::fs4transport::FS4PersistentPacketStreamer;
 
 CompressionConfig::Type
