@@ -6,8 +6,10 @@
 #include "health_producer.h"
 #include "metrics_producer.h"
 #include "component_config_producer.h"
-#include <memory>
 #include "json_handler_repo.h"
+
+#include <atomic>
+#include <memory>
 
 namespace vespalib {
 
@@ -24,17 +26,20 @@ private:
     MetricsProducer &_metricsProducer;
     ComponentConfigProducer &_componentConfigProducer;
     JsonHandlerRepo _handler_repo;
+    std::atomic<bool> _limit_endpoints;
 
 public:
     StateApi(const HealthProducer &hp,
              MetricsProducer &mp,
-             ComponentConfigProducer &ccp);
+             ComponentConfigProducer &ccp,
+             bool limit_endpoints = false);
     ~StateApi() override;
     Response get(const std::string &host,
                  const std::string &path,
                  const std::map<std::string,std::string> &params,
                  const net::ConnectionAuthContext &auth_ctx) const override;
     JsonHandlerRepo &repo() { return _handler_repo; }
+    void set_limit_endpoints(bool limit_endpoints) { _limit_endpoints.store(limit_endpoints); }
 };
 
 } // namespace vespalib
