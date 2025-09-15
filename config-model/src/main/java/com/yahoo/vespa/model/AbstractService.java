@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
+import com.yahoo.config.model.MallocImplResolver;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.deploy.DeployState;
@@ -146,6 +147,9 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
         }
         if (! deployState.featureFlags().useMallocImpl().isEmpty()) {
             addEnvironmentVariable("VESPA_USE_MALLOC_IMPL", deployState.featureFlags().useMallocImpl());
+
+            String path = MallocImplResolver.resolvePath(MallocImplResolver.Impl.valueOf(deployState.featureFlags().useMallocImpl()));
+            setPreLoad(path);
         }
     }
 
