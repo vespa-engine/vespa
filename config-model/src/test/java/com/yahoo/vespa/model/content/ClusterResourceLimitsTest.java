@@ -79,7 +79,7 @@ public class ClusterResourceLimitsTest {
     void content_node_limits_are_derived_from_cluster_controller_limits_if_not_set() {
         assertLimits(0.4, 0.7, 0.88, 0.76, 0.85, 0.94, 0.05,
                 new Fixture().ctrlDisk(0.4).ctrlMemory(0.7).lowWatermarkDifference(0.05).ctrlAddressSpace(0.88));
-        assertLimits(0.75, 0.8, 0.89, 0.9, 0.9, 0.945, 0.0,
+        assertLimits(0.75, 0.8, 0.80, 0.9, 0.9, 0.9, 0.0,
                 new Fixture());
     }
 
@@ -87,35 +87,35 @@ public class ClusterResourceLimitsTest {
     void content_node_limits_can_be_set_explicit() {
         assertLimits(0.4, 0.7, 0.88, 0.9, 0.95, 0.93, 0.0,
                 new Fixture().ctrlDisk(0.4).ctrlMemory(0.7).ctrlAddressSpace(0.88).nodeDisk(0.9).nodeMemory(0.95).nodeAddressSpace(0.93));
-        assertLimits(0.4, 0.8, 0.89, 0.95, 0.9, 0.945, 0.0,
+        assertLimits(0.4, 0.8, 0.80, 0.95, 0.9, 0.9, 0.0,
                 new Fixture().ctrlDisk(0.4).nodeDisk(0.95));
-        assertLimits(0.75, 0.7, 0.89, 0.9, 0.95, 0.945, 0.0,
+        assertLimits(0.75, 0.7, 0.80, 0.9, 0.95, 0.9, 0.0,
                 new Fixture().ctrlMemory(0.7).nodeMemory(0.95));
     }
 
     @Test
     void cluster_controller_limits_are_equal_to_content_node_limits_minus_one_percent_if_not_set() {
-        assertLimits(0.89, 0.94, 0.89, 0.9, 0.95, 0.945, 0.0,
+        assertLimits(0.89, 0.94, 0.80, 0.9, 0.95, 0.9, 0.0,
                 new Fixture().nodeDisk(0.9).nodeMemory(0.95));
-        assertLimits(0.89, 0.8, 0.89, 0.9, 0.9, 0.945, 0.0,
+        assertLimits(0.89, 0.8, 0.80, 0.9, 0.9, 0.9, 0.0,
                 new Fixture().nodeDisk(0.9));
-        assertLimits(0.75, 0.94, 0.89, 0.9, 0.95, 0.945, 0.0,
+        assertLimits(0.75, 0.94, 0.80, 0.9, 0.95, 0.9, 0.0,
                 new Fixture().nodeMemory(0.95));
-        assertLimits(0.75, 0.0, 0.89, 0.9, 0.005, 0.945, 0.0,
+        assertLimits(0.75, 0.0, 0.80, 0.9, 0.005, 0.9, 0.0,
                 new Fixture().nodeMemory(0.005));
     }
 
     @Test
     void limits_are_derived_from_the_other_if_not_set() {
-        assertLimits(0.6, 0.94, 0.89, 0.84, 0.95, 0.945, 0.0,
+        assertLimits(0.6, 0.94, 0.80, 0.84, 0.95, 0.9, 0.0,
                 new Fixture().ctrlDisk(0.6).nodeMemory(0.95));
-        assertLimits(0.89, 0.7, 0.89, 0.9, 0.85, 0.945, 0.0,
+        assertLimits(0.89, 0.7, 0.80, 0.9, 0.85, 0.9, 0.0,
                 new Fixture().ctrlMemory(0.7).nodeDisk(0.9));
     }
 
     @Test
     void default_resource_limits_when_feed_block_is_enabled_in_distributor() {
-        assertLimits(0.75, 0.8, 0.89, 0.9, 0.9, 0.945, 0.0,
+        assertLimits(0.75, 0.8, 0.80, 0.9, 0.9, 0.9, 0.0,
                 new Fixture(true));
     }
 
