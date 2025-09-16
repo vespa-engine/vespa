@@ -38,12 +38,6 @@ SameElementBlueprint::calculate_flow_stats(uint32_t) const
             AndFlow::cost_of(children, true) + est * children.size()};
 }
 
-void
-SameElementBlueprint::optimize_self(OptimizePass pass)
-{
-    (void) pass;
-}
-
 uint8_t
 SameElementBlueprint::calculate_cost_tier() const
 {
@@ -92,7 +86,7 @@ void SameElementBlueprint::sort(Children& children, InFlow in_flow) const
 std::unique_ptr<SearchIterator>
 SameElementBlueprint::createIntermediateSearch(MultiSearch::Children, fef::MatchData&) const
 {
-    abort(); // match data for subtree (subtree_md) must be owned by search iterator
+    abort(); // Handled by createSearchImpl and create_same_element_search
 }
 
 std::unique_ptr<SameElementSearch>
