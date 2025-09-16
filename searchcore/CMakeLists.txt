@@ -118,6 +118,7 @@ vespa_define_module(
     src/tests/proton/server
     src/tests/proton/server/disk_mem_usage_metrics
     src/tests/proton/server/disk_mem_usage_sampler
+    src/tests/proton/server/initialization_status
     src/tests/proton/server/initialize_threads_calculator
     src/tests/proton/server/memoryflush
     src/tests/proton/server/resource_usage_write_filter
