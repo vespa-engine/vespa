@@ -26,7 +26,7 @@ public class MallocImplResolver {
 
     static private String resolveMimallocPath() {
         // TODO(johsol): EXPERIMENTAL For testing mimalloc.
-        return "/opt/vespa-deps/lib64/libmimalloc.so.2";
+        return "/opt/vespa-deps/lib64/libmimalloc.so";
     }
 
     static private String resolveVespaMallocPath() {

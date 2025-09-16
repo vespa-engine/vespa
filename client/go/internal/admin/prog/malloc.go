@@ -46,18 +46,13 @@ func fileExistsAlsoInLdLibraryPath(path string) (bool, string) {
 }
 
 func mimallocLib() string {
-	// TODO(johsol) while resolving rpm packages for mimalloc, we check for both libmimalloc.so and libmimalloc.so.2
-	//              because currently the symlink libmimalloc.so is only available in devel image.
-	//              This is for testing.
-	fileNames := []string{"libmimalloc.so", "libmimalloc.so.2"}
-	for _, fileName := range fileNames {
-		ok, path := fileExistsAlsoInLdLibraryPath(fileName)
-		if ok {
-			trace.Debug("found library:", path)
-			return path
-		}
+	fileName := "libmimalloc.so"
+	ok, path := fileExistsAlsoInLdLibraryPath(fileName)
+	if ok {
+		trace.Debug("found library:", path)
+		return path
 	}
-	trace.Debug("missing library:", strings.Join(fileNames, ","))
+	trace.Debug("missing library:", fileName)
 	trace.Warning("Could not find library mimalloc.")
 	return ""
 }
