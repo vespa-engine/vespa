@@ -406,7 +406,7 @@ struct SameElementAdapter {
         if (!blueprint) {
             blueprint = std::make_unique<SameElementBlueprint>(field, subtree_mdl, false);
             for (auto& child : children) {
-                blueprint->add_child(std::move(child));
+                blueprint->addChild(std::move(child));
             }
         }
     }
