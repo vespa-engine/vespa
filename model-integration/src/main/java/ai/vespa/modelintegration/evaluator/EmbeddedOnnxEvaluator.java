@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.protect.Process.logAndDie;
+
 
 /**
  * Evaluates an ONNX Model by deferring to ONNX Runtime.
@@ -45,7 +47,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
                 return TensorConverter.toVespaTensor(result.get(0));
             }
         } catch (OrtException e) {
-            throw new RuntimeException("ONNX Runtime exception", e);
+            throw handleOrtException(e);
         } finally {
             if (onnxInputs != null) {
                 onnxInputs.values().forEach(OnnxTensor::close);
@@ -67,12 +69,20 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
                 return outputs;
             }
         } catch (OrtException e) {
-            throw new RuntimeException("ONNX Runtime exception", e);
+            throw handleOrtException(e);
         } finally {
             if (onnxInputs != null) {
                 onnxInputs.values().forEach(OnnxTensor::close);
             }
         }
+    }
+    
+    private RuntimeException handleOrtException(OrtException exception) {
+        if (exception.getMessage().contains("Failed to allocate memory")) {
+            logAndDie("ONNX Runtime is out of memory", exception);
+        }
+        
+        return new RuntimeException("ONNX Runtime exception", exception);
     }
 
     private Map<String, OnnxEvaluator.IdAndType> toSpecMap(Map<String, NodeInfo> infoMap) {
