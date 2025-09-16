@@ -29,7 +29,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
 
     private final EmbeddedOnnxRuntime.ReferencedOrtSession session;
     
-    private boolean isUsingCuda;
+    private boolean isCudaLoaded;
 
     EmbeddedOnnxEvaluator(String modelPath, OnnxEvaluatorOptions options, EmbeddedOnnxRuntime runtime) {
         session = createSession(EmbeddedOnnxRuntime.ModelPathOrData.of(modelPath), runtime, options, true);
@@ -81,12 +81,8 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
     
     private RuntimeException handleOrtException(OrtException exception) {
         if (exception.getMessage().contains("Failed to allocate memory")) {
-            var message = "ONNX Runtime is out of memory during evaluation";
-            
-            if (isUsingCuda) {
-                message += " on GPU";
-            }
-            
+            var device = isCudaLoaded ? "GPU" : "CPU";
+            var message = "ONNX Runtime is out of memory during evaluation on " + device;
             logAndDie(message, exception);
         }
         
@@ -162,8 +158,8 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
         try {
             boolean loadCuda = tryCuda && options.requestingGpu();
             EmbeddedOnnxRuntime.ReferencedOrtSession session = runtime.acquireSession(model, options, loadCuda);
+            isCudaLoaded = loadCuda;
             if (loadCuda) {
-                isUsingCuda = true;
                 LOG.log(Level.INFO, "Created session with CUDA using GPU device " + options.gpuDeviceNumber());
             }
             return session;
