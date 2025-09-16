@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.protect.Process.logAndDie;
+
 
 /**
  * Evaluates an ONNX Model by deferring to ONNX Runtime.
@@ -26,6 +28,8 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
     private static final Logger LOG = Logger.getLogger(EmbeddedOnnxEvaluator.class.getName());
 
     private final EmbeddedOnnxRuntime.ReferencedOrtSession session;
+    
+    private boolean isCudaLoaded;
 
     EmbeddedOnnxEvaluator(String modelPath, OnnxEvaluatorOptions options, EmbeddedOnnxRuntime runtime) {
         session = createSession(EmbeddedOnnxRuntime.ModelPathOrData.of(modelPath), runtime, options, true);
@@ -45,7 +49,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
                 return TensorConverter.toVespaTensor(result.get(0));
             }
         } catch (OrtException e) {
-            throw new RuntimeException("ONNX Runtime exception", e);
+            throw handleOrtException(e);
         } finally {
             if (onnxInputs != null) {
                 onnxInputs.values().forEach(OnnxTensor::close);
@@ -67,12 +71,22 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
                 return outputs;
             }
         } catch (OrtException e) {
-            throw new RuntimeException("ONNX Runtime exception", e);
+            throw handleOrtException(e);
         } finally {
             if (onnxInputs != null) {
                 onnxInputs.values().forEach(OnnxTensor::close);
             }
         }
+    }
+    
+    private RuntimeException handleOrtException(OrtException exception) {
+        if (exception.getMessage().contains("Failed to allocate memory")) {
+            var device = isCudaLoaded ? "GPU" : "CPU";
+            var message = "ONNX Runtime is out of memory during evaluation on " + device;
+            logAndDie(message, exception);
+        }
+        
+        return new RuntimeException("ONNX Runtime exception", exception);
     }
 
     private Map<String, OnnxEvaluator.IdAndType> toSpecMap(Map<String, NodeInfo> infoMap) {
@@ -133,7 +147,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
         }
     }
 
-    private static EmbeddedOnnxRuntime.ReferencedOrtSession createSession(
+    private EmbeddedOnnxRuntime.ReferencedOrtSession createSession(
             EmbeddedOnnxRuntime.ModelPathOrData model,
             EmbeddedOnnxRuntime runtime,
             OnnxEvaluatorOptions options,
@@ -144,6 +158,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
         try {
             boolean loadCuda = tryCuda && options.requestingGpu();
             EmbeddedOnnxRuntime.ReferencedOrtSession session = runtime.acquireSession(model, options, loadCuda);
+            isCudaLoaded = loadCuda;
             if (loadCuda) {
                 LOG.log(Level.INFO, "Created session with CUDA using GPU device " + options.gpuDeviceNumber());
             }
