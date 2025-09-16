@@ -37,8 +37,6 @@ public:
 
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     
-    void optimize_self(OptimizePass pass) override;
-
     std::unique_ptr<SameElementSearch> create_same_element_search(search::fef::TermFieldMatchData& tfmd) const;
     std::unique_ptr<SearchIterator> createIntermediateSearch(MultiSearch::Children sub_searches,
                                                              fef::MatchData& md) const override;
