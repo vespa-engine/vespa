@@ -16,11 +16,11 @@ class SameElementBlueprint : public ComplexLeafBlueprint
 private:
     HitEstimate                _estimate;
     fef::MatchDataLayout       _layout;
-    std::vector<Blueprint::UP> _terms;
+    std::vector<Blueprint::UP> _children;
     std::string           _field_name;
 
 public:
-    SameElementBlueprint(const FieldSpec &field, bool expensive);
+    SameElementBlueprint(const FieldSpec &field, fef::MatchDataLayout subtree_mdl, bool expensive);
     SameElementBlueprint(const SameElementBlueprint &) = delete;
     SameElementBlueprint &operator=(const SameElementBlueprint &) = delete;
     ~SameElementBlueprint() override;
@@ -29,10 +29,7 @@ public:
     bool isWhiteList() const noexcept final { return true; }
 
     // used by create visitor
-    FieldSpec getNextChildField(const std::string &field_name, uint32_t field_id);
-
-    // used by create visitor
-    void addTerm(Blueprint::UP term);
+    void add_child(Blueprint::UP child);
 
     void sort(InFlow in_flow) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
@@ -44,7 +41,7 @@ public:
     SearchIteratorUP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda) const override;
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const std::vector<Blueprint::UP> &terms() const { return _terms; }
+    const std::vector<Blueprint::UP> &children() const { return _children; }
     const std::string &field_name() const { return _field_name; }
 };
 
