@@ -230,6 +230,7 @@ vespa_define_module(
     src/tests/ranksetup
     src/tests/ranksetup/verify_feature
     src/tests/searchcommon/attribute/config
+    src/tests/searchcommon/attribute/initialization_status
     src/tests/searchcommon/schema
     src/tests/sort
     src/tests/sortresults
