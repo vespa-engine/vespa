@@ -344,7 +344,6 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                                            ModelElement contentElement,
                                            ContentCluster contentCluster,
                                            DeployState deployState) {
-            if (admin == null) return; // only in tests
             if (contentCluster.getPersistence() == null) return;
 
             ClusterControllerContainerCluster clusterControllers;
@@ -477,8 +476,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
     }
 
     public static String getClusterId(ModelElement clusterElem) {
-        String clusterId = clusterElem.stringAttribute("id");
-        return clusterId != null ? clusterId : "content";
+        return clusterElem.stringAttribute("id", "content");
     }
 
     public String getName() { return clusterId; }
