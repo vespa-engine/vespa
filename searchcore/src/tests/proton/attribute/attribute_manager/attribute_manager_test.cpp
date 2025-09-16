@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
+#include <vespa/searchcore/proton/attribute/attribute_initialization_status_collector.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_reconfig.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
@@ -771,6 +772,36 @@ TEST_F(AttributeManagerTest, require_that_attributes_can_be_initialized_and_load
         validateAttribute(*a2->get());
         AttributeGuard::UP a3 = newMgr.mgr->get()->getAttribute("a3");
         validateAttribute(*a3->get());
+    }
+}
+
+TEST_F(AttributeManagerTest, require_that_attribute_initialization_status_can_collected)
+{
+    BaseFixture f;
+    {
+        AttributeManagerFixture amf(f);
+        populateAndFlushAttributes(amf);
+    }
+    {
+        AttributeManagerFixture amf(f);
+
+        AttributesConfigBuilder attrCfg;
+        attrCfg.attribute.push_back(createAttributeConfig("a1"));
+        attrCfg.attribute.push_back(createAttributeConfig("a2"));
+        attrCfg.attribute.push_back(createAttributeConfig("a3"));
+
+        ParallelAttributeManager newMgr(createSerialNum + 5, *amf._msp, attrCfg, 10);
+
+        std::vector<std::shared_ptr<search::attribute::AttributeInitializationStatus>> statuses;
+        AttributeInitializationStatusCollector visitor(statuses);
+        newMgr.initializer->accept_visitor(visitor);
+
+        // Verify that we got the three attributes a1, a2, and a3
+        std::sort(statuses.begin(), statuses.end(), [](auto &l, auto &r) { return l->get_name() < r->get_name(); });
+        ASSERT_EQ(statuses.size(), 3);
+        EXPECT_EQ(statuses[0]->get_name(), "a1");
+        EXPECT_EQ(statuses[1]->get_name(), "a2");
+        EXPECT_EQ(statuses[2]->get_name(), "a3");
     }
 }
 
