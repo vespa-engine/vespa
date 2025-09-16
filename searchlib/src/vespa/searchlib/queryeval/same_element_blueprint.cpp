@@ -6,115 +6,119 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
+#include <cassert>
 #include <map>
 
 namespace search::queryeval {
 
 SameElementBlueprint::SameElementBlueprint(const FieldSpec &field, fef::MatchDataLayout subtree_mdl, bool expensive)
-    : ComplexLeafBlueprint(field),
-      _estimate(),
+    : IntermediateBlueprint(),
       _layout(std::move(subtree_mdl)),
-      _children(),
-      _field_name(field.getName())
+      _field_name(field.getName()),
+      _handle(field.getHandle()),
+      _expensive(expensive)
 {
-    if (expensive) {
-        set_cost_tier(State::COST_TIER_EXPENSIVE);
-    }
 }
 
 SameElementBlueprint::~SameElementBlueprint() = default;
 
-void
-SameElementBlueprint::add_child(Blueprint::UP child)
+AnyFlow
+SameElementBlueprint::my_flow(InFlow in_flow) const
 {
-    const State &childState = child->getState();
-    HitEstimate childEst = childState.estimate();
-    if (_children.empty() ||  (childEst < _estimate)) {
-        _estimate = childEst;
-        setEstimate(_estimate);
-    }
-    _children.push_back(std::move(child));
-}
-
-void
-SameElementBlueprint::sort(InFlow in_flow)
-{
-    resolve_strict(in_flow);
-    auto flow = AndFlow(in_flow);
-    for (auto &child: _children) {
-        child->sort(InFlow(flow.strict(), flow.flow()));
-        flow.add(child->estimate());
-    }
+    return AnyFlow::create<AndFlow>(in_flow);
 }
 
 FlowStats
-SameElementBlueprint::calculate_flow_stats(uint32_t docid_limit) const
+SameElementBlueprint::calculate_flow_stats(uint32_t) const
 {
-    for (auto &child : _children) {
-        child->update_flow_stats(docid_limit);
-    }
-    double est = AndFlow::estimate_of(_children);
+    auto& children = get_children();
+    double est = AndFlow::estimate_of(children);
     return {est,
-            AndFlow::cost_of(_children, false) + est * _children.size(),
-            AndFlow::cost_of(_children, true) + est * _children.size()};
+            AndFlow::cost_of(children, false) + est * children.size(),
+            AndFlow::cost_of(children, true) + est * children.size()};
 }
 
 void
 SameElementBlueprint::optimize_self(OptimizePass pass)
 {
-    if (pass == OptimizePass::LAST) {
-        std::sort(_children.begin(), _children.end(),
-                  [](const auto &a, const auto &b) {
-                      return (a->getState().estimate() < b->getState().estimate());
-                  });
+    (void) pass;
+}
+
+uint8_t
+SameElementBlueprint::calculate_cost_tier() const
+{
+    uint8_t cost_tier = State::COST_TIER_MAX;
+    auto& children = get_children();
+    for (auto& child : children) {
+        cost_tier = std::min(cost_tier, child->getState().cost_tier());
+    }
+    if (_expensive) {
+        cost_tier = std::max(cost_tier, State::COST_TIER_EXPENSIVE);
+    }
+    return cost_tier;
+}
+
+std::unique_ptr<SearchIterator>
+SameElementBlueprint::createSearchImpl(fef::MatchData& md) const
+{
+    auto* tfmd = md.resolveTermField(_handle);
+    assert(tfmd != nullptr);
+    return create_same_element_search(*tfmd);
+}
+
+Blueprint::HitEstimate
+SameElementBlueprint::combine(const std::vector<HitEstimate>& data) const
+{
+    return min(data);
+}
+
+FieldSpecBaseList SameElementBlueprint::exposeFields() const
+{
+    return {};
+}
+
+void SameElementBlueprint::sort(Children& children, InFlow in_flow) const
+{
+    if (opt_sort_by_cost()) {
+        AndFlow::sort(children, in_flow.strict());
+        if (opt_allow_force_strict()) {
+            AndFlow::reorder_for_extra_strictness(children, in_flow, 3);
+        }
+    } else {
+        std::sort(children.begin(), children.end(), TieredLessEstimate());
     }
 }
 
-void
-SameElementBlueprint::fetchPostings(const ExecuteInfo &execInfo)
+std::unique_ptr<SearchIterator>
+SameElementBlueprint::createIntermediateSearch(MultiSearch::Children, fef::MatchData&) const
 {
-    if (_children.empty()) {
-        return;
-    }
-    _children[0]->fetchPostings(execInfo);
-    double hit_rate = execInfo.hit_rate() * _children[0]->estimate();
-    for (size_t i = 1; i < _children.size(); ++i) {
-        Blueprint& child = *_children[i];
-        child.fetchPostings(ExecuteInfo::create(hit_rate, execInfo));
-        hit_rate = hit_rate * _children[i]->estimate();
-    }
+    abort(); // match data for subtree (subtree_md) must be owned by search iterator
 }
 
 std::unique_ptr<SameElementSearch>
 SameElementBlueprint::create_same_element_search(search::fef::TermFieldMatchData& tfmd) const
 {
-    fef::MatchData::UP md = _layout.createMatchData();
-    std::vector<std::unique_ptr<SearchIterator>> search_children;
-    search_children.reserve(_children.size());
-    for (size_t i = 0; i < _children.size(); ++i) {
-        search_children.emplace_back(_children[i]->createSearch(*md));
+    auto subtree_md = _layout.createMatchData();
+    MultiSearch::Children sub_searches;
+    auto& children = get_children();
+    sub_searches.reserve(children.size());
+    for (const auto & child : children) {
+        sub_searches.push_back(child->createSearch(*subtree_md));
     }
-    return std::make_unique<SameElementSearch>(tfmd, std::move(md), std::move(search_children), strict());
-}
-
-SearchIterator::UP
-SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda) const
-{
-    assert(tfmda.size() == 1);
-    return create_same_element_search(*tfmda[0]);
+    // match data for subtree (subtree_md) must be owned by search iterator
+    return std::make_unique<SameElementSearch>(tfmd, std::move(subtree_md), std::move(sub_searches), strict());
 }
 
 SearchIterator::UP
 SameElementBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    return create_atmost_and_filter(_children, strict(), constraint);
+    return create_atmost_and_filter(get_children(), strict(), constraint);
 }
 
 void
 SameElementBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
-    ComplexLeafBlueprint::visitMembers(visitor);
-    visit(visitor, "children", _children);
+    IntermediateBlueprint::visitMembers(visitor);
 }
 
 }
