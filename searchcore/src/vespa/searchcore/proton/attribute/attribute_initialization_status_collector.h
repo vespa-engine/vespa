@@ -9,10 +9,10 @@
 namespace proton {
 
 /**
- * Visitor that allows you to get the AttributeVectorWrappers created by the InitializerTask and its dependencies.
+ * Visitor that allows you to get all AttributeInitializationStatus objects created by the InitializerTask and its dependencies.
  *
  * It visits all AttributeInitializers in an InitializerTask and its dependencies.
- * For every AttributeInitializer, it collects a pointer to its AttributeVectorWrapper
+ * For every AttributeInitializer, it collects a pointer to its AttributeInitializationStatus
  * in the given vector.
  */
 class AttributeInitializationStatusCollector : public initializer::InitializerTaskVisitor {
