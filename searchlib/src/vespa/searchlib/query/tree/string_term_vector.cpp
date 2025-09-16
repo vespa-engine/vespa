@@ -14,52 +14,40 @@ StringTermVector::StringTermVector(uint32_t sz)
 
 StringTermVector::~StringTermVector() = default;
 
-void
-StringTermVector::addTerm(std::string_view, Weight)
-{
+void StringTermVector::addTerm(std::string_view term, Weight) {
+    // should only happen when replicating
+    _terms.emplace_back(term);
+}
+
+void StringTermVector::addTerm(int64_t, Weight) {
     // Will/should never happen
     assert(false);
 }
 
-void
-StringTermVector::addTerm(int64_t, Weight)
-{
-    // Will/should never happen
-    assert(false);
-}
-
-void
-StringTermVector::addTerm(std::string_view term)
-{
+void StringTermVector::addTerm(std::string_view term) {
     _terms.emplace_back(term);
 }
 
 TermVector::StringAndWeight
-StringTermVector::getAsString(uint32_t index) const
-{
+StringTermVector::getAsString(uint32_t index) const {
     const auto & v = _terms[index];
     return {v, Weight(1)};
 }
 
 
 TermVector::IntegerAndWeight
-StringTermVector::getAsInteger(uint32_t index) const
-{
+StringTermVector::getAsInteger(uint32_t index) const {
     const auto & v = _terms[index];
     int64_t value(0);
     std::from_chars(v.c_str(), v.c_str() + v.size(), value);
     return {value, Weight(1)};
 }
 
-Weight
-StringTermVector::getWeight(uint32_t) const
-{
+Weight StringTermVector::getWeight(uint32_t) const {
     return Weight(1);
 }
 
-uint32_t
-StringTermVector::size() const
-{
+uint32_t StringTermVector::size() const {
     return _terms.size();
 }
 

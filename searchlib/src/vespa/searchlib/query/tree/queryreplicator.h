@@ -212,14 +212,14 @@ private:
             auto replica = std::make_unique<StringTermVector>(num_terms);
             for (uint32_t i(0); i < num_terms; i++) {
                 auto v = original.getAsString(i);
-                replica->addTerm(v.first);
+                replica->addTerm(v.first, v.second);
             }
             return replica;
         } else if (original.getType() == MultiTerm::Type::INTEGER) {
             auto replica = std::make_unique<IntegerTermVector>(num_terms);
             for (uint32_t i(0); i < original.getNumTerms(); i++) {
                 auto v = original.getAsInteger(i);
-                replica->addTerm(v.first);
+                replica->addTerm(v.first, v.second);
             }
             return replica;
         } else {
