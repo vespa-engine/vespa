@@ -12,8 +12,6 @@ std::string AttributeInitializationStatus::state_to_string(State state) {
         return "loading";
     case State::REPROCESSING:
         return "reprocessing";
-    case State::REPROCESSING_FINISHED:
-        return "reprocessing_finished";
     case State::LOADED:
         return "loaded";
     }

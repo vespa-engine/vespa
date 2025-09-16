@@ -20,7 +20,6 @@ public:
         QUEUED,
         LOADING,
         REPROCESSING,
-        REPROCESSING_FINISHED,
         LOADED
     };
     static std::string state_to_string(State state);
