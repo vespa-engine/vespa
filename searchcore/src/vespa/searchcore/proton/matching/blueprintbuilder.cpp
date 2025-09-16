@@ -102,7 +102,7 @@ private:
         if (n.numFields() == 1) {
             auto se = std::make_unique<SameElementBlueprint>(n.field(0).fieldSpec(), n.subtree_mdl, n.is_expensive());
             for (auto* node : n.getChildren()) {
-                se->addChild(build(_requestContext, *node, _context));
+                se->add_child(build(_requestContext, *node, _context));
             }
             _result = std::move(se);
         } else {

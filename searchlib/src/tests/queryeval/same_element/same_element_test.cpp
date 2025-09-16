@@ -44,13 +44,12 @@ std::unique_ptr<SameElementBlueprint> make_blueprint(const std::vector<FakeResul
     }
     auto result = std::make_unique<SameElementBlueprint>(make_field_spec(), std::move(subtree_mdl), false);
     for (auto& fake : bp_children) {
-        result->addChild(std::move(fake));
+        result->add_child(std::move(fake));
     }
     return result;
 }
 
 Blueprint::UP finalize(Blueprint::UP bp, bool strict) {
-    bp->setDocIdLimit(1000);
     Blueprint::UP result = Blueprint::optimize_and_sort(std::move(bp), strict);
     result->fetchPostings(ExecuteInfo::FULL);
     result->freeze();
@@ -141,9 +140,9 @@ TEST(SameElementTest, require_that_children_are_sorted) {
     auto b = make_result({{5, {0}}, {5, {0}}});
     auto c = make_result({{5, {0}}, {5, {0}}, {5, {0}}, {5, {0}}});
     auto bp = finalize(make_blueprint({a,b,c}), true);
-    EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).getChild(0).getState().estimate().estHits, 2u);
-    EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).getChild(1).getState().estimate().estHits, 3u);
-    EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).getChild(2).getState().estimate().estHits, 4u);
+    EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).children()[0]->getState().estimate().estHits, 2u);
+    EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).children()[1]->getState().estimate().estHits, 3u);
+    EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).children()[2]->getState().estimate().estHits, 4u);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
