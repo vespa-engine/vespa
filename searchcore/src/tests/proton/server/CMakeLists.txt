@@ -3,6 +3,7 @@
 vespa_add_executable(searchcore_proton_server_gtest_test_app TEST
     SOURCES
     gtest_runner.cpp
+    ddbstate_test.cpp
     documentretriever_test.cpp
     feeddebugger_test.cpp
     feedstates_test.cpp
