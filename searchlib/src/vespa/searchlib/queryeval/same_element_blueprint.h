@@ -15,8 +15,7 @@ class SameElementBlueprint : public IntermediateBlueprint
 {
 private:
     fef::MatchDataLayout  _layout;
-    std::string           _field_name;
-    fef::TermFieldHandle  _handle;
+    FieldSpec             _field;
     bool                  _expensive;
 
     AnyFlow my_flow(InFlow in_flow) const override;
@@ -43,7 +42,7 @@ public:
 
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const std::string &field_name() const { return _field_name; }
+    const std::string &field_name() const { return _field.getName(); }
 };
 
 }

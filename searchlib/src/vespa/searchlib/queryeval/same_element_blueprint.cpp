@@ -14,8 +14,7 @@ namespace search::queryeval {
 SameElementBlueprint::SameElementBlueprint(const FieldSpec &field, fef::MatchDataLayout subtree_mdl, bool expensive)
     : IntermediateBlueprint(),
       _layout(std::move(subtree_mdl)),
-      _field_name(field.getName()),
-      _handle(field.getHandle()),
+      _field(field),
       _expensive(expensive)
 {
 }
@@ -55,7 +54,7 @@ SameElementBlueprint::calculate_cost_tier() const
 std::unique_ptr<SearchIterator>
 SameElementBlueprint::createSearchImpl(fef::MatchData& md) const
 {
-    auto* tfmd = md.resolveTermField(_handle);
+    auto* tfmd = md.resolveTermField(_field.getHandle());
     assert(tfmd != nullptr);
     return create_same_element_search(*tfmd);
 }
@@ -68,7 +67,9 @@ SameElementBlueprint::combine(const std::vector<HitEstimate>& data) const
 
 FieldSpecBaseList SameElementBlueprint::exposeFields() const
 {
-    return {};
+    FieldSpecBaseList fields;
+    fields.add(_field);
+    return fields;
 }
 
 void SameElementBlueprint::sort(Children& children, InFlow in_flow) const
