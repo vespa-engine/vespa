@@ -5,6 +5,7 @@
 #include "node.h"
 #include "querybuilder.h"
 #include "termnodes.h"
+#include "weighted_string_term_vector.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/common/geo_location_parser.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -73,8 +74,16 @@ private:
             std::string_view view = queryStack.index_as_view();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            builder.addEquiv(arity, id, weight);
-            pureTermView = view;
+            auto words = std::make_unique<WeightedStringTermVector>(arity);
+            for (uint32_t idx = 0; idx < arity; idx++) {
+                if (queryStack.next() && queryStack.getType() == ParseItem::ITEM_PURE_WEIGHTED_STRING) {
+                    words->addTerm(queryStack.getTerm(), queryStack.GetWeight());
+                } else {
+                    builder.reportError("bad or missing contents for ITEM_WORD_ALTERNATIVES");
+                    return t;
+                }
+            }
+            t = &builder.add_word_alternatives(std::move(words), std::string(view), id, weight);
         } else if (type == ParseItem::ITEM_WEAK_AND) {
             uint32_t targetNumHits = queryStack.getTargetHits();
             builder.addWeakAnd(arity, targetNumHits, queryStack.index_as_string());
@@ -102,7 +111,7 @@ private:
         } else if (type == ParseItem::ITEM_WEIGHTED_SET) {
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-           auto & ws = builder.addWeightedSetTerm(arity, queryStack.index_as_string(), id, weight);
+            auto & ws = builder.addWeightedSetTerm(arity, queryStack.index_as_string(), id, weight);
             pureTermView = std::string_view();
             populateMultiTerm(queryStack, builder, ws);
             t = &ws;
@@ -186,9 +195,9 @@ private:
                 bool     prefix_match       = queryStack.has_prefix_match_semantics();
                 t = &builder.addFuzzyTerm(term, view, id, weight, max_edit_distance, prefix_lock_length, prefix_match);
             } else if (type == ParseItem::ITEM_STRING_IN) {
-                t = &builder.add_in_term(queryStack.get_terms(), MultiTerm::Type::STRING, view, id, weight);
+                t = &builder.add_in_term(queryStack.get_terms(), MultiTerm::MultiTermType::STRING, view, id, weight);
             } else if (type == ParseItem::ITEM_NUMERIC_IN) {
-                t = &builder.add_in_term(queryStack.get_terms(), MultiTerm::Type::INTEGER, view, id, weight);
+                t = &builder.add_in_term(queryStack.get_terms(), MultiTerm::MultiTermType::INTEGER, view, id, weight);
             } else {
                 vespalib::Issue::report("query builder: Unable to create query tree from stack dump. node type = %d.", type);
             }

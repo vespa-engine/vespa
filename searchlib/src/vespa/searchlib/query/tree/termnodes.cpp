@@ -29,14 +29,15 @@ DotProduct::~DotProduct() = default;
 WandTerm::~WandTerm() = default;
 FuzzyTerm::~FuzzyTerm() = default;
 InTerm::~InTerm() = default;
+WordAlternatives::~WordAlternatives() = default;
 
 MultiTerm::MultiTerm(uint32_t num_terms)
     : _terms(),
       _num_terms(num_terms),
-      _type(Type::UNKNOWN)
+      _type(MultiTermType::UNKNOWN)
 {}
 
-MultiTerm::MultiTerm(std::unique_ptr<TermVector> terms, Type type)
+MultiTerm::MultiTerm(std::unique_ptr<TermVector> terms, MultiTermType type)
     : _terms(std::move(terms)),
       _num_terms(_terms->size()),
       _type(type)
@@ -60,11 +61,11 @@ void
 MultiTerm::addTerm(std::string_view term, Weight weight) {
     if ( ! _terms) {
         _terms = std::make_unique<WeightedStringTermVector>(_num_terms);
-        _type = Type::STRING;
+        _type = MultiTermType::WEIGHTED_STRING;
     }
-    if (_type == Type::INTEGER) {
+    if (_type != MultiTermType::WEIGHTED_STRING) {
         _terms = downgrade();
-        _type = Type::STRING;
+        _type = MultiTermType::WEIGHTED_STRING;
     }
     _terms->addTerm(term, weight);
 }
@@ -73,7 +74,7 @@ void
 MultiTerm::addTerm(int64_t term, Weight weight) {
     if ( ! _terms) {
         _terms = std::make_unique<WeightedIntegerTermVector>(_num_terms);
-        _type = Type::INTEGER;
+        _type = MultiTermType::WEIGHTED_INTEGER;
     }
     _terms->addTerm(term, weight);
 }

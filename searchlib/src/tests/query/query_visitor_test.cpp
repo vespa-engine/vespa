@@ -52,6 +52,7 @@ public:
     void visit(FalseQueryNode &) override { isVisited<FalseQueryNode>() = true; }
     void visit(FuzzyTerm &) override { isVisited<FuzzyTerm>() = true; }
     void visit(InTerm&) override { isVisited<InTerm>() = true; }
+    void visit(WordAlternatives&) override { isVisited<WordAlternatives>() = true; }
 };
 
 template <class T>
@@ -89,7 +90,8 @@ TEST(QueryVisitorTest, requireThatAllNodesCanBeVisited) {
     checkVisit<TrueQueryNode>(new SimpleTrue());
     checkVisit<FalseQueryNode>(new SimpleFalse());
     checkVisit<FuzzyTerm>(new SimpleFuzzyTerm("t", "field", 0, Weight(0), 2, 0, false));
-    checkVisit<InTerm>(new SimpleInTerm(std::make_unique<StringTermVector>(0), MultiTerm::Type::STRING, "field", 0, Weight(0)));
+    checkVisit<InTerm>(new SimpleInTerm(std::make_unique<StringTermVector>(0), MultiTerm::MultiTermType::STRING, "field", 0, Weight(0)));
+    checkVisit<WordAlternatives>(new SimpleWordAlternatives(std::make_unique<StringTermVector>(0), "field", 0, Weight(0)));
 }
 
 }  // namespace

@@ -7,6 +7,8 @@
 #include "querybuilder.h"
 #include "queryvisitor.h"
 #include "string_term_vector.h"
+#include "weighted_integer_term_vector.h"
+#include "weighted_string_term_vector.h"
 #include "termnodes.h"
 #include <cassert>
 
@@ -83,18 +85,22 @@ private:
     }
 
     void replicateMultiTerm(const MultiTerm &original, MultiTerm & replica) {
-        if (original.getType() == MultiTerm::Type::STRING) {
-            for (uint32_t i(0); i < original.getNumTerms(); i++) {
+        switch (original.getType()) {
+        case MultiTerm::MultiTermType::STRING:
+        case MultiTerm::MultiTermType::WEIGHTED_STRING:
+            for (uint32_t i = 0; i < original.getNumTerms(); i++) {
                 auto v = original.getAsString(i);
                 replica.addTerm(v.first, v.second);
             }
-        } else if (original.getType() == MultiTerm::Type::INTEGER) {
-            for (uint32_t i(0); i < original.getNumTerms(); i++) {
+            break;
+        case MultiTerm::MultiTermType::INTEGER:
+        case MultiTerm::MultiTermType::WEIGHTED_INTEGER:
+            for (uint32_t i = 0; i < original.getNumTerms(); i++) {
                 auto v = original.getAsInteger(i);
                 replica.addTerm(v.first, v.second);
             }
-        } else {
-            assert (original.getType() == MultiTerm::Type::UNKNOWN);
+            break;
+        case MultiTerm::MultiTermType::UNKNOWN:
             assert (original.getNumTerms() == 0);
         }
     }
@@ -206,28 +212,52 @@ private:
                 node.prefix_match()));
     }
 
-    std::unique_ptr<TermVector> replicate_subterms(const InTerm& original) {
+    std::unique_ptr<TermVector> replicate_subterms(const MultiTerm& original) {
         uint32_t num_terms = original.getNumTerms();
-        if (original.getType() == MultiTerm::Type::STRING) {
+        switch (original.getType()) {
+        case MultiTerm::MultiTermType::STRING: {
             auto replica = std::make_unique<StringTermVector>(num_terms);
-            for (uint32_t i(0); i < num_terms; i++) {
+            for (uint32_t i = 0; i < num_terms; i++) {
+                auto v = original.getAsString(i);
+                replica->addTerm(v.first);
+            }
+            return replica;
+        }
+        case MultiTerm::MultiTermType::WEIGHTED_STRING: {
+            auto replica = std::make_unique<WeightedStringTermVector>(num_terms);
+            for (uint32_t i = 0; i < num_terms; i++) {
                 auto v = original.getAsString(i);
                 replica->addTerm(v.first, v.second);
             }
             return replica;
-        } else if (original.getType() == MultiTerm::Type::INTEGER) {
+        }
+        case MultiTerm::MultiTermType::INTEGER: {
             auto replica = std::make_unique<IntegerTermVector>(num_terms);
-            for (uint32_t i(0); i < original.getNumTerms(); i++) {
+            for (uint32_t i = 0; i < original.getNumTerms(); i++) {
+                auto v = original.getAsInteger(i);
+                replica->addTerm(v.first);
+            }
+            return replica;
+        }
+        case MultiTerm::MultiTermType::WEIGHTED_INTEGER: {
+            auto replica = std::make_unique<WeightedIntegerTermVector>(num_terms);
+            for (uint32_t i = 0; i < original.getNumTerms(); i++) {
                 auto v = original.getAsInteger(i);
                 replica->addTerm(v.first, v.second);
             }
             return replica;
-        } else {
-            abort();
         }
+        case MultiTerm::MultiTermType::UNKNOWN:
+            assert(num_terms == 0);
+        }
+        return std::make_unique<WeightedStringTermVector>(num_terms);
     }
     void visit(InTerm& node) override {
         replicate(node, _builder.add_in_term(replicate_subterms(node), node.getType(), node.getView(), node.getId(), node.getWeight()));
+    }
+
+    void visit(WordAlternatives& node) override {
+        replicate(node, _builder.add_word_alternatives(replicate_subterms(node), node.getView(), node.getId(), node.getWeight()));
     }
 };
 

@@ -306,7 +306,7 @@ class QueryNodeConverter : public QueryVisitor {
     }
 
     void visit(InTerm& node) override {
-        bool is_string = (node.getType() == MultiTerm::Type::STRING);
+        bool is_string = (node.getType() == MultiTerm::MultiTermType::STRING);
         auto item_type = is_string  ? ParseItem::ITEM_STRING_IN : ParseItem::ITEM_NUMERIC_IN;
         createWeightedSet(node, item_type, 0);
         auto num_terms = node.getNumTerms();
@@ -319,6 +319,28 @@ class QueryNodeConverter : public QueryVisitor {
                 appendLong(node.getAsInteger(i).first);
             }
         }
+    }
+
+    void visit(WordAlternatives& node) override {
+        uint8_t features = ParseItem::IF_WEIGHT;
+        uint8_t flags = 0;
+        if (!node.isRanked()) {
+            flags |= ParseItem::IFLAG_NORANK;
+        }
+        if (!node.usePositionData()) {
+            flags |= ParseItem::IFLAG_NOPOSITIONDATA;
+        }
+        if (flags != 0) {
+            features |= ParseItem::IF_FLAGS;
+        }
+        append_type_and_features(ParseItem::ITEM_WORD_ALTERNATIVES, features);
+        appendCompressedNumber(node.getWeight().percent());
+        if (flags != 0) {
+            appendByte(flags);
+        }
+        appendCompressedPositiveNumber(node.getNumTerms());
+        appendString(node.getView());
+        createMultiTermNodes(node);
     }
 
 public:

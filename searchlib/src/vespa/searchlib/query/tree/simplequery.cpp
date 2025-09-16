@@ -58,4 +58,6 @@ SimpleFuzzyTerm::~SimpleFuzzyTerm() = default;
 
 SimpleInTerm::~SimpleInTerm() = default;
 
+SimpleWordAlternatives::~SimpleWordAlternatives() = default;
+
 }

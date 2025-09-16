@@ -232,9 +232,17 @@ createFuzzyTerm(std::string_view term, const std::string & view, int32_t id, Wei
 
 template <class NodeTypes>
 typename NodeTypes::InTerm *
-create_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type, const std::string & view, int32_t id, Weight weight) {
+create_in_term(std::unique_ptr<TermVector> terms, MultiTerm::MultiTermType type, const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::InTerm(std::move(terms), type, view, id, weight);
 }
+
+template <class NodeTypes>
+typename NodeTypes::WordAlternatives *
+create_word_alternatives(std::unique_ptr<TermVector> terms, const std::string & view, int32_t id, Weight weight) {
+    return new typename NodeTypes::WordAlternatives(std::move(terms), view, id, weight);
+}
+
+
 
 template <class NodeTypes>
 class QueryBuilder : public QueryBuilderBase {
@@ -360,9 +368,14 @@ public:
     typename NodeTypes::FalseQueryNode &add_false_node() {
         return addTerm(create_false<NodeTypes>());
     }
-    typename NodeTypes::InTerm& add_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type, const string & view, int32_t id, Weight weight) {
+    typename NodeTypes::InTerm& add_in_term(std::unique_ptr<TermVector> terms, MultiTerm::MultiTermType type, const string & view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(create_in_term<NodeTypes>(std::move(terms), type, view, id, weight));
+    }
+
+    typename NodeTypes::WordAlternatives& add_word_alternatives(std::unique_ptr<TermVector> terms, const string & view, int32_t id, Weight weight) {
+        adjustWeight(weight);
+        return addTerm(create_word_alternatives<NodeTypes>(std::move(terms), view, id, weight));
     }
 };
 

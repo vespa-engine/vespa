@@ -52,7 +52,7 @@ public:
 class StringTerm : public QueryNodeMixin<StringTerm, StringBase >
 {
 public:
-    StringTerm(const Type &term, std::string, int32_t id, Weight weight);
+    StringTerm(const Type &term, std::string view, int32_t id, Weight weight);
     virtual ~StringTerm() = 0;
 };
 
@@ -175,7 +175,7 @@ public:
 
 class MultiTerm : public Node {
 public:
-    enum class Type {STRING, INTEGER, UNKNOWN};
+    enum class MultiTermType {STRING, INTEGER, WEIGHTED_STRING, WEIGHTED_INTEGER, UNKNOWN};
     using StringAndWeight = TermVector::StringAndWeight;
     using IntegerAndWeight = TermVector::IntegerAndWeight;
     ~MultiTerm() override;
@@ -187,15 +187,15 @@ public:
     IntegerAndWeight getAsInteger(uint32_t index) const { return _terms->getAsInteger(index); }
     Weight weight(uint32_t index) const { return _terms->getWeight(index); }
     uint32_t getNumTerms() const { return _num_terms; }
-    Type getType() const { return _type; }
+    MultiTermType getType() const { return _type; }
 protected:
     explicit MultiTerm(uint32_t num_terms);
-    MultiTerm(std::unique_ptr<TermVector> terms, Type type);
+    MultiTerm(std::unique_ptr<TermVector> terms, MultiTermType type);
 private:
     VESPA_DLL_LOCAL std::unique_ptr<TermVector> downgrade() __attribute__((noinline));
     std::unique_ptr<TermVector> _terms;
     uint32_t _num_terms;
-    Type _type;
+    MultiTermType _type;
 };
 
 class WeightedSetTerm : public QueryNodeMixin<WeightedSetTerm, MultiTerm>, public Term {
@@ -238,12 +238,23 @@ public:
 
 class InTerm : public QueryNodeMixin<InTerm, MultiTerm>, public Term {
 public:
-    InTerm(std::unique_ptr<TermVector> terms, MultiTerm::Type type, const std::string & view, int32_t id, Weight weight)
+    InTerm(std::unique_ptr<TermVector> terms, MultiTerm::MultiTermType type, const std::string & view, int32_t id, Weight weight)
         : QueryNodeMixinType(std::move(terms), type),
           Term(view, id, weight)
     {
     }
     virtual ~InTerm() = 0;
 };
+
+class WordAlternatives : public QueryNodeMixin<WordAlternatives, MultiTerm>, public Term {
+public:
+    virtual ~WordAlternatives() = 0;
+
+    WordAlternatives(std::unique_ptr<TermVector> terms, const std::string & view, int32_t id, Weight weight)
+      : QueryNodeMixinType(std::move(terms), MultiTermType::WEIGHTED_STRING),
+        Term(view, id, weight)
+    {}
+};
+
 
 }

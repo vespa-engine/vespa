@@ -459,7 +459,7 @@ TEST(AttributeBlueprintTest, direct_weighted_set_blueprint_creates_or_like_filte
         auto stv = std::make_unique<StringTermVector>(2);
         stv->addTerm("foo");
         stv->addTerm("bar");
-        SimpleInTerm term(std::move(stv), SimpleInTerm::Type::STRING, field, 0, Weight(0));
+        SimpleInTerm term(std::move(stv), SimpleInTerm::MultiTermType::STRING, field, 0, Weight(0));
         f.expect_filter_search(SimpleResult({1, 3}), term);
     }
 }
@@ -477,7 +477,7 @@ TEST(AttributeBlueprintTest, attribute_weighted_set_blueprint_creates_or_like_fi
         auto stv = std::make_unique<StringTermVector>(2);
         stv->addTerm("foo");
         stv->addTerm("bar");
-        SimpleInTerm term(std::move(stv), SimpleInTerm::Type::STRING, field, 0, Weight(0));
+        SimpleInTerm term(std::move(stv), SimpleInTerm::MultiTermType::STRING, field, 0, Weight(0));
         f.expect_filter_search(SimpleResult({1, 3}), term);
     }
 }
