@@ -57,7 +57,7 @@ public class SingleNodeProvisionerTest {
     @Test
     void require_allocate_clustermembership_works() throws IOException, SAXException {
         String servicesXml = "<services version='1.0'>"
-                + "  <admin version='3.0'>"
+                + "  <admin version='4.0'>"
                 + "    <nodes count='1' />"
                 + "  </admin>"
                 + "  <container version='1.0'>"

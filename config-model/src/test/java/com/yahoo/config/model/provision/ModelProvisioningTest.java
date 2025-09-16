@@ -174,7 +174,7 @@ public class ModelProvisioningTest {
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                 "<services>" +
                 "\n" +
-                "  <admin version='3.0'>" +
+                "  <admin version='4.0'>" +
                 "    <nodes count='3'/>" +
                 "  </admin>" +
                 "  <content version='1.0' id='bar'>" +
@@ -933,7 +933,7 @@ public class ModelProvisioningTest {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                         "<services>" +
-                        "  <admin version='3.0'>" +
+                        "  <admin version='4.0'>" +
                         "    <nodes count='3'/>" + // Ignored
                         "  </admin>" +
                         "  <content version='1.0' id='bar'>" +
@@ -1072,7 +1072,7 @@ public class ModelProvisioningTest {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                         "<services>" +
-                        "  <admin version='3.0'>" +
+                        "  <admin version='4.0'>" +
                         "    <nodes count='3'/>" + // Ignored
                         "  </admin>" +
                         "  <container version='1.0' id='container'>" +
@@ -1120,7 +1120,7 @@ public class ModelProvisioningTest {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
-                        "  <admin version='3.0'>" +
+                        "  <admin version='4.0'>" +
                         "    <nodes count='3'/>" + // Ignored
                         "  </admin>" +
                         "  <content version='1.0' id='bar'>" +
@@ -1224,7 +1224,7 @@ public class ModelProvisioningTest {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
-                        "  <admin version='3.0'>" +
+                        "  <admin version='4.0'>" +
                         "    <nodes count='3'/>" + // Ignored
                         "  </admin>" +
                         "  <content version='1.0' id='bar'>" +
