@@ -1340,7 +1340,6 @@
       "public int maxDistributorDocumentOperationSizeMib()",
       "public java.lang.Object sidecarsForTest()",
       "public boolean useTriton()",
-      "public long searchCoreTransactionLogReplaySoftMemoryLimit()",
       "public boolean useNewPrepareForRestart()",
       "public int searchNodeInitializerThreads()",
       "public int searchCoreMaxOutstandingMoveOps()",
