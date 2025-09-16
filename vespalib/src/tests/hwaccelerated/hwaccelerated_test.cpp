@@ -51,7 +51,7 @@ void verify_dot_product(std::span<const IAccelerated*> accels, size_t test_lengt
 }
 
 const IAccelerated* baseline_accelerator() {
-    static auto baseline = IAccelerated::create_platform_baseline_accelerator();
+    static auto baseline = IAccelerated::create_baseline_auto_vectorized_target();
     return baseline.get();
 }
 
