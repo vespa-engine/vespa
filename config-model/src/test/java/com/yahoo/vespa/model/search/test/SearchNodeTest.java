@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Unit tests for search node.
  *
- * @author geirst
+ * @author Geir Storli
  */
 public class SearchNodeTest {
 
@@ -41,8 +41,8 @@ public class SearchNodeTest {
     private static SearchNode createSearchNode(MockRoot root, String name, int distributionKey, NodeSpec nodeSpec,
                                                boolean flushOnShutDown, boolean isHosted,
                                                Boolean syncTransactionLog) {
-        return SearchNode.create(root, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown,
-                null, isHosted, syncTransactionLog);
+        return new SearchNode(root, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown,
+                              null, isHosted, syncTransactionLog);
     }
 
     private static SearchNode createSearchNode(MockRoot root, Boolean syncTransactionLog) {

@@ -91,22 +91,15 @@ public class SearchNode extends AbstractService implements
         @Override
         protected SearchNode doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor,
                                      Element producerSpec) {
-            return SearchNode.create(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName,
-                                     contentNode, flushOnShutdown, tuning, deployState.isHosted(), syncTransactionLog);
+            return new SearchNode(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName,
+                                  contentNode, flushOnShutdown, tuning, deployState.isHosted(), syncTransactionLog);
         }
 
     }
 
-    public static SearchNode create(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
-                                    String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
-                                    Tuning tuning, boolean isHostedVespa, Boolean syncTransactionLog) {
-        return new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService,
-                              flushOnShutdown, tuning, isHostedVespa, syncTransactionLog);
-    }
-
-    private SearchNode(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
-                       String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
-                       Tuning tuning, boolean isHostedVespa, Boolean syncTransactionLog) {
+    public SearchNode(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
+                      String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
+                      Tuning tuning, boolean isHostedVespa, Boolean syncTransactionLog) {
         super(parent, name);
         this.distributionKey = distributionKey;
         this.serviceLayerService = serviceLayerService;
