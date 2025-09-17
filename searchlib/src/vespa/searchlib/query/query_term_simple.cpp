@@ -152,17 +152,22 @@ template <typename N>
 QueryTermSimple::RangeResult<N>
 QueryTermSimple::getFloatRange() const noexcept
 {
-    N lowRaw, highRaw;
-    bool valid = getAsFloatTerm(lowRaw, highRaw);
     RangeResult<N> res;
-    res.valid = valid;
-    if (!valid) {
+    if (_numeric_range) {
+        res.valid = true;
+        res.low = _numeric_range->fp_lower_limit;
+        res.high = _numeric_range->fp_upper_limit;
+        if (! _numeric_range->lower_inclusive) {
+            res.low = std::nextafter(res.low, res.high);
+        }
+        if (! _numeric_range->upper_inclusive) {
+            res.high = std::nextafter(res.high, res.low);
+        }
+    } else {
+        res.valid = false;
         res.low = std::numeric_limits<N>::infinity();
         res.high = -std::numeric_limits<N>::infinity();
         res.adjusted = true;
-    } else {
-        res.low = lowRaw;
-        res.high = highRaw;
     }
     return res;
 }
@@ -172,9 +177,11 @@ QueryTermSimple::getRangeInternal(int64_t & low, int64_t & high) const noexcept
 {
     bool valid = getAsIntegerTerm(low, high);
     if ( ! valid ) {
-        double l(0), h(0);
-        valid = getAsFloatTerm(l, h);
-        if (valid) {
+        RangeResult<double> range = getFloatRange<double>();
+        if (range.valid) {
+            valid = true;
+            double l = range.low;
+            double h = range.high;
             if ((l == h) && isRepresentableByInt64(l)) {
                 low = high = static_cast<int64_t>(std::round(l));
             } else {
