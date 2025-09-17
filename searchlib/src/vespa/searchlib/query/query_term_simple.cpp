@@ -302,35 +302,19 @@ QueryTermSimple::getAsIntegerTerm(int64_t & lower, int64_t & upper) const noexce
 bool
 QueryTermSimple::getAsFloatTerm(double & lower, double & upper) const noexcept
 {
-    if (_numeric_range) {
-        lower = _numeric_range->fp_lower_limit;
-        upper = _numeric_range->fp_upper_limit;
-        if (! _numeric_range->lower_inclusive) {
-            lower = std::nextafter(lower, upper);
-        }
-        if (! _numeric_range->upper_inclusive) {
-            upper = std::nextafter(upper, lower);
-        }
-        return true;
-    }
-    return false;
+    auto range = getFloatRange<double>();
+    lower = range.low;
+    upper = range.high;
+    return range.valid;
 }
 
 bool
 QueryTermSimple::getAsFloatTerm(float & lower, float & upper) const noexcept
 {
-    if (_numeric_range) {
-        lower = _numeric_range->fp_lower_limit;
-        upper = _numeric_range->fp_upper_limit;
-        if (! _numeric_range->lower_inclusive) {
-            lower = std::nextafter(lower, upper);
-        }
-        if (! _numeric_range->upper_inclusive) {
-            upper = std::nextafter(upper, lower);
-        }
-        return true;
-    }
-    return false;
+    auto range = getFloatRange<float>();
+    lower = range.low;
+    upper = range.high;
+    return range.valid;
 }
 
 QueryTermSimple::~QueryTermSimple() = default;
