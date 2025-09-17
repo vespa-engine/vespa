@@ -30,23 +30,32 @@ WandTerm::~WandTerm() = default;
 FuzzyTerm::~FuzzyTerm() = default;
 InTerm::~InTerm() = default;
 
-MultiTerm::MultiTerm(uint32_t num_terms)
+MultiTermBase::MultiTermBase(uint32_t num_terms)
     : _terms(),
       _num_terms(num_terms),
       _type(Type::UNKNOWN)
 {}
 
-MultiTerm::MultiTerm(std::unique_ptr<TermVector> terms, Type type)
+MultiTermBase::MultiTermBase(std::unique_ptr<TermVector> terms, Type type)
     : _terms(std::move(terms)),
       _num_terms(_terms->size()),
       _type(type)
-{
-}
+{}
+
+MultiTermBase::~MultiTermBase() = default;
+
+MultiTerm::MultiTerm(uint32_t num_terms)
+  : MultiTermBase(num_terms)
+{}
+
+MultiTerm::MultiTerm(std::unique_ptr<TermVector> terms, Type type)
+  : MultiTermBase(std::move(terms), type)
+{}
 
 MultiTerm::~MultiTerm() = default;
 
 std::unique_ptr<TermVector>
-MultiTerm::downgrade() {
+MultiTermBase::downgrade() {
     // Downgrade all number to string. This should really not happen
     auto new_terms = std::make_unique<WeightedStringTermVector>(_num_terms);
     for (uint32_t i(0), m(_terms->size()); i < m; i++) {
@@ -56,8 +65,7 @@ MultiTerm::downgrade() {
     return new_terms;
 }
 
-void
-MultiTerm::addTerm(std::string_view term, Weight weight) {
+void MultiTermBase::addTerm(std::string_view term, Weight weight) {
     if ( ! _terms) {
         _terms = std::make_unique<WeightedStringTermVector>(_num_terms);
         _type = Type::WEIGHTED_STRING;
@@ -69,8 +77,7 @@ MultiTerm::addTerm(std::string_view term, Weight weight) {
     _terms->addTerm(term, weight);
 }
 
-void
-MultiTerm::addTerm(int64_t term, Weight weight) {
+void MultiTermBase::addTerm(int64_t term, Weight weight) {
     if ( ! _terms) {
         _terms = std::make_unique<WeightedIntegerTermVector>(_num_terms);
         _type = Type::WEIGHTED_INTEGER;

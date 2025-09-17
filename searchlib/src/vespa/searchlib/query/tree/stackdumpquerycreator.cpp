@@ -11,7 +11,7 @@ using vespalib::Issue;
 namespace search::query {
 
 void
-StackDumpQueryCreatorHelper::populateMultiTerm(SimpleQueryStackDumpIterator &queryStack, QueryBuilderBase & builder, MultiTerm & mt) {
+StackDumpQueryCreatorHelper::populateMultiTerm(SimpleQueryStackDumpIterator &queryStack, QueryBuilderBase & builder, MultiTermBase & mt) {
     uint32_t added(0);
     for (added = 0; (added < mt.getNumTerms()) && queryStack.next(); added++) {
         ParseItem::ItemType type = queryStack.getType();

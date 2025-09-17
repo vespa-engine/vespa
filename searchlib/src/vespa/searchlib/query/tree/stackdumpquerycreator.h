@@ -15,7 +15,7 @@ namespace search::query {
 
 class StackDumpQueryCreatorHelper {
 public:
-    static void populateMultiTerm(SimpleQueryStackDumpIterator &queryStack, QueryBuilderBase & builder, MultiTerm & mt);
+    static void populateMultiTerm(SimpleQueryStackDumpIterator &queryStack, QueryBuilderBase & builder, MultiTermBase & mt);
     static void reportError(const SimpleQueryStackDumpIterator &queryStack, const QueryBuilderBase & builder);
 };
 
@@ -54,7 +54,7 @@ public:
     }
 
 private:
-    static void populateMultiTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilderBase & builder, MultiTerm & mt) {
+    static void populateMultiTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilderBase & builder, MultiTermBase & mt) {
         StackDumpQueryCreatorHelper::populateMultiTerm(queryStack, builder, mt);
     }
     static Term *
@@ -102,16 +102,20 @@ private:
         } else if (type == ParseItem::ITEM_WEIGHTED_SET) {
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            auto & ws = builder.addWeightedSetTerm(arity, queryStack.index_as_string(), id, weight);
+            MultiTermBase helper(arity);
             pureTermView = std::string_view();
-            populateMultiTerm(queryStack, builder, ws);
+            populateMultiTerm(queryStack, builder, helper);
+            auto tv = helper.stealTermVector();
+            auto & ws = builder.addWeightedSetTerm(std::move(tv), helper.getType(), queryStack.index_as_string(), id, weight);
             t = &ws;
         } else if (type == ParseItem::ITEM_DOT_PRODUCT) {
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            auto & dotProduct = builder.addDotProduct(arity, queryStack.index_as_string(), id, weight);
+            MultiTermBase helper(arity);
             pureTermView = std::string_view();
-            populateMultiTerm(queryStack, builder, dotProduct);
+            populateMultiTerm(queryStack, builder, helper);
+            auto tv = helper.stealTermVector();
+            auto & dotProduct = builder.addDotProduct(std::move(tv), helper.getType(), queryStack.index_as_string(), id, weight);
             t = &dotProduct;
         } else if (type == ParseItem::ITEM_WAND) {
             int32_t id = queryStack.getUniqueId();
@@ -119,9 +123,12 @@ private:
             uint32_t targetNumHits = queryStack.getTargetHits();
             double scoreThreshold = queryStack.getScoreThreshold();
             double thresholdBoostFactor = queryStack.getThresholdBoostFactor();
-            auto & wand = builder.addWandTerm(arity, queryStack.index_as_string(), id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
+            MultiTermBase helper(arity);
             pureTermView = std::string_view();
-            populateMultiTerm(queryStack, builder, wand);
+            populateMultiTerm(queryStack, builder, helper);
+            auto tv = helper.stealTermVector();
+            auto & wand = builder.addWandTerm(std::move(tv), helper.getType(),
+                                              queryStack.index_as_string(), id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
             t = & wand;
         } else if (type == ParseItem::ITEM_NOT) {
             builder.addAndNot(arity);

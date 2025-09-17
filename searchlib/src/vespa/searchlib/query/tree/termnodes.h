@@ -173,14 +173,18 @@ public:
     double get_distance_threshold() const { return _distance_threshold; }
 };
 
-class MultiTerm : public Node {
-public:
+struct MultiTermBase {
     enum class Type {STRING, INTEGER, WEIGHTED_STRING, WEIGHTED_INTEGER, UNKNOWN};
     using StringAndWeight = TermVector::StringAndWeight;
     using IntegerAndWeight = TermVector::IntegerAndWeight;
-    ~MultiTerm() override;
+
+    MultiTermBase(std::unique_ptr<TermVector> terms, Type type);
+    explicit MultiTermBase(uint32_t num_terms);
+    ~MultiTermBase();
+
     void addTerm(std::string_view term, Weight weight);
     void addTerm(int64_t term, Weight weight);
+
     // Note that the first refers to a zero terminated string.
     // That is required as the comparator for the enum store requires it.
     StringAndWeight getAsString(uint32_t index) const { return _terms->getAsString(index); }
@@ -188,14 +192,26 @@ public:
     Weight weight(uint32_t index) const { return _terms->getWeight(index); }
     uint32_t getNumTerms() const { return _num_terms; }
     Type getType() const { return _type; }
-protected:
-    explicit MultiTerm(uint32_t num_terms);
-    MultiTerm(std::unique_ptr<TermVector> terms, Type type);
+
+    std::unique_ptr<TermVector> stealTermVector() {
+        auto r = std::move(_terms);
+        _num_terms = 0;
+        _type = Type::UNKNOWN;
+        return r;
+    }
 private:
     VESPA_DLL_LOCAL std::unique_ptr<TermVector> downgrade() __attribute__((noinline));
     std::unique_ptr<TermVector> _terms;
     uint32_t _num_terms;
     Type _type;
+};
+
+class MultiTerm : public MultiTermBase, public Node {
+public:
+    ~MultiTerm() override;
+protected:
+    MultiTerm(std::unique_ptr<TermVector> terms, Type type);
+    explicit MultiTerm(uint32_t num_terms);
 };
 
 class WeightedSetTerm : public QueryNodeMixin<WeightedSetTerm, MultiTerm>, public Term {
