@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.SchemaInfo;
@@ -27,6 +28,7 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.LinkedHashMap;
 import java.util.Objects;
@@ -222,7 +224,8 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
                                            clusterName, node, flushOnShutdown, tuning, deployState.isHosted(),
-                                           syncTransactionLog);
+                                           syncTransactionLog,
+                                           deployState.getProperties().mallocImpl(Optional.of(ClusterSpec.Type.content)));
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState);
         } else {

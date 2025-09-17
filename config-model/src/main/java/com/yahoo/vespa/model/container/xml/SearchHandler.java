@@ -44,7 +44,7 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
     static List<BindingPattern> bindingPattern(Collection<Integer> ports) {
         if (ports.isEmpty()) return defaultBindings();
         return ports.stream()
-                    .map(s -> List.of((BindingPattern) SystemBindingPattern.fromHttpPortAndPath(s, DEFAULT_BINDING.path()),
+                    .map(s -> List.of(SystemBindingPattern.fromHttpPortAndPath(s, DEFAULT_BINDING.path()),
                                       (BindingPattern) SystemBindingPattern.fromHttpPortAndPath(s, DEFAULT_BINDING_NO_SLASH.path())))
                     .flatMap(List::stream)
                     .toList();

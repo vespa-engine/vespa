@@ -1394,6 +1394,7 @@
       "public java.lang.String jvmGCOptions()",
       "public java.lang.String jvmGCOptions(java.util.Optional)",
       "public abstract java.lang.String jvmGCOptions(java.util.Optional, java.util.Optional)",
+      "public java.lang.String mallocImpl(java.util.Optional)",
       "public int searchNodeInitializerThreads(java.lang.String)",
       "public boolean useDedicatedNodeForLogserver()",
       "public boolean allowDisableMtls()",

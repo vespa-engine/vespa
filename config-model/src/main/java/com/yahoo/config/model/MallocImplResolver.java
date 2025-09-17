@@ -3,6 +3,8 @@ package com.yahoo.config.model;
 
 import com.yahoo.vespa.defaults.Defaults;
 
+import java.util.Optional;
+
 /**
  * Resolves malloc implementation in config model.
  * <p>
@@ -21,6 +23,16 @@ public class MallocImplResolver {
         return switch (impl) {
             case vespamalloc -> resolveVespaMallocPath();
             case mimalloc -> resolveMimallocPath();
+        };
+    }
+
+    static public Optional<String> pathToLibrary(String impl) {
+        if (impl == null || impl.isEmpty()) {
+            return Optional.empty();
+        }
+        return switch (Impl.valueOf(impl)) {
+            case vespamalloc -> Optional.of(resolveVespaMallocPath());
+            case mimalloc -> Optional.of(resolveMimallocPath());
         };
     }
 
