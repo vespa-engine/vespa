@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import ai.vespa.sampling.ProbabilisticSampleRate;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
@@ -20,8 +19,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
 
 /**
  * A wrapper RequestHandler that enables access logging. By wrapping the request handler, we are able to wrap the
@@ -51,9 +48,6 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
     private final org.eclipse.jetty.server.Request jettyRequest;
     private final RequestHandler delegateRequestHandler;
     private final AccessLogEntry accessLogEntry;
-    private final List<String> pathPrefixes;
-    private final List<ProbabilisticSampleRate> samplingRate;
-    private final List<Long> maxSize;
 
     public AccessLoggingRequestHandler(
             org.eclipse.jetty.server.Request jettyRequest,
@@ -62,10 +56,7 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
         this.jettyRequest = jettyRequest;
         this.delegateRequestHandler = delegateRequestHandler;
         this.accessLogEntry = accessLogEntry;
-        var cfg = getConnector(jettyRequest).connectorConfig().accessLog().content();
-        this.pathPrefixes = cfg.stream().map(e -> e.pathPrefix()).toList();
-        this.samplingRate = cfg.stream().map(e -> ProbabilisticSampleRate.withSystemDefaults(e.sampleRate())).toList();
-        this.maxSize = cfg.stream().map(e -> e.maxSize()).toList();
+
     }
 
     @Override
@@ -76,13 +67,13 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
         var originalContentChannel = delegateRequestHandler.handleRequest(request, handler);
         var uriPath = request.getUri().getPath();
         if (methodsWithEntity.contains(httpRequest.getMethod())) {
-            for (int i = 0; i < pathPrefixes.size(); i++) {
-                if (uriPath.startsWith(pathPrefixes.get(i))) {
-                    if (samplingRate.get(i).shouldSample()) {
-                        return new ContentLoggingContentChannel(originalContentChannel, maxSize.get(i));
-                    }
-                }
-            }
+            // Determine if the request content should be logged based on path prefix and effective sample rate
+            long contentMaxSize = RequestUtils.getConnector(jettyRequest).requestContentLogging().stream()
+                    .filter(rcl -> uriPath.startsWith(rcl.pathPrefix()) && rcl.samplingRate().shouldSample())
+                    .map(rcl -> rcl.maxSize())
+                    .findAny()
+                    .orElse(0L);
+            if (contentMaxSize > 0) return new ContentLoggingContentChannel(originalContentChannel, contentMaxSize);
         }
         return originalContentChannel;
     }
