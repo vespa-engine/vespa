@@ -40,6 +40,7 @@
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchcore/proton/matching/session_manager_explorer.h>
 #include <vespa/searchcore/proton/common/scheduled_forward_executor.h>
+#include <vespa/searchcore/proton/server/document_db_initialization_status.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/diskindex/posting_list_cache.h>
@@ -1230,7 +1231,7 @@ void Proton::report_initialization_status(const vespalib::slime::Inserter &inser
     vespalib::slime::ArrayInserter arrayInserter(dbArrayCursor);
 
     for (const auto &kv : _documentDBMap) {
-        kv.second->report_initialization_status(arrayInserter);
+        kv.second->get_initialization_status()->report_initialization_status(arrayInserter);
     }
 }
 

@@ -3,6 +3,7 @@
 #include "documentdb.h"
 #include "bootstrapconfig.h"
 #include "combiningfeedview.h"
+#include "document_db_initialization_status.h"
 #include "document_db_reconfig.h"
 #include "document_meta_store_read_guards.h"
 #include "document_subdb_collection_explorer.h"
@@ -218,7 +219,8 @@ DocumentDB::DocumentDB(const std::string &baseDir,
       _maintenanceController(shared_service.transport(), _writeService.master(), _refCount, _docTypeName),
       _jobTrackers(),
       _calc(),
-      _metricsUpdater(_subDBs, _writeService, _jobTrackers, _writeFilter, *_feedHandler)
+      _metricsUpdater(_subDBs, _writeService, _jobTrackers, _writeFilter, *_feedHandler),
+      _initializationStatus(std::make_shared<DocumentDBInitializationStatus>(_docTypeName.getName(), _state, *_feedHandler))
 {
     assert(configSnapshot);
 
@@ -316,9 +318,10 @@ DocumentDB::initManagers()
     _initConfigSnapshot.reset();
     InitializerTask::SP rootTask = _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum, _indexCfg);
     {
-        lock_guard guard(_initialization_mutex);
-        AttributeInitializationStatusCollector visitor(_attribute_initialization_statuses);
+        std::vector<std::shared_ptr<AttributeInitializationStatus>> attribute_initialization_statuses;
+        AttributeInitializationStatusCollector visitor(attribute_initialization_statuses);
         rootTask->accept_visitor(visitor);
+        _initializationStatus->setAttributeInitializationStatuses(std::move(attribute_initialization_statuses));
     }
     InitializeThreads initializeThreads = _initializeThreads;
     _initializeThreads.reset();
@@ -1130,60 +1133,9 @@ DocumentDB::session_manager() {
     return _owner.session_manager();
 }
 
-void DocumentDB::report_initialization_status(const vespalib::slime::Inserter &inserter) const {
-    lock_guard guard(_initialization_mutex);
-
-    vespalib::slime::Cursor &db_cursor = inserter.insertObject();
-    db_cursor.setString("name", _docTypeName.getName());
-
-    DDBState::State state = _state.getState();
-    std::string state_string = DDBState::getStateString(state);
-    // Make stateString lowercase
-    std::transform(state_string.begin(), state_string.end(), state_string.begin(),
-           [](unsigned char c){ return std::tolower(c); });
-    db_cursor.setString("state", state_string);
-
-    if (state >= DDBState::State::LOAD) {
-        db_cursor.setString("start_time", timepoint_to_string(_state.get_load_time()));
-    }
-
-    if (state >= DDBState::State::REPLAY_TRANSACTION_LOG) {
-        db_cursor.setString("replay_start_time", timepoint_to_string(_state.get_replay_time()));
-    }
-
-    if (state >= DDBState::State::ONLINE) {
-        db_cursor.setString("end_time", timepoint_to_string(_state.get_online_time()));
-    }
-
-    if (state >= DDBState::State::REPLAY_TRANSACTION_LOG) {
-        db_cursor.setString("replay_progress", std::format("{:.6f}", _feedHandler->getReplayProgress()));
-    }
-
-    vespalib::slime::Cursor &subdb_cursor = db_cursor.setObject("ready_subdb");
-
-    vespalib::slime::Cursor &loaded_cursor = subdb_cursor.setArray("loaded_attributes");
-    vespalib::slime::ArrayInserter loaded_array_inserter(loaded_cursor);
-
-    vespalib::slime::Cursor &loading_cursor = subdb_cursor.setArray("loading_attributes");
-    vespalib::slime::ArrayInserter loading_array_inserter(loading_cursor);
-
-    vespalib::slime::Cursor &queued_cursor = subdb_cursor.setArray("queued_attributes");
-    vespalib::slime::ArrayInserter queued_array_inserter(queued_cursor);
-
-    for (const auto &attribute_status: _attribute_initialization_statuses) {
-
-        search::attribute::AttributeInitializationStatus::State attribute_state = attribute_status->get_state();
-
-        if (attribute_state == search::attribute::AttributeInitializationStatus::State::QUEUED) {
-            attribute_status->report_initialization_status(queued_array_inserter);
-
-        } else if (attribute_state == search::attribute::AttributeInitializationStatus::State::LOADED) {
-            attribute_status->report_initialization_status(loaded_array_inserter);
-
-        } else { // loading or reprocessing
-            attribute_status->report_initialization_status(loading_array_inserter);
-        }
-    }
+std::shared_ptr<DocumentDBInitializationStatus>
+DocumentDB::get_initialization_status() const {
+    return _initializationStatus;
 }
 
 } // namespace proton
