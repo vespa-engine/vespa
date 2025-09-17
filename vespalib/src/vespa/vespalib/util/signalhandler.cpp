@@ -2,11 +2,6 @@
 
 #include "signalhandler.h"
 #include "backtrace.h"
-#ifdef __APPLE__
-#define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
-#endif
-#include <boost/stacktrace/safe_dump_to.hpp> // Header-only dependency
-#include <boost/stacktrace/frame.hpp>
 #include <array>
 #include <atomic>
 #include <cassert>
@@ -94,9 +89,7 @@ SignalHandler::dump_current_thread_stack_to_shared_state() noexcept
         return; // Someone else is already inside the house...!
     }
     auto& frames_buf = _shared_backtrace_data._stack_frames;
-    static_assert(std::is_same_v<const void*, boost::stacktrace::frame::native_frame_ptr_t>);
-    // Note: safe_dump_to() takes in buffer size in _bytes_, not in number of frames.
-    const auto n_frames = boost::stacktrace::safe_dump_to(frames_buf.data(), frames_buf.size() * sizeof(void*));
+    const size_t n_frames = signal_safe_collect_stack_frames(frames_buf.data(), frames_buf.size());
     _shared_backtrace_data._n_dumped_frames = static_cast<uint32_t>(n_frames);
     _shared_backtrace_data._signal_handler_done.store(true);
 }
@@ -211,8 +204,8 @@ SignalHandler::get_cross_thread_stack_trace(pthread_t thread_id)
         expected_done = true;
     }
     constexpr int frames_to_skip = 4; // handleSignal() -> gotSignal() -> dump_current_thread_...() -> backtrace()
-    return vespalib::getStackTrace(frames_to_skip, _shared_backtrace_data._stack_frames.data(),
-                                   static_cast<int>(_shared_backtrace_data._n_dumped_frames));
+    return getStackTrace(frames_to_skip, _shared_backtrace_data._stack_frames.data(),
+                         static_cast<int>(_shared_backtrace_data._n_dumped_frames));
 }
 
 void
