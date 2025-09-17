@@ -60,11 +60,11 @@ void
 MultiTerm::addTerm(std::string_view term, Weight weight) {
     if ( ! _terms) {
         _terms = std::make_unique<WeightedStringTermVector>(_num_terms);
-        _type = Type::STRING;
+        _type = Type::WEIGHTED_STRING;
     }
-    if (_type == Type::INTEGER) {
+    if (_type != Type::WEIGHTED_STRING) {
         _terms = downgrade();
-        _type = Type::STRING;
+        _type = Type::WEIGHTED_STRING;
     }
     _terms->addTerm(term, weight);
 }
@@ -73,7 +73,7 @@ void
 MultiTerm::addTerm(int64_t term, Weight weight) {
     if ( ! _terms) {
         _terms = std::make_unique<WeightedIntegerTermVector>(_num_terms);
-        _type = Type::INTEGER;
+        _type = Type::WEIGHTED_INTEGER;
     }
     _terms->addTerm(term, weight);
 }

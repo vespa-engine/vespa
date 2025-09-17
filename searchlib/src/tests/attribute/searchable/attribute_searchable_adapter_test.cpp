@@ -663,7 +663,7 @@ void set_attr_value(AttributeVector &attr, uint32_t docid, size_t value) {
         str.push_back('a' + value / 27);
         str.push_back('a' + value % 27);
         string_attr->update(docid, str);
-        string_attr->commit();    
+        string_attr->commit();
     } else {
         ASSERT_TRUE(false);
     }

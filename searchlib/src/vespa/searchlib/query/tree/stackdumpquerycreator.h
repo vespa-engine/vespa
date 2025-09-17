@@ -102,7 +102,7 @@ private:
         } else if (type == ParseItem::ITEM_WEIGHTED_SET) {
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-           auto & ws = builder.addWeightedSetTerm(arity, queryStack.index_as_string(), id, weight);
+            auto & ws = builder.addWeightedSetTerm(arity, queryStack.index_as_string(), id, weight);
             pureTermView = std::string_view();
             populateMultiTerm(queryStack, builder, ws);
             t = &ws;
