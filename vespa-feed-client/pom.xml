@@ -38,7 +38,8 @@
       <dependency>
         <groupId>org.eclipse.jetty.http2</groupId>
         <artifactId>jetty-http2-common</artifactId>
-        <version>${jetty.client.vespa.version}</version>
+        <!-- Must use server version because of CVE-2025-5115 -->
+        <version>${jetty.vespa.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -131,7 +132,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>${maven-enforcer-plugin.vespa.version}</version>
         <executions>
           <execution>
             <!-- See comment in dependencyManagement above -->
@@ -142,14 +142,16 @@
             <configuration>
               <rules>
                 <dependencyConvergence>
-                  <uniqueVersions>false</uniqueVersions>
+                  <uniqueVersions>true</uniqueVersions>
                 </dependencyConvergence>
                 <bannedDependencies>
+                  <searchTransitive>true</searchTransitive>
                   <excludes>
-                    <exclude>org.eclipse.jetty*:*</exclude>
+                    <exclude>org.eclipse.jetty*</exclude>
                   </excludes>
                   <includes>
                     <include>org.eclipse.jetty*:*:${jetty.client.vespa.version}</include>
+                    <include>org.eclipse.jetty.http2:jetty-http2-common:${jetty.vespa.version}</include>
                   </includes>
                   <message>All client Jetty dependencies must use version ${jetty.client.vespa.version}</message>
                 </bannedDependencies>

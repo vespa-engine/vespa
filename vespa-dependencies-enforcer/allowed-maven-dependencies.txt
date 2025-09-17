@@ -201,9 +201,7 @@ org.eclipse.collections:eclipse-collections-api:${eclipse-collections.vespa.vers
 org.eclipse.collections:eclipse-collections:${eclipse-collections.vespa.version}
 org.eclipse.jetty.http2:jetty-http2-client-transport:${jetty.client.vespa.version}
 org.eclipse.jetty.http2:jetty-http2-client:${jetty.client.vespa.version}
-org.eclipse.jetty.http2:jetty-http2-common:${jetty.client.vespa.version}
 org.eclipse.jetty.http2:jetty-http2-common:${jetty.vespa.version}
-org.eclipse.jetty.http2:jetty-http2-hpack:${jetty.client.vespa.version}
 org.eclipse.jetty.http2:jetty-http2-hpack:${jetty.vespa.version}
 org.eclipse.jetty.http2:jetty-http2-server:${jetty.vespa.version}
 org.eclipse.jetty:jetty-alpn-client:${jetty.client.vespa.version}
