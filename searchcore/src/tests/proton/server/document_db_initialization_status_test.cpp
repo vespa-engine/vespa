@@ -69,7 +69,6 @@ protected:
         vespalib::slime::SlimeInserter inserter(slime);
         _status.report_initialization_status(inserter);
 
-        std::cout << slime.toString() << std::endl;
         EXPECT_EQ(slime.get().children(), children);
         EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("test_database"));
         EXPECT_EQ(slime.get()["state"].asString().make_string(), state);
