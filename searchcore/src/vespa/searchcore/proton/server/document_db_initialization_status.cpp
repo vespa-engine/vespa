@@ -15,7 +15,7 @@ DocumentDBInitializationStatus::DocumentDBInitializationStatus(const std::string
       _replay_progress_producer(replay_progress_producer) {
 }
 
-void DocumentDBInitializationStatus::setAttributeInitializationStatuses(std::vector<std::shared_ptr<AttributeInitializationStatus>>&& attribute_initialization_statuses) {
+void DocumentDBInitializationStatus::set_attribute_initialization_statuses(std::vector<std::shared_ptr<AttributeInitializationStatus>>&& attribute_initialization_statuses) {
     std::lock_guard<std::mutex> guard(_mutex);
 
     _attribute_initialization_statuses = std::move(attribute_initialization_statuses);

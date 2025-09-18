@@ -321,7 +321,7 @@ DocumentDB::initManagers()
         std::vector<std::shared_ptr<AttributeInitializationStatus>> attribute_initialization_statuses;
         AttributeInitializationStatusCollector visitor(attribute_initialization_statuses);
         rootTask->accept_visitor(visitor);
-        _initializationStatus->setAttributeInitializationStatuses(std::move(attribute_initialization_statuses));
+        _initializationStatus->set_attribute_initialization_statuses(std::move(attribute_initialization_statuses));
     }
     InitializeThreads initializeThreads = _initializeThreads;
     _initializeThreads.reset();

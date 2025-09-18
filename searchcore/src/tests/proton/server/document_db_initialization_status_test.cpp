@@ -114,7 +114,7 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_initializing_with_attr
     attributes.push_back(_reprocessing_attribute);
     attributes.push_back(_reprocessed_attribute);
     attributes.push_back(_reprocessed_loaded_attribute);
-    _status.setAttributeInitializationStatuses(std::move(attributes));
+    _status.set_attribute_initialization_statuses(std::move(attributes));
 
     _state.enterLoadState();
 
@@ -155,7 +155,7 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_online_with_attributes
     std::vector<std::shared_ptr<AttributeInitializationStatus> > attributes;
     attributes.push_back(_loaded_attribute);
     attributes.push_back(_reprocessed_loaded_attribute);
-    _status.setAttributeInitializationStatuses(std::move(attributes));
+    _status.set_attribute_initialization_statuses(std::move(attributes));
 
     _state.enterLoadState();
     _state.enterReplayTransactionLogState();
