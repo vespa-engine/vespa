@@ -68,12 +68,12 @@ rm -rf rpms
 mv "$WORKDIR/docker-image/rpms" rpms
 
 echo "--- Building system-test container"
-GHCR_SYSTEMTEST_TAG="$("${WORKDIR}/.buildkite/utils/get-container-tag.sh" "ghcr.io" "vespa-engine/vespa-systemtest-preview-$ARCH" "$VESPA_VERSION")"
-echo "Building system-test container with tag: ${GHCR_SYSTEMTEST_TAG}"
+DOCKER_SYSTEMTEST_TAG="$("${WORKDIR}/.buildkite/utils/get-container-tag.sh" "docker.io" "vespa-engine/vespa-systemtest-preview-$ARCH" "$VESPA_VERSION")"
+echo "Building system-test container with tag: ${DOCKER_SYSTEMTEST_TAG}"
 SYSTEM_TEST_BASE_IMAGE="almalinux:${ALMALINUX_MAJOR}"
 docker build --progress=plain \
              --build-arg BASE_IMAGE="$SYSTEM_TEST_BASE_IMAGE" \
              --build-arg VESPA_BASE_IMAGE="${GHCR_PREVIEW_TAG}" \
              --target systemtest \
-             --tag "$GHCR_SYSTEMTEST_TAG" \
+             --tag "$DOCKER_SYSTEMTEST_TAG" \
              --file Dockerfile .

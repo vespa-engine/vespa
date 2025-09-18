@@ -40,5 +40,10 @@ echo "Pushing container: ${SYSTEMTEST_PREVIEW_CONTAINER_URI}"
 docker push "$SYSTEMTEST_PREVIEW_CONTAINER_URI"
 IMAGE_SHA256=$(crane digest "$SYSTEMTEST_PREVIEW_CONTAINER_URI")
 
+if [ "${IMAGE_SHA256}" = "" ]; then
+    echo "Failed getting IMAGE_SHA256 from $SYSTEMTEST_PREVIEW_CONTAINER_URI"
+    exit 1
+fi
+
 echo "Setting Buildkite metadata for system-test container..."
 buildkite-agent meta-data set "vespa-systemtest-container-image-$ARCH-al${ALMALINUX_MAJOR}" "$SYSTEMTEST_PREVIEW_CONTAINER_URI@$IMAGE_SHA256"
