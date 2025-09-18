@@ -4,6 +4,9 @@
 
 #include "ddbstate.h"
 #include "document_db_initialization_status.h"
+#include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 namespace proton {
 
@@ -56,5 +59,45 @@ ProtonInitializationStatus::time_point ProtonInitializationStatus::get_end_time(
     std::lock_guard<std::mutex> guard(_mutex);
     return _end_time;
 }
+
+void ProtonInitializationStatus::report_initialization_status(const vespalib::slime::Inserter &inserter) const {
+    std::lock_guard<std::mutex> guard(_mutex);
+
+    vespalib::slime::Cursor &cursor = inserter.insertObject();
+    cursor.setString("state", ProtonInitializationStatus::state_to_string(_state));
+    cursor.setString("current_time", timepoint_to_string(std::chrono::system_clock::now()));
+    cursor.setString("initialization_started", timepoint_to_string(_start_time));
+
+    if (_state == ProtonInitializationStatus::READY) {
+        cursor.setString("initialization_finished", timepoint_to_string(_end_time));
+    }
+
+    // DB counts
+    size_t load(0), replay(0), online(0);
+    for (const auto &status : _ddb_initialization_statuses) {
+        switch (status->get_state().getState()) {
+            case DDBState::State::REPLAY_TRANSACTION_LOG:
+                ++replay;
+                break;
+            case DDBState::State::ONLINE:
+                ++online;
+                break;
+            default:
+                ++load;
+        }
+    }
+    cursor.setLong("load", load);
+    cursor.setLong("replay_transaction_log", replay);
+    cursor.setLong("online", online);
+
+    // DBs
+    vespalib::slime::Cursor &dbArrayCursor = cursor.setArray("dbs");
+    vespalib::slime::ArrayInserter arrayInserter(dbArrayCursor);
+
+    for (const auto &status : _ddb_initialization_statuses) {
+        status->report_initialization_status(arrayInserter);
+    }
+}
+
 
 }

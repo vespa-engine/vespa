@@ -2,12 +2,15 @@
 
 #pragma once
 
+#include <vespa/vespalib/net/http/initialization_status_producer.h>
+
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
 
 namespace search::attribute { class AttributeInitializationStatus; }
+namespace vespalib::slime { struct Inserter; }
 
 using search::attribute::AttributeInitializationStatus;
 
@@ -22,7 +25,7 @@ class IReplayProgressProducer;
  *
  * Thread-safe.
  */
-class DocumentDBInitializationStatus {
+class DocumentDBInitializationStatus : public vespalib::InitializationStatusProducer {
 private:
     const std::string              _name;
     const DDBState&                _state;
@@ -37,6 +40,8 @@ public:
     void set_attribute_initialization_statuses(std::vector<std::shared_ptr<AttributeInitializationStatus>>&& attribute_initialization_statuses);
 
     const DDBState& get_state() const { return _state; }
+
+    void report_initialization_status(const vespalib::slime::Inserter &inserter) const override;
 };
 
 }
