@@ -120,7 +120,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean useNewPrepareForRestart() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchNodeInitializerThreads() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
-        @ModelFeatureFlag(owners = {"hmusum", "johsol"}) default String useMallocImpl() { return ""; }
+        @ModelFeatureFlag(owners = {"hmusum", "johsol"}, removeAfter = "8.584.3") default String useMallocImpl() { return ""; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -159,7 +159,9 @@ public interface ModelContext {
 
         // Default setting for the gc-options attribute if not specified explicitly by application
         String jvmGCOptions(Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId);
-        
+
+        default String mallocImpl(Optional<ClusterSpec.Type> clusterType) { return ""; }
+
         default int searchNodeInitializerThreads(String clusterId) { return 0; }
         
         // Note: Used in unit tests (set to false in TestProperties) to avoid needing to deal with implicitly created node for logserver

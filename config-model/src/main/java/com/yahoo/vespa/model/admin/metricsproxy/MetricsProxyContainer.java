@@ -72,6 +72,12 @@ public class MetricsProxyContainer extends Container implements
     }
 
     @Override
+    public void setMallocImpl(String mallocImpl) {
+        // Do nothing here, only ApplicationContainer should set
+        // this to anything other than the default, and that class has overridden this method.
+    }
+
+    @Override
     protected ContainerServiceType myServiceType() {
         return METRICS_PROXY_CONTAINER;
     }

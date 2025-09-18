@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
@@ -144,12 +145,6 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
         initialized = true;
         for(String envVar : deployState.getProperties().environmentVariables()) {
             addEnvironmentVariable(envVar);
-        }
-        if (! deployState.featureFlags().useMallocImpl().isEmpty()) {
-            addEnvironmentVariable("VESPA_USE_MALLOC_IMPL", deployState.featureFlags().useMallocImpl());
-
-            String path = MallocImplResolver.resolvePath(MallocImplResolver.Impl.valueOf(deployState.featureFlags().useMallocImpl()));
-            setPreLoad(path);
         }
     }
 
@@ -379,7 +374,9 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
         return preload != null ? preload : defaultPreload();
     }
     public void setPreLoad(String preload) {
-        this.preload = preload;
+        if (preload != null && !preload.isEmpty()) {
+            this.preload = preload;
+        }
     }
     /** If larger or equal to 0 it means that explicit mmaps shall not be included in coredump.*/
     public void setMMapNoCoreLimit(long noCoreLimit) {
@@ -401,6 +398,13 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
     public void setVespaMalloc(String s) { environmentVariables.put("VESPA_USE_VESPAMALLOC", s); }
     public void setVespaMallocDebug(String s) { environmentVariables.put("VESPA_USE_VESPAMALLOC_D", s); }
     public void setVespaMallocDebugStackTrace(String s) { environmentVariables.put("VESPA_USE_VESPAMALLOC_DST", s); }
+    public void setMallocImpl(String mallocImpl) {
+        if (mallocImpl !=null && !mallocImpl.isEmpty()) {
+            addEnvironmentVariable("VESPA_USE_MALLOC_IMPL", mallocImpl);
+        } else {
+            log.log(Level.INFO, "Null or empty malloc impl supplied for service " + getServiceName() + ", ignoring");
+        }
+    }
 
     private static String toEnvValue(Object o) {
         if (o instanceof Number || o instanceof Boolean) {

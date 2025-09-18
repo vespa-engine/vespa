@@ -20,6 +20,7 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.net.HostName;
@@ -28,6 +29,7 @@ import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.application.validation.Validation;
+import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
@@ -352,33 +354,64 @@ public class VespaModelTestCase {
                           <container version='1.0' id='default'>
                             <search/>
                           </container>
+                          <content id="music" version="1.0">"
+                            <redundancy>1</redundancy>"
+                            <nodes count="1">
+                                <resources disk="24Gb" />
+                            </nodes>
+                            <documents>
+                              <document type="music" mode="index"/>
+                            </documents>
+                          </content>
                         </services>""";
-        var app = new MockApplicationPackage.Builder().withServices(services).build();
+        var app = new MockApplicationPackage.Builder().withServices(services)
+                                                      .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
+                                                      .build();
+
+        {
+            var model = createModel(app, ClusterSpec.Type.container, "mimalloc");
+            assertMallocImpl(model, ClusterSpec.Type.container, "default", "mimalloc");
+
+            model = createModel(app, ClusterSpec.Type.container, "vespamalloc");
+            assertMallocImpl(model, ClusterSpec.Type.container, "default", "vespamalloc");
+        }
+
+        {
+            var model = createModel(app, ClusterSpec.Type.content, "mimalloc");
+            assertMallocImpl(model, ClusterSpec.Type.content, "music", "mimalloc");
+
+            model = createModel(app, ClusterSpec.Type.content, "vespamalloc");
+            assertMallocImpl(model, ClusterSpec.Type.content, "music", "vespamalloc");
+        }
+    }
+
+    private VespaModel createModel(ApplicationPackage app, ClusterSpec.Type clusterType, String mallocImpl) throws IOException, SAXException {
         var properties = new TestProperties()
                 .setHostedVespa(true)
                 .setApplicationId(ApplicationId.from("foo", "bar", "default-t"));
+        var deployState = new DeployState.Builder()
+                .applicationPackage(app)
+                .properties(properties.setMallocImpl(clusterType, mallocImpl))
+                .build();
+        return new VespaModel(new NullConfigModelRegistry(), deployState);
+    }
 
-        {
-            var deployState = new DeployState.Builder()
-                    .applicationPackage(app)
-                    .properties(properties.setUseMallocImpl("mimalloc"))
-                    .build();
-            var model = new VespaModel(new NullConfigModelRegistry(), deployState);
-            var container = model.getContainerClusters().get("default").getContainers().get(0);
-            assertEquals("mimalloc", container.getEnvVars().get("VESPA_USE_MALLOC_IMPL"));
-            assertTrue(container.getStartupCommand().orElse("").contains("/opt/vespa-deps/lib64/libmimalloc.so"));
+    private void assertMallocImpl(VespaModel model, ClusterSpec.Type clusterType, String clusterId, String expectedMallocImpl) {
+        var libraryPath = expectedMallocImpl.equals("mimalloc") ?
+                "/opt/vespa-deps/lib64/libmimalloc.so" :
+                "/opt/vespa/lib64/vespa/malloc/libvespamalloc.so";
+        if (clusterType == ClusterSpec.Type.content) {
+            ContentCluster contentCluster = model.getContentClusters().get(clusterId);
+            var searchNode = contentCluster.getSearch().getSearchNodes().get(0);
+            assertEquals(expectedMallocImpl, searchNode.getEnvVars().get("VESPA_USE_MALLOC_IMPL"));
+            var distributor = contentCluster.getDistributorNodes().getChildren().values().iterator().next();
+            assertEquals(expectedMallocImpl, distributor.getEnvVars().get("VESPA_USE_MALLOC_IMPL"));
+        } else {
+            var container = model.getContainerClusters().get(clusterId).getContainers().get(0);
+            assertEquals(expectedMallocImpl, container.getEnvVars().get("VESPA_USE_MALLOC_IMPL"));
+            assertTrue(container.getStartupCommand().orElse("").contains(libraryPath));
         }
 
-        {
-            var deployState = new DeployState.Builder()
-                    .applicationPackage(app)
-                    .properties(properties.setUseMallocImpl(""))
-                    .build();
-            var model = new VespaModel(new NullConfigModelRegistry(), deployState);
-            var container = model.getContainerClusters().get("default").getContainers().get(0);
-            assertNull(container.getEnvVars().get("VESPA_USE_MALLOC_IMPL"));
-            assertTrue(container.getStartupCommand().orElse("").contains("lib64/vespa/malloc/libvespamalloc.so"));
-        }
     }
 
 }

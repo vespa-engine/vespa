@@ -5,6 +5,7 @@ import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.searchlib.TranslogserverConfig;
@@ -92,21 +93,23 @@ public class SearchNode extends AbstractService implements
         protected SearchNode doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor,
                                      Element producerSpec) {
             return SearchNode.create(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName,
-                                     contentNode, flushOnShutdown, tuning, deployState.isHosted(), syncTransactionLog);
+                                     contentNode, flushOnShutdown, tuning, deployState.isHosted(), syncTransactionLog,
+                                     deployState.getProperties().mallocImpl(Optional.of(ClusterSpec.Type.content)));
         }
 
     }
 
     public static SearchNode create(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
                                     String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
-                                    Tuning tuning, boolean isHostedVespa, Boolean syncTransactionLog) {
+                                    Tuning tuning, boolean isHostedVespa, Boolean syncTransactionLog,
+                                    String mallocImpl) {
         return new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService,
-                              flushOnShutdown, tuning, isHostedVespa, syncTransactionLog);
+                              flushOnShutdown, tuning, isHostedVespa, syncTransactionLog, mallocImpl);
     }
 
     private SearchNode(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
                        String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
-                       Tuning tuning, boolean isHostedVespa, Boolean syncTransactionLog) {
+                       Tuning tuning, boolean isHostedVespa, Boolean syncTransactionLog, String mallocImpl) {
         super(parent, name);
         this.distributionKey = distributionKey;
         this.serviceLayerService = serviceLayerService;
@@ -124,7 +127,10 @@ public class SearchNode extends AbstractService implements
         this.tuning = tuning;
         this.syncTransactionLog = syncTransactionLog;
         setPropertiesElastic(clusterName, distributionKey);
+        // The OMP_NUM_THREADS environment variable sets the number of threads OpenMP will use for parallel regions
+        // See https://www.openmp.org/spec-html/5.0/openmpse50.html
         addEnvironmentVariable("OMP_NUM_THREADS", 1);
+        setMallocImpl(mallocImpl);
     }
 
     private void setPropertiesElastic(String clusterName, int distributionKey) {

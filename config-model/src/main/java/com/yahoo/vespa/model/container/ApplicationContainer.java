@@ -2,11 +2,10 @@
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
-import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.MallocImplResolver;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
@@ -40,6 +39,16 @@ public final class ApplicationContainer extends Container implements
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.SystemInfoProvider"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.ZoneInfoProvider"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.ClusterInfoProvider"));
+    }
+
+    public void setMallocImpl(String mallocImpl) {
+        if (mallocImpl == null || mallocImpl.isEmpty()) {
+            return;
+        }
+
+        super.setMallocImpl(mallocImpl);
+        // Note: Need to set preload for containers when using malloc other than the default
+        MallocImplResolver.pathToLibrary(mallocImpl).ifPresent(this::setPreLoad);
     }
 
     @Override
