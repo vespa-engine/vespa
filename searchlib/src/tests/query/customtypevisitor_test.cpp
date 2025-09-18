@@ -143,13 +143,6 @@ struct MyInTerm : InTerm {
     ~MyInTerm() override;
 };
 
-struct MyWordAlternatives : WordAlternatives {
-    MyWordAlternatives()
-      : WordAlternatives(std::make_unique<StringTermVector>(0), "view", 0, Weight(0))
-    {}
-    ~MyWordAlternatives() override;
-};
-
 MyAnd::~MyAnd() = default;
 
 MyAndNot::~MyAndNot() = default;
@@ -204,8 +197,6 @@ MyFalse::~MyFalse() = default;
 
 MyInTerm::~MyInTerm() = default;
 
-MyWordAlternatives::~MyWordAlternatives() = default;
-
 struct MyQueryNodeTypes {
     using And = MyAnd;
     using AndNot = MyAndNot;
@@ -234,7 +225,6 @@ struct MyQueryNodeTypes {
     using FalseQueryNode = MyFalse;
     using TrueQueryNode = MyTrue;
     using InTerm = MyInTerm;
-    using WordAlternatives = MyWordAlternatives;
 };
 
 class MyCustomVisitor : public CustomTypeVisitor<MyQueryNodeTypes>
@@ -275,7 +265,6 @@ public:
     void visit(MyFalse &) override { setVisited<MyFalse>(); }
     void visit(MyFuzzyTerm &) override { setVisited<MyFuzzyTerm>(); }
     void visit(MyInTerm&) override { setVisited<MyInTerm>(); }
-    void visit(MyWordAlternatives&) override { setVisited<MyWordAlternatives>(); }
 };
 
 template <class T>
@@ -313,7 +302,6 @@ TEST(CustomTypeVisitorTest, all_query_nodes_are_visited) {
     requireThatNodeIsVisited<MyTrue>();
     requireThatNodeIsVisited<MyFalse>();
     requireThatNodeIsVisited<MyFuzzyTerm>();
-    requireThatNodeIsVisited<MyWordAlternatives>();
 }
 }  // namespace
 

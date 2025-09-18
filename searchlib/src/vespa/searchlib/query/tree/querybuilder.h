@@ -404,10 +404,6 @@ public:
         return addTerm(create_in_term<NodeTypes>(std::move(terms), type, view, id, weight));
     }
 
-    typename NodeTypes::WordAlternatives& add_word_alternatives(std::unique_ptr<TermVector> terms, const string & view, int32_t id, Weight weight) {
-        adjustWeight(weight);
-        return addTerm(create_word_alternatives<NodeTypes>(std::move(terms), view, id, weight));
-    }
 };
 
 }

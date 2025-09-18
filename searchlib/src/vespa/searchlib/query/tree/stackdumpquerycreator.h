@@ -5,7 +5,6 @@
 #include "node.h"
 #include "querybuilder.h"
 #include "termnodes.h"
-#include "weighted_string_term_vector.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/common/geo_location_parser.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -74,16 +73,8 @@ private:
             std::string_view view = queryStack.index_as_view();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            auto words = std::make_unique<WeightedStringTermVector>(arity);
-            for (uint32_t idx = 0; idx < arity; idx++) {
-                if (queryStack.next() && queryStack.getType() == ParseItem::ITEM_PURE_WEIGHTED_STRING) {
-                    words->addTerm(queryStack.getTerm(), queryStack.GetWeight());
-                } else {
-                    // report error?
-                    return nullptr;
-                }
-            }
-            t = &builder.add_word_alternatives(std::move(words), std::string(view), id, weight);
+            builder.addEquiv(arity, id, weight);
+            pureTermView = view;
         } else if (type == ParseItem::ITEM_WEAK_AND) {
             uint32_t targetNumHits = queryStack.getTargetHits();
             builder.addWeakAnd(arity, targetNumHits, queryStack.index_as_string());

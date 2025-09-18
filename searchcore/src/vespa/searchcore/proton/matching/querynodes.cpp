@@ -135,10 +135,8 @@ template struct ProtonTerm<search::query::PredicateQuery>;
 template struct ProtonTerm<search::query::RegExpTerm>;
 template struct ProtonTerm<search::query::FuzzyTerm>;
 template struct ProtonTerm<search::query::InTerm>;
-template struct ProtonTerm<search::query::WordAlternatives>;
 
 ProtonEquiv::~ProtonEquiv() = default;
-ProtonWordAlternatives::~ProtonWordAlternatives() = default;
 ProtonSameElement::~ProtonSameElement() = default;
 ProtonNearestNeighborTerm::~ProtonNearestNeighborTerm() = default;
 

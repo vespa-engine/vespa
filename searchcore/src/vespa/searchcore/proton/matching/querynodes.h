@@ -126,6 +126,7 @@ struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv> {
     using ProtonTermBase::ProtonTermBase;
     ~ProtonEquiv() override;
 };
+
 struct ProtonSameElement final : public ProtonTermBase<search::query::SameElement> {
     search::fef::MatchDataLayout subtree_mdl;
     using ProtonTermBase::ProtonTermBase;
@@ -157,20 +158,6 @@ using ProtonRegExpTerm =      ProtonTerm<search::query::RegExpTerm>;
 using ProtonFuzzyTerm =       ProtonTerm<search::query::FuzzyTerm>;
 using ProtonInTerm =          ProtonTerm<search::query::InTerm>;
 
-struct ProtonWordAlternatives final : public ProtonTermBase<search::query::WordAlternatives> {
-    std::vector<std::unique_ptr<ProtonStringTerm>> children;
-    ProtonWordAlternatives(std::unique_ptr<search::query::TermVector> terms, const std::string & view, int32_t id, search::query::Weight weight)
-      : ProtonTermBase(std::move(terms), view, id, weight)
-    {
-        for (uint32_t idx = 0; idx < getNumTerms(); idx++) {
-            auto pair = getAsString(idx);
-            auto tp = std::make_unique<ProtonStringTerm>(std::string(pair.first), getView(), 0, pair.second);
-            children.emplace_back(std::move(tp));
-        }
-    }
-    ~ProtonWordAlternatives() override;
-};
-
 struct ProtonNodeTypes {
     using And =                 ProtonAnd;
     using AndNot =              ProtonAndNot;
@@ -199,7 +186,6 @@ struct ProtonNodeTypes {
     using FalseQueryNode =      ProtonFalse;
     using FuzzyTerm =           ProtonFuzzyTerm;
     using InTerm =              ProtonInTerm;
-    using WordAlternatives =    ProtonWordAlternatives;
 };
 
 extern template struct ProtonTerm<search::query::LocationTerm>;
@@ -217,6 +203,5 @@ extern template struct ProtonTerm<search::query::PredicateQuery>;
 extern template struct ProtonTerm<search::query::RegExpTerm>;
 extern template struct ProtonTerm<search::query::FuzzyTerm>;
 extern template struct ProtonTerm<search::query::InTerm>;
-extern template struct ProtonTerm<search::query::WordAlternatives>;
 
 }

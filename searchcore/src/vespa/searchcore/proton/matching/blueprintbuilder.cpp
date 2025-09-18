@@ -3,7 +3,6 @@
 #include "blueprintbuilder.h"
 #include "querynodes.h"
 #include <vespa/searchcorespi/index/indexsearchable.h>
-#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/queryeval/create_blueprint_params.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
@@ -99,32 +98,6 @@ private:
         n.setDocumentFrequency(_result->getState().estimate().estHits, _context.getDocIdLimit());
     }
 
-    void buildWordAlternatives(ProtonWordAlternatives &n) {
-        assert(n.children.size() == n.getNumTerms());
-        double eqw = n.getWeight().percent();
-        search::fef::MatchDataLayout layout;
-        std::vector<std::unique_ptr<Blueprint>> term_bps;
-        for (const auto& tp : n.children) {
-            tp->allocateTerms(layout);
-            term_bps.emplace_back(build(_requestContext, *tp, _context));
-        }
-        FieldSpecBaseList specs;
-        specs.reserve(n.numFields());
-        for (size_t i = 0; i < n.numFields(); ++i) {
-            specs.add(n.field(i).fieldSpec());
-        }
-        auto *eq = new EquivBlueprint(std::move(specs), layout);
-        _result.reset(eq);
-        assert(term_bps.size() == n.getNumTerms());
-        for (uint32_t idx = 0; idx < n.getNumTerms(); idx++) {
-            auto pair = n.getAsString(idx);
-            double w = pair.second.percent();
-            eq->addTerm(std::move(term_bps[idx]), w / eqw);
-        }
-        _result->setDocIdLimit(_context.getDocIdLimit());
-        n.setDocumentFrequency(_result->getState().estimate().estHits, _context.getDocIdLimit());
-    }
-
     void buildSameElement(ProtonSameElement &n) {
         if (n.numFields() == 1) {
             auto se = std::make_unique<SameElementBlueprint>(n.field(0).fieldSpec(), n.subtree_mdl, n.is_expensive());
@@ -167,7 +140,6 @@ protected:
     void visit(ProtonOr &n)          override { buildIntermediate(new OrBlueprint(), n); }
     void visit(ProtonWeakAnd &n)     override { buildWeakAnd(n); }
     void visit(ProtonEquiv &n)       override { buildEquiv(n); }
-    void visit(ProtonWordAlternatives &n) override { buildWordAlternatives(n); }
     void visit(ProtonRank &n)        override { buildIntermediate(new RankBlueprint(), n); }
     void visit(ProtonNear &n)        override {
         buildIntermediate(new NearBlueprint(n.getDistance(), _requestContext.get_element_gap_inspector()), n);

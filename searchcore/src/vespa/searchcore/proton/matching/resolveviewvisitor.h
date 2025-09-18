@@ -23,7 +23,6 @@ public:
 
     void visit(ProtonLocationTerm& n) override;
     void visit(ProtonNodeTypes::Equiv& n) override;
-    void visit(ProtonNodeTypes::WordAlternatives& n) override;
     void visit(ProtonNodeTypes::SameElement &n) override;
 };
 
