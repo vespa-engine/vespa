@@ -232,7 +232,7 @@ createFuzzyTerm(std::string_view term, const std::string & view, int32_t id, Wei
 
 template <class NodeTypes>
 typename NodeTypes::InTerm *
-create_in_term(std::unique_ptr<TermVector> terms, MultiTerm::MultiTermType type, const std::string & view, int32_t id, Weight weight) {
+create_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type, const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::InTerm(std::move(terms), type, view, id, weight);
 }
 
@@ -368,7 +368,7 @@ public:
     typename NodeTypes::FalseQueryNode &add_false_node() {
         return addTerm(create_false<NodeTypes>());
     }
-    typename NodeTypes::InTerm& add_in_term(std::unique_ptr<TermVector> terms, MultiTerm::MultiTermType type, const string & view, int32_t id, Weight weight) {
+    typename NodeTypes::InTerm& add_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type, const string & view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(create_in_term<NodeTypes>(std::move(terms), type, view, id, weight));
     }

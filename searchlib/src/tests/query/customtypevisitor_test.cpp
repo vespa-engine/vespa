@@ -137,7 +137,7 @@ struct MyFalse : FalseQueryNode {
 
 struct MyInTerm : InTerm {
     MyInTerm()
-        : InTerm(std::make_unique<StringTermVector>(0), MultiTerm::MultiTermType::STRING, "view", 0, Weight(0))
+        : InTerm(std::make_unique<StringTermVector>(0), MultiTerm::Type::STRING, "view", 0, Weight(0))
     {
     }
     ~MyInTerm() override;

@@ -306,7 +306,7 @@ class QueryNodeConverter : public QueryVisitor {
     }
 
     void visit(InTerm& node) override {
-        bool is_string = (node.getType() == MultiTerm::MultiTermType::STRING);
+        bool is_string = (node.getType() == MultiTerm::Type::STRING);
         auto item_type = is_string  ? ParseItem::ITEM_STRING_IN : ParseItem::ITEM_NUMERIC_IN;
         createWeightedSet(node, item_type, 0);
         auto num_terms = node.getNumTerms();

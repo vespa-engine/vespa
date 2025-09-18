@@ -538,7 +538,7 @@ struct MyFuzzyTerm : FuzzyTerm {
 };
 
 struct MyInTerm : InTerm {
-    MyInTerm(std::unique_ptr<TermVector> terms, MultiTerm::MultiTermType type,
+    MyInTerm(std::unique_ptr<TermVector> terms, MultiTerm::Type type,
              const string& f, int32_t i, Weight w)
         : InTerm(std::move(terms), type, f, i, w)
     {
@@ -883,7 +883,7 @@ SimpleMultiTerm::~SimpleMultiTerm() = default;
 TEST(QueryBuilderTest, initial_state_of_MultiTerm) {
     SimpleMultiTerm mt(7);
     EXPECT_EQ(7u, mt.getNumTerms());
-    EXPECT_TRUE(MultiTerm::MultiTermType::UNKNOWN == mt.getType());
+    EXPECT_TRUE(MultiTerm::Type::UNKNOWN == mt.getType());
 }
 
 void
@@ -908,7 +908,7 @@ TEST(QueryBuilderTest, add_and_get_of_integer_MultiTerm) {
     for (int64_t i(0); i < mt.getNumTerms(); i++) {
         mt.addTerm(i-3, Weight(i-4));
     }
-    EXPECT_TRUE(MultiTerm::MultiTermType::WEIGHTED_INTEGER == mt.getType());
+    EXPECT_TRUE(MultiTerm::Type::WEIGHTED_INTEGER == mt.getType());
     verify_multiterm_get(mt);
 }
 
@@ -919,7 +919,7 @@ TEST(QueryBuilderTest, add_and_get_of_string_MultiTerm) {
         auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
         mt.addTerm(std::string_view(buf, res.ptr - buf), Weight(i-4));
     }
-    EXPECT_TRUE(MultiTerm::MultiTermType::WEIGHTED_STRING == mt.getType());
+    EXPECT_TRUE(MultiTerm::Type::WEIGHTED_STRING == mt.getType());
     verify_multiterm_get(mt);
 }
 
@@ -929,20 +929,20 @@ TEST(QueryBuilderTest, first_string_then_integer_MultiTerm) {
     for (int64_t i(1); i < mt.getNumTerms(); i++) {
         mt.addTerm(i-3, Weight(i-4));
     }
-    EXPECT_TRUE(MultiTerm::MultiTermType::WEIGHTED_STRING == mt.getType());
+    EXPECT_TRUE(MultiTerm::Type::WEIGHTED_STRING == mt.getType());
     verify_multiterm_get(mt);
 }
 
 TEST(QueryBuilderTest, first_integer_then_string_MultiTerm) {
     SimpleMultiTerm mt(7);
     mt.addTerm(-3, Weight(-4));
-    EXPECT_TRUE(MultiTerm::MultiTermType::WEIGHTED_INTEGER == mt.getType());
+    EXPECT_TRUE(MultiTerm::Type::WEIGHTED_INTEGER == mt.getType());
     for (int64_t i(1); i < mt.getNumTerms(); i++) {
         char buf[24];
         auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
         mt.addTerm(std::string_view(buf, res.ptr - buf), Weight(i-4));
     }
-    EXPECT_TRUE(MultiTerm::MultiTermType::WEIGHTED_STRING == mt.getType());
+    EXPECT_TRUE(MultiTerm::Type::WEIGHTED_STRING == mt.getType());
     verify_multiterm_get(mt);
 }
 
@@ -993,7 +993,7 @@ void
 test_in_node(const std::vector<TermType>& values)
 {
     QueryBuilder<SimpleQueryNodeTypes> builder;
-    builder.add_in_term(make_subterms(values), MultiTerm::MultiTermType::STRING,
+    builder.add_in_term(make_subterms(values), MultiTerm::Type::STRING,
                         "view", 0, Weight(0));
     auto node = builder.build();
     string stack_dump = StackDumpCreator::create(*node);

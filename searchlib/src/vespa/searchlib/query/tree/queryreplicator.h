@@ -86,21 +86,21 @@ private:
 
     void replicateMultiTerm(const MultiTerm &original, MultiTerm & replica) {
         switch (original.getType()) {
-        case MultiTerm::MultiTermType::STRING:
-        case MultiTerm::MultiTermType::WEIGHTED_STRING:
+        case MultiTerm::Type::STRING:
+        case MultiTerm::Type::WEIGHTED_STRING:
             for (uint32_t i = 0; i < original.getNumTerms(); i++) {
                 auto v = original.getAsString(i);
                 replica.addTerm(v.first, v.second);
             }
             break;
-        case MultiTerm::MultiTermType::INTEGER:
-        case MultiTerm::MultiTermType::WEIGHTED_INTEGER:
+        case MultiTerm::Type::INTEGER:
+        case MultiTerm::Type::WEIGHTED_INTEGER:
             for (uint32_t i = 0; i < original.getNumTerms(); i++) {
                 auto v = original.getAsInteger(i);
                 replica.addTerm(v.first, v.second);
             }
             break;
-        case MultiTerm::MultiTermType::UNKNOWN:
+        case MultiTerm::Type::UNKNOWN:
             assert (original.getNumTerms() == 0);
         }
     }
@@ -215,7 +215,7 @@ private:
     std::unique_ptr<TermVector> replicate_subterms(const MultiTerm& original) {
         uint32_t num_terms = original.getNumTerms();
         switch (original.getType()) {
-        case MultiTerm::MultiTermType::STRING: {
+        case MultiTerm::Type::STRING: {
             auto replica = std::make_unique<StringTermVector>(num_terms);
             for (uint32_t i = 0; i < num_terms; i++) {
                 auto v = original.getAsString(i);
@@ -223,7 +223,7 @@ private:
             }
             return replica;
         }
-        case MultiTerm::MultiTermType::WEIGHTED_STRING: {
+        case MultiTerm::Type::WEIGHTED_STRING: {
             auto replica = std::make_unique<WeightedStringTermVector>(num_terms);
             for (uint32_t i = 0; i < num_terms; i++) {
                 auto v = original.getAsString(i);
@@ -231,7 +231,7 @@ private:
             }
             return replica;
         }
-        case MultiTerm::MultiTermType::INTEGER: {
+        case MultiTerm::Type::INTEGER: {
             auto replica = std::make_unique<IntegerTermVector>(num_terms);
             for (uint32_t i = 0; i < original.getNumTerms(); i++) {
                 auto v = original.getAsInteger(i);
@@ -239,7 +239,7 @@ private:
             }
             return replica;
         }
-        case MultiTerm::MultiTermType::WEIGHTED_INTEGER: {
+        case MultiTerm::Type::WEIGHTED_INTEGER: {
             auto replica = std::make_unique<WeightedIntegerTermVector>(num_terms);
             for (uint32_t i = 0; i < original.getNumTerms(); i++) {
                 auto v = original.getAsInteger(i);
@@ -247,7 +247,7 @@ private:
             }
             return replica;
         }
-        case MultiTerm::MultiTermType::UNKNOWN:
+        case MultiTerm::Type::UNKNOWN:
             assert(num_terms == 0);
         }
         return std::make_unique<WeightedStringTermVector>(num_terms);

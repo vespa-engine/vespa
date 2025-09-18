@@ -580,7 +580,7 @@ TEST(AttributeSearchableAdapterTest, require_that_attribute_in_term_works) {
         stv->addTerm("bar");
         stv->addTerm("baz");
         stv->addTerm("fox");
-        SimpleInTerm node(std::move(stv), SimpleInTerm::MultiTermType::STRING, field, 0, Weight(1));
+        SimpleInTerm node(std::move(stv), SimpleInTerm::Type::STRING, field, 0, Weight(1));
         Result result = do_search(attribute_manager, node, strict);
         EXPECT_FALSE(result.est_empty);
         ASSERT_EQ(5u, result.hits.size());

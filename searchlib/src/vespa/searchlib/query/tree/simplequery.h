@@ -76,7 +76,7 @@ struct SimpleWandTerm : WandTerm {
     ~SimpleWandTerm() override;
 };
 struct SimpleInTerm : InTerm {
-    SimpleInTerm(std::unique_ptr<TermVector> terms, MultiTerm::MultiTermType type, std::string view, int32_t id, Weight weight)
+    SimpleInTerm(std::unique_ptr<TermVector> terms, MultiTerm::Type type, std::string view, int32_t id, Weight weight)
         : InTerm(std::move(terms), type, std::move(view), id, weight)
     {
     }

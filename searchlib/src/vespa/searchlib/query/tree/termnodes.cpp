@@ -34,10 +34,10 @@ WordAlternatives::~WordAlternatives() = default;
 MultiTerm::MultiTerm(uint32_t num_terms)
     : _terms(),
       _num_terms(num_terms),
-      _type(MultiTermType::UNKNOWN)
+      _type(Type::UNKNOWN)
 {}
 
-MultiTerm::MultiTerm(std::unique_ptr<TermVector> terms, MultiTermType type)
+MultiTerm::MultiTerm(std::unique_ptr<TermVector> terms, Type type)
     : _terms(std::move(terms)),
       _num_terms(_terms->size()),
       _type(type)
@@ -61,11 +61,11 @@ void
 MultiTerm::addTerm(std::string_view term, Weight weight) {
     if ( ! _terms) {
         _terms = std::make_unique<WeightedStringTermVector>(_num_terms);
-        _type = MultiTermType::WEIGHTED_STRING;
+        _type = Type::WEIGHTED_STRING;
     }
-    if (_type != MultiTermType::WEIGHTED_STRING) {
+    if (_type != Type::WEIGHTED_STRING) {
         _terms = downgrade();
-        _type = MultiTermType::WEIGHTED_STRING;
+        _type = Type::WEIGHTED_STRING;
     }
     _terms->addTerm(term, weight);
 }
@@ -74,7 +74,7 @@ void
 MultiTerm::addTerm(int64_t term, Weight weight) {
     if ( ! _terms) {
         _terms = std::make_unique<WeightedIntegerTermVector>(_num_terms);
-        _type = MultiTermType::WEIGHTED_INTEGER;
+        _type = Type::WEIGHTED_INTEGER;
     }
     _terms->addTerm(term, weight);
 }

@@ -90,7 +90,7 @@ TEST(QueryVisitorTest, requireThatAllNodesCanBeVisited) {
     checkVisit<TrueQueryNode>(new SimpleTrue());
     checkVisit<FalseQueryNode>(new SimpleFalse());
     checkVisit<FuzzyTerm>(new SimpleFuzzyTerm("t", "field", 0, Weight(0), 2, 0, false));
-    checkVisit<InTerm>(new SimpleInTerm(std::make_unique<StringTermVector>(0), MultiTerm::MultiTermType::STRING, "field", 0, Weight(0)));
+    checkVisit<InTerm>(new SimpleInTerm(std::make_unique<StringTermVector>(0), MultiTerm::Type::STRING, "field", 0, Weight(0)));
     checkVisit<WordAlternatives>(new SimpleWordAlternatives(std::make_unique<StringTermVector>(0), "field", 0, Weight(0)));
 }
 

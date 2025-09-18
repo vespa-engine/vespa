@@ -71,7 +71,7 @@ make_query_node(QueryOperator query_op, const TermVector& terms)
         for (auto term : terms) {
             termv->addTerm(term);
         }
-        return std::make_unique<SimpleInTerm>(std::move(termv), MultiTerm::MultiTermType::INTEGER, field_name, 0, Weight(1));
+        return std::make_unique<SimpleInTerm>(std::move(termv), MultiTerm::Type::INTEGER, field_name, 0, Weight(1));
     } else if (query_op == QueryOperator::WeightedSet) {
         auto res = std::make_unique<SimpleWeightedSetTerm>(terms.size(), field_name, 0, Weight(1));
         for (auto term : terms) {

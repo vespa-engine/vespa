@@ -195,9 +195,9 @@ private:
                 bool     prefix_match       = queryStack.has_prefix_match_semantics();
                 t = &builder.addFuzzyTerm(term, view, id, weight, max_edit_distance, prefix_lock_length, prefix_match);
             } else if (type == ParseItem::ITEM_STRING_IN) {
-                t = &builder.add_in_term(queryStack.get_terms(), MultiTerm::MultiTermType::STRING, view, id, weight);
+                t = &builder.add_in_term(queryStack.get_terms(), MultiTerm::Type::STRING, view, id, weight);
             } else if (type == ParseItem::ITEM_NUMERIC_IN) {
-                t = &builder.add_in_term(queryStack.get_terms(), MultiTerm::MultiTermType::INTEGER, view, id, weight);
+                t = &builder.add_in_term(queryStack.get_terms(), MultiTerm::Type::INTEGER, view, id, weight);
             } else {
                 vespalib::Issue::report("query builder: Unable to create query tree from stack dump. node type = %d.", type);
             }
