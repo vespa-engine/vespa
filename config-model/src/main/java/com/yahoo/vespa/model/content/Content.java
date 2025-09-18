@@ -44,7 +44,7 @@ import java.util.Set;
  * The config model from a content tag in services.
  * This consists mostly of a ContentCluster.
  *
- * @author baldersheim
+ * @author Henning Baldersheim
  */
 public class Content extends ConfigModel {
 
@@ -207,8 +207,8 @@ public class Content extends ConfigModel {
     
         @Override
         public void doBuild(Content content, Element xml, ConfigModelContext modelContext) {
-            Admin admin = content.adminModel != null ? content.adminModel.getAdmin() : null; // This is null in tests only
-            content.cluster = new ContentCluster.Builder(admin).build(content.containers, modelContext, xml);
+            Admin admin = content.adminModel.getAdmin();
+            content.cluster = new ContentCluster.Builder(admin).build(modelContext, xml);
             buildIndexingClusters(content, modelContext,
                                   (ApplicationConfigProducerRoot)modelContext.getParentProducer());
         }

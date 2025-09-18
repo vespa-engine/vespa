@@ -3,6 +3,7 @@
 #include "my_shared_library.h"
 #include <vespa/vespalib/util/count_down_latch.h>
 #include <vespa/vespalib/util/signalhandler.h>
+#include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <thread>
@@ -14,8 +15,7 @@ LOG_SETUP("signalhandler_test");
 using namespace vespalib;
 using namespace ::testing;
 
-TEST(SignalHandlerTest, signal_handler_can_intercept_hooked_signals)
-{
+TEST(SignalHandlerTest, signal_handler_can_intercept_hooked_signals) {
     EXPECT_TRUE(!SignalHandler::INT.check());
     EXPECT_TRUE(!SignalHandler::TERM.check());
     SignalHandler::INT.ignore();
@@ -36,10 +36,12 @@ TEST(SignalHandlerTest, signal_handler_can_intercept_hooked_signals)
     EXPECT_EQ(0, system("res=`./vespalib_victim_app`; test \"$res\" = \"GOT TERM\""));
 }
 
-TEST(SignalHandlerTest, can_dump_stack_of_another_thread)
-{
-    vespalib::CountDownLatch arrival_latch(2);
-    vespalib::CountDownLatch departure_latch(2);
+TEST(SignalHandlerTest, can_dump_stack_of_another_thread) {
+    if (!has_signal_safe_collect_stack_frames()) {
+        GTEST_SKIP() << "async signal safe stack dumping not supported; skipping test";
+    }
+    CountDownLatch arrival_latch(2);
+    CountDownLatch departure_latch(2);
 
     std::thread t([&]{
         my_cool_function(arrival_latch, departure_latch);
@@ -55,8 +57,10 @@ TEST(SignalHandlerTest, can_dump_stack_of_another_thread)
     t.join();
 }
 
-TEST(SignalHandlerTest, can_get_stack_trace_of_own_thread)
-{
+TEST(SignalHandlerTest, can_get_stack_trace_of_own_thread) {
+    if (!has_signal_safe_collect_stack_frames()) {
+        GTEST_SKIP() << "async signal safe stack dumping not supported; skipping test";
+    }
     auto trace = my_totally_tubular_and_groovy_function();
     EXPECT_THAT(trace, HasSubstr("my_totally_tubular_and_groovy_function"));
 }

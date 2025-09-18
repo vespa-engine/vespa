@@ -34,7 +34,6 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.container.Container;
-import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.content.ClusterControllerConfig;
 import com.yahoo.vespa.model.content.ClusterResourceLimits;
 import com.yahoo.vespa.model.content.ContentSearch;
@@ -113,7 +112,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             this.admin = admin;
         }
         
-        public ContentCluster build(Collection<ContainerModel> containers, ConfigModelContext context, Element w3cContentElement) {
+        public ContentCluster build(ConfigModelContext context, Element w3cContentElement) {
             ModelElement contentElement = new ModelElement(w3cContentElement);
             DeployState deployState = context.getDeployState();
             ModelElement documentsElement = contentElement.child("documents");
@@ -345,7 +344,6 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                                            ModelElement contentElement,
                                            ContentCluster contentCluster,
                                            DeployState deployState) {
-            if (admin == null) return; // only in tests
             if (contentCluster.getPersistence() == null) return;
 
             ClusterControllerContainerCluster clusterControllers;
@@ -478,8 +476,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
     }
 
     public static String getClusterId(ModelElement clusterElem) {
-        String clusterId = clusterElem.stringAttribute("id");
-        return clusterId != null ? clusterId : "content";
+        return clusterElem.stringAttribute("id", "content");
     }
 
     public String getName() { return clusterId; }

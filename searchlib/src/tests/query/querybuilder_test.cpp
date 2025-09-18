@@ -427,19 +427,17 @@ struct MySameElement : SameElement {
 };
 
 struct MyWeightedSetTerm : WeightedSetTerm {
-    MyWeightedSetTerm(uint32_t n, const string & f, int32_t i, Weight w) : WeightedSetTerm(n, f, i, w) {}
+    using WeightedSetTerm::WeightedSetTerm;
     ~MyWeightedSetTerm() override;
 };
 
 struct MyDotProduct : DotProduct {
-    MyDotProduct(uint32_t n, const string & f, int32_t i, Weight w) : DotProduct(n, f, i, w) {}
+    using DotProduct::DotProduct;
     ~MyDotProduct() override;
 };
 
 struct MyWandTerm : WandTerm {
-    MyWandTerm(uint32_t n, const string & f, int32_t i, Weight w, uint32_t targetNumHits,
-               int64_t scoreThreshold, double thresholdBoostFactor)
-        : WandTerm(n, f, i, w, targetNumHits, scoreThreshold, thresholdBoostFactor) {}
+    using WandTerm::WandTerm;
     ~MyWandTerm() override;
 };
 

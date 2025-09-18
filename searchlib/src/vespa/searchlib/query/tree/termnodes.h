@@ -204,6 +204,10 @@ public:
         : QueryNodeMixinType(num_terms),
           Term(view, id, weight)
     {}
+    WeightedSetTerm(std::unique_ptr<TermVector> terms, Type type, const std::string & view, int32_t id, Weight weight)
+      : QueryNodeMixinType(std::move(terms), type),
+        Term(view, id, weight)
+    {}
     virtual ~WeightedSetTerm() = 0;
 };
 
@@ -212,6 +216,10 @@ public:
     DotProduct(uint32_t num_terms, const std::string & view, int32_t id, Weight weight)
         : QueryNodeMixinType(num_terms),
           Term(view, id, weight)
+    {}
+    DotProduct(std::unique_ptr<TermVector> terms, Type type, const std::string & view, int32_t id, Weight weight)
+      : QueryNodeMixinType(std::move(terms), type),
+        Term(view, id, weight)
     {}
     virtual ~DotProduct() = 0;
 };
@@ -225,6 +233,15 @@ public:
     WandTerm(uint32_t num_terms, const std::string & view, int32_t id, Weight weight,
              uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor)
         : QueryNodeMixinType(num_terms),
+          Term(view, id, weight),
+          _targetNumHits(targetNumHits),
+          _scoreThreshold(scoreThreshold),
+          _thresholdBoostFactor(thresholdBoostFactor)
+    {}
+    WandTerm(std::unique_ptr<TermVector> terms, Type type,
+             const std::string & view, int32_t id, Weight weight,
+             uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor)
+        : QueryNodeMixinType(std::move(terms), type),
           Term(view, id, weight),
           _targetNumHits(targetNumHits),
           _scoreThreshold(scoreThreshold),
