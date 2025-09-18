@@ -31,7 +31,6 @@ class TrueQueryNode;
 class FalseQueryNode;
 class FuzzyTerm;
 class InTerm;
-class WordAlternatives;
 
 struct QueryVisitor {
     virtual ~QueryVisitor() = default;
@@ -63,7 +62,7 @@ struct QueryVisitor {
     virtual void visit(FalseQueryNode &) = 0;
     virtual void visit(FuzzyTerm &) = 0;
     virtual void visit(InTerm &) = 0;
-    virtual void visit(WordAlternatives &) = 0;
 };
 
 }
+

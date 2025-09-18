@@ -53,7 +53,6 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
     void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) override;
-    Trinary is_strict() const override { return (_strict ? Trinary::True : Trinary::False); }
 };
 
 }

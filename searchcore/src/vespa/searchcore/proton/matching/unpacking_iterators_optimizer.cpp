@@ -35,7 +35,6 @@ struct TermExpander : QueryVisitor {
     void visit(And &) override {}
     void visit(AndNot &) override {}
     void visit(Equiv &) override {}
-    void visit(WordAlternatives &) override {}
     void visit(NumberTerm &) override {}
     void visit(LocationTerm &) override {}
     void visit(Near &) override {}

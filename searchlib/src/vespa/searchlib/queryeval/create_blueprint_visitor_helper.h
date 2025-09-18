@@ -42,7 +42,7 @@ public:
     const FieldSpec &getField() const { return _field; }
 
     void visitPhrase(query::Phrase &n);
-    void visitWordAlternatives(query::WordAlternatives &n);
+    void visitEquiv(query::Equiv &n);
 
     template <typename WS, typename NODE>
     void createWeightedSet(std::unique_ptr<WS> bp, NODE &n);
@@ -58,7 +58,6 @@ public:
 
     void visit(query::And &) override { illegalVisit(); }
     void visit(query::AndNot &) override { illegalVisit(); }
-    void visit(query::Equiv &) override { illegalVisit(); }
     void visit(query::Near &) override { illegalVisit(); }
     void visit(query::ONear &) override { illegalVisit(); }
     void visit(query::Or &) override { illegalVisit(); }
@@ -69,8 +68,8 @@ public:
     void visit(query::Phrase &n) override {
         visitPhrase(n);
     }
-    void visit(query::WordAlternatives &n) override {
-        visitWordAlternatives(n);
+    void visit(query::Equiv &n) override {
+        visitEquiv(n);
     }
 
     void visit(query::WeightedSetTerm &n) override { visitWeightedSetTerm(n); }

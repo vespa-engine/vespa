@@ -235,10 +235,6 @@ private:
     void visit(InTerm& node) override {
         copyState(node, _builder.add_in_term(replicate_subterms(node), node.getType(), node.getView(), node.getId(), node.getWeight()));
     }
-
-    void visit(WordAlternatives& node) override {
-        copyState(node, _builder.add_word_alternatives(replicate_subterms(node), node.getView(), node.getId(), node.getWeight()));
-    }
 };
 
 }

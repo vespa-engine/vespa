@@ -263,15 +263,4 @@ public:
     virtual ~InTerm() = 0;
 };
 
-class WordAlternatives : public QueryNodeMixin<WordAlternatives, MultiTerm>, public Term {
-public:
-    virtual ~WordAlternatives() = 0;
-
-    WordAlternatives(std::unique_ptr<TermVector> terms, const std::string & view, int32_t id, Weight weight)
-      : QueryNodeMixinType(std::move(terms), Type::WEIGHTED_STRING),
-        Term(view, id, weight)
-    {}
-};
-
-
 }

@@ -56,24 +56,22 @@ CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
     setResult(std::move(phrase));
 }
 
-void CreateBlueprintVisitorHelper::visitWordAlternatives(query::WordAlternatives &n) {
+void CreateBlueprintVisitorHelper::visitEquiv(query::Equiv &n) {
     fef::MatchDataLayout layout;
     std::vector<std::unique_ptr<Blueprint>> blueprints;
-    for (size_t i = 0; i < n.getNumTerms(); ++i) {
+    for (auto node : n.getChildren()) {
         fef::TermFieldHandle handle = layout.allocTermField(_field.getFieldId());
         FieldSpec inner{_field.getName(), _field.getFieldId(), handle, false};
-        auto pair = n.getAsString(i);
-        query::SimpleStringTerm term(std::string(pair.first), _field.getName(), 0, pair.second); // TODO Temporary
-        blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner, term));
+        blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner, *node));
     }
     double eqw = n.getWeight().percent();
     FieldSpecBaseList fields;
     fields.add(_field);
     auto eq = std::make_unique<EquivBlueprint>(fields, std::move(layout));
-    for (size_t i = 0; i < n.getNumTerms(); ++i) {
-        auto pair = n.getAsString(i);
-        double w = pair.second.percent();
-        eq->addTerm(std::move(blueprints[i]), w / eqw);
+    size_t idx = 0;
+    for (auto node : n.getChildren()) {
+        double w = getWeightFromNode(*node).percent();
+        eq->addTerm(std::move(blueprints[idx++]), w / eqw);
     }
     setResult(std::move(eq));
 }
@@ -84,7 +82,7 @@ CreateBlueprintVisitorHelper::handleNumberTermAsText(query::NumberTerm &n)
     std::string termStr = termAsString(n);
     queryeval::SplitFloat splitter(termStr);
     if (splitter.parts() > 1) {
-        query::SimplePhrase phraseNode(_field.getName(), n.getId(), n.getWeight());
+        query::SimplePhrase phraseNode(n.getView(), n.getId(), n.getWeight());
         phraseNode.setStateFrom(n);
         for (size_t i = 0; i < splitter.parts(); ++i) {
             phraseNode.append(std::make_unique<query::SimpleStringTerm>(splitter.getPart(i), "", 0, query::Weight(0)));
@@ -94,7 +92,7 @@ CreateBlueprintVisitorHelper::handleNumberTermAsText(query::NumberTerm &n)
         if (splitter.parts() == 1) {
             termStr = splitter.getPart(0);
         }
-        query::SimpleStringTerm stringNode(termStr, _field.getName(), n.getId(), n.getWeight());
+        query::SimpleStringTerm stringNode(termStr, n.getView(), n.getId(), n.getWeight());
         stringNode.setStateFrom(n);
         visit(stringNode);
     }
