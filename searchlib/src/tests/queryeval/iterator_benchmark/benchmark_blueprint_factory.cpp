@@ -207,4 +207,3 @@ make_blueprint_factory(const FieldConfig& field_cfg, QueryOperator query_op,
 }
 
 }
-
