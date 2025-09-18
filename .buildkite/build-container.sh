@@ -52,7 +52,7 @@ rm -rf rpms
 mv "$WORKDIR/docker-image/rpms" rpms
 
 GHCR_SYSTEMTEST_TAG="$("${WORKDIR}/.buildkite/utils/get-container-tag.sh" "ghcr.io" "vespa-engine/vespa-systemtest-preview-$ARCH" "$VESPA_VERSION")"
-SYSTEM_TEST_BASE_IMAGE="almalinux:${AL_MAJOR_VERSION}"
+SYSTEM_TEST_BASE_IMAGE="almalinux:${ALMALINUX_MAJOR}"
 docker build --progress=plain \
              --build-arg BASE_IMAGE="$SYSTEM_TEST_BASE_IMAGE" \
              --build-arg VESPA_BASE_IMAGE="${GHCR_PREVIEW_TAG}" \
