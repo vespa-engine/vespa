@@ -5,6 +5,7 @@
 #include "feed_handler_stats.h"
 #include "i_inc_serial_num.h"
 #include "i_operation_storer.h"
+#include "i_replay_progress_producer.h"
 #include "idocumentmovehandler.h"
 #include "igetserialnum.h"
 #include "iheartbeathandler.h"
@@ -51,7 +52,8 @@ class FeedHandler: private search::transactionlog::client::Callback,
                    public IHeartBeatHandler,
                    public IOperationStorer,
                    public IGetSerialNum,
-                   public IIncSerialNum
+                   public IIncSerialNum,
+                   public IReplayProgressProducer
 {
 private:
     using Packet = search::transactionlog::Packet;
@@ -226,7 +228,7 @@ public:
     uint64_t  inc_prepare_serial_num() { return ++_prepare_serial_num; }
 
     bool isDoingReplay() const;
-    float getReplayProgress() const {
+    float getReplayProgress() const override {
         return _tlsReplayProgress ? _tlsReplayProgress->getProgress() : 0;
     }
     bool getTransactionLogReplayDone() const;

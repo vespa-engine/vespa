@@ -3,6 +3,7 @@
 #include "documentdb.h"
 #include "bootstrapconfig.h"
 #include "combiningfeedview.h"
+#include "document_db_initialization_status.h"
 #include "document_db_reconfig.h"
 #include "document_meta_store_read_guards.h"
 #include "document_subdb_collection_explorer.h"
@@ -215,7 +216,8 @@ DocumentDB::DocumentDB(const std::string &baseDir,
       _maintenanceController(shared_service.transport(), _writeService.master(), _refCount, _docTypeName),
       _jobTrackers(),
       _calc(),
-      _metricsUpdater(_subDBs, _writeService, _jobTrackers, _writeFilter, *_feedHandler)
+      _metricsUpdater(_subDBs, _writeService, _jobTrackers, _writeFilter, *_feedHandler),
+      _initializationStatus(std::make_shared<DocumentDBInitializationStatus>(_docTypeName.getName(), _state, *_feedHandler))
 {
     assert(configSnapshot);
 
@@ -313,9 +315,10 @@ DocumentDB::initManagers()
     _initConfigSnapshot.reset();
     InitializerTask::SP rootTask = _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum, _indexCfg);
     {
-        lock_guard guard(_initialization_mutex);
-        AttributeInitializationStatusCollector visitor(_attribute_initialization_statuses);
+        std::vector<std::shared_ptr<AttributeInitializationStatus>> attribute_initialization_statuses;
+        AttributeInitializationStatusCollector visitor(attribute_initialization_statuses);
         rootTask->accept_visitor(visitor);
+        _initializationStatus->set_attribute_initialization_statuses(std::move(attribute_initialization_statuses));
     }
     InitializeThreads initializeThreads = _initializeThreads;
     _initializeThreads.reset();
@@ -1125,6 +1128,11 @@ DocumentDB::set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener
 matching::SessionManager &
 DocumentDB::session_manager() {
     return _owner.session_manager();
+}
+
+std::shared_ptr<DocumentDBInitializationStatus>
+DocumentDB::get_initialization_status() const {
+    return _initializationStatus;
 }
 
 } // namespace proton

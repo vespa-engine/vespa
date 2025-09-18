@@ -34,10 +34,7 @@ namespace vespalib {
     struct ThreadBundle;
 }
 namespace search {
-    namespace attribute {
-        class AttributeInitializationStatus;
-        class Interlock;
-    }
+    namespace attribute { class Interlock; }
     namespace common { class FileHeaderContext; }
     namespace transactionlog {
         class TransLogClient;
@@ -60,6 +57,7 @@ namespace storage::spi { struct BucketExecutor; }
 
 namespace proton {
 class AttributeConfigInspector;
+class DocumentDBInitializationStatus;
 class DocumentDBReconfig;
 class ExecutorThreadingServiceStats;
 class IDocumentDBOwner;
@@ -148,9 +146,7 @@ private:
     DocumentDBJobTrackers                            _jobTrackers;
     std::shared_ptr<IBucketStateCalculator>          _calc;
     DocumentDBMetricsUpdater                         _metricsUpdater;
-
-    mutable std::mutex                               _initialization_mutex;  // protects vector below
-    std::vector<std::shared_ptr<search::attribute::AttributeInitializationStatus>> _attribute_initialization_statuses;
+    std::shared_ptr<DocumentDBInitializationStatus>  _initializationStatus;
 
     void registerReference();
     void setActiveConfig(DocumentDBConfigSP config);
@@ -434,6 +430,8 @@ public:
 
     void set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener);
     const DDBState& get_state() const noexcept { return _state; }
+
+    std::shared_ptr<DocumentDBInitializationStatus> get_initialization_status() const;
 };
 
 } // namespace proton

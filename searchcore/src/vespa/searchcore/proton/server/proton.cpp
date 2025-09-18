@@ -3,6 +3,7 @@
 #include "proton.h"
 #include "disk_mem_usage_sampler.h"
 #include "document_db_explorer.h"
+#include "document_db_initialization_status.h"
 #include "documentdbconfig.h"
 #include "fileconfigmanager.h"
 #include "flushhandlerproxy.h"
@@ -730,6 +731,8 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                                   initializeThreads,
                                   bootstrapConfig->getHwInfo(),
                                   _posting_list_cache);
+    _initialization_status.addDocumentDBInitializationStatus(ret->get_initialization_status());
+
     try {
         ret->start();
     } catch (vespalib::Exception &e) {
@@ -780,6 +783,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
             return;
         }
         old = it->second;
+        _initialization_status.removeDocumentDBInitializationStatus(old->get_initialization_status());
         _documentDBMap.erase(it);
     }
 

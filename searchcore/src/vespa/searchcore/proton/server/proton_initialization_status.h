@@ -3,9 +3,12 @@
 #pragma once
 
 #include <chrono>
+#include <memory>
 #include <mutex>
 
 namespace proton {
+
+class DocumentDBInitializationStatus;
 
 /**
  * Class that tracks the initialization state of Proton and keeps timestamps of when a state was entered.
@@ -29,8 +32,13 @@ private:
 
     State _state;
 
+    std::vector<std::shared_ptr<DocumentDBInitializationStatus>> _ddb_initialization_statuses;
+
 public:
     ProtonInitializationStatus();
+
+    void addDocumentDBInitializationStatus(const std::shared_ptr<DocumentDBInitializationStatus>& status);
+    void removeDocumentDBInitializationStatus(const std::shared_ptr<DocumentDBInitializationStatus>& status);
 
     State get_state() const;
 

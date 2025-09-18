@@ -2,6 +2,9 @@
 
 #include "proton_initialization_status.h"
 
+#include "ddbstate.h"
+#include "document_db_initialization_status.h"
+
 namespace proton {
 
 std::string ProtonInitializationStatus::state_to_string(State state) {
@@ -17,6 +20,15 @@ std::string ProtonInitializationStatus::state_to_string(State state) {
 
 ProtonInitializationStatus::ProtonInitializationStatus()
     : _state(State::INITIALIZING) {
+}
+
+void ProtonInitializationStatus::addDocumentDBInitializationStatus(const std::shared_ptr<DocumentDBInitializationStatus>& status) {
+    _ddb_initialization_statuses.push_back(status);
+}
+
+void ProtonInitializationStatus::removeDocumentDBInitializationStatus(const std::shared_ptr<DocumentDBInitializationStatus>& status) {
+    _ddb_initialization_statuses.erase(std::remove(_ddb_initialization_statuses.begin(), _ddb_initialization_statuses.end(), status),
+                                   _ddb_initialization_statuses.end());
 }
 
 ProtonInitializationStatus::State ProtonInitializationStatus::get_state() const {
