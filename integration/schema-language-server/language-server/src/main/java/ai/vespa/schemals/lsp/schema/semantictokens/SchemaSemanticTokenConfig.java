@@ -109,6 +109,7 @@ class SchemaSemanticTokenConfig {
         add(TokenType.RANK_FEATURES);
         add(TokenType.RANK_PROFILE);
         add(TokenType.RANK_PROPERTIES);
+        add(TokenType.RANK_SCORE_DROP_LIMIT);
         add(TokenType.RANK_TYPE);
         add(TokenType.RAW_AS_BASE64_IN_SUMMARY);
         add(TokenType.SCHEMA);
