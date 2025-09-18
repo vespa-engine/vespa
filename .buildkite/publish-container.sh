@@ -35,7 +35,7 @@ buildkite-agent meta-data set "vespa-container-image-${ARCH}-al${ALMALINUX_MAJOR
 
 echo "--- Publishing system-test container"
 # Publish the system test container image
-SYSTEMTEST_PREVIEW_CONTAINER_URI=$("${WORKDIR}/.buildkite/utils/get-container-tag.sh" "ghcr.io" "vespa-engine/vespa-systemtest-preview-$ARCH" "$VESPA_VERSION")
+SYSTEMTEST_PREVIEW_CONTAINER_URI=$("${WORKDIR}/.buildkite/utils/get-container-tag.sh" "docker.io" "vespaengine/vespa-systemtest-preview-$ARCH" "$VESPA_VERSION")
 echo "Pushing container: ${SYSTEMTEST_PREVIEW_CONTAINER_URI}"
 docker push "$SYSTEMTEST_PREVIEW_CONTAINER_URI"
 IMAGE_SHA256=$(crane digest "$SYSTEMTEST_PREVIEW_CONTAINER_URI")
