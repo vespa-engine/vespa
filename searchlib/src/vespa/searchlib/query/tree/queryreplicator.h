@@ -237,7 +237,7 @@ private:
     }
 
     void visit(WordAlternatives& node) override {
-        replicate(node, _builder.add_word_alternatives(replicate_subterms(node), node.getView(), node.getId(), node.getWeight()));
+        copyState(node, _builder.add_word_alternatives(replicate_subterms(node), node.getView(), node.getId(), node.getWeight()));
     }
 };
 

@@ -79,8 +79,8 @@ private:
                 if (queryStack.next() && queryStack.getType() == ParseItem::ITEM_PURE_WEIGHTED_STRING) {
                     words->addTerm(queryStack.getTerm(), queryStack.GetWeight());
                 } else {
-                    builder.reportError("bad or missing contents for ITEM_WORD_ALTERNATIVES");
-                    return t;
+                    // report error?
+                    return nullptr;
                 }
             }
             t = &builder.add_word_alternatives(std::move(words), std::string(view), id, weight);
