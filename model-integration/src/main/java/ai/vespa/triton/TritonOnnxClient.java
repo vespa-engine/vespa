@@ -91,6 +91,7 @@ public class TritonOnnxClient implements AutoCloseable {
     }
 
     public void unloadModel(String modelName) {
+        log.fine(() -> "Unloading model " + modelName);
         var request = GrpcService.RepositoryModelUnloadRequest.newBuilder()
                 .setModelName(modelName)
                 .build();
