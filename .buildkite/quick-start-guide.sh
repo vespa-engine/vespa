@@ -8,4 +8,5 @@ if [[ $VESPA_USE_SANITIZER != null ]]; then
     exit 0
 fi
 
+echo "--- 📖 Running quick start guide test"
 "$SOURCE_DIR/.buildkite/test-quick-start-guide.sh"

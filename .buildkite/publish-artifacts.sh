@@ -8,15 +8,19 @@ if [[ $BUILDKITE != true ]]; then
     exit 0
 fi
 
+echo "--- 📤 Publishing build artifacts"
 cd "$WORKDIR/artifacts/$ARCH"
 
+echo "Creating archives..."
 tar -cf rpm-repo.tar rpms &
 tar -cf maven-repo.tar maven-repo
 cp -a rpms/vespa-config-model-fat-*.rpm .
 wait
 
+echo "Signing artifacts..."
 for FILE in *.tar *.rpm; do
     cosign sign-blob -y --oidc-provider=buildkite-agent --output-signature "$FILE.sig" --output-certificate "$FILE.pem" "$FILE"
 done
 
+echo "Uploading artifacts to Buildkite..."
 buildkite-agent artifact upload "*.tar;*.tar.sig;*.tar.pem;*.rpm;*.rpm.sig;*.rpm.pem" "$BUILDKITE_ARTIFACT_DESTINATION/$VESPA_VERSION/artifacts/$ARCH"

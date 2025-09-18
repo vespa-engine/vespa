@@ -11,6 +11,7 @@ fi
 readonly VESPA_VERSION=$1
 readonly DIR=$2
 
+echo "--- 📝 Updating POM versions to $VESPA_VERSION"
 # Fail if DIR does not exist or is not a directory
 if [[ ! -d "$DIR" ]]; then
     echo "Directory $DIR does not exist or is not a directory."
@@ -22,6 +23,7 @@ if [[ -z $(find -L "$DIR" -name "pom.xml") ]]; then
     exit 0
 fi
 
+echo "Updating version strings in POM files..."
 if [[ "$(uname)" == "Darwin" ]]; then
     SED_INPLACE=(sed -i '')
 else

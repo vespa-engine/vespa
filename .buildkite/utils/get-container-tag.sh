@@ -17,6 +17,7 @@ if [[ $# -ne 3 ]]; then
     exit 1
 fi
 
+# Generate container tag with OS suffix
 os-suffix() {
   # Set default tag to be pointing to Almalinux 8 version.
   # TODO: Update when we switch default OS

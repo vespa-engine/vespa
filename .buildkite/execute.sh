@@ -25,7 +25,7 @@ function report()
 }
 trap report EXIT
 
-echo "Executing $STEP"
+echo "--- 🚀 Executing step: $STEP"
 START=$(date '+%s')
 /usr/bin/time -v -p "$MYDIR/$STEP.sh" &> "$LOG_DIR/$STEP.log" || (cp -a "$LOG_DIR/$STEP.log" "$LOG_DIR/error-$STEP.log" && cat "$LOG_DIR/$STEP.log" && false)
 
@@ -35,5 +35,5 @@ fi
 
 DURATION=$(( $(date '+%s') - START ))
 echo "STEPTIMER=$STEP:$START,${DURATION}s"
-echo "Finished $STEP in $DURATION seconds. Log saved in $LOG_DIR/$STEP.log."
+echo "✅ Finished $STEP in $DURATION seconds. Log saved in $LOG_DIR/$STEP.log."
 

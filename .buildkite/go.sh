@@ -3,6 +3,8 @@
 
 set -euo pipefail
 
+echo "--- 🐹 Building Go components"
 cd "$SOURCE_DIR"
 
+echo "Installing Go client and tools..."
 make -C client/go BIN="$WORKDIR/vespa-install/opt/vespa/bin" SHARE="$WORKDIR/vespa-install/usr/share" install-all

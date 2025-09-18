@@ -11,6 +11,10 @@ URL=$1
 WEB_URL=$2
 TIMEOUT=$3
 
+echo "--- ⏱️ Waiting for Buildkite build completion"
+echo "Monitoring build: $WEB_URL"
+echo "Timeout: ${TIMEOUT}s"
+
 WAIT_UNTIL=$(( $(date +%s) + "$TIMEOUT" ))
 while [[ $(date +%s) -le $WAIT_UNTIL ]]; do
     STATUS=$(curl -sSL -H "Content-Type: application/json" -H "Authorization: Bearer $BUILDKITE_TRIGGER_TOKEN" "$URL" | jq -re '.state')
@@ -19,10 +23,11 @@ while [[ $(date +%s) -le $WAIT_UNTIL ]]; do
 
     case $STATUS in
         passed)
+            echo "✅ Build completed successfully"
             break
             ;;
         failed)
-            echo "Buildkite build failed. Visit $WEB_URL for information."
+            echo "❌ Buildkite build failed. Visit $WEB_URL for information."
             exit 1
             ;;
         *)
@@ -32,6 +37,6 @@ while [[ $(date +%s) -le $WAIT_UNTIL ]]; do
 done
 
 if [[ $STATUS != passed ]]; then
-    echo "Timed out waiting for build at $WEB_URL ."
+    echo "⏰ Timed out waiting for build at $WEB_URL ."
     exit 1
 fi

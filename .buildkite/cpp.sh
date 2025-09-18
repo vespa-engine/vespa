@@ -3,10 +3,12 @@
 
 set -euo pipefail
 
+echo "--- ⚙️ Building C++ components"
 # shellcheck disable=1091
 source /etc/profile.d/enable-gcc-toolset.sh
 
 PATH=/opt/vespa-deps/bin:$PATH
 
 cd "$SOURCE_DIR"
+echo "Running make with $NUM_CPP_THREADS threads..."
 make -j "$NUM_CPP_THREADS"
