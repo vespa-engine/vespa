@@ -69,7 +69,6 @@ public class SearchNode extends AbstractService implements
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<SearchNode> {
 
-        private final String name;
         private final NodeSpec nodeSpec;
         private final String clusterName;
         private final ContentNode contentNode;
@@ -77,9 +76,8 @@ public class SearchNode extends AbstractService implements
         private final Tuning tuning;
         private final Boolean syncTransactionLog;
 
-        public Builder(String name, NodeSpec nodeSpec, String clusterName, ContentNode node,
+        public Builder(NodeSpec nodeSpec, String clusterName, ContentNode node,
                        boolean flushOnShutdown, Tuning tuning, Boolean syncTransactionLog) {
-            this.name = name;
             this.nodeSpec = nodeSpec;
             this.clusterName = clusterName;
             this.contentNode = node;
@@ -91,16 +89,16 @@ public class SearchNode extends AbstractService implements
         @Override
         protected SearchNode doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor,
                                      Element producerSpec) {
-            return new SearchNode(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName,
+            return new SearchNode(ancestor, contentNode.getDistributionKey(), nodeSpec, clusterName,
                                   contentNode, flushOnShutdown, tuning, deployState.isHosted(), syncTransactionLog);
         }
 
     }
 
-    public SearchNode(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
+    public SearchNode(TreeConfigProducer<?> parent, int distributionKey, NodeSpec nodeSpec,
                       String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
                       Tuning tuning, boolean isHostedVespa, Boolean syncTransactionLog) {
-        super(parent, name);
+        super(parent, "" + distributionKey);
         this.distributionKey = distributionKey;
         this.serviceLayerService = serviceLayerService;
         this.isHostedVespa = isHostedVespa;

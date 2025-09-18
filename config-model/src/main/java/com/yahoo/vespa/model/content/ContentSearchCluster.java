@@ -220,14 +220,12 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
         SearchNode searchNode;
         if (element == null) {
-            searchNode = new SearchNode(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
-                                        clusterName, node, flushOnShutdown, tuning, deployState.isHosted(),
-                                        syncTransactionLog);
+            searchNode = new SearchNode(parent, node.getDistributionKey(), spec, clusterName, node,
+                                        flushOnShutdown, tuning, deployState.isHosted(), syncTransactionLog);
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState);
         } else {
-            searchNode = new SearchNode.Builder("" + node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
-                                                tuning, syncTransactionLog)
+            searchNode = new SearchNode.Builder(spec, clusterName, node, flushOnShutdown, tuning, syncTransactionLog)
                     .build(deployState, parent, element.getXml());
         }
         if (searchCluster != null) {
