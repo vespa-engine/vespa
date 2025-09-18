@@ -13,17 +13,17 @@ using proton::IReplayProgressProducer;
 using proton::ProtonInitializationStatus;
 
 class DummyReplayProgressProducer : public proton::IReplayProgressProducer {
-    float getReplayProgress() const override {
+    float getProgress() const override {
         return 0.23f;
     }
 };
 
 class ProtonInitializationStatusTest : public ::testing::Test {
 protected:
-    DummyReplayProgressProducer _producer;
-    DDBState _db_state1;
-    DDBState _db_state2;
-    DDBState _db_state3;
+    std::shared_ptr<DummyReplayProgressProducer> _producer;
+    std::shared_ptr<DDBState> _db_state1;
+    std::shared_ptr<DDBState> _db_state2;
+    std::shared_ptr<DDBState> _db_state3;
 
     std::shared_ptr<DocumentDBInitializationStatus> _db_status1;
     std::shared_ptr<DocumentDBInitializationStatus> _db_status2;
@@ -31,10 +31,17 @@ protected:
 
     ProtonInitializationStatus _status;
 
-    ProtonInitializationStatusTest() {
-        _db_status1 = std::make_shared<DocumentDBInitializationStatus>("db1", _db_state1, _producer);
-        _db_status2 = std::make_shared<DocumentDBInitializationStatus>("db2", _db_state2, _producer);
-        _db_status3 = std::make_shared<DocumentDBInitializationStatus>("db3", _db_state3, _producer);
+    ProtonInitializationStatusTest()
+        : _producer(std::make_shared<DummyReplayProgressProducer>()),
+          _db_state1(std::make_shared<DDBState>()),
+          _db_state2(std::make_shared<DDBState>()),
+          _db_state3(std::make_shared<DDBState>()),
+          _db_status1(std::make_shared<DocumentDBInitializationStatus>("db1", _db_state1)),
+          _db_status2(std::make_shared<DocumentDBInitializationStatus>("db2", _db_state2)),
+          _db_status3(std::make_shared<DocumentDBInitializationStatus>("db3", _db_state3)) {
+        _db_status1->set_replay_progress_producer(_producer);
+        _db_status2->set_replay_progress_producer(_producer);
+        _db_status3->set_replay_progress_producer(_producer);
 
     }
     ~ProtonInitializationStatusTest() override __attribute__((noinline)) = default; // Avoid warning about inline-unit-growth limit
@@ -130,8 +137,8 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_with_dbs) {
 
     _status.addDocumentDBInitializationStatus(_db_status1);
     _status.addDocumentDBInitializationStatus(_db_status2);
-    _db_state1.enterLoadState();
-    _db_state2.enterLoadState();
+    _db_state1->enterLoadState();
+    _db_state2->enterLoadState();
 
     {
         vespalib::Slime slime;
@@ -154,15 +161,15 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_with_dbs) {
         EXPECT_EQ(dbs[1]["name"].asString().make_string(), std::string("db2"));
     }
 
-    _db_state1.enterReplayTransactionLogState();
-    _db_state1.enterApplyLiveConfigState();
-    _db_state1.enterReprocessState();
-    _db_state1.enterOnlineState();
+    _db_state1->enterReplayTransactionLogState();
+    _db_state1->enterApplyLiveConfigState();
+    _db_state1->enterReprocessState();
+    _db_state1->enterOnlineState();
 
-    _db_state2.enterReplayTransactionLogState();
-    _db_state2.enterApplyLiveConfigState();
-    _db_state2.enterReprocessState();
-    _db_state2.enterOnlineState();
+    _db_state2->enterReplayTransactionLogState();
+    _db_state2->enterApplyLiveConfigState();
+    _db_state2->enterReprocessState();
+    _db_state2->enterOnlineState();
 
     _status.end_initialization();
 
@@ -196,17 +203,17 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_with_dbs_when_removing_and
     _status.addDocumentDBInitializationStatus(_db_status1);
     _status.addDocumentDBInitializationStatus(_db_status2);
 
-    _db_state1.enterLoadState();
-    _db_state1.enterReplayTransactionLogState();
-    _db_state1.enterApplyLiveConfigState();
-    _db_state1.enterReprocessState();
-    _db_state1.enterOnlineState();
+    _db_state1->enterLoadState();
+    _db_state1->enterReplayTransactionLogState();
+    _db_state1->enterApplyLiveConfigState();
+    _db_state1->enterReprocessState();
+    _db_state1->enterOnlineState();
 
-    _db_state2.enterLoadState();
-    _db_state2.enterReplayTransactionLogState();
-    _db_state2.enterApplyLiveConfigState();
-    _db_state2.enterReprocessState();
-    _db_state2.enterOnlineState();
+    _db_state2->enterLoadState();
+    _db_state2->enterReplayTransactionLogState();
+    _db_state2->enterApplyLiveConfigState();
+    _db_state2->enterReprocessState();
+    _db_state2->enterOnlineState();
 
     _status.end_initialization();
 
@@ -245,11 +252,11 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_with_dbs_when_removing_and
         EXPECT_EQ(dbs[1]["name"].asString().make_string(), std::string("db3"));
     }
 
-    _db_state3.enterLoadState();
-    _db_state3.enterReplayTransactionLogState();
-    _db_state3.enterApplyLiveConfigState();
-    _db_state3.enterReprocessState();
-    _db_state3.enterOnlineState();
+    _db_state3->enterLoadState();
+    _db_state3->enterReplayTransactionLogState();
+    _db_state3->enterApplyLiveConfigState();
+    _db_state3->enterReprocessState();
+    _db_state3->enterOnlineState();
 
     {
         vespalib::Slime slime;
@@ -274,33 +281,33 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_db_counts) {
 
     _status.addDocumentDBInitializationStatus(_db_status1);
     _status.addDocumentDBInitializationStatus(_db_status2);
-    _db_state1.enterLoadState();
-    _db_state2.enterLoadState();
+    _db_state1->enterLoadState();
+    _db_state2->enterLoadState();
 
     expect_db_counts(2, 0, 0);
 
-    _db_state1.enterReplayTransactionLogState();
+    _db_state1->enterReplayTransactionLogState();
     expect_db_counts(1, 1, 0);
 
-    _db_state1.enterApplyLiveConfigState();
+    _db_state1->enterApplyLiveConfigState();
     expect_db_counts(2, 0, 0);
 
-    _db_state1.enterReprocessState();
+    _db_state1->enterReprocessState();
     expect_db_counts(2, 0, 0);
 
-    _db_state1.enterOnlineState();
+    _db_state1->enterOnlineState();
     expect_db_counts(1, 0, 1);
 
-    _db_state2.enterReplayTransactionLogState();
+    _db_state2->enterReplayTransactionLogState();
     expect_db_counts(0, 1, 1);
 
-    _db_state2.enterApplyLiveConfigState();
+    _db_state2->enterApplyLiveConfigState();
     expect_db_counts(1, 0, 1);
 
-    _db_state2.enterReprocessState();
+    _db_state2->enterReprocessState();
     expect_db_counts(1, 0, 1);
 
-    _db_state2.enterOnlineState();
+    _db_state2->enterOnlineState();
     expect_db_counts(0, 0, 2);
 
     _status.end_initialization();
@@ -313,17 +320,17 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_db_counts_when_removing_an
     _status.addDocumentDBInitializationStatus(_db_status1);
     _status.addDocumentDBInitializationStatus(_db_status2);
 
-    _db_state1.enterLoadState();
-    _db_state1.enterReplayTransactionLogState();
-    _db_state1.enterApplyLiveConfigState();
-    _db_state1.enterReprocessState();
-    _db_state1.enterOnlineState();
+    _db_state1->enterLoadState();
+    _db_state1->enterReplayTransactionLogState();
+    _db_state1->enterApplyLiveConfigState();
+    _db_state1->enterReprocessState();
+    _db_state1->enterOnlineState();
 
-    _db_state2.enterLoadState();
-    _db_state2.enterReplayTransactionLogState();
-    _db_state2.enterApplyLiveConfigState();
-    _db_state2.enterReprocessState();
-    _db_state2.enterOnlineState();
+    _db_state2->enterLoadState();
+    _db_state2->enterReplayTransactionLogState();
+    _db_state2->enterApplyLiveConfigState();
+    _db_state2->enterReprocessState();
+    _db_state2->enterOnlineState();
 
     _status.end_initialization();
     expect_db_counts(0, 0, 2);
@@ -334,13 +341,13 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_db_counts_when_removing_an
     _status.addDocumentDBInitializationStatus(_db_status3);
     expect_db_counts(1, 0, 1);
 
-    _db_state3.enterLoadState();
+    _db_state3->enterLoadState();
     expect_db_counts(1, 0, 1);
 
-    _db_state3.enterReplayTransactionLogState();
-    _db_state3.enterApplyLiveConfigState();
-    _db_state3.enterReprocessState();
-    _db_state3.enterOnlineState();
+    _db_state3->enterReplayTransactionLogState();
+    _db_state3->enterApplyLiveConfigState();
+    _db_state3->enterReprocessState();
+    _db_state3->enterOnlineState();
 
     expect_db_counts(0, 0, 2);
 

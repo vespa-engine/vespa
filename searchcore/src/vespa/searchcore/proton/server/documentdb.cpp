@@ -102,7 +102,7 @@ public:
     {}
 
     TransientResourceUsage get_transient_resource_usage() const override {
-        if (!_doc_db.get_state().get_load_done()) {
+        if (!_doc_db.get_state().get_load_done())  {
             return {0, 0};
         }
         return _doc_db.getReadySubDB()->get_transient_resource_usage();
@@ -204,7 +204,7 @@ DocumentDB::DocumentDB(const std::string &baseDir,
       _refCount(),
       _owner(owner),
       _bucketExecutor(shared_service.bucket_executor()),
-      _state(),
+      _state(std::make_shared<DDBState>()),
       _resource_usage_forwarder(_writeService.master()),
       _writeFilter(),
       _transient_usage_provider(std::make_shared<DocumentDBResourceUsageProvider>(*this)),
@@ -217,7 +217,7 @@ DocumentDB::DocumentDB(const std::string &baseDir,
       _jobTrackers(),
       _calc(),
       _metricsUpdater(_subDBs, _writeService, _jobTrackers, _writeFilter, *_feedHandler),
-      _initializationStatus(std::make_shared<DocumentDBInitializationStatus>(_docTypeName.getName(), _state, *_feedHandler))
+      _initializationStatus(std::make_shared<DocumentDBInitializationStatus>(_docTypeName.getName(), _state))
 {
     assert(configSnapshot);
 
@@ -249,7 +249,7 @@ DocumentDB::DocumentDB(const std::string &baseDir,
 void
 DocumentDB::registerReference()
 {
-    if (_state.getAllowReconfig()) {
+    if (_state->getAllowReconfig()) {
         auto registry = _owner.getDocumentDBReferenceRegistry();
         if (registry) {
             auto reference = _subDBs.getReadySubDB()->getDocumentDBReference();
@@ -278,7 +278,7 @@ DocumentDB::getActiveConfig() const {
 void
 DocumentDB::internalInit()
 {
-    (void) _state.enterLoadState();
+    (void) _state->enterLoadState();
     masterExecute([this]() { initManagers(); });
 }
 
@@ -347,7 +347,7 @@ DocumentDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, std::o
 {
     auto active_config_snapshot = getActiveConfig();
     auto cmpres = active_config_snapshot->compare(new_config_snapshot);
-    if (_state.getState() == DDBState::State::APPLY_LIVE_CONFIG) {
+    if (_state->getState() == DDBState::State::APPLY_LIVE_CONFIG) {
         cmpres.importedFieldsChanged = true;
     }
     const ReconfigParams reconfig_params(cmpres);
@@ -359,7 +359,7 @@ DocumentDB::enterReprocessState()
 {
     // Called by executor thread
     assert(_writeService.master().isCurrentThread());
-    if (!_state.enterReprocessState()) {
+    if (!_state->enterReprocessState()) {
         return;
     }
     ReprocessingRunner &runner = _subDBs.getReprocessingRunner();
@@ -383,7 +383,7 @@ DocumentDB::enterOnlineState()
     // Ensure that all replayed operations are committed to memory structures
     _feedView.get()->forceCommitAndWait(CommitParam(_feedHandler->getSerialNum()));
 
-    (void) _state.enterOnlineState();
+    (void) _state->enterOnlineState();
     // Consider delayed pruning of transaction log and config history
     _feedHandler->considerDelayedPrune();
     performStartMaintenance();
@@ -394,7 +394,7 @@ DocumentDB::performReconfig(DocumentDBConfig::SP configSnapshot, std::unique_ptr
 {
     // Called by executor thread
     applyConfig(std::move(configSnapshot), getCurrentSerialNumber(), std::move(prepared_reconfig));
-    if (_state.getState() == DDBState::State::APPLY_LIVE_CONFIG) {
+    if (_state->getState() == DDBState::State::APPLY_LIVE_CONFIG) {
         enterReprocessState();
     }
 }
@@ -412,7 +412,7 @@ DocumentDB::applySubDBConfig(const DocumentDBConfig &newConfigSnapshot,
     auto newDocType = newRepo->getDocumentType(_docTypeName.getName());
     assert(newDocType != nullptr);
     DocumentDBReferenceResolver resolver(*registry, *newDocType, newConfigSnapshot.getImportedFieldsConfig(), *oldDocType,
-                                         _refCount, _writeService.field_writer(), _state.getAllowReconfig());
+                                         _refCount, _writeService.field_writer(), _state->getAllowReconfig());
     _subDBs.applyConfig(newConfigSnapshot, *_activeConfigSnapshot, serialNum, params, resolver, prepared_reconfig);
 }
 
@@ -424,7 +424,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     // feed mode and when switching to normal feed mode after replay.
     // Called by replayConfig() in visitor callback by executor thread
     // when using config from transaction log.
-    if (_state.getClosed()) {
+    if (_state->getClosed()) {
         LOG(error, "Applying config to closed document db");
         return;
     }
@@ -435,13 +435,13 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         lock_guard guard(_configMutex);
         assert(_activeConfigSnapshot.get());
         if (configSnapshot->getDelayedAttributeAspects()) {
-            _state.setConfigState(DDBState::ConfigState::NEED_RESTART);
+            _state->setConfigState(DDBState::ConfigState::NEED_RESTART);
             LOG(info, "DocumentDB(%s): Delaying attribute aspect changes: need restart",
                 _docTypeName.toString().c_str());
         }
         cmpres = _activeConfigSnapshot->compare(*configSnapshot);
     }
-    if (_state.getState() == DDBState::State::APPLY_LIVE_CONFIG) {
+    if (_state->getState() == DDBState::State::APPLY_LIVE_CONFIG) {
         cmpres.importedFieldsChanged = true;
     }
     const ReconfigParams params(cmpres);
@@ -471,7 +471,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         _maintenanceController.killJobs();
     }
 
-    if (_state.getState() >= DDBState::State::APPLY_LIVE_CONFIG) {
+    if (_state->getState() >= DDBState::State::APPLY_LIVE_CONFIG) {
         _writeServiceConfig.update(configSnapshot->get_threading_service_config());
     }
     _writeService.set_task_limits(_writeServiceConfig.master_task_limit(),
@@ -483,7 +483,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
             // Not last entry in tls.  Reprocessing should already be done.
             _subDBs.getReprocessingRunner().reset();
         }
-        if (_state.getState() == DDBState::State::ONLINE) {
+        if (_state->getState() == DDBState::State::ONLINE) {
             // Changes applied while online should not trigger reprocessing
             assert(_subDBs.getReprocessingRunner().empty());
         }
@@ -493,11 +493,11 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         setIndexSchema(*configSnapshot, serialNum);
     }
     if (!configSnapshot->getDelayedAttributeAspects()) {
-        if (_state.getDelayedConfig()) {
+        if (_state->getDelayedConfig()) {
             LOG(info, "DocumentDB(%s): Stopped delaying attribute aspect changes",
                 _docTypeName.toString().c_str());
         }
-        _state.clearDelayedConfig();
+        _state->clearDelayedConfig();
     }
     setActiveConfig(configSnapshot);
     if (params.shouldMaintenanceControllerChange() || _maintenanceController.getPaused()) {
@@ -510,8 +510,8 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     auto prepare_start_time = prepared_reconfig->start_time();
     prepared_reconfig.reset();
     auto end_time = vespalib::steady_clock::now();
-    auto state_string = DDBState::getStateString(_state.getState());
-    auto config_state_string = DDBState::getConfigStateString(_state.getConfigState());
+    auto state_string = DDBState::getStateString(_state->getState());
+    auto config_state_string = DDBState::getConfigStateString(_state->getConfigState());
     std::string saved_string(save_config ? "yes" : "no");
     LOG(info, "DocumentDB(%s): Applied config, state=%s, config_state=%s, saved=%s, serialNum=%" PRIu64 ", %.3fs of %.3fs in write thread",
         _docTypeName.toString().c_str(),
@@ -544,7 +544,7 @@ DocumentDB::close()
     waitForOnlineState();
     {
         lock_guard guard(_configMutex);
-        _state.enterShutdownState();
+        _state->enterShutdownState();
         _configCV.notify_all();
     }
     // Abort any ongoing maintenance
@@ -585,7 +585,7 @@ DocumentDB::close()
     // matching, summary fetch, flushing and reconfig.
     _feedView.clear();
     _subDBs.clearViews();
-    _state.enterDeadState();
+    _state->enterDeadState();
 }
 
 DocumentDB::~DocumentDB()
@@ -606,7 +606,7 @@ DocumentDB::closeSubDBs()
 size_t
 DocumentDB::getNumDocs() const
 {
-    if (_state.get_load_done()) {
+    if (_state->get_load_done()) {
         return _subDBs.getReadySubDB()->getNumDocs();
     } else {
         return 0u;
@@ -616,7 +616,7 @@ DocumentDB::getNumDocs() const
 ActiveDocs
 DocumentDB::getNumActiveDocs() const
 {
-    if (_state.get_load_done()) {
+    if (_state->get_load_done()) {
         return { _subDBs.getReadySubDB()->getNumActiveDocs(), _subDBs.getBucketDB().getNumActiveDocs() };
     } else {
         return {0u, 0u};
@@ -696,7 +696,7 @@ void
 DocumentDB::onPerformPrune(SerialNum flushedSerial)
 {
     if (!getAllowPrune()) {
-        assert(_state.getClosed());
+        assert(_state->getClosed());
         return;
     }
     _config_store->prune(flushedSerial);
@@ -705,7 +705,7 @@ DocumentDB::onPerformPrune(SerialNum flushedSerial)
 bool
 DocumentDB::getAllowPrune() const
 {
-    return _state.getAllowPrune();
+    return _state->getAllowPrune();
 }
 
 void
@@ -731,7 +731,7 @@ DocumentDB::startTransactionLogReplay()
     IDocumentSubDB *readySubDB = _subDBs.getReadySubDB();
     SerialNum oldestFlushedSerial = getOldestFlushedSerial();
     SerialNum newestFlushedSerial = getNewestFlushedSerial();
-    (void) _state.enterReplayTransactionLogState();
+    (void) _state->enterReplayTransactionLogState();
     _feedHandler->replayTransactionLog(readySubDB->getIndexManager()->
                                       getFlushedSerialNum(),
                                       readySubDB->getSummaryManager()->
@@ -740,6 +740,7 @@ DocumentDB::startTransactionLogReplay()
                                       newestFlushedSerial,
                                       *_config_store,
                                       _owner.shared_replay_throttler());
+    _initializationStatus->set_replay_progress_producer(_feedHandler->get_tls_replay_progress());
     _initGate.countDown();
 
     LOG(debug, "DocumentDB(%s): Database started.", _docTypeName.toString().c_str());
@@ -806,13 +807,13 @@ DocumentDB::reconfigure(DocumentDBConfig::SP snapshot)
     _pendingConfigSnapshot.set(snapshot);
     auto active_snapshot = getActiveConfig();
     assert(active_snapshot);
-    assert(_state.getAllowReconfig());
+    assert(_state->getAllowReconfig());
     snapshot = DocumentDBConfig::makeDelayedAttributeAspectConfig(snapshot, *active_snapshot);
     auto prepared_reconfig = prepare_reconfig(*snapshot, std::nullopt);
     masterExecute([this, snapshot, prepared_reconfig = std::move(prepared_reconfig)]() mutable { performReconfig(snapshot, std::move(prepared_reconfig)); });
     // Wait for config to be applied, or for document db close
     std::unique_lock<std::mutex> guard(_configMutex);
-    while ((_activeConfigSnapshot->getGeneration() < snapshot->getGeneration()) && !_state.getClosed()) {
+    while ((_activeConfigSnapshot->getGeneration() < snapshot->getGeneration()) && !_state->getClosed()) {
         _configCV.wait(guard);
     }
 }
@@ -823,7 +824,7 @@ DocumentDB::enterRedoReprocessState()
     assert(_writeService.master().isCurrentThread());
     ReprocessingRunner &runner = _subDBs.getReprocessingRunner();
     if (!runner.empty()) {
-        if (!_state.enterRedoReprocessState()) {
+        if (!_state->enterRedoReprocessState()) {
             return;
         }
         runner.run();
@@ -844,7 +845,7 @@ DocumentDB::enterApplyLiveConfigState()
     // Enable reconfig and queue currently pending config as executor task.
     {
         lock_guard guard(_configMutex);
-        (void) _state.enterApplyLiveConfigState();
+        (void) _state->enterApplyLiveConfigState();
     }
     auto new_config_snapshot = _pendingConfigSnapshot.get();
     auto prepared_reconfig = prepare_reconfig(*new_config_snapshot, std::nullopt);
@@ -859,10 +860,10 @@ StatusReport::UP
 DocumentDB::reportStatus() const
 {
     StatusReport::Params params("documentdb:" + _docTypeName.toString());
-    const DDBState::State rawState = _state.getState();
+    const DDBState::State rawState = _state->getState();
     {
         const std::string state(DDBState::getStateString(rawState));
-        const std::string configState(DDBState::getConfigStateString(_state.getConfigState()));
+        const std::string configState(DDBState::getConfigStateString(_state->getConfigState()));
         params.internalState(state).internalConfigState(configState);
     }
 
@@ -884,7 +885,7 @@ DocumentDB::reportStatus() const
         std::string msg = make_string("DocumentDB reprocess on startup (%u%% done)",
                                            static_cast<uint32_t>(progress));
         return StatusReport::create(params.state(StatusReport::PARTIAL).progress(progress).message(msg));
-    } else if (_state.getDelayedConfig()) {
+    } else if (_state->getDelayedConfig()) {
         return StatusReport::create(params.state(StatusReport::PARTIAL).
                 message("DocumentDB delaying attribute aspects changes in config"));
     } else {
@@ -976,7 +977,7 @@ DocumentDB::performStartMaintenance()
     std::shared_ptr<DocumentDBConfig> activeConfig;
     {
         lock_guard guard(_configMutex);
-        if (_state.getClosed())
+        if (_state->getClosed())
             return;
         activeConfig = _activeConfigSnapshot;
     }
@@ -1002,7 +1003,7 @@ DocumentDB::forwardMaintenanceConfig()
     DocumentDBConfig::SP activeConfig = getActiveConfig();
     assert(activeConfig);
     auto maintenanceConfig(activeConfig->getMaintenanceConfigSP());
-    if (!_state.getClosed()) {
+    if (!_state->getClosed()) {
         if (_maintenanceController.getPaused()) {
             injectMaintenanceJobs(*maintenanceConfig);
         }
@@ -1059,7 +1060,7 @@ DocumentDB::notifyAllBucketsChanged()
 void
 DocumentDB::updateMetrics(const metrics::MetricLockGuard & guard)
 {
-    if (_state.getState() < DDBState::State::REPLAY_TRANSACTION_LOG) {
+    if (_state->getState() < DDBState::State::REPLAY_TRANSACTION_LOG) {
         return;
     }
     _metricsUpdater.updateMetrics(guard, _metrics);
@@ -1092,7 +1093,7 @@ DocumentDB::getCurrentSerialNumber() const
 void
 DocumentDB::waitForOnlineState()
 {
-    _state.waitForOnlineState();
+    _state->waitForOnlineState();
 }
 
 std::string

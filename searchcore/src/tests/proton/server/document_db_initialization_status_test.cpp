@@ -13,15 +13,15 @@ using proton::DDBState;
 using proton::DocumentDBInitializationStatus;
 
 class DummyReplayProgressProducer : public proton::IReplayProgressProducer {
-    float getReplayProgress() const override {
+    float getProgress() const override {
         return 0.23f;
     }
 };
 
 class DocumentDBInitializationStatusTest : public ::testing::Test {
 protected:
-    DummyReplayProgressProducer _producer;
-    DDBState _state;
+    std::shared_ptr<DummyReplayProgressProducer> _producer;
+    std::shared_ptr<DDBState> _state;
     DocumentDBInitializationStatus _status;
 
     std::shared_ptr<AttributeInitializationStatus> _queued_attribute1;
@@ -33,7 +33,12 @@ protected:
     std::shared_ptr<AttributeInitializationStatus> _reprocessed_loaded_attribute;
 
     DocumentDBInitializationStatusTest()
-        : _status("test_database", _state, _producer) {
+        : _producer(std::make_shared<DummyReplayProgressProducer>()),
+          _state(std::make_shared<DDBState>()),
+          _status("test_database", _state) {
+
+        _status.set_replay_progress_producer(_producer);
+
         _queued_attribute1 = std::make_shared<AttributeInitializationStatus>("queued_attribute1");
         _queued_attribute2 = std::make_shared<AttributeInitializationStatus>("queued_attribute2");
 
@@ -76,7 +81,7 @@ protected:
 };
 
 TEST_F(DocumentDBInitializationStatusTest, test_reporting_initializing) {
-    _state.enterLoadState();
+    _state->enterLoadState();
 
     vespalib::Slime slime;
     vespalib::slime::SlimeInserter inserter(slime);
@@ -86,7 +91,7 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_initializing) {
     EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("test_database"));
     EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("load"));
     EXPECT_EQ(slime.get()["loading_started"].asString().make_string(),
-              DocumentDBInitializationStatus::timepoint_to_string(_state.get_load_time()));
+              DocumentDBInitializationStatus::timepoint_to_string(_state->get_load_time()));
 
     vespalib::slime::Inspector& ready_subdb = slime.get()["ready_subdb"];
     EXPECT_EQ(ready_subdb.children(), 3);
@@ -115,7 +120,7 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_initializing_with_attr
     attributes.push_back(_reprocessed_loaded_attribute);
     _status.set_attribute_initialization_statuses(std::move(attributes));
 
-    _state.enterLoadState();
+    _state->enterLoadState();
 
     vespalib::Slime slime;
     vespalib::slime::SlimeInserter inserter(slime);
@@ -125,7 +130,7 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_initializing_with_attr
     EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("test_database"));
     EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("load"));
     EXPECT_EQ(slime.get()["loading_started"].asString().make_string(),
-              DocumentDBInitializationStatus::timepoint_to_string(_state.get_load_time()));
+              DocumentDBInitializationStatus::timepoint_to_string(_state->get_load_time()));
 
     vespalib::slime::Inspector& ready_subdb = slime.get()["ready_subdb"];
     EXPECT_EQ(ready_subdb.children(), 3);
@@ -156,11 +161,11 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_online_with_attributes
     attributes.push_back(_reprocessed_loaded_attribute);
     _status.set_attribute_initialization_statuses(std::move(attributes));
 
-    _state.enterLoadState();
-    _state.enterReplayTransactionLogState();
-    _state.enterApplyLiveConfigState();
-    _state.enterReprocessState();
-    _state.enterOnlineState();
+    _state->enterLoadState();
+    _state->enterReplayTransactionLogState();
+    _state->enterApplyLiveConfigState();
+    _state->enterReprocessState();
+    _state->enterOnlineState();
 
     vespalib::Slime slime;
     vespalib::slime::SlimeInserter inserter(slime);
@@ -170,11 +175,11 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_online_with_attributes
     EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("test_database"));
     EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("online"));
     EXPECT_EQ(slime.get()["loading_started"].asString().make_string(),
-              DocumentDBInitializationStatus::timepoint_to_string(_state.get_load_time()));
+              DocumentDBInitializationStatus::timepoint_to_string(_state->get_load_time()));
     EXPECT_EQ(slime.get()["loading_finished"].asString().make_string(),
-              DocumentDBInitializationStatus::timepoint_to_string(_state.get_load_time()));
+              DocumentDBInitializationStatus::timepoint_to_string(_state->get_online_time()));
     EXPECT_EQ(slime.get()["replay_started"].asString().make_string(),
-              DocumentDBInitializationStatus::timepoint_to_string(_state.get_replay_time()));
+              DocumentDBInitializationStatus::timepoint_to_string(_state->get_replay_time()));
     EXPECT_EQ(slime.get()["replay_progress"].asString().make_string(), "0.230000");
 
     vespalib::slime::Inspector& ready_subdb = slime.get()["ready_subdb"];
@@ -196,18 +201,18 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_online_with_attributes
 }
 
 TEST_F(DocumentDBInitializationStatusTest, test_reporting_states_before_online) {
-    _state.enterLoadState();
+    _state->enterLoadState();
     expect_children_and_state(4, "load");
 
-    _state.enterReplayTransactionLogState();
+    _state->enterReplayTransactionLogState();
     expect_children_and_state(6, "replay_transaction_log");
 
-    _state.enterApplyLiveConfigState();
+    _state->enterApplyLiveConfigState();
     expect_children_and_state(6, "apply_live_config");
 
-    _state.enterReprocessState();
+    _state->enterReprocessState();
     expect_children_and_state(6, "reprocess");
 
-    _state.enterOnlineState();
+    _state->enterOnlineState();
     expect_children_and_state(7, "online");
 }

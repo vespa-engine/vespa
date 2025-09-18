@@ -113,7 +113,7 @@ TransactionLogManager::prepareReplay(TransLogClient &client,
     }
 }
 
-std::unique_ptr<TlsReplayProgress>
+std::shared_ptr<TlsReplayProgress>
 TransactionLogManager::make_replay_progress(SerialNum first, SerialNum last)
 {
     return std::make_unique<TlsReplayProgress>(getDomainName(), first, last);

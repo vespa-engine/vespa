@@ -5,7 +5,6 @@
 #include "feed_handler_stats.h"
 #include "i_inc_serial_num.h"
 #include "i_operation_storer.h"
-#include "i_replay_progress_producer.h"
 #include "idocumentmovehandler.h"
 #include "igetserialnum.h"
 #include "iheartbeathandler.h"
@@ -52,8 +51,7 @@ class FeedHandler: private search::transactionlog::client::Callback,
                    public IHeartBeatHandler,
                    public IOperationStorer,
                    public IGetSerialNum,
-                   public IIncSerialNum,
-                   public IReplayProgressProducer
+                   public IIncSerialNum
 {
 private:
     using Packet = search::transactionlog::Packet;
@@ -75,7 +73,7 @@ private:
     const TlsWriterFactory                &_tlsWriterfactory;
     std::unique_ptr<TlsWriter>             _tlsMgrWriter;
     TlsWriter                             *_tlsWriter;
-    TlsReplayProgress::UP                  _tlsReplayProgress;
+    std::shared_ptr<TlsReplayProgress>     _tlsReplayProgress;
     // the serial num of the last feed operation processed by feed handler.
     std::atomic<SerialNum>                 _serialNum;
     // the serial num considered to be fully procssessed and flushed to stable storage. Used to prune transaction log.
@@ -227,8 +225,9 @@ public:
     SerialNum getPrunedSerialNum() const { return _prunedSerialNum; }
     uint64_t  inc_prepare_serial_num() { return ++_prepare_serial_num; }
 
+    const std::shared_ptr<TlsReplayProgress>& get_tls_replay_progress() const { return _tlsReplayProgress;}
     bool isDoingReplay() const;
-    float getReplayProgress() const override {
+    float getReplayProgress() const {
         return _tlsReplayProgress ? _tlsReplayProgress->getProgress() : 0;
     }
     bool getTransactionLogReplayDone() const;

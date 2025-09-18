@@ -136,7 +136,7 @@ private:
     vespalib::MonitoredRefCount                      _refCount;
     IDocumentDBOwner                                &_owner;
     storage::spi::BucketExecutor                    &_bucketExecutor;
-    DDBState                                         _state;
+    std::shared_ptr<DDBState>                        _state;
     ResourceUsageForwarder                           _resource_usage_forwarder;
     AttributeUsageFilter                             _writeFilter;
     std::shared_ptr<ITransientResourceUsageProvider> _transient_usage_provider;
@@ -385,7 +385,7 @@ public:
      */
     vespalib::RetainGuard retain() { return {_refCount}; }
 
-    bool getDelayedConfig() const { return _state.getDelayedConfig(); }
+    bool getDelayedConfig() const { return _state->getDelayedConfig(); }
     void replayConfig(SerialNum serialNum) override;
     const DocTypeName & getDocTypeName() const noexcept { return _docTypeName; }
     std::unique_ptr<DocumentDBReconfig> prepare_reconfig(const DocumentDBConfig& new_config_snapshot, std::optional<SerialNum> serial_num);
@@ -429,7 +429,7 @@ public:
     ExecutorThreadingService & getWriteService() { return _writeService; }
 
     void set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener);
-    const DDBState& get_state() const noexcept { return _state; }
+    const DDBState& get_state() const noexcept { return *_state; }
 
     std::shared_ptr<DocumentDBInitializationStatus> get_initialization_status() const;
 };

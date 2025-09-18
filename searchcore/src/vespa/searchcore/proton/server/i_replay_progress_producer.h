@@ -10,7 +10,7 @@ namespace proton {
 class IReplayProgressProducer {
 public:
     virtual ~IReplayProgressProducer() = default;
-    virtual float getReplayProgress() const = 0;
+    virtual float getProgress() const = 0;
 };
 
 }
