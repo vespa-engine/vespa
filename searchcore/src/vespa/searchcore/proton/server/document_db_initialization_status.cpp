@@ -41,15 +41,15 @@ void DocumentDBInitializationStatus::report_initialization_status(const vespalib
     db_cursor.setString("state", state_string);
 
     if (state >= DDBState::State::LOAD) {
-        db_cursor.setString("loading_started", timepoint_to_string(_state->get_load_time()));
+        db_cursor.setString("start_time", timepoint_to_string(_state->get_load_time()));
     }
 
     if (state >= DDBState::State::REPLAY_TRANSACTION_LOG) {
-        db_cursor.setString("replay_started", timepoint_to_string(_state->get_replay_time()));
+        db_cursor.setString("replay_start_time", timepoint_to_string(_state->get_replay_time()));
     }
 
     if (state >= DDBState::State::ONLINE) {
-        db_cursor.setString("loading_finished", timepoint_to_string(_state->get_online_time()));
+        db_cursor.setString("end_time", timepoint_to_string(_state->get_online_time()));
     }
 
     if (state >= DDBState::State::REPLAY_TRANSACTION_LOG) {

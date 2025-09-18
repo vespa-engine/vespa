@@ -97,7 +97,7 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_initializing_no_dbs) {
     EXPECT_EQ(slime.get().children(), 7);
     EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("initializing"));
     EXPECT_TRUE(slime.get()["current_time"].valid());
-    EXPECT_EQ(slime.get()["initialization_started"].asString().make_string(),
+    EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
               ProtonInitializationStatus::timepoint_to_string(_status.get_start_time()));
     EXPECT_EQ(slime.get()["load"].asLong(), 0);
     EXPECT_EQ(slime.get()["replay_transaction_log"].asLong(), 0);
@@ -119,9 +119,9 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_ready_no_dbs) {
     EXPECT_EQ(slime.get().children(), 8);
     EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("ready"));
     EXPECT_TRUE(slime.get()["current_time"].valid());
-    EXPECT_EQ(slime.get()["initialization_started"].asString().make_string(),
+    EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
               ProtonInitializationStatus::timepoint_to_string(_status.get_start_time()));
-    EXPECT_EQ(slime.get()["initialization_finished"].asString().make_string(),
+    EXPECT_EQ(slime.get()["end_time"].asString().make_string(),
               ProtonInitializationStatus::timepoint_to_string(_status.get_end_time()));
     EXPECT_EQ(slime.get()["load"].asLong(), 0);
     EXPECT_EQ(slime.get()["replay_transaction_log"].asLong(), 0);
@@ -148,7 +148,7 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_with_dbs) {
         EXPECT_EQ(slime.get().children(), 7);
         EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("initializing"));
         EXPECT_TRUE(slime.get()["current_time"].valid());
-        EXPECT_EQ(slime.get()["initialization_started"].asString().make_string(),
+        EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
                   ProtonInitializationStatus::timepoint_to_string(_status.get_start_time()));
         EXPECT_EQ(slime.get()["load"].asLong(), 2);
         EXPECT_EQ(slime.get()["replay_transaction_log"].asLong(), 0);
@@ -181,9 +181,9 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_with_dbs) {
         EXPECT_EQ(slime.get().children(), 8);
         EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("ready"));
         EXPECT_TRUE(slime.get()["current_time"].valid());
-        EXPECT_EQ(slime.get()["initialization_started"].asString().make_string(),
+        EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
                   ProtonInitializationStatus::timepoint_to_string(_status.get_start_time()));
-        EXPECT_EQ(slime.get()["initialization_finished"].asString().make_string(),
+        EXPECT_EQ(slime.get()["end_time"].asString().make_string(),
                   ProtonInitializationStatus::timepoint_to_string(_status.get_end_time()));
         EXPECT_EQ(slime.get()["load"].asLong(), 0);
         EXPECT_EQ(slime.get()["replay_transaction_log"].asLong(), 0);

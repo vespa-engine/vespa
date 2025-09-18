@@ -118,23 +118,23 @@ void AttributeInitializationStatus::report_initialization_status(const vespalib:
     cursor.setString("status", state_to_string(_state));
 
     if (_state >= State::LOADING && _was_reprocessed) {
-        cursor.setString("reprocessing_progress",  std::format("{:.6f}", _reprocessing_percentage));
+        cursor.setString("reprocess_progress",  std::format("{:.6f}", _reprocessing_percentage));
     }
 
     if (_state >= State::LOADING) {
-        cursor.setString("loading_started", timepoint_to_string(_start_time));
+        cursor.setString("start_time", timepoint_to_string(_start_time));
     }
 
     if (_state >= State::LOADING && _was_reprocessed) {
-        cursor.setString("reprocessing_started",timepoint_to_string(_reprocessing_start_time));
+        cursor.setString("reprocess_start_time",timepoint_to_string(_reprocessing_start_time));
     }
 
     if ((_state == State::LOADING || _state == State::LOADED) && _was_reprocessed) {
-        cursor.setString("reprocessing_finished", timepoint_to_string(_reprocessing_end_time));
+        cursor.setString("reprocess_end_time", timepoint_to_string(_reprocessing_end_time));
     }
 
     if (_state == State::LOADED) {
-        cursor.setString("loading_finished", timepoint_to_string(_end_time));
+        cursor.setString("end_time", timepoint_to_string(_end_time));
     }
 }
 

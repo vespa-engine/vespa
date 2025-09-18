@@ -89,7 +89,7 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_initializing) {
     EXPECT_EQ(slime.get().children(), 4);
     EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("test_database"));
     EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("load"));
-    EXPECT_EQ(slime.get()["loading_started"].asString().make_string(),
+    EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
               DocumentDBInitializationStatus::timepoint_to_string(_state->get_load_time()));
 
     vespalib::slime::Inspector& ready_subdb = slime.get()["ready_subdb"];
@@ -129,7 +129,7 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_initializing_with_attr
     EXPECT_EQ(slime.get().children(), 4);
     EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("test_database"));
     EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("load"));
-    EXPECT_EQ(slime.get()["loading_started"].asString().make_string(),
+    EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
               DocumentDBInitializationStatus::timepoint_to_string(_state->get_load_time()));
 
     vespalib::slime::Inspector& ready_subdb = slime.get()["ready_subdb"];
@@ -175,11 +175,11 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_online_with_attributes
     EXPECT_EQ(slime.get().children(), 7);
     EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("test_database"));
     EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("online"));
-    EXPECT_EQ(slime.get()["loading_started"].asString().make_string(),
+    EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
               DocumentDBInitializationStatus::timepoint_to_string(_state->get_load_time()));
-    EXPECT_EQ(slime.get()["loading_finished"].asString().make_string(),
+    EXPECT_EQ(slime.get()["end_time"].asString().make_string(),
               DocumentDBInitializationStatus::timepoint_to_string(_state->get_online_time()));
-    EXPECT_EQ(slime.get()["replay_started"].asString().make_string(),
+    EXPECT_EQ(slime.get()["replay_start_time"].asString().make_string(),
               DocumentDBInitializationStatus::timepoint_to_string(_state->get_replay_time()));
     EXPECT_EQ(slime.get()["replay_progress"].asString().make_string(), "0.230000");
 

@@ -66,10 +66,10 @@ void ProtonInitializationStatus::report_initialization_status(const vespalib::sl
     vespalib::slime::Cursor &cursor = inserter.insertObject();
     cursor.setString("state", ProtonInitializationStatus::state_to_string(_state));
     cursor.setString("current_time", timepoint_to_string(std::chrono::system_clock::now()));
-    cursor.setString("initialization_started", timepoint_to_string(_start_time));
+    cursor.setString("start_time", timepoint_to_string(_start_time));
 
     if (_state == ProtonInitializationStatus::READY) {
-        cursor.setString("initialization_finished", timepoint_to_string(_end_time));
+        cursor.setString("end_time", timepoint_to_string(_end_time));
     }
 
     // DB counts
