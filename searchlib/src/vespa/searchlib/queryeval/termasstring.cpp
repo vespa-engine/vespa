@@ -40,6 +40,7 @@ using search::query::TrueQueryNode;
 using search::query::WandTerm;
 using search::query::WeakAnd;
 using search::query::WeightedSetTerm;
+using search::query::WordAlternatives;
 using std::string;
 using std::string_view;
 
@@ -98,6 +99,7 @@ struct TermAsStringVisitor : public QueryVisitor {
     void visit(DotProduct &) override {illegalVisit(); }
     void visit(WandTerm &) override {illegalVisit(); }
     void visit(InTerm&) override { illegalVisit(); }
+    void visit(WordAlternatives&) override { illegalVisit(); }
 
     void visit(NumberTerm &n) override {visitTerm(n); }
     void visit(LocationTerm &n) override {visitTerm(n); }

@@ -216,7 +216,7 @@ class QueryNodeConverter : public QueryVisitor {
 
     template <typename T> void appendTerm(const TermBase<T> &node);
 
-    void createTermNode(const TermNode &node, ParseItem::ItemType type) {
+    void createTermNode(const Term &node, ParseItem::ItemType type) {
         uint8_t features = ParseItem::IF_WEIGHT | ParseItem::IF_UNIQUEID;
         uint8_t flags = 0;
         if (!node.isRanked()) {
@@ -319,6 +319,12 @@ class QueryNodeConverter : public QueryVisitor {
                 appendLong(node.getAsInteger(i).first);
             }
         }
+    }
+
+    void visit(WordAlternatives& node) override {
+        createTermNode(node, ParseItem::ITEM_WORD_ALTERNATIVES);
+        appendCompressedPositiveNumber(node.getNumTerms());
+        createMultiTermNodes(node);
     }
 
 public:

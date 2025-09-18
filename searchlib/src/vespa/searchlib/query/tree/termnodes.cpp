@@ -29,6 +29,7 @@ DotProduct::~DotProduct() = default;
 WandTerm::~WandTerm() = default;
 FuzzyTerm::~FuzzyTerm() = default;
 InTerm::~InTerm() = default;
+WordAlternatives::~WordAlternatives() = default;
 
 MultiTerm::MultiTerm(uint32_t num_terms)
     : _terms(),

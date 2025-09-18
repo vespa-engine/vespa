@@ -60,6 +60,7 @@ class TemplateTermVisitor : public CustomTypeTermVisitor<NodeTypes> {
     void visit(typename NodeTypes::SameElement &n) override { myVisit(n); }
 
     void visit(typename NodeTypes::InTerm& n) override { myVisit(n); }
+    void visit(typename NodeTypes::WordAlternatives& n) override { myVisit(n); }
 };
 
 }

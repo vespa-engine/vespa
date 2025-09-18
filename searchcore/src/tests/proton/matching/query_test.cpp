@@ -259,6 +259,7 @@ public:
     void visit(ProtonRegExpTerm &) override {}
     void visit(ProtonNearestNeighborTerm &) override {}
     void visit(ProtonInTerm&) override {}
+    void visit(ProtonWordAlternatives&) override {}
 };
 
 TEST(QueryTest, requireThatTermsAreLookedUp)
@@ -411,6 +412,7 @@ public:
     void visit(ProtonNearestNeighborTerm &) override {}
     void visit(ProtonFuzzyTerm &) override {}
     void visit(ProtonInTerm&) override { }
+    void visit(ProtonWordAlternatives&) override { }
 };
 
 TEST(QueryTest, requireThatTermDataIsFilledIn)
@@ -815,7 +817,7 @@ TEST(QueryTest, requireThatFakeFieldSearchDumpsDiffer)
     l2->basic_plan(true, 1000);
     l3->basic_plan(true, 1000);
     l4->basic_plan(true, 1000);
-    
+
     l1->fetchPostings(ExecuteInfo::FULL);
     l2->fetchPostings(ExecuteInfo::FULL);
     l3->fetchPostings(ExecuteInfo::FULL);
