@@ -47,8 +47,6 @@
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
 #include <vespa/searchlib/transactionlog/translogserverapp.h>
 #include <vespa/searchlib/util/fileheadertk.h>
-#include <vespa/vespalib/data/slime/cursor.h>
-#include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/net/http/state_server.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
@@ -732,6 +730,8 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                                   initializeThreads,
                                   bootstrapConfig->getHwInfo(),
                                   _posting_list_cache);
+    _initialization_status.addDocumentDBInitializationStatus(ret->get_initialization_status());
+
     try {
         ret->start();
     } catch (vespalib::Exception &e) {
@@ -782,6 +782,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
             return;
         }
         old = it->second;
+        _initialization_status.removeDocumentDBInitializationStatus(old->get_initialization_status());
         _documentDBMap.erase(it);
     }
 
@@ -1192,47 +1193,6 @@ Proton::getPersistence()
 metrics::MetricManager &
 Proton::getMetricManager() {
     return _metricsEngine->getManager();
-}
-
-void Proton::report_initialization_status(const vespalib::slime::Inserter &inserter) const {
-    std::shared_lock<std::shared_mutex> guard(_mutex);
-
-    ProtonInitializationStatus::State state = _initialization_status.get_state();
-
-    vespalib::slime::Cursor &cursor = inserter.insertObject();
-    cursor.setString("state", ProtonInitializationStatus::state_to_string(state));
-    cursor.setString("current_time", timepoint_to_string(std::chrono::system_clock::now()));
-    cursor.setString("start_time", timepoint_to_string(_initialization_status.get_start_time()));
-
-    if (state == ProtonInitializationStatus::READY) {
-        cursor.setString("end_time", timepoint_to_string(_initialization_status.get_end_time()));
-    }
-
-    // DB counts
-    int load(0), replay(0), online(0);
-    for (const auto &kv : _documentDBMap) {
-        switch (kv.second->get_state().getState()) {
-            case DDBState::State::REPLAY_TRANSACTION_LOG:
-                ++replay;
-                break;
-            case DDBState::State::ONLINE:
-                ++online;
-                 break;
-             default:
-                 ++load;
-         }
-    }
-    cursor.setLong("load", load);
-    cursor.setLong("replay_transaction_log", replay);
-    cursor.setLong("online", online);
-
-    // DBs
-    vespalib::slime::Cursor &dbArrayCursor = cursor.setArray("dbs");
-    vespalib::slime::ArrayInserter arrayInserter(dbArrayCursor);
-
-    for (const auto &kv : _documentDBMap) {
-        kv.second->get_initialization_status()->report_initialization_status(arrayInserter);
-    }
 }
 
 } // namespace proton
