@@ -23,11 +23,14 @@ import java.nio.file.attribute.PosixFilePermissions;
  * Experimental Triton ONNX runtime.
  *
  * @author bjorncs
+ * @author glebashnik
  */
 public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime {
 
     private final TritonConfig config;
     private final TritonOnnxClient client;
+    private final boolean isExplicitControlMode;
+    private final TritonOnnxModelLoader modelLoader;
 
     // Test constructor
     public TritonOnnxRuntime() {
@@ -38,19 +41,26 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     public TritonOnnxRuntime(TritonConfig config) {
         this.config = config;
         this.client = new TritonOnnxClient(config);
+        this.isExplicitControlMode = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
+        this.modelLoader = new TritonOnnxModelLoader(client, isExplicitControlMode);
     }
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        if (!client.isHealthy())
+        if (!client.isHealthy()) {
             throw new IllegalStateException("Triton server is not healthy! (target=%s)".formatted(config.target()));
-        var isExplicitControlMode = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
-        if (isExplicitControlMode) copyModelToRepository(modelPath, options);
-        return new TritonOnnxEvaluator(client, modelName(modelPath), isExplicitControlMode);
+        }
+        
+        if (isExplicitControlMode) {
+            copyModelToRepository(modelPath, options);
+        }
+
+        return new TritonOnnxEvaluator(client, modelName(modelPath), modelLoader);
     }
 
     @Override
     public void deconstruct() {
+        modelLoader.unloadAllModels();
         client.close();
     }
 

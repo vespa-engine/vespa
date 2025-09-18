@@ -12,30 +12,25 @@ import java.util.Map;
  * An ONNX evaluator that uses {@link TritonOnnxClient} to evaluate the model.
  *
  * @author bjorncs
+ * @author glebashnik
  */
 class TritonOnnxEvaluator implements OnnxEvaluator {
-
     private final String modelName;
-    private final TritonOnnxClient triton;
+    private final TritonOnnxClient tritonClient;
     private final TritonOnnxClient.ModelMetadata modelMetadata;
-    private final boolean isExplicitControlMode;
+    private final TritonOnnxModelLoader modelLoader;
 
-    TritonOnnxEvaluator(TritonOnnxClient client, String modelName, boolean isExplicitControlMode) {
+    TritonOnnxEvaluator(TritonOnnxClient tritonClient, String modelName, TritonOnnxModelLoader modelLoader) {
         this.modelName = modelName;
-        this.triton = client;
-        this.isExplicitControlMode = isExplicitControlMode;
-        try {
-            if (isExplicitControlMode) triton.loadModel(modelName);
-            this.modelMetadata = triton.getModelMetadata(modelName);
-        } catch (TritonOnnxClient.TritonException e) {
-            throw new RuntimeException("Failed to load model: " + modelName, e);
-        }
+        this.tritonClient = tritonClient;
+        this.modelLoader = modelLoader;
+        modelMetadata = modelLoader.loadModel(modelName);
     }
 
     @Override
     public Tensor evaluate(Map<String, Tensor> inputs, String output) {
         try {
-            return triton.evaluate(modelName, inputs, output);
+            return tritonClient.evaluate(modelName, inputs, output);
         } catch (TritonOnnxClient.TritonException e) {
             throw new RuntimeException("Failed to evaluate model: " + modelName, e);
         }
@@ -44,7 +39,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     @Override
     public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
         try {
-            return triton.evaluate(modelName, inputs);
+            return tritonClient.evaluate(modelName, inputs);
         } catch (TritonOnnxClient.TritonException e) {
             throw new RuntimeException("Failed to evaluate model: " + modelName, e);
         }
@@ -78,7 +73,6 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
 
     @Override
     public void close() {
-        // Note: This is not safe if evaluator instances shares the same underlying Triton model.
-        if (isExplicitControlMode) triton.unloadModel(modelName);
+        modelLoader.unloadModel(modelName);
     }
 }

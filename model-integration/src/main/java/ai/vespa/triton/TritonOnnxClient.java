@@ -49,7 +49,6 @@ public class TritonOnnxClient implements AutoCloseable {
     private final HealthGrpc.HealthBlockingV2Stub grpcHealthStub;
 
     public static class TritonException extends RuntimeException {
-        public TritonException(Throwable cause) { super(cause); }
         public TritonException(String message) { super(message); }
         public TritonException(String message, Throwable cause) { super(message, cause); }
     }
@@ -68,7 +67,8 @@ public class TritonOnnxClient implements AutoCloseable {
         var request = GrpcService.ModelMetadataRequest.newBuilder()
                 .setName(modelName)
                 .build();
-        var response = invokeGrpc(grpcInferenceStub, s -> s.modelMetadata(request));
+        var response = invokeGrpc(
+                grpcInferenceStub, s -> s.modelMetadata(request), "Failed to get model metadata " + modelName);
         var inputs = toTensorTypes(response.getInputsList());
         var outputs = toTensorTypes(response.getOutputsList());
         return new ModelMetadata(inputs, outputs);
@@ -77,7 +77,7 @@ public class TritonOnnxClient implements AutoCloseable {
 
     public boolean isHealthy() {
         var req = HealthCheckRequest.newBuilder().build();
-        var response = invokeGrpc(grpcHealthStub, s -> s.check(req));
+        var response = invokeGrpc(grpcHealthStub, s -> s.check(req), "Failed to check health");
         log.fine(() -> "Triton health status: " + response.getStatus());
         return response.getStatus() == HealthCheckResponse.ServingStatus.SERVING;
     }
@@ -87,14 +87,14 @@ public class TritonOnnxClient implements AutoCloseable {
         var request = GrpcService.RepositoryModelLoadRequest.newBuilder()
                 .setModelName(modelName)
                 .build();
-        invokeGrpc(grpcInferenceStub, s -> s.repositoryModelLoad(request));
+        invokeGrpc(grpcInferenceStub, s -> s.repositoryModelLoad(request), "Failed to load model: " + modelName);
     }
 
     public void unloadModel(String modelName) {
         var request = GrpcService.RepositoryModelUnloadRequest.newBuilder()
                 .setModelName(modelName)
                 .build();
-        invokeGrpc(grpcInferenceStub, s -> s.repositoryModelUnload(request));
+        invokeGrpc(grpcInferenceStub, s -> s.repositoryModelUnload(request), "Failed to unload model: " + modelName);
     }
 
     public Map<String, Tensor> evaluate(String modelName, Map<String, Tensor> inputs) {
@@ -110,10 +110,12 @@ public class TritonOnnxClient implements AutoCloseable {
                 .setModelName(modelName);
 
         // Get model metadata to convert vespa tensor types to onnx types
-        var metadata = invokeGrpc(grpcInferenceStub, s -> s.modelMetadata(
-                GrpcService.ModelMetadataRequest.newBuilder()
-                        .setName(modelName)
-                        .build()));
+        var metadata = invokeGrpc(
+                grpcInferenceStub, s -> s.modelMetadata(
+                        GrpcService.ModelMetadataRequest.newBuilder()
+                                .setName(modelName)
+                                .build()), "Failed to get model metadata: " + modelName
+        );
 
         inputs.forEach((name, tensor) -> addInputToBuilder(metadata.getInputsList(), requestBuilder, tensor, name));
 
@@ -123,7 +125,8 @@ public class TritonOnnxClient implements AutoCloseable {
                         .setName(name)
                         .build()));
 
-        var response = invokeGrpc(grpcInferenceStub, s -> s.modelInfer(requestBuilder.build()));
+        var response = invokeGrpc(
+                grpcInferenceStub, s -> s.modelInfer(requestBuilder.build()), "Failed to infer model: " + modelName);
 
         Map<String, Tensor> outputs = new HashMap<>();
         for (int i = 0; i < response.getOutputsCount(); i++) {
@@ -141,7 +144,7 @@ public class TritonOnnxClient implements AutoCloseable {
 
     @Override
     public void close() {
-        var ch = (ManagedChannel) invokeGrpc(grpcInferenceStub, AbstractStub::getChannel);
+        var ch = (ManagedChannel) invokeGrpc(grpcInferenceStub, AbstractStub::getChannel, "Failed to get channel");
         ch.shutdown();
         try {
             if (!ch.awaitTermination(5, SECONDS))
@@ -341,11 +344,11 @@ public class TritonOnnxClient implements AutoCloseable {
 
 
     // Converts StatusRuntimeException to TritonException
-    private <T, S extends AbstractBlockingStub<S>> T invokeGrpc(S stub, Function<S, T> invocation) {
+    private <T, S extends AbstractBlockingStub<S>> T invokeGrpc(S stub, Function<S, T> invocation, String errorMessage) {
         try {
             return invocation.apply(stub);
         } catch (StatusRuntimeException e) {
-            throw new TritonException(e);
+            throw new TritonException(errorMessage, e);
         }
     }
 }
