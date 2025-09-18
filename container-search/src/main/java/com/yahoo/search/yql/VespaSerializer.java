@@ -700,7 +700,11 @@ public class VespaSerializer {
                 destination.append(normalizeIndexName(item.getFieldName())).append(" contains ");
             }
 
-            destination.append(SAME_ELEMENT).append('(');
+            destination.append(SAME_ELEMENT);
+            if (item.getItemCount() == 1 && item.getItem(0) instanceof CompositeItem)
+                return true; // serialize nested content in the normal way
+
+            destination.append('(');
             for (int i = 0; i < item.getItemCount(); ++i) {
                 if (i > 0) {
                     destination.append(", ");
@@ -724,7 +728,7 @@ public class VespaSerializer {
                     new WordAlternativesSerializer().serialize(destination, (WordAlternativesItem)current);
                 } else {
                     throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName() +
-                                                       " in same_element is not implemented, please report this as a bug.");
+                                                       " in sameElement is not implemented, please report this as a bug.");
                 }
             }
             destination.append(')');
