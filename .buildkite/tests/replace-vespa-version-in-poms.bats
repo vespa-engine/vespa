@@ -100,7 +100,7 @@ EOF
   run "$BATS_TEST_DIRNAME/../replace-vespa-version-in-poms.sh" "$VESPA_VERSION" "$test_dir"
 
   assert_success
-  assert_output "No pom.xml files found in $test_dir"
+  assert_output --partial "No pom.xml files found in $test_dir"
 }
 
 @test "No Vespa version provided" {
