@@ -5,6 +5,7 @@
 #include "matchdatareservevisitor.h"
 #include "resolveviewvisitor.h"
 #include "sameelementmodifier.h"
+#include "tag_needed_handles.h"
 #include "termdataextractor.h"
 #include "unpacking_iterators_optimizer.h"
 #include <vespa/document/datatype/positiondatatype.h>
@@ -225,6 +226,12 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
 
     _blueprint = BlueprintBuilder::build(requestContext, *_query_tree, std::move(_whiteListBlueprint), context);
     LOG(debug, "original blueprint:\n%s\n", _blueprint->asString().c_str());
+}
+
+void
+Query::tag_needed_handles(HandleRecorder& handle_recorder, const search::fef::IIndexEnvironment& index_env)
+{
+    proton::matching::tag_needed_handles(*_query_tree, handle_recorder, index_env);
 }
 
 void

@@ -141,7 +141,6 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, InFlow in_flow) const override;
-    SearchIteratorUP createSearchImpl(fef::MatchData &md) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;
@@ -168,7 +167,6 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, InFlow in_flow) const override;
-    SearchIteratorUP createSearchImpl(fef::MatchData &md) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;

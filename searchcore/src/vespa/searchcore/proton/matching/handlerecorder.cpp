@@ -26,6 +26,11 @@ HandleRecorder::HandleRecorder() :
 {
 }
 
+HandleRecorder::HandleRecorder(const HandleRecorder::HandleMap& initial_handles)
+    : _handles(initial_handles)
+{
+}
+
 namespace {
 
 std::string

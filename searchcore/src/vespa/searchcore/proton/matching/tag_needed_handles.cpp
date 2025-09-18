@@ -14,8 +14,8 @@ namespace proton::matching {
 
 class TagNeededHandlesVisitor : public TemplateTermVisitor<TagNeededHandlesVisitor, ProtonNodeTypes>
 {
-    uint32_t           _inspecting_ancestor_nodes;
-    IIndexEnvironment& _index_env;
+    uint32_t                 _inspecting_ancestor_nodes;
+    const IIndexEnvironment& _index_env;
 
     void visit_handles(const ProtonTermData& n);
 
@@ -27,7 +27,7 @@ class TagNeededHandlesVisitor : public TemplateTermVisitor<TagNeededHandlesVisit
         }
     }
 public:
-    TagNeededHandlesVisitor(search::fef::IIndexEnvironment& index_env);
+    TagNeededHandlesVisitor(const search::fef::IIndexEnvironment& index_env);
     ~TagNeededHandlesVisitor() override;
 
     template <class TermNode>
@@ -42,7 +42,7 @@ public:
      */
 };
 
-TagNeededHandlesVisitor::TagNeededHandlesVisitor(IIndexEnvironment& index_env)
+TagNeededHandlesVisitor::TagNeededHandlesVisitor(const IIndexEnvironment& index_env)
     : TemplateTermVisitor<TagNeededHandlesVisitor, ProtonNodeTypes>(),
       _inspecting_ancestor_nodes(0u),
       _index_env(index_env)
@@ -90,8 +90,7 @@ TagNeededHandlesVisitor::visit(ProtonNodeTypes::ONear& n)
 }
 
 void
-tag_needed_handles(HandleRecorder& handle_recorder, IIndexEnvironment& index_env,
-                        search::query::Node& node)
+tag_needed_handles(search::query::Node& node, HandleRecorder& handle_recorder, const IIndexEnvironment& index_env)
 {
     TagNeededHandlesVisitor visitor(index_env);
     HandleRecorder::Binder binder(handle_recorder);
