@@ -158,6 +158,7 @@ struct MetricsUpdateHook : metrics::UpdateHook
     }
 };
 
+const std::string INITIALIZATION_API_PATH = "/state/v1/initialization";
 const std::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
 
 VESPA_THREAD_STACK_TAG(proton_close_executor);
@@ -296,6 +297,9 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _rpcHooks(),
       _healthAdapter(*this),
       _genericStateHandler(CUSTOM_COMPONENT_API_PATH, *this),
+      _initialization_handler(_initialization_status),
+      _initialization_bind_token(),
+      _initialization_root_token(),
       _customComponentBindToken(),
       _customComponentRootToken(),
       _stateServer(),
@@ -417,6 +421,13 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     std::string fileConfigId;
     _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_shared_service->shared_raw());
 
+    _stateServer = std::make_unique<vespalib::StateServer>(protonConfig.httpport, _healthAdapter,
+                                                           _metricsEngine->metrics_producer(),
+                                                           *this,
+                                                           true);
+    _initialization_bind_token = _stateServer->repo().bind(INITIALIZATION_API_PATH, _initialization_handler);
+    _initialization_root_token = _stateServer->repo().add_root_resource(INITIALIZATION_API_PATH);
+
     InitializeThreadsCalculator calc(hwInfo.cpu(), protonConfig.basedir, protonConfig.initialize.threads);
     LOG(info, "Start initializing components: threads=%u, configured=%u",
         calc.num_threads(), protonConfig.initialize.threads);
@@ -434,8 +445,11 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     calc.init_done();
 
     _metricsEngine->start(_configUri);
-    _stateServer = std::make_unique<vespalib::StateServer>(protonConfig.httpport, _healthAdapter,
-                                                           _metricsEngine->metrics_producer(), *this);
+
+    // Enable remaining /state/v1/ endpoints
+    _stateServer->set_limit_endpoints(false);
+
+    // Add /custom/component endpoint
     _customComponentBindToken = _stateServer->repo().bind(CUSTOM_COMPONENT_API_PATH, _genericStateHandler);
     _customComponentRootToken = _stateServer->repo().add_root_resource(CUSTOM_COMPONENT_API_PATH);
 
@@ -596,6 +610,8 @@ Proton::shutdown_config_fetching_and_state_exposing_components_once() noexcept
     _executor.sync();
     _customComponentRootToken.reset();
     _customComponentBindToken.reset();
+    _initialization_root_token.reset();
+    _initialization_bind_token.reset();
     _stateServer.reset();
     if (_metricsEngine) {
         _metricsEngine->removeMetricsHook(*_metricsHook);
