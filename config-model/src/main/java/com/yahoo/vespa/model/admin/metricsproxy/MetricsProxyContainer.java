@@ -49,7 +49,6 @@ public class MetricsProxyContainer extends Container implements
     private final MetricsProxyContainerCluster cluster;
     private final ApplicationId applicationId;
     private final Zone zone;
-    private final String jvmGCOptions;
 
     public MetricsProxyContainer(MetricsProxyContainerCluster cluster, HostResource host, int index, DeployState deployState) {
         super(cluster, host.getHostname(), index, deployState);
@@ -58,7 +57,6 @@ public class MetricsProxyContainer extends Container implements
         this.cluster = cluster;
         this.applicationId = deployState.getApplicationPackage().getApplicationId();
         this.zone = deployState.zone();
-        this.jvmGCOptions = deployState.getProperties().jvmGCOptions(clusterMembership.map(membership -> membership.cluster().type()));
         setProp("clustertype", "admin");
         setProp("index", String.valueOf(index));
         addNodeSpecificComponents();
