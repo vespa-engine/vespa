@@ -7,6 +7,7 @@
 #include <chrono>
 #include <memory>
 #include <mutex>
+#include <vector>
 
 namespace vespalib::slime { struct Inserter; }
 
