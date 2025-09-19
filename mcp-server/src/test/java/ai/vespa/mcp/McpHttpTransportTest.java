@@ -108,6 +108,7 @@ public class McpHttpTransportTest {
 
         HttpResponse response = transport.handlePost(request, requestBody.getBytes(StandardCharsets.UTF_8));
         assertEquals(200, response.getStatus());
+        assertTrue(renderResponse(response).contains("\"jsonrpc\":\"2.0\""));
     }
 
     @Test
@@ -124,7 +125,7 @@ public class McpHttpTransportTest {
     /**
      * Helper method to render an HttpResponse to a String.
      */
-    private String renderResponse(HttpResponse response) {
+    public static String renderResponse(HttpResponse response) {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             response.render(out);
