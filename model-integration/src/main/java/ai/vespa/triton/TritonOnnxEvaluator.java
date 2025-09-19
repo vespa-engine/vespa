@@ -52,7 +52,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     // Evaluate with optional retry in case the model is unloaded because of app redeployment or Triton restart.
     private Map<String, Tensor> evaluate(Map<String, Tensor> inputs, boolean allowRetry) {
         try {
-            return triton.evaluate(modelName, inputs);
+            return triton.evaluate(modelName, modelMetadata, inputs);
         } catch (TritonOnnxClient.TritonException e) {
             if (allowRetry) {
                 log.warning(() -> "Retrying to evaluate model: " + modelName);
@@ -67,7 +67,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     @Override
     public Map<String, IdAndType> getInputs() {
         Map<String, IdAndType> result = new HashMap<>();
-        modelMetadata.inputs().forEach((name, type) ->
+        modelMetadata.inputs.forEach((name, type) ->
             result.put(name, new IdAndType(name, type)));
         return result;
     }
@@ -75,24 +75,24 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     @Override
     public Map<String, IdAndType> getOutputs() {
         Map<String, IdAndType> result = new HashMap<>();
-        modelMetadata.outputs().forEach((name, type) ->
+        modelMetadata.outputs.forEach((name, type) ->
             result.put(name, new IdAndType(name, type)));
         return result;
     }
 
     @Override
     public Map<String, TensorType> getInputInfo() {
-        return modelMetadata.inputs();
+        return modelMetadata.inputs;
     }
 
     @Override
     public Map<String, TensorType> getOutputInfo() {
-        return modelMetadata.outputs();
+        return modelMetadata.outputs;
     }
 
     @Override
     public void close() {
-        // Note: This is not safe if evaluator instances shares the same underlying Triton model.
+        // Note: This is not safe if evaluator instances share the same underlying Triton model.
         if (isExplicitControlMode) triton.unloadModel(modelName);
     }
 }
