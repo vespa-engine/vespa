@@ -84,7 +84,7 @@ CreateBlueprintVisitorHelper::handleNumberTermAsText(query::NumberTerm &n)
     std::string termStr = termAsString(n);
     queryeval::SplitFloat splitter(termStr);
     if (splitter.parts() > 1) {
-        query::SimplePhrase phraseNode(_field.getName(), n.getId(), n.getWeight());
+        query::SimplePhrase phraseNode(n.getView(), n.getId(), n.getWeight());
         phraseNode.setStateFrom(n);
         for (size_t i = 0; i < splitter.parts(); ++i) {
             phraseNode.append(std::make_unique<query::SimpleStringTerm>(splitter.getPart(i), "", 0, query::Weight(0)));
@@ -94,7 +94,7 @@ CreateBlueprintVisitorHelper::handleNumberTermAsText(query::NumberTerm &n)
         if (splitter.parts() == 1) {
             termStr = splitter.getPart(0);
         }
-        query::SimpleStringTerm stringNode(termStr, _field.getName(), n.getId(), n.getWeight());
+        query::SimpleStringTerm stringNode(termStr, n.getView(), n.getId(), n.getWeight());
         stringNode.setStateFrom(n);
         visit(stringNode);
     }
