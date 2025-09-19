@@ -18,6 +18,7 @@ import java.util.concurrent.Executors;
 
 import static com.yahoo.container.jdisc.HttpRequest.createTestRequest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -121,6 +122,7 @@ public class McpJdiscHandlerTest {
 
         HttpResponse response = handler.handle(request, null);
         assertEquals(200, response.getStatus());
+        assertTrue(McpHttpTransportTest.renderResponse(response).contains("success"));
         verify(mockTransport).handlePost(eq(request), any(byte[].class));
     }
 
