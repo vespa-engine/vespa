@@ -47,7 +47,7 @@ public class OpenTelemetryConfigGenerator {
         boolean isCd = true;
         boolean isPublic = true;
         if (zone != null) {
-            isCd = zone.system().isCd();
+            isCd = zone.system().isCdLike();
             isPublic = zone.system().isPublicLike();
             this.useTls = true;
         } else {

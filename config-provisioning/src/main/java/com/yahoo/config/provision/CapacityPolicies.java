@@ -111,7 +111,7 @@ public class CapacityPolicies {
         }
 
         // Allow slow storage in zones which are not performance sensitive
-        if (zone.system().isCd() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
+        if (zone.system().isCdLike() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
             target = target.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any).withBandwidthGbps(0.1);
 
         return target;
@@ -128,7 +128,7 @@ public class CapacityPolicies {
     private NodeResources defaultResources(ClusterSpec clusterSpec) {
         var adminClusterArchitecture = tuning.adminClusterArchitecture();
         if (clusterSpec.type() == ClusterSpec.Type.admin) {
-            if (exclusivity.allocation(clusterSpec) && !zone.system().isKubernetes()) {
+            if (exclusivity.allocation(clusterSpec) && !zone.system().isKubernetesLike()) {
                 return smallestExclusiveResources().with(adminClusterArchitecture);
             }
 
@@ -223,7 +223,7 @@ public class CapacityPolicies {
 
     // The lowest amount of resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
     private NodeResources smallestExclusiveResources() {
-        if (zone.system().isKubernetes()) return MIN_KUBERNETES_RESOURCES;
+        if (zone.system().isKubernetesLike()) return MIN_KUBERNETES_RESOURCES;
         return zone.cloud().name() == CloudName.AZURE || zone.cloud().name() == CloudName.GCP
                 ? new NodeResources(2, 8, 50, 0.3)
                 : new NodeResources(0.5, 8, 50, 0.3);
@@ -231,7 +231,7 @@ public class CapacityPolicies {
 
     // The lowest amount of resources that can be shared (i.e. a matching host flavor for this exists)
     private NodeResources smallestSharedResources() {
-        if (zone.system().isKubernetes()) throw new IllegalStateException("Not expecting shared nodes in Kubernetes");
+        if (zone.system().isKubernetesLike()) throw new IllegalStateException("Not expecting shared nodes in Kubernetes");
         return zone.cloud().name() == CloudName.GCP
                 ? new NodeResources(1, 4, 50, 0.3)
                 : new NodeResources(0.5, 2, 50, 0.3);

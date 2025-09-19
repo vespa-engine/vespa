@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -15,10 +16,10 @@ import java.util.stream.Stream;
  */
 public enum SystemName {
 
-    /** Continuous deployment system */
+    /** Yahoo Continuous deployment system */
     cd,
 
-    /** Production system */
+    /** Yahoo Production system */
     main,
 
     /** System accessible to the public */
@@ -31,22 +32,23 @@ public enum SystemName {
     dev,
 
     /** Kubernetes */
-    kubernetes;
+    kubernetes,
+
+    /** Kubernetes CD */
+    kubernetesCd,
+
+    /** Default system (for unit tests and non-hosted) */
+    Default;
 
     public static SystemName defaultSystem() {
-        return main; // TODO the default shouldn't be main but rather a 'default' system
+        return Default;
     }
 
     public static SystemName from(String value) {
-        return switch (value.toLowerCase()) {
-            case "dev" -> dev;
-            case "cd" -> cd;
-            case "main" -> main;
-            case "public" -> Public;
-            case "publiccd" -> PublicCd;
-            case "kubernetes" -> kubernetes;
-            default -> throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
-        };
+        return Arrays.stream(values())
+                .filter(systemName -> systemName.value().equals(value))
+                .findAny()
+                .orElseThrow(() -> new IllegalArgumentException("'%s' is not a valid system".formatted(value)));
     }
 
     public String value() {
@@ -57,6 +59,8 @@ public enum SystemName {
             case Public -> "public";
             case PublicCd -> "publiccd";
             case kubernetes -> "kubernetes";
+            case kubernetesCd -> "kubernetescd";
+            case Default -> "default";
         };
     }
 
@@ -66,12 +70,23 @@ public enum SystemName {
     // TODO Remove and use isPublicLike() instead
     public boolean isPublic() { return isPublicLike(); }
 
-    public boolean isMainLike() { return this == main || this == cd; }
+    // TODO Remove and use isYahoo() instead
+    public boolean isMainLike() { return isYahoo(); }
 
-    public boolean isKubernetes() { return this == kubernetes; }
+    public boolean isYahoo() { return this == main || this == cd; }
+
+    // TODO Remove and use isKubernetesLike() instead
+    public boolean isKubernetes() { return isKubernetesLike(); }
+
+    public boolean isKubernetesLike() { return this == kubernetes || this == kubernetesCd; }
 
     /** Whether the system is used for continuous deployment. */
-    public boolean isCd() { return this == cd || this == PublicCd; }
+    // TODO Remove and use isCdLike() instead
+    public boolean isCd() { return isCdLike(); }
+
+    public boolean isCdLike() { return this == cd || this == PublicCd || this == kubernetesCd; }
+
+    public boolean isProduction() { return this == main || this == Public || this == kubernetes; }
 
     public static Set<SystemName> all() { return EnumSet.allOf(SystemName.class); }
 
