@@ -13,7 +13,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
  * Fail if:
- * An SD field explicitly says summary:dynamic , but the field is non-string array, wset, or struct.
+ * A schemas field explicitly says summary:dynamic , but the field is non-string array, wset, or struct.
  * If there is an explicitly defined summary class, saying dynamic in one of its summary
  * fields is always legal.
  *
