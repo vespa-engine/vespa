@@ -61,6 +61,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
 
         List<Runnable> futureDownloads = new ArrayList<>();
         for (Session session : preparedAndActivatedSessions()) {
+            log.log(FINE, () -> "Considering session " + session.getSessionId());
             if (shuttingDown())
                 return asSuccessFactorDeviation(attempts, failures[0]);
 
@@ -69,12 +70,14 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                 continue;
 
             Optional<FileReference> appFileReference = session.getApplicationPackageReference();
+            log.log(FINE, () -> "Application package reference: " + appFileReference);
             if (appFileReference.isPresent()) {
                 long sessionId = session.getSessionId();
                 FileReference fileReference = appFileReference.get();
 
                 attempts++;
                 if (! fileReferenceExistsOnDisk(downloadDirectory, fileReference)) {
+                    log.log(FINE, () -> "Application package reference: " + appFileReference.get() + " not on disk, downloading");
                     Future<Optional<File>> futureDownload = startDownload(fileReference, sessionId, applicationId);
                     futureDownloads.add(() -> {
                         try {
