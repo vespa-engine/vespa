@@ -34,9 +34,8 @@ public final class ToolBox {
     }
 
     public static void visit(QueryVisitor visitor, Item item) {
-        if (item instanceof CompositeItem) {
+        if (item instanceof CompositeItem composite) {
             if (visitor.visit(item)) {
-                CompositeItem composite = (CompositeItem) item;
                 for (int i = 0; i < composite.getItemCount(); ++i) {
                     visit(visitor, composite.getItem(i));
                 }

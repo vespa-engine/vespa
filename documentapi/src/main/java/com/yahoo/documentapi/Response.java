@@ -83,8 +83,7 @@ public class Response {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if ( ! (o instanceof Response)) return false;
-        Response response = (Response) o;
+        if ( ! (o instanceof Response response)) return false;
         return requestId == response.requestId &&
                Objects.equals(textMessage, response.textMessage) &&
                outcome == response.outcome;
