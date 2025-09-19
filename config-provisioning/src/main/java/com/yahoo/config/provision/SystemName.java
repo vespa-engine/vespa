@@ -87,6 +87,8 @@ public enum SystemName {
 
     public boolean isCdLike() { return this == cd || this == PublicCd || this == kubernetesCd; }
 
+    public boolean isProduction() { return this == main || this == Public || this == kubernetes; }
+
     public static Set<SystemName> all() { return EnumSet.allOf(SystemName.class); }
 
     public static Set<SystemName> allOf(Predicate<SystemName> predicate) {
