@@ -24,3 +24,9 @@ fileHandler.queueSize int default=10000
 
 # Buffer size for the output stream has a default of 256k
 fileHandler.bufferSize int default=262144
+
+# Maximum file size (in bytes) before rotation. 0 means disabled (only time-based rotation)
+fileHandler.rotationSize long default=0
+
+# Interval in milliseconds between file size checks
+fileHandler.sizeCheckInterval long default=60000
