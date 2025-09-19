@@ -288,53 +288,6 @@ public class LogFileHandlerTestCase {
     }
     
     @Test
-    void testSizeCheckInterval() throws IOException, InterruptedException {
-        File root = newFolder(temporaryFolder, "testsizecheckinterval");
-        String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s";
-        
-        // Set rotation size to 1KB but with a long check interval
-        long rotationSize = 1024; // 1KB
-        long sizeCheckInterval = 5000; // Check every 5 seconds
-        
-        LogFileHandler<String> handler = new LogFileHandler<>(
-                Compression.NONE, BUFFER_SIZE, pattern, new long[]{0}, null, 2048, 
-                "thread-name", new StringLogWriter(), rotationSize, sizeCheckInterval);
-        
-        // Write initial message to trigger file creation
-        handler.publish("initial");
-        handler.flush();
-        Thread.sleep(100);
-        
-        String firstFile = handler.getFileName();
-        assertNotNull(firstFile, "File should be created after first write");
-        
-        // Write data that exceeds rotation size
-        String largeMessage = "x".repeat(100);
-        for (int i = 0; i < 15; i++) { // 1500 bytes total
-            handler.publish(largeMessage);
-        }
-        handler.flush();
-        
-        // Wait shorter than check interval
-        Thread.sleep(1000);
-        handler.publish("test");
-        handler.flush();
-        
-        // Should NOT have rotated yet (within check interval)
-        assertEquals(firstFile, handler.getFileName(), "File should not rotate before check interval");
-        
-        // Wait for check interval to pass
-        Thread.sleep(4500);
-        handler.publish("trigger check");
-        handler.flush();
-        
-        // Now it should have rotated
-        assertNotEquals(firstFile, handler.getFileName(), "File should rotate after check interval");
-        
-        handler.shutdown();
-    }
-    
-    @Test
     void testSizeAndTimeRotation() throws IOException, InterruptedException {
         File root = newFolder(temporaryFolder, "testsizeandtimerotation");
         String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s";

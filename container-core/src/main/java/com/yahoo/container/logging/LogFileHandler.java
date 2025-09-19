@@ -315,14 +315,8 @@ class LogFileHandler <LOGTYPE> {
                 nextRotationTime = getNextRotationTime(now); // lazy initialization
             }
             
-            // Check for size-based rotation
             if (shouldCheckSizeRotation(now)) {
-                if (checkAndRotateIfNeeded()) {
-                    // File was rotated, reset size tracking
-                    approximateFileSize = 0;
-                    lastSizeCheck = now;
-                    nextRotationTime = getNextRotationTime(now); // Recalculate next rotation time
-                }
+                syncFileSizeAndRotateIfNeeded();
             }
             
             // Regular time-based rotation check
@@ -332,14 +326,28 @@ class LogFileHandler <LOGTYPE> {
             }
             
             try {
-                // Track bytes written for size estimation
-                long bytesBeforeWrite = fileOutput != null ? fileOutput.fileOut.getChannel().position() : 0;
+                // Track bytes before writing
+                long bytesBeforeWrite = fileOutput != null ? fileOutput.getTotalBytesWritten() : 0;
+                
+                // Write the log record
                 logWriter.write(r, fileOutput);
                 fileOutput.write('\n');
-                long bytesAfterWrite = fileOutput != null ? fileOutput.fileOut.getChannel().position() : 0;
+                
+                // Calculate bytes written for this record
+                long bytesAfterWrite = fileOutput.getTotalBytesWritten();
+                long bytesWritten = bytesAfterWrite - bytesBeforeWrite;
                 
                 // Update approximate size
-                approximateFileSize += (bytesAfterWrite - bytesBeforeWrite);
+                approximateFileSize += bytesWritten;
+                
+                // Check for immediate rotation if size exceeded
+                // This provides responsive rotation without waiting for the check interval
+                if (rotationSize > 0 && approximateFileSize >= rotationSize) {
+                    logger.info("Rotating log file " + fileName + 
+                               " due to approximate size: " + approximateFileSize + " >= " + rotationSize);
+                    internalRotateNow();
+                    approximateFileSize = 0;
+                }
                 
             } catch (IOException e) {
                 logger.warning("Failed writing log record: " + Exceptions.toMessageString(e));
@@ -353,39 +361,33 @@ class LogFileHandler <LOGTYPE> {
                    (now - lastSizeCheck) >= sizeCheckInterval;
         }
         
-        // Check file size and rotate if needed
-        private boolean checkAndRotateIfNeeded() {
+        // Sync approximate size with actual file size periodically
+        private void syncFileSizeAndRotateIfNeeded() {
             if (fileOutput == null || fileName == null) {
-                return false;
+                return;
             }
             
             try {
-                // Get actual file size from filesystem
+                // Get actual file size from filesystem for accuracy
                 Path filePath = Paths.get(fileName);
                 long actualSize = Files.size(filePath);
                 
-                // Update our cached size to be accurate
+                // Sync our cached size with actual size
                 approximateFileSize = actualSize;
                 lastSizeCheck = System.currentTimeMillis();
                 
-                // Check if rotation is needed
+                // Check if rotation is needed based on actual size
                 if (actualSize >= rotationSize) {
                     logger.info("Rotating log file " + fileName + 
-                               " due to size: " + actualSize + " >= " + rotationSize);
+                               " due to actual size: " + actualSize + " >= " + rotationSize);
                     internalRotateNow();
-                    return true;
+                    approximateFileSize = 0;
                 }
             } catch (IOException e) {
-                // If we can't check the size, use approximate size
-                if (approximateFileSize >= rotationSize) {
-                    logger.info("Rotating log file based on approximate size: " + 
-                               approximateFileSize + " >= " + rotationSize);
-                    internalRotateNow();
-                    return true;
-                }
+                // If we can't check the actual size, continue using approximate
+                logger.log(Level.FINE, "Could not sync file size for " + fileName, e);
+                lastSizeCheck = System.currentTimeMillis();
             }
-            
-            return false;
         }
 
         /**
@@ -437,6 +439,8 @@ class LogFileHandler <LOGTYPE> {
             try {
                 checkAndCreateDir(fileName);
                 fileOutput = new PageCacheFriendlyFileOutputStream(nativeIO, Paths.get(fileName), bufferSize);
+                approximateFileSize = 0; // Reset size tracking for new file
+                lastSizeCheck = now; // Reset check timer
                 LogFileDb.nowLoggingTo(fileName);
             } catch (IOException e) {
                 throw new RuntimeException("Couldn't open log file '" + fileName + "'", e);
@@ -588,6 +592,7 @@ class LogFileHandler <LOGTYPE> {
         private final BufferedOutputStream bufferedOut;
         private final int bufferSize;
         private long lastDropPosition = 0;
+        private long totalBytesWritten = 0; // Track total bytes written to this file
 
         PageCacheFriendlyFileOutputStream(NativeIO nativeIO, Path file, int bufferSize) throws FileNotFoundException {
             this.nativeIO = nativeIO;
@@ -596,9 +601,21 @@ class LogFileHandler <LOGTYPE> {
             this.bufferSize = bufferSize;
         }
 
-        @Override public void write(byte[] b) throws IOException { bufferedOut.write(b); }
-        @Override public void write(byte[] b, int off, int len) throws IOException { bufferedOut.write(b, off, len); }
-        @Override public void write(int b) throws IOException { bufferedOut.write(b); }
+        @Override public void write(byte[] b) throws IOException { 
+            bufferedOut.write(b); 
+            totalBytesWritten += b.length;
+        }
+        
+        @Override public void write(byte[] b, int off, int len) throws IOException { 
+            bufferedOut.write(b, off, len); 
+            totalBytesWritten += len;
+        }
+        
+        @Override public void write(int b) throws IOException { 
+            bufferedOut.write(b); 
+            totalBytesWritten++;
+        }
+        
         @Override public void close() throws IOException { bufferedOut.close(); }
 
         @Override
@@ -609,6 +626,10 @@ class LogFileHandler <LOGTYPE> {
                 nativeIO.dropPartialFileFromCache(fileOut.getFD(), lastDropPosition, newPos, true);
                 lastDropPosition = newPos;
             }
+        }
+        
+        public long getTotalBytesWritten() {
+            return totalBytesWritten;
         }
     }
 
