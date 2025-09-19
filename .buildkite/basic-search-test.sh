@@ -1,7 +1,16 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#
+# Generates a container tag name based on the provided arguments.
 
-set -euo pipefail
+set -o errexit
+set -o nounset
+set -o pipefail
+
+if [[ -n "${DEBUG:-}" ]]; then
+    set -o xtrace
+fi
 
 echo "--- 🔧 Setting up Vespa RPM repository"
 echo -e "[vespa-rpms-local]\nname=Local Vespa RPMs\nbaseurl=file://$(pwd)/artifacts/$ARCH/rpms\nenabled=1\ngpgcheck=0" > /etc/yum.repos.d/vespa-rpms-local.repo
@@ -39,5 +48,3 @@ trap "kill $NODE_SERVER_PID" EXIT
 sleep 3
 echo "Executing basic search test..."
 ruby "$SYSTEM_TEST_DIR/tests/search/basicsearch/basic_search.rb" || (/opt/vespa/bin/vespa-logfmt -N && false)
-
-

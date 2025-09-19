@@ -33,4 +33,3 @@ ln -sf "/opt/vespa-cli_${VESPA_CLI_VERSION}_linux_${GO_ARCH}/bin/vespa" /usr/loc
 echo "Running quick start guide test..."
 # Run test
 python3 test/test.py -v -c test/_quick-start.yaml
-

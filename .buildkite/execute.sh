@@ -1,10 +1,19 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#
+# Generates a container tag name based on the provided arguments.
 
-set -euo pipefail
+set -o errexit
+set -o nounset
+set -o pipefail
+
+if [[ -n "${DEBUG:-}" ]]; then
+    set -o xtrace
+fi
 
 if [[ $# != 1 ]]; then
-  echo "Usage: $0 <Step name>"  
+  echo "Usage: $0 <Step name>"
   exit 1
 fi
 
@@ -36,4 +45,3 @@ fi
 DURATION=$(( $(date '+%s') - START ))
 echo "STEPTIMER=$STEP:$START,${DURATION}s"
 echo "✅ Finished $STEP in $DURATION seconds. Log saved in $LOG_DIR/$STEP.log."
-
