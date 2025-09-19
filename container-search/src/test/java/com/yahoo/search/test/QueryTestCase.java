@@ -1309,6 +1309,7 @@ public class QueryTestCase {
         var profile = new QueryProfile("test");
         profile.set("model.type", "linguistics", null); // disables further processing
         profile.set("model.type.isYqlDefault", "true", null);
+
         {
             String parsedYql = parse("select * from sources * where default contains 'color'",
                                      mockLinguistics,
@@ -1327,6 +1328,33 @@ public class QueryTestCase {
                          parsedYql);
             assertEquals(parsedYql, parse(parsedYql, mockLinguistics, profile),
                          "Re-parsing yield the same output");
+        }
+
+        {
+            String parsedYql = parse("select * from sources * where default contains 'color-red'",
+                                     mockLinguistics,
+                                     profile);
+            assertEquals("select * from sources * where default contains " +
+                         "({origin: {original: \"color-red\", offset: 0, length: 9}, id: 1, stem: false}" +
+                         "phrase(default contains ({origin: {original: \"color-red\", offset: 0, length: 9}, " +
+                         "normalizeCase: false, accentDrop: false}alternatives({\"color\": 1.0, \"colour\": 1.0})), \"red\"))",
+                         parsedYql);
+            //assertEquals(parsedYql, parse(parsedYql, mockLinguistics, profile), TODO: YQL parse alternatives inside phrases
+            //             "Re-parsing yield the same output");
+        }
+
+        {
+            String parsedYql = parse("select * from sources * where default contains near('my', 'color-red')",
+                                     mockLinguistics,
+                                     profile);
+            assertEquals("select * from sources * where default contains " +
+                         "near(({stem: false, normalizeCase: false, accentDrop: false, id: 1}\"my\"), " +
+                         "({origin: {original: \"color-red\", offset: 0, length: 9}, id: 2, stem: false}" +
+                         "phrase(default contains ({origin: {original: \"color-red\", offset: 0, length: 9}, " +
+                         "normalizeCase: false, accentDrop: false}alternatives({\"color\": 1.0, \"colour\": 1.0})), \"red\")))",
+                         parsedYql);
+            //assertEquals(parsedYql, parse(parsedYql, mockLinguistics, profile), TODO: YQL parse alternatives inside phrases
+            //             "Re-parsing yield the same output");
         }
     }
 
@@ -1360,8 +1388,10 @@ public class QueryTestCase {
 
     private String parse(String yql, Linguistics linguistics, QueryProfile profile) {
         var query = new Query(httpEncode("?yql=" + yql), profile.compile(null));
-        new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub(null, linguistics)).search(query);
+        var result = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub(null, linguistics)).search(query);
+        assertNull(result.hits().getError(), result.hits().getError() == null ? "" : result.hits().getError().toString());
         query.getModel().prepare(query.getRanking()); // Test serialization/deserialization of these additional annotations
+
         return query.yqlRepresentation();
     }
 
@@ -1523,10 +1553,17 @@ public class QueryTestCase {
         public Iterable<Token> tokenize(String input, LinguisticsParameters parameters) {
             List<Token> tokens = new ArrayList<>();
             for (String token : input.split(" ")) {
-                if (token.equals("color"))
+                if (token.isBlank()) continue;
+                if (token.equals("color")) {
                     tokens.add(SimpleToken.fromStems("color", List.of("color", "colour")));
-                else
+                }
+                else if (token.equals("color-red")) {
+                    tokens.add(SimpleToken.fromStems("color", List.of("color", "colour")));
+                    tokens.add(SimpleToken.fromStems("red", List.of("red")));
+                }
+                else {
                     tokens.add(SimpleToken.fromStems(token, List.of(token)));
+                }
             }
             return tokens;
         }

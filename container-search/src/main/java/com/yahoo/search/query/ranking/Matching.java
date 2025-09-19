@@ -7,6 +7,7 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -82,7 +83,8 @@ public class Matching implements Cloneable {
 
     private static void validateRange(String field, double v, double lboundIncl, double uboundIncl) {
         if (v < lboundIncl || v > uboundIncl) {
-            throw new IllegalArgumentException("%s must be in the range [%.1f, %.1f]. It is %.1f".formatted(field, lboundIncl, uboundIncl, v));
+            throw new IllegalArgumentException(String.format(Locale.US, "%s must be in the range [%.1f, %.1f]. It is %.1f",
+                                                             field, lboundIncl, uboundIncl, v));
         }
     }
 
