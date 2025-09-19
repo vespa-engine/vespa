@@ -314,13 +314,57 @@ HWY_AFTER_NAMESPACE();
 
 namespace vespalib::hwaccelerated {
 
+namespace {
+
 #define VESPA_HWY_ADD_SUPPORTED_IMPL_VISITOR(hwy_target, hwy_ns) \
     if ((supported_targets & hwy_target) != 0) { \
         target_id_and_impl.emplace_back(hwy_target, hwy_ns::HwyTargetAccelerator::create_instance()); \
     }
 
+enum class ExcludeTargets {
+    // No targets should be excluded
+    None,
+    // Exclude targets that _we_ believe are not optimal for the purposes of running our
+    // vectorized kernels.
+    AssumedSuboptimal
+};
+
+bool target_is_assumed_suboptimal(uint64_t target_hwy_id) noexcept {
+    // SVE/SVE2 is not a strict superset of NEON, which means that certain very useful
+    // 128-bit NEON(_BF16) vector instructions are _not_ present as "sizeless" SVE vector
+    // operations.
+    //
+    // In particular:
+    //  - int8 squared Euclidean distance:
+    //    NEON has `ssub` signed subtraction of high/low vector lanes with implicit
+    //    widening. On SVE this needs separate unpack high/low instructions followed by
+    //    a non-widening subtraction, increasing instruction count and register pressure.
+    //  - BFloat16 dot product:
+    //    SVE does not have guaranteed BF16 support prior to armv8.6-a and its BF16 dot
+    //    product operation does not give the same result as NEON BF16 unless FEAT_EBF16
+    //    is present, due to differences in rounding behavior. Because of this, dynamic
+    //    target compilation for Highway does not by default use BF16 instructions for
+    //    _any_ SVE targets. It is also not clear how this could be enabled with today's
+    //    set of compilation targets, as they are not ARM architecture version-oriented.
+    //
+    // In practice this means that 128-bit SVE may be _slower_ for some important operations
+    // than 128-bit NEON_BF16. For both the above ops, the observed relative slowdown is
+    // on the order of ~1.5-2x. The only serious speed increase from SVE is for popcount.
+    //
+    // So for now, disable SVE targets entirely until it's had more time to cook. If SVE
+    // is present, NEON_BF16 is expected to always be present.
+    //
+    // This is based on testing on Google Axion (SVE2_128), Amazon Graviton 3 (SVE_256)
+    // and Amazon Graviton 4 (SVE2_128) nodes, and will be updated once newer/shinier
+    // hardware is available for testing.
+    //
+    // TODO consider still enabling if SVE2 vector length is > 128 bits. Needs benchmarking.
+    //  Only HW with >128 bits that's currently available is Graviton 3, which is only SVE.
+    return (target_hwy_id & HWY_ALL_SVE) != 0;
+}
+
 // The "best" supported target will be the first element in the vector.
-std::vector<std::unique_ptr<IAccelerated>> Highway::create_supported_targets() {
+std::vector<std::unique_ptr<IAccelerated>> create_supported_targets_impl(ExcludeTargets exclude_targets) {
     // On x64 we require AVX2 as a baseline, so don't bother wasting time with SSSE3/SSE4.
     // Ideally we would not even build these targets. No effect on Aarch64.
     hwy::DisableTargets(HWY_SSSE3 | HWY_SSE4);
@@ -342,18 +386,27 @@ std::vector<std::unique_ptr<IAccelerated>> Highway::create_supported_targets() {
         return lhs.first == rhs.first;
     });
     target_id_and_impl.erase(to_erase.begin(), to_erase.end());
-    assert(!target_id_and_impl.empty()); // Must be at least a fallback target
 
     std::vector<std::unique_ptr<IAccelerated>> preferred_target_order;
     preferred_target_order.reserve(target_id_and_impl.size());
     for (auto& elem : target_id_and_impl) {
+        if ((exclude_targets == ExcludeTargets::AssumedSuboptimal) && target_is_assumed_suboptimal(elem.first)) {
+            continue; // Ignore this target
+        }
         preferred_target_order.emplace_back(std::move(elem.second));
     }
+    assert(!preferred_target_order.empty()); // Must be at least a fallback target
     return preferred_target_order;
 }
 
+} // anon ns
+
+std::vector<std::unique_ptr<IAccelerated>> Highway::create_supported_targets() {
+    return create_supported_targets_impl(ExcludeTargets::None);
+}
+
 std::unique_ptr<IAccelerated> Highway::create_best_target() {
-    return std::move(create_supported_targets().front());
+    return std::move(create_supported_targets_impl(ExcludeTargets::AssumedSuboptimal).front());
 }
 
 } // namespace vespalib::hwaccelerated
