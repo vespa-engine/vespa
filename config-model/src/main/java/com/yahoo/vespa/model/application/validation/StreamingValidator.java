@@ -45,7 +45,7 @@ public class StreamingValidator implements Validator {
 
     private static void logWarning(String cluster, Schema schema, ImmutableSDField sd, DeployLogger logger, String message) {
         logger.logApplicationPackage(Level.WARNING, "For search cluster '" + cluster +
-                "', streaming schema '" + schema.getName() + "', SD field '" + sd.getName() + "': " + message);
+                "', streaming schema '" + schema.getName() + "', schema field '" + sd.getName() + "': " + message);
     }
 
     private static void warnStreamingGramMatching(String cluster, Schema schema, DeployLogger logger) {
