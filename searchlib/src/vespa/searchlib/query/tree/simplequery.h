@@ -75,7 +75,12 @@ struct SimpleInTerm : InTerm {
     using InTerm::InTerm;
     ~SimpleInTerm() override;
 };
-
+struct SimpleWordAlternatives : WordAlternatives {
+    SimpleWordAlternatives(std::unique_ptr<TermVector> terms, const std::string & view, int32_t id, Weight weight)
+      : WordAlternatives(std::move(terms), view, id, weight)
+    {}
+    ~SimpleWordAlternatives() override;
+};
 struct SimpleRank : Rank
 {
     ~SimpleRank() override;
@@ -182,6 +187,7 @@ struct SimpleQueryNodeTypes {
     using NearestNeighborTerm = SimpleNearestNeighborTerm;
     using FuzzyTerm = SimpleFuzzyTerm;
     using InTerm = SimpleInTerm;
+    using WordAlternatives = SimpleWordAlternatives;
 };
 
 }

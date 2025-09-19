@@ -56,22 +56,24 @@ CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
     setResult(std::move(phrase));
 }
 
-void CreateBlueprintVisitorHelper::visitEquiv(query::Equiv &n) {
+void CreateBlueprintVisitorHelper::visitWordAlternatives(query::WordAlternatives &n) {
     fef::MatchDataLayout layout;
     std::vector<std::unique_ptr<Blueprint>> blueprints;
-    for (auto node : n.getChildren()) {
+    for (size_t i = 0; i < n.getNumTerms(); ++i) {
         fef::TermFieldHandle handle = layout.allocTermField(_field.getFieldId());
         FieldSpec inner{_field.getName(), _field.getFieldId(), handle, false};
-        blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner, *node));
+        auto pair = n.getAsString(i);
+        query::SimpleStringTerm term(std::string(pair.first), _field.getName(), 0, pair.second); // TODO Temporary
+        blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner, term));
     }
     double eqw = n.getWeight().percent();
     FieldSpecBaseList fields;
     fields.add(_field);
     auto eq = std::make_unique<EquivBlueprint>(fields, std::move(layout));
-    size_t idx = 0;
-    for (auto node : n.getChildren()) {
-        double w = getWeightFromNode(*node).percent();
-        eq->addTerm(std::move(blueprints[idx++]), w / eqw);
+    for (size_t i = 0; i < n.getNumTerms(); ++i) {
+        auto pair = n.getAsString(i);
+        double w = pair.second.percent();
+        eq->addTerm(std::move(blueprints[i]), w / eqw);
     }
     setResult(std::move(eq));
 }

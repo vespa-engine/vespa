@@ -40,6 +40,13 @@ ResolveViewVisitor::visit(ProtonNodeTypes::Equiv& n)
     n.resolveFromChildren(n.getChildren());
 }
 
+void ResolveViewVisitor::visit(ProtonNodeTypes::WordAlternatives& n) {
+    for (const auto& tp : n.children) {
+        visitTerm(*tp);
+    }
+    visitTerm(n);
+}
+
 void
 ResolveViewVisitor::visit(ProtonNodeTypes::SameElement& n)
 {
