@@ -79,7 +79,7 @@ private:
                 if (queryStack.next() && queryStack.getType() == ParseItem::ITEM_PURE_WEIGHTED_STRING) {
                     words->addTerm(queryStack.getTerm(), queryStack.GetWeight());
                 } else {
-                    // report error?
+                    vespalib::Issue::report("query builder: invalid WORD_ALTERNATIVES item");
                     return nullptr;
                 }
             }
