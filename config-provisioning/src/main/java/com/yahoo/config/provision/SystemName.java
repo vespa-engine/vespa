@@ -31,7 +31,10 @@ public enum SystemName {
     dev,
 
     /** Kubernetes */
-    kubernetes;
+    kubernetes,
+
+    /** Kubernetes CD */
+    kubernetesCd;
 
     public static SystemName defaultSystem() {
         return main; // TODO the default shouldn't be main but rather a 'default' system
@@ -45,6 +48,7 @@ public enum SystemName {
             case "public" -> Public;
             case "publiccd" -> PublicCd;
             case "kubernetes" -> kubernetes;
+            case "kubernetescd" -> kubernetesCd;
             default -> throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
         };
     }
@@ -57,6 +61,7 @@ public enum SystemName {
             case Public -> "public";
             case PublicCd -> "publiccd";
             case kubernetes -> "kubernetes";
+            case kubernetesCd -> "kubernetescd";
         };
     }
 
@@ -66,12 +71,21 @@ public enum SystemName {
     // TODO Remove and use isPublicLike() instead
     public boolean isPublic() { return isPublicLike(); }
 
-    public boolean isMainLike() { return this == main || this == cd; }
+    // TODO Remove and use isYahoo() instead
+    public boolean isMainLike() { return isYahoo(); }
 
-    public boolean isKubernetes() { return this == kubernetes; }
+    public boolean isYahoo() { return this == main || this == cd; }
+
+    // TODO Remove and use isKubernetesLike() instead
+    public boolean isKubernetes() { return isKubernetesLike(); }
+
+    public boolean isKubernetesLike() { return this == kubernetes || this == kubernetesCd; }
 
     /** Whether the system is used for continuous deployment. */
-    public boolean isCd() { return this == cd || this == PublicCd; }
+    // TODO Remove and use isCdLike() instead
+    public boolean isCd() { return isCdLike(); }
+
+    public boolean isCdLike() { return this == cd || this == PublicCd || this == kubernetesCd; }
 
     public static Set<SystemName> all() { return EnumSet.allOf(SystemName.class); }
 
