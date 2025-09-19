@@ -13,7 +13,7 @@ class HandleRecorder;
  * Visits all terms of a node tree and register need for normal features due to query recall, i.e. when iterators
  * inspects unpacked data from children (e.g. equiv, near, onear, phrase and sameElement).
  */
-void tag_needed_handles(HandleRecorder& handle_recorder, search::fef::IIndexEnvironment& index_env,
-                        search::query::Node& node);
+void tag_needed_handles(search::query::Node& node, HandleRecorder& handle_recorder,
+                        const search::fef::IIndexEnvironment& index_env);
 
 }

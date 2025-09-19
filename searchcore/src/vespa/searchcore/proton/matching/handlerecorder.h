@@ -34,6 +34,7 @@ public:
         ~Asserter();
     };
     HandleRecorder();
+    explicit HandleRecorder(const HandleRecorder::HandleMap& initial_handles);
     ~HandleRecorder();
     const HandleMap& get_handles() const { return _handles; }
     HandleMap steal_handles() && { return std::move(_handles); }

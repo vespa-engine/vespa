@@ -53,6 +53,7 @@ private:
     std::unique_ptr<RankProgram>     _rank_program;
     std::unique_ptr<SearchIterator>  _search;
     HandleRecorder::HandleMap        _used_handles;
+    const HandleRecorder::HandleMap& _needed_handles;
     bool                             _search_has_changed;
     void setup(std::unique_ptr<RankProgram>, ExecutionProfiler *profiler, double termwise_limit = 1.0);
 public:
@@ -66,7 +67,8 @@ public:
                const QueryEnvironment &queryEnv,
                const MatchDataLayout &mdl,
                const RankSetup &rankSetup,
-               const Properties &featureOverrides);
+               const Properties &featureOverrides,
+               const HandleRecorder::HandleMap& needed_handles);
     ~MatchTools();
     const vespalib::Doom &getDoom() const { return _doom; }
     QueryLimiter & getQueryLimiter() { return _queryLimiter; }
@@ -136,6 +138,7 @@ private:
     bool                               _valid;
     FirstPhaseRankLookup*              _first_phase_rank_lookup;
     const search::IDocumentMetaStore & _metaStore;
+    HandleRecorder::HandleMap          _needed_handles;
 
     std::unique_ptr<AttributeOperationTask>
     createTask(std::string_view attribute, std::string_view operation) const;

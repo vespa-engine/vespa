@@ -123,7 +123,7 @@ TagNeededHandlesTest::prepare(Node& query)
     MatchDataReserveVisitor reserve_visitor(*_mdl);
     query.accept(reserve_visitor);
     _handle_recorder = std::make_unique<HandleRecorder>();
-    tag_needed_handles(*_handle_recorder, *_index_env, query);
+    tag_needed_handles(query, *_handle_recorder, *_index_env);
 }
 
 HandleSet
