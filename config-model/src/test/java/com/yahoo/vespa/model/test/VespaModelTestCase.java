@@ -276,7 +276,7 @@ public class VespaModelTestCase {
     @Test
     void testNoMultitenantHostExported() throws IOException, SAXException {
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
-                .withServices("<services version='1.0'><admin version='3.0'><nodes count='1' /></admin></services>")
+                .withServices("<services version='1.0'><admin version='4.0'><nodes count='1' /></admin></services>")
                 .build();
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(applicationPackage)
@@ -287,7 +287,7 @@ public class VespaModelTestCase {
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         AllocatedHosts info = model.allocatedHosts();
-        assertEquals(0, info.getHosts().size(), "Admin version 3 is ignored, and there are no other hosts to borrow for admin services");
+        assertEquals(0, info.getHosts().size(), "There are no other hosts to borrow for admin services");
     }
 
     @Test

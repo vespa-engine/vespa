@@ -2,8 +2,10 @@
 <!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services version="1.0">
 
-  <admin version="3.0">
-    <nodes count="3" flavor="small"/>
+  <admin version="4.0">
+      <logging>
+          <class name="org.myorg.MyHelperClass" levels="+debug" />
+      </logging>
   </admin>
 
   <container id="container1" version="1.0">
