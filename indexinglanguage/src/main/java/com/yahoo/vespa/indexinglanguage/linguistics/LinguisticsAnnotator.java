@@ -15,6 +15,7 @@ import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.Tokenizer;
 import com.yahoo.text.Text;
+import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -191,7 +192,7 @@ public class LinguisticsAnnotator {
         if (maxRatio >= 1 && (maxCharacters < 0 || maxCharacters == Integer.MAX_VALUE)) return false;
         var replacementCharCount = text.chars().filter(c -> c == 0xFFFD).count();
         if (replacementCharCount > maxCharacters && replacementCharCount > text.length() * maxRatio) {
-            var reason = ("some text of length %d is classified as binary data as it contains %d Unicode replacement characters. " +
+            var reason = ("Some text of length %d is classified as binary data as it contains %d Unicode replacement characters. " +
                     "(max-replacement-character-ratio=%d%%, max-replacement-characters=%d)")
                     .formatted(text.length(), replacementCharCount, (int)Math.round(maxRatio * 100) , maxCharacters);
             var docIdString = (docId != null) ? "%s".formatted(docId.toString()) : "<unknown>";
@@ -199,7 +200,7 @@ public class LinguisticsAnnotator {
                 log.warning("Skipping tokenization of '%s' while reindexing: %s. ".formatted(docIdString, reason));
                 return true;
             } else {
-                throw new IllegalArgumentException("Invalid document '%s': %s".formatted(docIdString, reason));
+                throw new InvalidInputException(reason);
             }
         }
         return false;

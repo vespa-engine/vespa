@@ -14,6 +14,7 @@ import com.yahoo.language.process.TokenType;
 import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.language.simple.SimpleToken;
+import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -275,8 +276,8 @@ public class LinguisticsAnnotatorTestCase {
 
         assertTrue(isAnnotated.test("\uFFFD".repeat(10) + "a".repeat(90))); // Up to 10 replacement characters allowed
         assertTrue(isAnnotated.test("\uFFFD".repeat(11) + "a".repeat(100))); // Up to 10% being replacement characters allowed
-        var exception = assertThrows(IllegalArgumentException.class, () -> isAnnotated.test("\uFFFD".repeat(11) + "a".repeat(90))); // Above both limits, so no annotations
-        var expectedMsg = "Invalid document 'id:this:foobar::1': some text of length 101 is classified as binary data" +
+        var exception = assertThrows(InvalidInputException.class, () -> isAnnotated.test("\uFFFD".repeat(11) + "a".repeat(90))); // Above both limits, so no annotations
+        var expectedMsg = "Some text of length 101 is classified as binary data" +
                 " as it contains 11 Unicode replacement characters. " +
                 "(max-replacement-character-ratio=10%, max-replacement-characters=10)";
         assertEquals(expectedMsg, exception.getMessage());
@@ -295,8 +296,8 @@ public class LinguisticsAnnotatorTestCase {
                         new DocumentId("id:this:foobar::1"),
                         isReindexingOperation);
 
-        var exception = assertThrows(IllegalArgumentException.class, () -> isAnnotated.test(false)); // Not reindexing, so exception
-        var expectedMsg = "Invalid document 'id:this:foobar::1': some text of length 2 is classified as binary data" +
+        var exception = assertThrows(InvalidInputException.class, () -> isAnnotated.test(false)); // Not reindexing, so exception
+        var expectedMsg = "Some text of length 2 is classified as binary data" +
                 " as it contains 2 Unicode replacement characters. " +
                 "(max-replacement-character-ratio=1%, max-replacement-characters=1)";
         assertEquals(expectedMsg, exception.getMessage());
