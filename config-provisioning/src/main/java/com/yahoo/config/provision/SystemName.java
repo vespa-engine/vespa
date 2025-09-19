@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -15,10 +16,10 @@ import java.util.stream.Stream;
  */
 public enum SystemName {
 
-    /** Continuous deployment system */
+    /** Yahoo Continuous deployment system */
     cd,
 
-    /** Production system */
+    /** Yahoo Production system */
     main,
 
     /** System accessible to the public */
@@ -34,23 +35,20 @@ public enum SystemName {
     kubernetes,
 
     /** Kubernetes CD */
-    kubernetesCd;
+    kubernetesCd,
+
+    /** Default system (for unit tests and non-hosted) */
+    Default;
 
     public static SystemName defaultSystem() {
-        return main; // TODO the default shouldn't be main but rather a 'default' system
+        return Default;
     }
 
     public static SystemName from(String value) {
-        return switch (value.toLowerCase()) {
-            case "dev" -> dev;
-            case "cd" -> cd;
-            case "main" -> main;
-            case "public" -> Public;
-            case "publiccd" -> PublicCd;
-            case "kubernetes" -> kubernetes;
-            case "kubernetescd" -> kubernetesCd;
-            default -> throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
-        };
+        return Arrays.stream(values())
+                .filter(systemName -> systemName.value().equals(value))
+                .findAny()
+                .orElseThrow(() -> new IllegalArgumentException("'%s' is not a valid system".formatted(value)));
     }
 
     public String value() {
@@ -62,6 +60,7 @@ public enum SystemName {
             case PublicCd -> "publiccd";
             case kubernetes -> "kubernetes";
             case kubernetesCd -> "kubernetescd";
+            case Default -> "default";
         };
     }
 
