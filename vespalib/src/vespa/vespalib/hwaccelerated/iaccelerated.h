@@ -40,7 +40,7 @@ public:
     // OR 128 bytes from multiple, optionally inverted sources
     virtual void or128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) const noexcept = 0;
 
-    [[nodiscard]] virtual const char* implementation_name() const noexcept { return "AutoVectorized"; }
+    [[nodiscard]] virtual const char* implementation_name() const noexcept { return "AutoVec"; }
     // Returns a static string representing the name of the underlying accelerator target (e.g. "AVX3", "NEON" etc.)
     [[nodiscard]] virtual const char* target_name() const noexcept { return "Unknown"; }
 
