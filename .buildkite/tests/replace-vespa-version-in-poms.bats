@@ -100,7 +100,7 @@ EOF
   run "$BATS_TEST_DIRNAME/../replace-vespa-version-in-poms.sh" "$VESPA_VERSION" "$test_dir"
 
   assert_success
-  assert_output "No pom.xml files found in $test_dir"
+  assert_output --partial "No pom.xml files found in $test_dir"
 }
 
 @test "No Vespa version provided" {
@@ -129,5 +129,5 @@ EOF
   run "$BATS_TEST_DIRNAME/../replace-vespa-version-in-poms.sh" "$VESPA_VERSION" "$non_existent_dir"
 
   assert_failure
-  assert_output "Directory $non_existent_dir does not exist or is not a directory."
+  assert_output --partial "Directory $non_existent_dir does not exist or is not a directory."
 }

@@ -1,8 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#
 
-set -euo pipefail
-set -x
+set -o errexit
+set -o nounset
+set -o pipefail
+
+if [[ -n "${RUNNER_DEBUG:-}" ]]; then
+    set -o xtrace
+fi
 
 if (( $# < 1 )); then
     echo "Usage: $0 <RPM architecture>"

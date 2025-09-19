@@ -2,11 +2,12 @@
 #
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #
+
 set -o errexit
 set -o nounset
 set -o pipefail
 
-if [[ "${DEBUG:-}" == "true" ]]; then
+if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
 

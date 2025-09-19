@@ -1,14 +1,17 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #
+# Publishes container images by authenticating, pushing, signing, and setting Buildkite metadata.
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
-if [[ "${DEBUG:-}" == "true" ]]; then
+if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
+
 
 if [[ $BUILDKITE != true ]]; then
     echo "Skipping container publishing when not executed by Buildkite."
