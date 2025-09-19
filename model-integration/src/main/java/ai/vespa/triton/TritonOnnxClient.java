@@ -85,9 +85,9 @@ public class TritonOnnxClient implements AutoCloseable {
                 .setName(modelName)
                 .build();
         var response = invokeGrpc(grpcInferenceStub, s -> s.modelMetadata(request));
-        var vespaInputTypes = toTensorTypes(response.getInputsList());
-        var vespaOutputTypes = toTensorTypes(response.getOutputsList());
-        return new ModelMetadata(vespaInputTypes, vespaOutputTypes, response.getInputsList());
+        var inputs = toTensorTypes(response.getInputsList());
+        var outputs = toTensorTypes(response.getOutputsList());
+        return new ModelMetadata(inputs, outputs, response.getInputsList());
     }
 
 
