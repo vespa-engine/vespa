@@ -4,12 +4,11 @@ package com.yahoo.docproc.jdisc;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.docproc.Call;
 import com.yahoo.docproc.CallStack;
+import com.yahoo.docproc.DocumentProcessor;
+import com.yahoo.docproc.Processing;
 import com.yahoo.docproc.impl.DocprocExecutor;
 import com.yahoo.docproc.impl.DocprocService;
-import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.impl.HandledProcessingException;
-import com.yahoo.docproc.Processing;
-import java.util.logging.Level;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.PrintWriter;
@@ -19,6 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -133,6 +133,11 @@ public class DocumentProcessingTask implements Runnable {
                 requestContext.processingFailed(RequestContext.ErrorCode.ERROR_PROCESSING_FAILURE,
                         progress.getReason().orElse("Document processing failed."));
                 return progress;
+            } else if (DocumentProcessor.Progress.INVALID_INPUT.equals(progress)) {
+                log.log(Level.FINE,
+                        () -> "Invalid input for '" + processing + "' at " + processing.callStack().getLastPopped());
+                requestContext.processingFailed(RequestContext.ErrorCode.ERROR_INVALID_INPUT,
+                        progress.getReason().orElse("Document processing failed due to invalid input."));
             } else if (DocumentProcessor.Progress.PERMANENT_FAILURE.equals(progress)) {
                 logProcessingFailure(processing, null);
                 requestContext.processingFailed(RequestContext.ErrorCode.ERROR_PROCESSING_FAILURE,

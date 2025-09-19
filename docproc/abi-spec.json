@@ -166,6 +166,7 @@
       "public static final com.yahoo.docproc.DocumentProcessor$Progress DONE",
       "public static final com.yahoo.docproc.DocumentProcessor$Progress LATER",
       "public static final com.yahoo.docproc.DocumentProcessor$Progress FAILED",
+      "public static final com.yahoo.docproc.DocumentProcessor$Progress INVALID_INPUT",
       "public static final com.yahoo.docproc.DocumentProcessor$Progress PERMANENT_FAILURE"
     ]
   },
