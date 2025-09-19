@@ -15,15 +15,10 @@ import java.util.Optional;
 public class MallocImplResolver {
 
     public enum Impl {
+        mimalloc,
         vespamalloc,
-        mimalloc
-    }
-
-    static public String resolvePath(Impl impl) {
-        return switch (impl) {
-            case vespamalloc -> resolveVespaMallocPath();
-            case mimalloc -> resolveMimallocPath();
-        };
+        vespamallocd,
+        vespamallocdst
     }
 
     static public Optional<String> pathToLibrary(String impl) {
@@ -31,18 +26,29 @@ public class MallocImplResolver {
             return Optional.empty();
         }
         return switch (Impl.valueOf(impl)) {
-            case vespamalloc -> Optional.of(resolveVespaMallocPath());
             case mimalloc -> Optional.of(resolveMimallocPath());
+            case vespamalloc -> Optional.of(resolveVespaMallocPath());
+            case vespamallocd -> Optional.of(resolveVespaMallocDebugPath());
+            case vespamallocdst -> Optional.of(resolveVespaMallocDstPath());
         };
     }
 
     static private String resolveMimallocPath() {
-        // TODO(johsol): EXPERIMENTAL For testing mimalloc.
         return "/opt/vespa-deps/lib64/libmimalloc.so";
     }
 
     static private String resolveVespaMallocPath() {
         return Defaults.getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so");
     }
+
+    static private String resolveVespaMallocDebugPath() {
+        return Defaults.getDefaults().underVespaHome("lib64/vespa/malloc/libvespamallocd.so");
+    }
+
+    static private String resolveVespaMallocDstPath() {
+        return Defaults.getDefaults().underVespaHome("lib64/vespa/malloc/libvespamallocdst16.so");
+    }
+
+
 
 }

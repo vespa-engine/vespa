@@ -72,8 +72,17 @@ func (p *Spec) ConfigureMallocImpl() {
 	// TODO(johsol): Keeping this simple for now defaulting to old behaviour if not mimalloc, but in future switch on
 	//               mallocImpl for vespamalloc and variants.
 	mallocImpl := p.Getenv(envvars.VESPA_USE_MALLOC_IMPL)
-	if mallocImpl == "mimalloc" {
-		useFile = mimallocLib()
+	if useFile != "" {
+		switch mallocImpl {
+		case "mimalloc":
+			useFile = mimallocLib()
+		case "vespamalloc":
+			useFile = vespaMallocLib("libvespamalloc.so")
+		case "vespamallocd":
+			useFile = vespaMallocLib("libvespamallocd.so")
+		case "vespamallocdst":
+			useFile = vespaMallocLib("libvespamallocdst16.so")
+		}
 	}
 	if useFile == "" {
 		switch {

@@ -49,7 +49,6 @@ import java.util.logging.Level;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -383,6 +382,11 @@ public class VespaModelTestCase {
             model = createModel(app, ClusterSpec.Type.content, "vespamalloc");
             assertMallocImpl(model, ClusterSpec.Type.content, "music", "vespamalloc");
         }
+
+        {
+            var model = createModel(app, ClusterSpec.Type.content, "vespamallocd");
+            assertMallocImpl(model, ClusterSpec.Type.content, "music", "vespamallocd");
+        }
     }
 
     private VespaModel createModel(ApplicationPackage app, ClusterSpec.Type clusterType, String mallocImpl) throws IOException, SAXException {
@@ -397,9 +401,13 @@ public class VespaModelTestCase {
     }
 
     private void assertMallocImpl(VespaModel model, ClusterSpec.Type clusterType, String clusterId, String expectedMallocImpl) {
-        var libraryPath = expectedMallocImpl.equals("mimalloc") ?
-                "/opt/vespa-deps/lib64/libmimalloc.so" :
-                "/opt/vespa/lib64/vespa/malloc/libvespamalloc.so";
+        var libraryPath = switch (expectedMallocImpl) {
+            case "mimalloc" -> "/opt/vespa-deps/lib64/libmimalloc.so";
+            case "vespamalloc" -> "/opt/vespa/lib64/vespa/malloc/libvespamalloc.so";
+            case "vespamallocd" -> "/opt/vespa/lib64/vespa/malloc/libvespamallocd.so";
+            case "vespamallocdst" -> "/opt/vespa/lib64/vespa/malloc/libvespamallocdst16.so";
+            default -> throw new IllegalArgumentException("Unexpected malloc impl " + expectedMallocImpl);
+        };
         if (clusterType == ClusterSpec.Type.content) {
             ContentCluster contentCluster = model.getContentClusters().get(clusterId);
             var searchNode = contentCluster.getSearch().getSearchNodes().get(0);
