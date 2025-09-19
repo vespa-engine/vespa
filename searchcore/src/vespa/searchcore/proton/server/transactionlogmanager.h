@@ -52,7 +52,7 @@ public:
     /*
      * Make a tls replay progress object for serial numbers (first..last]
      */
-    std::unique_ptr<TlsReplayProgress>
+    std::shared_ptr<TlsReplayProgress>
     make_replay_progress(SerialNum first, SerialNum last);
 
     /**

@@ -2,17 +2,24 @@
 
 #pragma once
 
+#include <vespa/vespalib/net/http/initialization_status_producer.h>
+
 #include <chrono>
+#include <memory>
 #include <mutex>
 
+namespace vespalib::slime { struct Inserter; }
+
 namespace proton {
+
+class DocumentDBInitializationStatus;
 
 /**
  * Class that tracks the initialization state of Proton and keeps timestamps of when a state was entered.
  *
  * Thread-safe.
  */
-class ProtonInitializationStatus {
+class ProtonInitializationStatus : public vespalib::InitializationStatusProducer {
 public:
     enum State {
         INITIALIZING,
@@ -29,8 +36,13 @@ private:
 
     State _state;
 
+    std::vector<std::shared_ptr<DocumentDBInitializationStatus>> _ddb_initialization_statuses;
+
 public:
     ProtonInitializationStatus();
+
+    void addDocumentDBInitializationStatus(const std::shared_ptr<DocumentDBInitializationStatus>& status);
+    void removeDocumentDBInitializationStatus(const std::shared_ptr<DocumentDBInitializationStatus>& status);
 
     State get_state() const;
 
@@ -39,6 +51,8 @@ public:
 
     time_point get_start_time() const;
     time_point get_end_time() const;
+
+    void report_initialization_status(const vespalib::slime::Inserter &inserter) const override;
 };
 
 }

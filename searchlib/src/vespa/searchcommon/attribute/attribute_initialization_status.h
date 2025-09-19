@@ -2,10 +2,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/net/http/initialization_status_producer.h>
 
 #include <chrono>
 #include <mutex>
+
+namespace vespalib::slime { struct Inserter; }
 
 namespace search::attribute {
 
@@ -14,7 +16,7 @@ namespace search::attribute {
  *
  * Thread-safe.
  */
-class AttributeInitializationStatus {
+class AttributeInitializationStatus : public vespalib::InitializationStatusProducer {
 public:
     enum State {
         QUEUED,
@@ -41,6 +43,8 @@ public:
     time_point get_reprocessing_end_time() const;
     bool was_reprocessed() const;
     float get_reprocessing_percentage() const;
+
+    void report_initialization_status(const vespalib::slime::Inserter &inserter) const override;
 
 private:
     mutable std::mutex _mutex;

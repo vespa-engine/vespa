@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcommon/attribute/attribute_initialization_status.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using search::attribute::AttributeInitializationStatus;
@@ -100,6 +101,120 @@ TEST(AttributeInitializationStatusTest, test_timestamps)
     EXPECT_EQ(reprocessing_start_time, status.get_reprocessing_start_time());
     EXPECT_EQ(reprocessing_end_time, status.get_reprocessing_end_time());
     EXPECT_EQ(end_time, status.get_end_time());
+}
+
+TEST(AttributeInitializationStatusTest, test_reporting_queued) {
+    vespalib::Slime slime;
+    vespalib::slime::SlimeInserter inserter(slime);
+
+    AttributeInitializationStatus status("testAttribute");
+    status.report_initialization_status(inserter);
+
+    EXPECT_EQ(slime.get().children(), 2);
+    EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("testAttribute"));
+    EXPECT_EQ(slime.get()["status"].asString().make_string(), std::string("queued"));
+}
+
+TEST(AttributeInitializationStatusTest, test_reporting_loading) {
+    vespalib::Slime slime;
+    vespalib::slime::SlimeInserter inserter(slime);
+
+    AttributeInitializationStatus status("testAttribute");
+    status.start_loading();
+    status.report_initialization_status(inserter);
+
+    EXPECT_EQ(slime.get().children(), 3);
+    EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("testAttribute"));
+    EXPECT_EQ(slime.get()["status"].asString().make_string(), std::string("loading"));
+    EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
+              AttributeInitializationStatus::timepoint_to_string(status.get_start_time()));
+}
+
+TEST(AttributeInitializationStatusTest, test_reporting_loaded) {
+    vespalib::Slime slime;
+    vespalib::slime::SlimeInserter inserter(slime);
+
+    AttributeInitializationStatus status("testAttribute");
+    status.start_loading();
+    status.end_loading();
+    status.report_initialization_status(inserter);
+
+    EXPECT_EQ(slime.get().children(), 4);
+    EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("testAttribute"));
+    EXPECT_EQ(slime.get()["status"].asString().make_string(), std::string("loaded"));
+    EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
+              AttributeInitializationStatus::timepoint_to_string(status.get_start_time()));
+    EXPECT_EQ(slime.get()["end_time"].asString().make_string(),
+              AttributeInitializationStatus::timepoint_to_string(status.get_end_time()));
+}
+
+TEST(AttributeInitializationStatusTest, test_reporting_reprocessing) {
+    vespalib::Slime slime;
+    vespalib::slime::SlimeInserter inserter(slime);
+
+    AttributeInitializationStatus status("testAttribute");
+    status.start_loading();
+    status.start_reprocessing();
+    status.set_reprocessing_percentage(0.42f);
+    status.report_initialization_status(inserter);
+
+    EXPECT_EQ(slime.get().children(), 5);
+    EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("testAttribute"));
+    EXPECT_EQ(slime.get()["status"].asString().make_string(), std::string("reprocessing"));
+    EXPECT_EQ(slime.get()["reprocess_progress"].asString().make_string(), "0.420000");
+    EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
+              AttributeInitializationStatus::timepoint_to_string(status.get_start_time()));
+    EXPECT_EQ(slime.get()["reprocess_start_time"].asString().make_string(),
+              AttributeInitializationStatus::timepoint_to_string(status.get_reprocessing_start_time()));
+}
+
+TEST(AttributeInitializationStatusTest, test_reporting_reprocessing_loading) {
+    vespalib::Slime slime;
+    vespalib::slime::SlimeInserter inserter(slime);
+
+    AttributeInitializationStatus status("testAttribute");
+    status.start_loading();
+    status.start_reprocessing();
+    status.set_reprocessing_percentage(0.42f);
+    status.end_reprocessing();
+    status.report_initialization_status(inserter);
+
+    EXPECT_EQ(slime.get().children(), 6);
+    EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("testAttribute"));
+    EXPECT_EQ(slime.get()["status"].asString().make_string(), std::string("loading"));
+    EXPECT_EQ(slime.get()["reprocess_progress"].asString().make_string(), "1.000000");
+    EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
+              AttributeInitializationStatus::timepoint_to_string(status.get_start_time()));
+    EXPECT_EQ(slime.get()["reprocess_start_time"].asString().make_string(),
+              AttributeInitializationStatus::timepoint_to_string(status.get_reprocessing_start_time()));
+    EXPECT_EQ(slime.get()["reprocess_end_time"].asString().make_string(),
+              AttributeInitializationStatus::timepoint_to_string(status.get_reprocessing_end_time()));
+}
+
+TEST(AttributeInitializationStatusTest, test_reporting_reprocessing_loaded) {
+    vespalib::Slime slime;
+    vespalib::slime::SlimeInserter inserter(slime);
+
+    AttributeInitializationStatus status("testAttribute");
+    status.start_loading();
+    status.start_reprocessing();
+    status.set_reprocessing_percentage(0.42f);
+    status.end_reprocessing();
+    status.end_loading();
+    status.report_initialization_status(inserter);
+
+    EXPECT_EQ(slime.get().children(), 7);
+    EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("testAttribute"));
+    EXPECT_EQ(slime.get()["status"].asString().make_string(), std::string("loaded"));
+    EXPECT_EQ(slime.get()["reprocess_progress"].asString().make_string(), "1.000000");
+    EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
+              AttributeInitializationStatus::timepoint_to_string(status.get_start_time()));
+    EXPECT_EQ(slime.get()["reprocess_start_time"].asString().make_string(),
+              AttributeInitializationStatus::timepoint_to_string(status.get_reprocessing_start_time()));
+    EXPECT_EQ(slime.get()["reprocess_end_time"].asString().make_string(),
+              AttributeInitializationStatus::timepoint_to_string(status.get_reprocessing_end_time()));
+    EXPECT_EQ(slime.get()["end_time"].asString().make_string(),
+              AttributeInitializationStatus::timepoint_to_string(status.get_end_time()));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

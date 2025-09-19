@@ -2,6 +2,10 @@
 
 #include "attribute_initialization_status.h"
 
+#include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/data/slime/slime.h>
+
 namespace search::attribute {
 
 std::string AttributeInitializationStatus::state_to_string(State state) {
@@ -103,6 +107,35 @@ float AttributeInitializationStatus::get_reprocessing_percentage() const {
     std::lock_guard<std::mutex> guard(_mutex);
 
     return _reprocessing_percentage;
+}
+
+void AttributeInitializationStatus::report_initialization_status(const vespalib::slime::Inserter &inserter) const {
+    std::lock_guard<std::mutex> guard(_mutex);
+
+    vespalib::slime::Cursor &cursor = inserter.insertObject();
+    cursor.setString("name", _name);
+
+    cursor.setString("status", state_to_string(_state));
+
+    if (_state >= State::LOADING && _was_reprocessed) {
+        cursor.setString("reprocess_progress",  std::format("{:.6f}", _reprocessing_percentage));
+    }
+
+    if (_state >= State::LOADING) {
+        cursor.setString("start_time", timepoint_to_string(_start_time));
+    }
+
+    if (_state >= State::LOADING && _was_reprocessed) {
+        cursor.setString("reprocess_start_time",timepoint_to_string(_reprocessing_start_time));
+    }
+
+    if ((_state == State::LOADING || _state == State::LOADED) && _was_reprocessed) {
+        cursor.setString("reprocess_end_time", timepoint_to_string(_reprocessing_end_time));
+    }
+
+    if (_state == State::LOADED) {
+        cursor.setString("end_time", timepoint_to_string(_end_time));
+    }
 }
 
 }
