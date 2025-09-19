@@ -187,9 +187,7 @@ public class MetricsProxyContainer extends Container implements
     }
 
     @Override
-    protected String defaultPreload() {
-        return "";
-    }
+    protected String defaultPreload() { return ""; }
 
     @Override public Optional<String> getPreShutdownCommand() { return Optional.of(prepareStopCommand(Duration.ofMinutes(6))); }
 

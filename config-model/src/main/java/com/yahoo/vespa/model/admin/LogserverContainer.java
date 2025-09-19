@@ -8,6 +8,7 @@ import com.yahoo.vespa.model.container.Container;
 
 /**
  * Container that should be running on same host as the logserver. Sets up a handler for getting logs from logserver.
+ * @author hmusum
  */
 public class LogserverContainer extends Container {
 
@@ -18,17 +19,13 @@ public class LogserverContainer extends Container {
     @Override
     public void setMallocImpl(String mallocImpl) {
         // Do nothing here, only ApplicationContainer should set
-        //this to anything other than the default, and that class has overridden this method.
+        // this to anything other than the default, and that class has overridden this method.
     }
 
     @Override
-    public ContainerServiceType myServiceType() {
-        return ContainerServiceType.LOGSERVER_CONTAINER;
-    }
+    public ContainerServiceType myServiceType() { return ContainerServiceType.LOGSERVER_CONTAINER; }
 
     @Override
-    public String defaultPreload() {
-        return "";
-    }
+    public String defaultPreload() { return ""; }
 
 }
