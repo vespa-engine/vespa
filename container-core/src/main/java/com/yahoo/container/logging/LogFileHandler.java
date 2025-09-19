@@ -48,15 +48,25 @@ class LogFileHandler <LOGTYPE> {
     @FunctionalInterface private interface Pollable<T> { Operation<T> poll() throws InterruptedException; }
 
     LogFileHandler(Compression compression, int bufferSize, String filePattern, String rotationTimes, String symlinkName,
+                   int queueSize, String threadName, LogWriter<LOGTYPE> logWriter, long rotationSize, long sizeCheckInterval) {
+        this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, threadName, logWriter, rotationSize, sizeCheckInterval);
+    }
+
+    LogFileHandler(Compression compression, int bufferSize, String filePattern, long[] rotationTimes, String symlinkName,
+                   int queueSize, String threadName, LogWriter<LOGTYPE> logWriter, long rotationSize, long sizeCheckInterval) {
+        this.logQueue = new LinkedBlockingQueue<>(queueSize);
+        this.logThread = new LogThread<>(logWriter, filePattern, compression, bufferSize, rotationTimes, symlinkName, threadName, this::poll, rotationSize, sizeCheckInterval);
+        this.logThread.start();
+    }
+
+    LogFileHandler(Compression compression, int bufferSize, String filePattern, String rotationTimes, String symlinkName,
                    int queueSize, String threadName, LogWriter<LOGTYPE> logWriter) {
-        this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, threadName, logWriter);
+        this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, threadName, logWriter, 0, 60000);
     }
 
     LogFileHandler(Compression compression, int bufferSize, String filePattern, long[] rotationTimes, String symlinkName,
                    int queueSize, String threadName, LogWriter<LOGTYPE> logWriter) {
-        this.logQueue = new LinkedBlockingQueue<>(queueSize);
-        this.logThread = new LogThread<>(logWriter, filePattern, compression, bufferSize, rotationTimes, symlinkName, threadName, this::poll);
-        this.logThread.start();
+        this(compression, bufferSize, filePattern, rotationTimes, symlinkName, queueSize, threadName, logWriter, 0, 60000);
     }
 
     private Operation<LOGTYPE> poll() throws InterruptedException {
@@ -196,6 +206,10 @@ class LogFileHandler <LOGTYPE> {
         private final String symlinkName;
         private final ExecutorService executor = createCompressionTaskExecutor();
         private final NativeIO nativeIO = new NativeIO();
+        private final long rotationSize; // Maximum file size in bytes (0 = disabled)
+        private final long sizeCheckInterval; // Interval between size checks
+        private long lastSizeCheck = 0;  // Last time we checked file size
+        private long approximateFileSize = 0; // Cached file size
 
 
         LogThread(LogWriter<LOGTYPE> logWriter,
@@ -205,7 +219,9 @@ class LogFileHandler <LOGTYPE> {
                   long[] rotationTimes,
                   String symlinkName,
                   String threadName,
-                  Pollable<LOGTYPE> operationProvider) {
+                  Pollable<LOGTYPE> operationProvider,
+                  long rotationSize,
+                  long sizeCheckInterval) {
             super(threadName);
             setDaemon(true);
             this.logWriter = logWriter;
@@ -215,6 +231,8 @@ class LogFileHandler <LOGTYPE> {
             this.rotationTimes = rotationTimes;
             this.symlinkName = (symlinkName != null && !symlinkName.isBlank()) ? symlinkName : null;
             this.operationProvider = operationProvider;
+            this.rotationSize = rotationSize;
+            this.sizeCheckInterval = sizeCheckInterval;
         }
 
         private static ExecutorService createCompressionTaskExecutor() {
@@ -292,20 +310,83 @@ class LogFileHandler <LOGTYPE> {
 
         private void internalPublish(LOGTYPE r) {
             // first check to see if new file needed.
-            // if so, use this.internalRotateNow() to do it
-
             long now = System.currentTimeMillis();
             if (nextRotationTime <= 0) {
                 nextRotationTime = getNextRotationTime(now); // lazy initialization
             }
+            
+            if (shouldCheckSizeRotation(now)) {
+                syncFileSizeAndRotateIfNeeded();
+            }
+            
+            // Regular time-based rotation check
             if (now > nextRotationTime || fileOutput == null) {
                 internalRotateNow();
+                approximateFileSize = 0; // Reset size after rotation
             }
+            
             try {
+                // Track bytes before writing
+                long bytesBeforeWrite = fileOutput != null ? fileOutput.getTotalBytesWritten() : 0;
+                
+                // Write the log record
                 logWriter.write(r, fileOutput);
                 fileOutput.write('\n');
+                
+                // Calculate bytes written for this record
+                long bytesAfterWrite = fileOutput.getTotalBytesWritten();
+                long bytesWritten = bytesAfterWrite - bytesBeforeWrite;
+                
+                // Update approximate size
+                approximateFileSize += bytesWritten;
+                
+                // Check for immediate rotation if size exceeded
+                // This provides responsive rotation without waiting for the check interval
+                if (rotationSize > 0 && approximateFileSize >= rotationSize) {
+                    logger.info("Rotating log file " + fileName + 
+                               " due to approximate size: " + approximateFileSize + " >= " + rotationSize);
+                    internalRotateNow();
+                    approximateFileSize = 0;
+                }
+                
             } catch (IOException e) {
                 logger.warning("Failed writing log record: " + Exceptions.toMessageString(e));
+            }
+        }
+
+        // Helper method to check if it's time to check size
+        private boolean shouldCheckSizeRotation(long now) {
+            // Only check if size rotation is enabled and enough time has passed
+            return rotationSize > 0 && 
+                   (now - lastSizeCheck) >= sizeCheckInterval;
+        }
+        
+        // Sync approximate size with actual file size periodically
+        private void syncFileSizeAndRotateIfNeeded() {
+            if (fileOutput == null || fileName == null) {
+                return;
+            }
+            
+            try {
+                // Get actual file size from filesystem for accuracy
+                Path filePath = Paths.get(fileName);
+                long actualSize = Files.size(filePath);
+                
+                // Sync our cached size with actual size
+                approximateFileSize = actualSize;
+                lastSizeCheck = System.currentTimeMillis();
+                
+                // Check if rotation is needed based on actual size
+                if (actualSize >= rotationSize) {
+                    logger.info("Rotating log file " + fileName + 
+                               " due to actual size: " + actualSize + " >= " + rotationSize);
+                    internalRotateNow();
+                    approximateFileSize = 0;
+                }
+            } catch (IOException e) {
+                // If we can't check the actual size, continue using approximate
+                logger.log(Level.FINE, "Could not sync file size for " + fileName, e);
+                lastSizeCheck = System.currentTimeMillis();
             }
         }
 
@@ -358,6 +439,8 @@ class LogFileHandler <LOGTYPE> {
             try {
                 checkAndCreateDir(fileName);
                 fileOutput = new PageCacheFriendlyFileOutputStream(nativeIO, Paths.get(fileName), bufferSize);
+                approximateFileSize = 0; // Reset size tracking for new file
+                lastSizeCheck = now; // Reset check timer
                 LogFileDb.nowLoggingTo(fileName);
             } catch (IOException e) {
                 throw new RuntimeException("Couldn't open log file '" + fileName + "'", e);
@@ -509,6 +592,7 @@ class LogFileHandler <LOGTYPE> {
         private final BufferedOutputStream bufferedOut;
         private final int bufferSize;
         private long lastDropPosition = 0;
+        private long totalBytesWritten = 0; // Track total bytes written to this file
 
         PageCacheFriendlyFileOutputStream(NativeIO nativeIO, Path file, int bufferSize) throws FileNotFoundException {
             this.nativeIO = nativeIO;
@@ -517,9 +601,21 @@ class LogFileHandler <LOGTYPE> {
             this.bufferSize = bufferSize;
         }
 
-        @Override public void write(byte[] b) throws IOException { bufferedOut.write(b); }
-        @Override public void write(byte[] b, int off, int len) throws IOException { bufferedOut.write(b, off, len); }
-        @Override public void write(int b) throws IOException { bufferedOut.write(b); }
+        @Override public void write(byte[] b) throws IOException { 
+            bufferedOut.write(b); 
+            totalBytesWritten += b.length;
+        }
+        
+        @Override public void write(byte[] b, int off, int len) throws IOException { 
+            bufferedOut.write(b, off, len); 
+            totalBytesWritten += len;
+        }
+        
+        @Override public void write(int b) throws IOException { 
+            bufferedOut.write(b); 
+            totalBytesWritten++;
+        }
+        
         @Override public void close() throws IOException { bufferedOut.close(); }
 
         @Override
@@ -530,6 +626,10 @@ class LogFileHandler <LOGTYPE> {
                 nativeIO.dropPartialFileFromCache(fileOut.getFD(), lastDropPosition, newPos, true);
                 lastDropPosition = newPos;
             }
+        }
+        
+        public long getTotalBytesWritten() {
+            return totalBytesWritten;
         }
     }
 
@@ -546,10 +646,13 @@ class LogFileHandler <LOGTYPE> {
 
         @Override
         public synchronized void close() throws IOException {
-            super.close();
             if (!closed) {
-                Files.move(tmpPath, path, StandardCopyOption.ATOMIC_MOVE);
-                closed = true;
+                try {
+                    super.close();
+                    Files.move(tmpPath, path, StandardCopyOption.ATOMIC_MOVE);
+                } finally {
+                    closed = true;
+                }
             }
         }
 
