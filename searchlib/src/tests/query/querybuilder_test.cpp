@@ -367,6 +367,7 @@ struct AbstractTypes {
     using TrueQueryNode = search::query::TrueQueryNode;
     using FalseQueryNode = search::query::FalseQueryNode;
     using FuzzyTerm = search::query::FuzzyTerm;
+    using WordAlternatives = search::query::WordAlternatives;
 };
 
 // Builds a tree with simplequery and checks that the results have the
@@ -543,6 +544,13 @@ struct MyInTerm : InTerm {
     ~MyInTerm() override;
 };
 
+struct MyWordAlternatives : WordAlternatives {
+    MyWordAlternatives(std::unique_ptr<TermVector> terms, const string& v, int32_t i, Weight w)
+      : WordAlternatives(std::move(terms), v, i, w)
+    {}
+    ~MyWordAlternatives() override;
+};
+
 MyAnd::~MyAnd() = default;
 
 MyAndNot::~MyAndNot() = default;
@@ -597,6 +605,8 @@ MyFuzzyTerm::~MyFuzzyTerm() = default;
 
 MyInTerm::~MyInTerm() = default;
 
+MyWordAlternatives::~MyWordAlternatives() = default;
+
 struct MyQueryNodeTypes {
     using And = MyAnd;
     using AndNot = MyAndNot;
@@ -625,6 +635,7 @@ struct MyQueryNodeTypes {
     using FalseQueryNode = MyFalse;
     using FuzzyTerm = MyFuzzyTerm;
     using InTerm = MyInTerm;
+    using WordAlternatives = MyWordAlternatives;
 };
 
 TEST(QueryBuilderTest, require_that_Custom_Query_Trees_Can_Be_Built) {

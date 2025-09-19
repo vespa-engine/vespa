@@ -47,6 +47,8 @@ struct TermDataFromTermVisitor
     void visit(ProtonNearestNeighborTerm &n) override { visitTerm(n); }
     void visit(ProtonFuzzyTerm &n) override { visitTerm(n); }
     void visit(ProtonInTerm& n) override { visitTerm(n); }
+    void visit(ProtonWordAlternatives &n) override { visitTerm(n); }
+
 };
 }  // namespace
 
