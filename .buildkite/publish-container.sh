@@ -2,7 +2,7 @@
 #
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #
-# Generates a container tag name based on the provided arguments.
+# Publishes container images by authenticating, pushing, signing, and setting Buildkite metadata.
 
 set -o errexit
 set -o nounset
@@ -12,9 +12,6 @@ if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
 
-if [[ "${DEBUG:-}" == "true" ]]; then
-    set -o xtrace
-fi
 
 if [[ $BUILDKITE != true ]]; then
     echo "Skipping container publishing when not executed by Buildkite."

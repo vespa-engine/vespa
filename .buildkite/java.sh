@@ -2,7 +2,7 @@
 #
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #
-# Generates a container tag name based on the provided arguments.
+# Builds Java components using Maven.
 
 set -o errexit
 set -o nounset

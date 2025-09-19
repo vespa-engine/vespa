@@ -2,7 +2,7 @@
 #
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #
-# Generates a container tag name based on the provided arguments.
+# Prepares the build environment by updating Vespa version in POMs and creating artifact directories.
 
 set -o errexit
 set -o nounset
