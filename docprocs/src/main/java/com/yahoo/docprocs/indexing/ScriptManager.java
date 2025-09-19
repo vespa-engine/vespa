@@ -27,13 +27,13 @@ import java.util.Set;
 /**
  * @author Simon Thoresen Hult
  */
-public class ScriptManager {
+class ScriptManager {
 
     private static final String FULL = "[all]";
     private final Map<String, Map<String, DocumentScript>> documentFieldScripts;
     private final DocumentTypeManager documentTypeManager;
 
-    public ScriptManager(DocumentTypeManager documentTypeManager, IlscriptsConfig config, Linguistics linguistics,
+    ScriptManager(DocumentTypeManager documentTypeManager, IlscriptsConfig config, Linguistics linguistics,
                          Map<String, Chunker> chunkers,
                          Map<String, Embedder> embedders,
                          Map<String, FieldGenerator> generators) {
@@ -55,11 +55,11 @@ public class ScriptManager {
         return null;
     }
 
-    public DocumentScript getScript(DocumentType inputType) {
+    DocumentScript getScript(DocumentType inputType) {
         return getScript(inputType, FULL);
     }
 
-    public DocumentScript getScript(DocumentType inputType, String inputFieldName) {
+    DocumentScript getScript(DocumentType inputType, String inputFieldName) {
         Map<String, DocumentScript> fieldScripts = getScripts(inputType);
         if (fieldScripts == null) return null;
         return fieldScripts.get(inputFieldName);
