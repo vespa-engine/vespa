@@ -402,7 +402,7 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
         if (mallocImpl !=null && !mallocImpl.isEmpty()) {
             addEnvironmentVariable("VESPA_USE_MALLOC_IMPL", mallocImpl);
         } else {
-            log.log(Level.INFO, "Null or empty malloc impl supplied for service " + getServiceName() + ", ignoring");
+            log.log(Level.FINE, "Null or empty malloc impl supplied for service " + getServiceName() + ", ignoring");
         }
     }
 
