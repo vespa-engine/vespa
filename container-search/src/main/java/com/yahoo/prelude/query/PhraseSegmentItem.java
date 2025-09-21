@@ -28,7 +28,7 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
             setIndexName(w.getIndexName());
             for (Iterator<Item> i = andSegment.getItemIterator(); i.hasNext();) {
                 TermItem word = (TermItem) i.next();
-                addTermItem(word);
+                addIndexedItem(word);
             }
         }
     }
@@ -82,6 +82,14 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
         }
     }
 
+    @Override
+    public boolean acceptsItemsOfType(ItemType itemType) {
+        return itemType == ItemType.WORD ||
+               itemType == ItemType.WORD_ALTERNATIVES ||
+               itemType == ItemType.INT ||
+               itemType == ItemType.EXACT;
+    }
+
     /**
      * Adds subitem. The word will have its index name set to the index name
      * of this phrase. If the item is a word, it will simply be added,
@@ -91,8 +99,10 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
      */
     @Override
     public void addItem(Item item) {
-        if (item instanceof TermItem term) {
-            addTermItem(term);
+        if (item instanceof WordItem || item instanceof PhraseSegmentItem || item instanceof WordAlternativesItem) {
+            addIndexedItem((IndexedItem) item);
+        } else if (item instanceof IntItem intItem) {
+            addIndexedItem(intItem.asWord());
         } else {
             throw new IllegalArgumentException("Can not add " + item + " to a segment phrase");
         }
@@ -105,12 +115,13 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
         return extracted;
     }
 
-    private void addTermItem(TermItem word) {
-        word.setIndexName(this.getIndexName());
-        super.addItem(word);
-    }
 
     // TODO: Override addItem(index,item), setItem(index,item)
+
+    private void addIndexedItem(IndexedItem word) {
+        word.setIndexName(this.getIndexName());
+        super.addItem((Item) word);
+    }
 
     /**
      * Returns a subitem as a term item
