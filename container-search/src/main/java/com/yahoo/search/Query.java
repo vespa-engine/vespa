@@ -711,11 +711,11 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /**
      * Serialize this query as YQL+. This method will never throw exceptions,
-     * but instead return a human readable error message if a problem occurred while
+     * but instead return a human-readable error message if a problem occurred while
      * serializing the query. Hits and offset information will be included if
      * different from default, while linguistics metadata are not added.
      *
-     * @return a valid YQL+ query string or a human readable error message
+     * @return a valid YQL+ query string or a human-readable error message
      * @see Query#yqlRepresentation(boolean)
      */
     public String yqlRepresentation() {

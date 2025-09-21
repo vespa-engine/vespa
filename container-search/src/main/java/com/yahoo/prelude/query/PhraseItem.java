@@ -63,11 +63,6 @@ public class PhraseItem extends CompositeIndexedItem {
         return explicit;
     }
 
-    private IndexedItem convertIntToWord(Item orig) {
-        IntItem o = (IntItem) orig;
-        return new WordItem(o.stringValue(), o.getIndexName(), o.isFromQuery());
-    }
-
     /**
      * Adds subitem. The word will have its index name set to the index name of
      * this phrase. If the item is a word, it will simply be added, if the item
@@ -80,8 +75,8 @@ public class PhraseItem extends CompositeIndexedItem {
         if (item instanceof WordItem || item instanceof PhraseSegmentItem || item instanceof WordAlternativesItem) {
             addIndexedItem((IndexedItem) item);
         }
-        else if (item instanceof IntItem) {
-            addIndexedItem(convertIntToWord(item));
+        else if (item instanceof IntItem intItem) {
+            addIndexedItem(intItem.asWord());
         }
         else if (item instanceof PhraseItem || item instanceof AndSegmentItem) {
             for (Iterator<Item> i = ((CompositeItem) item).getItemIterator(); i.hasNext();)
@@ -105,8 +100,8 @@ public class PhraseItem extends CompositeIndexedItem {
     public void addItem(int index, Item item) {
         if (item instanceof WordItem || item instanceof PhraseSegmentItem) {
             addIndexedItem(index, (IndexedItem) item);
-        } else if (item instanceof IntItem) {
-            addIndexedItem(index, convertIntToWord(item));
+        } else if (item instanceof IntItem intItem) {
+            addIndexedItem(index, intItem.asWord());
         } else if (item instanceof PhraseItem phrase) {
             for (Iterator<Item> i = phrase.getItemIterator(); i.hasNext();) {
                 addIndexedItem(index++, (WordItem) i.next());
@@ -120,8 +115,8 @@ public class PhraseItem extends CompositeIndexedItem {
     public Item setItem(int index, Item item) {
         if (item instanceof WordItem || item instanceof PhraseSegmentItem) {
             return setIndexedItem(index, (IndexedItem) item);
-        } else if (item instanceof IntItem) {
-            return setIndexedItem(index, convertIntToWord(item));
+        } else if (item instanceof IntItem intItem) {
+            return setIndexedItem(index, intItem.asWord());
         } else if (item instanceof PhraseItem phrase) {
             Iterator<Item> i = phrase.getItemIterator();
             // we assume we don't try to add empty phrases
