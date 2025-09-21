@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import com.yahoo.config.model.MallocImplResolver;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.deploy.DeployState;
@@ -257,7 +256,7 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
      * @return classname without package prefix.
      */
     private String getShortClassName() {
-        Class myClass = getClass();
+        Class<?> myClass = getClass();
         Package myPackage = myClass.getPackage();
         return myClass.getName().substring(1 + myPackage.getName().length());
     }
@@ -400,6 +399,7 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
     public void setVespaMallocDebugStackTrace(String s) { environmentVariables.put("VESPA_USE_VESPAMALLOC_DST", s); }
     public void setMallocImpl(String mallocImpl) {
         if (mallocImpl !=null && !mallocImpl.isEmpty()) {
+            log.log(Level.INFO, "Setting malloc impl for service " + getServiceName() + " to " + mallocImpl);
             addEnvironmentVariable("VESPA_USE_MALLOC_IMPL", mallocImpl);
         } else {
             log.log(Level.FINE, "Null or empty malloc impl supplied for service " + getServiceName() + ", ignoring");
