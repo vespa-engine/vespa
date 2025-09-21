@@ -6,120 +6,114 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
+#include <cassert>
 #include <map>
 
 namespace search::queryeval {
 
-SameElementBlueprint::SameElementBlueprint(const FieldSpec &field, bool expensive)
-    : ComplexLeafBlueprint(field),
-      _estimate(),
-      _layout(),
-      _terms(),
-      _field_name(field.getName())
+SameElementBlueprint::SameElementBlueprint(const FieldSpec &field, fef::MatchDataLayout subtree_mdl, bool expensive)
+    : IntermediateBlueprint(),
+      _layout(std::move(subtree_mdl)),
+      _field(field),
+      _expensive(expensive)
 {
-    if (expensive) {
-        set_cost_tier(State::COST_TIER_EXPENSIVE);
-    }
 }
 
 SameElementBlueprint::~SameElementBlueprint() = default;
 
-FieldSpec
-SameElementBlueprint::getNextChildField(const std::string &field_name, uint32_t field_id)
+AnyFlow
+SameElementBlueprint::my_flow(InFlow in_flow) const
 {
-    return {field_name, field_id, _layout.allocTermField(field_id), false};
-}
-
-void
-SameElementBlueprint::addTerm(Blueprint::UP term)
-{
-    const State &childState = term->getState();
-    assert(childState.numFields() == 1);
-    HitEstimate childEst = childState.estimate();
-    if (_terms.empty() ||  (childEst < _estimate)) {
-        _estimate = childEst;
-        setEstimate(_estimate);
-    }
-    _terms.push_back(std::move(term));
-}
-
-void
-SameElementBlueprint::sort(InFlow in_flow)
-{
-    resolve_strict(in_flow);
-    auto flow = AndFlow(in_flow);
-    for (auto &term: _terms) {
-        term->sort(InFlow(flow.strict(), flow.flow()));
-        flow.add(term->estimate());
-    }
+    return AnyFlow::create<AndFlow>(in_flow);
 }
 
 FlowStats
-SameElementBlueprint::calculate_flow_stats(uint32_t docid_limit) const
+SameElementBlueprint::calculate_flow_stats(uint32_t) const
 {
-    for (auto &term: _terms) {
-        term->update_flow_stats(docid_limit);
-    }
-    double est = AndFlow::estimate_of(_terms);
+    auto& children = get_children();
+    double est = AndFlow::estimate_of(children);
     return {est,
-            AndFlow::cost_of(_terms, false) + est * _terms.size(),
-            AndFlow::cost_of(_terms, true) + est * _terms.size()};
+            AndFlow::cost_of(children, false) + est * children.size(),
+            AndFlow::cost_of(children, true) + est * children.size()};
 }
 
-void
-SameElementBlueprint::optimize_self(OptimizePass pass)
+uint8_t
+SameElementBlueprint::calculate_cost_tier() const
 {
-    if (pass == OptimizePass::LAST) {
-        std::sort(_terms.begin(), _terms.end(),
-                  [](const auto &a, const auto &b) {
-                      return (a->getState().estimate() < b->getState().estimate());
-                  });
+    uint8_t cost_tier = State::COST_TIER_MAX;
+    auto& children = get_children();
+    for (auto& child : children) {
+        cost_tier = std::min(cost_tier, child->getState().cost_tier());
+    }
+    if (_expensive) {
+        cost_tier = std::max(cost_tier, State::COST_TIER_EXPENSIVE);
+    }
+    return cost_tier;
+}
+
+std::unique_ptr<SearchIterator>
+SameElementBlueprint::createSearchImpl(fef::MatchData& md) const
+{
+    auto* tfmd = md.resolveTermField(_field.getHandle());
+    assert(tfmd != nullptr);
+    return create_same_element_search(*tfmd);
+}
+
+Blueprint::HitEstimate
+SameElementBlueprint::combine(const std::vector<HitEstimate>& data) const
+{
+    return min(data);
+}
+
+FieldSpecBaseList SameElementBlueprint::exposeFields() const
+{
+    FieldSpecBaseList fields;
+    fields.add(_field);
+    return fields;
+}
+
+void SameElementBlueprint::sort(Children& children, InFlow in_flow) const
+{
+    if (opt_sort_by_cost()) {
+        AndFlow::sort(children, in_flow.strict());
+        if (opt_allow_force_strict()) {
+            AndFlow::reorder_for_extra_strictness(children, in_flow, 3);
+        }
+    } else {
+        std::sort(children.begin(), children.end(), TieredLessEstimate());
     }
 }
 
-void
-SameElementBlueprint::fetchPostings(const ExecuteInfo &execInfo)
+std::unique_ptr<SearchIterator>
+SameElementBlueprint::createIntermediateSearch(MultiSearch::Children, fef::MatchData&) const
 {
-    if (_terms.empty()) return;
-    _terms[0]->fetchPostings(execInfo);
-    double hit_rate = execInfo.hit_rate() * _terms[0]->estimate();
-    for (size_t i = 1; i < _terms.size(); ++i) {
-        Blueprint & term = *_terms[i];
-        term.fetchPostings(ExecuteInfo::create(hit_rate, execInfo));
-        hit_rate = hit_rate * _terms[i]->estimate();
-    }
+    abort(); // Handled by createSearchImpl and create_same_element_search
 }
 
 std::unique_ptr<SameElementSearch>
 SameElementBlueprint::create_same_element_search(search::fef::TermFieldMatchData& tfmd) const
 {
-    fef::MatchData::UP md = _layout.createMatchData();
-    std::vector<std::unique_ptr<SearchIterator>> children;
-    children.reserve(_terms.size());
-    for (size_t i = 0; i < _terms.size(); ++i) {
-        children.emplace_back(_terms[i]->createSearch(*md));
+    auto subtree_md = _layout.createMatchData();
+    MultiSearch::Children sub_searches;
+    auto& children = get_children();
+    sub_searches.reserve(children.size());
+    for (const auto & child : children) {
+        sub_searches.push_back(child->createSearch(*subtree_md));
     }
-    return std::make_unique<SameElementSearch>(tfmd, std::move(md), std::move(children), strict());
-}
-
-SearchIterator::UP
-SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda) const
-{
-    assert(tfmda.size() == 1);
-    return create_same_element_search(*tfmda[0]);
+    // match data for subtree (subtree_md) must be owned by search iterator
+    return std::make_unique<SameElementSearch>(tfmd, std::move(subtree_md), std::move(sub_searches), strict());
 }
 
 SearchIterator::UP
 SameElementBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    return create_atmost_and_filter(_terms, strict(), constraint);
+    return create_atmost_and_filter(get_children(), strict(), constraint);
 }
 
 void
 SameElementBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
-    ComplexLeafBlueprint::visitMembers(visitor);
-    visit(visitor, "terms", _terms);
+    IntermediateBlueprint::visitMembers(visitor);
 }
 
 }

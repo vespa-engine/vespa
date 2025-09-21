@@ -52,7 +52,7 @@ public:
 class StringTerm : public QueryNodeMixin<StringTerm, StringBase >
 {
 public:
-    StringTerm(const Type &term, std::string, int32_t id, Weight weight);
+    StringTerm(const Type &term, std::string view, int32_t id, Weight weight);
     virtual ~StringTerm() = 0;
 };
 
@@ -175,7 +175,7 @@ public:
 
 class MultiTerm : public Node {
 public:
-    enum class Type {STRING, INTEGER, UNKNOWN};
+    enum class Type {STRING, INTEGER, WEIGHTED_STRING, WEIGHTED_INTEGER, UNKNOWN};
     using StringAndWeight = TermVector::StringAndWeight;
     using IntegerAndWeight = TermVector::IntegerAndWeight;
     ~MultiTerm() override;
@@ -204,6 +204,10 @@ public:
         : QueryNodeMixinType(num_terms),
           Term(view, id, weight)
     {}
+    WeightedSetTerm(std::unique_ptr<TermVector> terms, Type type, const std::string & view, int32_t id, Weight weight)
+      : QueryNodeMixinType(std::move(terms), type),
+        Term(view, id, weight)
+    {}
     virtual ~WeightedSetTerm() = 0;
 };
 
@@ -212,6 +216,10 @@ public:
     DotProduct(uint32_t num_terms, const std::string & view, int32_t id, Weight weight)
         : QueryNodeMixinType(num_terms),
           Term(view, id, weight)
+    {}
+    DotProduct(std::unique_ptr<TermVector> terms, Type type, const std::string & view, int32_t id, Weight weight)
+      : QueryNodeMixinType(std::move(terms), type),
+        Term(view, id, weight)
     {}
     virtual ~DotProduct() = 0;
 };
@@ -225,6 +233,15 @@ public:
     WandTerm(uint32_t num_terms, const std::string & view, int32_t id, Weight weight,
              uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor)
         : QueryNodeMixinType(num_terms),
+          Term(view, id, weight),
+          _targetNumHits(targetNumHits),
+          _scoreThreshold(scoreThreshold),
+          _thresholdBoostFactor(thresholdBoostFactor)
+    {}
+    WandTerm(std::unique_ptr<TermVector> terms, Type type,
+             const std::string & view, int32_t id, Weight weight,
+             uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor)
+        : QueryNodeMixinType(std::move(terms), type),
           Term(view, id, weight),
           _targetNumHits(targetNumHits),
           _scoreThreshold(scoreThreshold),
@@ -245,5 +262,16 @@ public:
     }
     virtual ~InTerm() = 0;
 };
+
+class WordAlternatives : public QueryNodeMixin<WordAlternatives, MultiTerm>, public Term {
+public:
+    virtual ~WordAlternatives() = 0;
+
+    WordAlternatives(std::unique_ptr<TermVector> terms, const std::string & view, int32_t id, Weight weight)
+      : QueryNodeMixinType(std::move(terms), Type::WEIGHTED_STRING),
+        Term(view, id, weight)
+    {}
+};
+
 
 }

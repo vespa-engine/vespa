@@ -230,6 +230,7 @@ vespa_define_module(
     src/tests/ranksetup
     src/tests/ranksetup/verify_feature
     src/tests/searchcommon/attribute/config
+    src/tests/searchcommon/attribute/initialization_status
     src/tests/searchcommon/schema
     src/tests/sort
     src/tests/sortresults
@@ -257,6 +258,7 @@ vespa_define_module(
     src/tests/util/slime_output_raw_buf_adapter
     src/tests/util/token_extractor
     src/tests/vespa-fileheader-inspect
+    src/tests/query/word_alternatives
 )
 
 install_jar(searchlib.jar)

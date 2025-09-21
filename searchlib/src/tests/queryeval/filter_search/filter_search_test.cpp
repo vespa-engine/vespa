@@ -390,23 +390,44 @@ struct ParallelWeakAndAdapter {
 // enable Make-ing same element
 struct SameElementAdapter {
     FieldSpec field;
-    SameElementBlueprint blueprint;
+    MatchDataLayout subtree_mdl;
+    mutable std::vector<std::unique_ptr<Blueprint>> children;
+    mutable std::unique_ptr<SameElementBlueprint> blueprint;
     SameElementAdapter();
     ~SameElementAdapter();
     void addChild(std::unique_ptr<Blueprint> child) {
-        auto child_field = blueprint.getNextChildField("foo", 3);
+        assert(!blueprint);
+        FieldSpec child_field("foo", 3, subtree_mdl.allocTermField(3), false);
         auto term = std::make_unique<LeafProxy>(child_field, std::move(child));
-        blueprint.addTerm(std::move(term));
+
+        children.emplace_back(std::move(term));
+    }
+    void make_blueprint() const {
+        if (!blueprint) {
+            blueprint = std::make_unique<SameElementBlueprint>(field, subtree_mdl, false);
+            for (auto& child : children) {
+                blueprint->addChild(std::move(child));
+            }
+        }
     }
     void basic_plan(InFlow in_flow, uint32_t my_docid_limit) {
-        blueprint.basic_plan(in_flow, my_docid_limit);
+        make_blueprint();
+        blueprint->basic_plan(in_flow, my_docid_limit);
     }
     auto createFilterSearch(Constraint constraint) const {
-        return blueprint.createFilterSearch(constraint);
+        make_blueprint();
+        return blueprint->createFilterSearch(constraint);
     }
 };
 
-SameElementAdapter::SameElementAdapter() : field("foo", 5, 11), blueprint(field, false) {}
+SameElementAdapter::SameElementAdapter()
+    : field("foo", 5, 11),
+      subtree_mdl(),
+      children(),
+      blueprint()
+{
+}
+
 SameElementAdapter::~SameElementAdapter() = default;
 
 // Make a specific intermediate-ish blueprint that you can add

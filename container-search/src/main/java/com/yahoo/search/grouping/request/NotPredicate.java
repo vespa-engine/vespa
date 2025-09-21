@@ -12,6 +12,7 @@ import java.util.Objects;
  */
 @Beta
 public class NotPredicate extends FilterExpression {
+
     private final FilterExpression expression;
 
     public NotPredicate(FilterExpression expression) {

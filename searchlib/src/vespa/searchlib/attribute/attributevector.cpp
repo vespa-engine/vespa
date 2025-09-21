@@ -103,7 +103,8 @@ AttributeVector::AttributeVector(std::string_view baseFileName, const Config &c)
       _nextStatUpdateTime(),
       _memory_allocator(make_memory_allocator(_baseFileName.getAttributeName(), c)),
       _size_on_disk(0),
-      _last_flush_duration(0)
+      _last_flush_duration(0),
+      _initialization_status(std::make_shared<search::attribute::AttributeInitializationStatus>(getName())) // object is only temporary
 {
 }
 
@@ -358,11 +359,13 @@ AttributeVector::load() {
 bool
 AttributeVector::load(vespalib::Executor * executor) {
     assert(!_loaded);
+    _initialization_status->start_loading();
     bool loaded = onLoad(executor);
     if (loaded) {
         commit();
         incGeneration();
         updateStat(true);
+        _initialization_status->end_loading();
     }
     _loaded = loaded;
     return _loaded;

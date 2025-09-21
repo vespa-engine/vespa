@@ -14,7 +14,7 @@ class SameElementDescendantModifier : public search::query::TemplateTermVisitor<
     const std::string& _same_element_view;
 public:
     SameElementDescendantModifier(const std::string& same_element_view);
-    ~SameElementDescendantModifier();
+    ~SameElementDescendantModifier() override;
     void visit_term(Term& term);
     template <class TermNode>
     void visitTerm(TermNode &n) { visit_term(n); }
@@ -22,7 +22,8 @@ public:
 
 
 SameElementDescendantModifier::SameElementDescendantModifier(const std::string& same_element_view)
-    : _same_element_view(same_element_view)
+    : search::query::TemplateTermVisitor<SameElementDescendantModifier, ProtonNodeTypes>(),
+      _same_element_view(same_element_view)
 {
 }
 
@@ -37,6 +38,13 @@ SameElementDescendantModifier::visit_term(Term& term)
         term.setView(_same_element_view + "." + term.getView());
     }
 }
+
+SameElementModifier::SameElementModifier()
+    : search::query::TemplateTermVisitor<SameElementModifier, ProtonNodeTypes>()
+{
+}
+
+SameElementModifier::~SameElementModifier() = default;
 
 void
 SameElementModifier::visit(ProtonNodeTypes::SameElement &n)

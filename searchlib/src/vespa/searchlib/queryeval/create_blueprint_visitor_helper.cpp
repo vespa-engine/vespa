@@ -7,6 +7,7 @@
 #include "get_weight_from_node.h"
 #include "wand/parallel_weak_and_blueprint.h"
 #include "simple_phrase_blueprint.h"
+#include "equiv_blueprint.h"
 #include "weighted_set_term_blueprint.h"
 #include "split_float.h"
 #include "irequestcontext.h"
@@ -53,6 +54,28 @@ CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
         phrase->addTerm(_searchable.createBlueprint(_requestContext, fields, *child));
     }
     setResult(std::move(phrase));
+}
+
+void CreateBlueprintVisitorHelper::visitWordAlternatives(query::WordAlternatives &n) {
+    fef::MatchDataLayout layout;
+    std::vector<std::unique_ptr<Blueprint>> blueprints;
+    for (size_t i = 0; i < n.getNumTerms(); ++i) {
+        fef::TermFieldHandle handle = layout.allocTermField(_field.getFieldId());
+        FieldSpec inner{_field.getName(), _field.getFieldId(), handle, false};
+        auto pair = n.getAsString(i);
+        query::SimpleStringTerm term(std::string(pair.first), _field.getName(), 0, pair.second); // TODO Temporary
+        blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner, term));
+    }
+    double eqw = n.getWeight().percent();
+    FieldSpecBaseList fields;
+    fields.add(_field);
+    auto eq = std::make_unique<EquivBlueprint>(fields, std::move(layout));
+    for (size_t i = 0; i < n.getNumTerms(); ++i) {
+        auto pair = n.getAsString(i);
+        double w = pair.second.percent();
+        eq->addTerm(std::move(blueprints[i]), w / eqw);
+    }
+    setResult(std::move(eq));
 }
 
 void

@@ -33,7 +33,7 @@ public:
         }
         inserter.flush();
     }
-    ~Verifier() {}
+    ~Verifier() override;
 
     SearchIterator::UP create(bool strict) const override {
         (void) strict;
@@ -42,6 +42,9 @@ public:
         return _field_index.make_search_iterator("a", 0, match_data);
     }
 };
+
+template <typename FieldIndexType>
+Verifier<FieldIndexType>::~Verifier() = default;
 
 Schema
 get_schema()

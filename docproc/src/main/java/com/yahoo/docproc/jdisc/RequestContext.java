@@ -38,7 +38,8 @@ public interface RequestContext {
         ERROR_ABORTED(Response.Status.TEMPORARY_REDIRECT, DocumentProtocol.ERROR_ABORTED),
         ERROR_BUSY(Response.Status.TEMPORARY_REDIRECT, DocumentProtocol.ERROR_BUSY),
         //fatal:
-        ERROR_PROCESSING_FAILURE(Response.Status.INTERNAL_SERVER_ERROR, DocumentProtocol.ERROR_PROCESSING_FAILURE);
+        ERROR_PROCESSING_FAILURE(Response.Status.INTERNAL_SERVER_ERROR, DocumentProtocol.ERROR_PROCESSING_FAILURE),
+        ERROR_INVALID_INPUT(Response.Status.BAD_REQUEST, DocumentProtocol.ERROR_REJECTED);
 
         private final int discStatus;
         private final int documentProtocolStatus;

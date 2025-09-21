@@ -7,6 +7,7 @@ import com.yahoo.tensor.TensorType;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * An ONNX evaluator that uses {@link TritonOnnxClient} to evaluate the model.
@@ -14,19 +15,25 @@ import java.util.Map;
  * @author bjorncs
  */
 class TritonOnnxEvaluator implements OnnxEvaluator {
-
+    private static final Logger log = Logger.getLogger(TritonOnnxEvaluator.class.getName());
+    
     private final String modelName;
     private final TritonOnnxClient triton;
-    private final TritonOnnxClient.ModelMetadata modelMetadata;
     private final boolean isExplicitControlMode;
-
+    
+    private TritonOnnxClient.ModelMetadata modelMetadata;
+    
     TritonOnnxEvaluator(TritonOnnxClient client, String modelName, boolean isExplicitControlMode) {
         this.modelName = modelName;
         this.triton = client;
         this.isExplicitControlMode = isExplicitControlMode;
+        loadModel();
+    }
+    
+    private void loadModel() {
         try {
             if (isExplicitControlMode) triton.loadModel(modelName);
-            this.modelMetadata = triton.getModelMetadata(modelName);
+            modelMetadata = triton.getModelMetadata(modelName);
         } catch (TritonOnnxClient.TritonException e) {
             throw new RuntimeException("Failed to load model: " + modelName, e);
         }
@@ -34,18 +41,25 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
 
     @Override
     public Tensor evaluate(Map<String, Tensor> inputs, String output) {
-        try {
-            return triton.evaluate(modelName, inputs, output);
-        } catch (TritonOnnxClient.TritonException e) {
-            throw new RuntimeException("Failed to evaluate model: " + modelName, e);
-        }
+        return evaluate(inputs).get(output);
     }
 
     @Override
     public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
+        return evaluate(inputs, true);
+    }
+
+    // Evaluate with optional retry in case the model is unloaded because of app redeployment or Triton restart.
+    private Map<String, Tensor> evaluate(Map<String, Tensor> inputs, boolean allowRetry) {
         try {
             return triton.evaluate(modelName, inputs);
         } catch (TritonOnnxClient.TritonException e) {
+            if (allowRetry) {
+                log.warning(() -> "Retrying to evaluate model: " + modelName);
+                loadModel();
+                return evaluate(inputs, false);
+            }
+            
             throw new RuntimeException("Failed to evaluate model: " + modelName, e);
         }
     }

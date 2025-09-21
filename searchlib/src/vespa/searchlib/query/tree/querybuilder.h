@@ -134,18 +134,17 @@ template <class NodeTypes>
 typename NodeTypes::SameElement *createSameElement(const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::SameElement(view, id, weight);
 }
-template <class NodeTypes>
-typename NodeTypes::WeightedSetTerm *createWeightedSetTerm(uint32_t num_terms, const std::string & view, int32_t id, Weight weight) {
-    return new typename NodeTypes::WeightedSetTerm(num_terms, view, id, weight);
+template <class NodeTypes, typename... Args>
+typename NodeTypes::WeightedSetTerm *createWeightedSetTerm(Args&&... args) {
+    return new typename NodeTypes::WeightedSetTerm(std::forward<Args>(args)...);
 }
-template <class NodeTypes>
-typename NodeTypes::DotProduct *createDotProduct(uint32_t num_terms, const std::string & view, int32_t id, Weight weight) {
-    return new typename NodeTypes::DotProduct(num_terms, view, id, weight);
+template <class NodeTypes, typename... Args>
+typename NodeTypes::DotProduct *createDotProduct(Args&&... args) {
+    return new typename NodeTypes::DotProduct(std::forward<Args>(args)...);
 }
-template <class NodeTypes>
-typename NodeTypes::WandTerm *
-createWandTerm(uint32_t num_terms, const std::string & view, int32_t id, Weight weight, uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor) {
-    return new typename NodeTypes::WandTerm(num_terms, view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
+template <class NodeTypes, typename... Args>
+typename NodeTypes::WandTerm *createWandTerm(Args&&... args) {
+    return new typename NodeTypes::WandTerm(std::forward<Args>(args)...);
 }
 template <class NodeTypes>
 typename NodeTypes::Rank *createRank() {
@@ -232,9 +231,18 @@ createFuzzyTerm(std::string_view term, const std::string & view, int32_t id, Wei
 
 template <class NodeTypes>
 typename NodeTypes::InTerm *
-create_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type, const std::string & view, int32_t id, Weight weight) {
+create_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type,
+               const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::InTerm(std::move(terms), type, view, id, weight);
 }
+
+template <class NodeTypes>
+typename NodeTypes::WordAlternatives *
+create_word_alternatives(std::unique_ptr<TermVector> terms, const std::string & view, int32_t id, Weight weight) {
+    return new typename NodeTypes::WordAlternatives(std::move(terms), view, id, weight);
+}
+
+
 
 template <class NodeTypes>
 class QueryBuilder : public QueryBuilderBase {
@@ -290,7 +298,7 @@ public:
     }
     typename NodeTypes::DotProduct &addDotProduct(int child_count, const string & view, int32_t id, Weight weight) {
         adjustWeight(weight);
-        typename NodeTypes::DotProduct &node = addTerm( createDotProduct<NodeTypes>(child_count, view, id, weight));
+        typename NodeTypes::DotProduct &node = addTerm(createDotProduct<NodeTypes>(child_count, view, id, weight));
         return node;
     }
     typename NodeTypes::WandTerm &addWandTerm(int child_count, const string & view, int32_t id, Weight weight,
@@ -301,6 +309,36 @@ public:
                 createWandTerm<NodeTypes>(child_count, view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor));
         return node;
     }
+
+
+    typename NodeTypes::WeightedSetTerm &addWeightedSetTerm(std::unique_ptr<TermVector> tv, MultiTerm::Type type,
+                                                            const string & view, int32_t id, Weight weight) {
+        adjustWeight(weight);
+        typename NodeTypes::WeightedSetTerm &node = addTerm(
+                createWeightedSetTerm<NodeTypes>(std::move(tv), type,
+                                                 view, id, weight));
+        return node;
+    }
+    typename NodeTypes::DotProduct &addDotProduct(std::unique_ptr<TermVector> tv, MultiTerm::Type type,
+                                                  const string & view, int32_t id, Weight weight) {
+        adjustWeight(weight);
+        typename NodeTypes::DotProduct &node = addTerm(
+                createDotProduct<NodeTypes>(std::move(tv), type,
+                                            view, id, weight));
+        return node;
+    }
+    typename NodeTypes::WandTerm &addWandTerm(std::unique_ptr<TermVector> tv, MultiTerm::Type type,
+                                              const string & view, int32_t id, Weight weight,
+                                              uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor)
+    {
+        adjustWeight(weight);
+        typename NodeTypes::WandTerm &node = addTerm(
+                createWandTerm<NodeTypes>(
+                        std::move(tv), type,
+                        view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor));
+        return node;
+    }
+
     typename NodeTypes::Rank &addRank(int child_count) {
         return addIntermediate(createRank<NodeTypes>(), child_count);
     }
@@ -360,9 +398,15 @@ public:
     typename NodeTypes::FalseQueryNode &add_false_node() {
         return addTerm(create_false<NodeTypes>());
     }
-    typename NodeTypes::InTerm& add_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type, const string & view, int32_t id, Weight weight) {
+    typename NodeTypes::InTerm& add_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type,
+                                            const string & view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(create_in_term<NodeTypes>(std::move(terms), type, view, id, weight));
+    }
+
+    typename NodeTypes::WordAlternatives& add_word_alternatives(std::unique_ptr<TermVector> terms, const string & view, int32_t id, Weight weight) {
+        adjustWeight(weight);
+        return addTerm(create_word_alternatives<NodeTypes>(std::move(terms), view, id, weight));
     }
 };
 

@@ -1,13 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
-if [ "${RUNNER_DEBUG:-}" == "1" ]; then
-    set -o xtrace
-fi
+#
 
 set -o errexit
 set -o nounset
 set -o pipefail
+
+if [[ -n "${RUNNER_DEBUG:-}" ]]; then
+    set -o xtrace
+fi
 
 dnf install -yq 'dnf-command(config-manager)' jq
 

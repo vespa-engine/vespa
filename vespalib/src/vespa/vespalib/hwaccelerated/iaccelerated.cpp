@@ -269,36 +269,9 @@ EnabledTargetLevel EnabledTargetLevel::create_from_env_var() {
     return EnabledTargetLevel(enabled_level);
 }
 
-IAccelerated::UP create_accelerator() {
+[[nodiscard]] EnabledTargetLevel enabled_target_level() {
     static auto target_level = EnabledTargetLevel::create_from_env_var();
-    if (target_level.is_enabled(target::HIGHWAY)) {
-        auto hwy_target = Highway::create_best_target();
-        // TODO drop down to debug level once the dust has settled
-        LOG(info, "Using Highway vectorization engine with target %s", hwy_target->target_name());
-        return hwy_target;
-    }
-#ifdef __x86_64__
-    if (target_level.is_enabled(target::AVX3_DL)) {
-        return std::make_unique<Avx3DlAccelerator>();
-    }
-    if (target_level.is_enabled(target::AVX3)) {
-        return std::make_unique<Avx3Accelerator>();
-    }
-    if (target_level.is_enabled(target::AVX2)) {
-        return std::make_unique<Avx2Accelerator>();
-    }
-#else // aarch64
-    if (target_level.is_enabled(target::SVE2)) {
-        return std::make_unique<Sve2Accelerator>();
-    }
-    if (target_level.is_enabled(target::SVE)) {
-        return std::make_unique<SveAccelerator>();
-    }
-    if (target_level.is_enabled(target::NEON_FP16_DOTPROD)) {
-        return std::make_unique<NeonFp16DotprodAccelerator>();
-    }
-#endif
-    return IAccelerated::create_platform_baseline_accelerator();
+    return target_level;
 }
 
 template<typename T>
@@ -310,7 +283,7 @@ std::vector<T> createAndFill(size_t sz) {
     return v;
 }
 
-template<typename T>
+template <typename T, typename SumT = T>
 void
 verifyDotproduct(const IAccelerated & accel)
 {
@@ -319,11 +292,11 @@ verifyDotproduct(const IAccelerated & accel)
     std::vector<T> a = createAndFill<T>(testLength);
     std::vector<T> b = createAndFill<T>(testLength);
     for (size_t j(0); j < 0x20; j++) {
-        T sum(0);
+        SumT sum(0);
         for (size_t i(j); i < testLength; i++) {
             sum += a[i]*b[i];
         }
-        T hwComputedSum(accel.dotProduct(&a[j], &b[j], testLength - j));
+        SumT hwComputedSum(accel.dotProduct(&a[j], &b[j], testLength - j));
         if (sum != hwComputedSum) {
             fprintf(stderr, "Accelerator is not computing dotproduct correctly.\n");
             LOG_ABORT("should not be reached");
@@ -331,7 +304,7 @@ verifyDotproduct(const IAccelerated & accel)
     }
 }
 
-template<typename T>
+template <typename T, typename SumT = T>
 void
 verifyEuclideanDistance(const IAccelerated & accel) {
     const size_t testLength(255);
@@ -339,11 +312,11 @@ verifyEuclideanDistance(const IAccelerated & accel) {
     std::vector<T> a = createAndFill<T>(testLength);
     std::vector<T> b = createAndFill<T>(testLength);
     for (size_t j(0); j < 0x20; j++) {
-        T sum(0);
+        SumT sum(0);
         for (size_t i(j); i < testLength; i++) {
             sum += (a[i] - b[i]) * (a[i] - b[i]);
         }
-        T hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
+        SumT hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
         if (sum != hwComputedSum) {
             fprintf(stderr, "Accelerator is not computing euclidean distance correctly.\n");
             LOG_ABORT("should not be reached");
@@ -490,10 +463,10 @@ private:
     static void verify(const IAccelerated & accelerated) {
         verifyDotproduct<float>(accelerated);
         verifyDotproduct<double>(accelerated);
-        verifyDotproduct<int8_t>(accelerated); // FIXME this can't be right, uses intermediate sum type of i8...?
-        verifyDotproduct<int32_t>(accelerated);
+        verifyDotproduct<int8_t, int64_t>(accelerated);
+        verifyDotproduct<int32_t, int64_t>(accelerated);
         verifyDotproduct<int64_t>(accelerated);
-        verifyEuclideanDistance<int8_t>(accelerated);
+        verifyEuclideanDistance<int8_t, int64_t>(accelerated);
         verifyEuclideanDistance<float>(accelerated);
         verifyEuclideanDistance<double>(accelerated);
         verifyPopulationCount(accelerated);
@@ -504,14 +477,23 @@ private:
 
 RuntimeVerificator::RuntimeVerificator()
 {
-    verify(*IAccelerated::create_platform_baseline_accelerator());
-    verify(*create_accelerator());
+    verify(*IAccelerated::create_baseline_auto_vectorized_target());
+    verify(*IAccelerated::create_best_accelerator_impl_and_target());
+}
+
+// Simple wrapper to debug log created impl+target once during process startup.
+IAccelerated::UP create_and_log_best_accelerator() {
+    auto accel = IAccelerated::create_best_accelerator_impl_and_target();
+    LOG(debug, "Created accelerator of type %s for runtime target %s",
+        accel->implementation_name(), accel->target_name());
+    return accel;
 }
 
 } // anon ns
 
-IAccelerated::UP IAccelerated::create_platform_baseline_accelerator() {
-    // Important: must never recurse into create_accelerator(), as it defers to this function as a fallback.
+IAccelerated::UP IAccelerated::create_baseline_auto_vectorized_target() {
+    // Important: must never recurse into create_best_auto_vectorized_target(),
+    // as it defers to this function as a fallback.
 #ifdef __x86_64__
     return std::make_unique<X64GenericAccelerator>();
 #else
@@ -519,11 +501,46 @@ IAccelerated::UP IAccelerated::create_platform_baseline_accelerator() {
 #endif
 }
 
+IAccelerated::UP IAccelerated::create_best_auto_vectorized_target() {
+    const auto target_level = enabled_target_level();
+#ifdef __x86_64__
+    if (target_level.is_enabled(target::AVX3_DL)) {
+        return std::make_unique<Avx3DlAccelerator>();
+    }
+    if (target_level.is_enabled(target::AVX3)) {
+        return std::make_unique<Avx3Accelerator>();
+    }
+    if (target_level.is_enabled(target::AVX2)) {
+        return std::make_unique<Avx2Accelerator>();
+    }
+#else // aarch64
+    if (target_level.is_enabled(target::SVE2)) {
+        return std::make_unique<Sve2Accelerator>();
+    }
+    if (target_level.is_enabled(target::SVE)) {
+        return std::make_unique<SveAccelerator>();
+    }
+    if (target_level.is_enabled(target::NEON_FP16_DOTPROD)) {
+        return std::make_unique<NeonFp16DotprodAccelerator>();
+    }
+#endif
+    return create_baseline_auto_vectorized_target();
+}
+
+std::unique_ptr<IAccelerated> IAccelerated::create_best_accelerator_impl_and_target() {
+    const auto target_level = enabled_target_level();
+    if (target_level.is_enabled(target::HIGHWAY)) {
+        return Highway::create_best_target();
+    }
+    return create_best_auto_vectorized_target();
+}
+
+
 const IAccelerated &
 IAccelerated::getAccelerator()
 {
     static RuntimeVerificator verifyAccelerator_once;
-    static IAccelerated::UP accelerator = create_accelerator();
+    static auto accelerator = create_and_log_best_accelerator();
     return *accelerator;
 }
 

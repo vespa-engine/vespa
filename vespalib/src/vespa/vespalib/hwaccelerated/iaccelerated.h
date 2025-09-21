@@ -40,10 +40,13 @@ public:
     // OR 128 bytes from multiple, optionally inverted sources
     virtual void or128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) const noexcept = 0;
 
-    // Returns a static string representing the name of the underlying accelerator implementation
+    [[nodiscard]] virtual const char* implementation_name() const noexcept { return "AutoVec"; }
+    // Returns a static string representing the name of the underlying accelerator target (e.g. "AVX3", "NEON" etc.)
     [[nodiscard]] virtual const char* target_name() const noexcept { return "Unknown"; }
 
-    static IAccelerated::UP create_platform_baseline_accelerator();
+    static std::unique_ptr<IAccelerated> create_baseline_auto_vectorized_target();
+    static std::unique_ptr<IAccelerated> create_best_auto_vectorized_target();
+    static std::unique_ptr<IAccelerated> create_best_accelerator_impl_and_target();
 
     static const IAccelerated& getAccelerator() __attribute__((noinline));
 };

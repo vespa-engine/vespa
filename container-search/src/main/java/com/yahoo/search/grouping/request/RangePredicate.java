@@ -3,6 +3,8 @@ package com.yahoo.search.grouping.request;
 
 import com.yahoo.api.annotations.Beta;
 
+import java.util.Locale;
+
 /**
  * Represents a filter expression that matches a value from the evaluated expression within a range.
  *
@@ -37,7 +39,7 @@ public class RangePredicate extends FilterExpression {
 
     @Override
     public String toString() {
-        return "range(%s, %s, %s, %b, %b)".formatted(lower, upper, expression, lowerInclusive, upperInclusive);
+        return String.format(Locale.US, "range(%s, %s, %s, %b, %b)" , lower, upper, expression, lowerInclusive, upperInclusive);
     }
 
     @Override

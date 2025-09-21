@@ -171,7 +171,7 @@ FieldInfoBlueprint::setup(const fef::IIndexEnvironment &indexEnv,
     if (params.size() == 1) {
         std::string name = params[0].getValue();
         const fef::FieldInfo *fi = indexEnv.getFieldByName(name);
-        if (fi != 0) {
+        if (fi != nullptr) {
             _fieldId = fi->id();
             if (fi->type() == fef::FieldType::INDEX) {
                 _type = 1.0;

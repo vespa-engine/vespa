@@ -65,7 +65,7 @@ void
 Monitor::disconnect()
 {
     if (_channel != nullptr) {
-        _channel->SetContext(FNET_Context((FNET_Channel *)0));
+        _channel->SetContext(FNET_Context((FNET_Channel *)nullptr));
         if (_channel->GetConnection()->GetState() <= FNET_Connection::FNET_CONNECTED) {
             _channel->CloseAndFree();
         }

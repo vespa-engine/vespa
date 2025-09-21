@@ -1340,10 +1340,10 @@
       "public int maxDistributorDocumentOperationSizeMib()",
       "public java.lang.Object sidecarsForTest()",
       "public boolean useTriton()",
-      "public long searchCoreTransactionLogReplaySoftMemoryLimit()",
       "public boolean useNewPrepareForRestart()",
       "public int searchNodeInitializerThreads()",
-      "public int searchCoreMaxOutstandingMoveOps()"
+      "public int searchCoreMaxOutstandingMoveOps()",
+      "public java.lang.String useMallocImpl()"
     ],
     "fields" : [ ]
   },
@@ -1394,6 +1394,7 @@
       "public java.lang.String jvmGCOptions()",
       "public java.lang.String jvmGCOptions(java.util.Optional)",
       "public abstract java.lang.String jvmGCOptions(java.util.Optional, java.util.Optional)",
+      "public java.lang.String mallocImpl(java.util.Optional)",
       "public int searchNodeInitializerThreads(java.lang.String)",
       "public boolean useDedicatedNodeForLogserver()",
       "public boolean allowDisableMtls()",

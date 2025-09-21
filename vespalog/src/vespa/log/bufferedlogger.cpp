@@ -28,7 +28,10 @@ struct EntryKey {
     Logger* const _logger;
     const std::string _token;
     std::strong_ordering operator<=>(const EntryKey& entry) const = default;
+    ~EntryKey();
 };
+
+EntryKey::~EntryKey() = default;
 
 struct PayLoad {
     Logger::LogLevel level;

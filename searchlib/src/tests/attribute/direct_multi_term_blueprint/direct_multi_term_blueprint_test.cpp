@@ -192,7 +192,7 @@ public:
     {
         tfmda.add(&tfmd);
     }
-    ~DirectMultiTermBlueprintTest() {}
+    ~DirectMultiTermBlueprintTest() override;
     void setup(bool field_is_filter_in, bool need_term_field_match_data) {
         field_is_filter = field_is_filter_in;
         attr = make_attribute(GetParam().col_type, GetParam().type, field_is_filter);
@@ -280,6 +280,8 @@ public:
         return field_is_filter ? iterator_unpack_docid : iterator_unpack_docid_and_weights;
     }
 };
+
+DirectMultiTermBlueprintTest::~DirectMultiTermBlueprintTest() = default;
 
 void
 expect_hits(const Docids& exp_docids, SearchIterator& itr)

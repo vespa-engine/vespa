@@ -22,7 +22,7 @@ import java.util.Optional;
 /**
  * For testing purposes only.
  * 
- * @author geirst
+ * @author Geir Storli
  */
 public class ContentClusterUtils {
 
@@ -67,7 +67,7 @@ public class ContentClusterUtils {
         ConfigModelContext context = ConfigModelContext.create(applicationType, root.getDeployState(),
                                                                null, null, root, null);
 
-        return new ContentCluster.Builder(admin).build(List.of(), context, doc.getDocumentElement());
+        return new ContentCluster.Builder(admin).build(context, doc.getDocumentElement());
     }
 
     public static ContentCluster createCluster(String clusterXml, List<String> schemas, DeployState.Builder deployStateBuilder) throws Exception {

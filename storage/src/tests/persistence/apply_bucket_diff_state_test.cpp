@@ -41,7 +41,7 @@ public:
           _fail()
     {
     }
-    ~DummyMergeBucketInfoSyncer();
+    ~DummyMergeBucketInfoSyncer() override;
     void sync_bucket_info(const spi::Bucket& bucket) const override {
         EXPECT_EQ(bucket, spi::Bucket(dummy_document_bucket));
         ++_sync_count;
@@ -100,7 +100,7 @@ public:
     {
     }
 
-    ~ApplyBucketDiffStateTestBase();
+    ~ApplyBucketDiffStateTestBase() override;
 
     std::shared_ptr<ApplyBucketDiffState> make_state() {
         return ApplyBucketDiffState::create(syncer, merge_handler_metrics, clock, spi::Bucket(dummy_document_bucket), RetainGuard(monitored_ref_count));

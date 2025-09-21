@@ -27,6 +27,7 @@ import com.yahoo.language.provider.DefaultGeneratorProvider;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,17 +90,24 @@ public class IndexingProcessor extends DocumentProcessor {
         if (proc.getDocumentOperations().isEmpty()) return Progress.DONE;
 
         List<DocumentOperation> out = new ArrayList<>(proc.getDocumentOperations().size());
-        for (DocumentOperation documentOperation : proc.getDocumentOperations()) {
-            if (documentOperation instanceof DocumentPut) {
-                processDocument((DocumentPut)documentOperation, out);
-            } else if (documentOperation instanceof DocumentUpdate) {
-                processUpdate((DocumentUpdate)documentOperation, out);
-            } else if (documentOperation instanceof DocumentRemove) {
-                processRemove((DocumentRemove)documentOperation, out);
-            } else if (documentOperation != null) {
-                throw new IllegalArgumentException("Document class " + documentOperation.getClass().getName() + " not supported.");
-            } else {
-                throw new IllegalArgumentException("Expected document, got null.");
+        for (var op : proc.getDocumentOperations()) {
+            try {
+                if (op instanceof DocumentPut dp) {
+                    processDocument(dp, out);
+                } else if (op instanceof DocumentUpdate du) {
+                    processUpdate(du, out);
+                } else if (op instanceof DocumentRemove dr) {
+                    processRemove(dr, out);
+                } else if (op != null) {
+                    throw new IllegalArgumentException("Document class " + op.getClass().getName() + " not supported.");
+                } else {
+                    throw new IllegalArgumentException("Expected document, got null.");
+                }
+            } catch (InvalidInputException e) {
+                return Progress.INVALID_INPUT.withReason(
+                        op.getId() != null
+                                ? "Operation on '%s' contains invalid input: %s".formatted(op.getId().toString(), e.getMessage())
+                                : "Operation contains invalid input: %s".formatted(e.getMessage()));
             }
         }
         proc.getDocumentOperations().clear();

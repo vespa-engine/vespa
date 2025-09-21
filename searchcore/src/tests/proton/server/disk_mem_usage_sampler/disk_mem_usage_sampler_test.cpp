@@ -58,7 +58,7 @@ struct DiskMemUsageSamplerTest : public ::testing::Test {
         sampler->add_transient_usage_provider(std::make_shared<MyProvider>(50, 200));
         sampler->add_transient_usage_provider(std::make_shared<MyProvider>(100, 150));
     }
-    ~DiskMemUsageSamplerTest();
+    ~DiskMemUsageSamplerTest() override;
     const ResourceUsageWriteFilter& filter() const { return *write_filter; }
 };
 

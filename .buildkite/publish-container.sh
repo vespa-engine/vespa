@@ -1,28 +1,52 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#
+# Publishes container images by authenticating, pushing, signing, and setting Buildkite metadata.
 
-set -euo pipefail
+set -o errexit
+set -o nounset
+set -o pipefail
+
+if [[ -n "${DEBUG:-}" ]]; then
+    set -o xtrace
+fi
+
 
 if [[ $BUILDKITE != true ]]; then
     echo "Skipping container publishing when not executed by Buildkite."
     exit 0
 fi
 
+echo "--- Authenticating to GitHub Container Registry"
 OPT_STATE="$(set +o)"
 set +x
 echo "$VESPA_ENGINE_GHCR_IO_WRITE_TOKEN" |  docker login ghcr.io --username esolitos --password-stdin
 eval "$OPT_STATE"
-docker push "ghcr.io/vespa-engine/vespa-preview-$ARCH:$VESPA_VERSION"
 
-IMAGE_SHA256=$(crane digest "ghcr.io/vespa-engine/vespa-preview-$ARCH:$VESPA_VERSION")
+echo "--- Publishing Vespa preview container"
+VESPA_PREVIEW_CONTAINER_URI="$("${WORKDIR}/.buildkite/utils/get-container-tag.sh" "ghcr.io" "vespa-engine/vespa-preview-${ARCH}" "$VESPA_VERSION")"
+echo "Pushing container: ${VESPA_PREVIEW_CONTAINER_URI}"
+docker push "$VESPA_PREVIEW_CONTAINER_URI"
 
-cosign sign -y --oidc-provider=buildkite-agent "ghcr.io/vespa-engine/vespa-preview-$ARCH@$IMAGE_SHA256"
+echo "Signing container image..."
+IMAGE_SHA256=$(crane digest "$VESPA_PREVIEW_CONTAINER_URI")
+cosign sign -y --oidc-provider=buildkite-agent "${VESPA_PREVIEW_CONTAINER_URI}@${IMAGE_SHA256}"
 
-buildkite-agent meta-data set "vespa-container-image-$ARCH" "ghcr.io/vespa-engine/vespa-preview-$ARCH@$IMAGE_SHA256"
+echo "Setting Buildkite metadata for Vespa container..."
+buildkite-agent meta-data set "vespa-container-image-${ARCH}-al${ALMALINUX_MAJOR}" "${VESPA_PREVIEW_CONTAINER_URI}@${IMAGE_SHA256}"
 
+echo "--- Publishing system-test container"
 # Publish the system test container image
-docker push "docker.io/vespaengine/vespa-systemtest-preview-$ARCH:$VESPA_VERSION"
-IMAGE_SHA256=$(crane digest "docker.io/vespaengine/vespa-systemtest-preview-$ARCH:$VESPA_VERSION")
+SYSTEMTEST_PREVIEW_CONTAINER_URI=$("${WORKDIR}/.buildkite/utils/get-container-tag.sh" "docker.io" "vespaengine/vespa-systemtest-preview-$ARCH" "$VESPA_VERSION")
+echo "Pushing container: ${SYSTEMTEST_PREVIEW_CONTAINER_URI}"
+docker push "$SYSTEMTEST_PREVIEW_CONTAINER_URI"
+IMAGE_SHA256=$(crane digest "$SYSTEMTEST_PREVIEW_CONTAINER_URI")
 
-buildkite-agent meta-data set "vespa-systemtest-container-image-$ARCH" "docker.io/vespaengine/vespa-systemtest-preview-$ARCH@$IMAGE_SHA256"
+if [ "${IMAGE_SHA256}" = "" ]; then
+    echo "Failed getting IMAGE_SHA256 from $SYSTEMTEST_PREVIEW_CONTAINER_URI"
+    exit 1
+fi
 
+echo "Setting Buildkite metadata for system-test container..."
+buildkite-agent meta-data set "vespa-systemtest-container-image-$ARCH-al${ALMALINUX_MAJOR}" "$SYSTEMTEST_PREVIEW_CONTAINER_URI@$IMAGE_SHA256"

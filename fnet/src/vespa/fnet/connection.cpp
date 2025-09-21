@@ -32,7 +32,7 @@ public:
               _done(false),
               _waiting(false) {}
 
-    ~SyncPacket() {}
+    ~SyncPacket() override;
 
     void WaitFree() {
         std::unique_lock<std::mutex> guard(_lock);
@@ -45,6 +45,7 @@ public:
     void Free() override;
 };
 
+SyncPacket::~SyncPacket() = default;
 
 void
 SyncPacket::Free()
@@ -70,10 +71,13 @@ struct DoHandshakeWork : vespalib::Executor::Task {
         conn->Owner()->handshake_act(conn, false);
         conn = nullptr; // ref given away above
     }
-    ~DoHandshakeWork() {
-        assert(conn == nullptr);
-    }
+    ~DoHandshakeWork() override;
 };
+
+DoHandshakeWork::~DoHandshakeWork()
+{
+    assert(conn == nullptr);
+}
 
 }
 

@@ -113,7 +113,7 @@ protected:
     std::vector<Search*>  searchVec;
 
     MessageBusTest();
-    ~MessageBusTest();
+    ~MessageBusTest() override;
     void SetUp() override;
     void TearDown() override;
 

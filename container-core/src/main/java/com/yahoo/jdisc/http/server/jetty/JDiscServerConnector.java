@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import ai.vespa.sampling.ProbabilisticSampleRate;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import org.eclipse.jetty.http.HttpVersion;
@@ -11,6 +12,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,6 +32,9 @@ class JDiscServerConnector extends ServerConnector {
     private final Metric metric;
     private final String connectorName;
     private final int listenPort;
+    private final List<RequestContentLogging> requestContentLogging;
+
+    record RequestContentLogging(String pathPrefix, ProbabilisticSampleRate samplingRate, long maxSize) {}
 
     JDiscServerConnector(ConnectorConfig config, Metric metric, Server server, ConnectionFactory... factories) {
         super(server, factories);
@@ -56,7 +61,14 @@ class JDiscServerConnector extends ServerConnector {
         long shutdownIdleTimeout = (long) (config.shutdownIdleTimeout() * 1000);
         // Ensure shutdown idle timeout is less than idle timeout and stop timeout
         setShutdownIdleTimeout(Math.min(shutdownIdleTimeout, Math.min(idleTimeout, server.getStopTimeout())));
+
+        this.requestContentLogging = config.accessLog().content().stream()
+                .map(e -> new RequestContentLogging(
+                        e.pathPrefix(), ProbabilisticSampleRate.withSystemDefaults(e.sampleRate()), e.maxSize()))
+                .toList();
     }
+
+    List<RequestContentLogging> requestContentLogging() { return requestContentLogging; }
 
     public ConnectionStatistics getStatistics() {
         return statistics;

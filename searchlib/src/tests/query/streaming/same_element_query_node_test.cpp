@@ -55,12 +55,12 @@ TEST(SameElementQueryNodeTest, a_unhandled_sameElement_stack)
     const QueryNode & root = q.getRoot();
     auto sameElement = dynamic_cast<const SameElementQueryNode *>(&root);
     EXPECT_TRUE(sameElement != nullptr);
-    EXPECT_EQ(2u, sameElement->get_terms().size());
+    EXPECT_EQ(2u, sameElement->get_children().size());
     EXPECT_EQ("xyz_abcdefghij_xyzxyzx", sameElement->getIndex());
-    auto term0 = sameElement->get_terms()[0].get();
-    EXPECT_TRUE(term0 != nullptr);
-    auto term1 = sameElement->get_terms()[1].get();
-    EXPECT_TRUE(term1 != nullptr);
+    auto child0 = sameElement->get_children()[0].get();
+    EXPECT_TRUE(child0 != nullptr);
+    auto child1 = sameElement->get_children()[1].get();
+    EXPECT_TRUE(child1 != nullptr);
 }
 
 namespace {
@@ -86,15 +86,16 @@ TEST(SameElementQueryNodeTest, test_same_element_evaluate)
     auto * sameElem = dynamic_cast<SameElementQueryNode *>(&q.getRoot());
     EXPECT_TRUE(sameElem != nullptr);
     EXPECT_EQ("field", sameElem->getIndex());
-    EXPECT_EQ(3u, sameElem->get_terms().size());
-    verifyQueryTermNode("field.f1", sameElem->get_terms()[0].get());
-    verifyQueryTermNode("field.f2", sameElem->get_terms()[1].get());
-    verifyQueryTermNode("field.f3", sameElem->get_terms()[2].get());
+    EXPECT_EQ(3u, sameElem->get_children().size());
+    verifyQueryTermNode("field.f1", sameElem->get_children()[0].get());
+    verifyQueryTermNode("field.f2", sameElem->get_children()[1].get());
+    verifyQueryTermNode("field.f3", sameElem->get_children()[2].get());
 
     QueryTermList leaves;
     q.getLeaves(leaves);
     EXPECT_EQ(1u, leaves.size());
-    auto& terms = sameElem->get_terms();
+    QueryTermList terms;
+    sameElem->get_hidden_leaves(terms);
     EXPECT_EQ(3u, terms.size());
     for (auto& qt : terms) {
         qt->resizeFieldId(3);
@@ -122,26 +123,10 @@ TEST(SameElementQueryNodeTest, test_same_element_evaluate)
     terms[2]->add(2, 6, 170, 17);
     HitList hits;
     sameElem->evaluateHits(hits);
-    EXPECT_EQ(4u, hits.size());
-    EXPECT_EQ(2u, hits[0].field_id());
-    EXPECT_EQ(0u, hits[0].element_id());
-    EXPECT_EQ(130, hits[0].element_weight());
-    EXPECT_EQ(0u, hits[0].position());
-
-    EXPECT_EQ(2u, hits[1].field_id());
-    EXPECT_EQ(2u, hits[1].element_id());
-    EXPECT_EQ(140, hits[1].element_weight());
-    EXPECT_EQ(0u, hits[1].position());
-
-    EXPECT_EQ(2u, hits[2].field_id());
-    EXPECT_EQ(4u, hits[2].element_id());
-    EXPECT_EQ(150, hits[2].element_weight());
-    EXPECT_EQ(0u, hits[2].position());
-
-    EXPECT_EQ(2u, hits[3].field_id());
-    EXPECT_EQ(5u, hits[3].element_id());
-    EXPECT_EQ(160, hits[3].element_weight());
-    EXPECT_EQ(0u, hits[3].position());
+    EXPECT_TRUE(hits.empty());
+    std::vector<uint32_t> element_ids;
+    sameElem->get_element_ids(element_ids);
+    EXPECT_EQ((std::vector<uint32_t>{ 0, 2, 4, 5}), element_ids);
     EXPECT_TRUE(sameElem->evaluate());
 
     SimpleTermData td;

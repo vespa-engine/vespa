@@ -9,7 +9,7 @@ namespace expression {
 IMPLEMENT_ABSTRACT_EXPRESSIONNODE(ArrayOperationNode, FunctionNode);
 
 ArrayOperationNode::ArrayOperationNode()
-  : FunctionNode(), _attributeName(), _attribute(0), _docId(0)
+  : FunctionNode(), _attributeName(), _attribute(nullptr), _docId(0)
 {}
 
 ArrayOperationNode::ArrayOperationNode(const ArrayOperationNode& rhs)

@@ -13,7 +13,7 @@ protected:
 
 public:
     FileAreaFreeListTest();
-    ~FileAreaFreeListTest();
+    ~FileAreaFreeListTest() override;
     void test_merge_area_blocked(bool previous);
 };
 

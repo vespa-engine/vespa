@@ -47,7 +47,7 @@ class FullBenchmark : public Benchmark
 {
 public:
     FullBenchmark(size_t numDocs, size_t numValue);
-    ~FullBenchmark();
+    ~FullBenchmark() override;
     void compute(size_t docId) const override {
         _dp.dotProduct(&_query[0], &_values[docId * _query.size()], _query.size());
     }
@@ -80,7 +80,7 @@ class SparseBenchmark : public Benchmark
 {
 public:
     SparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues);
-    ~SparseBenchmark();
+    ~SparseBenchmark() override;
 protected:
     struct P {
         P(uint32_t key=0, int32_t value=0) noexcept :
@@ -105,6 +105,7 @@ SparseBenchmark::SparseBenchmark(size_t numDocs, size_t numValues, size_t numQue
         }
     }
 }
+
 SparseBenchmark::~SparseBenchmark() = default;
 
 std::function<void(int64_t)> use_sum = [](int64_t) noexcept { };
@@ -115,7 +116,7 @@ private:
     using map = hash_map<uint32_t, int32_t>;
 public:
     UnorderedSparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues);
-    ~UnorderedSparseBenchmark();
+    ~UnorderedSparseBenchmark() override;
 private:
     void compute(size_t docId) const override {
         int64_t sum(0);
@@ -139,6 +140,7 @@ UnorderedSparseBenchmark::UnorderedSparseBenchmark(size_t numDocs, size_t numVal
         _query[j] = j;
     }
 }
+
 UnorderedSparseBenchmark::~UnorderedSparseBenchmark() = default;
 
 class OrderedSparseBenchmark : public SparseBenchmark
@@ -146,7 +148,7 @@ class OrderedSparseBenchmark : public SparseBenchmark
 private:
 public:
     OrderedSparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues);
-    ~OrderedSparseBenchmark();
+    ~OrderedSparseBenchmark() override;
 private:
     void compute(size_t docId) const override {
         int64_t sum(0);
@@ -172,6 +174,7 @@ OrderedSparseBenchmark::OrderedSparseBenchmark(size_t numDocs, size_t numValues,
         _query[j] = P(k, k);
     }
 }
+
 OrderedSparseBenchmark::~OrderedSparseBenchmark() = default;
 
 int main(int argc, char *argv[])

@@ -105,6 +105,16 @@ INJECT Token :
 
 }
 
+INJECT BaseNode  :
+{
+    private IllegalArgumentException illegalArgumentException;
+    public IllegalArgumentException getIllegalArgumentException() { return illegalArgumentException; }
+
+    public void addIllegalArgumentException(IllegalArgumentException e) {
+        illegalArgumentException = e;
+    }
+}
+
 TOKEN :
     <INTEGER: <DECIMAL> (["l","L"])? | <HEX> (["l","L"])? | <OCTAL> (["l","L"])?> |
         <#DECIMAL: ["1"-"9"] (["0"-"9"])*> |
@@ -197,6 +207,7 @@ TOKEN :
     <POW: "pow"> |
     <PRECISION: "precision"> |
     <PREDEFINED: "predefined"> |
+    <QUANTILES: "quantiles"> |
     <RANGE: "range"> |
     <REGEX: "regex"> |
     <RELEVANCE: "relevance"> |
@@ -449,6 +460,7 @@ GroupingExpression value(GroupingOperation grp) :
                    exp = sortFunction(grp)             |
                    exp = arrayAtLookup(grp)            |
                    exp = interpolatedLookupElm(grp)       |
+                   exp = quantilesExpression(grp)      |
                    exp = stddevAggregator(grp)         |
                    exp = stringValue                 |
                    exp = strCatFunction(grp)           |
@@ -672,6 +684,31 @@ GroupingExpression md5Function(GroupingOperation grp) :
     { return new Md5Function(exp, num.intValue()); }
 ;
 
+GroupingExpression quantilesExpression(GroupingOperation grp) :
+{
+    GroupingExpression input;
+    List<Number> qs = new ArrayList<Number>();
+    Number q;
+}
+    (<QUANTILES> lbraceElm lbracketElm
+        q = number { qs.add(q); }
+        (
+            commaElm
+            q = number { qs.add(q); }
+        )*
+        rbracketElm
+        commaElm
+        input = expElm(grp)
+    rbraceElm)
+    {
+        try {
+            return new QuantileAggregator(qs, input);
+        } catch (IllegalArgumentException ex) {
+            thisProduction.addIllegalArgumentException(ex);
+        }
+        return new DoubleValue(0); // Return a generic GroupingExpression
+    }
+;
 
 GroupingExpression minExpression(GroupingOperation grp) :
 {
@@ -1211,6 +1248,7 @@ String identifierStr :
         <POW> |
         <PRECISION> |
         <PREDEFINED> |
+        <QUANTILES> |
         <RANGE> |
         <REGEX> |
         <RELEVANCE> |

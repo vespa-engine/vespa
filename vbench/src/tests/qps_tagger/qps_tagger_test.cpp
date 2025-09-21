@@ -8,16 +8,16 @@ TEST(QpsTaggerTest, qps_tagger) {
     RequestReceptor f1;
     QpsTagger f2(2.0, f1);
     f2.handle(Request::UP(new Request()));
-    ASSERT_TRUE(f1.request.get() != 0);
+    ASSERT_TRUE(f1.request);
     EXPECT_NEAR(0.0, f1.request->scheduledTime(), 10e-6);
     f2.handle(Request::UP(new Request()));
-    ASSERT_TRUE(f1.request.get() != 0);
+    ASSERT_TRUE(f1.request);
     EXPECT_NEAR(0.5, f1.request->scheduledTime(), 10e-6);
     f2.handle(Request::UP(new Request()));
-    ASSERT_TRUE(f1.request.get() != 0);
+    ASSERT_TRUE(f1.request);
     EXPECT_NEAR(1.0, f1.request->scheduledTime(), 10e-6);
     f2.handle(Request::UP(new Request()));
-    ASSERT_TRUE(f1.request.get() != 0);
+    ASSERT_TRUE(f1.request);
     EXPECT_NEAR(1.5, f1.request->scheduledTime(), 10e-6);
 }
 

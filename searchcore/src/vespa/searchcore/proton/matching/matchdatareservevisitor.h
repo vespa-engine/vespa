@@ -3,7 +3,6 @@
 #pragma once
 
 #include "querynodes.h"
-#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
 
 namespace proton::matching {
@@ -14,22 +13,17 @@ namespace proton::matching {
  */
 class MatchDataReserveVisitor : public search::query::TemplateTermVisitor<MatchDataReserveVisitor, ProtonNodeTypes>
 {
-    search::fef::MatchDataLayout &_mdl;
+    search::fef::MatchDataLayout& _mdl;
 
 public:
+    MatchDataReserveVisitor(search::fef::MatchDataLayout& mdl);
+    ~MatchDataReserveVisitor() override;
+
     template <class TermNode>
-    void visitTerm(TermNode &n) { n.allocateTerms(_mdl); }
+    void visitTerm(TermNode& n) { n.allocateTerms(_mdl); }
 
-    void visit(ProtonNodeTypes::Equiv &n) override {
-        MatchDataReserveVisitor subAllocator(n.children_mdl);
-        for (size_t i = 0; i < n.getChildren().size(); ++i) {
-            n.getChildren()[i]->accept(subAllocator);
-        }
-        n.allocateTerms(_mdl);
-    }
-
-    MatchDataReserveVisitor(search::fef::MatchDataLayout &mdl) : _mdl(mdl) {}
+    void visit(ProtonNodeTypes::Equiv& n) override;
+    void visit(ProtonNodeTypes::SameElement& n) override;
 };
 
 }
-

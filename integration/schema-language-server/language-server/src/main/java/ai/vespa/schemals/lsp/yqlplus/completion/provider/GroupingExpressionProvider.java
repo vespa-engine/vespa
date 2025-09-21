@@ -60,6 +60,7 @@ public class GroupingExpressionProvider implements CompletionProvider {
            CompletionUtils.constructSnippet("now", "now()"),
            CompletionUtils.constructSnippet("or", "or($0)"),
            CompletionUtils.constructSnippet("predefined", "predefined(${1:expr}, ${2:bucket})"),
+           CompletionUtils.constructSnippet("quantiles", "quantiles([${1:quantiles}], ${2:expr})"),
            CompletionUtils.constructSnippet("relevance", "relevance()"),
            CompletionUtils.constructSnippet("reverse", "reverse($0)"),
            CompletionUtils.constructSnippet("size", "size($0)"),

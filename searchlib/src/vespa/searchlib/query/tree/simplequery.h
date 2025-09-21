@@ -60,27 +60,26 @@ struct SimpleSameElement : SameElement {
     ~SimpleSameElement() override;
 };
 struct SimpleWeightedSetTerm : WeightedSetTerm {
-    SimpleWeightedSetTerm(uint32_t num_terms, std::string view, int32_t id, Weight weight)
-        : WeightedSetTerm(num_terms, std::move(view), id, weight) {}
+    using WeightedSetTerm::WeightedSetTerm;
     ~SimpleWeightedSetTerm() override;
 };
 struct SimpleDotProduct : DotProduct {
-    SimpleDotProduct(uint32_t num_terms, std::string view, int32_t id, Weight weight)
-        : DotProduct(num_terms, std::move(view), id, weight) {}
+    using DotProduct::DotProduct;
     ~SimpleDotProduct() override;
 };
 struct SimpleWandTerm : WandTerm {
-    SimpleWandTerm(uint32_t num_terms, std::string view, int32_t id, Weight weight,
-                   uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor)
-        : WandTerm(num_terms, std::move(view), id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor) {}
+    using WandTerm::WandTerm;
     ~SimpleWandTerm() override;
 };
 struct SimpleInTerm : InTerm {
-    SimpleInTerm(std::unique_ptr<TermVector> terms, MultiTerm::Type type, std::string view, int32_t id, Weight weight)
-        : InTerm(std::move(terms), type, std::move(view), id, weight)
-    {
-    }
+    using InTerm::InTerm;
     ~SimpleInTerm() override;
+};
+struct SimpleWordAlternatives : WordAlternatives {
+    SimpleWordAlternatives(std::unique_ptr<TermVector> terms, const std::string & view, int32_t id, Weight weight)
+      : WordAlternatives(std::move(terms), view, id, weight)
+    {}
+    ~SimpleWordAlternatives() override;
 };
 struct SimpleRank : Rank
 {
@@ -188,6 +187,7 @@ struct SimpleQueryNodeTypes {
     using NearestNeighborTerm = SimpleNearestNeighborTerm;
     using FuzzyTerm = SimpleFuzzyTerm;
     using InTerm = SimpleInTerm;
+    using WordAlternatives = SimpleWordAlternatives;
 };
 
 }

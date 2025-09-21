@@ -107,6 +107,15 @@ public class UserInputTestCase {
     }
 
     @Test
+    void testUserInputInSameElement() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql", "select * from sources * where myArray contains sameElement({grammar:'all'}userInput('a b'))");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where myArray contains sameElement(default contains \"a\" AND default contains \"b\")",
+                     query.yqlRepresentation());
+    }
+
+    @Test
     void testMustAndShouldUserInput() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",

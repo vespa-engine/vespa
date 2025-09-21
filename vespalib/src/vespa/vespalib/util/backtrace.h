@@ -36,6 +36,21 @@ std::string getStackTrace(int ignoreTop, void* const* stack, int size);
  */
 int getStackTraceFrames(void** framesOut, int maxFrames);
 
+/**
+ * Returns true iff `signal_safe_collect_stack_frames()` is supported on
+ * this platform.
+ */
+[[nodiscard]] bool has_signal_safe_collect_stack_frames() noexcept;
+
+/**
+ * Collects up to and including `frames_max` stack frames into `frames_out` in
+ * an async signal safe way. The number of collected frames is returned.
+ *
+ * If `has_signal_safe_collect_stack_frames() == false`, the  function will
+ * return 0 and `frames_out` is not modified.
+ */
+[[nodiscard]] size_t signal_safe_collect_stack_frames(void** frames_out, size_t frames_max);
+
 
 }
 

@@ -42,6 +42,7 @@ public:
     const FieldSpec &getField() const { return _field; }
 
     void visitPhrase(query::Phrase &n);
+    void visitWordAlternatives(query::WordAlternatives &n);
 
     template <typename WS, typename NODE>
     void createWeightedSet(std::unique_ptr<WS> bp, NODE &n);
@@ -68,6 +69,10 @@ public:
     void visit(query::Phrase &n) override {
         visitPhrase(n);
     }
+    void visit(query::WordAlternatives &n) override {
+        visitWordAlternatives(n);
+    }
+
     void visit(query::WeightedSetTerm &n) override { visitWeightedSetTerm(n); }
     void visit(query::DotProduct &n) override { visitDotProduct(n); }
     void visit(query::WandTerm &n) override { visitWandTerm(n); }

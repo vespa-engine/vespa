@@ -49,12 +49,12 @@ squaredEuclideanDistanceT(const T * a, const T * b, size_t sz) noexcept
     size_t i(0);
     for (; i + UNROLL <= sz; i += UNROLL) {
         for (size_t j(0); j < UNROLL; j++) {
-            T d = a[i+j] - b[i+j];
+            AccuT d = a[i+j] - b[i+j];
             partial[j] += d * d;
         }
     }
     for (;i < sz; i++) {
-        T d = a[i] - b[i];
+        AccuT d = a[i] - b[i];
         partial[i%UNROLL] += d * d;
     }
     double sum(0);
@@ -101,7 +101,7 @@ VESPA_HWACCEL_TARGET_TYPE::dotProduct(const float * a, const float * b, size_t s
 float
 VESPA_HWACCEL_TARGET_TYPE::dotProduct(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept
 {
-    return multiplyAdd<float, BFloat16, 4>(a, b, sz);
+    return multiplyAdd<float, BFloat16, 16>(a, b, sz);
 }
 
 double
@@ -191,8 +191,8 @@ VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const double * a, const doub
 
 double
 VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept {
-    // This is around 2x the perf of the naive loop in mixed_l2_distance.cpp
-    return squaredEuclideanDistanceT<float, BFloat16, 4>(a, b, sz);
+    // This is around 10x the perf of the naive loop in mixed_l2_distance.cpp
+    return squaredEuclideanDistanceT<float, BFloat16, 16>(a, b, sz);
 }
 
 void

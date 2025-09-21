@@ -69,20 +69,6 @@ void optimize_source_blenders(IntermediateBlueprint &self, size_t begin_idx) {
     }
 }
 
-void
-need_normal_features_for_children(const IntermediateBlueprint &blueprint, fef::MatchData &md)
-{
-    for (size_t i = 0; i < blueprint.childCnt(); ++i) {
-        const Blueprint::State &cs = blueprint.getChild(i).getState();
-        for (size_t j = 0; j < cs.numFields(); ++j) {
-            auto *tfmd = cs.field(j).resolve(md);
-            if (tfmd != nullptr) {
-                tfmd->setNeedNormalFeatures(true);
-            }
-        }
-    }
-}
-
 } // namespace search::queryeval::<unnamed>
 
 //-----------------------------------------------------------------------------
@@ -607,13 +593,6 @@ NearBlueprint::sort(Children &children, InFlow in_flow) const
 }
 
 SearchIterator::UP
-NearBlueprint::createSearchImpl(fef::MatchData &md) const
-{
-    need_normal_features_for_children(*this, md);
-    return IntermediateBlueprint::createSearchImpl(md);
-}
-
-SearchIterator::UP
 NearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
                                         search::fef::MatchData &md) const
 {
@@ -667,13 +646,6 @@ void
 ONearBlueprint::sort(Children &, InFlow) const
 {
     // ordered near cannot sort children here
-}
-
-SearchIterator::UP
-ONearBlueprint::createSearchImpl(fef::MatchData &md) const
-{
-    need_normal_features_for_children(*this, md);
-    return IntermediateBlueprint::createSearchImpl(md);
 }
 
 SearchIterator::UP

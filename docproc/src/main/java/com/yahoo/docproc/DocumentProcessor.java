@@ -122,6 +122,11 @@ public abstract class DocumentProcessor extends ChainedComponent {
         public static final Progress FAILED = new Progress("failed");
 
         /**
+         * Returned by a processor when the input document operation was invalid.
+         */
+        public static final Progress INVALID_INPUT = new Progress("invalid_input");
+
+        /**
          * Returned by a processor when processing has permanently failed,
          * so that the document processing service should disable itself until
          * reconfigured or restarted.

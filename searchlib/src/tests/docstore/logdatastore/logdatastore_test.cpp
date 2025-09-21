@@ -144,7 +144,7 @@ class LogDataStoreTest : public ::testing::Test, public vespalib::test::TestData
 {
 protected:
     LogDataStoreTest();
-    ~LogDataStoreTest();
+    ~LogDataStoreTest() override;
     static void SetUpTestSuite();
     static void TearDownTestSuite();
     static std::string _truncated_testdir;

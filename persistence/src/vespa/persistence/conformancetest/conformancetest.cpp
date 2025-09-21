@@ -253,7 +253,7 @@ verifyDocs(const std::vector<DocAndTimestamp>& wanted,
     size_t wantedIdx = 0;
     for (size_t i = 0; i < retrieved.size(); ++i) {
         DocEntry& entry(*retrieved[i]);
-        if (entry.getDocument() != 0) {
+        if (entry.getDocument() != nullptr) {
             if (!(*wanted[wantedIdx].doc == *entry.getDocument())) {
                 FAIL() << "Documents differ! Wanted:\n"
                        << wanted[wantedIdx].doc->toString(true)
@@ -266,7 +266,7 @@ verifyDocs(const std::vector<DocAndTimestamp>& wanted,
             ++wantedIdx;
         } else {
             // Remove-entry
-            EXPECT_TRUE(entry.getDocumentId() != 0);
+            EXPECT_TRUE(entry.getDocumentId() != nullptr);
             size_t serSize = entry.getDocumentId()->getSerializedSize();
             EXPECT_EQ(serSize, size_t(entry.getSize()));
             if (removes.find(entry.getDocumentId()->toString()) == removes.end()) {

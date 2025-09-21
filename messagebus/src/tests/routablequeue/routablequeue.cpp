@@ -13,11 +13,16 @@ private:
     static uint32_t _cnt;
 public:
     TestMessage(uint32_t id) : SimpleMessage(""), _id(id) { ++_cnt; }
-    ~TestMessage() { --_cnt; }
+    ~TestMessage() override;
     uint32_t getType() const override { return _id; }
     static uint32_t getCnt() { return _cnt; }
 };
 uint32_t TestMessage::_cnt = 0;
+
+TestMessage::~TestMessage()
+{
+    --_cnt;
+}
 
 class TestReply : public SimpleReply {
 private:
@@ -25,11 +30,16 @@ private:
     static uint32_t _cnt;
 public:
     TestReply(uint32_t id) : SimpleReply(""), _id(id) { ++_cnt; }
-    ~TestReply() { --_cnt; }
+    ~TestReply() override;
     uint32_t getType() const override { return _id; }
     static uint32_t getCnt() { return _cnt; }
 };
 uint32_t TestReply::_cnt = 0;
+
+TestReply::~TestReply()
+{
+    --_cnt;
+}
 
 TEST(RoutableQueueTest, routablequeue_test) {
     {

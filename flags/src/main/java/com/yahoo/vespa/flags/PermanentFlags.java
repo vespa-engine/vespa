@@ -260,7 +260,7 @@ public class PermanentFlags {
     );
 
     public static final UnboundDoubleFlag RESOURCE_LIMIT_ADDRESS_SPACE = defineDoubleFlag(
-            "resource-limit-address-space", 0.89,
+            "resource-limit-address-space", 0.80,
             "Resource limit (between 0.0 and 1.0) for memory address space on content nodes, used by cluster controller for when to block feed",
             "Takes effect on next deployment",
             INSTANCE_ID
@@ -627,7 +627,7 @@ public class PermanentFlags {
             INSTANCE_ID);
 
     public static final UnboundListFlag<String> IGNORE_CORE_DUMP_TYPE_WHEN_REPORTING = defineListFlag(
-            "ignore-core-dump-report-when-reporting", List.of(), String.class,
+            "ignore-core-dump-type-when-reporting", List.of(), String.class,
             "Whether to ignore core dump reporting (creating or updating a Jira ticket) for the specified core dump types." +
                     "Typically set to JVM_HEAP and/or OOM for apps that have issues in application code " +
                     "that the customer needs to fix and we don't want to create or update a Jira issue for.",

@@ -27,6 +27,7 @@ public class NoPrefixForIndexes implements Validator {
                     for (ImmutableSDField field : schema.allConcreteFields()) {
                         if (field.doesIndexing()) {
                             //if (!field.getIndexTo().isEmpty() && !field.getIndexTo().contains(field.getName())) continue;
+                            // TODO Vespa 9: Fail for all except NORMAL
                             if (field.getMatching().getAlgorithm().equals(MatchAlgorithm.PREFIX)) {
                                 failField(context, schema, field);
                             }

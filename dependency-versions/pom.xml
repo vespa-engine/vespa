@@ -133,7 +133,7 @@
         <mimepull.vespa.version>1.10.0</mimepull.vespa.version>
         <mockito.vespa.version>5.18.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.0</mojo-executor.vespa.version>
-        <netty.vespa.version>4.1.118.Final</netty.vespa.version>
+        <netty.vespa.version>4.1.125.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.65.Final</netty-tcnative.vespa.version>
         <okhttp.vespa.version>4.12.0</okhttp.vespa.version>
         <onnxruntime.vespa.version>1.22.0</onnxruntime.vespa.version>
@@ -186,7 +186,7 @@
         <maven-core.vespa.version>3.9.9</maven-core.vespa.version>
         <maven-dependency-plugin.vespa.version>3.8.1</maven-dependency-plugin.vespa.version>
         <maven-deploy-plugin.vespa.version>3.1.4</maven-deploy-plugin.vespa.version>
-        <maven-enforcer-plugin.vespa.version>3.5.0</maven-enforcer-plugin.vespa.version>
+        <maven-enforcer-plugin.vespa.version>3.6.1</maven-enforcer-plugin.vespa.version>
         <maven-failsafe-plugin.vespa.version>3.3.1</maven-failsafe-plugin.vespa.version>
         <maven-gpg-plugin.vespa.version>3.2.7</maven-gpg-plugin.vespa.version>
         <maven-install-plugin.vespa.version>3.1.2</maven-install-plugin.vespa.version>

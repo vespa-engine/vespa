@@ -367,6 +367,7 @@ struct AbstractTypes {
     using TrueQueryNode = search::query::TrueQueryNode;
     using FalseQueryNode = search::query::FalseQueryNode;
     using FuzzyTerm = search::query::FuzzyTerm;
+    using WordAlternatives = search::query::WordAlternatives;
 };
 
 // Builds a tree with simplequery and checks that the results have the
@@ -426,19 +427,17 @@ struct MySameElement : SameElement {
 };
 
 struct MyWeightedSetTerm : WeightedSetTerm {
-    MyWeightedSetTerm(uint32_t n, const string & f, int32_t i, Weight w) : WeightedSetTerm(n, f, i, w) {}
+    using WeightedSetTerm::WeightedSetTerm;
     ~MyWeightedSetTerm() override;
 };
 
 struct MyDotProduct : DotProduct {
-    MyDotProduct(uint32_t n, const string & f, int32_t i, Weight w) : DotProduct(n, f, i, w) {}
+    using DotProduct::DotProduct;
     ~MyDotProduct() override;
 };
 
 struct MyWandTerm : WandTerm {
-    MyWandTerm(uint32_t n, const string & f, int32_t i, Weight w, uint32_t targetNumHits,
-               int64_t scoreThreshold, double thresholdBoostFactor)
-        : WandTerm(n, f, i, w, targetNumHits, scoreThreshold, thresholdBoostFactor) {}
+    using WandTerm::WandTerm;
     ~MyWandTerm() override;
 };
 
@@ -545,6 +544,13 @@ struct MyInTerm : InTerm {
     ~MyInTerm() override;
 };
 
+struct MyWordAlternatives : WordAlternatives {
+    MyWordAlternatives(std::unique_ptr<TermVector> terms, const string& v, int32_t i, Weight w)
+      : WordAlternatives(std::move(terms), v, i, w)
+    {}
+    ~MyWordAlternatives() override;
+};
+
 MyAnd::~MyAnd() = default;
 
 MyAndNot::~MyAndNot() = default;
@@ -599,6 +605,8 @@ MyFuzzyTerm::~MyFuzzyTerm() = default;
 
 MyInTerm::~MyInTerm() = default;
 
+MyWordAlternatives::~MyWordAlternatives() = default;
+
 struct MyQueryNodeTypes {
     using And = MyAnd;
     using AndNot = MyAndNot;
@@ -627,6 +635,7 @@ struct MyQueryNodeTypes {
     using FalseQueryNode = MyFalse;
     using FuzzyTerm = MyFuzzyTerm;
     using InTerm = MyInTerm;
+    using WordAlternatives = MyWordAlternatives;
 };
 
 TEST(QueryBuilderTest, require_that_Custom_Query_Trees_Can_Be_Built) {
@@ -897,7 +906,7 @@ TEST(QueryBuilderTest, add_and_get_of_integer_MultiTerm) {
     for (int64_t i(0); i < mt.getNumTerms(); i++) {
         mt.addTerm(i-3, Weight(i-4));
     }
-    EXPECT_TRUE(MultiTerm::Type::INTEGER == mt.getType());
+    EXPECT_TRUE(MultiTerm::Type::WEIGHTED_INTEGER == mt.getType());
     verify_multiterm_get(mt);
 }
 
@@ -908,7 +917,7 @@ TEST(QueryBuilderTest, add_and_get_of_string_MultiTerm) {
         auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
         mt.addTerm(std::string_view(buf, res.ptr - buf), Weight(i-4));
     }
-    EXPECT_TRUE(MultiTerm::Type::STRING == mt.getType());
+    EXPECT_TRUE(MultiTerm::Type::WEIGHTED_STRING == mt.getType());
     verify_multiterm_get(mt);
 }
 
@@ -918,20 +927,20 @@ TEST(QueryBuilderTest, first_string_then_integer_MultiTerm) {
     for (int64_t i(1); i < mt.getNumTerms(); i++) {
         mt.addTerm(i-3, Weight(i-4));
     }
-    EXPECT_TRUE(MultiTerm::Type::STRING == mt.getType());
+    EXPECT_TRUE(MultiTerm::Type::WEIGHTED_STRING == mt.getType());
     verify_multiterm_get(mt);
 }
 
 TEST(QueryBuilderTest, first_integer_then_string_MultiTerm) {
     SimpleMultiTerm mt(7);
     mt.addTerm(-3, Weight(-4));
-    EXPECT_TRUE(MultiTerm::Type::INTEGER == mt.getType());
+    EXPECT_TRUE(MultiTerm::Type::WEIGHTED_INTEGER == mt.getType());
     for (int64_t i(1); i < mt.getNumTerms(); i++) {
         char buf[24];
         auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
         mt.addTerm(std::string_view(buf, res.ptr - buf), Weight(i-4));
     }
-    EXPECT_TRUE(MultiTerm::Type::STRING == mt.getType());
+    EXPECT_TRUE(MultiTerm::Type::WEIGHTED_STRING == mt.getType());
     verify_multiterm_get(mt);
 }
 

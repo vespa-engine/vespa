@@ -98,7 +98,6 @@ vespa_define_module(
     src/tests/proton/matching/match_phase_limiter
     src/tests/proton/matching/partial_result
     src/tests/proton/matching/request_context
-    src/tests/proton/matching/same_element_builder
     src/tests/proton/matching/unpacking_iterators_optimizer
     src/tests/proton/persistenceconformance
     src/tests/proton/persistenceengine
@@ -119,6 +118,7 @@ vespa_define_module(
     src/tests/proton/server
     src/tests/proton/server/disk_mem_usage_metrics
     src/tests/proton/server/disk_mem_usage_sampler
+    src/tests/proton/server/initialization_status
     src/tests/proton/server/initialize_threads_calculator
     src/tests/proton/server/memoryflush
     src/tests/proton/server/resource_usage_write_filter

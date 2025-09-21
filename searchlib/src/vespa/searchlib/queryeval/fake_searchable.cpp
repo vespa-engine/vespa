@@ -53,7 +53,7 @@ public:
     LookupVisitor(Searchable &searchable, const IRequestContext & requestContext,
                   const Map &map, const std::string &tag, bool is_attr, const FieldSpec &field);
 
-    ~LookupVisitor();
+    ~LookupVisitor() override;
     template <class TermNode>
     void visitTerm(TermNode &n);
 

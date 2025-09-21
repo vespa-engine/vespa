@@ -109,7 +109,7 @@ class ClosestTest : public ::testing::TestWithParam<TestParam>
 {
 protected:
     ClosestTest();
-    ~ClosestTest();
+    ~ClosestTest() override;
     bool direct_tensor() const noexcept { return GetParam()._direct_tensor; }
     void assert_closest(const Labels& labels, const std::string& feature_name, const std::string& query_tensor, const TensorSpec& exp_spec);
     void assert_closest(const Labels& labels, const std::string& feature_name, const std::vector<TensorSpec>& exp_specs);
@@ -154,7 +154,7 @@ TEST_F(ClosestTest, require_that_blueprint_can_be_created_from_factory)
     BlueprintFactoryFixture f;
     auto bp = f.factory.createBlueprint("closest");
     EXPECT_TRUE(bp);
-    EXPECT_TRUE(dynamic_cast<ClosestBlueprint*>(bp.get()) != 0);
+    EXPECT_TRUE(dynamic_cast<ClosestBlueprint*>(bp.get()) != nullptr);
 }
 
 TEST_F(ClosestTest, require_that_no_features_are_dumped)

@@ -140,7 +140,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         try {
             String servicesXml =
                     "<services>" +
-                            "<admin version='3.0'>" +
+                            "<admin version='4.0'>" +
                             "    <nodes count='1'/>" +
                             "</admin>" +
                             "<container version='1.0'>" +
@@ -663,7 +663,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     private QrConfig getQrConfig(ModelContext.Properties properties) throws IOException, SAXException {
         String servicesXml =
                 "<services>" +
-                "  <admin version='3.0'>" +
+                "  <admin version='4.0'>" +
                 "    <nodes count='2'/>" +
                 "  </admin>" +
                 "  <container id ='default' version='1.0'>" +
@@ -786,24 +786,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         {
             try {
                 tester.createModel(servicesXml.apply(2), true);
-                fail("Expected exception");
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-        {
-            String xmlWithNodes =
-                    "<?xml version='1.0' encoding='utf-8' ?>" +
-                            "<services>" +
-                            "  <container version='1.0' id='container1'>" +
-                            "     <zookeeper/>" +
-                            "     <nodes of='content1'/>" +
-                            "  </container>" +
-                            "  <content version='1.0' id='content1'>" +
-                            "     <nodes count='3'/>" +
-                            "   </content>" +
-                            "</services>";
-            try {
-                tester.createModel(xmlWithNodes, true);
                 fail("Expected exception");
             } catch (IllegalArgumentException ignored) {
             }

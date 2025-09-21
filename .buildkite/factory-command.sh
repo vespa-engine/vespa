@@ -1,6 +1,16 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-set -eo pipefail
+#
+# Executes Factory API commands based on the provided arguments.
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+if [[ -n "${DEBUG:-}" ]]; then
+    set -o xtrace
+fi
 
 if (( $# < 1 )); then
     echo "Usage: $0 <command> [options]"
@@ -9,7 +19,6 @@ fi
 
 COMMAND=$1
 FACTORY_API="https://api.factory.vespa.ai/factory/v1"
-
 
 IDENTITY_PATH="${ATHENZ_KEY_AND_CERT_PATH:-/workspace/identity}"
 CURL="curl -sL --key $IDENTITY_PATH/key --cert $IDENTITY_PATH/cert"

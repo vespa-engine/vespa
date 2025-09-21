@@ -43,7 +43,7 @@ struct ParamView final : Value, LazyParams {
 public:
     ParamView(const ValueType &type_in, bool direct_in)
       : my_type(type_in), my_cells(), value(0.0), direct(direct_in) {}
-    const ValueType &type() const final override { return my_type; }
+    const ValueType &type() const final { return my_type; }
     template <typename ICT>
     void adjust(const ICT *cells, size_t size) {
         if (direct) {
@@ -53,10 +53,10 @@ public:
             my_cells = TypedCells(&value, CellType::DOUBLE, 1);
         }
     }
-    TypedCells cells() const final override { return my_cells; }
-    const Index &index() const final override { return TrivialIndex::get(); }
-    MemoryUsage get_memory_usage() const final override { return self_memory_usage<ParamView>(); }
-    const Value &resolve(size_t, Stash &) const final override { return *this; }
+    TypedCells cells() const final { return my_cells; }
+    const Index &index() const final { return TrivialIndex::get(); }
+    MemoryUsage get_memory_usage() const final { return self_memory_usage<ParamView>(); }
+    const Value &resolve(size_t, Stash &) const final { return *this; }
 };
 
 template <typename OCT>

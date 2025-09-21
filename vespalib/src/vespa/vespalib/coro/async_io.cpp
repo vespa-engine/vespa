@@ -75,7 +75,7 @@ struct SelectorThread : AsyncIo {
     void main();
     void init_shutdown() override;
     void fini_shutdown() override;
-    ~SelectorThread();
+    ~SelectorThread() override;
     bool running() const noexcept {
         return (_thread_id.load(std::memory_order_relaxed) != std::thread::id());
     }

@@ -3,11 +3,9 @@ package com.yahoo.vespa.model.admin.clustercontroller;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.documentmodel.NewDocumentType;
@@ -80,6 +78,12 @@ public class ClusterControllerContainer extends Container implements
                 .append(" -Dio.netty.allocator.numHeapArenas=").append(numHeapArenas)
                 .append(" -Dio.netty.allocator.numDirectArenas=").append(numDirectArenas)
                 .toString();
+    }
+
+    @Override
+    public void setMallocImpl(String mallocImpl) {
+        // Do nothing here, only ApplicationContainer should set
+        // this to anything other than the default, and that class has overridden this method.
     }
 
     @Override
@@ -184,8 +188,6 @@ public class ClusterControllerContainer extends Container implements
     }
 
     @Override
-    protected String defaultPreload() {
-        return "";
-    }
+    protected String defaultPreload() { return ""; }
 
 }

@@ -2,14 +2,15 @@
 
 #include "blueprintbuilder.h"
 #include "querynodes.h"
-#include "same_element_builder.h"
 #include <vespa/searchcorespi/index/indexsearchable.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/queryeval/create_blueprint_params.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
+#include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/vespalib/util/issue.h>
 
 using namespace search::queryeval;
@@ -98,13 +99,39 @@ private:
         n.setDocumentFrequency(_result->getState().estimate().estHits, _context.getDocIdLimit());
     }
 
+    void buildWordAlternatives(ProtonWordAlternatives &n) {
+        assert(n.children.size() == n.getNumTerms());
+        double eqw = n.getWeight().percent();
+        search::fef::MatchDataLayout layout;
+        std::vector<std::unique_ptr<Blueprint>> term_bps;
+        for (const auto& tp : n.children) {
+            tp->allocateTerms(layout);
+            term_bps.emplace_back(build(_requestContext, *tp, _context));
+        }
+        FieldSpecBaseList specs;
+        specs.reserve(n.numFields());
+        for (size_t i = 0; i < n.numFields(); ++i) {
+            specs.add(n.field(i).fieldSpec());
+        }
+        auto *eq = new EquivBlueprint(std::move(specs), layout);
+        _result.reset(eq);
+        assert(term_bps.size() == n.getNumTerms());
+        for (uint32_t idx = 0; idx < n.getNumTerms(); idx++) {
+            auto pair = n.getAsString(idx);
+            double w = pair.second.percent();
+            eq->addTerm(std::move(term_bps[idx]), w / eqw);
+        }
+        _result->setDocIdLimit(_context.getDocIdLimit());
+        n.setDocumentFrequency(_result->getState().estimate().estHits, _context.getDocIdLimit());
+    }
+
     void buildSameElement(ProtonSameElement &n) {
         if (n.numFields() == 1) {
-            SameElementBuilder builder(_requestContext, _context, n.field(0).fieldSpec(), n.is_expensive());
-            for (Node *node: n.getChildren()) {
-                builder.add_child(*node);
+            auto se = std::make_unique<SameElementBlueprint>(n.field(0).fieldSpec(), n.subtree_mdl, n.is_expensive());
+            for (auto* node : n.getChildren()) {
+                se->addChild(build(_requestContext, *node, _context));
             }
-            _result = builder.build();
+            _result = std::move(se);
         } else {
             vespalib::Issue::report("SameElement operator searches in unexpected number of fields. Expected 1 but was %zu", n.numFields());
             _result = std::make_unique<EmptyBlueprint>();
@@ -140,6 +167,7 @@ protected:
     void visit(ProtonOr &n)          override { buildIntermediate(new OrBlueprint(), n); }
     void visit(ProtonWeakAnd &n)     override { buildWeakAnd(n); }
     void visit(ProtonEquiv &n)       override { buildEquiv(n); }
+    void visit(ProtonWordAlternatives &n) override { buildWordAlternatives(n); }
     void visit(ProtonRank &n)        override { buildIntermediate(new RankBlueprint(), n); }
     void visit(ProtonNear &n)        override {
         buildIntermediate(new NearBlueprint(n.getDistance(), _requestContext.get_element_gap_inspector()), n);

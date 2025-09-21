@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "i_replay_progress_producer.h"
 #include <vespa/searchlib/common/serialnum.h>
 #include <atomic>
 #include <memory>
@@ -9,7 +10,7 @@
 
 namespace proton {
 
-class TlsReplayProgress
+class TlsReplayProgress : public IReplayProgressProducer
 {
 private:
     const std::string  _domainName;
@@ -33,7 +34,7 @@ public:
     search::SerialNum getFirst() const noexcept { return _first; }
     search::SerialNum getLast() const noexcept { return _last; }
     search::SerialNum getCurrent() const noexcept { return _current.load(std::memory_order_relaxed); }
-    float getProgress() const noexcept {
+    float getProgress() const noexcept override {
         if (_first == _last) {
             return 1.0;
         } else {

@@ -10,8 +10,10 @@ struct Untaintable : Taintable {
     Taint taint;
 
     const Taint &tainted() const override { return taint; }
-    ~Untaintable() {}
+    ~Untaintable() override;
 };
+
+Untaintable::~Untaintable() = default;
 
 Untaintable untaintable;
 

@@ -15,6 +15,7 @@ namespace search::engine { class Trace; }
 
 namespace proton::matching {
 
+class HandleRecorder;
 class ViewResolver;
 class ISearchContext;
 
@@ -89,6 +90,8 @@ public:
     void reserveHandles(const IRequestContext & requestContext,
                         ISearchContext &context,
                         search::fef::MatchDataLayout &mdl);
+
+    void tag_needed_handles(HandleRecorder& handle_recorder, const search::fef::IIndexEnvironment& index_env);
 
     void enumerate_blueprint_nodes() noexcept;
 

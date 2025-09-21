@@ -176,7 +176,7 @@ public:
         TaskBase(Stressor &p, uint32_t d) // complete remove
             : TaskBase(p, d, ConstVectorRef(), PrepareFuture(), ReadGuard()) {}
 
-        ~TaskBase() {}
+        ~TaskBase() override;
     };
 
     struct PrepareAddTask  : TaskBase {
@@ -353,6 +353,9 @@ public:
 
 template <typename IndexType>
 Stressor<IndexType>::~Stressor() = default;
+
+template <typename IndexType>
+Stressor<IndexType>::TaskBase::~TaskBase() = default;
 
 using StressorTypes = ::testing::Types<HnswIndex<HnswIndexType::SINGLE>>;
 

@@ -136,9 +136,7 @@ struct IndexManagerTest : public ::testing::Test {
         resetIndexManager();
     }
 
-    ~IndexManagerTest() {
-        _service.shutdown();
-    }
+    ~IndexManagerTest() override;
 
     template <class FunctionType>
     void runAsMaster(FunctionType &&function) {
@@ -198,6 +196,11 @@ struct IndexManagerTest : public ::testing::Test {
     bool has_urgent_fusion() const;
     void assert_urgent(const std::string& label, bool pending, bool flush, bool fusion);
 };
+
+IndexManagerTest:: ~IndexManagerTest()
+{
+    _service.shutdown();
+}
 
 void
 IndexManagerTest::flushIndexManager()
@@ -656,7 +659,7 @@ TEST_F(IndexManagerTest, require_that_disk_indexes_are_loaded_on_startup)
 {
     addDocument(docid);
     flushIndexManager();
-    _index_manager.reset(0);
+    _index_manager.reset();
 
     ASSERT_TRUE(indexExists("flush", 1));
     resetIndexManager();
@@ -676,7 +679,7 @@ TEST_F(IndexManagerTest, require_that_disk_indexes_are_loaded_on_startup)
     fusion_spec.flush_ids.push_back(1);
     fusion_spec.flush_ids.push_back(2);
     _index_manager->getMaintainer().runFusion(fusion_spec, std::make_shared<search::FlushToken>());
-    _index_manager.reset(0);
+    _index_manager.reset();
 
     ASSERT_TRUE(!indexExists("flush", 1));
     ASSERT_TRUE(!indexExists("flush", 2));
@@ -696,7 +699,7 @@ TEST_F(IndexManagerTest, require_that_disk_indexes_are_loaded_on_startup)
 
     addDocument(docid + 2);
     flushIndexManager();
-    _index_manager.reset(0);
+    _index_manager.reset();
 
     ASSERT_TRUE(indexExists("fusion", 2));
     ASSERT_TRUE(indexExists("flush", 3));

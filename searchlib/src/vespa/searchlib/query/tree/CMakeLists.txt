@@ -14,5 +14,7 @@ vespa_add_library(searchlib_query_tree OBJECT
     string_term_vector.cpp
     term.cpp
     termnodes.cpp
+    weighted_integer_term_vector.cpp
+    weighted_string_term_vector.cpp
     DEPENDS
 )

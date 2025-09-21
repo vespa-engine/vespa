@@ -7,6 +7,8 @@
 #include "querybuilder.h"
 #include "queryvisitor.h"
 #include "string_term_vector.h"
+#include "weighted_integer_term_vector.h"
+#include "weighted_string_term_vector.h"
 #include "termnodes.h"
 #include <cassert>
 
@@ -29,6 +31,10 @@ public:
     }
 
 private:
+    void copyState(const Term &original, Term &replica) {
+        replica.setStateFrom(original);
+    }
+
     void visitNodes(const std::vector<Node *> &nodes) {
         for (auto node : nodes) {
             node->accept(*this);
@@ -71,7 +77,7 @@ private:
     }
 
     void visit(Phrase &node) override {
-        replicate(node, _builder.addPhrase(node.getChildren().size(), node.getView(),
+        copyState(node, _builder.addPhrase(node.getChildren().size(), node.getView(),
                                            node.getId(), node.getWeight()).set_expensive(node.is_expensive()));
         visitNodes(node.getChildren());
     }
@@ -82,42 +88,26 @@ private:
         visitNodes(node.getChildren());
     }
 
-    void replicateMultiTerm(const MultiTerm &original, MultiTerm & replica) {
-        if (original.getType() == MultiTerm::Type::STRING) {
-            for (uint32_t i(0); i < original.getNumTerms(); i++) {
-                auto v = original.getAsString(i);
-                replica.addTerm(v.first, v.second);
-            }
-        } else if (original.getType() == MultiTerm::Type::INTEGER) {
-            for (uint32_t i(0); i < original.getNumTerms(); i++) {
-                auto v = original.getAsInteger(i);
-                replica.addTerm(v.first, v.second);
-            }
-        } else {
-            assert (original.getType() == MultiTerm::Type::UNKNOWN);
-            assert (original.getNumTerms() == 0);
-        }
-    }
-
     void visit(WeightedSetTerm &node) override {
-        auto & replica = _builder.addWeightedSetTerm(node.getNumTerms(), node.getView(), node.getId(), node.getWeight());
-        replicate(node, replica);
-        replicateMultiTerm(node, replica);
+        auto & replica = _builder.addWeightedSetTerm(
+                replicate_subterms(node), node.getType(), node.getView(), node.getId(), node.getWeight());
+        copyState(node, replica);
     }
 
     void visit(DotProduct &node) override {
-        auto & replica = _builder.addDotProduct(node.getNumTerms(), node.getView(), node.getId(), node.getWeight());
-        replicate(node, replica);
-        replicateMultiTerm(node, replica);
+        auto & replica = _builder.addDotProduct(
+                replicate_subterms(node), node.getType(), node.getView(), node.getId(), node.getWeight());
+        copyState(node, replica);
     }
 
     void visit(WandTerm &node) override {
-        auto & replica = _builder.addWandTerm(node.getNumTerms(), node.getView(), node.getId(), node.getWeight(),
+        auto & replica = _builder.addWandTerm(
+                replicate_subterms(node), node.getType(),
+                node.getView(), node.getId(), node.getWeight(),
                                               node.getTargetNumHits(),
                                               node.getScoreThreshold(),
                                               node.getThresholdBoostFactor());
-        replicate(node, replica);
-        replicateMultiTerm(node, replica);
+        copyState(node, replica);
     }
 
     void visit(Rank &node) override {
@@ -125,66 +115,62 @@ private:
         visitNodes(node.getChildren());
     }
 
-    void replicate(const Term &original, Term &replica) {
-        replica.setStateFrom(original);
-    }
-
     void visit(NumberTerm &node) override {
-        replicate(node, _builder.addNumberTerm(
+        copyState(node, _builder.addNumberTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
     void visit(LocationTerm &node) override {
-        replicate(node,_builder.addLocationTerm(
+        copyState(node,_builder.addLocationTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
     void visit(PrefixTerm &node) override {
-        replicate(node, _builder.addPrefixTerm(
+        copyState(node, _builder.addPrefixTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
     void visit(RangeTerm &node) override {
-        replicate(node, _builder.addRangeTerm(
+        copyState(node, _builder.addRangeTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
     void visit(StringTerm &node) override {
-        replicate(node, _builder.addStringTerm(
+        copyState(node, _builder.addStringTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
     void visit(SubstringTerm &node) override {
-        replicate(node, _builder.addSubstringTerm(
+        copyState(node, _builder.addSubstringTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
     void visit(SuffixTerm &node) override {
-        replicate(node, _builder.addSuffixTerm(
+        copyState(node, _builder.addSuffixTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
     void visit(PredicateQuery &node) override {
-        replicate(node, _builder.addPredicateQuery(
+        copyState(node, _builder.addPredicateQuery(
                           std::make_unique<PredicateQueryTerm>(*node.getTerm()),
                           node.getView(), node.getId(), node.getWeight()));
     }
 
     void visit(RegExpTerm &node) override {
-        replicate(node, _builder.addRegExpTerm(
+        copyState(node, _builder.addRegExpTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
     void visit(NearestNeighborTerm &node) override {
-        replicate(node, _builder.add_nearest_neighbor_term(node.get_query_tensor_name(), node.getView(),
+        copyState(node, _builder.add_nearest_neighbor_term(node.get_query_tensor_name(), node.getView(),
                                                            node.getId(), node.getWeight(), node.get_target_num_hits(),
                                                            node.get_allow_approximate(), node.get_explore_additional_hits(),
                                                            node.get_distance_threshold()));
@@ -199,35 +185,59 @@ private:
     }
 
     void visit(FuzzyTerm &node) override {
-        replicate(node, _builder.addFuzzyTerm(
+        copyState(node, _builder.addFuzzyTerm(
                 node.getTerm(), node.getView(),
                 node.getId(), node.getWeight(),
                 node.max_edit_distance(), node.prefix_lock_length(),
                 node.prefix_match()));
     }
 
-    std::unique_ptr<TermVector> replicate_subterms(const InTerm& original) {
+    std::unique_ptr<TermVector> replicate_subterms(const MultiTerm& original) {
         uint32_t num_terms = original.getNumTerms();
-        if (original.getType() == MultiTerm::Type::STRING) {
+        switch (original.getType()) {
+        case MultiTerm::Type::STRING: {
             auto replica = std::make_unique<StringTermVector>(num_terms);
-            for (uint32_t i(0); i < num_terms; i++) {
+            for (uint32_t i = 0; i < num_terms; i++) {
                 auto v = original.getAsString(i);
                 replica->addTerm(v.first);
             }
             return replica;
-        } else if (original.getType() == MultiTerm::Type::INTEGER) {
+        }
+        case MultiTerm::Type::WEIGHTED_STRING: {
+            auto replica = std::make_unique<WeightedStringTermVector>(num_terms);
+            for (uint32_t i = 0; i < num_terms; i++) {
+                auto v = original.getAsString(i);
+                replica->addTerm(v.first, v.second);
+            }
+            return replica;
+        }
+        case MultiTerm::Type::INTEGER: {
             auto replica = std::make_unique<IntegerTermVector>(num_terms);
-            for (uint32_t i(0); i < original.getNumTerms(); i++) {
+            for (uint32_t i = 0; i < original.getNumTerms(); i++) {
                 auto v = original.getAsInteger(i);
                 replica->addTerm(v.first);
             }
             return replica;
-        } else {
-            abort();
         }
+        case MultiTerm::Type::WEIGHTED_INTEGER: {
+            auto replica = std::make_unique<WeightedIntegerTermVector>(num_terms);
+            for (uint32_t i = 0; i < original.getNumTerms(); i++) {
+                auto v = original.getAsInteger(i);
+                replica->addTerm(v.first, v.second);
+            }
+            return replica;
+        }
+        case MultiTerm::Type::UNKNOWN:
+            assert(num_terms == 0);
+        }
+        return std::make_unique<WeightedStringTermVector>(num_terms);
     }
     void visit(InTerm& node) override {
-        replicate(node, _builder.add_in_term(replicate_subterms(node), node.getType(), node.getView(), node.getId(), node.getWeight()));
+        copyState(node, _builder.add_in_term(replicate_subterms(node), node.getType(), node.getView(), node.getId(), node.getWeight()));
+    }
+
+    void visit(WordAlternatives& node) override {
+        copyState(node, _builder.add_word_alternatives(replicate_subterms(node), node.getView(), node.getId(), node.getWeight()));
     }
 };
 

@@ -33,7 +33,7 @@
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake
 %global _vespa_abseil_cpp_version 20250127.1
-%global _vespa_build_depencencies_version 1.6.2
+%global _vespa_build_depencencies_version 1.6.3
 %global _vespa_gtest_version 1.16.0
 %global _vespa_protobuf_version 5.30.1
 %global _vespa_openblas_version 0.3.27
@@ -333,12 +333,12 @@ export FACTORY_VESPA_VERSION=%{version}
 export PATH="%{_prefix}-deps/bin:$PATH"
 
 %if 0%{?_use_mvn_wrapper}
-sh bootstrap.sh wrapper
+./bootstrap.sh wrapper
 %global _mvn_cmd $(pwd)/mvnw
 %else
 %global _mvn_cmd mvn
 %endif
-%{?_use_mvn_wrapper:env VESPA_MAVEN_COMMAND=%{_mvn_cmd} }sh bootstrap.sh java
+%{?_use_mvn_wrapper:env VESPA_MAVEN_COMMAND=%{_mvn_cmd} }./bootstrap.sh java
 %{_mvn_cmd} --batch-mode -nsu -T 1C install -DskipTests -Dmaven.javadoc.skip=true
 
 %{_command_cmake} -DCMAKE_INSTALL_PREFIX=%{_prefix} \

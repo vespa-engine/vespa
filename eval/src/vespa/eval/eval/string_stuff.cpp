@@ -3,6 +3,7 @@
 #include "string_stuff.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cctype>
+#include <cstdlib>
 
 namespace vespalib::eval {
 

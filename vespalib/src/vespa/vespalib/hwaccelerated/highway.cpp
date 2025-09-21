@@ -21,6 +21,17 @@ namespace HWY_NAMESPACE {
 
 namespace hn = hwy::HWY_NAMESPACE;
 
+// Must always be undef'd to ensure we expand the correct HWY_ATTR per target.
+#undef VESPA_NOEXCEPT_HWY_ATTR
+// Clang and GCC refuse to parse `noexcept HWY_ATTR` and `HWY_ATTR noexcept`,
+// respectively. GCC seems to be the one that is technically correct(tm), but
+// we still want Clang to compile, so hide the dirt under a macro carpet.
+#if defined(__clang__)
+#define VESPA_NOEXCEPT_HWY_ATTR HWY_ATTR noexcept
+#else
+#define VESPA_NOEXCEPT_HWY_ATTR noexcept HWY_ATTR
+#endif
+
 // Many of the Highway functions used within this file are fairly self-explanatory
 // of how they relate to elements in, and across, vectors (Sub, Mul, MulAdd etc.),
 // others not so much (ReorderWidenMulAccumulate, SumOfMulQuadAccumulate, ...).
@@ -54,19 +65,46 @@ double my_hwy_dot_double(const double* HWY_RESTRICT a,
     return my_hwy_dot_impl(a, b, sz);
 }
 
+// Although Highway comes with its own BFloat16 dot product kernel, we do not use it due
+// to some very unfortunate codegen by GCC for the code handling the edge case where
+// input vectors are shorter than the number of lanes of a single vector register.
+//
+// This is done using a loop with scalar (i.e. non-vector) conversions from the compiler
+// native `__bf16` type to `float` using `static_cast`, which one could reasonably assume
+// would be optimal (and Highway presumably does just this). However, GCC will, in a case
+// of signalling vs. quiet NaN-handling pedantry, implicitly insert a **function call**
+// to the `__extendbfsf2` library function per lhs and rhs element. This brutally destroys
+// performance on x64 AVX2+3 for very short vectors, meaning we're better off with our
+// own kernel.
+//
+// It may be noted that Clang has the expected codegen for `__bf16` -> `float` conversions,
+// i.e. a simple zero-extending left shift of 16 (see https://reviews.llvm.org/D151563).
+//
+// See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=121853 for upstream report.
 HWY_INLINE
 float my_hwy_dot_bf16(const BFloat16* HWY_RESTRICT a,
                       const BFloat16* HWY_RESTRICT b,
                       const size_t sz) noexcept
 {
-    // Highway already comes with dot product kernels supporting BF16, so use these.
     static_assert(sizeof(BFloat16)  == sizeof(hwy::bfloat16_t));
     static_assert(alignof(BFloat16) == alignof(hwy::bfloat16_t));
-
+    // We make the assumption that both vespalib::BFloat16 and hwy::bfloat16_t are POD-like
+    // wrappers around the same u16 bitwise representation, with zero padding bits, meaning
+    // we can treat them as-if identical.
     const auto* a_bf16 = reinterpret_cast<const hwy::bfloat16_t*>(a);
     const auto* b_bf16 = reinterpret_cast<const hwy::bfloat16_t*>(b);
-    // Although our input parameters are BF16, the returned value must be a float to avoid losing precision.
-    return my_hwy_dot_impl<hwy::bfloat16_t, float>(a_bf16, b_bf16, sz);
+
+    const hn::ScalableTag<hwy::bfloat16_t> dbf16;
+    // Repartition to float vector with same vector size, but different number of lanes.
+    // E.g. for a 128-bit vector of 8x BF16 lanes this becomes a 4x float lanes vector.
+    const hn::Repartition<float, decltype(dbf16)> df32;
+    // Since we're widening the element type, loading e.g. 8 lanes of BF16 in a single
+    // 128-bit vector requires us to process 2 vectors of 4 lanes of float32.
+    auto kernel_fn = [df32](auto lhs, auto rhs, auto& acc0, auto& acc1) VESPA_NOEXCEPT_HWY_ATTR {
+        acc0 = hn::ReorderWidenMulAccumulate(df32, lhs, rhs, acc0, acc1);
+    };
+    using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<4>, HasAccumulatorArity<2>>;
+    return MyKernel::pairwise(dbf16, df32, a_bf16, b_bf16, sz, hn::Zero(df32), kernel_fn, VecAdd(), LaneReduceSum());
 }
 
 template <typename T> requires (hwy::IsFloat<T>())
@@ -78,7 +116,7 @@ double my_hwy_square_euclidean_distance(const T* HWY_RESTRICT a,
     const hn::ScalableTag<T> d;
     // `HWY_ATTR` is needed to ensure lambdas have the expected codegen target.
     // See https://google.github.io/highway/en/master/faq.html#boilerplate
-    const auto kernel_fn = [](auto lhs, auto rhs, auto& accu) noexcept HWY_ATTR {
+    const auto kernel_fn = [](auto lhs, auto rhs, auto& accu) VESPA_NOEXCEPT_HWY_ATTR {
         const auto sub = hn::Sub(lhs, rhs);
         accu = hn::MulAdd(sub, sub, accu); // note: using fused multiply-add
     };
@@ -93,19 +131,14 @@ double my_hwy_square_euclidean_distance_bf16(const BFloat16* HWY_RESTRICT a,
 {
     static_assert(sizeof(BFloat16)  == sizeof(hwy::bfloat16_t));
     static_assert(alignof(BFloat16) == alignof(hwy::bfloat16_t));
-    // We make the assumption that both vespalib::BFloat16 and hwy::bfloat16_t are POD-like
-    // wrappers around the same u16 bitwise representation, with zero padding bits, meaning
-    // we can treat them as-if identical.
+
     const auto* a_bf16 = reinterpret_cast<const hwy::bfloat16_t*>(a);
     const auto* b_bf16 = reinterpret_cast<const hwy::bfloat16_t*>(b);
 
-    const hn::ScalableTag<hwy::bfloat16_t> dbf16;
-    // Repartition to float vector with same vector size, but different number of lanes.
-    // E.g. for a 128-bit vector of 8x BF16 lanes this becomes a 4x float lanes vector.
+    const hn::ScalableTag<hwy::bfloat16_t>        dbf16;
     const hn::Repartition<float, decltype(dbf16)> df;
-    // Since we're widening the element type, loading e.g. 8 lanes of BF16 in a single
-    // 128-bit vector requires us to process 2 vectors of 4 lanes of float32.
-    auto kernel_fn = [df](auto lhs, auto rhs, auto& acc0, auto& acc1) noexcept HWY_ATTR {
+
+    auto kernel_fn = [df](auto lhs, auto rhs, auto& acc0, auto& acc1) VESPA_NOEXCEPT_HWY_ATTR {
         const auto sub_lo = hn::Sub(hn::PromoteLowerTo(df, lhs), hn::PromoteLowerTo(df, rhs));
         acc0 = hn::MulAdd(sub_lo, sub_lo, acc0);
         const auto sub_hi = hn::Sub(hn::PromoteUpperTo(df, lhs), hn::PromoteUpperTo(df, rhs));
@@ -126,7 +159,7 @@ int32_t sub_mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a,
     const hn::Repartition<int16_t, decltype(d8)>  d16;
     const hn::Repartition<int32_t, decltype(d16)> d32;
 
-    auto kernel_fn = [d16, d32](auto lhs, auto rhs, auto& acc0, auto& acc1, auto& acc2, auto& acc3) noexcept HWY_ATTR {
+    auto kernel_fn = [d16, d32](auto lhs, auto rhs, auto& acc0, auto& acc1, auto& acc2, auto& acc3) VESPA_NOEXCEPT_HWY_ATTR {
         const auto sub_l_i16 = hn::Sub(hn::PromoteLowerTo(d16, lhs), hn::PromoteLowerTo(d16, rhs));
         const auto sub_u_i16 = hn::Sub(hn::PromoteUpperTo(d16, lhs), hn::PromoteUpperTo(d16, rhs));
         acc0 = hn::ReorderWidenMulAccumulate(d32, sub_l_i16, sub_l_i16, acc0, acc1);
@@ -153,7 +186,7 @@ size_t my_hwy_popcount(const uint64_t* a, const size_t sz) noexcept {
     // TODO have a way to explicitly disable fallbacks for benchmarking purposes
 #if HWY_TARGET != HWY_AVX2 && HWY_TARGET != HWY_AVX3
     const hn::ScalableTag<uint64_t> d;
-    const auto kernel_fn = [](auto v, auto& accu) noexcept HWY_ATTR {
+    const auto kernel_fn = [](auto v, auto& accu) VESPA_NOEXCEPT_HWY_ATTR {
         accu = hn::Add(hn::PopulationCount(v), accu);
     };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<8>, HasAccumulatorArity<1>>;
@@ -176,7 +209,7 @@ int32_t mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a,
     const hn::ScalableTag<int8_t> d8;
 #if HWY_TARGET != HWY_NEON
     const hn::Repartition<int32_t, decltype(d8)> d32;
-    const auto kernel_fn = [d32](auto lhs_i8, auto rhs_i8, auto& accu) noexcept HWY_ATTR {
+    const auto kernel_fn = [d32](auto lhs_i8, auto rhs_i8, auto& accu) VESPA_NOEXCEPT_HWY_ATTR {
         accu = hn::SumOfMulQuadAccumulate(d32, lhs_i8, rhs_i8, accu);
     };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<8>, HasAccumulatorArity<1>>;
@@ -196,7 +229,7 @@ int32_t mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a,
     const hn::Repartition<int16_t, decltype(d8)>  d16;
     const hn::Repartition<int32_t, decltype(d16)> d32;
 
-    const auto kernel_fn = [d16, d32](auto lhs_i8, auto rhs_i8, auto& acc0, auto& acc1, auto& acc2, auto& acc3) noexcept HWY_ATTR {
+    const auto kernel_fn = [d16, d32](auto lhs_i8, auto rhs_i8, auto& acc0, auto& acc1, auto& acc2, auto& acc3) VESPA_NOEXCEPT_HWY_ATTR {
         const auto lhs_i16_lo = hn::PromoteLowerTo(d16, lhs_i8);
         const auto lhs_i16_hi = hn::PromoteUpperTo(d16, lhs_i8);
         const auto rhs_i16_lo = hn::PromoteLowerTo(d16, rhs_i8);
@@ -261,6 +294,9 @@ public:
     double squaredEuclideanDistance(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept override {
         return my_hwy_square_euclidean_distance_bf16(a, b, sz);
     }
+    const char* implementation_name() const noexcept override {
+        return "Highway";
+    }
     const char* target_name() const noexcept override {
         return my_hwy_target_name();
     }
@@ -278,13 +314,57 @@ HWY_AFTER_NAMESPACE();
 
 namespace vespalib::hwaccelerated {
 
+namespace {
+
 #define VESPA_HWY_ADD_SUPPORTED_IMPL_VISITOR(hwy_target, hwy_ns) \
     if ((supported_targets & hwy_target) != 0) { \
         target_id_and_impl.emplace_back(hwy_target, hwy_ns::HwyTargetAccelerator::create_instance()); \
     }
 
+enum class ExcludeTargets {
+    // No targets should be excluded
+    None,
+    // Exclude targets that _we_ believe are not optimal for the purposes of running our
+    // vectorized kernels.
+    AssumedSuboptimal
+};
+
+bool target_is_assumed_suboptimal(uint64_t target_hwy_id) noexcept {
+    // SVE/SVE2 is not a strict superset of NEON, which means that certain very useful
+    // 128-bit NEON(_BF16) vector instructions are _not_ present as "sizeless" SVE vector
+    // operations.
+    //
+    // In particular:
+    //  - int8 squared Euclidean distance:
+    //    NEON has `ssub` signed subtraction of high/low vector lanes with implicit
+    //    widening. On SVE this needs separate unpack high/low instructions followed by
+    //    a non-widening subtraction, increasing instruction count and register pressure.
+    //  - BFloat16 dot product:
+    //    SVE does not have guaranteed BF16 support prior to armv8.6-a and its BF16 dot
+    //    product operation does not give the same result as NEON BF16 unless FEAT_EBF16
+    //    is present, due to differences in rounding behavior. Because of this, dynamic
+    //    target compilation for Highway does not by default use BF16 instructions for
+    //    _any_ SVE targets. It is also not clear how this could be enabled with today's
+    //    set of compilation targets, as they are not ARM architecture version-oriented.
+    //
+    // In practice this means that 128-bit SVE may be _slower_ for some important operations
+    // than 128-bit NEON_BF16. For both the above ops, the observed relative slowdown is
+    // on the order of ~1.5-2x. The only serious speed increase from SVE is for popcount.
+    //
+    // So for now, disable SVE targets entirely until it's had more time to cook. If SVE
+    // is present, NEON_BF16 is expected to always be present.
+    //
+    // This is based on testing on Google Axion (SVE2_128), Amazon Graviton 3 (SVE_256)
+    // and Amazon Graviton 4 (SVE2_128) nodes, and will be updated once newer/shinier
+    // hardware is available for testing.
+    //
+    // TODO consider still enabling if SVE2 vector length is > 128 bits. Needs benchmarking.
+    //  Only HW with >128 bits that's currently available is Graviton 3, which is only SVE.
+    return (target_hwy_id & HWY_ALL_SVE) != 0;
+}
+
 // The "best" supported target will be the first element in the vector.
-std::vector<std::unique_ptr<IAccelerated>> Highway::create_supported_targets() {
+std::vector<std::unique_ptr<IAccelerated>> create_supported_targets_impl(ExcludeTargets exclude_targets) {
     // On x64 we require AVX2 as a baseline, so don't bother wasting time with SSSE3/SSE4.
     // Ideally we would not even build these targets. No effect on Aarch64.
     hwy::DisableTargets(HWY_SSSE3 | HWY_SSE4);
@@ -306,18 +386,27 @@ std::vector<std::unique_ptr<IAccelerated>> Highway::create_supported_targets() {
         return lhs.first == rhs.first;
     });
     target_id_and_impl.erase(to_erase.begin(), to_erase.end());
-    assert(!target_id_and_impl.empty()); // Must be at least a fallback target
 
     std::vector<std::unique_ptr<IAccelerated>> preferred_target_order;
     preferred_target_order.reserve(target_id_and_impl.size());
     for (auto& elem : target_id_and_impl) {
+        if ((exclude_targets == ExcludeTargets::AssumedSuboptimal) && target_is_assumed_suboptimal(elem.first)) {
+            continue; // Ignore this target
+        }
         preferred_target_order.emplace_back(std::move(elem.second));
     }
+    assert(!preferred_target_order.empty()); // Must be at least a fallback target
     return preferred_target_order;
 }
 
+} // anon ns
+
+std::vector<std::unique_ptr<IAccelerated>> Highway::create_supported_targets() {
+    return create_supported_targets_impl(ExcludeTargets::None);
+}
+
 std::unique_ptr<IAccelerated> Highway::create_best_target() {
-    return std::move(create_supported_targets().front());
+    return std::move(create_supported_targets_impl(ExcludeTargets::AssumedSuboptimal).front());
 }
 
 } // namespace vespalib::hwaccelerated

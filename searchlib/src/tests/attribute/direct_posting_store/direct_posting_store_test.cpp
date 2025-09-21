@@ -103,8 +103,10 @@ struct DirectPostingStoreTest : public ::testing::TestWithParam<TestParam> {
             populate_long(attr);
         }
     }
-    ~DirectPostingStoreTest() {}
+    ~DirectPostingStoreTest() override;
 };
+
+DirectPostingStoreTest::~DirectPostingStoreTest() = default;
 
 void expect_docid_posting_store(BasicType type, CollectionType col_type, bool fast_search) {
     EXPECT_TRUE(make_attribute(type, col_type, fast_search)->as_docid_posting_store() != nullptr);
@@ -263,7 +265,7 @@ TEST_P(DirectPostingStoreTest, collect_folded_works)
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
     Verifier();
-    ~Verifier();
+    ~Verifier() override;
     SearchIterator::UP create(bool strict) const override {
         (void) strict;
         const auto* api = _attr->as_docid_with_weight_posting_store();
@@ -287,7 +289,8 @@ Verifier::Verifier()
         set_doc(int_attr, docid, int64_t(123), 1);
     }
 }
-Verifier::~Verifier() {}
+
+Verifier::~Verifier() = default;
 
 TEST(VerifierTest, verify_document_weight_search_iterator) {
     Verifier verifier;

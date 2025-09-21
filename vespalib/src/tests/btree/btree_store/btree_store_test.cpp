@@ -26,7 +26,7 @@ protected:
     TreeStore _store;
     
     BTreeStoreTest();
-    ~BTreeStoreTest();
+    ~BTreeStoreTest() override;
 
     void inc_generation()
     {

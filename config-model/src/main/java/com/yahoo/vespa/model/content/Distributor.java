@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.config.model.producer.TreeConfigProducer;
@@ -44,6 +45,7 @@ public class Distributor extends ContentNode implements StorDistributormanagerCo
         if (distributorBasePort != null) {
             setBasePort(distributorBasePort);
         }
+        setMallocImpl(properties.mallocImpl(Optional.of(ClusterSpec.Type.content)));
     }
 
     private int tuneNumDistributorStripes() {

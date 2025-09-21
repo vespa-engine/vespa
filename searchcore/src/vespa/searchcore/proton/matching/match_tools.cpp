@@ -3,6 +3,7 @@
 #include "match_tools.h"
 #include "querynodes.h"
 #include "rangequerylocator.h"
+#include "tag_needed_handles.h"
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/attribute/diversity.h>
@@ -84,7 +85,7 @@ MatchTools::setup(std::unique_ptr<RankProgram> rank_program, ExecutionProfiler *
         _match_data->soft_reset();
     }
     _rank_program = std::move(rank_program);
-    HandleRecorder recorder;
+    HandleRecorder recorder(_needed_handles);
     {
         HandleRecorder::Binder bind(recorder);
         _rank_program->setup(*_match_data, _queryEnv, _featureOverrides, profiler);
@@ -108,7 +109,8 @@ MatchTools::MatchTools(QueryLimiter & queryLimiter,
                        const QueryEnvironment & queryEnv,
                        const MatchDataLayout & mdl,
                        const RankSetup & rankSetup,
-                       const Properties & featureOverrides)
+                       const Properties & featureOverrides,
+                       const HandleRecorder::HandleMap& needed_handles)
     : _queryLimiter(queryLimiter),
       _doom(doom),
       _query(query),
@@ -120,6 +122,7 @@ MatchTools::MatchTools(QueryLimiter & queryLimiter,
       _rank_program(),
       _search(),
       _used_handles(),
+      _needed_handles(needed_handles),
       _search_has_changed(false)
 {
 }
@@ -195,7 +198,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _diversityParams(),
       _valid(false),
       _first_phase_rank_lookup(nullptr),
-      _metaStore(metaStore)
+      _metaStore(metaStore),
+      _needed_handles()
 {
     if (doom.soft_doom()) return;
     auto trace = root_trace.make_trace();
@@ -208,6 +212,11 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.extractLocations(_queryEnv.locations());
         trace.addEvent(5, "Build query execution plan");
         _query.reserveHandles(_requestContext, searchContext, _mdl);
+        {
+            HandleRecorder recorder;
+            _query.tag_needed_handles(recorder, _queryEnv.getIndexEnvironment());
+            _needed_handles = std::move(recorder).steal_handles();
+        }
         trace.addEvent(5, "Optimize query execution plan");
         bool sort_by_cost = SortBlueprintsByCost::check(_queryEnv.getProperties(), rankSetup.sort_blueprints_by_cost());
         double hitRate = std::min(1.0, double(maxNumHits)/double(searchContext.getDocIdLimit()));
@@ -255,7 +264,7 @@ MatchToolsFactory::createMatchTools() const
 {
     assert(_valid);
     return std::make_unique<MatchTools>(_queryLimiter, _requestContext.getDoom(), _query,
-                                        *_match_limiter, _queryEnv, _mdl, _rankSetup, _featureOverrides);
+                                        *_match_limiter, _queryEnv, _mdl, _rankSetup, _featureOverrides, _needed_handles);
 }
 
 std::unique_ptr<IDiversifier>

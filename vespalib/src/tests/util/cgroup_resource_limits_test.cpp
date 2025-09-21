@@ -12,7 +12,7 @@ class CGroupResourceLimitsTest : public ::testing::Test
 {
 protected:
     CGroupResourceLimitsTest();
-    ~CGroupResourceLimitsTest();
+    ~CGroupResourceLimitsTest() override;
     void check_limits(std::string_view name, const std::optional<uint64_t>& memory_limit, const std::optional<uint32_t>& cpu_limit);
 };
 

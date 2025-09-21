@@ -65,3 +65,12 @@ vespa_add_executable(searchcore_querynodes_test_app TEST
     GTest::gtest
 )
 vespa_add_test(NAME searchcore_querynodes_test_app COMMAND searchcore_querynodes_test_app)
+vespa_add_executable(searchcore_tag_needed_handles_test_app TEST
+    SOURCES
+    tag_needed_handles_test.cpp
+    DEPENDS
+    searchcore_server
+    searchcore_matching
+    GTest::gtest
+)
+vespa_add_test(NAME searchcore_tag_needed_handles_test_app COMMAND searchcore_tag_needed_handles_test_app)

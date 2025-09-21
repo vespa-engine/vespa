@@ -20,13 +20,13 @@ protected:
     {
     }
 
-    ~LidStateVectorTest()
-    {
-        _gen_hold.reclaim_all();
-    }
-
+    ~LidStateVectorTest() override;
 };
 
+LidStateVectorTest::~LidStateVectorTest()
+{
+    _gen_hold.reclaim_all();
+}
 
 TEST_F(LidStateVectorTest, basic_free_list_is_working)
 {

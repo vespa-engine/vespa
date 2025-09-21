@@ -181,11 +181,10 @@ public class StorageGroup {
         return java.util.Objects.hash(index, name, partitions);
     }
 
-    public static Map<HostResource, ClusterMembership> provisionHosts(NodesSpecification nodesSpecification, 
-                                                                      String clusterIdString, 
+    public static Map<HostResource, ClusterMembership> provisionHosts(NodesSpecification nodesSpecification,
+                                                                      ClusterSpec.Id clusterId,
                                                                       HostSystem hostSystem,
                                                                       ConfigModelContext context) {
-        ClusterSpec.Id clusterId = ClusterSpec.Id.from(clusterIdString);
         return nodesSpecification.provision(hostSystem,
                                             ClusterSpec.Type.content,
                                             clusterId,
@@ -345,7 +344,7 @@ public class StorageGroup {
                 Map<HostResource, ClusterMembership> hostMapping =
                         nodeRequirement.isPresent() ?
                         provisionHosts(nodeRequirement.get(),
-                                       owner.getStorageCluster().getClusterName(),
+                                       ClusterSpec.Id.from(owner.getStorageCluster().getClusterName()),
                                        owner.getRoot().hostSystem(),
                                        context) :
                         Map.of();
@@ -454,8 +453,7 @@ public class StorageGroup {
         }
 
         private Optional<String> childAsString(Optional<ModelElement> element, String childTagName) {
-            if (element.isEmpty()) return Optional.empty();
-            return Optional.ofNullable(element.get().childAsString(childTagName));
+            return element.map(modelElement -> modelElement.childAsString(childTagName));
         }
         private Optional<Long> childAsLong(Optional<ModelElement> element, String childTagName) {
             return element.map(modelElement -> modelElement.childAsLong(childTagName));
