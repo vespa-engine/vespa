@@ -143,8 +143,11 @@ public class StemmingSearcherTestCase {
     @Test
     void testMultipleStemming() {
         assertStemmed("WEAKAND(100) WORD_ALTERNATIVES foobar:[ tree(0.7) trees(1.0) ] " +
-                      "foobar:\"noun girl\" WORD_ALTERNATIVES foobar:[ flower(0.7) flowers(1.0) ] " +
-                      "foobar:\"a verb a\" WORD_ALTERNATIVES foobar:[ girl(0.7) girls(1.0) ]",
+                      "foobar:\"" + (
+                              "WORD_ALTERNATIVES foobar:[ noun(0.7) nouns(1.0) ] " +
+                              "WORD_ALTERNATIVES foobar:[ girl(0.7) girls(1.0) ]\" " ) +
+                      "WORD_ALTERNATIVES foobar:[ flower(0.7) flowers(1.0) ] " +
+                      "foobar:\"a WORD_ALTERNATIVES foobar:[ verb(0.7) verbs(1.0) ] a\" WORD_ALTERNATIVES foobar:[ girl(0.7) girls(1.0) ]",
                       "/search?language=en&search=four&query=trees \"nouns girls\" flowers \"a verbs a\" girls&default-index=foobar");
     }
 

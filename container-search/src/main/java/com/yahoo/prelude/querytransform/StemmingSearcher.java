@@ -302,9 +302,10 @@ public class StemmingSearcher extends Searcher {
                                            Substring origin,
                                            boolean insidePhrase) {
         String indexName = current.getIndexName();
-        if (!insidePhrase && ((index.getLiteralBoost() || index.getStemMode() == StemMode.ALL))) {
+        if (index.getLiteralBoost() || index.getStemMode() == StemMode.ALL) {
             List<Alternative> terms = new ArrayList<>(segment.size() + 1);
-            terms.add(new Alternative(current.stringValue(), 1.0d));
+            var original = segment.getOrigin();
+            terms.add(new Alternative(original.orElse(current.stringValue()), 1.0d));
             for (String term : segment) {
                 terms.add(new Alternative(term, 0.7d));
             }

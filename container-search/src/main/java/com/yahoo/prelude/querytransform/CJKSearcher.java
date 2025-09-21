@@ -104,8 +104,10 @@ public class CJKSearcher extends Searcher {
     private boolean hasOverlappingTokens(PhraseSegmentItem segments) {
         int segmentsLength=0;
         for (Iterator<Item> i = segments.getItemIterator(); i.hasNext(); ) {
-            WordItem segment = (WordItem) i.next();
-            segmentsLength += segment.getWord().length();
+            Item item = i.next();
+            if (item instanceof WordItem wordItem) {
+                segmentsLength += wordItem.getWord().length();
+            }
         }
         return segmentsLength > segments.getRawWord().length();
     }

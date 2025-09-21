@@ -25,7 +25,7 @@ public class AndSegmentItem extends SegmentItem implements BlockItem {
         int weight = item.getWeight();
         if (item.getItemCount() > 0) {
             for (Iterator<Item> i = item.getItemIterator(); i.hasNext();) {
-                WordItem word = (WordItem) i.next();
+                TermItem word = (TermItem) i.next();
                 word.setWeight(weight);
                 addItem(word);
             }
