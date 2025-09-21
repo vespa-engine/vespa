@@ -4,6 +4,7 @@ package com.yahoo.language.process;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A list of strings which does not allow for duplicate elements.
@@ -12,6 +13,7 @@ import java.util.List;
  */
 public final class StemList extends AbstractList<String> {
 
+    private final Optional<String> origin;
     private final List<String> stems;
 
     public StemList() {
@@ -19,12 +21,19 @@ public final class StemList extends AbstractList<String> {
     }
 
     public StemList(String... stems) {
+        this(Optional.empty(), stems);
+    }
+
+    public StemList(Optional<String> origin, String... stems) {
         super();
+        this.origin = origin;
         this.stems = new ArrayList<>(Math.max(stems.length, 3));
         for (String word : stems) {
             add(word);
         }
     }
+
+    public Optional<String> getOrigin() { return origin; }
 
     @Override
     public String get(int i) {
