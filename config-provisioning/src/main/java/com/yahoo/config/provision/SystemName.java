@@ -90,7 +90,7 @@ public enum SystemName {
 
     public boolean isCdLike() { return this == cd || this == PublicCd || this == kubernetesCd; }
 
-    public boolean isProdLike() { return this == main || this == Public || this == kubernetes; }
+    public boolean isProductionLike() { return this == main || this == Public || this == kubernetes; }
 
     public static Set<SystemName> all() { return EnumSet.allOf(SystemName.class); }
 
