@@ -1336,11 +1336,11 @@ public class QueryTestCase {
                                      profile);
             assertEquals("select * from sources * where default contains " +
                          "({origin: {original: \"color-red\", offset: 0, length: 9}, id: 1, stem: false}" +
-                         "phrase(default contains ({origin: {original: \"color-red\", offset: 0, length: 9}, " +
+                         "phrase(({origin: {original: \"color-red\", offset: 0, length: 9}, " +
                          "normalizeCase: false, accentDrop: false}alternatives({\"color\": 1.0, \"colour\": 1.0})), \"red\"))",
                          parsedYql);
-            //assertEquals(parsedYql, parse(parsedYql, mockLinguistics, profile), TODO: YQL parse alternatives inside phrases
-            //             "Re-parsing yield the same output");
+            assertEquals(parsedYql, parse(parsedYql, mockLinguistics, profile),
+                         "Re-parsing yield the same output");
         }
 
         {
@@ -1350,11 +1350,11 @@ public class QueryTestCase {
             assertEquals("select * from sources * where default contains " +
                          "near(({stem: false, normalizeCase: false, accentDrop: false, id: 1}\"my\"), " +
                          "({origin: {original: \"color-red\", offset: 0, length: 9}, id: 2, stem: false}" +
-                         "phrase(default contains ({origin: {original: \"color-red\", offset: 0, length: 9}, " +
+                         "phrase(({origin: {original: \"color-red\", offset: 0, length: 9}, " +
                          "normalizeCase: false, accentDrop: false}alternatives({\"color\": 1.0, \"colour\": 1.0})), \"red\")))",
                          parsedYql);
-            //assertEquals(parsedYql, parse(parsedYql, mockLinguistics, profile), TODO: YQL parse alternatives inside phrases
-            //             "Re-parsing yield the same output");
+            assertEquals(parsedYql, parse(parsedYql, mockLinguistics, profile),
+                         "Re-parsing yield the same output");
         }
     }
 
