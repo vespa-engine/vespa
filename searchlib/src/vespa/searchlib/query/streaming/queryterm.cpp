@@ -66,20 +66,6 @@ QueryTerm::visitMembers(vespalib::ObjectVisitor & visitor) const
     visit(visitor, "uniqueid", _uniqueId);
 }
 
-QueryTerm::QueryTerm(Type type, string index, std::unique_ptr<NumericRangeSpec> range)
-  : QueryTermUCS4(type, std::move(range)),
-    _hitList(),
-    _index(std::move(index)),
-    _result(),
-    _encoding(0x01),
-    _isRanked(false),
-    _filter(true),
-    _weight(100),
-    _uniqueId(0),
-    _fieldInfo()
-{
-}
-
 QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, string_view termS, string indexS,
                      Type type, Normalizing normalizing)
     : QueryTermUCS4(QueryNormalization::optional_fold(termS, type, normalizing), type),

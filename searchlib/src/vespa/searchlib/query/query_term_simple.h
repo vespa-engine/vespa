@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "numeric_range_spec.h"
 #include "query_normalization.h"
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/util/memory.h>
@@ -34,20 +33,17 @@ public:
     QueryTermSimple(QueryTermSimple &&) = delete;
     QueryTermSimple & operator = (QueryTermSimple &&) = delete;
     QueryTermSimple(const string & term_, Type type);
-    QueryTermSimple(Type type, std::unique_ptr<NumericRangeSpec> range);
     virtual ~QueryTermSimple();
-
-
     /**
      * Extracts the content of this query term as a range with low and high values.
      */
     template <typename N>
     RangeResult<N> getRange() const noexcept;
-    int                         getRangeLimit() const noexcept { return activeRange().rangeLimit; }
-    size_t                     getMaxPerGroup() const noexcept { return activeRange().maxPerGroup; }
-    size_t           getDiversityCutoffGroups() const noexcept { return activeRange().diversityCutoffGroups; }
-    bool             getDiversityCutoffStrict() const noexcept { return activeRange().diversityCutoffStrict; }
-    string_view         getDiversityAttribute() const noexcept { return activeRange().diversityAttribute; }
+    int                         getRangeLimit() const noexcept { return _rangeLimit; }
+    size_t                     getMaxPerGroup() const noexcept { return _maxPerGroup; }
+    size_t           getDiversityCutoffGroups() const noexcept { return _diversityCutoffGroups; }
+    bool             getDiversityCutoffStrict() const noexcept { return _diversityCutoffStrict; }
+    string_view         getDiversityAttribute() const noexcept { return _diversityAttribute; }
     [[nodiscard]] size_t fuzzy_max_edit_distance() const noexcept { return _fuzzy_max_edit_distance; }
     [[nodiscard]] size_t fuzzy_prefix_lock_length() const noexcept { return _fuzzy_prefix_lock_length; }
     [[nodiscard]] bool   fuzzy_prefix_match() const noexcept { return _fuzzy_prefix_match; }
@@ -69,22 +65,26 @@ public:
     string getClassName() const;
     bool isValid() const noexcept { return _valid; }
     const string & getTermString() const noexcept { return _term; }
-    const NumericRangeSpec& activeRange() const noexcept { return _numeric_range ? (*_numeric_range) : emptyNumericRange; }
 
 private:
-    static NumericRangeSpec emptyNumericRange;
-    std::unique_ptr<NumericRangeSpec> _numeric_range = {};
     bool getRangeInternal(int64_t & low, int64_t & high) const noexcept;
     template <typename N>
     RangeResult<N> getIntegerRange() const noexcept;
     template <typename N>
     RangeResult<N>    getFloatRange() const noexcept;
+    int32_t     _rangeLimit;
+    uint32_t    _maxPerGroup;
+    uint32_t    _diversityCutoffGroups;
     Type        _type;
+    bool        _diversityCutoffStrict;
     bool        _valid;
 protected:
     bool        _fuzzy_prefix_match; // set in QueryTerm
 private:
     string      _term;
+    string_view   _diversityAttribute;
+    template <typename T, typename D>
+    bool    getAsNumericTerm(T & lower, T & upper, D d) const noexcept;
 
 protected:
     uint32_t    _fuzzy_max_edit_distance;  // set in QueryTerm
@@ -97,3 +97,4 @@ void visit(vespalib::ObjectVisitor &self, const std::string &name,
            const search::QueryTermSimple &obj);
 void visit(vespalib::ObjectVisitor &self, const std::string &name,
            const search::QueryTermSimple *obj);
+
