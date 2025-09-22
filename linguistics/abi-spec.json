@@ -720,6 +720,8 @@
     "methods" : [
       "public void <init>()",
       "public varargs void <init>(java.lang.String[])",
+      "public varargs void <init>(java.util.Optional, java.lang.String[])",
+      "public java.util.Optional getOrigin()",
       "public java.lang.String get(int)",
       "public int size()",
       "public java.lang.String set(int, java.lang.String)",

@@ -11,6 +11,7 @@ import java.util.regex.PatternSyntaxException;
 
 import org.junit.jupiter.api.Test;
 import com.yahoo.prelude.query.Item.ItemType;
+import static com.yahoo.prelude.query.WordAlternativesItem.Alternative;
 
 /**
  * Check basic contracts common to "many" item implementations.
@@ -343,11 +344,16 @@ public class ItemsCommonStuffTestCase {
             caught = true;
         }
         assertTrue(caught);
-        assertEquals("blbl", p.getWordItem(3).getWord());
+        assertEquals("blbl", p.getTermItem(3).stringValue());
         ByteBuffer b = ByteBuffer.allocate(5000);
         int i = p.encode(b);
         assertEquals(5, i);
         assertEquals("nalle bamse teddy blbl", p.getIndexedString());
+
+        var alts = List.of(new Alternative("towers", 0.75), new Alternative("tower", 0.5));
+        var wa = new WordAlternativesItem("ignore", true, new Substring("Towers"), alts);
+        p.addItem(wa);
+        assertEquals("'nalle bamse teddy blbl WORD_ALTERNATIVES [ tower(0.5) towers(0.75) ]'", p.toString());
     }
 
     @Test
@@ -404,4 +410,3 @@ public class ItemsCommonStuffTestCase {
     }
 
 }
-

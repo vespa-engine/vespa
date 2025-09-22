@@ -1194,7 +1194,7 @@
       "public boolean acceptsItemsOfType(com.yahoo.prelude.query.Item$ItemType)",
       "public void addItem(com.yahoo.prelude.query.Item)",
       "public java.util.Optional extractSingleChild()",
-      "public com.yahoo.prelude.query.WordItem getWordItem(int)",
+      "public com.yahoo.prelude.query.TermItem getTermItem(int)",
       "protected void encodeThis(java.nio.ByteBuffer)",
       "public int encode(java.nio.ByteBuffer)",
       "public int encodeContent(java.nio.ByteBuffer)",

@@ -44,7 +44,7 @@ public class TestSegmenter implements Segmenter {
         return tokens;
     }
 
-    private static final String[] testTokens = new String[] { "bc", "fg", "first", "second", "third" };
+    private static final String[] testTokens = new String[] { "bc", "fg", "first", "second", "third", "nouns", "splits" };
 
     private static String startsByTestToken(String string, int index) {
         for (String testToken : testTokens) {

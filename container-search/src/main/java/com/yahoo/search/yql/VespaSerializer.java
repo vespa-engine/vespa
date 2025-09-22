@@ -615,8 +615,8 @@ public class VespaSerializer {
                 if (current instanceof WordItem word) {
                     destination.append('"');
                     escape(word.getIndexedString(), destination).append('"');
-                } else if (current instanceof WordAlternativesItem) {
-                    new WordAlternativesSerializer().serialize(destination, (WordAlternativesItem)current);
+                } else if (current instanceof WordAlternativesItem alternatives) {
+                    WordAlternativesSerializer.serialize(destination, alternatives, false);
                 } else {
                     throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName() +
                                                        " in phrases not implemented, please report this as a bug.");

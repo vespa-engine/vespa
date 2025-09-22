@@ -24,10 +24,10 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     public PhraseSegmentItem(AndSegmentItem andSegment) {
         super(andSegment.getRawWord(), andSegment.stringValue(), andSegment.isFromQuery(), andSegment.isStemmed(), andSegment.getOrigin());
         if (andSegment.getItemCount() > 0) {
-            WordItem w = (WordItem) andSegment.getItem(0);
+            TermItem w = (TermItem) andSegment.getItem(0);
             setIndexName(w.getIndexName());
             for (Iterator<Item> i = andSegment.getItemIterator(); i.hasNext();) {
-                WordItem word = (WordItem) i.next();
+                TermItem word = (TermItem) i.next();
                 addIndexedItem(word);
             }
         }
@@ -68,7 +68,7 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     public void setIndexName(String index) {
         super.setIndexName(index);
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
-            WordItem word = (WordItem) i.next();
+            TermItem word = (TermItem) i.next();
             word.setIndexName(index);
         }
     }
@@ -95,7 +95,7 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
      * of this phrase. If the item is a word, it will simply be added,
      * if the item is a phrase, each of the words of the phrase will be added.
      *
-     * @throws IllegalArgumentException if the given item is not a WordItem or PhraseItem
+     * @throws IllegalArgumentException if the given item is not a TermItem or PhraseItem
      */
     @Override
     public void addItem(Item item) {
@@ -115,6 +115,7 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
         return extracted;
     }
 
+
     // TODO: Override addItem(index,item), setItem(index,item)
 
     private void addIndexedItem(IndexedItem word) {
@@ -123,13 +124,13 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     }
 
     /**
-     * Returns a subitem as a word item
+     * Returns a subitem as a term item
      *
      * @param index the (0-base) index of the item to return
      * @throws IndexOutOfBoundsException if there is no subitem at index
      */
-    public WordItem getWordItem(int index) {
-        return (WordItem) getItem(index);
+    public TermItem getTermItem(int index) {
+        return (TermItem) getItem(index);
     }
 
     @Override
@@ -175,9 +176,13 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     void appendContentsString(StringBuilder buffer) {
         buffer.append("'");
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
-            WordItem wordItem = (WordItem) i.next();
-
-            buffer.append(wordItem.getWord());
+            var item = i.next();
+            if (item instanceof WordItem wordItem) {
+                buffer.append(wordItem.getWord());
+            } else {
+                item.appendHeadingString(buffer);
+                item.appendBodyString(buffer);
+            }
             if (i.hasNext()) {
                 buffer.append(" ");
             }

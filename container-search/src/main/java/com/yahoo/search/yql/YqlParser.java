@@ -749,16 +749,7 @@ public class YqlParser implements Parser {
         return sameElement;
     }
 
-    private Item instantiatePhraseItem(String field, OperatorNode<ExpressionOperator> ast) {
-        assertHasFunctionName(ast, PHRASE);
-
-        if (getAnnotation(ast, ORIGIN, Map.class, null, ORIGIN_DESCRIPTION, false) != null) {
-            return instantiateSegmentItem(field, ast, false);
-        }
-
-        PhraseItem phrase = new PhraseItem();
-        phrase.setIndexName(field);
-        phrase.setExplicit(true);
+    private void fillPhraseItem(CompositeItem phrase, String field, OperatorNode<ExpressionOperator> ast) {
         for (OperatorNode<ExpressionOperator> word : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
             if (word.getOperator() == ExpressionOperator.CALL) {
                 List<String> names = word.getArgument(0);
@@ -780,7 +771,23 @@ public class YqlParser implements Parser {
                 phrase.addItem(instantiateWordItem(field, word, phrase.getClass()));
             }
         }
-        return leafStyleSettings(ast, phrase);
+    }
+
+    private Item instantiatePhraseItem(String field, OperatorNode<ExpressionOperator> ast) {
+        assertHasFunctionName(ast, PHRASE);
+        boolean wasSegmented = (getAnnotation(ast, ORIGIN, Map.class, null, ORIGIN_DESCRIPTION, false) != null);
+        if (wasSegmented) {
+            Substring origin = getSubstring(ast);
+            PhraseSegmentItem phrase = instantiatePhraseSegmentItem(origin.getValue(), field, true, ast);
+            fillPhraseItem(phrase, field, ast);
+            return leafStyleSettings(ast, phrase);
+        } else {
+            PhraseItem phrase = new PhraseItem();
+            phrase.setIndexName(field);
+            phrase.setExplicit(true);
+            fillPhraseItem(phrase, field, ast);
+            return leafStyleSettings(ast, phrase);
+        }
     }
 
     private Item instantiateSegmentItem(String field, OperatorNode<ExpressionOperator> ast, boolean forcePhrase) {
