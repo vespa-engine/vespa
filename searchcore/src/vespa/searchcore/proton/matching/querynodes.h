@@ -46,6 +46,8 @@ public:
         [[nodiscard]] TermFieldHandle getHandle(MatchDataDetails requested_details) const override;
         [[nodiscard]] const std::string & getName() const noexcept { return _field_spec.getName(); }
         [[nodiscard]] bool is_filter() const noexcept { return _field_spec.isFilter(); }
+
+        void disable_filter() noexcept { _field_spec.disable_filter(); }
     };
 
 private:
@@ -71,6 +73,8 @@ public:
     [[nodiscard]] size_t numFields() const final { return _fields.size(); }
     [[nodiscard]] const FieldEntry &field(size_t i) const final { return _fields[i]; }
     [[nodiscard]] const FieldEntry *lookupField(uint32_t fieldId) const final;
+    // Write access to field is needeed by TagNeededHandlesVisitor
+    [[nodiscard]] FieldEntry &field(size_t i) noexcept { return _fields[i]; }
 };
 
 template <typename NodeType> inline uint32_t numTerms(const NodeType &) { return 1; }

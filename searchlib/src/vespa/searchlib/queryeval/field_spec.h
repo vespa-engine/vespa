@@ -57,6 +57,7 @@ public:
     }
     const std::string & getName() const noexcept { return _name; }
     fef::FilterThreshold get_filter_threshold() const noexcept { return _threshold; }
+    void disable_filter() noexcept { _threshold = fef::FilterThreshold(false); }
 private:
     std::string _name; // field name
     fef::FilterThreshold _threshold;
