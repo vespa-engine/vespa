@@ -13,4 +13,7 @@ import com.yahoo.api.annotations.Beta;
  */
 @Beta
 public record DocumentFrequency(long frequency, long count) {
+    public final String toString() {
+        return "{frequency: " + frequency + ", count: " + count + "}";
+    }
 }
