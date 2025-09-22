@@ -12,26 +12,27 @@ import java.util.stream.Stream;
  * Systems in hosted Vespa
  *
  * @author Martin Polden
+ * @author hakon
  * @author bjorncs
  */
 public enum SystemName {
 
-    /** Yahoo Continuous deployment system */
+    /** Yahoo Private Cloud CD */
     cd,
 
-    /** Yahoo Production system */
+    /** Yahoo Private Cloud Production */
     main,
 
-    /** System accessible to the public */
+    /** Vespa Cloud Production */
     Public,
 
-    /** Continuous deployment system for testing the Public system */
+    /** Vespa Cloud CD */
     PublicCd,
 
     /** Local development system */
     dev,
 
-    /** Kubernetes */
+    /** Kubernetes Production */
     kubernetes,
 
     /** Kubernetes CD */
@@ -65,15 +66,18 @@ public enum SystemName {
     }
 
     /** Whether the system is similar to Public, e.g. PublicCd. */
-    public boolean isPublicLike() { return this == Public || this == PublicCd; }
+    public boolean isPublicCloudLike() { return this == Public || this == PublicCd; }
 
-    // TODO Remove and use isPublicLike() instead
-    public boolean isPublic() { return isPublicLike(); }
+    // TODO Remove and use isPublicCloudLike() instead
+    public boolean isPublicLike() { return isPublicCloudLike(); }
 
-    // TODO Remove and use isYahoo() instead
-    public boolean isMainLike() { return isYahoo(); }
+    // TODO Remove and use isPublicCloudLike() instead
+    public boolean isPublic() { return isPublicCloudLike(); }
 
-    public boolean isYahoo() { return this == main || this == cd; }
+    // TODO Remove and use isYahooLike() instead
+    public boolean isMainLike() { return isYahooLike(); }
+
+    public boolean isYahooLike() { return this == main || this == cd; }
 
     // TODO Remove and use isKubernetesLike() instead
     public boolean isKubernetes() { return isKubernetesLike(); }
@@ -86,7 +90,7 @@ public enum SystemName {
 
     public boolean isCdLike() { return this == cd || this == PublicCd || this == kubernetesCd; }
 
-    public boolean isProduction() { return this == main || this == Public || this == kubernetes; }
+    public boolean isProdLike() { return this == main || this == Public || this == kubernetes; }
 
     public static Set<SystemName> all() { return EnumSet.allOf(SystemName.class); }
 

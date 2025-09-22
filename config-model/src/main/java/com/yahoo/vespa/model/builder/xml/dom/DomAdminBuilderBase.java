@@ -136,7 +136,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     private String parseLogforwarderRole(String role, DeployState deployState) {
         if (role == null)
             return null;
-        if (deployState.zone().system().isPublicLike())
+        if (deployState.zone().system().isPublicCloudLike())
             throw new IllegalArgumentException("Logforwarder role not supported in public systems");
 
         // Currently only support athenz roles on format athenz://<domain>/role/<role>
