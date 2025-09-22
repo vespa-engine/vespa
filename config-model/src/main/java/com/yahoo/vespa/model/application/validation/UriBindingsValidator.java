@@ -72,7 +72,7 @@ class UriBindingsValidator implements Validator {
      * Logs to deploy logger in non-public systems, throw otherwise
      */
     private static void logOrThrow(String message, Context context) {
-        if (context.deployState().zone().system().isPublicLike()) {
+        if (context.deployState().zone().system().isPublicCloudLike()) {
             context.illegal(message);
         } else {
             context.deployState().getDeployLogger().log(Level.WARNING, message);

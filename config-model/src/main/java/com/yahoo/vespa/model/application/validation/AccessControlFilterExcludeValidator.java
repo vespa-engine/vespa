@@ -21,7 +21,7 @@ public class AccessControlFilterExcludeValidator implements Validator {
 
     @Override
     public void validate(Context context) {
-        if (!context.deployState().isHosted() || context.deployState().zone().system().isPublicLike()) return;
+        if (!context.deployState().isHosted() || context.deployState().zone().system().isPublicCloudLike()) return;
         if (context.deployState().getProperties().allowDisableMtls()) return;
         context.model().getContainerClusters().forEach((id, cluster) -> {
             Http http = cluster.getHttp();

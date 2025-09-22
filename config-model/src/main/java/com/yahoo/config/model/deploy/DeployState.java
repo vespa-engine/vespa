@@ -313,7 +313,7 @@ public class DeployState implements ConfigDefinitionStore {
     public boolean isHostedTenantApplication(ApplicationType type) {
         boolean isTesterApplication = getProperties().applicationId().instance().isTester();
         return isHosted() && type == ApplicationType.DEFAULT && !isTesterApplication
-                && !zone().system().isKubernetes();
+                && !zone().system().isKubernetesLike();
     }
 
     public static class Builder {
