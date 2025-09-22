@@ -23,10 +23,10 @@ public enum SystemName {
     /** Yahoo Private Cloud Production */
     main,
 
-    /** Vespa Cloud Production */
+    /** Public Vespa Cloud Production */
     Public,
 
-    /** Vespa Cloud CD */
+    /** Public Vespa Cloud CD */
     PublicCd,
 
     /** Local development system */
