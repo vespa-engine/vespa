@@ -186,7 +186,7 @@ public class ClusterMonitor<T> {
         }
 
         public void run() {
-            log.info("Starting cluster monitor thread " + getName());
+            log.fine("Starting cluster monitor thread " + getName());
             // Pings must happen in a separate thread from this to handle timeouts
             // By using a cached thread pool we ensured that 1) a single thread will be used
             // for all pings when there are no problems (important because it ensures that
@@ -220,7 +220,7 @@ public class ClusterMonitor<T> {
                     log.warning("Timeout waiting for ping executor to terminate");
                 }
             } catch (InterruptedException e) { }
-            log.info("Stopped cluster monitor thread " + getName());
+            log.fine("Stopped cluster monitor thread " + getName());
         }
 
     }
