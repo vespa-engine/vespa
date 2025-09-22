@@ -273,10 +273,10 @@ QueryTermSimple::getFloatRange() const noexcept
         res.low = _numeric_range->fp_lower_limit;
         res.high = _numeric_range->fp_upper_limit;
         if (! _numeric_range->lower_inclusive) {
-            res.low = std::nextafter(res.low, res.high);
+            res.low = std::nextafter(res.low, std::numeric_limits<N>::infinity());
         }
         if (! _numeric_range->upper_inclusive) {
-            res.high = std::nextafter(res.high, res.low);
+            res.high = std::nextafter(res.high, -std::numeric_limits<N>::infinity());
         }
     } else {
         res.valid = false;
