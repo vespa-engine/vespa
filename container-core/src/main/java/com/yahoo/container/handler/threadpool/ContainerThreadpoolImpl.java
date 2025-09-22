@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * Default implementation of {@link ContainerThreadPool}.
  *
  * @author Steinar Knutsen
- * @author baldersheim
+ * @author Henning Baldersheim
  * @author bratseth
  * @author bjorncs
  */
@@ -45,7 +45,7 @@ public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCl
         int maxThreads = maxThreads(config, cpus);
         int minThreads = minThreads(config, maxThreads, cpus);
         int queueSize = queueSize(config, maxThreads);
-        log.info(String.format("Threadpool '%s': min=%d, max=%d, queue=%d", name, minThreads, maxThreads, queueSize));
+        log.config(String.format("Threadpool '%s': min=%d, max=%d, queue=%d", name, minThreads, maxThreads, queueSize));
 
         ThreadPoolMetric threadPoolMetric = new ThreadPoolMetric(metric, name);
         WorkerCompletionTimingThreadPoolExecutor executor =
