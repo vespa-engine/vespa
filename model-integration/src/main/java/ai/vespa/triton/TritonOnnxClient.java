@@ -25,6 +25,7 @@ import io.grpc.stub.AbstractStub;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +64,22 @@ public class TritonOnnxClient implements AutoCloseable {
         this.grpcHealthStub = HealthGrpc.newBlockingV2Stub(ch);
     }
 
-    public record ModelMetadata(Map<String, TensorType> inputs, Map<String, TensorType> outputs) {}
+    public static class ModelMetadata {
+        public final Map<String, TensorType> inputs;
+        public final Map<String, TensorType> outputs;
+        // Only used by `evaluate` inside the client, thus `private`.
+        private final List<GrpcService.ModelMetadataResponse.TensorMetadata> tritonInputs;
+
+        private ModelMetadata(
+                Map<String, TensorType> inputs,
+                Map<String, TensorType> outputs,
+                List<GrpcService.ModelMetadataResponse.TensorMetadata> tritonInputs) {
+            this.inputs = Collections.unmodifiableMap(inputs);
+            this.outputs = Collections.unmodifiableMap(outputs);
+            this.tritonInputs = Collections.unmodifiableList(tritonInputs);
+        }
+    }
+    
     public ModelMetadata getModelMetadata(String modelName) {
         var request = GrpcService.ModelMetadataRequest.newBuilder()
                 .setName(modelName)
@@ -71,7 +87,7 @@ public class TritonOnnxClient implements AutoCloseable {
         var response = invokeGrpc(grpcInferenceStub, s -> s.modelMetadata(request));
         var inputs = toTensorTypes(response.getInputsList());
         var outputs = toTensorTypes(response.getOutputsList());
-        return new ModelMetadata(inputs, outputs);
+        return new ModelMetadata(inputs, outputs, response.getInputsList());
     }
 
 
@@ -98,25 +114,19 @@ public class TritonOnnxClient implements AutoCloseable {
         invokeGrpc(grpcInferenceStub, s -> s.repositoryModelUnload(request));
     }
 
-    public Map<String, Tensor> evaluate(String modelName, Map<String, Tensor> inputs) {
-        return evaluate(modelName, inputs, Set.of());
+    public Map<String, Tensor> evaluate(String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs) {
+        return evaluate(modelName, modelMetadata, inputs, Set.of());
     }
 
-    public Tensor evaluate(String modelName, Map<String, Tensor> inputs, String outputName) {
-        return evaluate(modelName, inputs, Set.of(outputName)).get(outputName);
+    public Tensor evaluate(String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, String outputName) {
+        return evaluate(modelName, modelMetadata, inputs, Set.of(outputName)).get(outputName);
     }
 
-    public Map<String, Tensor> evaluate(String modelName, Map<String, Tensor> inputs, Set<String> outputNames) {
+    public Map<String, Tensor> evaluate(String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, Set<String> outputNames) {
         var requestBuilder = GrpcService.ModelInferRequest.newBuilder()
                 .setModelName(modelName);
 
-        // Get model metadata to convert vespa tensor types to onnx types
-        var metadata = invokeGrpc(grpcInferenceStub, s -> s.modelMetadata(
-                GrpcService.ModelMetadataRequest.newBuilder()
-                        .setName(modelName)
-                        .build()));
-
-        inputs.forEach((name, tensor) -> addInputToBuilder(metadata.getInputsList(), requestBuilder, tensor, name));
+        inputs.forEach((name, tensor) -> addInputToBuilder(modelMetadata.tritonInputs, requestBuilder, tensor, name));
 
         // Returns all output if none is specified
         outputNames.forEach(name -> requestBuilder.addOutputs(
