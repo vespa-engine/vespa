@@ -52,13 +52,17 @@ TEST(ContentNodeMessageStatsTest, errors_are_categorized_based_on_result_code) {
     s.observe_incoming_response_result(id, static_cast<api::ReturnCode::Result>(mbus::ErrorCode::CONNECTION_ERROR));
     s.observe_incoming_response_result(id, static_cast<api::ReturnCode::Result>(mbus::ErrorCode::NETWORK_ERROR));
     s.observe_incoming_response_result(id, static_cast<api::ReturnCode::Result>(mbus::ErrorCode::NO_ADDRESS_FOR_SERVICE));
-    s.observe_incoming_response_result(id, api::ReturnCode::TIMEOUT);
     s.observe_incoming_response_result(id, api::ReturnCode::NOT_CONNECTED);
-    EXPECT_EQ(s.recv_network_error, 5);
+    EXPECT_EQ(s.recv_network_error, 4);
     s.observe_incoming_response_result(id, api::ReturnCode::STALE_TIMESTAMP);
     EXPECT_EQ(s.recv_clock_skew_error, 1);
     s.observe_incoming_response_result(id, api::ReturnCode::DISK_FAILURE);
     EXPECT_EQ(s.recv_other_error, 1);
+    // Timeouts may be due to both network problems and overloaded nodes, so
+    // count it under "other" since we can't really know this on the distributor.
+    s.observe_incoming_response_result(id, api::ReturnCode::TIMEOUT);
+    EXPECT_EQ(s.recv_network_error, 4); // unchanged
+    EXPECT_EQ(s.recv_other_error, 2);
 }
 
 TEST(ContentNodeMessageStatsTest, do_not_attribute_possible_transitive_errors_to_node) {
