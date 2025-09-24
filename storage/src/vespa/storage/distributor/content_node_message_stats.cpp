@@ -50,11 +50,12 @@ constexpr bool is_rpc_related_error_code(api::ReturnCode::Result res) noexcept {
     const auto res_ignore_enum = static_cast<uint32_t>(res);
     switch (res_ignore_enum) {
     // See `StorageApiRpcService` for FRT RPC -> mbus/storage API error mapping.
-    // Whatever's assigned there for RPC-level errors should also be included here.
+    // Whatever's assigned there for RPC-level errors should also be included here
+    // (except timeouts, which may also happen due to deadline expiry for enqueued
+    // operations and would therefore be ambiguous).
     case mbus::ErrorCode::CONNECTION_ERROR:
     case mbus::ErrorCode::NETWORK_ERROR:
     case mbus::ErrorCode::NO_ADDRESS_FOR_SERVICE:
-    case api::ReturnCode::TIMEOUT:
     case api::ReturnCode::NOT_CONNECTED:
         return true;
     default:
