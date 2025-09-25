@@ -364,13 +364,6 @@ public class Flags {
             TENANT_ID
     );
 
-    public static final UnboundBooleanFlag REQUIRE_OPERATOR_MODE = defineFeatureFlag(
-            "require-operator-mode", false,
-            List.of("eirik"), "2025-05-27", "2025-09-25",
-            "Wheter operator mode is required to access hostedOperator functionality",
-            "Takes effect immediately"
-    );
-
     public static final UnboundBooleanFlag AZURE_IPV6 = defineFeatureFlag(
             "azure-ipv6", false,
             List.of("olaa"), "2025-06-10", "2025-11-01",
