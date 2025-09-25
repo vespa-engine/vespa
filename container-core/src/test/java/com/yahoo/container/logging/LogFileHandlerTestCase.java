@@ -18,13 +18,17 @@ import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.function.BiFunction;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
+import java.lang.reflect.Field;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -214,15 +218,12 @@ public class LogFileHandlerTestCase {
         File root = newFolder(temporaryFolder, "testsizerotation");
         String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s";
         
-        // Set rotation size to 1KB and check interval to 100ms for faster testing
-        long rotationSize = 1024; // 1KB
-        long sizeCheckInterval = 100; // Check every 100ms for testing
+        long rotationSize = 1024;
         
         LogFileHandler<String> handler = new LogFileHandler<>(
                 Compression.NONE, BUFFER_SIZE, pattern, new long[]{0}, null, 2048, 
-                "thread-name", new StringLogWriter(), rotationSize, sizeCheckInterval);
+                rotationSize, "thread-name", new StringLogWriter());
         
-        // Write initial message to trigger file creation
         handler.publish("initial");
         handler.flush();
         Thread.sleep(100);
@@ -230,42 +231,36 @@ public class LogFileHandlerTestCase {
         String firstFile = handler.getFileName();
         assertNotNull(firstFile, "File should be created after first write");
         
-        // Write data that exceeds rotation size
-        String largeMessage = "x".repeat(100); // 100 bytes per message
-        for (int i = 0; i < 15; i++) { // 1500 bytes total, exceeds 1024
+        String largeMessage = "x".repeat(100);
+        for (int i = 0; i < 15; i++) {
             handler.publish(largeMessage);
         }
         handler.flush();
         
-        // Wait for size check to occur
-        Thread.sleep(200);
+        forceFileSizeCheck(handler);
         
-        // Publish one more message to trigger the check during publish
         handler.publish("trigger");
         handler.flush();
+        Thread.sleep(200);
         
-        // Verify rotation occurred
         String currentFile = handler.getFileName();
         assertNotEquals(firstFile, currentFile, "File should have rotated due to size");
         
-        // Verify first file exists and is not empty
-        assertTrue(Files.exists(Paths.get(firstFile)));
-        assertTrue(Files.size(Paths.get(firstFile)) > 0);
+        assertTrue(Files.exists(Paths.get(firstFile)), "Original file should exist after rotation");
+        assertTrue(Files.size(Paths.get(firstFile)) > 0, "Original file should have data");
         
         handler.shutdown();
     }
-    
+
     @Test
     void testSizeRotationDisabled() throws IOException, InterruptedException {
         File root = newFolder(temporaryFolder, "testsizerotationdisabled");
         String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s";
         
-        // Rotation size = 0 means disabled
         LogFileHandler<String> handler = new LogFileHandler<>(
                 Compression.NONE, BUFFER_SIZE, pattern, new long[]{0}, null, 2048, 
-                "thread-name", new StringLogWriter(), 0, 1000);
+                0, "thread-name", new StringLogWriter());
         
-        // Write initial message to trigger file creation
         handler.publish("initial");
         handler.flush();
         Thread.sleep(100);
@@ -273,124 +268,143 @@ public class LogFileHandlerTestCase {
         String firstFile = handler.getFileName();
         assertNotNull(firstFile, "File should be created after first write");
         
-        // Write lots of data
         String largeMessage = "x".repeat(1000);
-        for (int i = 0; i < 100; i++) { // 100KB total
+        for (int i = 0; i < 100; i++) {
             handler.publish(largeMessage);
         }
         handler.flush();
+        
+        forceFileSizeCheck(handler);
+        handler.publish("test");
+        handler.flush();
         Thread.sleep(100);
         
-        // Verify no rotation occurred
         assertEquals(firstFile, handler.getFileName(), "File should not rotate when size rotation is disabled");
         
         handler.shutdown();
     }
-    
+
     @Test
-    void testSizeCheckInterval() throws IOException, InterruptedException {
-        File root = newFolder(temporaryFolder, "testsizecheckinterval");
+    void testFileSizeCheckInterval() throws IOException, InterruptedException, NoSuchFieldException, IllegalAccessException {
+        File root = newFolder(temporaryFolder, "testfilesizecheckinterval");
         String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s";
         
-        // Set rotation size to 1KB but with a long check interval
-        long rotationSize = 1024; // 1KB
-        long sizeCheckInterval = 5000; // Check every 5 seconds
+        long rotationSize = 1024;
         
         LogFileHandler<String> handler = new LogFileHandler<>(
                 Compression.NONE, BUFFER_SIZE, pattern, new long[]{0}, null, 2048, 
-                "thread-name", new StringLogWriter(), rotationSize, sizeCheckInterval);
+                rotationSize, "thread-name", new StringLogWriter());
         
-        // Write initial message to trigger file creation
         handler.publish("initial");
         handler.flush();
         Thread.sleep(100);
         
         String firstFile = handler.getFileName();
-        assertNotNull(firstFile, "File should be created after first write");
+        assertNotNull(firstFile);
         
-        // Write data that exceeds rotation size
-        String largeMessage = "x".repeat(100);
-        for (int i = 0; i < 15; i++) { // 1500 bytes total
-            handler.publish(largeMessage);
+        String message = "x".repeat(100);
+        for (int i = 0; i < 20; i++) {
+            handler.publish(message);
         }
         handler.flush();
         
-        // Wait shorter than check interval
-        Thread.sleep(1000);
+        Field intervalField = handler.logThread.getClass().getDeclaredField("fileSizeCheckInterval");
+        intervalField.setAccessible(true);
+        Duration interval = (Duration) intervalField.get(handler.logThread);
+        assertEquals(Duration.ofMinutes(1), interval, "Check interval should be 1 minute");
+        
         handler.publish("test");
         handler.flush();
-        
-        // Should NOT have rotated yet (within check interval)
+        Thread.sleep(100);
         assertEquals(firstFile, handler.getFileName(), "File should not rotate before check interval");
         
-        // Wait for check interval to pass
-        Thread.sleep(4500);
-        handler.publish("trigger check");
+        forceFileSizeCheck(handler);
+        handler.publish("trigger");
         handler.flush();
+        Thread.sleep(200);
         
-        // Now it should have rotated
-        assertNotEquals(firstFile, handler.getFileName(), "File should rotate after check interval");
+        assertNotEquals(firstFile, handler.getFileName(), "File should rotate after size check");
         
         handler.shutdown();
     }
-    
+
     @Test
     void testSizeAndTimeRotation() throws IOException, InterruptedException {
         File root = newFolder(temporaryFolder, "testsizeandtimerotation");
         String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s";
         
-        // Configure both size and time rotation
-        long rotationSize = 2048; // 2KB
-        long sizeCheckInterval = 100;
-        // Use rotation times that won't trigger during test
-        long[] rotationTimes = {System.currentTimeMillis() + 3600000}; // 1 hour from now
+        long rotationSize = 2048;
+        long[] rotationTimes = {System.currentTimeMillis() + 3600000};
         
         LogFileHandler<String> handler = new LogFileHandler<>(
                 Compression.NONE, BUFFER_SIZE, pattern, rotationTimes, null, 2048, 
-                "thread-name", new StringLogWriter(), rotationSize, sizeCheckInterval);
+                rotationSize, "thread-name", new StringLogWriter());
         
-        // Write initial message to trigger file creation
         handler.publish("initial");
         handler.flush();
         Thread.sleep(100);
         
         String firstFile = handler.getFileName();
-        assertNotNull(firstFile, "File should be created after first write");
+        assertNotNull(firstFile);
         
-        // Write less than rotation size
         String message = "x".repeat(100);
-        for (int i = 0; i < 10; i++) { // 1000 bytes, less than 2KB
+        for (int i = 0; i < 10; i++) {
             handler.publish(message);
         }
         handler.flush();
-        Thread.sleep(200);
+        Thread.sleep(100);
         
-        // Should not have rotated (neither size nor time triggered)
-        assertEquals(firstFile, handler.getFileName());
+        assertEquals(firstFile, handler.getFileName(), "File should not rotate before size limit");
         
-        // Now exceed size limit
-        for (int i = 0; i < 15; i++) { // Additional 1500 bytes, total 2500 bytes > 2KB
+        for (int i = 0; i < 15; i++) {
             handler.publish(message);
         }
         handler.flush();
         
-        // Wait for size check to occur
-        Thread.sleep(200);
-        
-        // Publish another message to trigger the check during publish
+        forceFileSizeCheck(handler);
         handler.publish("trigger");
         handler.flush();
-        
-        // Wait a bit for rotation to complete
         Thread.sleep(200);
         
-        // Should have rotated due to size
-        String secondFile = handler.getFileName();
-        assertNotEquals(firstFile, secondFile, "File should rotate due to size limit");
+        assertNotEquals(firstFile, handler.getFileName(), "File should rotate due to size limit");
         
         handler.shutdown();
     }
-    
+
+    @Test
+    void testMultipleSizeRotations() throws IOException, InterruptedException {
+        File root = newFolder(temporaryFolder, "testmultiplesizerotations");
+        String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s";
+        
+        long rotationSize = 512;
+        
+        LogFileHandler<String> handler = new LogFileHandler<>(
+                Compression.NONE, BUFFER_SIZE, pattern, new long[]{0}, null, 2048, 
+                rotationSize, "thread-name", new StringLogWriter());
+        
+        String message = "x".repeat(50);
+        
+        for (int rotation = 0; rotation < 3; rotation++) {
+            for (int i = 0; i < 12; i++) {
+                handler.publish(message);
+            }
+            handler.flush();
+            
+            forceFileSizeCheck(handler);
+            handler.publish("trigger" + rotation);
+            handler.flush();
+            Thread.sleep(200);
+        }
+        
+        handler.shutdown();
+        
+        List<Path> logFiles = Files.list(root.toPath())
+                .filter(p -> p.toString().contains("logfilehandlertest"))
+                .collect(Collectors.toList());
+        
+        assertTrue(logFiles.size() >= 3, "Should have created at least 3 log files due to size rotation");
+    }
+
     @Test
     void testSizeRotationWithCompression() throws IOException, InterruptedException {
         File root = newFolder(temporaryFolder, "testsizerotationcompression");
@@ -398,39 +412,31 @@ public class LogFileHandlerTestCase {
         
         LogFileHandler<String> handler = new LogFileHandler<>(
                 Compression.ZSTD, BUFFER_SIZE, pattern, new long[]{0}, null, 2048, 
-                "thread-name", new StringLogWriter(), 1024, 100);
+                1024, "thread-name", new StringLogWriter());
         
-        // Write initial message to trigger file creation
         handler.publish("initial");
         handler.flush();
         Thread.sleep(100);
         
         String firstFile = handler.getFileName();
-        assertNotNull(firstFile, "File should be created after first write");
+        assertNotNull(firstFile);
         
-        // Write data exceeding rotation size
         String message = "x".repeat(100);
-        for (int i = 0; i < 20; i++) { // 2000 bytes
+        for (int i = 0; i < 20; i++) {
             handler.publish(message);
         }
         handler.flush();
         
-        // Wait for size check to occur
-        Thread.sleep(200);
-        
-        // Publish another message to trigger the check during publish
+        forceFileSizeCheck(handler);
         handler.publish("trigger");
         handler.flush();
-        Thread.sleep(100);
+        Thread.sleep(200);
         
-        // Get the current file after rotation
         String secondFile = handler.getFileName();
-        assertNotEquals(firstFile, secondFile, "File should have rotated due to size");
+        assertNotEquals(firstFile, secondFile);
         
-        // Force another rotation to trigger compression of the previous file
         handler.rotateNow();
         
-        // Wait for compression to complete
         int maxWaitTime = 5000;
         int waited = 0;
         while (Files.exists(Paths.get(firstFile)) && waited < maxWaitTime) {
@@ -438,63 +444,20 @@ public class LogFileHandlerTestCase {
             waited += 100;
         }
         
-        // Verify first file was compressed
         assertFalse(Files.exists(Paths.get(firstFile)), "Original file should be deleted after compression");
         assertTrue(Files.exists(Paths.get(firstFile + ".zst")), "Compressed file should exist");
         
         handler.shutdown();
     }
-    
-    @Test
-    void testMultipleSizeRotations() throws IOException, InterruptedException {
-        File root = newFolder(temporaryFolder, "testmultiplesizerotations");
-        String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s";
-        
-        LogFileHandler<String> handler = new LogFileHandler<>(
-                Compression.NONE, BUFFER_SIZE, pattern, new long[]{0}, null, 2048, 
-                "thread-name", new StringLogWriter(), 512, 50); // Small size, fast checks
-        
-        // Track all created files
-        String message = "x".repeat(50);
-        
-        // Create multiple rotations
-        for (int rotation = 0; rotation < 3; rotation++) {
-            for (int i = 0; i < 12; i++) { // 600 bytes per rotation
-                handler.publish(message);
-            }
-            handler.flush();
-            Thread.sleep(100); // Wait for size check
-            handler.publish("trigger" + rotation);
+
+    private void forceFileSizeCheck(LogFileHandler<String> handler) {
+        try {
+            Field lastCheckField = handler.logThread.getClass().getDeclaredField("lastFileSizeCheck");
+            lastCheckField.setAccessible(true);
+            lastCheckField.set(handler.logThread, Instant.now().minus(Duration.ofMinutes(2)));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to force file size check", e);
         }
-        
-        handler.shutdown();
-        
-        // Count log files created
-        List<Path> logFiles = Files.list(root.toPath())
-                .filter(p -> p.toString().contains("logfilehandlertest"))
-                .collect(Collectors.toList());
-        
-        assertTrue(logFiles.size() >= 3, "Should have created at least 3 log files due to size rotation");
-    }
-    
-    @Test
-    void testBackwardCompatibility() throws IOException {
-        // Test that old constructor still works (without size parameters)
-        File root = newFolder(temporaryFolder, "testbackwardcompat");
-        String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S";
-        
-        // Use old constructor
-        LogFileHandler<String> handler = new LogFileHandler<>(
-                Compression.NONE, BUFFER_SIZE, pattern, "0 5 ...", null, 2048, 
-                "thread-name", new StringLogWriter());
-        
-        // Should work normally without size-based rotation
-        handler.publish("test backward compatibility");
-        handler.flush();
-        
-        assertTrue(Files.exists(Paths.get(handler.getFileName())));
-        
-        handler.shutdown();
     }
 
     static class StringLogWriter implements LogWriter<String> {
