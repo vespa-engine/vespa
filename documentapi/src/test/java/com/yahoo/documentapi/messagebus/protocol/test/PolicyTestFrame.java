@@ -99,6 +99,7 @@ public class PolicyTestFrame {
     }
 
     // Inherit doc from Object.
+    @SuppressWarnings({"deprecation","removal"}) // finalize() is deprecated from Java 9
     @Override
     protected void finalize() throws Throwable {
         destroy();
