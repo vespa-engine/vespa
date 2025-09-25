@@ -44,6 +44,20 @@ QueryBuilder::QueryBuilder()
 
 QueryBuilder::~QueryBuilder() = default;
 
+void
+QueryBuilder::adjust_index(std::string& index)
+{
+    if (index.empty()) {
+        if (_same_element_view.has_value() && !_same_element_view.value().empty()) {
+            index = _same_element_view.value();
+        } else {
+            index = SimpleQueryStackDumpIterator::DEFAULT_INDEX;
+        }
+    } else if (_same_element_view.has_value() && !_same_element_view.value().empty()) {
+        index = _same_element_view.value() + "." + index;
+    }
+}
+
 std::unique_ptr<QueryNode>
 QueryBuilder::build(const QueryNode * parent, const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator & queryRep, bool allowRewrite)
 {
@@ -106,16 +120,12 @@ QueryBuilder::build(const QueryNode * parent, const QueryNodeResultFactory& fact
         case ParseItem::ITEM_FUZZY:
         {
             std::string index(queryRep.index_as_view());
-            if (index.empty()) {
-                if ((type == ParseItem::ITEM_PURE_WEIGHTED_STRING) || (type == ParseItem::ITEM_PURE_WEIGHTED_LONG)) {
-                    index = parent->getIndex();
-                } else if (_same_element_view.has_value() && !_same_element_view.value().empty()) {
-                    index = _same_element_view.value();
-                } else {
-                    index = SimpleQueryStackDumpIterator::DEFAULT_INDEX;
-                }
-            } else if (_same_element_view.has_value() && !_same_element_view.value().empty()) {
-                index = _same_element_view.value() + "." + index;
+            if (index.empty() &&
+                ((type == ParseItem::ITEM_PURE_WEIGHTED_STRING) || (type == ParseItem::ITEM_PURE_WEIGHTED_LONG)) &&
+                parent != nullptr) {
+                index = parent->getIndex();
+            } else {
+                adjust_index(index);
             }
             TermType sTerm = ParseItem::toTermType(type);
             QueryTerm::string ssTerm;
@@ -292,9 +302,7 @@ std::unique_ptr<QueryNode>
 QueryBuilder::build_phrase_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
 {
     std::string index(queryRep.index_as_view());
-    if (index.empty()) {
-        index = SimpleQueryStackDumpIterator::DEFAULT_INDEX;
-    }
+    adjust_index(index);
     auto phrase = std::make_unique<PhraseQueryNode>(factory.create(), index, queryRep.getArity());
     auto arity = queryRep.getArity();
     phrase->setWeight(queryRep.GetWeight());

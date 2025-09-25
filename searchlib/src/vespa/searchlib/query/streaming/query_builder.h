@@ -29,6 +29,7 @@ class QueryBuilder {
     static void skip_unknown(SimpleQueryStackDumpIterator& queryRep);
 
     std::optional<std::string> _same_element_view;
+    void adjust_index(std::string& index);
 public:
     QueryBuilder();
     ~QueryBuilder();
