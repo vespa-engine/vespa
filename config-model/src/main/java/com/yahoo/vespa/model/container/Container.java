@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
-import com.yahoo.config.model.MallocImplResolver;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
@@ -68,7 +67,6 @@ public abstract class Container extends AbstractService implements
     private List<LogctlSpec> logctlSpecs = List.of();
 
     protected final TreeConfigProducer<?> parent;
-    protected final DeployState deployState;
     private final String name;
     private boolean requireSpecificPorts = true;
 
@@ -92,7 +90,6 @@ public abstract class Container extends AbstractService implements
 
     protected Container(TreeConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
         super(parent, name);
-        this.deployState = deployState;
         this.name = name;
         this.parent = parent;
         this.retired = retired;
