@@ -14,8 +14,13 @@ import java.util.Map;
  */
 public class RPCServicePool {
 
-    private final Map<Long, ServiceLRUCache> mapOfServiceCache;
     private final int maxSize;
+    private final ThreadLocal<ServiceLRUCache> perThreadServiceCache =
+            new ThreadLocal<ServiceLRUCache>() {
+                @Override protected ServiceLRUCache initialValue() {
+                    return new ServiceLRUCache(maxSize);
+                }
+            };
 
     /**
      * Create a new service pool for the given network.
@@ -23,7 +28,6 @@ public class RPCServicePool {
      * @param maxSize The max number of services to cache.
      */
     public RPCServicePool(int maxSize) {
-        mapOfServiceCache = new CopyOnWriteHashMap<>();
         this.maxSize = maxSize;
     }
 
@@ -36,12 +40,11 @@ public class RPCServicePool {
      * @return A service address for the given pattern.
      */
     public RPCServiceAddress resolve(String pattern, IMirror mirror) {
-
         return getPerThreadCache().computeIfAbsent(pattern, (key) -> RPCService.create(mirror, key)).resolve();
     }
 
     private ServiceLRUCache getPerThreadCache() {
-        return mapOfServiceCache.computeIfAbsent(Thread.currentThread().getId(), (key) -> new ServiceLRUCache(maxSize));
+        return perThreadServiceCache.get();
     }
 
     /**
