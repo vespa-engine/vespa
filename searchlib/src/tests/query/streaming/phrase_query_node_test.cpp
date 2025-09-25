@@ -56,9 +56,9 @@ TEST(PhraseQueryNodeTest, test_phrase_evaluate)
     terms[1]->add(2, 0, 1, 2);
     terms[2]->add(2, 0, 1, 4);
     // field 3
-    terms[0]->add(3, 0, 1, 0);
-    terms[1]->add(3, 0, 1, 1);
-    terms[2]->add(3, 0, 1, 2);
+    terms[0]->add(3, 31, 1, 0);
+    terms[1]->add(3, 31, 1, 1);
+    terms[2]->add(3, 31, 1, 2);
     // field 4 (not complete match)
     terms[0]->add(4, 0, 1, 1);
     terms[1]->add(4, 0, 1, 2);
@@ -76,9 +76,12 @@ TEST(PhraseQueryNodeTest, test_phrase_evaluate)
     EXPECT_EQ(0u, hits[1].element_id());
     EXPECT_EQ(4u, hits[1].position());
     EXPECT_EQ(3u, hits[2].field_id());
-    EXPECT_EQ(0u, hits[2].element_id());
+    EXPECT_EQ(31u, hits[2].element_id());
     EXPECT_EQ(0u, hits[2].position());
     EXPECT_TRUE(p.evaluate());
+    std::vector<uint32_t> element_ids;
+    p.get_element_ids(element_ids);
+    EXPECT_EQ((std::vector<uint32_t>{0, 31}), element_ids);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

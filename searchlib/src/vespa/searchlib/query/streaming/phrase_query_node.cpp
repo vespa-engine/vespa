@@ -66,8 +66,11 @@ PhraseQueryNode::evaluateHits(HitList & hl) const
 }
 
 void
-PhraseQueryNode::get_element_ids(std::vector<uint32_t>&) const
+PhraseQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
 {
+    HitList list;
+    const HitList& hit_list = evaluateHits(list);
+    get_element_ids_helper(element_ids, hit_list);
 }
 
 void
