@@ -178,6 +178,7 @@ class DeactivatedContainerWatchdog implements DeactivatedContainerWatchdogMetric
      * These are threads launched by components of application bundles and not stopped after subsequent component deconstruction.
      * The below algorithm is a heuristic and will not detect all leaked threads.
      */
+    @SuppressWarnings("deprecation") // Thread.getId() is deprecated
     private void warnOnThreadsHavingClassloaderFromUninstalledBundles(Collection<Thread> threads) {
         record ThreadDetails(Thread thread, Bundle bundle) {}
         List<ThreadDetails> staleThreads = new ArrayList<>();

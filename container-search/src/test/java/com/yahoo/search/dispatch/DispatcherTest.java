@@ -135,6 +135,7 @@ public class DispatcherTest {
         dispatcher.deconstruct();
     }
 
+    @SuppressWarnings("deprecation") // Thread.getId() is deprecated
     @Test
     void testRpcResourceShutdownOnReconfiguration() throws InterruptedException, ExecutionException, IOException {
         // Ping factory lets us tick each ping, so we may delay shutdown, due to monitor thread RPC usage.
@@ -177,6 +178,7 @@ public class DispatcherTest {
                 };
             }
             // Verifies cleanup is done by the expected thread, by ID, and cleans up the "RPC connection" (phaser).
+            @SuppressWarnings("deprecation") // Thread.getId() is deprecated
             @Override public Collection<? extends AutoCloseable> updateNodes(DispatchNodesConfig config) {
                 for (DispatchNodesConfig.Node node : config.node())
                     rpcResources.putIfAbsent(node.key(), true);
