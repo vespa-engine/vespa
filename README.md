@@ -58,6 +58,7 @@ or run your own Vespa instance: [https://docs.vespa.ai/en/getting-started.html](
 - [Vespa APIs](https://docs.vespa.ai/en/api.html) is useful to understand how to interface with Vespa
 - Explore the [sample applications](https://github.com/vespa-engine/sample-apps/tree/master)
 - Follow the [Vespa Blog](https://blog.vespa.ai/) for feature updates / use cases
+- Join the [Vespa Slack community](https://slack.vespa.ai/) to ask questions and share feedback
 
 Full documentation is at [https://docs.vespa.ai](https://docs.vespa.ai).
 
