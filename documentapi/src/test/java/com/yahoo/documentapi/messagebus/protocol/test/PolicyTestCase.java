@@ -817,12 +817,9 @@ public class PolicyTestCase {
         }
     }
 
-    private PolicyTestFrame newFrame() {
-        return new PolicyTestFrame(manager);
-    }
-
-    private PolicyTestFrame newFrame(Message msg) {
-        PolicyTestFrame frame = newFrame();
+    private PolicyTestFrame newPutDocumentFrame(String documentId) {
+        Message msg = newPutDocument(documentId);
+        PolicyTestFrame frame =  new PolicyTestFrame(manager);
         frame.setMessage(msg);
         return frame;
     }
@@ -832,7 +829,4 @@ public class PolicyTestCase {
                                                                    new DocumentId(documentId))));
     }
 
-    private PolicyTestFrame newPutDocumentFrame(String documentId) {
-        return newFrame(newPutDocument(documentId));
-    }
 }
