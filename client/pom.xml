@@ -36,6 +36,7 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
           <release>${vespaClients.jdk.releaseVersion}</release>
+          <compilerArgs>-Werror</compilerArgs>
         </configuration>
       </plugin>
       <plugin>
