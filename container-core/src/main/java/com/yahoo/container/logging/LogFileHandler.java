@@ -64,23 +64,23 @@ class LogFileHandler <LOGTYPE> {
 
     LogFileHandler(Compression compression, int bufferSize, String filePattern, String rotationTimes, String symlinkName,
                    int queueSize, long rotationSize, String threadName, LogWriter<LOGTYPE> logWriter) {
-        this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, rotationSize, threadName, logWriter, Clock.systemDefaultZone());
+        this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, rotationSize, threadName, logWriter, Clock.systemUTC());
     }
 
     LogFileHandler(Compression compression, int bufferSize, String filePattern, long[] rotationTimes, String symlinkName,
                    int queueSize, long rotationSize, String threadName, LogWriter<LOGTYPE> logWriter) {
-        this(compression, bufferSize, filePattern, rotationTimes, symlinkName, queueSize, rotationSize, threadName, logWriter, Clock.systemDefaultZone());
+        this(compression, bufferSize, filePattern, rotationTimes, symlinkName, queueSize, rotationSize, threadName, logWriter, Clock.systemUTC());
     }
 
     // Keep backward compatibility constructors
     LogFileHandler(Compression compression, int bufferSize, String filePattern, String rotationTimes, String symlinkName,
                    int queueSize, String threadName, LogWriter<LOGTYPE> logWriter) {
-        this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, 0, threadName, logWriter, Clock.systemDefaultZone());
+        this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, 0, threadName, logWriter, Clock.systemUTC());
     }
 
     LogFileHandler(Compression compression, int bufferSize, String filePattern, long[] rotationTimes, String symlinkName,
                    int queueSize, String threadName, LogWriter<LOGTYPE> logWriter) {
-        this(compression, bufferSize, filePattern, rotationTimes, symlinkName, queueSize, 0, threadName, logWriter, Clock.systemDefaultZone());
+        this(compression, bufferSize, filePattern, rotationTimes, symlinkName, queueSize, 0, threadName, logWriter, Clock.systemUTC());
     }
 
 
@@ -260,7 +260,7 @@ class LogFileHandler <LOGTYPE> {
                   String threadName,
                   Pollable<LOGTYPE> operationProvider) {
             this(logWriter, filePattern, compression, bufferSize, rotationTimes,
-                    symlinkName, rotationSize, threadName, operationProvider, Clock.systemDefaultZone());
+                    symlinkName, rotationSize, threadName, operationProvider, Clock.systemUTC());
         }
 
         private static ExecutorService createCompressionTaskExecutor() {
