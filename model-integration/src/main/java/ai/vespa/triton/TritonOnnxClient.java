@@ -43,7 +43,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 @Beta
 public class TritonOnnxClient implements AutoCloseable {
-
+    final int MAX_INBOUND_MESSAGE_SIZE_MIB = 128;
     private static final Logger log = Logger.getLogger(TritonOnnxClient.class.getName());
 
     private final GRPCInferenceServiceGrpc.GRPCInferenceServiceBlockingV2Stub grpcInferenceStub;
@@ -59,6 +59,7 @@ public class TritonOnnxClient implements AutoCloseable {
     public TritonOnnxClient(TritonConfig config) {
         var ch = ManagedChannelBuilder.forTarget(config.target())
                 .usePlaintext()
+                .maxInboundMessageSize(MAX_INBOUND_MESSAGE_SIZE_MIB * 1024 * 1024)
                 .build();
         this.grpcInferenceStub = GRPCInferenceServiceGrpc.newBlockingV2Stub(ch);
         this.grpcHealthStub = HealthGrpc.newBlockingV2Stub(ch);
