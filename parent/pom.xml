@@ -134,19 +134,6 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <configuration>
-                        <doclint>${doclint},-missing</doclint>
-                        <quiet>true</quiet>
-                        <show>protected</show>
-
-                        <!-- TODO: remove this setting when the plugin looks for element-list (JDK 10+) instead of package-list. -->
-                        <detectOfflineLinks>false</detectOfflineLinks>
-                    </configuration>
-                    <version>${maven-javadoc-plugin.vespa.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-plugin-plugin</artifactId>
                     <version>${maven-plugin-tools.vespa.version}</version>
                     <configuration>
