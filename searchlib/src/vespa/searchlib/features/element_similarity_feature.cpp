@@ -245,7 +245,12 @@ public:
         _md = &md;
     }
 
-    void requeue_term(uint16_t term, uint32_t element) {
+    // take the front term in the position queue,
+    // iterate to its next element (or end), and
+    // put it back into the element queue if possible
+    void requeue_pos_front(uint32_t element) {
+        uint16_t term = _position_queue.front();
+        _position_queue.pop_front();
         while (_pos[term] != _end[term] && (_pos[term]->getElementId() == element)) {
             ++_pos[term];
         }
@@ -280,18 +285,16 @@ public:
                         _pos[first]->getPosition(),
                         _terms.weights[first],
                         first);
-            requeue_term(_position_queue.front(), elementId);
-            _position_queue.pop_front();
+            requeue_pos_front(elementId);
             while (!_position_queue.empty()) {
                 uint16_t item = _position_queue.front();
                 if (state.want_match(_pos[item]->getPosition())) {
                     state.addMatch(_pos[item]->getPosition(), _terms.weights[item], item);
-                    requeue_term(_position_queue.front(), elementId);
-                    _position_queue.pop_front();
+                    requeue_pos_front(elementId);
                 } else {
                     ++_pos[item];
-                    if (_pos[item] == _end[item]) {
-                        _position_queue.pop_front();
+                    if (_pos[item] == _end[item] || _pos[item]->getElementId() != elementId) {
+                        requeue_pos_front(elementId);
                     } else {
                         _position_queue.adjust();
                     }
