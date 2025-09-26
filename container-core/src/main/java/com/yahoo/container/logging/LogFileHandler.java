@@ -19,6 +19,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
@@ -48,16 +51,38 @@ class LogFileHandler <LOGTYPE> {
     @FunctionalInterface private interface Pollable<T> { Operation<T> poll() throws InterruptedException; }
 
     LogFileHandler(Compression compression, int bufferSize, String filePattern, String rotationTimes, String symlinkName,
+                   int queueSize, long rotationSize, String threadName, LogWriter<LOGTYPE> logWriter, Clock clock) {
+        this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, rotationSize, threadName, logWriter, clock);
+    }
+
+    LogFileHandler(Compression compression, int bufferSize, String filePattern, long[] rotationTimes, String symlinkName,
+                   int queueSize, long rotationSize, String threadName, LogWriter<LOGTYPE> logWriter, Clock clock) {
+        this.logQueue = new LinkedBlockingQueue<>(queueSize);
+        this.logThread = new LogThread<>(logWriter, filePattern, compression, bufferSize, rotationTimes, symlinkName, rotationSize, threadName, this::poll, clock);
+        this.logThread.start();
+    }
+
+    LogFileHandler(Compression compression, int bufferSize, String filePattern, String rotationTimes, String symlinkName,
+                   int queueSize, long rotationSize, String threadName, LogWriter<LOGTYPE> logWriter) {
+        this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, rotationSize, threadName, logWriter, Clock.systemUTC());
+    }
+
+    LogFileHandler(Compression compression, int bufferSize, String filePattern, long[] rotationTimes, String symlinkName,
+                   int queueSize, long rotationSize, String threadName, LogWriter<LOGTYPE> logWriter) {
+        this(compression, bufferSize, filePattern, rotationTimes, symlinkName, queueSize, rotationSize, threadName, logWriter, Clock.systemUTC());
+    }
+
+    // Keep backward compatibility constructors
+    LogFileHandler(Compression compression, int bufferSize, String filePattern, String rotationTimes, String symlinkName,
                    int queueSize, String threadName, LogWriter<LOGTYPE> logWriter) {
-        this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, threadName, logWriter);
+        this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, 0, threadName, logWriter, Clock.systemUTC());
     }
 
     LogFileHandler(Compression compression, int bufferSize, String filePattern, long[] rotationTimes, String symlinkName,
                    int queueSize, String threadName, LogWriter<LOGTYPE> logWriter) {
-        this.logQueue = new LinkedBlockingQueue<>(queueSize);
-        this.logThread = new LogThread<>(logWriter, filePattern, compression, bufferSize, rotationTimes, symlinkName, threadName, this::poll);
-        this.logThread.start();
+        this(compression, bufferSize, filePattern, rotationTimes, symlinkName, queueSize, 0, threadName, logWriter, Clock.systemUTC());
     }
+
 
     private Operation<LOGTYPE> poll() throws InterruptedException {
         return logQueue.poll(100, TimeUnit.MILLISECONDS);
@@ -187,6 +212,10 @@ class LogFileHandler <LOGTYPE> {
         long lastFlush = 0;
         private PageCacheFriendlyFileOutputStream fileOutput = null;
         private long nextRotationTime = 0;
+        private long fileSize = 0;
+        private final Duration fileSizeCheckInterval = Duration.ofMinutes(1);
+        private final Clock clock;
+        private Instant lastFileSizeCheck = Instant.now();
         private final String filePattern;  // default to current directory, ms time stamp
         private volatile String fileName;
         private final LogWriter<LOGTYPE> logWriter;
@@ -196,7 +225,7 @@ class LogFileHandler <LOGTYPE> {
         private final String symlinkName;
         private final ExecutorService executor = createCompressionTaskExecutor();
         private final NativeIO nativeIO = new NativeIO();
-
+        private final long rotationSize;
 
         LogThread(LogWriter<LOGTYPE> logWriter,
                   String filePattern,
@@ -204,8 +233,10 @@ class LogFileHandler <LOGTYPE> {
                   int bufferSize,
                   long[] rotationTimes,
                   String symlinkName,
+                  long rotationSize,
                   String threadName,
-                  Pollable<LOGTYPE> operationProvider) {
+                  Pollable<LOGTYPE> operationProvider,
+                  Clock clock) {
             super(threadName);
             setDaemon(true);
             this.logWriter = logWriter;
@@ -214,7 +245,22 @@ class LogFileHandler <LOGTYPE> {
             this.bufferSize = bufferSize;
             this.rotationTimes = rotationTimes;
             this.symlinkName = (symlinkName != null && !symlinkName.isBlank()) ? symlinkName : null;
+            this.rotationSize = rotationSize;
             this.operationProvider = operationProvider;
+            this.clock = clock;
+        }
+
+        LogThread(LogWriter<LOGTYPE> logWriter,
+                  String filePattern,
+                  Compression compression,
+                  int bufferSize,
+                  long[] rotationTimes,
+                  String symlinkName,
+                  long rotationSize,
+                  String threadName,
+                  Pollable<LOGTYPE> operationProvider) {
+            this(logWriter, filePattern, compression, bufferSize, rotationTimes,
+                    symlinkName, rotationSize, threadName, operationProvider, Clock.systemUTC());
         }
 
         private static ExecutorService createCompressionTaskExecutor() {
@@ -294,11 +340,18 @@ class LogFileHandler <LOGTYPE> {
             // first check to see if new file needed.
             // if so, use this.internalRotateNow() to do it
 
-            long now = System.currentTimeMillis();
+            long now = clock.millis();
+            Instant nowInstant = Instant.ofEpochMilli(now);
             if (nextRotationTime <= 0) {
                 nextRotationTime = getNextRotationTime(now); // lazy initialization
             }
-            if (now > nextRotationTime || fileOutput == null) {
+            if (lastFileSizeCheck.plus(fileSizeCheckInterval).isBefore(nowInstant)) {
+                getFileSize(nowInstant);
+            }
+            if (rotationSize > 0 && fileOutput != null && fileSize >= rotationSize) {
+                nextRotationTime = now; // trigger rotation based on size
+            }
+            if (now >= nextRotationTime || fileOutput == null) {
                 internalRotateNow();
             }
             try {
@@ -306,6 +359,17 @@ class LogFileHandler <LOGTYPE> {
                 fileOutput.write('\n');
             } catch (IOException e) {
                 logger.warning("Failed writing log record: " + Exceptions.toMessageString(e));
+            }
+        }
+
+        private void getFileSize(Instant now) {
+            if (fileOutput != null) {
+                try {
+                    fileSize = Files.size(Paths.get(fileName));
+                    lastFileSizeCheck = now;
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Failed to get log file size: " + Exceptions.toMessageString(e), e);
+                }
             }
         }
 
@@ -317,7 +381,7 @@ class LogFileHandler <LOGTYPE> {
          */
         long getNextRotationTime(long now) {
             if (now <= 0) {
-                now = System.currentTimeMillis();
+                now = clock.millis();
             }
             long nowTod = timeOfDayMillis(now);
             long next = 0;
@@ -352,7 +416,7 @@ class LogFileHandler <LOGTYPE> {
             // figure out new file name, then
 
             String oldFileName = fileName;
-            long now = System.currentTimeMillis();
+            long now = clock.millis();
             fileName = LogFormatter.insertDate(filePattern, now);
             internalClose();
             try {
