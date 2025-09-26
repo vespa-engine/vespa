@@ -112,7 +112,7 @@ TEST(AttributeInitializationStatusTest, test_reporting_queued) {
 
     EXPECT_EQ(slime.get().children(), 2);
     EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("testAttribute"));
-    EXPECT_EQ(slime.get()["status"].asString().make_string(), std::string("queued"));
+    EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("queued"));
 }
 
 TEST(AttributeInitializationStatusTest, test_reporting_loading) {
@@ -125,7 +125,7 @@ TEST(AttributeInitializationStatusTest, test_reporting_loading) {
 
     EXPECT_EQ(slime.get().children(), 3);
     EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("testAttribute"));
-    EXPECT_EQ(slime.get()["status"].asString().make_string(), std::string("loading"));
+    EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("loading"));
     EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
               AttributeInitializationStatus::timepoint_to_string(status.get_start_time()));
 }
@@ -141,7 +141,7 @@ TEST(AttributeInitializationStatusTest, test_reporting_loaded) {
 
     EXPECT_EQ(slime.get().children(), 4);
     EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("testAttribute"));
-    EXPECT_EQ(slime.get()["status"].asString().make_string(), std::string("loaded"));
+    EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("loaded"));
     EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
               AttributeInitializationStatus::timepoint_to_string(status.get_start_time()));
     EXPECT_EQ(slime.get()["end_time"].asString().make_string(),
@@ -160,7 +160,7 @@ TEST(AttributeInitializationStatusTest, test_reporting_reprocessing) {
 
     EXPECT_EQ(slime.get().children(), 5);
     EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("testAttribute"));
-    EXPECT_EQ(slime.get()["status"].asString().make_string(), std::string("reprocessing"));
+    EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("reprocessing"));
     EXPECT_EQ(slime.get()["reprocess_progress"].asString().make_string(), "0.420000");
     EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
               AttributeInitializationStatus::timepoint_to_string(status.get_start_time()));
@@ -181,7 +181,7 @@ TEST(AttributeInitializationStatusTest, test_reporting_reprocessing_loading) {
 
     EXPECT_EQ(slime.get().children(), 6);
     EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("testAttribute"));
-    EXPECT_EQ(slime.get()["status"].asString().make_string(), std::string("loading"));
+    EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("loading"));
     EXPECT_EQ(slime.get()["reprocess_progress"].asString().make_string(), "1.000000");
     EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
               AttributeInitializationStatus::timepoint_to_string(status.get_start_time()));
@@ -205,7 +205,7 @@ TEST(AttributeInitializationStatusTest, test_reporting_reprocessing_loaded) {
 
     EXPECT_EQ(slime.get().children(), 7);
     EXPECT_EQ(slime.get()["name"].asString().make_string(), std::string("testAttribute"));
-    EXPECT_EQ(slime.get()["status"].asString().make_string(), std::string("loaded"));
+    EXPECT_EQ(slime.get()["state"].asString().make_string(), std::string("loaded"));
     EXPECT_EQ(slime.get()["reprocess_progress"].asString().make_string(), "1.000000");
     EXPECT_EQ(slime.get()["start_time"].asString().make_string(),
               AttributeInitializationStatus::timepoint_to_string(status.get_start_time()));
