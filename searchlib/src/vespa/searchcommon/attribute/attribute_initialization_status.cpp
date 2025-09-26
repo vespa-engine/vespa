@@ -115,7 +115,7 @@ void AttributeInitializationStatus::report_initialization_status(const vespalib:
     vespalib::slime::Cursor &cursor = inserter.insertObject();
     cursor.setString("name", _name);
 
-    cursor.setString("status", state_to_string(_state));
+    cursor.setString("state", state_to_string(_state));
 
     if (_state >= State::LOADING && _was_reprocessed) {
         cursor.setString("reprocess_progress",  std::format("{:.6f}", _reprocessing_percentage));
