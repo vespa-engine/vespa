@@ -505,8 +505,7 @@
       "final"
     ],
     "methods" : [
-      "public void <init>(com.yahoo.jdisc.handler.ReadableContentChannel)",
-      "public void finalize()"
+      "public void <init>(com.yahoo.jdisc.handler.ReadableContentChannel)"
     ],
     "fields" : [ ]
   },
