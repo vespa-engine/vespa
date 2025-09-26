@@ -15,6 +15,8 @@ import java.util.logging.Logger;
  * @author bjorncs
  */
 class TritonOnnxEvaluator implements OnnxEvaluator {
+    private static final Logger log = Logger.getLogger(TritonOnnxEvaluator.class.getName());
+    
     private final String modelName;
     private final TritonOnnxClient tritonClient;
     private final boolean isExplicitControlMode;
@@ -56,6 +58,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
             return tritonClient.evaluate(modelName, modelMetadata, inputs);
         } catch (TritonOnnxClient.TritonException e) {
             if (allowRetry) {
+                log.warning("Retrying to evaluate model: " + modelName);
                 loadModelIfNotReady();
                 return evaluate(inputs, false);
             }
