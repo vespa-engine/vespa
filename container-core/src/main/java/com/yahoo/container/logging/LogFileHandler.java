@@ -213,7 +213,7 @@ class LogFileHandler <LOGTYPE> {
         private PageCacheFriendlyFileOutputStream fileOutput = null;
         private long nextRotationTime = 0;
         private long fileSize = 0;
-        final static Duration fileSizeCheckInterval = Duration.ofMinutes(1);
+        private final Duration fileSizeCheckInterval = Duration.ofMinutes(1);
         private final Clock clock;
         private Instant lastFileSizeCheck = Instant.now();
         private final String filePattern;  // default to current directory, ms time stamp

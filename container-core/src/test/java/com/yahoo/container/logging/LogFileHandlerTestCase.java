@@ -446,7 +446,6 @@ public class LogFileHandlerTestCase {
         handler.shutdown();
     }
 
-
     static class StringLogWriter implements LogWriter<String> {
 
         @Override
