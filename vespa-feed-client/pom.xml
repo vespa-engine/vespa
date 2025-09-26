@@ -104,6 +104,7 @@
             <configuration>
               <release>${vespaClients.jdk.releaseVersion}</release>
               <showDeprecation>true</showDeprecation>
+              <compilerArgs>-Werror</compilerArgs>
             </configuration>
           </execution>
         </executions>
