@@ -109,6 +109,28 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     }
 
     @Override
+    public void addItem(int index, Item item) {
+        if (item instanceof WordItem || item instanceof PhraseSegmentItem || item instanceof WordAlternativesItem) {
+            addIndexedItem(index, (IndexedItem) item);
+        } else if (item instanceof IntItem intItem) {
+            addIndexedItem(index, intItem.asWord());
+        } else {
+            throw new IllegalArgumentException("Can not add " + item + " to a phrase");
+        }
+    }
+
+    @Override
+    public Item setItem(int index, Item item) {
+        if (item instanceof WordItem || item instanceof PhraseSegmentItem || item instanceof WordAlternativesItem) {
+            return setIndexedItem(index, (IndexedItem) item);
+        } else if (item instanceof IntItem intItem) {
+            return setIndexedItem(index, intItem.asWord());
+        } else {
+            throw new IllegalArgumentException("Can not add " + item + " to a phrase");
+        }
+    }
+
+    @Override
     public Optional<Item> extractSingleChild() {
         Optional<Item> extracted = super.extractSingleChild();
         extracted.ifPresent(e -> e.setWeight(this.getWeight()));
@@ -116,11 +138,25 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     }
 
 
-    // TODO: Override addItem(index,item), setItem(index,item)
-
     private void addIndexedItem(IndexedItem word) {
         word.setIndexName(this.getIndexName());
         super.addItem((Item) word);
+    }
+
+    private void addIndexedItem(int index, IndexedItem word) {
+        word.setIndexName(this.getIndexName());
+        if (word instanceof Item item) {
+            item.setWeight(this.getWeight());
+        }
+        super.addItem(index, (Item) word);
+    }
+
+    private Item setIndexedItem(int index, IndexedItem word) {
+        word.setIndexName(this.getIndexName());
+        if (word instanceof Item item) {
+            item.setWeight(this.getWeight());
+        }
+        return super.setItem(index, (Item) word);
     }
 
     /**

@@ -139,4 +139,5 @@ public class RecallSearcher extends Searcher {
             }
         }
     }
+
 }

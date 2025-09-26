@@ -130,7 +130,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     private static void validateName(Map<String, TensorType> types, String name, String type) {
         if ( ! types.containsKey(name)) {
             throw new IllegalArgumentException("Model does not contain required " + type + ": '" + name + "'. " +
-                    "Model contains: " + String.join(",", types.keySet()));
+                                               "Model contains: " + String.join(",", types.keySet()));
         }
     }
 

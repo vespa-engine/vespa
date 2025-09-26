@@ -88,17 +88,8 @@ public class PhraseItem extends CompositeIndexedItem {
     }
 
     @Override
-    public boolean acceptsItemsOfType(ItemType itemType) {
-        return itemType == ItemType.WORD ||
-               itemType == ItemType.WORD_ALTERNATIVES ||
-               itemType == ItemType.INT ||
-               itemType == ItemType.EXACT ||
-               itemType == ItemType.PHRASE;
-    }
-
-    @Override
     public void addItem(int index, Item item) {
-        if (item instanceof WordItem || item instanceof PhraseSegmentItem) {
+        if (item instanceof WordItem || item instanceof PhraseSegmentItem || item instanceof WordAlternativesItem) {
             addIndexedItem(index, (IndexedItem) item);
         } else if (item instanceof IntItem intItem) {
             addIndexedItem(index, intItem.asWord());
@@ -113,7 +104,7 @@ public class PhraseItem extends CompositeIndexedItem {
 
     @Override
     public Item setItem(int index, Item item) {
-        if (item instanceof WordItem || item instanceof PhraseSegmentItem) {
+        if (item instanceof WordItem || item instanceof PhraseSegmentItem || item instanceof WordAlternativesItem) {
             return setIndexedItem(index, (IndexedItem) item);
         } else if (item instanceof IntItem intItem) {
             return setIndexedItem(index, intItem.asWord());
@@ -130,6 +121,15 @@ public class PhraseItem extends CompositeIndexedItem {
         } else {
             throw new IllegalArgumentException("Can not add " + item + " to a phrase");
         }
+    }
+
+    @Override
+    public boolean acceptsItemsOfType(ItemType itemType) {
+        return itemType == ItemType.WORD ||
+               itemType == ItemType.WORD_ALTERNATIVES ||
+               itemType == ItemType.INT ||
+               itemType == ItemType.EXACT ||
+               itemType == ItemType.PHRASE;
     }
 
     @Override
