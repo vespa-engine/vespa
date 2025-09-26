@@ -312,11 +312,12 @@ class LogFileHandler <LOGTYPE> {
             // if so, use this.internalRotateNow() to do it
 
             long now = System.currentTimeMillis();
+            Instant nowInstant = Instant.ofEpochMilli(now);
             if (nextRotationTime <= 0) {
                 nextRotationTime = getNextRotationTime(now); // lazy initialization
             }
-            if (lastFileSizeCheck.plus(fileSizeCheckInterval).isBefore(Instant.now())) {
-                getFileSize();
+            if (lastFileSizeCheck.plus(fileSizeCheckInterval).isBefore(nowInstant)) {
+                getFileSize(nowInstant);
             }
             if (rotationSize > 0 && fileOutput != null && fileSize >= rotationSize) {
                 nextRotationTime = now; // trigger rotation based on size
@@ -332,11 +333,11 @@ class LogFileHandler <LOGTYPE> {
             }
         }
 
-        private void getFileSize() {
+        private void getFileSize(Instant now) {
             if (fileOutput != null) {
                 try {
                     fileSize = Files.size(Paths.get(fileName));
-                    lastFileSizeCheck = Instant.now();
+                    lastFileSizeCheck = now;
                 } catch (IOException e) {
                     logger.log(Level.WARNING, "Failed to get log file size: " + Exceptions.toMessageString(e), e);
                 }
