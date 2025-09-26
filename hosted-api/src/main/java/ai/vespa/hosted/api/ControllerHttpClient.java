@@ -114,6 +114,30 @@ public abstract class ControllerHttpClient {
         return new MutualTlsControllerHttpClient(endpoint, privateKey, certificates);
     }
 
+    public static ControllerHttpClient withBearerToken(
+            java.net.URI endpoint,
+            java.util.function.Supplier<String> tokenSupplier) {
+        return new BearerTokenControllerHttpClient(endpoint, tokenSupplier, null);
+    }
+
+    private static final class BearerTokenControllerHttpClient extends ControllerHttpClient {
+        private final Supplier<String> tokenSupplier;
+
+        private BearerTokenControllerHttpClient(URI endpoint, Supplier<String> tokenSupplier, SSLContext sslContext) {
+            super(endpoint, sslContext); // null => default SSLContext (normal HTTPS)
+            this.tokenSupplier = Objects.requireNonNull(tokenSupplier, "tokenSupplier");
+        }
+
+        @Override
+        protected HttpRequest request(HttpRequest.Builder request, Method method, Supplier<InputStream> data) {
+            // Don’t overwrite if caller explicitly set Authorization for a single call
+            request.header("Authorization", request.build().headers().firstValue("Authorization").isPresent()
+                    ? request.build().headers().firstValue("Authorization").get()
+                    : "Bearer " + tokenSupplier.get());
+            return super.request(request, method, data);
+        }
+    }
+
     /** Sends the given submission to the remote controller and returns the version of the accepted package, or throws if this fails. */
     public SubmitResult submit(Submission submission, TenantName tenant, ApplicationName application) {
         return toSubmitResult(send(request(HttpRequest.newBuilder(applicationPath(tenant, application).resolve("submit"))
