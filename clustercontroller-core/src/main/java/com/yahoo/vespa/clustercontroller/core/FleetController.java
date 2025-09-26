@@ -70,7 +70,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     private long cycleCount = 0;
     private long lastMetricUpdateCycleCount = 0;
     private long nextStateSendTime = 0;
-    private Long controllerThreadId = null;
+    private Thread controllerThread = null;
 
     private boolean waitingForCycle = false;
     private final StatusPageServer.PatternRequestRouter statusRequestRouter = new StatusPageServer.PatternRequestRouter();
@@ -249,7 +249,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             runner.join();
         }
         context.log(logger, Level.INFO, "FleetController done shutting down event thread.");
-        controllerThreadId = Thread.currentThread().getId();
+        controllerThread = Thread.currentThread();
         database.shutdown(databaseContext);
 
         if (rpcServer != null) {
@@ -270,7 +270,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     }
 
     private void verifyInControllerThread() {
-        if (controllerThreadId != null && controllerThreadId != Thread.currentThread().getId()) {
+        if (controllerThread != null && controllerThread != Thread.currentThread()) {
             throw new IllegalStateException("Function called from non-controller thread. Shouldn't happen.");
         }
     }
@@ -1050,7 +1050,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
 
     @Override
     public void run() {
-        controllerThreadId = Thread.currentThread().getId();
+        controllerThread = Thread.currentThread();
         context.log(logger, Level.INFO, "Starting tick loop");
         try {
             processingCycle = true;
