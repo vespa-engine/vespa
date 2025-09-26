@@ -9,7 +9,7 @@ import java.util.Objects;
  */
 public final class LocaleFactory {
 
-    private static final Locale UNKNOWN = new Locale("", "", "");
+    private static final Locale UNKNOWN = Locale.ROOT;
 
     private LocaleFactory() {}
 
@@ -45,7 +45,7 @@ public final class LocaleFactory {
             }
         }
         if (language.isEmpty()) return UNKNOWN;
-        return new Locale(language, region, script);
+        return new Locale.Builder().setLanguage(language).setScript(script).setRegion(region).build();
     }
 
 }

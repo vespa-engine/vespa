@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -46,7 +47,8 @@ public class LocaleFactoryTestCase {
         Locale locale = LocaleFactory.fromLanguageTag(tag);
         assertEquals(language, locale.getLanguage());
         assertEquals(country, locale.getCountry());
-        assertEquals(variant, locale.getVariant());
+        // in Java 21, it's not "variant" but "script"
+        assertTrue(locale.getVariant().equals(variant) || locale.getScript().equals(variant));
     }
 
 }

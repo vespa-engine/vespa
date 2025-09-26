@@ -581,6 +581,7 @@ public enum Language {
         }
         if (str.equals("zh")) {
             if (locale.getCountry().equalsIgnoreCase("cn") ||
+                locale.getScript().equalsIgnoreCase("hans") ||
                 locale.getVariant().equalsIgnoreCase("hans")) {
                 return CHINESE_SIMPLIFIED;
             }
