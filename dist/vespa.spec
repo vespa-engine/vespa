@@ -667,6 +667,7 @@ fi
 %{_prefix}/lib/jars/jna-*.jar
 %{_prefix}/lib/jars/linguistics-components-jar-with-dependencies.jar
 %{_prefix}/lib/jars/lucene-linguistics-jar-with-dependencies.jar
+%{_prefix}/lib/jars/mcp-server-jar-with-dependencies.jar
 %{_prefix}/lib/jars/model-evaluation-jar-with-dependencies.jar
 %{_prefix}/lib/jars/model-integration-jar-with-dependencies.jar
 %{_prefix}/lib/jars/security-utils.jar
