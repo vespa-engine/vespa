@@ -77,7 +77,7 @@ public class VsmSummary extends Derived {
                     return true;
                 }
             }
-            // The sources in the summary field are the same as the sub-fields in the SD field.
+            // The sources in the summary field are the same as the sub-fields in the schema field.
             // All sub fields do summarying.
             // Don't map.
             return false;

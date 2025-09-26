@@ -63,7 +63,7 @@ public class IndexingOutputs extends Processor {
             if (!DynamicSummaryTransformUtils.isSupportedType(fieldType)) {
                 warn(schema, field, "Dynamic summaries are only supported for fields of type " +
                         "string and array<string>, ignoring summary field '" + summaryField.getName() +
-                        "' for sd field '" + field.getName() + "' of type " +
+                        "' for field '" + field.getName() + "' of type " +
                         fieldType.getName() + ".");
             }
         }
