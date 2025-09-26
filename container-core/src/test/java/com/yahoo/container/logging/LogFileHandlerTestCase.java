@@ -27,7 +27,6 @@ import java.lang.reflect.Field;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -285,7 +284,7 @@ public class LogFileHandlerTestCase {
     }
 
     @Test
-    void testFileSizeCheckInterval() throws IOException, InterruptedException, NoSuchFieldException, IllegalAccessException {
+    void testFileSizeCheckInterval() throws IOException, InterruptedException {
         File root = newFolder(temporaryFolder, "testfilesizecheckinterval");
         String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s";
         
@@ -308,10 +307,7 @@ public class LogFileHandlerTestCase {
         }
         handler.flush();
         
-        Field intervalField = handler.logThread.getClass().getDeclaredField("fileSizeCheckInterval");
-        intervalField.setAccessible(true);
-        Duration interval = (Duration) intervalField.get(handler.logThread);
-        assertEquals(Duration.ofMinutes(1), interval, "Check interval should be 1 minute");
+        assertEquals(Duration.ofMinutes(1), LogFileHandler.LogThread.fileSizeCheckInterval, "Check interval should be 1 minute");
         
         handler.publish("test");
         handler.flush();
