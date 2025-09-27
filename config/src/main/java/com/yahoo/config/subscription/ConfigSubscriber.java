@@ -10,6 +10,7 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.yolean.Exceptions;
 
+import java.lang.ref.Cleaner;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
@@ -36,8 +37,8 @@ public class ConfigSubscriber implements AutoCloseable {
     protected final List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles = new CopyOnWriteArrayList<>();
     private final ConfigSource source;
     private final Object monitor = new Object();
-    private final Throwable stackTraceAtConstruction; // TODO Remove once finalizer is gone
     private final JrtConfigRequesters requesters = new JrtConfigRequesters();
+    private final Finalizer finalizer;
 
     /** The last complete config generation received by this */
     private long generation = -1;
@@ -72,7 +73,8 @@ public class ConfigSubscriber implements AutoCloseable {
      */
     public ConfigSubscriber(ConfigSource source) {
         this.source = source;
-        this.stackTraceAtConstruction = new Throwable();
+        this.finalizer = new Finalizer(super.toString(), subscriptionHandles, requesters);
+        this.cleanable = cleaner.register(this, finalizer);
     }
 
     /**
@@ -358,10 +360,7 @@ public class ConfigSubscriber implements AutoCloseable {
             if (state == State.CLOSED) return;
             state = State.CLOSED;
         }
-        for (ConfigHandle<? extends ConfigInstance> h : subscriptionHandles) {
-            h.subscription().close();
-        }
-        requesters.close();
+        finalizer.close();
         log.log(FINE, () -> "Config subscriber has been closed.");
     }
 
@@ -490,21 +489,40 @@ public class ConfigSubscriber implements AutoCloseable {
      * Finalizer to ensure that we do not leak resources on reconfig. Though finalizers are bad,
      * this is not a performance critical object as it will be deconstructed typically container reconfig.
      */
-    @Override
-    @SuppressWarnings("deprecation")  // finalize() is deprecated from Java 9
-    protected void finalize() throws Throwable {
-        try {
-            if (!isClosed()) {
+    private static final class Finalizer implements Runnable {
+        private boolean isClosed = false;
+        private final String name;
+        private final List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles;
+        private final JrtConfigRequesters requesters;
+        private final Throwable stackTraceAtConstruction;
+        Finalizer(String name,
+                  List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles,
+                  JrtConfigRequesters requesters)
+        {
+            this.name = name;
+            this.subscriptionHandles = subscriptionHandles;
+            this.requesters = requesters;
+            this.stackTraceAtConstruction = new Throwable();
+            this.stackTraceAtConstruction.fillInStackTrace();
+        }
+        public void run() {
+            if (! isClosed) {
                 log.log(WARNING, stackTraceAtConstruction,
                         () -> String.format("%s: Closing subscription from finalizer() - close() has not been called (keys=%s)",
-                                            super.toString(),
-                                            subscriptionHandles.stream().map(handle -> handle.subscription().getKey().toString()).toList()));
+                                            name,
+                                            subscriptionHandles.stream()
+                                            .map(handle -> handle.subscription().getKey().toString()).toList()));
                 close();
             }
-        } finally {
-            super.finalize();
+        }
+        public void close() {
+            for (ConfigHandle<? extends ConfigInstance> h : subscriptionHandles) {
+                h.subscription().close();
+            }
+            requesters.close();
+            isClosed = true;
         }
     }
-
-
+    private static final Cleaner cleaner = Cleaner.create();
+    private final Cleaner.Cleanable cleanable;
 }
