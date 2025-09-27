@@ -88,15 +88,6 @@ bool isPartialRange(std::string_view s) noexcept {
             ((s[0] == '<') || (s[0] == '>'));
 }
 
-constexpr double NEG_INF = -std::numeric_limits<double>::infinity();
-constexpr double POS_INF = std::numeric_limits<double>::infinity();
-
-constexpr float NEG_INF_F = -std::numeric_limits<float>::infinity();
-constexpr float POS_INF_F = std::numeric_limits<float>::infinity();
-
-constexpr float NEG_MIN_F = -std::numeric_limits<float>::max();
-constexpr float POS_MAX_F = std::numeric_limits<float>::max();
-
 constexpr int64_t NEG_MIN_I64 = std::numeric_limits<int64_t>::min();
 constexpr int64_t POS_MAX_I64 = std::numeric_limits<int64_t>::max();
 
