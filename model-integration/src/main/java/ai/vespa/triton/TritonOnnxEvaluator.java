@@ -18,25 +18,28 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     private static final Logger log = Logger.getLogger(TritonOnnxEvaluator.class.getName());
     
     private final String modelName;
-    private final TritonOnnxClient triton;
+    private final TritonOnnxClient tritonClient;
     private final boolean isExplicitControlMode;
     
     private TritonOnnxClient.ModelMetadata modelMetadata;
     
-    TritonOnnxEvaluator(TritonOnnxClient client, String modelName, boolean isExplicitControlMode) {
+    TritonOnnxEvaluator(TritonOnnxClient tritonClient, String modelName, boolean isExplicitControlMode) {
         this.modelName = modelName;
-        this.triton = client;
+        this.tritonClient = tritonClient;
         this.isExplicitControlMode = isExplicitControlMode;
-        loadModel();
+        loadModelIfNotReady();
     }
     
-    private void loadModel() {
-        try {
-            if (isExplicitControlMode) triton.loadModel(modelName);
-            modelMetadata = triton.getModelMetadata(modelName);
-        } catch (TritonOnnxClient.TritonException e) {
-            throw new RuntimeException("Failed to load model: " + modelName, e);
+    private void loadModelIfNotReady() {
+        if (isExplicitControlMode) {
+            var isModelReady = tritonClient.isModelReady(modelName);
+
+            if (!isModelReady) {
+                tritonClient.loadModel(modelName);
+            }
         }
+        
+        modelMetadata = tritonClient.getModelMetadata(modelName);
     }
 
     @Override
@@ -49,18 +52,18 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
         return evaluate(inputs, true);
     }
 
-    // Evaluate with optional retry in case the model is unloaded because of app redeployment or Triton restart.
+    // Evaluate with optional retry in case the model is unloaded because of app redeployment or Triton server restart.
     private Map<String, Tensor> evaluate(Map<String, Tensor> inputs, boolean allowRetry) {
         try {
-            return triton.evaluate(modelName, modelMetadata, inputs);
+            return tritonClient.evaluate(modelName, modelMetadata, inputs);
         } catch (TritonOnnxClient.TritonException e) {
             if (allowRetry) {
-                log.warning(() -> "Retrying to evaluate model: " + modelName);
-                loadModel();
+                log.warning("Retrying to evaluate model: " + modelName);
+                loadModelIfNotReady();
                 return evaluate(inputs, false);
             }
             
-            throw new RuntimeException("Failed to evaluate model: " + modelName, e);
+            throw e;
         }
     }
 
@@ -93,6 +96,8 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     @Override
     public void close() {
         // Note: This is not safe if evaluator instances share the same underlying Triton model.
-        if (isExplicitControlMode) triton.unloadModel(modelName);
+        if (isExplicitControlMode) {
+            tritonClient.unloadModel(modelName);
+        }
     }
 }
