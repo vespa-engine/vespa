@@ -17,6 +17,7 @@ public:
     QueryTermUCS4(QueryTermUCS4 &&) = delete;
     QueryTermUCS4 & operator = (QueryTermUCS4 &&) = delete;
     QueryTermUCS4(const string & term_, Type type);
+    QueryTermUCS4(Type type, std::unique_ptr<NumericRangeSpec> range);
     ~QueryTermUCS4() override;
     uint32_t getTermLen() const { return _cachedTermLen; }
     uint32_t term(const char * & t)     const { t = getTerm(); return _cachedTermLen; }
@@ -36,4 +37,3 @@ private:
 };
 
 }
-
