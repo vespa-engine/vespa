@@ -11,6 +11,7 @@ import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.DocumentFrequency;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
+import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -169,6 +170,25 @@ public class SignificanceSearcher extends Searcher {
             long nq_i             = documentFrequency.frequency();
             log.log(Level.FINE, () -> "Setting document frequency for " + word + " to {frequency: " + nq_i + ", count: " + N + "}");
             wi.setDocumentFrequency(new DocumentFrequency(nq_i, N));
+        } else if (root instanceof WordAlternativesItem wai) {
+            if (wai.getDocumentFrequency().isPresent() || wai.hasExplicitSignificance())
+                return;
+            long best_freq = Long.MAX_VALUE;
+            long best_count = 0;
+            for (var alternative : wai.getAlternatives()) {
+                var documentFrequency = significanceModel.documentFrequency(alternative.word.toLowerCase());
+                long N                = documentFrequency.corpusSize();
+                long nq_i             = documentFrequency.frequency();
+                if (nq_i < best_freq) {
+                    best_freq = nq_i;
+                    best_count = N;
+                }
+            }
+            if (best_freq < best_count) {
+                var df = new DocumentFrequency(best_freq, best_count);
+                log.log(Level.FINE, () -> "Setting document frequency for " + wai + " to " + df);
+                wai.setDocumentFrequency(df);
+            }
         } else if (root instanceof CompositeItem ci) {
             for (int i = 0; i < ci.getItemCount(); i++) {
                 setIDF(ci.getItem(i), significanceModel);
@@ -176,5 +196,3 @@ public class SignificanceSearcher extends Searcher {
         }
     }
 }
-
-
