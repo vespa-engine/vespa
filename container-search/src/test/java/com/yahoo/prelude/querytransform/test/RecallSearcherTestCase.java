@@ -30,7 +30,7 @@ public class RecallSearcherTestCase {
         Query query = new Query();
         Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
         assertNull(result.hits().getError());
-        assertTrue(query.getModel().getQueryTree().getRoot() instanceof NullItem);
+        assertInstanceOf(NullItem.class, query.getModel().getQueryTree().getRoot());
     }
 
     @Test
