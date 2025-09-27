@@ -77,9 +77,9 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
         this.name = Analyze.internalNameToClassName(name)
                 .orElseThrow(() -> new RuntimeException("Unable to resolve class name for " + name));
 
-        if (version > Opcodes.V17 && jdkVersionCheck == JdkVersionCheck.ENABLED) {
+        if (version > Opcodes.V21 && jdkVersionCheck == JdkVersionCheck.ENABLED) {
             var jdkVersion = version - 44;
-            throw new RuntimeException("Class " + name + " is compiled for Java version " + jdkVersion + ", but only Java 17 is supported");
+            throw new RuntimeException("Class " + name + " is compiled for Java version " + jdkVersion + ", but only Java 17 to 21 is supported");
         }
 
         addImportWithInternalName(superName);
