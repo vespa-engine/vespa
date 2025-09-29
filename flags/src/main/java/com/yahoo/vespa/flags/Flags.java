@@ -51,14 +51,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
-            List.of("hakonhall"), "2025-03-19", "2025-10-01",
+            List.of("hakonhall"), "2025-03-19", "2025-11-01",
             "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
     public static final UnboundBooleanFlag LOCKED_GCP_PROVISION = defineFeatureFlag(
             "locked-gcp-provision", false,
-            List.of("hakonhall"), "2025-08-05", "2025-10-05",
+            List.of("hakonhall"), "2025-08-05", "2025-11-05",
             "Whether to provision GCP hosts under the application- and unallocated- locks, even though it takes ~1m.",
             "Takes effect on next host being provisioned");
 
