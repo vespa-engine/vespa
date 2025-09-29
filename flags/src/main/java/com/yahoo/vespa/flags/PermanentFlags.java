@@ -23,6 +23,7 @@ import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.Dimension.CONSOLE_USER_EMAIL;
+import static com.yahoo.vespa.flags.Dimension.ENVIRONMENT;
 import static com.yahoo.vespa.flags.Dimension.FLAVOR;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
@@ -633,7 +634,7 @@ public class PermanentFlags {
                     "that the customer needs to fix and we don't want to create or update a Jira issue for.",
             "Takes effect immediately",
             list -> Set.of("CORE_DUMP", "JVM_HEAP", "OOM").containsAll(list),
-            TENANT_ID, APPLICATION, INSTANCE_ID
+            TENANT_ID, APPLICATION, INSTANCE_ID, ZONE_ID, ENVIRONMENT
     );
 
     private PermanentFlags() {}
