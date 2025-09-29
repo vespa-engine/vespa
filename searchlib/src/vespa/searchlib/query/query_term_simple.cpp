@@ -32,57 +32,6 @@ bool isFullRange(std::string_view s) noexcept {
             (s[sz-1] == '>' || s[sz-1] == ']');
 }
 
-/*
-struct IntDecoder {
-    static int64_t fromstr(const char * q, const char * qend, const char ** end) noexcept {
-        int64_t v(0);
-        for (;q < qend && (std::isspace(static_cast<unsigned char>(*q)) || (*q == '+')); q++);
-        std::from_chars_result err = std::from_chars(q, qend, v, 10);
-        if (err.ec == std::errc::result_out_of_range) {
-            v = (*q == '-') ? std::numeric_limits<int64_t>::min() : std::numeric_limits<int64_t>::max();
-        }
-        *end = err.ptr;
-        return v;
-    }
-    static int64_t nearestDownwd(int64_t n, int64_t min) noexcept { return (n > min ? n - 1 : n); }
-    static int64_t nearestUpward(int64_t n, int64_t max) noexcept { return (n < max ? n + 1 : n); }
-};
-
-template <typename T>
-struct FloatDecoder {
-    static T fromstr(const char * q, const char * qend, const char ** end) noexcept {
-        T v(0);
-#if defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 200000
-        std::string tmp(q, qend - q);
-        char* tmp_end = nullptr;
-        const char *tmp_cstring = tmp.c_str();
-        if constexpr (std::is_same_v<T, float>) {
-            v = vespalib::locale::c::strtof_au(tmp_cstring, &tmp_end);
-        } else {
-            v = vespalib::locale::c::strtod_au(tmp_cstring, &tmp_end);
-        }
-        if (end != nullptr) {
-            *end = (tmp_end != nullptr) ? (q + (tmp_end - tmp_cstring)) : nullptr;
-        }
-#else
-        for (;q < qend && (std::isspace(static_cast<unsigned char>(*q)) || (*q == '+')); q++);
-        std::from_chars_result err = std::from_chars(q, qend, v);
-        if (err.ec == std::errc::result_out_of_range) {
-            v = (*q == '-') ? -std::numeric_limits<T>::infinity() : std::numeric_limits<T>::infinity();
-        }
-        *end = err.ptr;
-#endif
-        return v;
-    }
-    static T nearestDownwd(T n, T min) noexcept {
-        return std::nextafter(n, min);
-    }
-    static T nearestUpward(T n, T max) noexcept {
-        return std::nextafter(n, max);
-    }
-};
-*/
-
 bool isPartialRange(std::string_view s) noexcept {
     return (s.size() > 1) &&
             ((s[0] == '<') || (s[0] == '>'));
@@ -455,63 +404,6 @@ QueryTermSimple::QueryTermSimple(Type type, std::unique_ptr<NumericRangeSpec> ra
 {
     _numeric_range = std::move(range);
 }
-
-/*
-template <typename T, typename D>
-bool
-QueryTermSimple::getAsNumericTerm(T & lower, T & upper, D d) const noexcept
-{
-    if (empty()) return false;
-
-    size_t sz(_term.size());
-    const char *err(nullptr);
-    T low(lower);
-    T high(upper);
-    const char * q = _term.c_str();
-    const char * qend = q + sz;
-    const char first(q[0]);
-    const char last(q[sz-1]);
-    bool isRange = (first == '<') || (first == '>') || (first == '[');
-    q += isRange ? 1 : 0;
-    T ll = d.fromstr(q, qend, &err);
-    bool valid = isValid() && ((*err == 0) || (*err == ';'));
-    if (!valid) return false;
-
-    if (*err == 0) {
-        if (first == '<') {
-            high = d.nearestDownwd(ll, lower);
-        } else if (first == '>') {
-            low = d.nearestUpward(ll, upper);
-        } else {
-            low = high = ll;
-            valid = ! isRange;
-        }
-    } else {
-        if ((first == '[') || (first == '<')) {
-            if (q != err) {
-                low = (first == '[') ? ll : d.nearestUpward(ll, upper);
-            }
-            q = err + 1;
-            T hh = d.fromstr(q, qend, &err);
-            bool hasUpperLimit(q != err);
-            if (*err == ';') {
-                err = const_cast<char *>(_term.data() + _term.size() - 1);
-            }
-            valid = (*err == last) && ((last == ']') || (last == '>'));
-            if (hasUpperLimit) {
-                high = (last == ']') ? hh : d.nearestDownwd(hh, lower);
-            }
-        } else {
-            valid = false;
-        }
-    }
-    if (valid) {
-        lower = low;
-        upper = high;
-    }
-    return valid;
-}
-*/
 
 std::string
 QueryTermSimple::getClassName() const
