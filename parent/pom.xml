@@ -86,7 +86,7 @@
                         <showWarnings>true</showWarnings>
                         <showDeprecation>false</showDeprecation>
                         <compilerArgs>
-                            <arg>${vespaCompilerArgs.xlint}</arg>
+                            <arg>-Xlint:all</arg>
                             <arg>-Xlint:-serial</arg>
                             <arg>-Xlint:-try</arg>
                             <arg>-Xlint:-processing</arg>
@@ -488,24 +488,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-        <profile>
-            <id>java17VespaCompilerArgs</id>
-            <activation>
-                <jdk>[1,21)</jdk>
-            </activation>
-            <properties>
-                <vespaCompilerArgs.xlint>-Xlint:all</vespaCompilerArgs.xlint>
-            </properties>
-        </profile>
-        <profile>
-            <id>java21VespaCompilerArgs</id>
-            <activation>
-                <jdk>[21,25)</jdk>
-            </activation>
-            <properties>
-                <vespaCompilerArgs.xlint>-Xlint:all,-this-escape</vespaCompilerArgs.xlint>
-            </properties>
         </profile>
     </profiles>
 
