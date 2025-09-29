@@ -156,7 +156,7 @@ SimplePhraseSearch::phraseSeek(uint32_t doc_id) {
 
 void
 SimplePhraseSearch::matchPhrase(uint32_t doc_id) {
-    AndSearch::doUnpack(doc_id);
+    MultiSearch::doUnpack(doc_id);
     if (PhraseMatcher(_childMatch, _eval_order, _iterators).hasMatch()) {
         setDocId(doc_id);
     }
@@ -168,7 +168,7 @@ SimplePhraseSearch::SimplePhraseSearch(Children children,
                                        fef::TermFieldMatchDataArray childMatch,
                                        vector<uint32_t> eval_order,
                                        TermFieldMatchData &tmd, bool strict)
-    : AndSearch(std::move(children)),
+    : MultiSearch(std::move(children)),
       _md(std::move(md)),
       _childMatch(std::move(childMatch)),
       _eval_order(std::move(eval_order)),
@@ -216,7 +216,7 @@ SimplePhraseSearch::doUnpack(uint32_t doc_id) {
 
 void
 SimplePhraseSearch::visitMembers(ObjectVisitor &visitor) const {
-    AndSearch::visitMembers(visitor);
+    MultiSearch::visitMembers(visitor);
     visit(visitor, "strict", _strict);
 }
 

@@ -16,7 +16,7 @@ namespace search::queryeval {
 /**
  * Search iterator for a phrase, based on a set of child search iterators.
  */
-class SimplePhraseSearch : public AndSearch
+class SimplePhraseSearch : public MultiSearch
 {
     fef::MatchData::UP           _md;
     fef::TermFieldMatchDataArray _childMatch;
