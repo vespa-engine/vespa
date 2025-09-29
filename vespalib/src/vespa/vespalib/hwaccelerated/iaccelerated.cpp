@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "fn_table.h"
 #include "iaccelerated.h"
 #include "highway.h"
 #ifdef __x86_64__
@@ -542,6 +543,7 @@ IAccelerated::getAccelerator()
     static RuntimeVerificator verifyAccelerator_once;
     static auto accelerator = create_and_log_best_accelerator();
     return *accelerator;
+    // TODO function table init and wiring!
 }
 
 } // vespalib::hwaccelerated

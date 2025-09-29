@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "fn_table.h"
 #include "highway.h"
 #include "platform_generic.h"
 #include <hwy/base.h>
@@ -261,6 +262,39 @@ const char* my_hwy_target_name() noexcept {
     return hwy::TargetName(HWY_TARGET);
 }
 
+// TODO remove code duplication once we deprecate IAccelerated.
+namespace {
+
+int64_t my_dot_product_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
+    return my_hwy_dot_int8(a, b, sz);
+}
+float my_dot_product_bf16(const BFloat16* a, const BFloat16* b, size_t sz) noexcept {
+    return my_hwy_dot_bf16(a, b, sz);
+}
+float my_dot_product_f32(const float* a, const float* b, size_t sz) noexcept {
+    return my_hwy_dot_float(a, b, sz);
+}
+double my_dot_product_f64(const double* a, const double* b, size_t sz) noexcept {
+    return my_hwy_dot_double(a, b, sz);
+}
+double my_squared_euclidean_distance_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
+    return my_hwy_square_euclidean_distance_int8(a, b, sz);
+}
+double my_squared_euclidean_distance_bf16(const BFloat16* a, const BFloat16* b, size_t sz) noexcept {
+    return my_hwy_square_euclidean_distance_bf16(a, b, sz);
+}
+double my_squared_euclidean_distance_f32(const float* a, const float* b, size_t sz) noexcept {
+    return my_hwy_square_euclidean_distance(a, b, sz);
+}
+double my_squared_euclidean_distance_f64(const double* a, const double* b, size_t sz) noexcept {
+    return my_hwy_square_euclidean_distance(a, b, sz);
+}
+size_t my_population_count(const uint64_t* buf, size_t sz) noexcept {
+    return my_hwy_popcount(buf, sz);
+}
+
+} // anon ns
+
 // Since we already do a virtual dispatch via the IAccelerated interface, avoid needing an
 // additional per-function dispatch step via Highway's function tables by creating a concrete
 // implementation class per target.
@@ -299,6 +333,17 @@ public:
     }
     const char* target_name() const noexcept override {
         return my_hwy_target_name();
+    }
+    void fill_sparse_fn_table(FnTable& ft) const noexcept override {
+        ft.dot_product_i8   = my_dot_product_i8;
+        ft.dot_product_bf16 = my_dot_product_bf16;
+        ft.dot_product_f32  = my_dot_product_f32;
+        ft.dot_product_f64  = my_dot_product_f64;
+        ft.squared_euclidean_distance_i8   = my_squared_euclidean_distance_i8;
+        ft.squared_euclidean_distance_bf16 = my_squared_euclidean_distance_bf16;
+        ft.squared_euclidean_distance_f32  = my_squared_euclidean_distance_f32;
+        ft.squared_euclidean_distance_f64  = my_squared_euclidean_distance_f64;
+        ft.population_count = my_population_count;
     }
 
     [[nodiscard]] static std::unique_ptr<IAccelerated> create_instance() {
@@ -363,8 +408,7 @@ bool target_is_assumed_suboptimal(uint64_t target_hwy_id) noexcept {
     return (target_hwy_id & HWY_ALL_SVE) != 0;
 }
 
-// The "best" supported target will be the first element in the vector.
-std::vector<std::unique_ptr<IAccelerated>> create_supported_targets_impl(ExcludeTargets exclude_targets) {
+std::vector<std::pair<uint64_t, std::unique_ptr<IAccelerated>>> create_supported_targets_with_impls() {
     // On x64 we require AVX2 as a baseline, so don't bother wasting time with SSSE3/SSE4.
     // Ideally we would not even build these targets. No effect on Aarch64.
     hwy::DisableTargets(HWY_SSSE3 | HWY_SSE4);
@@ -386,6 +430,12 @@ std::vector<std::unique_ptr<IAccelerated>> create_supported_targets_impl(Exclude
         return lhs.first == rhs.first;
     });
     target_id_and_impl.erase(to_erase.begin(), to_erase.end());
+    return target_id_and_impl;
+}
+
+// The "best" supported target will be the first element in the vector.
+std::vector<std::unique_ptr<IAccelerated>> create_supported_targets_impl(ExcludeTargets exclude_targets) {
+    auto target_id_and_impl = create_supported_targets_with_impls();
 
     std::vector<std::unique_ptr<IAccelerated>> preferred_target_order;
     preferred_target_order.reserve(target_id_and_impl.size());
@@ -407,6 +457,46 @@ std::vector<std::unique_ptr<IAccelerated>> Highway::create_supported_targets() {
 
 std::unique_ptr<IAccelerated> Highway::create_best_target() {
     return std::move(create_supported_targets_impl(ExcludeTargets::AssumedSuboptimal).front());
+}
+
+template <typename SelectFieldFn>
+auto select_first_non_excluded(std::span<const std::pair<uint64_t, FnTable>> tables,
+                               uint64_t exclude_mask,
+                               SelectFieldFn sel_fn) noexcept
+{
+    for (const auto& t : tables) {
+        const uint64_t target_id = t.first;
+        auto field = sel_fn(t.second);
+        if (field != nullptr && (target_id & exclude_mask) == 0) {
+            return field;
+        }
+    }
+    // Should have found at least one non-excluded function pointer
+    abort();
+}
+
+void Highway::fill_sparse_fn_table(FnTable& tbl) {
+    auto target_id_and_impl = create_supported_targets_with_impls();
+    std::vector<std::pair<uint64_t, FnTable>> fn_tables;
+    fn_tables.reserve(target_id_and_impl.size());
+    for (const auto& id_and_impl : target_id_and_impl) {
+        fn_tables.emplace_back(id_and_impl.first, FnTable{});
+        id_and_impl.second->fill_sparse_fn_table(fn_tables.back().second);
+    }
+    // By our definitions, target_id_and_impl[0] has the "best" function table. Copy all
+    // function pointers and then patch the functions where we believe the "best" isn't
+    // actually the best. See `target_is_assumed_suboptimal()` for rationale on these.
+    tbl = fn_tables.front().second;
+    tbl.dot_product_bf16 = select_first_non_excluded(fn_tables, HWY_ALL_SVE, [](const FnTable& ft) {
+        return ft.dot_product_bf16;
+    });
+    // Tiny bit faster on Graviton 3 SVE, but noticeably slower on Axion and Graviton 4 SVE/SVE2.
+    tbl.squared_euclidean_distance_bf16 = select_first_non_excluded(fn_tables, HWY_ALL_SVE, [](const FnTable& ft) {
+        return ft.squared_euclidean_distance_bf16;
+    });
+    tbl.squared_euclidean_distance_i8 = select_first_non_excluded(fn_tables, HWY_ALL_SVE, [](const FnTable& ft) {
+        return ft.squared_euclidean_distance_i8;
+    });
 }
 
 } // namespace vespalib::hwaccelerated

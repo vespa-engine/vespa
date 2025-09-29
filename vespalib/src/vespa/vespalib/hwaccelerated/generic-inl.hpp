@@ -7,6 +7,7 @@
 #error "VESPA_HWACCEL_INCLUDE_DEFINITIONS not set"
 #endif
 
+#include "fn_table.h"
 #include "private_helpers.hpp"
 #include <cblas.h>
 
@@ -203,6 +204,101 @@ VESPA_HWACCEL_TARGET_TYPE::and128(size_t offset, const std::vector<std::pair<con
 void
 VESPA_HWACCEL_TARGET_TYPE::or128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
     helper::orChunks<16, 8>(offset, src, dest);
+}
+
+// TODO remove code duplication once we deprecate IAccelerated.
+namespace {
+
+int64_t my_dot_product_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
+    return helper::multiplyAdd(a, b, sz);
+}
+int64_t my_dot_product_i16(const int16_t* a, const int16_t* b, size_t sz) noexcept {
+    return multiplyAdd<int64_t, int16_t, 8>(a, b, sz);
+}
+int64_t my_dot_product_i32(const int32_t* a, const int32_t* b, size_t sz) noexcept {
+    return multiplyAdd<int64_t, int32_t, 8>(a, b, sz);
+}
+int64_t my_dot_product_i64(const int64_t* a, const int64_t* b, size_t sz) noexcept {
+    return multiplyAdd<long long, int64_t, 8>(a, b, sz);
+}
+float my_dot_product_bf16(const BFloat16* a, const BFloat16* b, size_t sz) noexcept {
+    return multiplyAdd<float, BFloat16, 16>(a, b, sz);
+}
+float my_dot_product_f32(const float* a, const float* b, size_t sz) noexcept {
+    return cblas_sdot(sz, a, 1, b, 1);
+}
+double my_dot_product_f64(const double* a, const double* b, size_t sz) noexcept {
+    return cblas_ddot(sz, a, 1, b, 1);
+}
+double my_squared_euclidean_distance_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
+    return helper::squaredEuclideanDistance(a, b, sz);
+}
+double my_squared_euclidean_distance_bf16(const BFloat16* a, const BFloat16* b, size_t sz) noexcept {
+    // This is around 10x the perf of the naive loop in mixed_l2_distance.cpp
+    return squaredEuclideanDistanceT<float, BFloat16, 16>(a, b, sz);
+}
+double my_squared_euclidean_distance_f32(const float* a, const float* b, size_t sz) noexcept {
+    return squaredEuclideanDistanceT<float, float, 16>(a, b, sz);
+}
+double my_squared_euclidean_distance_f64(const double* a, const double* b, size_t sz) noexcept {
+    return squaredEuclideanDistanceT<double, double, 16>(a, b, sz);
+}
+size_t my_population_count(const uint64_t* buf, size_t sz) noexcept {
+    return helper::populationCount(buf, sz);
+}
+void my_convert_bfloat16_to_float(const uint16_t* src, float* dest, size_t sz) noexcept {
+    helper::convert_bfloat16_to_float(src, dest, sz);
+}
+void my_or_bit(void* aOrg, const void* bOrg, size_t bytes) noexcept {
+    bitOperation<8>([](uint64_t a, uint64_t b) { return a | b; }, aOrg, bOrg, bytes);
+}
+void my_and_bit(void* aOrg, const void* bOrg, size_t bytes) noexcept {
+    bitOperation<8>([](uint64_t a, uint64_t b) { return a & b; }, aOrg, bOrg, bytes);
+}
+void my_and_not_bit(void* aOrg, const void* bOrg, size_t bytes) noexcept {
+    bitOperation<8>([](uint64_t a, uint64_t b) { return a & ~b; }, aOrg, bOrg, bytes);
+}
+void my_not_bit(void* aOrg, size_t bytes) noexcept {
+    auto a(static_cast<uint64_t *>(aOrg));
+    const size_t sz(bytes/sizeof(uint64_t));
+    for (size_t i(0); i < sz; i++) {
+        a[i] = ~a[i];
+    }
+    auto ac(static_cast<uint8_t *>(aOrg));
+    for (size_t i(sz*sizeof(uint64_t)); i < bytes; i++) {
+        ac[i] = ~ac[i];
+    }
+}
+void my_and_128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) noexcept {
+    helper::andChunks<16, 8>(offset, src, dest);
+}
+void my_or_128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) noexcept {
+    helper::orChunks<16, 8>(offset, src, dest);
+}
+
+} // anon ns
+
+void
+VESPA_HWACCEL_TARGET_TYPE::fill_sparse_fn_table(FnTable& ft) const noexcept {
+    ft.dot_product_i8   = my_dot_product_i8;
+    ft.dot_product_i16  = my_dot_product_i16;
+    ft.dot_product_i32  = my_dot_product_i32;
+    ft.dot_product_i64  = my_dot_product_i64;
+    ft.dot_product_bf16 = my_dot_product_bf16;
+    ft.dot_product_f32  = my_dot_product_f32;
+    ft.dot_product_f64  = my_dot_product_f64;
+    ft.squared_euclidean_distance_i8   = my_squared_euclidean_distance_i8;
+    ft.squared_euclidean_distance_bf16 = my_squared_euclidean_distance_bf16;
+    ft.squared_euclidean_distance_f32  = my_squared_euclidean_distance_f32;
+    ft.squared_euclidean_distance_f64  = my_squared_euclidean_distance_f64;
+    ft.population_count = my_population_count;
+    ft.convert_bfloat16_to_float = my_convert_bfloat16_to_float;
+    ft.or_bit      = my_or_bit;
+    ft.and_bit     = my_and_bit;
+    ft.and_not_bit = my_and_not_bit;
+    ft.not_bit     = my_not_bit;
+    ft.and_128     = my_and_128;
+    ft.or_128      = my_or_128;
 }
 
 } // vespalib::hwaccelerated

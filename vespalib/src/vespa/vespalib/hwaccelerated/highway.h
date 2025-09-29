@@ -21,6 +21,8 @@ public:
     // of what `create_supported_targets()` returns, as we may apply platform-specific target
     // exclusions.
     [[nodiscard]] static std::unique_ptr<IAccelerated> create_best_target();
+
+    void fill_sparse_fn_table(FnTable& tbl);
 };
 
 }

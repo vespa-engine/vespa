@@ -38,6 +38,7 @@ public:
 #ifdef VESPA_HWACCEL_TARGET_NAME
     const char* target_name() const noexcept override { return VESPA_HWACCEL_TARGET_NAME; }
 #endif
+    void fill_sparse_fn_table(FnTable&) const noexcept override;
 };
 
 } // vespalib::hwaccelerated

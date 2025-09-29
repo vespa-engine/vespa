@@ -9,6 +9,8 @@
 
 namespace vespalib::hwaccelerated {
 
+struct FnTable;
+
 /**
  * This contains an interface to all primitives that has different cpu supported accelerations.
  * The actual implementation you get by calling the static getAccelerator method.
@@ -43,6 +45,10 @@ public:
     [[nodiscard]] virtual const char* implementation_name() const noexcept { return "AutoVec"; }
     // Returns a static string representing the name of the underlying accelerator target (e.g. "AVX3", "NEON" etc.)
     [[nodiscard]] virtual const char* target_name() const noexcept { return "Unknown"; }
+
+    // The function table entries must be valid for the lifetime of the process,
+    // entirely independent of the lifetime of `this`.
+    virtual void fill_sparse_fn_table(FnTable&) const noexcept {}
 
     static std::unique_ptr<IAccelerated> create_baseline_auto_vectorized_target();
     static std::unique_ptr<IAccelerated> create_best_auto_vectorized_target();
