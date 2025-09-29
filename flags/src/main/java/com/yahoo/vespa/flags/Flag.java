@@ -69,8 +69,11 @@ public interface Flag<T, F extends Flag<T, F>> {
     default F with(SystemName systemName) { return with(Dimension.SYSTEM, systemName.value()); }
     default F with(TenantName tenantName) { return with(Dimension.TENANT_ID, tenantName.value()); }
     default F with(Version vespaVersion) { return with(Dimension.VESPA_VERSION, vespaVersion.toFullString()); }
-    default F with(ZoneId zoneId) { return with(Dimension.ZONE_ID, zoneId.value()); }
-    default F with(Zone zone) { return with(Dimension.ZONE_ID, zone.systemLocalValue()); }
+    /** Sets the zone and environment dimensions. */
+    default F with(ZoneId zoneId) { return with(Dimension.ZONE_ID, zoneId.value()).with(Dimension.ENVIRONMENT, zoneId.environment().value()); }
+    /** Sets the zone and environment dimensions. */
+    default F with(Zone zone) { return with(Dimension.ZONE_ID, zone.systemLocalValue()) .with(Dimension.ENVIRONMENT, zone.environment().value()); }
+    /** Sets the zone and environment dimensions. */
     default F with(ZoneApi zoneApi) { return with(zoneApi.getVirtualId()); }
 
     /** Sets the tenant, application, and instance dimensions. */
@@ -86,8 +89,11 @@ public interface Flag<T, F extends Flag<T, F>> {
     default F withSystemName(Optional<SystemName> systemName) { return systemName.map(this::with).orElse(self()); }
     default F withTenantName(Optional<TenantName> tenantName) { return tenantName.map(this::with).orElse(self()); }
     default F withVersion(Optional<Version> vespaVersion) { return vespaVersion.map(this::with).orElse(self()); }
+    /** Sets the zone and environment dimensions. */
     default F withZoneId(Optional<ZoneId> zoneId) { return zoneId.map(this::with).orElse(self()); }
+    /** Sets the zone and environment dimensions. */
     default F withZone(Optional<Zone> zone) { return zone.map(this::with).orElse(self()); }
+    /** Sets the zone and environment dimensions. */
     default F withZoneApi(Optional<ZoneApi> zoneApi) { return zoneApi.map(this::with).orElse(self()); }
 
     /** Returns the value, boxed if the flag wraps a primitive type. */
