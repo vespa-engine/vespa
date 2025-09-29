@@ -3,7 +3,7 @@
 
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include "andsearch.h"
+#include "multisearch.h"
 #include <optional>
 
 namespace search::queryeval {
@@ -13,7 +13,7 @@ class IElementGapInspector;
 /**
  * The near search base implements the common logic of the near and o-near search.
  */
-class NearSearchBase : public AndSearch
+class NearSearchBase : public MultiSearch
 {
 protected:
     uint32_t _data_size;

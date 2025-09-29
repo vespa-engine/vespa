@@ -54,7 +54,7 @@ NearSearchBase::NearSearchBase(Children terms,
                                const TermFieldMatchDataArray &data,
                                uint32_t window,
                                bool strict)
-    : AndSearch(std::move(terms)),
+    : MultiSearch(std::move(terms)),
       _data_size(data.size()),
       _window(window),
       _strict(strict)
@@ -64,7 +64,7 @@ NearSearchBase::NearSearchBase(Children terms,
 void
 NearSearchBase::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
-    AndSearch::visitMembers(visitor);
+    MultiSearch::visitMembers(visitor);
     visit(visitor, "data_size", _data_size);
     visit(visitor, "window", _window);
     visit(visitor, "strict", _strict);
