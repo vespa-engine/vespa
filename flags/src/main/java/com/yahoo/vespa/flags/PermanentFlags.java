@@ -51,7 +51,7 @@ public class PermanentFlags {
             "jvm-gc-options", "",
             "Sets default jvm gc options",
             "Takes effect at redeployment",
-            INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID);
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID);
 
     public static final UnboundIntFlag HEAP_SIZE_PERCENTAGE = defineIntFlag(
             "heap-size-percentage", 69,
@@ -188,7 +188,7 @@ public class PermanentFlags {
             "Otherwise a '.' + the flag value will be appended.",
             "Takes effect on the next host admin tick.  The upgrade to the new wanted docker image is orchestrated.",
             value -> value.isEmpty() || QUALIFIER_PATTERN.matcher(value).find() || VERSION_PATTERN.matcher(value).find(),
-            HOSTNAME, NODE_TYPE, TENANT_ID, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION);
+            HOSTNAME, NODE_TYPE, TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION);
 
     public static final UnboundStringFlag ZOOKEEPER_SERVER_VERSION = defineStringFlag(
             "zookeeper-server-version", "3.9.3",
@@ -374,19 +374,19 @@ public class PermanentFlags {
             "(logserver and clustercontroller clusters).",
             "Takes effect on next redeployment",
             value -> Set.of("any", "arm64", "x86_64").contains(value),
-            INSTANCE_ID);
+            TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundDoubleFlag LOGSERVER_NODE_MEMORY = defineDoubleFlag(
             "logserver-node-memory", 0.0,
             "Amount of memory (in GiB) to allocate for logserver nodes",
             "Takes effect on allocation from node repository",
-            INSTANCE_ID);
+            TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundDoubleFlag CLUSTER_CONTROLLER_NODE_MEMORY = defineDoubleFlag(
             "cluster-controller-node-memory", 0.0,
             "Amount of memory (in GiB) to allocate for cluster-controller nodes",
             "Takes effect on allocation from node repository",
-            INSTANCE_ID);
+            TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundListFlag<String> CLOUD_ACCOUNTS = defineListFlag(
             "cloud-accounts", List.of(), String.class,
@@ -625,7 +625,7 @@ public class PermanentFlags {
                     "The threads are shared between document databases when value is larger than 0." +
                     "When set to 0 (default) we use 1 separate thread per document database.",
             "Takes effect at startup of search node",
-            INSTANCE_ID);
+            TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundListFlag<String> IGNORE_CORE_DUMP_TYPE_WHEN_REPORTING = defineListFlag(
             "ignore-core-dump-type-when-reporting", List.of(), String.class,

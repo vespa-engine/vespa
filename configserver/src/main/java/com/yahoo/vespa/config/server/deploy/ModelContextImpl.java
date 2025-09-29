@@ -377,12 +377,9 @@ public class ModelContextImpl implements ModelContext {
             this.tenantVaults = tenantVaults;
             this.tenantSecretStores = tenantSecretStores;
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
-                    .with(Dimension.INSTANCE_ID, applicationId.serializedForm())
-                    .with(Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance())
+                    .with(applicationId)
                     .withVersion(Optional.of(modelVersion));
-            this.searchNodeInitializerThreadsFlag = PermanentFlags.SEARCHNODE_INITIALIZER_THREADS.bindTo(flagSource)
-                                                                                                 .with(Dimension.INSTANCE_ID, applicationId.serializedForm())
-                                                                                                 .with(Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance());
+            this.searchNodeInitializerThreadsFlag = PermanentFlags.SEARCHNODE_INITIALIZER_THREADS.bindTo(flagSource).with(applicationId);
             this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource).with(applicationId).value();
             this.operatorCertificates = operatorCertificates;
             this.tlsCiphersOverride = PermanentFlags.TLS_CIPHERS_OVERRIDE.bindTo(flagSource).with(applicationId).value();
@@ -395,8 +392,7 @@ public class ModelContextImpl implements ModelContext {
             this.jdiscHttpComplianceViolations = PermanentFlags.JDISC_HTTP_COMPLIANCE_VIOLATIONS.bindTo(flagSource)
                     .with(applicationId).with(modelVersion).value();
             this.mallocImplFlag = Flags.VESPA_USE_MALLOC_IMPL.bindTo(flagSource)
-                    .with(Dimension.INSTANCE_ID, applicationId.serializedForm())
-                    .with(Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance())
+                    .with(applicationId)
                     .withVersion(Optional.of(modelVersion));
         }
 
