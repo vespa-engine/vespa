@@ -401,7 +401,7 @@ public class Flags {
             "Which malloc implementation to use  " +
                     "Valid values: 'vespamalloc', 'mimalloc', '' (empty string, meaning default malloc implementation).",
             "Takes effect at next reboot of the node",
-            APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
+            TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
