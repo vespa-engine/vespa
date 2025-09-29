@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "fn_table.h"
 #include "iaccelerated.h"
 #include "highway.h"
 #ifdef __x86_64__
@@ -24,9 +25,11 @@
 #    endif
 #endif
 #include <vespa/vespalib/util/memory.h>
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <format>
+#include <ranges>
 #include <string>
 #include <vector>
 
@@ -39,6 +42,8 @@
 LOG_SETUP(".vespalib.hwaccelerated");
 
 namespace vespalib::hwaccelerated {
+
+using dispatch::FnTable;
 
 namespace {
 
@@ -142,8 +147,6 @@ namespace target {
 // This is mostly just to be able to experiment in a controlled manner with levels
 // _higher_ than what's enabled by default.
 
-// TODO make it possible to select specific targets within Highway
-constexpr uint32_t HIGHWAY           = 4;
 #ifdef __x86_64__
 constexpr uint32_t AVX3_DL           = 3;
 constexpr uint32_t AVX3              = 2;
@@ -164,7 +167,6 @@ constexpr uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
 
 [[nodiscard]] const char* level_u32_to_str(uint32_t level) noexcept {
     switch (level) {
-    case HIGHWAY:           return "HIGHWAY";
 #ifdef __x86_64__
     case AVX3_DL:           return "AVX3_DL";
     case AVX3:              return "AVX3";
@@ -181,9 +183,6 @@ constexpr uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
 }
 
 [[nodiscard]] uint32_t level_str_to_u32(const std::string& str) noexcept {
-    if (str == "HIGHWAY") {
-        return HIGHWAY;
-    }
 #ifdef __x86_64__
     if (str == "AVX3_DL") {
         return AVX3_DL;
@@ -240,34 +239,46 @@ constexpr uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
 } // target
 
 class EnabledTargetLevel {
-    const uint32_t _max_level;
+    const uint32_t _max_native_level;
+    const bool     _with_highway;
 public:
-    constexpr explicit EnabledTargetLevel(uint32_t max_level) noexcept : _max_level(max_level) {}
+    constexpr EnabledTargetLevel(uint32_t max_native_level, bool with_highway) noexcept
+        : _max_native_level(max_native_level),
+          _with_highway(with_highway)
+    {}
     [[maybe_unused]] [[nodiscard]] bool is_enabled(uint32_t level) const noexcept {
-        return level <= _max_level;
+        return level <= _max_native_level;
     }
+    [[nodiscard]] bool with_highway() const noexcept { return _with_highway; }
     [[nodiscard]] static EnabledTargetLevel create_from_env_var();
 };
 
+constexpr bool should_use_highway_by_default() noexcept {
+    return false; // TODO the Big Flip(tm)
+}
+
 EnabledTargetLevel EnabledTargetLevel::create_from_env_var() {
+    const uint32_t supported_level       = target::max_supported_level();
+    const uint32_t default_enabled_level = std::min(target::DEFAULT_LEVEL, supported_level);
     // This is a variable for internal testing only. If you're _not_ using this for internal
     // Vespa testing, I will break into your kitchen and make a mess out of your pots and pans.
     const char* maybe_var = getenv("VESPA_INTERNAL_VECTORIZATION_TARGET_LEVEL");
-    const uint32_t wanted_level = (maybe_var != nullptr)
-            ? target::level_str_to_u32(std::string(maybe_var))
-            : target::DEFAULT_LEVEL;
-    // Highway is always a supported level, so short-circuit if it's wanted
-    if (wanted_level == target::HIGHWAY) {
-        return EnabledTargetLevel(target::HIGHWAY);
+    if (maybe_var == nullptr) {
+        return {default_enabled_level, should_use_highway_by_default()};
     }
-    const uint32_t supported_level = target::max_supported_level();
-    if (wanted_level > supported_level && (maybe_var != nullptr)) {
+    std::string target_var(maybe_var);
+    if (target_var == "HIGHWAY") {
+        return {default_enabled_level, true};
+    }
+    // There is an explicit target override, but it's specifying an auto-vectorized target
+    const uint32_t wanted_level = target::level_str_to_u32(target_var);
+    if (wanted_level > supported_level) {
         LOG(info, "Requested vectorization target level is %s, but platform only supports %s.",
             target::level_u32_to_str(wanted_level), target::level_u32_to_str(supported_level));
     }
     const uint32_t enabled_level = std::min(wanted_level, supported_level);
     LOG(debug, "Using vectorization target level %s", target::level_u32_to_str(enabled_level));
-    return EnabledTargetLevel(enabled_level);
+    return {enabled_level, false};
 }
 
 [[nodiscard]] EnabledTargetLevel enabled_target_level() {
@@ -484,10 +495,26 @@ RuntimeVerificator::RuntimeVerificator()
 
 // Simple wrapper to debug log created impl+target once during process startup.
 IAccelerated::UP create_and_log_best_accelerator() {
+    static RuntimeVerificator verify_accelerator_once;
     auto accel = IAccelerated::create_best_accelerator_impl_and_target();
-    LOG(debug, "Created accelerator of type %s for runtime target %s",
-        accel->implementation_name(), accel->target_name());
+    LOG(debug, "Created accelerator %s", accel->target_info().to_string().c_str());
     return accel;
+}
+
+// noexcept note: it is technically possible that something transitive here
+// will throw, but then we _want_ the process to immediately terminate.
+[[nodiscard]] FnTable build_optimal_fn_table() noexcept {
+    std::vector<FnTable> fn_tables;
+    const auto target_level = enabled_target_level();
+    if (target_level.with_highway()) {
+        // `hwy_targets` has the best target at the front
+        for (const auto& hwy_target : Highway::create_supported_targets()) {
+            fn_tables.emplace_back(hwy_target->fn_table());
+        }
+    }
+    // Finally, add the auto-vectorized fallback table at the end.
+    fn_tables.emplace_back(dispatch::complete_baseline_fn_table());
+    return dispatch::build_composite_fn_table(fn_tables, true);
 }
 
 } // anon ns
@@ -530,23 +557,111 @@ IAccelerated::UP IAccelerated::create_best_auto_vectorized_target() {
 
 std::unique_ptr<IAccelerated> IAccelerated::create_best_accelerator_impl_and_target() {
     const auto target_level = enabled_target_level();
-    if (target_level.is_enabled(target::HIGHWAY)) {
+    if (target_level.with_highway()) {
         return Highway::create_best_target();
     }
     return create_best_auto_vectorized_target();
 }
 
-std::string IAccelerated::friendly_name() const {
-    return std::format("{} - {}", implementation_name(), target_name());
-}
-
-
-const IAccelerated &
-IAccelerated::getAccelerator()
-{
-    static RuntimeVerificator verifyAccelerator_once;
+const IAccelerated&
+IAccelerated::getAccelerator() {
     static auto accelerator = create_and_log_best_accelerator();
     return *accelerator;
 }
+
+namespace dispatch {
+
+#define VESPA_HWACCEL_PATCH_FN_TABLE_VISITOR(fn_type, fn_field, fn_id) \
+    if ((src_tbl.fn_field) != nullptr && (ignore_suboptimal || !src_tbl.fn_is_tagged_as_suboptimal(fn_id))) { \
+        composite_tbl.fn_field = src_tbl.fn_field; \
+        composite_tbl.fn_target_infos[static_cast<size_t>(fn_id)] = src_tbl.fn_target_infos[static_cast<size_t>(fn_id)]; \
+    }
+
+FnTable build_composite_fn_table(std::span<const FnTable> fn_tables, bool ignore_suboptimal) noexcept {
+    assert(!fn_tables.empty());
+    FnTable composite_tbl;
+    // Start at the back (worst) and move towards the front (best), patching in present
+    // function pointers as we go (assuming not suboptimal & ignored). Painter's algorithm
+    // for function pointers!
+    for (const auto& src_tbl : std::ranges::reverse_view(fn_tables)) {
+        VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_PATCH_FN_TABLE_VISITOR);
+    }
+    return composite_tbl;
+}
+
+FnTable build_composite_fn_table(const FnTable& fn_table,
+                                 const FnTable& base_table,
+                                 bool ignore_suboptimal) noexcept
+{
+    std::vector<FnTable> fn_tables;
+    fn_tables.emplace_back(fn_table);
+    fn_tables.emplace_back(base_table);
+    return build_composite_fn_table(fn_tables, ignore_suboptimal);
+}
+
+FnTable optimal_composite_fn_table() noexcept {
+    static auto global_table = build_optimal_fn_table();
+    return global_table;
+}
+
+FnTable complete_baseline_fn_table() noexcept {
+    // The "best" auto-vectorized target may itself be sparse, whereas the baseline auto-vectorized
+    // target is guaranteed to be complete. Fuse the two together like a 1980's children's action
+    // cartoon show where we with our powers combined can take down the bad guy. It's possible for the
+    // two targets to be identical (e.g. NEON vs NEON); this is effectively a no-op.
+    static auto baseline_table = build_composite_fn_table(IAccelerated::create_best_auto_vectorized_target()->fn_table(),
+                                                          IAccelerated::create_baseline_auto_vectorized_target()->fn_table(),
+                                                          true);
+    return baseline_table;
+}
+
+namespace {
+
+struct BuildFnTableAndPatchFunctionsAtStartup {
+    BuildFnTableAndPatchFunctionsAtStartup();
+};
+
+BuildFnTableAndPatchFunctionsAtStartup::BuildFnTableAndPatchFunctionsAtStartup() {
+    thread_unsafe_update_function_dispatch_pointers(optimal_composite_fn_table());
+}
+
+BuildFnTableAndPatchFunctionsAtStartup build_fn_table_once;
+
+#define VESPA_HWACCEL_DEBUG_LOG_FN_ENTRY(fn_type, fn_field, fn_id) \
+    LOG(debug, "%s => %s", #fn_field, tbl.fn_target_info(fn_id).to_string().c_str());
+
+void debug_log_fn_table_update(const FnTable& tbl) {
+    LOG(debug, "Updating global vectorization function dispatch table:");
+    VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_DEBUG_LOG_FN_ENTRY);
+}
+
+FnTable& mutable_active_fn_table() noexcept {
+    static FnTable active_table;
+    return active_table;
+}
+
+} // anon ns
+
+const FnTable& active_fn_table() noexcept {
+    return mutable_active_fn_table(); // ... but as const
+}
+
+#define VESPA_HWACCEL_COPY_TABLE_TO_FN_PTR_VISITOR(fn_type, fn_field, fn_id) \
+    VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(fn_field) = fns.fn_field;
+
+void thread_unsafe_update_function_dispatch_pointers(const FnTable& fns) {
+    assert(fns.is_complete());
+    if (LOG_WOULD_LOG(debug)) {
+        debug_log_fn_table_update(fns);
+    }
+    // Thread safety note: we expect there to exist one singular thread during
+    // invocation of this function, meaning that all subsequent loads of the
+    // function pointers must happen-after these stores. Anything else would be
+    // a terrible sin, and we can't have any of that!
+    mutable_active_fn_table() = fns;
+    VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_COPY_TABLE_TO_FN_PTR_VISITOR);
+}
+
+} // dispatch
 
 } // vespalib::hwaccelerated

@@ -13,7 +13,7 @@ Where `$n` is the vector width _in bytes_ and should preferably be tested
 for all of `16, 32, 64, 128, 256`. SVE/SVE2 tops out at 2048 bits (256 bytes),
 so no need to test anything larger.
 
-Example output:
+Example output for 512-bit vector size:
 ```
 $ qemu-aarch64 -cpu max,sve-default-vector-length=64 ./vespalib_hwaccelerated_test_app
 [==========] Running 2 tests from 1 test suite.
@@ -31,4 +31,12 @@ Highway - NEON (128 bit vector width)
 [ RUN      ] HwAcceleratedTest.dot_product_impls_match_source_of_truth
 [       OK ] HwAcceleratedTest.dot_product_impls_match_source_of_truth (3651 ms)
 [----------] 2 tests from HwAcceleratedTest (6731 ms total)
+```
+
+Example command to test all vector sizes:
+
+```shell
+for vlen in 16 32 64 128 256 ;
+  do qemu-aarch64 -cpu max,sve-default-vector-length=$vlen ./vespalib_hwaccelerated_test_app ;
+done
 ```
