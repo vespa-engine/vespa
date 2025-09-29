@@ -48,6 +48,8 @@ public:
     void and128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) const noexcept override;
     void or128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) const noexcept override;
     const char* target_name() const noexcept override { return "AVX3_DL"; }
+    TargetInfo target_info() const noexcept override;
+    const dispatch::FnTable& fn_table() const override;
 };
 
 }

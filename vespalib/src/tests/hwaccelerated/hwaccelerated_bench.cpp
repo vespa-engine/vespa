@@ -38,7 +38,8 @@ constexpr std::string_view type_string() noexcept {
 
 template <typename T, typename Fn>
 void register_accel_binary_arg_benchmark(std::string_view name, std::unique_ptr<IAccelerated> accel, Fn&& fn) {
-    std::string instance_name = std::format("{}/{}/{}/{}", name, type_string<T>(), accel->implementation_name(), accel->target_name());
+    const auto accel_target = accel->target_info();
+    std::string instance_name = std::format("{}/{}/{}/{}", name, type_string<T>(), accel_target.implementation_name(), accel_target.target_name());
     auto bench_fn = [fn = std::forward<Fn>(fn), accel = std::move(accel)](benchmark::State& state) {
         auto [a, b] = create_and_fill_lhs_rhs<T>(state.range());
         for (auto _ : state) {

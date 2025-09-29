@@ -10,8 +10,10 @@ endif()
 
 vespa_add_library(vespa_hwaccelerated
     SOURCES
+    fn_table.cpp
     iaccelerated.cpp
     highway.cpp
+    target_info.cpp
     ${ACCEL_FILES}
     DEPENDS
     INSTALL lib64

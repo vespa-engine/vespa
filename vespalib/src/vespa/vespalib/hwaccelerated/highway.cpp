@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "fn_table.h"
 #include "highway.h"
 #include "platform_generic.h"
+#include "target_info.h"
 #include <hwy/base.h>
 #include <algorithm>
 #include <cassert>
@@ -23,7 +25,6 @@ namespace HWY_NAMESPACE {
 
 namespace hn = hwy::HWY_NAMESPACE;
 namespace {
-
 // Must always be undef'd to ensure we expand the correct HWY_ATTR per target.
 #undef VESPA_NOEXCEPT_HWY_ATTR
 // Clang and GCC refuse to parse `noexcept HWY_ATTR` and `HWY_ATTR noexcept`,
@@ -297,9 +298,45 @@ const char* my_hwy_target_name() noexcept {
     return hwy::TargetName(HWY_TARGET);
 }
 
-[[nodiscard]] size_t vector_bit_count() noexcept {
+[[nodiscard]] uint16_t vector_byte_size() noexcept {
     const hn::ScalableTag<int8_t> d8; // Widest possible runtime vector
-    return hn::Lanes(d8) * 8;
+    return static_cast<uint16_t>(hn::Lanes(d8)); // Presumably no vectors with more than 524K bits for some time...
+}
+
+// TODO remove code duplication once we deprecate IAccelerated.
+
+int64_t my_dot_product_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
+    return my_hwy_dot_int8(a, b, sz);
+}
+float my_dot_product_bf16(const BFloat16* a, const BFloat16* b, size_t sz) noexcept {
+    return my_hwy_dot_bf16(a, b, sz);
+}
+float my_dot_product_f32(const float* a, const float* b, size_t sz) noexcept {
+    return my_hwy_dot_float(a, b, sz);
+}
+double my_dot_product_f64(const double* a, const double* b, size_t sz) noexcept {
+    return my_hwy_dot_double(a, b, sz);
+}
+double my_squared_euclidean_distance_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
+    return my_hwy_square_euclidean_distance_int8(a, b, sz);
+}
+double my_squared_euclidean_distance_bf16(const BFloat16* a, const BFloat16* b, size_t sz) noexcept {
+    return my_hwy_square_euclidean_distance_bf16(a, b, sz);
+}
+double my_squared_euclidean_distance_f32(const float* a, const float* b, size_t sz) noexcept {
+    return my_hwy_square_euclidean_distance(a, b, sz);
+}
+double my_squared_euclidean_distance_f64(const double* a, const double* b, size_t sz) noexcept {
+    return my_hwy_square_euclidean_distance(a, b, sz);
+}
+size_t my_binary_hamming_distance(const void* lhs, const void* rhs, size_t sz) noexcept {
+    return my_hwy_binary_hamming_distance(lhs, rhs, sz);
+}
+size_t my_population_count(const uint64_t* buf, size_t sz) noexcept {
+    return my_hwy_popcount(buf, sz);
+}
+TargetInfo my_target_info() noexcept {
+    return {"Highway", my_hwy_target_name(), vector_byte_size()};
 }
 
 } // anon ns
@@ -340,14 +377,43 @@ public:
     double squaredEuclideanDistance(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept override {
         return my_hwy_square_euclidean_distance_bf16(a, b, sz);
     }
-    const char* implementation_name() const noexcept override {
-        return "Highway";
+    TargetInfo target_info() const noexcept override {
+        return my_target_info();
     }
-    const char* target_name() const noexcept override {
-        return my_hwy_target_name();
+
+    [[nodiscard]] static dispatch::FnTable build_fn_table() {
+        dispatch::FnTable ft(my_target_info());
+        ft.dot_product_i8   = my_dot_product_i8;
+        ft.dot_product_bf16 = my_dot_product_bf16;
+        ft.dot_product_f32  = my_dot_product_f32;
+        ft.dot_product_f64  = my_dot_product_f64;
+        ft.squared_euclidean_distance_i8   = my_squared_euclidean_distance_i8;
+        ft.squared_euclidean_distance_bf16 = my_squared_euclidean_distance_bf16;
+        ft.squared_euclidean_distance_f32  = my_squared_euclidean_distance_f32;
+        ft.squared_euclidean_distance_f64  = my_squared_euclidean_distance_f64;
+        ft.binary_hamming_distance = my_binary_hamming_distance;
+        ft.population_count = my_population_count;
+#if HWY_TARGET == HWY_AVX2 || HWY_TARGET == HWY_AVX3
+        // AVX2 and AVX3 do not have dedicated vector popcount instructions, so the Highway "emulation"
+        // ends up being slower in practice than the baseline one using 4x pipelined POPCNT.
+        ft.tag_fns_as_suboptimal({FnTable::FnId::BINARY_HAMMING_DISTANCE, FnTable::FnId::POPULATION_COUNT});
+#endif
+#if (HWY_TARGET & HWY_ALL_SVE) != 0
+        // The SVE BFDOT instruction is not used by Highway for BF16 dot products due to a
+        // different rounding mode than that of NEON.
+        ft.tag_fns_as_suboptimal({FnTable::FnId::DOT_PRODUCT_BF16});
+#endif
+#if HWY_TARGET == HWY_SVE || HWY_TARGET == HWY_SVE_256
+        // SVE (1st edition) does not have signed subtraction with widening, causing
+        // i8 Euclidean to be slower than under NEON.
+        ft.tag_fns_as_suboptimal({FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_I8});
+#endif
+        return ft;
     }
-    std::string friendly_name() const override {
-        return std::format("Highway - {} ({} bit vector width)", target_name(), vector_bit_count());
+
+    const dispatch::FnTable& fn_table() const override {
+        static const FnTable tbl = build_fn_table();
+        return tbl;
     }
 
     [[nodiscard]] static std::unique_ptr<IAccelerated> create_instance() {
@@ -412,8 +478,7 @@ bool target_is_assumed_suboptimal(uint64_t target_hwy_id) noexcept {
     return (target_hwy_id & HWY_ALL_SVE) != 0;
 }
 
-// The "best" supported target will be the first element in the vector.
-std::vector<std::unique_ptr<IAccelerated>> create_supported_targets_impl(ExcludeTargets exclude_targets) {
+std::vector<std::pair<uint64_t, std::unique_ptr<IAccelerated>>> create_supported_targets_with_impls() {
     // On x64 we require AVX2 as a baseline, so don't bother wasting time with SSSE3/SSE4.
     // Ideally we would not even build these targets. No effect on Aarch64.
     hwy::DisableTargets(HWY_SSSE3 | HWY_SSE4);
@@ -435,6 +500,12 @@ std::vector<std::unique_ptr<IAccelerated>> create_supported_targets_impl(Exclude
         return lhs.first == rhs.first;
     });
     target_id_and_impl.erase(to_erase.begin(), to_erase.end());
+    return target_id_and_impl;
+}
+
+// The "best" supported target will be the first element in the vector.
+std::vector<std::unique_ptr<IAccelerated>> create_supported_targets_impl(ExcludeTargets exclude_targets) {
+    auto target_id_and_impl = create_supported_targets_with_impls();
 
     std::vector<std::unique_ptr<IAccelerated>> preferred_target_order;
     preferred_target_order.reserve(target_id_and_impl.size());
