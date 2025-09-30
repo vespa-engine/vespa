@@ -174,11 +174,11 @@ protected:
      */
     bool have_closer_distance(HnswTraversalCandidate candidate, const HnswTraversalCandidateVector& curr_result) const;
     template <typename HnswCandidateVectorT>
-    SelectResult select_neighbors_heuristic(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
+    SelectResult select_neighbors_heuristic(const HnswCandidateVectorT& neighbors, uint32_t max_links, uint32_t level) const;
     template <typename HnswCandidateVectorT>
     SelectResult select_neighbors_simple(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
     template <typename HnswCandidateVectorT>
-    SelectResult select_neighbors(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
+    SelectResult select_neighbors(const HnswCandidateVectorT& neighbors, uint32_t max_links, uint32_t level) const;
     void shrink_if_needed(uint32_t nodeid, uint32_t level);
     void connect_new_node(uint32_t nodeid, const LinkArrayRef &neighbors, uint32_t level);
     void mutual_reconnect(const LinkArrayRef &cluster, uint32_t level);

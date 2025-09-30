@@ -181,12 +181,18 @@ HnswIndex<type>::select_neighbors_simple(const HnswCandidateVectorT& neighbors, 
 template <HnswIndexType type>
 template <typename HnswCandidateVectorT>
 SelectResult
-HnswIndex<type>::select_neighbors_heuristic(const HnswCandidateVectorT& neighbors, uint32_t max_links) const
+HnswIndex<type>::select_neighbors_heuristic(const HnswCandidateVectorT& neighbors, uint32_t max_links, uint32_t level) const
 {
     SelectResult result;
     NearestPriQ nearest;
+    HnswCandidateVectorT with_no_neighbors;
     for (const auto& entry : neighbors) {
-        nearest.push(entry);
+        if (_graph.get_link_array(entry.nodeid, level).size() <= 1){
+            with_no_neighbors.push_back(entry);
+        }
+        else{
+            nearest.push(entry);
+        }
     }
     while (!nearest.empty()) {
         auto candidate = nearest.top();
@@ -196,7 +202,7 @@ HnswIndex<type>::select_neighbors_heuristic(const HnswCandidateVectorT& neighbor
             continue;
         }
         result.used.push_back(candidate);
-        if (result.used.size() == max_links) {
+        if (result.used.size() == max_links - with_no_neighbors.size()) {
             while (!nearest.empty()) {
                 candidate = nearest.top();
                 nearest.pop();
@@ -204,16 +210,19 @@ HnswIndex<type>::select_neighbors_heuristic(const HnswCandidateVectorT& neighbor
             }
         }
     }
+    for (const auto& entry : with_no_neighbors){
+        result.used.push_back(entry);
+    }
     return result;
 }
 
 template <HnswIndexType type>
 template <typename HnswCandidateVectorT>
 SelectResult
-HnswIndex<type>::select_neighbors(const HnswCandidateVectorT& neighbors, uint32_t max_links) const
+HnswIndex<type>::select_neighbors(const HnswCandidateVectorT& neighbors, uint32_t max_links, uint32_t level) const
 {
     if (_cfg.heuristic_select_neighbors()) {
-        return select_neighbors_heuristic(neighbors, max_links);
+        return select_neighbors_heuristic(neighbors, max_links, level);
     } else {
         return select_neighbors_simple(neighbors, max_links);
     }
@@ -233,7 +242,7 @@ HnswIndex<type>::shrink_if_needed(uint32_t nodeid, uint32_t level)
             double dist = calc_distance(*df, neighbor_nodeid);
             neighbors.emplace_back(neighbor_nodeid, dist);
         }
-        auto split = select_neighbors(neighbors, max_links);
+        auto split = select_neighbors(neighbors, max_links, level);
         LinkArray new_links;
         new_links.reserve(split.used.size());
         for (const auto & neighbor : split.used) {
@@ -673,7 +682,7 @@ HnswIndex<type>::internal_prepare_add_node(PreparedAddDoc& op, TypedCells input_
     // Find neighbors of the added document in each level it should exist in.
     while (search_level >= 0) {
         search_layer(*df, _cfg.neighbors_to_explore_at_construction(), 0.0, best_neighbors, search_level, nullptr);
-        auto neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_on_inserts());
+        auto neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_on_inserts(), search_layer);
         auto& links = connections[search_level];
         links.reserve(neighbors.used.size());
         for (const auto & neighbor : neighbors.used) {
@@ -774,35 +783,126 @@ template <HnswIndexType type>
 void
 HnswIndex<type>::mutual_reconnect(const LinkArrayRef &cluster, uint32_t level)
 {
-    std::vector<PairDist> pairs;
-    for (uint32_t i = 0; i + 1 < cluster.size(); ++i) {
-        uint32_t n_id_1 = cluster[i];
-        TypedCells n_cells_1 = get_vector(n_id_1);
-        if (n_cells_1.non_existing_attribute_value()) [[unlikely]] continue;
-        LinkArrayRef n_list_1 = _graph.get_link_array(n_id_1, level);
-        std::unique_ptr<BoundDistanceFunction> df = _distance_ff->for_insertion_vector(n_cells_1);
-        for (uint32_t j = i + 1; j < cluster.size(); ++j) {
-            uint32_t n_id_2 = cluster[j];
-            if ( ! has_link_to(n_list_1, n_id_2)) {
-                auto n_cells_2 = get_vector(n_id_2);
-                if (!n_cells_2.non_existing_attribute_value()) {
-                    pairs.emplace_back(n_id_1, n_id_2, df->calc(n_cells_2));
+    // Union-Find structure for connected components
+    struct UnionFind {
+        std::vector<uint32_t> parent, size;
+        UnionFind(const LinkArrayRef& nodes) : parent(nodes.begin(), nodes.end()), size(nodes.size(), 1) {}
+        uint32_t find(uint32_t u) {
+            auto idx = std::find(parent.begin(), parent.end(), u) - parent.begin();
+            while (parent[idx] != cluster[idx]) {
+                parent[idx] = parent[std::find(parent.begin(), parent.end(), parent[idx]) - parent.begin()];
+                idx = std::find(parent.begin(), parent.end(), parent[idx]) - parent.begin();
+            }
+            return parent[idx];
+        }
+        bool union_sets(uint32_t u, uint32_t w) {
+            uint32_t pu = find(u), pw = find(w);
+            if (pu == pw) return false;
+            auto idx_u = std::find(parent.begin(), parent.end(), pu) - parent.begin();
+            auto idx_w = std::find(parent.begin(), parent.end(), pw) - parent.begin();
+            if (size[idx_u] < size[idx_w]) std::swap(idx_u, idx_w);
+            parent[idx_w] = parent[idx_u];
+            size[idx_u] += size[idx_w];
+            return true;
+        }
+        uint32_t component_size(uint32_t u) {
+            uint32_t pu = find(u);
+            auto idx = std::find(parent.begin(), parent.end(), pu) - parent.begin();
+            return size[idx];
+        }
+    };
+
+    // Prepare node capacities
+    std::unordered_map<uint32_t, uint32_t> cap;
+    for (uint32_t nodeid : cluster) {
+        cap[nodeid] = max_links_for_level(level) - _graph.get_link_array(nodeid, level).size();
+    }
+
+    // Pre-existing edges
+    std::vector<std::pair<uint32_t, uint32_t>> pre_edges;
+    for (uint32_t i = 0; i < cluster.size(); ++i) {
+        uint32_t u = cluster[i];
+        auto links = _graph.get_link_array(u, level);
+        for (uint32_t w : links) {
+            if (std::find(cluster.begin(), cluster.end(), w) != cluster.end() && u < w) {
+                pre_edges.emplace_back(u, w);
+            }
+        }
+    }
+
+    // Distance matrix
+    std::unordered_map<uint32_t, std::unordered_map<uint32_t, double>> dist;
+    for (uint32_t i = 0; i < cluster.size(); ++i) {
+        uint32_t u = cluster[i];
+        auto cells_u = get_vector(u);
+        if (cells_u.non_existing_attribute_value()) continue;
+        auto df = _distance_ff->for_insertion_vector(cells_u);
+        for (uint32_t j = 0; j < cluster.size(); ++j) {
+            uint32_t w = cluster[j];
+            if (u != w) {
+                auto cells_w = get_vector(w);
+                if (!cells_w.non_existing_attribute_value()) {
+                    dist[u][w] = df->calc(cells_w);
                 }
             }
         }
     }
-    std::sort(pairs.begin(), pairs.end());
-    for (const PairDist & pair : pairs) {
-        LinkArrayRef old_links_1 = _graph.get_link_array(pair.id_first, level);
-        if (old_links_1.size() >= _cfg.max_links_on_inserts()) continue;
 
-        LinkArrayRef old_links_2 = _graph.get_link_array(pair.id_second, level);
-        if (old_links_2.size() >= _cfg.max_links_on_inserts()) continue;
-
-        add_link_to(pair.id_first, level, old_links_1, pair.id_second);
-        add_link_to(pair.id_second, level, old_links_2, pair.id_first);
+    // Union-Find initialization
+    UnionFind UF(cluster);
+    for (const auto& e : pre_edges) {
+        UF.union_sets(e.first, e.second);
     }
-}
+
+    // Repair edges
+    std::vector<std::pair<uint32_t, uint32_t>> repair_edges;
+    while (true) {
+        // Candidates: edges between different components with available capacity
+        std::vector<std::pair<uint32_t, uint32_t>> candidates;
+        for (size_t i = 0; i < cluster.size(); ++i) {
+            uint32_t u = cluster[i];
+            for (size_t j = i + 1; j < cluster.size(); ++j) {
+                uint32_t w = cluster[j];
+                if (UF.find(u) != UF.find(w) && cap[u] > 0 && cap[w] > 0) {
+                    candidates.emplace_back(u, w);
+                }
+            }
+        }
+        if (candidates.empty()) break;
+
+        // Edge priority function
+        auto edge_priority = [&](const std::pair<uint32_t, uint32_t>& e) {
+            uint32_t u = e.first, w = e.second;
+            bool singleton_1 = ((cap[u] == 1 && UF.component_size(u) == 1) &&
+                                (cap[w] == 1 && UF.component_size(w) == 1));
+            return std::tuple<bool, int, double, int, uint32_t>(
+                singleton_1,
+                -int(std::min(cap[u], cap[w])),
+                dist[u][w],
+                -int(cap[u] + cap[w]),
+                std::max(UF.component_size(u), UF.component_size(w))
+            );
+        };
+
+        std::sort(candidates.begin(), candidates.end(),
+                  [&](const auto& a, const auto& b) { return edge_priority(a) < edge_priority(b); });
+
+        uint32_t u = candidates[0].first, w = candidates[0].second;
+        repair_edges.emplace_back(u, w);
+        cap[u] -= 1;
+        cap[w] -= 1;
+        UF.union_sets(u, w);
+    }
+
+    // Actually add the repair edges to the graph
+    for (const auto& e : repair_edges) {
+        uint32_t u = e.first, w = e.second;
+        auto links_u = _graph.get_link_array(u, level);
+        auto links_w = _graph.get_link_array(w, level);
+        add_link_to(u, level, links_u, w);
+        add_link_to(w, level, links_w, u);
+    }
+
 
 template <HnswIndexType type>
 void
