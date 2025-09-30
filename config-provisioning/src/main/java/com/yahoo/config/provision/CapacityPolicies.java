@@ -164,7 +164,7 @@ public class CapacityPolicies {
                 : tuning.clusterControllerMem(1.50);
 
         // TODO: Consider CPU adjustments as well
-        var adjustedMemory = adjustClusterControllerMemory(memory, contentNodes, clusterSpec.vespaVersion().getMinor());
+        var adjustedMemory = adjustClusterControllerMemory(memory, contentNodes, clusterSpec.vespaVersion());
         // But go back to use overridden memory if set (through feature flag)
         if (tuning.clusterControllerMemoryGiB() > 0.0) {
             adjustedMemory = memory;
@@ -176,7 +176,7 @@ public class CapacityPolicies {
 
     // Adjust memory based on number of content nodes in all content clusters
     // Note: nodeCount is 0 if unknown.
-    private static double adjustClusterControllerMemory(double memory, long nodeCount, int vespaMinorVersion) {
+    private static double adjustClusterControllerMemory(double memory, long nodeCount, Version vespaVersion) {
         int count = (int) nodeCount;
         // We have seen clusters with ~100 nodes needing at least 1.6 GiB on x86_64
         // Adjust memory based on number of content nodes (which is a simple way to model the O(n^2) behavior
@@ -184,7 +184,7 @@ public class CapacityPolicies {
         // Increase in steps to avoid changes of memory allocation with small changes in node count.
 
         double adjustmentFactor = 0.20; // 20% increase per step for vespa version > 8.588
-        if (vespaMinorVersion <= 588) {
+        if (vespaVersion.isBefore(Version.fromString("8.588.1"))) {
             adjustmentFactor = 0.15;
         }
 
