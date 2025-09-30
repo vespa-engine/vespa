@@ -241,11 +241,6 @@ public class TenantApplications implements RequestHandler, HostValidator {
         return application.resolveConfig(req, responseFactory);
     }
 
-    private void notifyConfigActivationListeners(ApplicationVersions applicationVersions) {
-        hostRegistry.update(applicationVersions.getId(), applicationVersions.allHosts());
-        configActivationListener.configActivated(applicationVersions);
-    }
-
     /**
      * Activates the config of the given app. Notifies listeners
      *
@@ -260,7 +255,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
                 return; // Application activated a new session before we got here.
 
             setActiveApp(applicationVersions);
-            notifyConfigActivationListeners(applicationVersions);
+            configActivationListener.configActivated(applicationVersions);
         }
     }
 
