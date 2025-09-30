@@ -21,6 +21,7 @@ LOG_SETUP(".proton.matching.docsum_matcher");
 using search::MatchingElements;
 using search::MatchingElementsFields;
 using search::fef::FeatureResolver;
+using search::fef::MatchData;
 using search::fef::RankProgram;
 using search::queryeval::AndNotBlueprint;
 using search::queryeval::Blueprint;
@@ -64,10 +65,11 @@ const T *as(const Blueprint &bp) { return dynamic_cast<const T *>(&bp); }
 
 void find_matching_elements(const std::vector<uint32_t> &docs,
                             const SameElementBlueprint &same_element,
+                            MatchData& md,
                             MatchingElements &result)
 {
     search::fef::TermFieldMatchData dummy_tfmd;
-    auto search = same_element.create_same_element_search(dummy_tfmd);
+    auto search = same_element.create_same_element_search(md, dummy_tfmd);
     search->initRange(docs.front(), docs.back()+1);
     std::vector<uint32_t> matches;
     for (uint32_t doc : docs) {
@@ -126,7 +128,7 @@ struct FindMatchingElements {
     const MatchingElementsFields &fields;
     MatchingElements &result;
     const FieldIdToNameMapper idToName;
-    search::fef::MatchData &matchData;
+    MatchData&                matchData;
 
     void process(const std::vector<uint32_t> &docs, const Blueprint &bp);
 };
@@ -137,7 +139,7 @@ void FindMatchingElements::process(
 {
     if (auto same_element = as<SameElementBlueprint>(bp)) {
         if (fields.has_field(same_element->field_name())) {
-            find_matching_elements(docs, *same_element, result);
+            find_matching_elements(docs, *same_element, matchData, result);
         }
     } else if (auto matching_elements_search = bp.create_matching_elements_search(fields)) {
         find_matching_elements(docs, *matching_elements_search, result);

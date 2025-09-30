@@ -131,7 +131,6 @@ struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv> {
     ~ProtonEquiv() override;
 };
 struct ProtonSameElement final : public ProtonTermBase<search::query::SameElement> {
-    search::fef::MatchDataLayout subtree_mdl;
     using ProtonTermBase::ProtonTermBase;
     ~ProtonSameElement() override;
 };

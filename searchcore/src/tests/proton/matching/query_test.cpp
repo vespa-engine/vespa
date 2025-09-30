@@ -1050,7 +1050,7 @@ TEST(QueryTest, requireThatSameElementAllocatesMatchData)
     MatchDataReserveVisitor visitor(mdl);
     node->accept(visitor);
     MatchData::UP match_data = mdl.createMatchData();
-    EXPECT_EQ(1u, match_data->getNumTermFields());
+    EXPECT_EQ(3u, match_data->getNumTermFields());
 }
 
 TEST(QueryTest, requireThatSameElementIteratorsCanBeBuilt)

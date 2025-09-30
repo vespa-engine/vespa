@@ -300,7 +300,7 @@ SearchIterator *getParent<SameElement>(SearchIterator *a, SearchIterator *b) {
     // we only check how many term/field combinations
     // are below the SameElement parent:
     // two terms searching in one index field
-    return new SameElementSearch(tmd, nullptr, std::move(children), true);
+    return new SameElementSearch(tmd, std::move(children), true);
 }
 
 template <>
