@@ -5,7 +5,7 @@ import com.yahoo.api.annotations.Beta;
 
 /**
  * All information needed for creating any extra data structures associated with
- * a single metric, outside of its basic type.
+ * a single metric, in addition to its basic type.
  *
  * @author steinar
  */
@@ -30,8 +30,7 @@ public final class MetricSettings {
          * Set whether a resulting metric should have a histogram. Default is
          * false.
          *
-         * @param histogram
-         *            whether to generate a histogram
+         * @param histogram whether to generate a histogram
          * @return this, to facilitate chaining
          */
         public Builder histogram(boolean histogram) {
@@ -42,8 +41,7 @@ public final class MetricSettings {
         /**
          * Build a fresh MetricSettings instance.
          *
-         * @return a MetricSettings instance containing the values set in this
-         *         builder
+         * @return a MetricSettings instance containing the values set in this builder
          */
         public MetricSettings build() {
             return new MetricSettings(histogram);
@@ -67,4 +65,5 @@ public final class MetricSettings {
     boolean isHistogram() {
         return histogram;
     }
+
 }

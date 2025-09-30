@@ -4,7 +4,7 @@ package com.yahoo.metrics.simple;
 import com.yahoo.metrics.simple.UntypedMetric.AssumedType;
 
 /**
- * A single metric measurement and all the meta data needed to route it
+ * A single metric measurement and all the metadata needed to route it
  * correctly.
  *
  * @author Steinar Knutsen

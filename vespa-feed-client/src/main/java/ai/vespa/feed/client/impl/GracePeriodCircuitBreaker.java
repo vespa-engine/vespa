@@ -35,6 +35,7 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
 
     /**
      * Creates a new circuit breaker with the given grace periods.
+     *
      * @param grace the period of consecutive failures before state changes to half-open.
      */
     public GracePeriodCircuitBreaker(Duration grace) {
@@ -43,6 +44,7 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
 
     /**
      * Creates a new circuit breaker with the given grace periods.
+     *
      * @param grace the period of consecutive failures before state changes to half-open.
      * @param doom the period of consecutive failures before shutting down.
      */
