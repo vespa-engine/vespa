@@ -127,7 +127,7 @@ private:
 
     void buildSameElement(ProtonSameElement &n) {
         if (n.numFields() == 1) {
-            auto se = std::make_unique<SameElementBlueprint>(n.field(0).fieldSpec(), n.subtree_mdl, n.is_expensive());
+            auto se = std::make_unique<SameElementBlueprint>(n.field(0).fieldSpec(), n.is_expensive());
             for (auto* node : n.getChildren()) {
                 se->addChild(build(_requestContext, *node, _context));
             }

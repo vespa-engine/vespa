@@ -102,6 +102,7 @@ TagNeededHandlesVisitor::visit(ProtonNodeTypes::ONear& n)
 void
 TagNeededHandlesVisitor::visit(ProtonNodeTypes::Phrase& n)
 {
+    maybe_visit_field_specs(n);
     ++_inspecting_ancestor_nodes;
     ++_changed_match_data;
     visitChildren(n);
@@ -113,9 +114,7 @@ void
 TagNeededHandlesVisitor::visit(ProtonNodeTypes::SameElement& n)
 {
     ++_inspecting_ancestor_nodes;
-    ++_changed_match_data;
     visitChildren(n);
-    --_changed_match_data;
     --_inspecting_ancestor_nodes;
 }
 

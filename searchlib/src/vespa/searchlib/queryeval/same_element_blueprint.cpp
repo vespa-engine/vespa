@@ -9,11 +9,13 @@
 #include <cassert>
 #include <map>
 
+using search::fef::MatchData;
+using search::fef::TermFieldMatchData;
+
 namespace search::queryeval {
 
-SameElementBlueprint::SameElementBlueprint(const FieldSpec &field, fef::MatchDataLayout subtree_mdl, bool expensive)
+SameElementBlueprint::SameElementBlueprint(const FieldSpec &field, bool expensive)
     : IntermediateBlueprint(),
-      _layout(std::move(subtree_mdl)),
       _field(field),
       _expensive(expensive)
 {
@@ -52,11 +54,11 @@ SameElementBlueprint::calculate_cost_tier() const
 }
 
 std::unique_ptr<SearchIterator>
-SameElementBlueprint::createSearchImpl(fef::MatchData& md) const
+SameElementBlueprint::createSearchImpl(MatchData& md) const
 {
     auto* tfmd = md.resolveTermField(_field.getHandle());
     assert(tfmd != nullptr);
-    return create_same_element_search(*tfmd);
+    return create_same_element_search(md, *tfmd);
 }
 
 Blueprint::HitEstimate
@@ -85,23 +87,22 @@ void SameElementBlueprint::sort(Children& children, InFlow in_flow) const
 }
 
 std::unique_ptr<SearchIterator>
-SameElementBlueprint::createIntermediateSearch(MultiSearch::Children, fef::MatchData&) const
+SameElementBlueprint::createIntermediateSearch(MultiSearch::Children, MatchData&) const
 {
     abort(); // Handled by createSearchImpl and create_same_element_search
 }
 
 std::unique_ptr<SameElementSearch>
-SameElementBlueprint::create_same_element_search(search::fef::TermFieldMatchData& tfmd) const
+SameElementBlueprint::create_same_element_search(MatchData& md, TermFieldMatchData& tfmd) const
 {
-    auto subtree_md = _layout.createMatchData();
     MultiSearch::Children sub_searches;
     auto& children = get_children();
     sub_searches.reserve(children.size());
     for (const auto & child : children) {
-        sub_searches.push_back(child->createSearch(*subtree_md));
+        sub_searches.push_back(child->createSearch(md));
     }
     // match data for subtree (subtree_md) must be owned by search iterator
-    return std::make_unique<SameElementSearch>(tfmd, std::move(subtree_md), std::move(sub_searches), strict());
+    return std::make_unique<SameElementSearch>(tfmd, std::move(sub_searches), strict());
 }
 
 SearchIterator::UP

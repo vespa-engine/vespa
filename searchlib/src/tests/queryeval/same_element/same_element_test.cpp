@@ -19,30 +19,30 @@ void verify_elements(SameElementSearch &se, uint32_t docid, const std::initializ
     EXPECT_EQ(actual, expect);
 }
 
-FieldSpec make_field_spec() {
+FieldSpec make_field_spec(MatchDataLayout& mdl) {
     // This field spec is aligned with the match data created below.
     uint32_t field_id = 0;
-    TermFieldHandle handle = 0;
-    return {"foo", field_id, handle};
+    return {"foo", field_id, mdl.allocTermField(field_id)};
 }
 
-MatchData::UP make_match_data() {
-    return MatchData::makeTestInstance(1, 1);
+std::unique_ptr<MatchDataLayout> make_match_data_layout() {
+    auto mdl = std::make_unique<MatchDataLayout>();
+    return mdl;
 }
 
-std::unique_ptr<SameElementBlueprint> make_blueprint(const std::vector<FakeResult> &children, bool fake_attr = false) {
-    MatchDataLayout subtree_mdl;
+std::unique_ptr<SameElementBlueprint> make_blueprint(MatchDataLayout& mdl,
+                                                     const std::vector<FakeResult> &children, bool fake_attr = false) {
     std::vector<std::unique_ptr<Blueprint>> bp_children;
     bp_children.reserve(children.size());
     for (size_t i = 0; i < children.size(); ++i) {
         uint32_t field_id = i;
         std::string field_name = vespalib::make_string("f%u", field_id);
-        FieldSpec field(field_name, field_id, subtree_mdl.allocTermField(field_id), false);
+        FieldSpec field(field_name, field_id, mdl.allocTermField(field_id), false);
         auto fake = std::make_unique<FakeBlueprint>(field, children[i]);
         fake->is_attr(fake_attr);
         bp_children.emplace_back(std::move(fake));
     }
-    auto result = std::make_unique<SameElementBlueprint>(make_field_spec(), std::move(subtree_mdl), false);
+    auto result = std::make_unique<SameElementBlueprint>(make_field_spec(mdl), false);
     for (auto& fake : bp_children) {
         result->addChild(std::move(fake));
     }
@@ -58,8 +58,9 @@ Blueprint::UP finalize(Blueprint::UP bp, bool strict) {
 }
 
 SimpleResult find_matches(const std::vector<FakeResult> &children) {
-    auto md = make_match_data();
-    auto bp = finalize(make_blueprint(children), false);
+    auto mdl = make_match_data_layout();
+    auto bp = finalize(make_blueprint(*mdl, children), false);
+    auto md = mdl->createMatchData();
     auto search = bp->createSearch(*md);
     return SimpleResult().search(*search, 1000);
 }
@@ -87,8 +88,9 @@ TEST(SameElementTest, require_that_simple_match_can_be_found) {
 TEST(SameElementTest, require_that_matching_elements_can_be_identified) {
     auto a = make_result({{5, {1,3,7,12}}, {10, {1,2,3}}});
     auto b = make_result({{5, {3,5,7,10}}, {10, {4,5,6}}});
-    auto bp = finalize(make_blueprint({a,b}), false);
-    auto md = make_match_data();
+    auto mdl = make_match_data_layout();
+    auto bp = finalize(make_blueprint(*mdl, {a,b}), false);
+    auto md = mdl->createMatchData();
     auto search = bp->createSearch(*md);
     search->initRange(1, 1000);
     auto *se = dynamic_cast<SameElementSearch*>(search.get());
@@ -107,12 +109,15 @@ TEST(SameElementTest, require_that_children_must_match_within_same_element) {
 }
 
 TEST(SameElementTest, require_that_strict_iterator_seeks_to_next_hit_and_can_unpack_matching_docid) {
-    auto md = make_match_data();
+    auto mdl = make_match_data_layout();
     auto a = make_result({{5, {1,2}}, {7, {1,2}}, {8, {1,2}}, {9, {1,2}}});
     auto b = make_result({{5, {3}}, {6, {1,2}}, {7, {2,4}}, {9, {1}}});
-    auto bp = finalize(make_blueprint({a,b}), true);
+    auto sebp = make_blueprint(*mdl, {a, b});
+    auto handle = sebp->get_field().getHandle();
+    auto bp = finalize(std::move(sebp), true);
+    auto md = mdl->createMatchData();
     auto search = bp->createSearch(*md);
-    auto* tfmd = md->resolveTermField(0);
+    auto* tfmd = md->resolveTermField(handle);
     search->initRange(1, 1000);
     EXPECT_LT(search->getDocId(), 1u);
     EXPECT_FALSE(search->seek(1));
@@ -132,7 +137,8 @@ TEST(SameElementTest, require_that_results_are_estimated_appropriately) {
     auto a = make_result({{5, {0}}, {5, {0}}, {5, {0}}});
     auto b = make_result({{5, {0}}, {5, {0}}});
     auto c = make_result({{5, {0}}, {5, {0}}, {5, {0}}, {5, {0}}});
-    auto bp = finalize(make_blueprint({a,b,c}), true);
+    auto mdl = make_match_data_layout();
+    auto bp = finalize(make_blueprint(*mdl, {a,b,c}), true);
     EXPECT_EQ(bp->getState().estimate().estHits, 2u);
 }
 
@@ -140,7 +146,8 @@ TEST(SameElementTest, require_that_children_are_sorted) {
     auto a = make_result({{5, {0}}, {5, {0}}, {5, {0}}});
     auto b = make_result({{5, {0}}, {5, {0}}});
     auto c = make_result({{5, {0}}, {5, {0}}, {5, {0}}, {5, {0}}});
-    auto bp = finalize(make_blueprint({a,b,c}), true);
+    auto mdl = make_match_data_layout();
+    auto bp = finalize(make_blueprint(*mdl, {a,b,c}), true);
     EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).getChild(0).getState().estimate().estHits, 2u);
     EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).getChild(1).getState().estimate().estHits, 3u);
     EXPECT_EQ(dynamic_cast<SameElementBlueprint&>(*bp).getChild(2).getState().estimate().estHits, 4u);

@@ -308,7 +308,7 @@ TEST_F(TagNeededHandlesTest, hidden_unpack_for_phrase_children)
     EXPECT_EQ((ThresholdVector{0.0, 0.5}), extract_thresholds(*root));
 }
 
-TEST_F(TagNeededHandlesTest, hidden_unpack_for_same_element_children)
+TEST_F(TagNeededHandlesTest, unpack_for_same_element_children)
 {
     QueryBuilder<ProtonNodeTypes> query_builder;
     constexpr uint32_t term_count = 2;
@@ -317,7 +317,23 @@ TEST_F(TagNeededHandlesTest, hidden_unpack_for_same_element_children)
     query_builder.addStringTerm(bar_term, view, term_id + 2, string_weight);
     auto root = query_builder.build();
     prepare(*root);
-    EXPECT_EQ(HandleSet{}, normal_features_handles());
+    EXPECT_EQ((HandleSet{0, 1, 2, 3}), normal_features_handles());
+    EXPECT_EQ((ThresholdVector{0.0, 0.5, 1.0, 1.0, 1.0, 1.0}), extract_thresholds(*root));
+}
+
+TEST_F(TagNeededHandlesTest, unpack_for_same_element_with_phrase_child)
+{
+    QueryBuilder<ProtonNodeTypes> query_builder;
+    constexpr uint32_t term_count = 2;
+    constexpr uint32_t phrase_term_count = 2;
+    query_builder.addSameElement(term_count, view, term_id, string_weight);
+    query_builder.addStringTerm(foo_term, view, term_id + 1, string_weight);
+    query_builder.addPhrase(phrase_term_count, view, term_id, string_weight);
+    query_builder.addStringTerm(bar_term, view, term_id + 2, string_weight);
+    query_builder.addStringTerm(baz_term, view, term_id + 3, string_weight);
+    auto root = query_builder.build();
+    prepare(*root);
+    EXPECT_EQ((HandleSet{0, 1, 2, 3}), normal_features_handles());
     EXPECT_EQ((ThresholdVector{0.0, 0.5, 1.0, 1.0, 1.0, 1.0}), extract_thresholds(*root));
 }
 

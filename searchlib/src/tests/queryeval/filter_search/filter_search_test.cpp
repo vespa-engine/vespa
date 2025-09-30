@@ -390,21 +390,19 @@ struct ParallelWeakAndAdapter {
 // enable Make-ing same element
 struct SameElementAdapter {
     FieldSpec field;
-    MatchDataLayout subtree_mdl;
     mutable std::vector<std::unique_ptr<Blueprint>> children;
     mutable std::unique_ptr<SameElementBlueprint> blueprint;
     SameElementAdapter();
     ~SameElementAdapter();
     void addChild(std::unique_ptr<Blueprint> child) {
         assert(!blueprint);
-        FieldSpec child_field("foo", 3, subtree_mdl.allocTermField(3), false);
-        auto term = std::make_unique<LeafProxy>(child_field, std::move(child));
+        auto term = std::make_unique<LeafProxy>(std::move(child));
 
         children.emplace_back(std::move(term));
     }
     void make_blueprint() const {
         if (!blueprint) {
-            blueprint = std::make_unique<SameElementBlueprint>(field, subtree_mdl, false);
+            blueprint = std::make_unique<SameElementBlueprint>(field, false);
             for (auto& child : children) {
                 blueprint->addChild(std::move(child));
             }
@@ -422,7 +420,6 @@ struct SameElementAdapter {
 
 SameElementAdapter::SameElementAdapter()
     : field("foo", 5, 11),
-      subtree_mdl(),
       children(),
       blueprint()
 {

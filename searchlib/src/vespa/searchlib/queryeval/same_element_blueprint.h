@@ -14,13 +14,12 @@ class SameElementSearch;
 class SameElementBlueprint : public IntermediateBlueprint
 {
 private:
-    fef::MatchDataLayout  _layout;
     FieldSpec             _field;
     bool                  _expensive;
 
     AnyFlow my_flow(InFlow in_flow) const override;
 public:
-    SameElementBlueprint(const FieldSpec &field, fef::MatchDataLayout subtree_mdl, bool expensive);
+    SameElementBlueprint(const FieldSpec &field, bool expensive);
     SameElementBlueprint(const SameElementBlueprint &) = delete;
     SameElementBlueprint &operator=(const SameElementBlueprint &) = delete;
     ~SameElementBlueprint() override;
@@ -36,13 +35,15 @@ public:
 
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     
-    std::unique_ptr<SameElementSearch> create_same_element_search(search::fef::TermFieldMatchData& tfmd) const;
+    std::unique_ptr<SameElementSearch> create_same_element_search(search::fef::MatchData& md,
+                                                                  search::fef::TermFieldMatchData& tfmd) const;
     std::unique_ptr<SearchIterator> createIntermediateSearch(MultiSearch::Children sub_searches,
                                                              fef::MatchData& md) const override;
 
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const std::string &field_name() const { return _field.getName(); }
+    const std::string &field_name() const noexcept { return _field.getName(); }
+    const FieldSpec& get_field() const noexcept { return _field; }
 };
 
 }

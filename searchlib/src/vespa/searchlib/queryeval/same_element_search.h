@@ -22,7 +22,6 @@ private:
     using It = fef::TermFieldMatchData::PositionsIterator;
 
     fef::TermFieldMatchData         &_tfmd;
-    fef::MatchData::UP               _md;
     std::vector<std::unique_ptr<SearchIterator>> _children;
     std::vector<uint32_t>            _matchingElements;
     bool                             _strict;
@@ -33,7 +32,6 @@ private:
 
 public:
     SameElementSearch(fef::TermFieldMatchData &tfmd,
-                      fef::MatchData::UP md,
                       std::vector<std::unique_ptr<SearchIterator>> children,
                       bool strict);
     ~SameElementSearch() override;

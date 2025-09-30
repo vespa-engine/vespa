@@ -41,11 +41,9 @@ SameElementSearch::check_element_match(uint32_t docid)
 }
 
 SameElementSearch::SameElementSearch(fef::TermFieldMatchData &tfmd,
-                                     fef::MatchData::UP md,
                                      std::vector<std::unique_ptr<SearchIterator>> children,
                                      bool strict)
     : _tfmd(tfmd),
-      _md(std::move(md)),
       _children(std::move(children)),
       _strict(strict)
 {
