@@ -11,7 +11,6 @@ import java.util.logging.Logger;
 import static com.yahoo.config.provision.NodeResources.Architecture;
 import static com.yahoo.config.provision.NodeResources.Architecture.x86_64;
 import static java.util.Objects.requireNonNull;
-import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
 /**
@@ -164,7 +163,8 @@ public class CapacityPolicies {
                 ? tuning.clusterControllerMem(1.32)
                 : tuning.clusterControllerMem(1.50);
 
-        var adjustedMemory = adjustClusterControllerMemory(memory, contentNodes);
+        // TODO: Consider CPU adjustments as well
+        var adjustedMemory = adjustClusterControllerMemory(memory, contentNodes, clusterSpec.vespaVersion());
         // But go back to use overridden memory if set (through feature flag)
         if (tuning.clusterControllerMemoryGiB() > 0.0) {
             adjustedMemory = memory;
@@ -176,37 +176,26 @@ public class CapacityPolicies {
 
     // Adjust memory based on number of content nodes in all content clusters
     // Note: nodeCount is 0 if unknown.
-    private static double adjustClusterControllerMemory(double memory, long nodeCount) {
+    private static double adjustClusterControllerMemory(double memory, long nodeCount, Version vespaVersion) {
         int count = (int) nodeCount;
         // We have seen clusters with ~100 nodes needing at least 1.6 GiB on x86_64
         // Adjust memory based on number of content nodes (which is a simple way to model the O(n^2) behavior
         // of the increase in communication between cluster controller and nodes (and thus memory)).
         // Increase in steps to avoid changes of memory allocation with small changes in node count.
-        double adjustment;
-        if (isBetween(count, 0, 50)) {
-            adjustment = 0;
-        } else if (isBetween(count, 50, 100)) {
-            adjustment = 0.15;
-        } else if (isBetween(count, 100, 200)) {
-            adjustment = 0.3;
-        } else if (isBetween(count, 200, 300)) {
-            adjustment = 0.45;
-        } else {
-            adjustment = 0.6;
+
+        double adjustmentFactor = 0.20; // 20% increase per step for vespa version > 8.588
+        if (vespaVersion.isBefore(Version.fromString("8.588.1"))) {
+            adjustmentFactor = 0.15;
         }
+
+        var step = Math.min(4, count / 50); // max 4 steps (200+ nodes)
+        double adjustment = step * adjustmentFactor;
 
         double newMemory = memory + adjustment;
         if (count >= 50) {
             log.log(INFO, "Adjusted cluster controller memory (" + count + " content nodes): " + newMemory + " GiB");
-        } else {
-            log.log(FINE, "Not adjusting cluster controller memory (" + count + " content nodes): " + newMemory + " GiB");
         }
         return newMemory;
-    }
-
-    // is between lower (inclusive) and upper (exclusive)
-    public static boolean isBetween(int x, int lower, int upper) {
-        return lower <= x && x < upper;
     }
 
     private NodeResources logserverResources(Architecture architecture) {
