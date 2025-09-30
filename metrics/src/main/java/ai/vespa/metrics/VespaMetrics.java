@@ -48,6 +48,7 @@ public interface VespaMetrics {
         return withSuffix(Suffix.min);
     }
 
+    /** The count if this metric per second. */
     default String rate() {
         return withSuffix(Suffix.rate);
     }

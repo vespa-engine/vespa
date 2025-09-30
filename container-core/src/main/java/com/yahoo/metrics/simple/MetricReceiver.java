@@ -43,7 +43,7 @@ public class MetricReceiver {
      * {@link #declareGauge(String)}, or {@link #declareGauge(String, Point)}
      * instead.
      *
-     * @param sample a single simple containing all meta data necessary to update a metric
+     * @param sample a single simple containing all metadata necessary to update a metric
      */
     public void update(Sample sample) {
         // pass around the receiver instead of histogram settings to avoid reading any volatile if unnecessary
