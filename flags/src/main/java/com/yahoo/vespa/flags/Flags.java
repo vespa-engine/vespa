@@ -57,7 +57,7 @@ public class Flags {
             INSTANCE_ID, VESPA_VERSION);
 
     public static final UnboundBooleanFlag LOCKED_GCP_PROVISION = defineFeatureFlag(
-            "locked-gcp-provision", false,
+            "locked-gcp-provision", true,
             List.of("hakonhall"), "2025-08-05", "2025-11-05",
             "Whether to provision GCP hosts under the application- and unallocated- locks, even though it takes ~1m.",
             "Takes effect on next host being provisioned");
