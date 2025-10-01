@@ -2,30 +2,55 @@
 
 package com.yahoo.vespasignificance;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.ParseException;
+
 import java.io.IOException;
-import java.util.List;
+import java.util.Arrays;
+
+import static com.yahoo.vespasignificance.CommandLineOptions.createGlobalOptions;
+import static com.yahoo.vespasignificance.CommandLineOptions.printGlobalHelp;
 
 /**
  * The vespa-significance tool generates significance models based on input feed files.
  *
  * @author MariusArhaug
  */
-
 public class Main {
 
     public static void main(String[] args) {
+        var parser = new DefaultParser();
+        CommandLine global;
         try {
-            if (args.length == 0) {
-                System.err.println("No arguments provided. Use --help to see available options.");
-                System.exit(1);
-            }
+            global = parser.parse(createGlobalOptions(), args, true);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
 
-            if (!args[0].equals("generate")) {
-                System.err.println("Invalid command. Use 'generate' to generate significance models.");
-                System.exit(1);
-            }
-            String[] commandLineArgs = List.of(args).subList(1, args.length).toArray(new String[0]);
+        String[] remaining = global.getArgs();
+        if (remaining.length == 0 || global.hasOption("help")) {
+            printGlobalHelp();
+            return;
+        }
 
+
+        String sub = remaining[0];
+        String[] subArgs = Arrays.copyOfRange(remaining, 1, remaining.length);
+        switch (sub) {
+            case "generate":
+                runGenerate(subArgs);
+                break;
+
+            default:
+                System.err.println("Error: Unknown command `" + sub + "`");
+                printGlobalHelp();
+                break;
+        }
+    }
+
+    static void runGenerate(String[] commandLineArgs) {
+        try {
             CommandLineOptions options = new CommandLineOptions();
             ClientParameters params = options.parseCommandLineArguments(commandLineArgs);
 
