@@ -68,6 +68,8 @@ private:
     std::vector<MyTerm*> _terms;
     bool                 _ordered;
     uint32_t             _window;
+    uint32_t             _num_negative_terms;
+    uint32_t             _negative_term_brick_size;
     MockElementGapInspector _element_gap_inspector;
 
 public:
@@ -94,9 +96,20 @@ public:
     uint32_t getWindow() const {
         return _window;
     }
+    uint32_t getNumNegativeTerms() const {
+        return _num_negative_terms;
+    }
+    uint32_t getNegativeTermBrickSize() const {
+        return _negative_term_brick_size;
+    }
     const IElementGapInspector& get_element_gap_inspector() const noexcept { return _element_gap_inspector; }
     MyQuery& set_element_gap(ElementGap element_gap) {
         _element_gap_inspector = MockElementGapInspector(element_gap);
+        return *this;
+    }
+    MyQuery& set_negative_terms(uint32_t num_negative_terms, uint32_t negative_term_brick_size) {
+        _num_negative_terms = num_negative_terms;
+        _negative_term_brick_size = negative_term_brick_size;
         return *this;
     }
 };
@@ -105,6 +118,8 @@ MyQuery::MyQuery(bool ordered, uint32_t window)
     : _terms(),
       _ordered(ordered),
       _window(window),
+      _num_negative_terms(0),
+      _negative_term_brick_size(0),
       _element_gap_inspector(std::nullopt)
 {}
 
@@ -125,12 +140,20 @@ protected:
     struct NearSpec {
         std::string _positive_terms;
         uint32_t _window;
+        std::string _negative_terms;
+        uint32_t _brick_size;
         bool _ordered;
         search::fef::ElementGap _element_gap;
         NearSearchTest* _test;
 
         NearSpec(const std::string& positive_terms, uint32_t window, bool ordered, NearSearchTest* test)
-            : _positive_terms(positive_terms), _window(window), _ordered(ordered), _test(test) {}
+            : _positive_terms(positive_terms), _window(window), _brick_size(0), _ordered(ordered), _test(test) {}
+
+        NearSpec& avoid(const std::string& terms, uint32_t brick_size) {
+            _negative_terms = terms;
+            _brick_size = brick_size;
+            return *this;
+        }
 
         NearSpec& element_gap(uint32_t gap) {
             _element_gap = gap;
@@ -140,6 +163,9 @@ protected:
         std::string make_label() const {
             std::string label = _ordered ? "onear(" : "near(";
             label += _positive_terms + "," + std::to_string(_window) + ")";
+            if (!_negative_terms.empty()) {
+                label += ".avoid(" + _negative_terms + "," + std::to_string(_brick_size) + ")";
+            }
             if (_element_gap.has_value()) {
                 label += ".gap(" + std::to_string(*_element_gap) + ")";
             }
@@ -318,9 +344,11 @@ NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId,
     SCOPED_TRACE(vespalib::make_string("%s - %u", label.c_str(), matchId));
     search::queryeval::IntermediateBlueprint *near_b = nullptr;
     if (query.isOrdered()) {
-        near_b = new search::queryeval::ONearBlueprint(query.getWindow(), query.get_element_gap_inspector());
+        near_b = new search::queryeval::ONearBlueprint(query.getWindow(), query.getNumNegativeTerms(),
+                                                        query.getNegativeTermBrickSize(), query.get_element_gap_inspector());
     } else {
-        near_b = new search::queryeval::NearBlueprint(query.getWindow(), query.get_element_gap_inspector());
+        near_b = new search::queryeval::NearBlueprint(query.getWindow(), query.getNumNegativeTerms(),
+                                                       query.getNegativeTermBrickSize(), query.get_element_gap_inspector());
     }
     search::queryeval::Blueprint::UP bp(near_b);
     search::fef::MatchDataLayout layout;
@@ -366,13 +394,17 @@ NearSearchTest::NearSpec::verify(const search::queryeval::FakeIndex& index, uint
                                  const std::vector<uint32_t> &expected_elements)
 {
     std::vector<MyTerm> terms;
-    for (char ch : _positive_terms) {
+    std::string all_terms = _positive_terms + _negative_terms;
+    for (char ch : all_terms) {
         terms.emplace_back(index.lookup(ch));
     }
 
     MyQuery query(_ordered, _window);
     for (auto& term : terms) {
         query.addTerm(term);
+    }
+    if (!_negative_terms.empty()) {
+        query.set_negative_terms(_negative_terms.size(), _brick_size);
     }
     if (_element_gap.has_value()) {
         query.set_element_gap(_element_gap);
@@ -389,6 +421,63 @@ TEST_F(NearSearchTest, with_visual_setup)
         .elem(3, "..A.B..C.");
     near("ABC", 4).verify(docs, 69, {1, 2});
     onear("ABC", 4).verify(docs, 69, {1});
+}
+
+TEST_F(NearSearchTest, non_matching_negative_term)
+{
+    for (uint32_t id: {1, 69}) {
+        auto docs = index().doc(id).elem(1, "AB");
+        near("AB", 4).avoid("X", 3).verify(docs, id, {1});
+        onear("AB", 4).avoid("X", 3).verify(docs, id, {1});
+    }
+}
+
+TEST_F(NearSearchTest, negative_term_retry_window)
+{
+    auto docs = index().doc(69)
+        .elem(1, "X.A.A.B...X")
+        .elem(2, "X.A.A.B..X.");
+    near("AB", 4).avoid("X", 3).verify(docs, 69, {1});
+    onear("AB", 4).avoid("X", 3).verify(docs, 69, {1});
+}
+
+TEST_F(NearSearchTest, quantum_brick)
+{
+    auto docs = index().doc(69)
+        .elem(1, "AB").elem(2, "X").elem(3, "AB")
+        .elem(4, "AB").elem(5, " X ").elem(6, "BA");
+    near("AB", 1).avoid("X", 2).element_gap(1).verify(docs, 69, {4, 6});
+    onear("AB", 1).avoid("X", 2).element_gap(1).verify(docs, 69, {4});
+}
+
+TEST_F(NearSearchTest, zero_brick_size)
+{
+    auto docs = index().doc(69)
+        .elem(1, "xAxBx")
+        .elem(2, "xA.Bx");
+    near("AB", 2).avoid("x", 0).verify(docs, 69, {2});
+    onear("AB", 2).avoid("x", 0).verify(docs, 69, {2});
+}
+
+TEST_F(NearSearchTest, multiple_negative_terms)
+{
+    auto docs = index().doc(69)
+        .elem(1, "yxyAxByxy")
+        .elem(2, "xyxAyBxyx")
+        .elem(3, "yxyA.Byxy")
+        .elem(4, "xyxB.Axyx");
+    near("AB", 2).avoid("xy", 0).verify(docs, 69, {3,4});
+    onear("AB", 2).avoid("xy", 0).verify(docs, 69, {3});
+}
+
+TEST_F(NearSearchTest, single_positive_term)
+{
+    auto docs = index().doc(69)
+        .elem(1, "XX..A...X")
+        .elem(2, "X...A..XX")
+        .elem(3, "X...A...X");
+    near("A", 1).avoid("X", 3).verify(docs, 69, {3});
+    onear("A", 1).avoid("X", 3).verify(docs, 69, {3});
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
