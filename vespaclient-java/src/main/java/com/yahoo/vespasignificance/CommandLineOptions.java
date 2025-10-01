@@ -1,16 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespasignificance;
 
-import org.apache.commons.cli.ParseException;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
+import org.apache.commons.cli.*;
 
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -27,8 +22,6 @@ public class CommandLineOptions {
     public static final String FIELD_OPTION = "field";
     public static final String LANGUAGE_OPTION = "language";
     public static final String ZST_COMPRESSION = "zst-compression";
-
-    private final Options options = createOptions();
 
     /** Options for selecting subcommand */
     static Options createGlobalOptions() {
@@ -62,8 +55,8 @@ public class CommandLineOptions {
         fmt.printHelp("vespa-significance <command>", header.toString(), createGlobalOptions(), "", true);
     }
 
-    @SuppressWarnings("AccessStaticViaInstance")
-    private static Options createOptions() {
+    /** Options for generate command */
+    static Options createGenerateOptions() {
         Options options = new Options();
 
         options.addOption(Option.builder("h")
@@ -109,31 +102,43 @@ public class CommandLineOptions {
         return options;
     }
 
-    public void printHelp() {
-        HelpFormatter formatter = new HelpFormatter();
-
-        formatter.printHelp(
-                "vespa-significance <command> <options>", "Perform a significance value related operation.", options,
-                "The generate command generates a significance model file for a given corpus type .jsonl file.\n",
-                false);
+    /** Petty print help for generate command */
+    public static void printGenerateHelp() {
+        HelpFormatter fmt = new HelpFormatter();
+        fmt.setWidth(100);
+        fmt.setLeftPadding(2);
+        fmt.setDescPadding(2);
+        String header = "Options:";
+        fmt.printHelp("vespa-significance generate [options]", header, createGenerateOptions(), "", true);
     }
 
-    public ClientParameters parseCommandLineArguments(String[] args) throws IllegalArgumentException {
-        try {
-            CommandLineParser clp = new DefaultParser();
-            CommandLine cl = clp.parse(options, args);
-            ClientParameters.Builder builder = new ClientParameters.Builder();
+    /** Parse generate command options to ClientParameters */
+    public static ClientParameters parseGenerateCommandLineArguments(CommandLine cl) {
+        ClientParameters.Builder builder = new ClientParameters.Builder();
 
-            builder.setHelp(cl.hasOption(HELP_OPTION));
-            builder.setInputFile(cl.getOptionValue(INPUT_OPTION));
-            builder.setOutputFile(cl.getOptionValue(OUTPUT_OPTION));
-            builder.setField(cl.getOptionValue(FIELD_OPTION));
-            builder.setLanguage(cl.getOptionValue(LANGUAGE_OPTION));
-            builder.setZstCompression(cl.hasOption(ZST_COMPRESSION) ? cl.getOptionValue(ZST_COMPRESSION) : "true");
+        builder.setHelp(cl.hasOption(HELP_OPTION));
+        builder.setInputFile(cl.getOptionValue(INPUT_OPTION));
+        builder.setOutputFile(cl.getOptionValue(OUTPUT_OPTION));
+        builder.setField(cl.getOptionValue(FIELD_OPTION));
+        builder.setLanguage(cl.getOptionValue(LANGUAGE_OPTION));
+        builder.setZstCompression(cl.hasOption(ZST_COMPRESSION) ? cl.getOptionValue(ZST_COMPRESSION) : "true");
 
-            return builder.build();
-        } catch (ParseException e) {
-            throw new IllegalArgumentException("Failed to parse command line arguments: " + e.getMessage());
+        return builder.build();
+    }
+
+    /**
+     * Utils for parsing command line manually.
+     * <p>
+     * For instance when there are required options, and we want to check for --help.
+     */
+    static class Utils {
+        static boolean hasHelpOption(String[] args) {
+            for (var arg : args) {
+                if (List.of("--help", "-h").contains(arg)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
