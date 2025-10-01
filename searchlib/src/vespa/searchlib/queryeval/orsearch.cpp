@@ -5,6 +5,7 @@
 #include "termwise_helper.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/util/left_right_heap.h>
+#include <algorithm>
 
 namespace search::queryeval {
 
@@ -104,6 +105,31 @@ void
 OrSearch::or_hits_into(BitVector &result, uint32_t begin_id)
 {
     TermwiseHelper::orChildren(result, getChildren().begin(), getChildren().end(), begin_id);
+}
+
+void
+OrSearch::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    auto& children = getChildren();
+    if (children.empty()) {
+        return;
+    }
+    children.front()->get_element_ids(docid, element_ids);
+    std::span others(children.begin() + 1, children.end());
+    if (others.empty()) {
+        return;
+    }
+    std::vector<uint32_t> temp_element_ids;
+    std::vector<uint32_t> result;
+    for (auto& child : others) {
+        temp_element_ids.clear();
+        result.clear();
+        child->get_element_ids(docid, temp_element_ids);
+        std::set_union(element_ids.begin(), element_ids.end(),
+                       temp_element_ids.begin(), temp_element_ids.end(),
+                       std::back_inserter(result));
+        std::swap(element_ids, result);
+    }
 }
 
 SearchIterator::UP
