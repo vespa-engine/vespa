@@ -10,7 +10,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
 
-import java.io.InputStream;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 
 /**
@@ -28,6 +29,38 @@ public class CommandLineOptions {
     public static final String ZST_COMPRESSION = "zst-compression";
 
     private final Options options = createOptions();
+
+    /** Options for selecting subcommand */
+    static Options createGlobalOptions() {
+        Options options = new Options();
+
+        options.addOption(Option.builder("h")
+                .longOpt("help")
+                .desc("Show available commands.")
+                .build());
+
+        return options;
+    }
+
+    /** Map command name to description */
+    static Map<String, String> registeredCommands() {
+        Map<String, String> commands = new LinkedHashMap<>();
+        commands.put("generate", "Generate a significance model from a JSONL feed file.");
+        return commands;
+    }
+
+    /** Pretty print the global help */
+    static void printGlobalHelp() {
+        HelpFormatter fmt = new HelpFormatter();
+        fmt.setWidth(100);
+        fmt.setLeftPadding(2);
+
+        StringBuilder header = new StringBuilder("Commands:\n");
+        registeredCommands().forEach((name, desc) -> header.append(String.format("  %-12s %s%n", name, desc)));
+        header.append("\nOptions:");
+
+        fmt.printHelp("vespa-significance <command>", header.toString(), createGlobalOptions(), "", true);
+    }
 
     @SuppressWarnings("AccessStaticViaInstance")
     private static Options createOptions() {
