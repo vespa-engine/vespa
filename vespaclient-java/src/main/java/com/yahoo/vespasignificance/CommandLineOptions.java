@@ -4,6 +4,7 @@ package com.yahoo.vespasignificance;
 import org.apache.commons.cli.*;
 
 
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,9 +48,13 @@ public class CommandLineOptions {
         HelpFormatter fmt = new HelpFormatter();
         fmt.setWidth(100);
         fmt.setLeftPadding(2);
+        fmt.setOptionComparator(Comparator.comparing(Option::getLongOpt));
 
+        Comparator<String> byName = String.CASE_INSENSITIVE_ORDER;
         StringBuilder header = new StringBuilder("Commands:\n");
-        registeredCommands().forEach((name, desc) -> header.append(String.format("  %-12s %s%n", name, desc)));
+        registeredCommands().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey(byName))
+                .forEach(e -> header.append(String.format("  %-12s %s%n", e.getKey(), e.getValue())));
         header.append("\nOptions:");
 
         fmt.printHelp("vespa-significance <command>", header.toString(), createGlobalOptions(), "", true);
@@ -60,43 +65,47 @@ public class CommandLineOptions {
         Options options = new Options();
 
         options.addOption(Option.builder("h")
-                .hasArg(false)
-                .desc("Show this syntax page.")
                 .longOpt(HELP_OPTION)
+                .desc("Show this help and exit.")
                 .build());
 
         options.addOption(Option.builder("i")
-                .required()
-                .hasArg(true)
-                .desc("Input file")
                 .longOpt(INPUT_OPTION)
+                .required()
+                .hasArg()
+                .argName("file.jsonl")
+                .desc("Input JSON Lines file. One Vespa document per line.")
                 .build());
 
         options.addOption(Option.builder("o")
-                .required()
-                .hasArg(true)
-                .desc("Output file")
                 .longOpt(OUTPUT_OPTION)
+                .required()
+                .hasArg()
+                .argName("model.json[.zst]")
+                .desc("Output model file.")
                 .build());
 
         options.addOption(Option.builder("f")
-                .required()
-                .hasArg(true)
-                .desc("Field to analyze")
                 .longOpt(FIELD_OPTION)
+                .required()
+                .hasArg()
+                .argName("fieldName")
+                .desc("Document field to analyze.")
                 .build());
 
         options.addOption(Option.builder("l")
-                .required()
-                .hasArg(true)
-                .desc("Language tag for output file")
                 .longOpt(LANGUAGE_OPTION)
+                .required()
+                .hasArg()
+                .argName("tag[,tag...]")
+                .desc("ISO language tag(s), comma-separated (e.g., 'en', 'no', or 'en,no').")
                 .build());
 
         options.addOption(Option.builder("zst")
-                .hasArg(true)
-                .desc("Use Zstandard compression")
                 .longOpt(ZST_COMPRESSION)
+                .hasArg()
+                .argName("true|false")
+                .desc("Use Zstandard compression (default: false). If true, --out must end with .zst.")
                 .build());
 
         return options;
@@ -108,8 +117,9 @@ public class CommandLineOptions {
         fmt.setWidth(100);
         fmt.setLeftPadding(2);
         fmt.setDescPadding(2);
+        fmt.setOptionComparator(Comparator.comparing(Option::getLongOpt));
         String header = "Options:";
-        fmt.printHelp("vespa-significance generate [options]", header, createGenerateOptions(), "", true);
+        fmt.printHelp("vespa-significance generate", header, createGenerateOptions(), "", true);
     }
 
     /** Parse generate command options to ClientParameters */
