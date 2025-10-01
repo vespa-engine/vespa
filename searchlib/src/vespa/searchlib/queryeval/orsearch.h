@@ -25,6 +25,7 @@ public:
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
     void or_hits_into(BitVector &result, uint32_t begin_id) override;
     void and_hits_into(BitVector &result, uint32_t begin_id) override;
+    void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
 
 protected:
     OrSearch(Children children) : MultiSearch(std::move(children)) { }

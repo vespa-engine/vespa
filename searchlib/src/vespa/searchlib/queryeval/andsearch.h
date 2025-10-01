@@ -22,6 +22,8 @@ public:
 
     AndSearch & estimate(uint32_t est) { _estimate = est; return *this; }
     uint32_t estimate() const { return _estimate; }
+    void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
+    void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) override;
 protected:
     explicit AndSearch(Children children);
     void doUnpack(uint32_t docid) override;

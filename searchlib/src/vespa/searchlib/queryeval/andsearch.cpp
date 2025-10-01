@@ -54,6 +54,45 @@ AndSearch::AndSearch(Children children) :
 {
 }
 
+void
+AndSearch::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    auto& children = getChildren();
+    if (children.empty()) {
+        return;
+    }
+    children.front()->get_element_ids(docid, element_ids);
+    std::span others(children.begin() + 1, children.end());
+    if (element_ids.empty() || others.empty()) {
+        return;
+    }
+    for (auto& child : others) {
+        child->and_element_ids_into(docid, element_ids);
+        if (element_ids.empty()) {
+            return;
+        }
+    }
+}
+
+void
+AndSearch::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    if (element_ids.empty()) {
+        return;
+    }
+    auto& children = getChildren();
+    if (children.empty()) {
+        element_ids.clear();
+        return;
+    }
+    for (auto& child : children) {
+        child->and_element_ids_into(docid, element_ids);
+        if (element_ids.empty()) {
+            return;
+        }
+    }
+}
+
 namespace {
 
 class FullUnpack
