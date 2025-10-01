@@ -131,7 +131,7 @@ public class CommandLineOptions {
         builder.setOutputFile(cl.getOptionValue(OUTPUT_OPTION));
         builder.setField(cl.getOptionValue(FIELD_OPTION));
         builder.setLanguage(cl.getOptionValue(LANGUAGE_OPTION));
-        builder.setZstCompression(cl.hasOption(ZST_COMPRESSION) ? cl.getOptionValue(ZST_COMPRESSION) : "true");
+        builder.setZstCompression(cl.hasOption(ZST_COMPRESSION) ? cl.getOptionValue(ZST_COMPRESSION) : "false");
 
         return builder.build();
     }
