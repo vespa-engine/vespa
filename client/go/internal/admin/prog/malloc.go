@@ -68,9 +68,6 @@ func (p *Spec) ConfigureMallocImpl() {
 		return
 	}
 	var useFile string
-
-	// TODO(johsol): Keeping this simple for now defaulting to old behaviour if not mimalloc, but in future switch on
-	//               mallocImpl for vespamalloc and variants.
 	mallocImpl := p.Getenv(envvars.VESPA_USE_MALLOC_IMPL)
 	switch mallocImpl {
 	case "mimalloc":
