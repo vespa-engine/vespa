@@ -27,58 +27,39 @@ using search::queryeval::test::MockElementGapInspector;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-class ElementPositions {
-    uint32_t _id;
-    uint32_t _len;
-    std::vector<uint32_t> _pos;
-public:
-    ElementPositions(uint32_t id, uint32_t len, const std::vector<uint32_t>& pos)
-        : _id(id),
-          _len(len),
-          _pos(pos)
-    {
-    }
-    uint32_t get_id() const noexcept { return _id; }
-    uint32_t get_len() const noexcept { return _len; }
-    const std::vector<uint32_t>& get_pos() const noexcept { return _pos; }
-};
-
 class MyTerm {
 private:
-    std::vector<uint32_t> _docs;
-    std::vector<ElementPositions> _epos;
+    search::queryeval::FakeResult _result;
 
 public:
-    MyTerm(const std::vector<uint32_t>& doc, const std::vector<ElementPositions>& epos);
-    ~MyTerm();
+    MyTerm() = default;
+    ~MyTerm() = default;
+
+    MyTerm& doc(uint32_t docid) {
+        _result.doc(docid);
+        return *this;
+    }
+
+    MyTerm& elem(uint32_t id, uint32_t length) {
+        _result.elem(id).len(length);
+        return *this;
+    }
+
+    template <typename... Positions>
+    MyTerm& pos(Positions... positions) {
+        (_result.pos(positions), ...);
+        return *this;
+    }
 
     search::queryeval::Blueprint::UP
     make_blueprint(uint32_t fieldId, search::fef::TermFieldHandle handle) const
     {
-        search::queryeval::FakeResult result;
-        for (auto docid : _docs) {
-            result.doc(docid);
-            for (auto& epos : _epos) {
-                result.elem(epos.get_id());
-                result.len(epos.get_len());
-                for (auto pos : epos.get_pos()) {
-                    result.pos(pos);
-                }
-            }
-        }
         return search::queryeval::Blueprint::UP(
                 new search::queryeval::FakeBlueprint(
                         search::queryeval::FieldSpec("<field>", fieldId, handle),
-                        result));
+                        _result));
     }
 };
-
-MyTerm::MyTerm(const std::vector<uint32_t>& doc, const std::vector<ElementPositions>& epos)
-    : _docs(doc),
-      _epos(epos)
-{}
-
-MyTerm::~MyTerm() = default;
 
 class MyQuery {
 private:
@@ -158,14 +139,16 @@ NearSearchTest::~NearSearchTest() = default;
 
 TEST_F(NearSearchTest, basic_near)
 {
-    MyTerm foo({69}, {{0, 100, {6, 11}}});
+    auto foo = MyTerm().doc(69).elem(0, 100).pos(6, 11);
     for (uint32_t i = 0; i <= 1; ++i) {
         SCOPED_TRACE(vespalib::make_string("i = %u", i));
         testNearSearch(MyQuery(false, i).addTerm(foo), 69, "near 1");
         testNearSearch(MyQuery(true,  i).addTerm(foo), 69, "onear 1");
     }
 
-    MyTerm bar({68, 69, 70}, {{0, 100, {7, 10}}});
+    auto bar = MyTerm().doc(68).elem(0, 100).pos(7, 10)
+                       .doc(69).elem(0, 100).pos(7, 10)
+                       .doc(70).elem(0, 100).pos(7, 10);
     testNearSearch(MyQuery(false, 0).addTerm(foo).addTerm(bar), 0, "near 2");
     testNearSearch(MyQuery(true,  0).addTerm(foo).addTerm(bar), 0, "onear 2");
     for (uint32_t i = 1; i <= 2; ++i) {
@@ -174,7 +157,9 @@ TEST_F(NearSearchTest, basic_near)
         testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(bar), 69, "onear 3");
     }
 
-    MyTerm baz({69, 70, 71}, {{0, 100, {8, 9}}});
+    auto baz = MyTerm().doc(69).elem(0, 100).pos(8, 9)
+                       .doc(70).elem(0, 100).pos(8, 9)
+                       .doc(71).elem(0, 100).pos(8, 9);
     for (uint32_t i = 0; i <= 1; ++i) {
         SCOPED_TRACE(vespalib::make_string("i = %u", i));
         testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(bar).addTerm(baz), 0, "near 10");
@@ -209,8 +194,10 @@ TEST_F(NearSearchTest, basic_near)
 
 TEST_F(NearSearchTest, element_boundary)
 {
-    MyTerm foo({69}, {{0, 5, {0}}});
-    MyTerm bar({69, 70, 71}, {{1, 5, {1}}});
+    auto foo = MyTerm().doc(69).elem(0, 5).pos(0);
+    auto bar = MyTerm().doc(69).elem(1, 5).pos(1)
+                       .doc(70).elem(1, 5).pos(1)
+                       .doc(71).elem(1, 5).pos(1);
     testNearSearch(MyQuery(false, 20).addTerm(foo).addTerm(bar), 0, "near 1");
     testNearSearch(MyQuery(true, 20).addTerm(foo).addTerm(bar), 0, "onear 1");
     testNearSearch(MyQuery(false, 20).addTerm(foo).addTerm(bar).set_element_gap(0), 69, "near 1");
@@ -223,7 +210,7 @@ TEST_F(NearSearchTest, element_boundary)
 
 TEST_F(NearSearchTest, repeated_terms)
 {
-    MyTerm foo({69},{{0, 100, {1, 2, 3}}});
+    auto foo = MyTerm().doc(69).elem(0, 100).pos(1, 2, 3);
     testNearSearch(MyQuery(false, 0).addTerm(foo).addTerm(foo), 69, "near 50");
     testNearSearch(MyQuery(true,  0).addTerm(foo).addTerm(foo), 0, "onear 50");
     for (uint32_t i = 1; i <= 2; ++i) {
@@ -246,8 +233,10 @@ TEST_F(NearSearchTest, repeated_terms)
 
 TEST_F(NearSearchTest, get_element_ids)
 {
-    MyTerm foo({69}, {{3, 5, {2}}, {7, 5, {2}}});
-    MyTerm bar({69, 70, 71}, {{3, 5, {4}}, {7, 5, {0}}});
+    auto foo = MyTerm().doc(69).elem(3, 5).pos(2).elem(7, 5).pos(2);
+    auto bar = MyTerm().doc(69).elem(3, 5).pos(4).elem(7, 5).pos(0)
+                       .doc(70).elem(3, 5).pos(4).elem(7, 5).pos(0)
+                       .doc(71).elem(3, 5).pos(4).elem(7, 5).pos(0);
     test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, {{3, 7}}, {}, "near 61");
     test_near_search(MyQuery(true, 4).addTerm(foo).addTerm(bar), 69, {{3}}, {}, "onear 61");
     test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, {{3, 7}}, {}, "near 62");
@@ -256,8 +245,10 @@ TEST_F(NearSearchTest, get_element_ids)
 
 TEST_F(NearSearchTest, and_element_ids_into)
 {
-    MyTerm foo({69}, {{3, 5, {2}}, {7, 5, {2}}});
-    MyTerm bar({69, 70, 71}, {{3, 5, {4}}, {7, 5, {0}}});
+    auto foo = MyTerm().doc(69).elem(3, 5).pos(2).elem(7, 5).pos(2);
+    auto bar = MyTerm().doc(69).elem(3, 5).pos(4).elem(7, 5).pos(0)
+                       .doc(70).elem(3, 5).pos(4).elem(7, 5).pos(0)
+                       .doc(71).elem(3, 5).pos(4).elem(7, 5).pos(0);
     const std::vector<uint32_t> no_element_ids;
     test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, {{3, 7}}, {{1, 3, 5, 7, 9}}, "near 711");
     test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, {{3}}, {{1, 3, 5, 9}}, "near 712");
