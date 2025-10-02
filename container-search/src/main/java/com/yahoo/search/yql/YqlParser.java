@@ -367,7 +367,7 @@ public class YqlParser implements Parser {
             annotationStack.addFirst(ast);
             return switch (ast.getOperator()) {
                 case AND -> buildAnd(ast, currentField);
-                case OR -> buildOr(ast);
+                case OR -> buildOr(ast, currentField);
                 case EQ -> buildEquals(ast);
                 case LT -> buildLessThan(ast);
                 case GT -> buildGreaterThan(ast);
@@ -1333,8 +1333,8 @@ public class YqlParser implements Parser {
         return notItem;
     }
 
-    private CompositeItem buildOr(OperatorNode<ExpressionOperator> spec) {
-        return convertVarArgs(spec, 0, new OrItem());
+    private CompositeItem buildOr(OperatorNode<ExpressionOperator> spec, String currentField) {
+        return convertVarArgs(spec, 0, new OrItem(), currentField);
     }
 
     private CompositeItem buildWeakAnd(OperatorNode<ExpressionOperator> spec) {
@@ -1348,18 +1348,19 @@ public class YqlParser implements Parser {
         if (targetNumHits != null) {
             weakAnd.setN(targetNumHits);
         }
-        return convertVarArgs(spec, 1, weakAnd);
+        return convertVarArgs(spec, 1, weakAnd, null);
     }
 
     private CompositeItem buildRank(OperatorNode<ExpressionOperator> spec) {
-        return convertVarArgs(spec, 1, new RankItem());
+        return convertVarArgs(spec, 1, new RankItem(), null);
     }
 
-    private CompositeItem convertVarArgs(OperatorNode<ExpressionOperator> ast, int argIdx, CompositeItem out) {
+    private CompositeItem convertVarArgs(OperatorNode<ExpressionOperator> ast, int argIdx, CompositeItem out,
+                                         String currentField) {
         Iterable<OperatorNode<ExpressionOperator>> args = ast.getArgument(argIdx);
         for (OperatorNode<ExpressionOperator> arg : args) {
             assertHasOperator(arg, ExpressionOperator.class);
-            out.addItem(convertExpression(arg, null));
+            out.addItem(convertExpression(arg, currentField));
         }
         return out;
     }
