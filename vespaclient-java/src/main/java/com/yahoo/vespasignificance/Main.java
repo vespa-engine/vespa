@@ -9,9 +9,6 @@ import org.apache.commons.cli.ParseException;
 import java.io.IOException;
 import java.util.Arrays;
 
-import static com.yahoo.vespasignificance.CommandLineOptions.*;
-import static com.yahoo.vespasignificance.CommandLineOptions.Utils.*;
-
 /**
  * The vespa-significance tool generates significance models based on input feed files.
  *
@@ -23,17 +20,17 @@ public class Main {
         var parser = new DefaultParser();
         CommandLine global;
         try {
-            global = parser.parse(createGlobalOptions(), args, true);
+            global = parser.parse(CommandLineOptions.createGlobalOptions(), args, true);
         } catch (ParseException e) {
             System.err.println("Parsing failed. Reason: " + e.getMessage());
-            printGlobalHelp();
+            CommandLineOptions.printGlobalHelp();
             System.exit(1);
             return;
         }
 
         String[] remaining = global.getArgs();
         if (remaining.length == 0 || global.hasOption("help")) {
-            printGlobalHelp();
+            CommandLineOptions.printGlobalHelp();
             return;
         }
 
@@ -46,28 +43,28 @@ public class Main {
 
             default:
                 System.err.println("Error: Unknown command `" + sub + "`");
-                printGlobalHelp();
+                CommandLineOptions.printGlobalHelp();
                 break;
         }
     }
 
     static void runGenerate(String[] commandLineArgs) {
         try {
-            if (hasHelpOption(commandLineArgs)) {
-                printGenerateHelp();
+            if (CommandLineOptions.Utils.hasHelpOption(commandLineArgs)) {
+                CommandLineOptions.printGenerateHelp();
                 return;
             }
 
             var commandLineParser = new DefaultParser();
-            CommandLine commandLine = commandLineParser.parse(createGenerateOptions(), commandLineArgs);
+            CommandLine commandLine = commandLineParser.parse(CommandLineOptions.createGenerateOptions(), commandLineArgs);
 
-            ClientParameters params = parseGenerateCommandLineArguments(commandLine);
+            ClientParameters params = CommandLineOptions.parseGenerateCommandLineArguments(commandLine);
             System.setProperty("vespa.replace_invalid_unicode", "true");
             SignificanceModelGenerator significanceModelGenerator = createSignificanceModelGenerator(params);
             significanceModelGenerator.generate();
         } catch (ParseException e) {
             System.err.printf("Error: %s.\n", e.getMessage());
-            printGenerateHelp();
+            CommandLineOptions.printGenerateHelp();
             System.exit(1);
         } catch (IOException e) {
             throw new RuntimeException(e);
