@@ -191,21 +191,21 @@ public class Flags {
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2025-10-01",
+            List.of("andreer"), "2023-08-21", "2025-11-01",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
             "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2025-10-01",
+            List.of("andreer"), "2023-08-28", "2025-11-01",
             "Always use IPv6 target groups for load balancers in aws",
             "Takes effect on next load-balancer provisioning",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
             "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2025-10-01",
+            List.of("andreer"), "2023-08-28", "2025-11-01",
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
@@ -227,7 +227,7 @@ public class Flags {
 
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
-            List.of("andreer", "olaa"), "2023-10-06", "2025-10-01",
+            List.of("andreer", "olaa"), "2023-10-06", "2025-11-01",
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
             TENANT_ID, APPLICATION, INSTANCE_ID);
@@ -335,7 +335,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag CREATE_TENANT_ROLES = defineFeatureFlag(
             "create-tenant-roles", true,
-            List.of("andreer"), "2025-04-28", "2025-10-01",
+            List.of("andreer"), "2025-04-28", "2025-11-01",
             "Whether to create tenant specific roles",
             "Takes effect immediately",
             TENANT_ID
@@ -358,7 +358,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
             "delete-tenant-roles", false,
-            List.of("andreer"), "2025-05-05", "2025-10-01",
+            List.of("andreer"), "2025-05-05", "2025-11-01",
             "Whether to delete tenant specific roles",
             "Role deletion happens when tenant is next processed by TenantRoleMaintainer",
             TENANT_ID
