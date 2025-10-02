@@ -1803,6 +1803,17 @@
       "public final java.lang.String name"
     ]
   },
+  "com.yahoo.prelude.query.ToProtobuf" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.prelude.query.ToolBox$QueryVisitor" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
