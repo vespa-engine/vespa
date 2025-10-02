@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  *
  * @author vekterli
  */
-public class AcceptHeaderMatcher {
+class AcceptHeaderMatcher {
 
     private final Map<String, Double> qualityByNormalizedTypeName;
 
