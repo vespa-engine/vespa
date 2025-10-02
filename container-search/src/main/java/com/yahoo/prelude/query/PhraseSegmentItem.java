@@ -270,12 +270,12 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     @Override
     protected SearchProtocol.QueryTreeItem toProtobuf() {
         // PhraseSegmentItem should be converted to a phrase
-        var builder = ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.ItemPhrase.newBuilder();
+        var builder = SearchProtocol.ItemPhrase.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));
         for (var child : items()) {
             builder.addChildren(child.toProtobuf());
         }
-        return ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.QueryTreeItem.newBuilder()
+        return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemPhrase(builder.build())
                 .build();
     }

@@ -62,11 +62,11 @@ public class AndSegmentItem extends SegmentItem implements BlockItem {
     @Override
     protected SearchProtocol.QueryTreeItem toProtobuf() {
         // AndSegmentItem should be folded/converted before serialization
-        var builder = ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.ItemAnd.newBuilder();
+        var builder = SearchProtocol.ItemAnd.newBuilder();
         for (var child : items()) {
             builder.addChildren(child.toProtobuf());
         }
-        return ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.QueryTreeItem.newBuilder()
+        return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemAnd(builder.build())
                 .build();
     }

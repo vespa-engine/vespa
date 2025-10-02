@@ -107,10 +107,10 @@ public class BoolItem extends TermItem {
     @Override
     protected SearchProtocol.QueryTreeItem toProtobuf() {
         // BoolItem is serialized as a word term
-        var builder = ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.ItemWordTerm.newBuilder();
+        var builder = SearchProtocol.ItemWordTerm.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));
         builder.setWord(stringValue());
-        return ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.QueryTreeItem.newBuilder()
+        return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemWordTerm(builder.build())
                 .build();
     }
