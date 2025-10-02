@@ -101,9 +101,22 @@ public interface FeedClient extends Closeable {
      *
      * <p>What counts as a failure?</p>
      * <ul>
-     *   <li>Non-2xx HTTP responses (e.g., 429, 5xx) are reported via {@link #failure(HttpResponse)}.</li>
-     *   <li>Transport errors (connect/DNS/TLS/timeouts, etc.) are reported via {@link #failure(Throwable)}.</li>
-     *   <li>Successful 2xx responses are reported via {@link #success()}.</li>
+     *   <li><strong>Success (reported via {@link #success()}):</strong>
+     *       If we were able to communicate with the server, it’s a success unless it’s a server error.
+     *       Concretely: all 2xx, plus 404 (Not Found) and 412 (Precondition Failed).
+     *       This matches the default strategy; see {@code HttpRequestStrategy}.</li>
+     *
+     *   <li><strong>HTTP failure (reported via {@link #failure(HttpResponse)}):</strong>
+     *       503 and any other ≥ 500 server errors. 503 is retried by the default strategy,
+     *       subject to the configured {@link FeedClient.RetryStrategy}.</li>
+     *
+     *   <li><strong>Back-pressure (429):</strong>
+     *       Handled by the throttler and retried; it does <em>not</em> invoke {@code failure(HttpResponse)}
+     *       and does <em>not</em> affect breaker state. See
+     *       {@code HttpRequestStrategy}.</li>
+     *
+     *   <li><strong>Transport failure (reported via {@link #failure(Throwable)}):</strong>
+     *       Connect/DNS/TLS errors, timeouts, and other I/O exceptions where no HTTP response was obtained.</li>
      * </ul>
      *
      * <p>Vespa provides {@code GracePeriodCircuitBreaker}, a time-based implementation that can be configured to:
