@@ -166,13 +166,13 @@ public class Flags {
 
     public static final UnboundListFlag<String> ZONAL_WEIGHTED_ENDPOINT_RECORDS = defineListFlag(
             "zonal-weighted-endpoint-records", List.of(), String.class,
-            List.of("hmusum"), "2023-12-15", "2025-10-01",
+            List.of("hmusum"), "2023-12-15", "2025-12-01",
             "A list of weighted (application) endpoint fqdns for which we should use zonal endpoints as targets, not LBs.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
             "weighted-endpoint-record-ttl", List.of(), String.class,
-            List.of("hmusum"), "2023-05-16", "2025-10-01",
+            List.of("hmusum"), "2023-05-16", "2025-12-01",
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
@@ -289,7 +289,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY = defineIntFlag(
             "max-content-node-maintenance-op-concurrency", -1,
-            List.of("vekterli"), "2025-03-07", "2025-10-01",
+            List.of("vekterli"), "2025-03-07", "2025-11-01",
             "Sets the maximum concurrency for maintenance-related operations on content nodes. " +
             "Only intended as a manual emergency brake feature if a system is suddenly incapable of handling " +
             "regular maintenance pressure.",
@@ -310,7 +310,7 @@ public class Flags {
     
     public static final UnboundIntFlag MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB = defineIntFlag(
             "max-distributor-document-operation-size-mib", 128,
-            List.of("vekterli"), "2025-03-17", "2025-10-01",
+            List.of("vekterli", "hmusum"), "2025-03-17", "2025-11-01",
             "Sets the maximum size in MiB of a document operation (Put or Update) that a distributor " +
             "will accept when it arrives over the Document API. Any value outside (1, 2048) implies " +
             "effectively unbounded behavior. Setting this value too low will have the obvious consequences.",
@@ -373,7 +373,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NEW_PREPARE_FOR_RESTART_METHOD = defineFeatureFlag(
             "use-new-prepare-for-restart-method", false,
-            List.of("hmusum"), "2025-06-17", "2025-10-01",
+            List.of("hmusum"), "2025-06-17", "2025-12-01",
             "Whether to use new logic and new RPC method to do prepareForRestart for content nodes",
             "Takes effect at next tick",
             HOSTNAME
@@ -381,14 +381,14 @@ public class Flags {
 
     public static final UnboundIntFlag SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS = defineIntFlag(
             "search-core-max-outstanding-move-ops", 100,
-            List.of("hmusum"), "2025-07-09", "2025-10-01",
+            List.of("hmusum"), "2025-07-09", "2025-12-01",
             "The max outstanding move operations a maintenance job can have before being blocked.",
             "Takes effect at next deployment of the application",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_VESPA_NODE_CTL = defineFeatureFlag(
             "use-vespa-node-ctl", true,
-            List.of("hmusum"), "2025-08-12", "2025-10-01",
+            List.of("hmusum"), "2025-08-12", "2025-12-01",
             "Whether to use vespa-node-ctl to start, stop, restart, suspend and resume services " +
             "or do this directly from host-admin.",
             "Takes effect at next tick",
