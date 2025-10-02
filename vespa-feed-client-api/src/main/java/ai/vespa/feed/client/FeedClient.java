@@ -83,22 +83,61 @@ public interface FeedClient extends Closeable {
 
     }
 
-    /** Allows slowing down or halting completely operations against the configured endpoint on high failure rates. */
+    /**
+     * Allows slowing down—or halting—operations against the configured endpoint when failures persist.
+     *
+     * <p>The {@link FeedClient} calls {@link #success()}, {@link #failure(HttpResponse)}, and
+     * {@link #failure(Throwable)} for each operation it performs. Application code should not call these;
+     * implementors use them to update internal breaker state.</p>
+     *
+     * <p>The breaker communicates its decision back to the client through {@link #state()}:</p>
+     * <ul>
+     *   <li>{@link State#CLOSED} – Normal operation; the client sends requests as usual.</li>
+     *   <li>{@link State#HALF_OPEN} – The client probes cautiously (limited traffic) to test recovery.
+     *       A successful probe typically transitions the breaker towards {@code CLOSED}.</li>
+     *   <li>{@link State#OPEN} – The client short-circuits (fails fast) instead of sending requests
+     *       until probing is allowed again.</li>
+     * </ul>
+     *
+     * <p>What counts as a failure?</p>
+     * <ul>
+     *   <li>Non-2xx HTTP responses (e.g., 429, 5xx) are reported via {@link #failure(HttpResponse)}.</li>
+     *   <li>Transport errors (connect/DNS/TLS/timeouts, etc.) are reported via {@link #failure(Throwable)}.</li>
+     *   <li>Successful 2xx responses are reported via {@link #success()}.</li>
+     * </ul>
+     *
+     * <p>Vespa provides {@code GracePeriodCircuitBreaker}, a time-based implementation that can be configured to:
+     * start probing after a {@code grace} period of continuous failures, and optionally transition to {@code OPEN}
+     * after a longer {@code doom} period if failures persist. Example:</p>
+     *
+     * <pre>{@code
+     * var breaker = new GracePeriodCircuitBreaker(
+     *         Duration.ofSeconds(10), // start HALF_OPEN probing after ~10s of continuous failures
+     *         Duration.ofSeconds(20)  // go OPEN if failures persist for ~20s
+     * );
+     * var client = FeedClientBuilder.create(endpoint)
+     *         .setCircuitBreaker(breaker)
+     *         .build();
+     * }</pre>
+     *
+     * <p><strong>Default behavior:</strong> The default circuit-breaker is documented on
+     * {@code FeedClientBuilderImpl}. This interface does not prescribe a default.</p>
+     */
     interface CircuitBreaker {
 
-        /** A circuit breaker which is always closed. */
+        /** A circuit breaker which is always {@link State#CLOSED} (circuit breaking disabled). */
         CircuitBreaker FUSED = () -> State.CLOSED;
 
-        /** Called by the client whenever a successful response is obtained. */
+        /** Called by the client whenever a successful (2xx) HTTP response is obtained. */
         default void success() { }
 
-        /** Called by the client whenever an error HTTP response is received. */
+        /** Called by the client for any error HTTP response (e.g., 4xx/5xx) considered a failure. */
         default void failure(HttpResponse response) { }
 
-        /** Called by the client whenever an exception occurs trying to obtain a HTTP response. */
+        /** Called by the client when a transport exception occurs attempting to obtain an HTTP response. */
         default void failure(Throwable cause) { }
 
-        /** The current state of the circuit breaker. */
+        /** Returns the current state of the circuit breaker. */
         State state();
 
         enum State {
@@ -106,10 +145,10 @@ public interface FeedClient extends Closeable {
             /** Circuit is closed: business as usual. */
             CLOSED,
 
-            /** Circuit is half-open: something is wrong, perhaps it recovers? */
+            /** Circuit is half-open: probing recovery with limited traffic. */
             HALF_OPEN,
 
-            /** Circuit is open: we have given up. */
+            /** Circuit is open: fail fast instead of sending normal requests. */
             OPEN;
 
         }

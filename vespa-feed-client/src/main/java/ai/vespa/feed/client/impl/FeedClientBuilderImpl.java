@@ -168,6 +168,14 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
 
     /**
      * Overrides default circuit breaker.
+     *
+     * <p><strong>Default:</strong> If not set, the client uses
+     * {@link GracePeriodCircuitBreaker} with {@code grace = Duration.ofSeconds(10)} and no {@code doom}.
+     * With this default, the breaker transitions to
+     * {@link FeedClient.CircuitBreaker.State#HALF_OPEN} after ~10 seconds of
+     * continuous failures and will never transition to
+     * {@link FeedClient.CircuitBreaker.State#OPEN}.</p>
+     *
      * @see FeedClient.CircuitBreaker
      */
     @Override
