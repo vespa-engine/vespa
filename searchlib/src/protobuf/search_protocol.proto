@@ -220,19 +220,6 @@ message ItemFuzzy {
 }
 
 // numeric ranges
-message ItemGenericRangeTerm {
-    TermItemProperties properties = 1;
-    string lower_limit = 2;
-    string upper_limit = 3;
-    bool has_range_limit = 6;
-    bool with_diversity = 7;
-    bool with_diversity_cutoff = 8;
-    bool diversity_cutoff_strict = 9;
-    int32 range_limit = 10;
-    string diversity_attribute = 11;
-    uint32 diversity_max_per_group = 12;
-    uint32 diversity_cutoff_groups = 13;
-}
 message ItemIntegerRangeTerm {
     TermItemProperties properties = 1;
     int64 lower_limit = 2;
@@ -387,7 +374,6 @@ message QueryTreeItem {
         ItemRegexp item_regexp = 19;
         ItemFuzzy item_fuzzy = 20;
 
-        ItemGenericRangeTerm item_generic_range_term = 21;
         ItemIntegerRangeTerm item_integer_range_term = 22;
         ItemFloatingPointRangeTerm item_floating_point_range_term = 23;
 
