@@ -140,8 +140,31 @@ AndQueryNode::evaluate() const
 }
 
 void
-AndQueryNode::get_element_ids(std::vector<uint32_t>&) const
+AndQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
 {
+    auto& children = getChildren();
+    if (children.empty()) {
+        return;
+    }
+    children.front()->get_element_ids(element_ids);
+    std::span others(children.begin() + 1, children.end());
+    if (others.empty() || element_ids.empty()) {
+        return;
+    }
+    std::vector<uint32_t> temp_element_ids;
+    std::vector<uint32_t> result;
+    for (auto& child : others) {
+        temp_element_ids.clear();
+        result.clear();
+        child->get_element_ids(temp_element_ids);
+        std::set_intersection(element_ids.begin(), element_ids.end(),
+                              temp_element_ids.begin(), temp_element_ids.end(),
+                              std::back_inserter(result));
+        std::swap(element_ids, result);
+        if (element_ids.empty()) {
+            return;
+        }
+    }
 }
 
 AndNotQueryNode::~AndNotQueryNode() = default;
@@ -176,8 +199,25 @@ OrQueryNode::evaluate() const {
 }
 
 void
-OrQueryNode::get_element_ids(std::vector<uint32_t>&) const
+OrQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
 {
+    auto& children = getChildren();
+    if (children.empty()) {
+        return;
+    }
+    std::vector<uint32_t> temp_element_ids;
+    std::vector<uint32_t> result;
+    for (auto& child : children) {
+        temp_element_ids.clear();
+        child->get_element_ids(temp_element_ids);
+        if (!temp_element_ids.empty()) {
+            result.clear();
+            std::set_union(element_ids.begin(), element_ids.end(),
+                           temp_element_ids.begin(), temp_element_ids.end(),
+                           std::back_inserter(result));
+            std::swap(element_ids, result);
+        }
+    }
 }
 
 RankWithQueryNode::~RankWithQueryNode() = default;

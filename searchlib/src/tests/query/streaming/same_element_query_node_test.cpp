@@ -10,6 +10,7 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 using search::fef::MatchData;
 using search::fef::SimpleTermData;
@@ -44,7 +45,109 @@ AllowRewrite::~AllowRewrite() = default;
 
 }
 
-TEST(SameElementQueryNodeTest, a_unhandled_sameElement_stack)
+class SameElementQueryNodeTest : public ::testing::Test {
+protected:
+    enum class QueryTweak {
+        NORMAL,       // All children of query root are term nodes
+        AND,          // Last child is AND with two term nodes
+        OR            // Last child is OR with two term nodes
+    };
+
+    SameElementQueryNodeTest();
+    ~SameElementQueryNodeTest() override;
+    static bool evaluate_query(QueryTweak query_tweak, const std::vector<std::vector<uint32_t>>& elementsvv);
+    static std::vector<uint32_t> get_element_ids(QueryTweak query_tweak, const std::vector<std::vector<uint32_t>>& elementsvv);
+    static std::unique_ptr<Query> make_query(QueryTweak query_tweak, const std::vector<std::vector<uint32_t>>& elementsvv);
+};
+
+SameElementQueryNodeTest::SameElementQueryNodeTest()
+    : testing::Test()
+{
+}
+
+SameElementQueryNodeTest::~SameElementQueryNodeTest() = default;
+
+bool
+SameElementQueryNodeTest::evaluate_query(QueryTweak query_tweak, const std::vector<std::vector<uint32_t>>& elementsvv)
+{
+    auto query = make_query(query_tweak, elementsvv);
+    return query->getRoot().evaluate();
+}
+
+std::vector<uint32_t>
+SameElementQueryNodeTest::get_element_ids(QueryTweak query_tweak, const std::vector<std::vector<uint32_t>>& elementsvv)
+{
+    auto query = make_query(query_tweak, elementsvv);
+    std::vector<uint32_t> result;
+    query->getRoot().get_element_ids(result);
+    return result;
+}
+
+std::unique_ptr<Query>
+SameElementQueryNodeTest::make_query(QueryTweak query_tweak, const std::vector<std::vector<uint32_t>>& elementsvv)
+{
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    auto num_terms = elementsvv.size();
+    auto top_arity = num_terms;
+    switch (query_tweak) {
+        case QueryTweak::AND:
+        case QueryTweak::OR:
+            EXPECT_LE(2, num_terms);
+            assert(num_terms >= 2);
+            --top_arity;
+            break;
+        default:
+            break;
+    }
+    builder.addSameElement(top_arity, "field", 0, Weight(0));
+    for (uint32_t idx = 0; idx < elementsvv.size(); ++idx) {
+        switch (query_tweak) {
+            case QueryTweak::AND:
+                if (idx == elementsvv.size() - 2) {
+                    builder.addAnd(2);
+                }
+                break;
+            case QueryTweak::OR:
+                if (idx == elementsvv.size() - 2) {
+                    builder.addOr(2);
+                }
+                break;
+            default:
+                break;
+        }
+        vespalib::asciistream s;
+        s << "s" << idx;
+        builder.addStringTerm(s.str(), "field", idx, Weight(0));
+    }
+    auto node = builder.build();
+    std::string stackDump = StackDumpCreator::create(*node);
+    QueryNodeResultFactory empty;
+    auto q = std::make_unique<Query>(empty, stackDump);
+    auto& top = dynamic_cast<SameElementQueryNode&>(q->getRoot());
+    EXPECT_EQ(top_arity, top.get_children().size());
+    top.resizeFieldId(1);
+    QueryTermList terms;
+    top.get_hidden_leaves(terms);
+    EXPECT_EQ(elementsvv.size(), terms.size());
+    for (QueryTerm * qt : terms) {
+        qt->resizeFieldId(1);
+    }
+    constexpr uint32_t pos = 0;
+    constexpr uint32_t field_id = 0;
+    constexpr int32_t element_weight = 10;
+    constexpr uint32_t element_len = 5;
+    for (uint32_t idx = 0; idx < elementsvv.size(); ++idx) {
+        auto& elementsv = elementsvv[idx];
+        auto& term = terms[idx];
+        for (auto& element : elementsv) {
+            auto hl_idx = term->add(field_id, element, element_weight, pos);
+            term->set_element_length(hl_idx, element_len);
+        }
+    }
+    return q;
+}
+
+TEST_F(SameElementQueryNodeTest, a_unhandled_sameElement_stack)
 {
     const char * stack = "\022\002\026xyz_abcdefghij_xyzxyzxQ\001\vxxxxxx_name\034xxxxxx_xxxx_xxxxxxx_xxxxxxxxE\002\005delta\b<0.00393";
     std::string_view stackDump(stack);
@@ -70,7 +173,7 @@ namespace {
     }
 }
 
-TEST(SameElementQueryNodeTest, test_same_element_evaluate)
+TEST_F(SameElementQueryNodeTest, test_same_element_evaluate)
 {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addSameElement(3, "field", 0, Weight(0));
@@ -141,6 +244,26 @@ TEST(SameElementQueryNodeTest, test_same_element_evaluate)
     EXPECT_EQ(2, tfmd0->getDocId());
     EXPECT_EQ(0, tfmd0->getNumOccs());
     EXPECT_EQ(0, tfmd0->end() - tfmd0->begin());
+}
+
+TEST_F(SameElementQueryNodeTest, and_below_same_element)
+{
+    std::vector<std::vector<uint32_t>> elementsvv3({ { 5, 7, 10, 12 }, { 4, 7, 12, 14} });
+    std::vector<std::vector<uint32_t>> elementsvv9({ { 4, 6, 9, 10 }, { 3, 9, 13 } });
+    EXPECT_TRUE(evaluate_query(QueryTweak::AND, elementsvv3));
+    EXPECT_EQ((std::vector<uint32_t>{ 7, 12 }), get_element_ids(QueryTweak::AND, elementsvv3));
+    EXPECT_TRUE(evaluate_query(QueryTweak::AND, elementsvv9));
+    EXPECT_EQ((std::vector<uint32_t>{ 9 }), get_element_ids(QueryTweak::AND, elementsvv9));
+}
+
+TEST_F(SameElementQueryNodeTest, or_below_same_element)
+{
+    std::vector<std::vector<uint32_t>> elementsvv3({ { 5, 10 }, { 7, 12 } });
+    std::vector<std::vector<uint32_t>> elementsvv9({ { 6 }, { 4, 9 } });
+    EXPECT_TRUE(evaluate_query(QueryTweak::OR, elementsvv3));
+    EXPECT_EQ((std::vector<uint32_t>{ 5, 7, 10, 12 }), get_element_ids(QueryTweak::OR, elementsvv3));
+    EXPECT_TRUE(evaluate_query(QueryTweak::OR, elementsvv9));
+    EXPECT_EQ((std::vector<uint32_t>{ 4, 6, 9 }), get_element_ids(QueryTweak::OR, elementsvv9));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
