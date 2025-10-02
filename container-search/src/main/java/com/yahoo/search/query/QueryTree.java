@@ -36,11 +36,6 @@ public class QueryTree extends RootItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
-        throw new UnsupportedOperationException("QueryTree itself should not be serialized, serialize its root");
-    }
-
-    @Override
     public boolean equals(Object o) {
         if( !(o instanceof QueryTree)) return false;
         return super.equals(o);

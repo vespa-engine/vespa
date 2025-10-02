@@ -1843,8 +1843,7 @@
       "public"
     ],
     "methods" : [
-      "public void <init>()",
-      "public static ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem convertFromQuery(com.yahoo.prelude.query.Item)"
+      "public void <init>()"
     ],
     "fields" : [ ]
   },
