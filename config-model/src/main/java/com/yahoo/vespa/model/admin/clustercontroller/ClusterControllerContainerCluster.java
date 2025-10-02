@@ -44,7 +44,12 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
     public void getConfig(QrStartConfig.Builder builder) {
         super.getConfig(builder);
 
-        builder.jvm.heapsize(128);
+        if (isHostedVespa()) {
+            // In hosted Vespa we have more memory available, so we can use a larger heap
+            builder.jvm.heapsize(192);
+        } else {
+            builder.jvm.heapsize(128);
+        }
     }
 
     public ReindexingContext reindexingContext() { return reindexingContext; }
