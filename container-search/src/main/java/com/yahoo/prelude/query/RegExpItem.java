@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
+
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -91,6 +93,16 @@ public class RegExpItem extends TermItem {
 
         RegExpItem other = (RegExpItem)o;
         return Objects.equals(this.expression, other.expression);
+    }
+
+    @Override
+    protected SearchProtocol.QueryTreeItem toProtobuf() {
+        var builder = SearchProtocol.ItemRegexp.newBuilder();
+        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setRegexp(expression);
+        return SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemRegexp(builder.build())
+                .build();
     }
 
 }

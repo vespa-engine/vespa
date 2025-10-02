@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.prelude.query.*;
 
 import java.util.ArrayList;
@@ -32,6 +33,11 @@ public class QueryTree extends RootItem {
 
     public QueryTree(Item root) {
         super(root);
+    }
+
+    @Override
+    protected SearchProtocol.QueryTreeItem toProtobuf() {
+        throw new UnsupportedOperationException("QueryTree itself should not be serialized, serialize its root");
     }
 
     @Override

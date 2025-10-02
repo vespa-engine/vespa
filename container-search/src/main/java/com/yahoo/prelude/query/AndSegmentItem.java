@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
+
 import java.util.Iterator;
 
 /**
@@ -55,6 +57,18 @@ public class AndSegmentItem extends SegmentItem implements BlockItem {
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
             i.next().setWeight(w);
         }
+    }
+
+    @Override
+    protected SearchProtocol.QueryTreeItem toProtobuf() {
+        // AndSegmentItem should be folded/converted before serialization
+        var builder = ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.ItemAnd.newBuilder();
+        for (var child : items()) {
+            builder.addChildren(child.toProtobuf());
+        }
+        return ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemAnd(builder.build())
+                .build();
     }
 
 }

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.protect.Validator;
 
 import java.util.Collection;
@@ -101,6 +102,18 @@ public class EquivItem extends CompositeTaggableItem {
                itemType == ItemType.INT ||
                itemType == ItemType.EXACT ||
                itemType == ItemType.PHRASE;
+    }
+
+    @Override
+    protected SearchProtocol.QueryTreeItem toProtobuf() {
+        var builder = SearchProtocol.ItemEquiv.newBuilder();
+        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        for (var child : items()) {
+            builder.addChildren(child.toProtobuf());
+        }
+        return SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemEquiv(builder.build())
+                .build();
     }
 
 }

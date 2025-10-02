@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.prelude.query.parser.Token;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 import com.yahoo.protect.Validator;
@@ -181,6 +182,16 @@ public class WordItem extends TermItem {
         discloser.addProperty("segmentIndex", segmentIndex);
         discloser.addProperty("stemmed", stemmed);
         discloser.addProperty("words", words);
+    }
+
+    @Override
+    protected SearchProtocol.QueryTreeItem toProtobuf() {
+        var builder = SearchProtocol.ItemWordTerm.newBuilder();
+        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setWord(word);
+        return SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemWordTerm(builder.build())
+                .build();
     }
 
 }

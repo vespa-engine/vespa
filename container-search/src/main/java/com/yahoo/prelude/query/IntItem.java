@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
+
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Objects;
@@ -293,6 +295,64 @@ public class IntItem extends TermItem {
             return new IntItem(from, to, indexName);
         else {
             return new RangeItem(from, to, hitLimit, indexName, false);
+        }
+    }
+
+    @Override
+    protected SearchProtocol.QueryTreeItem toProtobuf() {
+        // Check if this is a range or a simple term
+        if (!from.equals(to)) {
+            // This is a range
+            Number fromNum = from.number();
+            Number toNum = to.number();
+
+            // Check if it's floating point or integer
+            if (fromNum instanceof Double || toNum instanceof Double) {
+                var builder = SearchProtocol.ItemFloatingPointRangeTerm.newBuilder();
+                builder.setProperties(ToProtobuf.buildTermProperties(this));
+                builder.setLowerLimit(fromNum.doubleValue());
+                builder.setUpperLimit(toNum.doubleValue());
+                builder.setLowerInclusive(from.isInclusive());
+                builder.setUpperInclusive(to.isInclusive());
+                if (hitLimit != 0) {
+                    builder.setHasRangeLimit(true);
+                    builder.setRangeLimit(hitLimit);
+                }
+                return SearchProtocol.QueryTreeItem.newBuilder()
+                        .setItemFloatingPointRangeTerm(builder.build())
+                        .build();
+            } else {
+                var builder = SearchProtocol.ItemIntegerRangeTerm.newBuilder();
+                builder.setProperties(ToProtobuf.buildTermProperties(this));
+                builder.setLowerLimit(fromNum.longValue());
+                builder.setUpperLimit(toNum.longValue());
+                if (hitLimit != 0) {
+                    builder.setHasRangeLimit(true);
+                    builder.setRangeLimit(hitLimit);
+                }
+                return SearchProtocol.QueryTreeItem.newBuilder()
+                        .setItemIntegerRangeTerm(builder.build())
+                        .build();
+            }
+        } else {
+            // This is a simple term
+            Number num = from.number();
+
+            if (num instanceof Double) {
+                var builder = SearchProtocol.ItemFloatingPointTerm.newBuilder();
+                builder.setProperties(ToProtobuf.buildTermProperties(this));
+                builder.setNumber(num.doubleValue());
+                return SearchProtocol.QueryTreeItem.newBuilder()
+                        .setItemFloatingPointTerm(builder.build())
+                        .build();
+            } else {
+                var builder = SearchProtocol.ItemIntegerTerm.newBuilder();
+                builder.setProperties(ToProtobuf.buildTermProperties(this));
+                builder.setNumber(num.longValue());
+                return SearchProtocol.QueryTreeItem.newBuilder()
+                        .setItemIntegerTerm(builder.build())
+                        .build();
+            }
         }
     }
 

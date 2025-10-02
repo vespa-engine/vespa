@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
@@ -264,6 +265,19 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), explicit);
+    }
+
+    @Override
+    protected SearchProtocol.QueryTreeItem toProtobuf() {
+        // PhraseSegmentItem should be converted to a phrase
+        var builder = ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.ItemPhrase.newBuilder();
+        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        for (var child : items()) {
+            builder.addChildren(child.toProtobuf());
+        }
+        return ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemPhrase(builder.build())
+                .build();
     }
 
 }

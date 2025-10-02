@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 
 /**
  * Represents the rank operator, which only orders the result set and
@@ -22,6 +23,17 @@ public class RankItem extends CompositeItem {
     @Override
     public String getName() {
         return "RANK";
+    }
+
+    @Override
+    protected SearchProtocol.QueryTreeItem toProtobuf() {
+        var builder = SearchProtocol.ItemRank.newBuilder();
+        for (var child : items()) {
+            builder.addChildren(child.toProtobuf());
+        }
+        return SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemRank(builder.build())
+                .build();
     }
 
 }

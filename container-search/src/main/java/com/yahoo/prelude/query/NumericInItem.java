@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.compress.IntegerCompressor;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
@@ -105,6 +106,18 @@ public class NumericInItem extends InItem {
         NumericInItem clone = (NumericInItem)super.clone();
         clone.tokens = new HashSet<>(tokens);
         return clone;
+    }
+
+    @Override
+    protected SearchProtocol.QueryTreeItem toProtobuf() {
+        var builder = SearchProtocol.ItemNumericIn.newBuilder();
+        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        for (Long token : tokens) {
+            builder.addNumbers(token);
+        }
+        return SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemNumericIn(builder.build())
+                .build();
     }
 
 }

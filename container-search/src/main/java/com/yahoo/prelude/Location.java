@@ -19,6 +19,9 @@ public class Location implements Cloneable {
     // longitude (degrees): negative for West; positive for East
     public record Point(double latitude, double longitude) {}
 
+    // Bounding box with north, south, east, west coordinates in degrees
+    public record BoundingBox(double north, double south, double east, double west) {}
+
     // 1 or 2
     private int dimensions = 0;
 
@@ -347,12 +350,31 @@ public class Location implements Cloneable {
         }
     }
 
+    private void checkBoundingBox() {
+        if (!hasBoundingBox()) {
+            throw new IllegalArgumentException("only bounding boxes support this api");
+        }
+    }
+
     public String bbInDegrees() {
         return "" +
                 (y1 * 0.000001) + ", " +
                 (x1 * 0.000001) + ", " +
                 (y2 * 0.000001) + ", " +
                 (x2 * 0.000001);
+    }
+
+    /**
+     * Get the bounding box as a BoundingBox record.
+     * May only be called when hasBoundingBox() returns true.
+     **/
+    public BoundingBox getBoundingBox() {
+        checkBoundingBox();
+        double north = y2 * 0.000001;
+        double south = y1 * 0.000001;
+        double east = x2 * 0.000001;
+        double west = x1 * 0.000001;
+        return new BoundingBox(north, south, east, west);
     }
 
     /**

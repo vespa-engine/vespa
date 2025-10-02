@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -38,4 +40,11 @@ public class TrueItem extends Item {
 
     @Override
     protected void appendBodyString(StringBuilder buffer) { }
+
+    @Override
+    protected SearchProtocol.QueryTreeItem toProtobuf() {
+        return SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemTrue(SearchProtocol.ItemTrue.newBuilder().build())
+                .build();
+    }
 }

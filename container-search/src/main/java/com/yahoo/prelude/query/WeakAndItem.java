@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.compress.IntegerCompressor;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
@@ -138,6 +139,19 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
         if (this.n != other.n) return false;
         if ( ! Objects.equals(this.index, other.index)) return false;
         return true;
+    }
+
+    @Override
+    protected SearchProtocol.QueryTreeItem toProtobuf() {
+        var builder = SearchProtocol.ItemWeakAnd.newBuilder();
+        builder.setIndex(index);
+        builder.setTargetNumHits(getN());
+        for (var child : items()) {
+            builder.addChildren(child.toProtobuf());
+        }
+        return SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemWeakAnd(builder.build())
+                .build();
     }
 
 }

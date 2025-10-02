@@ -2,6 +2,7 @@
 
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.compress.IntegerCompressor;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
@@ -124,6 +125,20 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     public int hashCode() {
         return Objects.hash(super.hashCode(), targetNumHits, hnswExploreAdditionalHits,
                             distanceThreshold, approximate, field, queryTensorName);
+    }
+
+    @Override
+    protected SearchProtocol.QueryTreeItem toProtobuf() {
+        var builder = SearchProtocol.ItemNearestNeighbor.newBuilder();
+        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setQueryTensorName(queryTensorName);
+        builder.setTargetNumHits(targetNumHits);
+        builder.setAllowApproximate(approximate);
+        builder.setExploreAdditionalHits(hnswExploreAdditionalHits);
+        builder.setDistanceThreshold(distanceThreshold);
+        return SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemNearestNeighbor(builder.build())
+                .build();
     }
 
 }

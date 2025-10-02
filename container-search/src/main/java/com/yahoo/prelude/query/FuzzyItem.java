@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.compress.IntegerCompressor;
 
 import java.nio.ByteBuffer;
@@ -145,6 +146,19 @@ public class FuzzyItem extends TermItem {
         putString(getIndexedString(), buffer);
         IntegerCompressor.putCompressedPositiveNumber(this.maxEditDistance, buffer);
         IntegerCompressor.putCompressedPositiveNumber(this.prefixLength, buffer);
+    }
+
+    @Override
+    protected SearchProtocol.QueryTreeItem toProtobuf() {
+        var builder = SearchProtocol.ItemFuzzy.newBuilder();
+        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setWord(term);
+        builder.setMaxEditDistance(maxEditDistance);
+        builder.setPrefixLockLength(prefixLength);
+        builder.setPrefixMatch(prefixMatch);
+        return SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemFuzzy(builder.build())
+                .build();
     }
 
 }

@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -136,6 +138,17 @@ public class NotItem extends CompositeItem {
     public int getTermCount() {
         Item positive = getPositiveItem();
         return positive == null ? 0 : positive.getTermCount();
+    }
+
+    @Override
+    protected SearchProtocol.QueryTreeItem toProtobuf() {
+        var builder = SearchProtocol.ItemAndNot.newBuilder();
+        for (var child : items()) {
+            builder.addChildren(child.toProtobuf());
+        }
+        return SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemAndNot(builder.build())
+                .build();
     }
 
 }
