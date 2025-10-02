@@ -434,6 +434,14 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testSameElementWithNestedOr() {
+        assertParse("select * from sources * where myStringArray contains sameElement('a' or 'b')",
+            "myStringArray:{(OR a b)}");
+        assertParse("select * from sources * where myStringArray contains sameElement('a' or ('b' and 'c'))",
+            "myStringArray:{(OR a (AND b c))}");
+    }
+
+    @Test
     void testPhrase() {
         assertParse("select foo from bar where baz contains phrase(\"a\", \"b\")",
                 "baz:\"a b\"");
