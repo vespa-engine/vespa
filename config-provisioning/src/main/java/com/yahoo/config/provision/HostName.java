@@ -7,17 +7,17 @@ import static ai.vespa.validation.Validation.require;
 import static ai.vespa.validation.Validation.requireLength;
 
 /**
- * Hostnames match {@link #domainNamePattern}, and are restricted to 64 characters in length.
+ * Fully qualified (FQDN) hostnames are DNS names ({@link #domainNamePattern}).
  *
- * @author jonmv
+ * <p>To allow long FQDN hostnames, the Linux kernel hostname should be set to the leaf label only
+ * (because it has a limitation of 64 characters), and system and DNS should be configured to resolve the FQDN hostname.</p>
+ *
+ * @author Jon Marius Venstad
  */
 public class HostName extends DomainName {
 
     private HostName(String value) {
-        super(requireLength(require( ! value.endsWith("."),
-                                     value, "hostname cannot end with '.'"),
-                            "hostname length", 1, 64),
-              "hostname");
+        super(require( ! value.endsWith("."), value, "hostname cannot end with '.'"), "hostname");
     }
 
     public static HostName of(String value) {
