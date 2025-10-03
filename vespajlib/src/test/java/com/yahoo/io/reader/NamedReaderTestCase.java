@@ -36,6 +36,8 @@ public class NamedReaderTestCase {
     @Test
     public void testMethodMasking() {
         List<Method> unmaskedMethods = ClassValidator.unmaskedMethodsFromSuperclass(NamedReader.class);
+        // there is no problem inheriting the Reader implementation for these:
+        unmaskedMethods.removeIf(m -> m.getName().equals("readAllAsString") || m.getName().equals("readAllLines"));
         if (! unmaskedMethods.isEmpty()) {
             fail("Unmasked methods in " + NamedReader.class.getName() + ": " + unmaskedMethods);
         }
