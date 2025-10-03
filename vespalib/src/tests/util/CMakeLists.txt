@@ -14,6 +14,7 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     defer_test.cpp
     eventbarrier.cpp
     file_area_freelist_test.cpp
+    fixed_capacity_fifo_test.cpp
     generation_hold_list_test.cpp
     generationhandler_test.cpp
     json.cpp
