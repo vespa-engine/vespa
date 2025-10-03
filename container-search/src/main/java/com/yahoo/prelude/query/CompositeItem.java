@@ -57,6 +57,7 @@ public abstract class CompositeItem extends Item {
     protected void adding(Item item) {
         Validator.ensureNotNull("A composite item child", item);
         Validator.ensure("Attempted to add a composite to itself", item != this);
+        Validator.ensure("Cannot add a RootItem as a child", !(item instanceof RootItem));
         if (item instanceof CompositeItem) {
             ensureNotInSubtree((CompositeItem) item);
         }

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.MockItem;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
@@ -27,42 +28,6 @@ public class TextualQueryRepresentationTestCase {
 
     private enum ExampleEnum {
         example;
-    }
-
-    private static class MockItem extends Item {
-        private final String name;
-
-        @Override
-        public void setIndexName(String index) {
-        }
-
-        @Override
-        public ItemType getItemType() {
-            return null;
-        }
-
-        @Override
-        public String getName() {
-            return name;
-        }
-
-        @Override
-        public int encode(ByteBuffer buffer) {
-            return 0;
-        }
-
-        @Override
-        public int getTermCount() {
-            return 0;
-        }
-
-        @Override
-        protected void appendBodyString(StringBuilder buffer) {
-        }
-
-        MockItem(String name) {
-            this.name = name;
-        }
     }
 
     private final Item basic = new MockItem("basic") {

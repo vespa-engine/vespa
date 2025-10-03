@@ -1452,6 +1452,33 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.prelude.query.RootItem" : {
+    "superClass" : "com.yahoo.prelude.query.CompositeItem",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(com.yahoo.prelude.query.Item)",
+      "public void setIndexName(java.lang.String)",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "public int encode(java.nio.ByteBuffer)",
+      "protected void appendHeadingString(java.lang.StringBuilder)",
+      "public com.yahoo.prelude.query.Item getRoot()",
+      "public final void setRoot(com.yahoo.prelude.query.Item)",
+      "public boolean equals(java.lang.Object)",
+      "public com.yahoo.prelude.query.RootItem clone()",
+      "public void addItem(com.yahoo.prelude.query.Item)",
+      "public void addItem(int, com.yahoo.prelude.query.Item)",
+      "public boolean isEmpty()",
+      "public bridge synthetic com.yahoo.prelude.query.CompositeItem clone()",
+      "public bridge synthetic com.yahoo.prelude.query.Item clone()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.prelude.query.SameElementItem" : {
     "superClass" : "com.yahoo.prelude.query.NonReducibleCompositeItem",
     "interfaces" : [ ],
@@ -5573,7 +5600,7 @@
     "fields" : [ ]
   },
   "com.yahoo.search.query.QueryTree" : {
-    "superClass" : "com.yahoo.prelude.query.CompositeItem",
+    "superClass" : "com.yahoo.prelude.query.RootItem",
     "interfaces" : [ ],
     "attributes" : [
       "public"
@@ -5581,22 +5608,13 @@
     "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.prelude.query.Item)",
-      "public void setIndexName(java.lang.String)",
-      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "public java.lang.String getName()",
-      "public int encode(java.nio.ByteBuffer)",
-      "protected void appendHeadingString(java.lang.StringBuilder)",
-      "public com.yahoo.prelude.query.Item getRoot()",
-      "public final void setRoot(com.yahoo.prelude.query.Item)",
       "public boolean equals(java.lang.Object)",
       "public com.yahoo.search.query.QueryTree clone()",
-      "public void addItem(com.yahoo.prelude.query.Item)",
-      "public void addItem(int, com.yahoo.prelude.query.Item)",
-      "public boolean isEmpty()",
       "public com.yahoo.prelude.query.Item withRank(com.yahoo.prelude.query.Item)",
       "public com.yahoo.prelude.query.Item and(com.yahoo.prelude.query.Item)",
       "public static java.util.List getPositiveTerms(com.yahoo.prelude.query.Item)",
       "public int treeSize()",
+      "public bridge synthetic com.yahoo.prelude.query.RootItem clone()",
       "public bridge synthetic com.yahoo.prelude.query.CompositeItem clone()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
