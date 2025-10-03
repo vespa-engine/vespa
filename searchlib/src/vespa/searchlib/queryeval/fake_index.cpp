@@ -10,6 +10,8 @@ FakeIndex::FakeIndex()
 {
 }
 
+FakeIndex::~FakeIndex() = default;
+
 FakeIndex&
 FakeIndex::doc(uint32_t docid)
 {

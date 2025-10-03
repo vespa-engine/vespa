@@ -28,6 +28,7 @@ private:
 
 public:
     FakeIndex();
+    ~FakeIndex();
 
     /**
      * Start adding data for a new document.
