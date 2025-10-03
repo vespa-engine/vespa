@@ -853,6 +853,9 @@
       "public com.yahoo.container.jdisc.RequestHandlerTestDriver$MockResponseHandler sendRequest(java.lang.String, com.yahoo.jdisc.http.HttpRequest$Method, java.lang.String, java.lang.String)",
       "public com.yahoo.container.jdisc.RequestHandlerTestDriver$MockResponseHandler sendRequest(java.lang.String, com.yahoo.jdisc.http.HttpRequest$Method, java.nio.ByteBuffer)",
       "public com.yahoo.container.jdisc.RequestHandlerTestDriver$MockResponseHandler sendRequest(java.lang.String, com.yahoo.jdisc.http.HttpRequest$Method, java.nio.ByteBuffer, java.lang.String)",
+      "public com.yahoo.container.jdisc.RequestHandlerTestDriver$MockResponseHandler sendRequest(com.yahoo.jdisc.Request, java.nio.ByteBuffer)",
+      "public com.yahoo.jdisc.Request createRequest(java.lang.String, com.yahoo.jdisc.http.HttpRequest$Method)",
+      "public com.yahoo.container.jdisc.RequestHandlerTestDriver$MockResponseHandler sendRequest(com.yahoo.jdisc.Request, java.lang.String)",
       "public java.lang.String censorDigits(java.lang.String)"
     ],
     "fields" : [ ]

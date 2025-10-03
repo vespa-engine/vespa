@@ -96,6 +96,24 @@ public class RequestHandlerTestDriver implements AutoCloseable {
         return responseHandler;
     }
 
+    public MockResponseHandler sendRequest(Request request, ByteBuffer body) {
+        var responseHandler = new MockResponseHandler();
+        ContentChannel requestContent = request.connect(responseHandler);
+        requestContent.write(body, null);
+        requestContent.close(null);
+        request.release();
+        this.responseHandler = responseHandler;
+        return responseHandler;
+    }
+
+    public Request createRequest(String uri, HttpRequest.Method method) {
+        return HttpRequest.newServerRequest(driver, URI.create(uri), method);
+    }
+
+    public MockResponseHandler sendRequest(Request request, String body) {
+        return sendRequest(request, ByteBuffer.wrap(body.getBytes(StandardCharsets.UTF_8)));
+    }
+
     /** Replaces all occurrences of 0-9 digits by d's */
     public String censorDigits(String s) {
         return s.replaceAll("[0-9]","d");

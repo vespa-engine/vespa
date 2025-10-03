@@ -45,6 +45,7 @@ import com.yahoo.documentapi.VisitorResponse;
 import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
+import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.Trace;
@@ -83,6 +84,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
 import static com.yahoo.jdisc.http.HttpRequest.Method.DELETE;
@@ -1129,6 +1131,74 @@ public class DocumentV1ApiTest {
     }
 
     @Test
+    void visit_with_application_jsonl_accept_header_returns_json_lines() {
+        var driver = new RequestHandlerTestDriver(handler); // try-with-resources hangs the test on assertion failure, which isn't optimal
+        var tokens = List.of(new AckToken(null), new AckToken(null), new AckToken(null), new AckToken(null));
+        access.expect(tokens);
+        access.expect(parameters -> {
+            parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc1)), tokens.get(0));
+            parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc2)), tokens.get(1));
+            parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc3)), tokens.get(2));
+            parameters.getLocalDataHandler().onMessage(new RemoveDocumentMessage(new DocumentId("id:space:music::t-square-truth")), tokens.get(3));
+            var statistics = new VisitorStatistics();
+            statistics.setBucketsVisited(1);
+            statistics.setDocumentsVisited(4);
+            parameters.getControlHandler().onVisitorStatistics(statistics);
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
+        });
+        var request = driver.createRequest("http://localhost/document/v1?cluster=content&includeRemoves=true&stream=true", HttpRequest.Method.GET);
+        request.headers().add("Accept", "application/json;q=0.7, application/jsonl;q=1");
+        var response = driver.sendRequest(request, "");
+        assertSameJsonLines("""
+                {"put":"id:space:music::one","fields":{"artist":"Tom Waits","embedding":{"type":"tensor(x[3])","values":[1.0,2.0,3.0]}}}
+                {"put":"id:space:music:n=1:two","fields":{"artist":"Asa-Chan & Jun-Ray","embedding":{"type":"tensor(x[3])","values":[4.0,5.0,6.0]}}}
+                {"put":"id:space:music:g=a:three","fields":{}}
+                {"remove":"id:space:music::t-square-truth"}
+                {"documentCount":4}
+                """, response.readAll());
+        assertEquals(200, response.getStatus());
+        List<String> contentType = response.getResponse().headers().get("Content-Type");
+        assertEquals(1, contentType.size());
+        assertEquals("application/jsonl; charset=UTF-8", contentType.get(0));
+    }
+
+    @Test
+    void visit_with_application_json_preference_returns_legacy_json() {
+        var driver = new RequestHandlerTestDriver(handler); // try-with-resources hangs the test on assertion failure, which isn't optimal
+        var tokens = List.of(new AckToken(null));
+        access.expect(tokens);
+        access.expect(parameters -> {
+            parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc1)), tokens.get(0));
+            var statistics = new VisitorStatistics();
+            statistics.setBucketsVisited(1);
+            statistics.setDocumentsVisited(1);
+            parameters.getControlHandler().onVisitorStatistics(statistics);
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
+        });
+        var request = driver.createRequest("http://localhost/document/v1?cluster=content&stream=true", HttpRequest.Method.GET);
+        request.headers().add("Accept", "application/json;q=0.7, application/jsonl;q=0.1");
+        var response = driver.sendRequest(request, "");
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1",
+                         "documents": [
+                           {
+                             "id": "id:space:music::one",
+                             "fields": {
+                               "artist": "Tom Waits",
+                               "embedding": { "type": "tensor(x[3])", "values": [1.0,2.0,3.0] }
+                             }
+                           }
+                         ],
+                         "documentCount": 1
+                       }""", response.readAll());
+        assertEquals(200, response.getStatus());
+        List<String> contentType = response.getResponse().headers().get("Content-Type");
+        assertEquals(1, contentType.size());
+        assertEquals("application/json; charset=UTF-8", contentType.get(0));
+    }
+
+    @Test
     public void batch_update_rewrites_tas_condition_with_timestamp_predicate_if_provided_by_backend() {
         var driver = new RequestHandlerTestDriver(handler); // try-with-resources hangs the test on assertion failure, which isn't optimal
         List<AckToken> tokens = List.of(new AckToken(null), new AckToken(null), new AckToken(null), new AckToken(null));
@@ -1472,11 +1542,20 @@ public class DocumentV1ApiTest {
         try {
             formatter.encode(actualPretty, SlimeUtils.jsonToSlimeOrThrow(actual));
             formatter.encode(expectedPretty, SlimeUtils.jsonToSlimeOrThrow(expected));
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
         assertEquals(expectedPretty.toString(UTF_8), actualPretty.toString(UTF_8));
+    }
+
+    static void assertSameJsonLines(String expected, String actual) {
+        // Zip of lines() streams would be prettier, but no such thing?
+        String[] expectedLines = expected.split("\n");
+        String[] actualLines = actual.split("\n");
+        assertEquals(expectedLines.length, actualLines.length, "Mismatching number of JSON lines");
+        for (int i = 0; i < expectedLines.length; ++i) {
+            assertSameJson(expectedLines[i], actualLines[i]);
+        }
     }
 
 }

@@ -120,9 +120,14 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 /**
  * Asynchronous HTTP handler for /document/v1
  *
- * @author jonmv
+ * @author Jon Marius Venstad
  */
 public final class DocumentV1ApiHandler extends AbstractRequestHandler {
+
+    private static class MediaType {
+        static final String JSON       = "application/json";
+        static final String JSON_LINES = "application/jsonl";
+    }
 
     private static final Duration defaultTimeout = Duration.ofSeconds(180); // Match document API default timeout.
     private static final Duration handlerTimeout = Duration.ofMillis(100); // Extra time to allow for handler, JDisc and jetty to complete.
@@ -1271,15 +1276,34 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         visit(request, parameters, false, true, handler, new VisitCallback() { });
     }
 
+    private static boolean requestAcceptsJsonLinesResponse(HttpRequest request) {
+        List<String> acceptHeaders = request.headers().get("Accept");
+        if (acceptHeaders != null) {
+            // As per RFC 9110 5.2. "Field Lines and Combined Field Value", multiple header
+            // lines (if present) are combined to one line that is comma-separated.
+            String combinedAcceptHeader = String.join(",", acceptHeaders);
+            try {
+                var acceptMatcher = new AcceptHeaderMatcher(combinedAcceptHeader);
+                // Note: ordering matters! If the client has equal preference for JSONL and JSON,
+                // _we_ prefer to use JSONL. Also, since "application/jsonl" is not IANA-standardized,
+                // we might want to extend this if there are (or will be) widely used aliases.
+                var bestTypes = acceptMatcher.preferredExactMediaTypes(MediaType.JSON_LINES, MediaType.JSON);
+                if (!bestTypes.isEmpty() && MediaType.JSON_LINES.equals(bestTypes.get(0))) {
+                    return true;
+                }
+            } catch (IllegalArgumentException e) {
+                log.fine(() -> "Failed to parse Accept header '%s': %s".formatted(combinedAcceptHeader, e.getMessage()));
+                // TODO should we reject with a Bad Request instead?
+            }
+        } // else: for backwards compatibility, always assume application/json is accepted
+        return false;
+    }
+
     private StreamableJsonResponse createStreamableJsonResponse(HttpRequest request, ResponseHandler handler, boolean streaming) throws IOException {
         var tensorOptions = createTensorOptionsFromRequest(request);
-        if (streaming) {
-            // TODO! This is very temporary!
-            var format = request.parameters().getOrDefault("format", List.of());
-            if ((format.size() == 1) && "jsonl-experimental-20250707".equals(format.get(0))) {
-                var writer = new BufferedContentChannelResponseWriter(handler);
-                return new StreamingJsonLinesResponse(writer, tensorOptions);
-            }
+        if (streaming && requestAcceptsJsonLinesResponse(request)) {
+            var writer = new BufferedContentChannelResponseWriter(handler);
+            return new StreamingJsonLinesResponse(writer, tensorOptions);
         }
         return JsonResponse.createWithPath(request, handler, tensorOptions);
     }
