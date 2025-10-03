@@ -16,6 +16,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     equivsearch.cpp
     exact_nearest_neighbor_iterator.cpp
     executeinfo.cpp
+    fake_index.cpp
     fake_requestcontext.cpp
     fake_result.cpp
     fake_search.cpp

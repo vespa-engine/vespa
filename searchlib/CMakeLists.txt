@@ -203,6 +203,7 @@ vespa_define_module(
     src/tests/queryeval/dot_product
     src/tests/queryeval/equiv
     src/tests/queryeval/exact_nearest_neighbor
+    src/tests/queryeval/fake_index
     src/tests/queryeval/fake_searchable
     src/tests/queryeval/filter_search
     src/tests/queryeval/flow
