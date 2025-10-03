@@ -3,6 +3,11 @@ package com.yahoo.vespasignificance.export;
 
 import java.util.List;
 
+/**
+ * Pretty print table.
+ *
+ * @author johsol
+ */
 final class TablePrinter {
 
     /** Unicode box-drawing table with auto width and middle-ellipsizing. */
@@ -12,7 +17,6 @@ final class TablePrinter {
         final int cols = headers.size();
         final int[] w = computeColumnWidths(headers, rows);
 
-        // Optional: cap to terminal width (reads $COLUMNS, default 120)
         int maxWidth = parseInt(System.getenv("COLUMNS"), 120);
         shrinkToWidth(w, maxWidth);
 
@@ -33,8 +37,6 @@ final class TablePrinter {
         // Bottom border
         System.out.println(frameLine('└', '┴', '┘', '─', w));
     }
-
-    // ----- helpers -----
 
     private static int[] computeColumnWidths(List<String> headers, List<List<String>> rows) {
         int cols = headers.size();
