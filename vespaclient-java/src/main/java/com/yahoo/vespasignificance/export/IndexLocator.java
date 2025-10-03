@@ -36,7 +36,7 @@ public class IndexLocator {
      * <p>
      * On none or more than 1 match, it will exit.
      */
-    String locateIndexDir(ExportClientParameters params) {
+    Path locateIndexDir(ExportClientParameters params) {
         Path searchRoot = Paths.get(VESPA_HOME, "var", "db", "vespa", "search");
 
         // Not common, but might be more than 1 cluster on one host.
@@ -70,7 +70,12 @@ public class IndexLocator {
         Path schemaDir = schemaSel.getValue();
 
         Path indexDir = schemaDir.resolve("0.ready").resolve("index").resolve("index.flush.1");
-        return indexDir.toString();
+        if (!Files.exists(indexDir)) {
+            System.out.println("Index directory does not exist: " + indexDir);
+            System.exit(1);
+        }
+
+        return indexDir;
     }
 
     private static List<Path> listDirs(Path root, java.util.function.Predicate<Path> filter) {

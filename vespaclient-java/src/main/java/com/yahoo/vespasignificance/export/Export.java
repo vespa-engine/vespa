@@ -3,6 +3,8 @@ package com.yahoo.vespasignificance.export;
 
 import com.yahoo.vespasignificance.CommandLineOptions;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
@@ -14,7 +16,7 @@ import java.nio.file.Paths;
 public class Export {
 
     ExportClientParameters params;
-    String indexDir;
+    Path indexDir;
 
 
     public Export(ExportClientParameters params) {
@@ -23,6 +25,7 @@ public class Export {
 
     public void run() {
         resolveIndexDir();
+        callVespaIndexInspect();
     }
 
     private void resolveIndexDir() {
@@ -42,9 +45,20 @@ public class Export {
                 System.exit(1);
             }
 
-            indexDir = params.indexDir();
+            indexDir = Paths.get(params.indexDir());
         }
+    }
 
-        System.out.println("Index directory: " + params.indexDir());
+    private void callVespaIndexInspect() {
+        var indexInspect = new VespaIndexInspectClient();
+        try {
+            var df = indexInspect.dumpWords(indexDir, params.fieldName());
+            System.out.println("Extracted values:");
+            for (var entry : df.entrySet()) {
+                System.out.println(entry.getKey() + ": " + entry.getValue());
+            }
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
