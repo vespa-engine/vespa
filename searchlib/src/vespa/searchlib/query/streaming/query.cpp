@@ -6,7 +6,9 @@
 #include "same_element_query_node.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
+#include <algorithm>
 #include <cassert>
+#include <span>
 
 namespace search::streaming {
 
