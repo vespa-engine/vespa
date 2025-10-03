@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
+import javax.inject.Inject;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -38,7 +39,7 @@ public class GenerateSourcesMojo extends AbstractMojo {
     @Parameter(defaultValue = "${session}", readonly = true, required = true)
     protected MavenSession session;
 
-    @Component
+    @Inject
     @Requirement
     private BuildPluginManager pluginManager;
 
