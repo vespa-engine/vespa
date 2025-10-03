@@ -12,6 +12,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -100,14 +101,14 @@ public class ApplicationFileManager implements AddFileInterface {
         try {
             file = new File(tmpDir, path.getRelative());
             Files.createDirectories(file.getParentFile().toPath());
-            URL website = new URL(uri);
+            URL website = new URI(uri).toURL();
             if ( ! List.of("http", "https").contains(website.getProtocol().toLowerCase(Locale.ROOT)))
                 throw new IllegalArgumentException("only HTTP(S) supported for URI type resources");
             rbc = Channels.newChannel(website.openStream());
             fos = new FileOutputStream(file);
             fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
             return file;
-        } catch (SocketTimeoutException e) {
+        } catch (java.net.URISyntaxException|SocketTimeoutException e) {
             throw new IllegalArgumentException("Failed connecting to or reading from " + uri, e);
         } catch (IOException e) {
             throw new IllegalArgumentException("Failed creating " + file, e);

@@ -70,6 +70,9 @@ public class ExportPackagesIT {
     private static final List<String> removedPackagesInJava24 = List.of(
             "java.lang.classfile.components"
     );
+    private static final List<String> newPackagesInJava25 = List.of(
+            "javax.sound"
+    );
 
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("([^;,]+);\\s*version=\"([^\"]*)\"(?:,\\s*([^;,]+);\\s*uses:=\"([^\"]*)\")?");
 
@@ -155,6 +158,9 @@ public class ExportPackagesIT {
         }
         if (Runtime.version().feature() >= 24) {
             expectedPackages = expectedPackages.removePackages(removedPackagesInJava24).addPackages(newPackagesInJava24);
+        }
+        if (Runtime.version().feature() >= 25) {
+            expectedPackages = expectedPackages.addPackages(newPackagesInJava25);
         }
         var actualPackages = parsePackages(actualValue).removeJavaVersion();
 

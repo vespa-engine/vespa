@@ -37,7 +37,7 @@ fi
 
 get_env_var_with_optional_default() {
     local var_name=$1; shift
-    local default_val=${1:-}; shift
+    local default_val=${1:-};
 
     # Disable nounset as we are checking if the variable is set
     set +o nounset
