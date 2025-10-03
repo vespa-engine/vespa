@@ -36,7 +36,7 @@ public class PrefixItem extends WordItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemPrefixTerm.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));
         builder.setWord(getWord());

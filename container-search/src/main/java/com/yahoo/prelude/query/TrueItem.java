@@ -42,7 +42,7 @@ public class TrueItem extends Item {
     protected void appendBodyString(StringBuilder buffer) { }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemTrue(SearchProtocol.ItemTrue.newBuilder().build())
                 .build();

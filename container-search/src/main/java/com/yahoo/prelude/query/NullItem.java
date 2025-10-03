@@ -45,7 +45,7 @@ public class NullItem extends Item {
     public int getTermCount() { return 0; }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         throw new IllegalStateException("A NullItem was attempted serialized. This is probably a misbehaving searcher");
     }
 

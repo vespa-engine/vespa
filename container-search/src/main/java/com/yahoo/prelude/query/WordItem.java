@@ -185,7 +185,7 @@ public class WordItem extends TermItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemWordTerm.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));
         builder.setWord(word);

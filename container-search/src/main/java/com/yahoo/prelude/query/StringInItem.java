@@ -111,7 +111,7 @@ public class StringInItem extends InItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemStringIn.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));
         for (String token : tokens) {

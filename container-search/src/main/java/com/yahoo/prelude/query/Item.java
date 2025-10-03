@@ -251,7 +251,7 @@ public abstract class Item implements Cloneable {
     public abstract int encode(ByteBuffer buffer);
 
     /** Convert this item to protobuf format */
-    protected abstract SearchProtocol.QueryTreeItem toProtobuf();
+    abstract SearchProtocol.QueryTreeItem toProtobuf();
 
     protected void encodeThis(ByteBuffer buffer) {
         byte CODE_MASK =     0b00011111;

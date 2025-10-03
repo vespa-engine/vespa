@@ -36,7 +36,7 @@ public class ONearItem extends NearItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemOnear.newBuilder();
         builder.setDistance(distance);
         for (var child : items()) {

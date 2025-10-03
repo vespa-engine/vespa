@@ -3,7 +3,7 @@ package com.yahoo.prelude.query;
 
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 
-public class ToProtobuf {
+class ToProtobuf {
 
     /**
      * Convert any Item to SearchProtocol.QueryTreeItem

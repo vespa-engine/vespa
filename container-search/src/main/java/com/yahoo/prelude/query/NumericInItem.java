@@ -109,7 +109,7 @@ public class NumericInItem extends InItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemNumericIn.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));
         for (Long token : tokens) {

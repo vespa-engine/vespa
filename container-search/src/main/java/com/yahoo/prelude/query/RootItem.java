@@ -51,7 +51,7 @@ public class RootItem extends CompositeItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         throw new UnsupportedOperationException("QueryTree itself should not be serialized, serialize its root");
     }
 

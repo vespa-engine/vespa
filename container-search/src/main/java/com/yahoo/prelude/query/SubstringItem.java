@@ -34,7 +34,7 @@ public class SubstringItem extends WordItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemSubstringTerm.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));
         builder.setWord(getWord());

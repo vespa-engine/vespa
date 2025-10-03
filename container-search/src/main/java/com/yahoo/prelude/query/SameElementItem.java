@@ -70,7 +70,7 @@ public class SameElementItem extends NonReducibleCompositeItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemSameElement.newBuilder();
         var props = SearchProtocol.TermItemProperties.newBuilder();
         props.setIndex(fieldName);

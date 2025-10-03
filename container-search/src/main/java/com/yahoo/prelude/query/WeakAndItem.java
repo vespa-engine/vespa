@@ -142,7 +142,7 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemWeakAnd.newBuilder();
         builder.setIndex(index);
         builder.setTargetNumHits(getN());

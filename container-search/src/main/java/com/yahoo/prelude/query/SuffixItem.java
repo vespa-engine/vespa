@@ -34,7 +34,7 @@ public class SuffixItem extends WordItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemSuffixTerm.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));
         builder.setWord(getWord());

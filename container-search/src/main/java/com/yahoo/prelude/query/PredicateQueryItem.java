@@ -189,7 +189,7 @@ public class PredicateQueryItem extends SimpleTaggableItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemPredicateQuery.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));
 

@@ -297,8 +297,7 @@
     "methods" : [
       "public void <init>()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "public java.lang.String getName()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public java.lang.String getName()"
     ],
     "fields" : [ ]
   },
@@ -317,8 +316,7 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public java.lang.String getIndexName()",
-      "public void setWeight(int)",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public void setWeight(int)"
     ],
     "fields" : [ ]
   },
@@ -367,8 +365,7 @@
       "public boolean equals(java.lang.Object)",
       "public int getNumWords()",
       "public java.lang.String getIndexedString()",
-      "public boolean isWords()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public boolean isWords()"
     ],
     "fields" : [ ]
   },
@@ -488,8 +485,7 @@
     "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.util.Map)",
-      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()"
     ],
     "fields" : [ ]
   },
@@ -507,8 +503,7 @@
       "public java.lang.String getName()",
       "protected void adding(com.yahoo.prelude.query.Item)",
       "public boolean acceptsItemsOfType(com.yahoo.prelude.query.Item$ItemType)",
-      "public static boolean acceptsChildrenOfType(com.yahoo.prelude.query.Item$ItemType)",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public static boolean acceptsChildrenOfType(com.yahoo.prelude.query.Item$ItemType)"
     ],
     "fields" : [ ]
   },
@@ -523,8 +518,7 @@
       "public void <init>(java.lang.String, boolean)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "public java.lang.String stringValue()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public java.lang.String stringValue()"
     ],
     "fields" : [ ]
   },
@@ -542,8 +536,7 @@
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "public int encode(java.nio.ByteBuffer)",
       "public int getTermCount()",
-      "protected void appendBodyString(java.lang.StringBuilder)",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "protected void appendBodyString(java.lang.StringBuilder)"
     ],
     "fields" : [ ]
   },
@@ -575,8 +568,7 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "protected void appendHeadingString(java.lang.StringBuilder)",
-      "protected void encodeThis(java.nio.ByteBuffer)",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "protected void encodeThis(java.nio.ByteBuffer)"
     ],
     "fields" : [
       "public static int DEFAULT_MAX_EDIT_DISTANCE",
@@ -606,7 +598,6 @@
       "public int getNumWords()",
       "public boolean isStemmed()",
       "public boolean isWords()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
@@ -740,8 +731,7 @@
       "public int getNumWords()",
       "public boolean isStemmed()",
       "public boolean isWords()",
-      "public static com.yahoo.prelude.query.IntItem from(java.lang.String, com.yahoo.prelude.query.Limit, com.yahoo.prelude.query.Limit, int)",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public static com.yahoo.prelude.query.IntItem from(java.lang.String, com.yahoo.prelude.query.Limit, com.yahoo.prelude.query.Limit, int)"
     ],
     "fields" : [ ]
   },
@@ -841,7 +831,6 @@
       "public void setParent(com.yahoo.prelude.query.CompositeItem)",
       "public com.yahoo.prelude.query.CompositeItem getParent()",
       "public abstract int encode(java.nio.ByteBuffer)",
-      "protected abstract ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()",
       "protected void encodeThis(java.nio.ByteBuffer)",
       "protected static byte[] getBytes(java.lang.String)",
       "public static void putString(java.lang.String, java.nio.ByteBuffer)",
@@ -985,7 +974,6 @@
       "public com.yahoo.prelude.query.Item clone()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()",
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [ ]
@@ -1007,8 +995,7 @@
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public int hashCode()"
     ],
     "fields" : [
       "protected int distance",
@@ -1041,8 +1028,7 @@
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public int hashCode()"
     ],
     "fields" : [ ]
   },
@@ -1079,8 +1065,7 @@
       "public com.yahoo.prelude.query.Item removeItem(int)",
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "protected void appendBodyString(java.lang.StringBuilder)",
-      "public int getTermCount()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public int getTermCount()"
     ],
     "fields" : [ ]
   },
@@ -1098,8 +1083,7 @@
       "public void appendBodyString(java.lang.StringBuilder)",
       "public void appendHeadingString(java.lang.StringBuilder)",
       "public java.lang.String getName()",
-      "public int getTermCount()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public int getTermCount()"
     ],
     "fields" : [ ]
   },
@@ -1123,7 +1107,6 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public com.yahoo.prelude.query.NumericInItem clone()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
@@ -1139,8 +1122,7 @@
       "public void <init>()",
       "public void <init>(int)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "public java.lang.String getName()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public java.lang.String getName()"
     ],
     "fields" : [ ]
   },
@@ -1153,8 +1135,7 @@
     "methods" : [
       "public void <init>()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "public java.lang.String getName()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public java.lang.String getName()"
     ],
     "fields" : [ ]
   },
@@ -1191,8 +1172,7 @@
       "public int getNumWords()",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public int hashCode()"
     ],
     "fields" : [ ]
   },
@@ -1228,8 +1208,7 @@
       "public void setExplicit(boolean)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public int hashCode()"
     ],
     "fields" : [ ]
   },
@@ -1308,7 +1287,6 @@
       "public com.yahoo.prelude.query.PredicateQueryItem clone()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
@@ -1328,8 +1306,7 @@
       "public void <init>(java.lang.String, java.lang.String)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "public java.lang.String stringValue()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public java.lang.String stringValue()"
     ],
     "fields" : [ ]
   },
@@ -1349,8 +1326,7 @@
       "public long getValue()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
-      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)"
     ],
     "fields" : [ ]
   },
@@ -1387,8 +1363,7 @@
       "public java.lang.String getString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
-      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)"
     ],
     "fields" : [ ]
   },
@@ -1448,8 +1423,7 @@
     "methods" : [
       "public void <init>()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "public java.lang.String getName()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public java.lang.String getName()"
     ],
     "fields" : [ ]
   },
@@ -1474,8 +1448,7 @@
       "public java.util.regex.Pattern getRegexp()",
       "public java.lang.String toString()",
       "public int hashCode()",
-      "public boolean equals(java.lang.Object)",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public boolean equals(java.lang.Object)"
     ],
     "fields" : [ ]
   },
@@ -1492,7 +1465,6 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public int encode(java.nio.ByteBuffer)",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()",
       "public ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTree toProtobufQueryTree()",
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "public com.yahoo.prelude.query.Item getRoot()",
@@ -1524,8 +1496,7 @@
       "public java.lang.String getFieldName()",
       "public void setIndexName(java.lang.String)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public int hashCode()"
     ],
     "fields" : [ ]
   },
@@ -1660,7 +1631,6 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public com.yahoo.prelude.query.StringInItem clone()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
@@ -1700,8 +1670,7 @@
       "public void <init>(java.lang.String, boolean)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "public java.lang.String stringValue()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public java.lang.String stringValue()"
     ],
     "fields" : [ ]
   },
@@ -1716,8 +1685,7 @@
       "public void <init>(java.lang.String, boolean)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "public java.lang.String stringValue()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public java.lang.String stringValue()"
     ],
     "fields" : [ ]
   },
@@ -1836,17 +1804,6 @@
       "public final java.lang.String name"
     ]
   },
-  "com.yahoo.prelude.query.ToProtobuf" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()"
-    ],
-    "fields" : [ ]
-  },
   "com.yahoo.prelude.query.ToolBox$QueryVisitor" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -1888,8 +1845,7 @@
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "public int encode(java.nio.ByteBuffer)",
       "public int getTermCount()",
-      "protected void appendBodyString(java.lang.StringBuilder)",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "protected void appendBodyString(java.lang.StringBuilder)"
     ],
     "fields" : [ ]
   },
@@ -1936,8 +1892,7 @@
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public int hashCode()"
     ],
     "fields" : [ ]
   },
@@ -1996,7 +1951,6 @@
       "public com.yahoo.prelude.query.WeightedSetItem clone()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
@@ -2044,7 +1998,6 @@
       "public com.yahoo.prelude.query.WordAlternativesItem clone()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
@@ -2086,8 +2039,7 @@
       "public java.lang.String getIndexedString()",
       "public boolean isWords()",
       "public void setWords(boolean)",
-      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
-      "protected ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTreeItem toProtobuf()"
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)"
     ],
     "fields" : [ ]
   },

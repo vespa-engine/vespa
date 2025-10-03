@@ -105,7 +105,7 @@ public class BoolItem extends TermItem {
     public boolean isWords() { return false; }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         // BoolItem is serialized as a word term
         var builder = SearchProtocol.ItemWordTerm.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));

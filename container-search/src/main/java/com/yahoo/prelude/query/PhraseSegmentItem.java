@@ -268,7 +268,7 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         // PhraseSegmentItem should be converted to a phrase
         var builder = SearchProtocol.ItemPhrase.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));

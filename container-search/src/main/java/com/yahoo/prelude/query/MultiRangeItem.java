@@ -350,7 +350,7 @@ public class MultiRangeItem<Type extends Number> extends MultiTermItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         // Convert to composite item and serialize that
         return asCompositeItem().toProtobuf();
     }

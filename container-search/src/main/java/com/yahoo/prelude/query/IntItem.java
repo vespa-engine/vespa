@@ -299,7 +299,7 @@ public class IntItem extends TermItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         // Check if this is a range or a simple term
         if (!from.equals(to)) {
             // This is a range

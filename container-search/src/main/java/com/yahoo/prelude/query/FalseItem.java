@@ -42,7 +42,7 @@ public class FalseItem extends Item {
     protected void appendBodyString(StringBuilder buffer) { }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemFalse(SearchProtocol.ItemFalse.newBuilder().build())
                 .build();

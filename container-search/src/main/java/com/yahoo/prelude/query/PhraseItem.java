@@ -291,7 +291,7 @@ public class PhraseItem extends CompositeIndexedItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemPhrase.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));
         for (var child : items()) {

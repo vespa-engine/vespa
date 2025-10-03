@@ -92,7 +92,7 @@ public class NearItem extends CompositeItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemNear.newBuilder();
         builder.setDistance(distance);
         for (var child : items()) {

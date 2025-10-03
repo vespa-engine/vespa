@@ -21,7 +21,7 @@ public class OrItem extends CompositeItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemOr.newBuilder();
         for (var child : items()) {
             builder.addChildren(child.toProtobuf());

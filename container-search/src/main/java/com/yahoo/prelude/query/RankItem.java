@@ -26,7 +26,7 @@ public class RankItem extends CompositeItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemRank.newBuilder();
         for (var child : items()) {
             builder.addChildren(child.toProtobuf());

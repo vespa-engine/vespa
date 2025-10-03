@@ -122,7 +122,7 @@ public class GeoLocationItem extends TermItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemGeoLocationTerm.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));
 

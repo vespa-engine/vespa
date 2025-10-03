@@ -69,7 +69,7 @@ public class PureWeightedString extends PureWeightedItem  {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemPureWeightedString.newBuilder();
         builder.setWeight(getWeight());
         builder.setValue(value);

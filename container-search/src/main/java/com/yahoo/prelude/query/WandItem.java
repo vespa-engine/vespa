@@ -131,7 +131,7 @@ public class WandItem extends WeightedSetItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         // Detect if we have strings or longs
         boolean hasLongs = false;
         boolean hasStrings = false;

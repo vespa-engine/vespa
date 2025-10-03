@@ -160,7 +160,7 @@ public class WordAlternativesItem extends TermItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemWordAlternatives.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));
         for (Alternative alt : alternatives) {

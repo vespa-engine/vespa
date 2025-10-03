@@ -21,7 +21,7 @@ public class DotProductItem extends WeightedSetItem {
     public ItemType getItemType() { return ItemType.DOTPRODUCT; }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         // Detect if we have strings or longs
         boolean hasLongs = false;
         boolean hasStrings = false;

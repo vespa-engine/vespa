@@ -128,7 +128,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     }
 
     @Override
-    protected SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemNearestNeighbor.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));
         builder.setQueryTensorName(queryTensorName);
