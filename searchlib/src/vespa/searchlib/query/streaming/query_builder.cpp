@@ -51,7 +51,7 @@ QueryBuilder::adjust_index(std::string& index)
         if (_same_element_view.has_value() && !_same_element_view.value().empty()) {
             index = _same_element_view.value();
         } else {
-            index = SimpleQueryStackDumpIterator::DEFAULT_INDEX;
+            index = QueryStackIterator::DEFAULT_INDEX;
         }
     } else if (_same_element_view.has_value() && !_same_element_view.value().empty()) {
         index = _same_element_view.value() + "." + index;
@@ -59,7 +59,7 @@ QueryBuilder::adjust_index(std::string& index)
 }
 
 std::unique_ptr<QueryNode>
-QueryBuilder::build(const QueryNode * parent, const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator & queryRep, bool allowRewrite)
+QueryBuilder::build(const QueryNode * parent, const QueryNodeResultFactory& factory, QueryStackIterator & queryRep, bool allowRewrite)
 {
     unsigned int arity = queryRep.getArity();
     ParseItem::ItemType type = queryRep.getType();
@@ -223,7 +223,7 @@ QueryBuilder::build(const QueryNode * parent, const QueryNodeResultFactory& fact
 }
 
 std::unique_ptr<QueryNode>
-QueryBuilder::build_nearest_neighbor_query_node(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& query_rep)
+QueryBuilder::build_nearest_neighbor_query_node(const QueryNodeResultFactory& factory, QueryStackIterator& query_rep)
 {
     std::string_view query_tensor_name = query_rep.getTerm();
     std::string field_name = query_rep.index_as_string();
@@ -236,7 +236,7 @@ QueryBuilder::build_nearest_neighbor_query_node(const QueryNodeResultFactory& fa
 }
 
 void
-QueryBuilder::populate_multi_term(Normalizing string_normalize_mode, MultiTerm& mt, SimpleQueryStackDumpIterator& queryRep)
+QueryBuilder::populate_multi_term(Normalizing string_normalize_mode, MultiTerm& mt, QueryStackIterator& queryRep)
 {
     char buf[24];
     std::string subterm;
@@ -268,7 +268,7 @@ QueryBuilder::populate_multi_term(Normalizing string_normalize_mode, MultiTerm& 
 }
 
 std::unique_ptr<QueryNode>
-QueryBuilder::build_dot_product_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
+QueryBuilder::build_dot_product_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep)
 {
     auto dp = std::make_unique<DotProductTerm>(factory.create(), queryRep.index_as_string(), queryRep.getArity());
     dp->setWeight(queryRep.GetWeight());
@@ -278,7 +278,7 @@ QueryBuilder::build_dot_product_term(const QueryNodeResultFactory& factory, Simp
 }
 
 std::unique_ptr<QueryNode>
-QueryBuilder::build_wand_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
+QueryBuilder::build_wand_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep)
 {
     auto wand = std::make_unique<WandTerm>(factory.create(), queryRep.index_as_string(), queryRep.getArity());
     wand->setWeight(queryRep.GetWeight());
@@ -289,7 +289,7 @@ QueryBuilder::build_wand_term(const QueryNodeResultFactory& factory, SimpleQuery
 }
 
 std::unique_ptr<QueryNode>
-QueryBuilder::build_weighted_set_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
+QueryBuilder::build_weighted_set_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep)
 {
     auto ws = std::make_unique<WeightedSetTerm>(factory.create(), queryRep.index_as_string(), queryRep.getArity());
     ws->setWeight(queryRep.GetWeight());
@@ -299,7 +299,7 @@ QueryBuilder::build_weighted_set_term(const QueryNodeResultFactory& factory, Sim
 }
 
 std::unique_ptr<QueryNode>
-QueryBuilder::build_phrase_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
+QueryBuilder::build_phrase_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep)
 {
     std::string index(queryRep.index_as_view());
     adjust_index(index);
@@ -318,7 +318,7 @@ QueryBuilder::build_phrase_term(const QueryNodeResultFactory& factory, SimpleQue
 }
 
 std::unique_ptr<QueryNode>
-QueryBuilder::build_equiv_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep, bool allow_rewrite)
+QueryBuilder::build_equiv_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep, bool allow_rewrite)
 {
     auto eqn = std::make_unique<EquivQueryNode>(factory.create(), queryRep.getArity());
     auto arity = queryRep.getArity();
@@ -343,7 +343,7 @@ QueryBuilder::build_equiv_term(const QueryNodeResultFactory& factory, SimpleQuer
 }
 
 std::unique_ptr<QueryNode>
-QueryBuilder::build_same_element_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
+QueryBuilder::build_same_element_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep)
 {
     auto sen = std::make_unique<SameElementQueryNode>(factory.create(), queryRep.index_as_string(), queryRep.getArity());
     _same_element_view = queryRep.index_as_string();
@@ -360,7 +360,7 @@ QueryBuilder::build_same_element_term(const QueryNodeResultFactory& factory, Sim
 }
 
 void
-QueryBuilder::skip_unknown(SimpleQueryStackDumpIterator& queryRep)
+QueryBuilder::skip_unknown(QueryStackIterator& queryRep)
 {
     auto type = queryRep.getType();
     for (uint32_t skipCount = queryRep.getArity(); (skipCount > 0) && queryRep.next(); skipCount--) {

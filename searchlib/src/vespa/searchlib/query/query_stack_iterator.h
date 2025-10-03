@@ -106,6 +106,9 @@ public:
     std::string_view getTerm() const noexcept { return _d.term_view; }
 
     int64_t getIntegerTerm() const noexcept { return _d.integerTerm; }
+
+    virtual std::string_view getStack() const noexcept { return ""; }
+    virtual size_t getPosition() const noexcept { return 0; }
 };
 
 } // namespace

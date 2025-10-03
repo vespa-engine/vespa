@@ -47,8 +47,8 @@ public:
     SimpleQueryStackDumpIterator& operator=(const SimpleQueryStackDumpIterator &) = delete;
     ~SimpleQueryStackDumpIterator();
 
-    std::string_view getStack() const noexcept { return std::string_view(_buf, _bufEnd - _buf); }
-    size_t getPosition() const noexcept { return _currPos; }
+    std::string_view getStack() const noexcept override { return std::string_view(_buf, _bufEnd - _buf); }
+    size_t getPosition() const noexcept override { return _currPos; }
 
     /**
      * Moves to the next item in the buffer.

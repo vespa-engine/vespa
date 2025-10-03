@@ -11,7 +11,7 @@ using vespalib::Issue;
 namespace search::query {
 
 void
-StackDumpQueryCreatorHelper::populateMultiTerm(SimpleQueryStackDumpIterator &queryStack, QueryBuilderBase & builder, MultiTerm & mt) {
+StackDumpQueryCreatorHelper::populateMultiTerm(QueryStackIterator &queryStack, QueryBuilderBase & builder, MultiTerm & mt) {
     uint32_t added(0);
     for (added = 0; (added < mt.getNumTerms()) && queryStack.next(); added++) {
         ParseItem::ItemType type = queryStack.getType();
@@ -33,7 +33,7 @@ StackDumpQueryCreatorHelper::populateMultiTerm(SimpleQueryStackDumpIterator &que
 }
 
 void
-StackDumpQueryCreatorHelper::reportError(const SimpleQueryStackDumpIterator &queryStack, const QueryBuilderBase & builder) {
+StackDumpQueryCreatorHelper::reportError(const QueryStackIterator &queryStack, const QueryBuilderBase & builder) {
     std::string_view stack = queryStack.getStack();
     Issue::report("Unable to create query tree from stack dump. Failed at position %ld out of %ld bytes %s",
                queryStack.getPosition(), stack.size(), builder.error().c_str());
