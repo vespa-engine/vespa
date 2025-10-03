@@ -20,7 +20,7 @@ BlockableMaintenanceJob::internal_notify_resource_usage(const ResourceUsageState
 {
     bool resourcesOK = !state.aboveDiskLimit(_resourceLimitFactor) &&
         !state.aboveMemoryLimit(_resourceLimitFactor) &&
-        !state.max_attribute_address_space_state().aboveLimit();
+        !state.max_attribute_address_space_state().aboveLimit(_resourceLimitFactor);
     if (resourcesOK) {
         if (isBlocked(BlockedReason::RESOURCE_LIMITS)) {
             unBlock(BlockedReason::RESOURCE_LIMITS);
