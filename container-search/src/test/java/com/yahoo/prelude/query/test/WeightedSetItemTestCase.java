@@ -2,6 +2,7 @@
 package com.yahoo.prelude.query.test;
 
 import com.yahoo.prelude.query.CompositeIndexedItem;
+import com.yahoo.prelude.query.FakeWSItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PureWeightedString;
 import com.yahoo.prelude.query.WeightedSetItem;
@@ -57,20 +58,6 @@ public class WeightedSetItemTestCase {
         assertEquals(Integer.valueOf(-10), ws.addToken("bad", -10));
         assertEquals(1, ws.getNumTokens());
         assertEquals(Integer.valueOf(-10), ws.getTokenWeight("bad"));
-    }
-
-    static class FakeWSItem extends CompositeIndexedItem {
-        public FakeWSItem() { setIndexName("index"); }
-        public ItemType getItemType() { return ItemType.WEIGHTEDSET; }
-        public String getName() { return "WEIGHTEDSET"; }
-        public int getNumWords() { return 1; }
-        public String getIndexedString() { return ""; }
-
-        public void add(String token, int weight) {
-            WordItem w = new WordItem(token, getIndexName());
-            w.setWeight(weight);
-            super.addItem(w);
-        }
     }
 
     @Test
