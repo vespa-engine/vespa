@@ -4,8 +4,12 @@ package com.yahoo.vespasignificance.export;
 import com.yahoo.vespasignificance.CommandLineOptions;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * This class uses vespa-index-inspect to export significance model from
@@ -25,6 +29,7 @@ public class Export {
 
     public void run() {
         resolveIndexDir();
+        requireFieldDir(indexDir, params.fieldName());
         callVespaIndexInspect();
     }
 
@@ -60,5 +65,56 @@ public class Export {
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void requireFieldDir(Path indexDir, String fieldName) {
+        if (fieldName == null || fieldName.isBlank()) {
+            System.out.println("[error] No --field specified.");
+            System.exit(1);
+        }
+
+        // Collect candidate field directories (depth 1 and 2)
+        List<Path> candidates = new ArrayList<>();
+        try (Stream<Path> s1 = Files.list(indexDir)) {
+            s1.filter(Files::isDirectory).forEach(candidates::add);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to list index directory: " + indexDir, e);
+        }
+
+        // Depth 2 (common: index/<something>/<field>)
+        List<Path> depth2 = new ArrayList<>();
+        for (Path p : candidates) {
+            try (Stream<Path> s2 = Files.list(p)) {
+                s2.filter(Files::isDirectory).forEach(depth2::add);
+            } catch (IOException ignored) {}
+        }
+        candidates.addAll(depth2);
+
+        // Try exact match on the leaf directory name
+        for (Path p : candidates) {
+            String leaf = p.getFileName().toString();
+            if (leaf.equals(fieldName)) {
+                return; // found → OK
+            }
+        }
+
+        // Not found → show helpful listing of what we DID find
+        List<List<String>> rows = candidates.stream()
+                .map(p -> List.of(p.getFileName().toString(), p.toString()))
+                .sorted((a, b) -> a.get(0).compareToIgnoreCase(b.get(0)))
+                .toList();
+
+        if (rows.isEmpty()) {
+            System.out.println("[error] No field directories found under: " + indexDir);
+        } else {
+            TablePrinter.printTable(
+                    "[error] Field directory '" + fieldName + "' not found under: " + indexDir,
+                    List.of("field", "path"),
+                    rows
+            );
+            System.out.println();
+            System.out.println("Use `--field <name>` to select one of the above.");
+        }
+        System.exit(1);
     }
 }

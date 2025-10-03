@@ -19,7 +19,7 @@ public record ExportClientParameters(boolean locateIndex, String indexDir, Strin
 
         private boolean locateIndex;
         private String indexDir;
-        private String outputFile;
+        private String outputFile = "out.txt";
         private String fieldName;
         private String clusterName;
         private String schemaName;
