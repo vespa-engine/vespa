@@ -16,8 +16,8 @@ namespace search::query {
 
 class StackDumpQueryCreatorHelper {
 public:
-    static void populateMultiTerm(SimpleQueryStackDumpIterator &queryStack, QueryBuilderBase & builder, MultiTerm & mt);
-    static void reportError(const SimpleQueryStackDumpIterator &queryStack, const QueryBuilderBase & builder);
+    static void populateMultiTerm(QueryStackIterator &queryStack, QueryBuilderBase & builder, MultiTerm & mt);
+    static void reportError(const QueryStackIterator &queryStack, const QueryBuilderBase & builder);
 };
 
 /**
@@ -26,7 +26,7 @@ public:
 template <class NodeTypes>
 class StackDumpQueryCreator {
 public:
-    static Node::UP create(search::SimpleQueryStackDumpIterator &queryStack)
+    static Node::UP create(search::QueryStackIterator &queryStack)
     {
         QueryBuilder<NodeTypes> builder;
 
@@ -55,11 +55,11 @@ public:
     }
 
 private:
-    static void populateMultiTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilderBase & builder, MultiTerm & mt) {
+    static void populateMultiTerm(search::QueryStackIterator &queryStack, QueryBuilderBase & builder, MultiTerm & mt) {
         StackDumpQueryCreatorHelper::populateMultiTerm(queryStack, builder, mt);
     }
     static Term *
-    createQueryTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilder<NodeTypes> & builder, std::string & pureTermView) {
+    createQueryTerm(search::QueryStackIterator &queryStack, QueryBuilder<NodeTypes> & builder, std::string & pureTermView) {
         uint32_t arity = queryStack.getArity();
         ParseItem::ItemType type = queryStack.getType();
         Node::UP node;

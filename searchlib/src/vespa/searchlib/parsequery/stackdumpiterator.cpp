@@ -15,28 +15,11 @@ using search::query::StringTermVector;
 
 namespace search {
 
-std::string_view SimpleQueryStackDumpIterator::DEFAULT_INDEX = "default";
-
 SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(std::string_view buf)
     : _buf(buf.begin()),
       _bufEnd(buf.end()),
       _currPos(0),
-      _currEnd(0),
-      _currType(ParseItem::ITEM_UNDEF),
-      _currFlags(0),
-      _currWeight(100),
-      _currUniqueId(0),
-      _currArity(0),
-      _curr_index_name(),
-      _curr_term(),
-      _curr_integer_term(0),
-      _extraIntArg1(0),
-      _extraIntArg2(0),
-      _extraIntArg3(0),
-      _extraDoubleArg4(0),
-      _extraDoubleArg5(0),
-      _predicate_query_term(),
-      _terms()
+      _currEnd(0)
 {
 }
 
@@ -116,69 +99,71 @@ bool SimpleQueryStackDumpIterator::readNext() {
         }
         type_code += (uint8_t) *p++;
     }
-    _currType = static_cast<ParseItem::ItemType>(type_code);
+    _d.itemType = static_cast<ParseItem::ItemType>(type_code);
 
     if (ParseItem::GetFeature_Weight(typefield)) {
         int64_t tmpLong = readCompressedInt(p);
-        _currWeight.setPercent(tmpLong);
+        _d.weight.setPercent(tmpLong);
     } else {
-        _currWeight.setPercent(100);
+        _d.weight.setPercent(100);
     }
     if (__builtin_expect(ParseItem::getFeature_UniqueId(typefield), false)) {
-        _currUniqueId = readCompressedPositiveInt(p);
+        _d.uniqueId = readCompressedPositiveInt(p);
     } else {
-        _currUniqueId = 0;
+        _d.uniqueId = 0;
     }
+    /** flags of the current item **/
+    uint8_t currFlags = 0;
     if (__builtin_expect(ParseItem::getFeature_Flags(typefield), false)) {
         if ((p + sizeof(uint8_t)) > _bufEnd) return false;
-        _currFlags = (uint8_t)*p++;
-    } else {
-        _currFlags = 0;
+        currFlags = (uint8_t)*p++;
     }
+    _d.noRankFlag = (currFlags & ParseItem::ItemFlags::IFLAG_NORANK) != 0;
+    _d.noPositionDataFlag = (currFlags & ParseItem::ItemFlags::IFLAG_NOPOSITIONDATA) != 0;
+    _d.isSpecialTokenFlag = (currFlags & ParseItem::IFLAG_SPECIALTOKEN) != 0;
 
-    switch (_currType) {
+    _d.creaFilterFlag = (currFlags & ParseItem::ItemFlags::IFLAG_FILTER) != 0;
+    _d.prefix_match_semantics_flag = (currFlags & ParseItem::ItemFlags::IFLAG_PREFIX_MATCH) != 0;
+    _d.term_view = std::string_view();
+
+    switch (_d.itemType) {
     case ParseItem::ITEM_OR:
     case ParseItem::ITEM_EQUIV:
     case ParseItem::ITEM_AND:
     case ParseItem::ITEM_NOT:
     case ParseItem::ITEM_RANK:
-        _currArity = readCompressedPositiveInt(p);
-        _curr_index_name = std::string_view();
-        _curr_term = std::string_view();
+        _d.arity = readCompressedPositiveInt(p);
+        _d.index_view = std::string_view();
         break;
 
     case ParseItem::ITEM_NEAR:
     case ParseItem::ITEM_ONEAR:
-        _currArity = readCompressedPositiveInt(p);
-        _extraIntArg1 = readCompressedPositiveInt(p);
-        _curr_index_name = std::string_view();
-        _curr_term = std::string_view();
+        _d.arity = readCompressedPositiveInt(p);
+        _d.nearDistance = readCompressedPositiveInt(p);
+        _d.index_view = std::string_view();
         break;
 
     case ParseItem::ITEM_WEAK_AND:
-        _currArity = readCompressedPositiveInt(p);
-        _extraIntArg1 = readCompressedPositiveInt(p); // targetNumHits
-        _curr_index_name = read_string_view(p);
-        _curr_term = std::string_view();
+        _d.arity = readCompressedPositiveInt(p);
+        _d.targetHits = readCompressedPositiveInt(p); // targetNumHits
+        _d.index_view = read_string_view(p);
         break;
     case ParseItem::ITEM_SAME_ELEMENT:
-        _currArity = readCompressedPositiveInt(p);
-        _curr_index_name = read_string_view(p);
-        _curr_term = std::string_view();
+        _d.arity = readCompressedPositiveInt(p);
+        _d.index_view = read_string_view(p);
         break;
 
     case ParseItem::ITEM_PURE_WEIGHTED_STRING:
-        _curr_term = read_string_view(p);
-        _currArity = 0;
+        _d.term_view = read_string_view(p);
+        _d.arity = 0;
         break;
     case ParseItem::ITEM_PURE_WEIGHTED_LONG:
-        _curr_integer_term = read_value<int64_t>(p);
-        _currArity = 0;
+        _d.integerTerm = read_value<int64_t>(p);
+        _d.arity = 0;
         break;
     case ParseItem::ITEM_WORD_ALTERNATIVES:
-        _curr_index_name = read_string_view(p);
-        _currArity = readCompressedPositiveInt(p);
-        _curr_term = std::string_view();
+        _d.index_view = read_string_view(p);
+        _d.arity = readCompressedPositiveInt(p);
         break;
     case ParseItem::ITEM_NUMTERM:
     case ParseItem::ITEM_GEO_LOCATION_TERM:
@@ -188,9 +173,9 @@ bool SimpleQueryStackDumpIterator::readNext() {
     case ParseItem::ITEM_EXACTSTRINGTERM:
     case ParseItem::ITEM_SUFFIXTERM:
     case ParseItem::ITEM_REGEXP:
-        _curr_index_name = read_string_view(p);
-        _curr_term = read_string_view(p);
-        _currArity = 0;
+        _d.index_view = read_string_view(p);
+        _d.term_view = read_string_view(p);
+        _d.arity = 0;
         break;
     case ParseItem::ITEM_PREDICATE_QUERY:
         readPredicate(p);
@@ -211,7 +196,7 @@ bool SimpleQueryStackDumpIterator::readNext() {
     case ParseItem::ITEM_TRUE:
     case ParseItem::ITEM_FALSE:
         // no content
-        _currArity = 0;
+        _d.arity = 0;
         break;
     case ParseItem::ITEM_STRING_IN:
         read_string_in(p);
@@ -231,98 +216,83 @@ bool SimpleQueryStackDumpIterator::readNext() {
 
 void
 SimpleQueryStackDumpIterator::readPredicate(const char *&p) {
-    _curr_index_name = read_string_view(p);
-    _predicate_query_term = std::make_unique<PredicateQueryTerm>();
+    _d.index_view = read_string_view(p);
+    _d.predicateQueryTerm = std::make_unique<PredicateQueryTerm>();
 
     size_t count = readCompressedPositiveInt(p);
     for (size_t i = 0; i < count; ++i) {
         std::string_view key = read_string_view(p);
         std::string_view value = read_string_view(p);
         uint64_t sub_queries = read_value<uint64_t>(p);
-        _predicate_query_term->addFeature(std::string(key), std::string(value), sub_queries);
+        _d.predicateQueryTerm->addFeature(std::string(key), std::string(value), sub_queries);
     }
     count = readCompressedPositiveInt(p);
     for (size_t i = 0; i < count; ++i) {
         std::string_view key = read_string_view(p);
         uint64_t value = read_value<uint64_t>(p);
         uint64_t sub_queries = read_value<uint64_t>(p);
-        _predicate_query_term->addRangeFeature(std::string(key), value, sub_queries);
+        _d.predicateQueryTerm->addRangeFeature(std::string(key), value, sub_queries);
     }
 }
 
 void
 SimpleQueryStackDumpIterator::readNN(const char *& p) {
-    _curr_index_name = read_string_view(p);
-    _curr_term = read_string_view(p); // query_tensor_name
-    _extraIntArg1 = readCompressedPositiveInt(p); // targetNumHits
-    _extraIntArg2 = readCompressedPositiveInt(p); // allow_approximate
-    _extraIntArg3 = readCompressedPositiveInt(p); // explore_additional_hits
+    _d.index_view = read_string_view(p);
+    _d.term_view = read_string_view(p); // query_tensor_name
+    _d.targetHits = readCompressedPositiveInt(p); // targetNumHits
+    uint32_t tmp = readCompressedPositiveInt(p); // allow_approximate
     // XXX: remove later when QRS doesn't send this extra flag
-    _extraIntArg2 &= ~0x40;
+    _d.allowApproximateFlag = ((tmp & ~0x40) != 0);
+    _d.exploreAdditionalHits = readCompressedPositiveInt(p); // explore_additional_hits
     // QRS always sends this now:
-    _extraDoubleArg4 = read_value<double>(p); // distance threshold
-    _currArity = 0;
+    _d.distanceThreshold = read_value<double>(p); // distance threshold
+    _d.arity = 0;
 }
 
 void
 SimpleQueryStackDumpIterator::readComplexTerm(const char *& p) {
-    _currArity = readCompressedPositiveInt(p);
-    _curr_index_name = read_string_view(p);
-    if (_currType == ParseItem::ITEM_WAND) {
-        _extraIntArg1 = readCompressedPositiveInt(p); // targetNumHits
-        _extraDoubleArg4 = read_value<double>(p); // scoreThreshold
-        _extraDoubleArg5 = read_value<double>(p); // thresholdBoostFactor
+    _d.arity = readCompressedPositiveInt(p);
+    _d.index_view = read_string_view(p);
+    if (getType() == ParseItem::ITEM_WAND) {
+        _d.targetHits = readCompressedPositiveInt(p); // targetNumHits
+        _d.scoreThreshold = read_value<double>(p); // scoreThreshold
+        _d.thresholdBoostFactor = read_value<double>(p); // thresholdBoostFactor
     }
-    _curr_term = std::string_view();
 }
 
 void
 SimpleQueryStackDumpIterator::readFuzzy(const char *&p) {
-    _curr_index_name = read_string_view(p);
-    _curr_term = read_string_view(p); // fuzzy term
-    _extraIntArg1 = readCompressedPositiveInt(p); // maxEditDistance
-    _extraIntArg2 = readCompressedPositiveInt(p); // prefixLength
-    _currArity = 0;
-}
-
-std::unique_ptr<query::PredicateQueryTerm>
-SimpleQueryStackDumpIterator::getPredicateQueryTerm()
-{
-    return std::move(_predicate_query_term);
+    _d.index_view = read_string_view(p);
+    _d.term_view = read_string_view(p); // fuzzy term
+    _d.fuzzy_max_edit_distance = readCompressedPositiveInt(p); // maxEditDistance
+    _d.fuzzy_prefix_lock_length = readCompressedPositiveInt(p); // prefixLength
+    _d.arity = 0;
 }
 
 void
 SimpleQueryStackDumpIterator::read_string_in(const char*& p)
 {
     uint32_t num_terms = readCompressedPositiveInt(p);
-    _currArity = 0;
-    _curr_index_name = read_string_view(p);
-    _curr_term = std::string_view();
+    _d.arity = 0;
+    _d.index_view = read_string_view(p);
     auto terms = std::make_unique<StringTermVector>(num_terms);
     for (uint32_t i = 0; i < num_terms; ++i) {
         terms->addTerm(read_string_view(p));
     }
-    _terms = std::move(terms);
+    _d.termVector = std::move(terms);
 }
 
 void
 SimpleQueryStackDumpIterator::read_numeric_in(const char*& p)
 {
     uint32_t num_terms = readCompressedPositiveInt(p);
-    _currArity = 0;
-    _curr_index_name = read_string_view(p);
-    _curr_term = std::string_view();
+    _d.arity = 0;
+    _d.index_view = read_string_view(p);
     auto terms = std::make_unique<IntegerTermVector>(num_terms);
     for (uint32_t i = 0; i < num_terms; ++i) {
         terms->addTerm(read_value<int64_t>(p));
     }
-    _terms = std::move(terms);
-}
-
-std::unique_ptr<query::TermVector>
-SimpleQueryStackDumpIterator::get_terms()
-{
-    return std::move(_terms);
+    _d.termVector = std::move(terms);
 }
 
 }
