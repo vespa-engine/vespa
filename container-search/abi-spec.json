@@ -1465,6 +1465,7 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public int encode(java.nio.ByteBuffer)",
+      "public ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTree toProtobufQueryTree()",
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "public com.yahoo.prelude.query.Item getRoot()",
       "public final void setRoot(com.yahoo.prelude.query.Item)",

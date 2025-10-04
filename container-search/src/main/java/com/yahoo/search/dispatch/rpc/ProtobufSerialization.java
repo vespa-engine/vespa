@@ -69,7 +69,9 @@ public class ProtobufSerialization {
             builder.setDocumentType(documentDb);
         }
         GrowableByteBuffer scratchPad = threadLocalBuffer.get();
-        builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree(), scratchPad));
+        var queryTree = query.getModel().getQueryTree();
+        builder.setQueryTreeBlob(serializeQueryTree(queryTree, scratchPad));
+        builder.setQueryTree(queryTree.toProtobufQueryTree());
 
         if (query.getGroupingSessionCache() || query.getRanking().getQueryCache()) {
             // TODO verify that the session key is included whenever rank properties would have been

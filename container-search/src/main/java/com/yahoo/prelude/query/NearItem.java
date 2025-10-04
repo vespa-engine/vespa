@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.compress.IntegerCompressor;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
@@ -88,6 +89,18 @@ public class NearItem extends CompositeItem {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), distance);
+    }
+
+    @Override
+    SearchProtocol.QueryTreeItem toProtobuf() {
+        var builder = SearchProtocol.ItemNear.newBuilder();
+        builder.setDistance(distance);
+        for (var child : items()) {
+            builder.addChildren(child.toProtobuf());
+        }
+        return SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemNear(builder.build())
+                .build();
     }
 
 }

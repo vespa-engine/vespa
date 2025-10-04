@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
+
 /**
  * A word that matches a suffix of words instead of a complete word.
  *
@@ -29,6 +31,16 @@ public class SuffixItem extends WordItem {
     @Override
     public String stringValue() {
         return "*" + getWord();
+    }
+
+    @Override
+    SearchProtocol.QueryTreeItem toProtobuf() {
+        var builder = SearchProtocol.ItemSuffixTerm.newBuilder();
+        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setWord(getWord());
+        return SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemSuffixTerm(builder.build())
+                .build();
     }
 
 }
