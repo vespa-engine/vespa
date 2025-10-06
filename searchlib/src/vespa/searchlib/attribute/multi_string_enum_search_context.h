@@ -21,6 +21,8 @@ public:
                                  const AttributeVector& toBeSearched,
                                  MultiValueMappingReadView<M> mv_mapping_read_view,
                                  const EnumStoreT<const char*>& enum_store);
+    MultiStringEnumSearchContext(MultiStringEnumSearchContext&& rhs) noexcept = default;
+    ~MultiStringEnumSearchContext() override;
 };
 
 }

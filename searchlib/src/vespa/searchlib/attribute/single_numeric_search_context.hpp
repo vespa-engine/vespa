@@ -16,6 +16,9 @@ SingleNumericSearchContext<T, M>::SingleNumericSearchContext(std::unique_ptr<Que
 }
 
 template <typename T, typename M>
+SingleNumericSearchContext<T, M>::~SingleNumericSearchContext() = default;
+
+template <typename T, typename M>
 std::unique_ptr<queryeval::SearchIterator>
 SingleNumericSearchContext<T, M>::createFilterIterator(fef::TermFieldMatchData* matchData, bool strict)
 {

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "multi_string_enum_search_context.h"
-#include "multi_enum_search_context.hpp"
+#include "multi_enum_search_context.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 
 namespace search::attribute {
@@ -17,5 +17,8 @@ MultiStringEnumSearchContext<M>::MultiStringEnumSearchContext(std::unique_ptr<Qu
     : MultiEnumSearchContext<const char*, StringSearchContext, M>(StringMatcher(std::move(qTerm), cased, fuzzy_matching_algorithm), toBeSearched, mv_mapping_read_view, enum_store)
 {
 }
+
+template <typename M>
+MultiStringEnumSearchContext<M>::~MultiStringEnumSearchContext() = default;
 
 }

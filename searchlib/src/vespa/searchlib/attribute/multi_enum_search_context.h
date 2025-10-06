@@ -31,6 +31,8 @@ protected:
     }
 
     MultiEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<T>& enum_store);
+    MultiEnumSearchContext(MultiEnumSearchContext&& rhs) noexcept = default;
+    ~MultiEnumSearchContext() override;
 
 public:
     int32_t find(DocId doc, int32_t elemId, int32_t & weight) const {
