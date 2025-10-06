@@ -22,25 +22,17 @@ public final class ClusterSpec {
 
     private final Version vespaVersion;
     private final boolean exclusive;
-    private final Optional<Id> combinedId;
     private final Optional<DockerImage> dockerImageRepo;
     private final ZoneEndpoint zoneEndpoint;
     private final boolean stateful;
 
     private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive,
-                        Optional<Id> combinedId, Optional<DockerImage> dockerImageRepo,
-                        ZoneEndpoint zoneEndpoint, boolean stateful) {
+                        Optional<DockerImage> dockerImageRepo, ZoneEndpoint zoneEndpoint, boolean stateful) {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
         this.vespaVersion = Objects.requireNonNull(vespaVersion, "vespaVersion cannot be null");
         this.exclusive = exclusive;
-        if (type == Type.combined) {
-            if (combinedId.isEmpty()) throw new IllegalArgumentException("combinedId must be set for cluster of type " + type);
-        } else {
-            if (combinedId.isPresent()) throw new IllegalArgumentException("combinedId must be empty for cluster of type " + type);
-        }
-        this.combinedId = combinedId;
         if (dockerImageRepo.isPresent() && dockerImageRepo.get().tag().isPresent())
             throw new IllegalArgumentException("dockerImageRepo is not allowed to have a tag");
         this.dockerImageRepo = dockerImageRepo;
@@ -72,11 +64,6 @@ public final class ClusterSpec {
     /** Returns the group within the cluster this specifies, or empty to specify the whole cluster */
     public Optional<Group> group() { return groupId; }
 
-    /** Returns the ID of the container cluster that is combined with this. This is only present for combined clusters */
-    public Optional<Id> combinedId() {
-        return combinedId;
-    }
-
     /**
      * Returns whether the physical hosts running the nodes of this application can
      * also run nodes of other applications. Using exclusive nodes for containers increases security and cost.
@@ -87,11 +74,11 @@ public final class ClusterSpec {
     public boolean isStateful() { return stateful; }
 
     public ClusterSpec with(Optional<Group> newGroup) {
-        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
+        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint, stateful);
     }
 
     public ClusterSpec withExclusivity(boolean exclusive) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
+        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint, stateful);
     }
 
     /** Creates a ClusterSpec when requesting a cluster */
@@ -113,7 +100,6 @@ public final class ClusterSpec {
         private Optional<DockerImage> dockerImageRepo = Optional.empty();
         private Version vespaVersion;
         private boolean exclusive = false;
-        private Optional<Id> combinedId = Optional.empty();
         private ZoneEndpoint zoneEndpoint = ZoneEndpoint.defaultEndpoint;
         private boolean stateful;
 
@@ -124,7 +110,7 @@ public final class ClusterSpec {
         }
 
         public ClusterSpec build() {
-            return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
+            return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint, stateful);
         }
 
         public Builder group(Group groupId) {
@@ -144,11 +130,6 @@ public final class ClusterSpec {
 
         public Builder exclusive(boolean exclusive) {
             this.exclusive = exclusive;
-            return this;
-        }
-
-        public Builder combinedId(Optional<Id> combinedId) {
-            this.combinedId = combinedId;
             return this;
         }
 
@@ -185,14 +166,13 @@ public final class ClusterSpec {
                id.equals(that.id) &&
                groupId.equals(that.groupId) &&
                vespaVersion.equals(that.vespaVersion) &&
-               combinedId.equals(that.combinedId) &&
                dockerImageRepo.equals(that.dockerImageRepo) &&
                zoneEndpoint.equals(that.zoneEndpoint);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
+        return Objects.hash(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint, stateful);
     }
 
     /**
@@ -201,8 +181,6 @@ public final class ClusterSpec {
      */
     public boolean satisfies(ClusterSpec other) {
         if ( ! other.id.equals(this.id)) return false; // ID mismatch
-        if (other.type.isContent() || this.type.isContent()) // Allow seamless transition between content and combined
-            return other.type.isContent() == this.type.isContent();
         return other.type.equals(this.type);
     }
 
@@ -212,17 +190,16 @@ public final class ClusterSpec {
         // These enum names are written to ZooKeeper - do not change
         admin,
         container,
-        content,
-        combined;
+        content;
 
         /** Returns whether this runs a content cluster */
         public boolean isContent() {
-            return this == content || this == combined;
+            return this == content;
         }
 
         /** Returns whether this runs a container cluster */
         public boolean isContainer() {
-            return this == container || this == combined;
+            return this == container;
         }
 
         public static Type from(String typeName) {
@@ -230,7 +207,6 @@ public final class ClusterSpec {
                 case "admin" -> admin;
                 case "container" -> container;
                 case "content" -> content;
-                case "combined" -> combined;
                 default -> throw new IllegalArgumentException("Illegal cluster type '" + typeName + "'");
             };
         }
