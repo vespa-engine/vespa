@@ -118,6 +118,31 @@ public class MetricUpdater {
 
     public void updateMasterState(boolean isMaster) {
         metricReporter.set("is-master", isMaster ? 1 : 0);
+        if (!isMaster) {
+            // Metric gauge values are "sticky" once set, which potentially causes
+            // max-aggregation of metrics across cluster controllers to return stale
+            // and unexpected values unless we explicitly zero out metrics when
+            // leadership is lost.
+            resetNodeStateAndResourceUsageMetricsToZero();
+        }
+    }
+
+    private void resetNodeStateAndResourceUsageMetricsToZero() {
+        for (NodeType type : NodeType.getTypes()) {
+            Map<String, String> dimensions = Map.of("node-type", type.toString().toLowerCase());
+            MetricReporter.Context context = createContext(dimensions);
+            for (State s : State.values()) {
+                String name = s.toString().toLowerCase() + ".count";
+                metricReporter.set(name, 0, context);
+            }
+            metricReporter.set("nodes-not-converged", 0, context);
+        }
+        MetricReporter.Context context = createContext(Map.of());
+        metricReporter.set("resource_usage.max_disk_utilization", 0.0, context);
+        metricReporter.set("resource_usage.max_memory_utilization", 0.0, context);
+        metricReporter.set("resource_usage.nodes_above_limit", 0, context);
+        metricReporter.set("resource_usage.disk_limit", 0.0, context);
+        metricReporter.set("resource_usage.memory_limit", 0.0, context);
     }
 
     public void updateClusterBucketsOutOfSyncRatio(double ratio) {
