@@ -481,6 +481,7 @@ public class ClusterSearcherTestCase {
         DispatchNodesConfig nodesConfig = new DispatchNodesConfig.Builder().build();
         Dispatcher dispatcher = new Dispatcher(ComponentId.createAnonymousComponentId("test-id"),
                                                dispatchConfig,
+                                               new QrSearchersConfig.Builder().build(),
                                                nodesConfig,
                                                vipStatus);
         ComponentRegistry<Dispatcher> dispatchers = new ComponentRegistry<>();

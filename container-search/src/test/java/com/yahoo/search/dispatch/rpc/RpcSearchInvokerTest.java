@@ -5,6 +5,7 @@ package com.yahoo.search.dispatch.rpc;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.compress.CompressionType;
+import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
@@ -33,7 +34,7 @@ public class RpcSearchInvokerTest {
         var lengthHolder = new AtomicInteger();
         var mockClient = parameterCollectorClient(compressionTypeHolder, payloadHolder, lengthHolder);
         var mockPool = new RpcResourcePool(ImmutableMap.of(7, mockClient.createConnection("foo", 123)));
-        var invoker = new RpcSearchInvoker(mockSearcher(), compressor, new Node("test", 7, "seven", 1), mockPool, 1000);
+        var invoker = new RpcSearchInvoker(mockSearcher(), compressor, new Node("test", 7, "seven", 1), mockPool, 1000, new QrSearchersConfig.Builder().build());
 
         Query q = new Query("search/?query=test&hits=10&offset=3");
         RpcSearchInvoker.RpcContext context = (RpcSearchInvoker.RpcContext) invoker.sendSearchRequest(q, null);
@@ -47,7 +48,7 @@ public class RpcSearchInvokerTest {
         assertEquals(3, request.getOffset());
         assertFalse(request.getQueryTreeBlob().isEmpty());
 
-        var invoker2 = new RpcSearchInvoker(mockSearcher(), compressor, new Node("test", 8, "eight", 1), mockPool, 1000);
+        var invoker2 = new RpcSearchInvoker(mockSearcher(), compressor, new Node("test", 8, "eight", 1), mockPool, 1000, new QrSearchersConfig.Builder().build());
         RpcSearchInvoker.RpcContext context2 = (RpcSearchInvoker.RpcContext) invoker2.sendSearchRequest(q, context);
         assertSame(context, context2);
         assertEquals(lengthHolder.get(), context.compressedPayload.uncompressedSize());
@@ -62,7 +63,7 @@ public class RpcSearchInvokerTest {
         var lengthHolder = new AtomicInteger();
         var mockClient = parameterCollectorClient(compressionTypeHolder, payloadHolder, lengthHolder);
         var mockPool = new RpcResourcePool(ImmutableMap.of(7, mockClient.createConnection("foo", 123)));
-        var invoker = new RpcSearchInvoker(mockSearcher(), compressor, new Node("test", 7, "seven", 1), mockPool, maxHits);
+        var invoker = new RpcSearchInvoker(mockSearcher(), compressor, new Node("test", 7, "seven", 1), mockPool, maxHits, new QrSearchersConfig.Builder().build());
 
         Query q = new Query("search/?query=test&hits=10&offset=3");
         invoker.sendSearchRequest(q, null);

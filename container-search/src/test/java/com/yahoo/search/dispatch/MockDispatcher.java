@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
@@ -35,11 +36,11 @@ public class MockDispatcher extends Dispatcher {
     }
 
     private MockDispatcher(ClusterMonitor clusterMonitor, SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcResourcePool rpcResourcePool) {
-        this(clusterMonitor, searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster.groupList(), dispatchConfig));
+        this(clusterMonitor, searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster.groupList(), dispatchConfig, new QrSearchersConfig.Builder().build()));
     }
 
     private MockDispatcher(ClusterMonitor clusterMonitor, SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcInvokerFactory invokerFactory) {
-        super(clusterMonitor, searchCluster, dispatchConfig, invokerFactory);
+        super(clusterMonitor, searchCluster, dispatchConfig, new QrSearchersConfig.Builder().build(), invokerFactory);
         this.clusterMonitor = clusterMonitor;
     }
 

@@ -16,6 +16,7 @@ import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
+import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.InvokerResult;
 import com.yahoo.search.dispatch.LeanHit;
@@ -50,8 +51,8 @@ public class ProtobufSerialization {
      */
     private static final ThreadLocal<GrowableByteBuffer> threadLocalBuffer = ThreadLocal.withInitial(() -> new GrowableByteBuffer(4096));
 
-    static byte[] serializeSearchRequest(Query query, int hits, String serverId, double requestTimeout) {
-        return convertFromQuery(query, hits, serverId, requestTimeout).toByteArray();
+    static byte[] serializeSearchRequest(Query query, int hits, String serverId, double requestTimeout, QrSearchersConfig qrSearchersConfig) {
+        return convertFromQuery(query, hits, serverId, requestTimeout, qrSearchersConfig).toByteArray();
     }
 
     private static void convertSearchReplyErrors(Result target, List<SearchProtocol.Error> errors) {
@@ -60,10 +61,9 @@ public class ProtobufSerialization {
         }
     }
 
-    static SearchProtocol.SearchRequest convertFromQuery(Query query, int hits, String serverId, double requestTimeout) {
+    static SearchProtocol.SearchRequest convertFromQuery(Query query, int hits, String serverId, double requestTimeout, QrSearchersConfig qrSearchersConfig) {
         var builder = SearchProtocol.SearchRequest.newBuilder().setHits(hits).setOffset(query.getOffset())
                 .setTimeout((int) (requestTimeout * 1000));
-
         var documentDb = query.getModel().getDocumentDb();
         if (documentDb != null) {
             builder.setDocumentType(documentDb);
@@ -71,8 +71,9 @@ public class ProtobufSerialization {
         GrowableByteBuffer scratchPad = threadLocalBuffer.get();
         var queryTree = query.getModel().getQueryTree();
         builder.setQueryTreeBlob(serializeQueryTree(queryTree, scratchPad));
-        builder.setQueryTree(queryTree.toProtobufQueryTree());
-
+        if (qrSearchersConfig.sendProtobufQuerytree()) {
+            builder.setQueryTree(queryTree.toProtobufQueryTree());
+        }
         if (query.getGroupingSessionCache() || query.getRanking().getQueryCache()) {
             // TODO verify that the session key is included whenever rank properties would have been
             builder.setSessionKey(query.getSessionId(serverId).toString());

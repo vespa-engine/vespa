@@ -2,6 +2,7 @@
 package com.yahoo.search.dispatch.rpc;
 
 import com.yahoo.compress.Compressor;
+import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.InvokerResult;
@@ -31,10 +32,11 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
     private final BlockingQueue<Client.ResponseOrError<ProtobufResponse>> responses;
     private final int maxHits;
     private final CompressPayload compressor;
+    private final QrSearchersConfig qrSearchersConfig;
 
     private Query query;
 
-    RpcSearchInvoker(VespaBackend searcher, CompressPayload compressor, Node node, RpcConnectionPool resourcePool, int maxHits) {
+    RpcSearchInvoker(VespaBackend searcher, CompressPayload compressor, Node node, RpcConnectionPool resourcePool, int maxHits, QrSearchersConfig qrSearchersConfig) {
         super(Optional.of(node));
         this.searcher = searcher;
         this.node = node;
@@ -42,6 +44,7 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
         this.responses = new LinkedBlockingQueue<>(1);
         this.maxHits = maxHits;
         this.compressor = compressor;
+        this.qrSearchersConfig = qrSearchersConfig;
     }
 
     @Override
@@ -81,7 +84,7 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
         return new RpcContext(compressor, query,
                               ProtobufSerialization.serializeSearchRequest(query,
                                                                            Math.min(query.getHits(), maxHits),
-                                                                           searcher.getServerId(), requestTimeout));
+                                                                           searcher.getServerId(), requestTimeout, qrSearchersConfig));
     }
 
     @Override

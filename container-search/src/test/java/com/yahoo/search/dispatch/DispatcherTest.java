@@ -2,6 +2,7 @@
 package com.yahoo.search.dispatch;
 
 import com.yahoo.compress.CompressionType;
+import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
@@ -67,7 +68,7 @@ public class DispatcherTest {
             assertEquals(1, nodes.get(0).key());
             return true;
         });
-        Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false), cl, dispatchConfig, invokerFactory);
+        Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false), cl, dispatchConfig, new QrSearchersConfig.Builder().build(), invokerFactory);
         SearchInvoker invoker = disp.getSearchInvoker(q, null);
         assertNotNull(invoker);
         invokerFactory.verifyAllEventsProcessed();
@@ -83,7 +84,7 @@ public class DispatcherTest {
             }
         };
         MockInvokerFactory invokerFactory = new MockInvokerFactory(cl.groupList(), dispatchConfig, (n, a) -> true);
-        Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false), cl, dispatchConfig, invokerFactory);
+        Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false), cl, dispatchConfig, new QrSearchersConfig.Builder().build(), invokerFactory);
         SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
         assertNotNull(invoker);
         invokerFactory.verifyAllEventsProcessed();
@@ -101,7 +102,7 @@ public class DispatcherTest {
             assertTrue(acceptIncompleteCoverage);
             return true;
         });
-        Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false), cl, dispatchConfig, invokerFactory);
+        Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false), cl, dispatchConfig, new QrSearchersConfig.Builder().build(), invokerFactory);
         SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
         assertNotNull(invoker);
         invokerFactory.verifyAllEventsProcessed();
@@ -114,7 +115,7 @@ public class DispatcherTest {
             SearchCluster cl = new MockSearchCluster("1", 2, 1);
 
             MockInvokerFactory invokerFactory = new MockInvokerFactory(cl.groupList(), dispatchConfig, (n, a) -> false, (n, a) -> false);
-            Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false), cl, dispatchConfig, invokerFactory);
+            Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false), cl, dispatchConfig, new QrSearchersConfig.Builder().build(), invokerFactory);
             disp.getSearchInvoker(new Query(), null);
             disp.deconstruct();
             fail("Expected exception");
@@ -127,7 +128,7 @@ public class DispatcherTest {
     @Test
     void testGroup0IsSelected() {
         SearchCluster cluster = new MockSearchCluster("1", 3, 1);
-        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig,
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new QrSearchersConfig.Builder().build(),
                 new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.pingIterationCompleted();
         assertEquals(0,
@@ -198,7 +199,7 @@ public class DispatcherTest {
         };
 
         // This factory just forwards search to the dummy RPC layer above, nothing more.
-        InvokerFactoryFactory invokerFactories = (rpcConnectionPool, searchGroups, dispatchConfig) -> new InvokerFactory(searchGroups, dispatchConfig) {
+        InvokerFactoryFactory invokerFactories = (rpcConnectionPool, searchGroups, dispatchConfig, qrSearchersConfig) -> new InvokerFactory(searchGroups, dispatchConfig) {
             @Override protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackend searcher, Query query, int maxHits, Node node) {
                 return Optional.of(new SearchInvoker(Optional.of(node)) {
                     @Override protected Object sendSearchRequest(Query query, Object context) {
@@ -220,7 +221,7 @@ public class DispatcherTest {
             }
         };
 
-        Dispatcher dispatcher = new Dispatcher(dispatchConfig, rpcPool, cluster, invokerFactories);
+        Dispatcher dispatcher = new Dispatcher(dispatchConfig, new QrSearchersConfig.Builder().build(), rpcPool, cluster, invokerFactories);
         ExecutorService executor = Executors.newFixedThreadPool(1);
 
         // Set two groups with a single node each.
