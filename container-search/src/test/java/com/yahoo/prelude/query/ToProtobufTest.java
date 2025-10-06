@@ -867,6 +867,36 @@ public class ToProtobufTest {
     }
 
     @Test
+    void testConvertFromQueryWithNearestNeighborItemWithOptionalAttributes() throws InvalidProtocolBufferException {
+        NearestNeighborItem nearestNeighbor = new NearestNeighborItem("myvector", "query_vector");
+        nearestNeighbor.setTargetNumHits(100);
+        nearestNeighbor.setAllowApproximate(false);
+        nearestNeighbor.setHnswExploreAdditionalHits(50);
+        nearestNeighbor.setDistanceThreshold(0.5);
+        nearestNeighbor.setWeight(200);
+        nearestNeighbor.setFilter(true);
+
+        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(nearestNeighbor);
+        assertNotNull(result);
+        String json = toJson(result);
+        String expected = """
+            {
+              "itemNearestNeighbor": {
+                "properties": {
+                  "itemWeight": 200,
+                  "doNotHighlight": true
+                },
+                "queryTensorName": "query_vector",
+                "targetNumHits": 100,
+                "exploreAdditionalHits": 50,
+                "distanceThreshold": 0.5
+              }
+            }
+            """;
+        assertJsonEquals(json, expected);
+    }
+
+    @Test
     void testConvertFromQueryWithGeoLocationItem() throws InvalidProtocolBufferException {
         com.yahoo.prelude.Location location = new com.yahoo.prelude.Location();
         location.setAttribute("myloc");
