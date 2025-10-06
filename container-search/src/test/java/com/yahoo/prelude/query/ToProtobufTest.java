@@ -848,6 +848,43 @@ public class ToProtobufTest {
     }
 
     @Test
+    void testConvertFromQueryWithWordAlternativesInsidePhrase() throws InvalidProtocolBufferException {
+        PhraseItem phrase = new PhraseItem();
+        phrase.setIndexName("myindex");
+        phrase.addItem(new WordItem("hello"));
+        WordAlternativesItem alternatives = new WordAlternativesItem("myindex", false, null,
+                java.util.List.of(
+                    new WordAlternativesItem.Alternative("world", 1.0),
+                    new WordAlternativesItem.Alternative("universe", 0.7)
+                ));
+        phrase.addItem(alternatives);
+
+        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(phrase);
+        assertNotNull(result);
+        String json = toJson(result);
+        String expected = """
+            {
+              "itemPhrase": {
+                "properties": {"index": "myindex"},
+                "children": [
+                  {"itemWordTerm": {"properties": {"index": "myindex"}, "word": "hello"}},
+                  {
+                    "itemWordAlternatives": {
+                      "properties": {"index": "myindex"},
+                      "weightedStrings": [
+                        {"weight": 70, "value": "universe"},
+                        {"weight": 100, "value": "world"}
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+            """;
+        assertJsonEquals(json, expected);
+    }
+
+    @Test
     void testConvertFromQueryWithNearestNeighborItem() throws InvalidProtocolBufferException {
         NearestNeighborItem nearestNeighbor = new NearestNeighborItem("myvector", "query_vector");
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(nearestNeighbor);
