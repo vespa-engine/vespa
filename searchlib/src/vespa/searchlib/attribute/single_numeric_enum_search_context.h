@@ -19,6 +19,8 @@ public:
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EnumIndices = std::span<const AtomicEntryRef>;
     SingleNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, EnumIndices enum_indices, const EnumStoreT<T>& enum_store);
+    SingleNumericEnumSearchContext(SingleNumericEnumSearchContext&& rhs) noexcept = default;
+    ~SingleNumericEnumSearchContext() override;
 };
 
 }

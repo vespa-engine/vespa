@@ -3,7 +3,7 @@
 #pragma once
 
 #include "multi_numeric_enum_search_context.h"
-#include "multi_enum_search_context.hpp"
+#include "multi_enum_search_context.h"
 
 namespace search::attribute {
 
@@ -12,5 +12,8 @@ MultiNumericEnumSearchContext<T, M>::MultiNumericEnumSearchContext(std::unique_p
     : MultiEnumSearchContext<T, NumericSearchContext<NumericRangeMatcher<T>>, M>(NumericRangeMatcher<T>(*qTerm), toBeSearched, mv_mapping_read_view, enum_store)
 {
 }
+
+template <typename T, typename M>
+MultiNumericEnumSearchContext<T, M>::~MultiNumericEnumSearchContext() = default;
 
 }

@@ -32,6 +32,8 @@ protected:
 
 public:
     SingleEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched, EnumIndices enum_indices, const EnumStoreT<T>& enum_store);
+    SingleEnumSearchContext(SingleEnumSearchContext&& rhs) noexcept = default;
+    ~SingleEnumSearchContext() override;
 
     int32_t find(DocId docId, int32_t elemId, int32_t & weight) const {
         if ( elemId != 0) return -1;

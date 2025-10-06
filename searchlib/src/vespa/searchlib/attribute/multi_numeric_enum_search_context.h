@@ -17,6 +17,8 @@ class MultiNumericEnumSearchContext : public MultiEnumSearchContext<T, NumericSe
 {
 public:
     MultiNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<T>& enum_store);
+    MultiNumericEnumSearchContext(MultiNumericEnumSearchContext&& rhs) noexcept = default;
+    ~MultiNumericEnumSearchContext() override;
 };
 
 }
