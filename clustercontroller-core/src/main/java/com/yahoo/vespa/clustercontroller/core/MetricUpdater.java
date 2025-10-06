@@ -17,6 +17,32 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.BooleanSupplier;
 
+import static com.yahoo.vespa.clustercontroller.core.MetricDimensionNames.CLUSTER;
+import static com.yahoo.vespa.clustercontroller.core.MetricDimensionNames.CLUSTER_ID;
+import static com.yahoo.vespa.clustercontroller.core.MetricDimensionNames.CONTROLLER_INDEX;
+import static com.yahoo.vespa.clustercontroller.core.MetricDimensionNames.DID_WORK;
+import static com.yahoo.vespa.clustercontroller.core.MetricDimensionNames.NODE_TYPE;
+import static com.yahoo.vespa.clustercontroller.core.MetricDimensionNames.WORK_ID;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.AGREED_MASTER_VOTES;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.AVAILABLE_NODES_RATIO;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.BUSY_TICK_TIME_MS;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.CLUSTER_BUCKETS_OUT_OF_SYNC_RATIO;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.CLUSTER_CONTROLLER;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.CLUSTER_STATE_CHANGE;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.IDLE_TICK_TIME_MS;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.IS_MASTER;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.NODES_NOT_CONVERGED;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.NODE_EVENT;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.REMOTE_TASK_QUEUE_SIZE;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.ResourceUsage.DISK_LIMIT;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.ResourceUsage.MAX_DISK_UTILIZATION;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.ResourceUsage.MAX_MEMORY_UTILIZATION;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.ResourceUsage.MEMORY_LIMIT;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.ResourceUsage.NODES_ABOVE_LIMIT;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.STORED_DOCUMENT_BYTES;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.STORED_DOCUMENT_COUNT;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.WORK_MS;
+
 public class MetricUpdater {
 
     private final ComponentMetricReporter metricReporter;
@@ -27,10 +53,10 @@ public class MetricUpdater {
     private Duration stateVersionConvergenceGracePeriod = Duration.ofSeconds(30);
 
     public MetricUpdater(MetricReporter metricReporter, Timer timer, int controllerIndex, String clusterName) {
-        this.metricReporter = new ComponentMetricReporter(metricReporter, "cluster-controller.");
-        this.metricReporter.addDimension("controller-index", String.valueOf(controllerIndex));
-        this.metricReporter.addDimension("cluster", clusterName);
-        this.metricReporter.addDimension("clusterid", clusterName);
+        this.metricReporter = new ComponentMetricReporter(metricReporter, "%s.".formatted(CLUSTER_CONTROLLER));
+        this.metricReporter.addDimension(CONTROLLER_INDEX, String.valueOf(controllerIndex));
+        this.metricReporter.addDimension(CLUSTER, clusterName);
+        this.metricReporter.addDimension(CLUSTER_ID, clusterName);
         this.timer = timer;
     }
 
@@ -62,7 +88,7 @@ public class MetricUpdater {
         int effectiveStateVersion = (state.getVersion() > 0) ? state.getVersion() : -1;
         boolean convergenceDeadlinePassed = lastStateBroadcastTimePoint.plus(stateVersionConvergenceGracePeriod).isBefore(now);
         for (NodeType type : NodeType.getTypes()) {
-            dimensions.put("node-type", type.toString().toLowerCase());
+            dimensions.put(NODE_TYPE, type.toString().toLowerCase());
             MetricReporter.Context context = createContext(dimensions);
             Map<State, Integer> nodeCounts = new HashMap<>();
             for (State s : State.values()) {
@@ -88,18 +114,18 @@ public class MetricUpdater {
 
             final int availableNodes = nodesInAvailableState(nodeCounts);
             final int totalNodes = Math.max(cluster.getConfiguredNodes().size(), 1); // Assumes 1-1 between distributor and storage
-            metricReporter.set("available-nodes.ratio", (double)availableNodes / totalNodes, context);
-            metricReporter.set("nodes-not-converged", nodesNotConverged, context);
+            metricReporter.set(AVAILABLE_NODES_RATIO, (double)availableNodes / totalNodes, context);
+            metricReporter.set(NODES_NOT_CONVERGED, nodesNotConverged, context);
         }
-        dimensions.remove("node-type");
+        dimensions.remove(NODE_TYPE);
         MetricReporter.Context context = createContext(dimensions);
-        metricReporter.add("cluster-state-change", 1, context);
+        metricReporter.add(CLUSTER_STATE_CHANGE, 1, context);
 
-        metricReporter.set("resource_usage.max_disk_utilization", resourceUsage.getMaxDiskUtilization(), context);
-        metricReporter.set("resource_usage.max_memory_utilization", resourceUsage.getMaxMemoryUtilization(), context);
-        metricReporter.set("resource_usage.nodes_above_limit", resourceUsage.getNodesAboveLimit(), context);
-        metricReporter.set("resource_usage.disk_limit", resourceUsage.getDiskLimit(), context);
-        metricReporter.set("resource_usage.memory_limit", resourceUsage.getMemoryLimit(), context);
+        metricReporter.set(MAX_DISK_UTILIZATION, resourceUsage.getMaxDiskUtilization(), context);
+        metricReporter.set(MAX_MEMORY_UTILIZATION, resourceUsage.getMaxMemoryUtilization(), context);
+        metricReporter.set(NODES_ABOVE_LIMIT, resourceUsage.getNodesAboveLimit(), context);
+        metricReporter.set(DISK_LIMIT, resourceUsage.getDiskLimit(), context);
+        metricReporter.set(MEMORY_LIMIT, resourceUsage.getMemoryLimit(), context);
     }
 
     public void updateMasterElectionMetrics(Map<Integer, Integer> data) {
@@ -113,11 +139,11 @@ public class MetricUpdater {
             throw new IllegalStateException("Assumed smallest count is sorted first");
         }
         int maxCount = counts.isEmpty() ? 0 : counts.last();
-        metricReporter.set("agreed-master-votes", maxCount);
+        metricReporter.set(AGREED_MASTER_VOTES, maxCount);
     }
 
     public void updateMasterState(boolean isMaster) {
-        metricReporter.set("is-master", isMaster ? 1 : 0);
+        metricReporter.set(IS_MASTER, isMaster ? 1 : 0);
         if (!isMaster) {
             // Metric gauge values are "sticky" once set, which potentially causes
             // max-aggregation of metrics across cluster controllers to return stale
@@ -129,46 +155,46 @@ public class MetricUpdater {
 
     private void resetNodeStateAndResourceUsageMetricsToZero() {
         for (NodeType type : NodeType.getTypes()) {
-            Map<String, String> dimensions = Map.of("node-type", type.toString().toLowerCase());
+            Map<String, String> dimensions = Map.of(NODE_TYPE, type.toString().toLowerCase());
             MetricReporter.Context context = createContext(dimensions);
             for (State s : State.values()) {
                 String name = s.toString().toLowerCase() + ".count";
                 metricReporter.set(name, 0, context);
             }
-            metricReporter.set("nodes-not-converged", 0, context);
+            metricReporter.set(NODES_NOT_CONVERGED, 0, context);
         }
         MetricReporter.Context context = createContext(Map.of());
-        metricReporter.set("resource_usage.max_disk_utilization", 0.0, context);
-        metricReporter.set("resource_usage.max_memory_utilization", 0.0, context);
-        metricReporter.set("resource_usage.nodes_above_limit", 0, context);
-        metricReporter.set("resource_usage.disk_limit", 0.0, context);
-        metricReporter.set("resource_usage.memory_limit", 0.0, context);
+        metricReporter.set(MAX_DISK_UTILIZATION, 0.0, context);
+        metricReporter.set(MAX_MEMORY_UTILIZATION, 0.0, context);
+        metricReporter.set(NODES_ABOVE_LIMIT, 0, context);
+        metricReporter.set(DISK_LIMIT, 0.0, context);
+        metricReporter.set(MEMORY_LIMIT, 0.0, context);
     }
 
     public void updateClusterBucketsOutOfSyncRatio(double ratio) {
-        metricReporter.set("cluster-buckets-out-of-sync-ratio", ratio);
+        metricReporter.set(CLUSTER_BUCKETS_OUT_OF_SYNC_RATIO, ratio);
     }
 
     public void updateClusterDocumentMetrics(long docsTotal, long bytesTotal) {
-        metricReporter.set("stored-document-count", docsTotal);
-        metricReporter.set("stored-document-bytes", bytesTotal);
+        metricReporter.set(STORED_DOCUMENT_COUNT, docsTotal);
+        metricReporter.set(STORED_DOCUMENT_BYTES, bytesTotal);
     }
 
     public void addTickTime(long millis, boolean didWork) {
         if (didWork) {
-            metricReporter.set("busy-tick-time-ms", millis);
+            metricReporter.set(BUSY_TICK_TIME_MS, millis);
         } else {
-            metricReporter.set("idle-tick-time-ms", millis);
+            metricReporter.set(IDLE_TICK_TIME_MS, millis);
         }
     }
 
     public void recordNewNodeEvent() {
         // TODO(hakonhall): Replace add() with a persistent aggregate metric.
-        metricReporter.add("node-event", 1);
+        metricReporter.add(NODE_EVENT, 1);
     }
 
     public void updateRemoteTaskQueueSize(int size) {
-        metricReporter.set("remote-task-queue.size", size);
+        metricReporter.set(REMOTE_TASK_QUEUE_SIZE, size);
     }
 
     public boolean forWork(String workId, BooleanSupplier work) {
@@ -176,9 +202,9 @@ public class MetricUpdater {
         boolean didWork = work.getAsBoolean();
         double seconds = Duration.ofNanos(System.nanoTime() - startNanos).toMillis() / 1000.;
 
-        MetricReporter.Context context = createContext(Map.of("didWork", Boolean.toString(didWork),
-                                                              "workId", workId));
-        metricReporter.set("work-ms", seconds, context);
+        MetricReporter.Context context = createContext(Map.of(DID_WORK, Boolean.toString(didWork),
+                                                              WORK_ID, workId));
+        metricReporter.set(WORK_MS, seconds, context);
 
         return didWork;
     }

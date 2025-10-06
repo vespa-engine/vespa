@@ -11,6 +11,20 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 
+import static com.yahoo.vespa.clustercontroller.core.MetricDimensionNames.CLUSTER;
+import static com.yahoo.vespa.clustercontroller.core.MetricDimensionNames.CLUSTER_ID;
+import static com.yahoo.vespa.clustercontroller.core.MetricDimensionNames.CONTROLLER_INDEX;
+import static com.yahoo.vespa.clustercontroller.core.MetricDimensionNames.NODE_TYPE;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.AVAILABLE_NODES_RATIO;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.CLUSTER_CONTROLLER;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.NODES_NOT_CONVERGED;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.ResourceUsage.DISK_LIMIT;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.ResourceUsage.MAX_DISK_UTILIZATION;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.ResourceUsage.MAX_MEMORY_UTILIZATION;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.ResourceUsage.MEMORY_LIMIT;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.ResourceUsage.NODES_ABOVE_LIMIT;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.STORED_DOCUMENT_BYTES;
+import static com.yahoo.vespa.clustercontroller.core.MetricNames.STORED_DOCUMENT_COUNT;
 import static com.yahoo.vespa.clustercontroller.core.matchers.HasMetricContext.hasMetricContext;
 import static com.yahoo.vespa.clustercontroller.core.matchers.HasMetricContext.withDimension;
 import static org.hamcrest.Matchers.closeTo;
@@ -47,17 +61,21 @@ public class MetricReporterTest {
 
     private static HasMetricContext.Dimension[] withClusterDimension() {
         // Dimensions that are always present
-        HasMetricContext.Dimension controllerDim = withDimension("controller-index", "0");
-        HasMetricContext.Dimension clusterDim = withDimension("cluster", CLUSTER_NAME);
-        HasMetricContext.Dimension clusteridDim = withDimension("clusterid", CLUSTER_NAME);
+        HasMetricContext.Dimension controllerDim = withDimension(CONTROLLER_INDEX, "0");
+        HasMetricContext.Dimension clusterDim = withDimension(CLUSTER, CLUSTER_NAME);
+        HasMetricContext.Dimension clusteridDim = withDimension(CLUSTER_ID, CLUSTER_NAME);
         return new HasMetricContext.Dimension[] { controllerDim, clusterDim, clusteridDim };
     }
 
     private static HasMetricContext.Dimension[] withNodeTypeDimension(String type) {
         // Node type-specific dimension
-        HasMetricContext.Dimension nodeType = withDimension("node-type", type);
+        HasMetricContext.Dimension nodeType = withDimension(NODE_TYPE, type);
         var otherDims = withClusterDimension();
         return new HasMetricContext.Dimension[] { otherDims[0], otherDims[1], otherDims[2], nodeType };
+    }
+
+    private static String metricName(String subName) {
+        return "%s.%s".formatted(CLUSTER_CONTROLLER, subName);
     }
 
     @Test
@@ -67,15 +85,15 @@ public class MetricReporterTest {
                 ClusterState.stateFromString("distributor:10 .1.s:d storage:9 .1.s:d .2.s:m .4.s:d"),
                 new ResourceUsageStats(), Instant.ofEpochMilli(12345));
 
-        verify(f.mockReporter).set(eq("cluster-controller.up.count"), eq(9),
+        verify(f.mockReporter).set(eq(metricName("up.count")), eq(9),
                 argThat(hasMetricContext(withNodeTypeDimension("distributor"))));
-        verify(f.mockReporter).set(eq("cluster-controller.up.count"), eq(6),
+        verify(f.mockReporter).set(eq(metricName("up.count")), eq(6),
                 argThat(hasMetricContext(withNodeTypeDimension("storage"))));
-        verify(f.mockReporter).set(eq("cluster-controller.down.count"), eq(1),
+        verify(f.mockReporter).set(eq(metricName("down.count")), eq(1),
                 argThat(hasMetricContext(withNodeTypeDimension("distributor"))));
-        verify(f.mockReporter).set(eq("cluster-controller.down.count"), eq(3),
+        verify(f.mockReporter).set(eq(metricName("down.count")), eq(3),
                 argThat(hasMetricContext(withNodeTypeDimension("storage"))));
-        verify(f.mockReporter).set(eq("cluster-controller.maintenance.count"), eq(1),
+        verify(f.mockReporter).set(eq(metricName("maintenance.count")), eq(1),
                 argThat(hasMetricContext(withNodeTypeDimension("storage"))));
     }
 
@@ -84,11 +102,11 @@ public class MetricReporterTest {
         f.metricUpdater.updateClusterStateMetrics(f.clusterFixture.cluster(), ClusterState.stateFromString(clusterState),
                 new ResourceUsageStats(), Instant.ofEpochMilli(12345));
 
-        verify(f.mockReporter).set(eq("cluster-controller.available-nodes.ratio"),
+        verify(f.mockReporter).set(eq(metricName(AVAILABLE_NODES_RATIO)),
                 doubleThat(closeTo(distributorRatio, 0.0001)),
                 argThat(hasMetricContext(withNodeTypeDimension("distributor"))));
 
-        verify(f.mockReporter).set(eq("cluster-controller.available-nodes.ratio"),
+        verify(f.mockReporter).set(eq(metricName(AVAILABLE_NODES_RATIO)),
                 doubleThat(closeTo(storageRatio, 0.0001)),
                 argThat(hasMetricContext(withNodeTypeDimension("storage"))));
     }
@@ -121,23 +139,23 @@ public class MetricReporterTest {
                 ClusterState.stateFromString("distributor:10 storage:10"),
                 new ResourceUsageStats(0.5, 0.6, 5, 0.7, 0.8), Instant.ofEpochMilli(12345));
 
-        verify(f.mockReporter).set(eq("cluster-controller.resource_usage.max_disk_utilization"),
+        verify(f.mockReporter).set(eq(metricName(MAX_DISK_UTILIZATION)),
                 doubleThat(closeTo(0.5, 0.0001)),
                 argThat(hasMetricContext(withClusterDimension())));
 
-        verify(f.mockReporter).set(eq("cluster-controller.resource_usage.max_memory_utilization"),
+        verify(f.mockReporter).set(eq(metricName(MAX_MEMORY_UTILIZATION)),
                 doubleThat(closeTo(0.6, 0.0001)),
                 argThat(hasMetricContext(withClusterDimension())));
 
-        verify(f.mockReporter).set(eq("cluster-controller.resource_usage.nodes_above_limit"),
+        verify(f.mockReporter).set(eq(metricName(NODES_ABOVE_LIMIT)),
                 eq(5),
                 argThat(hasMetricContext(withClusterDimension())));
 
-        verify(f.mockReporter).set(eq("cluster-controller.resource_usage.disk_limit"),
+        verify(f.mockReporter).set(eq(metricName(DISK_LIMIT)),
                 doubleThat(closeTo(0.7, 0.0001)),
                 argThat(hasMetricContext(withClusterDimension())));
 
-        verify(f.mockReporter).set(eq("cluster-controller.resource_usage.memory_limit"),
+        verify(f.mockReporter).set(eq(metricName(MEMORY_LIMIT)),
                 doubleThat(closeTo(0.8, 0.0001)),
                 argThat(hasMetricContext(withClusterDimension())));
     }
@@ -184,9 +202,9 @@ public class MetricReporterTest {
                     ClusterState.stateFromString(stateString),
                     new ResourceUsageStats(), stateBroadcastTime);
 
-            verify(mockReporter).set(eq("cluster-controller.nodes-not-converged"), eq(expectedDistr),
+            verify(mockReporter).set(eq(metricName(NODES_NOT_CONVERGED)), eq(expectedDistr),
                     argThat(hasMetricContext(withNodeTypeDimension("distributor"))));
-            verify(mockReporter).set(eq("cluster-controller.nodes-not-converged"), eq(expectedStorage),
+            verify(mockReporter).set(eq(metricName(NODES_NOT_CONVERGED)), eq(expectedStorage),
                     argThat(hasMetricContext(withNodeTypeDimension("storage"))));
         }
 
@@ -225,8 +243,8 @@ public class MetricReporterTest {
         f.metricUpdater.updateClusterDocumentMetrics(12345, 6789000);
 
         // Metric dimensions are set indirectly via the metric updater's default context
-        verify(f.mockReporter).set(eq("cluster-controller.stored-document-count"), eq(12345L), any());
-        verify(f.mockReporter).set(eq("cluster-controller.stored-document-bytes"), eq(6789000L), any());
+        verify(f.mockReporter).set(eq(metricName(STORED_DOCUMENT_COUNT)), eq(12345L), any());
+        verify(f.mockReporter).set(eq(metricName(STORED_DOCUMENT_BYTES)), eq(6789000L), any());
     }
 
     @Test
@@ -235,33 +253,33 @@ public class MetricReporterTest {
         f.metricUpdater.updateMasterState(false);
 
         // Node state counts are reset
-        verify(f.mockReporter).set(eq("cluster-controller.up.count"), eq(0),
+        verify(f.mockReporter).set(eq(metricName("up.count")), eq(0),
                 argThat(hasMetricContext(withNodeTypeDimension("distributor"))));
-        verify(f.mockReporter).set(eq("cluster-controller.up.count"), eq(0),
+        verify(f.mockReporter).set(eq(metricName("up.count")), eq(0),
                 argThat(hasMetricContext(withNodeTypeDimension("storage"))));
-        verify(f.mockReporter).set(eq("cluster-controller.down.count"), eq(0),
+        verify(f.mockReporter).set(eq(metricName("down.count")), eq(0),
                 argThat(hasMetricContext(withNodeTypeDimension("distributor"))));
-        verify(f.mockReporter).set(eq("cluster-controller.down.count"), eq(0),
+        verify(f.mockReporter).set(eq(metricName("down.count")), eq(0),
                 argThat(hasMetricContext(withNodeTypeDimension("storage"))));
-        verify(f.mockReporter).set(eq("cluster-controller.maintenance.count"), eq(0),
+        verify(f.mockReporter).set(eq(metricName("maintenance.count")), eq(0),
                 argThat(hasMetricContext(withNodeTypeDimension("storage"))));
 
         // Non-convergence metrics are reset
-        verify(f.mockReporter).set(eq("cluster-controller.nodes-not-converged"), eq(0),
+        verify(f.mockReporter).set(eq(metricName(NODES_NOT_CONVERGED)), eq(0),
                 argThat(hasMetricContext(withNodeTypeDimension("distributor"))));
-        verify(f.mockReporter).set(eq("cluster-controller.nodes-not-converged"), eq(0),
+        verify(f.mockReporter).set(eq(metricName(NODES_NOT_CONVERGED)), eq(0),
                 argThat(hasMetricContext(withNodeTypeDimension("storage"))));
 
         // Resource usage metrics are reset
-        verify(f.mockReporter).set(eq("cluster-controller.resource_usage.max_disk_utilization"), eq(0.0),
+        verify(f.mockReporter).set(eq(metricName(MAX_DISK_UTILIZATION)), eq(0.0),
                 argThat(hasMetricContext(withClusterDimension())));
-        verify(f.mockReporter).set(eq("cluster-controller.resource_usage.max_memory_utilization"), eq(0.0),
+        verify(f.mockReporter).set(eq(metricName(MAX_MEMORY_UTILIZATION)), eq(0.0),
                 argThat(hasMetricContext(withClusterDimension())));
-        verify(f.mockReporter).set(eq("cluster-controller.resource_usage.nodes_above_limit"), eq(0),
+        verify(f.mockReporter).set(eq(metricName(NODES_ABOVE_LIMIT)), eq(0),
                 argThat(hasMetricContext(withClusterDimension())));
-        verify(f.mockReporter).set(eq("cluster-controller.resource_usage.disk_limit"), eq(0.0),
+        verify(f.mockReporter).set(eq(metricName(DISK_LIMIT)), eq(0.0),
                 argThat(hasMetricContext(withClusterDimension())));
-        verify(f.mockReporter).set(eq("cluster-controller.resource_usage.memory_limit"), eq(0.0),
+        verify(f.mockReporter).set(eq(metricName(MEMORY_LIMIT)), eq(0.0),
                 argThat(hasMetricContext(withClusterDimension())));
     }
 
