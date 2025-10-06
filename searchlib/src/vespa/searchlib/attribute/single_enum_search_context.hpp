@@ -17,6 +17,9 @@ SingleEnumSearchContext<T, BaseSC>::SingleEnumSearchContext(typename BaseSC::Mat
 }
 
 template <typename T, typename BaseSC>
+SingleEnumSearchContext<T, BaseSC>::~SingleEnumSearchContext() = default;
+
+template <typename T, typename BaseSC>
 std::unique_ptr<queryeval::SearchIterator>
 SingleEnumSearchContext<T, BaseSC>::createFilterIterator(fef::TermFieldMatchData* matchData, bool strict)
 {

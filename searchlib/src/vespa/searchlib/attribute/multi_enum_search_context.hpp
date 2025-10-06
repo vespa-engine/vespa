@@ -17,6 +17,9 @@ MultiEnumSearchContext<T, BaseSC, M>::MultiEnumSearchContext(typename BaseSC::Ma
 }
 
 template <typename T, typename BaseSC, typename M>
+MultiEnumSearchContext<T, BaseSC, M>::~MultiEnumSearchContext() = default;
+
+template <typename T, typename BaseSC, typename M>
 std::unique_ptr<queryeval::SearchIterator>
 MultiEnumSearchContext<T, BaseSC, M>::createFilterIterator(fef::TermFieldMatchData* matchData, bool strict)
 {

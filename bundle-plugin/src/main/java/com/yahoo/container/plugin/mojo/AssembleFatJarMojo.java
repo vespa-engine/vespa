@@ -38,6 +38,7 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 
 /**
  * Wrapper around maven-shade-plugin's {@link DefaultShader} for packaging Vespa fat jars for `$VESPA_HOME/lib/jars`.
@@ -54,7 +55,7 @@ public class AssembleFatJarMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}")
     public MavenProject project;
 
-    @Component
+    @Inject
     public DependencyGraphBuilder dependencyGraphBuilder;
 
     @Parameter(defaultValue = "${project.artifactId}-jar-with-dependencies")

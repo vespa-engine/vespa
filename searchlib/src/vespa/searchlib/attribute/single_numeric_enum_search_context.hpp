@@ -3,7 +3,7 @@
 #pragma once
 
 #include "single_numeric_enum_search_context.h"
-#include "single_enum_search_context.hpp"
+#include "single_enum_search_context.h"
 
 namespace search::attribute {
 
@@ -12,5 +12,8 @@ SingleNumericEnumSearchContext<T>::SingleNumericEnumSearchContext(std::unique_pt
     : SingleEnumSearchContext<T, NumericSearchContext<NumericRangeMatcher<T>>>(NumericRangeMatcher<T>(*qTerm, true), toBeSearched, enum_indices, enum_store)
 {
 }
+
+template <typename T>
+SingleNumericEnumSearchContext<T>::~SingleNumericEnumSearchContext() = default;
 
 }

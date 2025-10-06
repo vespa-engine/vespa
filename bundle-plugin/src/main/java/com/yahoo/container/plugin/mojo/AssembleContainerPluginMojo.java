@@ -4,7 +4,6 @@ package com.yahoo.container.plugin.mojo;
 import com.yahoo.container.plugin.util.Artifacts;
 import org.apache.maven.model.Build;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
@@ -17,6 +16,7 @@ import java.nio.file.Paths;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.jar.JarFile;
+import javax.inject.Inject;
 
 /**
  * @author Tony Vaagenes
@@ -29,7 +29,7 @@ public class AssembleContainerPluginMojo extends AbstractAssembleBundleMojo {
         WITH, WITHOUT
     }
 
-    @Component
+    @Inject
     private MavenProjectHelper projectHelper;
 
     @Parameter(alias = "UseCommonAssemblyIds", defaultValue = "false")

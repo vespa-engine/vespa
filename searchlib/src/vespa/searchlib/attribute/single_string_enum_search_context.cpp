@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "single_string_enum_search_context.h"
-#include "single_enum_search_context.hpp"
+#include "single_enum_search_context.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 
 namespace search::attribute {

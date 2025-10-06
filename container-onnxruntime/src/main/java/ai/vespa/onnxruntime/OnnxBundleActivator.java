@@ -22,6 +22,7 @@ public class OnnxBundleActivator implements BundleActivator {
     private static final String[] LIBRARY_NAMES = { "onnxruntime", "onnxruntime4j_jni" };
     private static final Logger log = Logger.getLogger(OnnxBundleActivator.class.getName());
 
+    @SuppressWarnings("restricted")
     @Override
     public void start(BundleContext ctx) {
         String skipAll = OnnxBundleActivator.class.getSimpleName() + SKIP_SUFFIX;

@@ -27,6 +27,7 @@ import org.osgi.resource.Wire;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.cert.X509Certificate;
@@ -63,10 +64,10 @@ public final class ClassLoaderOsgiFramework implements OsgiFramework {
     public List<Bundle> installBundle(String bundleLocation) {
         if (bundleLocation != null && ! bundleLocation.isEmpty()) {
             try {
-                URL url = new URL(bundleLocation);
+                URL url = new URI(bundleLocation).toURL();
                 bundleLocations.add(url);
                 bundleList.add(new JarBundleImpl(url));
-            } catch (IOException e) {
+            } catch (java.net.URISyntaxException|IOException e) {
                 throw new RuntimeException(e);
             }
         }

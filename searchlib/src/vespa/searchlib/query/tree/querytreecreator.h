@@ -18,7 +18,7 @@ struct QueryTreeCreator {
         return QueryReplicator<NodeTypes>().replicate(node);
     }
 
-    static Node::UP create(search::SimpleQueryStackDumpIterator &iterator) {
+    static Node::UP create(search::QueryStackIterator &iterator) {
         return StackDumpQueryCreator<NodeTypes>().create(iterator);
     }
 

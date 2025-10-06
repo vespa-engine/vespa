@@ -271,9 +271,20 @@ public class StreamingJsonLinesResponseTest {
     @Test
     void message_is_rendered_as_own_line() throws IOException {
         var f = new Fixture();
-        f.jsonlResponse.writeMessage("'ello, 'ello, this is London");
+        f.jsonlResponse.writeMessage("'ello, 'ello, this is London", StreamableJsonResponse.MessageSeverity.INFO);
+        f.jsonlResponse.writeMessage("seagulls incoming", StreamableJsonResponse.MessageSeverity.WARNING);
+        f.jsonlResponse.writeMessage("seagulls have arrived, flee for your lives", StreamableJsonResponse.MessageSeverity.ERROR);
+
         String expected = """
-                {"message":"'ello, 'ello, this is London"}
+                {"message":{"text":"'ello, 'ello, this is London","severity":"info"}}
+                """;
+        verify(f.writer).write(expected, null);
+        expected = """
+                {"message":{"text":"seagulls incoming","severity":"warning"}}
+                """;
+        verify(f.writer).write(expected, null);
+        expected = """
+                {"message":{"text":"seagulls have arrived, flee for your lives","severity":"error"}}
                 """;
         verify(f.writer).write(expected, null);
     }

@@ -30,6 +30,7 @@ private:
 
 public:
     MultiNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view);
+    ~MultiNumericSearchContext() override;
     int32_t find(DocId doc, int32_t elemId, int32_t & weight) const {
         auto values(_mv_mapping_read_view.get(doc));
         for (uint32_t i(elemId); i < values.size(); i++) {

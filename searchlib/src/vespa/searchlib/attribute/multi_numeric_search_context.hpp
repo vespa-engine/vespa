@@ -17,6 +17,9 @@ MultiNumericSearchContext<T, M>::MultiNumericSearchContext(std::unique_ptr<Query
 }
 
 template <typename T, typename M>
+MultiNumericSearchContext<T, M>::~MultiNumericSearchContext() = default;
+
+template <typename T, typename M>
 std::unique_ptr<queryeval::SearchIterator>
 MultiNumericSearchContext<T, M>::createFilterIterator(fef::TermFieldMatchData* matchData, bool strict)
 {

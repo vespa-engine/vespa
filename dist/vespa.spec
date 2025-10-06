@@ -33,7 +33,7 @@
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake
 %global _vespa_abseil_cpp_version 20250127.1
-%global _vespa_build_depencencies_version 1.6.5
+%global _vespa_build_depencencies_version 1.6.6
 %global _vespa_gtest_version 1.16.0
 %global _vespa_protobuf_version 5.30.1
 %global _vespa_openblas_version 0.3.27
@@ -171,7 +171,7 @@ Requires: vespa-xxhash >= 0.8.1
 Requires: xxhash-libs >= 0.8.1
 %endif
 %if 0%{?el8}
-Requires: vespa-openssl >= 3.1.7
+Requires: vespa-openssl >= 3.5.4
 %else
 Requires: openssl-libs
 %endif
@@ -197,7 +197,7 @@ Summary: Vespa - The open big data serving engine - C++ libraries
 Requires: %{name}-base-libs = %{version}-%{release}
 Requires: libicu
 %if 0%{?el8}
-Requires: vespa-openssl >= 3.1.7
+Requires: vespa-openssl >= 3.5.4
 %else
 Requires: openssl-libs
 %endif

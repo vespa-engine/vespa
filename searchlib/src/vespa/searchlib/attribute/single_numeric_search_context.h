@@ -29,6 +29,7 @@ private:
 
 public:
     SingleNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, std::span<const T> data);
+    ~SingleNumericSearchContext() override;
     int32_t find(DocId docId, int32_t elemId, int32_t& weight) const {
         if ( elemId != 0) return -1;
         const T v = vespalib::atomic::load_ref_relaxed(_data[docId]);
