@@ -179,6 +179,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains> implements
                                    .keepSegmentAnds(true)
                                    .keepIdeographicPunctuation(true));
         }
+        builder.sendProtobufQuerytree(sendProtobufQuerytree);
     }
 
 }
