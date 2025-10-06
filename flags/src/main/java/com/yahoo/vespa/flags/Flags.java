@@ -246,6 +246,13 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag SEND_PROTOBUF_QUERYTREE = defineFeatureFlag(
+            "send-protobuf-querytree", false,
+            List.of("arnej"), "2025-10-06", "2026-03-31",
+            "If true, send query tree as protobuf instead of legacy format",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     public static final UnboundBooleanFlag MONITORING_JWT = defineFeatureFlag(
             "monitoring-jwt", false,
             List.of("olaa"), "2024-07-05", "2025-11-01",
