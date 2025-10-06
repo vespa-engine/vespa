@@ -964,7 +964,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             if (response.isSuccess()) {
                 callback.onSuccess((response instanceof DocumentResponse) ? ((DocumentResponse) response).getDocument() : null, jsonResponse);
             } else {
-                jsonResponse.writeMessage(response.getTextMessage());
+                jsonResponse.writeMessage(response.getTextMessage(), StreamableJsonResponse.MessageSeverity.ERROR);
                 switch (response.outcome()) {
                     case NOT_FOUND -> jsonResponse.commit(Response.Status.NOT_FOUND);
                     case CONDITION_FAILED -> jsonResponse.commit(Response.Status.PRECONDITION_FAILED);
@@ -1348,7 +1348,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                 case ABORTED:
                                     if (error.get() == null && ! hasVisitedAnyBuckets() && parameters.getVisitInconsistentBuckets()) {
                                         response.writeMessage("No buckets visited within timeout of " +
-                                                              parameters.getSessionTimeoutMs() + "ms (request timeout -5s)");
+                                                              parameters.getSessionTimeoutMs() + "ms (request timeout -5s)",
+                                                              StreamableJsonResponse.MessageSeverity.INFO); // Timeout here is not an error
                                         status = Response.Status.GATEWAY_TIMEOUT;
                                         break;
                                     }
@@ -1367,7 +1368,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                         break;
                                     }
                                 default:
-                                    response.writeMessage(error.get() != null ? error.get() : message != null ? message : "Visiting failed");
+                                    response.writeMessage(error.get() != null ? error.get() : message != null ? message : "Visiting failed",
+                                                          StreamableJsonResponse.MessageSeverity.ERROR);
                             }
                             if ( ! streaming)
                                 response.commit(status, fullyApplied);

@@ -101,7 +101,7 @@ class JsonResponse implements StreamableJsonResponse {
      */
     static JsonResponse createWithPathAndMessage(HttpRequest request, String message, ResponseHandler handler, JsonFormat.EncodeOptions tensorOptions) throws IOException {
         JsonResponse response = createWithPath(request, handler, tensorOptions);
-        response.writeMessage(message);
+        response.writeMessage(message, MessageSeverity.ERROR); // Implied error severity
         return response;
     }
 
@@ -162,9 +162,10 @@ class JsonResponse implements StreamableJsonResponse {
     }
 
     @Override
-    public synchronized void writeMessage(String message) throws IOException {
+    public synchronized void writeMessage(String message, MessageSeverity severity) throws IOException {
         json.writeFieldName(JsonNames.MESSAGE);
         json.writeString(message);
+        // Severity is not included in the legacy format
     }
 
     @Override
