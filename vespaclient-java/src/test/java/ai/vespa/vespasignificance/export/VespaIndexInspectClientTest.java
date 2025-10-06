@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license.
 package ai.vespa.vespasignificance.export;
 
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,11 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Testing process handling in {@code VespaIndexInspectClient.DumpWordsProcessIterator}
+ *
+ * @author johsol
+ */
 class VespaIndexInspectClientTest {
 
     static class FakeProcess extends Process {
