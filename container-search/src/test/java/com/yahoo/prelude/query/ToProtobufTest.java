@@ -15,12 +15,20 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class ToProtobufTest {
 
-    private String toJson(SearchProtocol.QueryTreeItem item) throws InvalidProtocolBufferException {
-        return JsonFormat.printer().print(item);
+    private String toJson(SearchProtocol.QueryTreeItem item) {
+        try {
+            return JsonFormat.printer().print(item);
+        } catch (InvalidProtocolBufferException e) {
+            throw new IllegalStateException("Failed to convert protobuf to JSON", e);
+        }
     }
 
-    private String toJson(SearchProtocol.TermItemProperties props) throws InvalidProtocolBufferException {
-        return JsonFormat.printer().print(props);
+    private String toJson(SearchProtocol.TermItemProperties props) {
+        try {
+            return JsonFormat.printer().print(props);
+        } catch (InvalidProtocolBufferException e) {
+            throw new IllegalStateException("Failed to convert protobuf to JSON", e);
+        }
     }
 
     private void assertJsonEquals(String actualJson, String expectedJson) {
@@ -36,7 +44,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithWordItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithWordItem() {
         WordItem word = new WordItem("test", "myindex");
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(word);
         assertNotNull(result);
@@ -45,7 +53,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithAndItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithAndItem() {
         AndItem and = new AndItem();
         and.addItem(new WordItem("foo", "myindex"));
         and.addItem(new WordItem("bar", "myindex"));
@@ -66,20 +74,21 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testBuildTermPropertiesWithDefaultValues() throws InvalidProtocolBufferException {
+    void testBuildTermPropertiesWithDefaultValues() {
         WordItem word = new WordItem("test");
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
         assertNotNull(props);
-        String json = toJson(props);
         assertFalse(props.hasItemWeight());
         assertFalse(props.getDoNotRank());
         assertFalse(props.getDoNotUsePositionData());
         assertFalse(props.getDoNotHighlight());
         assertFalse(props.getIsSpecialToken());
+        String json = toJson(props);
+        assertJsonEquals(json, "{}");
     }
 
     @Test
-    void testBuildTermPropertiesWithIndex() throws InvalidProtocolBufferException {
+    void testBuildTermPropertiesWithIndex() {
         WordItem word = new WordItem("test", "myindex");
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
         assertNotNull(props);
@@ -89,7 +98,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testBuildTermPropertiesWithWeight() throws InvalidProtocolBufferException {
+    void testBuildTermPropertiesWithWeight() {
         WordItem word = new WordItem("test", "myindex");
         word.setWeight(200);
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
@@ -100,7 +109,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testBuildTermPropertiesWithUniqueId() throws InvalidProtocolBufferException {
+    void testBuildTermPropertiesWithUniqueId() {
         WordItem word = new WordItem("test", "myindex");
         word.setUniqueID(42);
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
@@ -111,7 +120,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testBuildTermPropertiesWithRankedFalse() throws InvalidProtocolBufferException {
+    void testBuildTermPropertiesWithRankedFalse() {
         WordItem word = new WordItem("test", "myindex");
         word.setRanked(false);
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
@@ -122,7 +131,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testBuildTermPropertiesWithPositionDataFalse() throws InvalidProtocolBufferException {
+    void testBuildTermPropertiesWithPositionDataFalse() {
         WordItem word = new WordItem("test", "myindex");
         word.setPositionData(false);
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
@@ -133,7 +142,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testBuildTermPropertiesWithFilterTrue() throws InvalidProtocolBufferException {
+    void testBuildTermPropertiesWithFilterTrue() {
         WordItem word = new WordItem("test", "myindex");
         word.setFilter(true);
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
@@ -144,7 +153,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testBuildTermPropertiesWithSpecialToken() throws InvalidProtocolBufferException {
+    void testBuildTermPropertiesWithSpecialToken() {
         WordItem word = new WordItem("test", "myindex");
         word.setFromSpecialToken(true);
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
@@ -155,7 +164,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testBuildTermPropertiesWithAllProperties() throws InvalidProtocolBufferException {
+    void testBuildTermPropertiesWithAllProperties() {
         WordItem word = new WordItem("test", "myindex");
         word.setWeight(150);
         word.setUniqueID(99);
@@ -190,7 +199,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testBuildTermPropertiesWithNonIndexedItem() throws InvalidProtocolBufferException {
+    void testBuildTermPropertiesWithNonIndexedItem() {
         OrItem or = new OrItem();
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(or);
         assertNotNull(props);
@@ -199,7 +208,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testBuildTermPropertiesWithPhraseItem() throws InvalidProtocolBufferException {
+    void testBuildTermPropertiesWithPhraseItem() {
         PhraseItem phrase = new PhraseItem("myindex");
         phrase.addItem(new WordItem("foo"));
         phrase.addItem(new WordItem("bar"));
@@ -215,7 +224,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithOrItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithOrItem() {
         OrItem or = new OrItem();
         or.addItem(new WordItem("foo", "myindex"));
         or.addItem(new WordItem("bar", "myindex"));
@@ -236,7 +245,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithNestedComposite() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithNestedComposite() {
         AndItem and = new AndItem();
         OrItem or = new OrItem();
         or.addItem(new WordItem("foo", "myindex"));
@@ -268,7 +277,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithPhraseItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithPhraseItem() {
         PhraseItem phrase = new PhraseItem("myindex");
         phrase.addItem(new WordItem("foo"));
         phrase.addItem(new WordItem("bar"));
@@ -291,7 +300,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithPrefixItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithPrefixItem() {
         PrefixItem prefix = new PrefixItem("test", "myindex");
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(prefix);
         assertNotNull(result);
@@ -308,7 +317,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithRankItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithRankItem() {
         RankItem rank = new RankItem();
         rank.addItem(new WordItem("foo", "myindex"));
         rank.addItem(new WordItem("bar", "myindex"));
@@ -366,7 +375,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithNotItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithNotItem() {
         NotItem not = new NotItem();
         not.addPositiveItem(new WordItem("foo", "myindex"));
         not.addNegativeItem(new WordItem("bar", "myindex"));
@@ -388,7 +397,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithWeakAndItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithWeakAndItem() {
         WeakAndItem weakAnd = new WeakAndItem();
         weakAnd.addItem(new WordItem("foo", "myindex"));
         weakAnd.addItem(new WordItem("bar", "myindex"));
@@ -411,7 +420,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithSameElementItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithSameElementItem() {
         SameElementItem sameElement = new SameElementItem("myfield");
         sameElement.addItem(new WordItem("foo"));
         sameElement.addItem(new WordItem("bar"));
@@ -434,7 +443,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithNearItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithNearItem() {
         NearItem near = new NearItem();
         near.addItem(new WordItem("foo", "myindex"));
         near.addItem(new WordItem("bar", "myindex"));
@@ -457,7 +466,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithONearItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithONearItem() {
         ONearItem onear = new ONearItem();
         onear.addItem(new WordItem("foo", "myindex"));
         onear.addItem(new WordItem("bar", "myindex"));
@@ -480,7 +489,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithEquivItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithEquivItem() {
         EquivItem equiv = new EquivItem();
         equiv.addItem(new WordItem("foo", "myindex"));
         equiv.addItem(new WordItem("bar", "myindex"));
@@ -503,7 +512,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithPhraseSegmentItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithPhraseSegmentItem() {
         PhraseSegmentItem phraseSegment = new PhraseSegmentItem("test", false, false);
         phraseSegment.addItem(new WordItem("foo"));
         phraseSegment.addItem(new WordItem("bar"));
@@ -527,7 +536,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithAndSegmentItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithAndSegmentItem() {
         AndSegmentItem andSegment = new AndSegmentItem("test", false, false);
         andSegment.addItem(new WordItem("foo"));
         andSegment.addItem(new WordItem("bar"));
@@ -550,7 +559,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithWeightedSetItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithWeightedSetItem() {
         WeightedSetItem weightedSet = new WeightedSetItem("myindex");
         weightedSet.addToken("foo", 100);
         weightedSet.addToken("bar", 200);
@@ -573,7 +582,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithDotProductItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithDotProductItem() {
         DotProductItem dotProduct = new DotProductItem("myindex");
         dotProduct.addToken("foo", 100);
         dotProduct.addToken("bar", 200);
@@ -596,7 +605,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithWandItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithWandItem() {
         WandItem wand = new WandItem("myindex", 10);
         wand.addToken("foo", 100);
         wand.addToken("bar", 200);
@@ -621,7 +630,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithSuffixItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithSuffixItem() {
         SuffixItem suffix = new SuffixItem("test");
         suffix.setIndexName("myindex");
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(suffix);
@@ -639,7 +648,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithSubstringItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithSubstringItem() {
         SubstringItem substring = new SubstringItem("test");
         substring.setIndexName("myindex");
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(substring);
@@ -657,7 +666,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithRegExpItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithRegExpItem() {
         RegExpItem regexp = new RegExpItem("myindex", true, "test.*");
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(regexp);
         assertNotNull(result);
@@ -666,7 +675,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithIntItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithIntItem() {
         IntItem intItem = new IntItem("[10;20]", "myindex");
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(intItem);
         assertNotNull(result);
@@ -684,7 +693,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithRangeItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithRangeItem() {
         RangeItem range = new RangeItem(10, 20, "myindex");
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(range);
         assertNotNull(result);
@@ -702,7 +711,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithNumericInItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithNumericInItem() {
         NumericInItem numericIn = new NumericInItem("myindex");
         numericIn.addToken(42L);
         numericIn.addToken(99L);
@@ -722,7 +731,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithStringInItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithStringInItem() {
         StringInItem stringIn = new StringInItem("myindex");
         stringIn.addToken("foo");
         stringIn.addToken("bar");
@@ -742,7 +751,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithBoolItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithBoolItem() {
         BoolItem bool = new BoolItem(true, "myindex");
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(bool);
         assertNotNull(result);
@@ -751,7 +760,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithFuzzyItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithFuzzyItem() {
         FuzzyItem fuzzy = new FuzzyItem("myindex", true, "test", 2, 0, false);
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(fuzzy);
         assertNotNull(result);
@@ -769,7 +778,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithExactStringItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithExactStringItem() {
         ExactStringItem exactString = new ExactStringItem("test");
         exactString.setIndexName("myindex");
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(exactString);
@@ -779,7 +788,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithMarkerWordItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithMarkerWordItem() {
         MarkerWordItem marker = MarkerWordItem.createStartOfHost("myindex");
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(marker);
         assertNotNull(result);
@@ -796,7 +805,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithTrueItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithTrueItem() {
         TrueItem trueItem = new TrueItem();
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(trueItem);
         assertNotNull(result);
@@ -810,7 +819,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithFalseItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithFalseItem() {
         FalseItem falseItem = new FalseItem();
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(falseItem);
         assertNotNull(result);
@@ -824,7 +833,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithWordAlternativesItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithWordAlternativesItem() {
         WordAlternativesItem alternatives = new WordAlternativesItem("myindex", false, null,
                 java.util.List.of(
                     new WordAlternativesItem.Alternative("foo", 1.0),
@@ -848,7 +857,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithWordAlternativesInsidePhrase() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithWordAlternativesInsidePhrase() {
         PhraseItem phrase = new PhraseItem();
         phrase.setIndexName("myindex");
         phrase.addItem(new WordItem("hello"));
@@ -885,7 +894,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithNearestNeighborItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithNearestNeighborItem() {
         NearestNeighborItem nearestNeighbor = new NearestNeighborItem("myvector", "query_vector");
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(nearestNeighbor);
         assertNotNull(result);
@@ -904,7 +913,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithNearestNeighborItemWithOptionalAttributes() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithNearestNeighborItemWithOptionalAttributes() {
         NearestNeighborItem nearestNeighbor = new NearestNeighborItem("myvector", "query_vector");
         nearestNeighbor.setTargetNumHits(100);
         nearestNeighbor.setAllowApproximate(false);
@@ -934,7 +943,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithGeoLocationItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithGeoLocationItem() {
         com.yahoo.prelude.Location location = new com.yahoo.prelude.Location();
         location.setAttribute("myloc");
         location.setGeoCircle(37.4, -122.1, 1000);
@@ -957,7 +966,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithPredicateQueryItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithPredicateQueryItem() {
         PredicateQueryItem predicate = new PredicateQueryItem();
         predicate.addFeature("key", "value");
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(predicate);
@@ -977,7 +986,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithUriItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithUriItem() {
         UriItem uri = new UriItem("myindex");
         uri.addItem(new WordItem("foo"));
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(uri);
@@ -997,7 +1006,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithMultiRangeItem() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithMultiRangeItem() {
         MultiRangeItem<Long> multiRange = MultiRangeItem.overPoints(MultiRangeItem.NumberType.LONG, "myindex",
                                                                      MultiRangeItem.Limit.INCLUSIVE,
                                                                      MultiRangeItem.Limit.INCLUSIVE);
@@ -1011,7 +1020,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithOptionalAttributes() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithOptionalAttributes() {
         WordItem word = new WordItem("test", "myindex");
         word.setWeight(200);
         word.setUniqueID(42);
@@ -1041,7 +1050,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithWeightOnly() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithWeightOnly() {
         WordItem word = new WordItem("test", "myindex");
         word.setWeight(150);
 
@@ -1063,7 +1072,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithUniqueIdOnly() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithUniqueIdOnly() {
         WordItem word = new WordItem("test", "myindex");
         word.setUniqueID(123);
 
@@ -1085,7 +1094,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithPhraseItemAndWeight() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithPhraseItemAndWeight() {
         PhraseItem phrase = new PhraseItem();
         phrase.setIndexName("myindex");
         phrase.addItem(new WordItem("foo"));
@@ -1113,7 +1122,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithEquivItemAndUniqueId() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithEquivItemAndUniqueId() {
         EquivItem equiv = new EquivItem();
         equiv.addItem(new WordItem("foo", "myindex"));
         equiv.addItem(new WordItem("bar", "myindex"));
@@ -1139,7 +1148,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithRankedFalse() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithRankedFalse() {
         WordItem word = new WordItem("test", "myindex");
         word.setRanked(false);
 
@@ -1161,7 +1170,7 @@ public class ToProtobufTest {
     }
 
     @Test
-    void testConvertFromQueryWithFilterTrue() throws InvalidProtocolBufferException {
+    void testConvertFromQueryWithFilterTrue() {
         WordItem word = new WordItem("test", "myindex");
         word.setFilter(true);
 
