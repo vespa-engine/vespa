@@ -186,11 +186,16 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
     }
 
     @Override
-    public void writeMessage(String message) throws IOException {
+    public void writeMessage(String message, MessageSeverity severity) throws IOException {
         writeJsonLine((json) -> {
             json.writeStartObject();
             json.writeFieldName(JsonNames.MESSAGE);
+            json.writeStartObject();
+            json.writeFieldName(JsonNames.TEXT);
             json.writeString(message);
+            json.writeFieldName(JsonNames.SEVERITY);
+            json.writeString(severity.jsonValue());
+            json.writeEndObject();
             json.writeEndObject();
         });
     }

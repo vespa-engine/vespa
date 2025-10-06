@@ -25,7 +25,18 @@ interface StreamableJsonResponse extends AutoCloseable {
     void reportUpdatedContinuation(Supplier<VisitorContinuation> continuationSupplier) throws IOException;
     void writeEpilogueContinuation(VisitorContinuation continuation) throws IOException;
     void writeTrace(Trace trace) throws IOException;
-    void writeMessage(String message) throws IOException;
+
+    enum MessageSeverity {
+        INFO("info"),
+        WARNING("warning"),
+        ERROR("error");
+
+        private final String jsonValue;
+        MessageSeverity(String jsonValue) { this.jsonValue = jsonValue; }
+        public String jsonValue() { return jsonValue; }
+    }
+
+    void writeMessage(String message, MessageSeverity severity) throws IOException;
     void writeDocumentCount(long count) throws IOException;
     void close() throws IOException; // Narrowed exception specifier
 }
