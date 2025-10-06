@@ -201,6 +201,46 @@ public class Json implements Iterable<Json> {
                 '}';
     }
 
+    /**
+     * Parse JSON into slime structures and compare for equivalence.
+     * @param explainWhyNot if true, print a message on stderr explaining why
+     *                      jsonA and jsonB are not equivalent.
+     * @throws IllegalArgumentException if jsonA or jsonB cannot be parsed.
+     */
+    public static boolean equivalent(String jsonA, String jsonB, boolean explainWhyNot) {
+	return equivalent(Json.of(jsonA), jsonB, explainWhyNot);
+    }
+    /** Compare JSON for equivalence. */
+    public static boolean equivalent(Json jsonA, String jsonB, boolean explainWhyNot) {
+	return equivalent(jsonA, Json.of(jsonB), explainWhyNot);
+    }
+    /** Compare JSON for equivalence. */
+    public static boolean equivalent(Json jsonA, Json jsonB, boolean explainWhyNot) {
+	return equivalent(jsonA.inspector, jsonB.inspector, explainWhyNot);
+    }
+    /** Compare JSON for equivalence. */
+    public static boolean equivalent(Inspector jsonA, String jsonB, boolean explainWhyNot) {
+	return equivalent(jsonA, Json.of(jsonB), explainWhyNot);
+    }
+    /** Compare JSON for equivalence. */
+    public static boolean equivalent(Inspector jsonA, Json jsonB, boolean explainWhyNot) {
+	return equivalent(jsonA, jsonB.inspector, explainWhyNot);
+    }
+    /**
+     * Compare JSON for equivalence.
+     * @param explainWhyNot if true, print pretty-printed JSON to stderr explaining why
+     *                      jsonA and jsonB are not equivalent.
+     */
+    public static boolean equivalent(Inspector jsonA, Inspector jsonB, boolean explainWhyNot) {
+        boolean result = SlimeUtils.equalTo(jsonA, jsonB);
+        if (!result && explainWhyNot) {
+            System.err.println("JSON values are not equivalent:");
+            System.err.println("First:  " + SlimeUtils.toJson(jsonA, false));
+            System.err.println("Second: " + SlimeUtils.toJson(jsonB, false));
+        }
+        return result;
+    }
+
     /** Provides a fluent API for building a {@link Slime} instance. */
     public static class Builder {
         protected final Cursor cursor;
