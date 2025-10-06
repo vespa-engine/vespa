@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
@@ -46,6 +47,11 @@ public abstract class PureWeightedItem extends Item {
     @Override
     public void disclose(Discloser discloser) {
         discloser.addProperty("weight", getWeight());
+    }
+
+    @Override
+    SearchProtocol.QueryTreeItem toProtobuf() {
+        throw new UnsupportedOperationException("PureWeightedItem should not serialize itself to protobuf");
     }
 
 }

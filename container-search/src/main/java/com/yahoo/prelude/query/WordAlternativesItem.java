@@ -164,7 +164,7 @@ public class WordAlternativesItem extends TermItem {
         var builder = SearchProtocol.ItemWordAlternatives.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this));
         for (Alternative alt : alternatives) {
-            var weightedString = SearchProtocol.ItemPureWeightedString.newBuilder()
+            var weightedString = SearchProtocol.PureWeightedString.newBuilder()
                     .setWeight((int) (getWeight() * alt.exactness + 0.5))
                     .setValue(alt.word)
                     .build();

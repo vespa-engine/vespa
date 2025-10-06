@@ -39,7 +39,7 @@ public class DotProductItem extends WeightedSetItem {
             builder.setProperties(ToProtobuf.buildTermProperties(this));
             for (var it = getTokens(); it.hasNext();) {
                 var entry = it.next();
-                var weightedLong = SearchProtocol.ItemPureWeightedLong.newBuilder()
+                var weightedLong = SearchProtocol.PureWeightedLong.newBuilder()
                         .setWeight(entry.getValue())
                         .setValue((Long) entry.getKey())
                         .build();
@@ -53,7 +53,7 @@ public class DotProductItem extends WeightedSetItem {
             builder.setProperties(ToProtobuf.buildTermProperties(this));
             for (var it = getTokens(); it.hasNext();) {
                 var entry = it.next();
-                var weightedString = SearchProtocol.ItemPureWeightedString.newBuilder()
+                var weightedString = SearchProtocol.PureWeightedString.newBuilder()
                         .setWeight(entry.getValue())
                         .setValue(entry.getKey().toString())
                         .build();

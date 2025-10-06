@@ -68,14 +68,4 @@ public class PureWeightedString extends PureWeightedItem  {
         discloser.setValue(value);
     }
 
-    @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
-        var builder = SearchProtocol.ItemPureWeightedString.newBuilder();
-        builder.setWeight(getWeight());
-        builder.setValue(value);
-        return SearchProtocol.QueryTreeItem.newBuilder()
-                .setItemPureWeightedString(builder.build())
-                .build();
-    }
-
 }
