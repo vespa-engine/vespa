@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license.
 package ai.vespa.vespasignificance.export;
 
 import org.junit.jupiter.api.Test;
