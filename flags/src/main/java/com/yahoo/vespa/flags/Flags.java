@@ -56,6 +56,13 @@ public class Flags {
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
+    public static final UnboundBooleanFlag NEW_ADDRESS_ALLOCATION = defineFeatureFlag(
+            "new-address-allocation", false,
+            List.of("hakonhall"), "2025-10-06", "2025-11-06",
+            "Whether to use new address allocation during provisioning",
+            "Takes effect on next host being provisioned",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
     public static final UnboundBooleanFlag LOCKED_GCP_PROVISION = defineFeatureFlag(
             "locked-gcp-provision", true,
             List.of("hakonhall"), "2025-08-05", "2025-11-05",
