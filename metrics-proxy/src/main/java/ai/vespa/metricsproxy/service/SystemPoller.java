@@ -25,8 +25,6 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import static java.util.logging.Level.WARNING;
-
 /**
  * Class to get data from the system and update the services at given intervals.
  * TODO: rewrite to use ScheduledExecutorService or just call poll() directly.
@@ -42,6 +40,7 @@ public class SystemPoller {
     private static final MetricId CPU_UTIL = MetricId.toMetricId("cpu_util");
     private static final MetricId MEMORY_VIRT = MetricId.toMetricId("memory_virt");
     private static final MetricId MEMORY_RSS = MetricId.toMetricId("memory_rss");
+    private static final int pageSize = getPageSize();
 
     private final Duration interval;
     private final List<VespaService> services;
@@ -111,10 +110,6 @@ public class SystemPoller {
      * @return array[0] = memoryResident, array[1] = memoryVirtual (both in bytes)
      */
     static long[] getMemoryUsage(VespaService service) {
-        return getMemoryUsage(service, getPageSize());
-    }
-
-    static long[] getMemoryUsage(VespaService service, int pageSize) {
         String s;
         int pid = service.getPid();
 
@@ -310,10 +305,8 @@ public class SystemPoller {
         try {
             return Integer.parseInt(new ProcessExecuter().exec("getconf PAGESIZE").getSecond().trim());
         } catch (IOException e) {
-            log.log(WARNING, "Getting page size failed, using fallback value 4096");
-            return 4096;
+            throw new RuntimeException("Getting page size failed");
         }
     }
-
 
 }
