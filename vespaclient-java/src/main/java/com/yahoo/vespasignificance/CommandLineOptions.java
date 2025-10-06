@@ -31,6 +31,7 @@ public class CommandLineOptions {
     public static final String INDEX_DIR = "index-dir";
     public static final String CLUSTER_OPTION = "cluster";
     public static final String SCHEMA_NAME = "schema";
+    public static final String NODE_INDEX_OPTION = "node-index";
 
     /** Options for selecting subcommand */
     static Options createGlobalOptions() {
@@ -190,6 +191,13 @@ public class CommandLineOptions {
                 .desc("Name of schema")
                 .build());
 
+        options.addOption(Option.builder()
+                .longOpt(NODE_INDEX_OPTION)
+                .hasArg()
+                .argName("n0")
+                .desc("Specify node dir if multiple exists.")
+                .build());
+
         return options;
     }
 
@@ -212,6 +220,7 @@ public class CommandLineOptions {
                 .indexDir(cl.getOptionValue(INDEX_DIR))
                 .clusterName(cl.getOptionValue(CLUSTER_OPTION))
                 .schemaName(cl.getOptionValue(SCHEMA_NAME))
+                .nodeIndex(cl.getOptionValue(NODE_INDEX_OPTION))
                 .build();
     }
 
