@@ -943,4 +943,176 @@ public class ToProtobufTest {
         assertTrue(json.contains("itemOr"), "Expected itemOr in JSON: " + json);
     }
 
+    @Test
+    void testConvertFromQueryWithOptionalAttributes() throws InvalidProtocolBufferException {
+        WordItem word = new WordItem("test", "myindex");
+        word.setWeight(200);
+        word.setUniqueID(42);
+        word.setRanked(false);
+        word.setPositionData(false);
+        word.setFilter(true);
+
+        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(word);
+        assertNotNull(result);
+        String json = toJson(result);
+        String expected = """
+            {
+              "itemWordTerm": {
+                "word": "test",
+                "properties": {
+                  "index": "myindex",
+                  "itemWeight": 200,
+                  "uniqueId": 42,
+                  "doNotRank": true,
+                  "doNotUsePositionData": true,
+                  "doNotHighlight": true
+                }
+              }
+            }
+            """;
+        assertJsonEquals(json, expected);
+    }
+
+    @Test
+    void testConvertFromQueryWithWeightOnly() throws InvalidProtocolBufferException {
+        WordItem word = new WordItem("test", "myindex");
+        word.setWeight(150);
+
+        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(word);
+        assertNotNull(result);
+        String json = toJson(result);
+        String expected = """
+            {
+              "itemWordTerm": {
+                "word": "test",
+                "properties": {
+                  "index": "myindex",
+                  "itemWeight": 150
+                }
+              }
+            }
+            """;
+        assertJsonEquals(json, expected);
+    }
+
+    @Test
+    void testConvertFromQueryWithUniqueIdOnly() throws InvalidProtocolBufferException {
+        WordItem word = new WordItem("test", "myindex");
+        word.setUniqueID(123);
+
+        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(word);
+        assertNotNull(result);
+        String json = toJson(result);
+        String expected = """
+            {
+              "itemWordTerm": {
+                "word": "test",
+                "properties": {
+                  "index": "myindex",
+                  "uniqueId": 123
+                }
+              }
+            }
+            """;
+        assertJsonEquals(json, expected);
+    }
+
+    @Test
+    void testConvertFromQueryWithPhraseItemAndWeight() throws InvalidProtocolBufferException {
+        PhraseItem phrase = new PhraseItem();
+        phrase.setIndexName("myindex");
+        phrase.addItem(new WordItem("foo"));
+        phrase.addItem(new WordItem("bar"));
+        phrase.setWeight(250);
+
+        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(phrase);
+        assertNotNull(result);
+        String json = toJson(result);
+        String expected = """
+            {
+              "itemPhrase": {
+                "properties": {
+                  "index": "myindex",
+                  "itemWeight": 250
+                },
+                "children": [
+                  {"itemWordTerm": {"properties": {"index": "myindex", "itemWeight": 250}, "word": "foo"}},
+                  {"itemWordTerm": {"properties": {"index": "myindex", "itemWeight": 250}, "word": "bar"}}
+                ]
+              }
+            }
+            """;
+        assertJsonEquals(json, expected);
+    }
+
+    @Test
+    void testConvertFromQueryWithEquivItemAndUniqueId() throws InvalidProtocolBufferException {
+        EquivItem equiv = new EquivItem();
+        equiv.addItem(new WordItem("foo", "myindex"));
+        equiv.addItem(new WordItem("bar", "myindex"));
+        equiv.setUniqueID(999);
+
+        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(equiv);
+        assertNotNull(result);
+        String json = toJson(result);
+        String expected = """
+            {
+              "itemEquiv": {
+                "properties": {
+                  "uniqueId": 999
+                },
+                "children": [
+                  {"itemWordTerm": {"properties": {"index": "myindex"}, "word": "foo"}},
+                  {"itemWordTerm": {"properties": {"index": "myindex"}, "word": "bar"}}
+                ]
+              }
+            }
+            """;
+        assertJsonEquals(json, expected);
+    }
+
+    @Test
+    void testConvertFromQueryWithRankedFalse() throws InvalidProtocolBufferException {
+        WordItem word = new WordItem("test", "myindex");
+        word.setRanked(false);
+
+        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(word);
+        assertNotNull(result);
+        String json = toJson(result);
+        String expected = """
+            {
+              "itemWordTerm": {
+                "word": "test",
+                "properties": {
+                  "index": "myindex",
+                  "doNotRank": true
+                }
+              }
+            }
+            """;
+        assertJsonEquals(json, expected);
+    }
+
+    @Test
+    void testConvertFromQueryWithFilterTrue() throws InvalidProtocolBufferException {
+        WordItem word = new WordItem("test", "myindex");
+        word.setFilter(true);
+
+        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(word);
+        assertNotNull(result);
+        String json = toJson(result);
+        String expected = """
+            {
+              "itemWordTerm": {
+                "word": "test",
+                "properties": {
+                  "index": "myindex",
+                  "doNotHighlight": true
+                }
+              }
+            }
+            """;
+        assertJsonEquals(json, expected);
+    }
+
 }
