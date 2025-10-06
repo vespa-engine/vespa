@@ -5,6 +5,7 @@
 #include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
+#include <vespa/searchlib/queryeval/fake_index.h>
 #include <vespa/searchlib/queryeval/test/mock_element_gap_inspector.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
@@ -33,6 +34,7 @@ private:
 
 public:
     MyTerm() = default;
+    MyTerm(const search::queryeval::FakeResult& result) : _result(result) {}
     ~MyTerm() = default;
 
     MyTerm& doc(uint32_t docid) {
@@ -119,6 +121,44 @@ protected:
     void testNearSearch(MyQuery& query, uint32_t matchId, const std::string& label);
     void test_near_search(MyQuery& query, uint32_t matchId, std::optional<std::vector<uint32_t>> exp_element_ids,
                           std::optional<std::vector<uint32_t>> and_element_ids, const std::string& label);
+
+    struct NearSpec {
+        std::string _positive_terms;
+        uint32_t _window;
+        bool _ordered;
+        search::fef::ElementGap _element_gap;
+        NearSearchTest* _test;
+
+        NearSpec(const std::string& positive_terms, uint32_t window, bool ordered, NearSearchTest* test)
+            : _positive_terms(positive_terms), _window(window), _ordered(ordered), _test(test) {}
+
+        NearSpec& element_gap(uint32_t gap) {
+            _element_gap = gap;
+            return *this;
+        }
+
+        std::string make_label() const {
+            std::string label = _ordered ? "onear(" : "near(";
+            label += _positive_terms + "," + std::to_string(_window) + ")";
+            if (_element_gap.has_value()) {
+                label += ".gap(" + std::to_string(*_element_gap) + ")";
+            }
+            return label;
+        }
+
+        void verify(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
+                    const std::vector<uint32_t>& expected_elements);
+    };
+
+    NearSpec near(const std::string& terms, uint32_t window) {
+        return NearSpec(terms, window, false, this);
+    }
+
+    NearSpec onear(const std::string& terms, uint32_t window) {
+        return NearSpec(terms, window, true, this);
+    }
+
+    search::queryeval::FakeIndex index() { return {}; }
 
     NearSearchTest();
     ~NearSearchTest() override;
@@ -319,6 +359,36 @@ NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId,
     } else {
         EXPECT_TRUE(foundMatch);
     }
+}
+
+void
+NearSearchTest::NearSpec::verify(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
+                                 const std::vector<uint32_t> &expected_elements)
+{
+    std::vector<MyTerm> terms;
+    for (char ch : _positive_terms) {
+        terms.emplace_back(index.lookup(ch));
+    }
+
+    MyQuery query(_ordered, _window);
+    for (auto& term : terms) {
+        query.addTerm(term);
+    }
+    if (_element_gap.has_value()) {
+        query.set_element_gap(_element_gap);
+    }
+
+    _test->test_near_search(query, expected_docid, expected_elements, {}, make_label());
+}
+
+TEST_F(NearSearchTest, with_visual_setup)
+{
+    auto docs = index().doc(69)
+        .elem(1, "..A.B.C..")
+        .elem(2, "..A.C.B..")
+        .elem(3, "..A.B..C.");
+    near("ABC", 4).verify(docs, 69, {1, 2});
+    onear("ABC", 4).verify(docs, 69, {1});
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
