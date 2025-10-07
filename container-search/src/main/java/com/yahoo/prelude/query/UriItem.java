@@ -3,7 +3,6 @@ package com.yahoo.prelude.query;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
