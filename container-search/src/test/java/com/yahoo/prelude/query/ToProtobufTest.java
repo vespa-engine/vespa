@@ -6,7 +6,10 @@ import ai.vespa.json.TestUtils;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
+import com.yahoo.prelude.Location;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -835,7 +838,7 @@ public class ToProtobufTest {
     @Test
     void testConvertFromQueryWithWordAlternativesItem() {
         WordAlternativesItem alternatives = new WordAlternativesItem("myindex", false, null,
-                java.util.List.of(
+                List.of(
                     new WordAlternativesItem.Alternative("foo", 1.0),
                     new WordAlternativesItem.Alternative("bar", 0.8)
                 ));
@@ -862,7 +865,7 @@ public class ToProtobufTest {
         phrase.setIndexName("myindex");
         phrase.addItem(new WordItem("hello"));
         WordAlternativesItem alternatives = new WordAlternativesItem("myindex", false, null,
-                java.util.List.of(
+                List.of(
                     new WordAlternativesItem.Alternative("world", 1.0),
                     new WordAlternativesItem.Alternative("universe", 0.7)
                 ));
@@ -944,7 +947,7 @@ public class ToProtobufTest {
 
     @Test
     void testConvertFromQueryWithGeoLocationItem() {
-        com.yahoo.prelude.Location location = new com.yahoo.prelude.Location();
+        Location location = new Location();
         location.setAttribute("myloc");
         location.setGeoCircle(37.4, -122.1, 1000);
         GeoLocationItem geoLocation = new GeoLocationItem(location);
