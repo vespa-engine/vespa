@@ -2,7 +2,7 @@
 
 package com.yahoo.prelude.query;
 
-import ai.vespa.json.Json;
+import ai.vespa.json.TestUtils;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
@@ -32,7 +32,7 @@ public class ToProtobufTest {
     }
 
     private void assertJsonEquals(String actualJson, String expectedJson) {
-        assertTrue(Json.equivalent(Json.of(actualJson), expectedJson, true),
+        assertTrue(TestUtils.equivalent(actualJson, expectedJson),
                    "Expected JSON: " + expectedJson + "\nActual JSON: " + actualJson);
     }
 
