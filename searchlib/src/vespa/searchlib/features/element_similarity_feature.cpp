@@ -180,12 +180,12 @@ struct State {
         sum_term_weight += weight;
     }
 
-    void calculate_scores(size_t num_query_terms, int total_term_weight) {
+    void calculate_scores(int total_term_weight) {
         element_length = std::max(element_length, matched_terms);
         double matches = matched_terms;
         if (matches < 2) {
             proximity = proximity_score(element_length);
-            order = (num_query_terms == 1) ? 1.0 : 0.0;
+            order = matches;
         } else {
             proximity = sum_proximity_score / (matches - 1);
             order = num_in_order / (double) (matches - 1);
@@ -300,7 +300,7 @@ public:
                     }
                 }
             }
-            state.calculate_scores(_terms.handles.size(), _terms.total_weight);
+            state.calculate_scores(_terms.total_weight);
             for (auto &output: _outputs) {
                 output.second->add(output.first(state.proximity, state.order,
                                                 state.query_coverage, state.field_coverage,
