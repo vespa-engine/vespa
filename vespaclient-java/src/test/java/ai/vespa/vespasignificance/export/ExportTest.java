@@ -63,7 +63,7 @@ class ExportTest {
         var outPath = tmp.resolve("out.tsv").toString();
 
         // Params: force IndexLocator path (null indexDir), and provide field name
-        var params = params(outPath, null, "myfield", "alpha", "doc", "n0");
+        var params = params(outPath, null, "myfield", "alpha", "doc", "0");
 
         // Create the index dir and the field dir on disk
         Path indexDir = tmp.resolve("idx");
@@ -71,7 +71,7 @@ class ExportTest {
 
         // Locator returns that path
         IndexLocator locator = mock(IndexLocator.class);
-        when(locator.locateIndexDir("alpha", "doc", "n0")).thenReturn(indexDir);
+        when(locator.locateIndexDir("alpha", "doc", "0")).thenReturn(indexDir);
 
         // Dump function emits unsorted rows
         Export.DumpFn dumpFn = (idx, field) -> Stream.of(
