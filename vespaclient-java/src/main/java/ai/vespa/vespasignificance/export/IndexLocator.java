@@ -8,8 +8,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -31,7 +31,16 @@ import java.util.stream.Stream;
  */
 public class IndexLocator {
 
-    private final String VESPA_HOME = Defaults.getDefaults().vespaHome();
+    private final Path vespaHome;
+
+    public IndexLocator() {
+        this(Path.of(Defaults.getDefaults().vespaHome()));
+    }
+
+    // for testing
+    IndexLocator(Path vespaHome) {
+        this.vespaHome = Objects.requireNonNull(vespaHome);
+    }
 
     /**
      * Resolves the index dir or exits with a helpful message.
@@ -39,7 +48,7 @@ public class IndexLocator {
      * On none or more than 1 match, it will exit.
      */
     Path locateIndexDir(@Nullable String clusterName, @Nullable String schemaName) throws NoSuchFileException {
-        Path searchRoot = Paths.get(VESPA_HOME, "var", "db", "vespa", "search");
+        Path searchRoot = vespaHome.resolve(Path.of("var", "db", "vespa", "search"));
 
         // Not common, but might be more than 1 cluster on one host.
         List<Path> clusterDirs = listDirs(searchRoot, p -> p.getFileName().toString().startsWith("cluster"));
@@ -57,6 +66,10 @@ public class IndexLocator {
         Path clusterDir = chooseOrThrow(clusterRes, "cluster");
 
         Path documentsDir = clusterDir.resolve("n0").resolve("documents");
+        if (!Files.isDirectory(documentsDir)) {
+            throw new NoSuchFileException("Documents directory does not exist: " + documentsDir);
+        }
+
         List<Path> schemaDirs = listDirs(documentsDir, Files::isDirectory);
         var schemaRes = PathSelector.selectOne(
                 schemaDirs,
@@ -81,7 +94,8 @@ public class IndexLocator {
         throw new SelectionException(res.outcome(), kind, res.message(), res.options());
     }
 
-    private static List<Path> listDirs(Path root, java.util.function.Predicate<Path> filter) {
+    private static List<Path> listDirs(Path root, java.util.function.Predicate<Path> filter) throws NoSuchFileException {
+        if (!Files.isDirectory(root)) throw new NoSuchFileException("Not a directory: " + root);
         try (Stream<Path> s = Files.list(root)) {
             return s.filter(Files::isDirectory).filter(filter).sorted().toList();
         } catch (IOException e) {
