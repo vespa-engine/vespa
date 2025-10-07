@@ -13,11 +13,11 @@ public class TestUtils {
      * @throws IllegalArgumentException if jsonA or jsonB cannot be parsed.
      */
     public static boolean equivalent(String jsonA, String jsonB) {
-	return equivalent(Json.of(jsonA), jsonB);
+        return equivalent(Json.of(jsonA), jsonB);
     }
     /** Compare JSON for equivalence. */
     public static boolean equivalent(Json jsonA, String jsonB) {
-	return equivalent(jsonA, Json.of(jsonB));
+        return equivalent(jsonA, Json.of(jsonB));
     }
     /** Compare JSON for equivalence. */
     public static boolean equivalent(Json jsonA, Json jsonB) {
