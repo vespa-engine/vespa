@@ -10,22 +10,25 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
  * Resolves the path of an index.
  * <p>
- * The path to the index might look like this:
- * - $VESPA_HOME/var/db/vespa/search/CLUSTER/n0/documents/SCHEMA/0.ready/index/index.flush.1/
+ * <p>Expected layout:</p>
+ * <pre>
+ * $VESPA_HOME/var/db/vespa/search/CLUSTER/NODE_INDEX/documents/SCHEMA/0.ready/index/index.flush.1/
+ * </pre>
+ * Fields are subdirectories inside {@code index.flush.1}.
  * <p>
- * There is a possibility of two separate proton instances running on the same host, therefore,
- * we need to take into consideration that the user must choose between several clusters.
- * However, in the common case, trivially, if there is only one cluster, we can choose that one.
- * <p>
- * There might also be more than one document type for a cluster, and the same applies here. If
- * there are multiple, tell the user to choose, else use trivial one.
- * <p>
- * This class does not consider fields, only locates index on a host.
+ * Although uncommon, a host may run multiple clusters and/or multiple node indices.
+ * This class uses {@link PathSelector} to disambiguate:
+ * <ul>
+ *   <li>if a preferred name is provided and exists, it is chosen;</li>
+ *   <li>if no preference is provided and there is exactly one candidate, it is chosen;</li>
+ *   <li>otherwise a {@link SelectionException} is thrown with options to present to the user.</li>
+ * </ul>
  *
  * @author johsol
  */
@@ -43,14 +46,12 @@ public class IndexLocator {
     }
 
     /**
-     * Resolves the index dir or exits with a helpful message.
-     * <p>
-     * On none or more than 1 match, it will exit.
+     * Resolves the full path to the {@code index.flush.1} directory.
      */
     Path locateIndexDir(@Nullable String clusterName, @Nullable String schemaName, @Nullable String nodeIndex) throws NoSuchFileException {
         Path searchRoot = vespaHome.resolve(Path.of("var", "db", "vespa", "search"));
 
-        // Not common, but might be more than 1 cluster on one host.
+        // Resolve cluster path
         List<Path> clusterDirs = listDirs(searchRoot, p -> p.getFileName().toString().startsWith("cluster"));
         var clusterRes = PathSelector.selectOne(
                 clusterDirs,
@@ -65,6 +66,7 @@ public class IndexLocator {
         );
         Path clusterDir = chooseOrThrow(clusterRes, "cluster");
 
+        // Resolve node path
         List<Path> nodeDirs = listDirs(clusterDir, p -> Files.isDirectory(p) && p.getFileName().toString().matches("n\\d+"));
         var nodeRes = PathSelector.selectOne(
                 nodeDirs,
@@ -76,11 +78,13 @@ public class IndexLocator {
         );
         Path nodeDir = chooseOrThrow(nodeRes, "node-index");
 
+        // Resolve document path
         Path documentsDir = nodeDir.resolve("documents");
         if (!Files.isDirectory(documentsDir)) {
             throw new NoSuchFileException("Documents directory does not exist: " + documentsDir);
         }
 
+        // Resolve schema path
         List<Path> schemaDirs = listDirs(documentsDir, Files::isDirectory);
         var schemaRes = PathSelector.selectOne(
                 schemaDirs,
@@ -92,6 +96,7 @@ public class IndexLocator {
         );
         Path schemaDir = chooseOrThrow(schemaRes, "schema");
 
+        // Resolve the full path to the index
         Path indexDir = schemaDir.resolve("0.ready").resolve("index").resolve("index.flush.1");
         if (!Files.exists(indexDir)) {
             throw new NoSuchFileException("Index directory does not exist: " + indexDir);
@@ -100,12 +105,20 @@ public class IndexLocator {
         return indexDir;
     }
 
+    /**
+     * Returns the selected value when {@link PathSelector.Outcome#CHOSEN}, otherwise throws a
+     * {@link SelectionException} that includes the outcome, the kind (e.g. {@code "cluster"}),
+     * and the list of candidate rows to display.
+     */
     private static <T> T chooseOrThrow(PathSelector.Result<T> res, String kind) {
         if (res.outcome() == PathSelector.Outcome.CHOSEN) return res.value();
         throw new SelectionException(res.outcome(), kind, res.message(), res.options());
     }
 
-    private static List<Path> listDirs(Path root, java.util.function.Predicate<Path> filter) throws NoSuchFileException {
+    /**
+     * Lists immediate subdirectories of {@code root} that satisfy {@code filter}, in sorted order.
+     */
+    private static List<Path> listDirs(Path root, Predicate<Path> filter) throws NoSuchFileException {
         if (!Files.isDirectory(root)) throw new NoSuchFileException("Not a directory: " + root);
         try (Stream<Path> s = Files.list(root)) {
             return s.filter(Files::isDirectory).filter(filter).sorted().toList();
