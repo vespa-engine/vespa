@@ -140,6 +140,13 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <!-- dependency of protobuf-java-util -->
+      <groupId>com.google.j2objc</groupId>
+      <artifactId>j2objc-annotations</artifactId>
+      <version>${j2objc-annotations.vespa.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java-util</artifactId>
       <scope>test</scope>
