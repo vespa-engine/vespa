@@ -185,9 +185,13 @@ public class WeightedSetItem extends SimpleTaggableItem {
         return Objects.hash(super.hashCode(), indexName, set);
     }
 
-    @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
-        // Detect if we have strings or longs
+    /**
+     * Detects if this weighted set contains only long values (no strings).
+     * Used to determine which protobuf message type to use for serialization.
+     *
+     * @return true if all tokens are Long values, false if any token is a String
+     */
+    protected boolean hasOnlyLongs() {
         boolean hasLongs = false;
         boolean hasStrings = false;
         for (Object key : set.keySet()) {
@@ -197,8 +201,12 @@ public class WeightedSetItem extends SimpleTaggableItem {
                 hasStrings = true;
             }
         }
+        return hasLongs && !hasStrings;
+    }
 
-        if (hasLongs && !hasStrings) {
+    @Override
+    SearchProtocol.QueryTreeItem toProtobuf() {
+        if (hasOnlyLongs()) {
             var builder = SearchProtocol.ItemWeightedSetOfLong.newBuilder();
             builder.setProperties(ToProtobuf.buildTermProperties(this));
             for (Map.Entry<Object, Integer> entry : set.entrySet()) {

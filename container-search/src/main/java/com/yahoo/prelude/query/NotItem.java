@@ -3,7 +3,6 @@ package com.yahoo.prelude.query;
 
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
