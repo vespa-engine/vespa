@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class ToProtobufTest {
 
-    private String toJson(SearchProtocol.QueryTreeItem item) {
+    private static String toJson(SearchProtocol.QueryTreeItem item) {
         try {
             return JsonFormat.printer().print(item);
         } catch (InvalidProtocolBufferException e) {
@@ -26,7 +26,7 @@ public class ToProtobufTest {
         }
     }
 
-    private String toJson(SearchProtocol.TermItemProperties props) {
+    private static String toJson(SearchProtocol.TermItemProperties props) {
         try {
             return JsonFormat.printer().print(props);
         } catch (InvalidProtocolBufferException e) {
@@ -34,25 +34,33 @@ public class ToProtobufTest {
         }
     }
 
-    private void assertJsonEquals(String actualJson, String expectedJson) {
+    private static void assertJsonEquals(String actualJson, String expectedJson) {
         assertTrue(TestUtils.equivalent(actualJson, expectedJson),
                    "Expected JSON: " + expectedJson + "\nActual JSON: " + actualJson);
     }
 
+    private static void assertConvertsToJson(Item item, String expectedJson) {
+        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(item);
+        assertNotNull(result);
+        assertJsonEquals(toJson(result), expectedJson);
+    }
+
+    private static void assertPropertiesAreJson(Item item, String expectedJson) {
+        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(item);
+        assertNotNull(props);
+        assertJsonEquals(toJson(props), expectedJson);
+    }
+
     @Test
     void testConvertFromQueryWithNullItem() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            ToProtobuf.convertFromQuery(null);
-        });
+        assertThrows(IllegalArgumentException.class, () -> ToProtobuf.convertFromQuery(null));
     }
 
     @Test
     void testConvertFromQueryWithWordItem() {
-        WordItem word = new WordItem("test", "myindex");
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(word);
-        assertNotNull(result);
-        String json = toJson(result);
-        assertJsonEquals(json, "{\"itemWordTerm\": {\"word\": \"test\", \"properties\": {\"index\": \"myindex\"}}}");
+        assertConvertsToJson(new WordItem("test", "myindex"), """
+                {"itemWordTerm": {"word": "test", "properties": {"index": "myindex"}}}
+                """);
     }
 
     @Test
@@ -60,10 +68,7 @@ public class ToProtobufTest {
         AndItem and = new AndItem();
         and.addItem(new WordItem("foo", "myindex"));
         and.addItem(new WordItem("bar", "myindex"));
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(and);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(and, """
             {
               "itemAnd": {
                 "children": [
@@ -72,8 +77,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -86,18 +90,17 @@ public class ToProtobufTest {
         assertFalse(props.getDoNotUsePositionData());
         assertFalse(props.getDoNotHighlight());
         assertFalse(props.getIsSpecialToken());
-        String json = toJson(props);
-        assertJsonEquals(json, "{}");
+        assertJsonEquals(toJson(props), "{}");
     }
 
     @Test
     void testBuildTermPropertiesWithIndex() {
         WordItem word = new WordItem("test", "myindex");
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
-        assertNotNull(props);
-        String json = toJson(props);
         assertEquals("myindex", props.getIndex());
-        assertJsonEquals(json, "{\"index\": \"myindex\"}");
+        assertPropertiesAreJson(word, """
+                {"index": "myindex"}
+                """);
     }
 
     @Test
@@ -105,10 +108,10 @@ public class ToProtobufTest {
         WordItem word = new WordItem("test", "myindex");
         word.setWeight(200);
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
-        assertNotNull(props);
-        String json = toJson(props);
         assertEquals(200, props.getItemWeight());
-        assertJsonEquals(json, "{\"index\": \"myindex\", \"itemWeight\": 200}");
+        assertPropertiesAreJson(word, """
+                {"index": "myindex", "itemWeight": 200}
+                """);
     }
 
     @Test
@@ -116,10 +119,10 @@ public class ToProtobufTest {
         WordItem word = new WordItem("test", "myindex");
         word.setUniqueID(42);
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
-        assertNotNull(props);
-        String json = toJson(props);
         assertEquals(42, props.getUniqueId());
-        assertJsonEquals(json, "{\"index\": \"myindex\", \"uniqueId\": 42}");
+        assertPropertiesAreJson(word, """
+                {"index": "myindex", "uniqueId": 42}
+                """);
     }
 
     @Test
@@ -127,10 +130,10 @@ public class ToProtobufTest {
         WordItem word = new WordItem("test", "myindex");
         word.setRanked(false);
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
-        assertNotNull(props);
-        String json = toJson(props);
         assertTrue(props.getDoNotRank());
-        assertJsonEquals(json, "{\"index\": \"myindex\", \"doNotRank\": true}");
+        assertPropertiesAreJson(word, """
+                {"index": "myindex", "doNotRank": true}
+                """);
     }
 
     @Test
@@ -138,10 +141,10 @@ public class ToProtobufTest {
         WordItem word = new WordItem("test", "myindex");
         word.setPositionData(false);
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
-        assertNotNull(props);
-        String json = toJson(props);
         assertTrue(props.getDoNotUsePositionData());
-        assertJsonEquals(json, "{\"index\": \"myindex\", \"doNotUsePositionData\": true}");
+        assertPropertiesAreJson(word, """
+                {"index": "myindex", "doNotUsePositionData": true}
+                """);
     }
 
     @Test
@@ -149,10 +152,10 @@ public class ToProtobufTest {
         WordItem word = new WordItem("test", "myindex");
         word.setFilter(true);
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
-        assertNotNull(props);
-        String json = toJson(props);
         assertTrue(props.getDoNotHighlight());
-        assertJsonEquals(json, "{\"index\": \"myindex\", \"doNotHighlight\": true}");
+        assertPropertiesAreJson(word, """
+                {"index": "myindex", "doNotHighlight": true}
+                """);
     }
 
     @Test
@@ -160,10 +163,10 @@ public class ToProtobufTest {
         WordItem word = new WordItem("test", "myindex");
         word.setFromSpecialToken(true);
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
-        assertNotNull(props);
-        String json = toJson(props);
         assertTrue(props.getIsSpecialToken());
-        assertJsonEquals(json, "{\"index\": \"myindex\", \"isSpecialToken\": true}");
+        assertPropertiesAreJson(word, """
+                {"index": "myindex", "isSpecialToken": true}
+                """);
     }
 
     @Test
@@ -177,9 +180,6 @@ public class ToProtobufTest {
         word.setFromSpecialToken(true);
 
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
-
-        assertNotNull(props);
-        String json = toJson(props);
         assertEquals("myindex", props.getIndex());
         assertEquals(150, props.getItemWeight());
         assertEquals(99, props.getUniqueId());
@@ -187,7 +187,7 @@ public class ToProtobufTest {
         assertTrue(props.getDoNotUsePositionData());
         assertTrue(props.getDoNotHighlight());
         assertTrue(props.getIsSpecialToken());
-        String expected = """
+        assertPropertiesAreJson(word, """
             {
               "index": "myindex",
               "itemWeight": 150,
@@ -197,17 +197,12 @@ public class ToProtobufTest {
               "doNotHighlight": true,
               "isSpecialToken": true
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
     void testBuildTermPropertiesWithNonIndexedItem() {
-        OrItem or = new OrItem();
-        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(or);
-        assertNotNull(props);
-        String json = toJson(props);
-        assertJsonEquals(json, "{}");
+        assertPropertiesAreJson(new OrItem(), "{}");
     }
 
     @Test
@@ -218,12 +213,11 @@ public class ToProtobufTest {
         phrase.setWeight(250);
 
         SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(phrase);
-
-        assertNotNull(props);
-        String json = toJson(props);
         assertEquals("myindex", props.getIndex());
         assertEquals(250, props.getItemWeight());
-        assertJsonEquals(json, "{\"index\": \"myindex\", \"itemWeight\": 250}");
+        assertPropertiesAreJson(phrase, """
+                {"index": "myindex", "itemWeight": 250}
+                """);
     }
 
     @Test
@@ -231,10 +225,7 @@ public class ToProtobufTest {
         OrItem or = new OrItem();
         or.addItem(new WordItem("foo", "myindex"));
         or.addItem(new WordItem("bar", "myindex"));
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(or);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(or, """
             {
               "itemOr": {
                 "children": [
@@ -243,8 +234,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -256,10 +246,7 @@ public class ToProtobufTest {
         and.addItem(or);
         and.addItem(new WordItem("baz", "myindex"));
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(and);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(and, """
             {
               "itemAnd": {
                 "children": [
@@ -275,8 +262,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -285,10 +271,7 @@ public class ToProtobufTest {
         phrase.addItem(new WordItem("foo"));
         phrase.addItem(new WordItem("bar"));
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(phrase);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(phrase, """
             {
               "itemPhrase": {
                 "properties": {"index": "myindex"},
@@ -298,25 +281,19 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
     void testConvertFromQueryWithPrefixItem() {
-        PrefixItem prefix = new PrefixItem("test", "myindex");
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(prefix);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(new PrefixItem("test", "myindex"), """
             {
               "itemPrefixTerm": {
                 "word": "test",
                 "properties": {"index": "myindex"}
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -325,10 +302,7 @@ public class ToProtobufTest {
         rank.addItem(new WordItem("foo", "myindex"));
         rank.addItem(new WordItem("bar", "myindex"));
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(rank);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(rank, """
             {
               "itemRank": {
                 "children": [
@@ -337,43 +311,35 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
     void testRootItemThrowsUnsupportedOperation() {
         RootItem root = new RootItem(new WordItem("test", "myindex"));
-        UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class, () -> {
-            ToProtobuf.convertFromQuery(root);
-        });
+        var exception = assertThrows(UnsupportedOperationException.class,
+                () -> ToProtobuf.convertFromQuery(root));
         assertTrue(exception.getMessage().contains("should not be serialized"));
     }
 
     @Test
     void testNullItemThrowsIllegalState() {
-        NullItem nullItem = new NullItem();
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            ToProtobuf.convertFromQuery(nullItem);
-        });
+        var exception = assertThrows(IllegalStateException.class,
+                () -> ToProtobuf.convertFromQuery(new NullItem()));
         assertTrue(exception.getMessage().contains("NullItem was attempted serialized"));
     }
 
     @Test
     void testPureWeightedStringThrowsUnsupportedOperation() {
-        PureWeightedString pureWeighted = new PureWeightedString("test", 100);
-        UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class, () -> {
-            ToProtobuf.convertFromQuery(pureWeighted);
-        });
+        var exception = assertThrows(UnsupportedOperationException.class,
+                () -> ToProtobuf.convertFromQuery(new PureWeightedString("test", 100)));
         assertTrue(exception.getMessage().contains("should not serialize itself"));
     }
 
     @Test
     void testPureWeightedIntegerThrowsUnsupportedOperation() {
-        PureWeightedInteger pureWeighted = new PureWeightedInteger(42, 100);
-        UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class, () -> {
-            ToProtobuf.convertFromQuery(pureWeighted);
-        });
+        var exception = assertThrows(UnsupportedOperationException.class,
+                () -> ToProtobuf.convertFromQuery(new PureWeightedInteger(42, 100)));
         assertTrue(exception.getMessage().contains("should not serialize itself"));
     }
 
@@ -383,10 +349,7 @@ public class ToProtobufTest {
         not.addPositiveItem(new WordItem("foo", "myindex"));
         not.addNegativeItem(new WordItem("bar", "myindex"));
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(not);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(not, """
             {
               "itemAndNot": {
                 "children": [
@@ -395,8 +358,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -405,10 +367,7 @@ public class ToProtobufTest {
         weakAnd.addItem(new WordItem("foo", "myindex"));
         weakAnd.addItem(new WordItem("bar", "myindex"));
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(weakAnd);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(weakAnd, """
             {
               "itemWeakAnd": {
                 "targetNumHits": 100,
@@ -418,8 +377,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -428,10 +386,7 @@ public class ToProtobufTest {
         sameElement.addItem(new WordItem("foo"));
         sameElement.addItem(new WordItem("bar"));
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(sameElement);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(sameElement, """
             {
               "itemSameElement": {
                 "properties": {"index": "myfield"},
@@ -441,8 +396,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -451,10 +405,7 @@ public class ToProtobufTest {
         near.addItem(new WordItem("foo", "myindex"));
         near.addItem(new WordItem("bar", "myindex"));
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(near);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(near, """
             {
               "itemNear": {
                 "distance": 2,
@@ -464,8 +415,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -474,10 +424,7 @@ public class ToProtobufTest {
         onear.addItem(new WordItem("foo", "myindex"));
         onear.addItem(new WordItem("bar", "myindex"));
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(onear);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(onear, """
             {
               "itemOnear": {
                 "distance": 2,
@@ -487,8 +434,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -497,10 +443,7 @@ public class ToProtobufTest {
         equiv.addItem(new WordItem("foo", "myindex"));
         equiv.addItem(new WordItem("bar", "myindex"));
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(equiv);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(equiv, """
             {
               "itemEquiv": {
                 "properties": {},
@@ -510,8 +453,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -521,10 +463,7 @@ public class ToProtobufTest {
         phraseSegment.addItem(new WordItem("bar"));
         phraseSegment.setIndexName("myindex");
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(phraseSegment);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(phraseSegment, """
             {
               "itemPhrase": {
                 "properties": {"index": "myindex"},
@@ -534,8 +473,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -545,10 +483,7 @@ public class ToProtobufTest {
         andSegment.addItem(new WordItem("bar"));
         andSegment.setIndexName("myindex");
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(andSegment);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(andSegment, """
             {
               "itemAnd": {
                 "children": [
@@ -557,8 +492,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -567,10 +501,7 @@ public class ToProtobufTest {
         weightedSet.addToken("foo", 100);
         weightedSet.addToken("bar", 200);
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(weightedSet);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(weightedSet, """
             {
               "itemWeightedSetOfString": {
                 "properties": {},
@@ -580,8 +511,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -590,10 +520,7 @@ public class ToProtobufTest {
         dotProduct.addToken("foo", 100);
         dotProduct.addToken("bar", 200);
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(dotProduct);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(dotProduct, """
             {
               "itemDotProductOfString": {
                 "properties": {},
@@ -603,8 +530,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -613,10 +539,7 @@ public class ToProtobufTest {
         wand.addToken("foo", 100);
         wand.addToken("bar", 200);
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(wand);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(wand, """
             {
               "itemStringWand": {
                 "properties": {},
@@ -628,62 +551,48 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
     void testConvertFromQueryWithSuffixItem() {
         SuffixItem suffix = new SuffixItem("test");
         suffix.setIndexName("myindex");
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(suffix);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(suffix, """
             {
               "itemSuffixTerm": {
                 "word": "test",
                 "properties": {"index": "myindex"}
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
     void testConvertFromQueryWithSubstringItem() {
         SubstringItem substring = new SubstringItem("test");
         substring.setIndexName("myindex");
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(substring);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(substring, """
             {
               "itemSubstringTerm": {
                 "word": "test",
                 "properties": {"index": "myindex"}
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
     void testConvertFromQueryWithRegExpItem() {
         RegExpItem regexp = new RegExpItem("myindex", true, "test.*");
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(regexp);
-        assertNotNull(result);
-        String json = toJson(result);
-        assertJsonEquals(json, "{\"itemRegexp\": {\"properties\": {\"index\": \"myindex\"}, \"regexp\": \"test.*\"}}");
+        assertConvertsToJson(regexp, """
+                {"itemRegexp": {"properties": {"index": "myindex"}, "regexp": "test.*"}}
+                """);
     }
 
     @Test
     void testConvertFromQueryWithIntItem() {
-        IntItem intItem = new IntItem("[10;20]", "myindex");
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(intItem);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(new IntItem("[10;20]", "myindex"), """
             {
               "itemIntegerRangeTerm": {
                 "properties": {"index": "myindex"},
@@ -691,17 +600,12 @@ public class ToProtobufTest {
                 "upperLimit": "20"
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
     void testConvertFromQueryWithRangeItem() {
-        RangeItem range = new RangeItem(10, 20, "myindex");
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(range);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(new RangeItem(10, 20, "myindex"), """
             {
               "itemIntegerRangeTerm": {
                 "properties": {"index": "myindex"},
@@ -709,8 +613,7 @@ public class ToProtobufTest {
                 "upperLimit": "20"
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -719,18 +622,14 @@ public class ToProtobufTest {
         numericIn.addToken(42L);
         numericIn.addToken(99L);
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(numericIn);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(numericIn, """
             {
               "itemNumericIn": {
                 "properties": {},
                 "numbers": ["42", "99"]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -739,36 +638,26 @@ public class ToProtobufTest {
         stringIn.addToken("foo");
         stringIn.addToken("bar");
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(stringIn);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(stringIn, """
             {
               "itemStringIn": {
                 "properties": {},
                 "words": ["bar", "foo"]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
     void testConvertFromQueryWithBoolItem() {
-        BoolItem bool = new BoolItem(true, "myindex");
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(bool);
-        assertNotNull(result);
-        String json = toJson(result);
-        assertJsonEquals(json, "{\"itemWordTerm\": {\"properties\": {\"index\": \"myindex\"}, \"word\": \"true\"}}");
+        assertConvertsToJson(new BoolItem(true, "myindex"), """
+                {"itemWordTerm": {"properties": {"index": "myindex"}, "word": "true"}}
+                """);
     }
 
     @Test
     void testConvertFromQueryWithFuzzyItem() {
-        FuzzyItem fuzzy = new FuzzyItem("myindex", true, "test", 2, 0, false);
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(fuzzy);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(new FuzzyItem("myindex", true, "test", 2, 0, false), """
             {
               "itemFuzzy": {
                 "properties": {"index": "myindex"},
@@ -776,63 +665,46 @@ public class ToProtobufTest {
                 "maxEditDistance": 2
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
     void testConvertFromQueryWithExactStringItem() {
         ExactStringItem exactString = new ExactStringItem("test");
         exactString.setIndexName("myindex");
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(exactString);
-        assertNotNull(result);
-        String json = toJson(result);
-        assertJsonEquals(json, "{\"itemExactstringTerm\": {\"properties\": {\"index\": \"myindex\"}, \"word\": \"test\"}}");
+        assertConvertsToJson(exactString, """
+                {"itemExactstringTerm": {"properties": {"index": "myindex"}, "word": "test"}}
+                """);
     }
 
     @Test
     void testConvertFromQueryWithMarkerWordItem() {
-        MarkerWordItem marker = MarkerWordItem.createStartOfHost("myindex");
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(marker);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(MarkerWordItem.createStartOfHost("myindex"), """
             {
               "itemWordTerm": {
                 "word": "^",
                 "properties": {"index": "myindex"}
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
     void testConvertFromQueryWithTrueItem() {
-        TrueItem trueItem = new TrueItem();
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(trueItem);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(new TrueItem(), """
             {
               "itemTrue": {}
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
     void testConvertFromQueryWithFalseItem() {
-        FalseItem falseItem = new FalseItem();
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(falseItem);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(new FalseItem(), """
             {
               "itemFalse": {}
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -842,10 +714,7 @@ public class ToProtobufTest {
                     new WordAlternativesItem.Alternative("foo", 1.0),
                     new WordAlternativesItem.Alternative("bar", 0.8)
                 ));
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(alternatives);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(alternatives, """
             {
               "itemWordAlternatives": {
                 "properties": {"index": "myindex"},
@@ -855,8 +724,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -871,10 +739,7 @@ public class ToProtobufTest {
                 ));
         phrase.addItem(alternatives);
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(phrase);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(phrase, """
             {
               "itemPhrase": {
                 "properties": {"index": "myindex"},
@@ -892,17 +757,12 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
     void testConvertFromQueryWithNearestNeighborItem() {
-        NearestNeighborItem nearestNeighbor = new NearestNeighborItem("myvector", "query_vector");
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(nearestNeighbor);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(new NearestNeighborItem("myvector", "query_vector"), """
             {
               "itemNearestNeighbor": {
                 "properties": {},
@@ -911,8 +771,7 @@ public class ToProtobufTest {
                 "distanceThreshold": "Infinity"
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -925,10 +784,7 @@ public class ToProtobufTest {
         nearestNeighbor.setWeight(200);
         nearestNeighbor.setFilter(true);
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(nearestNeighbor);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(nearestNeighbor, """
             {
               "itemNearestNeighbor": {
                 "properties": {
@@ -941,8 +797,7 @@ public class ToProtobufTest {
                 "distanceThreshold": 0.5
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -951,10 +806,7 @@ public class ToProtobufTest {
         location.setAttribute("myloc");
         location.setGeoCircle(37.4, -122.1, 1000);
         GeoLocationItem geoLocation = new GeoLocationItem(location);
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(geoLocation);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(geoLocation, """
             {
               "itemGeoLocationTerm": {
                 "properties": {"index": "myloc"},
@@ -964,18 +816,14 @@ public class ToProtobufTest {
                 "radius": 1000.0
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
     void testConvertFromQueryWithPredicateQueryItem() {
         PredicateQueryItem predicate = new PredicateQueryItem();
         predicate.addFeature("key", "value");
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(predicate);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(predicate, """
             {
               "itemPredicateQuery": {
                 "properties": {},
@@ -984,18 +832,14 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
     void testConvertFromQueryWithUriItem() {
         UriItem uri = new UriItem("myindex");
         uri.addItem(new WordItem("foo"));
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(uri);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(uri, """
             {
               "itemPhrase": {
                 "properties": {"index": "myindex"},
@@ -1004,8 +848,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -1018,6 +861,7 @@ public class ToProtobufTest {
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(multiRange);
         assertNotNull(result);
         String json = toJson(result);
+        // MultiRangeItem is converted to OR of IntItem ranges
         String expected = """
             {
               "itemOr": {
@@ -1052,10 +896,7 @@ public class ToProtobufTest {
         word.setPositionData(false);
         word.setFilter(true);
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(word);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(word, """
             {
               "itemWordTerm": {
                 "word": "test",
@@ -1069,8 +910,7 @@ public class ToProtobufTest {
                 }
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -1078,10 +918,7 @@ public class ToProtobufTest {
         WordItem word = new WordItem("test", "myindex");
         word.setWeight(150);
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(word);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(word, """
             {
               "itemWordTerm": {
                 "word": "test",
@@ -1091,8 +928,7 @@ public class ToProtobufTest {
                 }
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -1100,10 +936,7 @@ public class ToProtobufTest {
         WordItem word = new WordItem("test", "myindex");
         word.setUniqueID(123);
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(word);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(word, """
             {
               "itemWordTerm": {
                 "word": "test",
@@ -1113,8 +946,7 @@ public class ToProtobufTest {
                 }
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -1125,10 +957,7 @@ public class ToProtobufTest {
         phrase.addItem(new WordItem("bar"));
         phrase.setWeight(250);
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(phrase);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(phrase, """
             {
               "itemPhrase": {
                 "properties": {
@@ -1141,8 +970,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -1152,10 +980,7 @@ public class ToProtobufTest {
         equiv.addItem(new WordItem("bar", "myindex"));
         equiv.setUniqueID(999);
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(equiv);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(equiv, """
             {
               "itemEquiv": {
                 "properties": {
@@ -1167,8 +992,7 @@ public class ToProtobufTest {
                 ]
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -1176,10 +1000,7 @@ public class ToProtobufTest {
         WordItem word = new WordItem("test", "myindex");
         word.setRanked(false);
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(word);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(word, """
             {
               "itemWordTerm": {
                 "word": "test",
@@ -1189,8 +1010,7 @@ public class ToProtobufTest {
                 }
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
     @Test
@@ -1198,10 +1018,7 @@ public class ToProtobufTest {
         WordItem word = new WordItem("test", "myindex");
         word.setFilter(true);
 
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(word);
-        assertNotNull(result);
-        String json = toJson(result);
-        String expected = """
+        assertConvertsToJson(word, """
             {
               "itemWordTerm": {
                 "word": "test",
@@ -1211,8 +1028,7 @@ public class ToProtobufTest {
                 }
               }
             }
-            """;
-        assertJsonEquals(json, expected);
+            """);
     }
 
 }
