@@ -8,9 +8,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -97,12 +100,57 @@ public class IndexLocator {
         Path schemaDir = chooseOrThrow(schemaRes, "schema");
 
         // Resolve the full path to the index
-        Path indexDir = schemaDir.resolve("0.ready").resolve("index").resolve("index.flush.1");
+        Path indexDir = schemaDir.resolve("0.ready").resolve("index");
         if (!Files.exists(indexDir)) {
             throw new NoSuchFileException("Index directory does not exist: " + indexDir);
         }
 
-        return indexDir;
+        // TODO(johsol): WIP
+        // triggerFlush creates index.flush.n
+        // after index.flush.n is created, then there might start a fusion job
+        // which merges several index.flush.n and index.fusion.m into
+        // index.fusion.m+1.
+        //
+        // Unsure what is the correct, but currently finds newest fusion,
+        // then newest flush.
+        //
+        // The problem is that this tool can be invoked while flushing.
+
+        List<Path> candidates = listDirs(indexDir, Files::isDirectory);
+        if (candidates.isEmpty()) {
+            throw new NoSuchFileException("There are no flushed indexes on disk in: " + indexDir);
+        }
+
+        if (candidates.size() == 1) {
+            return candidates.get(0);
+        }
+
+        System.err.println("Found " + candidates.size() + " index candidates. Output might be unstable.");
+
+        Comparator<Path> bySeqDesc =
+                Comparator.comparingInt(IndexLocator::seq).reversed()
+                        .thenComparing(p -> p.getFileName().toString());
+
+        var latestFusion = candidates.stream()
+                .map(Path::getFileName)
+                .map(Path::toString)
+                .map(indexDir::resolve)
+                .filter(p -> p.getFileName().toString().contains("fusion"))
+                .max(bySeqDesc);
+
+        if (latestFusion.isPresent()) return latestFusion.get();
+
+        var latestFlush = candidates.stream()
+                .map(Path::getFileName)
+                .map(Path::toString)
+                .map(indexDir::resolve)
+                .filter(p -> p.getFileName().toString().contains("flush"))
+                .max(bySeqDesc);
+
+        if (latestFlush.isPresent()) return latestFlush.get();
+
+        // unreachable
+        throw new NoSuchFileException("Found no fusion/flush directories ending with .<number> under: " + indexDir);
     }
 
     /**
@@ -125,6 +173,14 @@ public class IndexLocator {
         } catch (IOException e) {
             throw new RuntimeException("Failed to list: " + root, e);
         }
+    }
+
+    private static final Pattern TRAILING_NUM = Pattern.compile(".*\\.(\\d+)$");
+
+    private static int seq(Path p) {
+        String name = p.getFileName().toString();
+        Matcher m = TRAILING_NUM.matcher(name);
+        return m.matches() ? Integer.parseInt(m.group(1)) : -1;
     }
 
 }

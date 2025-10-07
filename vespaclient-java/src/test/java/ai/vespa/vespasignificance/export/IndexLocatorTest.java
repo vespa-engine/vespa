@@ -142,7 +142,7 @@ class IndexLocatorTest {
                 NoSuchFileException.class,
                 () -> locator.locateIndexDir("alpha", "doc", "0")
         );
-        assertTrue(e.getMessage().contains("Index directory"));
+        assertTrue(e.getMessage().contains("There are no flushed indexes on disk in: "));
     }
 
     @Test
