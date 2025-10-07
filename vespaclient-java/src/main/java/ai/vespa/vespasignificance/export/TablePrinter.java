@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license.
 package ai.vespa.vespasignificance.export;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -13,7 +14,17 @@ import java.util.List;
  */
 final class TablePrinter {
 
+    /**
+     * Print an ascii table to stdout.
+     */
     static void printTable(String heading, List<String> headers, List<List<String>> rows) {
+        printTable(System.out, heading, headers, rows);
+    }
+
+    /**
+     * Print an ascii table. Specify PrintStream to use with the out parameter.
+     */
+    static void printTable(PrintStream out, String heading, List<String> headers, List<List<String>> rows) {
         if (headers == null) headers = Collections.emptyList();
         if (rows == null) rows = Collections.emptyList();
 
@@ -21,7 +32,7 @@ final class TablePrinter {
         if (cols == 0) {
             // Nothing to format — just print heading (if any) and return.
             if (heading != null && !heading.isEmpty()) {
-                System.out.println(heading);
+                out.println(heading);
             }
             return;
         }
@@ -53,19 +64,19 @@ final class TablePrinter {
 
         // Print heading (centered to table width, excluding trailing newline).
         if (heading != null && !heading.isEmpty()) {
-            System.out.println(center(heading, tableWidth));
+            out.println(center(heading, tableWidth));
         }
 
         // Header
-        System.out.println(sep);
-        System.out.println(buildRow(headers, widths));
-        System.out.println(sep);
+        out.println(sep);
+        out.println(buildRow(headers, widths));
+        out.println(sep);
 
         // Rows
         for (List<String> r : normalized) {
-            System.out.println(buildRow(r, widths));
+            out.println(buildRow(r, widths));
         }
-        System.out.println(sep);
+        out.println(sep);
     }
 
     // ---- helpers ----
