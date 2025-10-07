@@ -122,12 +122,13 @@ public class Export {
                 handleSelectionException(e);
             } catch (NoSuchFileException nf) {
                 System.err.println(nf.getMessage());
+                System.err.println("Note: you can use --index-dir to specify the index directory.");
                 throw new ExportFailure();
             }
         } else {
             if (params.indexDir().isEmpty()) {
                 System.err.println("Error: No index directory specified.");
-                System.err.println("Use --index-dir to specify index directory or --locate-index to search for index directory.");
+                System.err.println("Use --index-dir to specify index directory.");
                 CommandLineOptions.printExportHelp();
                 throw new ExportFailure();
             }
