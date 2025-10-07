@@ -39,6 +39,12 @@ SameElementBlueprint::calculate_flow_stats(uint32_t) const
             AndFlow::cost_of(children, true) + est * children.size()};
 }
 
+bool
+SameElementBlueprint::always_needs_unpack() const
+{
+    return true; // Need unpack to filter match data for descendants
+};
+
 uint8_t
 SameElementBlueprint::calculate_cost_tier() const
 {

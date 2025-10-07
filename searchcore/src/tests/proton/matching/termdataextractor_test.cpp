@@ -6,6 +6,7 @@ LOG_SETUP("termdataextractor_test");
 
 #include <vespa/searchcore/proton/matching/querynodes.h>
 #include <vespa/searchcore/proton/matching/resolveviewvisitor.h>
+#include <vespa/searchcore/proton/matching/sameelementmodifier.h>
 #include <vespa/searchcore/proton/matching/termdataextractor.h>
 #include <vespa/searchcore/proton/matching/viewresolver.h>
 #include <vespa/searchlib/fef/tablemanager.h>
@@ -130,21 +131,61 @@ TEST(TermDataExtractorTest, requireThatNegativeTermsAreSkipped) {
     EXPECT_EQ(id[1], term_data[1]->getUniqueId());
 }
 
-TEST(TermDataExtractorTest, requireThatSameElementIsExtractedAsOneTerm)
+namespace {
+
+std::vector<uint32_t>
+same_element_query_ids(bool structured, bool ranked)
 {
     QueryBuilder<ProtonNodeTypes> query_builder;
     query_builder.addAnd(2);
     query_builder.addSameElement(2, field, id[3], Weight(7));
     query_builder.addStringTerm("term1", field, id[0], Weight(1));
-    query_builder.addStringTerm("term2", field, id[1], Weight(1));
+    query_builder.addStringTerm("term2", structured ? field : "", id[1], Weight(1)).setRanked(ranked);
     query_builder.addStringTerm("term3", field, id[2], Weight(1));
-    Node::UP node = query_builder.build();
+    auto node = query_builder.build();
+    SameElementModifier same_element_modifier;
+    node->accept(same_element_modifier); // Determine if match data from same element node should be exposed
+    vector<const ITermData *> terms;
+    TermDataExtractor::extractTerms(*node, terms);
+    std::vector<uint32_t> result_ids;
+    for (auto td : terms) {
+        result_ids.push_back(td->getUniqueId());
+    }
+    return result_ids;
+}
 
-    vector<const ITermData *> term_data;
-    TermDataExtractor::extractTerms(*node, term_data);
-    ASSERT_EQ(2u, term_data.size());
-    EXPECT_EQ(id[3], term_data[0]->getUniqueId());
-    EXPECT_EQ(id[2], term_data[1]->getUniqueId());
+class SameElementModifierTweak {
+    bool _old_can_hide_match_data_for_same_element;
+public:
+    SameElementModifierTweak(bool can_hide_match_data_for_same_element);
+    ~SameElementModifierTweak();
+};
+
+SameElementModifierTweak::SameElementModifierTweak(bool can_hide_match_data_for_same_element)
+  : _old_can_hide_match_data_for_same_element(SameElementModifier::can_hide_match_data_for_same_element)
+{
+    SameElementModifier::can_hide_match_data_for_same_element = can_hide_match_data_for_same_element;
+}
+
+SameElementModifierTweak::~SameElementModifierTweak()
+{
+    SameElementModifier::can_hide_match_data_for_same_element = _old_can_hide_match_data_for_same_element;
+}
+
+}
+
+TEST(TermDataExtractorTest, requireThatSameElementIsExtractedAsOneOrZeroTerms)
+{
+    EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(true, true));
+    {
+        SameElementModifierTweak same_element_modifier_tweak(false);
+        EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(false, true));
+    }
+    {
+        SameElementModifierTweak same_element_modifier_tweak(true);
+        EXPECT_EQ((std::vector<uint32_t>{id[2]}), same_element_query_ids(false, true));
+    }
+    EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(false, false));
 }
 
 }  // namespace

@@ -24,9 +24,6 @@ public:
     SameElementBlueprint &operator=(const SameElementBlueprint &) = delete;
     ~SameElementBlueprint() override;
 
-    // no match data
-    bool isWhiteList() const noexcept final { return true; }
-
     uint8_t calculate_cost_tier() const override;
     SearchIteratorUP createSearchImpl(search::fef::MatchData& md) const override;
     HitEstimate combine(const std::vector<HitEstimate>& data) const override;
@@ -34,7 +31,8 @@ public:
     void sort(Children& children, InFlow in_flow) const override;
 
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
-    
+    bool always_needs_unpack() const override;
+
     std::unique_ptr<SameElementSearch> create_same_element_search(search::fef::MatchData& md,
                                                                   search::fef::TermFieldMatchData& tfmd) const;
     std::unique_ptr<SearchIterator> createIntermediateSearch(MultiSearch::Children sub_searches,
