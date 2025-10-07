@@ -132,19 +132,7 @@ public class WandItem extends WeightedSetItem {
 
     @Override
     SearchProtocol.QueryTreeItem toProtobuf() {
-        // Detect if we have strings or longs
-        boolean hasLongs = false;
-        boolean hasStrings = false;
-        for (var it = getTokens(); it.hasNext();) {
-            var entry = it.next();
-            if (entry.getKey() instanceof Long) {
-                hasLongs = true;
-            } else {
-                hasStrings = true;
-            }
-        }
-
-        if (hasLongs && !hasStrings) {
+        if (hasOnlyLongs()) {
             var builder = SearchProtocol.ItemLongWand.newBuilder();
             builder.setProperties(ToProtobuf.buildTermProperties(this));
             builder.setTargetNumHits(targetNumHits);
