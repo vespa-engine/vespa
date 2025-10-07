@@ -256,7 +256,7 @@ public class Flags {
     public static final UnboundBooleanFlag SEND_PROTOBUF_QUERYTREE = defineFeatureFlag(
             "send-protobuf-querytree", false,
             List.of("arnej"), "2025-10-06", "2026-03-31",
-            "If true, send query tree as protobuf instead of legacy format",
+            "If true, send query tree as protobuf in addition to legacy format",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
@@ -321,7 +321,7 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID
     );
-    
+
     public static final UnboundIntFlag MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB = defineIntFlag(
             "max-distributor-document-operation-size-mib", 128,
             List.of("vekterli", "hmusum"), "2025-03-17", "2025-11-01",
@@ -338,7 +338,7 @@ public class Flags {
             "Takes effect immediately",
             CLOUD_ACCOUNT
     );
-    
+
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
             List.of("glebashnik"), "2025-04-25", "2025-12-01",
