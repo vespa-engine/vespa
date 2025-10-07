@@ -1332,6 +1332,7 @@
       "public double logserverNodeMemory()",
       "public double clusterControllerNodeMemory()",
       "public boolean useLegacyWandQueryParsing()",
+      "public boolean sendProtobufQuerytree()",
       "public boolean forwardAllLogLevels()",
       "public long zookeeperPreAllocSize()",
       "public int documentV1QueueSize()",

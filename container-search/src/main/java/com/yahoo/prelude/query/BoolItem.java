@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.processing.IllegalInputException;
 
 import java.nio.ByteBuffer;
@@ -102,5 +103,16 @@ public class BoolItem extends TermItem {
     /** Returns true if this consists of regular word characters. Returns false if this represents a "special token" */
     @Override
     public boolean isWords() { return false; }
+
+    @Override
+    SearchProtocol.QueryTreeItem toProtobuf() {
+        // BoolItem is serialized as a word term
+        var builder = SearchProtocol.ItemWordTerm.newBuilder();
+        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setWord(stringValue());
+        return SearchProtocol.QueryTreeItem.newBuilder()
+                .setItemWordTerm(builder.build())
+                .build();
+    }
 
 }

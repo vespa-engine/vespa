@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.compress.IntegerCompressor;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
@@ -127,6 +128,57 @@ public class WandItem extends WeightedSetItem {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), targetNumHits, scoreThreshold, thresholdBoostFactor);
+    }
+
+    @Override
+    SearchProtocol.QueryTreeItem toProtobuf() {
+        // Detect if we have strings or longs
+        boolean hasLongs = false;
+        boolean hasStrings = false;
+        for (var it = getTokens(); it.hasNext();) {
+            var entry = it.next();
+            if (entry.getKey() instanceof Long) {
+                hasLongs = true;
+            } else {
+                hasStrings = true;
+            }
+        }
+
+        if (hasLongs && !hasStrings) {
+            var builder = SearchProtocol.ItemLongWand.newBuilder();
+            builder.setProperties(ToProtobuf.buildTermProperties(this));
+            builder.setTargetNumHits(targetNumHits);
+            builder.setScoreThreshold(scoreThreshold);
+            builder.setThresholdBoostFactor(thresholdBoostFactor);
+            for (var it = getTokens(); it.hasNext();) {
+                var entry = it.next();
+                var weightedLong = SearchProtocol.PureWeightedLong.newBuilder()
+                        .setWeight(entry.getValue())
+                        .setValue((Long) entry.getKey())
+                        .build();
+                builder.addWeightedLongs(weightedLong);
+            }
+            return SearchProtocol.QueryTreeItem.newBuilder()
+                    .setItemLongWand(builder.build())
+                    .build();
+        } else {
+            var builder = SearchProtocol.ItemStringWand.newBuilder();
+            builder.setProperties(ToProtobuf.buildTermProperties(this));
+            builder.setTargetNumHits(targetNumHits);
+            builder.setScoreThreshold(scoreThreshold);
+            builder.setThresholdBoostFactor(thresholdBoostFactor);
+            for (var it = getTokens(); it.hasNext();) {
+                var entry = it.next();
+                var weightedString = SearchProtocol.PureWeightedString.newBuilder()
+                        .setWeight(entry.getValue())
+                        .setValue(entry.getKey().toString())
+                        .build();
+                builder.addWeightedStrings(weightedString);
+            }
+            return SearchProtocol.QueryTreeItem.newBuilder()
+                    .setItemStringWand(builder.build())
+                    .build();
+        }
     }
 
 }

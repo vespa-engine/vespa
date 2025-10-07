@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.collections.CopyOnWriteHashMap;
 import com.yahoo.compress.IntegerCompressor;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
@@ -182,6 +183,48 @@ public class WeightedSetItem extends SimpleTaggableItem {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), indexName, set);
+    }
+
+    @Override
+    SearchProtocol.QueryTreeItem toProtobuf() {
+        // Detect if we have strings or longs
+        boolean hasLongs = false;
+        boolean hasStrings = false;
+        for (Object key : set.keySet()) {
+            if (key instanceof Long) {
+                hasLongs = true;
+            } else {
+                hasStrings = true;
+            }
+        }
+
+        if (hasLongs && !hasStrings) {
+            var builder = SearchProtocol.ItemWeightedSetOfLong.newBuilder();
+            builder.setProperties(ToProtobuf.buildTermProperties(this));
+            for (Map.Entry<Object, Integer> entry : set.entrySet()) {
+                var weightedLong = SearchProtocol.PureWeightedLong.newBuilder()
+                        .setWeight(entry.getValue())
+                        .setValue((Long) entry.getKey())
+                        .build();
+                builder.addWeightedLongs(weightedLong);
+            }
+            return SearchProtocol.QueryTreeItem.newBuilder()
+                    .setItemWeightedSetOfLong(builder.build())
+                    .build();
+        } else {
+            var builder = SearchProtocol.ItemWeightedSetOfString.newBuilder();
+            builder.setProperties(ToProtobuf.buildTermProperties(this));
+            for (Map.Entry<Object, Integer> entry : set.entrySet()) {
+                var weightedString = SearchProtocol.PureWeightedString.newBuilder()
+                        .setWeight(entry.getValue())
+                        .setValue(entry.getKey().toString())
+                        .build();
+                builder.addWeightedStrings(weightedString);
+            }
+            return SearchProtocol.QueryTreeItem.newBuilder()
+                    .setItemWeightedSetOfString(builder.build())
+                    .build();
+        }
     }
 
 }

@@ -16,6 +16,7 @@ import com.yahoo.search.dispatch.rpc.RpcConnectionPool;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
 import com.yahoo.search.dispatch.rpc.RpcPingFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
+import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.dispatch.searchcluster.AvailabilityPolicy;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -66,6 +67,7 @@ public class Dispatcher extends AbstractComponent {
     private final RpcConnectionPool rpcResourcePool;
     private final SearchCluster searchCluster;
     private final ClusterMonitor<Node> clusterMonitor;
+    private final QrSearchersConfig qrSearchersConfig;
     private volatile VolatileItems volatileItems;
 
     private static class VolatileItems {
@@ -114,44 +116,50 @@ public class Dispatcher extends AbstractComponent {
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     interface InvokerFactoryFactory {
-        InvokerFactory create(RpcConnectionPool rpcConnectionPool, SearchGroups searchGroups, DispatchConfig dispatchConfig);
+        InvokerFactory create(RpcConnectionPool rpcConnectionPool, SearchGroups searchGroups, DispatchConfig dispatchConfig, QrSearchersConfig qrSearchersConfig);
     }
 
     @Inject
-    public Dispatcher(ComponentId clusterId, DispatchConfig dispatchConfig, DispatchNodesConfig nodesConfig, VipStatus vipStatus) {
-        this(clusterId, dispatchConfig, new RpcResourcePool(dispatchConfig, nodesConfig), nodesConfig, vipStatus, RpcInvokerFactory::new);
+    public Dispatcher(ComponentId clusterId, DispatchConfig dispatchConfig, QrSearchersConfig qrSearchersConfig, DispatchNodesConfig nodesConfig, VipStatus vipStatus) {
+        this(clusterId, dispatchConfig, qrSearchersConfig, new RpcResourcePool(dispatchConfig, nodesConfig), nodesConfig, vipStatus, RpcInvokerFactory::new);
         initialWarmup(dispatchConfig.warmuptime());
     }
 
-    Dispatcher(ComponentId clusterId, DispatchConfig dispatchConfig, RpcConnectionPool rpcConnectionPool,
+    Dispatcher(ComponentId clusterId, DispatchConfig dispatchConfig, QrSearchersConfig qrSearchersConfig, RpcConnectionPool rpcConnectionPool,
                DispatchNodesConfig nodesConfig, VipStatus vipStatus, InvokerFactoryFactory invokerFactories) {
-        this(dispatchConfig, rpcConnectionPool,
+        this(dispatchConfig, qrSearchersConfig, rpcConnectionPool,
              new SearchCluster(clusterId.stringValue(), AvailabilityPolicy.from(dispatchConfig),
                                toNodes(clusterId.stringValue(), nodesConfig), vipStatus, new RpcPingFactory(rpcConnectionPool)),
              invokerFactories);
     }
 
-    Dispatcher(DispatchConfig dispatchConfig, RpcConnectionPool rpcConnectionPool,
+    Dispatcher(ComponentId clusterId, DispatchConfig dispatchConfig, RpcConnectionPool rpcConnectionPool,
+               DispatchNodesConfig nodesConfig, VipStatus vipStatus, InvokerFactoryFactory invokerFactories) {
+        this(clusterId, dispatchConfig, null, rpcConnectionPool, nodesConfig, vipStatus, invokerFactories);
+    }
+
+    Dispatcher(DispatchConfig dispatchConfig, QrSearchersConfig qrSearchersConfig, RpcConnectionPool rpcConnectionPool,
                SearchCluster searchCluster, InvokerFactoryFactory invokerFactories) {
-        this(dispatchConfig, rpcConnectionPool, searchCluster, new ClusterMonitor<>(searchCluster, false), invokerFactories);
+        this(dispatchConfig, qrSearchersConfig, rpcConnectionPool, searchCluster, new ClusterMonitor<>(searchCluster, false), invokerFactories);
         this.clusterMonitor.start(); // Populate nodes to monitor before starting it.
     }
 
-    Dispatcher(DispatchConfig dispatchConfig, RpcConnectionPool rpcConnectionPool,
+    Dispatcher(DispatchConfig dispatchConfig, QrSearchersConfig qrSearchersConfig, RpcConnectionPool rpcConnectionPool,
                SearchCluster searchCluster, ClusterMonitor<Node> clusterMonitor, InvokerFactoryFactory invokerFactories) {
         this.dispatchConfig = dispatchConfig;
+        this.qrSearchersConfig = qrSearchersConfig;
         this.rpcResourcePool = rpcConnectionPool;
         this.searchCluster = searchCluster;
-        this.invokerFactories = invokerFactories;
         this.clusterMonitor = clusterMonitor;
+        this.invokerFactories = invokerFactories;
         this.volatileItems = update();
         searchCluster.addMonitoring(clusterMonitor);
     }
 
     /* For simple mocking in tests. Beware that searchCluster is shutdown in deconstruct() */
     Dispatcher(ClusterMonitor<Node> clusterMonitor, SearchCluster searchCluster,
-               DispatchConfig dispatchConfig, InvokerFactory invokerFactory) {
-        this(dispatchConfig, null, searchCluster, clusterMonitor, (__, ___, ____) -> invokerFactory);
+               DispatchConfig dispatchConfig, QrSearchersConfig qrSearchersConfig, InvokerFactory invokerFactory) {
+        this(dispatchConfig, qrSearchersConfig, null, searchCluster, clusterMonitor, (__, ___, ____, _____) -> invokerFactory);
     }
 
     /** Returns the snapshot of volatile items that need to be kept together, incrementing its reference counter. */
@@ -208,7 +216,7 @@ public class Dispatcher extends AbstractComponent {
 
     private VolatileItems update() {
         return new VolatileItems(new LoadBalancer(searchCluster.groupList().groups(), toLoadBalancerPolicy(dispatchConfig.distributionPolicy())),
-                                 invokerFactories.create(rpcResourcePool, searchCluster.groupList(), dispatchConfig));
+                                 invokerFactories.create(rpcResourcePool, searchCluster.groupList(), dispatchConfig, qrSearchersConfig));
     }
 
     private void initialWarmup(double warmupTime) {

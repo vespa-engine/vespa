@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
+import com.yahoo.search.query.QueryTree;
 import java.nio.ByteBuffer;
 
 /**
@@ -48,6 +50,23 @@ public class RootItem extends CompositeItem {
         return getRoot().encode(buffer);
     }
 
+    @Override
+    SearchProtocol.QueryTreeItem toProtobuf() {
+        throw new UnsupportedOperationException("QueryTree itself should not be serialized, serialize its root");
+    }
+
+    /**
+     * Convert this query tree to protobuf format.
+     * @return a SearchProtocol.QueryTree protobuf message
+     */
+    public SearchProtocol.QueryTree toProtobufQueryTree() {
+        var builder = SearchProtocol.QueryTree.newBuilder();
+        if (getRoot() != null && !(getRoot() instanceof NullItem)) {
+            builder.setRoot(getRoot().toProtobuf());
+        }
+        return builder.build();
+    }
+
     // Let's not pollute toString() by adding "ROOT"
     @Override
     protected void appendHeadingString(StringBuilder sb) {
@@ -63,6 +82,7 @@ public class RootItem extends CompositeItem {
         if (root == this) throw new IllegalArgumentException("Cannot make a root point at itself");
         if (root == null) throw new IllegalArgumentException("Root must not be null, use NullItem instead.");
         if (root instanceof RootItem) throw new IllegalArgumentException("Do not use a new RootItem instance as a root.");
+        if (root instanceof QueryTree) throw new IllegalArgumentException("Do not use a new QueryTree instance as a root.");
         if (this.getItemCount() == 0) // initializing
             super.addItem(root);
         else
