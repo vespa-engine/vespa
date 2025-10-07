@@ -269,6 +269,23 @@ public class StreamingJsonLinesResponseTest {
     }
 
     @Test
+    void null_trace_is_not_rendered() throws Exception {
+        var f = new Fixture();
+        f.jsonlResponse.writeTrace(null);
+        verify(f.writer, never()).write(anyString(), any());
+    }
+
+    @Test
+    void empty_trace_is_not_rendered() throws Exception {
+        var f = new Fixture();
+        var trace = new Trace(9);
+        // Not rendering traces without a root node is the behavior of the legacy
+        // JSON renderer, so we carry the torch of that particular tradition.
+        f.jsonlResponse.writeTrace(trace);
+        verify(f.writer, never()).write(anyString(), any());
+    }
+
+    @Test
     void message_is_rendered_as_own_line() throws IOException {
         var f = new Fixture();
         f.jsonlResponse.writeMessage("'ello, 'ello, this is London", StreamableJsonResponse.MessageSeverity.INFO);
@@ -290,11 +307,11 @@ public class StreamingJsonLinesResponseTest {
     }
 
     @Test
-    void document_count_is_rendered_as_own_line() throws IOException {
+    void document_count_is_rendered_as_part_of_session_stats_object() throws IOException {
         var f = new Fixture();
         f.jsonlResponse.writeDocumentCount(123456);
         String expected = """
-                {"documentCount":123456}
+                {"sessionStats":{"documentCount":123456}}
                 """;
         verify(f.writer).write(expected, null);
     }

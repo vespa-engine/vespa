@@ -175,6 +175,9 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
 
     @Override
     public void writeTrace(Trace trace) throws IOException {
+        if (trace == null || trace.getRoot().isEmpty()) {
+            return; // no-op
+        }
         writeJsonLine((json) -> {
             json.writeStartObject();
             json.writeFieldName(JsonNames.TRACE);
@@ -202,11 +205,13 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
 
     @Override
     public void writeDocumentCount(long count) throws IOException {
-        // TODO do we want this for streaming or do we want another kind of session summary?
         writeJsonLine((json) -> {
+            json.writeStartObject();
+            json.writeFieldName(JsonNames.SESSION_STATS);
             json.writeStartObject();
             json.writeFieldName(JsonNames.DOCUMENT_COUNT);
             json.writeNumber(count);
+            json.writeEndObject();
             json.writeEndObject();
         });
     }

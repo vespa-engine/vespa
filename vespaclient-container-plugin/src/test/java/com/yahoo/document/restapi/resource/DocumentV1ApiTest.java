@@ -1154,7 +1154,7 @@ public class DocumentV1ApiTest {
                 {"put":"id:space:music:n=1:two","fields":{"artist":"Asa-Chan & Jun-Ray","embedding":{"type":"tensor(x[3])","values":[4.0,5.0,6.0]}}}
                 {"put":"id:space:music:g=a:three","fields":{}}
                 {"remove":"id:space:music::t-square-truth"}
-                {"documentCount":4}
+                {"sessionStats":{"documentCount":4}}
                 """, response.readAll());
         assertEquals(200, response.getStatus());
         List<String> contentType = response.getResponse().headers().get("Content-Type");
