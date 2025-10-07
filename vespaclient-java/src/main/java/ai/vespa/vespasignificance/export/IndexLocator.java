@@ -47,7 +47,7 @@ public class IndexLocator {
      * <p>
      * On none or more than 1 match, it will exit.
      */
-    Path locateIndexDir(@Nullable String clusterName, @Nullable String schemaName) throws NoSuchFileException {
+    Path locateIndexDir(@Nullable String clusterName, @Nullable String schemaName, @Nullable String nodeIndex) throws NoSuchFileException {
         Path searchRoot = vespaHome.resolve(Path.of("var", "db", "vespa", "search"));
 
         // Not common, but might be more than 1 cluster on one host.
@@ -65,7 +65,18 @@ public class IndexLocator {
         );
         Path clusterDir = chooseOrThrow(clusterRes, "cluster");
 
-        Path documentsDir = clusterDir.resolve("n0").resolve("documents");
+        List<Path> nodeDirs = listDirs(clusterDir, p -> Files.isDirectory(p) && p.getFileName().toString().matches("n\\d+"));
+        var nodeRes = PathSelector.selectOne(
+                nodeDirs,
+                nodeIndex,
+                "node-index",
+                clusterDir,
+                p -> p.getFileName().toString(),
+                Path::toString
+        );
+        Path nodeDir = chooseOrThrow(nodeRes, "node-index");
+
+        Path documentsDir = nodeDir.resolve("documents");
         if (!Files.isDirectory(documentsDir)) {
             throw new NoSuchFileException("Documents directory does not exist: " + documentsDir);
         }
