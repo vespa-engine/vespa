@@ -118,7 +118,7 @@ public class IndexLocator {
 
         List<Path> candidates = listDirs(indexDir, Files::isDirectory);
         if (candidates.isEmpty()) {
-            throw new NoSuchFileException("There is no flushed indexes on disk in: " + indexDir);
+            throw new NoSuchFileException("There are no flushed indexes on disk in: " + indexDir);
         }
 
         if (candidates.size() == 1) {
