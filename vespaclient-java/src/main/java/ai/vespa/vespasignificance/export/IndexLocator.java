@@ -6,6 +6,7 @@ import com.yahoo.vespa.defaults.Defaults;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -37,7 +38,7 @@ public class IndexLocator {
      * <p>
      * On none or more than 1 match, it will exit.
      */
-    Path locateIndexDir(@Nullable String clusterName, @Nullable String schemaName) {
+    Path locateIndexDir(@Nullable String clusterName, @Nullable String schemaName) throws NoSuchFileException {
         Path searchRoot = Paths.get(VESPA_HOME, "var", "db", "vespa", "search");
 
         // Not common, but might be more than 1 cluster on one host.
@@ -53,7 +54,7 @@ public class IndexLocator {
                 },
                 Path::toString
         );
-        Path clusterDir = chooseOrExit(clusterRes, "cluster");
+        Path clusterDir = chooseOrThrow(clusterRes, "cluster");
 
         Path documentsDir = clusterDir.resolve("n0").resolve("documents");
         List<Path> schemaDirs = listDirs(documentsDir, Files::isDirectory);
@@ -65,35 +66,19 @@ public class IndexLocator {
                 p -> p.getFileName().toString(),
                 Path::toString
         );
-        Path schemaDir = chooseOrExit(schemaRes, "schema");
+        Path schemaDir = chooseOrThrow(schemaRes, "schema");
 
         Path indexDir = schemaDir.resolve("0.ready").resolve("index").resolve("index.flush.1");
         if (!Files.exists(indexDir)) {
-            System.out.println("Index directory does not exist: " + indexDir);
-            System.exit(1);
+            throw new NoSuchFileException("Index directory does not exist: " + indexDir);
         }
 
         return indexDir;
     }
 
-    /** Parse the {@link PathSelector.Result}. */
-    private static <T> T chooseOrExit(PathSelector.Result<T> res, String kind) {
+    private static <T> T chooseOrThrow(PathSelector.Result<T> res, String kind) {
         if (res.outcome() == PathSelector.Outcome.CHOSEN) return res.value();
-
-        System.out.println("Error: " + res.message());
-        var rows = res.options();
-        if (!rows.isEmpty()) {
-            TablePrinter.printTable(
-                    null,
-                    List.of(kind, "path"),
-                    rows.stream().map(r -> List.of(r.name(), r.path())).toList()
-            );
-            System.out.println();
-            System.out.println("Use `--" + kind + " <name>` to select one of the above.");
-        }
-
-        System.exit(1);
-        throw new IllegalStateException("unreachable");
+        throw new SelectionException(res.outcome(), kind, res.message(), res.options());
     }
 
     private static List<Path> listDirs(Path root, java.util.function.Predicate<Path> filter) {
