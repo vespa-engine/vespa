@@ -1011,15 +1011,36 @@ public class ToProtobufTest {
     @Test
     void testConvertFromQueryWithMultiRangeItem() {
         MultiRangeItem<Long> multiRange = MultiRangeItem.overPoints(MultiRangeItem.NumberType.LONG, "myindex",
-                                                                     MultiRangeItem.Limit.INCLUSIVE,
-                                                                     MultiRangeItem.Limit.INCLUSIVE);
+                                                                    MultiRangeItem.Limit.INCLUSIVE,
+                                                                    MultiRangeItem.Limit.INCLUSIVE);
         multiRange.addRange(1L, 10L);
         multiRange.addRange(20L, 30L);
         SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(multiRange);
         assertNotNull(result);
         String json = toJson(result);
-        // MultiRangeItem is converted to OR of IntItem ranges
-        assertTrue(json.contains("itemOr"), "Expected itemOr in JSON: " + json);
+        String expected = """
+            {
+              "itemOr": {
+                "children": [
+                  {
+                    "itemIntegerRangeTerm": {
+                      "properties": {"index": "myindex"},
+                      "lowerLimit": "1",
+                      "upperLimit": "10"
+                    }
+                  },
+                  {
+                    "itemIntegerRangeTerm": {
+                      "properties": {"index": "myindex"},
+                      "lowerLimit": "20",
+                      "upperLimit": "30"
+                    }
+                  }
+                ]
+              }
+            }
+            """;
+        assertJsonEquals(json, expected);
     }
 
     @Test
