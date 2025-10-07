@@ -307,11 +307,11 @@ public class StreamingJsonLinesResponseTest {
     }
 
     @Test
-    void document_count_is_rendered_as_own_line() throws IOException {
+    void document_count_is_rendered_as_part_of_session_stats_object() throws IOException {
         var f = new Fixture();
         f.jsonlResponse.writeDocumentCount(123456);
         String expected = """
-                {"documentCount":123456}
+                {"sessionStats":{"documentCount":123456}}
                 """;
         verify(f.writer).write(expected, null);
     }
