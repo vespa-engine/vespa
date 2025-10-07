@@ -40,7 +40,7 @@ class IndexLocatorTest {
         Path expected = mkIndexTree("cluster.alpha", "n0", "doc", true);
         IndexLocator locator = new IndexLocator(tmp);
 
-        Path actual = locator.locateIndexDir("alpha", "doc", "n0");
+        Path actual = locator.locateIndexDir("alpha", "doc", "0");
 
         assertEquals(expected, actual);
     }
@@ -69,7 +69,7 @@ class IndexLocatorTest {
 
         SelectionException e = assertThrows(
                 SelectionException.class,
-                () -> locator.locateIndexDir("beta", "doc", "n0")
+                () -> locator.locateIndexDir("beta", "doc", "0")
         );
         assertEquals(PathSelector.Outcome.NOT_FOUND, e.outcome());
         assertEquals("cluster", e.kind());
@@ -83,7 +83,7 @@ class IndexLocatorTest {
 
         SelectionException e = assertThrows(
                 SelectionException.class,
-                () -> locator.locateIndexDir(null, "doc", "n0")
+                () -> locator.locateIndexDir(null, "doc", "0")
         );
         assertEquals(PathSelector.Outcome.AMBIGUOUS, e.outcome());
         assertEquals("cluster", e.kind());
@@ -112,7 +112,7 @@ class IndexLocatorTest {
 
         SelectionException e = assertThrows(
                 SelectionException.class,
-                () -> locator.locateIndexDir("alpha", null, "n0")
+                () -> locator.locateIndexDir("alpha", null, "0")
         );
         assertEquals(PathSelector.Outcome.AMBIGUOUS, e.outcome());
         assertEquals("schema", e.kind());
@@ -127,7 +127,7 @@ class IndexLocatorTest {
 
         NoSuchFileException e = assertThrows(
                 NoSuchFileException.class,
-                () -> locator.locateIndexDir("alpha", "doc", "n0")
+                () -> locator.locateIndexDir("alpha", "doc", "0")
         );
         assertTrue(e.getMessage().contains("Documents directory"));
     }
@@ -140,7 +140,7 @@ class IndexLocatorTest {
 
         NoSuchFileException e = assertThrows(
                 NoSuchFileException.class,
-                () -> locator.locateIndexDir("alpha", "doc", "n0")
+                () -> locator.locateIndexDir("alpha", "doc", "0")
         );
         assertTrue(e.getMessage().contains("Index directory"));
     }

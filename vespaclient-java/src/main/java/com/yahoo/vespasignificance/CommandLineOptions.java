@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespasignificance;
 
+import ai.vespa.vespasignificance.export.ExportClientParameters;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
@@ -22,10 +23,15 @@ public class CommandLineOptions {
 
     public static final String HELP_OPTION = "help";
     public static final String INPUT_OPTION = "in";
-    public static final String OUTPUT_OPTION = "out";
+    public static final String OUTPUT_OPTION = "output";
     public static final String FIELD_OPTION = "field";
     public static final String LANGUAGE_OPTION = "language";
     public static final String ZST_COMPRESSION = "zst-compression";
+
+    public static final String INDEX_DIR = "index-dir";
+    public static final String CLUSTER_OPTION = "cluster";
+    public static final String SCHEMA_NAME = "schema";
+    public static final String NODE_INDEX_OPTION = "node-index";
 
     /** Options for selecting subcommand */
     static Options createGlobalOptions() {
@@ -43,6 +49,7 @@ public class CommandLineOptions {
     static Map<String, String> registeredCommands() {
         Map<String, String> commands = new LinkedHashMap<>();
         commands.put("generate", "Generate a significance model from a JSONL feed file.");
+        commands.put("export", "Export terms and document frequency from a flushed index to TSV.");
         return commands;
     }
 
@@ -137,6 +144,84 @@ public class CommandLineOptions {
         builder.setZstCompression(cl.hasOption(ZST_COMPRESSION) ? cl.getOptionValue(ZST_COMPRESSION) : "false");
 
         return builder.build();
+    }
+
+    /** Options for export command */
+    static Options createExportOptions() {
+        Options options = new Options();
+
+        options.addOption(Option.builder("h")
+                .longOpt(HELP_OPTION)
+                .desc("Show this help and exit.")
+                .build());
+
+        options.addOption(Option.builder()
+                .longOpt(INDEX_DIR)
+                .hasArg()
+                .argName("path/to/index")
+                .desc("Path to index directory.")
+                .build());
+
+        options.addOption(Option.builder()
+                .longOpt(OUTPUT_OPTION)
+                .hasArg()
+                .argName("FILE.tsv")
+                .desc("Output TSV file.")
+                .build());
+
+        options.addOption(Option.builder()
+                .longOpt(FIELD_OPTION)
+                .required()
+                .hasArg()
+                .argName("FIELD")
+                .desc("Field to export.")
+                .build());
+
+        options.addOption(Option.builder()
+                .longOpt(CLUSTER_OPTION)
+                .hasArg()
+                .argName("NAME")
+                .desc("Cluster name.")
+                .build());
+
+        options.addOption(Option.builder()
+                .longOpt(SCHEMA_NAME)
+                .hasArg()
+                .argName("NAME")
+                .desc("Schema name (document type).")
+                .build());
+
+        options.addOption(Option.builder()
+                .longOpt(NODE_INDEX_OPTION)
+                .hasArg()
+                .argName("NUMBER")
+                .desc("Node index directory.")
+                .build());
+
+        return options;
+    }
+
+    /** Petty print help for export command */
+    public static void printExportHelp() {
+        HelpFormatter fmt = new HelpFormatter();
+        fmt.setWidth(100);
+        fmt.setLeftPadding(2);
+        fmt.setDescPadding(2);
+        fmt.setOptionComparator(Comparator.comparing(Option::getLongOpt));
+        String header = "Options:";
+        fmt.printHelp("vespa-significance export", header, createExportOptions(), "", true);
+    }
+
+    /** Parse generate command options to ClientParameters */
+    public static ExportClientParameters parseExportCommandLineArguments(CommandLine cl) {
+        return ExportClientParameters.builder()
+                .fieldName(cl.getOptionValue(FIELD_OPTION))
+                .outputFile(cl.hasOption(OUTPUT_OPTION) ? cl.getOptionValue(OUTPUT_OPTION) : "term_df.tsv")
+                .indexDir(cl.getOptionValue(INDEX_DIR))
+                .clusterName(cl.getOptionValue(CLUSTER_OPTION))
+                .schemaName(cl.getOptionValue(SCHEMA_NAME))
+                .nodeIndex(cl.getOptionValue(NODE_INDEX_OPTION))
+                .build();
     }
 
     /**

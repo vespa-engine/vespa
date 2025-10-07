@@ -73,7 +73,7 @@ public class IndexLocator {
                 nodeIndex,
                 "node-index",
                 clusterDir,
-                p -> p.getFileName().toString(),
+                p -> p.getFileName().toString().substring(1),
                 Path::toString
         );
         Path nodeDir = chooseOrThrow(nodeRes, "node-index");

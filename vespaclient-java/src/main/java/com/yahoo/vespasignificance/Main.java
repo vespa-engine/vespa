@@ -2,6 +2,7 @@
 
 package com.yahoo.vespasignificance;
 
+import ai.vespa.vespasignificance.export.Export;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.ParseException;
@@ -41,6 +42,10 @@ public class Main {
                 runGenerate(subArgs);
                 break;
 
+            case "export":
+                runExport(subArgs);
+                break;
+
             default:
                 System.err.println("Error: Unknown command `" + sub + "`");
                 CommandLineOptions.printGlobalHelp();
@@ -73,5 +78,26 @@ public class Main {
 
     private static SignificanceModelGenerator createSignificanceModelGenerator(ClientParameters params) {
         return new SignificanceModelGenerator(params);
+    }
+
+    static void runExport(String[] commandLineArgs) {
+        try {
+            if (CommandLineOptions.Utils.hasHelpOption(commandLineArgs)) {
+                CommandLineOptions.printExportHelp();
+                return;
+            }
+
+            var commandLineParser = new DefaultParser();
+            CommandLine commandLine = commandLineParser.parse(CommandLineOptions.createExportOptions(), commandLineArgs);
+            System.setProperty("vespa.replace_invalid_unicode", "true");
+
+            var clientParams = CommandLineOptions.parseExportCommandLineArguments(commandLine);
+            Export export = new Export(clientParams);
+            System.exit(export.run());
+        } catch (ParseException e) {
+            System.err.printf("Error: %s.\n", e.getMessage());
+            CommandLineOptions.printExportHelp();
+            System.exit(1);
+        }
     }
 }
