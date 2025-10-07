@@ -39,6 +39,12 @@ public:
         _term_data.push_back(&n);
     }
 
+    void visit(ProtonNodeTypes::SameElement &n) override {
+        if (n.expose_match_data_for_same_element) {
+            visitTerm(n);
+        }
+    }
+
 };
 }  // namespace
 

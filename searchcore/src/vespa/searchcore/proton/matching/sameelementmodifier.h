@@ -19,6 +19,7 @@ public:
     template <class TermNode>
     void visitTerm(TermNode &) {  }
     void visit(ProtonNodeTypes::SameElement &n) override;
+    static bool can_hide_match_data_for_same_element;
 };
 
 }
