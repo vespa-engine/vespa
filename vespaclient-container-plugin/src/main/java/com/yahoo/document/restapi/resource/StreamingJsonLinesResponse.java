@@ -175,6 +175,9 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
 
     @Override
     public void writeTrace(Trace trace) throws IOException {
+        if (trace == null || trace.getRoot().isEmpty()) {
+            return; // no-op
+        }
         writeJsonLine((json) -> {
             json.writeStartObject();
             json.writeFieldName(JsonNames.TRACE);
