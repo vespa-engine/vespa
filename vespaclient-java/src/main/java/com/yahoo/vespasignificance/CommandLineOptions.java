@@ -49,7 +49,7 @@ public class CommandLineOptions {
     static Map<String, String> registeredCommands() {
         Map<String, String> commands = new LinkedHashMap<>();
         commands.put("generate", "Generate a significance model from a JSONL feed file.");
-        commands.put("export", "Export subcommand.");
+        commands.put("export", "Export terms and document frequency from a flushed index to TSV.");
         return commands;
     }
 
@@ -159,43 +159,43 @@ public class CommandLineOptions {
                 .longOpt(INDEX_DIR)
                 .hasArg()
                 .argName("path/to/index")
-                .desc("Path to index dir.")
+                .desc("Path to index directory.")
                 .build());
 
         options.addOption(Option.builder()
                 .longOpt(OUTPUT_OPTION)
                 .hasArg()
-                .argName("term_df.tsv")
-                .desc("Output tab separated value file.")
+                .argName("FILE.tsv")
+                .desc("Output TSV file.")
                 .build());
 
         options.addOption(Option.builder()
                 .longOpt(FIELD_OPTION)
                 .required()
                 .hasArg()
-                .argName("fieldName")
-                .desc("Document field to analyze.")
+                .argName("FIELD")
+                .desc("Field to export.")
                 .build());
 
         options.addOption(Option.builder()
                 .longOpt(CLUSTER_OPTION)
                 .hasArg()
-                .argName("clusterName")
-                .desc("Name of cluster")
+                .argName("NAME")
+                .desc("Cluster name.")
                 .build());
 
         options.addOption(Option.builder()
                 .longOpt(SCHEMA_NAME)
                 .hasArg()
-                .argName("schemaName")
-                .desc("Name of schema")
+                .argName("NAME")
+                .desc("Schema name (document type).")
                 .build());
 
         options.addOption(Option.builder()
                 .longOpt(NODE_INDEX_OPTION)
                 .hasArg()
-                .argName("n0")
-                .desc("Specify node dir if multiple exists.")
+                .argName("NUMBER")
+                .desc("Node index directory.")
                 .build());
 
         return options;
