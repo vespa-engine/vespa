@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -43,7 +44,8 @@ class UrlDownloader {
     public Optional<File> download(File downloadDir) throws IOException {
         long start = System.currentTimeMillis();
         log.log(Level.INFO, "Downloading URL '" + uri + "'");
-        File contentsPath = new File(downloadDir, fileName());
+        var tempFile = Files.createTempFile(downloadDir.toPath(), fileName(), "inprogress");
+        var target = downloadDir.toPath().resolve(fileName());
         HttpGet get = new HttpGet(uri);
         downloadOptions.getAuthToken()
                        .ifPresent(token -> get.setHeader(new BasicHeader("Authorization", "Bearer " + token)));
@@ -51,22 +53,23 @@ class UrlDownloader {
             var code = resp.getCode();
             if (code != 200)
                 throw new RuntimeException("Download of URL '" + uri + "' failed, got response code " + code);
-            return writeContent(downloadDir, resp, contentsPath, start);
+            return writeContent(downloadDir, resp, tempFile, target, start);
         });
     }
 
-    private Optional<File> writeContent(File downloadDir, ClassicHttpResponse resp, File contentsPath, long start) throws IOException {
+    private Optional<File> writeContent(File downloadDir, ClassicHttpResponse resp, Path tempFile, Path target, long start) throws IOException {
         InputStream content = resp.getEntity().getContent();
         if (content == null) return Optional.empty();
 
         try (var in = content) {
-            Files.copy(in, contentsPath.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            if (contentsPath.exists() && contentsPath.length() > 0) {
+            Files.copy(in, tempFile, StandardCopyOption.REPLACE_EXISTING);
+            if (Files.exists(tempFile) && Files.size(tempFile) > 0) {
+                Files.move(tempFile, target);
                 new RequestTracker().trackRequest(downloadDir);
-                log.log(Level.FINE, () -> "URL '" + uri + "' available at " + contentsPath);
+                log.log(Level.FINE, () -> "URL '" + uri + "' available at " + target);
                 log.log(Level.INFO, String.format("Download of URL '%s' done in %.3f seconds",
                                                   uri, (System.currentTimeMillis() - start) / 1000.0));
-                return Optional.of(contentsPath);
+                return Optional.of(target.toFile());
             } else {
                 log.log(Level.SEVERE, "Downloaded URL '" + uri + "' not found, returning error");
                 return Optional.empty();
