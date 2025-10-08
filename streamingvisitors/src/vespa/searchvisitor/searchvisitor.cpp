@@ -524,7 +524,7 @@ SearchVisitor::init(const Parameters & params)
             _fieldSearchSpecMap.buildFromConfig(additionalFields);
 
             QueryTermDataFactory addOnFactory(this, &_element_gap_inspector);
-            auto serialized_query_tree = SerializedQueryTree::create(std::vector<char>(queryBlob.begin(), queryBlob.end()));
+            auto serialized_query_tree = SerializedQueryTree::fromStackDump(std::vector<char>(queryBlob.begin(), queryBlob.end()));
             _query = Query(addOnFactory, *serialized_query_tree);
             _searchBuffer->reserve(0x10000);
 

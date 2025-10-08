@@ -23,14 +23,14 @@ SerializedQueryTree::SerializedQueryTree(std::vector<char> stackDump, ctor_tag)
 
 SerializedQueryTree::~SerializedQueryTree() = default;
 
-SerializedQueryTreeSP SerializedQueryTree::create(std::vector<char> stackDump) {
+SerializedQueryTreeSP SerializedQueryTree::fromStackDump(std::vector<char> stackDump) {
     ctor_tag tag;
     return std::make_shared<SerializedQueryTree>(std::move(stackDump), tag);
 }
 
-SerializedQueryTreeSP SerializedQueryTree::create(std::string_view stackDumpRef) {
+SerializedQueryTreeSP SerializedQueryTree::fromStackDumpRef(std::string_view stackDumpRef) {
     std::vector<char> stackDump(stackDumpRef.data(), stackDumpRef.data() + stackDumpRef.size());
-    return create(std::move(stackDump));
+    return fromStackDump(std::move(stackDump));
 }
 
 std::unique_ptr<QueryStackIterator> SerializedQueryTree::makeIterator() const {

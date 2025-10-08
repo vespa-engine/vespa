@@ -14,7 +14,7 @@ QueryTermDecoder::decodeTerm(QueryPacketT term)
 {
     QueryTermSimple::UP result;
     QueryNodeResultFactory factory;
-    auto queryTree = SerializedQueryTree::create(std::vector<char>(term.begin(), term.end()));
+    auto queryTree = SerializedQueryTree::fromStackDump(std::vector<char>(term.begin(), term.end()));
     Query query(factory, *queryTree);
     if (query.valid() && (dynamic_cast<const QueryTerm *>(&query.getRoot()))) {
         result.reset(static_cast<QueryTerm *>(Query::steal(std::move(query)).release()));

@@ -1156,7 +1156,7 @@ TEST(QueryTest, global_filter_is_calculated_and_handled)
 bool query_needs_ranking(const std::string& stack_dump)
 {
     Query query;
-    auto queryTree = SerializedQueryTree::create(stack_dump);
+    auto queryTree = SerializedQueryTree::fromStackDumpRef(stack_dump);
     query.buildTree(*queryTree, "", ViewResolver(), plain_index_env);
     return query.needs_ranking();
 

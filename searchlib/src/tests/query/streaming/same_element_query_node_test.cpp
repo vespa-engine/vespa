@@ -154,7 +154,7 @@ TEST_F(SameElementQueryNodeTest, a_unhandled_sameElement_stack)
     const char * stack = "\022\002\026xyz_abcdefghij_xyzxyzxQ\001\vxxxxxx_name\034xxxxxx_xxxx_xxxxxxx_xxxxxxxxE\002\005delta\b<0.00393";
     std::string_view stackDump(stack);
     EXPECT_EQ(85u, stackDump.size());
-    auto queryTree = SerializedQueryTree::create(stackDump);
+    auto queryTree = SerializedQueryTree::fromStackDumpRef(stackDump);
     AllowRewrite empty("");
     const Query q(empty, *queryTree);
     EXPECT_TRUE(q.valid());

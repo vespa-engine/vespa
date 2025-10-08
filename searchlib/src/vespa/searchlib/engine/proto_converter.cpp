@@ -125,7 +125,7 @@ ProtoConverter::search_request_from_proto(const ProtoSearchRequest &proto, Searc
     request.groupSpec.assign(proto.grouping_blob().begin(), proto.grouping_blob().end());
     request.location = proto.geo_location();
     std::string_view stackDumpRef(proto.query_tree_blob().begin(), proto.query_tree_blob().end());
-    auto queryTree = SerializedQueryTree::create(stackDumpRef);
+    auto queryTree = SerializedQueryTree::fromStackDumpRef(stackDumpRef);
     request.setSerializedQueryTree(queryTree);
 }
 
@@ -223,7 +223,7 @@ ProtoConverter::docsum_request_from_proto(const ProtoDocsumRequest &proto, Docsu
     }
     request.location = proto.geo_location();
     std::string_view stackDumpRef(proto.query_tree_blob().begin(), proto.query_tree_blob().end());
-    auto queryTree = SerializedQueryTree::create(stackDumpRef);
+    auto queryTree = SerializedQueryTree::fromStackDumpRef(stackDumpRef);
     request.setSerializedQueryTree(queryTree);
     request.hits.resize(proto.global_ids_size());
     for (int i = 0; i < proto.global_ids_size(); ++i) {
