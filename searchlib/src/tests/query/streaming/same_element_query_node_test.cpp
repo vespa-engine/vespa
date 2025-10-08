@@ -22,6 +22,7 @@ using search::query::Node;
 using search::query::SimpleQueryNodeTypes;
 using search::query::StackDumpCreator;
 using search::query::Weight;
+using search::SerializedQueryTree;
 using search::streaming::HitList;
 using search::streaming::Query;
 using search::streaming::QueryNode;
@@ -153,7 +154,7 @@ TEST_F(SameElementQueryNodeTest, a_unhandled_sameElement_stack)
     const char * stack = "\022\002\026xyz_abcdefghij_xyzxyzxQ\001\vxxxxxx_name\034xxxxxx_xxxx_xxxxxxx_xxxxxxxxE\002\005delta\b<0.00393";
     std::string_view stackDump(stack);
     EXPECT_EQ(85u, stackDump.size());
-    auto queryTree = search::SerializedQueryTree::create(stackDump);
+    auto queryTree = SerializedQueryTree::create(stackDump);
     AllowRewrite empty("");
     const Query q(empty, *queryTree);
     EXPECT_TRUE(q.valid());

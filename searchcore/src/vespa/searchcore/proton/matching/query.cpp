@@ -35,6 +35,7 @@ using search::query::Node;
 using search::query::QueryTreeCreator;
 using search::query::TemplateTermVisitor;
 using search::query::Weight;
+using search::SerializedQueryTree;
 using search::queryeval::AndBlueprint;
 using search::queryeval::AndNotBlueprint;
 using search::queryeval::Blueprint;
@@ -169,7 +170,7 @@ NeedsRankingVisitor::NeedsRankingVisitor()
 NeedsRankingVisitor::~NeedsRankingVisitor() = default;
 
 Node::UP
-create_query_tree(const search::SerializedQueryTree &queryTree)
+create_query_tree(const SerializedQueryTree &queryTree)
 {
     auto stack_dump_iterator = queryTree.makeIterator();
     return QueryTreeCreator<ProtonNodeTypes>::create(*stack_dump_iterator);
@@ -181,7 +182,7 @@ Query::Query() = default;
 Query::~Query() = default;
 
 bool
-Query::buildTree(const search::SerializedQueryTree &queryTree, const string &location,
+Query::buildTree(const SerializedQueryTree &queryTree, const string &location,
                  const ViewResolver &resolver, const IIndexEnvironment &indexEnv)
 {
     _query_tree = create_query_tree(queryTree);

@@ -5,7 +5,6 @@
 #include "searchvisitor.h"
 #include "matching_elements_filler.h"
 #include <vespa/document/base/exceptions.h>
-#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/datatype/positiondatatype.h>
@@ -43,6 +42,7 @@ using document::DataType;
 using document::PositionDataType;
 using search::AttributeGuard;
 using search::AttributeVector;
+using search::SerializedQueryTree;
 using search::aggregation::HitsAggregationResult;
 using search::attribute::IAttributeVector;
 using search::attribute::make_sort_blob_writer;
@@ -524,7 +524,7 @@ SearchVisitor::init(const Parameters & params)
             _fieldSearchSpecMap.buildFromConfig(additionalFields);
 
             QueryTermDataFactory addOnFactory(this, &_element_gap_inspector);
-            auto serialized_query_tree = search::SerializedQueryTree::create(std::vector<char>(queryBlob.begin(), queryBlob.end()));
+            auto serialized_query_tree = SerializedQueryTree::create(std::vector<char>(queryBlob.begin(), queryBlob.end()));
             _query = Query(addOnFactory, *serialized_query_tree);
             _searchBuffer->reserve(0x10000);
 

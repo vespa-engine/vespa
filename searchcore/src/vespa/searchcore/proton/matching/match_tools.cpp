@@ -22,6 +22,7 @@ using search::attribute::diversity::DiversityFilter;
 using search::queryeval::CreateBlueprintParams;
 using search::queryeval::ExecuteInfo;
 using search::queryeval::IDiversifier;
+using search::SerializedQueryTree;
 using vespalib::Issue;
 
 using namespace search::fef::indexproperties::matchphase;
@@ -173,7 +174,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   ISearchContext             & searchContext,
                   IAttributeContext          & attributeContext,
                   search::engine::Trace      & root_trace,
-                  const search::SerializedQueryTree & queryTree,
+                  const SerializedQueryTree & queryTree,
                   const std::string          & location,
                   const ViewResolver         & viewResolver,
                   const IDocumentMetaStore   & metaStore,

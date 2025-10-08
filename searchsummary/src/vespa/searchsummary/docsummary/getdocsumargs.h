@@ -15,7 +15,6 @@ class GetDocsumArgs
 {
 private:
     using FieldSet = vespalib::hash_set<std::string>;
-    using ConstQueryTree = const search::SerializedQueryTree;
     std::string                      _resultClassName;
     bool                             _dumpFeatures;
     bool                             _locations_possible;

@@ -17,6 +17,7 @@ using std::string;
 using std::vector;
 using search::ParseItem;
 using search::RawBuf;
+using search::SerializedQueryTree;
 using search::SerializedQueryTreeSP;
 using namespace search::query;
 
@@ -379,7 +380,7 @@ string StackDumpCreator::create(const Node &node) {
 SerializedQueryTreeSP StackDumpCreator::createSerializedQueryTree(const Node &node) {
     string stackDump = create(node);
     vector<char> buf(stackDump.begin(), stackDump.end());
-    return search::SerializedQueryTree::create(std::move(buf));
+    return SerializedQueryTree::create(std::move(buf));
 }
 
 using namespace search::query;
