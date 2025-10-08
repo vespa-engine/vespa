@@ -2,16 +2,15 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/matchdatalayout.h>
+#include "querynoderesultbase.h"
 #include <vespa/searchlib/fef/simpletermdata.h>
-#include <vespa/searchlib/query/streaming/querynoderesultbase.h>
 
-namespace streaming {
+namespace search::streaming {
 
 /**
  * This class keeps data for a query term that is used by the ranking framework.
  **/
-class QueryTermData : public search::streaming::QueryNodeResultBase
+class QueryTermData : public QueryNodeResultBase
 {
 private:
     search::fef::SimpleTermData   _termData;
@@ -21,7 +20,7 @@ public:
     const search::fef::SimpleTermData &getTermData() const noexcept { return _termData; }
 };
 
-class QueryTermDataFactory final : public search::streaming::QueryNodeResultFactory {
+class QueryTermDataFactory final : public QueryNodeResultFactory {
 public:
     using Normalizing = search::Normalizing;
     using QueryNormalization = search::QueryNormalization;
@@ -31,7 +30,7 @@ public:
           _element_gap_inspector(element_gap_inspector)
     {}
     ~QueryTermDataFactory() override;
-    std::unique_ptr<search::streaming::QueryNodeResultBase> create() const override {
+    std::unique_ptr<QueryNodeResultBase> create() const override {
         return std::make_unique<QueryTermData>();
     }
     Normalizing normalizing_mode(std::string_view index) const noexcept override {
@@ -46,6 +45,4 @@ private:
     const search::queryeval::IElementGapInspector* _element_gap_inspector;
 };
 
-
-} // namespace streaming
-
+}

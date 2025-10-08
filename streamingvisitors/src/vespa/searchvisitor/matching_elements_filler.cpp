@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "matching_elements_filler.h"
-#include "querytermdata.h"
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/query/streaming/in_term.h>
+#include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/searchlib/query/streaming/same_element_query_node.h>
 #include <vespa/searchlib/query/streaming/weighted_set_term.h>
 #include <vespa/vsm/searcher/fieldsearcher.h>
@@ -26,7 +26,7 @@ using search::streaming::QueryNode;
 using search::streaming::QueryTerm;
 using search::streaming::SameElementQueryNode;
 using search::streaming::WeightedSetTerm;
-using streaming::QueryTermData;
+using search::streaming::QueryTermData;
 using vdslib::SearchResult;
 using vsm::FieldIdT;
 using vsm::FieldIdTSearcherMap;

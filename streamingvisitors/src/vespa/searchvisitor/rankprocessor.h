@@ -14,9 +14,9 @@
 #include "querywrapper.h"
 #include "rankmanager.h"
 
-namespace streaming {
+namespace search::streaming { class QueryTermData; }
 
-class QueryTermData;
+namespace streaming {
 
 /**
  * This class is associated with a query and a rank profile and
@@ -45,8 +45,8 @@ private:
     HitCollector::UP                     _hitCollector;
     std::unique_ptr<RankProgram>         _match_features_program;
 
-    void resolve_fields_from_children(QueryTermData& qtd, const search::streaming::MultiTerm& mt);
-    void resolve_fields_from_term(QueryTermData& qtd, const search::streaming::QueryTerm& term);
+    void resolve_fields_from_children(search::streaming::QueryTermData& qtd, const search::streaming::MultiTerm& mt);
+    void resolve_fields_from_term(search::streaming::QueryTermData& qtd, const search::streaming::QueryTerm& term);
     void initQueryEnvironment();
     void initHitCollector(size_t wantedHitCount, bool use_sort_blob);
     void setupRankProgram(search::fef::RankProgram &program);

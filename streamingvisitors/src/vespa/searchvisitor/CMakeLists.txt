@@ -6,7 +6,6 @@ vespa_add_library(vespa_streamingvisitors
     indexenvironment.cpp
     matching_elements_filler.cpp
     queryenvironment.cpp
-    querytermdata.cpp
     querywrapper.cpp
     rankmanager.cpp
     rankprocessor.cpp

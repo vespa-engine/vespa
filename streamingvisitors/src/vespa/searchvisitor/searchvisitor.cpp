@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "querytermdata.h"
 #include "searchenvironment.h"
 #include "search_environment_snapshot.h"
 #include "searchvisitor.h"
@@ -21,6 +20,7 @@
 #include <vespa/searchlib/attribute/single_raw_ext_attribute.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/features/setup.h>
+#include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/searchlib/tensor/tensor_ext_attribute.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -37,8 +37,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.searchvisitor");
 
-namespace streaming {
-
 using document::DataType;
 using document::PositionDataType;
 using search::AttributeGuard;
@@ -50,6 +48,7 @@ using search::expression::ConfigureStaticParams;
 using search::fef::ElementGap;
 using search::streaming::Query;
 using search::Normalizing;
+using search::streaming::QueryTermDataFactory;
 using search::streaming::QueryTermList;
 using storage::StorageComponent;
 using storage::VisitorEnvironment;
@@ -60,6 +59,8 @@ using vsm::FieldPath;
 using vsm::StorageDocument;
 using vsm::StringFieldIdTMap;
 using std::string;
+
+namespace streaming {
 
 namespace {
 
