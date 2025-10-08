@@ -1,0 +1,41 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include "serialized_query_tree.h"
+#include <vespa/searchlib/parsequery/stackdumpiterator.h>
+
+namespace search {
+
+namespace {
+struct SdiWrap : SimpleQueryStackDumpIterator {
+    QueryTreeSP ref;
+    SdiWrap(QueryTreeSP data, std::string_view stackRef)
+      : SimpleQueryStackDumpIterator(stackRef),
+        ref(std::move(data))
+    {}
+    ~SdiWrap() = default;
+};
+
+} // namespace <unnamed>
+
+SerializedQueryTree::SerializedQueryTree(std::vector<char> stackDump, ctor_tag)
+    : _stackDump(std::move(stackDump))
+{}
+
+SerializedQueryTree::~SerializedQueryTree() = default;
+
+QueryTreeSP SerializedQueryTree::create(std::vector<char> stackDump) {
+    ctor_tag tag;
+    return std::make_shared<SerializedQueryTree>(std::move(stackDump), tag);
+}
+
+QueryTreeSP SerializedQueryTree::create(std::string_view stackDumpRef) {
+    std::vector<char> stackDump(stackDumpRef.data(), stackDumpRef.data() + stackDumpRef.size());
+    return create(std::move(stackDump));
+}
+
+std::unique_ptr<QueryStackIterator> SerializedQueryTree::makeIterator() const {
+    std::string_view stackRef(_stackDump.data(), _stackDump.size());
+    return std::make_unique<SdiWrap>(shared_from_this(), stackRef);
+}
+
+} // namespace search

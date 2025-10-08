@@ -406,20 +406,20 @@ private:
         vespalib::ConstBufferRef fillSummary(search::AttributeVector::DocId lid, std::string_view summaryClass) override;
         void set_dump_features(bool dump_features) { _dump_features = dump_features; }
         void set_location(std::string location) { _location = std::move(location); }
-        void set_stack_dump(std::vector<char> stack_dump) { _stack_dump = std::move(stack_dump); }
+        void set_serialized_query_tree(search::QueryTreeSP tree) { _serialized_query_tree = std::move(tree); }
         void add_summary_field(std::string_view field) { _summaryFields.emplace_back(field); }
         search::fef::Properties & highlightTerms() { return _highlight_terms;}
     private:
         StreamingDocsumsState& get_streaming_docsums_state(std::string_view summary_class);
         vsm::GetDocsumsStateCallback            _callback;
         vespalib::hash_map<std::string, std::unique_ptr<StreamingDocsumsState>> _docsum_states;
-        std::vector<std::string>           _summaryFields;
+        std::vector<std::string>                _summaryFields;
         std::unique_ptr<vsm::DocsumFilter>      _docsumFilter;
         search::docsummary::IDocsumWriter     * _docsumWriter;
         vespalib::SmartBuffer                   _buf;
         std::optional<bool>                     _dump_features;
-        std::optional<std::string>         _location;
-        std::optional<std::vector<char>>        _stack_dump;
+        std::optional<std::string>              _location;
+        search::QueryTreeSP                     _serialized_query_tree;
         search::fef::Properties                 _highlight_terms;
         const search::IAttributeManager&        _attr_manager;
         const search::QueryNormalization &      _query_normalization;

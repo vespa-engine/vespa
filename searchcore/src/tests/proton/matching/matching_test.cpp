@@ -383,7 +383,7 @@ struct MyWorld {
     }
 
     static void setStackDump(Request &request, const std::string &stack_dump) {
-        request.stackDump.assign(stack_dump.data(), stack_dump.data() + stack_dump.size());
+        request.setSerializedQueryTree(SerializedQueryTree::create(stack_dump));
     }
 
     static SearchRequest::SP createRequest(const std::string &stack_dump)

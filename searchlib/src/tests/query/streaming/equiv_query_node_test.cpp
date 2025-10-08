@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/simpletermdata.h>
@@ -48,7 +49,7 @@ public:
                          uint32_t exp_position,
                          int32_t exp_element_weight,
                          uint32_t exp_element_length);
-    std::string make_simple_equiv_stack_dump();
+    search::QueryTreeSP make_simple_equiv_stack_dump();
 };
 
 EquivQueryNodeTest::EquivQueryNodeTest()
@@ -73,7 +74,7 @@ EquivQueryNodeTest::assert_tfmd_pos(const std::string label,
     EXPECT_EQ(exp_element_length, tfmd_pos.getElementLen());
 }
 
-std::string
+search::QueryTreeSP
 EquivQueryNodeTest::make_simple_equiv_stack_dump()
 {
     QueryBuilder<SimpleQueryNodeTypes> builder;
@@ -84,14 +85,14 @@ EquivQueryNodeTest::make_simple_equiv_stack_dump()
         builder.addStringTerm("3", "", 0, Weight(0));
     }
     Node::UP node = builder.build();
-    return StackDumpCreator::create(*node);
+    return StackDumpCreator::createQueryTree(*node);
 }
 
 TEST_F(EquivQueryNodeTest, test_equiv_evaluate_and_unpack)
 {
-    auto stack_dump = make_simple_equiv_stack_dump();
+    auto queryTree = make_simple_equiv_stack_dump();
     QueryNodeResultFactory empty;
-    Query q(empty, stack_dump);
+    Query q(empty, *queryTree);
     auto& eqn = dynamic_cast<EquivQueryNode&>(q.getRoot());
     auto& terms = eqn.get_terms();
     EXPECT_EQ(3, terms.size());
@@ -194,9 +195,9 @@ TEST_F(EquivQueryNodeTest, test_equiv_evaluate_and_unpack)
 
 TEST_F(EquivQueryNodeTest, test_equiv_flattening)
 {
-    auto stack_dump = make_simple_equiv_stack_dump();
+    auto queryTree = make_simple_equiv_stack_dump();
     AllowRewrite allow_rewrite;
-    Query q(allow_rewrite, stack_dump);
+    Query q(allow_rewrite, *queryTree);
     auto& eqn = dynamic_cast<EquivQueryNode&>(q.getRoot());
     auto& terms = eqn.get_terms();
     // Query is flattened to equiv("2", "2.5", phrase("2","5"), "3")

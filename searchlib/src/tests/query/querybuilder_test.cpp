@@ -747,9 +747,9 @@ TEST(QueryBuilderTest, require_that_Query_Tree_Creator_Can_Replicate_Queries) {
 
 TEST(QueryBuilderTest, require_that_Query_Tree_Creator_Can_Create_Queries_From_Stack) {
     Node::UP node = createQueryTree<MyQueryNodeTypes>();
-    string stackDump = StackDumpCreator::create(*node);
+    auto stackDump = StackDumpCreator::create(*node);
 
-    SimpleQueryStackDumpIterator iterator(stackDump);
+    SimpleQueryStackDumpIterator iterator(std::string_view(stackDump.data(), stackDump.size()));
 
     Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
     checkQueryTreeTypes<SimpleQueryNodeTypes>(new_node.get());
@@ -768,8 +768,8 @@ TEST(QueryBuilderTest, require_that_All_Range_Syntaxes_Work) {
     builder.addRangeTerm(range2, "view", 0, Weight(0));
     Node::UP node = builder.build();
 
-    string stackDump = StackDumpCreator::create(*node);
-    SimpleQueryStackDumpIterator iterator(stackDump);
+    auto stackDump = StackDumpCreator::create(*node);
+    SimpleQueryStackDumpIterator iterator(std::string_view(stackDump.data(), stackDump.size()));
 
     Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
     And *and_node = dynamic_cast<And *>(new_node.get());
@@ -795,9 +795,9 @@ TEST(QueryBuilderTest, fuzzy_node_can_be_created) {
         builder.addFuzzyTerm("term", "view", 0, Weight(0), 3, 1, prefix_match);
         Node::UP node = builder.build();
 
-        string stackDump = StackDumpCreator::create(*node);
+        auto stackDump = StackDumpCreator::create(*node);
         {
-            SimpleQueryStackDumpIterator iterator(stackDump);
+            SimpleQueryStackDumpIterator iterator(std::string_view(stackDump.data(), stackDump.size()));
             Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
             auto *fuzzy_node = as_node<FuzzyTerm>(new_node.get());
             EXPECT_EQ(3u, fuzzy_node->max_edit_distance());
@@ -805,7 +805,7 @@ TEST(QueryBuilderTest, fuzzy_node_can_be_created) {
             EXPECT_EQ(prefix_match, fuzzy_node->prefix_match());
         }
         {
-            search::QueryTermSimple::UP queryTermSimple = search::QueryTermDecoder::decodeTerm(stackDump);
+            search::QueryTermSimple::UP queryTermSimple = search::QueryTermDecoder::decodeTerm(std::string_view(stackDump.data(), stackDump.size()));
             EXPECT_EQ(3u, queryTermSimple->fuzzy_max_edit_distance());
             EXPECT_EQ(1u, queryTermSimple->fuzzy_prefix_lock_length());
             EXPECT_EQ(prefix_match, queryTermSimple->fuzzy_prefix_match());
@@ -819,8 +819,8 @@ TEST(QueryBuilderTest, require_that_empty_intermediate_node_can_be_added) {
     Node::UP node = builder.build();
     ASSERT_TRUE(node.get());
 
-    string stackDump = StackDumpCreator::create(*node);
-    SimpleQueryStackDumpIterator iterator(stackDump);
+    auto stackDump = StackDumpCreator::create(*node);
+    SimpleQueryStackDumpIterator iterator(std::string_view(stackDump.data(), stackDump.size()));
 
     Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
     And *and_node = dynamic_cast<And *>(new_node.get());
@@ -994,8 +994,8 @@ test_in_node(const std::vector<TermType>& values)
     builder.add_in_term(make_subterms(values), MultiTerm::Type::STRING,
                         "view", 0, Weight(0));
     auto node = builder.build();
-    string stack_dump = StackDumpCreator::create(*node);
-    SimpleQueryStackDumpIterator iterator(stack_dump);
+    auto stack_dump = StackDumpCreator::create(*node);
+    SimpleQueryStackDumpIterator iterator({stack_dump.data(), stack_dump.size()});
     verify_in_node(*QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator), values);
     verify_in_node(*QueryTreeCreator<SimpleQueryNodeTypes>::replicate(*node), values);
 }

@@ -104,8 +104,8 @@ public:
     }
     vdslib::Parameters build() {
         auto node = _builder.build();
-        std::string query_stack_dump = StackDumpCreator::create(*node);
-        _params.set("query", query_stack_dump);
+        auto query_stack_dump = StackDumpCreator::create(*node);
+        _params.set("query", std::string(query_stack_dump.data(), query_stack_dump.size()));
         return _params;
     }
 };

@@ -4,7 +4,7 @@
 
 #include <vespa/juniper/query_item.h>
 
-namespace search { class SimpleQueryStackDumpIterator; }
+namespace search { class QueryStackIterator; }
 
 namespace search::docsummary {
 
@@ -17,12 +17,12 @@ struct JuniperDFWExplicitItemData;
  **/
 class JuniperDFWQueryItem : public juniper::QueryItem
 {
-    search::SimpleQueryStackDumpIterator *_si;
+    search::QueryStackIterator *_si;
     const JuniperDFWExplicitItemData *_data;
 public:
     JuniperDFWQueryItem() : _si(nullptr), _data(nullptr) {}
     ~JuniperDFWQueryItem() override = default;
-    explicit JuniperDFWQueryItem(search::SimpleQueryStackDumpIterator *si) : _si(si), _data(nullptr) {}
+    explicit JuniperDFWQueryItem(search::QueryStackIterator *si) : _si(si), _data(nullptr) {}
     explicit JuniperDFWQueryItem(const JuniperDFWExplicitItemData *data) : _si(nullptr), _data(data) {}
     JuniperDFWQueryItem(const QueryItem&) = delete;
     JuniperDFWQueryItem& operator= (const QueryItem&) = delete;

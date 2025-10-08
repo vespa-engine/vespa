@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/query/streaming/same_element_query_node.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/simpletermdata.h>
@@ -120,9 +121,9 @@ SameElementQueryNodeTest::make_query(QueryTweak query_tweak, const std::vector<s
         builder.addStringTerm(s.str(), "field", idx, Weight(0));
     }
     auto node = builder.build();
-    std::string stackDump = StackDumpCreator::create(*node);
+    auto queryTree = StackDumpCreator::createQueryTree(*node);
     QueryNodeResultFactory empty;
-    auto q = std::make_unique<Query>(empty, stackDump);
+    auto q = std::make_unique<Query>(empty, *queryTree);
     auto& top = dynamic_cast<SameElementQueryNode&>(q->getRoot());
     EXPECT_EQ(top_arity, top.get_children().size());
     top.resizeFieldId(1);
@@ -152,8 +153,9 @@ TEST_F(SameElementQueryNodeTest, a_unhandled_sameElement_stack)
     const char * stack = "\022\002\026xyz_abcdefghij_xyzxyzxQ\001\vxxxxxx_name\034xxxxxx_xxxx_xxxxxxx_xxxxxxxxE\002\005delta\b<0.00393";
     std::string_view stackDump(stack);
     EXPECT_EQ(85u, stackDump.size());
+    auto queryTree = search::SerializedQueryTree::create(stackDump);
     AllowRewrite empty("");
-    const Query q(empty, stackDump);
+    const Query q(empty, *queryTree);
     EXPECT_TRUE(q.valid());
     const QueryNode & root = q.getRoot();
     auto sameElement = dynamic_cast<const SameElementQueryNode *>(&root);
@@ -183,9 +185,9 @@ TEST_F(SameElementQueryNodeTest, test_same_element_evaluate)
         builder.addStringTerm("c", "f3", 2, Weight(0));
     }
     Node::UP node = builder.build();
-    std::string stackDump = StackDumpCreator::create(*node);
+    auto queryTree = StackDumpCreator::createQueryTree(*node);
     QueryNodeResultFactory empty;
-    Query q(empty, stackDump);
+    Query q(empty, *queryTree);
     auto * sameElem = dynamic_cast<SameElementQueryNode *>(&q.getRoot());
     EXPECT_TRUE(sameElem != nullptr);
     EXPECT_EQ("field", sameElem->getIndex());

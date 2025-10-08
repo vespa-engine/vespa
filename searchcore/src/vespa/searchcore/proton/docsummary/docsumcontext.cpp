@@ -52,8 +52,7 @@ DocsumContext::initState()
     _docsumState._args.initFromDocsumRequest(req);
     auto [session, expectSession] = Matcher::lookupSearchSession(_sessionMgr, req);
     if (session) {
-        std::string_view queryStack = session->getStackDump();
-        _docsumState._args.setStackDump(queryStack.size(), queryStack.data());
+        _docsumState._args.setSerializedQueryTree(session->getSerializedQueryTree());
     }
     _docsumState._docsumbuf.clear();
     _docsumState._docsumbuf.reserve(req.hits.size());

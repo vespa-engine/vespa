@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
@@ -30,8 +31,8 @@ TEST(QueryWrapperTest, test_query_wrapper)
             builder.addStringTerm("e", "", 0, Weight(0));
         }
         Node::UP node = builder.build();
-        std::string stackDump = StackDumpCreator::create(*node);
-        Query q(empty, stackDump);
+        auto queryTree = StackDumpCreator::createQueryTree(*node);
+        Query q(empty, *queryTree);
         QueryWrapper wrap(q);
         QueryWrapper::TermList & tl = wrap.getTermList();
 

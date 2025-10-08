@@ -208,7 +208,7 @@ TEST_F(SearchRequestTest, require_that_geo_location_is_converted) {
 TEST_F(SearchRequestTest, require_that_query_tree_blob_is_converted) {
     proto.set_query_tree_blob("query-tree-blob");
     convert();
-    EXPECT_EQ(std::string(&request.stackDump[0], request.stackDump.size()), "query-tree-blob");
+    EXPECT_EQ(std::string(request.getSerializedQueryTree()->getStackRef()), "query-tree-blob");
 }
 
 //-----------------------------------------------------------------------------
@@ -528,7 +528,7 @@ TEST_F(DocsumRequestTest, require_that_field_list_is_converted) {
 TEST_F(DocsumRequestTest, require_that_query_tree_blob_is_converted) {
     proto.set_query_tree_blob("query-tree-blob");
     convert();
-    EXPECT_EQ(std::string(&request.stackDump[0], request.stackDump.size()), "query-tree-blob");
+    EXPECT_EQ(std::string(request.getSerializedQueryTree()->getStackRef()), "query-tree-blob");
 }
 
 TEST_F(DocsumRequestTest, require_that_global_ids_are_converted) {

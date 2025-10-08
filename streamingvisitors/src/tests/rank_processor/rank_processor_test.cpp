@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchvisitor/rankprocessor.h>
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/searchlib/query/streaming/query.h>
@@ -54,8 +55,8 @@ void
 RankProcessorTest::build_query(QueryBuilder<SimpleQueryNodeTypes> &builder)
 {
     auto build_node = builder.build();
-    auto stack_dump = StackDumpCreator::create(*build_node);
-    _query = std::make_unique<Query>(_factory, stack_dump);
+    auto queryTree = StackDumpCreator::createQueryTree(*build_node);
+    _query = std::make_unique<Query>(_factory, *queryTree);
     _query_wrapper = std::make_unique<QueryWrapper>(*_query);
 }
 

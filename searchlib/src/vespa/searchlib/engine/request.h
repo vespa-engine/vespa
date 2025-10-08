@@ -4,6 +4,7 @@
 
 #include "propertiesmap.h"
 #include "trace.h"
+#include <vespa/searchlib/common/serialized_query_tree.h>
 
 namespace search::engine {
 
@@ -23,26 +24,27 @@ public:
     vespalib::duration getTimeLeft() const;
     bool expired() const { return getTimeLeft() <= vespalib::duration::zero(); }
 
-    std::string_view getStackRef() const {
-        return std::string_view(stackDump.data(), stackDump.size());
-    }
-
     void setTraceLevel(uint32_t level, uint32_t minLevel) const {
         _trace.setLevel(level);
         _trace.start(minLevel);
     }
 
     Trace & trace() const { return _trace; }
+
+    void setSerializedQueryTree(QueryTreeSP queryTree) {
+        _queryTree = std::move(queryTree);
+    }
+    const SerializedQueryTree * getSerializedQueryTree() const { return _queryTree.get(); }
 private:
-    RelativeTime           _relativeTime;
-    vespalib::steady_time  _timeOfDoom;
+    RelativeTime          _relativeTime;
+    vespalib::steady_time _timeOfDoom;
+    QueryTreeSP           _queryTree;
 public:
     /// Everything here should move up to private section and have accessors
     bool               dumpFeatures;
-    std::string   ranking;
-    std::string   location;
+    std::string        ranking;
+    std::string        location;
     PropertiesMap      propertiesMap;
-    std::vector<char>  stackDump;
     std::vector<char>  sessionId;
 private:
     mutable Trace      _trace;

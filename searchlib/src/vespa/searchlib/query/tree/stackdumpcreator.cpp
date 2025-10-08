@@ -4,12 +4,14 @@
 
 #include "intermediatenodes.h"
 #include "termnodes.h"
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/vespalib/objects/nbo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include <cassert>
+#include <vector>
 
 using std::string;
 using std::vector;
@@ -371,6 +373,12 @@ string StackDumpCreator::create(const Node &node) {
     QueryNodeConverter converter;
     const_cast<Node &>(node).accept(converter);
     return converter.getStackDump();
+}
+
+search::QueryTreeSP StackDumpCreator::createQueryTree(const Node &node) {
+    string stackDump = create(node);
+    vector<char> buf(stackDump.begin(), stackDump.end());
+    return search::SerializedQueryTree::create(std::move(buf));
 }
 
 using namespace search::query;

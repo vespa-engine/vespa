@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/fef/simpletermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
@@ -317,8 +318,9 @@ TEST(StreamingQueryTest, e_is_not_rewritten_even_if_allowed)
     const char term[6] = {TERM_UNIQ, 3, 1, 'c', 1, 'e'};
     std::string_view stackDump(term, sizeof(term));
     EXPECT_EQ(6u, stackDump.size());
+    auto queryTree = search::SerializedQueryTree::create(stackDump);
     AllowRewrite allowRewrite("c");
-    const Query q(allowRewrite, stackDump);
+    const Query q(allowRewrite, *queryTree);
     EXPECT_TRUE(q.valid());
     const QueryNode & root = q.getRoot();
     EXPECT_TRUE(dynamic_cast<const QueryTerm *>(&root) != nullptr);
@@ -333,8 +335,9 @@ TEST(StreamingQueryTest, onedot0e_is_not_rewritten_by_default)
     const char term[9] = {TERM_UNIQ, 3, 1, 'c', 4, '1', '.', '0', 'e'};
     std::string_view stackDump(term, sizeof(term));
     EXPECT_EQ(9u, stackDump.size());
+    auto queryTree = search::SerializedQueryTree::create(stackDump);
     AllowRewrite empty("nix");
-    const Query q(empty, stackDump);
+    const Query q(empty, *queryTree);
     EXPECT_TRUE(q.valid());
     const QueryNode & root = q.getRoot();
     EXPECT_TRUE(dynamic_cast<const QueryTerm *>(&root) != nullptr);
@@ -349,8 +352,9 @@ TEST(StreamingQueryTest, onedot0e_is_rewritten_if_allowed_too)
     const char term[9] = {TERM_UNIQ, 3, 1, 'c', 4, '1', '.', '0', 'e'};
     std::string_view stackDump(term, sizeof(term));
     EXPECT_EQ(9u, stackDump.size());
+    auto queryTree = search::SerializedQueryTree::create(stackDump);
     AllowRewrite empty("c");
-    const Query q(empty, stackDump);
+    const Query q(empty, *queryTree);
     EXPECT_TRUE(q.valid());
     const QueryNode & root = q.getRoot();
     EXPECT_TRUE(dynamic_cast<const EquivQueryNode *>(&root) != nullptr);
@@ -387,8 +391,9 @@ TEST(StreamingQueryTest, negative_integer_is_rewritten_if_allowed_for_string_fie
     const char term[7] = {TERM_UNIQ, 3, 1, 'c', 2, '-', '5'};
     std::string_view stackDump(term, sizeof(term));
     EXPECT_EQ(7u, stackDump.size());
+    auto queryTree = search::SerializedQueryTree::create(stackDump);
     AllowRewrite empty("c");
-    const Query q(empty, stackDump);
+    const Query q(empty, *queryTree);
     EXPECT_TRUE(q.valid());
     auto& root = q.getRoot();
     auto& equiv = dynamic_cast<const EquivQueryNode &>(root);
@@ -427,10 +432,10 @@ TEST(StreamingQueryTest, test_get_query_parts)
         }
     }
     Node::UP node = builder.build();
-    std::string stackDump = StackDumpCreator::create(*node);
+    auto queryTree = StackDumpCreator::createQueryTree(*node);
 
     QueryNodeResultFactory empty;
-    Query q(empty, stackDump);
+    Query q(empty, *queryTree);
     QueryTermList terms;
     q.getLeaves(terms);
     ASSERT_TRUE(terms.size() == 4);
@@ -735,9 +740,9 @@ TEST(StreamingQueryTest, test_nearest_neighbor_query_node)
     constexpr double distance = 0.5;
     builder.add_nearest_neighbor_term("qtensor", "field", id, Weight(weight), target_num_hits, allow_approximate, explore_additional_hits, distance_threshold);
     auto build_node = builder.build();
-    auto stack_dump = StackDumpCreator::create(*build_node);
+    auto queryTree = StackDumpCreator::createQueryTree(*build_node);
     QueryNodeResultFactory empty;
-    Query q(empty, stack_dump);
+    Query q(empty, *queryTree);
     auto* qterm = dynamic_cast<QueryTerm *>(&q.getRoot());
     EXPECT_TRUE(qterm != nullptr);
     auto* node = dynamic_cast<NearestNeighborQueryNode *>(&q.getRoot());

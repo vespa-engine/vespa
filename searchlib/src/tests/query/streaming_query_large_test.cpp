@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
@@ -44,10 +45,9 @@ TEST(StreamingQueryTest, testveryLongQueryResultingInBug6850778) {
         }
     }
     Node::UP node = builder.build();
-    std::string stackDump = StackDumpCreator::create(*node);
-
+    auto queryTree = StackDumpCreator::createQueryTree(*node);
     QueryNodeResultFactory factory;
-    Query q(factory, stackDump);
+    Query q(factory, *queryTree);
     QueryTermList terms;
     QueryNodeRefList phrases;
     q.getLeaves(terms);

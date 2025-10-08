@@ -4,6 +4,8 @@
 #include "queryterm.h"
 #include <vespa/searchlib/parsequery/parse.h>
 
+namespace search { class SerializedQueryTree; }
+
 namespace search::streaming {
 
 /**
@@ -127,14 +129,14 @@ class Query
 {
 public:
     Query();
-    Query(const QueryNodeResultFactory & factory, std::string_view queryRep);
+    Query(const QueryNodeResultFactory & factory, const SerializedQueryTree& queryTree);
     Query(const Query&) = delete;
     Query(Query&&) noexcept;
     ~Query();
     Query& operator=(const Query&) = delete;
     Query& operator=(Query&&) noexcept;
     /// Will build the query tree
-    bool build(const QueryNodeResultFactory & factory, std::string_view queryRep);
+    bool build(const QueryNodeResultFactory & factory, const SerializedQueryTree& queryTree);
     /// Will clear the results from the querytree.
     void reset();
     /// Will get all leafnodes.

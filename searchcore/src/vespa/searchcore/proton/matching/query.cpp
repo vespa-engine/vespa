@@ -23,7 +23,6 @@
 LOG_SETUP(".proton.matching.query");
 
 using document::PositionDataType;
-using search::SimpleQueryStackDumpIterator;
 using search::common::GeoLocation;
 using search::common::GeoLocationParser;
 using search::common::GeoLocationSpec;
@@ -169,17 +168,23 @@ NeedsRankingVisitor::NeedsRankingVisitor()
 
 NeedsRankingVisitor::~NeedsRankingVisitor() = default;
 
+Node::UP
+create_query_tree(const search::SerializedQueryTree &queryTree)
+{
+    auto stack_dump_iterator = queryTree.makeIterator();
+    return QueryTreeCreator<ProtonNodeTypes>::create(*stack_dump_iterator);
+}
+
 }  // namespace
 
 Query::Query() = default;
 Query::~Query() = default;
 
 bool
-Query::buildTree(std::string_view stack, const string &location,
+Query::buildTree(const search::SerializedQueryTree &queryTree, const string &location,
                  const ViewResolver &resolver, const IIndexEnvironment &indexEnv)
 {
-    SimpleQueryStackDumpIterator stack_dump_iterator(stack);
-    _query_tree = QueryTreeCreator<ProtonNodeTypes>::create(stack_dump_iterator);
+    _query_tree = create_query_tree(queryTree);
     if (_query_tree) {
         SameElementModifier prefixSameElementSubIndexes;
         _query_tree->accept(prefixSameElementSubIndexes);

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for querybuilder.
 
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
@@ -172,9 +173,9 @@ TEST(WordAlternativesTest, require_that_tree_can_be_replicated) {
 
 TEST(WordAlternativesTest, require_that_tree_can_be_replicated_via_stack) {
     Node::UP node = createQueryTree<SimpleQueryNodeTypes>();
-    string stackDump = StackDumpCreator::create(*node);
-    SimpleQueryStackDumpIterator iterator(stackDump);
-    Node::UP new_node = QueryTreeCreator<MyQueryNodeTypes>::create(iterator);
+    auto queryTree = StackDumpCreator::createQueryTree(*node);
+    auto iterator = queryTree->makeIterator();
+    Node::UP new_node = QueryTreeCreator<MyQueryNodeTypes>::create(*iterator);
     EXPECT_TRUE(bool(new_node));
     Expectation expect;
     expect.use_my_node = true;

@@ -98,14 +98,13 @@ GetDocsumsState::parse_locations()
                           _args.getLocation().c_str());
         }
     }
-    auto stackdump = _args.getStackDump();
-    if (! stackdump.empty()) {
-        search::SimpleQueryStackDumpIterator iterator(stackdump);
-        while (iterator.next()) {
-            if (iterator.getType() == search::ParseItem::ITEM_GEO_LOCATION_TERM) {
-                std::string view = iterator.index_as_string();
-                std::string term(iterator.getTerm());
-                GeoLocationParser parser;                
+    if (auto* tree = _args.getSerializedQueryTree()) {
+        auto iterator = tree->makeIterator();
+        while (iterator->next()) {
+            if (iterator->getType() == search::ParseItem::ITEM_GEO_LOCATION_TERM) {
+                std::string view = iterator->index_as_string();
+                std::string term(iterator->getTerm());
+                GeoLocationParser parser;
                 if (parser.parseNoField(term)) {
                     auto attr_name = PositionDataType::getZCurveFieldName(view);
                     GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
