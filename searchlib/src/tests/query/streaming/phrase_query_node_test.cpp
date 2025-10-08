@@ -32,9 +32,9 @@ TEST(PhraseQueryNodeTest, test_phrase_evaluate)
         builder.addStringTerm("c", "", 0, Weight(0));
     }
     Node::UP node = builder.build();
-    auto queryTree = StackDumpCreator::createSerializedQueryTree(*node);
+    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*node);
     QueryNodeResultFactory empty;
-    Query q(empty, *queryTree);
+    Query q(empty, *serializedQueryTree);
     auto& p = dynamic_cast<PhraseQueryNode&>(q.getRoot());
     auto& terms = p.get_terms();
     for (auto& qt : terms) {

@@ -167,9 +167,9 @@ NearTest::make_query(QueryTweak query_tweak, uint32_t distance, const std::vecto
         builder.addStringTerm(s.str(), "field", idx, Weight(0));
     }
     auto node = builder.build();
-    auto queryTree = StackDumpCreator::createSerializedQueryTree(*node);
+    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*node);
     auto empty = std::make_unique<MyQueryNodeResultFactory>(_element_gap_setting.value_or(std::nullopt));
-    auto q = std::make_unique<Query>(*empty, *queryTree);
+    auto q = std::make_unique<Query>(*empty, *serializedQueryTree);
     if (GetParam().ordered()) {
         auto& top = dynamic_cast<ONearQueryNode&>(q->getRoot());
         EXPECT_EQ(top_arity, top.size());

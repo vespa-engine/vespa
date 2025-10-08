@@ -91,9 +91,9 @@ EquivQueryNodeTest::make_simple_equiv_stack_dump()
 
 TEST_F(EquivQueryNodeTest, test_equiv_evaluate_and_unpack)
 {
-    auto queryTree = make_simple_equiv_stack_dump();
+    auto serializedQueryTree = make_simple_equiv_stack_dump();
     QueryNodeResultFactory empty;
-    Query q(empty, *queryTree);
+    Query q(empty, *serializedQueryTree);
     auto& eqn = dynamic_cast<EquivQueryNode&>(q.getRoot());
     auto& terms = eqn.get_terms();
     EXPECT_EQ(3, terms.size());
@@ -196,9 +196,9 @@ TEST_F(EquivQueryNodeTest, test_equiv_evaluate_and_unpack)
 
 TEST_F(EquivQueryNodeTest, test_equiv_flattening)
 {
-    auto queryTree = make_simple_equiv_stack_dump();
+    auto serializedQueryTree = make_simple_equiv_stack_dump();
     AllowRewrite allow_rewrite;
-    Query q(allow_rewrite, *queryTree);
+    Query q(allow_rewrite, *serializedQueryTree);
     auto& eqn = dynamic_cast<EquivQueryNode&>(q.getRoot());
     auto& terms = eqn.get_terms();
     // Query is flattened to equiv("2", "2.5", phrase("2","5"), "3")

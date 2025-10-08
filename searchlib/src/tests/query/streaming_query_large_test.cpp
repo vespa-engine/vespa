@@ -45,9 +45,9 @@ TEST(StreamingQueryTest, testveryLongQueryResultingInBug6850778) {
         }
     }
     Node::UP node = builder.build();
-    auto queryTree = StackDumpCreator::createSerializedQueryTree(*node);
+    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*node);
     QueryNodeResultFactory factory;
-    Query q(factory, *queryTree);
+    Query q(factory, *serializedQueryTree);
     QueryTermList terms;
     QueryNodeRefList phrases;
     q.getLeaves(terms);

@@ -31,8 +31,8 @@ TEST(QueryWrapperTest, test_query_wrapper)
             builder.addStringTerm("e", "", 0, Weight(0));
         }
         Node::UP node = builder.build();
-        auto queryTree = StackDumpCreator::createSerializedQueryTree(*node);
-        Query q(empty, *queryTree);
+        auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*node);
+        Query q(empty, *serializedQueryTree);
         QueryWrapper wrap(q);
         QueryWrapper::TermList & tl = wrap.getTermList();
 
