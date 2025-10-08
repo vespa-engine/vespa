@@ -31,14 +31,14 @@ public:
 
     Trace & trace() const { return _trace; }
 
-    void setSerializedQueryTree(QueryTreeSP queryTree) {
+    void setSerializedQueryTree(SerializedQueryTreeSP queryTree) {
         _queryTree = std::move(queryTree);
     }
     const SerializedQueryTree * getSerializedQueryTree() const { return _queryTree.get(); }
 private:
     RelativeTime          _relativeTime;
     vespalib::steady_time _timeOfDoom;
-    QueryTreeSP           _queryTree;
+    SerializedQueryTreeSP           _queryTree;
 public:
     /// Everything here should move up to private section and have accessors
     bool               dumpFeatures;

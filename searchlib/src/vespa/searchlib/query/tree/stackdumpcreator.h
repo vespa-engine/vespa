@@ -7,7 +7,7 @@
 
 namespace search {
     class SerializedQueryTree;
-    using QueryTreeSP = std::shared_ptr<const SerializedQueryTree>;
+    using SerializedQueryTreeSP = std::shared_ptr<const SerializedQueryTree>;
 }
 
 namespace search::query {
@@ -18,7 +18,7 @@ struct StackDumpCreator {
     // Creates a stack dump from a query tree.
     static std::string create(const Node &node);
     // Creates a SerializedQueryTree from a query tree.
-    static search::QueryTreeSP createSerializedQueryTree(const Node &node);
+    static SerializedQueryTreeSP createSerializedQueryTree(const Node &node);
 };
 
 }

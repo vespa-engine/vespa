@@ -406,7 +406,7 @@ private:
         vespalib::ConstBufferRef fillSummary(search::AttributeVector::DocId lid, std::string_view summaryClass) override;
         void set_dump_features(bool dump_features) { _dump_features = dump_features; }
         void set_location(std::string location) { _location = std::move(location); }
-        void set_serialized_query_tree(search::QueryTreeSP tree) { _serialized_query_tree = std::move(tree); }
+        void set_serialized_query_tree(search::SerializedQueryTreeSP tree) { _serialized_query_tree = std::move(tree); }
         void add_summary_field(std::string_view field) { _summaryFields.emplace_back(field); }
         search::fef::Properties & highlightTerms() { return _highlight_terms;}
     private:
@@ -419,7 +419,7 @@ private:
         vespalib::SmartBuffer                   _buf;
         std::optional<bool>                     _dump_features;
         std::optional<std::string>              _location;
-        search::QueryTreeSP                     _serialized_query_tree;
+        search::SerializedQueryTreeSP                     _serialized_query_tree;
         search::fef::Properties                 _highlight_terms;
         const search::IAttributeManager&        _attr_manager;
         const search::QueryNormalization &      _query_normalization;

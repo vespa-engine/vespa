@@ -19,7 +19,7 @@ private:
     std::string                      _resultClassName;
     bool                             _dumpFeatures;
     bool                             _locations_possible;
-    QueryTreeSP                      _serializedQueryTree;
+    SerializedQueryTreeSP                      _serializedQueryTree;
     std::string                      _location;
     vespalib::duration               _timeout;
     fef::Properties                  _highlightTerms;
@@ -33,7 +33,7 @@ public:
     void initFromDocsumRequest(const search::engine::DocsumRequest &req);
 
     void setResultClassName(std::string_view name) { _resultClassName = name; }
-    void setSerializedQueryTree(QueryTreeSP tree) { _serializedQueryTree = std::move(tree); }
+    void setSerializedQueryTree(SerializedQueryTreeSP tree) { _serializedQueryTree = std::move(tree); }
     void locations_possible(bool value) { _locations_possible = value; }
     bool locations_possible() const { return _locations_possible; }
     const std::string &getLocation() const { return _location; }

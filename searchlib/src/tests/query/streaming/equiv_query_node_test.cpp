@@ -23,6 +23,7 @@ using search::query::Node;
 using search::query::SimpleQueryNodeTypes;
 using search::query::StackDumpCreator;
 using search::query::Weight;
+using search::SerializedQueryTreeSP;
 using search::streaming::EquivQueryNode;
 using search::streaming::HitList;
 using search::streaming::PhraseQueryNode;
@@ -49,7 +50,7 @@ public:
                          uint32_t exp_position,
                          int32_t exp_element_weight,
                          uint32_t exp_element_length);
-    search::QueryTreeSP make_simple_equiv_stack_dump();
+    SerializedQueryTreeSP make_simple_equiv_stack_dump();
 };
 
 EquivQueryNodeTest::EquivQueryNodeTest()
@@ -74,7 +75,7 @@ EquivQueryNodeTest::assert_tfmd_pos(const std::string label,
     EXPECT_EQ(exp_element_length, tfmd_pos.getElementLen());
 }
 
-search::QueryTreeSP
+SerializedQueryTreeSP
 EquivQueryNodeTest::make_simple_equiv_stack_dump()
 {
     QueryBuilder<SimpleQueryNodeTypes> builder;

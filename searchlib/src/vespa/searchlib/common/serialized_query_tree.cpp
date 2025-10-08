@@ -7,8 +7,8 @@ namespace search {
 
 namespace {
 struct SdiWrap : SimpleQueryStackDumpIterator {
-    QueryTreeSP ref;
-    SdiWrap(QueryTreeSP data, std::string_view stackRef)
+    SerializedQueryTreeSP ref;
+    SdiWrap(SerializedQueryTreeSP data, std::string_view stackRef)
       : SimpleQueryStackDumpIterator(stackRef),
         ref(std::move(data))
     {}
@@ -23,12 +23,12 @@ SerializedQueryTree::SerializedQueryTree(std::vector<char> stackDump, ctor_tag)
 
 SerializedQueryTree::~SerializedQueryTree() = default;
 
-QueryTreeSP SerializedQueryTree::create(std::vector<char> stackDump) {
+SerializedQueryTreeSP SerializedQueryTree::create(std::vector<char> stackDump) {
     ctor_tag tag;
     return std::make_shared<SerializedQueryTree>(std::move(stackDump), tag);
 }
 
-QueryTreeSP SerializedQueryTree::create(std::string_view stackDumpRef) {
+SerializedQueryTreeSP SerializedQueryTree::create(std::string_view stackDumpRef) {
     std::vector<char> stackDump(stackDumpRef.data(), stackDumpRef.data() + stackDumpRef.size());
     return create(std::move(stackDump));
 }

@@ -12,14 +12,14 @@ class QueryStackIterator;
 class SimpleQueryStackDumpIterator;
 class SerializedQueryTree;
 
-using QueryTreeSP = std::shared_ptr<const SerializedQueryTree>;
+using SerializedQueryTreeSP = std::shared_ptr<const SerializedQueryTree>;
 
 class SerializedQueryTree : public std::enable_shared_from_this<SerializedQueryTree> {
 private:
     struct ctor_tag {};
 public:
-    static QueryTreeSP create(std::vector<char> stackDump);
-    static QueryTreeSP create(std::string_view stackDumpRef);
+    static SerializedQueryTreeSP create(std::vector<char> stackDump);
+    static SerializedQueryTreeSP create(std::string_view stackDumpRef);
     std::unique_ptr<QueryStackIterator> makeIterator() const;
     // use for testing only:
     std::string_view getStackRef() const noexcept {
