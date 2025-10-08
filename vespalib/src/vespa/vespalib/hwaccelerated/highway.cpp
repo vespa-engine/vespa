@@ -13,6 +13,7 @@
 #include <hwy/foreach_target.h>
 
 #include "hwy_kernel-inl.h"
+#include "hwy_aux_ops-inl.h"
 #include <hwy/contrib/dot/dot-inl.h>
 
 HWY_BEFORE_NAMESPACE();
@@ -139,9 +140,9 @@ double my_hwy_square_euclidean_distance_bf16(const BFloat16* HWY_RESTRICT a,
     const hn::Repartition<float, decltype(dbf16)> df;
 
     auto kernel_fn = [df](auto lhs, auto rhs, auto& acc0, auto& acc1) VESPA_NOEXCEPT_HWY_ATTR {
-        const auto sub_lo = hn::Sub(hn::PromoteLowerTo(df, lhs), hn::PromoteLowerTo(df, rhs));
+        hn::Vec<decltype(df)> sub_lo, sub_hi;
+        ReorderWidenSub(df, lhs, rhs, sub_lo, sub_hi);
         acc0 = hn::MulAdd(sub_lo, sub_lo, acc0);
-        const auto sub_hi = hn::Sub(hn::PromoteUpperTo(df, lhs), hn::PromoteUpperTo(df, rhs));
         acc1 = hn::MulAdd(sub_hi, sub_hi, acc1);
     };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<4>, UnrolledBy<2>, HasAccumulatorArity<2>>;
@@ -160,8 +161,8 @@ int32_t sub_mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a,
     const hn::Repartition<int32_t, decltype(d16)> d32;
 
     auto kernel_fn = [d16, d32](auto lhs, auto rhs, auto& acc0, auto& acc1, auto& acc2, auto& acc3) VESPA_NOEXCEPT_HWY_ATTR {
-        const auto sub_l_i16 = hn::Sub(hn::PromoteLowerTo(d16, lhs), hn::PromoteLowerTo(d16, rhs));
-        const auto sub_u_i16 = hn::Sub(hn::PromoteUpperTo(d16, lhs), hn::PromoteUpperTo(d16, rhs));
+        hn::Vec<decltype(d16)> sub_l_i16, sub_u_i16;
+        ReorderWidenSub(d16, lhs, rhs, sub_l_i16, sub_u_i16);
         acc0 = hn::ReorderWidenMulAccumulate(d32, sub_l_i16, sub_l_i16, acc0, acc1);
         acc2 = hn::ReorderWidenMulAccumulate(d32, sub_u_i16, sub_u_i16, acc2, acc3);
     };
