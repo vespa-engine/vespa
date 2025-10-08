@@ -42,7 +42,7 @@ public:
 
     const std::string & getResultClassName()      const { return _resultClassName; }
     const search::SerializedQueryTree& getSerializedQueryTree() const {
-        return _serializedQueryTree ? *_serializedQueryTree : *search::SerializedQueryTree::empty();
+        return _serializedQueryTree ? *_serializedQueryTree : search::SerializedQueryTree::empty();
     }
 
     void dumpFeatures(bool v) { _dumpFeatures = v; }

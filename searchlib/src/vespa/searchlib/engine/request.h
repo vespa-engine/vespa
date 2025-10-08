@@ -35,7 +35,7 @@ public:
         _queryTree = std::move(queryTree);
     }
     const SerializedQueryTree& getSerializedQueryTree() const {
-        return _queryTree ? *_queryTree : *SerializedQueryTree::empty();
+        return _queryTree ? *_queryTree : SerializedQueryTree::empty();
     }
 private:
     RelativeTime          _relativeTime;
