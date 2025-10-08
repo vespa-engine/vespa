@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for querybuilder.
 
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/query/tree/point.h>
@@ -17,6 +18,7 @@ LOG_SETUP("querybuilder_test");
 
 using std::string_view;
 using std::string;
+using search::SerializedQueryTree;
 using search::SimpleQueryStackDumpIterator;
 using namespace search::query;
 
@@ -748,10 +750,9 @@ TEST(QueryBuilderTest, require_that_Query_Tree_Creator_Can_Replicate_Queries) {
 TEST(QueryBuilderTest, require_that_Query_Tree_Creator_Can_Create_Queries_From_Stack) {
     Node::UP node = createQueryTree<MyQueryNodeTypes>();
     auto stackDump = StackDumpCreator::create(*node);
-
-    SimpleQueryStackDumpIterator iterator(std::string_view(stackDump.data(), stackDump.size()));
-
-    Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
+    auto iterator = serializedQueryTree->makeIterator();
+    Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator);
     checkQueryTreeTypes<SimpleQueryNodeTypes>(new_node.get());
 }
 
@@ -769,9 +770,10 @@ TEST(QueryBuilderTest, require_that_All_Range_Syntaxes_Work) {
     Node::UP node = builder.build();
 
     auto stackDump = StackDumpCreator::create(*node);
-    SimpleQueryStackDumpIterator iterator(std::string_view(stackDump.data(), stackDump.size()));
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
+    auto iterator = serializedQueryTree->makeIterator();
 
-    Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
+    Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator);
     And *and_node = dynamic_cast<And *>(new_node.get());
     ASSERT_TRUE(and_node);
     EXPECT_EQ(3u, and_node->getChildren().size());
@@ -797,8 +799,9 @@ TEST(QueryBuilderTest, fuzzy_node_can_be_created) {
 
         auto stackDump = StackDumpCreator::create(*node);
         {
-            SimpleQueryStackDumpIterator iterator(std::string_view(stackDump.data(), stackDump.size()));
-            Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
+            auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
+            auto iterator = serializedQueryTree->makeIterator();
+            Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator);
             auto *fuzzy_node = as_node<FuzzyTerm>(new_node.get());
             EXPECT_EQ(3u, fuzzy_node->max_edit_distance());
             EXPECT_EQ(1u, fuzzy_node->prefix_lock_length());
@@ -820,9 +823,10 @@ TEST(QueryBuilderTest, require_that_empty_intermediate_node_can_be_added) {
     ASSERT_TRUE(node.get());
 
     auto stackDump = StackDumpCreator::create(*node);
-    SimpleQueryStackDumpIterator iterator(std::string_view(stackDump.data(), stackDump.size()));
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
+    auto iterator = serializedQueryTree->makeIterator();
 
-    Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
+    Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator);
     And *and_node = dynamic_cast<And *>(new_node.get());
     ASSERT_TRUE(and_node);
     EXPECT_EQ(0u, and_node->getChildren().size());
@@ -864,8 +868,9 @@ TEST(QueryBuilderTest, test_query_parsing_error) {
          "\001xF\200y\002\016term_variation\004\016term_variation\001\061\004\016term_variation\001yĀz\n\vsource_lang\002jaĀ{\n\vtarget_lang\002en\000\002Ā|\v\alicense"
          "\017countrycode_allĀ}\v\alicense\016countrycode_tw";
     string stackDump(STACK, 2936);
-    SimpleQueryStackDumpIterator iterator(stackDump);
-    Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
+    auto iterator = serializedQueryTree->makeIterator();
+    Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator);
     EXPECT_FALSE(new_node);
 }
 
@@ -995,8 +1000,9 @@ test_in_node(const std::vector<TermType>& values)
                         "view", 0, Weight(0));
     auto node = builder.build();
     auto stack_dump = StackDumpCreator::create(*node);
-    SimpleQueryStackDumpIterator iterator({stack_dump.data(), stack_dump.size()});
-    verify_in_node(*QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator), values);
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(stack_dump);
+    auto iterator = serializedQueryTree->makeIterator();
+    verify_in_node(*QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator), values);
     verify_in_node(*QueryTreeCreator<SimpleQueryNodeTypes>::replicate(*node), values);
 }
 

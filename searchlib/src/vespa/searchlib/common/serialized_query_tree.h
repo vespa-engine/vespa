@@ -19,7 +19,7 @@ private:
     struct ctor_tag {};
 public:
     static SerializedQueryTreeSP fromStackDump(std::vector<char> stackDump);
-    static SerializedQueryTreeSP fromStackDumpRef(std::string_view stackDumpRef);
+    static SerializedQueryTreeSP fromStackDump(std::string_view stackDumpRef);
     std::unique_ptr<QueryStackIterator> makeIterator() const;
     // use for testing only:
     std::string_view getStackRef() const noexcept {

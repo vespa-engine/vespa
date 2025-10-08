@@ -28,7 +28,7 @@ SerializedQueryTreeSP SerializedQueryTree::fromStackDump(std::vector<char> stack
     return std::make_shared<SerializedQueryTree>(std::move(stackDump), tag);
 }
 
-SerializedQueryTreeSP SerializedQueryTree::fromStackDumpRef(std::string_view stackDumpRef) {
+SerializedQueryTreeSP SerializedQueryTree::fromStackDump(std::string_view stackDumpRef) {
     std::vector<char> stackDump(stackDumpRef.data(), stackDumpRef.data() + stackDumpRef.size());
     return fromStackDump(std::move(stackDump));
 }

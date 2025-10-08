@@ -319,7 +319,7 @@ TEST(StreamingQueryTest, e_is_not_rewritten_even_if_allowed)
     const char term[6] = {TERM_UNIQ, 3, 1, 'c', 1, 'e'};
     std::string_view stackDump(term, sizeof(term));
     EXPECT_EQ(6u, stackDump.size());
-    auto serializedQueryTree = SerializedQueryTree::fromStackDumpRef(stackDump);
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
     AllowRewrite allowRewrite("c");
     const Query q(allowRewrite, *serializedQueryTree);
     EXPECT_TRUE(q.valid());
@@ -336,7 +336,7 @@ TEST(StreamingQueryTest, onedot0e_is_not_rewritten_by_default)
     const char term[9] = {TERM_UNIQ, 3, 1, 'c', 4, '1', '.', '0', 'e'};
     std::string_view stackDump(term, sizeof(term));
     EXPECT_EQ(9u, stackDump.size());
-    auto serializedQueryTree = SerializedQueryTree::fromStackDumpRef(stackDump);
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
     AllowRewrite empty("nix");
     const Query q(empty, *serializedQueryTree);
     EXPECT_TRUE(q.valid());
@@ -353,7 +353,7 @@ TEST(StreamingQueryTest, onedot0e_is_rewritten_if_allowed_too)
     const char term[9] = {TERM_UNIQ, 3, 1, 'c', 4, '1', '.', '0', 'e'};
     std::string_view stackDump(term, sizeof(term));
     EXPECT_EQ(9u, stackDump.size());
-    auto serializedQueryTree = SerializedQueryTree::fromStackDumpRef(stackDump);
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
     AllowRewrite empty("c");
     const Query q(empty, *serializedQueryTree);
     EXPECT_TRUE(q.valid());
@@ -392,7 +392,7 @@ TEST(StreamingQueryTest, negative_integer_is_rewritten_if_allowed_for_string_fie
     const char term[7] = {TERM_UNIQ, 3, 1, 'c', 2, '-', '5'};
     std::string_view stackDump(term, sizeof(term));
     EXPECT_EQ(7u, stackDump.size());
-    auto serializedQueryTree = SerializedQueryTree::fromStackDumpRef(stackDump);
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
     AllowRewrite empty("c");
     const Query q(empty, *serializedQueryTree);
     EXPECT_TRUE(q.valid());

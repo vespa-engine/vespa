@@ -379,7 +379,7 @@ string StackDumpCreator::create(const Node &node) {
 
 SerializedQueryTreeSP StackDumpCreator::createSerializedQueryTree(const Node &node) {
     string stackDump = create(node);
-    return SerializedQueryTree::fromStackDumpRef(stackDump);
+    return SerializedQueryTree::fromStackDump(stackDump);
 }
 
 using namespace search::query;
