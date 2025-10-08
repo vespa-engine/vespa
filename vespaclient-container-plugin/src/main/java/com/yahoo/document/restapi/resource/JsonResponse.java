@@ -180,7 +180,7 @@ class JsonResponse implements StreamableJsonResponse {
     }
 
     @Override
-    public synchronized void writeTrace(Trace trace) throws IOException {
+    public synchronized void writeRequestTrace(Trace trace) throws IOException {
         if (trace != null && !trace.getRoot().isEmpty()) {
             TraceJsonRenderer.writeTrace(json, trace.getRoot());
         }
