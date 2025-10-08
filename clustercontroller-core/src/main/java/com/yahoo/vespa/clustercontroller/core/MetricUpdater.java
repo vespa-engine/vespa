@@ -163,12 +163,6 @@ public class MetricUpdater {
             }
             metricReporter.set(NODES_NOT_CONVERGED, 0, context);
         }
-        MetricReporter.Context context = createContext(Map.of());
-        metricReporter.set(MAX_DISK_UTILIZATION, 0.0, context);
-        metricReporter.set(MAX_MEMORY_UTILIZATION, 0.0, context);
-        metricReporter.set(NODES_ABOVE_LIMIT, 0, context);
-        metricReporter.set(DISK_LIMIT, 0.0, context);
-        metricReporter.set(MEMORY_LIMIT, 0.0, context);
     }
 
     public void updateClusterBucketsOutOfSyncRatio(double ratio) {
