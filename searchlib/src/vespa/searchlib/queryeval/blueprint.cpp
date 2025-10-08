@@ -770,7 +770,7 @@ IntermediateBlueprint::calculateUnpackInfo(const fef::MatchData & md) const
     bool allNeedUnpack(true);
     if ( ! areAnyParentsEquiv(getParent()) ) {
         for (size_t i = 0; i < childCnt(); ++i) {
-            if (isPositive(i)) {
+            if (may_need_unpack(i)) {
                 const Blueprint & child = getChild(i);
                 const State &cs = child.getState();
                 bool canSkipUnpack(canBlueprintSkipUnpack(child, md));

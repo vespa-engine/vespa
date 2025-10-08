@@ -36,7 +36,7 @@ private:
     uint8_t calculate_cost_tier() const override {
         return (childCnt() > 0) ? get_children()[0]->getState().cost_tier() : State::COST_TIER_NORMAL;
     }
-    bool isPositive(size_t index) const override { return index == 0; }
+    bool may_need_unpack(size_t index) const override { return index == 0; }
 };
 
 //-----------------------------------------------------------------------------
