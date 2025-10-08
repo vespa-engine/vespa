@@ -172,16 +172,16 @@ TEST(TextSimilarityFeatureTest, require_that_larger_perfect_match_gives_max_outp
     EXPECT_EQ(1.0, f1.get_feature("a b c d e f g", indexFoo().element("a b c d e f g"), FIELD));
 }
 
-TEST(TextSimilarityFeatureTest, require_that_extra_query_terms_reduces_order_but_not_proximity)
+TEST(TextSimilarityFeatureTest, require_that_extra_query_terms_does_not_reduce_order_or_proximity)
 {
     RankFixture f1;
     EXPECT_EQ(1.0, f1.get_feature("x y", indexFoo().element("x"), PROXIMITY));
     EXPECT_EQ(1.0, f1.get_feature("x y y", indexFoo().element("x"), PROXIMITY));
     EXPECT_EQ(1.0, f1.get_feature("x y y y", indexFoo().element("x"), PROXIMITY));
 
-    EXPECT_EQ(0.0, f1.get_feature("x y", indexFoo().element("x"), ORDER));
-    EXPECT_EQ(0.0, f1.get_feature("x y y", indexFoo().element("x"), ORDER));
-    EXPECT_EQ(0.0, f1.get_feature("x y y y", indexFoo().element("x"), ORDER));
+    EXPECT_EQ(1.0, f1.get_feature("x y", indexFoo().element("x"), ORDER));
+    EXPECT_EQ(1.0, f1.get_feature("x y y", indexFoo().element("x"), ORDER));
+    EXPECT_EQ(1.0, f1.get_feature("x y y y", indexFoo().element("x"), ORDER));
 }
 
 TEST(TextSimilarityFeatureTest, require_that_extra_field_terms_reduces_proximity_but_not_order)
