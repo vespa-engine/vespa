@@ -105,17 +105,6 @@ public class IndexLocator {
             throw new NoSuchFileException("Index directory does not exist: " + indexDir);
         }
 
-        // TODO(johsol): WIP
-        // triggerFlush creates index.flush.n
-        // after index.flush.n is created, then there might start a fusion job
-        // which merges several index.flush.n and index.fusion.m into
-        // index.fusion.m+1.
-        //
-        // Unsure what is the correct, but currently finds newest fusion,
-        // then newest flush.
-        //
-        // The problem is that this tool can be invoked while flushing.
-
         List<Path> candidates = listDirs(indexDir, Files::isDirectory);
         if (candidates.isEmpty()) {
             throw new NoSuchFileException("There are no flushed indexes on disk in: " + indexDir);
