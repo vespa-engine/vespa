@@ -121,7 +121,7 @@ SameElementQueryNodeTest::make_query(QueryTweak query_tweak, const std::vector<s
         builder.addStringTerm(s.str(), "field", idx, Weight(0));
     }
     auto node = builder.build();
-    auto queryTree = StackDumpCreator::createQueryTree(*node);
+    auto queryTree = StackDumpCreator::createSerializedQueryTree(*node);
     QueryNodeResultFactory empty;
     auto q = std::make_unique<Query>(empty, *queryTree);
     auto& top = dynamic_cast<SameElementQueryNode&>(q->getRoot());
@@ -185,7 +185,7 @@ TEST_F(SameElementQueryNodeTest, test_same_element_evaluate)
         builder.addStringTerm("c", "f3", 2, Weight(0));
     }
     Node::UP node = builder.build();
-    auto queryTree = StackDumpCreator::createQueryTree(*node);
+    auto queryTree = StackDumpCreator::createSerializedQueryTree(*node);
     QueryNodeResultFactory empty;
     Query q(empty, *queryTree);
     auto * sameElem = dynamic_cast<SameElementQueryNode *>(&q.getRoot());

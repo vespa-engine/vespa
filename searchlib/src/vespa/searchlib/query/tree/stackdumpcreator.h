@@ -18,7 +18,7 @@ struct StackDumpCreator {
     // Creates a stack dump from a query tree.
     static std::string create(const Node &node);
     // Creates a SerializedQueryTree from a query tree.
-    static search::QueryTreeSP createQueryTree(const Node &node);
+    static search::QueryTreeSP createSerializedQueryTree(const Node &node);
 };
 
 }

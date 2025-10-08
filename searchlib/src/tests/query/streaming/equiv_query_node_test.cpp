@@ -85,7 +85,7 @@ EquivQueryNodeTest::make_simple_equiv_stack_dump()
         builder.addStringTerm("3", "", 0, Weight(0));
     }
     Node::UP node = builder.build();
-    return StackDumpCreator::createQueryTree(*node);
+    return StackDumpCreator::createSerializedQueryTree(*node);
 }
 
 TEST_F(EquivQueryNodeTest, test_equiv_evaluate_and_unpack)

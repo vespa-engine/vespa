@@ -95,7 +95,7 @@ struct BoundTerm {
 BoundTerm::~BoundTerm() = default;
 
 Query make_query(std::unique_ptr<search::query::Node> root) {
-    auto queryTree = StackDumpCreator::createQueryTree(*root);
+    auto queryTree = StackDumpCreator::createSerializedQueryTree(*root);
     QueryTermDataFactory factory(nullptr, nullptr);
     Query query(factory, *queryTree);
     return query;

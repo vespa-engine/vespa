@@ -660,7 +660,7 @@ TEST(QueryTest, requireThatQueryGluesEverythingTogether)
 {
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addStringTerm(string_term, field, 1, Weight(2));
-    auto queryTree = StackDumpCreator::createQueryTree(*builder.build());
+    auto queryTree = StackDumpCreator::createSerializedQueryTree(*builder.build());
     Query query;
     query.buildTree(*queryTree, "", ViewResolver(), plain_index_env);
     vector<const ITermData *> term_data;
@@ -690,7 +690,7 @@ checkQueryAddsLocation(const string &loc_in, const string &loc_out) {
 
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addStringTerm(string_term, field, 1, Weight(2));
-    auto queryTree = StackDumpCreator::createQueryTree(*builder.build());
+    auto queryTree = StackDumpCreator::createSerializedQueryTree(*builder.build());
     Query query;
     query.buildTree(*queryTree,
                     loc_field + ":" + loc_in,
@@ -721,7 +721,7 @@ void verifyThatRankBlueprintAndAndNotStaysOnTopAfterLocation(QueryBuilder<Proton
     builder.addStringTerm("foo", field, field_id, string_weight);
     builder.addStringTerm("bar", field, field_id, string_weight);
     builder.addStringTerm("baz", field, field_id, string_weight);
-    auto queryTree = StackDumpCreator::createQueryTree(*builder.build());
+    auto queryTree = StackDumpCreator::createSerializedQueryTree(*builder.build());
 
     Query query;
     query.buildTree(*queryTree, loc_field + ":" + loc_string, ViewResolver(), attribute_index_env);
@@ -920,7 +920,7 @@ TEST(QueryTest, requireThatWhiteListBlueprintCanBeUsed)
 {
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addStringTerm("foo", field, field_id, string_weight);
-    auto queryTree = StackDumpCreator::createQueryTree(*builder.build());
+    auto queryTree = StackDumpCreator::createSerializedQueryTree(*builder.build());
     Query query;
     query.buildTree(*queryTree, "", ViewResolver(), plain_index_env);
 
@@ -950,7 +950,7 @@ void verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing(QueryBuilder<Pr
     builder.addStringTerm("foo", field, field_id, string_weight);
     builder.addStringTerm("bar", field, field_id, string_weight);
     builder.addStringTerm("baz", field, field_id, string_weight);
-    auto queryTree = StackDumpCreator::createQueryTree(*builder.build());
+    auto queryTree = StackDumpCreator::createSerializedQueryTree(*builder.build());
     Query query;
     query.buildTree(*queryTree, "", ViewResolver(), plain_index_env);
     FakeSearchContext context(42);
@@ -1002,7 +1002,7 @@ make_same_element_stack_dump(const std::string &prefix, const std::string &term_
     builder.addSameElement(2, prefix, 0, Weight(1));
     builder.addStringTerm("xyz", term_prefix + "f1", 1, Weight(1));
     builder.addStringTerm("abc", term_prefix + "f2", 2, Weight(1));
-    auto queryTree = StackDumpCreator::createQueryTree(*builder.build());
+    auto queryTree = StackDumpCreator::createSerializedQueryTree(*builder.build());
     auto stack_dump_iterator = queryTree->makeIterator();
     SameElementModifier sem;
     search::query::Node::UP query = search::query::QueryTreeCreator<ProtonNodeTypes>::create(*stack_dump_iterator);

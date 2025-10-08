@@ -55,7 +55,7 @@ void
 RankProcessorTest::build_query(QueryBuilder<SimpleQueryNodeTypes> &builder)
 {
     auto build_node = builder.build();
-    auto queryTree = StackDumpCreator::createQueryTree(*build_node);
+    auto queryTree = StackDumpCreator::createSerializedQueryTree(*build_node);
     _query = std::make_unique<Query>(_factory, *queryTree);
     _query_wrapper = std::make_unique<QueryWrapper>(*_query);
 }

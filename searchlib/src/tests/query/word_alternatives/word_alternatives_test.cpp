@@ -173,7 +173,7 @@ TEST(WordAlternativesTest, require_that_tree_can_be_replicated) {
 
 TEST(WordAlternativesTest, require_that_tree_can_be_replicated_via_stack) {
     Node::UP node = createQueryTree<SimpleQueryNodeTypes>();
-    auto queryTree = StackDumpCreator::createQueryTree(*node);
+    auto queryTree = StackDumpCreator::createSerializedQueryTree(*node);
     auto iterator = queryTree->makeIterator();
     Node::UP new_node = QueryTreeCreator<MyQueryNodeTypes>::create(*iterator);
     EXPECT_TRUE(bool(new_node));

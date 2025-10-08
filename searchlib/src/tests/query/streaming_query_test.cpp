@@ -432,7 +432,7 @@ TEST(StreamingQueryTest, test_get_query_parts)
         }
     }
     Node::UP node = builder.build();
-    auto queryTree = StackDumpCreator::createQueryTree(*node);
+    auto queryTree = StackDumpCreator::createSerializedQueryTree(*node);
 
     QueryNodeResultFactory empty;
     Query q(empty, *queryTree);
@@ -740,7 +740,7 @@ TEST(StreamingQueryTest, test_nearest_neighbor_query_node)
     constexpr double distance = 0.5;
     builder.add_nearest_neighbor_term("qtensor", "field", id, Weight(weight), target_num_hits, allow_approximate, explore_additional_hits, distance_threshold);
     auto build_node = builder.build();
-    auto queryTree = StackDumpCreator::createQueryTree(*build_node);
+    auto queryTree = StackDumpCreator::createSerializedQueryTree(*build_node);
     QueryNodeResultFactory empty;
     Query q(empty, *queryTree);
     auto* qterm = dynamic_cast<QueryTerm *>(&q.getRoot());
