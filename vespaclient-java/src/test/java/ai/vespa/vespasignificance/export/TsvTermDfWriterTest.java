@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,10 +28,15 @@ class TsvTermDfWriterTest {
     @TempDir
     Path tmp;
 
+    private TsvTermDfWriter newWriter(Path out) throws IOException {
+        Writer w = new OutputStreamWriter(Files.newOutputStream(out), StandardCharsets.UTF_8);
+        return new TsvTermDfWriter(w);
+    }
+
     @Test
     void writesUtf8TsvAndNewlines() throws Exception {
         Path out = tmp.resolve("out.tsv");
-        try (var w = new TsvTermDfWriter(out)) {
+        try (var w = newWriter(out)) {
             w.write(new VespaIndexInspectClient.TermDocumentFrequency("hello", 1));
             w.write(new VespaIndexInspectClient.TermDocumentFrequency("world", 2));
             w.flush();
@@ -48,7 +55,7 @@ class TsvTermDfWriterTest {
                         new VespaIndexInspectClient.TermDocumentFrequency("b", 2)
                 ).onClose(() -> closed[0] = true);
 
-        try (var w = new TsvTermDfWriter(out)) {
+        try (var w = newWriter(out)) {
             w.writeAll(rows); // should consume and close the stream
         }
         assertTrue(closed[0], "writeAll should close the input stream");
@@ -60,7 +67,7 @@ class TsvTermDfWriterTest {
     @Test
     void cannotWriteAfterClose() throws Exception {
         Path out = tmp.resolve("out.tsv");
-        var w = new TsvTermDfWriter(out);
+        var w = newWriter(out);
         w.close();
         assertThrows(IOException.class,
                 () -> w.write(new VespaIndexInspectClient.TermDocumentFrequency("x", 1)));
@@ -75,7 +82,7 @@ class TsvTermDfWriterTest {
                 new VespaIndexInspectClient.TermDocumentFrequency("b", 2)
         ).sorted(Comparator.comparing(VespaIndexInspectClient.TermDocumentFrequency::term));
 
-        try (var w = new TsvTermDfWriter(out)) {
+        try (var w = newWriter(out)) {
             w.writeAll(rows);
         }
         var text = Files.readString(out, StandardCharsets.UTF_8);
