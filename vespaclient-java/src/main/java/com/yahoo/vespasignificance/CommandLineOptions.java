@@ -165,7 +165,7 @@ public class CommandLineOptions {
         options.addOption(Option.builder()
                 .longOpt(OUTPUT_OPTION)
                 .hasArg()
-                .argName("FILE.tsv")
+                .argName("FILE.tsv[.zst]")
                 .desc("Output TSV file.")
                 .build());
 
