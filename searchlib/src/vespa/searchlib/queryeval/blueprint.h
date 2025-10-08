@@ -10,6 +10,7 @@
 #include "matching_phase.h"
 #include "multisearch.h"
 #include <vespa/searchlib/common/bitvector.h>
+#include <span>
 
 namespace vespalib { class ObjectVisitor; }
 namespace vespalib::slime {
@@ -401,12 +402,12 @@ protected:
 public:
     SearchIteratorUP createSearch(fef::MatchData &md) const { return tag_with_id(createSearchImpl(md)); }
     SearchIteratorUP createFilterSearch(FilterConstraint constraint) const { return tag_with_id(createFilterSearchImpl(constraint)); }
-    static SearchIteratorUP create_and_filter(const Children &children, bool strict, FilterConstraint constraint);
-    static SearchIteratorUP create_or_filter(const Children &children, bool strict, FilterConstraint constraint);
-    static SearchIteratorUP create_atmost_and_filter(const Children &children, bool strict, FilterConstraint constraint);
-    static SearchIteratorUP create_atmost_or_filter(const Children &children, bool strict, FilterConstraint constraint);
-    static SearchIteratorUP create_andnot_filter(const Children &children, bool strict, FilterConstraint constraint);
-    static SearchIteratorUP create_first_child_filter(const Children &children, FilterConstraint constraint);
+    static SearchIteratorUP create_and_filter(std::span<const UP> children, bool strict, FilterConstraint constraint);
+    static SearchIteratorUP create_or_filter(std::span<const UP> children, bool strict, FilterConstraint constraint);
+    static SearchIteratorUP create_atmost_and_filter(std::span<const UP> children, bool strict, FilterConstraint constraint);
+    static SearchIteratorUP create_atmost_or_filter(std::span<const UP> children, bool strict, FilterConstraint constraint);
+    static SearchIteratorUP create_andnot_filter(std::span<const UP> children, bool strict, FilterConstraint constraint);
+    static SearchIteratorUP create_first_child_filter(std::span<const UP> children, FilterConstraint constraint);
     static SearchIteratorUP create_default_filter(FilterConstraint constraint);
 
     // for debug dumping
