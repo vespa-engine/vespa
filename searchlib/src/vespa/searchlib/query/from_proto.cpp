@@ -126,20 +126,6 @@ bool handle(const ItemOnear& item, QueryStackIterator::Data& _d) {
     return true;
 }
 
-bool handle(const PureWeightedString& item, QueryStackIterator::Data& _d) {
-    _d.itemType = ParseItem::ItemType::ITEM_PURE_WEIGHTED_STRING;
-    _d.term_view = item.value();
-    _d.weight.setPercent(item.weight());
-    return true;
-}
-
-bool handle(const PureWeightedLong& item, QueryStackIterator::Data& _d) {
-    _d.itemType = ParseItem::ItemType::ITEM_PURE_WEIGHTED_LONG;
-    _d.integerTerm = item.value();
-    _d.weight.setPercent(item.weight());
-    return true;
-}
-
 bool handle(const ItemWeakAnd& item, QueryStackIterator::Data& _d) {
     _d.itemType = ParseItem::ItemType::ITEM_WEAK_AND;
     _d.index_view = item.index();
@@ -438,17 +424,26 @@ bool handle(const ItemNumericIn& item, QueryStackIterator::Data& _d) {
 } // namespace <unnamed>
 
 bool ProtoTreeIterator::handle_variant_item(TreeItem item) {
-    switch (item.index()) {
-    case 0:
-        return handle_item(*std::get<0>(item));
-    case 1:
-        return handle(*std::get<1>(item), _d);
-    case 2:
-        return handle(*std::get<2>(item), _d);
-    default:
-        abort();
-    }
+    auto visitor = [&](const auto *p) -> bool {
+        return handle_item(*p);
+    };
+    return std::visit(visitor, item);
 }
+
+bool ProtoTreeIterator::handle_item(const PureWeightedString& item) {
+    _d.itemType = ParseItem::ItemType::ITEM_PURE_WEIGHTED_STRING;
+    _d.term_view = item.value();
+    _d.weight.setPercent(item.weight());
+    return true;
+}
+
+bool ProtoTreeIterator::handle_item(const PureWeightedLong& item) {
+    _d.itemType = ParseItem::ItemType::ITEM_PURE_WEIGHTED_LONG;
+    _d.integerTerm = item.value();
+    _d.weight.setPercent(item.weight());
+    return true;
+}
+
 
 bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
     using IC = QueryTreeItem::ItemCase;
