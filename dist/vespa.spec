@@ -460,6 +460,7 @@ fi
 %dir %{_prefix}
 %{_prefix}/bin
 %exclude %{_prefix}/bin/vespa
+%exclude %{_prefix}/bin/vespa-curl
 %exclude %{_prefix}/bin/vespa-destination
 %exclude %{_prefix}/bin/vespa-fbench
 %exclude %{_prefix}/bin/vespa-feed-client
@@ -562,6 +563,7 @@ fi
 %endif
 %dir %{_prefix}
 %dir %{_prefix}/bin
+%{_prefix}/bin/vespa-curl
 %{_prefix}/bin/vespa-jvm-dumper
 %{_prefix}/bin/vespa-logfmt
 %{_prefix}/bin/vespa-security-env
