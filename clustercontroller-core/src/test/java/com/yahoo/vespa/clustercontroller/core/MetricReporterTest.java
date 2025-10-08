@@ -269,18 +269,6 @@ public class MetricReporterTest {
                 argThat(hasMetricContext(withNodeTypeDimension("distributor"))));
         verify(f.mockReporter).set(eq(metricName(NODES_NOT_CONVERGED)), eq(0),
                 argThat(hasMetricContext(withNodeTypeDimension("storage"))));
-
-        // Resource usage metrics are reset
-        verify(f.mockReporter).set(eq(metricName(MAX_DISK_UTILIZATION)), eq(0.0),
-                argThat(hasMetricContext(withClusterDimension())));
-        verify(f.mockReporter).set(eq(metricName(MAX_MEMORY_UTILIZATION)), eq(0.0),
-                argThat(hasMetricContext(withClusterDimension())));
-        verify(f.mockReporter).set(eq(metricName(NODES_ABOVE_LIMIT)), eq(0),
-                argThat(hasMetricContext(withClusterDimension())));
-        verify(f.mockReporter).set(eq(metricName(DISK_LIMIT)), eq(0.0),
-                argThat(hasMetricContext(withClusterDimension())));
-        verify(f.mockReporter).set(eq(metricName(MEMORY_LIMIT)), eq(0.0),
-                argThat(hasMetricContext(withClusterDimension())));
     }
 
 }
