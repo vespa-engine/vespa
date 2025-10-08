@@ -28,8 +28,10 @@ public:
 
     SerializedQueryTree(std::vector<char> stackDump, ctor_tag tag);
     ~SerializedQueryTree();
+    static SerializedQueryTreeSP empty();
 private:
     std::vector<char> _stackDump;
+    static SerializedQueryTreeSP _empty;
 };
 
 } // namespace search

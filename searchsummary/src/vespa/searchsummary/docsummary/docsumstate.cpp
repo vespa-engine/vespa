@@ -98,8 +98,9 @@ GetDocsumsState::parse_locations()
                           _args.getLocation().c_str());
         }
     }
-    if (auto* tree = _args.getSerializedQueryTree()) {
-        auto iterator = tree->makeIterator();
+    {
+        const auto& tree = _args.getSerializedQueryTree();
+        auto iterator = tree.makeIterator();
         while (iterator->next()) {
             if (iterator->getType() == search::ParseItem::ITEM_GEO_LOCATION_TERM) {
                 std::string view = iterator->index_as_string();

@@ -24,9 +24,7 @@ GetDocsumArgs::initFromDocsumRequest(const engine::DocsumRequest &req)
 {
     _dumpFeatures       = req.dumpFeatures;
     _resultClassName    = req.resultClassName;
-    if (const auto * queryTree = req.getSerializedQueryTree()) {
-        _serializedQueryTree = queryTree->shared_from_this();
-    }
+    _serializedQueryTree = req.getSerializedQueryTree().shared_from_this();
     _location           = req.location;
     _locations_possible = true;
     _timeout            = req.getTimeLeft();

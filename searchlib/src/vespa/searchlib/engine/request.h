@@ -34,7 +34,9 @@ public:
     void setSerializedQueryTree(SerializedQueryTreeSP queryTree) {
         _queryTree = std::move(queryTree);
     }
-    const SerializedQueryTree * getSerializedQueryTree() const { return _queryTree.get(); }
+    const SerializedQueryTree& getSerializedQueryTree() const {
+        return _queryTree ? *_queryTree : *SerializedQueryTree::empty();
+    }
 private:
     RelativeTime          _relativeTime;
     vespalib::steady_time _timeOfDoom;

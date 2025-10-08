@@ -38,4 +38,10 @@ std::unique_ptr<QueryStackIterator> SerializedQueryTree::makeIterator() const {
     return std::make_unique<SdiWrap>(shared_from_this(), stackRef);
 }
 
+SerializedQueryTreeSP SerializedQueryTree::_empty = SerializedQueryTree::fromStackDump(std::vector<char>());
+
+SerializedQueryTreeSP SerializedQueryTree::empty() {
+    return _empty;
+}
+
 } // namespace search

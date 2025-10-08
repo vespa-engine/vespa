@@ -39,8 +39,8 @@ DynamicTeaserDFW::insert_juniper_field(uint32_t docid, std::string_view input, G
 {
     auto& query = state._dynteaser.get_query(_input_field_name);
     if (!query) {
-        const auto* tree = state._args.getSerializedQueryTree();
-        auto iterator = tree ? tree->makeIterator() : QueryStackIterator::dummy();
+        const auto& tree = state._args.getSerializedQueryTree();
+        auto iterator = tree.makeIterator();
         JuniperQueryAdapter iq(state.query_normalization(), _query_term_filter.get(),
                                std::move(iterator), state._args.highlightTerms());
         query = _juniper->CreateQueryHandle(iq, nullptr);

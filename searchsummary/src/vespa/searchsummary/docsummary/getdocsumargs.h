@@ -18,7 +18,7 @@ private:
     std::string                      _resultClassName;
     bool                             _dumpFeatures;
     bool                             _locations_possible;
-    SerializedQueryTreeSP                      _serializedQueryTree;
+    SerializedQueryTreeSP            _serializedQueryTree;
     std::string                      _location;
     vespalib::duration               _timeout;
     fef::Properties                  _highlightTerms;
@@ -41,7 +41,9 @@ public:
     vespalib::duration getTimeout() const { return _timeout; }
 
     const std::string & getResultClassName()      const { return _resultClassName; }
-    const search::SerializedQueryTree* getSerializedQueryTree() const { return _serializedQueryTree.get(); }
+    const search::SerializedQueryTree& getSerializedQueryTree() const {
+        return _serializedQueryTree ? *_serializedQueryTree : *search::SerializedQueryTree::empty();
+    }
 
     void dumpFeatures(bool v) { _dumpFeatures = v; }
     bool dumpFeatures() const { return _dumpFeatures; }
