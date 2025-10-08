@@ -2,11 +2,17 @@
 package ai.vespa.vespasignificance.export;
 
 import com.yahoo.vespasignificance.CommandLineOptions;
+import io.airlift.compress.zstd.ZstdOutputStream;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -27,6 +33,7 @@ public class Export {
 
     private Path indexDir;
     private String fieldName;
+    private Path outputPath;
 
     public Export(ExportClientParameters params) {
         this(params,
@@ -48,7 +55,7 @@ public class Export {
 
     @FunctionalInterface
     interface WriterFactory {
-        TermDfWriter create(Path out) throws IOException;
+        TermDfWriter create(Writer out) throws IOException;
     }
 
     @FunctionalInterface
@@ -67,14 +74,17 @@ public class Export {
             resolveIndexDir();
             requireFieldDir(params.fieldName());
 
-            Path outFile = Path.of(params.outputFile());
             var ordering = Comparator.comparing(VespaIndexInspectClient.TermDocumentFrequency::term);
-            try (var rows = dumpFn.open(indexDir, fieldName).sorted(ordering);
-                 TermDfWriter writer = writerFactory.create(outFile)) {
+            try (var output = Files.newOutputStream(outputPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                 var maybeCompressed = params.zstCompress()
+                         ? new ZstdOutputStream(new BufferedOutputStream(output))
+                         : new BufferedOutputStream(output);
+                 var rows = dumpFn.open(indexDir, fieldName).sorted(ordering);
+                 TermDfWriter writer = writerFactory.create(new OutputStreamWriter(maybeCompressed, StandardCharsets.UTF_8))) {
                 writer.writeAll(rows);
             }
 
-            System.out.println("Exported " + Path.of(indexDir.toString(), fieldName) + " to " + outFile);
+            System.out.println("Exported " + Path.of(indexDir.toString(), fieldName) + " to " + outputPath);
             return 0;
         } catch (ExportFailure ignored) {
             return 1;
@@ -86,17 +96,24 @@ public class Export {
 
     /**
      * Ensures that output file is not null or blank and that we can create parent directories for
-     * output.
+     * output. If the output should be zst compressed we add .zst extension if not present.
      */
     private void ensureOutputFile() {
-        if (params.outputFile() == null || params.outputFile().isBlank()) {
+        var out = params.outputFile();
+        if (out == null || out.isBlank()) {
             System.err.println("Error: --output is required.");
             CommandLineOptions.printExportHelp();
             throw new ExportFailure();
         }
 
-        Path outFile = Path.of(params.outputFile());
-        Path parent = outFile.getParent();
+        boolean wantsZst = params.zstCompress();
+        boolean hasZstSuffix = out.endsWith(".zst");
+        if (wantsZst && !hasZstSuffix) {
+            out = out + ".zst";
+        }
+        outputPath = Path.of(out);
+
+        Path parent = outputPath.getParent();
         if (parent != null) {
             try {
                 Files.createDirectories(parent);
