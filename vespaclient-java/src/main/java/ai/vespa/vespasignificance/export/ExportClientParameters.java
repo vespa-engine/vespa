@@ -8,8 +8,13 @@ import java.util.Optional;
  *
  * @author johsol
  */
-public record ExportClientParameters(String indexDir, String outputFile, String fieldName,
-                                     Optional<String> schemaName, Optional<String> clusterName, Optional<String> nodeIndex) {
+public record ExportClientParameters(
+        String indexDir, String outputFile,
+        String fieldName,
+        Optional<String> schemaName,
+        Optional<String> clusterName,
+        Optional<String> nodeIndex,
+        boolean zstCompress) {
 
     public static Builder builder() {
         return new Builder();
@@ -23,6 +28,7 @@ public record ExportClientParameters(String indexDir, String outputFile, String 
         private String clusterName;
         private String schemaName;
         private String nodeIndex;
+        private boolean zstCompress = false;
 
         public Builder indexDir(String value) {
             this.indexDir = value;
@@ -54,8 +60,13 @@ public record ExportClientParameters(String indexDir, String outputFile, String 
             return this;
         }
 
+        public Builder zstCompress(boolean value) {
+            this.zstCompress = value;
+            return this;
+        }
+
         public ExportClientParameters build() {
-            return new ExportClientParameters(indexDir, outputFile, fieldName, Optional.ofNullable(schemaName), Optional.ofNullable(clusterName),  Optional.ofNullable(nodeIndex));
+            return new ExportClientParameters(indexDir, outputFile, fieldName, Optional.ofNullable(schemaName), Optional.ofNullable(clusterName), Optional.ofNullable(nodeIndex), zstCompress);
         }
     }
 
