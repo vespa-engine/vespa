@@ -486,7 +486,7 @@ protected:
 
     State calculateState() const final;
 
-    virtual bool isPositive(size_t index) const { (void) index; return true; }
+    virtual bool may_need_unpack(size_t index) const { (void) index; return true; }
 
     bool should_do_termwise_eval(const UnpackInfo &unpack, double match_limit) const;
 
