@@ -165,7 +165,7 @@ public class CommandLineOptions {
         options.addOption(Option.builder()
                 .longOpt(OUTPUT_OPTION)
                 .hasArg()
-                .argName("FILE.tsv")
+                .argName("FILE.tsv[.zst]")
                 .desc("Output TSV file.")
                 .build());
 
@@ -198,6 +198,11 @@ public class CommandLineOptions {
                 .desc("Node index directory.")
                 .build());
 
+        options.addOption(Option.builder("zst")
+                .longOpt(ZST_COMPRESSION)
+                .desc("Use Zstandard compression.")
+                .build());
+
         return options;
     }
 
@@ -221,6 +226,7 @@ public class CommandLineOptions {
                 .clusterName(cl.getOptionValue(CLUSTER_OPTION))
                 .schemaName(cl.getOptionValue(SCHEMA_NAME))
                 .nodeIndex(cl.getOptionValue(NODE_INDEX_OPTION))
+                .zstCompress(cl.hasOption(ZST_COMPRESSION))
                 .build();
     }
 

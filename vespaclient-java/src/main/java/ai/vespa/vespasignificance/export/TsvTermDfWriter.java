@@ -3,8 +3,7 @@ package ai.vespa.vespasignificance.export;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.Writer;
 
 /**
  * Writes {@link VespaIndexInspectClient.TermDocumentFrequency} rows as TSV.
@@ -14,8 +13,10 @@ import java.nio.file.Path;
 public final class TsvTermDfWriter implements TermDfWriter {
     private final BufferedWriter out;
 
-    public TsvTermDfWriter(Path path) throws IOException {
-        this.out = Files.newBufferedWriter(path);
+    public TsvTermDfWriter(Writer writer) throws IOException {
+        this.out = (writer instanceof BufferedWriter)
+                ? (BufferedWriter) writer
+                : new BufferedWriter(writer, 1 << 16);
     }
 
     @Override
