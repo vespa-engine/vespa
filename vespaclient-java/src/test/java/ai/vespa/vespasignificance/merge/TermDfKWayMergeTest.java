@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.vespasignificance.merge;
 
 import org.junit.jupiter.api.Test;
@@ -11,7 +12,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Tests methods in {@link TermDfKWayMerge}
+ *
+ * @author johsol
+ */
 public class TermDfKWayMergeTest {
+
     private static TermDfKWayMerge.Cursor cursorFrom(String s) {
         return new TermDfKWayMerge.Cursor(new BufferedReader(new StringReader(s)));
     }
@@ -21,11 +28,11 @@ public class TermDfKWayMergeTest {
         var c = cursorFrom("apple\t123\nbanana\t456\n");
         assertTrue(c.advance());
         assertEquals("apple", c.term);
-        assertEquals(123L, c.df);
+        assertEquals(123L, c.documentFrequency);
 
         assertTrue(c.advance());
         assertEquals("banana", c.term);
-        assertEquals(456L, c.df);
+        assertEquals(456L, c.documentFrequency);
 
         assertFalse(c.advance()); // EOF
     }
@@ -35,7 +42,7 @@ public class TermDfKWayMergeTest {
         var c = cursorFrom("\n   \npear\t  789   \n\n");
         assertTrue(c.advance());
         assertEquals("pear", c.term);
-        assertEquals(789L, c.df);
+        assertEquals(789L, c.documentFrequency);
         assertFalse(c.advance()); // nothing more after blanks
     }
 
