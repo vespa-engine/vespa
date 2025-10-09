@@ -37,8 +37,36 @@ bool possibleFloat(const QueryTerm & qt, const QueryTerm::string & term) {
 
 }
 
+class QueryBuilder::HiddenTermsGuard {
+    QueryBuilder &_builder;
+    bool          _active;
+
+public:
+    HiddenTermsGuard(QueryBuilder& builder)
+        : _builder(builder),
+          _active(false)
+    {
+    }
+    ~HiddenTermsGuard() {
+        deactivate();
+    }
+    void activate() {
+        if (!_active) {
+            _active = true;
+            ++_builder._hidden_terms;
+        }
+    }
+    void deactivate() {
+        if (_active) {
+            _active = false;
+            --_builder._hidden_terms;
+        }
+    }
+};
+
 QueryBuilder::QueryBuilder()
-    : _same_element_view()
+    : _same_element_view(),
+      _hidden_terms(0u)
 {
 }
 
@@ -68,7 +96,6 @@ QueryBuilder::build(const QueryNode * parent, const QueryNodeResultFactory& fact
         case ParseItem::ITEM_AND:
         case ParseItem::ITEM_OR:
         case ParseItem::ITEM_WEAK_AND:
-        case ParseItem::ITEM_NOT:
         case ParseItem::ITEM_NEAR:
         case ParseItem::ITEM_ONEAR:
         case ParseItem::ITEM_RANK:
@@ -93,6 +120,9 @@ QueryBuilder::build(const QueryNode * parent, const QueryNodeResultFactory& fact
                 }
             }
         }
+            break;
+        case ParseItem::ITEM_NOT:
+            qn = build_and_not(factory, queryRep);
             break;
         case ParseItem::ITEM_TRUE:
             qn = std::make_unique<TrueNode>();
@@ -155,7 +185,7 @@ QueryBuilder::build(const QueryNode * parent, const QueryNodeResultFactory& fact
                 }
                 qt->setWeight(queryRep.GetWeight());
                 qt->setUniqueId(queryRep.getUniqueId());
-                qt->setRanked( ! queryRep.hasNoRankFlag());
+                qt->setRanked( ! queryRep.hasNoRankFlag() && !hidden_terms());
                 qt->set_filter(queryRep.hasNoPositionDataFlag());
                 if (allowRewrite && possibleFloat(*qt, ssTerm) && factory.allow_float_terms_rewrite(ssIndex)) {
                     /*
@@ -357,6 +387,23 @@ QueryBuilder::build_same_element_term(const QueryNodeResultFactory& factory, Que
     }
     _same_element_view.reset();
     return sen;
+}
+
+std::unique_ptr<QueryNode>
+QueryBuilder::build_and_not(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep)
+{
+    HiddenTermsGuard hidden_terms_guard(*this);
+    auto arity = queryRep.getArity();
+    auto and_not = std::make_unique<AndNotQueryNode>();
+    for (size_t i = 0; i < arity; ++i) {
+        queryRep.next();
+        if (i == 1u) {
+            hidden_terms_guard.activate();
+        }
+        auto qn = build(and_not.get(), factory, queryRep, true);
+        and_not->addChild(std::move(qn));
+    }
+    return and_not;
 }
 
 void
