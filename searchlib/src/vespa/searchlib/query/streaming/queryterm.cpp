@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "queryterm.hpp"
+#include "query_term_data.h"
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/objects/visit.h>
@@ -10,6 +11,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.query.streaming.queryterm");
 
+using search::fef::IIndexEnvironment;
 using search::fef::ITermData;
 using search::fef::ITermFieldData;
 using search::fef::MatchData;
@@ -136,7 +138,15 @@ QueryTerm::set_element_length(uint32_t hitlist_idx, uint32_t element_length)
 }
 
 void
-QueryTerm::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env)
+QueryTerm::unpack_match_data(uint32_t docid, MatchData& match_data, const IIndexEnvironment& index_env)
+{
+    auto& qtd = static_cast<QueryTermData&>(getQueryItem());
+    const ITermData& td = qtd.getTermData();
+    unpack_match_data(docid, td, match_data, index_env);
+}
+
+void
+QueryTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const IIndexEnvironment& index_env)
 {
     HitList list;
     const HitList & hit_list = evaluateHits(list);
