@@ -36,6 +36,7 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     string_escape_test.cpp
     time_test.cpp
     typify_test.cpp
+    u32_set_test.cpp
     xmlserializabletest.cpp
     DEPENDS
     vespalib
