@@ -132,6 +132,8 @@ class NearBlueprint : public IntermediateBlueprint
 {
 private:
     uint32_t                    _window;
+    uint32_t                    _num_negative_terms;
+    uint32_t                    _negative_term_brick_size;
     const IElementGapInspector& _element_gap_inspector;
 
     AnyFlow my_flow(InFlow in_flow) const override;
@@ -147,7 +149,12 @@ public:
     SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
 
     explicit NearBlueprint(uint32_t window, const IElementGapInspector& element_gap_inspector) noexcept
+        : NearBlueprint(window, 0, 0, element_gap_inspector)
+    {}
+    NearBlueprint(uint32_t window, uint32_t num_negative_terms, uint32_t negative_term_brick_size, const IElementGapInspector& element_gap_inspector) noexcept
         : _window(window),
+          _num_negative_terms(num_negative_terms),
+          _negative_term_brick_size(negative_term_brick_size),
           _element_gap_inspector(element_gap_inspector)
     {}
 };
@@ -158,6 +165,8 @@ class ONearBlueprint  : public IntermediateBlueprint
 {
 private:
     uint32_t                    _window;
+    uint32_t                    _num_negative_terms;
+    uint32_t                    _negative_term_brick_size;
     const IElementGapInspector& _element_gap_inspector;
 
     AnyFlow my_flow(InFlow in_flow) const override;
@@ -173,7 +182,12 @@ public:
     SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
 
     explicit ONearBlueprint(uint32_t window, const IElementGapInspector& element_gap_inspector) noexcept
+        : ONearBlueprint(window, 0, 0, element_gap_inspector)
+    {}
+    ONearBlueprint(uint32_t window, uint32_t num_negative_terms, uint32_t negative_term_brick_size, const IElementGapInspector& element_gap_inspector) noexcept
         : _window(window),
+          _num_negative_terms(num_negative_terms),
+          _negative_term_brick_size(negative_term_brick_size),
           _element_gap_inspector(element_gap_inspector)
     {}
 };
