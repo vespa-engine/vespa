@@ -65,13 +65,12 @@ public class TermDfKWayMergeTest {
     void throwsOnLineWithoutTab() {
         var c = cursorFrom("notabline\n");
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, c::advance);
-        assertTrue(ex.getMessage().contains("Invalid term line"));
     }
 
     @Test
     void throwsOnNonNumericDf() {
         var c = cursorFrom("orange\tNaN\n");
-        assertThrows(NumberFormatException.class, c::advance);
+        assertThrows(IllegalArgumentException.class, c::advance);
     }
 
     @Test

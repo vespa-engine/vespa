@@ -9,33 +9,36 @@ import java.util.List;
 import java.util.PriorityQueue;
 
 /**
- * This class implements k-way merge for term-df files.
+ * This class implements k-way merge for multiple streams of "term\tnumber\n".
  * <p>
  * The implementation uses a min-heap on a set of cursors where each cursor
- * holds a file handle to one of the files being merged.
+ * holds a file handle to one of the files being merged and the current term
+ * and document frequency value for that file.
  *
  * @author johsol
  */
 public class TermDfKWayMerge {
 
     /**
-     * Holds each buffered reader and a cursor to the current line.
+     * Holds handle to buffered reader and when advanced holds the current term and document
+     * frequency for this stream.
      */
     final static class Cursor {
-        final BufferedReader bufferedReader;
 
+        final BufferedReader bufferedReader;
         String term;
         long documentFrequency;
+        long lineNo;
 
         Cursor(BufferedReader bufferedReader) {
             this.bufferedReader = bufferedReader;
+            this.lineNo = 1;
         }
 
         /**
-         * Parses the next TermDf line from the buffered reader.
+         * Parses term and document frequency from the next line from the buffered reader.
          * <p>
-         * Returns true if a new term and df was parsed, else false if there
-         * is no more data to parse.
+         * Returns true if it parsed a new line successfully, and false if there are no more lines.
          */
         boolean advance() throws IOException {
             String line;
@@ -45,11 +48,21 @@ public class TermDfKWayMerge {
 
                 int tab = line.indexOf('\t');
                 if (tab < 0) {
-                    throw new IllegalArgumentException("Invalid term line when expecting tab: " + line);
+                    throw new IllegalArgumentException("Missing tab at line " + lineNo + ": " + line);
                 }
 
                 term = line.substring(0, tab);
-                documentFrequency = Long.parseLong(line.substring(tab + 1).trim());
+                if (term.isEmpty()) {
+                    throw new IllegalArgumentException("Empty term at line " + lineNo);
+                }
+
+                String num = line.substring(tab + 1).trim();
+                try {
+                    documentFrequency = Long.parseLong(num);
+                } catch (NumberFormatException nfe) {
+                    throw new IllegalArgumentException("Invalid number at line " + lineNo + ": \"" + num + "\"", nfe);
+                }
+
                 return true;
             }
 
@@ -60,10 +73,9 @@ public class TermDfKWayMerge {
     /**
      * k-way merge between buffered readers expecting "term\tnumber" for each line.
      * <p>
-     * Every reader is read linearly. And since we use a min-heap to keep track of which to compare the current with,
-     * and it has insertion of log(k), it will have a time complexity of O(n log(k)).
-     * <p>
-     * Assumes one term per line.
+     * Every reader is read linearly. And since we use a min-heap to find which streams to merge and polling
+     * (take Cursor out of the queue) and offering (inserting cursor into the queue) takes O(log(k)), this
+     * algorithm has a time complexity of O(n log(k)).
      */
     public static void merge(
             List<BufferedReader> inputs,
@@ -79,21 +91,16 @@ public class TermDfKWayMerge {
         }
 
         while (!queue.isEmpty()) {
-            Cursor cursor = queue.poll();
-            String term = cursor.term;
-            long sumDf = cursor.documentFrequency;
+            String term = queue.peek().term;
+            long sumDf = 0L;
 
             while (!queue.isEmpty() && queue.peek().term.equals(term)) {
-                Cursor matchedCursor = queue.poll();
-                sumDf += matchedCursor.documentFrequency;
+                Cursor cursor = queue.poll();
+                sumDf += cursor.documentFrequency;
 
-                if (matchedCursor.advance()) {
-                    queue.offer(matchedCursor);
+                if (cursor.advance()) {
+                    queue.offer(cursor);
                 }
-            }
-
-            if (cursor.advance()) {
-                queue.offer(cursor);
             }
 
             if (sumDf >= minKeep) {
