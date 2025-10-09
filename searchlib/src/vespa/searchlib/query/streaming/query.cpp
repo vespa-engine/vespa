@@ -173,12 +173,16 @@ AndNotQueryNode::~AndNotQueryNode() = default;
 
 bool
 AndNotQueryNode::evaluate() const {
-    if (getChildren().empty()) return true;
+    if (getChildren().empty()) {
+        return false;
+    }
     auto it = getChildren().begin();
     auto mt = getChildren().end();
     if ((*it)->evaluate()) {
         for (++it; it != mt; it++) {
-            if ((*it)->evaluate()) return false;
+            if ((*it)->evaluate()) {
+                return false;
+            }
         }
         return true;
     }
