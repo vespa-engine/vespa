@@ -106,7 +106,7 @@ RankProcessor::resolve_fields_from_term(QueryTermData& qtd, const search::stream
 }
 
 void
-RankProcessor::add_query_term(search::streaming::QueryTerm& term)
+RankProcessor::maybe_add_query_term(search::streaming::QueryTerm& term)
 {
     if (!term.isRanked()) {
         return;
@@ -142,7 +142,7 @@ RankProcessor::initQueryEnvironment()
             const std::string & locStr = term->getTermString();
             _queryEnv.addGeoLocation(fieldName, locStr);
         }
-        add_query_term(*term);
+        maybe_add_query_term(*term);
     }
     _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
     _match_data = _mdLayout.createMatchData();
