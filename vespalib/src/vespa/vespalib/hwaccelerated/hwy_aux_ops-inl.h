@@ -80,5 +80,6 @@ void ReorderWidenSub(D d, V a, V b, hn::VFromD<D>& sub0, hn::VFromD<D>& sub1) no
 
 } // HWY_NAMESPACE
 } // vespalib::hwaccelerated
+HWY_AFTER_NAMESPACE();
 
 #endif // VESPA_HWY_AUX_OPS_INL_H_TARGET
