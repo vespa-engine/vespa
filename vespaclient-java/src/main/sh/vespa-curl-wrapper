@@ -89,6 +89,10 @@ CURL_PARAMETERS=("$@")
 if [ -n "${VESPA_TLS_ENABLED}" ]
 then
   CURL_PARAMETERS=("${CURL_PARAMETERS[@]/http:/https:}")
+  # Ensure that scheme-less URLs (e.g. localhost:8080/status.html) default to HTTPS when TLS is enabled
+  CURL_PARAMETERS=("--proto-default" "https" "${CURL_PARAMETERS[@]}")
+else
+  CURL_PARAMETERS=("--proto-default" "http" "${CURL_PARAMETERS[@]}")
 fi
 
 if [ -n "${VESPA_TLS_HOSTNAME_VALIDATION_DISABLED}" ]

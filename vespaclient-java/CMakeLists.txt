@@ -13,4 +13,6 @@ vespa_install_script(src/main/sh/vespa-visit-target.sh vespa-visit-target bin)
 vespa_install_script(src/main/sh/vespa-feed-perf vespa-feed-perf bin)
 vespa_install_script(src/main/sh/vespa-status-filedistribution.sh vespa-status-filedistribution bin)
 vespa_install_script(src/main/sh/vespa-significance.sh vespa-significance bin)
+vespa_install_script(src/main/sh/vespa-curl-wrapper vespa-curl bin)
+# TODO Replace usage of vespa-curl-wrapper with vespa-curl
 vespa_install_script(src/main/sh/vespa-curl-wrapper vespa-curl-wrapper libexec/vespa)
