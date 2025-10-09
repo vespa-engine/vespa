@@ -50,7 +50,7 @@ struct State {
         sum_term_weight += weight;
     }
 
-    void calculateScore(size_t num_query_terms, int total_term_weight,
+    void calculateScore(int total_term_weight,
                         double &score_out,
                         double &proximity_out, double &order_out,
                         double &query_coverage_out, double &field_coverage_out)
@@ -58,7 +58,7 @@ struct State {
         double matches = std::min(field_length, matched_terms);
         if (matches < 2) {
             proximity_out = proximity_score(field_length);
-            order_out = (num_query_terms == 1) ? 1.0 : 0.0;
+            order_out = matches;
         } else {
             proximity_out = sum_proximity_score / (matches - 1);
             order_out = num_in_order / (double) (matches - 1);
@@ -147,7 +147,7 @@ TextSimilarityExecutor::execute(uint32_t docId)
             }
         }
     }
-    state.calculateScore(_handles.size(), _total_term_weight,
+    state.calculateScore(_total_term_weight,
                          *outputs().get_number_ptr(0),
                          *outputs().get_number_ptr(1),
                          *outputs().get_number_ptr(2),
