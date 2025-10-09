@@ -6,6 +6,7 @@
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/searchlib/query/streaming/query_term_data.h>
+#include <vespa/searchlib/query/streaming/same_element_query_node.h>
 #include <vespa/vsm/vsm/fieldsearchspec.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/issue.h>
@@ -105,6 +106,30 @@ RankProcessor::resolve_fields_from_term(QueryTermData& qtd, const search::stream
 }
 
 void
+RankProcessor::add_query_term(search::streaming::QueryTerm& term)
+{
+    if (!term.isRanked()) {
+        return;
+    }
+    QueryTermData& qtd = dynamic_cast<QueryTermData&>(term.getQueryItem());
+
+    qtd.getTermData().setWeight(term.weight());
+    qtd.getTermData().setUniqueId(term.uniqueId());
+    qtd.getTermData().setPhraseLength(term.width());
+    auto* nn_term = term.as_nearest_neighbor_query_node();
+    if (nn_term != nullptr) {
+        qtd.getTermData().set_query_tensor_name(nn_term->get_query_tensor_name());
+    }
+    auto* eqn = term.as_equiv_query_node();
+    if (eqn != nullptr) {
+        resolve_fields_from_children(qtd, *eqn);
+    } else {
+        resolve_fields_from_term(qtd, term);
+    }
+    _queryEnv.addTerm(&qtd.getTermData());
+}
+
+void
 RankProcessor::initQueryEnvironment()
 {
     QueryWrapper::TermList & terms = _query.getTermList();
@@ -117,22 +142,7 @@ RankProcessor::initQueryEnvironment()
             const std::string & locStr = term->getTermString();
             _queryEnv.addGeoLocation(fieldName, locStr);
         }
-        QueryTermData & qtd = dynamic_cast<QueryTermData &>(term->getQueryItem());
-
-        qtd.getTermData().setWeight(term->weight());
-        qtd.getTermData().setUniqueId(term->uniqueId());
-        qtd.getTermData().setPhraseLength(term->width());
-        auto* nn_term = term->as_nearest_neighbor_query_node();
-        if (nn_term != nullptr) {
-            qtd.getTermData().set_query_tensor_name(nn_term->get_query_tensor_name());
-        }
-        auto* eqn = term->as_equiv_query_node();
-        if (eqn != nullptr) {
-            resolve_fields_from_children(qtd, *eqn);
-        } else {
-            resolve_fields_from_term(qtd, *term);
-        }
-        _queryEnv.addTerm(&qtd.getTermData());
+        add_query_term(*term);
     }
     _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
     _match_data = _mdLayout.createMatchData();

@@ -47,6 +47,7 @@ private:
 
     void resolve_fields_from_children(search::streaming::QueryTermData& qtd, const search::streaming::MultiTerm& mt);
     void resolve_fields_from_term(search::streaming::QueryTermData& qtd, const search::streaming::QueryTerm& term);
+    void add_query_term(search::streaming::QueryTerm& term);
     void initQueryEnvironment();
     void initHitCollector(size_t wantedHitCount, bool use_sort_blob);
     void setupRankProgram(search::fef::RankProgram &program);
