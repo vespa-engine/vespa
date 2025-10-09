@@ -259,7 +259,7 @@ template <> bool should_prune<OrSearch>(Trinary matches_any, bool, bool) { retur
 
 template <typename Op>
 std::unique_ptr<SearchIterator>
-create_op_filter(const Blueprint::Children &children, bool strict, Blueprint::FilterConstraint constraint)
+create_op_filter(std::span<const Blueprint::UP> children, bool strict, Blueprint::FilterConstraint constraint)
 {
     REQUIRE( ! children.empty());
     MultiSearch::Children list;
@@ -291,19 +291,19 @@ create_op_filter(const Blueprint::Children &children, bool strict, Blueprint::Fi
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_and_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
+Blueprint::create_and_filter(std::span<const UP> children, bool strict, Blueprint::FilterConstraint constraint)
 {
     return create_op_filter<AndSearch>(children, strict, constraint);
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_or_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
+Blueprint::create_or_filter(std::span<const UP> children, bool strict, Blueprint::FilterConstraint constraint)
 {
     return create_op_filter<OrSearch>(children, strict, constraint);
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_atmost_and_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
+Blueprint::create_atmost_and_filter(std::span<const UP> children, bool strict, Blueprint::FilterConstraint constraint)
 {
     if (constraint == FilterConstraint::UPPER_BOUND) {
         return create_and_filter(children, strict, constraint);
@@ -313,7 +313,7 @@ Blueprint::create_atmost_and_filter(const Children &children, bool strict, Bluep
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_atmost_or_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
+Blueprint::create_atmost_or_filter(std::span<const UP> children, bool strict, Blueprint::FilterConstraint constraint)
 {
     if (constraint == FilterConstraint::UPPER_BOUND) {
         return create_or_filter(children, strict, constraint);
@@ -323,7 +323,7 @@ Blueprint::create_atmost_or_filter(const Children &children, bool strict, Bluepr
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_andnot_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
+Blueprint::create_andnot_filter(std::span<const UP> children, bool strict, Blueprint::FilterConstraint constraint)
 {
     REQUIRE( ! children.empty() );
     MultiSearch::Children list;
@@ -353,7 +353,7 @@ Blueprint::create_andnot_filter(const Children &children, bool strict, Blueprint
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_first_child_filter(const Children &children, Blueprint::FilterConstraint constraint)
+Blueprint::create_first_child_filter(std::span<const UP> children, Blueprint::FilterConstraint constraint)
 {
     REQUIRE(!children.empty());
     return children[0]->createFilterSearch(constraint);
