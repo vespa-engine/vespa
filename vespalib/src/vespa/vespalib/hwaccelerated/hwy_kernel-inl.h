@@ -1,17 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-// Avoid include guard linter warnings
-#ifndef VESPA_HWY_KERNEL_INL_H_CALM_DOWN_LINTER
-#define VESPA_HWY_KERNEL_INL_H_CALM_DOWN_LINTER
-#endif
-
-// Per-target include guard. See https://google.github.io/highway/en/master/faq.html Q5.4.
-#if defined(VESPA_HWY_KERNEL_INL_H_TARGET) == defined(HWY_TARGET_TOGGLE)
-#ifdef VESPA_HWY_KERNEL_INL_H_TARGET
-#undef VESPA_HWY_KERNEL_INL_H_TARGET
-#else
-#define VESPA_HWY_KERNEL_INL_H_TARGET
-#endif
+// No include guard; this is intentional as this file will be included multiple times by
+// the same translation unit as part of compiling for multiple distinct Highway targets.
 
 #include <hwy/highway.h>
 
@@ -793,5 +783,3 @@ compute_chunked_sum(F&& fn, const T* HWY_RESTRICT lhs, const T* HWY_RESTRICT rhs
 }  // namespace HWY_NAMESPACE
 }  // namespace vespalib::hwaccelerated
 HWY_AFTER_NAMESPACE();
-
-#endif // VESPA_HWY_KERNEL_INL_H_TARGET
