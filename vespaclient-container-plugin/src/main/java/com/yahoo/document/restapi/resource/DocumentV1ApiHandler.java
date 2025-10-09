@@ -960,7 +960,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                SuccessCallback callback) {
         var tensorOptions = createTensorOptionsFromRequest(request); // request may be null; implies short form
         try (JsonResponse jsonResponse = JsonResponse.createWithPathAndId(path, handler, tensorOptions)) {
-            jsonResponse.writeTrace(response.getTrace());
+            jsonResponse.writeRequestTrace(response.getTrace());
             if (response.isSuccess()) {
                 callback.onSuccess((response instanceof DocumentResponse) ? ((DocumentResponse) response).getDocument() : null, jsonResponse);
             } else {
@@ -1340,7 +1340,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                             response.writeDocumentCount(parameters.getLocalDataHandler() != null ? locallyReceivedDocCount.get() : statsDocCount);
 
                             if (session.get() != null) {
-                                response.writeTrace(session.get().getTrace());
+                                response.writeRequestTrace(session.get().getTrace());
                             }
                             int status = Status.INTERNAL_SERVER_ERROR;
                             switch (code) {

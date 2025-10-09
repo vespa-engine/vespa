@@ -252,36 +252,34 @@ public class StreamingJsonLinesResponseTest {
     }
 
     @Test
-    void trace_is_rendered_as_own_line() throws IOException {
+    void request_trace_is_rendered_as_own_line() throws IOException {
         var f = new Fixture();
         var trace = new Trace(9);
         trace.trace(7, "Poirot's deductions", false);
         trace.getRoot().addChild(new TraceNode().setStrict(false)
                 .addChild("The butler did it")
                 .addChild("Weapon was a garden gnome"));
-        f.jsonlResponse.writeTrace(trace);
-        // TODO the nested "trace" objects aren't beautiful; reconsider format for JSONL.
-        //  Since trace nodes may technically output "message" objects at any level, need a wrapper.
+        f.jsonlResponse.writeRequestTrace(trace);
         String expected = """
-                {"trace":{"trace":[{"message":"Poirot's deductions"},{"fork":[{"message":"The butler did it"},{"message":"Weapon was a garden gnome"}]}]}}
+                {"requestTrace":{"trace":[{"message":"Poirot's deductions"},{"fork":[{"message":"The butler did it"},{"message":"Weapon was a garden gnome"}]}]}}
                 """;
         verify(f.writer).write(expected, null);
     }
 
     @Test
-    void null_trace_is_not_rendered() throws Exception {
+    void null_request_trace_is_not_rendered() throws Exception {
         var f = new Fixture();
-        f.jsonlResponse.writeTrace(null);
+        f.jsonlResponse.writeRequestTrace(null);
         verify(f.writer, never()).write(anyString(), any());
     }
 
     @Test
-    void empty_trace_is_not_rendered() throws Exception {
+    void empty_request_trace_is_not_rendered() throws Exception {
         var f = new Fixture();
         var trace = new Trace(9);
         // Not rendering traces without a root node is the behavior of the legacy
         // JSON renderer, so we carry the torch of that particular tradition.
-        f.jsonlResponse.writeTrace(trace);
+        f.jsonlResponse.writeRequestTrace(trace);
         verify(f.writer, never()).write(anyString(), any());
     }
 
