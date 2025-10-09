@@ -14,6 +14,7 @@ vespa_add_library(searchlib_query_streaming OBJECT
     phrase_query_node.cpp
     query.cpp
     query_builder.cpp
+    query_term_data.cpp
     querynode.cpp
     querynoderesultbase.cpp
     queryterm.cpp

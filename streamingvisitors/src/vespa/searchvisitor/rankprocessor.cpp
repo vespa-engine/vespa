@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "querytermdata.h"
 #include "rankprocessor.h"
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/searchlib/fef/simpletermfielddata.h>
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
+#include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/vsm/vsm/fieldsearchspec.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/issue.h>
@@ -32,6 +32,7 @@ using search::streaming::HitList;
 using search::streaming::MultiTerm;
 using search::streaming::Query;
 using search::streaming::QueryTerm;
+using search::streaming::QueryTermData;
 using search::streaming::QueryTermList;
 using vespalib::Issue;
 using vdslib::SearchResult;

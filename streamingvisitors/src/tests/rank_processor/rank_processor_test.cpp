@@ -2,12 +2,12 @@
 
 #include <vespa/searchvisitor/rankprocessor.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
-#include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
+#include <vespa/searchlib/query/streaming/query.h>
+#include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
-#include <vespa/searchvisitor/querytermdata.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using search::fef::MatchData;
@@ -21,9 +21,9 @@ using search::query::StackDumpCreator;
 using search::streaming::NearestNeighborQueryNode;
 using search::streaming::Query;
 using search::streaming::QueryTerm;
+using search::streaming::QueryTermData;
+using search::streaming::QueryTermDataFactory;
 using streaming::RankProcessor;
-using streaming::QueryTermData;
-using streaming::QueryTermDataFactory;
 using streaming::QueryWrapper;
 
 class RankProcessorTest : public testing::Test

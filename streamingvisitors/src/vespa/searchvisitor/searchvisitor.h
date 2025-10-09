@@ -8,7 +8,6 @@
 #include "rankmanager.h"
 #include "rankprocessor.h"
 #include "searchenvironment.h"
-#include "querytermdata.h"
 #include <vespa/vsm/common/docsum.h>
 #include <vespa/vsm/common/documenttypemapping.h>
 #include <vespa/vsm/common/storagedocument.h>

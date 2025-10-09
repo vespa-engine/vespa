@@ -12,12 +12,12 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/queryterm.h>
+#include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchvisitor/hitcollector.h>
 #include <vespa/searchvisitor/matching_elements_filler.h>
-#include <vespa/searchvisitor/querytermdata.h>
 #include <vespa/vdslib/container/searchresult.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vsm/searcher/fieldsearcher.h>
@@ -49,8 +49,8 @@ using search::streaming::QueryConnector;
 using search::streaming::QueryNode;
 using search::streaming::QueryNodeResultFactory;
 using search::streaming::QueryTerm;
-using streaming::QueryTermData;
-using streaming::QueryTermDataFactory;
+using search::streaming::QueryTermData;
+using search::streaming::QueryTermDataFactory;
 using streaming::HitCollector;
 using streaming::MatchingElementsFiller;
 using vdslib::SearchResult;
