@@ -124,9 +124,16 @@ ProtoConverter::search_request_from_proto(const ProtoSearchRequest &proto, Searc
     }
     request.groupSpec.assign(proto.grouping_blob().begin(), proto.grouping_blob().end());
     request.location = proto.geo_location();
-    std::string_view stackDumpRef(proto.query_tree_blob().begin(), proto.query_tree_blob().end());
-    auto queryTree = SerializedQueryTree::fromStackDump(stackDumpRef);
-    request.setSerializedQueryTree(queryTree);
+    if (proto.has_query_tree() && proto.query_tree().has_root()) {
+        using QueryTree = searchlib::searchprotocol::protobuf::QueryTree;
+        auto qtp = std::make_unique<QueryTree>(proto.query_tree());
+        auto queryTree = SerializedQueryTree::fromProtobuf(std::move(qtp));
+        request.setSerializedQueryTree(queryTree);
+    } else {
+        std::string_view stackDumpRef(proto.query_tree_blob().begin(), proto.query_tree_blob().end());
+        auto queryTree = SerializedQueryTree::fromStackDump(stackDumpRef);
+        request.setSerializedQueryTree(queryTree);
+    }
 }
 
 void
