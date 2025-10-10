@@ -4,6 +4,7 @@
 #include "onear_query_node.h"
 #include "query_builder.h"
 #include "same_element_query_node.h"
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
@@ -14,6 +15,20 @@ using search::fef::IIndexEnvironment;
 using search::fef::MatchData;
 
 namespace search::streaming {
+
+namespace {
+
+std::unique_ptr<QueryNode>
+build_query_tree(const QueryNodeResultFactory& factory, const SerializedQueryTree& queryTree)
+{
+    auto stack = queryTree.makeIterator();
+    if (stack->next()) {
+        return QueryBuilder().build(nullptr, factory, *stack, true);
+    }
+    return {};
+}
+
+}  // namespace
 
 void
 QueryConnector::visitMembers(vespalib::ObjectVisitor &visitor) const
@@ -259,10 +274,10 @@ RankWithQueryNode::get_element_ids(std::vector<uint32_t>&) const
 
 Query::Query() = default;
 
-Query::Query(const QueryNodeResultFactory & factory, std::string_view queryRep)
+Query::Query(const QueryNodeResultFactory & factory, const SerializedQueryTree& queryTree)
     : _root()
 {
-    build(factory, queryRep);
+    build(factory, queryTree);
 }
 
 Query::Query(Query&&) noexcept = default;
@@ -277,12 +292,9 @@ Query::evaluate() const {
 }
 
 bool
-Query::build(const QueryNodeResultFactory & factory, std::string_view queryRep)
+Query::build(const QueryNodeResultFactory & factory, const SerializedQueryTree& queryTree)
 {
-    search::SimpleQueryStackDumpIterator stack(queryRep);
-    if (stack.next()) {
-        _root = QueryBuilder().build(nullptr, factory, stack, true);
-    }
+    _root = build_query_tree(factory, queryTree);
     return valid();
 }
 

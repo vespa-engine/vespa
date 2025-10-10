@@ -7,6 +7,8 @@
 #include "i_query_term_filter_factory.h"
 #include "juniper_query_adapter.h"
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/searchlib/common/serialized_query_tree.h>
+#include <vespa/searchlib/query/query_stack_iterator.h>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/juniper/config.h>
 #include <vespa/juniper/result.h>
@@ -37,8 +39,10 @@ DynamicTeaserDFW::insert_juniper_field(uint32_t docid, std::string_view input, G
 {
     auto& query = state._dynteaser.get_query(_input_field_name);
     if (!query) {
+        const auto& tree = state._args.getSerializedQueryTree();
+        auto iterator = tree.makeIterator();
         JuniperQueryAdapter iq(state.query_normalization(), _query_term_filter.get(),
-                               state._args.getStackDump(), state._args.highlightTerms());
+                               std::move(iterator), state._args.highlightTerms());
         query = _juniper->CreateQueryHandle(iq, nullptr);
     }
 

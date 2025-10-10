@@ -5,6 +5,7 @@
 #include "match_context.h"
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
+#include <vespa/searchlib/engine/request.h>
 #include <vespa/vespalib/util/time.h>
 #include <memory>
 #include <string>
@@ -33,7 +34,7 @@ public:
         MatchContext context;
         std::unique_ptr<search::fef::Properties> feature_overrides;
         IDocumentMetaStoreContext::IReadGuard::SP readGuard;
-        std::vector<char> stackDump;
+        search::SerializedQueryTreeSP queryTree;
     };
 private:
     using SessionId = std::string;
@@ -66,7 +67,10 @@ public:
 
     MatchToolsFactory &getMatchToolsFactory() { return *_match_tools_factory; }
     std::string_view getStackDump() const noexcept {
-        return {_owned_objects.stackDump.data(), _owned_objects.stackDump.size()};
+        return _owned_objects.queryTree ? _owned_objects.queryTree->getStackRef() : std::string_view();
+    }
+    const search::SerializedQueryTreeSP getSerializedQueryTree() const noexcept {
+        return _owned_objects.queryTree;
     }
 };
 

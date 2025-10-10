@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for query.
 
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
 #include <vespa/searchcore/proton/matching/matchdatareservevisitor.h>
 #include <vespa/searchcore/proton/matching/blueprintbuilder.h>
@@ -49,6 +50,7 @@ using search::query::QueryBuilder;
 using search::query::Range;
 using search::query::StackDumpCreator;
 using search::query::Weight;
+using search::SerializedQueryTree;
 using search::queryeval::AndBlueprint;
 using search::queryeval::AndNotBlueprint;
 using search::queryeval::Blueprint;
@@ -659,10 +661,9 @@ TEST(QueryTest, requireThatQueryGluesEverythingTogether)
 {
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addStringTerm(string_term, field, 1, Weight(2));
-    string stack_dump = StackDumpCreator::create(*builder.build());
-
+    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*builder.build());
     Query query;
-    query.buildTree(stack_dump, "", ViewResolver(), plain_index_env);
+    query.buildTree(*serializedQueryTree, "", ViewResolver(), plain_index_env);
     vector<const ITermData *> term_data;
     query.extractTerms(term_data);
     EXPECT_EQ(1u, term_data.size());
@@ -690,10 +691,9 @@ checkQueryAddsLocation(const string &loc_in, const string &loc_out) {
 
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addStringTerm(string_term, field, 1, Weight(2));
-    string stack_dump = StackDumpCreator::create(*builder.build());
-
+    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*builder.build());
     Query query;
-    query.buildTree(stack_dump,
+    query.buildTree(*serializedQueryTree,
                     loc_field + ":" + loc_in,
                     ViewResolver(), index_environment);
     vector<const ITermData *> term_data;
@@ -722,10 +722,10 @@ void verifyThatRankBlueprintAndAndNotStaysOnTopAfterLocation(QueryBuilder<Proton
     builder.addStringTerm("foo", field, field_id, string_weight);
     builder.addStringTerm("bar", field, field_id, string_weight);
     builder.addStringTerm("baz", field, field_id, string_weight);
-    std::string stackDump = StackDumpCreator::create(*builder.build());
+    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*builder.build());
 
     Query query;
-    query.buildTree(stackDump, loc_field + ":" + loc_string, ViewResolver(), attribute_index_env);
+    query.buildTree(*serializedQueryTree, loc_field + ":" + loc_string, ViewResolver(), attribute_index_env);
     FakeSearchContext context(42);
     context.addIdx(0).idx(0).getFake()
             .addResult(field, "foo", FakeResult().doc(1));
@@ -921,10 +921,9 @@ TEST(QueryTest, requireThatWhiteListBlueprintCanBeUsed)
 {
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addStringTerm("foo", field, field_id, string_weight);
-    std::string stackDump = StackDumpCreator::create(*builder.build());
-
+    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*builder.build());
     Query query;
-    query.buildTree(stackDump, "", ViewResolver(), plain_index_env);
+    query.buildTree(*serializedQueryTree, "", ViewResolver(), plain_index_env);
 
     FakeSearchContext context(42);
     context.addIdx(0).idx(0).getFake()
@@ -952,9 +951,9 @@ void verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing(QueryBuilder<Pr
     builder.addStringTerm("foo", field, field_id, string_weight);
     builder.addStringTerm("bar", field, field_id, string_weight);
     builder.addStringTerm("baz", field, field_id, string_weight);
-    std::string stackDump = StackDumpCreator::create(*builder.build());
+    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*builder.build());
     Query query;
-    query.buildTree(stackDump, "", ViewResolver(), plain_index_env);
+    query.buildTree(*serializedQueryTree, "", ViewResolver(), plain_index_env);
     FakeSearchContext context(42);
     context.addIdx(0).idx(0).getFake()
             .addResult(field, "foo", FakeResult().doc(1));
@@ -1004,10 +1003,10 @@ make_same_element_stack_dump(const std::string &prefix, const std::string &term_
     builder.addSameElement(2, prefix, 0, Weight(1));
     builder.addStringTerm("xyz", term_prefix + "f1", 1, Weight(1));
     builder.addStringTerm("abc", term_prefix + "f2", 2, Weight(1));
-    std::string stack = StackDumpCreator::create(*builder.build());
-    search::SimpleQueryStackDumpIterator stack_dump_iterator(stack);
+    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*builder.build());
+    auto stack_dump_iterator = serializedQueryTree->makeIterator();
     SameElementModifier sem;
-    search::query::Node::UP query = search::query::QueryTreeCreator<ProtonNodeTypes>::create(stack_dump_iterator);
+    search::query::Node::UP query = search::query::QueryTreeCreator<ProtonNodeTypes>::create(*stack_dump_iterator);
     query->accept(sem);
     return query;
 }
@@ -1157,7 +1156,8 @@ TEST(QueryTest, global_filter_is_calculated_and_handled)
 bool query_needs_ranking(const std::string& stack_dump)
 {
     Query query;
-    query.buildTree(stack_dump, "", ViewResolver(), plain_index_env);
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(stack_dump);
+    query.buildTree(*serializedQueryTree, "", ViewResolver(), plain_index_env);
     return query.needs_ranking();
 
 }

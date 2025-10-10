@@ -162,8 +162,9 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
                    _stats.softDoomFactor(), factor, hasFactorOverride, vespalib::count_ns(safeLeft));
     }
     vespalib::Doom doom(_now_ref, safeDoom, request.getTimeOfDoom(), hasFactorOverride);
+    const auto& queryTree = request.getSerializedQueryTree();
     return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext,
-                                               request.trace(), request.getStackRef(), request.location,
+                                               request.trace(), queryTree, request.location,
                                                _viewResolver, metaStore, _indexEnv, *_rankSetup,
                                                rankProperties, feature_overrides, thread_bundle,
                                                metaStoreReadGuard, maxHits, is_search);
@@ -276,8 +277,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             // These should have been moved instead.
             owned_objects.feature_overrides = std::make_unique<Properties>(*feature_overrides);
             feature_overrides = owned_objects.feature_overrides.get();
-            std::string_view queryStack = request.getStackRef();
-            owned_objects.stackDump.assign(queryStack.begin(), queryStack.end());
+            owned_objects.queryTree = request.getSerializedQueryTree().shared_from_this();
         }
 
         MatchToolsFactory::UP mtf = create_match_tools_factory(request, searchContext, attrContext, metaStore,

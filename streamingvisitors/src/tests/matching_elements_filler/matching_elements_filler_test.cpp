@@ -9,6 +9,7 @@
 #include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/queryterm.h>
@@ -94,9 +95,9 @@ struct BoundTerm {
 BoundTerm::~BoundTerm() = default;
 
 Query make_query(std::unique_ptr<search::query::Node> root) {
-    std::string stack_dump = StackDumpCreator::create(*root);
+    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*root);
     QueryTermDataFactory factory(nullptr, nullptr);
-    Query query(factory, stack_dump);
+    Query query(factory, *serializedQueryTree);
     return query;
 }
 

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/query/streaming/multi_term.h>
 #include <vespa/searchlib/query/streaming/near_query_node.h>
 #include <vespa/searchlib/query/streaming/onear_query_node.h>
@@ -166,9 +167,9 @@ NearTest::make_query(QueryTweak query_tweak, uint32_t distance, const std::vecto
         builder.addStringTerm(s.str(), "field", idx, Weight(0));
     }
     auto node = builder.build();
-    std::string stackDump = StackDumpCreator::create(*node);
+    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*node);
     auto empty = std::make_unique<MyQueryNodeResultFactory>(_element_gap_setting.value_or(std::nullopt));
-    auto q = std::make_unique<Query>(*empty, stackDump);
+    auto q = std::make_unique<Query>(*empty, *serializedQueryTree);
     if (GetParam().ordered()) {
         auto& top = dynamic_cast<ONearQueryNode&>(q->getRoot());
         EXPECT_EQ(top_arity, top.size());

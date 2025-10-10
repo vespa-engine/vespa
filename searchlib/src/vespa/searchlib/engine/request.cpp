@@ -11,11 +11,11 @@ Request::Request(RelativeTime relativeTime)
 Request::Request(RelativeTime relativeTime, uint32_t reservePropMaps)
     : _relativeTime(std::move(relativeTime)),
       _timeOfDoom(vespalib::steady_time::max()),
+      _queryTree(),
       dumpFeatures(false),
       ranking(),
       location(),
       propertiesMap(reservePropMaps),
-      stackDump(),
       sessionId(),
       _trace(_relativeTime, 0)
 {

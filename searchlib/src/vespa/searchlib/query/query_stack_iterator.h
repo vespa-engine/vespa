@@ -109,6 +109,8 @@ public:
 
     virtual std::string_view getStack() const noexcept { return ""; }
     virtual size_t getPosition() const noexcept { return 0; }
+
+    static std::unique_ptr<QueryStackIterator> dummy();
 };
 
 } // namespace

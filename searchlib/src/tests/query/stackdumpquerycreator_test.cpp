@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for stackdumpquerycreator.
 
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
@@ -13,7 +14,7 @@ LOG_SETUP("stackdumpquerycreator_test");
 
 using search::ParseItem;
 using search::RawBuf;
-using search::SimpleQueryStackDumpIterator;
+using search::SerializedQueryTree;
 using std::string;
 using namespace search::query;
 
@@ -41,8 +42,9 @@ TEST(StackDumpQueryCreatorTest, requireThatTooLargeNumTermIsTreatedAsFloat) {
     RawBuf buf(1024);
     appendNumTerm(buf, term_string);
 
-    SimpleQueryStackDumpIterator query_stack(std::string_view(buf.GetDrainPos(), buf.GetUsedLen()));
-    Node::UP node = StackDumpQueryCreator<SimpleQueryNodeTypes>::create(query_stack);
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(std::string_view(buf.GetDrainPos(), buf.GetUsedLen()));
+    auto query_stack = serializedQueryTree->makeIterator();
+    Node::UP node = StackDumpQueryCreator<SimpleQueryNodeTypes>::create(*query_stack);
     ASSERT_TRUE(node.get());
     auto *term = dynamic_cast<NumberTerm *>(node.get());
     ASSERT_TRUE(term);
@@ -54,10 +56,10 @@ TEST(StackDumpQueryCreatorTest, requireThatTooLargeFloatNumTermIsTreatedAsFloat)
     RawBuf buf(1024);
     appendNumTerm(buf, term_string);
 
-    SimpleQueryStackDumpIterator
-        query_stack(std::string_view(buf.GetDrainPos(), buf.GetUsedLen()));
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(std::string_view(buf.GetDrainPos(), buf.GetUsedLen()));
+    auto query_stack = serializedQueryTree->makeIterator();
     Node::UP node =
-        StackDumpQueryCreator<SimpleQueryNodeTypes>::create(query_stack);
+        StackDumpQueryCreator<SimpleQueryNodeTypes>::create(*query_stack);
     ASSERT_TRUE(node.get());
     auto *term = dynamic_cast<NumberTerm *>(node.get());
     ASSERT_TRUE(term);
@@ -86,10 +88,10 @@ TEST(StackDumpQueryCreatorTest, require_that_PredicateQueryItem_stack_dump_item_
     buf.Put64ToInet(84UL);
     buf.Put64ToInet(0xffffUL);
 
-    SimpleQueryStackDumpIterator
-        query_stack(std::string_view(buf.GetDrainPos(), buf.GetUsedLen()));
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(std::string_view(buf.GetDrainPos(), buf.GetUsedLen()));
+    auto query_stack = serializedQueryTree->makeIterator();
     Node::UP node =
-        StackDumpQueryCreator<SimpleQueryNodeTypes>::create(query_stack);
+        StackDumpQueryCreator<SimpleQueryNodeTypes>::create(*query_stack);
     ASSERT_TRUE(node.get());
     auto *p = dynamic_cast<PredicateQuery *>(node.get());
     ASSERT_TRUE(p);
