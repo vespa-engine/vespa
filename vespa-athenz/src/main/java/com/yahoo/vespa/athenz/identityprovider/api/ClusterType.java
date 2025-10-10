@@ -12,15 +12,13 @@ import java.net.URI;
 public enum ClusterType {
     ADMIN,
     CONTAINER,
-    CONTENT,
-    COMBINED;
+    CONTENT;
 
     public static ClusterType from(String cfgValue) {
         return switch (cfgValue) {
             case "admin" -> ADMIN;
             case "container" -> CONTAINER;
             case "content" -> CONTENT;
-            case "combined" -> COMBINED;
             default -> throw new IllegalArgumentException("Illegal cluster type '" + cfgValue + "'");
         };
     }
@@ -30,7 +28,6 @@ public enum ClusterType {
             case ADMIN -> "admin";
             case CONTAINER -> "container";
             case CONTENT -> "content";
-            case COMBINED -> "combined";
         };
     }
 

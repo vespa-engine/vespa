@@ -8,7 +8,7 @@ import java.util.Optional;
 
 /**
  * A node's membership in a cluster. This is a value object.
- * The format is "clusterType/clusterId/groupId/index[/exclusive][/retired][/stateful][/combinedId]"
+ * The format is "clusterType/clusterId/groupId/index[/exclusive][/retired][/stateful]"
  *
  * @author bratseth
  */
@@ -24,7 +24,7 @@ public class ClusterMembership {
         String[] components = stringValue.split("/");
         if (components.length < 3)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
-                                       "Expected 'clusterType/clusterId/groupId/index[/retired][/exclusive][/stateful][/combinedId]'");
+                                       "Expected 'clusterType/clusterId/groupId/index[/retired][/exclusive][/stateful]'");
 
         Integer groupIndex = components[2].isEmpty() ? null : Integer.parseInt(components[2]);
         Integer nodeIndex;
@@ -40,7 +40,6 @@ public class ClusterMembership {
 
         boolean exclusive = false;
         boolean stateful = false;
-        var combinedId = Optional.<String>empty();
         boolean retired = false;
         if (components.length > (4 - missingElements)) {
             for (int i = (4 - missingElements); i < components.length; i++) {
@@ -49,7 +48,6 @@ public class ClusterMembership {
                     case "exclusive" -> exclusive = true;
                     case "retired" -> retired = true;
                     case "stateful" -> stateful = true;
-                    default -> combinedId = Optional.of(component);
                 }
             }
         }
@@ -59,7 +57,6 @@ public class ClusterMembership {
                                   .group(groupIndex == null ? null : ClusterSpec.Group.from(groupIndex))
                                   .vespaVersion(vespaVersion)
                                   .exclusive(exclusive)
-                                  .combinedId(combinedId.map(ClusterSpec.Id::from))
                                   .dockerImageRepository(dockerImageRepo)
                                   .loadBalancerSettings(zoneEndpoint)
                                   .stateful(stateful)
@@ -83,9 +80,7 @@ public class ClusterMembership {
                "/" + index +
                ( cluster.isExclusive() ? "/exclusive" : "") +
                ( retired ? "/retired" : "") +
-               ( cluster.isStateful() ? "/stateful" : "") +
-               ( cluster.combinedId().isPresent() ? "/" + cluster.combinedId().get().value() : "");
-
+               ( cluster.isStateful() ? "/stateful" : "");
     }
 
     /** Returns the cluster this node is a member of */

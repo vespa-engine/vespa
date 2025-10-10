@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,8 +36,6 @@ public class ClusterSpecTest {
                                List.of(spec(ClusterSpec.Type.content, "id1"), spec(ClusterSpec.Type.content, "id2")), false,
                                List.of(spec(ClusterSpec.Type.admin, "id1"), spec(ClusterSpec.Type.container, "id1")), false,
                                List.of(spec(ClusterSpec.Type.admin, "id1"), spec(ClusterSpec.Type.content, "id1")), false,
-                               List.of(spec(ClusterSpec.Type.combined, "id1"), spec(ClusterSpec.Type.container, "id1")), false,
-                               List.of(spec(ClusterSpec.Type.combined, "id1"), spec(ClusterSpec.Type.content, "id1")), true,
                                List.of(spec(ClusterSpec.Type.content, "id1"), spec(ClusterSpec.Type.content, "id1")), true
         );
         tests.forEach((specs, satisfies) -> {
@@ -50,13 +47,10 @@ public class ClusterSpecTest {
     }
 
     private static ClusterSpec spec(ClusterSpec.Type type, String id) {
-        ClusterSpec.Builder builder = ClusterSpec.specification(type, ClusterSpec.Id.from(id))
-                                                 .group(ClusterSpec.Group.from(1))
-                                                 .vespaVersion(Version.emptyVersion);
-        if (type == ClusterSpec.Type.combined) {
-            builder = builder.combinedId(Optional.of(ClusterSpec.Id.from("combined")));
-        }
-        return builder.build();
+        return ClusterSpec.specification(type, ClusterSpec.Id.from(id))
+                          .group(ClusterSpec.Group.from(1))
+                          .vespaVersion(Version.emptyVersion)
+                          .build();
     }
 
 }
