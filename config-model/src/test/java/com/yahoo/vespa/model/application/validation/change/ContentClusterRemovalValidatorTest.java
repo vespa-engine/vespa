@@ -29,7 +29,7 @@ public class ContentClusterRemovalValidatorTest {
             fail("Expected exception due to content cluster id change");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("content-cluster-removal: Content cluster 'contentClusterId' is removed. This will cause loss of all data in this cluster. " +
+            assertEquals("Removal (or id change) of content clusters: Content cluster 'contentClusterId' is removed. This will cause loss of all data in this cluster. " +
                     ValidationOverrides.toAllowMessage(ValidationId.contentClusterRemoval),
                     Exceptions.toMessageString(expected));
         }

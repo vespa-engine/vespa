@@ -741,6 +741,7 @@
       "public static com.yahoo.config.application.api.ValidationId[] values()",
       "public static com.yahoo.config.application.api.ValidationId valueOf(java.lang.String)",
       "public java.lang.String value()",
+      "public java.lang.String description()",
       "public java.lang.String toString()",
       "public static java.util.Optional from(java.lang.String)"
     ],

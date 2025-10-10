@@ -162,7 +162,7 @@ public class ResourcesReductionValidatorTest {
             fail("Expected exception due to resources reduction");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("resources-reduction: Effective resource reduction in cluster 'default' is too large: " +
+            assertEquals("Large reductions in node resources (> 50% of the current max total resources): Effective resource reduction in cluster 'default' is too large: " +
                          "group size from 10 to 4 nodes. " +
                          "To protect against mistakes, changes causing load increases of more than 100% are blocked. " +
                          ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction),
@@ -194,7 +194,7 @@ public class ResourcesReductionValidatorTest {
             fail("Expected exception due to redundancy increase");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("resources-reduction: " +
+            assertEquals("Large reductions in node resources (> 50% of the current max total resources): " +
                          "Effective resource reduction in cluster 'contentClusterId' is too large: " +
                          "redundancy from 1 to 3. " +
                          "To protect against mistakes, changes causing load increases of more than 100% are blocked. " +
@@ -225,7 +225,7 @@ public class ResourcesReductionValidatorTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("resources-reduction: Effective resource reduction in cluster 'contentClusterId' is too large: " +
+            assertEquals("Large reductions in node resources (> 50% of the current max total resources): Effective resource reduction in cluster 'contentClusterId' is too large: " +
                          "redundancy from 3 to 2, group size from 7 to 2 nodes. " +
                          "To protect against mistakes, changes causing load increases of more than 100% are blocked. " +
                          ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction),
@@ -260,7 +260,7 @@ public class ResourcesReductionValidatorTest {
             "</validation-overrides>\n";
 
     private void assertResourceReductionException(Exception e, String change) {
-        assertEquals("resources-reduction: Effective resource reduction in cluster 'default' is too large: " +
+        assertEquals("Large reductions in node resources (> 50% of the current max total resources): Effective resource reduction in cluster 'default' is too large: " +
                      change + ". " +
                      "To protect against mistakes, changes causing load increases of more than 100% are blocked. " +
                      ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction),

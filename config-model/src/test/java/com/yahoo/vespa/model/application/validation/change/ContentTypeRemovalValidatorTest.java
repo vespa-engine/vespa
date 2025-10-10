@@ -32,7 +32,7 @@ public class ContentTypeRemovalValidatorTest {
             fail("Expected exception due to removal of schema 'music");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("schema-removal: Schema 'music' is removed in content cluster 'test'. " +
+            assertEquals("Removal of a schema causes deletion of all documents: Schema 'music' is removed in content cluster 'test'. " +
                     "This will cause loss of all data in this schema. " +
                     ValidationOverrides.toAllowMessage(ValidationId.contentTypeRemoval),
                     Exceptions.toMessageString(expected));
