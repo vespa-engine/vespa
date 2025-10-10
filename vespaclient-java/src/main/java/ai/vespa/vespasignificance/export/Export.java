@@ -13,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -74,12 +73,11 @@ public class Export {
             resolveIndexDir();
             requireFieldDir(params.fieldName());
 
-            var ordering = Comparator.comparing(VespaIndexInspectClient.TermDocumentFrequency::term);
             try (var output = Files.newOutputStream(outputPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
                  var maybeCompressed = params.zstCompress()
                          ? new ZstdOutputStream(new BufferedOutputStream(output))
                          : new BufferedOutputStream(output);
-                 var rows = dumpFn.open(indexDir, fieldName).sorted(ordering);
+                 var rows = dumpFn.open(indexDir, fieldName);
                  TermDfWriter writer = writerFactory.create(new OutputStreamWriter(maybeCompressed, StandardCharsets.UTF_8))) {
                 writer.writeAll(rows);
             }
