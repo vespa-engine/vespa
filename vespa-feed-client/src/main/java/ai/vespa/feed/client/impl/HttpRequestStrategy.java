@@ -141,12 +141,12 @@ class HttpRequestStrategy implements RequestStrategy {
             log.fine(() -> String.format("Giving up on %s after %d attempts (%dms left)", request, attempt, timeLeft));
             return false;
         }
-        return switch (request.method().toUpperCase()) {
-            case "POST" -> strategy.retry(FeedClient.OperationType.PUT);
-            case "PUT" -> strategy.retry(FeedClient.OperationType.UPDATE);
-            case "DELETE" -> strategy.retry(FeedClient.OperationType.REMOVE);
-            default -> throw new IllegalStateException("Unexpected HTTP method: " + request.method());
-        };
+        switch (request.method().toUpperCase()) {
+            case "POST":   return strategy.retry(FeedClient.OperationType.PUT);
+            case "PUT":    return strategy.retry(FeedClient.OperationType.UPDATE);
+            case "DELETE": return strategy.retry(FeedClient.OperationType.REMOVE);
+            default: throw new IllegalStateException("Unexpected HTTP method: " + request.method());
+        }
     }
 
     /**
