@@ -3,6 +3,7 @@
 
 #include "queryterm.h"
 #include <vespa/searchlib/parsequery/parse.h>
+#include <optional>
 
 namespace search { class SerializedQueryTree; }
 
@@ -37,6 +38,8 @@ private:
     std::string _opName;
     std::string _index;
     QueryNodeList _children;
+protected:
+    std::optional<bool> _cached_evaluate_result;
 };
 
 /**

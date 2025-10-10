@@ -777,6 +777,7 @@ TEST(StreamingQueryTest, test_in_term)
     td.lookupField(10)->setHandle(0);
     td.lookupField(12)->setHandle(1);
     EXPECT_FALSE(term.evaluate());
+    term.reset();
     auto& q = *term.get_terms().front();
     q.add(11, 0, 1, 0);
     q.add(12, 0, 1, 0);
@@ -805,6 +806,7 @@ TEST(StreamingQueryTest, dot_product_term)
     td.lookupField(10)->setHandle(0);
     td.lookupField(12)->setHandle(1);
     EXPECT_FALSE(term.evaluate());
+    term.reset();
     auto& q0 = *term.get_terms()[0];
     q0.add(11, 0, -13, 0);
     q0.add(12, 0, -17, 0);
@@ -851,6 +853,7 @@ check_wand_term(double limit, const std::string& label)
     td.lookupField(10)->setHandle(0);
     td.lookupField(12)->setHandle(1);
     EXPECT_FALSE(term.evaluate());
+    term.reset();
     auto& q0 = *term.get_terms()[0];
     q0.add(11, 0, 17, 0);
     q0.add(12, 0, 13, 0);
@@ -906,6 +909,7 @@ TEST(StreamingQueryTest, weighted_set_term)
     td.lookupField(10)->setHandle(0);
     td.lookupField(12)->setHandle(1);
     EXPECT_FALSE(term.evaluate());
+    term.reset();
     auto& q0 = *term.get_terms()[0];
     q0.add(11, 0, 10, 0);
     q0.add(12, 0, 10, 0);

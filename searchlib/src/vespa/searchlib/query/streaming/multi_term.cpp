@@ -40,15 +40,24 @@ MultiTerm::reset()
     for (auto& term : _terms) {
         term->reset();
     }
+    _cached_evaluate_result.reset();
 }
 
 bool
 MultiTerm::evaluate()
 {
-    for (const auto& term : _terms) {
-        if (term->evaluate()) return true;
+    if (_cached_evaluate_result.has_value()) {
+        return _cached_evaluate_result.value();
     }
-    return false;
+    bool result = false;
+    for (const auto& term : _terms) {
+        if (term->evaluate()) {
+            result = true;
+            break;
+        }
+    }
+    _cached_evaluate_result.emplace(result);
+    return result;
 }
 
 MultiTerm*

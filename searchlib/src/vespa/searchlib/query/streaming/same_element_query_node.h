@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include "multi_term.h"
+#include "queryterm.h"
+#include <optional>
 
 namespace search::streaming {
 
@@ -11,7 +12,8 @@ namespace search::streaming {
 */
 class SameElementQueryNode : public QueryTerm
 {
-    QueryNodeList _children;
+    QueryNodeList       _children;
+    std::optional<bool> _cached_evaluate_result;
 public:
     SameElementQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms) noexcept;
     ~SameElementQueryNode() override;

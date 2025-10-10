@@ -15,8 +15,13 @@ PhraseQueryNode::~PhraseQueryNode() = default;
 bool
 PhraseQueryNode::evaluate()
 {
-  HitList hl;
-  return ! evaluateHits(hl).empty();
+    if (_cached_evaluate_result.has_value()) {
+        return _cached_evaluate_result.value();
+    }
+    HitList hl;
+    bool result = !evaluateHits(hl).empty();
+    _cached_evaluate_result.emplace(result);
+    return result;
 }
 
 size_t
