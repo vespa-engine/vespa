@@ -68,25 +68,9 @@ public enum SystemName {
     /** Whether the system is similar to Public, e.g. PublicCd. */
     public boolean isPublicCloudLike() { return this == Public || this == PublicCd; }
 
-    // TODO Remove and use isPublicCloudLike() instead
-    public boolean isPublicLike() { return isPublicCloudLike(); }
-
-    // TODO Remove and use isPublicCloudLike() instead
-    public boolean isPublic() { return isPublicCloudLike(); }
-
-    // TODO Remove and use isYahooLike() instead
-    public boolean isMainLike() { return isYahooLike(); }
-
     public boolean isYahooLike() { return this == main || this == cd; }
 
-    // TODO Remove and use isKubernetesLike() instead
-    public boolean isKubernetes() { return isKubernetesLike(); }
-
     public boolean isKubernetesLike() { return this == kubernetes || this == kubernetesCd; }
-
-    /** Whether the system is used for continuous deployment. */
-    // TODO Remove and use isCdLike() instead
-    public boolean isCd() { return isCdLike(); }
 
     public boolean isCdLike() { return this == cd || this == PublicCd || this == kubernetesCd; }
 
