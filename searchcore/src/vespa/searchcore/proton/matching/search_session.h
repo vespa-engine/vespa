@@ -69,8 +69,8 @@ public:
     std::string_view getStackDump() const noexcept {
         return _owned_objects.queryTree ? _owned_objects.queryTree->getStackRef() : std::string_view();
     }
-    const search::SerializedQueryTreeSP getSerializedQueryTree() const noexcept {
-        return _owned_objects.queryTree;
+    const search::SerializedQueryTree& getSerializedQueryTree() const noexcept {
+        return _owned_objects.queryTree ? *_owned_objects.queryTree : search::SerializedQueryTree::empty();
     }
 };
 

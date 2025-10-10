@@ -32,7 +32,9 @@ public:
     void initFromDocsumRequest(const search::engine::DocsumRequest &req);
 
     void setResultClassName(std::string_view name) { _resultClassName = name; }
-    void setSerializedQueryTree(SerializedQueryTreeSP tree) { _serializedQueryTree = std::move(tree); }
+    void setSerializedQueryTree(const search::SerializedQueryTree& tree) {
+        _serializedQueryTree = tree.shared_from_this();
+    }
     void locations_possible(bool value) { _locations_possible = value; }
     bool locations_possible() const { return _locations_possible; }
     const std::string &getLocation() const { return _location; }
