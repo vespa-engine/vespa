@@ -43,7 +43,7 @@ struct MockQuery {
         return *this;
     }
     ~MockQuery() {}
-    const NearestNeighborQueryNode& get(size_t idx) const {
+    NearestNeighborQueryNode& get(size_t idx) const {
         assert(idx < nodes.size());
         return *nodes[idx];
     }
@@ -92,17 +92,17 @@ public:
         query.reset();
         searcher.onValue(fv);
     }
-    void expect_match(const std::string& spec_expr, double exp_square_distance, const NearestNeighborQueryNode& node) {
+    void expect_match(const std::string& spec_expr, double exp_square_distance, NearestNeighborQueryNode& node) {
         match(spec_expr);
         expect_match(exp_square_distance, node);
     }
-    void expect_match(double exp_square_distance, const NearestNeighborQueryNode& node) {
+    void expect_match(double exp_square_distance, NearestNeighborQueryNode& node) {
         double exp_raw_score = 1.0 / (1.0 + std::sqrt(exp_square_distance));
         EXPECT_TRUE(node.evaluate());
         EXPECT_DOUBLE_EQ(exp_square_distance, node.get_distance().value());
         EXPECT_DOUBLE_EQ(exp_raw_score, node.get_raw_score().value());
     }
-    void expect_not_match(const std::string& spec_expr, const NearestNeighborQueryNode& node) {
+    void expect_not_match(const std::string& spec_expr, NearestNeighborQueryNode& node) {
         match(spec_expr);
         EXPECT_FALSE(node.evaluate());
     }
@@ -111,7 +111,7 @@ public:
 TEST_F(NearestNeighborSearcherTest, distance_heap_keeps_the_best_target_hits)
 {
     query.add("qt1", 2, 100.0);
-    const auto& node = query.get(0);
+    auto& node = query.get(0);
     set_query_tensor("qt1", "tensor(x[2]):[1,3]");
     prepare();
 
@@ -142,7 +142,7 @@ TEST_F(NearestNeighborSearcherTest, distance_heap_keeps_the_best_target_hits)
 TEST_F(NearestNeighborSearcherTest, raw_score_calculated_with_distance_threshold)
 {
     query.add("qt1", 10, 3.0);
-    const auto& node = query.get(0);
+    auto& node = query.get(0);
     set_query_tensor("qt1", "tensor(x[2]):[1,3]");
     prepare();
 

@@ -41,8 +41,8 @@ public:
           _element_gap_inspector(element_gap_inspector)
     { }
     ~NearQueryNode() override;
-    bool evaluate() const override;
-    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
+    bool evaluate() override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) override;
     void distance(size_t dist)       { _distance = dist; }
     size_t distance()          const { return _distance; }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;

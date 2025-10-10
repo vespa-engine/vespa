@@ -19,8 +19,8 @@ public:
         : NearQueryNode("ONEAR", element_gap_inspector)
     { }
     ~ONearQueryNode() override;
-    bool evaluate() const override;
-    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
+    bool evaluate() override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) override;
 };
 
 }

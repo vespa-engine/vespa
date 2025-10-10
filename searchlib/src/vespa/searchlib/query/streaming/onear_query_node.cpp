@@ -64,7 +64,7 @@ ONearQueryNode::evaluate_helper(MatchResult& match_result) const
 }
 
 bool
-ONearQueryNode::evaluate() const
+ONearQueryNode::evaluate()
 {
     BoolMatchResult match_result;
     evaluate_helper(match_result);
@@ -72,7 +72,7 @@ ONearQueryNode::evaluate() const
 }
 
 void
-ONearQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
+ONearQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
 {
     // Retrieve the elements that matched
     ElementIdMatchResult match_result(element_ids);;

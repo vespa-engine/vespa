@@ -60,7 +60,7 @@ NearQueryNode::evaluate_helper(MatchResult& match_result) const
 }
 
 bool
-NearQueryNode::evaluate() const
+NearQueryNode::evaluate()
 {
     BoolMatchResult match_result;
     evaluate_helper(match_result);
@@ -68,7 +68,7 @@ NearQueryNode::evaluate() const
 }
 
 void
-NearQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
+NearQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
 {
     // Retrieve the elements that matched
     ElementIdMatchResult match_result(element_ids);;
