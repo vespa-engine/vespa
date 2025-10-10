@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/queryterm.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
@@ -7,6 +8,7 @@
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
+using search::SerializedQueryTree;
 using search::query::QueryBuilder;
 using search::query::SimpleQueryNodeTypes;
 using search::query::StackDumpCreator;
@@ -25,8 +27,9 @@ TEST(StreamingQueryBuilderTest, hidden_terms_are_not_ranked)
     builder.addStringTerm("c", "", 0, Weight(0));
     auto node =  builder.build();
     std::string stackDump = StackDumpCreator::create(*node);
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
     QueryNodeResultFactory empty;
-    Query q(empty, stackDump);
+    Query q(empty, *serializedQueryTree);
     QueryTermList terms;
     q.getRoot().getLeaves(terms);
     EXPECT_EQ(3, terms.size());
