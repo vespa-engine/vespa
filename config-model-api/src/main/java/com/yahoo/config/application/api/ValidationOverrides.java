@@ -180,7 +180,7 @@ public class ValidationOverrides {
         static final long serialVersionUID = 789984668;
 
         private ValidationException(ValidationId validationId, String message) {
-            super(validationId + ": " + message + ". " + toAllowMessage(validationId));
+            super(validationId.description() + ": " + message + ". " + toAllowMessage(validationId));
             messagesById.put(validationId, List.of(message));
         }
 

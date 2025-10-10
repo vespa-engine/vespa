@@ -10,34 +10,44 @@ import java.util.Optional;
  */
 public enum ValidationId {
 
-    indexingChange("indexing-change"), // Changing what tokens are expected and stored in field indexes
-    indexModeChange("indexing-mode-change"), // Changing the index mode (streaming, indexed, store-only) of documents 
-    fieldTypeChange("field-type-change"), // Field type changes
-    clusterSizeReduction("cluster-size-reduction"), // NOT USED. TODO: Remove on Vespa 9
-    tensorTypeChange("tensor-type-change"), // // NOT USED. TODO: Remove on Vespa 9
-    resourcesReduction("resources-reduction"), // Large reductions in node resources (> 50% of the current max total resources)
-    contentTypeRemoval("schema-removal"), // Removal of a schema (causes deletion of all documents)
-    contentClusterRemoval("content-cluster-removal"), // Removal (or id change) of content clusters
-    deploymentRemoval("deployment-removal"), // Removal of production zones from deployment.xml
-    globalDocumentChange("global-document-change"), // Changing global attribute for document types in content clusters
-    configModelVersionMismatch("config-model-version-mismatch"), // Internal use
-    skipOldConfigModels("skip-old-config-models"), // Internal use
-    accessControl("access-control"), // Internal use, used in zones where there should be no access-control
-    globalEndpointChange("global-endpoint-change"), // Changing global endpoints
-    zoneEndpointChange("zone-endpoint-change"), // Changing zone (possibly private) endpoint settings
-    redundancyOne("redundancy-one"), // redundancy=1 requires a validation override on first deployment
-    pagedSettingRemoval("paged-setting-removal"), // May cause content nodes to run out of memory
-    certificateRemoval("certificate-removal"), // Remove data plane certificates
-    hnswSettingsChange("hnsw-settings-change"),
+    indexingChange("indexing-change", "Changing what tokens are expected and stored in field indexes"),
+    indexModeChange("indexing-mode-change", "Changing the index mode (streaming, indexed, store-only) of documents"),
+    fieldTypeChange("field-type-change", "Field type changes"),
+    clusterSizeReduction("cluster-size-reduction", "NOT USED"), // TODO: Remove on Vespa 9
+    tensorTypeChange("tensor-type-change", "NOT USED"), // TODO: Remove on Vespa 9
+    resourcesReduction("resources-reduction", "Large reductions in node resources (> 50% of the current max total resources)"),
+    contentTypeRemoval("schema-removal", "Removal of a schema causes deletion of all documents"),
+    contentClusterRemoval("content-cluster-removal", "Removal (or id change) of content clusters"),
+    deploymentRemoval("deployment-removal", "Removal of production zones from deployment.xml"),
+    globalDocumentChange("global-document-change", "Changing global attribute for document types in content clusters"),
+    configModelVersionMismatch("config-model-version-mismatch", "For internal use, allow using config models for a different Vespa version"),
+    skipOldConfigModels("skip-old-config-models", "For internal use, skip building old config models"),
+    accessControl("access-control", "For internal use, used in zones where there should be no access-control"),
+    globalEndpointChange("global-endpoint-change", "Changing global endpoints"),
+    zoneEndpointChange("zone-endpoint-change", "Changing zone (possibly private) endpoint settings"),
+    redundancyOne("redundancy-one", "Setting redundancy=1 requires a validation override on first deployment"),
+    pagedSettingRemoval("paged-setting-removal", "Removing paged for an attribute. May cause content nodes to run out of memory"),
+    certificateRemoval("certificate-removal", "Remove data plane certificates"),
+    hnswSettingsChange("hnsw-settings-change", "Changes to hnsw index settings"),
 
     @Deprecated
-    redundancyIncrease("redundancy-increase"); // Not in use. TODO: Remove on Vespa 9
+    redundancyIncrease("redundancy-increase", "Not in use"); // TODO: Remove on Vespa 9
 
     private final String id;
+    private final String description;
 
-    ValidationId(String id) { this.id = id; }
+    ValidationId(String id) {
+        this(id, "");
+    }
+
+    ValidationId(String id, String description) {
+        this.id = id;
+        this.description = description;
+    }
 
     public String value() { return id; }
+
+    public String description() { return description; }
 
     @Override
     public String toString() { return id; }
