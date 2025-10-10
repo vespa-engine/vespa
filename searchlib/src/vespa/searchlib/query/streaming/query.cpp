@@ -10,6 +10,9 @@
 #include <cassert>
 #include <span>
 
+using search::fef::IIndexEnvironment;
+using search::fef::MatchData;
+
 namespace search::streaming {
 
 void
@@ -40,6 +43,14 @@ QueryConnector::evaluateHits(HitList & hl) const
         hl.emplace_back(0, 0, 1, 1);
     }
     return hl;
+}
+
+void
+QueryConnector::unpack_match_data(uint32_t docid, MatchData& match_data, const IIndexEnvironment& index_env)
+{
+    for (const auto & node : _children) {
+        node->unpack_match_data(docid, match_data, index_env);
+    }
 }
 
 void
