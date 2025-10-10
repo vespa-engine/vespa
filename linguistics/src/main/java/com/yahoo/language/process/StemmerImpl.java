@@ -42,4 +42,9 @@ public class StemmerImpl implements Stemmer {
         }
     }
 
+    @Override
+    public String toString() {
+        return this.getClass().getName() + " using " + tokenizer;
+    }
+
 }

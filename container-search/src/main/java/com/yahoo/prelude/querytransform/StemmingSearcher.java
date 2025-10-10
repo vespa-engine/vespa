@@ -150,15 +150,14 @@ public class StemmingSearcher extends Searcher {
 
     private Item scan(Item item, StemContext context) {
         if (item == null) return null;
-
         boolean old = context.insidePhrase;
         if (item instanceof PhraseItem || item instanceof PhraseSegmentItem) {
             context.insidePhrase = true;
         }
         if (item instanceof BlockItem) {
             item = checkBlock((BlockItem) item, context);
-        } else if (item instanceof CompositeItem comp) {
-            ListIterator<Item> i = comp.getItemIterator();
+        } else if (item instanceof CompositeItem composite) {
+            ListIterator<Item> i = composite.getItemIterator();
             while (i.hasNext()) {
                 Item original = i.next();
                 Item transformed = scan(original, context);
@@ -170,15 +169,15 @@ public class StemmingSearcher extends Searcher {
         return item;
     }
 
-    private Item checkBlock(BlockItem b, StemContext context) {
-        if (b instanceof PrefixItem || !b.isWords()) return (Item) b;
+    private Item checkBlock(BlockItem item, StemContext context) {
+        if (item instanceof PrefixItem || !item.isWords()) return (Item) item;
 
-        if (b.isFromQuery() && !b.isStemmed()) {
-            Index index = context.indexFacts.getIndex(b.getIndexName());
+        if (item.isFromQuery() && !item.isStemmed()) {
+            Index index = context.indexFacts.getIndex(item.getIndexName());
             StemMode stemMode = index.getStemMode();
-            if (stemMode != StemMode.NONE) return stem(b, context, index);
+            if (stemMode != StemMode.NONE) return stem(item, context, index);
         }
-        return (Item) b;
+        return (Item) item;
     }
 
     private Substring getOffsets(BlockItem b) {
@@ -207,7 +206,7 @@ public class StemmingSearcher extends Searcher {
         String indexName = current.getIndexName();
         Substring origin = getOffsets(current);
         if (segments.size() == 1) {
-            TaggableItem w = singleWordSegment(current, segments.get(0), index, origin, context.insidePhrase);
+            TaggableItem w = singleWordSegment(current, segments.get(0), index, origin);
             setMetaData(current, context.reverseConnectivity, w);
             return (Item)w;
         }
@@ -218,7 +217,7 @@ public class StemmingSearcher extends Searcher {
             composite = chooseComposite(current, ((Item) current).getParent(), indexName);
 
         for (StemList segment : segments) {
-            TaggableItem w = singleWordSegment(current, segment, index, origin, context.insidePhrase);
+            TaggableItem w = singleWordSegment(current, segment, index, origin);
 
             if (composite instanceof AndSegmentItem) {
                 setSignificanceAndDocumentFrequency(w, current);
@@ -296,11 +295,7 @@ public class StemmingSearcher extends Searcher {
         }
     }
 
-    private TaggableItem singleWordSegment(BlockItem current,
-                                           StemList segment,
-                                           Index index,
-                                           Substring origin,
-                                           boolean insidePhrase) {
+    private TaggableItem singleWordSegment(BlockItem current, StemList segment, Index index, Substring origin) {
         String indexName = current.getIndexName();
         if (index.getLiteralBoost() || index.getStemMode() == StemMode.ALL) {
             List<Alternative> terms = new ArrayList<>(segment.size() + 1);
@@ -314,7 +309,10 @@ public class StemmingSearcher extends Searcher {
                 return alternatives;
             }
         }
-        return singleStemSegment((Item) current, segment.get(0), indexName, origin);
+
+        if (segment.get(0).isEmpty())
+            return (TaggableItem)current;
+        return singleStemSegment((Item)current, segment.get(0), indexName, origin);
     }
 
     private void setMetaData(BlockItem current, Map<Item, TaggableItem> reverseConnectivity, TaggableItem replacement) {
@@ -328,8 +326,7 @@ public class StemmingSearcher extends Searcher {
         setConnectivity(current, reverseConnectivity, (Item) replacement);
     }
 
-    private WordItem singleStemSegment(Item blockAsItem, String stem, String indexName,
-                                       Substring origin) {
+    private TaggableItem singleStemSegment(Item blockAsItem, String stem, String indexName, Substring origin) {
         WordItem replacement = new WordItem(stem, indexName, true, origin);
         replacement.setStemmed(true);
         copyAttributes(blockAsItem, replacement);

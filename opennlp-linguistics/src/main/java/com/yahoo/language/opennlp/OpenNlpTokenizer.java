@@ -178,4 +178,9 @@ public class OpenNlpTokenizer implements Tokenizer {
         return new OpenNlpTokenizer(mode, normalizer, transformer, snowballStemmingForEnglish, chineseSegmenter, createCjkGrams, specialTokenRegistry);
     }
 
+    @Override
+    public String toString() {
+        return "tokenizer " + this.getClass().getName();
+    }
+
 }
