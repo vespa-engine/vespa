@@ -3,6 +3,7 @@
 #pragma once
 
 #include "queryterm.h"
+#include <optional>
 
 namespace search::fef {
 
@@ -23,6 +24,7 @@ namespace search::streaming {
 class MultiTerm : public QueryTerm {
 protected:
     std::vector<std::unique_ptr<QueryTerm>> _terms;
+    std::optional<bool>                     _cached_evaluate_result;
 public:
     MultiTerm(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms);
     MultiTerm(std::unique_ptr<QueryNodeResultBase> result_base, string index,

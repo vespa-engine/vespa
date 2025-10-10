@@ -62,8 +62,12 @@ NearQueryNode::evaluate_helper(MatchResult& match_result) const
 bool
 NearQueryNode::evaluate()
 {
+    if (_cached_evaluate_result.has_value()) {
+        return _cached_evaluate_result.value();
+    }
     BoolMatchResult match_result;
     evaluate_helper(match_result);
+    _cached_evaluate_result.emplace(match_result.is_match());
     return match_result.is_match();
 }
 

@@ -57,12 +57,18 @@ EquivQueryNode::~EquivQueryNode() = default;
 bool
 EquivQueryNode::evaluate()
 {
+    if (_cached_evaluate_result.has_value()) {
+        return _cached_evaluate_result.value();
+    }
+    bool result = false;
     for (auto& subterm : get_terms()) {
         if (subterm->evaluate()) {
-            return true;
+            result = true;
+            break;
         }
     }
-    return false;
+    _cached_evaluate_result.emplace(result);
+    return result;
 }
 
 const HitList &
