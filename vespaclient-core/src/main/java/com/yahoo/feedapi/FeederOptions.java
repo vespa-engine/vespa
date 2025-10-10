@@ -171,9 +171,7 @@ public class FeederOptions {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof FeederOptions)) return false;
-
-        FeederOptions that = (FeederOptions) o;
+        if (!(o instanceof FeederOptions that)) return false;
 
         if (abortOnDocumentError != that.abortOnDocumentError) return false;
         if (abortOnSendError != that.abortOnSendError) return false;

@@ -61,7 +61,7 @@ public final class Text {
     }
 
     /**
-     * Validates that the given string value only contains text characters and
+     * Validates that the given string value only contains text characters and, if not
      * returns the first illegal code point if one is found.
      */
     public static OptionalInt validateTextString(String string) {

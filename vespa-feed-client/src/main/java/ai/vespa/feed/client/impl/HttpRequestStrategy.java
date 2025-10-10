@@ -135,7 +135,7 @@ class HttpRequestStrategy implements RequestStrategy {
         return inflight.get() - delayedCount.get() > throttler.targetInflight();
     }
 
-    private boolean retry(HttpRequest request, int attempt) {
+    private boolean shouldRetry(HttpRequest request, int attempt) {
         var timeLeft = request.timeLeft().toMillis();
         if (attempt > strategy.retries() || timeLeft <= 0) {
             log.fine(() -> String.format("Giving up on %s after %d attempts (%dms left)", request, attempt, timeLeft));
@@ -153,7 +153,7 @@ class HttpRequestStrategy implements RequestStrategy {
      * Retries all IOExceptions, unless error rate has converged to a value higher than the threshold,
      * or the user has turned off retries for this type of operation.
      */
-    private boolean retry(HttpRequest request, Throwable thrown, int attempt) {
+    private boolean shouldRetry(HttpRequest request, Throwable thrown, int attempt) {
         breaker.failure(thrown);
         log.log(FINE, thrown, () -> String.format("Failed attempt %d at %s", attempt, request));
         if (   (thrown instanceof IOException)               // General IO problems.
@@ -162,7 +162,7 @@ class HttpRequestStrategy implements RequestStrategy {
             || thrown instanceof RetryableException
         ) {
             log.finer(() -> String.format("Retrying request %s after exception '%s'", request, thrown));
-            return retry(request, attempt);
+            return shouldRetry(request, attempt);
         }
         return false;
     }
@@ -172,7 +172,7 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     /** Retries throttled requests (429), adjusting the target inflight count, and server unavailable (503). */
-    private boolean retry(HttpRequest request, HttpResponse response, int attempt) {
+    private boolean shouldRetry(HttpRequest request, HttpResponse response, int attempt) {
         if (isSuccess(response.code())) {
             logResponse(FINEST, response, request, attempt);
             breaker.success();
@@ -189,7 +189,7 @@ class HttpRequestStrategy implements RequestStrategy {
         logResponse(FINE, response, request, attempt);
         if (response.code() == 503) { // Hopefully temporary errors.
             breaker.failure(response);
-            return retry(request, attempt);
+            return shouldRetry(request, attempt);
         }
 
         if (response.code() >= 500) { // Server errors may indicate something wrong with the server.
@@ -302,10 +302,10 @@ class HttpRequestStrategy implements RequestStrategy {
                                RetriableFuture<HttpResponse> result, int attempt) {
         vessel.whenCompleteAsync((response, thrown) -> {
                                      result.set(response, thrown);
-                                     // Retry the operation if it failed with a transient error ...
+                                     // Retry the operation if it failed with a transient error
                                      var shouldRetry = thrown != null
-                                             ? retry(request, thrown, attempt)
-                                             : retry(request, response, attempt);
+                                             ? shouldRetry(request, thrown, attempt)
+                                             : shouldRetry(request, response, attempt);
                                      if (shouldRetry) {
                                          CompletableFuture<HttpResponse> retry = new CompletableFuture<>();
                                          offer(request, retry);
