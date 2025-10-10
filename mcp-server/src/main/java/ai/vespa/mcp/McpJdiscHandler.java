@@ -27,6 +27,7 @@ import com.yahoo.search.searchchain.ExecutionFactory;
 public class McpJdiscHandler extends ThreadedHttpRequestHandler{
     private static final Logger logger = Logger.getLogger(McpJdiscHandler.class.getName());
     private final McpHttpTransport  transport;
+    private final JdiscMcpServer mcpServer;
     
     @Inject
     public McpJdiscHandler(Executor executor,
@@ -34,8 +35,8 @@ public class McpJdiscHandler extends ThreadedHttpRequestHandler{
                            ExecutionFactory executionFactory, CompiledQueryProfileRegistry queryProfileRegistry) {
         super(executor, metrics, true);
         var tools = new McpTools(executionFactory, queryProfileRegistry);
-        var server = new JdiscMcpServer(tools);
-        this.transport = server.getTransport();
+        mcpServer = new JdiscMcpServer(tools);
+        this.transport = mcpServer.getTransport();
     }
 
     /**
@@ -81,5 +82,17 @@ public class McpJdiscHandler extends ThreadedHttpRequestHandler{
             case "DELETE" -> this.transport.handleDelete(request);
             default -> this.transport.createErrorResponse(405, "Only GET, POST, and DELETE requests are allowed", null);
         };
+    }
+
+    @Override
+    public void destroy() {
+        try {
+            if (this.mcpServer != null) {
+                mcpServer.close();
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error closing MCP server during handler destruction", e);
+        }
+        super.destroy();
     }
 }
