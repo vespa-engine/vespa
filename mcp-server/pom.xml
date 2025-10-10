@@ -16,12 +16,6 @@
   <packaging>container-plugin</packaging>
   <name>${project.artifactId}</name>
 
-<!--  <properties>-->
-<!--    <maven.compiler.source>17</maven.compiler.source>-->
-<!--    <maven.compiler.target>17</maven.compiler.target>-->
-<!--    <maven.compiler.release>17</maven.compiler.release>-->
-<!--  </properties>-->
-
   <dependencies>
     <!-- Core Vespa dependencies -->
     <dependency>
@@ -44,7 +38,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-search</artifactId>
+      <artifactId>container-search-and-docproc</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -54,6 +48,12 @@
       <groupId>io.modelcontextprotocol.sdk</groupId>
       <artifactId>mcp</artifactId>
       <version>0.11.2</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- Jackson for JSON processing -->

@@ -16,8 +16,7 @@ import io.modelcontextprotocol.server.McpStatelessServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.component.AbstractComponent;
-import com.yahoo.component.annotation.Inject;
+
 
 /**
  * Main MCP server application that exposes Vespa search functionality.
@@ -26,11 +25,9 @@ import com.yahoo.component.annotation.Inject;
  * @author Erling Fjelstad
  * @author Edvard Dingsør
  */
-public class McpServerComponent extends AbstractComponent{
-
-
+class JdiscMcpServer {
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final Logger logger = Logger.getLogger(McpServerComponent.class.getName());
+    private static final Logger logger = Logger.getLogger(JdiscMcpServer.class.getName());
 
     // MCP transport layer for Vespa request handling
     private final McpHttpTransport transport = new McpHttpTransport();
@@ -46,10 +43,9 @@ public class McpServerComponent extends AbstractComponent{
      * Initializes the MCP server with Vespa tools and starts the server.
      * Injects McpTools to access core functionality.
      */
-    @Inject
-    public McpServerComponent(McpTools vespaTools) {
+    public JdiscMcpServer(McpTools vespaTools) {
         this.vespaTools = vespaTools;
-        // this.transportProvider = new VespaStreamableTransportProvider(Duration.ofSeconds(60));
+
         // Tools for MCP server
         this.toolSpecs = List.of(
             getDocumentationTool(),
@@ -547,10 +543,10 @@ public class McpServerComponent extends AbstractComponent{
         );
     }
 
-    @Override
+    //@Override
     public void deconstruct() {
         logger.info("Deconstructing Vespa MCP server...");
-        super.deconstruct();
+        //super.deconstruct();
         logger.info("Vespa MCP server deconstructed");
     }
 

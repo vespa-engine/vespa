@@ -18,8 +18,6 @@ import java.util.logging.Level;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.yahoo.component.AbstractComponent;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.search.schema.*;
 import com.yahoo.tensor.Tensor;
@@ -39,7 +37,7 @@ import com.yahoo.search.searchchain.Execution;
  * @author Erling Fjelstad
  * @author Edvard Dingsør
  */
-public class McpTools extends AbstractComponent {
+class McpTools {
 
     // Static utilities for HTTP requests and JSON parsing
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
@@ -57,7 +55,7 @@ public class McpTools extends AbstractComponent {
     private static final String VESPA_DOCS_BASE_URL = "https://docs.vespa.ai";
     private static final String VESPA_SEARCH_API_BASE_URL = "https://api.search.vespa.ai/search/";
 
-    @Inject
+
     public McpTools(ExecutionFactory executionFactory, CompiledQueryProfileRegistry queryProfileRegistry) {
         this.executionFactory = executionFactory;
         this.queryProfileRegistry = queryProfileRegistry;
@@ -441,7 +439,7 @@ public class McpTools extends AbstractComponent {
      * @return A string containing the query examples, or an error message if reading fails.
      */
     String readQueryExamples() {
-        try (InputStream inputStream = McpServerComponent.class.getClassLoader().getResourceAsStream("queryExamples.txt")){
+        try (InputStream inputStream = JdiscMcpServer.class.getClassLoader().getResourceAsStream("queryExamples.txt")){
             if (inputStream == null) {
                 logger.log(Level.SEVERE, "Query examples resource not found");
                 return "Query examples resource not found";
