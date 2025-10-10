@@ -1,5 +1,6 @@
 package ai.vespa.mcp;
 
+import java.io.Closeable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @author Erling Fjelstad
  * @author Edvard Dingsør
  */
-class JdiscMcpServer {
+class JdiscMcpServer implements Closeable {
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final Logger logger = Logger.getLogger(JdiscMcpServer.class.getName());
 
@@ -542,5 +543,12 @@ class JdiscMcpServer {
             }
         );
     }
-
+    @Override
+    public void close() {
+        try {
+            transport.closeGracefully().block();
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error closing MCP transport", e);
+        }
+    }
 }
