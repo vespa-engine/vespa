@@ -140,6 +140,24 @@ public class PartialSummaryHandlerTestCase {
     }
 
     @Test
+    void testFillNotNeeded2() {
+        // When:
+        // 1) the summary class is not null;
+        // 2) only matchfeatures are selected;
+        // 3) want to fill the `[presentation]` summary class;
+        // Then resultAlreadyFilled
+        DocsumDefinitionSet set = createDocsumDefinitionSet();
+        var query = createQuery("default");
+        query.getPresentation().getSummaryFields().add("matchfeatures");
+        var hit1 = createHit(query, "[f:matchfeatures]");
+        var result = createResult(query, hit1);
+        var toTest = new PartialSummaryHandler(set);
+        String neededSummaryClass = "[presentation]"; // From the trace
+        toTest.wantToFill(result, neededSummaryClass);
+        assertTrue(toTest.resultAlreadyFilled());
+    }
+
+    @Test
     void testMultiFill() {
         DocsumDefinitionSet set = createDocsumDefinitionSet();
         var query = createQuery("first3");

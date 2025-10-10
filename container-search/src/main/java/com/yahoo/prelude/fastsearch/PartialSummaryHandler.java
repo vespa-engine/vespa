@@ -1,23 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
-import com.yahoo.prelude.fastsearch.DocumentDatabase;
-import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
 import com.yahoo.processing.IllegalInputException;
 
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Hit;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -38,6 +33,8 @@ public class PartialSummaryHandler {
     public static final String DEFAULT_CLASS = "default";
     public static final String ALL_FIELDS_CLASS = "default"; // not really true, but best we can do for now
     public static final String PRESENTATION = "[presentation]";
+    public static final String MATCHFEATURES_MARKER = "[f:matchfeatures]";
+    public static final Set<String> ONLY_MATCHFEATURES_IN_SUMMARY_FIELDS = Set.of("matchfeatures");
 
     private static final Logger log = Logger.getLogger(PartialSummaryHandler.class.getName());
 
@@ -327,6 +324,10 @@ public class PartialSummaryHandler {
     private boolean needsMoreFill(Set<String> alreadyFilled) {
         // unfillable?
         if (alreadyFilled == null) return false;
+
+        boolean areMatchFeaturesAlreadyFilled = alreadyFilled.contains(MATCHFEATURES_MARKER);
+        boolean onlyMatchFeaturesNeeded = fieldsFromQuery.equals(ONLY_MATCHFEATURES_IN_SUMMARY_FIELDS);
+        if (areMatchFeaturesAlreadyFilled && onlyMatchFeaturesNeeded) return false;
 
         // do we already have the entire thing?
         if (alreadyFilled.contains(askForSummary)) return false;
