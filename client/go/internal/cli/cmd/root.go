@@ -371,6 +371,7 @@ func (c *CLI) configureCommands() {
 	prodCmd.AddCommand(newProdInitCmd(c))               // prod init
 	prodCmd.AddCommand(newProdDeployCmd(c))             // prod deploy
 	rootCmd.AddCommand(prodCmd)                         // prod
+	rootCmd.AddCommand(newCountCmd(c))                  // count
 	rootCmd.AddCommand(newQueryCmd(c))                  // query
 	statusCmd.AddCommand(newStatusDeployCmd(c))         // status deploy
 	statusCmd.AddCommand(newStatusDeploymentCmd(c))     // status deployment
