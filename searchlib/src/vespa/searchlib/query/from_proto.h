@@ -27,6 +27,8 @@ private:
     std::string _serialized_term;
     bool handle_variant_item(TreeItem item);
     bool handle_item(const QTI& qsi);
+    bool handle_item(const PWS& qsi);
+    bool handle_item(const PWL& qsi);
 };
 
 } // namespace
