@@ -240,7 +240,7 @@ TEST_F(TagNeededHandlesTest, unpack_for_near_children)
     QueryBuilder<ProtonNodeTypes> query_builder;
     constexpr uint32_t term_count = 2;
     constexpr uint32_t distance = 7;
-    query_builder.addNear(term_count, distance);
+    query_builder.addNear(term_count, distance, 0, 0);
     query_builder.addStringTerm(foo_term, view, term_id, string_weight);
     query_builder.addStringTerm(bar_term, view, term_id + 1, string_weight);
     auto root = query_builder.build();
@@ -254,7 +254,7 @@ TEST_F(TagNeededHandlesTest, partial_unpack_for_near_children)
     QueryBuilder<ProtonNodeTypes> query_builder;
     constexpr uint32_t term_count = 2;
     constexpr uint32_t distance = 7;
-    query_builder.addNear(term_count, distance);
+    query_builder.addNear(term_count, distance, 0, 0);
     query_builder.addStringTerm(foo_term, mixed_view, term_id, string_weight);
     query_builder.addStringTerm(bar_term, mixed_view, term_id + 1, string_weight);
     auto root = query_builder.build();
@@ -269,7 +269,7 @@ TEST_F(TagNeededHandlesTest, unpack_for_near_children_with_equiv)
     constexpr uint32_t near_term_count = 2;
     constexpr uint32_t equiv_term_count = 2;
     constexpr uint32_t distance = 7;
-    query_builder.addNear(near_term_count, distance);
+    query_builder.addNear(near_term_count, distance, 0, 0);
     query_builder.addStringTerm(foo_term, view, term_id, string_weight);
     query_builder.addEquiv(equiv_term_count, term_id + 1, string_weight);
     query_builder.addStringTerm(bar_term, view, term_id + 2, string_weight);
@@ -285,7 +285,7 @@ TEST_F(TagNeededHandlesTest, unpack_for_onear_children)
     QueryBuilder<ProtonNodeTypes> query_builder;
     constexpr uint32_t term_count = 2;
     constexpr uint32_t distance = 7;
-    query_builder.addONear(term_count, distance);
+    query_builder.addONear(term_count, distance, 0, 0);
     query_builder.addStringTerm(foo_term, view, term_id, string_weight);
     query_builder.addStringTerm(bar_term, view, term_id + 1, string_weight);
     auto root = query_builder.build();

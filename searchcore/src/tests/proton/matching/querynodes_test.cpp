@@ -214,8 +214,8 @@ public:
 using QB = QueryBuilder<ProtonNodeTypes>;
 struct Phrase { void addToBuilder(QB& b) { b.addPhrase(2, view, id, weight); }};
 struct SameElement { void addToBuilder(QB& b) { b.addSameElement(2, view, id, weight); }};
-struct Near   { void addToBuilder(QB& b) { b.addNear(2, distance); } };
-struct ONear  { void addToBuilder(QB& b) { b.addONear(2, distance); } };
+struct Near   { void addToBuilder(QB& b) { b.addNear(2, distance, 0, 0); } };
+struct ONear  { void addToBuilder(QB& b) { b.addONear(2, distance, 0, 0); } };
 struct Or     { void addToBuilder(QB& b) { b.addOr(2); } };
 struct And    { void addToBuilder(QB& b) { b.addAnd(2); } };
 struct AndNot { void addToBuilder(QB& b) { b.addAndNot(2); } };

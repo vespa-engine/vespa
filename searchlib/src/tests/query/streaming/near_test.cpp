@@ -138,9 +138,9 @@ NearTest::make_query(QueryTweak query_tweak, uint32_t distance, const std::vecto
         --top_arity;
     }
     if (GetParam().ordered()) {
-        builder.addONear(top_arity, distance);
+        builder.addONear(top_arity, distance, 0, 0);
     } else {
-        builder.addNear(top_arity, distance);
+        builder.addNear(top_arity, distance, 0, 0);
     }
     for (uint32_t idx = 0; idx < hitsvv.size(); ++idx) {
         switch (query_tweak) {

@@ -527,7 +527,7 @@ TEST(QueryTest, requireThatNearIteratorsCanBeBuilt)
 {
     Fixture f;
     QueryBuilder<ProtonNodeTypes> builder;
-    builder.addNear(2, 4);
+    builder.addNear(2, 4, 0, 0);
     builder.addStringTerm(string_term, field, 1, Weight(2));
     builder.addStringTerm(prefix_term, field, 1, Weight(2));
     Node::UP node = builder.build();
@@ -553,7 +553,7 @@ TEST(QueryTest, requireThatONearIteratorsCanBeBuilt)
 {
     Fixture f;
     QueryBuilder<ProtonNodeTypes> builder;
-    builder.addONear(2, 4);
+    builder.addONear(2, 4, 0, 0);
     builder.addStringTerm(string_term, field, 1, Weight(2));
     builder.addStringTerm(prefix_term, field, 1, Weight(2));
     Node::UP node = builder.build();

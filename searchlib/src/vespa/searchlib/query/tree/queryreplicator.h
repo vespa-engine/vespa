@@ -62,12 +62,12 @@ private:
     }
 
     void visit(Near &node) override {
-        _builder.addNear(node.getChildren().size(), node.getDistance());
+        _builder.addNear(node.getChildren().size(), node.getDistance(), node.num_negative_terms(), node.negative_term_brick_size());
         visitNodes(node.getChildren());
     }
 
     void visit(ONear &node) override {
-        _builder.addONear(node.getChildren().size(), node.getDistance());
+        _builder.addONear(node.getChildren().size(), node.getDistance(), node.num_negative_terms(), node.negative_term_brick_size());
         visitNodes(node.getChildren());
     }
 

@@ -24,8 +24,6 @@ using namespace search::query;
 
 namespace {
 
-template <class NodeTypes> void checkQueryTreeTypes(Node *node);
-
 const string str[] = { "foo", "bar", "baz", "qux", "quux", "corge",
                        "grault", "garply", "waldo", "fred", "plugh" };
 const string (&view)[11] = str;
@@ -56,12 +54,12 @@ Node::UP createQueryTree() {
     {
         builder.addRank(2);
         {
-            builder.addNear(2, distance);
+            builder.addNear(2, distance, 1, 3);
             {
                 builder.addStringTerm(str[0], view[0], id[0], weight[0]);
                 builder.addSubstringTerm(str[1], view[1], id[1], weight[1]);
             }
-            builder.addONear(2, distance);
+            builder.addONear(2, distance, 1, 5);
             {
                 builder.addSuffixTerm(str[2], view[2], id[2], weight[2]);
                 builder.addPrefixTerm(str[3], view[3], id[3], weight[3]);
@@ -187,7 +185,7 @@ as_node(Node* node)
 }
 
 template <class NodeTypes>
-void checkQueryTreeTypes(Node *node) {
+void checkQueryTreeTypes(Node *node, bool skip_negative_term_params = false) {
     using And = typename NodeTypes::And;
     using AndNot = typename NodeTypes::AndNot;
     using NumberTerm = typename NodeTypes::NumberTerm;
@@ -221,6 +219,10 @@ void checkQueryTreeTypes(Node *node) {
     auto* near = as_node<Near>(rank->getChildren()[0]);
     EXPECT_EQ(2u, near->getChildren().size());
     EXPECT_EQ(distance, near->getDistance());
+    if (!skip_negative_term_params) {
+        EXPECT_EQ(1u, near->num_negative_terms());
+        EXPECT_EQ(3u, near->negative_term_brick_size());
+    }
     auto* string_term = as_node<StringTerm>(near->getChildren()[0]);
     EXPECT_TRUE(checkTerm(string_term, str[0], view[0], id[0], weight[0]));
     auto* substring_term = as_node<SubstringTerm>(near->getChildren()[1]);
@@ -229,6 +231,10 @@ void checkQueryTreeTypes(Node *node) {
     auto* onear = as_node<ONear>(rank->getChildren()[1]);
     EXPECT_EQ(2u, onear->getChildren().size());
     EXPECT_EQ(distance, onear->getDistance());
+    if (!skip_negative_term_params) {
+        EXPECT_EQ(1u, onear->num_negative_terms());
+        EXPECT_EQ(5u, onear->negative_term_brick_size());
+    }
     auto* suffix_term = as_node<SuffixTerm>(onear->getChildren()[0]);
     EXPECT_TRUE(checkTerm(suffix_term, str[2], view[2], id[2], weight[2]));
     auto* prefix_term = as_node<PrefixTerm>(onear->getChildren()[1]);
@@ -400,11 +406,15 @@ struct MyEquiv : Equiv {
 };
 
 struct MyNear : Near {
+    MyNear(size_t dist, size_t num_negative_terms, size_t negative_term_brick_size)
+      : Near(dist, num_negative_terms, negative_term_brick_size) {}
     explicit MyNear(size_t dist) : Near(dist) {}
     ~MyNear() override;
 };
 
 struct MyONear : ONear {
+    MyONear(size_t dist, size_t num_negative_terms, size_t negative_term_brick_size)
+      : ONear(dist, num_negative_terms, negative_term_brick_size) {}
     explicit MyONear(size_t dist) : ONear(dist) {}
     ~MyONear() override;
 };
@@ -753,7 +763,8 @@ TEST(QueryBuilderTest, require_that_Query_Tree_Creator_Can_Create_Queries_From_S
     auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
     auto iterator = serializedQueryTree->makeIterator();
     Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator);
-    checkQueryTreeTypes<SimpleQueryNodeTypes>(new_node.get());
+    // Skip negative term parameter checks because stack dump serialization doesn't support them yet (TODO in stackdumpquerycreator.h)
+    checkQueryTreeTypes<SimpleQueryNodeTypes>(new_node.get(), true);
 }
 
 TEST(QueryBuilderTest, require_that_All_Range_Syntaxes_Work) {
