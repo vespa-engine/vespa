@@ -543,11 +543,4 @@ class JdiscMcpServer {
         );
     }
 
-    //@Override
-    public void deconstruct() {
-        logger.info("Deconstructing Vespa MCP server...");
-        //super.deconstruct();
-        logger.info("Vespa MCP server deconstructed");
-    }
-
 }
