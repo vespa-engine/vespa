@@ -29,6 +29,7 @@ public enum ValidationId {
     pagedSettingRemoval("paged-setting-removal"), // May cause content nodes to run out of memory
     certificateRemoval("certificate-removal"), // Remove data plane certificates
     hnswSettingsChange("hnsw-settings-change"),
+    dataPlaneTokenEndpointRemoval("data-plane-token-removal"),
 
     @Deprecated
     redundancyIncrease("redundancy-increase"); // Not in use. TODO: Remove on Vespa 9
