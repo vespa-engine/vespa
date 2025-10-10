@@ -47,9 +47,9 @@ public final class TokenizeExpression extends Expression {
         context.setCurrentValue(output);
 
         AnnotatorConfig configWithLanguage = new AnnotatorConfig(config);
-        Language lang = context.resolveLanguage(linguistics);
-        if (lang != null)
-            configWithLanguage.setLanguage(lang);
+        Language language = context.resolveLanguage(linguistics);
+        if (language != null)
+            configWithLanguage.setLanguage(language);
         LinguisticsAnnotator annotator = new LinguisticsAnnotator(linguistics, configWithLanguage);
         annotator.annotate(output, context.getDocumentId().orElse(null), context.isReindexingOperation());
     }

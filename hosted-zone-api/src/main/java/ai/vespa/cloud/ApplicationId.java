@@ -28,8 +28,7 @@ public class ApplicationId {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof ApplicationId)) return false;
-        ApplicationId other = (ApplicationId)o;
+        if ( ! (o instanceof ApplicationId other)) return false;
         if ( ! other.tenant.equals(this.tenant)) return false;
         if ( ! other.application.equals(this.application)) return false;
         if ( ! other.instance.equals(this.instance)) return false;

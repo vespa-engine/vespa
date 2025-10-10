@@ -12,7 +12,7 @@ public class SimpleTokenType {
         switch (Character.getType(codePoint)) {
             case Character.NON_SPACING_MARK:
                 // "combining grave accent"
-                // and "DEVANAGARI VOWEL SIGN SHORT E" etc
+                // and "DEVANAGARI VOWEL SIGN SHORT E" etc.
                 // (letter-like)
             case Character.COMBINING_SPACING_MARK:
                 // "DEVANAGARI VOWEL SIGN SHORT O"
