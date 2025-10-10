@@ -60,7 +60,8 @@ public class Flags {
             "new-address-allocation", false,
             List.of("hakonhall"), "2025-10-06", "2025-11-06",
             "Whether to use new address allocation during provisioning",
-            "Takes effect on next host being provisioned");
+            "Takes effect on next host being provisioned",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag MULTI_IP = defineFeatureFlag(
             "multi-ip", false,
