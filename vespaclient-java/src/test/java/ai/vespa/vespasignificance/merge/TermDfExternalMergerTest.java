@@ -42,7 +42,7 @@ public class TermDfExternalMergerTest {
      * Writes lines to temporary file, closes the handle and returns the path.
      */
     private static Path writeInput(String... lines) throws IOException {
-        Path f = Files.createTempFile("termdf-test-", ".tvl");
+        Path f = Files.createTempFile("termdf-test-", ".tsv");
         try (BufferedWriter w = Files.newBufferedWriter(f, StandardCharsets.UTF_8)) {
             for (String line : lines) {
                 w.write(line);
@@ -67,7 +67,7 @@ public class TermDfExternalMergerTest {
     private record WriterAndPath(BufferedWriter writer, Path path) {}
 
     private static WriterAndPath newOutputFile() throws IOException {
-        Path out = Files.createTempFile("termdf-out-", ".tvl");
+        Path out = Files.createTempFile("termdf-out-", ".tsv");
         BufferedWriter w = Files.newBufferedWriter(out, StandardCharsets.UTF_8);
         return new WriterAndPath(w, out);
     }
@@ -210,7 +210,7 @@ public class TermDfExternalMergerTest {
 
         // Need a writer to invoke mergeFiles
         assertThrows(IllegalArgumentException.class, () -> {
-            Path out = Files.createTempFile("termdf-out-", ".tvl");
+            Path out = Files.createTempFile("termdf-out-", ".tsv");
             try (BufferedWriter w = Files.newBufferedWriter(out, StandardCharsets.UTF_8)) {
                 merger.mergeFiles(w, 1);
             }

@@ -126,7 +126,7 @@ public class TermDfExternalMerger {
         try {
             while (filesToMerge.size() > budget) {
                 final MergeBatch batch = dequeueBatch(budget, filesToMerge);
-                final Path tempFile = Files.createTempFile(tempDir, "termdf-", ".tmp.tvl");
+                final Path tempFile = Files.createTempFile(tempDir, "termdf-", ".tmp.tsv");
 
                 try (BufferedWriter tmpWriter = Files.newBufferedWriter(tempFile, StandardCharsets.UTF_8, StandardOpenOption.WRITE)) {
                     TermDfKWayMerge.merge(batch.readers(), tmpWriter, NO_MIN_KEEP);
