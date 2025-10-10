@@ -1,8 +1,7 @@
 # Vespa MCP Server
 
-This directory contains code for components and a request handler that enable Vespa users to package in a MCP server within their Vespa application.
+This directory contains code for a Vespa MCP server, which allows interaction with a Vespa application through an MCP client.
 
-## Features
 ### Tools
 - **`executeQuery`**: Build and execute Vespa queries against the Vespa application.
 - **`getSchemas`**: Retrieve the schemas of the Vespa application.
@@ -14,12 +13,36 @@ This directory contains code for components and a request handler that enable Ve
 ### Prompts
 - **`listTools`**: Prompt to list the tools and their descriptions of the MCP server.
 
-## Prerequisites
-- A deployed Vespa application.
-- An MCP client (e.g. [Claude Desktop](https://claude.ai/desktop)).
+## How to use
+1. Create your Vespa application like you would normally.
+2. Add the following to your `services.xml` to enable the MCP server:
+```xml
+<handler id="ai.vespa.mcp.McpJdiscHandler" bundle="mcp-server">
+    <binding>http://*/mcp/*</binding>
+</handler>
+```
+3. Deploy your application.
+4. Connect to the MCP server using an MCP client, e.g. [Claude Desktop](https://claude.ai/download):
+```json
+{
+  "mcpServers": {
+    "VespaMCP-java": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "http://localhost:8080/mcp/",
+        "--transport",
+        "http-first"
+      ]
+    }
+  }
+}
+```
+> [!NOTE]
+> Replace `http://localhost:8080/mcp/` with the URL of your deployed Vespa application, and add
+> ```
+> "--header",
+> "Authorization: Bearer <YOUR-TOKEN>"
+> ```
+> to the `args` array if your Application is running in Vespa Cloud.
 
-## Installation and setup
-### Local Vespa setup, using Docker
-
-
-### Vespa Cloud setup
