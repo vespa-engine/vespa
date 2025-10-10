@@ -13,7 +13,7 @@ class WeightedSetTerm : public MultiTerm {
 public:
     WeightedSetTerm(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms);
     ~WeightedSetTerm() override;
-    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) override;
     void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env) override;
 };
 

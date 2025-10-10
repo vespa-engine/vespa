@@ -83,7 +83,7 @@ class WrappedQuery {
 public:
     WrappedQuery(std::unique_ptr<MyQueryNodeResultFactory> factory_in, std::unique_ptr<Query> query_in);
     ~WrappedQuery();
-    const Query& query() const noexcept { return *_query; }
+    Query& query() const noexcept { return *_query; }
 };
 
 WrappedQuery::WrappedQuery(std::unique_ptr<MyQueryNodeResultFactory> factory_in, std::unique_ptr<Query> query_in)

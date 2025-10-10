@@ -40,22 +40,22 @@ struct SubFieldTerm
 {
     std::string _field_name;
     FieldIdT _id;
-    const QueryTerm* _term;
+    QueryTerm* _term;
 public:
-    SubFieldTerm(std::string field_name, FieldIdT id, const QueryTerm* term) noexcept
+    SubFieldTerm(std::string field_name, FieldIdT id, QueryTerm* term) noexcept
         : _field_name(std::move(field_name)),
           _id(id),
           _term(term)
     {
     }
     const std::string& get_field_name() const noexcept { return _field_name; }
-    const QueryTerm& get_term() const noexcept { return *_term; }
+    QueryTerm& get_term() const noexcept { return *_term; }
     FieldIdT get_id() const noexcept { return _id; }
 };
 
 class Matcher
 {
-    std::vector<const SameElementQueryNode*> _same_element_nodes;
+    std::vector<SameElementQueryNode*> _same_element_nodes;
     std::vector<SubFieldTerm> _sub_field_terms;
     vsm::FieldIdTSearcherMap& _field_searcher_map;
     const search::fef::IIndexEnvironment& _index_env;
@@ -64,24 +64,24 @@ class Matcher
 
     const std::string* matching_elements_field(const MatchingElementsFields& fields, FieldIdT field_id);
     void select_multiterm_children(const MatchingElementsFields& fields, const MultiTerm& multi_term);
-    void select_query_term_node(const MatchingElementsFields& fields, const QueryTerm& term);
-    void select_query_nodes(const MatchingElementsFields& fields, const QueryNode& query_node);
+    void select_query_term_node(const MatchingElementsFields& fields, QueryTerm& term);
+    void select_query_nodes(const MatchingElementsFields& fields, QueryNode& query_node);
     void add_matching_elements(const std::string& field_name, FieldIdT field_id, uint32_t doc_lid, const HitList& hit_list, MatchingElements& matching_elements);
-    void find_matching_elements(const SameElementQueryNode& same_element, uint32_t doc_lid, MatchingElements& matching_elements);
+    void find_matching_elements(SameElementQueryNode& same_element, uint32_t doc_lid, MatchingElements& matching_elements);
     void find_matching_elements(const SubFieldTerm& sub_field_term, uint32_t doc_lid, MatchingElements& matching_elements);
 public:
     Matcher(vsm::FieldIdTSearcherMap& field_searcher_map, const search::fef::IIndexEnvironment& index_env,
-            const MatchingElementsFields& fields, const Query& query);
+            const MatchingElementsFields& fields, Query& query);
     ~Matcher();
     bool empty() const { return _same_element_nodes.empty() && _sub_field_terms.empty(); }
     void find_matching_elements(const vsm::StorageDocument& doc, uint32_t doc_lid, MatchingElements& matching_elements);
 };
 
 template<typename T>
-const T* as(const QueryNode& query_node) { return dynamic_cast<const T*>(&query_node); }
+T* as(QueryNode& query_node) { return dynamic_cast<T*>(&query_node); }
 
 Matcher::Matcher(FieldIdTSearcherMap& field_searcher_map, const search::fef::IIndexEnvironment& index_env,
-                 const MatchingElementsFields& fields, const Query& query)
+                 const MatchingElementsFields& fields, Query& query)
     : _same_element_nodes(),
       _sub_field_terms(),
       _field_searcher_map(field_searcher_map),
@@ -125,7 +125,7 @@ Matcher::select_multiterm_children(const MatchingElementsFields& fields, const M
 }
 
 void
-Matcher::select_query_term_node(const MatchingElementsFields& fields, const QueryTerm& query_term)
+Matcher::select_query_term_node(const MatchingElementsFields& fields, QueryTerm& query_term)
 {
     auto& qtd = dynamic_cast<const QueryTermData &>(query_term.getQueryItem());
     auto& td = qtd.getTermData();
@@ -140,7 +140,7 @@ Matcher::select_query_term_node(const MatchingElementsFields& fields, const Quer
 }
 
 void
-Matcher::select_query_nodes(const MatchingElementsFields& fields, const QueryNode& query_node)
+Matcher::select_query_nodes(const MatchingElementsFields& fields, QueryNode& query_node)
 {
     if (auto same_element = as<SameElementQueryNode>(query_node)) {
         if (fields.has_field(same_element->getIndex())) {
@@ -179,7 +179,7 @@ Matcher::add_matching_elements(const std::string& field_name, FieldIdT field_id,
 }
 
 void
-Matcher::find_matching_elements(const SameElementQueryNode& same_element, uint32_t doc_lid, MatchingElements& matching_elements)
+Matcher::find_matching_elements(SameElementQueryNode& same_element, uint32_t doc_lid, MatchingElements& matching_elements)
 {
     _elements.clear();
     same_element.get_element_ids(_elements);
@@ -203,7 +203,7 @@ Matcher::find_matching_elements(const StorageDocument& doc, uint32_t doc_lid, Ma
     for (vsm::FieldSearcherContainer& fSearch : _field_searcher_map) {
         fSearch->search(doc);
     }
-    for (const auto* same_element : _same_element_nodes) {
+    for (auto* same_element : _same_element_nodes) {
         find_matching_elements(*same_element, doc_lid, matching_elements);
     }
     for (const auto& term : _sub_field_terms) {

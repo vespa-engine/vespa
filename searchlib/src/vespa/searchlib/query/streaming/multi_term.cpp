@@ -43,7 +43,7 @@ MultiTerm::reset()
 }
 
 bool
-MultiTerm::evaluate() const
+MultiTerm::evaluate()
 {
     for (const auto& term : _terms) {
         if (term->evaluate()) return true;

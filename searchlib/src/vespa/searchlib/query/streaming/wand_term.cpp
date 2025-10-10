@@ -18,7 +18,7 @@ WandTerm::WandTerm(std::unique_ptr<QueryNodeResultBase> result_base, string inde
 WandTerm::~WandTerm() = default;
 
 bool
-WandTerm::evaluate() const
+WandTerm::evaluate()
 {
     if (_score_threshold <= 0.0) {
         return DotProductTerm::evaluate();

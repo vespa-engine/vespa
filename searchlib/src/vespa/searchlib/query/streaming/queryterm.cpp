@@ -106,12 +106,12 @@ QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, string_view termS
 
 void QueryTerm::getLeaves(QueryTermList & tl)                { tl.push_back(this); }
 void QueryTerm::getLeaves(ConstQueryTermList & tl)     const { tl.push_back(this); }
-bool QueryTerm::evaluate()                             const { return !_hitList.empty(); }
+bool QueryTerm::evaluate()                                   { return !_hitList.empty(); }
 void QueryTerm::reset()                                      { _hitList.clear(); }
-const HitList & QueryTerm::evaluateHits(HitList &) const { return _hitList; }
+const HitList & QueryTerm::evaluateHits(HitList &)           { return _hitList; }
 
 void
-QueryTerm::get_element_ids(std::vector<uint32_t>& element_ids) const
+QueryTerm::get_element_ids(std::vector<uint32_t>& element_ids)
 {
     get_element_ids_helper(element_ids, _hitList);
 }

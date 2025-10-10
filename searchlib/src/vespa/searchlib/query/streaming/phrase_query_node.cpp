@@ -13,7 +13,7 @@ PhraseQueryNode::PhraseQueryNode(std::unique_ptr<QueryNodeResultBase> result_bas
 PhraseQueryNode::~PhraseQueryNode() = default;
 
 bool
-PhraseQueryNode::evaluate() const
+PhraseQueryNode::evaluate()
 {
   HitList hl;
   return ! evaluateHits(hl).empty();
@@ -26,7 +26,7 @@ PhraseQueryNode::width() const
 }
 
 const HitList &
-PhraseQueryNode::evaluateHits(HitList & hl) const
+PhraseQueryNode::evaluateHits(HitList & hl)
 {
     hl.clear();
     auto& terms = get_terms();
@@ -66,7 +66,7 @@ PhraseQueryNode::evaluateHits(HitList & hl) const
 }
 
 void
-PhraseQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
+PhraseQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
 {
     HitList list;
     const HitList& hit_list = evaluateHits(list);
