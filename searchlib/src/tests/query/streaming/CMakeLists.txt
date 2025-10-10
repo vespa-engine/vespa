@@ -54,3 +54,12 @@ vespa_add_executable(searchlib_query_streaming_phrase_query_node_test_app TEST
     GTest::gtest
 )
 vespa_add_test(NAME searchlib_query_streaming_phrase_query_node_test_app COMMAND searchlib_query_streaming_phrase_query_node_test_app)
+
+vespa_add_executable(searchlib_query_streaming_query_builder_test_app TEST
+    SOURCES
+    query_builder_test.cpp
+    DEPENDS
+    vespa_searchlib
+    GTest::gtest
+)
+vespa_add_test(NAME searchlib_query_streaming_query_builder_test_app COMMAND searchlib_query_streaming_query_builder_test_app)

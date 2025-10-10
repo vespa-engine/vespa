@@ -312,9 +312,7 @@ RankProcessor::unpackMatchData(uint32_t docId)
 void
 RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrapper& query, const search::fef::IIndexEnvironment& index_env)
 {
-    for (auto& term : query.getTermList()) {
-        term->unpack_match_data(docid, matchData, index_env);
-    }
+    query.get_query().getRoot().unpack_match_data(docid, matchData, index_env);
 }
 
 } // namespace streaming

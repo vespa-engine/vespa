@@ -321,8 +321,8 @@ message ItemNearestNeighbor {
 }
 message ItemGeoLocationTerm {
     TermItemProperties properties = 1;
-    bool hasGeoCircle = 2;
-    bool hasBoundingBox = 3;
+    bool has_geo_circle = 2;
+    bool has_bounding_box = 3;
     double latitude = 4;
     double longitude = 5;
     double radius = 6;

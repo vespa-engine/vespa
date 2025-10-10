@@ -55,7 +55,7 @@ EquivQueryNode::EquivQueryNode(std::unique_ptr<QueryNodeResultBase> result_base,
 EquivQueryNode::~EquivQueryNode() = default;
 
 bool
-EquivQueryNode::evaluate() const
+EquivQueryNode::evaluate()
 {
     for (auto& subterm : get_terms()) {
         if (subterm->evaluate()) {
@@ -66,7 +66,7 @@ EquivQueryNode::evaluate() const
 }
 
 const HitList &
-EquivQueryNode::evaluateHits(HitList & hl) const
+EquivQueryNode::evaluateHits(HitList & hl)
 {
     hl.clear();
     merge_hits_from_children(hl, *this);
@@ -74,7 +74,7 @@ EquivQueryNode::evaluateHits(HitList & hl) const
 }
 
 void
-EquivQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
+EquivQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
 {
     HitList hit_list;
     merge_hits_from_children(hit_list, *this);

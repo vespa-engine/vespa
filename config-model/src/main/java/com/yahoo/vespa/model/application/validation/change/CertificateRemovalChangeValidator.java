@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 /**
  * Check that data plane certificates are not removed from a cluster.
  *
- * @author mortent
+ * @author Morten Tokle
  */
 public class CertificateRemovalChangeValidator implements ChangeValidator {
 

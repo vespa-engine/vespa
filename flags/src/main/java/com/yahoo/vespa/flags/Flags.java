@@ -63,6 +63,13 @@ public class Flags {
             "Takes effect on next host being provisioned",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
+    public static final UnboundBooleanFlag MULTI_IP = defineFeatureFlag(
+            "multi-ip", false,
+            List.of("hakonhall"), "2025-10-10", "2025-11-10",
+            "Whether to allow storing >1 IP address for any given IP version",
+            "Takes effect on next host being provisioned",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
     public static final UnboundBooleanFlag LOCKED_GCP_PROVISION = defineFeatureFlag(
             "locked-gcp-provision", true,
             List.of("hakonhall"), "2025-08-05", "2025-11-05",

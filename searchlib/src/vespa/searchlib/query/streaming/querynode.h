@@ -4,6 +4,13 @@
 #include "hit.h"
 #include <memory>
 
+namespace search::fef {
+
+class IIndexEnvironment;
+class MatchData;
+
+}
+
 namespace search::streaming {
 
 class QueryTerm;
@@ -27,12 +34,13 @@ class QueryNode
 public:
   virtual ~QueryNode() = default;
   /// This evalutes if the subtree starting here evaluates to true.
-  virtual bool evaluate() const = 0;
+  virtual bool evaluate() = 0;
   /// This return the hitList for this subtree. Does only give meaning in a
   /// phrase search or any other search that requires position info.
-  virtual const HitList & evaluateHits(HitList & hl) const;
+  virtual const HitList & evaluateHits(HitList & hl);
   // Populate element_ids with the element ids matching the query for this subtree.
-  virtual void get_element_ids(std::vector<uint32_t>& element_ids) const = 0;
+  virtual void get_element_ids(std::vector<uint32_t>& element_ids) = 0;
+  virtual void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env) = 0;
   /// Clears all the hitlists so the query tree can be reused.
   virtual void reset() = 0;
   /// Gives you all leafs of this tree.

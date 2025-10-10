@@ -14,6 +14,7 @@
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/searchlib/queryeval/idiversifier.h>
 #include <vespa/vespalib/util/doom.h>
@@ -152,7 +153,7 @@ public:
                       ISearchContext &searchContext,
                       IAttributeContext &attributeContext,
                       search::engine::Trace & root_trace,
-                      std::string_view queryStack,
+                      const search::SerializedQueryTree & queryTree,
                       const std::string &location,
                       const ViewResolver &viewResolver,
                       const search::IDocumentMetaStore &metaStore,

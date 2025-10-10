@@ -14,7 +14,8 @@ import static com.yahoo.vespa.model.container.http.Client.Permission.READ;
 import static com.yahoo.vespa.model.container.http.Client.Permission.WRITE;
 
 /**
- * Represents a client. The client is identified by one of the provided certificates and have a set of permissions.
+ * Represents a client. The client is identified by one of the provided certificates or a token
+ * and have a set of permissions.
  *
  * @author mortent
  * @author bjorncs

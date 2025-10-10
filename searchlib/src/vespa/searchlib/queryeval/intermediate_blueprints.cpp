@@ -573,7 +573,10 @@ NearBlueprint::calculate_flow_stats(uint32_t) const {
 Blueprint::HitEstimate
 NearBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
-    return min(data);
+    // Only consider positive terms for hit estimate
+    size_t positive_count = data.size() - std::min(size_t(_num_negative_terms), data.size());
+    std::vector<HitEstimate> positive_data(data.begin(), data.begin() + positive_count);
+    return min(positive_data);
 }
 
 FieldSpecBaseList
@@ -585,11 +588,10 @@ NearBlueprint::exposeFields() const
 void
 NearBlueprint::sort(Children &children, InFlow in_flow) const
 {
-    if (opt_sort_by_cost()) {
-        AndFlow::sort(children, in_flow.strict());
-    } else {
-        std::sort(children.begin(), children.end(), TieredLessEstimate());
-    }
+    (void) in_flow;
+    // Only sort positive terms; negative terms must stay at the end
+    size_t positive_count = children.size() - std::min(size_t(_num_negative_terms), children.size());
+    std::sort(children.begin(), children.begin() + positive_count, TieredLessEstimate());
 }
 
 SearchIterator::UP
@@ -603,13 +605,17 @@ NearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
             tfmda.add(cs.field(j).resolve(md));
         }
     }
-    return std::make_unique<NearSearch>(std::move(sub_searches), tfmda, _window, _element_gap_inspector, strict());
+    return std::make_unique<NearSearch>(std::move(sub_searches), tfmda, _window, _num_negative_terms, _negative_term_brick_size, _element_gap_inspector, strict());
 }
 
 SearchIterator::UP
 NearBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    return create_atmost_and_filter(get_children(), strict(), constraint);
+    size_t positive_count = get_children().size() - std::min(size_t(_num_negative_terms), get_children().size());
+    if (positive_count > 0) {
+        return create_atmost_and_filter(std::span(get_children().data(), positive_count), strict(), constraint);
+    }
+    return std::make_unique<EmptySearch>();
 }
 
 //-----------------------------------------------------------------------------
@@ -633,7 +639,10 @@ ONearBlueprint::calculate_flow_stats(uint32_t) const {
 Blueprint::HitEstimate
 ONearBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
-    return min(data);
+    // Only consider positive terms for hit estimate
+    size_t positive_count = data.size() - std::min(size_t(_num_negative_terms), data.size());
+    std::vector<HitEstimate> positive_data(data.begin(), data.begin() + positive_count);
+    return min(positive_data);
 }
 
 FieldSpecBaseList
@@ -661,13 +670,17 @@ ONearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
     }
     // could sort sub_searches here
     // but then strictness inheritance would also need to be fixed
-    return std::make_unique<ONearSearch>(std::move(sub_searches), tfmda, _window, _element_gap_inspector, strict());
+    return std::make_unique<ONearSearch>(std::move(sub_searches), tfmda, _window, _num_negative_terms, _negative_term_brick_size, _element_gap_inspector, strict());
 }
 
 SearchIterator::UP
 ONearBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    return create_atmost_and_filter(get_children(), strict(), constraint);
+    size_t positive_count = get_children().size() - std::min(size_t(_num_negative_terms), get_children().size());
+    if (positive_count > 0) {
+        return create_atmost_and_filter(std::span(get_children().data(), positive_count), strict(), constraint);
+    }
+    return std::make_unique<EmptySearch>();
 }
 
 //-----------------------------------------------------------------------------

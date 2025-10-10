@@ -29,7 +29,7 @@ SearchSession::OwnershipBundle::OwnershipBundle(MatchContext && match_context,
       context(std::move(match_context)),
       feature_overrides(),
       readGuard(),
-      stackDump()
+      queryTree()
 {}
 
 SearchSession::OwnershipBundle::OwnershipBundle() noexcept = default;

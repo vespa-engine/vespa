@@ -4,6 +4,8 @@
 #include "queryterm.h"
 #include <vespa/searchlib/parsequery/parse.h>
 
+namespace search { class SerializedQueryTree; }
+
 namespace search::streaming {
 
 /**
@@ -15,7 +17,8 @@ class QueryConnector : public QueryNode
 public:
     explicit QueryConnector(const char * opName) noexcept;
     ~QueryConnector() override;
-    const HitList & evaluateHits(HitList & hl) const override;
+    const HitList & evaluateHits(HitList & hl) override;
+    void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env) override;
     void reset() override;
     void getLeaves(QueryTermList & tl) override;
     void getLeaves(ConstQueryTermList & tl) const override;
@@ -44,8 +47,8 @@ class TrueNode : public QueryConnector
 public:
     TrueNode() noexcept : QueryConnector("AND") { }
     ~TrueNode() override;
-    bool evaluate() const override;
-    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
+    bool evaluate() override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) override;
 };
 
 /** False operator. Matches nothing. */
@@ -54,8 +57,8 @@ class FalseNode : public QueryConnector
 public:
     FalseNode() noexcept : QueryConnector("AND") { }
     ~FalseNode() override;
-    bool evaluate() const override;
-    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
+    bool evaluate() override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) override;
 };
 
 /**
@@ -67,9 +70,9 @@ public:
     AndQueryNode() noexcept : QueryConnector("AND") { }
     explicit AndQueryNode(const char * opName) noexcept : QueryConnector(opName) { }
     ~AndQueryNode() override;
-    bool evaluate() const override;
+    bool evaluate() override;
     bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_AND; }
-    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) override;
 };
 
 /**
@@ -80,9 +83,9 @@ class AndNotQueryNode : public QueryConnector
 public:
     AndNotQueryNode() noexcept : QueryConnector("ANDNOT") { }
     ~AndNotQueryNode() override;
-    bool evaluate() const override;
+    bool evaluate() override;
     bool isFlattenable(ParseItem::ItemType) const override { return false; }
-    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) override;
 };
 
 /**
@@ -94,12 +97,12 @@ public:
     OrQueryNode() noexcept : QueryConnector("OR") { }
     explicit OrQueryNode(const char * opName) noexcept : QueryConnector(opName) { }
     ~OrQueryNode() override;
-    bool evaluate() const override;
+    bool evaluate() override;
     bool isFlattenable(ParseItem::ItemType type) const override {
         return (type == ParseItem::ITEM_OR) ||
                (type == ParseItem::ITEM_WEAK_AND);
     }
-    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) override;
 };
 
 /**
@@ -111,8 +114,8 @@ public:
     RankWithQueryNode() noexcept : QueryConnector("RANK") { }
     explicit RankWithQueryNode(const char * opName) noexcept : QueryConnector(opName) { }
     ~RankWithQueryNode() override;
-    bool evaluate() const override;
-    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
+    bool evaluate() override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) override;
 };
 
 /**
@@ -127,14 +130,14 @@ class Query
 {
 public:
     Query();
-    Query(const QueryNodeResultFactory & factory, std::string_view queryRep);
+    Query(const QueryNodeResultFactory & factory, const SerializedQueryTree& queryTree);
     Query(const Query&) = delete;
     Query(Query&&) noexcept;
     ~Query();
     Query& operator=(const Query&) = delete;
     Query& operator=(Query&&) noexcept;
     /// Will build the query tree
-    bool build(const QueryNodeResultFactory & factory, std::string_view queryRep);
+    bool build(const QueryNodeResultFactory & factory, const SerializedQueryTree& queryTree);
     /// Will clear the results from the querytree.
     void reset();
     /// Will get all leafnodes.

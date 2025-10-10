@@ -304,7 +304,7 @@ public class SDField extends Field implements ImmutableSDField {
                 return;
             }
             if (dataType instanceof CollectionDataType) {
-                dataType = ((CollectionDataType)dataType).getNestedType();
+                dataType = dataType.getNestedType();
             }
             if ((dataType instanceof MapDataType) || (dataType instanceof CollectionDataType)) {
                 // "array of map" or "array of array" will not have any struct fields
@@ -601,7 +601,7 @@ public class SDField extends Field implements ImmutableSDField {
     }
 
     /**
-     * Sets the default rank type of this fields indices, and sets this rank type
+     * Sets the default rank type of these fields indices, and sets this rank type
      * to all indices explicitly defined here which has no index set.
      * (This complex behavior is dues to the fact than we would prefer to have rank types
      * per field, not per index)

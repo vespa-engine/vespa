@@ -51,7 +51,6 @@ public enum Unit {
     TENANT(BaseUnit.TENANT, "Tenant that owns zero or more applications in a managed Vespa system"),
     THREAD(BaseUnit.THREAD, "Computer thread for executing e.g. tasks, operations or queries"),
     VCPU(BaseUnit.VCPU,"Virtual CPU"),
-
     VERSION(BaseUnit.VERSION, "Software or config version"),
     WAKEUP(BaseUnit.WAKEUP, "Computer thread wake-ups for doing some work");
 

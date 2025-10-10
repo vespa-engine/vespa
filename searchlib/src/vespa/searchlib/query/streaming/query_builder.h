@@ -18,6 +18,7 @@ class QueryNodeResultFactory;
  * Class used to build a query from a query stack.
  */
 class QueryBuilder {
+    class HiddenTermsGuard;
     std::unique_ptr<QueryNode> build_nearest_neighbor_query_node(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep);
     void populate_multi_term(Normalizing string_normalize_mode, MultiTerm& mt, QueryStackIterator& queryRep);
     std::unique_ptr<QueryNode> build_dot_product_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep);
@@ -26,10 +27,14 @@ class QueryBuilder {
     std::unique_ptr<QueryNode> build_phrase_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep);
     std::unique_ptr<QueryNode> build_equiv_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep, bool allow_rewrite);
     std::unique_ptr<QueryNode> build_same_element_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep);
+    std::unique_ptr<QueryNode> build_and_not(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep);
     static void skip_unknown(QueryStackIterator& queryRep);
 
     std::optional<std::string> _same_element_view;
+    uint32_t _hidden_terms;
+
     void adjust_index(std::string& index);
+    bool hidden_terms() const noexcept { return _hidden_terms != 0u; }
 public:
     QueryBuilder();
     ~QueryBuilder();

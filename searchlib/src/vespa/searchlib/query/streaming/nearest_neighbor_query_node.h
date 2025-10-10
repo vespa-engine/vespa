@@ -41,7 +41,7 @@ public:
     NearestNeighborQueryNode(NearestNeighborQueryNode &&) = delete;
     NearestNeighborQueryNode & operator = (NearestNeighborQueryNode &&) = delete;
     ~NearestNeighborQueryNode() override;
-    bool evaluate() const override;
+    bool evaluate() override;
     void reset() override;
     NearestNeighborQueryNode* as_nearest_neighbor_query_node() noexcept override;
     const std::string& get_query_tensor_name() const { return getTermString(); }

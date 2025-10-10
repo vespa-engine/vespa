@@ -9,13 +9,8 @@
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <string>
 
-namespace search::fef {
+namespace search::fef { class ITermData; }
 
-class IIndexEnvironment;
-class ITermData;
-class MatchData;
-
-}
 namespace search::streaming {
 
 class EquivQueryNode;
@@ -73,12 +68,12 @@ public:
     QueryTerm(QueryTerm &&) = delete;
     QueryTerm & operator = (QueryTerm &&) = delete;
     ~QueryTerm() override;
-    bool evaluate() const override;
-    const HitList & evaluateHits(HitList & hl) const override;
+    bool evaluate() override;
+    const HitList & evaluateHits(HitList & hl) override;
     void reset() override;
     void getLeaves(QueryTermList & tl) override;
     void getLeaves(ConstQueryTermList & tl) const override;
-    void get_element_ids(std::vector<uint32_t>& element_ids) const override;
+    void get_element_ids(std::vector<uint32_t>& element_ids) override;
 
     uint32_t            add(uint32_t field_id, uint32_t element_id, int32_t element_weight, uint32_t position);
     void                set_element_length(uint32_t hitlist_idx, uint32_t element_length);
@@ -115,7 +110,7 @@ public:
     virtual bool is_same_element_query_node() const noexcept;
     virtual SameElementQueryNode* as_same_element_query_node() noexcept;
     virtual const SameElementQueryNode* as_same_element_query_node() const noexcept;
-    void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env);
+    void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env) override;
     virtual void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env);
 protected:
     template <typename HitListType>

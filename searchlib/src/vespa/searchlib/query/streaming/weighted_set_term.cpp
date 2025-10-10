@@ -18,7 +18,7 @@ WeightedSetTerm::WeightedSetTerm(std::unique_ptr<QueryNodeResultBase> result_bas
 WeightedSetTerm::~WeightedSetTerm() = default;
 
 void
-WeightedSetTerm::get_element_ids(std::vector<uint32_t>&) const
+WeightedSetTerm::get_element_ids(std::vector<uint32_t>&)
 {
 }
 

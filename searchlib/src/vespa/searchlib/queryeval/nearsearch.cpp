@@ -26,14 +26,15 @@ using search::fef::TermFieldMatchDataPositionKey;
 
 template<typename T>
 void setup_fields(uint32_t window, const IElementGapInspector& element_gap_inspector,
-                  std::vector<T> &matchers, const TermFieldMatchDataArray &in, uint32_t terms) {
+                  std::vector<T> &matchers, const TermFieldMatchDataArray &in, uint32_t terms,
+                  uint32_t num_negative_terms, uint32_t negative_term_brick_size) {
     std::map<uint32_t,uint32_t> fields;
     for (size_t i = 0; i < in.size(); ++i) {
         ++fields[in[i]->getFieldId()];
     }
     for (auto [field, cnt]: fields) {
         if (cnt == terms) {
-            matchers.push_back(T(window, element_gap_inspector.get_element_gap(field), field, in));
+            matchers.push_back(T(window, element_gap_inspector.get_element_gap(field), field, in, num_negative_terms, negative_term_brick_size));
         }
     }
 }
@@ -53,12 +54,18 @@ calc_window_end_pos(const TermFieldMatchDataPosition& pos, uint32_t window, Elem
 NearSearchBase::NearSearchBase(Children terms,
                                const TermFieldMatchDataArray &data,
                                uint32_t window,
+                               uint32_t num_negative_terms,
+                               uint32_t negative_term_brick_size,
                                bool strict)
     : MultiSearch(std::move(terms)),
       _data_size(data.size()),
       _window(window),
+      _num_negative_terms(num_negative_terms),
+      _negative_term_brick_size(negative_term_brick_size),
       _strict(strict)
 {
+    // we need at least one positive term
+    assert(getChildren().size() > _num_negative_terms);
 }
 
 void
@@ -67,6 +74,8 @@ NearSearchBase::visitMembers(vespalib::ObjectVisitor &visitor) const
     MultiSearch::visitMembers(visitor);
     visit(visitor, "data_size", _data_size);
     visit(visitor, "window", _window);
+    visit(visitor, "num_negative_terms", _num_negative_terms);
+    visit(visitor, "negative_term_brick_size", _negative_term_brick_size);
     visit(visitor, "strict", _strict);
 }
 
@@ -74,13 +83,14 @@ void
 NearSearchBase::seekNext(uint32_t docId)
 {
     LOG(debug, "seekNext(%d)", docId);
+    size_t num_positive_terms = getChildren().size() - _num_negative_terms;
     const Children & terms(getChildren());
     SearchIterator &firstTerm = *terms[0];
     uint32_t nextId = firstTerm.getDocId();
     while ( ! isAtEnd(nextId)) {
         LOG(debug, "Looking for match in document %d.", nextId);
         bool foundHit = true;
-        for (uint32_t i = 1, len = terms.size(); i < len; ++i) {
+        for (uint32_t i = 1; i < num_positive_terms; ++i) {
             SearchIterator &term = *terms[i];
             if (!term.seek(nextId)) {
                 LOG(debug, "Term %d does not occur in document %d.", i, nextId);
@@ -123,11 +133,12 @@ void
 NearSearchBase::doSeek(uint32_t docId)
 {
     LOG(debug, "doSeek(%d)", docId);
+    size_t num_positive_terms = getChildren().size() - _num_negative_terms;
     const Children & terms(getChildren());
     bool foundHit = true;
-    for (uint32_t i = 0, len = terms.size(); i < len; ++i) {
+    for (uint32_t i = 0; i < num_positive_terms; ++i) {
         if (! terms[i]->seek(docId)) {
-            LOG(debug, "Term %d does not occur in document %d.", i, docId);
+            LOG(debug, "term %d does not occur in document %d.", i, docId);
             foundHit = false;
             break;
         }
@@ -146,10 +157,21 @@ NearSearch::NearSearch(Children terms,
                        uint32_t window,
                        const IElementGapInspector& element_gap_inspector,
                        bool strict)
-    : NearSearchBase(std::move(terms), data, window, strict),
+    : NearSearch(std::move(terms), data, window, 0, 0, element_gap_inspector, strict)
+{
+}
+
+NearSearch::NearSearch(Children terms,
+                       const TermFieldMatchDataArray &data,
+                       uint32_t window,
+                       uint32_t num_negative_terms,
+                       uint32_t negative_term_brick_size,
+                       const IElementGapInspector& element_gap_inspector,
+                       bool strict)
+    : NearSearchBase(std::move(terms), data, window, num_negative_terms, negative_term_brick_size, strict),
       _matchers()
 {
-    setup_fields(window, element_gap_inspector, _matchers, data, getChildren().size());
+    setup_fields(window, element_gap_inspector, _matchers, data, getChildren().size(), num_negative_terms, negative_term_brick_size);
 }
 
 NearSearch::~NearSearch() = default;
@@ -168,10 +190,62 @@ struct PosIter {
     }
 };
 
+// Helper class to efficiently check if negative terms break windows
+// Uses a priority queue to iterate through negative term positions in sorted order
+class NegativeTermChecker {
+private:
+    vespalib::PriorityQueue<PosIter> _queue;
+    uint32_t _negative_term_brick_size;
+    ElementGap _element_gap;
+
+public:
+    NegativeTermChecker(uint32_t negative_term_brick_size, ElementGap element_gap)
+        : _queue(), _negative_term_brick_size(negative_term_brick_size), _element_gap(element_gap)
+    {}
+
+    bool setup(const TermFieldMatchDataArray &input, size_t num_positive_terms, uint32_t docid) {
+        for (size_t i = num_positive_terms; i < input.size(); ++i) {
+            const search::fef::TermFieldMatchData *term = input[i];
+            if (term->getDocId() == docid && term->begin() != term->end()) {
+                _queue.push({term->begin(), term->end()});
+            }
+        }
+        return !_queue.empty();
+    }
+
+    // Check if the window [window_start, window_end] is ok (not broken by negative terms)
+    bool check_window(const TermFieldMatchDataPosition& window_start,
+                      const TermFieldMatchDataPosition& window_end)
+    {
+        while (!_queue.empty()) {
+            auto& front = _queue.front();
+            const auto& pos = *front.curPos;
+            auto last_unsafe_after_neg = calc_window_end_pos(pos, _negative_term_brick_size, _element_gap);
+            if (last_unsafe_after_neg < window_start) {
+                ++front.curPos;
+                if (front.curPos == front.endPos) {
+                    _queue.pop_front();
+                } else {
+                    _queue.adjust();
+                }
+                continue;
+            }
+            auto last_unsafe_after_window = calc_window_end_pos(window_end, _negative_term_brick_size, _element_gap);
+            return (last_unsafe_after_window < pos);
+        }
+        return true;
+    }
+
+    // no-op window filter for when there are no negative terms
+    struct None {
+        static constexpr bool check_window(const TermFieldMatchDataPosition&, const TermFieldMatchDataPosition&) noexcept { return true; }
+    };
+};
+
 struct Iterators
 {
     vespalib::PriorityQueue<PosIter> _queue;
-    TermFieldMatchDataPositionKey    _maxOcc;
+    TermFieldMatchDataPosition       _maxOcc;
     ElementGap                       _element_gap;
 
     Iterators(ElementGap element_gap)
@@ -180,7 +254,7 @@ struct Iterators
           _element_gap(element_gap)
     {
     }
-    void update(TermFieldMatchDataPositionKey occ)
+    void update(const TermFieldMatchDataPosition& occ)
     {
         if (_queue.size() == 1 || _maxOcc < occ) { _maxOcc = occ; }
     }
@@ -195,16 +269,18 @@ struct Iterators
         update(*iter.curPos);
     }
 
-    template <typename MatchResult>
-    void match(uint32_t window, MatchResult& match_result) {
+    template <typename MatchResult, typename Filter>
+    void match(uint32_t window, MatchResult& match_result, Filter&& filter) {
         for (;;) {
             PosIter &front = _queue.front();
             auto lastAllowed = calc_window_end_pos(*front.curPos, window, _element_gap);
 
             if (!(lastAllowed < _maxOcc)) {
-                match_result.register_match(front.curPos->getElementId());
-                if constexpr (MatchResult::shortcut_return) {
-                    return;
+                if (filter.check_window(*front.curPos, _maxOcc)) {
+                    match_result.register_match(front.curPos->getElementId());
+                    if constexpr (MatchResult::shortcut_return) {
+                        return;
+                    }
                 }
             }
             do {
@@ -228,7 +304,8 @@ void
 NearSearch::Matcher::match(uint32_t docId, MatchResult& match_result)
 {
     Iterators pos(get_element_gap());
-    for (uint32_t i = 0, len = inputs().size(); i < len; ++i) {
+    uint32_t num_positive_terms = inputs().size() - num_negative_terms();
+    for (uint32_t i = 0; i < num_positive_terms; ++i) {
         const search::fef::TermFieldMatchData *term = inputs()[i];
         if (term->getDocId() != docId || term->begin() == term->end()) {
             LOG(debug, "No occurrences found for term %d.", i);
@@ -237,9 +314,14 @@ NearSearch::Matcher::match(uint32_t docId, MatchResult& match_result)
         LOG(debug, "Got positions iterator for term %d.", i);
         pos.add(term);
     }
-
-    // Look for matching window.
-    pos.match(window(), match_result);
+    if (num_negative_terms() > 0) {
+        NegativeTermChecker filter(negative_term_brick_size(), get_element_gap());
+        if (filter.setup(inputs(), num_positive_terms, docId)) {
+            pos.match(window(), match_result, filter);
+            return;
+        }
+    }
+    pos.match(window(), match_result, NegativeTermChecker::None());
 }
 
 bool
@@ -274,19 +356,30 @@ ONearSearch::ONearSearch(Children terms,
                          uint32_t window,
                          const IElementGapInspector& element_gap_inspector,
                          bool strict)
-    : NearSearchBase(std::move(terms), data, window, strict),
+    : ONearSearch(std::move(terms), data, window, 0, 0, element_gap_inspector, strict)
+{
+}
+
+ONearSearch::ONearSearch(Children terms,
+                         const TermFieldMatchDataArray &data,
+                         uint32_t window,
+                         uint32_t num_negative_terms,
+                         uint32_t negative_term_brick_size,
+                         const IElementGapInspector& element_gap_inspector,
+                         bool strict)
+    : NearSearchBase(std::move(terms), data, window, num_negative_terms, negative_term_brick_size, strict),
       _matchers()
 {
-    setup_fields(window, element_gap_inspector, _matchers, data, getChildren().size());
+    setup_fields(window, element_gap_inspector, _matchers, data, getChildren().size(), num_negative_terms, negative_term_brick_size);
 }
 
 ONearSearch::~ONearSearch() = default;
 
-template <typename MatchResult>
+template <typename MatchResult, typename Filter>
 void
-ONearSearch::Matcher::match(uint32_t docId, MatchResult& match_result)
+ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result, Filter&& filter)
 {
-    uint32_t numTerms = inputs().size();
+    uint32_t numTerms = inputs().size() - num_negative_terms();
     PositionsIteratorList pos;
     for (uint32_t i = 0; i < numTerms; ++i) {
         const search::fef::TermFieldMatchData *term = inputs()[i];
@@ -299,9 +392,11 @@ ONearSearch::Matcher::match(uint32_t docId, MatchResult& match_result)
     }
     if (numTerms < 2) {
         for ( ; pos[0] != inputs()[0]->end(); ++pos[0]) {
-            match_result.register_match(pos[0]->getElementId());
-            if constexpr (MatchResult::shortcut_return) {
-                return;
+            if (filter.check_window(*pos[0], *pos[0])) {
+                match_result.register_match(pos[0]->getElementId());
+                if constexpr (MatchResult::shortcut_return) {
+                    return;
+                }
             }
         }
         return; // 1 term is always near itself
@@ -340,11 +435,13 @@ ONearSearch::Matcher::match(uint32_t docId, MatchResult& match_result)
             }
             LOG(spam, "Current position for term %d is %d.", i, curTermPos.getPosition());
             if (i + 1 == numTerms) {
-                LOG(debug, "ONEAR match found for document %d.", docId);
-                // OK for all terms
-                match_result.register_match(firstTermPos.getElementId());
-                if constexpr (MatchResult::shortcut_return) {
-                    return;
+                if (filter.check_window(*pos[0], *pos[i])) {
+                    LOG(debug, "ONEAR match found for document %d.", docId);
+                    // OK for all terms
+                    match_result.register_match(firstTermPos.getElementId());
+                    if constexpr (MatchResult::shortcut_return) {
+                        return;
+                    }
                 }
                 break;
             }
@@ -354,6 +451,21 @@ ONearSearch::Matcher::match(uint32_t docId, MatchResult& match_result)
     if constexpr (MatchResult::shortcut_return) {
         LOG(debug, "No ONEAR match found for document %d.", docId);
     }
+}
+
+template <typename MatchResult>
+void
+ONearSearch::Matcher::match(uint32_t docId, MatchResult& match_result)
+{
+    size_t num_positive_terms = inputs().size() - num_negative_terms();
+    if (num_negative_terms() > 0) {
+        NegativeTermChecker filter(negative_term_brick_size(), get_element_gap());
+        if (filter.setup(inputs(), num_positive_terms, docId)) {
+            match_impl(docId, match_result, filter);
+            return;
+        }
+    }
+    match_impl(docId, match_result, NegativeTermChecker::None());
 }
 
 bool

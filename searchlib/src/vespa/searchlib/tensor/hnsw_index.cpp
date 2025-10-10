@@ -794,10 +794,10 @@ HnswIndex<type>::mutual_reconnect(const LinkArrayRef &cluster, uint32_t level)
     std::sort(pairs.begin(), pairs.end());
     for (const PairDist & pair : pairs) {
         LinkArrayRef old_links_1 = _graph.get_link_array(pair.id_first, level);
-        if (old_links_1.size() >= _cfg.max_links_on_inserts()) continue;
+        if (old_links_1.size() >= max_links_for_level(level)) continue;
 
         LinkArrayRef old_links_2 = _graph.get_link_array(pair.id_second, level);
-        if (old_links_2.size() >= _cfg.max_links_on_inserts()) continue;
+        if (old_links_2.size() >= max_links_for_level(level)) continue;
 
         add_link_to(pair.id_first, level, old_links_1, pair.id_second);
         add_link_to(pair.id_second, level, old_links_2, pair.id_first);

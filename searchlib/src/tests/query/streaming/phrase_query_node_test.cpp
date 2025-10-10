@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/query/streaming/phrase_query_node.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/queryterm.h>
@@ -31,9 +32,9 @@ TEST(PhraseQueryNodeTest, test_phrase_evaluate)
         builder.addStringTerm("c", "", 0, Weight(0));
     }
     Node::UP node = builder.build();
-    std::string stackDump = StackDumpCreator::create(*node);
+    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*node);
     QueryNodeResultFactory empty;
-    Query q(empty, stackDump);
+    Query q(empty, *serializedQueryTree);
     auto& p = dynamic_cast<PhraseQueryNode&>(q.getRoot());
     auto& terms = p.get_terms();
     for (auto& qt : terms) {

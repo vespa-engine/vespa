@@ -18,21 +18,22 @@ SameElementQueryNode::SameElementQueryNode(std::unique_ptr<QueryNodeResultBase> 
 SameElementQueryNode::~SameElementQueryNode() = default;
 
 bool
-SameElementQueryNode::evaluate() const {
+SameElementQueryNode::evaluate()
+{
     std::vector<uint32_t> element_ids;
     get_element_ids(element_ids);
     return !element_ids.empty();
 }
 
 const HitList &
-SameElementQueryNode::evaluateHits(HitList & hl) const
+SameElementQueryNode::evaluateHits(HitList & hl)
 {
     hl.clear();
     return hl;
 }
 
 void
-SameElementQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
+SameElementQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
 {
     if (_children.empty()) {
         return;

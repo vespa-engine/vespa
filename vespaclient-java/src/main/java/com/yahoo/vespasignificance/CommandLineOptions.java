@@ -67,7 +67,7 @@ public class CommandLineOptions {
                 .forEach(e -> header.append(String.format("  %-12s %s%n", e.getKey(), e.getValue())));
         header.append("\nOptions:");
 
-        fmt.printHelp("vespa-significance <command>", header.toString(), createGlobalOptions(), "", true);
+        fmt.printHelp("vespa-significance <command> [options]", header.toString(), createGlobalOptions(), "", false);
     }
 
     /** Options for generate command */
@@ -129,7 +129,7 @@ public class CommandLineOptions {
         fmt.setDescPadding(2);
         fmt.setOptionComparator(Comparator.comparing(Option::getLongOpt));
         String header = "Options:";
-        fmt.printHelp("vespa-significance generate", header, createGenerateOptions(), "", true);
+        fmt.printHelp("vespa-significance generate [options]", header, createGenerateOptions(), "", false);
     }
 
     /** Parse generate command options to ClientParameters */
@@ -214,7 +214,7 @@ public class CommandLineOptions {
         fmt.setDescPadding(2);
         fmt.setOptionComparator(Comparator.comparing(Option::getLongOpt));
         String header = "Options:";
-        fmt.printHelp("vespa-significance export", header, createExportOptions(), "", true);
+        fmt.printHelp("vespa-significance export [options]", header, createExportOptions(), "", false);
     }
 
     /** Parse generate command options to ClientParameters */

@@ -75,7 +75,7 @@ public class IndexInfo extends Derived {
     protected void derive(Schema schema) {
         super.derive(schema); // Derive per field
         this.schema = schema;
-        // Populate fieldsets with actual field objects, bit late to do that here but
+        // Populate fieldsets with actual field objects, a bit late to do that here but
         for (FieldSet fs : fieldSets.values()) {
             for (String fieldName : fs.getFieldNames()) {
                 fs.fields().add(schema.getField(fieldName));

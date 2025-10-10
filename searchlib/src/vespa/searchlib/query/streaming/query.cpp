@@ -4,13 +4,31 @@
 #include "onear_query_node.h"
 #include "query_builder.h"
 #include "same_element_query_node.h"
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
 #include <cassert>
 #include <span>
 
+using search::fef::IIndexEnvironment;
+using search::fef::MatchData;
+
 namespace search::streaming {
+
+namespace {
+
+std::unique_ptr<QueryNode>
+build_query_tree(const QueryNodeResultFactory& factory, const SerializedQueryTree& queryTree)
+{
+    auto stack = queryTree.makeIterator();
+    if (stack->next()) {
+        return QueryBuilder().build(nullptr, factory, *stack, true);
+    }
+    return {};
+}
+
+}  // namespace
 
 void
 QueryConnector::visitMembers(vespalib::ObjectVisitor &visitor) const
@@ -34,12 +52,20 @@ QueryConnector::addChild(std::unique_ptr<QueryNode> child) {
 QueryConnector::~QueryConnector() = default;
 
 const HitList &
-QueryConnector::evaluateHits(HitList & hl) const
+QueryConnector::evaluateHits(HitList & hl)
 {
     if (evaluate()) {
         hl.emplace_back(0, 0, 1, 1);
     }
     return hl;
+}
+
+void
+QueryConnector::unpack_match_data(uint32_t docid, MatchData& match_data, const IIndexEnvironment& index_env)
+{
+    for (const auto & node : _children) {
+        node->unpack_match_data(docid, match_data, index_env);
+    }
 }
 
 void
@@ -108,32 +134,32 @@ QueryConnector::create(ParseItem::ItemType type, const QueryNodeResultFactory& f
 TrueNode::~TrueNode() = default;
 
 bool
-TrueNode::evaluate() const
+TrueNode::evaluate()
 {
     return true;
 }
 
 void
-TrueNode::get_element_ids(std::vector<uint32_t>&) const
+TrueNode::get_element_ids(std::vector<uint32_t>&)
 {
 }
 
 FalseNode::~FalseNode() = default;
 
-bool FalseNode::evaluate() const
+bool FalseNode::evaluate()
 {
     return false;
 }
 
 void
-FalseNode::get_element_ids(std::vector<uint32_t>&) const
+FalseNode::get_element_ids(std::vector<uint32_t>&)
 {
 }
 
 AndQueryNode::~AndQueryNode() = default;
 
 bool
-AndQueryNode::evaluate() const
+AndQueryNode::evaluate()
 {
     for (const auto & qn : getChildren()) {
         if ( ! qn->evaluate() ) return false;
@@ -142,7 +168,7 @@ AndQueryNode::evaluate() const
 }
 
 void
-AndQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
+AndQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
 {
     auto& children = getChildren();
     if (children.empty()) {
@@ -172,7 +198,8 @@ AndQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
 AndNotQueryNode::~AndNotQueryNode() = default;
 
 bool
-AndNotQueryNode::evaluate() const {
+AndNotQueryNode::evaluate()
+{
     if (getChildren().empty()) {
         return false;
     }
@@ -190,14 +217,15 @@ AndNotQueryNode::evaluate() const {
 }
 
 void
-AndNotQueryNode::get_element_ids(std::vector<uint32_t>&) const
+AndNotQueryNode::get_element_ids(std::vector<uint32_t>&)
 {
 }
 
 OrQueryNode::~OrQueryNode() = default;
 
 bool
-OrQueryNode::evaluate() const {
+OrQueryNode::evaluate()
+{
     for (const auto & qn : getChildren()) {
         if (qn->evaluate()) return true;
     }
@@ -205,7 +233,7 @@ OrQueryNode::evaluate() const {
 }
 
 void
-OrQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
+OrQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
 {
     auto& children = getChildren();
     if (children.empty()) {
@@ -229,7 +257,8 @@ OrQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) const
 RankWithQueryNode::~RankWithQueryNode() = default;
 
 bool
-RankWithQueryNode::evaluate() const {
+RankWithQueryNode::evaluate()
+{
     bool first = true;
     bool firstOk = false;
     for (const auto & qn : getChildren()) {
@@ -242,16 +271,16 @@ RankWithQueryNode::evaluate() const {
 }
 
 void
-RankWithQueryNode::get_element_ids(std::vector<uint32_t>&) const
+RankWithQueryNode::get_element_ids(std::vector<uint32_t>&)
 {
 }
 
 Query::Query() = default;
 
-Query::Query(const QueryNodeResultFactory & factory, std::string_view queryRep)
+Query::Query(const QueryNodeResultFactory & factory, const SerializedQueryTree& queryTree)
     : _root()
 {
-    build(factory, queryRep);
+    build(factory, queryTree);
 }
 
 Query::Query(Query&&) noexcept = default;
@@ -266,12 +295,9 @@ Query::evaluate() const {
 }
 
 bool
-Query::build(const QueryNodeResultFactory & factory, std::string_view queryRep)
+Query::build(const QueryNodeResultFactory & factory, const SerializedQueryTree& queryTree)
 {
-    search::SimpleQueryStackDumpIterator stack(queryRep);
-    if (stack.next()) {
-        _root = QueryBuilder().build(nullptr, factory, stack, true);
-    }
+    _root = build_query_tree(factory, queryTree);
     return valid();
 }
 

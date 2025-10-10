@@ -665,7 +665,7 @@ public class SchemaTestCase {
     }
 
     @Test
-    void testDuplicateField() throws Exception {
+    void testDuplicateField() {
         String schema =
                 """
                 schema doc {

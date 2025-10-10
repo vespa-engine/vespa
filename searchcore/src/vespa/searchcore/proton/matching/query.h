@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/geo_location_spec.h>
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
@@ -58,7 +59,7 @@ public:
      *
      * @return success(true)/failure(false)
      **/
-    bool buildTree(std::string_view stack,
+    bool buildTree(const search::SerializedQueryTree &queryTree,
                    const std::string &location,
                    const ViewResolver &resolver,
                    const search::fef::IIndexEnvironment &idxEnv);

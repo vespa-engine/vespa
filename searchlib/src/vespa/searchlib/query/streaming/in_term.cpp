@@ -21,7 +21,7 @@ InTerm::InTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string & 
 InTerm::~InTerm() = default;
 
 void
-InTerm::get_element_ids(std::vector<uint32_t>&) const
+InTerm::get_element_ids(std::vector<uint32_t>&)
 {
 }
 

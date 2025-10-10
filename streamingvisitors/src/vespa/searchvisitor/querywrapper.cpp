@@ -7,9 +7,10 @@ using namespace search::streaming;
 namespace streaming {
 
 QueryWrapper::QueryWrapper(Query & query)
-    : _termList()
+    : _query(query),
+      _termList()
 {
-    query.getLeaves(_termList);
+    _query.getLeaves(_termList);
 }
 
 QueryWrapper::~QueryWrapper() = default;

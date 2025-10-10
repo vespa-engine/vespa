@@ -671,14 +671,12 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
         EXPECT_EQ(0, root["unreachable_nodes"].asLong());
     }
 
-    // removing 1, its neighbors {2,3,4} will try to
-    // link together, but since 2 already has enough links
-    // only 3 and 4 will become neighbors:
+    // removing 1, its neighbors {2,3,4} will link together
     this->remove_document(1);
     this->expect_entry_point(6, 2);
-    this->expect_level_0(2, {5, 6});
-    this->expect_levels(3, {{4, 7}, {6}});
-    this->expect_level_0(4, {3});
+    this->expect_level_0(2, {3, 4, 5, 6});
+    this->expect_levels(3, {{2, 4, 7}, {6}});
+    this->expect_level_0(4, {2, 3});
     this->expect_level_0(5, {2, 6});
     this->expect_levels(6, {{2, 5, 7}, {3}, {}});
     this->expect_level_0(7, {3, 6});
@@ -697,10 +695,10 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
         EXPECT_EQ(0, root["level_histogram"][0].asLong());
         EXPECT_EQ(4, root["level_histogram"][1].asLong());
         EXPECT_EQ(0, root["level_0_links_histogram"][0].asLong());
-        EXPECT_EQ(1, root["level_0_links_histogram"][1].asLong());
-        EXPECT_EQ(4, root["level_0_links_histogram"][2].asLong());
-        EXPECT_EQ(1, root["level_0_links_histogram"][3].asLong());
-        EXPECT_EQ(0, root["level_0_links_histogram"][4].asLong());
+        EXPECT_EQ(0, root["level_0_links_histogram"][1].asLong());
+        EXPECT_EQ(3, root["level_0_links_histogram"][2].asLong());
+        EXPECT_EQ(2, root["level_0_links_histogram"][3].asLong());
+        EXPECT_EQ(1, root["level_0_links_histogram"][4].asLong());
         EXPECT_EQ(0, root["unreachable_nodes"].asLong());
     }
 }

@@ -765,6 +765,7 @@
       "public static final enum com.yahoo.config.application.api.ValidationId pagedSettingRemoval",
       "public static final enum com.yahoo.config.application.api.ValidationId certificateRemoval",
       "public static final enum com.yahoo.config.application.api.ValidationId hnswSettingsChange",
+      "public static final enum com.yahoo.config.application.api.ValidationId dataPlaneTokenEndpointRemoval",
       "public static final enum com.yahoo.config.application.api.ValidationId redundancyIncrease"
     ]
   },

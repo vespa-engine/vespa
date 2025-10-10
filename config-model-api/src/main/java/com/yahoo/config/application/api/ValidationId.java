@@ -16,6 +16,7 @@ public enum ValidationId {
     configModelVersionMismatch("config-model-version-mismatch", "For internal use, allow using config models for a different Vespa version"),
     contentClusterRemoval("content-cluster-removal", "Removal (or id change) of content clusters"),
     contentTypeRemoval("schema-removal", "Removal of a schema causes deletion of all documents"),
+    dataPlaneTokenEndpointRemoval("data-plane-token-removal", "Remove data plane token"),
     deploymentRemoval("deployment-removal", "Removal of production zones from deployment.xml"),
     fieldTypeChange("field-type-change", "Field type changes"),
     globalDocumentChange("global-document-change", "Changing global attribute for document types in content clusters"),

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "query_term_decoder.h"
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -13,7 +14,8 @@ QueryTermDecoder::decodeTerm(QueryPacketT term)
 {
     QueryTermSimple::UP result;
     QueryNodeResultFactory factory;
-    Query query(factory, term);
+    auto queryTree = SerializedQueryTree::fromStackDump(term);
+    Query query(factory, *queryTree);
     if (query.valid() && (dynamic_cast<const QueryTerm *>(&query.getRoot()))) {
         result.reset(static_cast<QueryTerm *>(Query::steal(std::move(query)).release()));
     } else {

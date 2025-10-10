@@ -19,6 +19,7 @@
 #include <vespa/searchlib/attribute/make_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/single_raw_ext_attribute.h>
 #include <vespa/searchlib/common/packets.h>
+#include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/searchlib/tensor/tensor_ext_attribute.h>
@@ -41,6 +42,7 @@ using document::DataType;
 using document::PositionDataType;
 using search::AttributeGuard;
 using search::AttributeVector;
+using search::SerializedQueryTree;
 using search::aggregation::HitsAggregationResult;
 using search::attribute::IAttributeVector;
 using search::attribute::make_sort_blob_writer;
@@ -216,7 +218,7 @@ SearchVisitor::SummaryGenerator::SummaryGenerator(const search::IAttributeManage
       _buf(4_Ki),
       _dump_features(),
       _location(),
-      _stack_dump(),
+      _serialized_query_tree(),
       _highlight_terms(),
       _attr_manager(attr_manager),
       _query_normalization(query_normalization)
@@ -248,8 +250,8 @@ SearchVisitor::SummaryGenerator::get_streaming_docsums_state(std::string_view su
     if (_location.has_value()) {
         ds._args.setLocation(_location.value());
     }
-    if (_stack_dump.has_value()) {
-        ds._args.setStackDump(_stack_dump.value().size(), _stack_dump.value().data());
+    if (_serialized_query_tree) {
+        ds._args.setSerializedQueryTree(_serialized_query_tree);
     }
     ds._args.highlightTerms(_highlight_terms);
     _docsumWriter->initState(_attr_manager, ds, state->get_resolve_class_info());
@@ -522,12 +524,13 @@ SearchVisitor::init(const Parameters & params)
             _fieldSearchSpecMap.buildFromConfig(additionalFields);
 
             QueryTermDataFactory addOnFactory(this, &_element_gap_inspector);
-            _query = Query(addOnFactory, std::string_view(queryBlob.data(), queryBlob.size()));
+            auto serialized_query_tree = SerializedQueryTree::fromStackDump(std::vector<char>(queryBlob.begin(), queryBlob.end()));
+            _query = Query(addOnFactory, *serialized_query_tree);
             _searchBuffer->reserve(0x10000);
 
             int stackCount = 0;
             if (params.get("querystackcount", stackCount)) {
-                _summaryGenerator.set_stack_dump(std::vector<char>(queryBlob.begin(), queryBlob.end()));
+                _summaryGenerator.set_serialized_query_tree(serialized_query_tree);
             } else {
                 Issue::report("Request without query stack count");
             }
