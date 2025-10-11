@@ -174,6 +174,17 @@ public class UserInputTestCase {
     }
 
     @Test
+    void testQuotedSymbol() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql",
+                             "select * from sources * where {targetHits: 500}userInput(@query)");
+        builder.setParameter("query", "˘͈ᵕ˘͈ meaning in english");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where ({targetNumHits: 500}weakAnd((default contains ({origin: {original: \"\\u02D8\\u0348\\u1D55\\u02D8\\u0348 meaning in english\", offset: 1, length: 2}}\"\\u0348\\u1D17\") AND default contains \"\\u0348\"), default contains \"meaning\", default contains \"in\", default contains \"english\"))",
+                     query.yqlRepresentation());
+    }
+
+    @Test
     void testSegmentedNoiseUserInput() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",

@@ -5,10 +5,13 @@ import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.opennlp.OpenNlpLinguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexFactsFactory;
 import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.*;
 import com.yahoo.prelude.querytransform.StemmingSearcher;
 import com.yahoo.search.Query;
@@ -17,6 +20,7 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.searchchain.Execution;
 
 import com.yahoo.search.test.QueryTestCase;
+import com.yahoo.search.yql.MinimalQueryInserter;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -158,6 +162,25 @@ public class StemmingSearcherTestCase {
         assertStemmed("WEAKAND(100) " + emoji1, "/search?query=" + emoji1);
         assertStemmed("WEAKAND(100) (AND " + emoji1 + " " + emoji2 + ")", "/search?query=" + emoji1 + emoji2);
         assertStemmed("WEAKAND(100) (AND " + emoji1 + " foo " + emoji2 + ")", "/search?query=" + emoji1 + "foo" + emoji2);
+    }
+
+    @Test
+    void testQuotedSymbol() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        index.setNormalize(true);
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where {targetHits: 500}userInput(@query)";
+        var input = "˘͈ᵕ˘͈ meaning in english";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode(input));
+        var result = new Execution(new Chain<>(new MinimalQueryInserter(linguistics), new StemmingSearcher(linguistics)),
+                                   Execution.Context.createContextStub(new IndexFacts(indexModel), linguistics)).search(query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        assertEquals("WEAKAND(500) (AND default:ᴗ default:͈) default:meaning default:in default:english", query.getModel().getQueryTree().toString());
     }
 
     @Test

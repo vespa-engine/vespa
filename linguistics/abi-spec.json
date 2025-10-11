@@ -779,7 +779,8 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.language.process.Tokenizer)",
-      "public java.util.List stem(java.lang.String, com.yahoo.language.process.LinguisticsParameters)"
+      "public java.util.List stem(java.lang.String, com.yahoo.language.process.LinguisticsParameters)",
+      "public java.lang.String toString()"
     ],
     "fields" : [ ]
   },
