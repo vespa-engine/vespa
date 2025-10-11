@@ -36,6 +36,7 @@ void walk_children(const T& t, std::vector<TreeItem>& target) {
 }
 
 void walk(const QueryTreeItem &item, std::vector<TreeItem>& target) {
+    target.push_back(TreeItem(&item));
     using IC = QueryTreeItem::ItemCase;
     switch (item.item_case()) {
     case IC::kItemOr:
