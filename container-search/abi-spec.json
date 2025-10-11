@@ -641,7 +641,9 @@
   },
   "com.yahoo.prelude.query.InItem" : {
     "superClass" : "com.yahoo.prelude.query.Item",
-    "interfaces" : [ ],
+    "interfaces" : [
+      "com.yahoo.prelude.query.HasIndexItem"
+    ],
     "attributes" : [
       "public",
       "abstract"
@@ -650,6 +652,7 @@
       "public void <init>(java.lang.String)",
       "public void setIndexName(java.lang.String)",
       "public java.lang.String getIndexName()",
+      "public int getNumWords()",
       "public java.lang.String getName()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
@@ -1004,7 +1007,9 @@
   },
   "com.yahoo.prelude.query.NearestNeighborItem" : {
     "superClass" : "com.yahoo.prelude.query.SimpleTaggableItem",
-    "interfaces" : [ ],
+    "interfaces" : [
+      "com.yahoo.prelude.query.HasIndexItem"
+    ],
     "attributes" : [
       "public"
     ],
@@ -1012,6 +1017,7 @@
       "public void <init>(java.lang.String, java.lang.String)",
       "public int getTargetNumHits()",
       "public java.lang.String getIndexName()",
+      "public int getNumWords()",
       "public double getDistanceThreshold()",
       "public int getHnswExploreAdditionalHits()",
       "public boolean getAllowApproximate()",
@@ -1263,7 +1269,9 @@
   },
   "com.yahoo.prelude.query.PredicateQueryItem" : {
     "superClass" : "com.yahoo.prelude.query.SimpleTaggableItem",
-    "interfaces" : [ ],
+    "interfaces" : [
+      "com.yahoo.prelude.query.HasIndexItem"
+    ],
     "attributes" : [
       "public"
     ],
@@ -1271,6 +1279,7 @@
       "public void <init>()",
       "public void setIndexName(java.lang.String)",
       "public java.lang.String getIndexName()",
+      "public int getNumWords()",
       "public void addFeature(java.lang.String, java.lang.String)",
       "public void addFeature(java.lang.String, java.lang.String, long)",
       "public void addFeature(com.yahoo.prelude.query.PredicateQueryItem$Entry)",
@@ -1925,7 +1934,9 @@
   },
   "com.yahoo.prelude.query.WeightedSetItem" : {
     "superClass" : "com.yahoo.prelude.query.SimpleTaggableItem",
-    "interfaces" : [ ],
+    "interfaces" : [
+      "com.yahoo.prelude.query.HasIndexItem"
+    ],
     "attributes" : [
       "public"
     ],
@@ -1941,6 +1952,7 @@
       "public java.util.Iterator getTokens()",
       "public void setIndexName(java.lang.String)",
       "public java.lang.String getIndexName()",
+      "public int getNumWords()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "protected void appendBodyString(java.lang.StringBuilder)",
