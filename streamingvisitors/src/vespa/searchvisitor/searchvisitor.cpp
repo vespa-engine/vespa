@@ -251,7 +251,7 @@ SearchVisitor::SummaryGenerator::get_streaming_docsums_state(std::string_view su
         ds._args.setLocation(_location.value());
     }
     if (_serialized_query_tree) {
-        ds._args.setSerializedQueryTree(*_serialized_query_tree);
+        ds._args.setSerializedQueryTree(_serialized_query_tree);
     }
     ds._args.highlightTerms(_highlight_terms);
     _docsumWriter->initState(_attr_manager, ds, state->get_resolve_class_info());

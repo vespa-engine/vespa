@@ -18,7 +18,7 @@ class ToProtobuf {
     static SearchProtocol.TermItemProperties buildTermProperties(Item item) {
         var props = SearchProtocol.TermItemProperties.newBuilder();
 
-        if (item instanceof HasIndexItem indexedItem) {
+        if (item instanceof IndexedItem indexedItem) {
             props.setIndex(indexedItem.getIndexName());
         }
 
