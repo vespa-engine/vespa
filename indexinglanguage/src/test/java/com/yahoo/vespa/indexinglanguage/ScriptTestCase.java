@@ -563,6 +563,27 @@ public class ScriptTestCase {
     }
 
     @Test
+    public void testGettingDetectedLanguage() {
+        String script = """
+                {
+                    input text | tokenize normalize | index text;
+                    get_language | set_var language;
+                }
+                """;
+        var tester = new ScriptTester();
+        var expression = tester.scriptFrom(script);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        var textField = new Field("text", (DataType.STRING));
+        adapter.createField(textField);
+        adapter.setValue("text", new StringFieldValue("Hello, world!"));
+        expression.resolve(adapter);
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+        assertEquals("en", context.getVariable("language").getWrappedValue());
+    }
+
+    @Test
     public void testChunking() {
         String script = "{ input myText | chunk chunkerId | summary myChunks | index myChunks }";
 

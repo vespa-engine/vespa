@@ -257,6 +257,7 @@ class SchemaSemanticTokenConfig {
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.ECHO);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.FLATTEN);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.GET_FIELD);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.GET_LANGUAGE);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.GET_VAR);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.HEX_DECODE);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.HEX_ENCODE);

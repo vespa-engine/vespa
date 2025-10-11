@@ -85,7 +85,7 @@ public abstract class Expression extends Selectable {
     /**
      * Sets the input type of this and returns the resulting output type, or null if it cannot be
      * uniquely determined.
-     * Subtypes may implement this by calling setInputType(inputType, requiredType, VerificationContext context).
+     * Subtypes may implement this by calling setInputType(inputType, requiredType, TypeContext context).
      */
     public DataType setInputType(DataType inputType, TypeContext context) {
         return assignInputType(inputType);

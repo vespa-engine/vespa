@@ -194,6 +194,7 @@ TOKEN :
     <FOR_EACH: "for_each"> |
     <GENERATE: "generate"> |
     <GET_FIELD: "get_field"> |
+    <GET_LANGUAGE: "get_language"> |
     <GET_VAR: "get_var"> |
     <GUARD: "guard"> |
     <HASH: "hash"> |
@@ -522,6 +523,12 @@ Expression getFieldExp() :
  
     ( <GET_FIELD> val = identifierStr() )
     { return new GetFieldExpression(val); }
+;
+
+Expression getLanguageExp() : { }
+
+    ( <GET_LANGUAGE> )
+    { return new GetLanguageExpression(); }
 ;
 
 Expression getVarExp() :
