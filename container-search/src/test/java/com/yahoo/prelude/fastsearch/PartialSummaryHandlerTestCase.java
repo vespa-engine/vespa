@@ -372,6 +372,30 @@ public class PartialSummaryHandlerTestCase {
         assertEquals(2, result.hits().getFilled().size());
     }
 
+    @Test
+    void enoughFields() {
+        var query = createQuery("first3");
+        query.getPresentation().setSummaryFields("field1");
+        var hit1 = createHit(query);
+        var result = createResult(query, hit1);
+        assertEquals("[f:field1]", PartialSummaryHandler.enoughFields(null, result));
+        assertEquals("[f:field1]", PartialSummaryHandler.enoughFields(PartialSummaryHandler.DEFAULT_CLASS, result));
+        assertEquals("[f:field1]", PartialSummaryHandler.enoughFields(PartialSummaryHandler.PRESENTATION, result));
+        assertEquals("default", PartialSummaryHandler.enoughFields("first3", result));
+    }
+
+    @Test
+    void enoughFieldsWhenOnlyMatchFeaturesAreInSummaryFeatures() {
+        var query = createQuery("first3");
+        query.getPresentation().setSummaryFields("matchfeatures");
+        var hit1 = createHit(query);
+        var result = createResult(query, hit1);
+        assertEquals("[f:matchfeatures]", PartialSummaryHandler.enoughFields(null, result));
+        assertEquals("[f:matchfeatures]", PartialSummaryHandler.enoughFields(PartialSummaryHandler.DEFAULT_CLASS, result));
+        assertEquals("[f:matchfeatures]", PartialSummaryHandler.enoughFields(PartialSummaryHandler.PRESENTATION, result));
+        assertEquals("default", PartialSummaryHandler.enoughFields("first3", result));
+    }
+
     static Query createQuery(String summaryClass) {
         if (summaryClass == null)
             return new Query("/search/?query=foo");
