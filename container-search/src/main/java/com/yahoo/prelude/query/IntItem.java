@@ -326,6 +326,8 @@ public class IntItem extends TermItem {
                 builder.setProperties(ToProtobuf.buildTermProperties(this));
                 builder.setLowerLimit(fromNum.longValue());
                 builder.setUpperLimit(toNum.longValue());
+                builder.setLowerInclusive(from.isInclusive());
+                builder.setUpperInclusive(to.isInclusive());
                 if (hitLimit != 0) {
                     builder.setHasRangeLimit(true);
                     builder.setRangeLimit(hitLimit);

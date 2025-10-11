@@ -224,6 +224,8 @@ message ItemIntegerRangeTerm {
     TermItemProperties properties = 1;
     int64 lower_limit = 2;
     int64 upper_limit = 3;
+    bool lower_inclusive = 4;
+    bool upper_inclusive = 5;
     bool has_range_limit = 6;
     bool with_diversity = 7;
     bool with_diversity_cutoff = 8;
