@@ -22,7 +22,8 @@ public class ExecutionContext {
     private final Map<String, FieldValue> variables = new HashMap<>();
     private final FieldValues fieldValues;
     private FieldValue currentValue;
-    private Language language;
+    private Language assignedLanguage = Language.UNKNOWN;
+    private Language detectedLanguage = Language.UNKNOWN;
     private final Map<Object, Object> cache = LazyMap.newHashMap();
     // Document id is practical for logging and informative error messages
     private DocumentId documentId;
@@ -34,7 +35,6 @@ public class ExecutionContext {
 
     public ExecutionContext(FieldValues fieldValue) {
         this.fieldValues = fieldValue;
-        this.language = Language.UNKNOWN;
     }
 
     public ExecutionContext execute(Expression expression) {
@@ -96,23 +96,27 @@ public class ExecutionContext {
         return cache;
     }
 
-    public Language getLanguage() { return language; }
+    /** Returns the explicitly set or last detected language. Returns UNKNOWN if neither set nor detected. */
+    public Language getLanguage() {
+        if (assignedLanguage != Language.UNKNOWN) return assignedLanguage;
+        return detectedLanguage;
+    }
 
     public ExecutionContext setLanguage(Language language) {
-        this.language = Objects.requireNonNull(language);
+        this.assignedLanguage = Objects.requireNonNull(language);
         return this;
     }
 
     public Language resolveLanguage(Linguistics linguistics) {
-        if (language != Language.UNKNOWN) return language;
+        if (assignedLanguage != Language.UNKNOWN) return assignedLanguage;
         if (linguistics == null) return Language.ENGLISH;
 
         Detection detection = linguistics.getDetector().detect(String.valueOf(currentValue), null);
         if (detection == null) return Language.ENGLISH;
 
-        Language detected = detection.getLanguage();
-        if (detected == Language.UNKNOWN) return Language.ENGLISH;
-        return detected;
+        detectedLanguage = detection.getLanguage();
+        if (detectedLanguage == Language.UNKNOWN) detectedLanguage = Language.ENGLISH;
+        return detectedLanguage;
     }
 
     public boolean isReindexingOperation() { return isReindexingOperation; }
