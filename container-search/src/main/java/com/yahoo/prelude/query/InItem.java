@@ -10,7 +10,7 @@ import static java.util.Objects.requireNonNullElse;
  *
  * @author toregge
  */
-public abstract class InItem extends Item {
+public abstract class InItem extends Item implements HasIndexItem {
 
     private String indexName;
 
@@ -23,9 +23,12 @@ public abstract class InItem extends Item {
         this.indexName = requireNonNullElse(index, "");
     }
 
+    @Override
     public String getIndexName() {
         return indexName;
     }
+
+    @Override public int getNumWords() { return 1; }
 
     @Override
     public String getName() {
