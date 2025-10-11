@@ -36,7 +36,6 @@ void walk_children(const T& t, std::vector<TreeItem>& target) {
 }
 
 void walk(const QueryTreeItem &item, std::vector<TreeItem>& target) {
-    target.push_back(TreeItem(&item));
     using IC = QueryTreeItem::ItemCase;
     switch (item.item_case()) {
     case IC::kItemOr:
@@ -236,9 +235,7 @@ bool handle(const ItemIntegerRangeTerm& item,
 {
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_NUMTERM;
-    auto b_mark = item.lower_inclusive() ? "[" : "<";
-    auto e_mark = item.upper_inclusive() ? "]" : ">";
-    tmp = std::format("{}{};{}", b_mark, item.lower_limit(), item.upper_limit());
+    tmp = std::format("[{};{}", item.lower_limit(), item.upper_limit());
     if (item.has_range_limit() || item.with_diversity()) {
         tmp += std::format(";{}", item.range_limit());
         if (item.with_diversity()) {
@@ -253,7 +250,9 @@ bool handle(const ItemIntegerRangeTerm& item,
             }
         }
     }
-    tmp += e_mark;
+    tmp += "]";
+    _d.term_view = tmp;
+    tmp = std::format("[{};{}]", item.lower_limit(), item.upper_limit());
     _d.term_view = tmp;
     return true;
 }
@@ -265,7 +264,7 @@ bool handle(const ItemFloatingPointRangeTerm& item,
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_NUMTERM;
     auto b_mark = item.lower_inclusive() ? "[" : "<";
-    auto e_mark = item.upper_inclusive() ? "]" : ">";
+    auto e_mark = item.upper_inclusive() ? "]" : "]";
     tmp = std::format("{}{};{}", b_mark, item.lower_limit(), item.upper_limit());
     if (item.has_range_limit() || item.with_diversity()) {
         tmp += std::format(";{}", item.range_limit());

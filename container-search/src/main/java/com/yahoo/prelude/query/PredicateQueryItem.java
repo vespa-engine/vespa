@@ -18,7 +18,7 @@ import java.util.Objects;
  *
  * @author Magnar Nedland
  */
-public class PredicateQueryItem extends SimpleTaggableItem implements HasIndexItem {
+public class PredicateQueryItem extends SimpleTaggableItem {
 
     private String fieldName = "predicate";
     private List<Entry> features = new ArrayList<>();
@@ -32,12 +32,9 @@ public class PredicateQueryItem extends SimpleTaggableItem implements HasIndexIt
     }
 
     /** Returns the name of the index (field) used for the predicates. */
-    @Override
     public String getIndexName() {
         return fieldName;
     }
-
-    @Override public int getNumWords() { return 0; }
 
     /**
      * Adds a feature/value-pair to the predicate query. This feature is applied to all sub queries.

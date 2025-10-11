@@ -26,7 +26,7 @@ import static java.util.Objects.requireNonNullElse;
  * order. Each matched weight will be represented as a standard
  * occurrence on position 0 in element 0.
  */
-public class WeightedSetItem extends SimpleTaggableItem implements HasIndexItem {
+public class WeightedSetItem extends SimpleTaggableItem {
 
     private String indexName;
     private CopyOnWriteHashMap<Object, Integer> set;
@@ -94,12 +94,9 @@ public class WeightedSetItem extends SimpleTaggableItem implements HasIndexItem 
         this.indexName = requireNonNullElse(index, "");
     }
 
-    @Override
     public String getIndexName() {
         return indexName;
     }
-
-    @Override public int getNumWords() { return 1; }
 
     @Override
     public ItemType getItemType() {

@@ -504,9 +504,7 @@ public class ToProtobufTest {
         assertConvertsToJson(weightedSet, """
             {
               "itemWeightedSetOfString": {
-                "properties": {
-                  "index": "myindex"
-                },
+                "properties": {},
                 "weightedStrings": [
                   {"weight": 200, "value": "bar"},
                   {"weight": 100, "value": "foo"}
@@ -525,9 +523,7 @@ public class ToProtobufTest {
         assertConvertsToJson(dotProduct, """
             {
               "itemDotProductOfString": {
-                "properties": {
-                  "index": "myindex"
-                },
+                "properties": {},
                 "weightedStrings": [
                   {"weight": 200, "value": "bar"},
                   {"weight": 100, "value": "foo"}
@@ -546,9 +542,7 @@ public class ToProtobufTest {
         assertConvertsToJson(wand, """
             {
               "itemStringWand": {
-                "properties": {
-                  "index": "myindex"
-                },
+                "properties": {},
                 "targetNumHits": 10,
                 "thresholdBoostFactor": 1.0,
                 "weightedStrings": [
@@ -603,9 +597,7 @@ public class ToProtobufTest {
               "itemIntegerRangeTerm": {
                 "properties": {"index": "myindex"},
                 "lowerLimit": "10",
-                "upperLimit": "20",
-                "lowerInclusive": true,
-                "upperInclusive": true
+                "upperLimit": "20"
               }
             }
             """);
@@ -618,9 +610,7 @@ public class ToProtobufTest {
               "itemIntegerRangeTerm": {
                 "properties": {"index": "myindex"},
                 "lowerLimit": "10",
-                "upperLimit": "20",
-                "lowerInclusive": true,
-                "upperInclusive": true
+                "upperLimit": "20"
               }
             }
             """);
@@ -635,9 +625,7 @@ public class ToProtobufTest {
         assertConvertsToJson(numericIn, """
             {
               "itemNumericIn": {
-                "properties": {
-                  "index": "myindex"
-                },
+                "properties": {},
                 "numbers": ["42", "99"]
               }
             }
@@ -653,9 +641,7 @@ public class ToProtobufTest {
         assertConvertsToJson(stringIn, """
             {
               "itemStringIn": {
-                "properties": {
-                  "index": "myindex"
-                },
+                "properties": {},
                 "words": ["bar", "foo"]
               }
             }
@@ -696,7 +682,7 @@ public class ToProtobufTest {
         assertConvertsToJson(MarkerWordItem.createStartOfHost("myindex"), """
             {
               "itemWordTerm": {
-                "word": "StArThOsT",
+                "word": "^",
                 "properties": {"index": "myindex"}
               }
             }
@@ -779,9 +765,7 @@ public class ToProtobufTest {
         assertConvertsToJson(new NearestNeighborItem("myvector", "query_vector"), """
             {
               "itemNearestNeighbor": {
-                "properties": {
-                  "index": "myvector"
-                },
+                "properties": {},
                 "queryTensorName": "query_vector",
                 "allowApproximate": true,
                 "distanceThreshold": "Infinity"
@@ -804,7 +788,6 @@ public class ToProtobufTest {
             {
               "itemNearestNeighbor": {
                 "properties": {
-                  "index": "myvector",
                   "itemWeight": 200,
                   "doNotHighlight": true
                 },
@@ -839,14 +822,11 @@ public class ToProtobufTest {
     @Test
     void testConvertFromQueryWithPredicateQueryItem() {
         PredicateQueryItem predicate = new PredicateQueryItem();
-        predicate.setIndexName("myindex");
         predicate.addFeature("key", "value");
         assertConvertsToJson(predicate, """
             {
               "itemPredicateQuery": {
-                "properties": {
-                  "index": "myindex"
-                },
+                "properties": {},
                 "features": [
                   {"key": "key", "value": "value", "subQueries": "18446744073709551615"}
                 ]
@@ -890,18 +870,14 @@ public class ToProtobufTest {
                     "itemIntegerRangeTerm": {
                       "properties": {"index": "myindex"},
                       "lowerLimit": "1",
-                      "upperLimit": "10",
-                      "lowerInclusive": true,
-                      "upperInclusive": true
+                      "upperLimit": "10"
                     }
                   },
                   {
                     "itemIntegerRangeTerm": {
                       "properties": {"index": "myindex"},
                       "lowerLimit": "20",
-                      "upperLimit": "30",
-                      "lowerInclusive": true,
-                      "upperInclusive": true
+                      "upperLimit": "30"
                     }
                   }
                 ]

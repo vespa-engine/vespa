@@ -18,7 +18,7 @@ import java.util.Objects;
  *
  * @author arnej
  */
-public class NearestNeighborItem extends SimpleTaggableItem implements HasIndexItem {
+public class NearestNeighborItem extends SimpleTaggableItem {
 
     private int targetNumHits = 0;
     private int hnswExploreAdditionalHits = 0;
@@ -36,10 +36,7 @@ public class NearestNeighborItem extends SimpleTaggableItem implements HasIndexI
     public int getTargetNumHits() { return targetNumHits; }
 
     /** Returns the name of the index (field) to be searched */
-    @Override
     public String getIndexName() { return field; }
-
-    @Override public int getNumWords() { return 0; }
 
     /** Returns the distance threshold for nearest-neighbor hits */
     public double getDistanceThreshold () { return this.distanceThreshold ; }
