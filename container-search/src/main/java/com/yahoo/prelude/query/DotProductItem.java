@@ -24,7 +24,7 @@ public class DotProductItem extends WeightedSetItem {
     SearchProtocol.QueryTreeItem toProtobuf() {
         if (hasOnlyLongs()) {
             var builder = SearchProtocol.ItemDotProductOfLong.newBuilder();
-            builder.setProperties(ToProtobuf.buildTermProperties(this));
+            builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
             for (var it = getTokens(); it.hasNext();) {
                 var entry = it.next();
                 var weightedLong = SearchProtocol.PureWeightedLong.newBuilder()
@@ -38,7 +38,7 @@ public class DotProductItem extends WeightedSetItem {
                     .build();
         } else {
             var builder = SearchProtocol.ItemDotProductOfString.newBuilder();
-            builder.setProperties(ToProtobuf.buildTermProperties(this));
+            builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
             for (var it = getTokens(); it.hasNext();) {
                 var entry = it.next();
                 var weightedString = SearchProtocol.PureWeightedString.newBuilder()

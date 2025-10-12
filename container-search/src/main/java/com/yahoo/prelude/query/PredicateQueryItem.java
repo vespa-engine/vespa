@@ -191,7 +191,7 @@ public class PredicateQueryItem extends SimpleTaggableItem {
     @Override
     SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemPredicateQuery.newBuilder();
-        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
 
         // Add features
         for (Entry entry : features) {

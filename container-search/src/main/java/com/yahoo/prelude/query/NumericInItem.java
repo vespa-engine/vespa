@@ -111,7 +111,7 @@ public class NumericInItem extends InItem {
     @Override
     SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemNumericIn.newBuilder();
-        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         for (Long token : tokens) {
             builder.addNumbers(token);
         }

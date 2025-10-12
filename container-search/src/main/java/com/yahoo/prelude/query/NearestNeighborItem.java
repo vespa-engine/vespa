@@ -130,7 +130,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     @Override
     SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemNearestNeighbor.newBuilder();
-        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         builder.setQueryTensorName(queryTensorName);
         builder.setTargetNumHits(targetNumHits);
         builder.setAllowApproximate(approximate);

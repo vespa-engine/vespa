@@ -46,7 +46,11 @@ public class ToProtobufTest {
     }
 
     private static void assertPropertiesAreJson(Item item, String expectedJson) {
-        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(item);
+        String index = "";
+        if (item instanceof HasIndexItem indexed) {
+            index = indexed.getIndexName();
+        }
+        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(item, index);
         assertNotNull(props);
         assertJsonEquals(toJson(props), expectedJson);
     }
@@ -83,7 +87,7 @@ public class ToProtobufTest {
     @Test
     void testBuildTermPropertiesWithDefaultValues() {
         WordItem word = new WordItem("test");
-        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
+        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word, "");
         assertNotNull(props);
         assertFalse(props.hasItemWeight());
         assertFalse(props.getDoNotRank());
@@ -96,7 +100,7 @@ public class ToProtobufTest {
     @Test
     void testBuildTermPropertiesWithIndex() {
         WordItem word = new WordItem("test", "myindex");
-        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
+        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word, word.getIndexName());
         assertEquals("myindex", props.getIndex());
         assertPropertiesAreJson(word, """
                 {"index": "myindex"}
@@ -107,7 +111,7 @@ public class ToProtobufTest {
     void testBuildTermPropertiesWithWeight() {
         WordItem word = new WordItem("test", "myindex");
         word.setWeight(200);
-        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
+        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word, word.getIndexName());
         assertEquals(200, props.getItemWeight());
         assertPropertiesAreJson(word, """
                 {"index": "myindex", "itemWeight": 200}
@@ -118,7 +122,7 @@ public class ToProtobufTest {
     void testBuildTermPropertiesWithUniqueId() {
         WordItem word = new WordItem("test", "myindex");
         word.setUniqueID(42);
-        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
+        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word, word.getIndexName());
         assertEquals(42, props.getUniqueId());
         assertPropertiesAreJson(word, """
                 {"index": "myindex", "uniqueId": 42}
@@ -129,7 +133,7 @@ public class ToProtobufTest {
     void testBuildTermPropertiesWithRankedFalse() {
         WordItem word = new WordItem("test", "myindex");
         word.setRanked(false);
-        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
+        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word, word.getIndexName());
         assertTrue(props.getDoNotRank());
         assertPropertiesAreJson(word, """
                 {"index": "myindex", "doNotRank": true}
@@ -140,7 +144,7 @@ public class ToProtobufTest {
     void testBuildTermPropertiesWithPositionDataFalse() {
         WordItem word = new WordItem("test", "myindex");
         word.setPositionData(false);
-        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
+        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word, word.getIndexName());
         assertTrue(props.getDoNotUsePositionData());
         assertPropertiesAreJson(word, """
                 {"index": "myindex", "doNotUsePositionData": true}
@@ -151,7 +155,7 @@ public class ToProtobufTest {
     void testBuildTermPropertiesWithFilterTrue() {
         WordItem word = new WordItem("test", "myindex");
         word.setFilter(true);
-        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
+        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word, word.getIndexName());
         assertTrue(props.getDoNotHighlight());
         assertPropertiesAreJson(word, """
                 {"index": "myindex", "doNotHighlight": true}
@@ -162,7 +166,7 @@ public class ToProtobufTest {
     void testBuildTermPropertiesWithSpecialToken() {
         WordItem word = new WordItem("test", "myindex");
         word.setFromSpecialToken(true);
-        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
+        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word, word.getIndexName());
         assertTrue(props.getIsSpecialToken());
         assertPropertiesAreJson(word, """
                 {"index": "myindex", "isSpecialToken": true}
@@ -179,7 +183,7 @@ public class ToProtobufTest {
         word.setFilter(true);
         word.setFromSpecialToken(true);
 
-        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word);
+        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(word, word.getIndexName());
         assertEquals("myindex", props.getIndex());
         assertEquals(150, props.getItemWeight());
         assertEquals(99, props.getUniqueId());
@@ -212,7 +216,7 @@ public class ToProtobufTest {
         phrase.addItem(new WordItem("bar"));
         phrase.setWeight(250);
 
-        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(phrase);
+        SearchProtocol.TermItemProperties props = ToProtobuf.buildTermProperties(phrase, phrase.getIndexName());
         assertEquals("myindex", props.getIndex());
         assertEquals(250, props.getItemWeight());
         assertPropertiesAreJson(phrase, """

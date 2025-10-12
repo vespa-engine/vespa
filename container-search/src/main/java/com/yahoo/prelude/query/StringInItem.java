@@ -113,7 +113,7 @@ public class StringInItem extends InItem {
     @Override
     SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemStringIn.newBuilder();
-        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         for (String token : tokens) {
             builder.addWords(token);
         }

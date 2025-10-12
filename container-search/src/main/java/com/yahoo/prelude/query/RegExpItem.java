@@ -98,7 +98,7 @@ public class RegExpItem extends TermItem {
     @Override
     SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemRegexp.newBuilder();
-        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         builder.setRegexp(expression);
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemRegexp(builder.build())

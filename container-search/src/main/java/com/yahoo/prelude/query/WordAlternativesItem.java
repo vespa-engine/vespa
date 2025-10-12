@@ -162,7 +162,7 @@ public class WordAlternativesItem extends TermItem {
     @Override
     SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemWordAlternatives.newBuilder();
-        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         for (Alternative alt : alternatives) {
             var weightedString = SearchProtocol.PureWeightedString.newBuilder()
                     .setWeight((int) (getWeight() * alt.exactness + 0.5))

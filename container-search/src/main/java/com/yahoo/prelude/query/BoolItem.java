@@ -108,7 +108,7 @@ public class BoolItem extends TermItem {
     SearchProtocol.QueryTreeItem toProtobuf() {
         // BoolItem is serialized as a word term
         var builder = SearchProtocol.ItemWordTerm.newBuilder();
-        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         builder.setWord(stringValue());
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemWordTerm(builder.build())

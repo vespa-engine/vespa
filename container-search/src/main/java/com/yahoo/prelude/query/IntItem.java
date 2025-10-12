@@ -309,7 +309,7 @@ public class IntItem extends TermItem {
             // Check if it's floating point or integer
             if (fromNum instanceof Double || toNum instanceof Double) {
                 var builder = SearchProtocol.ItemFloatingPointRangeTerm.newBuilder();
-                builder.setProperties(ToProtobuf.buildTermProperties(this));
+                builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
                 builder.setLowerLimit(fromNum.doubleValue());
                 builder.setUpperLimit(toNum.doubleValue());
                 builder.setLowerInclusive(from.isInclusive());
@@ -323,7 +323,7 @@ public class IntItem extends TermItem {
                         .build();
             } else {
                 var builder = SearchProtocol.ItemIntegerRangeTerm.newBuilder();
-                builder.setProperties(ToProtobuf.buildTermProperties(this));
+                builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
                 builder.setLowerLimit(fromNum.longValue());
                 builder.setUpperLimit(toNum.longValue());
                 builder.setLowerInclusive(from.isInclusive());
@@ -342,14 +342,14 @@ public class IntItem extends TermItem {
 
             if (num instanceof Double) {
                 var builder = SearchProtocol.ItemFloatingPointTerm.newBuilder();
-                builder.setProperties(ToProtobuf.buildTermProperties(this));
+                builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
                 builder.setNumber(num.doubleValue());
                 return SearchProtocol.QueryTreeItem.newBuilder()
                         .setItemFloatingPointTerm(builder.build())
                         .build();
             } else {
                 var builder = SearchProtocol.ItemIntegerTerm.newBuilder();
-                builder.setProperties(ToProtobuf.buildTermProperties(this));
+                builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
                 builder.setNumber(num.longValue());
                 return SearchProtocol.QueryTreeItem.newBuilder()
                         .setItemIntegerTerm(builder.build())
