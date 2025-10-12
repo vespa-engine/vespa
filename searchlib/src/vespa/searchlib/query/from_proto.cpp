@@ -72,7 +72,7 @@ void walk(const QueryTreeItem &item, std::vector<TreeItem>& target) {
     case IC::kItemLongWand:
         return walk_children(item.item_long_wand().weighted_longs(), target);
     case IC::kItemWordAlternatives:
-        return walk_children(item.item_string_wand().weighted_strings(), target);
+        return walk_children(item.item_word_alternatives().weighted_strings(), target);
     default:
         return;
     }
