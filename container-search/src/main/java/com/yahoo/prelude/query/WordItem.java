@@ -187,8 +187,8 @@ public class WordItem extends TermItem {
     @Override
     SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemWordTerm.newBuilder();
-        builder.setProperties(ToProtobuf.buildTermProperties(this));
-        builder.setWord(word);
+        builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
+        builder.setWord(getEncodedWord());
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemWordTerm(builder.build())
                 .build();

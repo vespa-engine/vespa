@@ -107,7 +107,7 @@ public class EquivItem extends CompositeTaggableItem {
     @Override
     SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemEquiv.newBuilder();
-        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setProperties(ToProtobuf.buildTermProperties(this, ""));
         for (var child : items()) {
             builder.addChildren(child.toProtobuf());
         }

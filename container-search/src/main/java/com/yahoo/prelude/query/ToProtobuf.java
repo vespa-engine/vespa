@@ -15,37 +15,29 @@ class ToProtobuf {
         return item.toProtobuf();
     }
 
-    static SearchProtocol.TermItemProperties buildTermProperties(Item item) {
+    static SearchProtocol.TermItemProperties buildTermProperties(Item item, String index) {
         var props = SearchProtocol.TermItemProperties.newBuilder();
 
-        if (item instanceof IndexedItem indexedItem) {
-            props.setIndex(indexedItem.getIndexName());
-        }
+        props.setIndex(index);
 
         if (item.getWeight() != Item.DEFAULT_WEIGHT) {
             props.setItemWeight(item.getWeight());
         }
-
         if (item.hasUniqueID()) {
             props.setUniqueId(item.uniqueID);
         }
-
         if (!item.isRanked()) {
             props.setDoNotRank(true);
         }
-
         if (!item.usePositionData()) {
             props.setDoNotUsePositionData(true);
         }
-
         if (item.isFilter()) {
             props.setDoNotHighlight(true);
         }
-
         if (item.isFromSpecialToken()) {
             props.setIsSpecialToken(true);
         }
-
         return props.build();
     }
 

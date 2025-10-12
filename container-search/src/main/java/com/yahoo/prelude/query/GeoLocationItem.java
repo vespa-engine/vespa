@@ -124,7 +124,7 @@ public class GeoLocationItem extends TermItem {
     @Override
     SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemGeoLocationTerm.newBuilder();
-        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
 
         // Set the circle/bounding box properties based on the location
         if (location.isGeoCircle()) {

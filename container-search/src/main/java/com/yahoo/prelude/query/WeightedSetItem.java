@@ -208,7 +208,7 @@ public class WeightedSetItem extends SimpleTaggableItem {
     SearchProtocol.QueryTreeItem toProtobuf() {
         if (hasOnlyLongs()) {
             var builder = SearchProtocol.ItemWeightedSetOfLong.newBuilder();
-            builder.setProperties(ToProtobuf.buildTermProperties(this));
+            builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
             for (Map.Entry<Object, Integer> entry : set.entrySet()) {
                 var weightedLong = SearchProtocol.PureWeightedLong.newBuilder()
                         .setWeight(entry.getValue())
@@ -221,7 +221,7 @@ public class WeightedSetItem extends SimpleTaggableItem {
                     .build();
         } else {
             var builder = SearchProtocol.ItemWeightedSetOfString.newBuilder();
-            builder.setProperties(ToProtobuf.buildTermProperties(this));
+            builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
             for (Map.Entry<Object, Integer> entry : set.entrySet()) {
                 var weightedString = SearchProtocol.PureWeightedString.newBuilder()
                         .setWeight(entry.getValue())

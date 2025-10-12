@@ -271,7 +271,7 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     SearchProtocol.QueryTreeItem toProtobuf() {
         // PhraseSegmentItem should be converted to a phrase
         var builder = SearchProtocol.ItemPhrase.newBuilder();
-        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         for (var child : items()) {
             builder.addChildren(child.toProtobuf());
         }

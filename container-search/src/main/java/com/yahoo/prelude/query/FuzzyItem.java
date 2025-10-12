@@ -151,7 +151,7 @@ public class FuzzyItem extends TermItem {
     @Override
     SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemFuzzy.newBuilder();
-        builder.setProperties(ToProtobuf.buildTermProperties(this));
+        builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         builder.setWord(term);
         builder.setMaxEditDistance(maxEditDistance);
         builder.setPrefixLockLength(prefixLength);

@@ -134,7 +134,7 @@ public class WandItem extends WeightedSetItem {
     SearchProtocol.QueryTreeItem toProtobuf() {
         if (hasOnlyLongs()) {
             var builder = SearchProtocol.ItemLongWand.newBuilder();
-            builder.setProperties(ToProtobuf.buildTermProperties(this));
+            builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
             builder.setTargetNumHits(targetNumHits);
             builder.setScoreThreshold(scoreThreshold);
             builder.setThresholdBoostFactor(thresholdBoostFactor);
@@ -151,7 +151,7 @@ public class WandItem extends WeightedSetItem {
                     .build();
         } else {
             var builder = SearchProtocol.ItemStringWand.newBuilder();
-            builder.setProperties(ToProtobuf.buildTermProperties(this));
+            builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
             builder.setTargetNumHits(targetNumHits);
             builder.setScoreThreshold(scoreThreshold);
             builder.setThresholdBoostFactor(thresholdBoostFactor);
