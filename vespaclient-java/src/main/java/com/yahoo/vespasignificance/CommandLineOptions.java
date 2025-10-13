@@ -254,7 +254,7 @@ public class CommandLineOptions {
                 .longOpt(MIN_KEEP_OPTION)
                 .hasArg()
                 .argName("NUMBER")
-                .desc("Filter on document frequency lower than NUMBER.")
+                .desc("Filter out document with frequency lower than NUMBER.")
                 .build());
 
         options.addOption(Option.builder("zst")
