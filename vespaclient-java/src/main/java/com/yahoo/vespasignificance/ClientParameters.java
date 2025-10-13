@@ -14,6 +14,9 @@ public class ClientParameters {
     // Input file for the program
     public final String inputFile;
 
+    // Format of input file
+    public final String format;
+
     // Output file for the program
     public final String outputFile;
 
@@ -29,12 +32,14 @@ public class ClientParameters {
     public ClientParameters(
             boolean help,
             String inputFile,
+            String format,
             String outputFile,
             String field,
             String language,
             boolean zstCompression) {
         this.help = help;
         this.inputFile = inputFile;
+        this.format = format;
         this.outputFile = outputFile;
         this.field = field;
         this.language = language;
@@ -44,6 +49,7 @@ public class ClientParameters {
     public static class Builder {
         private boolean help;
         private String inputFile;
+        private String format;
         private String outputFile;
         private String field;
         private String language;
@@ -56,6 +62,11 @@ public class ClientParameters {
 
         public Builder setInputFile(String inputFile) {
             this.inputFile = inputFile;
+            return this;
+        }
+
+        public Builder setFormat(String format) {
+            this.format = format;
             return this;
         }
 
@@ -79,7 +90,7 @@ public class ClientParameters {
         }
 
         public ClientParameters build() {
-            return new ClientParameters(help, inputFile, outputFile, field, language, zstCompression);
+            return new ClientParameters(help, inputFile, format, outputFile, field, language, zstCompression);
         }
     }
 }

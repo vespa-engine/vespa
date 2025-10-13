@@ -28,6 +28,7 @@ public class CommandLineOptions {
     public static final String FIELD_OPTION = "field";
     public static final String LANGUAGE_OPTION = "language";
     public static final String ZST_COMPRESSION = "zst-compression";
+    public static final String FORMAT_OPTION = "format";
 
     public static final String INDEX_DIR = "index-dir";
     public static final String CLUSTER_OPTION = "cluster";
@@ -91,9 +92,15 @@ public class CommandLineOptions {
                 .desc("Input JSON Lines file. One Vespa document per line.")
                 .build());
 
+        options.addOption(Option.builder()
+                .longOpt(FORMAT_OPTION)
+                .hasArg()
+                .argName("jsonl")
+                .desc("Format of input file. Default is jsonl.")
+                .build());
+
         options.addOption(Option.builder("o")
                 .longOpt(OUTPUT_OPTION)
-                .required()
                 .hasArg()
                 .argName("model.json[.zst]")
                 .desc("Output model file.")
@@ -101,7 +108,6 @@ public class CommandLineOptions {
 
         options.addOption(Option.builder("f")
                 .longOpt(FIELD_OPTION)
-                .required()
                 .hasArg()
                 .argName("fieldName")
                 .desc("Document field to analyze.")
@@ -109,7 +115,6 @@ public class CommandLineOptions {
 
         options.addOption(Option.builder("l")
                 .longOpt(LANGUAGE_OPTION)
-                .required()
                 .hasArg()
                 .argName("tag[,tag...]")
                 .desc("ISO language tag(s), comma-separated (e.g., 'en', 'no', or 'en,no').")
@@ -142,6 +147,7 @@ public class CommandLineOptions {
 
         builder.setHelp(cl.hasOption(HELP_OPTION));
         builder.setInputFile(cl.getOptionValue(INPUT_OPTION));
+        builder.setFormat(cl.hasOption(FORMAT_OPTION) ? cl.getOptionValue(FORMAT_OPTION) : "jsonl");
         builder.setOutputFile(cl.getOptionValue(OUTPUT_OPTION));
         builder.setField(cl.getOptionValue(FIELD_OPTION));
         builder.setLanguage(cl.getOptionValue(LANGUAGE_OPTION));
