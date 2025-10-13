@@ -86,9 +86,9 @@ public class CustomerRpmServiceTest {
 
     @Test
     void customer_rpm_services_serialize() throws JsonProcessingException {
-        CustomerRpmService service1 = new CustomerRpmService("foo", null, 123.4, null, false);
-        CustomerRpmService service2 = new CustomerRpmService("bar",  null, 567.8, 1.0, true);
-        CustomerRpmService service3 = new CustomerRpmService("dog",  "pack", 500.0, 0.3, false);
+        CustomerRpmService service1 = new CustomerRpmService("foo", null, 123.4, null, List.of(), false);
+        CustomerRpmService service2 = new CustomerRpmService("bar",  null, 567.8, 1.0, List.of(), true);
+        CustomerRpmService service3 = new CustomerRpmService("dog",  "pack", 500.0, 0.3, List.of(), false);
         CustomerRpmServiceList serviceList = new CustomerRpmServiceList(List.of(service1, service2, service3));
         var mapper = Jackson.mapper();
         String serialized = mapper.writeValueAsString(serviceList);
