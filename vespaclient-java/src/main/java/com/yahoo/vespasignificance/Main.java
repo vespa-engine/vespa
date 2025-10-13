@@ -8,7 +8,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.ParseException;
 
-import java.io.IOException;
 import java.util.Arrays;
 
 /**
@@ -71,13 +70,11 @@ public class Main {
             ClientParameters params = CommandLineOptions.parseGenerateCommandLineArguments(commandLine);
             System.setProperty("vespa.replace_invalid_unicode", "true");
             SignificanceModelGenerator significanceModelGenerator = createSignificanceModelGenerator(params);
-            significanceModelGenerator.generate();
+            System.exit(significanceModelGenerator.run());
         } catch (ParseException e) {
             System.err.printf("Error: %s.\n", e.getMessage());
             CommandLineOptions.printGenerateHelp();
             System.exit(1);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
