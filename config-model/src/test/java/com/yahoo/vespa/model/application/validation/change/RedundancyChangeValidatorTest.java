@@ -31,7 +31,7 @@ public class RedundancyChangeValidatorTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("redundancy-one: content cluster 'test' has redundancy 1, which will cause it to lose data if a node fails. " +
+            assertEquals("Setting redundancy=1 requires a validation override on first deployment: content cluster 'test' has redundancy 1, which will cause it to lose data if a node fails. " +
                          "This requires an override on first deployment in a production zone. " +
                          "To allow this add <allow until='yyyy-mm-dd'>redundancy-one</allow> to validation-overrides.xml, " +
                          "see https://docs.vespa.ai/en/reference/validation-overrides.html",

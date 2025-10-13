@@ -34,7 +34,7 @@ public class RedundancyOnFirstDeploymentValidatorTest {
             fail("Expected exception due to redundancy 1");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("redundancy-one: " +
+            assertEquals("Setting redundancy=1 requires a validation override on first deployment: " +
                     "content cluster 'contentClusterId' has redundancy 1, which will cause it to lose data if a node fails. " +
                     "This requires an override on first deployment in a production zone. " +
                     ValidationOverrides.toAllowMessage(ValidationId.redundancyOne),
