@@ -94,10 +94,10 @@ private:
             builder.addEquiv(arity, id, weight);
         } else if (type == ParseItem::ITEM_NEAR) {
             uint32_t nearDistance = queryStack.getNearDistance();
-            builder.addNear(arity, nearDistance);
+            builder.addNear(arity, nearDistance, 0, 0); // TODO: wire negative params
         } else if (type == ParseItem::ITEM_ONEAR) {
             uint32_t nearDistance = queryStack.getNearDistance();
-            builder.addONear(arity, nearDistance);
+            builder.addONear(arity, nearDistance, 0, 0); // TODO: wire negative params
         } else if (type == ParseItem::ITEM_PHRASE) {
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();

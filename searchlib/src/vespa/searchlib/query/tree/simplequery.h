@@ -26,10 +26,14 @@ struct SimpleAndNot : AndNot {
     ~SimpleAndNot() override;
 };
 struct SimpleNear : Near {
+    SimpleNear(size_t dist, size_t num_negative_terms, size_t negative_term_brick_size)
+      : Near(dist, num_negative_terms, negative_term_brick_size) {}
     explicit SimpleNear(size_t dist) : Near(dist) {}
     ~SimpleNear() override;
 };
 struct SimpleONear : ONear {
+    SimpleONear(size_t dist, size_t num_negative_terms, size_t negative_term_brick_size)
+      : ONear(dist, num_negative_terms, negative_term_brick_size) {}
     explicit SimpleONear(size_t dist) : ONear(dist) {}
     ~SimpleONear() override;
 };

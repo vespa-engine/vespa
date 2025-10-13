@@ -112,6 +112,34 @@ TEST(TermDataExtractorTest, requireThatUnrankedTermsAreSkipped) {
     EXPECT_EQ(id[0], term_data[0]->getUniqueId());
 }
 
+TEST(TermDataExtractorTest, requireThatNegativeNearTermsAreSkipped) {
+    QueryBuilder<ProtonNodeTypes> query_builder;
+    query_builder.addNear(3, 2, 2, 0);
+    query_builder.addStringTerm("term1", field, id[0], Weight(0));
+    query_builder.addStringTerm("term2", field, id[1], Weight(0));
+    query_builder.addStringTerm("term3", field, id[2], Weight(0));
+    Node::UP node = query_builder.build();
+
+    vector<const ITermData *> term_data;
+    TermDataExtractor::extractTerms(*node, term_data);
+    ASSERT_EQ(1u, term_data.size());
+    EXPECT_EQ(id[0], term_data[0]->getUniqueId());
+}
+
+TEST(TermDataExtractorTest, requireThatNegativeONearTermsAreSkipped) {
+    QueryBuilder<ProtonNodeTypes> query_builder;
+    query_builder.addONear(3, 2, 2, 0);
+    query_builder.addStringTerm("term1", field, id[0], Weight(0));
+    query_builder.addStringTerm("term2", field, id[1], Weight(0));
+    query_builder.addStringTerm("term3", field, id[2], Weight(0));
+    Node::UP node = query_builder.build();
+
+    vector<const ITermData *> term_data;
+    TermDataExtractor::extractTerms(*node, term_data);
+    ASSERT_EQ(1u, term_data.size());
+    EXPECT_EQ(id[0], term_data[0]->getUniqueId());
+}
+
 TEST(TermDataExtractorTest, requireThatNegativeTermsAreSkipped) {
     QueryBuilder<ProtonNodeTypes> query_builder;
     query_builder.addAnd(2);
@@ -130,8 +158,6 @@ TEST(TermDataExtractorTest, requireThatNegativeTermsAreSkipped) {
     EXPECT_EQ(id[0], term_data[0]->getUniqueId());
     EXPECT_EQ(id[1], term_data[1]->getUniqueId());
 }
-
-namespace {
 
 std::vector<uint32_t>
 same_element_query_ids(bool structured, bool ranked)
@@ -170,8 +196,6 @@ SameElementModifierTweak::SameElementModifierTweak(bool can_hide_match_data_for_
 SameElementModifierTweak::~SameElementModifierTweak()
 {
     SameElementModifier::can_hide_match_data_for_same_element = _old_can_hide_match_data_for_same_element;
-}
-
 }
 
 TEST(TermDataExtractorTest, requireThatSameElementIsExtractedAsOneOrZeroTerms)

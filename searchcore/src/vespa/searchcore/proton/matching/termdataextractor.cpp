@@ -34,6 +34,22 @@ public:
         n.getChildren()[0]->accept(*this);
     }
 
+    void visit(ProtonNodeTypes::Near &n) override {
+        const auto &list = n.getChildren();
+        size_t cnt = list.size() - std::min(n.num_negative_terms(), list.size());
+        for (size_t i = 0; i < cnt; ++i) {
+            list[i]->accept(*this);
+        }
+    }
+
+    void visit(ProtonNodeTypes::ONear &n) override {
+        const auto &list = n.getChildren();
+        size_t cnt = list.size() - std::min(n.num_negative_terms(), list.size());
+        for (size_t i = 0; i < cnt; ++i) {
+            list[i]->accept(*this);
+        }
+    }
+
     void visit(ProtonNodeTypes::Equiv &n) override {
         // XXX: unranked equiv not supported
         _term_data.push_back(&n);
