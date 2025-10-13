@@ -362,25 +362,29 @@ bool handle(const ItemGeoLocationTerm& item,
             QueryStackIterator::Data& _d,
             std::string& tmp)
 {
+    constexpr int M = 1000000;
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_GEO_LOCATION_TERM;
-    int x = item.longitude() * 1000000;
-    int y = item.latitude() * 1000000;
-    int radius = item.radius() * 1000000;
-    if (radius < 0)
-        radius = -1;
-    double radians = item.latitude() * M_PI / 180.0;
-    double cosLat = cos(radians);
-    int64_t aspect = cosLat * 4294967295L;
-    if (aspect < 0)
-        aspect = 0;
     tmp = "";
     if (item.has_geo_circle()) {
+        int x = item.longitude() * M;
+        int y = item.latitude() * M;
+        int radius = item.radius() * M;
+        if (radius < 0)
+            radius = -1;
+        double radians = item.latitude() * M_PI / 180.0;
+        double cosLat = cos(radians);
+        int64_t aspect = cosLat * 4294967295L;
+        if (aspect < 0)
+            aspect = 0;
         tmp += std::format("(2,{},{},{},0,1,0,{})", x, y, radius, aspect);
     }
     if (item.has_bounding_box()) {
-        tmp = std::format("[2,{},{},{},{}]",
-                          item.w(), item.s(), item.e(), item.n());
+        int w = item.w() * M;
+        int s = item.s() * M;
+        int e = item.e() * M;
+        int n = item.n() * M;
+        tmp = std::format("[2,{},{},{},{}]", w, s, e, n);
     }
     if (tmp == "") return false;
     _d.term_view = tmp;

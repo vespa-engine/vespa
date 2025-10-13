@@ -298,6 +298,15 @@ public class IntItem extends TermItem {
         }
     }
 
+    private static boolean needsFloatingPoint(Number num) {
+        double d = num.doubleValue();
+        long l = num.longValue();
+        double dFromL = l;
+        // NOTE: cannot use > Long.MAX_VALUE here, because that converts to > 0x1.0p63
+        if (d < -0x1.0p63 || d >= 0x1.0p63) return true;
+        return (d != dFromL);
+    }
+
     @Override
     SearchProtocol.QueryTreeItem toProtobuf() {
         // Check if this is a range or a simple term
@@ -306,8 +315,8 @@ public class IntItem extends TermItem {
             Number fromNum = from.number();
             Number toNum = to.number();
 
-            // Check if it's floating point or integer
-            if (fromNum instanceof Double || toNum instanceof Double) {
+            // Do we need floating point, or can we send it as an integer?
+            if (needsFloatingPoint(fromNum) || needsFloatingPoint(toNum)) {
                 var builder = SearchProtocol.ItemFloatingPointRangeTerm.newBuilder();
                 builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
                 builder.setLowerLimit(fromNum.doubleValue());
@@ -340,7 +349,7 @@ public class IntItem extends TermItem {
             // This is a simple term
             Number num = from.number();
 
-            if (num instanceof Double) {
+            if (needsFloatingPoint(num)) {
                 var builder = SearchProtocol.ItemFloatingPointTerm.newBuilder();
                 builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
                 builder.setNumber(num.doubleValue());

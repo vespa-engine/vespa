@@ -132,9 +132,7 @@ public class GeoLocationItem extends TermItem {
             builder.setLatitude(location.degNS());
             builder.setLongitude(location.degEW());
             double radius = location.degRadius();
-            if (radius >= 0) {
-                builder.setRadius(radius);
-            }
+            builder.setRadius(radius);
         }
 
         if (location.hasBoundingBox()) {
