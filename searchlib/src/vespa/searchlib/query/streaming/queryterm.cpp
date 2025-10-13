@@ -140,7 +140,7 @@ QueryTerm::set_element_length(uint32_t hitlist_idx, uint32_t element_length)
 void
 QueryTerm::unpack_match_data(uint32_t docid, MatchData& match_data, const IIndexEnvironment& index_env)
 {
-    if (isRanked()) {
+    if (evaluate() && isRanked()) {
         auto& qtd = static_cast<QueryTermData&>(getQueryItem());
         const ITermData& td = qtd.getTermData();
         unpack_match_data(docid, td, match_data, index_env);
