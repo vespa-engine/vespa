@@ -24,7 +24,7 @@ public class CommandLineOptions {
 
     public static final String HELP_OPTION = "help";
     public static final String INPUT_OPTION = "in";
-    public static final String OUTPUT_OPTION = "output";
+    public static final String OUTPUT_OPTION = "out";
     public static final String FIELD_OPTION = "field";
     public static final String LANGUAGE_OPTION = "language";
     public static final String ZST_COMPRESSION = "zst-compression";
