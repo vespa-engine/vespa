@@ -143,26 +143,16 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_BUSY_THREADS, EnumSet.of(sum, count, max));
         addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_TOTAL_THREADS.max());
         addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_QUEUE_SIZE.max());
-        addMetric(metrics, ContainerMetrics.JETTY_HTTP_COMPLIANCE_VIOLATION.rate());
 
         addMetric(metrics, ContainerMetrics.HTTPAPI_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, ContainerMetrics.HTTPAPI_PENDING, EnumSet.of(max, sum, count));
-        addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_OPERATIONS.rate());
         addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_UPDATES.rate());
         addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_REMOVES.rate());
         addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_PUTS.rate());
         addMetric(metrics, ContainerMetrics.HTTPAPI_SUCCEEDED.rate());
         addMetric(metrics, ContainerMetrics.HTTPAPI_FAILED.rate());
         addMetric(metrics, ContainerMetrics.HTTPAPI_PARSE_ERROR.rate());
-        addMetric(metrics, ContainerMetrics.HTTPAPI_CONDITION_NOT_MET.rate());
-        addMetric(metrics, ContainerMetrics.HTTPAPI_NOT_FOUND.rate());
-        addMetric(metrics, ContainerMetrics.HTTPAPI_FAILED_UNKNOWN.rate());
         addMetric(metrics, ContainerMetrics.HTTPAPI_FAILED_INSUFFICIENT_STORAGE.rate());
-        addMetric(metrics, ContainerMetrics.HTTPAPI_FAILED_TIMEOUT.rate());
-        addMetric(metrics, ContainerMetrics.HTTPAPI_QUEUED_OPERATIONS.last());
-        addMetric(metrics, ContainerMetrics.HTTPAPI_QUEUED_BYTES.last());
-        addMetric(metrics, ContainerMetrics.HTTPAPI_QUEUED_AGE.last());
-        addMetric(metrics, ContainerMetrics.HTTPAPI_MBUS_WINDOW_SIZE.last());
 
         addMetric(metrics, ContainerMetrics.MEM_HEAP_TOTAL.average());
         addMetric(metrics, ContainerMetrics.MEM_HEAP_FREE.average());
@@ -205,10 +195,8 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_HANDLER_UNHANDLED_EXCEPTIONS.rate());
 
         addMetric(metrics, ContainerMetrics.JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS.rate());
-        addMetric(metrics, ContainerMetrics.JDISC_APPLICATION_COMPONENT_GRAPH_RECONFIGURATIONS.rate());
 
         addMetric(metrics, ContainerMetrics.FEED_LATENCY, EnumSet.of(sum, count, max));
-        addMetric(metrics, ContainerMetrics.FEED_HTTP_REQUESTS, EnumSet.of(count, rate));
 
         addMetric(metrics, ContainerMetrics.JDISC_TLS_CAPABILITY_CHECKS_SUCCEEDED.rate());
         addMetric(metrics, ContainerMetrics.JDISC_TLS_CAPABILITY_CHECKS_FAILED.rate());
@@ -273,7 +261,7 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.QUERY_TIMEOUT, EnumSet.of(sum, count, max, min, ninety_five_percentile, ninety_nine_percentile));
         addMetric(metrics, ContainerMetrics.FAILED_QUERIES.rate());
         addMetric(metrics, ContainerMetrics.DEGRADED_QUERIES.rate());
-        addMetric(metrics, ContainerMetrics.HITS_PER_QUERY, EnumSet.of(sum, count, max, ninety_five_percentile, ninety_nine_percentile));
+        addMetric(metrics, ContainerMetrics.HITS_PER_QUERY, EnumSet.of(sum, count, max));
         addMetric(metrics, ContainerMetrics.SEARCH_CONNECTIONS, EnumSet.of(sum, count, max));
         addMetric(metrics, ContainerMetrics.QUERY_HIT_OFFSET, EnumSet.of(sum, count, max));
         addMetric(metrics, ContainerMetrics.DOCUMENTS_COVERED.count());
@@ -409,9 +397,6 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_DISK_BLOAT.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_MAX_BUCKET_SPREAD.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_MEMORY_USAGE_ALLOCATED_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_DISK_USAGE.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_DISK_BLOAT.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_MAX_BUCKET_SPREAD.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_MEMORY_USAGE_ALLOCATED_BYTES.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_MEMORY_USAGE_ALLOCATED_BYTES.average());
 
