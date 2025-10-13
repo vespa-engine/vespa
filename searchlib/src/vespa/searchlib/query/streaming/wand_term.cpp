@@ -23,14 +23,20 @@ WandTerm::evaluate()
     if (_score_threshold <= 0.0) {
         return DotProductTerm::evaluate();
     }
+    if (_cached_evaluate_result.has_value()) {
+        return _cached_evaluate_result.value();
+    }
     Scores scores;
     build_scores(scores);
+    bool result = false;
     for (auto &field_and_score : scores) {
         if (field_and_score.second > _score_threshold) {
-            return true;
+            result = true;
+            break;
         }
     }
-    return false;
+    _cached_evaluate_result.emplace(result);
+    return result;
 }
 
 void

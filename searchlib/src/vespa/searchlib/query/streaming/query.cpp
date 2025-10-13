@@ -40,7 +40,8 @@ QueryConnector::QueryConnector(const char * opName) noexcept
     : QueryNode(),
       _opName(opName),
       _index(),
-      _children()
+      _children(),
+      _cached_evaluate_result()
 {
 }
 
@@ -74,6 +75,7 @@ QueryConnector::reset()
     for (const auto & node : _children) {
         node->reset();
     }
+    _cached_evaluate_result.reset();
 }
 
 void
@@ -161,10 +163,18 @@ AndQueryNode::~AndQueryNode() = default;
 bool
 AndQueryNode::evaluate()
 {
-    for (const auto & qn : getChildren()) {
-        if ( ! qn->evaluate() ) return false;
+    if (_cached_evaluate_result.has_value()) {
+        return _cached_evaluate_result.value();
     }
-    return true;
+    bool result = !getChildren().empty();
+    for (const auto& qn : getChildren()) {
+        if (!qn->evaluate()) {
+            result = false;
+            break;
+        }
+    }
+    _cached_evaluate_result.emplace(result);
+    return result;
 }
 
 void
@@ -200,20 +210,22 @@ AndNotQueryNode::~AndNotQueryNode() = default;
 bool
 AndNotQueryNode::evaluate()
 {
-    if (getChildren().empty()) {
-        return false;
+    if (_cached_evaluate_result.has_value()) {
+        return _cached_evaluate_result.value();
     }
     auto it = getChildren().begin();
     auto mt = getChildren().end();
-    if ((*it)->evaluate()) {
+    bool result = it != mt && (*it)->evaluate();
+    if (result) {
         for (++it; it != mt; it++) {
             if ((*it)->evaluate()) {
-                return false;
+                result = false;
+                break;
             }
         }
-        return true;
     }
-    return false;
+    _cached_evaluate_result.emplace(result);
+    return result;
 }
 
 void
@@ -226,10 +238,18 @@ OrQueryNode::~OrQueryNode() = default;
 bool
 OrQueryNode::evaluate()
 {
-    for (const auto & qn : getChildren()) {
-        if (qn->evaluate()) return true;
+    if (_cached_evaluate_result.has_value()) {
+        return _cached_evaluate_result.value();
     }
-    return false;
+    bool result = false;
+    for (const auto & qn : getChildren()) {
+        if (qn->evaluate()) {
+            result = true;
+            break;
+        }
+    }
+    _cached_evaluate_result.emplace(result);
+    return result;
 }
 
 void
@@ -259,15 +279,12 @@ RankWithQueryNode::~RankWithQueryNode() = default;
 bool
 RankWithQueryNode::evaluate()
 {
-    bool first = true;
-    bool firstOk = false;
-    for (const auto & qn : getChildren()) {
-        if (qn->evaluate()) {
-            if (first) firstOk = true;
-        }
-        first = false;
+    if (_cached_evaluate_result.has_value()) {
+        return _cached_evaluate_result.value();
     }
-    return firstOk;
+    bool result = !getChildren().empty() && getChildren().front()->evaluate();
+    _cached_evaluate_result.emplace(result);
+    return result;
 }
 
 void

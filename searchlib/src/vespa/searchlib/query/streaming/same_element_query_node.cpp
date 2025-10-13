@@ -10,7 +10,8 @@ namespace search::streaming {
 
 SameElementQueryNode::SameElementQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms) noexcept
     : QueryTerm(std::move(result_base), "", index, Type::WORD, Normalizing::NONE),
-      _children()
+      _children(),
+      _cached_evaluate_result()
 {
     _children.reserve(num_terms);
 }
@@ -20,9 +21,14 @@ SameElementQueryNode::~SameElementQueryNode() = default;
 bool
 SameElementQueryNode::evaluate()
 {
+    if (_cached_evaluate_result.has_value()) {
+        return _cached_evaluate_result.value();
+    }
     std::vector<uint32_t> element_ids;
     get_element_ids(element_ids);
-    return !element_ids.empty();
+    bool result = !element_ids.empty();
+    _cached_evaluate_result.emplace(result);
+    return result;
 }
 
 const HitList &
@@ -89,6 +95,7 @@ SameElementQueryNode::reset()
     for (auto& child : _children) {
         child->reset();
     }
+    _cached_evaluate_result.reset();
 }
 
 void
