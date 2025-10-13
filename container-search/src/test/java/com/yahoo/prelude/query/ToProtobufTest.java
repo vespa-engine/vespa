@@ -631,6 +631,21 @@ public class ToProtobufTest {
     }
 
     @Test
+    void testConvertFromQueryWithFpRangeItem() {
+        assertConvertsToJson(new RangeItem(10.0, 10.5, "myindex"), """
+            {
+              "itemFloatingPointRangeTerm": {
+                "properties": {"index": "myindex"},
+                "lowerLimit": 10.0,
+                "upperLimit": 10.5,
+                "lowerInclusive": true,
+                "upperInclusive": true
+              }
+            }
+            """);
+    }
+
+    @Test
     void testConvertFromQueryWithNumericInItem() {
         NumericInItem numericIn = new NumericInItem("myindex");
         numericIn.addToken(42L);
