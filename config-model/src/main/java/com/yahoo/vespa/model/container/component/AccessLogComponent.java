@@ -130,9 +130,6 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         if (bufferSize != null) {
             builder.bufferSize(bufferSize);
         }
-        if (isHostedVespa) {
-            builder.rotationSize(100 * 1024 * 1024); // 100 MB
-        }
         return switch (compressionType) {
             case GZIP -> builder.compressionFormat(GZIP);
             case ZSTD -> builder.compressionFormat(ZSTD);
