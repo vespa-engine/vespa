@@ -2,6 +2,7 @@
 package com.yahoo.vespasignificance;
 
 import ai.vespa.vespasignificance.export.ExportClientParameters;
+import ai.vespa.vespasignificance.merge.MergeClientParameters;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
@@ -33,6 +34,8 @@ public class CommandLineOptions {
     public static final String SCHEMA_NAME = "schema";
     public static final String NODE_INDEX_OPTION = "node-index";
 
+    public static final String MIN_KEEP_OPTION = "min-keep";
+
     /** Options for selecting subcommand */
     static Options createGlobalOptions() {
         Options options = new Options();
@@ -50,6 +53,7 @@ public class CommandLineOptions {
         Map<String, String> commands = new LinkedHashMap<>();
         commands.put("generate", "Generate a significance model from a JSONL feed file.");
         commands.put("export", "Export terms and document frequency from a flushed index to TSV.");
+        commands.put("merge", "Merge terms and document frequency from a multiple TSV files.");
         return commands;
     }
 
@@ -227,6 +231,65 @@ public class CommandLineOptions {
                 .schemaName(cl.getOptionValue(SCHEMA_NAME))
                 .nodeIndex(cl.getOptionValue(NODE_INDEX_OPTION))
                 .zstCompress(cl.hasOption(ZST_COMPRESSION))
+                .build();
+    }
+
+    /** Options for merge command */
+    static Options createMergeOptions() {
+        Options options = new Options();
+
+        options.addOption(Option.builder("h")
+                .longOpt(HELP_OPTION)
+                .desc("Show this help and exit.")
+                .build());
+
+        options.addOption(Option.builder()
+                .longOpt(OUTPUT_OPTION)
+                .hasArg()
+                .argName("FILE.tsv[.zst]")
+                .desc("Output TSV file.")
+                .build());
+
+        options.addOption(Option.builder()
+                .longOpt(MIN_KEEP_OPTION)
+                .hasArg()
+                .argName("NUMBER")
+                .desc("Filter on document frequency lower than NUMBER.")
+                .build());
+
+        options.addOption(Option.builder("zst")
+                .longOpt(ZST_COMPRESSION)
+                .desc("Use Zstandard compression.")
+                .build());
+
+        return options;
+    }
+
+    /** Petty print help for export command */
+    public static void printMergeHelp() {
+        HelpFormatter fmt = new HelpFormatter();
+        fmt.setWidth(100);
+        fmt.setLeftPadding(2);
+        fmt.setDescPadding(2);
+        fmt.setOptionComparator(Comparator.comparing(Option::getLongOpt));
+        String cmd =
+                "vespa-significance merge [options] <input.tsv[.zst]> [<input2.tsv[.zst]> ...]";
+
+        String header = "Options:";
+        fmt.printHelp(cmd, header, createMergeOptions(), "", false);
+    }
+
+    /**
+     * Parse generate command options to ClientParameters. Expects CommandLine parameter to have
+     * input files in getArgList(). Use {@link org.apache.commons.cli.DefaultParser} with stopAtNonOption=true
+     * to ensure this.
+     */
+    public static MergeClientParameters parseMergeCommandLineArguments(CommandLine cl) {
+        return MergeClientParameters.builder()
+                .outputFile(cl.hasOption(OUTPUT_OPTION) ? cl.getOptionValue(OUTPUT_OPTION) : "term_df.tsv")
+                .zstCompress(cl.hasOption(ZST_COMPRESSION))
+                .minKeep(cl.hasOption(MIN_KEEP_OPTION) ? Long.parseLong(cl.getOptionValue(MIN_KEEP_OPTION)) : Long.MIN_VALUE)
+                .addInputFiles(cl.getArgList())
                 .build();
     }
 
