@@ -365,14 +365,8 @@ class LogFileHandler <LOGTYPE> {
         private void getFileSize(Instant now) {
             if (fileOutput != null) {
                 try {
-                    var path = Paths.get(fileName);
+                    fileSize = Files.size(Paths.get(fileName));
                     lastFileSizeCheck = now;
-                    // Don't try to get size if file does not exist (file was compressed or deleted manually)
-                    if (path.toFile().exists()) {
-                        fileSize = Files.size(path);
-                    } else {
-                        fileSize = 0;
-                    }
                 } catch (IOException e) {
                     logger.log(Level.WARNING, "Failed to get log file size: " + Exceptions.toMessageString(e), e);
                 }
