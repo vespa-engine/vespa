@@ -17,6 +17,8 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
+#include <vespa/searchlib/query/proto_tree_converter.h>
+#include <vespa/searchlib/query/proto_tree_converter.hpp>
 #include <vespa/searchlib/query/tree/querytreecreator.h>
 
 #include <vespa/log/log.h>
@@ -172,8 +174,8 @@ NeedsRankingVisitor::~NeedsRankingVisitor() = default;
 Node::UP
 create_query_tree(const SerializedQueryTree &queryTree)
 {
-    auto stack_dump_iterator = queryTree.makeIterator();
-    return QueryTreeCreator<ProtonNodeTypes>::create(*stack_dump_iterator);
+    QueryTreeCreator<ProtonNodeTypes> converter;
+    return queryTree.apply(converter);
 }
 
 }  // namespace

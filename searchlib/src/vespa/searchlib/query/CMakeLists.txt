@@ -3,6 +3,7 @@ vespa_add_library(searchlib_query OBJECT
     SOURCES
     from_proto.cpp
     numeric_range_spec.cpp
+    proto_tree_converter.cpp
     query_normalization.cpp
     query_stack_iterator.cpp
     query_term_decoder.cpp
