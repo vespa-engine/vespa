@@ -64,8 +64,10 @@ QueryConnector::evaluateHits(HitList & hl)
 void
 QueryConnector::unpack_match_data(uint32_t docid, MatchData& match_data, const IIndexEnvironment& index_env)
 {
-    for (const auto & node : _children) {
-        node->unpack_match_data(docid, match_data, index_env);
+    if (evaluate()) {
+        for (const auto &node: _children) {
+            node->unpack_match_data(docid, match_data, index_env);
+        }
     }
 }
 
