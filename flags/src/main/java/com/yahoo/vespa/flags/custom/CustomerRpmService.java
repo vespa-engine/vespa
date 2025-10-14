@@ -74,7 +74,7 @@ public class CustomerRpmService {
         this.packageName = packageName;
         this.memoryLimitMib = Objects.requireNonNull(memoryLimitMib);
         this.cpuLimitCores = cpuLimitCores == null || cpuLimitCores <= 0.0 ? null : cpuLimitCores;
-        this.repositories = repositories;
+        this.repositories = repositories == null ? List.of() : repositories;
         this.disabled = disabled != null && disabled;
     }
 
