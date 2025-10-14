@@ -44,6 +44,8 @@ public:
     // Returns a static string representing the name of the underlying accelerator target (e.g. "AVX3", "NEON" etc.)
     [[nodiscard]] virtual const char* target_name() const noexcept { return "Unknown"; }
 
+    [[nodiscard]] virtual std::string friendly_name() const;
+
     static std::unique_ptr<IAccelerated> create_baseline_auto_vectorized_target();
     static std::unique_ptr<IAccelerated> create_best_auto_vectorized_target();
     static std::unique_ptr<IAccelerated> create_best_accelerator_impl_and_target();

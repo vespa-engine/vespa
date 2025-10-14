@@ -10,6 +10,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("hwaccelerated_test");
 
+using namespace ::testing;
+
 namespace vespalib::hwaccelerated {
 
 // TODO reconcile run-time startup verification in `iaccelerated.cpp` with what's in here!
@@ -91,7 +93,16 @@ constexpr std::span<const size_t> test_lengths() noexcept {
     return lengths;
 }
 
-TEST(HwAcceleratedTest, euclidean_distance_impls_match_source_of_truth) {
+struct HwAcceleratedTest : Test {
+    static void SetUpTestSuite() {
+        fprintf(stderr, "Testing accelerators:\n");
+        for (const auto* accel : all_accelerators_to_test()) {
+            fprintf(stderr, "%s\n", accel->friendly_name().c_str());
+        }
+    }
+};
+
+TEST_F(HwAcceleratedTest, euclidean_distance_impls_match_source_of_truth) {
     auto accelerators = all_accelerators_to_test();
     for (size_t test_length : test_lengths()) {
         GTEST_DO(verify_euclidean_distance(accelerators, test_length));
@@ -108,7 +119,7 @@ void verify_dot_product(std::span<const IAccelerated*> accelerators, size_t test
     verify_dot_product<double>(accelerators, testLength, 0.0);
 }
 
-TEST(HwAcceleratedTest, dot_product_impls_match_source_of_truth) {
+TEST_F(HwAcceleratedTest, dot_product_impls_match_source_of_truth) {
     auto accelerators = all_accelerators_to_test();
     for (size_t test_length : test_lengths()) {
         GTEST_DO(verify_dot_product(accelerators, test_length));
