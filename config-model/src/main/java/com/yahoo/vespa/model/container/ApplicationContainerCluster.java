@@ -111,6 +111,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private Integer memoryPercentage = null;
     
+    // When set, overrides estimated ONNX model memory cost
     private Optional<Long> inferenceMemoryBytes = Optional.empty();
 
     private List<ApplicationClusterEndpoint> endpoints = List.of();
@@ -219,11 +220,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     }
 
     public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage; }
-
-    /** Sets the memory to dedicate to ONNX inference (in bytes), overriding automatic estimation. */
+    
     public void setInferenceMemory(long bytes) { this.inferenceMemoryBytes = Optional.of(bytes); }
 
-    /** Returns the configured inference memory in bytes, if set. */
     public Optional<Long> getInferenceMemory() { return inferenceMemoryBytes; }
 
     @Override
