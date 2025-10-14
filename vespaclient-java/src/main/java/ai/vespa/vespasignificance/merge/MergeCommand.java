@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.vespasignificance.merge;
 
+import ai.vespa.vespasignificance.common.VespaSignificanceTsvReader;
 import com.yahoo.vespasignificance.CommandLineOptions;
 import io.airlift.compress.zstd.ZstdInputStream;
 import io.airlift.compress.zstd.ZstdOutputStream;
@@ -17,8 +18,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 
 /**
  * vespa-significance subcommand that merges multiple sorted TSV inputs into a single TSV output.
@@ -46,9 +50,26 @@ public class MergeCommand {
             resolveAndValidateInputs();
             ensureOutputNotInInputs();
 
-            var merger = new TermDfExternalMerger(new HalfSystemLimitBudget(), inputPaths, MergeCommand::openInputReader);
-            try (var writer = newOutputWriter(outputPath, params.zstCompress())) {
-                merger.mergeFiles(writer, params.minKeep());
+            long totalDocCount = 0L;
+            for (Path p : inputPaths) {
+                var h = readHeader(p);
+                totalDocCount += h.documentCount();
+            }
+
+            var merger = new TermDfExternalMerger(
+                    new HalfSystemLimitBudget(),
+                    inputPaths,
+                    MergeCommand::openInputReader
+            );
+
+            var output = Files.newOutputStream(outputPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            var bos = new BufferedOutputStream(output, 1 << 16);
+            var os = params.zstCompress() ? new ZstdOutputStream(bos) : bos;
+            var ow = new OutputStreamWriter(os, StandardCharsets.UTF_8);
+
+            try (var tsv = new ai.vespa.vespasignificance.common.VespaSignificanceTsvWriter(ow, totalDocCount, true, Instant.now())) {
+                merger.mergeFiles(tsv::writeRow, params.minKeep());
+                tsv.flush();
             }
 
             System.out.println("Merged files to " + outputPath);
@@ -125,19 +146,38 @@ public class MergeCommand {
     }
 
     /**
-     * Opens an input path as a buffered {@link BufferedReader}.
+     * Opens a reader and skips the header to get to TSV data section.
      */
     private static BufferedReader openInputReader(Path path) throws IOException {
-        String name = path.getFileName().toString().toLowerCase(java.util.Locale.ROOT);
+        String name = path.getFileName().toString().toLowerCase(Locale.ROOT);
+        var in = Files.newInputStream(path);
+        var bin = new BufferedInputStream(in, 1 << 16);
+        InputStream decoded = name.endsWith(".zst")
+                ? new ZstdInputStream(bin)
+                : bin;
 
-        if (name.endsWith(".zst")) {
-            InputStream in = Files.newInputStream(path, StandardOpenOption.READ);
-            BufferedInputStream bin = new BufferedInputStream(in);
-            ZstdInputStream zst = new ZstdInputStream(bin);
-            return new BufferedReader(new InputStreamReader(zst, StandardCharsets.UTF_8));
+        var br = new BufferedReader(new InputStreamReader(decoded, StandardCharsets.UTF_8), 1 << 16);
+        String line;
+        while ((line = br.readLine()) != null) {
+            if (Objects.equals(line, VespaSignificanceTsvReader.HEADER_END)) break;
         }
+        return br;
+    }
 
-        return Files.newBufferedReader(path, StandardCharsets.UTF_8);
+    /**
+     * Extracts header from vespa significance tsv file (see {@link VespaSignificanceTsvReader}).
+     */
+    private VespaSignificanceTsvReader.Header readHeader(Path path) throws IOException {
+        String name = path.getFileName().toString().toLowerCase(Locale.ROOT);
+        var in = Files.newInputStream(path);
+        var bin = new BufferedInputStream(in);
+        InputStream decoded = name.endsWith(".zst")
+                ? new ZstdInputStream(bin)
+                : bin;
+
+        try (var r = new VespaSignificanceTsvReader(new InputStreamReader(decoded, StandardCharsets.UTF_8))) {
+            return r.header();
+        }
     }
 
     /**
