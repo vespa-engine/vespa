@@ -3,6 +3,7 @@ vespa_add_library(searchcommon_searchcommon_common OBJECT
     SOURCES
     datatype.cpp
     dictionary_config.cpp
+    element_ids.cpp
     growstrategy.cpp
     schema.cpp
     schemaconfigurer.cpp

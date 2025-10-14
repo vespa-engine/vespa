@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "element_ids.h"
+#include <vespa/searchcommon/common/element_ids.h>
 #include <cstdint>
 #include <string>
 
@@ -25,7 +25,7 @@ public:
     }
     virtual ~DocsumFieldWriter() = default;
     virtual bool isGenerated() const = 0;
-    virtual void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state, ElementIds selected_elements, vespalib::slime::Inserter &target) const = 0;
+    virtual void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state, search::common::ElementIds selected_elements, vespalib::slime::Inserter &target) const = 0;
     virtual const std::string & getAttributeName() const;
     virtual bool isDefaultValue(uint32_t docid, const GetDocsumsState& state) const;
     void setIndex(size_t v) { _index = v; }

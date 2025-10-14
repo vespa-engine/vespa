@@ -15,6 +15,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.positionsdfw");
 
+using search::common::ElementIds;
+
 namespace search::docsummary {
 
 namespace {

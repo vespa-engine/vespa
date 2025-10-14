@@ -22,6 +22,7 @@ using search::SingleInt64ExtAttribute;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::attribute::IAttributeFunctor;
+using search::common::ElementIds;
 using std::string;
 using std::vector;
 

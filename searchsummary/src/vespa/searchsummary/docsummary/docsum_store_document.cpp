@@ -8,6 +8,8 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 
+using search::common::ElementIds;
+
 namespace search::docsummary {
 
 DocsumStoreDocument::DocsumStoreDocument(std::unique_ptr<document::Document> document)

@@ -25,7 +25,7 @@ public:
     bool isGenerated() const override;
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      ElementIds selected_elements,
+                      search::common::ElementIds selected_elements,
                       vespalib::slime::Inserter& target) const override;
 };
 

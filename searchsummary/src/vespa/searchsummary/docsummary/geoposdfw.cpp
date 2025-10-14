@@ -15,11 +15,12 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.geoposdfw");
 
-namespace search::docsummary {
-
-using attribute::IAttributeVector;
-using attribute::IAttributeContext;
+using search::attribute::IAttributeVector;
+using search::attribute::IAttributeContext;
+using search::common::ElementIds;
 using vespalib::Issue;
+
+namespace search::docsummary {
 
 GeoPositionDFW::GeoPositionDFW(const std::string & attrName, bool useV8geoPositions) :
     AttrDFW(attrName),

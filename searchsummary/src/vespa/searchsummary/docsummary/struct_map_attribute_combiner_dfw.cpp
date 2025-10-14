@@ -16,6 +16,7 @@
 
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
+using search::common::ElementIds;
 using vespalib::slime::Cursor;
 
 namespace search::docsummary {

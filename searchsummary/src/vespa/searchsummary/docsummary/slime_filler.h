@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "element_ids.h"
 #include "slime_filler_filter.h"
 #include <vespa/document/fieldvalue/fieldvaluevisitor.h>
+#include <vespa/searchcommon/common/element_ids.h>
 #include <cstdint>
 #include <vector>
 
@@ -22,7 +22,7 @@ class IStringFieldConverter;
 class SlimeFiller : public document::ConstFieldValueVisitor {
 
     vespalib::slime::Inserter&   _inserter;
-    ElementIds                   _selected_elements;
+    search::common::ElementIds   _selected_elements;
     IStringFieldConverter*       _string_converter;
     SlimeFillerFilter::Iterator  _filter;
 
@@ -55,21 +55,21 @@ class SlimeFiller : public document::ConstFieldValueVisitor {
     void visit(const document::ReferenceFieldValue& value) override;
 public:
     SlimeFiller(vespalib::slime::Inserter& inserter);
-    SlimeFiller(vespalib::slime::Inserter& inserter, ElementIds selected_elements);
-    SlimeFiller(vespalib::slime::Inserter& inserter, ElementIds selected_elements,
+    SlimeFiller(vespalib::slime::Inserter& inserter, search::common::ElementIds selected_elements);
+    SlimeFiller(vespalib::slime::Inserter& inserter, search::common::ElementIds selected_elements,
                 IStringFieldConverter* string_converter,
                 SlimeFillerFilter::Iterator filter);
     ~SlimeFiller() override;
 
-    static void insert_summary_field(const document::FieldValue& value, ElementIds selected_elements,
+    static void insert_summary_field(const document::FieldValue& value, search::common::ElementIds selected_elements,
                                      vespalib::slime::Inserter& inserter,
                                      IStringFieldConverter* converter = nullptr);
 
-    static void insert_summary_field_with_field_filter(const document::FieldValue& value, ElementIds selected_elements,
+    static void insert_summary_field_with_field_filter(const document::FieldValue& value, search::common::ElementIds selected_elements,
                                                        vespalib::slime::Inserter& inserter,
                                                        IStringFieldConverter* converter,
                                                        const SlimeFillerFilter* filter);
-    static void insert_juniper_field(const document::FieldValue& value, ElementIds selected_elements,
+    static void insert_juniper_field(const document::FieldValue& value, search::common::ElementIds selected_elements,
                                      vespalib::slime::Inserter& inserter, IStringFieldConverter& converter);
 };
 

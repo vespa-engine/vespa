@@ -26,7 +26,7 @@ TokensDFW::isGenerated() const
 
 void
 TokensDFW::insert_field(uint32_t, const IDocsumStoreDocument* doc, GetDocsumsState&,
-                        ElementIds selected_elements,
+                        search::common::ElementIds selected_elements,
                         vespalib::slime::Inserter& target) const
 {
     if (doc != nullptr) {

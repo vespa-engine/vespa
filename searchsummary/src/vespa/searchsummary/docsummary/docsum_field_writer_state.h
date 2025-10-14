@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "element_ids.h"
+#include <vespa/searchcommon/common/element_ids.h>
 #include <cstdint>
 
 namespace vespalib::slime { struct Inserter; }
@@ -17,7 +17,8 @@ namespace search::docsummary {
 class DocsumFieldWriterState
 {
 public:
-    virtual void insertField(uint32_t docId, ElementIds selected_elements, vespalib::slime::Inserter &target) = 0;
+    virtual void insertField(uint32_t docId, search::common::ElementIds selected_elements,
+                             vespalib::slime::Inserter &target) = 0;
     virtual ~DocsumFieldWriterState() = default;
 };
 

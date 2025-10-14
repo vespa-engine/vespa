@@ -4,7 +4,7 @@
 #include <vespa/searchsummary/docsummary/i_docsum_store_document.h>
 #include "tokens_converter.h"
 
-using search::docsummary::ElementIds;
+using search::common::ElementIds;
 using search::docsummary::GetDocsumsState;
 using search::docsummary::IDocsumStoreDocument;
 

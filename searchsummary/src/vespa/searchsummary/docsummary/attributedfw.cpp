@@ -27,6 +27,7 @@ using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::attribute::IMultiValueAttribute;
 using search::attribute::IMultiValueReadView;
+using search::common::ElementIds;
 using vespalib::Issue;
 using vespalib::Memory;
 using vespalib::eval::Value;

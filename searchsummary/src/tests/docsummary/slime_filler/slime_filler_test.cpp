@@ -65,7 +65,7 @@ using document::StructFieldValue;
 using document::TensorDataType;
 using document::TensorFieldValue;
 using document::WeightedSetFieldValue;
-using search::docsummary::ElementIds;
+using search::common::ElementIds;
 using search::docsummary::IStringFieldConverter;
 using search::docsummary::ResultConfig;
 using search::docsummary::SlimeFiller;

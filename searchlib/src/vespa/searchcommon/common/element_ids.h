@@ -6,10 +6,11 @@
 #include <span>
 #include <vector>
 
-namespace search::docsummary {
+namespace search::common {
 
 /*
- * The selected element ids for a multi-value summary field, cf. SummaryElementsSelector.
+ * The selected element ids for a multi-value summary field, cf. SummaryElementsSelector or for unpacked
+ * match data.
  *
  * If _element_ids.data() is nullptr then all elements are selected.
  */
