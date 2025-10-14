@@ -50,6 +50,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -2571,4 +2573,35 @@ public class ModelProvisioningTest {
 
     }
 
+    @Test
+    public void testMemoryPercentageWithInferenceMemory() {
+        String services = "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "   <container id='container' version='1.0'>" +
+                "   <nodes>" +
+                "       <resources memory='4Gb'/>" +
+                "   </nodes>" +
+                "   <inference>" +
+                "       <memory>2Gb</memory>" +
+                "   </inference>" +
+                "</container>" +
+                "</services>";
+
+        VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(true);
+        tester.addHosts(new NodeResources(1, 4, 10, 1), 1);
+        VespaModel model = tester.createModel(services, true, deployStateWithClusterEndpoints("container"));
+        
+        ApplicationContainerCluster cluster = model.getContainerClusters().get("container");
+        assertNotNull(cluster);
+
+        // Verify inference memory
+        assertTrue(cluster.getInferenceMemory().isPresent());
+        assertEquals(2L * 1024 * 1024 * 1024, cluster.getInferenceMemory().get());
+        
+        // Verify memory percentage left for JVM
+        var memoryPercentage = cluster.getMemoryPercentage();
+        assertTrue(memoryPercentage.isPresent());
+        assertEquals(new ContainerCluster.JvmMemoryPercentage(33, OptionalInt.of(27), OptionalDouble.of(1.105)), memoryPercentage.get());
+    }
 }

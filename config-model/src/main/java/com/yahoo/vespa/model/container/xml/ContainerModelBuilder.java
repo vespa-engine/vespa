@@ -53,6 +53,7 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
+import com.yahoo.vespa.model.builder.xml.dom.BinaryUnit;
 import com.yahoo.vespa.model.builder.xml.dom.DomComponentBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomHandlerBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -226,6 +227,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addModelEvaluationRuntime(deployState, cluster);
         addModelEvaluation(spec, cluster, context); // NOTE: Must be done after addNodes
+        addInferenceMemory(spec, cluster);
 
         addServerProviders(deployState, spec, cluster);
 
@@ -878,6 +880,47 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private int getIntValue(Element element, String name, int defaultValue) {
         Element child = XML.getChild(element, name);
         return (child != null) ? Integer.parseInt(child.getTextContent()) : defaultValue;
+    }
+
+    private void addInferenceMemory(Element spec, ApplicationContainerCluster cluster) {
+        var inferenceElement = XML.getChild(spec, "inference");
+        if (inferenceElement == null) return;
+
+        var memoryElement = XML.getChild(inferenceElement, "memory");
+
+        if (memoryElement != null) {
+            var inferenceMemoryString = memoryElement.getTextContent().trim();
+            long inferenceMemoryBytes;
+
+            try {
+                inferenceMemoryBytes = (long) BinaryUnit.valueOf(inferenceMemoryString);
+            } catch (IllegalArgumentException exception) {
+                throw new IllegalArgumentException(
+                        "Invalid inference memory value, got: " + inferenceMemoryString, exception);
+            }
+
+            // Validate that inference memory does not exceed node memory
+            if (!cluster.getContainers().isEmpty()) {
+                var nodeMemoryGiB = cluster.getContainers().stream()
+                        .mapToDouble(container -> container.getHostResource().realResources().memoryGiB())
+                        .min()
+                        .orElse(Double.MAX_VALUE);
+
+                if (nodeMemoryGiB > 0) {
+                    long containerMemoryBytes = (long) (nodeMemoryGiB * 1024 * 1024 * 1024);
+
+                    if (inferenceMemoryBytes > containerMemoryBytes) {
+                        throw new IllegalArgumentException(
+                                String.format(
+                                        "Inference memory cannot exceed available node memory (%.2f GiB), got: %s",
+                                        nodeMemoryGiB, inferenceMemoryString
+                                ));
+                    }
+                }
+            }
+
+            cluster.setInferenceMemory(inferenceMemoryBytes);
+        }
     }
 
     protected void addModelEvaluationRuntime(DeployState deployState, ApplicationContainerCluster cluster) {

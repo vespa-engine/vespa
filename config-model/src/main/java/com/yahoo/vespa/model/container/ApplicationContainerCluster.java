@@ -110,6 +110,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private final int heapSizePercentageOfAvailableMemory;
 
     private Integer memoryPercentage = null;
+    
+    // When set, overrides estimated ONNX model memory cost
+    private Optional<Long> inferenceMemoryBytes = Optional.empty();
 
     private List<ApplicationClusterEndpoint> endpoints = List.of();
 
@@ -217,6 +220,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     }
 
     public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage; }
+    
+    public void setInferenceMemory(long bytes) { this.inferenceMemoryBytes = Optional.of(bytes); }
+
+    public Optional<Long> getInferenceMemory() { return inferenceMemoryBytes; }
 
     @Override
     public Optional<JvmMemoryPercentage> getMemoryPercentage() {
@@ -229,7 +236,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             // Node memory is known, so compute heap size as a percentage of available memory (excluding overhead, which the startup scripts also account for)
             double totalMemoryGb = getContainers().stream().mapToDouble(c -> c.getHostResource().realResources().memoryGiB()).min().orElseThrow();
             double totalMemoryMinusOverhead = Math.max(0, totalMemoryGb - Host.memoryOverheadGb);
-            double onnxModelCostGb = onnxModelCostCalculator.aggregatedModelCostInBytes() / (1024D * 1024 * 1024);
+            // Use configured inference memory if set, otherwise use automatic ONNX model cost estimation
+            double onnxModelCostGb = inferenceMemoryBytes.orElseGet(() -> onnxModelCostCalculator.aggregatedModelCostInBytes()) / (1024D * 1024 * 1024);
             double availableMemoryGb = Math.max(0, totalMemoryMinusOverhead - onnxModelCostGb);
             int memoryPercentageOfAvailable = (int) (heapSizePercentageOfAvailable * availableMemoryGb / totalMemoryMinusOverhead);
             int memoryPercentageOfTotal = (int) (heapSizePercentageOfAvailable * availableMemoryGb / totalMemoryGb);
