@@ -3,6 +3,7 @@ package ai.vespa.vespasignificance.common;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -61,6 +62,14 @@ public final class VespaSignificanceTsvReader implements AutoCloseable {
     /** Open and validate header. */
     public VespaSignificanceTsvReader(Path path) throws IOException {
         this.bufferedReader = Files.newBufferedReader(path, StandardCharsets.UTF_8);
+        this.header = readAndValidateHeader(this.bufferedReader);
+        this.enforceSorted = this.header.sorted;
+    }
+
+    public VespaSignificanceTsvReader(Reader reader) throws IOException {
+        this.bufferedReader = (reader instanceof BufferedReader)
+                ? (BufferedReader) reader
+                : new BufferedReader(reader, 1 << 16);
         this.header = readAndValidateHeader(this.bufferedReader);
         this.enforceSorted = this.header.sorted;
     }
