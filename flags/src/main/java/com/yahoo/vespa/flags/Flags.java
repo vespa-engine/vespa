@@ -393,7 +393,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag USE_NEW_PREPARE_FOR_RESTART_METHOD = defineFeatureFlag(
-            "use-new-prepare-for-restart-method", false,
+            "use-new-prepare-for-restart-method", true,
             List.of("hmusum"), "2025-06-17", "2025-12-01",
             "Whether to use new logic and new RPC method to do prepareForRestart for content nodes",
             "Takes effect at next tick",
