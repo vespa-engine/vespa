@@ -4,6 +4,7 @@ package ai.vespa.vespasignificance.common;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +32,17 @@ public final class VespaSignificanceTsvWriter implements AutoCloseable {
                                       Instant createdAt) throws IOException {
         this.bw = new BufferedWriter(
                 new OutputStreamWriter(Files.newOutputStream(out), StandardCharsets.UTF_8));
+        this.sorted = sorted;
+        writeHeader(documentCount, sorted, createdAt);
+    }
+
+    public VespaSignificanceTsvWriter(Writer writer,
+                                      long documentCount,
+                                      boolean sorted,
+                                      Instant createdAt) throws IOException {
+        this.bw = (writer instanceof BufferedWriter)
+                ? (BufferedWriter) writer
+                : new BufferedWriter(writer, 1 << 16);
         this.sorted = sorted;
         writeHeader(documentCount, sorted, createdAt);
     }
