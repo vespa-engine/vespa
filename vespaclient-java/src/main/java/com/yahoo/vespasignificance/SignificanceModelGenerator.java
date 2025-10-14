@@ -3,6 +3,7 @@ package com.yahoo.vespasignificance;
 
 import ai.vespa.vespasignificance.generate.FormatStrategy;
 import ai.vespa.vespasignificance.generate.JsonlDocumentFormatStrategy;
+import ai.vespa.vespasignificance.generate.VstsvFormatStrategy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.yahoo.language.Language;
@@ -83,6 +84,8 @@ public class SignificanceModelGenerator {
                 case jsonl -> formatStrategy = new JsonlDocumentFormatStrategy(
                         input, tokenizer, tokenizationLanguage, languageKeyParts, clientParameters.field
                 );
+
+                case vstsv -> formatStrategy = new VstsvFormatStrategy(input);
             }
 
             generate();
@@ -99,7 +102,8 @@ public class SignificanceModelGenerator {
     private enum InputFormat {
 
         /** Vespa documents in JSONL format. */
-        jsonl;
+        jsonl,
+        vstsv;
 
         /** Creates a comma separated list of the targets as a String */
         private static String allowed() {
@@ -175,17 +179,19 @@ public class SignificanceModelGenerator {
         }
 
         // Legacy behavior for jsonl
-        if (clientParameters.zstCompression && !outputFile.endsWith(".zst")) {
-            System.err.println("Output file must have .zst extension when using zst compression");
-            CommandLineOptions.printGenerateHelp();
-            throw new GenerateFailure();
-        }
+        if (format == InputFormat.jsonl) {
+            if (clientParameters.zstCompression && !outputFile.endsWith(".zst")) {
+                System.err.println("Output file must have .zst extension when using zst compression");
+                CommandLineOptions.printGenerateHelp();
+                throw new GenerateFailure();
+            }
 
-        // Legacy behavior for jsonl
-        if (!clientParameters.zstCompression && outputFile.endsWith(".zst")) {
-            System.err.println("Output file must not have .zst extension when not using zst compression");
-            CommandLineOptions.printGenerateHelp();
-            throw new GenerateFailure();
+            // Legacy behavior for jsonl
+            if (!clientParameters.zstCompression && outputFile.endsWith(".zst")) {
+                System.err.println("Output file must not have .zst extension when not using zst compression");
+                CommandLineOptions.printGenerateHelp();
+                throw new GenerateFailure();
+            }
         }
 
         this.outputFile = outputFile;
