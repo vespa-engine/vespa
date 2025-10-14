@@ -2,6 +2,7 @@
 package ai.vespa.vespasignificance.merge;
 
 import ai.vespa.vespasignificance.common.VespaSignificanceTsvReader;
+import ai.vespa.vespasignificance.common.VespaSignificanceTsvWriter;
 import com.yahoo.vespasignificance.CommandLineOptions;
 import io.airlift.compress.zstd.ZstdInputStream;
 import io.airlift.compress.zstd.ZstdOutputStream;
@@ -25,7 +26,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * vespa-significance subcommand that merges multiple sorted TSV inputs into a single TSV output.
+ * vespa-significance subcommand that merges multiple sorted Vespa Significance TSV inputs into a single VSTSV output.
  *
  * @author johsol
  */
@@ -67,9 +68,9 @@ public class MergeCommand {
             var os = params.zstCompress() ? new ZstdOutputStream(bos) : bos;
             var ow = new OutputStreamWriter(os, StandardCharsets.UTF_8);
 
-            try (var tsv = new ai.vespa.vespasignificance.common.VespaSignificanceTsvWriter(ow, totalDocCount, true, Instant.now())) {
-                merger.mergeFiles(tsv::writeRow, params.minKeep());
-                tsv.flush();
+            try (var vstsv = new VespaSignificanceTsvWriter(ow, totalDocCount, true, Instant.now())) {
+                merger.mergeFiles(vstsv::writeRow, params.minKeep());
+                vstsv.flush();
             }
 
             System.out.println("Merged files to " + outputPath);
@@ -90,9 +91,7 @@ public class MergeCommand {
     private void prepareOutputPath() {
         var out = params.outputFile();
         if (out == null || out.isBlank()) {
-            System.err.println("Error: --output is required.");
-            CommandLineOptions.printMergeHelp();
-            throw new MergeFailure();
+            out = "merged.vstsv";
         }
 
         boolean wantsZst = params.zstCompress();
@@ -146,7 +145,7 @@ public class MergeCommand {
     }
 
     /**
-     * Opens a reader and skips the header to get to TSV data section.
+     * Opens a reader and skips the header to get to vstsv data section.
      */
     private static BufferedReader openInputReader(Path path) throws IOException {
         String name = path.getFileName().toString().toLowerCase(Locale.ROOT);
