@@ -818,4 +818,50 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "</container>");
     }
 
+    @Test
+    void inference_memory_is_configured() {
+        var clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <inference>",
+                "    <memory>8Gb</memory>",
+                "  </inference>",
+                nodesXml,
+                "</container>");
+        var models = createModel(root, clusterElem);
+        var cluster = (ApplicationContainerCluster) models.get(0).getCluster();
+        assertEquals(8L * 1024 * 1024 * 1024, cluster.getInferenceMemory().orElse(0L));
+    }
+
+    @Test
+    void inference_memory_invalid() {
+        var clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <inference>",
+                "    <memory>-1Gb</memory>",
+                "  </inference>",
+                "</container>");
+        var exception = assertThrows(IllegalArgumentException.class, () -> createModel(root, clusterElem));
+        assertThat(exception.getMessage(), containsString("Invalid inference memory value, got: -1Gb"));
+    }
+
+    @Test
+    void inference_memory_exceed_node_memory() {
+        var flavor = new Flavor(new FlavorsConfig.Flavor.Builder().name("test").minMainMemoryAvailableGb(16).build());
+        var deployState = new DeployState.Builder()
+                .modelHostProvisioner(new SingleNodeProvisioner(flavor))
+                .properties(new TestProperties().setHostedVespa(true))
+                .build();
+        var myRoot = new MockRoot("root", deployState);
+
+        var clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <inference>",
+                "    <memory>32Gb</memory>",
+                "  </inference>",
+                "</container>");
+
+        var exception = assertThrows(IllegalArgumentException.class, () -> createModel(myRoot, clusterElem));
+        assertThat(exception.getMessage(), containsString("Inference memory cannot exceed available node memory (16.00 GiB), got: 32Gb"));
+    }
+
 }
