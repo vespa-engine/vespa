@@ -7,6 +7,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.copy_dfw");
 
+using search::common::ElementIds;
+
 namespace search::docsummary {
 
 CopyDFW::CopyDFW(const std::string& inputField)

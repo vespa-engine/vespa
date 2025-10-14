@@ -3,6 +3,8 @@
 #include "document_id_dfw.h"
 #include "i_docsum_store_document.h"
 
+using search::common::ElementIds;
+
 namespace search::docsummary {
 
 DocumentIdDFW::DocumentIdDFW() = default;

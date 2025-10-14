@@ -48,6 +48,7 @@ using document::StructFieldValue;
 using document::WeightedSetFieldValue;
 using document::TensorFieldValue;
 using document::ReferenceFieldValue;
+using search::common::ElementIds;
 using vespalib::slime::ArrayInserter;
 using vespalib::slime::Cursor;
 using vespalib::slime::Inserter;

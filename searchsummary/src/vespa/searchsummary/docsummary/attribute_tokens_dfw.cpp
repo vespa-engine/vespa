@@ -14,6 +14,7 @@ using search::attribute::IAttributeVector;
 using search::attribute::BasicType;
 using search::attribute::IMultiValueAttribute;
 using search::attribute::IMultiValueReadView;
+using search::common::ElementIds;
 using vespalib::LowerCase;
 using vespalib::Utf8Reader;
 using vespalib::Utf8Writer;

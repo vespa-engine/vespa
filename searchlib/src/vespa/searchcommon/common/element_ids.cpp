@@ -2,7 +2,7 @@
 
 #include "element_ids.h"
 
-namespace search::docsummary {
+namespace search::common {
 
 namespace {
 

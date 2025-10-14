@@ -12,6 +12,7 @@
 LOG_SETUP(".searchsummary.docsummary.attribute_combiner_dfw");
 
 using search::attribute::IAttributeContext;
+using search::common::ElementIds;
 
 namespace search::docsummary {
 

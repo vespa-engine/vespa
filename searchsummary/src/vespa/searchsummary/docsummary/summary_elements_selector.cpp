@@ -13,6 +13,7 @@
 #include <charconv>
 #include <optional>
 
+using search::common::ElementIds;
 using vespalib::FeatureSet;
 using vespalib::SharedStringRepo;
 using vespalib::eval::FastValueBuilderFactory;

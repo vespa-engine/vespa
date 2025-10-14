@@ -33,7 +33,7 @@ public:
     static std::unique_ptr<DocsumFieldWriter> create(const std::string &fieldName,
                                                      search::attribute::IAttributeContext &attrCtx);
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      ElementIds selected_elements,
+                      search::common::ElementIds selected_elements,
                       vespalib::slime::Inserter &target) const override;
 };
 

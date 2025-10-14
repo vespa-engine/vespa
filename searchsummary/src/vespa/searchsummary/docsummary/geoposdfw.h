@@ -17,7 +17,7 @@ public:
     using UP = std::unique_ptr<GeoPositionDFW>;
     GeoPositionDFW(const std::string & attrName, bool useV8geoPositions);
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      ElementIds selected_elements,
+                      search::common::ElementIds selected_elements,
                       vespalib::slime::Inserter &target) const override;
     static UP create(const char *attribute_name, const IAttributeManager *attribute_manager, bool useV8geoPositions);
 };

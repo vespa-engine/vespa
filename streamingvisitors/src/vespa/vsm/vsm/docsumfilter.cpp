@@ -17,6 +17,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.docsumfilter");
 
+using search::common::ElementIds;
 using namespace search::docsummary;
 using document::FieldPathEntry;
 using FieldMap = vsm::StringFieldIdTMap;

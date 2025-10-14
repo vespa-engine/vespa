@@ -6,6 +6,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <memory>
 
+using search::common::ElementIds;
 using namespace search::docsummary;
 
 class MockWriter : public DocsumFieldWriter {

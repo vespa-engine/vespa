@@ -2,10 +2,10 @@
 
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/searchcommon/common/element_ids.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
-#include <vespa/searchsummary/docsummary/element_ids.h>
 #include <vespa/searchsummary/docsummary/summary_elements_selector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/featureset.h>
@@ -14,7 +14,7 @@
 
 using search::MatchingElements;
 using search::MatchingElementsFields;
-using search::docsummary::ElementIds;
+using search::common::ElementIds;
 using search::docsummary::GetDocsumsState;
 using search::docsummary::GetDocsumsStateCallback;
 using search::docsummary::SummaryElementsSelector;

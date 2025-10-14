@@ -2,6 +2,7 @@
 
 #include "empty_docsum_field_writer_state.h"
 
+using search::common::ElementIds;
 using vespalib::slime::Inserter;
 
 namespace search::docsummary {

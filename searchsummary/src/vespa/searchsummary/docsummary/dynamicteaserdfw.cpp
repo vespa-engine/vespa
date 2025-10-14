@@ -19,6 +19,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.dynamicteaserdfw");
 
+using search::common::ElementIds;
+
 namespace search::docsummary {
 
 DynamicTeaserDFW::~DynamicTeaserDFW() = default;

@@ -92,6 +92,7 @@ using namespace std::chrono_literals;
 using vespalib::IDestructorCallback;
 using document::test::makeBucketSpace;
 using search::TuneFileDocumentDB;
+using search::common::ElementIds;
 using search::index::DummyFileHeaderContext;
 using search::linguistics::SPANTREE_NAME;
 using search::test::DocBuilder;
