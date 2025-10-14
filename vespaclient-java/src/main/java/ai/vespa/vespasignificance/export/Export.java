@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -37,7 +38,7 @@ public class Export {
     public Export(ExportClientParameters params) {
         this(params,
                 new IndexLocator(),
-                TsvTermDfWriter::new,
+                SignificanceTsvDfWriter::new,
                 (idx, field) -> new VespaIndexInspectClient().streamDumpWords(idx, field));
     }
 
@@ -54,7 +55,7 @@ public class Export {
 
     @FunctionalInterface
     interface WriterFactory {
-        TermDfWriter create(Writer out) throws IOException;
+        TermDfWriter create(Writer writer, long documentCount, boolean sorted, Instant createdAt) throws IOException;
     }
 
     @FunctionalInterface
@@ -73,13 +74,17 @@ public class Export {
             resolveIndexDir();
             requireFieldDir(params.fieldName());
 
+            long documentCount = 1L; // TODO find this in index dir.
+            boolean sorted = true;
+            var createdAt = Instant.now();
             try (var output = Files.newOutputStream(outputPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
                  var maybeCompressed = params.zstCompress()
                          ? new ZstdOutputStream(new BufferedOutputStream(output))
                          : new BufferedOutputStream(output);
                  var rows = dumpFn.open(indexDir, fieldName);
-                 TermDfWriter writer = writerFactory.create(new OutputStreamWriter(maybeCompressed, StandardCharsets.UTF_8))) {
+                 TermDfWriter writer = writerFactory.create(new OutputStreamWriter(maybeCompressed, StandardCharsets.UTF_8), documentCount, sorted, createdAt)) {
                 writer.writeAll(rows);
+                writer.flush();
             }
 
             System.out.println("Exported " + Path.of(indexDir.toString(), fieldName) + " to " + outputPath);

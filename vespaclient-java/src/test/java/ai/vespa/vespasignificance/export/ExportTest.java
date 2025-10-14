@@ -80,7 +80,7 @@ class ExportTest {
         );
 
         CapturingWriter writer = new CapturingWriter();
-        Export.WriterFactory wf = out -> writer;
+        Export.WriterFactory wf = (w, docCount, sorted, createdAt) -> writer;
 
         var baosOut = new ByteArrayOutputStream();
         var prevOut = System.out;
