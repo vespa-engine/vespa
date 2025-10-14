@@ -26,6 +26,7 @@
 #include <vespa/vespalib/util/memory.h>
 #include <cstdio>
 #include <cstdlib>
+#include <format>
 #include <string>
 #include <vector>
 
@@ -533,6 +534,10 @@ std::unique_ptr<IAccelerated> IAccelerated::create_best_accelerator_impl_and_tar
         return Highway::create_best_target();
     }
     return create_best_auto_vectorized_target();
+}
+
+std::string IAccelerated::friendly_name() const {
+    return std::format("{} - {}", implementation_name(), target_name());
 }
 
 

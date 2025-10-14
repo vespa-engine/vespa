@@ -5,6 +5,7 @@
 #include <hwy/base.h>
 #include <algorithm>
 #include <cassert>
+#include <format>
 
 // This file will be recursively included into itself with different target
 // compilation parameters. See the Highway docs.
@@ -262,6 +263,11 @@ const char* my_hwy_target_name() noexcept {
     return hwy::TargetName(HWY_TARGET);
 }
 
+[[nodiscard]] size_t vector_bit_count() noexcept {
+    const hn::ScalableTag<int8_t> d8; // Widest possible runtime vector
+    return hn::Lanes(d8) * 8;
+}
+
 // Since we already do a virtual dispatch via the IAccelerated interface, avoid needing an
 // additional per-function dispatch step via Highway's function tables by creating a concrete
 // implementation class per target.
@@ -300,6 +306,9 @@ public:
     }
     const char* target_name() const noexcept override {
         return my_hwy_target_name();
+    }
+    std::string friendly_name() const override {
+        return std::format("Highway - {} ({} bit vector width)", target_name(), vector_bit_count());
     }
 
     [[nodiscard]] static std::unique_ptr<IAccelerated> create_instance() {
