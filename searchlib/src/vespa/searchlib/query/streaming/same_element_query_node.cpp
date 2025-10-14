@@ -1,10 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "same_element_query_node.h"
+#include "query_term_data.h"
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <algorithm>
 #include <span>
+
+using search::fef::IIndexEnvironment;
+using search::fef::ITermData;
+using search::fef::MatchData;
 
 namespace search::streaming {
 
@@ -71,21 +76,35 @@ SameElementQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
 }
 
 void
-SameElementQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment&)
+SameElementQueryNode::unpack_match_data(uint32_t docid, MatchData& match_data, const IIndexEnvironment& index_env)
 {
     if (evaluate()) {
-        auto num_fields = td.numFields();
-        /*
-         * Currently reports hit for all fields for query node instead of
-         * just the fields where the related subfields had matches.
-         */
-        for (size_t field_idx = 0; field_idx < num_fields; ++field_idx) {
-            auto& tfd = td.field(field_idx);
-            auto field_id = tfd.getFieldId();
-            auto tmd = match_data.resolveTermField(tfd.getHandle());
-            tmd->setFieldId(field_id);
-            tmd->reset(docid);
+        if (isRanked()) {
+            auto &qtd = static_cast<QueryTermData&>(getQueryItem());
+            const ITermData &td = qtd.getTermData();
+            unpack_match_data(docid, td, match_data, index_env);
         }
+        // TODO: Filter match data based on matching elements
+        for (const auto& node : _children) {
+            node->unpack_match_data(docid, match_data, index_env);
+        }
+    }
+}
+
+void
+SameElementQueryNode::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const IIndexEnvironment&)
+{
+    auto num_fields = td.numFields();
+    /*
+     * Currently reports hit for all fields for query node instead of
+     * just the fields where the related subfields had matches.
+     */
+    for (size_t field_idx = 0; field_idx < num_fields; ++field_idx) {
+        auto& tfd = td.field(field_idx);
+        auto field_id = tfd.getFieldId();
+        auto tmd = match_data.resolveTermField(tfd.getHandle());
+        tmd->setFieldId(field_id);
+        tmd->reset(docid);
     }
 }
 
