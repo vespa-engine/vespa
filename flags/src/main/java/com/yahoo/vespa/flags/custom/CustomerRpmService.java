@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -48,6 +49,12 @@ public class CustomerRpmService {
     private final Double cpuLimitCores;
 
     /**
+     * Optional list of additional yum repositories to enable for this RPM.
+     */
+    @JsonProperty("repositories")
+    private final List<String> repositories;
+
+    /**
      * Optional disabled tag for the service unit. Defaults to false.
      * Enables removal of service without persistent storage on the host.
      */
@@ -60,12 +67,14 @@ public class CustomerRpmService {
         @JsonProperty(value = "package") String packageName,
         @JsonProperty(value = "memory") Double memoryLimitMib,
         @JsonProperty("cpu") Double cpuLimitCores,
+        @JsonProperty("repositories") List<String> repositories,
         @JsonProperty("disabled") Boolean disabled
     ) {
         this.unit = Objects.requireNonNull(unit);
         this.packageName = packageName;
         this.memoryLimitMib = Objects.requireNonNull(memoryLimitMib);
         this.cpuLimitCores = cpuLimitCores == null || cpuLimitCores <= 0.0 ? null : cpuLimitCores;
+        this.repositories = repositories == null ? List.of() : repositories;
         this.disabled = disabled != null && disabled;
     }
 
@@ -89,6 +98,10 @@ public class CustomerRpmService {
         return Optional.ofNullable(cpuLimitCores);
     }
 
+    public List<String> repositories() {
+        return repositories;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -98,19 +111,24 @@ public class CustomerRpmService {
             unit.equals(other.unit) &&
             memoryLimitMib.equals(other.memoryLimitMib) &&
             packageName().equals(other.packageName()) &&
+            repositories().equals(other.repositories()) &&
             cpuLimitCores().equals(other.cpuLimitCores());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(unitName(), packageName(), memoryLimitMib(), cpuLimitCores(), disabled());
+        return Objects.hash(unitName(), packageName(), memoryLimitMib(), cpuLimitCores(), repositories(), disabled());
     }
 
     @Override
     public String toString() {
-        return "{ unit: %s, package: %s, memory: %s MiB, cpu: %s, disabled: %s }"
-                .formatted(unitName(), packageName(), memoryLimitMib(),
-                        cpuLimitCores().map(Object::toString).orElse("unlimited"), disabled());
+        return "{ unit: %s, package: %s, memory: %s MiB, cpu: %s, repositories: %s, disabled: %s }"
+                .formatted(
+                        unitName(), packageName(), memoryLimitMib(),
+                        cpuLimitCores().map(Object::toString).orElse("unlimited"),
+                        String.join(", ", repositories()),
+                        disabled()
+                );
     }
 
 }
