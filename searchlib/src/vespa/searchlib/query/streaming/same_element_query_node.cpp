@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <span>
 
+using search::common::ElementIds;
 using search::fef::IIndexEnvironment;
 using search::fef::ITermData;
 using search::fef::MatchData;
@@ -76,23 +77,25 @@ SameElementQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
 }
 
 void
-SameElementQueryNode::unpack_match_data(uint32_t docid, MatchData& match_data, const IIndexEnvironment& index_env)
+SameElementQueryNode::unpack_match_data(uint32_t docid, MatchData& match_data, const IIndexEnvironment& index_env,
+                                        ElementIds element_ids)
 {
     if (evaluate()) {
         if (isRanked()) {
             auto &qtd = static_cast<QueryTermData&>(getQueryItem());
             const ITermData &td = qtd.getTermData();
-            unpack_match_data(docid, td, match_data, index_env);
+            unpack_match_data(docid, td, match_data, index_env, element_ids);
         }
         // TODO: Filter match data based on matching elements
         for (const auto& node : _children) {
-            node->unpack_match_data(docid, match_data, index_env);
+            node->unpack_match_data(docid, match_data, index_env, element_ids);
         }
     }
 }
 
 void
-SameElementQueryNode::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const IIndexEnvironment&)
+SameElementQueryNode::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const IIndexEnvironment&,
+                                        ElementIds)
 {
     auto num_fields = td.numFields();
     /*

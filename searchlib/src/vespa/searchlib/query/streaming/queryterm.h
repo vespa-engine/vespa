@@ -110,11 +110,16 @@ public:
     virtual bool is_same_element_query_node() const noexcept;
     virtual SameElementQueryNode* as_same_element_query_node() noexcept;
     virtual const SameElementQueryNode* as_same_element_query_node() const noexcept;
-    void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env) override;
-    virtual void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env);
+    void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
+                           search::common::ElementIds element_ids) override;
+    virtual void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
+                                   const fef::IIndexEnvironment& index_env, search::common::ElementIds element_ids);
 protected:
     template <typename HitListType>
-    static void unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const HitListType& hit_list, const QueryTerm& fl_term, bool term_filter, const fef::IIndexEnvironment& index_env);
+    static void unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
+                                         const HitListType& hit_list, const QueryTerm& fl_term, bool term_filter,
+                                         const fef::IIndexEnvironment& index_env,
+                                         search::common::ElementIds element_ids);
     static void get_element_ids_helper(std::vector<uint32_t>& element_ids, const HitList& hit_list);
     using QueryNodeResultBaseContainer = std::unique_ptr<QueryNodeResultBase>;
     HitList                      _hitList;

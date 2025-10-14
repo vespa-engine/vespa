@@ -5,6 +5,7 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
+using search::common::ElementIds;
 using search::fef::ITermData;
 using search::fef::MatchData;
 
@@ -56,7 +57,7 @@ DotProductTerm::unpack_scores(Scores& scores, std::optional<double> score_thresh
 }
 
 void
-DotProductTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const fef::IIndexEnvironment&)
+DotProductTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const fef::IIndexEnvironment&, ElementIds)
 {
     Scores scores;
     build_scores(scores);

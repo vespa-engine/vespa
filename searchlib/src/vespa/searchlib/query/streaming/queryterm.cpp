@@ -11,6 +11,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.query.streaming.queryterm");
 
+using search::common::ElementIds;
 using search::fef::IIndexEnvironment;
 using search::fef::ITermData;
 using search::fef::ITermFieldData;
@@ -138,21 +139,23 @@ QueryTerm::set_element_length(uint32_t hitlist_idx, uint32_t element_length)
 }
 
 void
-QueryTerm::unpack_match_data(uint32_t docid, MatchData& match_data, const IIndexEnvironment& index_env)
+QueryTerm::unpack_match_data(uint32_t docid, MatchData& match_data, const IIndexEnvironment& index_env,
+                             ElementIds element_ids)
 {
     if (evaluate() && isRanked()) {
         auto& qtd = static_cast<QueryTermData&>(getQueryItem());
         const ITermData& td = qtd.getTermData();
-        unpack_match_data(docid, td, match_data, index_env);
+        unpack_match_data(docid, td, match_data, index_env, element_ids);
     }
 }
 
 void
-QueryTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const IIndexEnvironment& index_env)
+QueryTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data,
+                             const IIndexEnvironment& index_env, ElementIds element_ids)
 {
     HitList list;
     const HitList & hit_list = evaluateHits(list);
-    unpack_match_data_helper(docid, td, match_data, hit_list, *this, is_filter(), index_env);
+    unpack_match_data_helper(docid, td, match_data, hit_list, *this, is_filter(), index_env, element_ids);
 }
 
 NearestNeighborQueryNode*

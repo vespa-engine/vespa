@@ -4,6 +4,7 @@
 #include "phrase_query_node.h"
 #include "queryterm.hpp"
 
+using search::common::ElementIds;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
 using search::fef::ITermFieldData;
@@ -88,11 +89,12 @@ EquivQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
 }
 
 void
-EquivQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env)
+EquivQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
+                                  ElementIds element_ids)
 {
     std::vector<HitWithFieldLength> hit_list;
     merge_hits_from_children(hit_list, *this);
-    unpack_match_data_helper(docid, td, match_data, hit_list, *this, is_filter(), index_env);
+    unpack_match_data_helper(docid, td, match_data, hit_list, *this, is_filter(), index_env, element_ids);
 }
 
 bool

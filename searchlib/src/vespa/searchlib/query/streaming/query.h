@@ -19,7 +19,8 @@ public:
     explicit QueryConnector(const char * opName) noexcept;
     ~QueryConnector() override;
     const HitList & evaluateHits(HitList & hl) override;
-    void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env) override;
+    void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
+                           search::common::ElementIds element_ids) override;
     void reset() override;
     void getLeaves(QueryTermList & tl) override;
     void getLeaves(ConstQueryTermList & tl) const override;

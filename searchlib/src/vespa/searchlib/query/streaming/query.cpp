@@ -11,6 +11,7 @@
 #include <cassert>
 #include <span>
 
+using search::common::ElementIds;
 using search::fef::IIndexEnvironment;
 using search::fef::MatchData;
 
@@ -62,11 +63,12 @@ QueryConnector::evaluateHits(HitList & hl)
 }
 
 void
-QueryConnector::unpack_match_data(uint32_t docid, MatchData& match_data, const IIndexEnvironment& index_env)
+QueryConnector::unpack_match_data(uint32_t docid, MatchData& match_data, const IIndexEnvironment& index_env,
+                                  ElementIds element_ids)
 {
     if (evaluate()) {
         for (const auto &node: _children) {
-            node->unpack_match_data(docid, match_data, index_env);
+            node->unpack_match_data(docid, match_data, index_env, element_ids);
         }
     }
 }

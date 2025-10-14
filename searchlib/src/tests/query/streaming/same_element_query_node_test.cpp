@@ -13,6 +13,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
+using search::common::ElementIds;
 using search::fef::MatchData;
 using search::fef::SimpleTermData;
 using search::fef::TermFieldHandle;
@@ -243,7 +244,7 @@ TEST_F(SameElementQueryNodeTest, test_same_element_evaluate)
     auto tfmd0 = md->resolveTermField(handle0);
     tfmd0->setNeedInterleavedFeatures(true);
     IndexEnvironment ie;
-    sameElem->unpack_match_data(2, td, *md, ie);
+    sameElem->unpack_match_data(2, td, *md, ie, ElementIds::select_all());
     EXPECT_EQ(2, tfmd0->getDocId());
     EXPECT_EQ(0, tfmd0->getNumOccs());
     EXPECT_EQ(0, tfmd0->end() - tfmd0->begin());

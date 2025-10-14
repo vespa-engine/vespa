@@ -24,6 +24,7 @@ using namespace search;
 using namespace search::query;
 using namespace search::streaming;
 using TermType = QueryTerm::Type;
+using search::common::ElementIds;
 using search::fef::SimpleTermData;
 using search::fef::MatchData;
 using search::fef::test::IndexEnvironment;
@@ -784,7 +785,7 @@ TEST(StreamingQueryTest, test_in_term)
     EXPECT_TRUE(term.evaluate());
     MatchData md(MatchData::params().numTermFields(2));
     IndexEnvironment ie;
-    term.unpack_match_data(23, td, md, ie);
+    term.unpack_match_data(23, td, md, ie, ElementIds::select_all());
     auto tmd0 = md.resolveTermField(0);
     EXPECT_NE(23, tmd0->getDocId());
     auto tmd2 = md.resolveTermField(1);
@@ -816,7 +817,7 @@ TEST(StreamingQueryTest, dot_product_term)
     EXPECT_TRUE(term.evaluate());
     MatchData md(MatchData::params().numTermFields(2));
     IndexEnvironment ie;
-    term.unpack_match_data(23, td, md, ie);
+    term.unpack_match_data(23, td, md, ie, ElementIds::select_all());
     auto tmd0 = md.resolveTermField(0);
     EXPECT_NE(23, tmd0->getDocId());
     auto tmd1 = md.resolveTermField(1);
@@ -863,7 +864,7 @@ check_wand_term(double limit, const std::string& label)
     EXPECT_EQ(limit < exp_wand_score_field_11, term.evaluate());
     MatchData md(MatchData::params().numTermFields(2));
     IndexEnvironment ie;
-    term.unpack_match_data(23, td, md, ie);
+    term.unpack_match_data(23, td, md, ie, ElementIds::select_all());
     auto tmd0 = md.resolveTermField(0);
     EXPECT_NE(23, tmd0->getDocId());
     auto tmd1 = md.resolveTermField(1);
@@ -919,7 +920,7 @@ TEST(StreamingQueryTest, weighted_set_term)
     EXPECT_TRUE(term.evaluate());
     MatchData md(MatchData::params().numTermFields(2));
     IndexEnvironment ie;
-    term.unpack_match_data(23, td, md, ie);
+    term.unpack_match_data(23, td, md, ie, ElementIds::select_all());
     auto tmd0 = md.resolveTermField(0);
     EXPECT_NE(23, tmd0->getDocId());
     auto tmd1 = md.resolveTermField(1);

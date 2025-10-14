@@ -17,7 +17,9 @@ LOG_SETUP(".searchvisitor.rankprocessor");
 
 using vespalib::FeatureSet;
 using vespalib::FeatureValues;
+using search::common::ElementIds;
 using search::fef::FeatureHandle;
+using search::fef::IIndexEnvironment;
 using search::fef::ITermData;
 using search::fef::ITermFieldData;
 using search::fef::IllegalHandle;
@@ -310,9 +312,10 @@ RankProcessor::unpackMatchData(uint32_t docId)
 }
 
 void
-RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrapper& query, const search::fef::IIndexEnvironment& index_env)
+RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrapper& query,
+                                 const IIndexEnvironment& index_env)
 {
-    query.get_query().getRoot().unpack_match_data(docid, matchData, index_env);
+    query.get_query().getRoot().unpack_match_data(docid, matchData, index_env, ElementIds::select_all());
 }
 
 } // namespace streaming
