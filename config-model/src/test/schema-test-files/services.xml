@@ -270,5 +270,9 @@
         <queue>40.0</queue>
       </threadpool>
     </search>
+    
+    <inference>
+        <memory>4Gb</memory>
+    </inference>  
   </container>
 </services>

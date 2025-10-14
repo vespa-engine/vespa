@@ -25,7 +25,8 @@ ContainerServices =
     Secrets? &
     ZooKeeper? &
     GenericConfig* &
-    Clients?
+    Clients? &
+    Inference?
 
 # TODO(ogronnesby): Change this configuration syntax
 ClientAuthorize = element client-authorize { empty }
@@ -345,4 +346,9 @@ DocumentBinding = element document {
     attribute type { xsd:NCName } &
     attribute class { xsd:NCName } &
     attribute bundle { xsd:NCName }
+}
+
+# Inference runtime configuration in container 
+Inference = element inference {
+    element memory { xsd:string }?
 }
