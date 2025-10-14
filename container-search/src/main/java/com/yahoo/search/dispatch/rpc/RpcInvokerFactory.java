@@ -50,6 +50,6 @@ public class RpcInvokerFactory extends InvokerFactory {
 
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(query);
         return new RpcProtobufFillInvoker(rpcResourcePool, compressor, searcher.getDocumentDatabase(query),
-                                          searcher.getServerId(), decodeType, summaryNeedsQuery);
+                                          searcher.getServerId(), decodeType, summaryNeedsQuery, qrSearchersConfig);
     }
 }

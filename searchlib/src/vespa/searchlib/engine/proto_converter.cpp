@@ -229,9 +229,16 @@ ProtoConverter::docsum_request_from_proto(const ProtoDocsumRequest &proto, Docsu
         add_multi_props(highlight_terms, proto.highlight_terms());
     }
     request.location = proto.geo_location();
-    std::string_view stackDumpRef(proto.query_tree_blob().begin(), proto.query_tree_blob().end());
-    auto queryTree = SerializedQueryTree::fromStackDump(stackDumpRef);
-    request.setSerializedQueryTree(queryTree);
+    if (proto.has_query_tree() && proto.query_tree().has_root()) {
+        using QueryTree = searchlib::searchprotocol::protobuf::QueryTree;
+        auto qtp = std::make_unique<QueryTree>(proto.query_tree());
+        auto queryTree = SerializedQueryTree::fromProtobuf(std::move(qtp));
+        request.setSerializedQueryTree(queryTree);
+    } else {
+        std::string_view stackDumpRef(proto.query_tree_blob().begin(), proto.query_tree_blob().end());
+        auto queryTree = SerializedQueryTree::fromStackDump(stackDumpRef);
+        request.setSerializedQueryTree(queryTree);
+    }
     request.hits.resize(proto.global_ids_size());
     for (int i = 0; i < proto.global_ids_size(); ++i) {
         const auto &gid = proto.global_ids(i);
