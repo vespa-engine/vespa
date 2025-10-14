@@ -571,9 +571,19 @@ TEST(FilterSearchTest, simple_and) {
     verify(Combine<AndFlow>(Blueprint::create_and_filter, child_list), expected);
     verify(Make<AndBlueprint>(child_list), expected);
     verify(Combine<AndFlow>(Blueprint::create_atmost_and_filter, child_list), expected, Expect::empty());
-    verify(Make<NearBlueprint>(child_list, 3, mock_element_gap_inspector), expected, Expect::empty());
-    verify(Make<ONearBlueprint>(child_list, 3, mock_element_gap_inspector), expected, Expect::empty());
+    verify(Make<NearBlueprint>(child_list, 3, 0, 0, mock_element_gap_inspector), expected, Expect::empty());
+    verify(Make<ONearBlueprint>(child_list, 3, 0, 0, mock_element_gap_inspector), expected, Expect::empty());
     verify(Make<SameElementAdapter>(child_list), expected, Expect::empty());
+}
+
+TEST(FilterSearchTest, partial_and) {
+    auto child_list = Children()
+        .hits({2, 4, 6, 7}).check(true, true)
+        .hits({1, 4, 6, 7, 10}).check(false, true)
+        .hits({1, 2, 3, 4, 5, 6}).check(false, true);
+    auto expected = Expect::hits({4, 6, 7});
+    verify(Make<NearBlueprint>(child_list, 3, 1, 0, mock_element_gap_inspector), expected, Expect::empty());
+    verify(Make<ONearBlueprint>(child_list, 3, 1, 0, mock_element_gap_inspector), expected, Expect::empty());
 }
 
 TEST(FilterSearchTest, eager_and) {

@@ -527,52 +527,60 @@ TEST(QueryTest, requireThatNearIteratorsCanBeBuilt)
 {
     Fixture f;
     QueryBuilder<ProtonNodeTypes> builder;
-    builder.addNear(2, 4, 0, 0);
+    builder.addNear(3, 4, 1, 5);
     builder.addStringTerm(string_term, field, 1, Weight(2));
     builder.addStringTerm(prefix_term, field, 1, Weight(2));
+    builder.addStringTerm(int_term, field, 1, Weight(2));
     Node::UP node = builder.build();
     ViewResolver resolver;
     ResolveViewVisitor visitor(resolver, plain_index_env);
     node->accept(visitor);
     ASSERT_TRUE(node);
 
-    FakeSearchContext context(8);
+    FakeSearchContext context(100);
     context.addIdx(0).idx(0).getFake()
         .addResult(field, prefix_term, FakeResult()
-                   .doc(4).pos(2).len(50).doc(8).pos(2).len(50))
+                   .doc(4).pos(2).len(50).doc(8).pos(2).len(50).doc(12).pos(2).len(50))
         .addResult(field, string_term, FakeResult()
-                   .doc(4).pos(40).len(50).doc(8).pos(5).len(50));
+                   .doc(4).pos(40).len(50).doc(8).pos(5).len(50).doc(12).pos(5).len(50))
+        .addResult(field, int_term, FakeResult()
+                   .doc(8).pos(7).len(50));
 
     SearchIterator::UP iterator = f.getIterator(*node, context);
     ASSERT_TRUE(iterator);
     EXPECT_TRUE(!iterator->seek(4));
-    EXPECT_TRUE(iterator->seek(8));
+    EXPECT_TRUE(!iterator->seek(8));
+    EXPECT_TRUE(iterator->seek(12));
 }
 
 TEST(QueryTest, requireThatONearIteratorsCanBeBuilt)
 {
     Fixture f;
     QueryBuilder<ProtonNodeTypes> builder;
-    builder.addONear(2, 4, 0, 0);
+    builder.addONear(3, 4, 1, 5);
     builder.addStringTerm(string_term, field, 1, Weight(2));
     builder.addStringTerm(prefix_term, field, 1, Weight(2));
+    builder.addStringTerm(int_term, field, 1, Weight(2));
     Node::UP node = builder.build();
     ViewResolver resolver;
     ResolveViewVisitor visitor(resolver, plain_index_env);
     node->accept(visitor);
     ASSERT_TRUE(node);
 
-    FakeSearchContext context(8);
+    FakeSearchContext context(100);
     context.addIdx(0).idx(0).getFake()
         .addResult(field, string_term, FakeResult()
-                   .doc(4).pos(5).len(50).doc(8).pos(2).len(50))
+                   .doc(4).pos(5).len(50).doc(8).pos(2).len(50).doc(12).pos(2).len(50))
         .addResult(field, prefix_term, FakeResult()
-                   .doc(4).pos(2).len(50).doc(8).pos(5).len(50));
+                   .doc(4).pos(2).len(50).doc(8).pos(5).len(50).doc(12).pos(5).len(50))
+        .addResult(field, int_term, FakeResult()
+                   .doc(8).pos(7).len(50));
 
     SearchIterator::UP iterator = f.getIterator(*node, context);
     ASSERT_TRUE(iterator);
     EXPECT_TRUE(!iterator->seek(4));
-    EXPECT_TRUE(iterator->seek(8));
+    EXPECT_TRUE(!iterator->seek(8));
+    EXPECT_TRUE(iterator->seek(12));
 }
 
 TEST(QueryTest, requireThatPhraseIteratorsCanBeBuilt)

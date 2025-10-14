@@ -170,10 +170,10 @@ protected:
     void visit(ProtonWordAlternatives &n) override { buildWordAlternatives(n); }
     void visit(ProtonRank &n)        override { buildIntermediate(new RankBlueprint(), n); }
     void visit(ProtonNear &n)        override {
-        buildIntermediate(new NearBlueprint(n.getDistance(), _requestContext.get_element_gap_inspector()), n);
+        buildIntermediate(new NearBlueprint(n.getDistance(), n.num_negative_terms(), n.negative_term_brick_size(), _requestContext.get_element_gap_inspector()), n);
     }
     void visit(ProtonONear &n)       override {
-        buildIntermediate(new ONearBlueprint(n.getDistance(), _requestContext.get_element_gap_inspector()), n);
+        buildIntermediate(new ONearBlueprint(n.getDistance(), n.num_negative_terms(), n.negative_term_brick_size(), _requestContext.get_element_gap_inspector()), n);
     }
     void visit(ProtonSameElement &n) override { buildSameElement(n); }
 

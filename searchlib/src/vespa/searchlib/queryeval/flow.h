@@ -268,11 +268,16 @@ struct FlowMixin {
 class AndFlow : public FlowMixin<AndFlow> {
 private:
     double _flow;
+    uint32_t _left;
     bool _strict;
 public:
-    AndFlow(InFlow flow) noexcept : _flow(flow.rate()), _strict(flow.strict()) {}
+    AndFlow(InFlow flow, uint32_t limit) noexcept : _flow(flow.rate()), _left(limit), _strict(flow.strict()) {}
+    AndFlow(InFlow flow) noexcept : _flow(flow.rate()), _left(-1), _strict(flow.strict()) {}
     void add(double est) noexcept {
-        _flow *= est;
+        if (_left > 0) {
+            _flow *= est;
+            --_left;
+        }
         _strict = false;
     }
     double flow() const noexcept { return _flow; }
@@ -445,7 +450,8 @@ private:
     };
     template <typename FLOW> struct Wrapper final : API {
         FLOW _flow;
-        Wrapper(InFlow in_flow) noexcept : _flow(in_flow) {}
+        template <typename... Args>
+        Wrapper(Args&&... args) noexcept : _flow(std::forward<Args>(args)...) {}
         void add(double est) noexcept override { _flow.add(est); }
         double flow() const noexcept override { return _flow.flow(); }
         bool strict() const noexcept override { return _flow.strict(); }
@@ -458,11 +464,11 @@ private:
     API &api() noexcept { return *reinterpret_cast<API*>(_space); }
     const API &api() const noexcept { return *reinterpret_cast<const API*>(_space); }
     template <typename FLOW> struct type_tag{};
-    template <typename FLOW> AnyFlow(InFlow in_flow, type_tag<FLOW>) noexcept {
+    template <typename FLOW, typename... Args> AnyFlow(type_tag<FLOW>, Args&&... args) noexcept {
         using stored_type = Wrapper<FLOW>;
         static_assert(alignof(stored_type) <= 8);
         static_assert(sizeof(stored_type) <= sizeof(_space));
-        API *upcasted = ::new (static_cast<void*>(_space)) stored_type(in_flow);
+        API *upcasted = ::new (static_cast<void*>(_space)) stored_type(std::forward<Args>(args)...);
         (void) upcasted;
         assert(static_cast<void*>(upcasted) == static_cast<void*>(_space));
     }
@@ -472,8 +478,8 @@ public:
     AnyFlow(const AnyFlow &) = delete;
     AnyFlow &operator=(AnyFlow &&) = delete;
     AnyFlow &operator=(const AnyFlow &) = delete;
-    template <typename FLOW> static AnyFlow create(InFlow in_flow) noexcept {
-        return AnyFlow(in_flow, type_tag<FLOW>());
+    template <typename FLOW, typename... Args> static AnyFlow create(Args&&... args) noexcept {
+        return AnyFlow(type_tag<FLOW>(), std::forward<Args>(args)...);
     }
     void add(double est) noexcept { api().add(est); }
     double flow() const noexcept { return api().flow(); }

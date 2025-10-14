@@ -559,22 +559,25 @@ NearBlueprint::~NearBlueprint() = default;
 AnyFlow
 NearBlueprint::my_flow(InFlow in_flow) const
 {
-    return AnyFlow::create<AndFlow>(in_flow);
+    size_t num_positive_terms = sat_sub(get_children().size(), _num_negative_terms);
+    return AnyFlow::create<AndFlow>(in_flow, num_positive_terms);
 }
 
 FlowStats
 NearBlueprint::calculate_flow_stats(uint32_t) const {
-    double est = AndFlow::estimate_of(get_children());
+    size_t num_positive_terms = sat_sub(get_children().size(), _num_negative_terms);
+    auto positive_terms = std::span(get_children().data(), num_positive_terms);
+    double est = AndFlow::estimate_of(positive_terms);
     return {est,
-            AndFlow::cost_of(get_children(), false) + childCnt() * est,
-            AndFlow::cost_of(get_children(), true) + childCnt() * est};
+            AndFlow::cost_of(positive_terms, false) + childCnt() * est,
+            AndFlow::cost_of(positive_terms, true) + childCnt() * est};
 }
 
 Blueprint::HitEstimate
 NearBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
     // Only consider positive terms for hit estimate
-    size_t positive_count = data.size() - std::min(size_t(_num_negative_terms), data.size());
+    size_t positive_count = sat_sub(data.size(), _num_negative_terms);
     std::vector<HitEstimate> positive_data(data.begin(), data.begin() + positive_count);
     return min(positive_data);
 }
@@ -590,7 +593,7 @@ NearBlueprint::sort(Children &children, InFlow in_flow) const
 {
     (void) in_flow;
     // Only sort positive terms; negative terms must stay at the end
-    size_t positive_count = children.size() - std::min(size_t(_num_negative_terms), children.size());
+    size_t positive_count = sat_sub(children.size(), _num_negative_terms);
     std::sort(children.begin(), children.begin() + positive_count, TieredLessEstimate());
 }
 
@@ -611,7 +614,7 @@ NearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 SearchIterator::UP
 NearBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    size_t positive_count = get_children().size() - std::min(size_t(_num_negative_terms), get_children().size());
+    size_t positive_count = sat_sub(get_children().size(), _num_negative_terms);
     if (positive_count > 0) {
         return create_atmost_and_filter(std::span(get_children().data(), positive_count), strict(), constraint);
     }
@@ -630,17 +633,19 @@ ONearBlueprint::my_flow(InFlow in_flow) const
 
 FlowStats
 ONearBlueprint::calculate_flow_stats(uint32_t) const {
-    double est = AndFlow::estimate_of(get_children());
+    size_t num_positive_terms = sat_sub(get_children().size(), _num_negative_terms);
+    auto positive_terms = std::span(get_children().data(), num_positive_terms);
+    double est = AndFlow::estimate_of(positive_terms);
     return {est,
-            AndFlow::cost_of(get_children(), false) + childCnt() * est,
-            AndFlow::cost_of(get_children(), true) + childCnt() * est};
+            AndFlow::cost_of(positive_terms, false) + childCnt() * est,
+            AndFlow::cost_of(positive_terms, true) + childCnt() * est};
 }
 
 Blueprint::HitEstimate
 ONearBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
     // Only consider positive terms for hit estimate
-    size_t positive_count = data.size() - std::min(size_t(_num_negative_terms), data.size());
+    size_t positive_count = sat_sub(data.size(), _num_negative_terms);
     std::vector<HitEstimate> positive_data(data.begin(), data.begin() + positive_count);
     return min(positive_data);
 }
@@ -676,7 +681,7 @@ ONearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 SearchIterator::UP
 ONearBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    size_t positive_count = get_children().size() - std::min(size_t(_num_negative_terms), get_children().size());
+    size_t positive_count = sat_sub(get_children().size(), _num_negative_terms);
     if (positive_count > 0) {
         return create_atmost_and_filter(std::span(get_children().data(), positive_count), strict(), constraint);
     }

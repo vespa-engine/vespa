@@ -67,8 +67,8 @@ void checkVisit(T *node) {
 TEST(QueryVisitorTest, requireThatAllNodesCanBeVisited) {
     checkVisit<And>(new SimpleAnd);
     checkVisit<AndNot>(new SimpleAndNot);
-    checkVisit<Near>(new SimpleNear(0));
-    checkVisit<ONear>(new SimpleONear(0));
+    checkVisit<Near>(new SimpleNear(0, 0, 0));
+    checkVisit<ONear>(new SimpleONear(0, 0, 0));
     checkVisit<Or>(new SimpleOr);
     checkVisit<Phrase>(new SimplePhrase("field", 0, Weight(42)));
     checkVisit<SameElement>(new SimpleSameElement("field", 0, Weight(42)));
