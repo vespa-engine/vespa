@@ -101,6 +101,7 @@ message DocsumRequest {
     bytes query_tree_blob = 14; // serialized opaquely like now, to be changed later
     repeated bytes global_ids = 15;
     repeated string fields = 16;
+    QueryTree query_tree = 17; // to replace blob above
 }
 
 message DocsumReply {

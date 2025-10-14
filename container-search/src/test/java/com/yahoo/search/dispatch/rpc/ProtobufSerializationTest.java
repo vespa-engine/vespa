@@ -62,7 +62,7 @@ public class ProtobufSerializationTest {
     @Test
     void testDocsumSerialization() {
         Query q = new Query("search/?query=test&hits=10&offset=3");
-        var builder = ProtobufSerialization.createDocsumRequestBuilder(q, "server", "summary", Set.of("f1", "f2"),true, 0.5);
+        var builder = ProtobufSerialization.createDocsumRequestBuilder(q, "server", "summary", Set.of("f1", "f2"),true, 0.5, new QrSearchersConfig.Builder().build());
         builder.setTimeout(0);
         var hit = new FastHit();
         hit.setGlobalId(new GlobalId(IdString.createIdString("id:ns:type::id")).getRawId());

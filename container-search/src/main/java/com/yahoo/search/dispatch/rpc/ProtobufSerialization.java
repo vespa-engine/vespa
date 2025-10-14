@@ -168,7 +168,8 @@ public class ProtobufSerialization {
                                                                            String summaryClass,
                                                                            Set<String> fields,
                                                                            boolean includeQueryData,
-                                                                           double requestTimeout) {
+                                                                           double requestTimeout,
+                                                                           QrSearchersConfig qrSearchersConfig) {
         var builder = SearchProtocol.DocsumRequest.newBuilder()
                 .setTimeout((int) (requestTimeout * 1000))
                 .setDumpFeatures(query.properties().getBoolean(Ranking.RANKFEATURES, false));
@@ -197,7 +198,7 @@ public class ProtobufSerialization {
         }
         GrowableByteBuffer scratchPad = threadLocalBuffer.get();
         if (includeQueryData) {
-            mergeQueryDataToDocsumRequest(query, scratchPad, builder);
+            mergeQueryDataToDocsumRequest(query, scratchPad, builder, qrSearchersConfig);
         }
         if (query.getTrace().getLevel() >= 3) {
             query.trace((includeQueryData ? "ProtoBuf: Resending " : "Not resending ") + "query during document summary fetching", 3);
@@ -214,11 +215,14 @@ public class ProtobufSerialization {
         return builder.build().toByteArray();
     }
 
-    private static void mergeQueryDataToDocsumRequest(Query query, GrowableByteBuffer scratchPad, SearchProtocol.DocsumRequest.Builder builder) {
+    private static void mergeQueryDataToDocsumRequest(Query query, GrowableByteBuffer scratchPad, SearchProtocol.DocsumRequest.Builder builder, QrSearchersConfig qrSearchersConfig) {
         var ranking = query.getRanking();
         var featureMap = ranking.getFeatures().asMap();
 
         builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree(), scratchPad));
+        if (qrSearchersConfig.sendProtobufQuerytree()) {
+            builder.setQueryTree(query.getModel().getQueryTree().toProtobufQueryTree());
+        }
 
         MapConverter.convertMapPrimitives(featureMap, builder::addFeatureOverrides);
         MapConverter.convertMapTensors(scratchPad, featureMap, builder::addTensorFeatureOverrides);
