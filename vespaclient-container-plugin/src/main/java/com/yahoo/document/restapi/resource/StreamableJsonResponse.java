@@ -24,6 +24,12 @@ interface StreamableJsonResponse extends AutoCloseable {
     // underlying supplied resource may require locking for safe access.
     void reportUpdatedContinuation(Supplier<VisitorContinuation> continuationSupplier) throws IOException;
     void writeEpilogueContinuation(VisitorContinuation continuation) throws IOException;
+    /**
+     * Write a Trace that encapsulates a logical span of the <em>entire</em> request
+     * (e.g. Get/Put or visitor session). For visitor sessions traces are intentionally
+     * limited in total size due to the amount of messages involved, so for that case
+     * this is usually a very truncated representation of the full trace.
+     */
     void writeTrace(Trace trace) throws IOException;
 
     enum MessageSeverity {

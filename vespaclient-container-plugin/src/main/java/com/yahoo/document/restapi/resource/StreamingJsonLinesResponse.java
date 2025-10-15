@@ -55,7 +55,10 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
 
     @Override
     public void commit(int status, boolean fullyApplied) throws IOException {
-        // TODO decide proper content type
+        // `application/jsonl` is the de facto (not de jure) media type for JSONL,
+        // so that's what we're going with. If this changes (JSONL gets some other
+        // IANA assignment) we can remap this based on what the client states it
+        // wants via the HTTP Accept header.
         responseWriter.commit(status, "application/jsonl; charset=UTF-8", fullyApplied);
     }
 
@@ -180,7 +183,7 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
         }
         writeJsonLine((json) -> {
             json.writeStartObject();
-            json.writeFieldName(JsonNames.TRACE);
+            json.writeFieldName(JsonNames.SESSION_TRACE);
             json.writeStartObject();
             TraceJsonRenderer.writeTrace(json, trace.getRoot());
             json.writeEndObject();
