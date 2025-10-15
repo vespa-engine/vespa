@@ -30,6 +30,7 @@ public class Export {
     private final IndexLocator locator;
     private final WriterFactory writerFactory;
     private final DumpFn dumpFn;
+    private final DocumentCountProviderFactory docCountFactory;
 
     private Path indexDir;
     private String fieldName;
@@ -39,18 +40,22 @@ public class Export {
         this(params,
                 new IndexLocator(),
                 SignificanceTsvDfWriter::new,
-                (idx, field) -> new VespaIndexInspectClient().streamDumpWords(idx, field));
+                (idx, field) -> new VespaIndexInspectClient().streamDumpWords(idx, field),
+                (dir) -> new DocIdLimitDocumentCountProvider(new VespaFileHeaderInspectClient(), dir)
+        );
     }
 
     // for tests
     Export(ExportClientParameters params,
            IndexLocator locator,
            WriterFactory writerFactory,
-           DumpFn dumpFn) {
+           DumpFn dumpFn,
+           DocumentCountProviderFactory docCountFactory) {
         this.params = Objects.requireNonNull(params);
         this.locator = Objects.requireNonNull(locator);
         this.writerFactory = Objects.requireNonNull(writerFactory);
         this.dumpFn = Objects.requireNonNull(dumpFn);
+        this.docCountFactory = docCountFactory;
     }
 
     @FunctionalInterface
@@ -61,6 +66,11 @@ public class Export {
     @FunctionalInterface
     interface DumpFn {
         Stream<VespaIndexInspectClient.TermDocumentFrequency> open(Path indexDir, String field) throws IOException;
+    }
+
+    @FunctionalInterface
+    interface DocumentCountProviderFactory {
+        DocumentCountProvider create(Path indexDir);
     }
 
     /**
@@ -74,7 +84,7 @@ public class Export {
             resolveIndexDir();
             requireFieldDir(params.fieldName());
 
-            long documentCount = 1L; // TODO find this in index dir.
+            long documentCount = docCountFactory.create(indexDir).getDocumentCount();
             boolean sorted = true;
             var createdAt = Instant.now();
             try (var output = Files.newOutputStream(outputPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);

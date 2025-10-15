@@ -81,12 +81,13 @@ class ExportTest {
 
         CapturingWriter writer = new CapturingWriter();
         Export.WriterFactory wf = (w, docCount, sorted, createdAt) -> writer;
+        Export.DocumentCountProviderFactory dcpf = (dir) -> () -> 42L;
 
         var baosOut = new ByteArrayOutputStream();
         var prevOut = System.out;
         System.setOut(new PrintStream(baosOut));
         try {
-            int code = new Export(params, locator, wf, dumpFn).run();
+            int code = new Export(params, locator, wf, dumpFn, dcpf).run();
             assertEquals(0, code);
             assertEquals(List.of("alpha", "zulu"), writer.terms);
         } finally {
