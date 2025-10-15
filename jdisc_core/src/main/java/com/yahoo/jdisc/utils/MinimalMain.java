@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Minimal launcher that run the specified main method using the same Apache Felix integration as in {@link com.yahoo.jdisc.core.StandaloneMain}.
@@ -78,16 +77,16 @@ public class MinimalMain {
 
     private static void run(String[] args) throws Exception {
         var bundleLocations = System.getProperty("bundle.locations");
-        var mainBundle = System.getProperty("main.bundle");
-        var mainClass = System.getProperty("main.class");
+        var mainBundleName = System.getProperty("main.bundle");
+        var mainClassName = System.getProperty("main.class");
 
         if (bundleLocations == null || bundleLocations.isEmpty()) {
             throw new LauncherException("System property 'bundle.locations' is required", 1);
         }
-        if (mainBundle == null || mainBundle.isEmpty()) {
+        if (mainBundleName == null || mainBundleName.isEmpty()) {
             throw new LauncherException("System property 'main.bundle' is required", 1);
         }
-        if (mainClass == null || mainClass.isEmpty()) {
+        if (mainClassName == null || mainClassName.isEmpty()) {
             throw new LauncherException("System property 'main.class' is required", 1);
         }
 
@@ -107,12 +106,24 @@ public class MinimalMain {
         }
         framework.startBundles(bundles, false);
 
-        var targetBundle = rsolveMainBundle(mainBundle, bundles, bundlePaths)
-                .orElseThrow(() -> new LauncherException("Main bundle not found: " + mainBundle, 1));
-
-        var mainClassInstance = resolveMainClass(targetBundle, mainClass);
-        var mainMethod = resolveMainMethod(mainClassInstance, mainClass);
+        var targetBundle = resolveMainBundle(mainBundleName, bundles, bundlePaths);
+        var mainClassInstance = resolveMainClass(targetBundle, mainClassName);
+        var mainMethod = resolveMainMethod(mainClassInstance, mainClassName);
         mainMethod.invoke(null, (Object) args);
+    }
+
+    private static Bundle resolveMainBundle(String mainBundle, List<Bundle> bundles, List<String> bundlePaths) {
+        // First try matching by symbolic name
+        for (var bundle : bundles) {
+            if (mainBundle.equals(bundle.getSymbolicName())) return bundle;
+        }
+
+        // If not found, try matching by resolved path
+        var resolvedMainBundle = resolveBundlePath(mainBundle);
+        for (int i = 0; i < bundlePaths.size(); i++) {
+            if (resolvedMainBundle.equals(bundlePaths.get(i))) return bundles.get(i);
+        }
+        throw new LauncherException("Main bundle not found: " + mainBundle, 1);
     }
 
     private static Method resolveMainMethod(Class<?> mainClassInstance, String mainClass) {
@@ -146,25 +157,6 @@ public class MinimalMain {
             }
         }));
         return cacheDir;
-    }
-
-    private static Optional<Bundle> rsolveMainBundle(String mainBundle, List<Bundle> bundles, List<String> bundlePaths) {
-        // First try matching by symbolic name
-        for (var bundle : bundles) {
-            if (mainBundle.equals(bundle.getSymbolicName())) {
-                return Optional.of(bundle);
-            }
-        }
-
-        // If not found, try matching by resolved path
-        var resolvedMainBundle = resolveBundlePath(mainBundle);
-        for (int i = 0; i < bundlePaths.size(); i++) {
-            if (resolvedMainBundle.equals(bundlePaths.get(i))) {
-                return Optional.of(bundles.get(i));
-            }
-        }
-
-        return Optional.empty();
     }
 
     private static String resolveBundlePath(String bundleLocation) {
