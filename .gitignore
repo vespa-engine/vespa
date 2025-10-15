@@ -35,6 +35,7 @@ Testing
 /rules.ninja
 *_benchmark_app
 *_test_app
+*_gtest_runner_app
 /cmake-build-debug/
 /mvnw
 /mvnw.cmd

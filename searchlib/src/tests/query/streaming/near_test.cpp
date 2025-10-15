@@ -30,6 +30,8 @@ using search::streaming::QueryNodeResultFactory;
 using search::streaming::QueryTerm;
 using search::streaming::QueryTermList;
 
+inline namespace near_test {
+
 class TestParam {
     bool _ordered;
 public:
@@ -54,8 +56,7 @@ enum class QueryTweak {
     EQUIV         // Last child of query root is an equiv node
 };
 
-class MyQueryNodeResultFactory : public QueryNodeResultFactory
-{
+class MyQueryNodeResultFactory : public QueryNodeResultFactory {
     MockElementGapInspector _mock_element_gap_inspector;
 public:
     MyQueryNodeResultFactory(ElementGap element_gap);
@@ -93,6 +94,8 @@ WrappedQuery::WrappedQuery(std::unique_ptr<MyQueryNodeResultFactory> factory_in,
 }
 
 WrappedQuery::~WrappedQuery() = default;
+
+}
 
 class NearTest : public ::testing::TestWithParam<TestParam> {
 protected:
@@ -358,5 +361,3 @@ TEST_P(NearTest, get_element_ids)
 auto test_values = ::testing::Values(TestParam(false), TestParam(true));
 
 INSTANTIATE_TEST_SUITE_P(NearTests, NearTest, test_values, testing::PrintToStringParamName());
-
-GTEST_MAIN_RUN_ALL_TESTS()

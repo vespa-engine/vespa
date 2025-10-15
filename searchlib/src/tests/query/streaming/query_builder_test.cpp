@@ -37,5 +37,3 @@ TEST(StreamingQueryBuilderTest, hidden_terms_are_not_ranked)
     EXPECT_FALSE(terms[1]->isRanked());
     EXPECT_TRUE(terms[2]->isRanked());
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

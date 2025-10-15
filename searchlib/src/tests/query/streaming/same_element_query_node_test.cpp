@@ -269,5 +269,3 @@ TEST_F(SameElementQueryNodeTest, or_below_same_element)
     EXPECT_TRUE(evaluate_query(QueryTweak::OR, elementsvv9));
     EXPECT_EQ((std::vector<uint32_t>{ 4, 6, 9 }), get_element_ids(QueryTweak::OR, elementsvv9));
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()
