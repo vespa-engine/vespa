@@ -5,6 +5,7 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
+using search::common::ElementIds;
 using search::fef::ITermData;
 using search::fef::MatchData;
 
@@ -23,7 +24,8 @@ WeightedSetTerm::get_element_ids(std::vector<uint32_t>&)
 }
 
 void
-WeightedSetTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const fef::IIndexEnvironment&)
+WeightedSetTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data,
+                                   const fef::IIndexEnvironment&, ElementIds)
 {
     vespalib::hash_map<uint32_t,std::vector<double>> scores;
     HitList hl_store;

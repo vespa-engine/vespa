@@ -4,6 +4,7 @@
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
 
+using search::common::ElementIds;
 using search::fef::ITermData;
 using search::fef::MatchData;
 
@@ -40,7 +41,8 @@ WandTerm::evaluate()
 }
 
 void
-WandTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const fef::IIndexEnvironment&)
+WandTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const fef::IIndexEnvironment&,
+                            ElementIds)
 {
     Scores scores;
     build_scores(scores);

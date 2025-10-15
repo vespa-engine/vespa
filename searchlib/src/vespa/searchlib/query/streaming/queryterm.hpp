@@ -37,8 +37,11 @@ set_interleaved_features(search::fef::TermFieldMatchData& tmd, uint32_t field_le
 
 template <typename HitListType>
 void
-QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const HitListType& hit_list, const QueryTerm& fl_term, bool term_filter, const fef::IIndexEnvironment& index_env)
+QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
+                                    const HitListType& hit_list, const QueryTerm& fl_term, bool term_filter,
+                                    const fef::IIndexEnvironment& index_env, search::common::ElementIds element_ids)
 {
+    (void) element_ids;
     (void) fl_term;
     if (!hit_list.empty()) { // only unpack if we have a hit
 

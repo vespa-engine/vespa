@@ -2,6 +2,9 @@
 
 #include "phrase_query_node.h"
 #include "hit_iterator_pack.h"
+#include "queryterm.hpp"
+
+using search::common::ElementIds;
 
 namespace search::streaming {
 
@@ -79,11 +82,13 @@ PhraseQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
 }
 
 void
-PhraseQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env)
+PhraseQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
+                                   const fef::IIndexEnvironment& index_env, ElementIds element_ids)
 {
     HitList list;
     const HitList & hit_list = evaluateHits(list);
-    unpack_match_data_helper(docid, td, match_data, hit_list, *get_terms().front(), is_filter(), index_env);
+    unpack_match_data_helper(docid, td, match_data, hit_list, *get_terms().front(), is_filter(), index_env,
+                             element_ids);
 }
 
 }

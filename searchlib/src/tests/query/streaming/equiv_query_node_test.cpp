@@ -13,6 +13,7 @@
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
+using search::common::ElementIds;
 using search::fef::MatchData;
 using search::fef::SimpleTermData;
 using search::fef::TermFieldHandle;
@@ -172,7 +173,7 @@ TEST_F(EquivQueryNodeTest, test_equiv_evaluate_and_unpack)
     tfmd0->setNeedInterleavedFeatures(true);
     tfmd1->setNeedInterleavedFeatures(true);
     IndexEnvironment ie;
-    eqn.unpack_match_data(2, td, *md, ie);
+    eqn.unpack_match_data(2, td, *md, ie, ElementIds::select_all());
     EXPECT_EQ(2, tfmd0->getDocId());
     EXPECT_EQ(3, tfmd0->getNumOccs());
     EXPECT_EQ(3, tfmd0->end() - tfmd0->begin());
