@@ -11,16 +11,21 @@ import java.util.Objects;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
-public record EnclaveAccountProfile(@JsonProperty("cloud") String cloud,
-                                    @JsonProperty("account") String account,
+public record EnclaveAccountProfile(@JsonProperty("cloudAccount") String cloudAccount,
                                     @JsonProperty("azureClientId") String azureClientId,
                                     @JsonProperty("azureTenantId") String azureTenantId) {
     public EnclaveAccountProfile {
-        Objects.requireNonNull(cloud, "cloud must not be null");
-        Objects.requireNonNull(account, "account must not be null");
+        Objects.requireNonNull(cloudAccount, "cloudAccount must not be null");
+        CloudName cloud = CloudAccount.from(cloudAccount).cloudName();
+        if (cloud == CloudName.AZURE) {
+            Objects.requireNonNull(azureClientId, "azureClientId must not be null for cloudAccount " + cloudAccount);
+            Objects.requireNonNull(azureTenantId, "azureTenantId must not be null for cloudAccount " + cloudAccount);
+        } else if (azureClientId != null || azureTenantId != null) {
+            throw new IllegalArgumentException("azureClientId and azureTenantId can not be set for cloudAccount " + cloudAccount);
+        }
     }
 
     public CloudAccount toCloudAccount() {
-        return CloudAccount.from(CloudName.from(cloud), account);
+        return CloudAccount.from(cloudAccount);
     }
 }
