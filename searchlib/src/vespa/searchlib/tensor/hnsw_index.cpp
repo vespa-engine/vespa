@@ -796,21 +796,21 @@ HnswIndex<type>::mutual_reconnect(const LinkArrayRef &cluster, uint32_t level)
     // Only add at most one edge per nodes
     vespalib::hash_set<uint32_t> already_added;
     for (const PairDist & pair : pairs) {
-        if (already_added.contains(pair.id_first) || already_added.contains(pair.id_second)) {
-            continue;
-        }
-
         LinkArrayRef old_links_1 = _graph.get_link_array(pair.id_first, level);
         if (old_links_1.size() >= max_links_for_level(level)) continue;
 
         LinkArrayRef old_links_2 = _graph.get_link_array(pair.id_second, level);
         if (old_links_2.size() >= max_links_for_level(level)) continue;
 
-        already_added.insert(pair.id_first);
-        already_added.insert(pair.id_second);
+        if ((old_links_1.empty() || old_links_2.empty())
+            || (!already_added.contains(pair.id_first) && !already_added.contains(pair.id_second))) {
 
-        add_link_to(pair.id_first, level, old_links_1, pair.id_second);
-        add_link_to(pair.id_second, level, old_links_2, pair.id_first);
+            already_added.insert(pair.id_first);
+            already_added.insert(pair.id_second);
+
+            add_link_to(pair.id_first, level, old_links_1, pair.id_second);
+            add_link_to(pair.id_second, level, old_links_2, pair.id_first);
+        }
     }
 }
 
