@@ -51,10 +51,6 @@ public class CapacityPolicies {
     private final ApplicationId applicationId;
     private final Tuning tuning;
 
-    public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Architecture adminClusterArchitecture) {
-        this(zone, exclusivity, applicationId, new Tuning(adminClusterArchitecture, 0.0, 0.0, 0));
-    }
-
     public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Tuning tuning) {
         this.zone = zone;
         this.exclusivity = exclusivity;
@@ -163,31 +159,24 @@ public class CapacityPolicies {
                 ? tuning.clusterControllerMem(1.32)
                 : tuning.clusterControllerMem(1.50);
 
-        // TODO: Consider CPU adjustments as well
-        var adjustedMemory = adjustClusterControllerMemory(memory, contentNodes, clusterSpec.vespaVersion());
+        var adjustedMemory = adjustClusterControllerMemory(memory, contentNodes);
         // But go back to use overridden memory if set (through feature flag)
         if (tuning.clusterControllerMemoryGiB() > 0.0) {
             adjustedMemory = memory;
         }
 
-        return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, memory, 10, 0.3),
-                                             new Version(8, 575, 8), new NodeResources(0.25, adjustedMemory, 10, 0.3)));
+        return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, adjustedMemory, 10, 0.3)));
     }
 
     // Adjust memory based on number of content nodes in all content clusters
     // Note: nodeCount is 0 if unknown.
-    private static double adjustClusterControllerMemory(double memory, long nodeCount, Version vespaVersion) {
+    private static double adjustClusterControllerMemory(double memory, long nodeCount) {
         int count = (int) nodeCount;
         // We have seen clusters with ~100 nodes needing at least 1.6 GiB on x86_64
         // Adjust memory based on number of content nodes (which is a simple way to model the O(n^2) behavior
         // of the increase in communication between cluster controller and nodes (and thus memory)).
         // Increase in steps to avoid changes of memory allocation with small changes in node count.
-
-        double adjustmentFactor = 0.20; // 20% increase per step for vespa version > 8.588
-        if (vespaVersion.isBefore(Version.fromString("8.588.1"))) {
-            adjustmentFactor = 0.15;
-        }
-
+        double adjustmentFactor = 0.20; // 20% increase per step
         var step = Math.min(4, count / 50); // max 4 steps (200+ nodes)
         double adjustment = step * adjustmentFactor;
 
