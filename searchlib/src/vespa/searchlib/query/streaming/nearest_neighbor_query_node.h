@@ -32,6 +32,7 @@ private:
 
 
 public:
+    using QueryTerm::unpack_match_data;
     NearestNeighborQueryNode(std::unique_ptr<QueryNodeResultBase> resultBase,
                              std::string_view query_tensor_name, string field_name,
                              uint32_t target_hits, double distance_threshold,
