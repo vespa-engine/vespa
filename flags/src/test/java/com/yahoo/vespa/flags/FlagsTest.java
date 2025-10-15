@@ -100,7 +100,8 @@ public class FlagsTest {
         instance.string = "foo";
 
         testGeneric(Flags.defineJacksonFlag("jackson-id", defaultInstance, ExampleJacksonClass.class,
-                                            List.of("owner"), "1970-01-01", "2100-01-01", "description", "modification effect", Dimension.HOSTNAME),
+                                            List.of("owner"), "1970-01-01", "2100-01-01", "description",
+                                            "modification effect", __ -> true, Dimension.HOSTNAME),
                 instance);
 
         testGeneric(Flags.defineListFlag("jackson-list-id", List.of(defaultInstance), ExampleJacksonClass.class, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod"),
