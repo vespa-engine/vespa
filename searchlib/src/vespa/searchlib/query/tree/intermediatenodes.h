@@ -76,7 +76,6 @@ class Near : public QueryNodeMixin<Near, Intermediate>
 public:
     Near(size_t distance, size_t num_negative_terms_in, size_t negative_term_brick_size_in)
       : _distance(distance), _num_negative_terms(num_negative_terms_in), _negative_term_brick_size(negative_term_brick_size_in) {}
-    explicit Near(size_t distance) : Near(distance, 0, 0) {}
     virtual ~Near() = 0;
 
     size_t getDistance() const { return _distance; }
@@ -95,7 +94,6 @@ class ONear : public QueryNodeMixin<ONear, Intermediate>
 public:
     ONear(size_t distance, size_t num_negative_terms_in, size_t negative_term_brick_size_in)
       : _distance(distance), _num_negative_terms(num_negative_terms_in), _negative_term_brick_size(negative_term_brick_size_in) {}
-    explicit ONear(size_t distance) : _distance(distance) {}
     virtual ~ONear() = 0;
 
     size_t getDistance() const { return _distance; }

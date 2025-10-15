@@ -34,12 +34,12 @@ struct MyEquiv : Equiv {
 };
 
 struct MyNear : Near {
-    MyNear() : Near(1) {}
+    MyNear() : Near(1, 0, 0) {}
     ~MyNear() override;
 };
 
 struct MyONear : ONear {
-    MyONear() : ONear(1) {}
+    MyONear() : ONear(1, 0, 0) {}
     ~MyONear() override;
 };
 

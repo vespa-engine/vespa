@@ -408,14 +408,12 @@ struct MyEquiv : Equiv {
 struct MyNear : Near {
     MyNear(size_t dist, size_t num_negative_terms, size_t negative_term_brick_size)
       : Near(dist, num_negative_terms, negative_term_brick_size) {}
-    explicit MyNear(size_t dist) : Near(dist) {}
     ~MyNear() override;
 };
 
 struct MyONear : ONear {
     MyONear(size_t dist, size_t num_negative_terms, size_t negative_term_brick_size)
       : ONear(dist, num_negative_terms, negative_term_brick_size) {}
-    explicit MyONear(size_t dist) : ONear(dist) {}
     ~MyONear() override;
 };
 

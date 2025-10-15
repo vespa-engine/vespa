@@ -194,7 +194,7 @@ public:
         void cost_tier(uint8_t value) noexcept { _cost_tier = value; }
         uint8_t cost_tier() const noexcept { return _cost_tier; }
     };
-    
+
     // converts from an absolute to a relative estimate
     static double abs_to_rel_est(uint32_t est, uint32_t docid_limit) noexcept {
         uint32_t total_docs = std::max(est, docid_limit);
@@ -212,6 +212,10 @@ public:
     // upper limit for estimate: docid_limit
     // lower limit for docid_limit: max child estimate
     static HitEstimate sat_sum(const std::vector<HitEstimate> &data, uint32_t docid_limit);
+
+    static constexpr size_t sat_sub(size_t a, size_t b) noexcept {
+        return (a > b) ? (a - b) : 0;
+    }
 
     // utility to get the greater estimate to sort first, higher tiers last
     struct TieredGreaterEstimate {

@@ -307,66 +307,86 @@ TEST(IntermediateBlueprintsTest, test_Or_Blueprint) {
 }
 
 TEST(IntermediateBlueprintsTest, test_Near_Blueprint) {
-    NearBlueprint b(7, mock_element_gap_inspector);
+    NearBlueprint b(7, 0, 0, mock_element_gap_inspector);
+    NearBlueprint c(7, 2, 0, mock_element_gap_inspector);
     { // combine
         std::vector<Blueprint::HitEstimate> est;
         EXPECT_EQ(true, b.combine(est).empty);
         EXPECT_EQ(0u, b.combine(est).estHits);
+        EXPECT_EQ(true, c.combine(est).empty);
+        EXPECT_EQ(0u, c.combine(est).estHits);
         est.emplace_back(10, false);
         EXPECT_EQ(false, b.combine(est).empty);
         EXPECT_EQ(10u, b.combine(est).estHits);
         est.emplace_back(20, false);
         EXPECT_EQ(false, b.combine(est).empty);
         EXPECT_EQ(10u, b.combine(est).estHits);
+        EXPECT_EQ(true, c.combine(est).empty);
+        EXPECT_EQ(0u, c.combine(est).estHits);
         est.emplace_back(5, false);
         EXPECT_EQ(false, b.combine(est).empty);
         EXPECT_EQ(5u, b.combine(est).estHits);
         est.emplace_back(0, true);
         EXPECT_EQ(true, b.combine(est).empty);
         EXPECT_EQ(0u, b.combine(est).estHits);
+        EXPECT_EQ(false, c.combine(est).empty);
+        EXPECT_EQ(10u, c.combine(est).estHits);
     }
     {
-        NearBlueprint a(7, mock_element_gap_inspector);
+        NearBlueprint a(7, 0, 0, mock_element_gap_inspector);
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQ(0u, a.exposeFields().size());
     }
-    check_sort_order_and_strictness(std::make_unique<NearBlueprint>(7, mock_element_gap_inspector), false,
+    check_sort_order_and_strictness(std::make_unique<NearBlueprint>(7, 0, 0, mock_element_gap_inspector), false,
                                     createLeafs({40, 10, 30, 20}), {1, 3, 2, 0},
                                     {false, false, false, false});
-    check_sort_order_and_strictness(std::make_unique<NearBlueprint>(7, mock_element_gap_inspector), true,
+    check_sort_order_and_strictness(std::make_unique<NearBlueprint>(7, 0, 0, mock_element_gap_inspector), true,
                                     createLeafs({40, 10, 30, 20}), {1, 3, 2, 0},
+                                    {true, false, false, false});
+    check_sort_order_and_strictness(std::make_unique<NearBlueprint>(7, 2, 0, mock_element_gap_inspector), true,
+                                    createLeafs({40, 30, 20, 10}), {1, 0, 2, 3},
                                     {true, false, false, false});
     // createSearch tested by iterator unit test
 }
 
 TEST(IntermediateBlueprintsTest, test_ONear_Blueprint) {
-    ONearBlueprint b(8, mock_element_gap_inspector);
+    ONearBlueprint b(8, 0, 0, mock_element_gap_inspector);
+    ONearBlueprint c(8, 2, 0, mock_element_gap_inspector);
     { // combine
         std::vector<Blueprint::HitEstimate> est;
         EXPECT_EQ(true, b.combine(est).empty);
         EXPECT_EQ(0u, b.combine(est).estHits);
+        EXPECT_EQ(true, c.combine(est).empty);
+        EXPECT_EQ(0u, c.combine(est).estHits);
         est.emplace_back(10, false);
         EXPECT_EQ(false, b.combine(est).empty);
         EXPECT_EQ(10u, b.combine(est).estHits);
         est.emplace_back(20, false);
         EXPECT_EQ(false, b.combine(est).empty);
         EXPECT_EQ(10u, b.combine(est).estHits);
+        EXPECT_EQ(true, c.combine(est).empty);
+        EXPECT_EQ(0u, c.combine(est).estHits);
         est.emplace_back(5, false);
         EXPECT_EQ(false, b.combine(est).empty);
         EXPECT_EQ(5u, b.combine(est).estHits);
         est.emplace_back(0, true);
         EXPECT_EQ(true, b.combine(est).empty);
         EXPECT_EQ(0u, b.combine(est).estHits);
+        EXPECT_EQ(false, c.combine(est).empty);
+        EXPECT_EQ(10u, c.combine(est).estHits);
     }
     {
-        ONearBlueprint a(8, mock_element_gap_inspector);
+        ONearBlueprint a(8, 0, 0, mock_element_gap_inspector);
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQ(0u, a.exposeFields().size());
     }
-    check_sort_order_and_strictness(std::make_unique<ONearBlueprint>(7, mock_element_gap_inspector), false,
+    check_sort_order_and_strictness(std::make_unique<ONearBlueprint>(7, 0, 0, mock_element_gap_inspector), false,
                                     createLeafs({20, 10, 40, 30}), {0, 1, 2, 3},
                                     {false, false, false, false});
-    check_sort_order_and_strictness(std::make_unique<ONearBlueprint>(7, mock_element_gap_inspector), true,
+    check_sort_order_and_strictness(std::make_unique<ONearBlueprint>(7, 0, 0, mock_element_gap_inspector), true,
+                                    createLeafs({20, 10, 40, 30}), {0, 1, 2, 3},
+                                    {true, false, false, false});
+    check_sort_order_and_strictness(std::make_unique<ONearBlueprint>(7, 2, 0, mock_element_gap_inspector), true,
                                     createLeafs({20, 10, 40, 30}), {0, 1, 2, 3},
                                     {true, false, false, false});
     // createSearch tested by iterator unit test
@@ -806,8 +826,8 @@ struct make {
     static make RANK() { return make(std::make_unique<RankBlueprint>()); }
     static make ANDNOT() { return make(std::make_unique<AndNotBlueprint>()); }
     static make SB(ISourceSelector &selector) { return make(std::make_unique<SourceBlenderBlueprint>(selector)); }
-    static make NEAR(uint32_t window) { return make(std::make_unique<NearBlueprint>(window, mock_element_gap_inspector)); }
-    static make ONEAR(uint32_t window) { return make(std::make_unique<ONearBlueprint>(window, mock_element_gap_inspector)); }
+    static make NEAR(uint32_t window, uint32_t neg_terms) { return make(std::make_unique<NearBlueprint>(window, neg_terms, 0, mock_element_gap_inspector)); }
+    static make ONEAR(uint32_t window, uint32_t neg_terms) { return make(std::make_unique<ONearBlueprint>(window, neg_terms, 0, mock_element_gap_inspector)); }
     static make WEAKAND(uint32_t n) { return make(std::make_unique<WeakAndBlueprint>(n)); }
     static make WEAKAND_ADJUST(double limit) {
         return make(std::make_unique<WeakAndBlueprint>(100, wand::StopWordStrategy(-limit, 1.0, 0, false), true));
@@ -925,6 +945,18 @@ TEST(IntermediateBlueprintsTest, test_single_child_optimization) {
     //-------------------------------------------------------------------------
     Blueprint::UP expect = make::SB(selector).source(2).leaf(42);
     //-------------------------------------------------------------------------
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST(IntermediateBlueprintsTest, NEAR_only_negative_children_optimized_away) {
+    Blueprint::UP top = make::NEAR(10, 6).leafs({2,20,1,15,3,25});
+    Blueprint::UP expect = std::make_unique<EmptyBlueprint>();
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST(IntermediateBlueprintsTest, ONEAR_only_negative_children_optimized_away) {
+    Blueprint::UP top = make::ONEAR(10, 6).leafs({2,20,1,15,3,25});
+    Blueprint::UP expect = std::make_unique<EmptyBlueprint>();
     optimize_and_compare(std::move(top), std::move(expect));
 }
 
@@ -1428,11 +1460,19 @@ TEST(IntermediateBlueprintsTest, relative_estimate_for_SB) {
 }
 
 TEST(IntermediateBlueprintsTest, relative_estimate_for_NEAR) {
-    verify_relative_estimate(make::NEAR(1), 0.2*0.3*0.5);
+    verify_relative_estimate(make::NEAR(5, 0), 0.2*0.3*0.5);
 }
 
 TEST(IntermediateBlueprintsTest, relative_estimate_for_ONEAR) {
-    verify_relative_estimate(make::ONEAR(1), 0.2*0.3*0.5);
+    verify_relative_estimate(make::ONEAR(5, 0), 0.2*0.3*0.5);
+}
+
+TEST(IntermediateBlueprintsTest, relative_estimate_for_NEAR_with_negative_children) {
+    verify_relative_estimate(make::NEAR(5, 1), 0.2*0.3);
+}
+
+TEST(IntermediateBlueprintsTest, relative_estimate_for_ONEAR_with_negative_children) {
+    verify_relative_estimate(make::ONEAR(5, 1), 0.2*0.3);
 }
 
 TEST(IntermediateBlueprintsTest, relative_estimate_for_WEAKAND) {
@@ -1483,15 +1523,31 @@ TEST(IntermediateBlueprintsTest, cost_for_SB) {
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_NEAR) {
-    verify_cost(make::NEAR(1),
+    verify_cost(make::NEAR(5, 0),
                 AndFlow::cost_of(child_stats, false) + AndFlow::estimate_of(child_stats) * 3,
                 AndFlow::cost_of(child_stats, true) + AndFlow::estimate_of(child_stats) * 3);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_ONEAR) {
-    verify_cost(make::ONEAR(1),
+    verify_cost(make::ONEAR(5, 0),
                 AndFlow::cost_of(child_stats, false) + AndFlow::estimate_of(child_stats) * 3,
                 AndFlow::cost_of(child_stats, true) + AndFlow::estimate_of(child_stats) * 3);
+}
+
+TEST(IntermediateBlueprintsTest, cost_for_NEAR_with_negative_children) {
+    ASSERT_GT(child_stats.size(), 1);
+    auto positive_stats = std::span(child_stats.data(), child_stats.size() - 1);
+    verify_cost(make::NEAR(5, 1),
+                AndFlow::cost_of(positive_stats, false) + AndFlow::estimate_of(positive_stats) * 3,
+                AndFlow::cost_of(positive_stats, true) + AndFlow::estimate_of(positive_stats) * 3);
+}
+
+TEST(IntermediateBlueprintsTest, cost_for_ONEAR_with_negative_children) {
+    ASSERT_GT(child_stats.size(), 1);
+    auto positive_stats = std::span(child_stats.data(), child_stats.size() - 1);
+    verify_cost(make::ONEAR(5, 1),
+                AndFlow::cost_of(positive_stats, false) + AndFlow::estimate_of(positive_stats) * 3,
+                AndFlow::cost_of(positive_stats, true) + AndFlow::estimate_of(positive_stats) * 3);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_WEAKAND) {
