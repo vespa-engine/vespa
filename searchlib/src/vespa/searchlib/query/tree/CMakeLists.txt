@@ -7,6 +7,7 @@ vespa_add_library(searchlib_query_tree OBJECT
     intermediatenodes.cpp
     location.cpp
     querybuilder.cpp
+    query_to_protobuf.cpp
     range.cpp
     simplequery.cpp
     stackdumpcreator.cpp
