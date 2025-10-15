@@ -33,7 +33,13 @@ public class TermDfKWayMergeTest {
                 .toList();
         StringWriter sw = new StringWriter();
         try (BufferedWriter bw = new BufferedWriter(sw)) {
-            TermDfKWayMerge.merge(readers, bw, minKeep);
+            TermDfRowSink sink = (term, df) -> {
+               bw.write(term);
+               bw.write('\t');
+               bw.write(Long.toString(df));
+               bw.write('\n');
+            };
+            TermDfKWayMerge.merge(readers, sink, minKeep);
         }
         return sw.toString();
     }
