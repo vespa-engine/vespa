@@ -5,6 +5,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
+import com.yahoo.prelude.fastsearch.PartialSummaryHandler;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.processing.request.CompoundName;
@@ -102,13 +103,9 @@ public class GroupingExecutor extends Searcher {
     private String extractSummaryClass(Hit hit, String summaryClass) {
         Object metaData = hit.getSearcherSpecificMetaData(this);
         if (metaData instanceof String metaDataString) {
-            // Use the summary class specified by grouping, set in HitConverter, for the first fill request
-            // after grouping. This assumes the first fill request is using the default summary class,
-            // which may be a fragile assumption. But currently we cannot do better because the difference
-            // between explicit and implicit summary class in fill is erased by the Execution.
-            //
-            // We reset the summary class here such that following fill calls will execute with the
-            // summary class they specify
+            // Use the summary class specified by grouping, set in
+            // HitConverter, in the fill request indented for presentation.
+            // We reset the summary class here as cleanup.
             hit.setSearcherSpecificMetaData(this, null);
             return metaDataString;
         }
@@ -117,19 +114,33 @@ public class GroupingExecutor extends Searcher {
 
     @Override
     public void fill(Result result, String summaryClass, Execution execution) {
+        Trace trace = result.getQuery().getTrace();
+        // is this the implicit fill for presentation?
+        // if not, no special handling.
+        if (! PartialSummaryHandler.PRESENTATION.equals(summaryClass)) {
+            if (trace.isTraceable(6)) {
+                trace.trace("GroupingExector.fill(): pass-through for summaryClass='" + summaryClass + "'", 6);
+            }
+            execution.fill(result, summaryClass);
+            return;
+        }
         Map<String, Result> summaryMap = new HashMap<>();
         for (Iterator<Hit> it = result.hits().unorderedDeepIterator(); it.hasNext(); ) {
             Hit hit = it.next();
             Result summaryResult = summaryMap.computeIfAbsent(extractSummaryClass(hit, summaryClass), key -> new Result(result.getQuery()));
             summaryResult.hits().add(hit);
         }
-        Trace trace = result.getQuery().getTrace();
         if (trace.isTraceable(2)) {
-            trace.trace("GroupingExecutor.fill(" + summaryClass + ") = {" + summaryMap.keySet() + "}", 2);
+            trace.trace("GroupingExecutor.fill(" + summaryClass + ") ==> {" + summaryMap.keySet() + "}", 2);
         }
         for (Map.Entry<String, Result> entry : summaryMap.entrySet()) {
             Result res = entry.getValue();
-            execution.fill(res, entry.getKey());
+            String fillName = entry.getKey();
+            if (fillName == null || fillName.equals("")) {
+                execution.fill(res, summaryClass);
+            } else {
+                execution.fill(res, fillName);
+            }
             result.hits().addErrorsFrom(res.hits());
         }
         Result defaultResult = summaryMap.get(ExpressionConverter.DEFAULT_SUMMARY_NAME);
