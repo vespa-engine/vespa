@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
+import com.yahoo.vespa.flags.custom.EnclaveAccountProfiles;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
 import com.yahoo.vespa.flags.custom.CustomerRpmServiceList;
 import com.yahoo.vespa.flags.custom.RoleList;
@@ -392,6 +393,12 @@ public class PermanentFlags {
             "cloud-accounts", List.of(), String.class,
             "A list of cloud accounts (e.g. AWS account or GCP project IDs) that are valid for the given tenant",
             "Takes effect on next deployment through controller",
+            TENANT_ID);
+
+    public static final UnboundJacksonFlag<EnclaveAccountProfiles> ENCLAVE_ACCOUNT_PROFILES = defineJacksonFlag(
+            "enclave-account-profiles", EnclaveAccountProfiles.EMPTY, EnclaveAccountProfiles.class,
+            "A list of enclave account profiles that are valid for the given tenant. Includes cloud account and misc. cloud metadata",
+            "Takes effect immediately",
             TENANT_ID);
 
     public static final UnboundBooleanFlag REQUIRE_ENCLAVE = defineFeatureFlag(
