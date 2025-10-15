@@ -8,6 +8,7 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <algorithm>
 #include <limits>
+#include <optional>
 
 
 namespace search::streaming {
@@ -50,14 +51,19 @@ QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fe
         search::fef::TermFieldMatchData *tmd = nullptr;
         uint32_t num_occs = 0;
         bool filter = false;
+        std::optional<search::common::ElementIds::iterator> element_ids_it;
 
         // optimize for hitlist giving all hits for a single field in one chunk
         for (const auto& hit : hit_list) {
             uint32_t field_id = hit.field_id();
             if (field_id != last_field_id) {
                 if (tmd != nullptr) {
-                    if (tmd->needs_interleaved_features()) {
-                        set_interleaved_features(*tmd, last_field_length, num_occs);
+                    if (num_occs != 0u) {
+                        if (tmd->needs_interleaved_features() && !filter) {
+                            set_interleaved_features(*tmd, last_field_length, num_occs);
+                        }
+                    } else {
+                        tmd->resetOnlyDocId(search::fef::TermFieldMatchData::invalidId());
                     }
                     // reset to notfound/unknown values
                     tmd = nullptr;
@@ -65,6 +71,9 @@ QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fe
                 num_occs = 0;
                 auto field = index_env.getField(field_id);
                 filter = term_filter || (field != nullptr && field->isFilter());
+                if (!element_ids.all_elements()) {
+                    element_ids_it.emplace(element_ids.begin());
+                }
 
                 // setup for new field that had a hit
                 const search::fef::ITermFieldData *tfd = td.lookupField(field_id);
@@ -83,6 +92,15 @@ QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fe
                     last_field_length = hit.get_field_length();
                 }
             }
+            if (element_ids_it.has_value()) {
+                auto& it = element_ids_it.value();
+                while (it < element_ids.end() && *it < hit.element_id()) {
+                    ++it;
+                }
+                if (it == element_ids.end() || *it != hit.element_id()) {
+                    continue; // Element is filtered
+                }
+            }
             ++num_occs;
             if (tmd != nullptr && !filter) {
                 search::fef::TermFieldMatchDataPosition pos(hit.element_id(), hit.position(),
@@ -91,8 +109,12 @@ QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fe
             }
         }
         if (tmd != nullptr) {
-            if (tmd->needs_interleaved_features()) {
-                set_interleaved_features(*tmd, last_field_length, num_occs);
+            if (num_occs != 0u) {
+                if (tmd->needs_interleaved_features() && !filter) {
+                    set_interleaved_features(*tmd, last_field_length, num_occs);
+                }
+            } else {
+                tmd->resetOnlyDocId(search::fef::TermFieldMatchData::invalidId());
             }
         }
     }
