@@ -93,10 +93,12 @@ public final class VespaFileHeaderInspectClient {
                 line = line.trim();
                 if (line.isEmpty() || line.charAt(0) != '|') continue;        // skip borders/headers
                 // Split table row: | Tag | Type | Value |
+                final int TAG_INDEX = 1;
+                final int VALUE_INDEX = 3;
                 String[] parts = line.split("\\|");
-                if (parts.length < 4) continue; // need at least "", " Tag ", " Type ", " Value ", ""
-                String tag = parts[1].trim();
-                String value = parts[3].trim(); // third column is "Value"
+                if (parts.length < 4) continue;
+                String tag = parts[TAG_INDEX].trim();
+                String value = parts[VALUE_INDEX].trim();
                 if (tag.isEmpty() || value.isEmpty()) continue;
 
                 if (tag.equals("Doc id limit")) {

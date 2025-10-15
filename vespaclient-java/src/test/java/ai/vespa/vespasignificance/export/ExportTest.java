@@ -81,7 +81,7 @@ class ExportTest {
 
         CapturingWriter writer = new CapturingWriter();
         Export.WriterFactory wf = (w, docCount, sorted, createdAt) -> writer;
-        Export.DocumentCountProviderFactory dcpf = (dir) -> () -> 42L; // any value is fine for this test
+        Export.DocumentCountProviderFactory dcpf = (dir) -> () -> 42L;
 
         var baosOut = new ByteArrayOutputStream();
         var prevOut = System.out;
