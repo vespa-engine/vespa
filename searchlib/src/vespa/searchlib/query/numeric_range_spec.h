@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <limits>
+#include <memory>
 
 namespace search {
 
@@ -37,6 +38,8 @@ struct NumericRangeSpec {
     }
 
     constexpr auto operator <=>(const NumericRangeSpec &rhs) const noexcept = default;
+
+    static std::unique_ptr<NumericRangeSpec> fromString(std::string_view stringRep);
 };
 
 } // namespace
