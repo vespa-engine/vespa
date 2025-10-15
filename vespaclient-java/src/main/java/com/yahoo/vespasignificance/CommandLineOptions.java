@@ -52,16 +52,16 @@ public class CommandLineOptions {
     /** Map command name to description */
     static Map<String, String> registeredCommands() {
         Map<String, String> commands = new LinkedHashMap<>();
-        commands.put("generate", "Generate a significance model from a JSONL feed file.");
-        commands.put("export", "Export terms and document frequency from a flushed index to TSV.");
-        commands.put("merge", "Merge terms and document frequency from a multiple TSV files.");
+        commands.put("generate", "Generate a significance model from a JSONL feed file or a Vespa Significance TSV file.");
+        commands.put("export", "Export terms and document frequency from an index to a Vespa Significance TSV file.");
+        commands.put("merge", "Merge multiple Vespa Significance TSV files.");
         return commands;
     }
 
     /** Pretty print the global help */
     static void printGlobalHelp() {
         HelpFormatter fmt = new HelpFormatter();
-        fmt.setWidth(100);
+        fmt.setWidth(120);
         fmt.setLeftPadding(2);
         fmt.setOptionComparator(Comparator.comparing(Option::getLongOpt));
 
@@ -88,14 +88,14 @@ public class CommandLineOptions {
                 .longOpt(INPUT_OPTION)
                 .required()
                 .hasArg()
-                .argName("file.jsonl")
-                .desc("Input JSON Lines file. One Vespa document per line.")
+                .argName("FILE")
+                .desc("Input JSON Lines. One Vespa document per line. Or Vespa Significance TSV (requires --format vstsv).")
                 .build());
 
         options.addOption(Option.builder()
                 .longOpt(FORMAT_OPTION)
                 .hasArg()
-                .argName("jsonl")
+                .argName("jsonl/vstsv")
                 .desc("Format of input file. Default is jsonl.")
                 .build());
 
@@ -124,7 +124,7 @@ public class CommandLineOptions {
                 .longOpt(ZST_COMPRESSION)
                 .hasArg()
                 .argName("true|false")
-                .desc("Use Zstandard compression (default: false). If true, --out must end with .zst.")
+                .desc("Use Zstandard compression on output (default: false). If true, --out must end with .zst.")
                 .build());
 
         return options;
@@ -133,12 +133,15 @@ public class CommandLineOptions {
     /** Petty print help for generate command */
     public static void printGenerateHelp() {
         HelpFormatter fmt = new HelpFormatter();
-        fmt.setWidth(100);
+        fmt.setWidth(120);
         fmt.setLeftPadding(2);
         fmt.setDescPadding(2);
         fmt.setOptionComparator(Comparator.comparing(Option::getLongOpt));
         String header = "Options:";
-        fmt.printHelp("vespa-significance generate [options]", header, createGenerateOptions(), "", false);
+        String footer = "Examples:\n"
+                + "  vespa-significance generate --in documents.jsonl --languages en,no --out model.json --field my_field\n"
+                + "  vespa-significance generate --format vstsv --in data.vstsv --out model.json\n";
+        fmt.printHelp("vespa-significance generate [options] --in <FILE>", header, createGenerateOptions(), footer, false);
     }
 
     /** Parse generate command options to ClientParameters */
@@ -175,8 +178,8 @@ public class CommandLineOptions {
         options.addOption(Option.builder()
                 .longOpt(OUTPUT_OPTION)
                 .hasArg()
-                .argName("FILE.tsv[.zst]")
-                .desc("Output TSV file.")
+                .argName("FILE.vstsv[.zst]")
+                .desc("Output Vespa Significance TSV file.")
                 .build());
 
         options.addOption(Option.builder()
@@ -210,7 +213,7 @@ public class CommandLineOptions {
 
         options.addOption(Option.builder("zst")
                 .longOpt(ZST_COMPRESSION)
-                .desc("Use Zstandard compression.")
+                .desc("Use Zstandard compression on output.")
                 .build());
 
         return options;
@@ -224,14 +227,14 @@ public class CommandLineOptions {
         fmt.setDescPadding(2);
         fmt.setOptionComparator(Comparator.comparing(Option::getLongOpt));
         String header = "Options:";
-        fmt.printHelp("vespa-significance export [options]", header, createExportOptions(), "", false);
+        fmt.printHelp("vespa-significance export [options] --field <FIELD>", header, createExportOptions(), "", false);
     }
 
     /** Parse generate command options to ClientParameters */
     public static ExportClientParameters parseExportCommandLineArguments(CommandLine cl) {
         return ExportClientParameters.builder()
                 .fieldName(cl.getOptionValue(FIELD_OPTION))
-                .outputFile(cl.hasOption(OUTPUT_OPTION) ? cl.getOptionValue(OUTPUT_OPTION) : "term_df.tsv")
+                .outputFile(cl.getOptionValue(OUTPUT_OPTION))
                 .indexDir(cl.getOptionValue(INDEX_DIR))
                 .clusterName(cl.getOptionValue(CLUSTER_OPTION))
                 .schemaName(cl.getOptionValue(SCHEMA_NAME))
@@ -252,8 +255,8 @@ public class CommandLineOptions {
         options.addOption(Option.builder()
                 .longOpt(OUTPUT_OPTION)
                 .hasArg()
-                .argName("FILE.tsv[.zst]")
-                .desc("Output TSV file.")
+                .argName("FILE.vstsv[.zst]")
+                .desc("Output Vespa Significance TSV file.")
                 .build());
 
         options.addOption(Option.builder()
@@ -265,7 +268,7 @@ public class CommandLineOptions {
 
         options.addOption(Option.builder("zst")
                 .longOpt(ZST_COMPRESSION)
-                .desc("Use Zstandard compression.")
+                .desc("Use Zstandard compression on output.")
                 .build());
 
         return options;
@@ -279,7 +282,7 @@ public class CommandLineOptions {
         fmt.setDescPadding(2);
         fmt.setOptionComparator(Comparator.comparing(Option::getLongOpt));
         String cmd =
-                "vespa-significance merge [options] <input.tsv[.zst]> [<input2.tsv[.zst]> ...]";
+                "vespa-significance merge [options] <input.vstsv[.zst]> [<input2.vstsv[.zst]> ...]";
 
         String header = "Options:";
         fmt.printHelp(cmd, header, createMergeOptions(), "", false);
@@ -292,7 +295,7 @@ public class CommandLineOptions {
      */
     public static MergeClientParameters parseMergeCommandLineArguments(CommandLine cl) {
         return MergeClientParameters.builder()
-                .outputFile(cl.hasOption(OUTPUT_OPTION) ? cl.getOptionValue(OUTPUT_OPTION) : "term_df.tsv")
+                .outputFile(cl.getOptionValue(OUTPUT_OPTION))
                 .zstCompress(cl.hasOption(ZST_COMPRESSION))
                 .minKeep(cl.hasOption(MIN_KEEP_OPTION) ? Long.parseLong(cl.getOptionValue(MIN_KEEP_OPTION)) : Long.MIN_VALUE)
                 .addInputFiles(cl.getArgList())

@@ -97,7 +97,7 @@ public class Export {
                 writer.flush();
             }
 
-            System.out.println("Exported " + Path.of(indexDir.toString(), fieldName) + " to " + outputPath);
+            System.out.println("Exported " + Path.of(indexDir.toString(), fieldName) + " to " + outputPath.toAbsolutePath());
             return 0;
         } catch (ExportFailure ignored) {
             return 1;
@@ -114,9 +114,7 @@ public class Export {
     private void ensureOutputFile() {
         var out = params.outputFile();
         if (out == null || out.isBlank()) {
-            System.err.println("Error: --output is required.");
-            CommandLineOptions.printExportHelp();
-            throw new ExportFailure();
+            out = "export_" + params.fieldName() + ".vstsv";
         }
 
         boolean wantsZst = params.zstCompress();
