@@ -165,7 +165,7 @@
         <stax2-api.vespa.version>4.2.2</stax2-api.vespa.version>
         <xerces.vespa.version>2.12.2</xerces.vespa.version>
         <zero-allocation-hashing.vespa.version>0.16</zero-allocation-hashing.vespa.version>
-        <zookeeper.client.vespa.version>3.9.3</zookeeper.client.vespa.version>
+        <zookeeper.client.vespa.version>3.9.4</zookeeper.client.vespa.version>
         <zookeeper.client.artifactId>zookeeper-server-${zookeeper.client.vespa.version}</zookeeper.client.artifactId>
         <vafer.jdependency.vespa.version>2.10</vafer.jdependency.vespa.version>
 
