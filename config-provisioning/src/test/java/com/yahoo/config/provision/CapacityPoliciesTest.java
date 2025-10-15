@@ -13,10 +13,6 @@ public class CapacityPoliciesTest {
 
     private static final Zone prodZone = new Zone(SystemName.Public, Environment.prod, RegionName.from("foo"));
     private static final Exclusivity exclusivity = new Exclusivity(prodZone, SharedHosts.empty());
-    private static final ClusterSpec clusterSpecOldVersion = ClusterSpec.request(ClusterSpec.Type.admin, ClusterSpec.Id.from("cluster-controllers"))
-                                                                      .vespaVersion("8.577.12")
-                                                                      .build();
-
     private static final ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.admin, ClusterSpec.Id.from("cluster-controllers"))
                                                               .vespaVersion("8.597.12")
                                                               .build();
@@ -25,38 +21,32 @@ public class CapacityPoliciesTest {
     void testClusterControllerMemory() {
         {
             int contentNodes = 0;
-            assertClusterControllerMemory(1.5, contentNodes, clusterSpecOldVersion);
             assertClusterControllerMemory(1.5, contentNodes, clusterSpec);
         }
 
         {
             int contentNodes = 8;
-            assertClusterControllerMemory(1.5, contentNodes, clusterSpecOldVersion);
             assertClusterControllerMemory(1.5, contentNodes, clusterSpec);
         }
 
         {
             int contentNodes = 49;
-            assertClusterControllerMemory(1.5, contentNodes, clusterSpecOldVersion);
             assertClusterControllerMemory(1.5, contentNodes, clusterSpec);
         }
 
         {
             int contentNodes = 50;
-            assertClusterControllerMemory(1.65, contentNodes, clusterSpecOldVersion);
             assertClusterControllerMemory(1.7, contentNodes, clusterSpec);
         }
 
         {
             int contentNodes = 50;
             // Explicitly defined cluster controller memory, 1.9 GiB
-            assertClusterControllerMemory(1.9, contentNodes, 1.9, clusterSpecOldVersion);
             assertClusterControllerMemory(1.9, contentNodes, 1.9, clusterSpec);
         }
 
         {
             int contentNodes = 1000;
-            assertClusterControllerMemory(2.1, contentNodes, clusterSpecOldVersion);
             assertClusterControllerMemory(2.3, contentNodes, clusterSpec);
         }
     }
