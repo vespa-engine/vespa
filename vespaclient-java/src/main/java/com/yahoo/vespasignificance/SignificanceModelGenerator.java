@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.io.FileOutputStream;
 import java.io.FileInputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -79,6 +80,10 @@ public class SignificanceModelGenerator {
             useZstCompression = clientParameters.zstCompression;
 
             final Path input = Paths.get(clientParameters.inputFile);
+            if (!Files.exists(input)) {
+                System.err.println("Error: input file " + input + " does not exist");
+                return 1;
+            }
 
             switch (format) {
                 case jsonl -> formatStrategy = new JsonlDocumentFormatStrategy(
