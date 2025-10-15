@@ -338,6 +338,17 @@ public class PartialSummaryHandlerTestCase {
         assertEquals(2, result.hits().getFilled().size());
     }
 
+    static class TraceToString extends com.yahoo.yolean.trace.TraceVisitor {
+        public StringBuilder target = new StringBuilder();
+        public void visit(com.yahoo.yolean.trace.TraceNode node) {
+            if (node.payload() != null) {
+                target.append("\n\t>>> ");
+                target.append(node.payload());
+                target.append(" <<<");
+            }
+        }
+    }
+
     @Test
     void testFieldsPlusClassPresentation() {
         DocsumDefinitionSet set = createDocsumDefinitionSet();
@@ -349,6 +360,15 @@ public class PartialSummaryHandlerTestCase {
         var result = createResult(query, hit1, hit2);
         var toTest = new PartialSummaryHandler(set);
         toTest.wantToFill(result, PartialSummaryHandler.PRESENTATION);
+        // so we have:
+        // summary=first3 (TOPIC, TITLE, WORDS)
+        // but fields = [ TOPIC, SCORE ]
+        // so what do we expect to get?
+        var tracer = new TraceToString();
+        query.getModel().getExecution().trace().accept(tracer);
+        assertTrue(tracer.target.toString()
+                   .contains("requested summary=first3 does not contain all fields [SCORE, TOPIC] from query; trying fields=[SCORE, TITLE, TOPIC, WORDS] and summary=default"),
+                   "Trace did not contain expected message, was: " + tracer.target);
         assertEquals("default", toTest.askForSummary());
         assertNotNull(toTest.askForFields());
         assertEquals(4, toTest.askForFields().size());
@@ -397,10 +417,11 @@ public class PartialSummaryHandlerTestCase {
     }
 
     static Query createQuery(String summaryClass) {
+        String q = "/search/?query=foo&trace.level=3";
         if (summaryClass == null)
-            return new Query("/search/?query=foo");
+            return new Query(q);
         else {
-            return new Query("/search/?query=foo&presentation.summary=" + summaryClass);
+            return new Query(q + "&presentation.summary=" + summaryClass);
         }
     }
 
