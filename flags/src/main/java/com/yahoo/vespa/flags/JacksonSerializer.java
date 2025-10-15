@@ -19,7 +19,7 @@ public class JacksonSerializer<T> implements FlagSerializer<T> {
     public T deserialize(RawFlag rawFlag) {
         T value = JsonNodeRawFlag.fromJsonNode(rawFlag.asJsonNode()).toJacksonClass(jacksonClass);
         if (!validator.test(value)) {
-            throw new IllegalArgumentException("Invalid value: " + rawFlag.asJson());
+            throw new IllegalArgumentException("Invalid " + jacksonClass.getSimpleName() + " value: " + rawFlag.asJson());
         }
         return value;
     }
