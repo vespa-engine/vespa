@@ -76,7 +76,7 @@ public class PartialSummaryHandler {
         analyzeQuery(result.getQuery());
         // NOTE: ordering here is important, there are dependencies between these steps:
         computeAskForFields();
-        computeAskForSum();
+        computeAskForSum(result.getQuery());
         computeFillMarker();
         computeEffectiveDocsumDef();
     }
@@ -88,7 +88,7 @@ public class PartialSummaryHandler {
         // NOTE: ordering here is important, there are dependencies between these steps:
         analyzeQuery(query);
         computeAskForFields();
-        computeAskForSum();
+        computeAskForSum(query);
         computeFillMarker();
         computeEffectiveDocsumDef();
     }
@@ -149,7 +149,7 @@ public class PartialSummaryHandler {
         return summaryClass != null && summaryClass.equals(PRESENTATION);
     }
 
-    private void computeAskForSum() {
+    private void computeAskForSum(Query query) {
         this.askForSummary = summaryRequestedInFill;
         if (askForSummary == null || askForSummary.equals(PRESENTATION)) {
             askForSummary = summaryFromQuery;
@@ -158,7 +158,24 @@ public class PartialSummaryHandler {
             askForSummary = DEFAULT_CLASS;
         }
         if (askForFields != null) {
-            askForSummary = ALL_FIELDS_CLASS;
+            var fieldsFromClass = getFieldsForClass(askForSummary);
+            var available = fieldsAlreadyFilled(resultHasFilled);
+            available.addAll(fieldsFromClass);
+            if (! available.containsAll(askForFields)) {
+                // Conflicting requirements. Possible reason:
+                // The user has specified both "select A,B from ..." and "presentation.summary=foo"
+                // where the "foo" class does not contain all of the "A,B" list.
+                // So what was the intention? We can't really tell.
+                // Use the union of fields, and the 'all' class.
+                askForFields.addAll(fieldsFromClass);
+                // Add a trace message which they can find if they don't get their expected result.
+                query.trace("requested summary=" + askForSummary +
+                            " does not contain all fields " + fieldsFromQuery +
+                            " from query; trying fields=" + askForFields +
+                            " and summary=" + ALL_FIELDS_CLASS,
+                            1);
+                askForSummary = ALL_FIELDS_CLASS;
+            }
         }
     }
 
@@ -169,44 +186,25 @@ public class PartialSummaryHandler {
             if (! fieldSet.isEmpty()) {
                 this.askForFields = fieldSet;
             }
-        } else if (isPresentationRequest(summaryRequestedInFill)) {
+        } else if (isPresentationRequest(summaryRequestedInFill) || isDefaultRequest(summaryRequestedInFill)) {
             if (! fieldsFromQuery.isEmpty()) {
-                if (summaryFromQuery == null) {
-                    askForFields = fieldsFromQuery;
-                } else {
-                    var fieldsFromClass = getFieldsForClass(summaryFromQuery);
-                    if (! fieldsFromClass.containsAll(fieldsFromQuery)) {
-                        askForFields = new HashSet<String>();
-                        askForFields.addAll(fieldsFromQuery);
-                        askForFields.addAll(fieldsFromClass);
-                    }
-                }
+                // must make a copy to avoid disturbing the query.
+                // Use TreeSet for deterministic ordering:
+                askForFields = new TreeSet<>(fieldsFromQuery);
             }
         } else if (summaryRequestedInFill != null && summaryRequestedInFill.startsWith("[")) {
             throw new IllegalArgumentException("fill(" + summaryRequestedInFill + ") is not valid");
-        } else if (isDefaultRequest(summaryRequestedInFill)) {
-            if (! fieldsFromQuery.isEmpty()) {
-                this.askForFields = fieldsFromQuery;
-            }
-        }
-        if (askForFields != null) {
-            var available = fieldsAlreadyFilled(resultHasFilled);
-            available.addAll(getFieldsForClass(ALL_FIELDS_CLASS));
-            askForFields.retainAll(available);
-            if (askForFields.isEmpty()) {
-                askForFields = null;
-            }
         }
     }
 
     private void computeFillMarker() {
         if (isPresentationRequest(summaryRequestedInFill)) {
-                fillMarkers.add(summaryRequestedInFill);
-                if (askForFields != null) {
-                    fillMarkers.add(syntheticName(askForFields));
-                } else {
-                    fillMarkers.add(summaryFromQuery);
-                }
+            fillMarkers.add(summaryRequestedInFill);
+            if (askForFields != null) {
+                fillMarkers.add(syntheticName(askForFields));
+            } else {
+                fillMarkers.add(summaryFromQuery);
+            }
         } else if (askForFields != null) {
             fillMarkers.add(syntheticName(askForFields));
         } else {
