@@ -33,11 +33,15 @@ using search::streaming::QueryNodeResultFactory;
 using search::streaming::QueryTerm;
 using search::streaming::QueryTermList;
 
+inline namespace equiv_query_node_test {
+
 class AllowRewrite : public QueryNodeResultFactory
 {
 public:
     bool allow_float_terms_rewrite(std::string_view) const noexcept override { return true; }
 };
+
+}
 
 class EquivQueryNodeTest : public ::testing::Test
 {
@@ -213,6 +217,3 @@ TEST_F(EquivQueryNodeTest, test_equiv_flattening)
     EXPECT_EQ("5", phrase->get_terms()[1]->getTermString());
     EXPECT_EQ("3", terms[3]->getTermString());
 }
-
-
-GTEST_MAIN_RUN_ALL_TESTS()

@@ -84,5 +84,3 @@ TEST(PhraseQueryNodeTest, test_phrase_evaluate)
     p.get_element_ids(element_ids);
     EXPECT_EQ((std::vector<uint32_t>{0, 31}), element_ids);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

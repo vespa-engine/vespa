@@ -71,7 +71,7 @@ check_seek_in_field_element(HitIterator& it, uint32_t position, FieldElement& fi
 
 }
 
-TEST(HitITeratorTest, seek_to_field_element)
+TEST(HitIteratorTest, seek_to_field_element)
 {
     auto hl = make_hit_list();
     HitIterator it(hl);
@@ -100,7 +100,7 @@ TEST(HitIteratorTest, step_in_field_element)
     check_step_in_field_element(it, field_element, false, nullptr, "end");
 }
 
-TEST(hitIteratorTest, seek_in_field_elem)
+TEST(HitIteratorTest, seek_in_field_elem)
 {
     auto hl = make_hit_list();
     HitIterator it(hl);
@@ -118,5 +118,3 @@ TEST(hitIteratorTest, seek_in_field_elem)
     check_seek_in_field_element(it, 9, field_element, true, &hl[5], "9");
     check_seek_in_field_element(it, 10, field_element, false, nullptr, "end");
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

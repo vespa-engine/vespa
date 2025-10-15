@@ -40,5 +40,3 @@ TEST(HitIteratorPackTest, seek_to_matching_field_element)
     ++itr_pack.get_field_element_ref().second;
     EXPECT_FALSE(itr_pack.seek_to_matching_field_element());
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

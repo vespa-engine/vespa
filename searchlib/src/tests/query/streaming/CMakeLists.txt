@@ -1,65 +1,22 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-vespa_add_executable(searchlib_query_streaming_equiv_query_node_test_app TEST
+vespa_add_executable(searchlib_query_streaming_gtest_runner_app TEST
     SOURCES
     equiv_query_node_test.cpp
-    DEPENDS
-    vespa_searchlib
-    GTest::gtest
-)
-vespa_add_test(NAME searchlib_query_streaming_equiv_query_node_test_app COMMAND searchlib_query_streaming_equiv_query_node_test_app)
-
-vespa_add_executable(searchlib_query_streaming_hit_iterator_test_app TEST
-    SOURCES
+    gtest_runner.cpp
     hit_iterator_test.cpp
-    DEPENDS
-    vespa_searchlib
-    GTest::gtest
-)
-vespa_add_test(NAME searchlib_query_streaming_hit_iterator_test_app COMMAND searchlib_query_streaming_hit_iterator_test_app)
-
-vespa_add_executable(searchlib_query_streaming_hit_iterator_pack_test_app TEST
-    SOURCES
     hit_iterator_pack_test.cpp
-    DEPENDS
-    vespa_searchlib
-    GTest::gtest
-)
-vespa_add_test(NAME searchlib_query_streaming_hit_iterator_pack_test_app COMMAND searchlib_query_streaming_hit_iterator_pack_test_app)
-
-vespa_add_executable(searchlib_query_streaming_near_test_app TEST
-    SOURCES
     near_test.cpp
+    nearest_neighbor_query_node_test.cpp
+    phrase_query_node_test.cpp
+    query_builder_test.cpp
+    query_term_test.cpp
+    same_element_query_node_test.cpp
     DEPENDS
     searchlib_queryeval_test
     vespa_searchlib
     GTest::gtest
 )
-vespa_add_test(NAME searchlib_query_streaming_near_test_app COMMAND searchlib_query_streaming_near_test_app)
 
-vespa_add_executable(searchlib_query_streaming_same_element_query_node_test_app TEST
-    SOURCES
-    same_element_query_node_test.cpp
-    DEPENDS
-    vespa_searchlib
-    GTest::gtest
-)
-vespa_add_test(NAME searchlib_query_streaming_same_element_query_node_test_app COMMAND searchlib_query_streaming_same_element_query_node_test_app)
+vespa_add_test(NAME searchlib_query_streaming_gtest_runner_app COMMAND searchlib_query_streaming_gtest_runner_app)
 
-vespa_add_executable(searchlib_query_streaming_phrase_query_node_test_app TEST
-    SOURCES
-    phrase_query_node_test.cpp
-    DEPENDS
-    vespa_searchlib
-    GTest::gtest
-)
-vespa_add_test(NAME searchlib_query_streaming_phrase_query_node_test_app COMMAND searchlib_query_streaming_phrase_query_node_test_app)
-
-vespa_add_executable(searchlib_query_streaming_query_builder_test_app TEST
-    SOURCES
-    query_builder_test.cpp
-    DEPENDS
-    vespa_searchlib
-    GTest::gtest
-)
-vespa_add_test(NAME searchlib_query_streaming_query_builder_test_app COMMAND searchlib_query_streaming_query_builder_test_app)
