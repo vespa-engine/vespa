@@ -142,7 +142,7 @@ public class PartialSummaryHandler {
     }
 
     private static boolean isDefaultRequest(String summaryClass) {
-        return summaryClass == null || summaryClass.equals(DEFAULT_CLASS);
+        return summaryClass == null || summaryClass.equals(DEFAULT_CLASS) || summaryClass.equals(PRESENTATION);
     }
 
     private static boolean isPresentationRequest(String summaryClass) {
