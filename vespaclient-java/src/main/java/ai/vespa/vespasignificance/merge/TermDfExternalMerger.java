@@ -82,12 +82,12 @@ public class TermDfExternalMerger {
     }
 
     /**
-     * Merges all configured input files and writes the merged result to {@code output}.
+     * Merges all configured input files and writes the merged result to {@code sink}.
      * <ul>
      *   <li>If the file-handle budget is greater than the number of inputs, merging is performed in
      *   a single pass.</li>
      *   <li>Otherwise, inputs are merged in batches into temporary files. The final pass merges and writes to the
-     *   {@code output}.</li>
+     *   {@code sink}.</li>
      *   <li>Only the final pass applies {@code minKeep}; intermediate passes use {@link #NO_MIN_KEEP}.</li>
      * </ul>
      * <p>
@@ -95,11 +95,10 @@ public class TermDfExternalMerger {
      * <ul>
      *   <li>All {@code BufferedReader}s opened by this class are closed within this method. Including those opened
      *   with the {@link BufferedReaderFactory}.</li>
-     *   <li>The caller retains responsibility for closing {@code output}.</li>
      * </ul>
      */
-    public void mergeFiles(BufferedWriter output, long minKeep) throws IOException {
-        Objects.requireNonNull(output, "output");
+    public void mergeFiles(TermDfRowSink sink, long minKeep) throws IOException {
+        Objects.requireNonNull(sink, "sink");
         if (files.isEmpty()) return;
 
         int budget = computeReaderBudget();
@@ -109,7 +108,7 @@ public class TermDfExternalMerger {
             final List<BufferedReader> readers = new ArrayList<>(files.size());
             try {
                 for (Path p : files) readers.add(readerFactory.open(p));
-                TermDfKWayMerge.merge(readers, output, minKeep);
+                TermDfKWayMerge.merge(readers, sink, minKeep);
             } finally {
                 closeQuietly(readers);
             }
@@ -129,7 +128,7 @@ public class TermDfExternalMerger {
                 final Path tempFile = Files.createTempFile(tempDir, "termdf-", ".tmp.tsv");
 
                 try (BufferedWriter tmpWriter = Files.newBufferedWriter(tempFile, StandardCharsets.UTF_8, StandardOpenOption.WRITE)) {
-                    TermDfKWayMerge.merge(batch.readers(), tmpWriter, NO_MIN_KEEP);
+                    mergeTemporaryToTsv(batch.readers(), tmpWriter);
                 } finally {
                     closeQuietly(batch.readers());
                     for (MergeSource e : batch.consumed()) {
@@ -143,7 +142,7 @@ public class TermDfExternalMerger {
             // Final pass. Write to output and filter out minKeep.
             final MergeBatch finalBatch = dequeueBatch(budget, filesToMerge);
             try {
-                TermDfKWayMerge.merge(finalBatch.readers(), output, minKeep);
+                TermDfKWayMerge.merge(finalBatch.readers(), sink, minKeep);
             } finally {
                 closeQuietly(finalBatch.readers());
                 for (MergeSource e : finalBatch.consumed()) {
@@ -153,6 +152,32 @@ public class TermDfExternalMerger {
         } finally {
             deleteTreeQuietly(tempDir);
         }
+    }
+
+    /**
+     * Used for temps that don't need to write intermediate header.
+     */
+    static void mergeTemporaryToTsv(List<BufferedReader> inputs, BufferedWriter out) throws IOException {
+        TermDfKWayMerge.merge(inputs, (term, df) -> {
+            out.write(term);
+            out.write('\t');
+            out.write(Long.toString(df));
+            out.write('\n');
+        }, TermDfExternalMerger.NO_MIN_KEEP);
+        out.flush();
+    }
+
+    // for tests
+    void mergeFiles(BufferedWriter output, long minKeep) throws IOException {
+        Objects.requireNonNull(output, "output");
+        TermDfRowSink sink = (term, df) -> {
+            output.write(term);
+            output.write('\t');
+            output.write(Long.toString(df));
+            output.write('\n');
+        };
+        mergeFiles(sink, minKeep);
+        output.flush();
     }
 
     /**

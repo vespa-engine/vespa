@@ -2,7 +2,6 @@
 package ai.vespa.vespasignificance.merge;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
@@ -32,7 +31,7 @@ public class TermDfKWayMerge {
 
         Cursor(BufferedReader bufferedReader) {
             this.bufferedReader = bufferedReader;
-            this.lineNo = 1;
+            this.lineNo = 0;
         }
 
         /**
@@ -43,6 +42,7 @@ public class TermDfKWayMerge {
         boolean advance() throws IOException {
             String line;
             while ((line = bufferedReader.readLine()) != null) {
+                lineNo++;
                 if (line.trim().isEmpty())
                     continue;
 
@@ -79,7 +79,7 @@ public class TermDfKWayMerge {
      */
     public static void merge(
             List<BufferedReader> inputs,
-            BufferedWriter output,
+            TermDfRowSink sink,
             long minKeep
     ) throws IOException {
         PriorityQueue<Cursor> queue = new PriorityQueue<>(inputs.size(), Comparator.comparing(c -> c.term));
@@ -104,14 +104,9 @@ public class TermDfKWayMerge {
             }
 
             if (sumDf >= minKeep) {
-                output.write(term);
-                output.write('\t');
-                output.write(Long.toString(sumDf));
-                output.write('\n');
+                sink.write(term, sumDf);
             }
         }
-
-        output.flush();
     }
 
 }
