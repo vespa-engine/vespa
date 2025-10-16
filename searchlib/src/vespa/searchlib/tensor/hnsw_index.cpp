@@ -288,6 +288,16 @@ calc_distance_helper(const BoundDistanceFunction &df, vespalib::eval::TypedCells
     return df.calc(rhs);
 }
 
+void prefetch_docid(const DocVectorAccess& vectors, std::uint32_t docid)
+{
+    vectors.prefetch_docid(docid);
+}
+
+void prefetch_vector(const DocVectorAccess& vectors, std::uint32_t docid)
+{
+    vectors.prefetch_vector(docid);
+}
+
 }
 
 template <HnswIndexType type>
@@ -355,6 +365,7 @@ HnswIndex<type>::find_nearest_in_layer(const BoundDistanceFunction &df, const Hn
     return nearest;
 }
 
+
 template <HnswIndexType type>
 template <class VisitedTracker, class BestNeighbors>
 void
@@ -386,31 +397,59 @@ HnswIndex<type>::search_layer_helper(const BoundDistanceFunction &df, uint32_t n
     }
     double limit_dist = std::numeric_limits<double>::max();
 
+    struct NeighborLinkMeta final {
+        std::uint32_t neighbor_nodeid;
+        GraphType::LevelsRef neighbor_ref;
+        std::uint32_t neighbor_docid;
+        std::uint32_t neighbor_subspace;
+    };
+    std::vector<NeighborLinkMeta> neighbor_link_metas;
+
     while (!candidates.empty()) {
         auto cand = candidates.top();
         if (cand.distance > (1.0 + exploration_slack) * limit_dist) {
             break;
         }
         candidates.pop();
-        for (uint32_t neighbor_nodeid : _graph.get_link_array(cand.levels_ref, level)) {
+
+        const auto link_array = _graph.get_link_array(cand.levels_ref, level);
+        neighbor_link_metas.clear();
+        for (const auto neighbor_nodeid : link_array) {
             if (neighbor_nodeid >= nodeid_limit) {
                 continue;
             }
-            auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
-            auto neighbor_ref = neighbor_node.levels_ref().load_acquire();
+            const auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
+
+            const auto neighbor_ref = neighbor_node.levels_ref().load_acquire();
             if ((! neighbor_ref.valid())
-                || ! visited.try_mark(neighbor_nodeid))
-            {
+                || ! visited.try_mark(neighbor_nodeid)) {
                 continue;
             }
-            uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
-            uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
-            double dist_to_input = calc_distance(df, neighbor_docid, neighbor_subspace);
-            if (dist_to_input < (1.0 + exploration_slack) * limit_dist) {
-                candidates.emplace(neighbor_nodeid, neighbor_ref, dist_to_input);
 
-                if (dist_to_input < limit_dist && filter_wrapper.check(neighbor_docid)) {
-                    best_neighbors.emplace(neighbor_nodeid, neighbor_docid, neighbor_ref, dist_to_input);
+            const auto neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
+            const auto neighbor_subspace = neighbor_node.acquire_subspace();
+
+            neighbor_link_metas.push_back(NeighborLinkMeta{
+                .neighbor_nodeid = neighbor_nodeid,
+                .neighbor_ref = neighbor_ref,
+                .neighbor_docid = neighbor_docid,
+                .neighbor_subspace = neighbor_subspace,
+            });
+
+            prefetch_docid(_vectors, neighbor_docid);
+        }
+
+        for (const auto& link : neighbor_link_metas) {
+            prefetch_vector(_vectors, link.neighbor_docid);
+        }
+
+        for (const auto& link : neighbor_link_metas) {
+            double dist_to_input = calc_distance(df, link.neighbor_docid, link.neighbor_subspace);
+            if (dist_to_input < (1.0 + exploration_slack) * limit_dist) {
+                candidates.emplace(link.neighbor_nodeid, link.neighbor_ref, dist_to_input);
+
+                if (dist_to_input < limit_dist && filter_wrapper.check(link.neighbor_docid)) {
+                    best_neighbors.emplace(link.neighbor_nodeid, link.neighbor_docid, link.neighbor_ref, dist_to_input);
                     while (best_neighbors.size() > neighbors_to_find) {
                         best_neighbors.pop();
                         limit_dist = best_neighbors.top().distance;
