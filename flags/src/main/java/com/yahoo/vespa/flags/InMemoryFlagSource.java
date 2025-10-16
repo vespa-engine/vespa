@@ -40,7 +40,8 @@ public class InMemoryFlagSource extends AbstractComponent implements FlagSource 
     }
 
     public <T> InMemoryFlagSource withJacksonFlag(FlagId flagId, T value, Class<T> jacksonClass) {
-        return withRawFlag(flagId, new UnboundJacksonFlag<>(flagId, value, jacksonClass).serializer().serialize(value));
+        return withRawFlag(flagId, new UnboundJacksonFlag<>(flagId, value, new FetchVector(),
+                                                            jacksonClass, __ -> true).serializer().serialize(value));
     }
 
     public <T> InMemoryFlagSource withListFlag(FlagId flagId, List<T> value, Class<T> elementClass) {

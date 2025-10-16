@@ -351,6 +351,7 @@ public class Flags {
             List.of("glebashnik"), "2025-04-25", "2025-12-01",
             "Specifies configuration for sidecars to testing provisioning",
             "Takes effect at redeployment",
+            __ -> true,
             APPLICATION
     );
 
@@ -475,9 +476,9 @@ public class Flags {
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static <T> UnboundJacksonFlag<T> defineJacksonFlag(String flagId, T defaultValue, Class<T> jacksonClass, List<String> owners,
                                                               String createdAt, String expiresAt, String description,
-                                                              String modificationEffect, Dimension... dimensions) {
-        return define((id2, defaultValue2, vector2) -> new UnboundJacksonFlag<>(id2, defaultValue2, vector2, jacksonClass),
-                flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
+                                                              String modificationEffect, Predicate<T> validator, Dimension... dimensions) {
+        return define((id2, defaultValue2, vector2) -> new UnboundJacksonFlag<>(id2, defaultValue2, vector2, jacksonClass, validator),
+                      flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

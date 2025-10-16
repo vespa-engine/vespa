@@ -94,7 +94,8 @@ public class PermanentFlags {
             "shared-host", SharedHost.createDisabled(), SharedHost.class,
             "Specifies whether shared hosts can be provisioned, and if so, the advertised " +
                     "node resources of the host, the maximum number of containers, etc.",
-            "Takes effect on next iteration of HostCapacityMaintainer.");
+            "Takes effect on next iteration of HostCapacityMaintainer.",
+            __ -> true);
 
     public static final UnboundStringFlag HOST_FLAVOR = defineStringFlag(
             "host-flavor", "",
@@ -176,6 +177,7 @@ public class PermanentFlags {
             "customer-rpm-services", CustomerRpmServiceList.empty(), CustomerRpmServiceList.class,
             "Specifies customer rpm services to run on enclave tenant hosts.",
             "Takes effect on next host admin tick.",
+            __ -> true,
             TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE);
 
     private static final String VERSION_QUALIFIER_REGEX = "[a-zA-Z0-9_-]+";
@@ -542,7 +544,8 @@ public class PermanentFlags {
     public static UnboundJacksonFlag<RoleList> ROLE_DEFINITIONS = defineJacksonFlag(
             "role-definitions", RoleList.empty(), RoleList.class,
             "Role definitions for the system",
-            "Takes effect on next iteration of UserManagementMaintainer");
+            "Takes effect on next iteration of UserManagementMaintainer",
+            __ -> true);
 
     public static final UnboundBooleanFlag FORWARD_ALL_LOG_LEVELS = defineFeatureFlag(
             "forward-all-log-levels", true,
@@ -677,8 +680,8 @@ public class PermanentFlags {
     }
 
     private static <T> UnboundJacksonFlag<T> defineJacksonFlag(
-            String flagId, T defaultValue, Class<T> jacksonClass,  String description, String modificationEffect, Dimension... dimensions) {
-        return Flags.defineJacksonFlag(flagId, defaultValue, jacksonClass, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
+            String flagId, T defaultValue, Class<T> jacksonClass,  String description, String modificationEffect, Predicate<T> validator, Dimension... dimensions) {
+        return Flags.defineJacksonFlag(flagId, defaultValue, jacksonClass, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, validator, dimensions);
     }
 
     private static <T> UnboundListFlag<T> defineListFlag(

@@ -4,6 +4,8 @@ package com.yahoo.vespa.flags;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.node.BooleanNode;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -16,6 +18,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -27,6 +30,18 @@ import static org.mockito.Mockito.when;
  * @author hakonhall
  */
 public class FlagsTest {
+    private Flags.Replacer replacer;
+
+    @BeforeEach
+    void setUp() {
+        replacer = Flags.clearFlagsForTesting();
+    }
+
+    @AfterEach
+    void tearDown() {
+        replacer.close();
+    }
+
     @Test
     void testBoolean() {
         final boolean defaultValue = false;
@@ -100,11 +115,30 @@ public class FlagsTest {
         instance.string = "foo";
 
         testGeneric(Flags.defineJacksonFlag("jackson-id", defaultInstance, ExampleJacksonClass.class,
-                                            List.of("owner"), "1970-01-01", "2100-01-01", "description", "modification effect", Dimension.HOSTNAME),
+                                            List.of("owner"), "1970-01-01", "2100-01-01", "description",
+                                            "modification effect", object -> object.integer == -2, Dimension.HOSTNAME),
                 instance);
 
         testGeneric(Flags.defineListFlag("jackson-list-id", List.of(defaultInstance), ExampleJacksonClass.class, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod"),
                 List.of(instance));
+    }
+
+    @Test
+    void testJacksonClassValidator() {
+        ExampleJacksonClass defaultInstance = new ExampleJacksonClass();
+        ExampleJacksonClass instance = new ExampleJacksonClass();
+        instance.integer = -2;
+        instance.string = "foo";
+
+        try {
+            testGeneric(Flags.defineJacksonFlag("jackson-id", defaultInstance, ExampleJacksonClass.class,
+                                                List.of("owner"), "1970-01-01", "2100-01-01", "description",
+                                                "modification effect", object -> object.integer != -2, Dimension.HOSTNAME),
+                        instance);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage(), equalTo("Invalid ExampleJacksonClass value: {\"integer\":-2,\"string\":\"foo\"}"));
+        }
     }
 
     static <T> void testGeneric(UnboundFlag<T, ?, ?> unboundFlag, T value) {
