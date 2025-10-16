@@ -94,7 +94,7 @@ QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fe
             }
             if (element_ids_it.has_value()) {
                 auto& it = element_ids_it.value();
-                while (it < element_ids.end() && *it < hit.element_id()) {
+                while (it != element_ids.end() && *it < hit.element_id()) {
                     ++it;
                 }
                 if (it == element_ids.end() || *it != hit.element_id()) {
