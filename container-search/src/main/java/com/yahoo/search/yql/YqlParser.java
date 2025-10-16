@@ -845,6 +845,9 @@ public class YqlParser implements Parser {
         int positiveCount = 0;
         for (OperatorNode<ExpressionOperator> word : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
             if (word.getOperator() == ExpressionOperator.NOT) {
+                if (positiveCount == 0) {
+                    throw new IllegalArgumentException("Must have some positive term before negative terms in " + nearItem.getName());
+                }
                 OperatorNode<ExpressionOperator> exp = word.getArgument(0);
                 assertHasOperator(exp, ExpressionOperator.class);
                 addNearItemChild(field, nearItem, exp);
@@ -867,7 +870,7 @@ public class YqlParser implements Parser {
             if (exclusionDistance != null) {
                 nearItem.setExclusionDistance(exclusionDistance);
             } else {
-                nearItem.setExclusionDistance(nearItem.getDistance() / 2);
+                nearItem.setExclusionDistance((nearItem.getDistance() + 1) / 2);
             }
         }
         return nearItem;
