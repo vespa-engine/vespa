@@ -4,6 +4,7 @@ package com.yahoo.docproc.impl;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.docproc.CallStack;
 import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.Processing;
@@ -70,8 +71,8 @@ public class DocprocService extends AbstractComponent {
      * @param mgr the document type manager to use.
      * @param numThreads to have in the thread pool
      */
-    public DocprocService(ComponentId id, CallStack stack, DocumentTypeManager mgr, int numThreads) {
-        this(id, numThreads);
+    public DocprocService(ComponentId id, CallStack stack, DocumentTypeManager mgr, ContainerThreadPool containerThreadPool) {
+        this(id, containerThreadPool);
         setCallStack(stack);
         setDocumentTypeManager(mgr);
         setInService(true);

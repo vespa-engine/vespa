@@ -6,6 +6,7 @@ import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.ComponentType;
 import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainsBuilder;
+import com.yahoo.vespa.model.container.ContainerThreadpool;
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.container.docproc.DocumentProcessor;
@@ -19,14 +20,18 @@ import java.util.Map;
  * @author gjoranv
  */
 public class DomDocprocChainsBuilder  extends DomChainsBuilder<DocumentProcessor, DocprocChain, DocprocChains> {
-    public DomDocprocChainsBuilder(Element outerChainsElem, boolean supportDocprocChainsDir) {
+    private final ContainerThreadpool docProcHandlerThreadpool;
+
+    public DomDocprocChainsBuilder(Element outerChainsElem, boolean supportDocprocChainsDir, ContainerThreadpool docProcHandlerThreadpool) {
         super(List.of(ComponentType.documentprocessor)
         );
+
+        this.docProcHandlerThreadpool = docProcHandlerThreadpool;
     }
 
     @Override
     protected DocprocChains newChainsInstance(TreeConfigProducer<AnyConfigProducer> parent) {
-        return new DocprocChains(parent, "docprocchains");
+        return new DocprocChains(parent, "docprocchains", docProcHandlerThreadpool);
     }
 
     @Override

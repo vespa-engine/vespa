@@ -211,7 +211,8 @@ DocprocInContainer = element document-processing {
     DocprocClusterAttributes? &
     DocumentProcessorV3* &
     ChainInDocprocInContainerCluster* &
-    GenericConfig*
+    GenericConfig* &
+    Threadpool?
 }
 ChainInDocprocInContainerCluster = element chain {
     DocprocChainV3Contents

@@ -351,8 +351,9 @@ public class Content extends ConfigModel {
         }
 
         private void addDocproc(ContainerCluster<?> cluster) {
+            // TODO get the threadpool inside here.
             if (cluster.getDocproc() == null) {
-                DocprocChains chains = new DocprocChains(cluster, "docprocchains");
+                DocprocChains chains = new DocprocChains(cluster, "docprocchains", null);
                 ContainerDocproc containerDocproc = new ContainerDocproc(cluster, chains);
                 cluster.setDocproc(containerDocproc);
             }
