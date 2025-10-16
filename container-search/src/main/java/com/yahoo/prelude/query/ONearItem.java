@@ -40,7 +40,7 @@ public class ONearItem extends NearItem {
         var builder = SearchProtocol.ItemOnear.newBuilder();
         builder.setDistance(distance);
         builder.setNumNegativeTerms(numNegativeItems);
-        builder.setNegativeTermBrickSize(negativeBrickSize);
+        builder.setExclusionDistance(exclusionDistance);
         for (var child : items()) {
             builder.addChildren(child.toProtobuf());
         }

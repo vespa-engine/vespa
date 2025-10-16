@@ -182,7 +182,7 @@ public class YqlParser implements Parser {
     public static final String LABEL = "label";
     public static final String NEAR = "near";
     public static final String NEAREST_NEIGHBOR = "nearestNeighbor";
-    public static final String NEGATIVE_BRICK_SIZE = "negativeBrickSize";
+    public static final String EXCLUSION_DISTANCE = "exclusionDistance";
     public static final String NORMALIZE_CASE = "normalizeCase";
     public static final String ONEAR = "onear";
     public static final String ORIGIN = "origin";
@@ -863,11 +863,11 @@ public class YqlParser implements Parser {
             nearItem.setDistance(distance);
         }
         if (negativeCount > 0) {
-            Integer negativeBrickSize = getAnnotation(ast, NEGATIVE_BRICK_SIZE, Integer.class, null, "negative brick size for near/onear operator");
-            if (negativeBrickSize != null) {
-                nearItem.setNegativeBrickSize(negativeBrickSize);
+            Integer exclusionDistance = getAnnotation(ast, EXCLUSION_DISTANCE, Integer.class, null, "exclusion distance for near/onear operator");
+            if (exclusionDistance != null) {
+                nearItem.setExclusionDistance(exclusionDistance);
             } else {
-                nearItem.setNegativeBrickSize(nearItem.getDistance() / 2);
+                nearItem.setExclusionDistance(nearItem.getDistance() / 2);
             }
         }
         return nearItem;

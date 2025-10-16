@@ -152,12 +152,12 @@ typename NodeTypes::Rank *createRank() {
 }
 
 template <class NodeTypes>
-typename NodeTypes::Near *createNear(size_t distance, size_t num_negative_terms, size_t negative_term_brick_size) {
-    return new typename NodeTypes::Near(distance, num_negative_terms, negative_term_brick_size);
+typename NodeTypes::Near *createNear(size_t distance, size_t num_negative_terms, size_t exclusion_distance) {
+    return new typename NodeTypes::Near(distance, num_negative_terms, exclusion_distance);
 }
 template <class NodeTypes>
-typename NodeTypes::ONear *createONear(size_t distance, size_t num_negative_terms, size_t negative_term_brick_size) {
-    return new typename NodeTypes::ONear(distance, num_negative_terms, negative_term_brick_size);
+typename NodeTypes::ONear *createONear(size_t distance, size_t num_negative_terms, size_t exclusion_distance) {
+    return new typename NodeTypes::ONear(distance, num_negative_terms, exclusion_distance);
 }
 
 // Term nodes
@@ -267,11 +267,11 @@ public:
     typename NodeTypes::AndNot &addAndNot(int child_count) {
         return addIntermediate(createAndNot<NodeTypes>(), child_count);
     }
-    typename NodeTypes::Near &addNear(int child_count, size_t distance, size_t num_negative_children, size_t negative_term_brick_size) {
-        return addIntermediate(createNear<NodeTypes>(distance, num_negative_children, negative_term_brick_size), child_count);
+    typename NodeTypes::Near &addNear(int child_count, size_t distance, size_t num_negative_children, size_t exclusion_distance) {
+        return addIntermediate(createNear<NodeTypes>(distance, num_negative_children, exclusion_distance), child_count);
     }
-    typename NodeTypes::ONear &addONear(int child_count, size_t distance, size_t num_negative_children, size_t negative_term_brick_size) {
-        return addIntermediate(createONear<NodeTypes>(distance, num_negative_children, negative_term_brick_size), child_count);
+    typename NodeTypes::ONear &addONear(int child_count, size_t distance, size_t num_negative_children, size_t exclusion_distance) {
+        return addIntermediate(createONear<NodeTypes>(distance, num_negative_children, exclusion_distance), child_count);
     }
     typename NodeTypes::Or &addOr(int child_count) {
         return addIntermediate(createOr<NodeTypes>(), child_count);

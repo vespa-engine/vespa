@@ -19,7 +19,7 @@ public class NearItem extends CompositeItem {
 
     protected int distance;
     protected int numNegativeItems;
-    protected int negativeBrickSize;
+    protected int exclusionDistance;
 
     /** The default distance used if none is specified: 2 */
     public static final int defaultDistance = 2;
@@ -56,12 +56,12 @@ public class NearItem extends CompositeItem {
         return numNegativeItems;
     }
 
-    public void setNegativeBrickSize(int negativeBrickSize) {
-        this.negativeBrickSize = negativeBrickSize;
+    public void setExclusionDistance(int exclusionDistance) {
+        this.exclusionDistance = exclusionDistance;
     }
 
-    public int getNegativeBrickSize() {
-        return negativeBrickSize;
+    public int getExclusionDistance() {
+        return exclusionDistance;
     }
 
     @Override
@@ -92,11 +92,11 @@ public class NearItem extends CompositeItem {
         buffer.append(getName());
         buffer.append("(");
         buffer.append(distance);
-        if (numNegativeItems != 0 || negativeBrickSize != 0) {
+        if (numNegativeItems != 0 || exclusionDistance != 0) {
             buffer.append(",");
             buffer.append(numNegativeItems);
             buffer.append(",");
-            buffer.append(negativeBrickSize);
+            buffer.append(exclusionDistance);
         }
         buffer.append(")");
         buffer.append(" ");
@@ -120,7 +120,7 @@ public class NearItem extends CompositeItem {
         var builder = SearchProtocol.ItemNear.newBuilder();
         builder.setDistance(distance);
         builder.setNumNegativeTerms(numNegativeItems);
-        builder.setNegativeTermBrickSize(negativeBrickSize);
+        builder.setExclusionDistance(exclusionDistance);
         for (var child : items()) {
             builder.addChildren(child.toProtobuf());
         }

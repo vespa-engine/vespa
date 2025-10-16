@@ -991,8 +991,8 @@
       "public int getDistance()",
       "public void setNumNegativeItems(int)",
       "public int getNumNegativeItems()",
-      "public void setNegativeBrickSize(int)",
-      "public int getNegativeBrickSize()",
+      "public void setExclusionDistance(int)",
+      "public int getExclusionDistance()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "protected void encodeThis(java.nio.ByteBuffer)",
@@ -1004,7 +1004,7 @@
     "fields" : [
       "protected int distance",
       "protected int numNegativeItems",
-      "protected int negativeBrickSize",
+      "protected int exclusionDistance",
       "public static final int defaultDistance"
     ]
   },

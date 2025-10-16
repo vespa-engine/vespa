@@ -27,14 +27,14 @@ using search::fef::TermFieldMatchDataPositionKey;
 template<typename T>
 void setup_fields(uint32_t window, const IElementGapInspector& element_gap_inspector,
                   std::vector<T> &matchers, const TermFieldMatchDataArray &in, uint32_t terms,
-                  uint32_t num_negative_terms, uint32_t negative_term_brick_size) {
+                  uint32_t num_negative_terms, uint32_t exclusion_distance) {
     std::map<uint32_t,uint32_t> fields;
     for (size_t i = 0; i < in.size(); ++i) {
         ++fields[in[i]->getFieldId()];
     }
     for (auto [field, cnt]: fields) {
         if (cnt == terms) {
-            matchers.push_back(T(window, element_gap_inspector.get_element_gap(field), field, in, num_negative_terms, negative_term_brick_size));
+            matchers.push_back(T(window, element_gap_inspector.get_element_gap(field), field, in, num_negative_terms, exclusion_distance));
         }
     }
 }
@@ -55,13 +55,13 @@ NearSearchBase::NearSearchBase(Children terms,
                                const TermFieldMatchDataArray &data,
                                uint32_t window,
                                uint32_t num_negative_terms,
-                               uint32_t negative_term_brick_size,
+                               uint32_t exclusion_distance,
                                bool strict)
     : MultiSearch(std::move(terms)),
       _data_size(data.size()),
       _window(window),
       _num_negative_terms(num_negative_terms),
-      _negative_term_brick_size(negative_term_brick_size),
+      _exclusion_distance(exclusion_distance),
       _strict(strict)
 {
     // we need at least one positive term
@@ -75,7 +75,7 @@ NearSearchBase::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "data_size", _data_size);
     visit(visitor, "window", _window);
     visit(visitor, "num_negative_terms", _num_negative_terms);
-    visit(visitor, "negative_term_brick_size", _negative_term_brick_size);
+    visit(visitor, "exclusion_distance", _exclusion_distance);
     visit(visitor, "strict", _strict);
 }
 
@@ -165,13 +165,13 @@ NearSearch::NearSearch(Children terms,
                        const TermFieldMatchDataArray &data,
                        uint32_t window,
                        uint32_t num_negative_terms,
-                       uint32_t negative_term_brick_size,
+                       uint32_t exclusion_distance,
                        const IElementGapInspector& element_gap_inspector,
                        bool strict)
-    : NearSearchBase(std::move(terms), data, window, num_negative_terms, negative_term_brick_size, strict),
+    : NearSearchBase(std::move(terms), data, window, num_negative_terms, exclusion_distance, strict),
       _matchers()
 {
-    setup_fields(window, element_gap_inspector, _matchers, data, getChildren().size(), num_negative_terms, negative_term_brick_size);
+    setup_fields(window, element_gap_inspector, _matchers, data, getChildren().size(), num_negative_terms, exclusion_distance);
 }
 
 NearSearch::~NearSearch() = default;
@@ -195,12 +195,12 @@ struct PosIter {
 class NegativeTermChecker {
 private:
     vespalib::PriorityQueue<PosIter> _queue;
-    uint32_t _negative_term_brick_size;
+    uint32_t _exclusion_distance;
     ElementGap _element_gap;
 
 public:
-    NegativeTermChecker(uint32_t negative_term_brick_size, ElementGap element_gap)
-        : _queue(), _negative_term_brick_size(negative_term_brick_size), _element_gap(element_gap)
+    NegativeTermChecker(uint32_t exclusion_distance, ElementGap element_gap)
+        : _queue(), _exclusion_distance(exclusion_distance), _element_gap(element_gap)
     {}
 
     bool setup(const TermFieldMatchDataArray &input, size_t num_positive_terms, uint32_t docid) {
@@ -220,7 +220,7 @@ public:
         while (!_queue.empty()) {
             auto& front = _queue.front();
             const auto& pos = *front.curPos;
-            auto last_unsafe_after_neg = calc_window_end_pos(pos, _negative_term_brick_size, _element_gap);
+            auto last_unsafe_after_neg = calc_window_end_pos(pos, _exclusion_distance, _element_gap);
             if (last_unsafe_after_neg < window_start) {
                 ++front.curPos;
                 if (front.curPos == front.endPos) {
@@ -230,7 +230,7 @@ public:
                 }
                 continue;
             }
-            auto last_unsafe_after_window = calc_window_end_pos(window_end, _negative_term_brick_size, _element_gap);
+            auto last_unsafe_after_window = calc_window_end_pos(window_end, _exclusion_distance, _element_gap);
             return (last_unsafe_after_window < pos);
         }
         return true;
@@ -315,7 +315,7 @@ NearSearch::Matcher::match(uint32_t docId, MatchResult& match_result)
         pos.add(term);
     }
     if (num_negative_terms() > 0) {
-        NegativeTermChecker filter(negative_term_brick_size(), get_element_gap());
+        NegativeTermChecker filter(exclusion_distance(), get_element_gap());
         if (filter.setup(inputs(), num_positive_terms, docId)) {
             pos.match(window(), match_result, filter);
             return;
@@ -364,13 +364,13 @@ ONearSearch::ONearSearch(Children terms,
                          const TermFieldMatchDataArray &data,
                          uint32_t window,
                          uint32_t num_negative_terms,
-                         uint32_t negative_term_brick_size,
+                         uint32_t exclusion_distance,
                          const IElementGapInspector& element_gap_inspector,
                          bool strict)
-    : NearSearchBase(std::move(terms), data, window, num_negative_terms, negative_term_brick_size, strict),
+    : NearSearchBase(std::move(terms), data, window, num_negative_terms, exclusion_distance, strict),
       _matchers()
 {
-    setup_fields(window, element_gap_inspector, _matchers, data, getChildren().size(), num_negative_terms, negative_term_brick_size);
+    setup_fields(window, element_gap_inspector, _matchers, data, getChildren().size(), num_negative_terms, exclusion_distance);
 }
 
 ONearSearch::~ONearSearch() = default;
@@ -459,7 +459,7 @@ ONearSearch::Matcher::match(uint32_t docId, MatchResult& match_result)
 {
     size_t num_positive_terms = inputs().size() - num_negative_terms();
     if (num_negative_terms() > 0) {
-        NegativeTermChecker filter(negative_term_brick_size(), get_element_gap());
+        NegativeTermChecker filter(exclusion_distance(), get_element_gap());
         if (filter.setup(inputs(), num_positive_terms, docId)) {
             match_impl(docId, match_result, filter);
             return;

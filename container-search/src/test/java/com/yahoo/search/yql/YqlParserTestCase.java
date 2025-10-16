@@ -727,7 +727,7 @@ public class YqlParserTestCase {
                 "NEAR(2,1,1) description:a description:b description:c");
         assertParse("select foo from bar where description contains near(\"a\", !\"b\", !\"c\")",
                 "NEAR(2,2,1) description:a description:b description:c");
-        assertParse("select foo from bar where description contains ({distance: 10, negativeBrickSize: 9} near(\"a\", \"b\", !\"c\"))",
+        assertParse("select foo from bar where description contains ({distance: 10, exclusionDistance: 9} near(\"a\", \"b\", !\"c\"))",
                 "NEAR(10,1,9) description:a description:b description:c");
         assertParseFail("select foo from bar where description contains near(\"a\", !\"b\", \"c\")",
                 new IllegalArgumentException("Positive terms must come before negative terms in NEAR"));
