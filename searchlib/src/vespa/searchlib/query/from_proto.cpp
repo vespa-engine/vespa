@@ -118,12 +118,20 @@ bool handle(const ItemNear& item, QueryStackIterator::Data& _d) {
     _d.itemType = ParseItem::ItemType::ITEM_NEAR;
     _d.arity = item.children_size();
     _d.nearDistance = item.distance();
+    uint32_t numNegativeTerms = item.num_negative_terms();
+    uint32_t exclusionDistance = item.exclusion_distance();
+    (void) numNegativeTerms; // TODO
+    (void) exclusionDistance; // TODO
     return true;
 }
 bool handle(const ItemOnear& item, QueryStackIterator::Data& _d) {
     _d.itemType = ParseItem::ItemType::ITEM_ONEAR;
     _d.arity = item.children_size();
     _d.nearDistance = item.distance();
+     uint32_t numNegativeTerms = item.num_negative_terms();
+     uint32_t exclusionDistance = item.exclusion_distance();
+    (void) numNegativeTerms; // TODO
+    (void) exclusionDistance; // TODO
     return true;
 }
 
