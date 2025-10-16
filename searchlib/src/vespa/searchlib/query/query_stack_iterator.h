@@ -54,6 +54,7 @@ public:
         uint32_t fuzzy_max_edit_distance = 0;
         uint32_t fuzzy_prefix_lock_length = 0;
 
+        void clear();
     };
 protected:
     Data _d;
