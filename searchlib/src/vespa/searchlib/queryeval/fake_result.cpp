@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fake_result.h"
+#include <vespa/searchlib/query/streaming/hit.h>
 #include <ostream>
 
 namespace search::queryeval {
@@ -43,6 +44,24 @@ std::ostream &operator << (std::ostream &out, const FakeResult &result) {
         }
     }
     return out;
+}
+
+std::vector<search::streaming::Hit>
+FakeResult::get_streaming_hits(uint32_t docid, uint32_t field_id) const
+{
+    std::vector<search::streaming::Hit> result;
+    for (const auto& doc : _documents) {
+        if (doc.docId == docid) {
+            for (const auto& elem : doc.elements) {
+                for (uint32_t pos : elem.positions) {
+                    search::streaming::Hit hit(field_id, elem.id, elem.weight, pos);
+                    hit.set_element_length(elem.length);
+                    result.push_back(hit);
+                }
+            }
+        }
+    }
+    return result;
 }
 
 }
