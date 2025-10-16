@@ -34,4 +34,37 @@ std::unique_ptr<QueryStackIterator> QueryStackIterator::dummy() {
     return std::make_unique<Dummy>();
 }
 
+void QueryStackIterator::Data::clear() {
+    itemType = ParseItem::ItemType::ITEM_UNDEF;
+
+    noRankFlag = false;
+    noPositionDataFlag = false;
+    creaFilterFlag = false;
+    isSpecialTokenFlag = false;
+    allowApproximateFlag = false;
+    prefix_match_semantics_flag = false;
+
+    weight = query::Weight(0);
+
+    // XXX what about these?
+    // predicateQueryTerm = {};
+    // termVector = {};
+
+    index_view = {};
+    term_view = {};
+    integerTerm = 0;
+
+    distanceThreshold = 0;
+    scoreThreshold = 0;
+    thresholdBoostFactor = 0;
+
+    uniqueId = 0;
+    arity = 0;
+    nearDistance = 0;
+    targetHits = 0;
+    exploreAdditionalHits = 0;
+    fuzzy_max_edit_distance = 0;
+    fuzzy_prefix_lock_length = 0;
+}
+
 }

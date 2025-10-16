@@ -367,23 +367,23 @@ bool handle(const ItemGeoLocationTerm& item,
     _d.itemType = ParseItem::ItemType::ITEM_GEO_LOCATION_TERM;
     tmp = "";
     if (item.has_geo_circle()) {
-        int x = item.longitude() * M;
-        int y = item.latitude() * M;
-        int radius = item.radius() * M;
-        if (radius < 0)
-            radius = -1;
+        int x = std::round(item.longitude() * M);
+        int y = std::round(item.latitude() * M);
+        int radius = (item.radius() < 0) ? -1 : std::round(item.radius() * M);
+
         double radians = item.latitude() * M_PI / 180.0;
         double cosLat = cos(radians);
         int64_t aspect = cosLat * 4294967295L;
-        if (aspect < 0)
+        if (aspect < 0) {
             aspect = 0;
+        }
         tmp += std::format("(2,{},{},{},0,1,0,{})", x, y, radius, aspect);
     }
     if (item.has_bounding_box()) {
-        int w = item.w() * M;
-        int s = item.s() * M;
-        int e = item.e() * M;
-        int n = item.n() * M;
+        int w = std::round(item.w() * M);
+        int s = std::round(item.s() * M);
+        int e = std::round(item.e() * M);
+        int n = std::round(item.n() * M);
         tmp = std::format("[2,{},{},{},{}]", w, s, e, n);
     }
     if (tmp == "") return false;
@@ -551,8 +551,10 @@ ProtoTreeIterator::ProtoTreeIterator(const ProtobufQueryTree& proto_query_tree)
 }
 
 bool ProtoTreeIterator::next() {
+    _d.clear();
     if (_pos < _items.size()) {
-        return handle_variant_item(_items[_pos++]);
+        bool ok = handle_variant_item(_items[_pos++]);
+        return ok;
     }
     return false;
 }
