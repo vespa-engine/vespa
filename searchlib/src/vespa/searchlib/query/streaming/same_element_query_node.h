@@ -12,8 +12,9 @@ namespace search::streaming {
 */
 class SameElementQueryNode : public QueryTerm
 {
-    QueryNodeList       _children;
-    std::optional<bool> _cached_evaluate_result;
+    QueryNodeList         _children;
+    std::vector<uint32_t> _element_ids;
+    std::optional<bool>   _cached_evaluate_result;
 public:
     SameElementQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms) noexcept;
     ~SameElementQueryNode() override;

@@ -30,9 +30,8 @@ SameElementQueryNode::evaluate()
     if (_cached_evaluate_result.has_value()) {
         return _cached_evaluate_result.value();
     }
-    std::vector<uint32_t> element_ids;
-    get_element_ids(element_ids);
-    bool result = !element_ids.empty();
+    get_element_ids(_element_ids);
+    bool result = !_element_ids.empty();
     _cached_evaluate_result.emplace(result);
     return result;
 }
@@ -47,6 +46,10 @@ SameElementQueryNode::evaluateHits(HitList & hl)
 void
 SameElementQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
 {
+    if (_cached_evaluate_result.has_value()) {
+        element_ids = _element_ids;
+        return;
+    }
     if (_children.empty()) {
         return;
     }
@@ -86,9 +89,8 @@ SameElementQueryNode::unpack_match_data(uint32_t docid, MatchData& match_data, c
             const ITermData &td = qtd.getTermData();
             unpack_match_data(docid, td, match_data, index_env, element_ids);
         }
-        // TODO: Filter match data based on matching elements
         for (const auto& node : _children) {
-            node->unpack_match_data(docid, match_data, index_env, element_ids);
+            node->unpack_match_data(docid, match_data, index_env, ElementIds(_element_ids));
         }
     }
 }
@@ -118,6 +120,7 @@ SameElementQueryNode::reset()
         child->reset();
     }
     _cached_evaluate_result.reset();
+    _element_ids.clear();
 }
 
 void
