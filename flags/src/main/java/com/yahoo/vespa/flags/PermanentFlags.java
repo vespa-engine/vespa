@@ -400,7 +400,7 @@ public class PermanentFlags {
     public static final UnboundJacksonFlag<EnclaveAccountProfiles> ENCLAVE_ACCOUNT_PROFILES = defineJacksonFlag(
             "enclave-account-profiles", EnclaveAccountProfiles.EMPTY, EnclaveAccountProfiles.class,
             "A list of enclave account profiles that are valid for the given tenant. Includes cloud account and misc. cloud metadata",
-            "Takes effect immediately",
+            "Takes effect immediately", __ -> true,
             TENANT_ID);
 
     public static final UnboundBooleanFlag REQUIRE_ENCLAVE = defineFeatureFlag(
