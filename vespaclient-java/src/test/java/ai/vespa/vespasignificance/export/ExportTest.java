@@ -75,8 +75,8 @@ class ExportTest {
 
         // Dump function emits unsorted rows
         Export.DumpFn dumpFn = (idx, field) -> Stream.of(
-                new VespaIndexInspectClient.TermDocumentFrequency("alpha", 5),
-                new VespaIndexInspectClient.TermDocumentFrequency("zulu", 2)
+                new VespaIndexInspectClient.TermDocumentFrequency("zulu", 2),
+                new VespaIndexInspectClient.TermDocumentFrequency("alpha", 5)
         );
 
         CapturingWriter writer = new CapturingWriter();
