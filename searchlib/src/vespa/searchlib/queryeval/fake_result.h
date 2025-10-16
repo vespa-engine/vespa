@@ -8,6 +8,8 @@
 #include <vector>
 #include <memory>
 
+namespace search::streaming { class Hit; }
+
 namespace search::queryeval {
 
 class FakeResult
@@ -116,6 +118,14 @@ public:
     const std::vector<Document> &inspect() const { return _documents; }
 
     const PostingInfo *postingInfo() const { return _minMaxPostingInfo.get(); }
+
+    /**
+     * Extract hits for a specific document as streaming Hit objects.
+     * @param docid The document ID to extract
+     * @param field_id Field ID for streaming hits
+     * @return Vector of streaming Hit objects for this document
+     */
+    std::vector<search::streaming::Hit> get_streaming_hits(uint32_t docid, uint32_t field_id) const;
 };
 
 std::ostream &operator << (std::ostream &out, const FakeResult &result);

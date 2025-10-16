@@ -4,10 +4,12 @@
 #include <vespa/searchlib/query/streaming/multi_term.h>
 #include <vespa/searchlib/query/streaming/near_query_node.h>
 #include <vespa/searchlib/query/streaming/onear_query_node.h>
+#include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/searchlib/query/streaming/queryterm.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
+#include <vespa/searchlib/queryeval/fake_index.h>
 #include <vespa/searchlib/queryeval/test/mock_element_gap_inspector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -17,6 +19,8 @@
 using TestHit = std::tuple<uint32_t, uint32_t, int32_t, uint32_t, uint32_t>;
 
 using search::fef::ElementGap;
+using search::streaming::Hit;
+using search::streaming::HitList;
 using search::query::QueryBuilder;
 using search::query::Node;
 using search::query::SimpleQueryNodeTypes;
@@ -106,6 +110,33 @@ protected:
     bool evaluate_query(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv);
     WrappedQuery make_query(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv);
     std::vector<uint32_t> get_element_ids(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv);
+
+    // Visual test support
+    struct NearSpec {
+        std::string _terms;
+        uint32_t _window;
+        std::optional<std::vector<uint32_t>> _field_ids;
+        NearTest* _test;
+
+        NearSpec(const std::string& terms, uint32_t window, NearTest* test)
+            : _terms(terms), _window(window), _field_ids(std::nullopt), _test(test) {}
+        ~NearSpec();
+
+        template <typename... Args>
+        NearSpec& fields(Args... field_ids) {
+            _field_ids = std::vector<uint32_t>{static_cast<uint32_t>(field_ids)...};
+            return *this;
+        }
+
+        void verify(const search::queryeval::FakeIndex& index, uint32_t docid,
+                   const std::vector<uint32_t>& expected_elements);
+    };
+
+    NearSpec near(const std::string& terms, uint32_t window) {
+        return NearSpec(terms, window, this);
+    }
+
+    search::queryeval::FakeIndex index() { return {}; }
 };
 
 NearTest::NearTest()
@@ -115,6 +146,7 @@ NearTest::NearTest()
 }
 
 NearTest::~NearTest() = default;
+NearTest::NearSpec::~NearSpec() = default;
 
 bool
 NearTest::evaluate_query(uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv)
@@ -216,6 +248,54 @@ NearTest::get_element_ids(QueryTweak query_tweak, uint32_t distance, const std::
     std::vector<uint32_t> result;
     wrapped_query.query().getRoot().get_element_ids(result);
     return result;
+}
+
+void
+NearTest::NearSpec::verify(const search::queryeval::FakeIndex& index, uint32_t docid,
+                          const std::vector<uint32_t>& expected_elements)
+{
+    MockElementGapInspector element_gap_inspector(_test->_element_gap_setting.value_or(std::nullopt));
+
+    // Create Near or ONear node
+    std::unique_ptr<search::streaming::QueryNode> root;
+    if (_test->GetParam().ordered()) {
+        root = std::make_unique<ONearQueryNode>(element_gap_inspector);
+    } else {
+        root = std::make_unique<NearQueryNode>(element_gap_inspector);
+    }
+    auto* near_node = static_cast<NearQueryNode*>(root.get());
+    near_node->distance(_window);
+
+    // Create term nodes and add hits
+    for (char ch : _terms) {
+        auto hits = index.get_streaming_hits(ch, docid, _field_ids);
+
+        // Determine max field_id from actual hits
+        uint32_t max_field_id = 0;
+        for (const auto& hit : hits) {
+            max_field_id = std::max(max_field_id, hit.field_id());
+        }
+
+        vespalib::asciistream term_str;
+        term_str << ch;
+        auto term = std::make_unique<QueryTerm>(std::make_unique<search::streaming::QueryTermData>(),
+                                                term_str.str(), "field", QueryTerm::Type::WORD);
+        term->resizeFieldId(max_field_id);
+
+        for (const auto& hit : hits) {
+            auto hl_idx = term->add(hit.field_id(), hit.element_id(),
+                                   hit.element_weight(), hit.position());
+            term->set_element_length(hl_idx, hit.element_length());
+        }
+
+        near_node->addChild(std::move(term));
+    }
+
+    // Get actual element IDs
+    std::vector<uint32_t> actual_elements;
+    root->get_element_ids(actual_elements);
+
+    EXPECT_EQ(expected_elements, actual_elements);
 }
 
 TEST_P(NearTest, test_empty_near)
@@ -356,6 +436,35 @@ TEST_P(NearTest, get_element_ids)
     EXPECT_EQ((GetParam().ordered() ? IDS{ 3 } : IDS{ 3, 7 }), get_element_ids(QueryTweak::NORMAL, 4, hitsvv));
     std::swap(hitsvv[0], hitsvv[1]);
     EXPECT_EQ((GetParam().ordered() ? IDS{ 7 } : IDS{ 3, 7 }), get_element_ids(QueryTweak::NORMAL, 4, hitsvv));
+}
+
+TEST_P(NearTest, basic_visual_test)
+{
+    auto docs = index().doc(69)
+        .elem(1, "..A.B.C..")
+        .elem(2, "..A.C.B..")
+        .elem(3, "..A.B..C.");
+
+    if (GetParam().ordered()) {
+        near("ABC", 4).verify(docs, 69, {1});
+    } else {
+        near("ABC", 4).verify(docs, 69, {1, 2});
+    }
+}
+
+TEST_P(NearTest, multi_field_visual_test)
+{
+    auto docs = index().doc(69)
+        .field(0).elem(1, "..A.B.C..")
+        .field(1).elem(1, "..A.C.B..");
+
+    if (GetParam().ordered()) {
+        near("ABC", 4).fields(0, 1).verify(docs, 69, {1});
+        near("ABC", 4).fields(1).verify(docs, 69, {});
+    } else {
+        near("ABC", 4).fields(0, 1).verify(docs, 69, {1});
+        near("ABC", 4).fields(1).verify(docs, 69, {1});
+    }
 }
 
 auto test_values = ::testing::Values(TestParam(false), TestParam(true));

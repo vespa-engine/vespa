@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchlib/queryeval/fake_index.h>
+#include <vespa/searchlib/query/streaming/hit.h>
 
 using namespace search::queryeval;
 
@@ -66,6 +67,48 @@ TEST(FakeIndexTest, require_that_dots_are_skipped) {
     // No terms should be registered
     auto result = index.lookup('.');
     EXPECT_EQ(result, FakeResult());
+}
+
+TEST(FakeIndexTest, require_that_multi_field_works) {
+    FakeIndex index;
+    index.doc(69).field(0).elem(0, "A.B")
+                 .field(1).elem(0, "..A");
+
+    auto a0_result = index.lookup('A', 0);
+    auto expected_a0 = FakeResult().doc(69).elem(0).len(3).pos(0);
+    EXPECT_EQ(a0_result, expected_a0);
+
+    auto a1_result = index.lookup('A', 1);
+    auto expected_a1 = FakeResult().doc(69).elem(0).len(3).pos(2);
+    EXPECT_EQ(a1_result, expected_a1);
+
+    auto b1_result = index.lookup('B', 1);
+    EXPECT_EQ(b1_result, FakeResult());
+}
+
+TEST(FakeIndexTest, require_that_streaming_hits_work) {
+    FakeIndex index;
+    index.doc(69).field(0).elem(1, "A.B")
+                 .field(1).elem(2, "..A");
+
+    auto hits = index.get_streaming_hits('A', 69);
+    EXPECT_EQ(hits.size(), 2u);
+    EXPECT_EQ(hits[0].field_id(), 0u);
+    EXPECT_EQ(hits[0].element_id(), 1u);
+    EXPECT_EQ(hits[0].position(), 0u);
+    EXPECT_EQ(hits[1].field_id(), 1u);
+    EXPECT_EQ(hits[1].element_id(), 2u);
+    EXPECT_EQ(hits[1].position(), 2u);
+}
+
+TEST(FakeIndexTest, require_that_streaming_hits_with_field_filter_work) {
+    FakeIndex index;
+    index.doc(69).field(0).elem(0, "A.B")
+                 .field(1).elem(0, "A.C");
+
+    auto hits = index.get_streaming_hits('A', 69, std::vector<uint32_t>{1});
+    EXPECT_EQ(hits.size(), 1u);
+    EXPECT_EQ(hits[0].field_id(), 1u);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
