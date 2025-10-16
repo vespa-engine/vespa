@@ -39,6 +39,8 @@ public class ONearItem extends NearItem {
     SearchProtocol.QueryTreeItem toProtobuf() {
         var builder = SearchProtocol.ItemOnear.newBuilder();
         builder.setDistance(distance);
+        builder.setNumNegativeTerms(numNegativeItems);
+        builder.setNegativeTermBrickSize(negativeBrickSize);
         for (var child : items()) {
             builder.addChildren(child.toProtobuf());
         }
