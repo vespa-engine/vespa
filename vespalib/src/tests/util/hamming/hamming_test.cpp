@@ -7,6 +7,8 @@
 #include <cstring>
 #include <vector>
 
+// TODO remove these once usage has migrated to IAccelerated
+
 using namespace vespalib;
 
 constexpr size_t ALIGN = 8;
@@ -61,7 +63,7 @@ void check_with_sizes(void *mem_a, void *mem_b) {
     for (size_t sz : { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 16, 32, 63, 64, 65 }) {
         check_with_flipping(mem_a, mem_b, sz);
     }
-}    
+}
 
 TEST(BinaryHammingTest, aligned_usage) {
     void *mem_a = my_alloc(0);

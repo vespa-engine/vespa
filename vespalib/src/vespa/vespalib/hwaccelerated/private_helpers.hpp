@@ -4,7 +4,9 @@
 
 #include <vespa/config.h>
 #include <bit>
+#include <cstdint>
 #include <cstring>
+#include <vector>
 
 namespace vespalib::hwaccelerated::helper {
 namespace {
@@ -23,6 +25,41 @@ populationCount(const uint64_t *a, size_t sz) {
         count += std::popcount(a[i]);
     }
     return count;
+}
+
+namespace {
+constexpr uint8_t WORD_SZ = sizeof(uint64_t);
+constexpr uint8_t UNROLL_CNT = 4;
+}
+
+size_t
+autovec_binary_hamming_distance(const void *lhs, const void *rhs, size_t sz) noexcept {
+    auto addr_a = (uintptr_t) lhs;
+    auto addr_b = (uintptr_t) rhs;
+    size_t sum = 0;
+    size_t i = 0;
+    bool aligned = ((addr_a & 0x7) == 0) && ((addr_b & 0x7) == 0);
+    if (__builtin_expect(aligned, true)) {
+        const auto *words_a = static_cast<const uint64_t *>(lhs);
+        const auto *words_b = static_cast<const uint64_t *>(rhs);
+        for (; (i+UNROLL_CNT) * WORD_SZ <= sz; i += UNROLL_CNT) {
+            for (uint8_t j=0; j < UNROLL_CNT; j++) {
+                sum += std::popcount(words_a[i+j] ^ words_b[i+j]);
+            }
+        }
+        for (; (i + 1) * WORD_SZ <= sz; ++i) {
+            sum += std::popcount(words_a[i] ^ words_b[i]);
+        }
+    }
+    if (__builtin_expect((i * WORD_SZ < sz), false)) {
+        const auto *bytes_a = static_cast<const uint8_t *>(lhs);
+        const auto *bytes_b = static_cast<const uint8_t *>(rhs);
+        for (i *= WORD_SZ; i < sz; ++i) {
+            uint64_t xor_bits = bytes_a[i] ^ bytes_b[i];
+            sum += std::popcount(xor_bits);
+        }
+    }
+    return sum;
 }
 
 #ifdef VESPA_USE_THREAD_SANITIZER
@@ -149,5 +186,5 @@ multiplyAdd(const int8_t *a, const int8_t *b, size_t sz) noexcept {
     return sum;
 }
 
-}
-}
+} // anon ns
+} // vespalib::hwaccelerated::helper
