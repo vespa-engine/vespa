@@ -182,6 +182,7 @@ public class YqlParser implements Parser {
     public static final String LABEL = "label";
     public static final String NEAR = "near";
     public static final String NEAREST_NEIGHBOR = "nearestNeighbor";
+    public static final String EXCLUSION_DISTANCE = "exclusionDistance";
     public static final String NORMALIZE_CASE = "normalizeCase";
     public static final String ONEAR = "onear";
     public static final String ORIGIN = "origin";
@@ -828,66 +829,69 @@ public class YqlParser implements Parser {
 
     private Item instantiateNearItem(String field, OperatorNode<ExpressionOperator> ast) {
         assertHasFunctionName(ast, NEAR);
-
         NearItem near = new NearItem();
-        near.setIndexName(field);
-        for (OperatorNode<ExpressionOperator> word : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
-            if (word.getOperator() == ExpressionOperator.CALL) {
-                List<String> names = word.getArgument(0);
-                switch (names.get(0)) {
-                    case EQUIV:
-                        near.addItem(instantiateEquivItem(field, word));
-                        break;
-                    case PHRASE:
-                        near.addItem(instantiatePhraseItem(field, word));
-                        break;
-                    case ALTERNATIVES:
-                        near.addItem(instantiateWordAlternativesItem(field, word));
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Expected " + EQUIV + ", " + PHRASE + ", or " + ALTERNATIVES + ", but got: " + names.get(0));
-                }
-            } else {
-                near.addItem(instantiateWordItem(field, word, near.getClass()));
-            }
-        }
-        Integer distance = getAnnotation(ast, DISTANCE, Integer.class, null, "term distance for NEAR operator");
-        if (distance != null) {
-            near.setDistance(distance);
-        }
-        return near;
+        return populateNearItem(field, ast, near, "term distance for NEAR operator");
     }
 
     private Item instantiateONearItem(String field, OperatorNode<ExpressionOperator> ast) {
         assertHasFunctionName(ast, ONEAR);
-
         NearItem onear = new ONearItem();
-        onear.setIndexName(field);
+        return populateNearItem(field, ast, onear, "term distance for ONEAR operator");
+    }
+
+    private NearItem populateNearItem(String field, OperatorNode<ExpressionOperator> ast, NearItem nearItem, String distanceAnnotationDescription) {
+        nearItem.setIndexName(field);
+        int negativeCount = 0;
+        int positiveCount = 0;
         for (OperatorNode<ExpressionOperator> word : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
-            if (word.getOperator() == ExpressionOperator.CALL) {
-                List<String> names = word.getArgument(0);
-                switch (names.get(0)) {
-                    case EQUIV:
-                        onear.addItem(instantiateEquivItem(field, word));
-                        break;
-                    case PHRASE:
-                        onear.addItem(instantiatePhraseItem(field, word));
-                        break;
-                    case ALTERNATIVES:
-                        onear.addItem(instantiateWordAlternativesItem(field, word));
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Expected " + EQUIV + ", " + PHRASE + ", or " + ALTERNATIVES + ", but got: " +names.get(0));
-                }
+            if (word.getOperator() == ExpressionOperator.NOT) {
+                OperatorNode<ExpressionOperator> exp = word.getArgument(0);
+                assertHasOperator(exp, ExpressionOperator.class);
+                addNearItemChild(field, nearItem, exp);
+                negativeCount++;
             } else {
-                onear.addItem(instantiateWordItem(field, word, onear.getClass()));
+                if (negativeCount > 0) {
+                    throw new IllegalArgumentException("Positive terms must come before negative terms in " + nearItem.getName());
+                }
+                addNearItemChild(field, nearItem, word);
+                positiveCount++;
             }
         }
-        Integer distance = getAnnotation(ast, DISTANCE, Integer.class, null, "term distance for ONEAR operator");
+        nearItem.setNumNegativeItems(negativeCount);
+        Integer distance = getAnnotation(ast, DISTANCE, Integer.class, null, distanceAnnotationDescription);
         if (distance != null) {
-            onear.setDistance(distance);
+            nearItem.setDistance(distance);
         }
-        return onear;
+        if (negativeCount > 0) {
+            Integer exclusionDistance = getAnnotation(ast, EXCLUSION_DISTANCE, Integer.class, null, "exclusion distance for near/onear operator");
+            if (exclusionDistance != null) {
+                nearItem.setExclusionDistance(exclusionDistance);
+            } else {
+                nearItem.setExclusionDistance(nearItem.getDistance() / 2);
+            }
+        }
+        return nearItem;
+    }
+
+    private void addNearItemChild(String field, NearItem nearItem, OperatorNode<ExpressionOperator> word) {
+        if (word.getOperator() == ExpressionOperator.CALL) {
+            List<String> names = word.getArgument(0);
+            switch (names.get(0)) {
+                case EQUIV:
+                    nearItem.addItem(instantiateEquivItem(field, word));
+                    break;
+                case PHRASE:
+                    nearItem.addItem(instantiatePhraseItem(field, word));
+                    break;
+                case ALTERNATIVES:
+                    nearItem.addItem(instantiateWordAlternativesItem(field, word));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Expected " + EQUIV + ", " + PHRASE + ", or " + ALTERNATIVES + ", but got: " + names.get(0));
+            }
+        } else {
+            nearItem.addItem(instantiateWordItem(field, word, nearItem.getClass()));
+        }
     }
 
     private Item fetchUserQuery() {

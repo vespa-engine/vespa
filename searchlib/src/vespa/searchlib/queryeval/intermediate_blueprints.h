@@ -133,7 +133,7 @@ class NearBlueprint : public IntermediateBlueprint
 private:
     uint32_t                    _window;
     uint32_t                    _num_negative_terms;
-    uint32_t                    _negative_term_brick_size;
+    uint32_t                    _exclusion_distance;
     const IElementGapInspector& _element_gap_inspector;
 
     AnyFlow my_flow(InFlow in_flow) const override;
@@ -147,10 +147,10 @@ public:
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;
     SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
-    NearBlueprint(uint32_t window, uint32_t num_negative_terms, uint32_t negative_term_brick_size, const IElementGapInspector& element_gap_inspector) noexcept
+    NearBlueprint(uint32_t window, uint32_t num_negative_terms, uint32_t exclusion_distance, const IElementGapInspector& element_gap_inspector) noexcept
         : _window(window),
           _num_negative_terms(num_negative_terms),
-          _negative_term_brick_size(negative_term_brick_size),
+          _exclusion_distance(exclusion_distance),
           _element_gap_inspector(element_gap_inspector)
     {}
 };
@@ -162,7 +162,7 @@ class ONearBlueprint  : public IntermediateBlueprint
 private:
     uint32_t                    _window;
     uint32_t                    _num_negative_terms;
-    uint32_t                    _negative_term_brick_size;
+    uint32_t                    _exclusion_distance;
     const IElementGapInspector& _element_gap_inspector;
 
     AnyFlow my_flow(InFlow in_flow) const override;
@@ -176,10 +176,10 @@ public:
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;
     SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
-    ONearBlueprint(uint32_t window, uint32_t num_negative_terms, uint32_t negative_term_brick_size, const IElementGapInspector& element_gap_inspector) noexcept
+    ONearBlueprint(uint32_t window, uint32_t num_negative_terms, uint32_t exclusion_distance, const IElementGapInspector& element_gap_inspector) noexcept
         : _window(window),
           _num_negative_terms(num_negative_terms),
-          _negative_term_brick_size(negative_term_brick_size),
+          _exclusion_distance(exclusion_distance),
           _element_gap_inspector(element_gap_inspector)
     {}
 };

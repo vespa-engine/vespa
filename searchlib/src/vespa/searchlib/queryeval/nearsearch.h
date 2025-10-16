@@ -19,7 +19,7 @@ protected:
     uint32_t _data_size;
     uint32_t _window;
     uint32_t _num_negative_terms;
-    uint32_t _negative_term_brick_size;
+    uint32_t _exclusion_distance;
     bool     _strict;
 
     using TermFieldMatchDataArray = search::fef::TermFieldMatchDataArray;
@@ -31,20 +31,20 @@ protected:
         search::fef::ElementGap _element_gap;
         TermFieldMatchDataArray _inputs;
         uint32_t                _num_negative_terms;
-        uint32_t                _negative_term_brick_size;
+        uint32_t                _exclusion_distance;
     protected:
         uint32_t window() const noexcept { return _window; }
         search::fef::ElementGap get_element_gap() const noexcept { return _element_gap; }
         const TermFieldMatchDataArray &inputs() const { return _inputs; }
         uint32_t num_negative_terms() const noexcept { return _num_negative_terms; }
-        uint32_t negative_term_brick_size() const noexcept { return _negative_term_brick_size; }
+        uint32_t exclusion_distance() const noexcept { return _exclusion_distance; }
     public:
-        MatcherBase(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in, uint32_t num_negative_terms, uint32_t negative_term_brick_size)
+        MatcherBase(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in, uint32_t num_negative_terms, uint32_t exclusion_distance)
             : _window(win),
               _element_gap(element_gap),
               _inputs(),
               _num_negative_terms(num_negative_terms),
-              _negative_term_brick_size(negative_term_brick_size)
+              _exclusion_distance(exclusion_distance)
         {
             for (size_t i = 0; i < in.size(); ++i) {
                 if (in[i]->getFieldId() == fieldId) {
@@ -84,14 +84,14 @@ public:
      * @param data   The term match data objects for all child terms.
      * @param window The size of the window in which all positive terms must occur.
      * @param num_negative_terms The number of negative terms (last N children).
-     * @param negative_term_brick_size The "brick size" around negative terms that breaks the window.
+     * @param exclusion_distance The "brick size" around negative terms that breaks the window.
      * @param strict Whether or not to skip to next matching document if seek fails.
      */
     NearSearchBase(Children terms,
                    const TermFieldMatchDataArray &data,
                    uint32_t window,
                    uint32_t num_negative_terms,
-                   uint32_t negative_term_brick_size,
+                   uint32_t exclusion_distance,
                    bool strict);
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
@@ -106,8 +106,8 @@ class NearSearch : public NearSearchBase
 private:
     struct Matcher : public NearSearchBase::MatcherBase
     {
-        Matcher(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in, uint32_t num_negative_terms, uint32_t negative_term_brick_size)
-            : MatcherBase(win, element_gap, fieldId, in, num_negative_terms, negative_term_brick_size) {}
+        Matcher(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in, uint32_t num_negative_terms, uint32_t exclusion_distance)
+            : MatcherBase(win, element_gap, fieldId, in, num_negative_terms, exclusion_distance) {}
         template <typename MatchResult>
         void match(uint32_t docId, MatchResult& result);
     };
@@ -138,7 +138,7 @@ public:
      * @param data   The term match data objects for all child terms.
      * @param window The size of the window in which all positive terms must occur.
      * @param num_negative_terms The number of negative terms (last N children).
-     * @param negative_term_brick_size The "brick size" around negative terms that breaks the window.
+     * @param exclusion_distance The "brick size" around negative terms that breaks the window.
      * @param element_gap_inspector An inspector that retrieves the element gap for a given field.
      * @param strict Whether or not to skip to next matching document if seek fails.
      */
@@ -146,7 +146,7 @@ public:
                const TermFieldMatchDataArray &data,
                uint32_t window,
                uint32_t num_negative_terms,
-               uint32_t negative_term_brick_size,
+               uint32_t exclusion_distance,
                const IElementGapInspector& element_gap_inspector,
                bool strict = true);
 
@@ -163,8 +163,8 @@ class ONearSearch : public NearSearchBase
 private:
     struct Matcher : public NearSearchBase::MatcherBase
     {
-        Matcher(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in, uint32_t num_negative_terms, uint32_t negative_term_brick_size)
-            : MatcherBase(win, element_gap, fieldId, in, num_negative_terms, negative_term_brick_size) {}
+        Matcher(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in, uint32_t num_negative_terms, uint32_t exclusion_distance)
+            : MatcherBase(win, element_gap, fieldId, in, num_negative_terms, exclusion_distance) {}
         template <typename MatchResult, typename WindowFilter>
         void match_impl(uint32_t docId, MatchResult& match_result, WindowFilter&& window_filter);
         template <typename MatchResult>
@@ -197,7 +197,7 @@ public:
      * @param data   The term match data objects for all child terms.
      * @param window The size of the window in which all positive terms must occur.
      * @param num_negative_terms The number of negative terms (last N children).
-     * @param negative_term_brick_size The "brick size" around negative terms that breaks the window.
+     * @param exclusion_distance The "brick size" around negative terms that breaks the window.
      * @param element_gap_inspector An inspector that retrieves the element gap for a given field.
      * @param strict Whether or not to skip to next matching document if seek fails.
      */
@@ -205,7 +205,7 @@ public:
                 const TermFieldMatchDataArray &data,
                 uint32_t window,
                 uint32_t num_negative_terms,
-                uint32_t negative_term_brick_size,
+                uint32_t exclusion_distance,
                 const IElementGapInspector& element_gap_inspector,
                 bool strict = true);
 

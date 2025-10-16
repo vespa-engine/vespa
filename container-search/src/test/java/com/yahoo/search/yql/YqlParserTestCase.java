@@ -551,12 +551,30 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testDistanceForNear() {
+        assertEquals("NEAR(7) default:a default:b",
+                     parse("SELECT * FROM sources * WHERE ({'distance':7} default contains near('a','b'))").getRoot().toString());
+
+        assertEquals("ONEAR(7) default:a default:b",
+                     parse("SELECT * FROM sources * WHERE ({'distance':7} default contains onear('a','b'))").getRoot().toString());
+    }
+
+    @Test
     void testPhraseSegmentsInNear() {
         assertEquals("NEAR(2) default:'a b' default:c",
                      parse("SELECT * FROM sources * WHERE (default contains near('a-b','c'))").getRoot().toString());
 
         assertEquals("ONEAR(2) default:'a b' default:c",
                      parse("SELECT * FROM sources * WHERE (default contains onear('a-b','c'))").getRoot().toString());
+    }
+
+    @Test
+    void testNegativeTermsInNear() {
+        assertEquals("NEAR(7,2,3) default:a default:b default:c default:d",
+                     parse("SELECT * FROM sources * WHERE ({'distance':7} default contains near('a', 'b', !'c', ! 'd'))").getRoot().toString());
+
+        assertEquals("ONEAR(7,2,3) default:a default:b default:c default:d",
+                     parse("SELECT * FROM sources * WHERE ({'distance':7} default contains onear('a', 'b', !'c', ! 'd'))").getRoot().toString());
     }
 
     @Test
@@ -705,6 +723,14 @@ public class YqlParserTestCase {
                 "NEAR(2) description:a description:b");
         assertParse("select foo from bar where description contains ({distance: 100} near(\"a\", \"b\"))",
                 "NEAR(100) description:a description:b");
+        assertParse("select foo from bar where description contains near(\"a\", \"b\", !\"c\")",
+                "NEAR(2,1,1) description:a description:b description:c");
+        assertParse("select foo from bar where description contains near(\"a\", !\"b\", !\"c\")",
+                "NEAR(2,2,1) description:a description:b description:c");
+        assertParse("select foo from bar where description contains ({distance: 10, exclusionDistance: 9} near(\"a\", \"b\", !\"c\"))",
+                "NEAR(10,1,9) description:a description:b description:c");
+        assertParseFail("select foo from bar where description contains near(\"a\", !\"b\", \"c\")",
+                new IllegalArgumentException("Positive terms must come before negative terms in NEAR"));
     }
 
     @Test
@@ -713,6 +739,12 @@ public class YqlParserTestCase {
                 "ONEAR(2) description:a description:b");
         assertParse("select foo from bar where description contains ({distance: 100} onear(\"a\", \"b\"))",
                 "ONEAR(100) description:a description:b");
+        assertParse("select foo from bar where description contains onear(\"a\", \"b\", !\"c\")",
+                "ONEAR(2,1,1) description:a description:b description:c");
+        assertParse("select foo from bar where description contains onear(\"a\", !\"b\", !\"c\")",
+                "ONEAR(2,2,1) description:a description:b description:c");
+        assertParseFail("select foo from bar where description contains onear(\"a\", !\"b\", \"c\")",
+                new IllegalArgumentException("Positive terms must come before negative terms in ONEAR"));
     }
 
     @Test

@@ -71,16 +71,16 @@ class Near : public QueryNodeMixin<Near, Intermediate>
 {
     uint32_t _distance;
     uint32_t _num_negative_terms;
-    uint32_t _negative_term_brick_size;
+    uint32_t _exclusion_distance;
 
 public:
-    Near(size_t distance, size_t num_negative_terms_in, size_t negative_term_brick_size_in)
-      : _distance(distance), _num_negative_terms(num_negative_terms_in), _negative_term_brick_size(negative_term_brick_size_in) {}
+    Near(size_t distance, size_t num_negative_terms_in, size_t exclusion_distance_in)
+      : _distance(distance), _num_negative_terms(num_negative_terms_in), _exclusion_distance(exclusion_distance_in) {}
     virtual ~Near() = 0;
 
     size_t getDistance() const { return _distance; }
     size_t num_negative_terms() const noexcept { return _num_negative_terms; }
-    size_t negative_term_brick_size() const noexcept { return _negative_term_brick_size; }
+    size_t exclusion_distance() const noexcept { return _exclusion_distance; }
 };
 
 //-----------------------------------------------------------------------------
@@ -89,16 +89,16 @@ class ONear : public QueryNodeMixin<ONear, Intermediate>
 {
     uint32_t _distance;
     uint32_t _num_negative_terms;
-    uint32_t _negative_term_brick_size;
+    uint32_t _exclusion_distance;
 
 public:
-    ONear(size_t distance, size_t num_negative_terms_in, size_t negative_term_brick_size_in)
-      : _distance(distance), _num_negative_terms(num_negative_terms_in), _negative_term_brick_size(negative_term_brick_size_in) {}
+    ONear(size_t distance, size_t num_negative_terms_in, size_t exclusion_distance_in)
+      : _distance(distance), _num_negative_terms(num_negative_terms_in), _exclusion_distance(exclusion_distance_in) {}
     virtual ~ONear() = 0;
 
     size_t getDistance() const { return _distance; }
     size_t num_negative_terms() const noexcept { return _num_negative_terms; }
-    size_t negative_term_brick_size() const noexcept { return _negative_term_brick_size; }
+    size_t exclusion_distance() const noexcept { return _exclusion_distance; }
 };
 
 //-----------------------------------------------------------------------------

@@ -221,7 +221,7 @@ void checkQueryTreeTypes(Node *node, bool skip_negative_term_params = false) {
     EXPECT_EQ(distance, near->getDistance());
     if (!skip_negative_term_params) {
         EXPECT_EQ(1u, near->num_negative_terms());
-        EXPECT_EQ(3u, near->negative_term_brick_size());
+        EXPECT_EQ(3u, near->exclusion_distance());
     }
     auto* string_term = as_node<StringTerm>(near->getChildren()[0]);
     EXPECT_TRUE(checkTerm(string_term, str[0], view[0], id[0], weight[0]));
@@ -233,7 +233,7 @@ void checkQueryTreeTypes(Node *node, bool skip_negative_term_params = false) {
     EXPECT_EQ(distance, onear->getDistance());
     if (!skip_negative_term_params) {
         EXPECT_EQ(1u, onear->num_negative_terms());
-        EXPECT_EQ(5u, onear->negative_term_brick_size());
+        EXPECT_EQ(5u, onear->exclusion_distance());
     }
     auto* suffix_term = as_node<SuffixTerm>(onear->getChildren()[0]);
     EXPECT_TRUE(checkTerm(suffix_term, str[2], view[2], id[2], weight[2]));
@@ -406,14 +406,14 @@ struct MyEquiv : Equiv {
 };
 
 struct MyNear : Near {
-    MyNear(size_t dist, size_t num_negative_terms, size_t negative_term_brick_size)
-      : Near(dist, num_negative_terms, negative_term_brick_size) {}
+    MyNear(size_t dist, size_t num_negative_terms, size_t exclusion_distance)
+      : Near(dist, num_negative_terms, exclusion_distance) {}
     ~MyNear() override;
 };
 
 struct MyONear : ONear {
-    MyONear(size_t dist, size_t num_negative_terms, size_t negative_term_brick_size)
-      : ONear(dist, num_negative_terms, negative_term_brick_size) {}
+    MyONear(size_t dist, size_t num_negative_terms, size_t exclusion_distance)
+      : ONear(dist, num_negative_terms, exclusion_distance) {}
     ~MyONear() override;
 };
 

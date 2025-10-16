@@ -148,13 +148,13 @@ message ItemNear {
     int32 distance = 1;
     repeated QueryTreeItem children = 2;
     int32 num_negative_terms = 3;
-    int32 negative_term_brick_size = 4;
+    int32 exclusion_distance = 4;
 }
 message ItemOnear {
     int32 distance = 1;
     repeated QueryTreeItem children = 2;
     int32 num_negative_terms = 3;
-    int32 negative_term_brick_size = 4;
+    int32 exclusion_distance = 4;
 }
 message ItemWeakAnd {
     string index = 1;

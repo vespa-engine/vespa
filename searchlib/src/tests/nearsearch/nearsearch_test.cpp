@@ -69,7 +69,7 @@ private:
     bool                 _ordered;
     uint32_t             _window;
     uint32_t             _num_negative_terms;
-    uint32_t             _negative_term_brick_size;
+    uint32_t             _exclusion_distance;
     MockElementGapInspector _element_gap_inspector;
 
 public:
@@ -99,17 +99,17 @@ public:
     uint32_t getNumNegativeTerms() const {
         return _num_negative_terms;
     }
-    uint32_t getNegativeTermBrickSize() const {
-        return _negative_term_brick_size;
+    uint32_t getExclusionDistance() const {
+        return _exclusion_distance;
     }
     const IElementGapInspector& get_element_gap_inspector() const noexcept { return _element_gap_inspector; }
     MyQuery& set_element_gap(ElementGap element_gap) {
         _element_gap_inspector = MockElementGapInspector(element_gap);
         return *this;
     }
-    MyQuery& set_negative_terms(uint32_t num_negative_terms, uint32_t negative_term_brick_size) {
+    MyQuery& set_negative_terms(uint32_t num_negative_terms, uint32_t exclusion_distance) {
         _num_negative_terms = num_negative_terms;
-        _negative_term_brick_size = negative_term_brick_size;
+        _exclusion_distance = exclusion_distance;
         return *this;
     }
 };
@@ -119,7 +119,7 @@ MyQuery::MyQuery(bool ordered, uint32_t window)
       _ordered(ordered),
       _window(window),
       _num_negative_terms(0),
-      _negative_term_brick_size(0),
+      _exclusion_distance(0),
       _element_gap_inspector(std::nullopt)
 {}
 
@@ -141,17 +141,17 @@ protected:
         std::string _positive_terms;
         uint32_t _window;
         std::string _negative_terms;
-        uint32_t _brick_size;
+        uint32_t _exclusion_distance;
         bool _ordered;
         search::fef::ElementGap _element_gap;
         NearSearchTest* _test;
 
         NearSpec(const std::string& positive_terms, uint32_t window, bool ordered, NearSearchTest* test)
-            : _positive_terms(positive_terms), _window(window), _brick_size(0), _ordered(ordered), _test(test) {}
+            : _positive_terms(positive_terms), _window(window), _exclusion_distance(0), _ordered(ordered), _test(test) {}
 
-        NearSpec& avoid(const std::string& terms, uint32_t brick_size) {
+        NearSpec& avoid(const std::string& terms, uint32_t exclusion_distance) {
             _negative_terms = terms;
-            _brick_size = brick_size;
+            _exclusion_distance = exclusion_distance;
             return *this;
         }
 
@@ -164,7 +164,7 @@ protected:
             std::string label = _ordered ? "onear(" : "near(";
             label += _positive_terms + "," + std::to_string(_window) + ")";
             if (!_negative_terms.empty()) {
-                label += ".avoid(" + _negative_terms + "," + std::to_string(_brick_size) + ")";
+                label += ".avoid(" + _negative_terms + "," + std::to_string(_exclusion_distance) + ")";
             }
             if (_element_gap.has_value()) {
                 label += ".gap(" + std::to_string(*_element_gap) + ")";
@@ -345,10 +345,10 @@ NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId,
     search::queryeval::IntermediateBlueprint *near_b = nullptr;
     if (query.isOrdered()) {
         near_b = new search::queryeval::ONearBlueprint(query.getWindow(), query.getNumNegativeTerms(),
-                                                        query.getNegativeTermBrickSize(), query.get_element_gap_inspector());
+                                                        query.getExclusionDistance(), query.get_element_gap_inspector());
     } else {
         near_b = new search::queryeval::NearBlueprint(query.getWindow(), query.getNumNegativeTerms(),
-                                                       query.getNegativeTermBrickSize(), query.get_element_gap_inspector());
+                                                       query.getExclusionDistance(), query.get_element_gap_inspector());
     }
     search::queryeval::Blueprint::UP bp(near_b);
     search::fef::MatchDataLayout layout;
@@ -404,7 +404,7 @@ NearSearchTest::NearSpec::verify(const search::queryeval::FakeIndex& index, uint
         query.addTerm(term);
     }
     if (!_negative_terms.empty()) {
-        query.set_negative_terms(_negative_terms.size(), _brick_size);
+        query.set_negative_terms(_negative_terms.size(), _exclusion_distance);
     }
     if (_element_gap.has_value()) {
         query.set_element_gap(_element_gap);
@@ -450,7 +450,7 @@ TEST_F(NearSearchTest, quantum_brick)
     onear("AB", 1).avoid("X", 2).element_gap(1).verify(docs, 69, {4});
 }
 
-TEST_F(NearSearchTest, zero_brick_size)
+TEST_F(NearSearchTest, zero_exclusion_distance)
 {
     auto docs = index().doc(69)
         .elem(1, "xAxBx")
