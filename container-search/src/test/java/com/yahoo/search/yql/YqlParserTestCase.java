@@ -570,10 +570,10 @@ public class YqlParserTestCase {
 
     @Test
     void testNegativeTermsInNear() {
-        assertEquals("NEAR(7,2,3) default:a default:b default:c default:d",
+        assertEquals("NEAR(7,2,4) default:a default:b default:c default:d",
                      parse("SELECT * FROM sources * WHERE ({'distance':7} default contains near('a', 'b', !'c', ! 'd'))").getRoot().toString());
 
-        assertEquals("ONEAR(7,2,3) default:a default:b default:c default:d",
+        assertEquals("ONEAR(7,2,4) default:a default:b default:c default:d",
                      parse("SELECT * FROM sources * WHERE ({'distance':7} default contains onear('a', 'b', !'c', ! 'd'))").getRoot().toString());
     }
 
