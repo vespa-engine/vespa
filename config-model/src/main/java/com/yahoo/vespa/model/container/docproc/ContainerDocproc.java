@@ -139,19 +139,27 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
 
     public static class Threadpool extends ContainerThreadpool {
 
-        private final int threads;
+        private final double threadsScale;
 
         public Threadpool(DeployState ds, Element options) {
             super(ds, "docproc-handler", options);
-            threads = ds.featureFlags().searchHandlerThreadpool();
+            threadsScale = ds.featureFlags().documentProcessorHandlerThreadpoolThreads();
         }
 
         @Override
         public void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder) {
+            double wantedNumber;
+            if (threadsScale > 0) {
+                var processors = Runtime.getRuntime().availableProcessors();
+                wantedNumber = Math.max(processors * threadsScale, 1);
+            } else {
+                wantedNumber = Math.max(-threadsScale, 1);
+            }
+
             builder.maxThreadExecutionTimeSeconds(190)
                     .keepAliveTime(5.0)
-                    .maxThreads(-threads)
-                    .minThreads(-threads)
+                    .maxThreads((int)wantedNumber)
+                    .minThreads((int)wantedNumber)
                     .queueSize(-40);
         }
 

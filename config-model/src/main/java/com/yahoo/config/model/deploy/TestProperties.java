@@ -81,6 +81,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
     private boolean useNewPrepareForRestart = false;
     private Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
+    private double documentProcessorHandlerThreadpoolThreads;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -133,6 +134,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
     @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
     @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
+    @Override public double documentProcessorHandlerThreadpoolThreads() { return documentProcessorHandlerThreadpoolThreads; }
     @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
     @Override public int searchNodeInitializerThreads() { return 0; }
     @Override public int searchNodeInitializerThreads(String clusterId) { return searchNodeInitializerThreads.getOrDefault(clusterId, 0); }
@@ -361,6 +363,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setSearchNodeInitializerThreads(int value, String clusterId) {
         this.searchNodeInitializerThreads.put(clusterId, value);
+        return this;
+    }
+
+    public TestProperties setDocumentHandlerThreadpoolThread(double value) {
+        this.documentProcessorHandlerThreadpoolThreads = value;
         return this;
     }
 

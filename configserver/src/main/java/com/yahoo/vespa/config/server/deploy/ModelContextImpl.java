@@ -214,6 +214,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useTriton;
         private final int searchCoreMaxOutstandingMoveOps;
         private final boolean useNewPrepareForRestart;
+        private double documentProcessorHandlerThreadpoolThreads;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.useNonPublicEndpointForTest = Flags.USE_NON_PUBLIC_ENDPOINT_FOR_TEST.bindTo(source).with(appId).with(version).value();
@@ -263,6 +264,7 @@ public class ModelContextImpl implements ModelContext {
             this.useTriton = Flags.USE_TRITON.bindTo(source).with(appId).with(version).value();
             this.searchCoreMaxOutstandingMoveOps = Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS.bindTo(source).with(appId).with(version).value();
             this.useNewPrepareForRestart = Flags.USE_NEW_PREPARE_FOR_RESTART_METHOD.bindTo(source).with(appId).with(version).value();
+            this.documentProcessorHandlerThreadpoolThreads = Flags.DOCUMENT_PROCESSOR_THREADPOOL_THREADS.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
@@ -312,6 +314,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useTriton() { return useTriton; }
         @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
         @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
+        @Override public double documentProcessorHandlerThreadpoolThreads() { return documentProcessorHandlerThreadpoolThreads; }
     }
 
     public static class Properties implements ModelContext.Properties {
