@@ -139,7 +139,9 @@ void FindMatchingElements::process(
 {
     if (auto same_element = as<SameElementBlueprint>(bp)) {
         if (fields.has_field(same_element->field_name())) {
+            matchData.needOnlyField(same_element->get_field().getFieldId());
             find_matching_elements(docs, *same_element, matchData, result);
+            matchData.soft_reset();
         }
     } else if (auto matching_elements_search = bp.create_matching_elements_search(fields)) {
         find_matching_elements(docs, *matching_elements_search, result);
@@ -169,12 +171,16 @@ void FindMatchingElements::process(
         for (size_t i = 0; i < intermediate->childCnt(); ++i) {
             process(docs, intermediate->getChild(i));
         }
-    } else if (bp.getState().numFields() == 1) {
-        uint32_t currentField = bp.getState().field(0).getFieldId();
-        const std::string& fieldName = idToName.lookup(currentField);
-        if (fields.has_field(fieldName)) {
-            SearchIterator::UP child = bp.createSearch(matchData);
-            find_matching_elements(docs, *child, fieldName, result);
+    } else if (bp.getState().numFields() > 0) {
+        for (size_t field_idx = 0; field_idx < bp.getState().numFields(); ++field_idx) {
+            uint32_t currentField = bp.getState().field(field_idx).getFieldId();
+            const std::string& fieldName = idToName.lookup(currentField);
+            if (fields.has_field(fieldName)) {
+                matchData.needOnlyField(currentField);
+                SearchIterator::UP child = bp.createSearch(matchData);
+                find_matching_elements(docs, *child, fieldName, result);
+                matchData.soft_reset();
+            }
         }
     }
 }

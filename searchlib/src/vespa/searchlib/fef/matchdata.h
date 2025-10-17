@@ -105,6 +105,16 @@ public:
     const TermFieldMatchData *resolveTermField(TermFieldHandle handle) const { return &_termFields[handle]; }
 
     static MatchData::UP makeTestInstance(uint32_t numTermFields, uint32_t fieldIdLimit);
+
+    void needOnlyField(uint32_t fieldId) {
+        for (auto &tfmd : _termFields) {
+            if (tfmd.getFieldId() == fieldId) {
+                tfmd.setNeedNormalFeatures(true);
+            } else {
+                tfmd.tagAsNotNeeded();
+            }
+        }
+    }
 };
 
 }
