@@ -108,8 +108,22 @@ RankProcessor::resolve_fields_from_term(QueryTermData& qtd, const search::stream
 }
 
 void
+RankProcessor::add_same_element_descendant_terms(search::streaming::SameElementQueryNode& same_element)
+{
+    QueryTermList descendant_terms;
+    same_element.get_hidden_leaves(descendant_terms);
+    for (auto& term : descendant_terms) {
+        maybe_add_query_term(*term);
+    }
+}
+
+void
 RankProcessor::maybe_add_query_term(search::streaming::QueryTerm& term)
 {
+    auto* same_element = term.as_same_element_query_node();
+    if (same_element != nullptr) {
+        add_same_element_descendant_terms(*same_element);
+    }
     if (!term.isRanked()) {
         return;
     }
@@ -137,8 +151,6 @@ RankProcessor::initQueryEnvironment()
     QueryWrapper::TermList & terms = _query.getTermList();
 
     for (auto& term : terms) {
-        if (!term->isRanked()) continue;
-
         if (term->isGeoLoc()) {
             const std::string & fieldName = term->index();
             const std::string & locStr = term->getTermString();
