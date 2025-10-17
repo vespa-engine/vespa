@@ -169,12 +169,22 @@ void FindMatchingElements::process(
         for (size_t i = 0; i < intermediate->childCnt(); ++i) {
             process(docs, intermediate->getChild(i));
         }
-    } else if (bp.getState().numFields() == 1) {
-        uint32_t currentField = bp.getState().field(0).getFieldId();
-        const std::string& fieldName = idToName.lookup(currentField);
-        if (fields.has_field(fieldName)) {
-            SearchIterator::UP child = bp.createSearch(matchData);
-            find_matching_elements(docs, *child, fieldName, result);
+    } else if (bp.getState().numFields() > 0) {
+        for (size_t field_idx = 0; field_idx < bp.getState().numFields(); ++field_idx) {
+            uint32_t currentField = bp.getState().field(field_idx).getFieldId();
+            const std::string& fieldName = idToName.lookup(currentField);
+            if (fields.has_field(fieldName)) {
+                for (size_t idx = 0; idx < matchData.getNumTermFields(); ++idx) {
+                    auto &tfmd = *matchData.resolveTermField(idx);
+                    if (tfmd.getFieldId() == currentField) {
+                        tfmd.setNeedNormalFeatures(true);
+                    } else {
+                        tfmd.tagAsNotNeeded();
+                    }
+                }
+                SearchIterator::UP child = bp.createSearch(matchData);
+                find_matching_elements(docs, *child, fieldName, result);
+            }
         }
     }
 }
