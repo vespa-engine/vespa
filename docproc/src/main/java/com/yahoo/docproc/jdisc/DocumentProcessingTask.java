@@ -16,6 +16,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
@@ -34,10 +35,10 @@ public class DocumentProcessingTask implements Runnable {
     private final RequestContext requestContext;
 
     private final DocprocService service;
-    private final ThreadPoolExecutor executor;
+    private final Executor executor;
 
     public DocumentProcessingTask(RequestContext requestContext, DocumentProcessingHandler docprocHandler,
-                                  DocprocService service, ThreadPoolExecutor executor) {
+                                  DocprocService service, Executor executor) {
         this.requestContext = requestContext;
         this.docprocHandler = docprocHandler;
         this.service = service;

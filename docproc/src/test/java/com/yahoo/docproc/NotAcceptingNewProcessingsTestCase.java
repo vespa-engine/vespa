@@ -14,7 +14,7 @@ public class NotAcceptingNewProcessingsTestCase {
 
     @Test
     public void testNotAccepting() {
-        DocprocService service = new DocprocService("habla");
+        DocprocService service = new DocprocService("habla", new SimpleContainerThreadPool());
         service.setCallStack(new CallStack());
         service.setInService(true);
 

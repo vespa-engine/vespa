@@ -10,6 +10,7 @@ import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.container.jdisc.messagebus.NetworkMultiplexerProvider;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.docproc.CallStack;
+import com.yahoo.docproc.SimpleContainerThreadPool;
 import com.yahoo.docproc.impl.DocprocService;
 import com.yahoo.docproc.jdisc.messagebus.MbusRequestContext;
 
@@ -72,7 +73,8 @@ public abstract class DocumentProcessingHandlerTestBase {
                 new ComponentRegistry<>(),
                 new DocumentProcessingHandlerParameters().
                         setDocumentTypeManager(documentTypeManager).
-                        setContainerDocumentConfig(new ContainerDocumentConfig(new ContainerDocumentConfig.Builder())));
+                        setContainerDocumentConfig(new ContainerDocumentConfig(new ContainerDocumentConfig.Builder())),
+                new SimpleContainerThreadPool());
         builder.serverBindings().bind("mbus://*/*", handler);
 
         ReferencedResource<SharedSourceSession> sessionRef = sessionCache.retainSource(new SourceSessionParams());
@@ -84,7 +86,7 @@ public abstract class DocumentProcessingHandlerTestBase {
         List<Pair<String, CallStack>> callStacks = getCallStacks();
         List<AbstractResource> resources = new ArrayList<>();
         for (Pair<String, CallStack> callStackPair : callStacks) {
-            DocprocService service = new DocprocService(callStackPair.getFirst());
+            DocprocService service = new DocprocService(callStackPair.getFirst(), new SimpleContainerThreadPool());
             service.setCallStack(callStackPair.getSecond());
             service.setInService(true);
 

@@ -29,7 +29,7 @@ public class TransientFailureTestCase {
 
     @Test
     public void testTransientFailures() {
-        DocprocService service = new DocprocService("transfail");
+        DocprocService service = new DocprocService("transfail", new SimpleContainerThreadPool());
         CallStack stack = new CallStack();
         stack.addNext(new OkDocProc()).addNext(new TransientFailDocProc());
         service.setCallStack(stack);
