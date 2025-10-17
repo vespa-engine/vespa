@@ -7,13 +7,32 @@
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <cinttypes>
+#include <google/protobuf/util/json_util.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.engine.proto_converter");
 
+//-----------------------------------------------------------------------------
+
 namespace search::engine {
 
 namespace {
+
+std::string msg_to_json(const google::protobuf::Message & message) {
+    using namespace google::protobuf::util;
+    JsonPrintOptions options;
+    options.add_whitespace = true;
+    options.always_print_fields_with_no_presence = true;
+    options.always_print_enums_as_ints = false;
+    options.preserve_proto_field_names = true;
+    options.unquote_int64_if_possible = true;
+    std::string output;
+    auto status = MessageToJsonString(message, &output, options);
+    if (! status.ok()) {
+        LOG(warning, "MessageToJsonString return BAD status");
+    }
+    return output;
+}
 
 std::string escape_message(const std::string &item) {
     static const char hexdigits[] = "0123456789ABCDEF";
@@ -127,12 +146,17 @@ ProtoConverter::search_request_from_proto(const ProtoSearchRequest &proto, Searc
     if (proto.has_query_tree() && proto.query_tree().has_root()) {
         using QueryTree = searchlib::searchprotocol::protobuf::QueryTree;
         auto qtp = std::make_unique<QueryTree>(proto.query_tree());
+        if (LOG_WOULD_LOG(debug)) {
+            std::string json = msg_to_json(*qtp);
+            LOG(debug, "search_request_from_proto using protobuf querytree: %s", json.c_str());
+        }
         auto queryTree = SerializedQueryTree::fromProtobuf(std::move(qtp));
         request.setSerializedQueryTree(queryTree);
     } else {
         std::string_view stackDumpRef(proto.query_tree_blob().begin(), proto.query_tree_blob().end());
         auto queryTree = SerializedQueryTree::fromStackDump(stackDumpRef);
         request.setSerializedQueryTree(queryTree);
+        LOG(debug, "search_request_from_proto using legacy stackdump for querytree");
     }
 }
 
@@ -232,11 +256,16 @@ ProtoConverter::docsum_request_from_proto(const ProtoDocsumRequest &proto, Docsu
     if (proto.has_query_tree() && proto.query_tree().has_root()) {
         using QueryTree = searchlib::searchprotocol::protobuf::QueryTree;
         auto qtp = std::make_unique<QueryTree>(proto.query_tree());
+        if (LOG_WOULD_LOG(debug)) {
+            std::string json = msg_to_json(*qtp);
+            LOG(debug, "docsum_request_from_proto using protobuf querytree: %s", json.c_str());
+        }
         auto queryTree = SerializedQueryTree::fromProtobuf(std::move(qtp));
         request.setSerializedQueryTree(queryTree);
     } else {
         std::string_view stackDumpRef(proto.query_tree_blob().begin(), proto.query_tree_blob().end());
         auto queryTree = SerializedQueryTree::fromStackDump(stackDumpRef);
+        LOG(debug, "docsum_request_from_proto using legacy stackdump for querytree");
         request.setSerializedQueryTree(queryTree);
     }
     request.hits.resize(proto.global_ids_size());

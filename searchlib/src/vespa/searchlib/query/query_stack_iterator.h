@@ -49,6 +49,8 @@ public:
         uint32_t uniqueId = 0;
         uint32_t arity = 0;
         uint32_t nearDistance = 0;
+        uint32_t negativeTerms = 0;
+        uint32_t exclusionDistance = 0;
         uint32_t targetHits = 0;
         uint32_t exploreAdditionalHits = 0;
         uint32_t fuzzy_max_edit_distance = 0;
@@ -78,6 +80,8 @@ public:
     uint32_t getArity() const noexcept { return _d.arity; }
 
     uint32_t getNearDistance() const noexcept { return _d.nearDistance; }
+    uint32_t getNegativeTerms() const noexcept { return _d.negativeTerms; }
+    uint32_t getExclusionDistance() const noexcept { return _d.exclusionDistance; }
     uint32_t getTargetHits() const noexcept { return _d.targetHits; }
     double getDistanceThreshold() const noexcept { return _d.distanceThreshold; }
     double getScoreThreshold() const noexcept { return _d.scoreThreshold; }

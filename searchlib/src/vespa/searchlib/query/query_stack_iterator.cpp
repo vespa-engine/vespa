@@ -61,6 +61,9 @@ void QueryStackIterator::Data::clear() {
     uniqueId = 0;
     arity = 0;
     nearDistance = 0;
+    negativeTerms = 0;
+    exclusionDistance = 0;
+
     targetHits = 0;
     exploreAdditionalHits = 0;
     fuzzy_max_edit_distance = 0;
