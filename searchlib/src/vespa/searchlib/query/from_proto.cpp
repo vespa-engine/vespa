@@ -436,6 +436,9 @@ bool ProtoTreeIterator::handle_variant_item(TreeItem item) {
 }
 
 bool ProtoTreeIterator::handle_item(const PureWeightedString& item) {
+    // NOTE:
+    // does not clear all data in _d, inherits most from parent.
+    _d.arity = 0;
     _d.itemType = ParseItem::ItemType::ITEM_PURE_WEIGHTED_STRING;
     _d.term_view = item.value();
     _d.weight.setPercent(item.weight());
@@ -443,6 +446,9 @@ bool ProtoTreeIterator::handle_item(const PureWeightedString& item) {
 }
 
 bool ProtoTreeIterator::handle_item(const PureWeightedLong& item) {
+    // NOTE:
+    // does not clear all data in _d, inherits most from parent.
+    _d.arity = 0;
     _d.itemType = ParseItem::ItemType::ITEM_PURE_WEIGHTED_LONG;
     _d.integerTerm = item.value();
     _d.weight.setPercent(item.weight());
@@ -451,6 +457,7 @@ bool ProtoTreeIterator::handle_item(const PureWeightedLong& item) {
 
 
 bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
+    _d.clear();
     using IC = QueryTreeItem::ItemCase;
     switch (qsi.item_case()) {
 
@@ -551,7 +558,6 @@ ProtoTreeIterator::ProtoTreeIterator(const ProtobufQueryTree& proto_query_tree)
 }
 
 bool ProtoTreeIterator::next() {
-    _d.clear();
     if (_pos < _items.size()) {
         bool ok = handle_variant_item(_items[_pos++]);
         return ok;
