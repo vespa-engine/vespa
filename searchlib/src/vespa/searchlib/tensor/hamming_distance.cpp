@@ -2,7 +2,7 @@
 
 #include "hamming_distance.h"
 #include "temporary_vector_store.h"
-#include <vespa/vespalib/util/binary_hamming_distance.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 
 using vespalib::typify_invoke;
 using vespalib::eval::TypedCells;
@@ -14,20 +14,21 @@ using vespalib::eval::Int8Float;
 
 template <typename VectorStoreType>
 class BoundHammingDistance final : public BoundDistanceFunction {
-private:
     using FloatType = VectorStoreType::FloatType;
+    const vespalib::hwaccelerated::IAccelerated& _accelerator;
     mutable VectorStoreType _tmpSpace;
     const std::span<const FloatType> _lhs_vector;
 public:
     explicit BoundHammingDistance(TypedCells lhs)
-        : _tmpSpace(lhs.size),
+        : _accelerator(vespalib::hwaccelerated::IAccelerated::getAccelerator()),
+          _tmpSpace(lhs.size),
           _lhs_vector(_tmpSpace.storeLhs(lhs))
     {}
     double calc(TypedCells rhs) const noexcept override {
         size_t sz = _lhs_vector.size();
         std::span<const FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         if constexpr (std::is_same<Int8Float, FloatType>::value) {
-            return (double) vespalib::binary_hamming_distance(_lhs_vector.data(), rhs_vector.data(), sz);
+            return (double)_accelerator.binary_hamming_distance(_lhs_vector.data(), rhs_vector.data(), sz);
         } else {
             size_t sum = 0;
             for (size_t i = 0; i < sz; ++i) {
