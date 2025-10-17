@@ -17,6 +17,7 @@ namespace search::streaming {
 SameElementQueryNode::SameElementQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms) noexcept
     : QueryTerm(std::move(result_base), "", index, Type::WORD, Normalizing::NONE),
       _children(),
+      _element_ids(),
       _cached_evaluate_result()
 {
     _children.reserve(num_terms);
