@@ -206,6 +206,7 @@ size_t my_hwy_binary_hamming_distance(const void* HWY_RESTRICT untyped_lhs,
                                       const void* HWY_RESTRICT untyped_rhs,
                                       const size_t sz) noexcept
 {
+#if HWY_TARGET != HWY_AVX2 && HWY_TARGET != HWY_AVX3
     // Inputs may have arbitrary byte alignments, so we have to read with an 8-bit
     // type to ensure we don't violate any natural alignment requirements. The
     // `HwyReduceKernel` code uses unaligned vector loads, so this works fine and
@@ -227,6 +228,10 @@ size_t my_hwy_binary_hamming_distance(const void* HWY_RESTRICT untyped_lhs,
 
     using MyKernel = HwyReduceKernel<UsesNAccumulators<4>, UnrolledBy<4>, HasAccumulatorArity<1>>;
     return MyKernel::pairwise(d8, d64, lhs_u8, rhs_u8, sz, hn::Zero(d64), kernel_fn, VecAdd(), LaneReduceSum());
+#else
+    // See `my_hwy_popcount` for rationale on falling back to auto-vectorized code pre-AVX3-DL x64
+    return PlatformGenericAccelerator().binary_hamming_distance(untyped_lhs, untyped_rhs, sz);
+#endif
 }
 
 // Multiply i8*i8 with the result widened to i16. Widen the intermediate i16 results to i32 and accumulate.

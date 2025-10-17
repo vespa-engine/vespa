@@ -35,6 +35,11 @@ Avx3Accelerator::squaredEuclideanDistance(const double * a, const double * b, si
     return avx::euclideanDistanceSelectAlignment<double, 64>(a, b, sz);
 }
 
+size_t
+Avx3Accelerator::binary_hamming_distance(const void* lhs, const void* rhs, size_t sz) const noexcept {
+    return helper::autovec_binary_hamming_distance(lhs, rhs, sz);
+}
+
 void
 Avx3Accelerator::and128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
     helper::andChunks<64, 2>(offset, src, dest);

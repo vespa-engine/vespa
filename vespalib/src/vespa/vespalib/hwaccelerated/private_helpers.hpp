@@ -32,7 +32,7 @@ constexpr uint8_t WORD_SZ = sizeof(uint64_t);
 constexpr uint8_t UNROLL_CNT = 4;
 }
 
-size_t
+inline size_t
 autovec_binary_hamming_distance(const void *lhs, const void *rhs, size_t sz) noexcept {
     auto addr_a = (uintptr_t) lhs;
     auto addr_b = (uintptr_t) rhs;
