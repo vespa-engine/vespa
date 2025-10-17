@@ -139,7 +139,9 @@ void FindMatchingElements::process(
 {
     if (auto same_element = as<SameElementBlueprint>(bp)) {
         if (fields.has_field(same_element->field_name())) {
+            matchData.needOnlyField(same_element->get_field().getFieldId());
             find_matching_elements(docs, *same_element, matchData, result);
+            matchData.soft_reset();
         }
     } else if (auto matching_elements_search = bp.create_matching_elements_search(fields)) {
         find_matching_elements(docs, *matching_elements_search, result);
@@ -174,16 +176,10 @@ void FindMatchingElements::process(
             uint32_t currentField = bp.getState().field(field_idx).getFieldId();
             const std::string& fieldName = idToName.lookup(currentField);
             if (fields.has_field(fieldName)) {
-                for (size_t idx = 0; idx < matchData.getNumTermFields(); ++idx) {
-                    auto &tfmd = *matchData.resolveTermField(idx);
-                    if (tfmd.getFieldId() == currentField) {
-                        tfmd.setNeedNormalFeatures(true);
-                    } else {
-                        tfmd.tagAsNotNeeded();
-                    }
-                }
+                matchData.needOnlyField(currentField);
                 SearchIterator::UP child = bp.createSearch(matchData);
                 find_matching_elements(docs, *child, fieldName, result);
+                matchData.soft_reset();
             }
         }
     }
