@@ -3,6 +3,7 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
@@ -47,6 +48,12 @@ public interface Flag<T, F extends Flag<T, F>> {
         return with(Dimension.TENANT_ID, applicationId.tenant().value())
               .with(Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance())
               .with(Dimension.INSTANCE_ID, applicationId.serializedForm());
+    }
+
+    /** Sets the tenant and application dimensions. */
+    default F with(TenantName tenantName, ApplicationName applicationName) {
+        return with(tenantName)
+              .with(Dimension.APPLICATION, ApplicationId.toSerializedForm(tenantName, applicationName));
     }
 
     /** architecture MUST NOT be 'any'. */

@@ -647,6 +647,13 @@ public class PermanentFlags {
             TENANT_ID, APPLICATION, INSTANCE_ID, ZONE_ID, ENVIRONMENT
     );
 
+    public static final UnboundBooleanFlag LOCK_APPLICATION_PACKAGE_ACCESS = defineFeatureFlag(
+            "lock-application-package-access", false,
+            "Whether application package access should be locked down",
+            "Takes effect immediately",
+            TENANT_ID, APPLICATION
+    );
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
