@@ -126,6 +126,94 @@ TEST_F(HwAcceleratedTest, dot_product_impls_match_source_of_truth) {
     }
 }
 
+// TODO dedupe with hamming_test.cpp
+
+class UnalignedPtr {
+    void*  _aligned_ptr = nullptr;
+    size_t _unalignment = 0;
+public:
+    constexpr UnalignedPtr(void* mem, size_t unalignment) noexcept
+        : _aligned_ptr(mem),
+          _unalignment(unalignment)
+    {}
+    // Make noncopyable/nonmovable for simplicity
+    UnalignedPtr(const UnalignedPtr&) = delete;
+    UnalignedPtr& operator=(const UnalignedPtr&) = delete;
+    UnalignedPtr(UnalignedPtr&&) noexcept = delete;
+    UnalignedPtr& operator=(UnalignedPtr&&) noexcept = delete;
+
+    ~UnalignedPtr() {
+        free(_aligned_ptr);
+    }
+
+    [[nodiscard]] void* as_unaligned_ptr() noexcept {
+        return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(_aligned_ptr) + _unalignment);
+    }
+};
+
+[[nodiscard]] UnalignedPtr alloc_unaligned(size_t sz, size_t unalignment = 0) {
+    constexpr size_t ALIGN = 8;
+    void* mem;
+    int r = posix_memalign(&mem, ALIGN, sz);
+    assert(r == 0);
+    return {mem, unalignment};
+}
+
+void flip_one_bit(void* memory, const void* other_memory, size_t sz) {
+    auto* buf       = reinterpret_cast<uint8_t*>(memory);
+    auto* other_buf = reinterpret_cast<const uint8_t*>(other_memory);
+    while (true) {
+        size_t byte_idx = random() % sz; // TODO non-deprecated PRNG
+        size_t bit_idx = random() % 8; // TODO non-deprecated PRNG
+        uint8_t cmp = other_buf[byte_idx];
+        uint8_t old = buf[byte_idx];
+        uint8_t bit = 1u << bit_idx;
+        if ((old & bit) == (cmp & bit)) {
+            uint8_t new_val = old ^ bit;
+            assert(old != new_val);
+            buf[byte_idx] = new_val;
+            return;
+        }
+    }
+}
+
+void check_with_flipping(std::span<const IAccelerated*> accels, void* mem_a, void* mem_b, size_t sz) {
+    memset(mem_a, 0, sz);
+    memset(mem_b, 0, sz);
+    size_t dist = 0;
+    for (const auto* accel : accels) {
+        ASSERT_EQ(accel->binary_hamming_distance(mem_a, mem_b, sz), dist) << accel->friendly_name();
+    }
+    while (dist * 2 < sz) {
+        flip_one_bit(mem_a, mem_b, sz);
+        ++dist;
+        for (const auto* accel : accels) {
+            ASSERT_EQ(accel->binary_hamming_distance(mem_a, mem_b, sz), dist) << accel->friendly_name();
+        }
+        flip_one_bit(mem_b, mem_a, sz);
+        ++dist;
+        for (const auto* accel : accels) {
+            ASSERT_EQ(accel->binary_hamming_distance(mem_a, mem_b, sz), dist) << accel->friendly_name();
+        }
+    }
+}
+
+void check_with_sizes(std::span<const IAccelerated*> accels, size_t lhs_unalign, size_t rhs_unalign) {
+    auto mem_a = alloc_unaligned(512, lhs_unalign);
+    auto mem_b = alloc_unaligned(512, rhs_unalign);
+    for (size_t sz = 0; sz <= 257; ++sz) {
+        ASSERT_NO_FATAL_FAILURE(check_with_flipping(accels, mem_a.as_unaligned_ptr(), mem_b.as_unaligned_ptr(), sz));
+    }
+}
+
+TEST_F(HwAcceleratedTest, binary_hamming_distance_with_alignments) {
+    auto accelerators = all_accelerators_to_test();
+    std::vector<std::pair<size_t, size_t>> lhs_rhs_unalignments = {{0, 0}, {1, 0}, {0, 1}, {3, 0}, {0, 7}, {2, 6}};
+    for (const auto& [lhs_unalign, rhs_unalign] : lhs_rhs_unalignments) {
+        ASSERT_NO_FATAL_FAILURE(check_with_sizes(accelerators, lhs_unalign, rhs_unalign));
+    }
+}
+
 } // vespalib::hwaccelerated
 
 GTEST_MAIN_RUN_ALL_TESTS()
