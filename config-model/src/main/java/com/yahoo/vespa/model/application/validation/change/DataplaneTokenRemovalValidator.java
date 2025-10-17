@@ -38,27 +38,31 @@ public class DataplaneTokenRemovalValidator implements ChangeValidator {
     }
 
     void validateClients(String clusterId, List<Client> current, List<Client> next, BiConsumer<ValidationId, String> reporter) {
-        List<DataplaneToken> currentTokens = current.stream()
-                .filter(client -> !client.internal())
-                .map(Client::tokens)
-                .flatMap(Collection::stream)
-                .toList();
-        List<DataplaneToken> nextTokens = next.stream()
-                                                    .filter(client -> !client.internal())
-                                                    .map(Client::tokens)
-                                                    .flatMap(Collection::stream)
-                                                    .toList();
+        List<String> currentTokenIds = current.stream()
+                                              .filter(client -> !client.internal())
+                                              .map(Client::tokens)
+                                              .flatMap(Collection::stream)
+                                              .map(DataplaneToken::tokenId)
+                                              .toList();
+        List<String> nextTokenIds = next.stream()
+                                        .filter(client -> !client.internal())
+                                        .map(Client::tokens)
+                                        .flatMap(Collection::stream)
+                                        .map(DataplaneToken::tokenId)
+                                        .toList();
 
         logger.log(Level.FINE, "Tokens for cluster %s: Current: [%s], Next: [%s]"
                 .formatted(clusterId,
-                           currentTokens.stream().map(DataplaneToken::tokenId).collect(Collectors.joining(", ")),
-                           nextTokens.stream().map(DataplaneToken::tokenId).collect(Collectors.joining(", "))));
+                           currentTokenIds.stream().collect(Collectors.joining(", ")),
+                           nextTokenIds.stream().collect(Collectors.joining(", "))));
 
-        List<DataplaneToken> missingTokens = currentTokens.stream().filter(token -> !nextTokens.contains(token)).toList();
+        List<String> missingTokens = currentTokenIds.stream()
+                                                          .filter(token -> !nextTokenIds.contains(token))
+                                                          .toList();
         if (!missingTokens.isEmpty()) {
             reporter.accept(ValidationId.dataPlaneTokenEndpointRemoval,
                             "Data plane token(s) from cluster '" + clusterId + "' is removed " +
-                            "(removed tokens: " + missingTokens.stream().map(DataplaneToken::tokenId).toList() + ") " +
+                            "(removed tokens: " + missingTokens.stream().toList() + ") " +
                             "This can cause client connection issues.");
         }
     }
