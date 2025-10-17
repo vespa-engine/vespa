@@ -239,7 +239,7 @@ public class Content extends ConfigModel {
                 if (targetCluster == null)
                     targetCluster = content.containers.iterator().next().getCluster();
 
-                addDocproc(targetCluster);
+                addDocproc(targetCluster, modelContext.getDeployState());
                 indexingCluster.setClusterName(targetCluster.getName());
                 addIndexingChainsTo(targetCluster, content, indexingCluster);
             }
@@ -318,7 +318,7 @@ public class Content extends ConfigModel {
             indexingCluster.addDefaultHandlersWithVip();
             indexingCluster.addAllPlatformBundles();
             indexingCluster.addAccessLog();
-            addDocproc(indexingCluster);
+            addDocproc(indexingCluster, modelContext.getDeployState());
 
             List<ApplicationContainer> nodes = new ArrayList<>();
             int index = 0;
@@ -350,10 +350,10 @@ public class Content extends ConfigModel {
             return null;
         }
 
-        private void addDocproc(ContainerCluster<?> cluster) {
+        private void addDocproc(ContainerCluster<?> cluster, DeployState ds) {
             // TODO get the threadpool inside here.
             if (cluster.getDocproc() == null) {
-                DocprocChains chains = new DocprocChains(cluster, "docprocchains", null);
+                DocprocChains chains = new DocprocChains(cluster, "docprocchains", new ContainerDocproc.Threadpool(ds, cluster.getDocproc().options.threadpoolXml));
                 ContainerDocproc containerDocproc = new ContainerDocproc(cluster, chains);
                 cluster.setDocproc(containerDocproc);
             }
