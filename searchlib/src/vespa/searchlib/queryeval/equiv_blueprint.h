@@ -31,8 +31,6 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
     bool isEquiv() const noexcept final { return true; }
-
-    const std::vector<Blueprint::UP>& childrenTerms() const { return _terms; }
 };
 
 }
