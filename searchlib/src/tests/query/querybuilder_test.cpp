@@ -842,7 +842,7 @@ TEST(QueryBuilderTest, require_that_empty_intermediate_node_can_be_added) {
 }
 
 TEST(QueryBuilderTest, control_size_of_SimpleQueryStackDumpIterator) {
-    EXPECT_EQ(152u, sizeof(SimpleQueryStackDumpIterator));
+    EXPECT_EQ(160u, sizeof(SimpleQueryStackDumpIterator));
 }
 
 TEST(QueryBuilderTest, test_query_parsing_error) {

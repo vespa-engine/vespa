@@ -174,6 +174,11 @@ VESPA_HWACCEL_TARGET_TYPE::populationCount(const uint64_t *a, size_t sz) const n
     return helper::populationCount(a, sz);
 }
 
+size_t
+VESPA_HWACCEL_TARGET_TYPE::binary_hamming_distance(const void* lhs, const void* rhs, size_t sz) const noexcept {
+    return helper::autovec_binary_hamming_distance(lhs, rhs, sz);
+}
+
 double
 VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) const noexcept {
     return helper::squaredEuclideanDistance(a, b, sz);

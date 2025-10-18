@@ -64,20 +64,26 @@ public:
     }
 };
 
+bool QueryBuilder::_expose_match_data_for_same_element_descendants = false;
+
 QueryBuilder::QueryBuilder()
     : _same_element_view(),
-      _hidden_terms(0u)
+      _hidden_terms(0u),
+      _expose_match_data_for_same_element(true)
 {
 }
 
 QueryBuilder::~QueryBuilder() = default;
 
 void
-QueryBuilder::adjust_index(std::string& index)
+QueryBuilder::adjust_index(std::string& index, bool ranked)
 {
     if (index.empty()) {
         if (_same_element_view.has_value() && !_same_element_view.value().empty()) {
             index = _same_element_view.value();
+            if (ranked) {
+                _expose_match_data_for_same_element = false;
+            }
         } else {
             index = QueryStackIterator::DEFAULT_INDEX;
         }
@@ -155,7 +161,7 @@ QueryBuilder::build(const QueryNode * parent, const QueryNodeResultFactory& fact
                 parent != nullptr) {
                 index = parent->getIndex();
             } else {
-                adjust_index(index);
+                adjust_index(index, !queryRep.hasNoRankFlag() && !hidden_terms());
             }
             TermType sTerm = ParseItem::toTermType(type);
             QueryTerm::string ssTerm;
@@ -332,7 +338,7 @@ std::unique_ptr<QueryNode>
 QueryBuilder::build_phrase_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep)
 {
     std::string index(queryRep.index_as_view());
-    adjust_index(index);
+    adjust_index(index, !queryRep.hasNoRankFlag() && !hidden_terms());
     auto phrase = std::make_unique<PhraseQueryNode>(factory.create(), index, queryRep.getArity());
     auto arity = queryRep.getArity();
     phrase->setWeight(queryRep.GetWeight());
@@ -377,15 +383,23 @@ QueryBuilder::build_same_element_term(const QueryNodeResultFactory& factory, Que
 {
     auto sen = std::make_unique<SameElementQueryNode>(factory.create(), queryRep.index_as_string(), queryRep.getArity());
     _same_element_view = queryRep.index_as_string();
+    _expose_match_data_for_same_element = true;
     auto arity = queryRep.getArity();
     sen->setWeight(queryRep.GetWeight());
     sen->setUniqueId(queryRep.getUniqueId());
+    HiddenTermsGuard hidden_terms_guard(*this);
+    if (!_expose_match_data_for_same_element_descendants) {
+        hidden_terms_guard.activate();
+    }
     for (size_t i = 0; i < arity; ++i) {
         queryRep.next();
         auto qn = build(sen.get(), factory, queryRep, false);
         sen->add_child(std::move(qn));
     }
     _same_element_view.reset();
+    if (!_expose_match_data_for_same_element) {
+        sen->setRanked(false);
+    }
     return sen;
 }
 

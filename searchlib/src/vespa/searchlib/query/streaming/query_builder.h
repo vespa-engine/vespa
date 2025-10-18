@@ -32,10 +32,13 @@ class QueryBuilder {
 
     std::optional<std::string> _same_element_view;
     uint32_t _hidden_terms;
+    bool                       _expose_match_data_for_same_element;
 
-    void adjust_index(std::string& index);
+    void adjust_index(std::string& index, bool ranked);
     bool hidden_terms() const noexcept { return _hidden_terms != 0u; }
 public:
+    static bool                _expose_match_data_for_same_element_descendants;
+
     QueryBuilder();
     ~QueryBuilder();
     std::unique_ptr<QueryNode> build(const QueryNode * parent, const QueryNodeResultFactory& factory, QueryStackIterator & queryRep, bool allowRewrite);

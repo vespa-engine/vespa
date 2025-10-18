@@ -10,10 +10,12 @@ com.amazonaws:aws-java-sdk-ssm:${aws-sdk.vespa.version}
 com.amazonaws:aws-java-sdk-sts:${aws-sdk.vespa.version}
 com.amazonaws:jmespath-java:${aws-sdk.vespa.version}
 com.auth0:java-jwt:${java-jwt.vespa.version}
+com.ethlo.time:itu:1.10.3
 com.fasterxml.jackson.core:jackson-annotations:${jackson2.vespa.version}
 com.fasterxml.jackson.core:jackson-core:${jackson2.vespa.version}
 com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}
 com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${jackson2.vespa.version}
+com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jackson2.vespa.version}
 com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.vespa.version}
 com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}
 com.fasterxml.jackson.module:jackson-module-kotlin:${jackson2.vespa.version}
@@ -37,6 +39,7 @@ com.huaban:jieba-analysis:${jieba.vespa.version}
 com.ibm.icu:icu4j:${icu4j.vespa.version}
 com.kotcrab.remark:remark:1.0.0
 com.microsoft.onnxruntime:onnxruntime:${onnxruntime.vespa.version}
+com.networknt:json-schema-validator:1.5.7
 com.openai:openai-java-client-okhttp:${openai-java.vespa.version}
 com.openai:openai-java-core:${openai-java.vespa.version}
 com.openai:openai-java:${openai-java.vespa.version}
@@ -98,6 +101,7 @@ io.jsonwebtoken:jjwt-jackson:${java-jjwt.vespa.version}
 io.micrometer:micrometer-commons:${micrometer.vespa.version}
 io.micrometer:micrometer-core:${micrometer.vespa.version}
 io.micrometer:micrometer-observation:${micrometer.vespa.version}
+io.modelcontextprotocol.sdk:mcp:0.11.2
 io.netty:netty-buffer:${netty.vespa.version}
 io.netty:netty-codec-http2:4.1.112.Final
 io.netty:netty-codec-http:4.1.112.Final
@@ -117,6 +121,7 @@ io.netty:netty-transport-native-epoll:${netty.vespa.version}:linux-x86_64
 io.netty:netty-transport-native-unix-common:${netty.vespa.version}
 io.netty:netty-transport:${netty.vespa.version}
 io.perfmark:perfmark-api:0.27.0
+io.projectreactor:reactor-core:3.7.0
 io.prometheus:simpleclient:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_common:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_tracer_common:${prometheus.client.vespa.version}
@@ -278,6 +283,7 @@ org.testcontainers:testcontainers:${testcontainers.vespa.version}
 org.tukaani:xz:1.9
 org.wiremock:wiremock-standalone:${wiremock.vespa.version}
 org.xerial.snappy:snappy-java:${snappy.vespa.version}
+org.yaml:snakeyaml:${snakeyaml.vespa.version}
 software.amazon.awssdk:annotations:${aws-sdk2.vespa.version}
 software.amazon.awssdk:apache-client:${aws-sdk2.vespa.version}
 software.amazon.awssdk:auth:${aws-sdk2.vespa.version}

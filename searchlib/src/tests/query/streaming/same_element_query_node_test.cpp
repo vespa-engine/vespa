@@ -6,6 +6,7 @@
 #include <vespa/searchlib/fef/simpletermdata.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/query/streaming/query.h>
+#include <vespa/searchlib/query/streaming/query_builder.h>
 #include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/searchlib/query/streaming/queryterm.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
@@ -50,6 +51,25 @@ private:
 };
 
 AllowRewrite::~AllowRewrite() = default;
+
+class QueryBuilderTweak {
+    using QueryBuilder = search::streaming::QueryBuilder;
+    bool _old_expose_match_data_for_same_element_descendants;
+public:
+    QueryBuilderTweak(bool expose_match_data_for_same_element_descendants);
+    ~QueryBuilderTweak();
+};
+
+QueryBuilderTweak::QueryBuilderTweak(bool expose_match_data_for_same_element_descendants)
+    : _old_expose_match_data_for_same_element_descendants(QueryBuilder::_expose_match_data_for_same_element_descendants)
+{
+    QueryBuilder::_expose_match_data_for_same_element_descendants = expose_match_data_for_same_element_descendants;
+}
+
+QueryBuilderTweak::~QueryBuilderTweak()
+{
+    QueryBuilder::_expose_match_data_for_same_element_descendants = _old_expose_match_data_for_same_element_descendants;
+}
 
 }
 
@@ -144,7 +164,7 @@ SameElementQueryNodeTest::make_query(QueryTweak query_tweak, const std::vector<s
         }
         vespalib::asciistream s;
         s << "s" << idx;
-        builder.addStringTerm(s.str(), "field", idx, Weight(0));
+        builder.addStringTerm(s.str(), "", idx, Weight(0));
     }
     auto node = builder.build();
     auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*node);
@@ -166,6 +186,7 @@ SameElementQueryNodeTest::make_query(QueryTweak query_tweak, const std::vector<s
     for (uint32_t idx = 0; idx < elementsvv.size(); ++idx) {
         auto& elementsv = elementsvv[idx];
         auto* term = terms[idx];
+        EXPECT_NE(top.isRanked(), term->isRanked());
         auto& qtd = static_cast<QueryTermData &>(term->getQueryItem());
         auto& td = qtd.getTermData();
         td.addField(field_id).setHandle(idx);
@@ -283,11 +304,22 @@ TEST_F(SameElementQueryNodeTest, and_below_same_element)
     std::vector<std::vector<uint32_t>> elementsvv9({ { 4, 6, 9, 10 }, { 3, 9, 13 } });
     EXPECT_TRUE(evaluate_query(QueryTweak::AND, elementsvv3));
     EXPECT_EQ((std::vector<uint32_t>{ 7, 12 }), get_element_ids(QueryTweak::AND, elementsvv3));
-    EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 7, 12 }, { 7, 12 } }),
-              extract_element_ids(QueryTweak::AND, elementsvv3));
     EXPECT_TRUE(evaluate_query(QueryTweak::AND, elementsvv9));
     EXPECT_EQ((std::vector<uint32_t>{ 9 }), get_element_ids(QueryTweak::AND, elementsvv9));
-    EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 9 }, { 9 } }), extract_element_ids(QueryTweak::AND, elementsvv9));
+    {
+        QueryBuilderTweak query_builder_tweak(false);
+        SCOPED_TRACE("query_builder_tweak false");
+        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::AND, elementsvv3));
+        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::AND, elementsvv9));
+    }
+    {
+        QueryBuilderTweak query_builder_tweak(true);
+        SCOPED_TRACE("query_builder_tweak true");
+        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 7, 12 }, { 7, 12 } }),
+                  extract_element_ids(QueryTweak::AND, elementsvv3));
+        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 9 }, { 9 } }),
+                  extract_element_ids(QueryTweak::AND, elementsvv9));
+    }
 }
 
 TEST_F(SameElementQueryNodeTest, or_below_same_element)
@@ -296,10 +328,20 @@ TEST_F(SameElementQueryNodeTest, or_below_same_element)
     std::vector<std::vector<uint32_t>> elementsvv9({ { 6 }, { 4, 9 } });
     EXPECT_TRUE(evaluate_query(QueryTweak::OR, elementsvv3));
     EXPECT_EQ((std::vector<uint32_t>{ 5, 7, 10, 12 }), get_element_ids(QueryTweak::OR, elementsvv3));
-    EXPECT_EQ((std::vector<std::vector<uint32_t>>{{ 5, 10 }, { 7, 12 } }),
-              extract_element_ids(QueryTweak::OR, elementsvv3));
     EXPECT_TRUE(evaluate_query(QueryTweak::OR, elementsvv9));
     EXPECT_EQ((std::vector<uint32_t>{ 4, 6, 9 }), get_element_ids(QueryTweak::OR, elementsvv9));
-    EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 6 }, { 4, 9} }),
-              extract_element_ids(QueryTweak::OR, elementsvv9));
+    {
+        QueryBuilderTweak query_builder_tweak(false);
+        SCOPED_TRACE("query_builder_tweak false");
+        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::OR, elementsvv3));
+        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::OR, elementsvv9));
+    }
+    {
+        QueryBuilderTweak query_builder_tweak(true);
+        SCOPED_TRACE("query_builder_tweak true");
+        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 5, 10 }, { 7, 12 } }),
+                  extract_element_ids(QueryTweak::OR, elementsvv3));
+        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 6 }, { 4, 9 } }),
+                  extract_element_ids(QueryTweak::OR, elementsvv9));
+    }
 }

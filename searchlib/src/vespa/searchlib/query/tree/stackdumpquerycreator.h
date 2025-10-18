@@ -94,10 +94,14 @@ private:
             builder.addEquiv(arity, id, weight);
         } else if (type == ParseItem::ITEM_NEAR) {
             uint32_t nearDistance = queryStack.getNearDistance();
-            builder.addNear(arity, nearDistance, 0, 0); // TODO: wire negative params
+            uint32_t negativeTerms = queryStack.getNegativeTerms();
+            uint32_t exclusionDistance = queryStack.getExclusionDistance();
+            builder.addNear(arity, nearDistance, negativeTerms, exclusionDistance);
         } else if (type == ParseItem::ITEM_ONEAR) {
             uint32_t nearDistance = queryStack.getNearDistance();
-            builder.addONear(arity, nearDistance, 0, 0); // TODO: wire negative params
+            uint32_t negativeTerms = queryStack.getNegativeTerms();
+            uint32_t exclusionDistance = queryStack.getExclusionDistance();
+            builder.addONear(arity, nearDistance, negativeTerms, exclusionDistance);
         } else if (type == ParseItem::ITEM_PHRASE) {
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();

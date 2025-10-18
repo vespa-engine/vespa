@@ -95,6 +95,11 @@ void register_all_benchmark_suites() {
     register_benchmarks<BFloat16>("Dot Product", dot_product_fn);
     register_benchmarks<int8_t>("Dot Product", dot_product_fn);
 
+    auto binary_hamming_fn = [](const IAccelerated& accelerator, const auto* lhs, const auto* rhs, size_t my_sz) {
+        return accelerator.binary_hamming_distance(lhs, rhs, my_sz);
+    };
+    register_benchmarks<uint8_t>("Binary Hamming Distance", binary_hamming_fn);
+
     auto popcount_fn = [](const IAccelerated& accelerator, const auto* lhs, const auto* rhs, size_t my_sz) {
         (void)rhs; // ... a little bit sneaky; overestimates bytes processed/sec by 2x
         return accelerator.populationCount(lhs, my_sz);

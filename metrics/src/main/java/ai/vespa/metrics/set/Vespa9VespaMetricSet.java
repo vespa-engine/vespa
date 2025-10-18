@@ -79,7 +79,6 @@ public class Vespa9VespaMetricSet {
     private static Set<Metric> getOtherMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        addMetric(metrics, SlobrokMetrics.SLOBROK_HEARTBEATS_FAILED.count());
         addMetric(metrics, SlobrokMetrics.SLOBROK_MISSING_CONSENSUS.count());
 
         addMetric(metrics, LogdMetrics.LOGD_PROCESSED_LINES.count());
@@ -91,9 +90,6 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_CLIENT_TLS_CONNECTIONS_ESTABLISHED.baseName());
         addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_SERVER_UNENCRYPTED_CONNECTIONS_ESTABLISHED.baseName());
         addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED.baseName());
-
-        // C++ Fnet metrics
-        addMetric(metrics, StorageMetrics.VDS_SERVER_FNET_NUM_CONNECTIONS.count());
 
         // NodeAdmin certificate
         addMetric(metrics, NodeAdminMetrics.ENDPOINT_CERTIFICATE_EXPIRY_SECONDS.baseName());
@@ -231,7 +227,6 @@ public class Vespa9VespaMetricSet {
         Set<Metric> metrics = new LinkedHashSet<>();
 
         addMetric(metrics, ContainerMetrics.PEAK_QPS.max());
-        addMetric(metrics, ContainerMetrics.SEARCH_CONNECTIONS, EnumSet.of(sum, count, max));
         addMetric(metrics, ContainerMetrics.QUERIES.rate());
         addMetric(metrics, ContainerMetrics.QUERY_CONTAINER_LATENCY, EnumSet.of(sum, count, max));
         addMetric(metrics, ContainerMetrics.QUERY_LATENCY, EnumSet.of(sum, count, max, ninety_five_percentile, ninety_nine_percentile));
@@ -244,7 +239,6 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.DOCUMENTS_COVERED.count());
         addMetric(metrics, ContainerMetrics.DOCUMENTS_TOTAL.count());
         addMetric(metrics, ContainerMetrics.DOCUMENTS_TARGET_TOTAL.count());
-        addMetric(metrics, ContainerMetrics.QUERY_ITEM_COUNT, EnumSet.of(max, sum, count));
         addMetric(metrics, ContainerMetrics.TOTAL_HITS_PER_QUERY, EnumSet.of(sum, count, max, ninety_five_percentile, ninety_nine_percentile));
         addMetric(metrics, ContainerMetrics.EMPTY_RESULTS.rate());
         addMetric(metrics, ContainerMetrics.REQUESTS_OVER_QUOTA, EnumSet.of(rate, count));
@@ -463,24 +457,16 @@ public class Vespa9VespaMetricSet {
 
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_COUNT.rate());
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_FAILED.rate());
-        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_TEST_AND_SET_FAILED.rate());
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_LATENCY, EnumSet.of(max, sum, count));
-        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_REQUEST_SIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_COUNT.rate());
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_FAILED.rate());
-        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_TEST_AND_SET_FAILED.rate());
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_LATENCY, EnumSet.of(max, sum, count));
-        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_REQUEST_SIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_GET_COUNT.rate());
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_GET_FAILED.rate());
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_GET_LATENCY, EnumSet.of(max, sum, count));
-        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_GET_REQUEST_SIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_COUNT.rate());
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_FAILED.rate());
-        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_TEST_AND_SET_FAILED.rate());
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_LATENCY, EnumSet.of(max, sum, count));
-        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_REQUEST_SIZE, EnumSet.of(max, sum, count));
-        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_CREATEITERATOR_COUNT.rate());
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_CREATEITERATOR_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_VISIT_COUNT.rate());
         addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_VISIT_LATENCY, EnumSet.of(max, sum, count));
@@ -511,13 +497,8 @@ public class Vespa9VespaMetricSet {
 
     private static Set<Metric> getDistributorMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_BUCKETS_RECHECKING.average());
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_IDEALSTATE_DIFF.average());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_BUCKETS_TOOFEWCOPIES.average());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_BUCKETS_TOOMANYCOPIES.average());
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_BUCKETS.average());
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_BUCKETS_NOTRUSTED.average());
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_MAX_OBSERVED_TIME_SINCE_LAST_GC_SEC.average());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_DELETE_BUCKET_DONE_OK.rate());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_DELETE_BUCKET_DONE_FAILED.rate());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_DELETE_BUCKET_PENDING.average());
@@ -533,56 +514,25 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_GARBAGE_COLLECTION_DONE_OK.rate());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_GARBAGE_COLLECTION_DONE_FAILED.rate());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_GARBAGE_COLLECTION_PENDING.average());
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_GARBAGE_COLLECTION_DOCUMENTS_REMOVED, EnumSet.of(count, rate));
+        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_GARBAGE_COLLECTION_DOCUMENTS_REMOVED, EnumSet.of(rate));
 
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_PUTS_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_PUTS_OK.rate());
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_PUTS_FAILURES_TOTAL.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_PUTS_FAILURES_NOTFOUND.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_PUTS_FAILURES_TEST_AND_SET_FAILED.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_PUTS_FAILURES_CONCURRENT_MUTATIONS.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_PUTS_FAILURES_NOTCONNECTED.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_PUTS_FAILURES_NOTREADY.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_PUTS_FAILURES_WRONGDISTRIBUTOR.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_PUTS_FAILURES_SAFE_TIME_NOT_REACHED.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_PUTS_FAILURES_STORAGEFAILURE.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_PUTS_FAILURES_TIMEOUT.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_PUTS_FAILURES_BUSY.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_PUTS_FAILURES_INCONSISTENT_BUCKET.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_REMOVES_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_REMOVES_LATENCY, EnumSet.of(max));
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_REMOVES_OK.rate());
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_REMOVES_FAILURES_TOTAL.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_REMOVES_FAILURES_NOTFOUND.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_REMOVES_FAILURES_TEST_AND_SET_FAILED.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_REMOVES_FAILURES_CONCURRENT_MUTATIONS.rate());
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_UPDATES_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_UPDATES_OK.rate());
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_UPDATES_FAILURES_TOTAL.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_UPDATES_FAILURES_NOTFOUND.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_UPDATES_FAILURES_TEST_AND_SET_FAILED.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_UPDATES_FAILURES_CONCURRENT_MUTATIONS.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_UPDATES_DIVERGING_TIMESTAMP_UPDATES.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_REMOVELOCATIONS_OK.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_REMOVELOCATIONS_FAILURES_TOTAL.rate());
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_GETS_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_GETS_OK.rate());
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_GETS_FAILURES_TOTAL.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_GETS_FAILURES_NOTFOUND.rate());
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_VISITOR_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_VISITOR_OK.rate());
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_VISITOR_FAILURES_TOTAL.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_VISITOR_FAILURES_NOTREADY.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_VISITOR_FAILURES_NOTCONNECTED.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_VISITOR_FAILURES_WRONGDISTRIBUTOR.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_VISITOR_FAILURES_SAFE_TIME_NOT_REACHED.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_VISITOR_FAILURES_STORAGEFAILURE.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_VISITOR_FAILURES_TIMEOUT.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_VISITOR_FAILURES_BUSY.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_VISITOR_FAILURES_INCONSISTENT_BUCKET.rate());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_VISITOR_FAILURES_NOTFOUND.rate());
 
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_DOCSSTORED.average());
-        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_BYTESSTORED.average());
 
         addMetric(metrics, DistributorMetrics.VDS_BOUNCER_CLOCK_SKEW_ABORTS.count());
 

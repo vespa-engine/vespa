@@ -108,27 +108,40 @@ RankProcessor::resolve_fields_from_term(QueryTermData& qtd, const search::stream
 }
 
 void
+RankProcessor::add_same_element_descendant_terms(search::streaming::SameElementQueryNode& same_element)
+{
+    QueryTermList descendant_terms;
+    same_element.get_hidden_leaves(descendant_terms);
+    for (auto& term : descendant_terms) {
+        maybe_add_query_term(*term);
+    }
+}
+
+void
 RankProcessor::maybe_add_query_term(search::streaming::QueryTerm& term)
 {
-    if (!term.isRanked()) {
-        return;
-    }
-    QueryTermData& qtd = dynamic_cast<QueryTermData&>(term.getQueryItem());
+    if (term.isRanked()) {
+        QueryTermData& qtd = dynamic_cast<QueryTermData&>(term.getQueryItem());
 
-    qtd.getTermData().setWeight(term.weight());
-    qtd.getTermData().setUniqueId(term.uniqueId());
-    qtd.getTermData().setPhraseLength(term.width());
-    auto* nn_term = term.as_nearest_neighbor_query_node();
-    if (nn_term != nullptr) {
-        qtd.getTermData().set_query_tensor_name(nn_term->get_query_tensor_name());
+        qtd.getTermData().setWeight(term.weight());
+        qtd.getTermData().setUniqueId(term.uniqueId());
+        qtd.getTermData().setPhraseLength(term.width());
+        auto* nn_term = term.as_nearest_neighbor_query_node();
+        if (nn_term != nullptr) {
+            qtd.getTermData().set_query_tensor_name(nn_term->get_query_tensor_name());
+        }
+        auto* eqn = term.as_equiv_query_node();
+        if (eqn != nullptr) {
+            resolve_fields_from_children(qtd, *eqn);
+        } else {
+            resolve_fields_from_term(qtd, term);
+        }
+        _queryEnv.addTerm(&qtd.getTermData());
     }
-    auto* eqn = term.as_equiv_query_node();
-    if (eqn != nullptr) {
-        resolve_fields_from_children(qtd, *eqn);
-    } else {
-        resolve_fields_from_term(qtd, term);
+    auto* same_element = term.as_same_element_query_node();
+    if (same_element != nullptr) {
+        add_same_element_descendant_terms(*same_element);
     }
-    _queryEnv.addTerm(&qtd.getTermData());
 }
 
 void
@@ -137,8 +150,6 @@ RankProcessor::initQueryEnvironment()
     QueryWrapper::TermList & terms = _query.getTermList();
 
     for (auto& term : terms) {
-        if (!term->isRanked()) continue;
-
         if (term->isGeoLoc()) {
             const std::string & fieldName = term->index();
             const std::string & locStr = term->getTermString();

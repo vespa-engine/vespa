@@ -22,6 +22,7 @@ namespace vespalib::hwaccelerated { // NOLINT: must nest namespaces
 namespace HWY_NAMESPACE {
 
 namespace hn = hwy::HWY_NAMESPACE;
+namespace {
 
 // Must always be undef'd to ensure we expand the correct HWY_ATTR per target.
 #undef VESPA_NOEXCEPT_HWY_ATTR
@@ -200,6 +201,38 @@ size_t my_hwy_popcount(const uint64_t* a, const size_t sz) noexcept {
 #endif
 }
 
+HWY_INLINE
+size_t my_hwy_binary_hamming_distance(const void* HWY_RESTRICT untyped_lhs,
+                                      const void* HWY_RESTRICT untyped_rhs,
+                                      const size_t sz) noexcept
+{
+#if HWY_TARGET != HWY_AVX2 && HWY_TARGET != HWY_AVX3
+    // Inputs may have arbitrary byte alignments, so we have to read with an 8-bit
+    // type to ensure we don't violate any natural alignment requirements. The
+    // `HwyReduceKernel` code uses unaligned vector loads, so this works fine and
+    // with effectively the same performance regardless of input alignment.
+    // We then do the vector equivalent of reinterpret_cast (which is well-defined)
+    // to treat each set of 8x 8-bit lanes as 1x u64 lane before running 64-bit
+    // xor -> popcount -> accumulate operations.
+    const auto* lhs_u8 = static_cast<const uint8_t*>(untyped_lhs);
+    const auto* rhs_u8 = static_cast<const uint8_t*>(untyped_rhs);
+
+    const hn::ScalableTag<uint8_t> d8;
+    const hn::RepartitionToWideX3<decltype(d8)> d64;
+
+    const auto kernel_fn = [d64](auto lhs, auto rhs, auto& accu) VESPA_NOEXCEPT_HWY_ATTR {
+        auto lhs_u64 = hn::BitCast(d64, lhs);
+        auto rhs_u64 = hn::BitCast(d64, rhs);
+        accu = hn::Add(hn::PopulationCount(hn::Xor(lhs_u64, rhs_u64)), accu);
+    };
+
+    using MyKernel = HwyReduceKernel<UsesNAccumulators<4>, UnrolledBy<4>, HasAccumulatorArity<1>>;
+    return MyKernel::pairwise(d8, d64, lhs_u8, rhs_u8, sz, hn::Zero(d64), kernel_fn, VecAdd(), LaneReduceSum());
+#else
+    // See `my_hwy_popcount` for rationale on falling back to auto-vectorized code pre-AVX3-DL x64
+    return PlatformGenericAccelerator().binary_hamming_distance(untyped_lhs, untyped_rhs, sz);
+#endif
+}
 
 // Multiply i8*i8 with the result widened to i16. Widen the intermediate i16 results to i32 and accumulate.
 // Depending on the implementation, the intermediate i16 widening step may be transparently done.
@@ -268,6 +301,8 @@ const char* my_hwy_target_name() noexcept {
     return hn::Lanes(d8) * 8;
 }
 
+} // anon ns
+
 // Since we already do a virtual dispatch via the IAccelerated interface, avoid needing an
 // additional per-function dispatch step via Highway's function tables by creating a concrete
 // implementation class per target.
@@ -288,6 +323,9 @@ public:
     }
     size_t populationCount(const uint64_t* a, size_t sz) const noexcept override {
         return my_hwy_popcount(a, sz);
+    }
+    size_t binary_hamming_distance(const void* lhs, const void* rhs, size_t sz) const noexcept override {
+        return my_hwy_binary_hamming_distance(lhs, rhs, sz);
     }
     double squaredEuclideanDistance(const int8_t* a, const int8_t* b, size_t sz) const noexcept override {
         return my_hwy_square_euclidean_distance_int8(a, b, sz);
