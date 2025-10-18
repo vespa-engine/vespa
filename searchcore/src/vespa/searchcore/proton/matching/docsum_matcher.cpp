@@ -7,6 +7,7 @@
 #include "field_id_to_name_mapper.h"
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/equiv_blueprint.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/queryeval/matching_elements_search.h>
@@ -25,6 +26,7 @@ using search::fef::MatchData;
 using search::fef::RankProgram;
 using search::queryeval::AndNotBlueprint;
 using search::queryeval::Blueprint;
+using search::queryeval::EquivBlueprint;
 using search::queryeval::IntermediateBlueprint;
 using search::queryeval::MatchingElementsSearch;
 using search::queryeval::MatchingPhase;
@@ -168,6 +170,10 @@ void FindMatchingElements::process(
     } else if (auto intermediate = as<IntermediateBlueprint>(bp)) {
         for (size_t i = 0; i < intermediate->childCnt(); ++i) {
             process(docs, intermediate->getChild(i));
+        }
+    } else if (auto equiv = as<EquivBlueprint>(bp)) {
+        for (const auto& child_bp : equiv->childrenTerms()) {
+            process(docs, *child_bp);
         }
     } else if (bp.getState().numFields() == 1) {
         uint32_t currentField = bp.getState().field(0).getFieldId();
