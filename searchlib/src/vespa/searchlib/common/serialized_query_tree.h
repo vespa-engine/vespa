@@ -34,6 +34,15 @@ public:
     SerializedQueryTree(std::vector<char> stackDump, std::unique_ptr<ProtobufQueryTree> protoQueryTree, ctor_tag tag);
     ~SerializedQueryTree();
     static const SerializedQueryTree& empty();
+
+    auto apply(auto mapper) const {
+        if (_protoQueryTree) {
+            return mapper.fromProto(*_protoQueryTree);
+        } else {
+            auto iterator = makeIterator();
+            return mapper.fromIterator(*iterator);
+        }
+    }
 private:
     std::vector<char> _stackDump;
     std::unique_ptr<ProtobufQueryTree> _protoQueryTree;
