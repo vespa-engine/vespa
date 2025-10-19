@@ -201,6 +201,7 @@ public:
                                            max_edit_distance, prefix_lock_length, prefix_match);
         if (d.noRankFlag) term.setRanked(false);
         if (d.noPositionDataFlag) term.setPositionData(false);
+        if (prefix_match) term.set_prefix_match(true); // nop?
         return true;
     }
 
@@ -208,6 +209,9 @@ public:
         auto d = fillTermProperties(item.properties());
         uint32_t arity = item.children_size();
         _builder.addEquiv(arity, d.uniqueId, d.weight);
+        // not supported:
+        // if (d.noRankFlag) term.setRanked(false);
+        // if (d.noPositionDataFlag) term.setPositionData(false);
         for (const auto &child : item.children()) {
             if (!handle_item(child)) {
                 return false;
@@ -224,7 +228,10 @@ public:
             auto word = child.value();
             words->addTerm(word, weight);
         }
-        _builder.add_word_alternatives(std::move(words), d.index_view, d.uniqueId, d.weight);
+        auto &term = _builder.add_word_alternatives(std::move(words), d.index_view, d.uniqueId, d.weight);
+        // compare equiv above
+        if (d.noRankFlag) term.setRanked(false);
+        if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
     }
 
@@ -232,6 +239,8 @@ public:
         auto d = fillTermProperties(item.properties());
         uint32_t arity = item.weighted_strings_size();
         auto & ws = _builder.addWeightedSetTerm(arity, d.index_view, d.uniqueId, d.weight);
+        if (d.noRankFlag) ws.setRanked(false);
+        if (d.noPositionDataFlag) ws.setPositionData(false);
         for (const auto &child : item.weighted_strings()) {
             query::Weight weight(child.weight());
             ws.addTerm(child.value(), weight);
@@ -243,6 +252,8 @@ public:
         auto d = fillTermProperties(item.properties());
         uint32_t arity = item.weighted_longs_size();
         auto & ws = _builder.addWeightedSetTerm(arity, d.index_view, d.uniqueId, d.weight);
+        if (d.noRankFlag) ws.setRanked(false);
+        if (d.noPositionDataFlag) ws.setPositionData(false);
         for (const auto &child : item.weighted_longs()) {
             query::Weight weight(child.weight());
             ws.addTerm(child.value(), weight);
@@ -253,7 +264,10 @@ public:
     bool handle(const ItemPhrase& item) {
         auto d = fillTermProperties(item.properties());
         uint32_t arity = item.children_size();
-        _builder.addPhrase(arity, d.index_view, d.uniqueId, d.weight);
+        auto &term = _builder.addPhrase(arity, d.index_view, d.uniqueId, d.weight);
+        if (d.noRankFlag) term.setRanked(false);
+        // not meaningful?
+        // if (d.noPositionDataFlag) term.setPositionData(false);
         for (const auto &child : item.children()) {
             if (!handle_item(child)) {
                 return false;
@@ -265,16 +279,20 @@ public:
     bool handle(const ItemIntegerTerm& item) {
         auto d = fillTermProperties(item.properties());
         int64_t number = item.number();
-        std::string term = std::format("{}", number);
-        _builder.addNumberTerm(term, d.index_view, d.uniqueId, d.weight);
+        std::string word = std::format("{}", number);
+        auto &term = _builder.addNumberTerm(word, d.index_view, d.uniqueId, d.weight);
+        if (d.noRankFlag) term.setRanked(false);
+        if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
     }
 
     bool handle(const ItemFloatingPointTerm& item) {
         auto d = fillTermProperties(item.properties());
         double number = item.number();
-        std::string term = std::format("{}", number);
-        _builder.addNumberTerm(term, d.index_view, d.uniqueId, d.weight);
+        std::string word = std::format("{}", number);
+        auto &term = _builder.addNumberTerm(word, d.index_view, d.uniqueId, d.weight);
+        if (d.noRankFlag) term.setRanked(false);
+        if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
     }
 
@@ -298,7 +316,9 @@ public:
             }
         }
         tmp += e_mark;
-        _builder.addNumberTerm(tmp, d.index_view, d.uniqueId, d.weight);
+        auto &term = _builder.addNumberTerm(tmp, d.index_view, d.uniqueId, d.weight);
+        if (d.noRankFlag) term.setRanked(false);
+        if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
     }
     bool handle(const ItemFloatingPointRangeTerm& item) {
@@ -321,14 +341,18 @@ public:
             }
         }
         tmp += e_mark;
-        _builder.addNumberTerm(tmp, d.index_view, d.uniqueId, d.weight);
+        auto &term = _builder.addNumberTerm(tmp, d.index_view, d.uniqueId, d.weight);
+        if (d.noRankFlag) term.setRanked(false);
+        if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
     }
 
     bool handle(const ItemSameElement& item) {
         auto d = fillTermProperties(item.properties());
         uint32_t arity = item.children_size();
-        _builder.addSameElement(arity, d.index_view, d.uniqueId, d.weight);
+        auto &term = _builder.addSameElement(arity, d.index_view, d.uniqueId, d.weight);
+        if (d.noRankFlag) term.setRanked(false);
+        if (d.noPositionDataFlag) term.setPositionData(false);
         for (const auto &child : item.children()) {
             if (!handle_item(child)) {
                 return false;
@@ -341,6 +365,8 @@ public:
         auto d = fillTermProperties(item.properties());
         uint32_t arity = item.weighted_strings_size();
         auto & dp = _builder.addDotProduct(arity, d.index_view, d.uniqueId, d.weight);
+        if (d.noRankFlag) dp.setRanked(false);
+        if (d.noPositionDataFlag) dp.setPositionData(false);
         for (const auto &child : item.weighted_strings()) {
             query::Weight weight(child.weight());
             dp.addTerm(child.value(), weight);
@@ -352,6 +378,8 @@ public:
         auto d = fillTermProperties(item.properties());
         uint32_t arity = item.weighted_longs_size();
         auto & dp = _builder.addDotProduct(arity, d.index_view, d.uniqueId, d.weight);
+        if (d.noRankFlag) dp.setRanked(false);
+        if (d.noPositionDataFlag) dp.setPositionData(false);
         for (const auto &child : item.weighted_longs()) {
             query::Weight weight(child.weight());
             dp.addTerm(child.value(), weight);
@@ -366,6 +394,8 @@ public:
         double scoreThreshold = item.score_threshold();
         double thresholdBoostFactor = item.threshold_boost_factor();
         auto & wand = _builder.addWandTerm(arity, d.index_view, d.uniqueId, d.weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
+        if (d.noRankFlag) wand.setRanked(false);
+        if (d.noPositionDataFlag) wand.setPositionData(false);
         for (const auto &child : item.weighted_strings()) {
             query::Weight weight(child.weight());
             wand.addTerm(child.value(), weight);
@@ -380,6 +410,8 @@ public:
         double scoreThreshold = item.score_threshold();
         double thresholdBoostFactor = item.threshold_boost_factor();
         auto & wand = _builder.addWandTerm(arity, d.index_view, d.uniqueId, d.weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
+        if (d.noRankFlag) wand.setRanked(false);
+        if (d.noPositionDataFlag) wand.setPositionData(false);
         for (const auto &child : item.weighted_longs()) {
             query::Weight weight(child.weight());
             wand.addTerm(child.value(), weight);
@@ -404,7 +436,11 @@ public:
             uint64_t sub_queries = range.sub_queries();
             predicateQueryTerm->addRangeFeature(key, value, sub_queries);
         }
-        _builder.addPredicateQuery(std::move(predicateQueryTerm), d.index_view, d.uniqueId, d.weight);
+        auto &term = _builder.addPredicateQuery(std::move(predicateQueryTerm), d.index_view, d.uniqueId, d.weight);
+        // not meaningful?
+        if (d.noRankFlag) term.setRanked(false);
+        // not meaningful?
+        if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
     }
 
@@ -416,9 +452,13 @@ public:
         bool allowApproximate = item.allow_approximate();
         uint32_t exploreAdditionalHits = item.explore_additional_hits();
         double distanceThreshold = item.distance_threshold();
-        _builder.add_nearest_neighbor_term(query_tensor_name, d.index_view, d.uniqueId, d.weight,
+        auto &term = _builder.add_nearest_neighbor_term(query_tensor_name, d.index_view, d.uniqueId, d.weight,
                                            targetNumHits, allowApproximate, exploreAdditionalHits,
                                            distanceThreshold);
+        // not meaningful?
+        if (d.noRankFlag) term.setRanked(false);
+        // not meaningful?
+        if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
     }
 
@@ -461,6 +501,10 @@ public:
         } else {
             return false;
         }
+        // not meaningful?
+        // if (d.noRankFlag) term.setRanked(false);
+        // not meaningful:
+        // if (d.noPositionDataFlag) term.setPositionData(false);
     }
 
 
@@ -471,8 +515,10 @@ public:
         for (const auto& word : item.words()) {
             terms->addTerm(word);
         }
-        _builder.add_in_term(std::move(terms), query::MultiTerm::Type::STRING,
+        auto &term = _builder.add_in_term(std::move(terms), query::MultiTerm::Type::STRING,
                              d.index_view, d.uniqueId, d.weight);
+        if (d.noRankFlag) term.setRanked(false);
+        if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
     }
 
@@ -483,8 +529,10 @@ public:
         for (int64_t number : item.numbers()) {
             terms->addTerm(number);
         }
-        _builder.add_in_term(std::move(terms), query::MultiTerm::Type::INTEGER,
+        auto &term = _builder.add_in_term(std::move(terms), query::MultiTerm::Type::INTEGER,
                              d.index_view, d.uniqueId, d.weight);
+        if (d.noRankFlag) term.setRanked(false);
+        if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
     }
 
