@@ -74,3 +74,11 @@ vespa_add_executable(searchcore_tag_needed_handles_test_app TEST
     GTest::gtest
 )
 vespa_add_test(NAME searchcore_tag_needed_handles_test_app COMMAND searchcore_tag_needed_handles_test_app)
+vespa_add_executable(searchcore_field_splitter_test_app TEST
+    SOURCES
+    field_splitter_test.cpp
+    DEPENDS
+    searchcore_matching
+    GTest::gtest
+)
+vespa_add_test(NAME searchcore_field_splitter_test_app COMMAND searchcore_field_splitter_test_app)

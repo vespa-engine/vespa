@@ -8,6 +8,7 @@ vespa_add_library(searchcore_matching STATIC
     document_scorer.cpp
     extract_features.cpp
     fakesearchcontext.cpp
+    field_splitter.cpp
     handlerecorder.cpp
     i_match_loop_communicator.cpp
     indexenvironment.cpp
