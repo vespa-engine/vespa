@@ -205,7 +205,10 @@ public:
     }
 
     void visit(ProtonSameElement &node) override {
-        addLine("SAMEELEMENT(view='" + node.getView() + "')");
+        std::string line = "SAMEELEMENT(view='" + node.getView() + "'";
+        line += dumpProtonTermData(node);
+        line += ")";
+        addLine(line);
         visitChildren(node.getChildren());
     }
 
