@@ -4,7 +4,6 @@
 
 #include "queryreplicator.h"
 #include "stackdumpquerycreator.h"
-#include <vespa/searchlib/query/proto_tree_converter.h>
 
 namespace search::query {
 
@@ -23,16 +22,7 @@ struct QueryTreeCreator {
         return StackDumpQueryCreator<NodeTypes>().create(iterator);
     }
 
-    QueryTreeCreator() = default;
-    ~QueryTreeCreator() = default;
-
-    Node::UP fromIterator(search::QueryStackIterator &iterator) {
-        return create(iterator);
-    }
-
-    Node::UP fromProto(const search::ProtobufQueryTree& proto_query_tree) {
-        return ProtoTreeConverter<NodeTypes>::convert(proto_query_tree);
-    }
+    QueryTreeCreator() = delete;
 };
 
 }
