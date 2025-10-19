@@ -401,8 +401,15 @@ private:
 
     // Helper to create a non-split SameElement (pass-through)
     void handleWithoutSplit(ProtonSameElement &node) {
-        _builder.addSameElement(node.getChildren().size(), node.getView(),
-                               node.getId(), node.getWeight()).set_expensive(node.is_expensive());
+        auto &replica = _builder.addSameElement(node.getChildren().size(), node.getView(),
+                                               node.getId(), node.getWeight());
+        replica.set_expensive(node.is_expensive());
+
+        // Copy ProtonTermData state - should have exactly one field when not splitting
+        if (node.numFields() == 1) {
+            copyProtonTermDataForField(node, replica, 0);
+        }
+
         visitNodes(node.getChildren());
     }
 
