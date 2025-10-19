@@ -921,6 +921,7 @@ void FieldSplitterVisitor::replicateTermForField<ProtonInTerm>(ProtonInTerm &nod
 }
 
 Node::UP FieldSplitter::split_terms(Node::UP root) {
+    LOG(debug, "field splitting input tree:\n%s", protonTreeToString(*root).c_str());
     FieldSplitterVisitor visitor;
     root->accept(visitor);
     Node::UP result = visitor.build();
