@@ -445,6 +445,8 @@ public class VespaModelTestCase {
                 .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
                 .build();
 
+        String configId = "default/component/com.yahoo.docproc.jdisc.DocumentProcessingHandler/threadpool@docproc-handler";
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
         {
             var properties = new TestProperties()
                     .setHostedVespa(true)
@@ -457,9 +459,9 @@ public class VespaModelTestCase {
 
             var model = new VespaModel(new NullConfigModelRegistry(), deployState);
             var builder = new ContainerThreadpoolConfig.Builder();
-            var b = model.getConfig(ContainerThreadpoolConfig.class, "default/component/com.yahoo.docproc.jdisc.DocumentProcessingHandler");
-            assertEquals(Runtime.getRuntime().availableProcessors() / 2, b.maxThreads());
-            assertEquals(Runtime.getRuntime().availableProcessors() / 2, b.minThreads());
+            var b = model.getConfig(ContainerThreadpoolConfig.class, configId);
+            assertEquals(availableProcessors / 2, b.maxThreads());
+            assertEquals(availableProcessors / 2, b.minThreads());
         }
 
         {
@@ -468,10 +470,10 @@ public class VespaModelTestCase {
                     .build();
 
             var model = new VespaModel(new NullConfigModelRegistry(), deployState);
-            var builder = new ContainerThreadpoolConfig.Builder();
-            model.getConfig(builder, "default/component/com.yahoo.docproc.jdisc.DocumentProcessingHandler");
-            assertEquals(builder.build().maxThreads(), Runtime.getRuntime().availableProcessors());
-            assertEquals(builder.build().minThreads(), Runtime.getRuntime().availableProcessors());
+            var b = model.getConfig(ContainerThreadpoolConfig.class, configId);
+
+            assertEquals(b.maxThreads(), availableProcessors);
+            assertEquals(b.minThreads(), availableProcessors);
         }
 
         {
@@ -486,9 +488,11 @@ public class VespaModelTestCase {
 
             var model = new VespaModel(new NullConfigModelRegistry(), deployState);
             var builder = new ContainerThreadpoolConfig.Builder();
-            model.getConfig(builder, "default/component/com.yahoo.docproc.jdisc.DocumentProcessingHandler");
-            assertEquals(10, builder.build().maxThreads());
-            assertEquals(10, builder.build().minThreads());
+            model.getConfig(builder, configId);
+
+            ContainerThreadpoolConfig config = builder.build();
+            assertEquals(10, config.maxThreads());
+            assertEquals(10, config.minThreads());
         }
     }
 

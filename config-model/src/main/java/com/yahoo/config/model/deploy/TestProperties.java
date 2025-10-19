@@ -81,7 +81,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
     private boolean useNewPrepareForRestart = false;
     private Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
-    private double documentProcessorHandlerThreadpoolThreads;
+    private double documentProcessorHandlerThreadpoolThreads = 1;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
