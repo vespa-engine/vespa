@@ -2,6 +2,7 @@
 
 #include "query.h"
 #include "blueprintbuilder.h"
+#include "field_splitter.h"
 #include "matchdatareservevisitor.h"
 #include "resolveviewvisitor.h"
 #include "sameelementmodifier.h"
@@ -195,6 +196,7 @@ Query::buildTree(const SerializedQueryTree &queryTree, const string &location,
         _query_tree = UnpackingIteratorsOptimizer::optimize(std::move(_query_tree), bool(_whiteListBlueprint));
         ResolveViewVisitor resolve_visitor(resolver, indexEnv);
         _query_tree->accept(resolve_visitor);
+        _query_tree = FieldSplitter::split_terms(std::move(_query_tree));
         NeedsRankingVisitor need_ranking_visitor;
         _query_tree->accept(need_ranking_visitor);
         _needs_ranking = need_ranking_visitor.needs_ranking();
@@ -231,7 +233,6 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
 {
     MatchDataReserveVisitor reserve_visitor(mdl);
     _query_tree->accept(reserve_visitor);
-
     _blueprint = BlueprintBuilder::build(requestContext, *_query_tree, std::move(_whiteListBlueprint), context);
     LOG(debug, "original blueprint:\n%s\n", _blueprint->asString().c_str());
 }
