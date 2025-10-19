@@ -374,6 +374,50 @@ private:
         _force_field_id = saved_field_id;
     }
 
+    // Helper to get field IDs from a ProtonTermData node
+    std::set<uint32_t> getFieldIds(const ProtonTermData &term_data) const {
+        std::set<uint32_t> fields;
+        for (size_t i = 0; i < term_data.numFields(); ++i) {
+            fields.insert(term_data.field(i).getFieldId());
+        }
+        return fields;
+    }
+
+    // Helper to check if all children have the same field set
+    bool allChildrenHaveSameFields(const std::vector<Node *> &children, const std::set<uint32_t> &expected_fields) const {
+        for (Node *child : children) {
+            auto* term_data = dynamic_cast<ProtonTermData*>(child);
+            if (!term_data || term_data->numFields() == 0) {
+                return false;
+            }
+
+            std::set<uint32_t> child_fields = getFieldIds(*term_data);
+            if (child_fields != expected_fields) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Helper to create a non-split SameElement (pass-through)
+    void handleWithoutSplit(ProtonSameElement &node) {
+        _builder.addSameElement(node.getChildren().size(), node.getView(),
+                               node.getId(), node.getWeight()).set_expensive(node.is_expensive());
+        visitNodes(node.getChildren());
+    }
+
+    // Helper to split SameElement across multiple fields
+    void splitSameElementByFields(ProtonSameElement &node, const std::set<uint32_t> &fields) {
+        _builder.addOr(fields.size());
+
+        for (uint32_t field_id : fields) {
+            auto &replica = _builder.addSameElement(node.getChildren().size(), node.getView(),
+                                                   node.getId(), node.getWeight());
+            replica.set_expensive(node.is_expensive());
+            splitAndVisitChildrenForField(node.getChildren(), field_id);
+        }
+    }
+
     void copyState(const search::query::Term &original, search::query::Term &replica) {
         replica.setRanked(original.isRanked());
         replica.setPositionData(original.usePositionData());
@@ -605,9 +649,34 @@ public:
     }
 
     void visit(ProtonSameElement &node) override {
-        _builder.addSameElement(node.getChildren().size(), node.getView(),
-                               node.getId(), node.getWeight()).set_expensive(node.is_expensive());
-        visitNodes(node.getChildren());
+        // Check if we can split this SameElement by fields
+        // SameElement is-a ProtonTermData, so check its fields first
+        // We can split if:
+        // 1. SameElement has multiple fields
+        // 2. All children have the same set of fields
+
+        // Check SameElement's own fields first
+        if (node.numFields() <= 1) {
+            // No splitting needed - single field or no fields
+            LOG(debug, "SameElement not split: has %zu field(s)", node.numFields());
+            handleWithoutSplit(node);
+            return;
+        }
+
+        // Get the field set from SameElement
+        std::set<uint32_t> same_element_fields = getFieldIds(node);
+
+        // Check if all children have the same field set as SameElement
+        if (!allChildrenHaveSameFields(node.getChildren(), same_element_fields)) {
+            // Children have different fields or lack field info - can't split
+            LOG(debug, "SameElement not split: children have different fields or lack field info");
+            handleWithoutSplit(node);
+            return;
+        }
+
+        // All children have the same multiple fields as SameElement - split like Phrase
+        LOG(debug, "Splitting SameElement across %zu fields", same_element_fields.size());
+        splitSameElementByFields(node, same_element_fields);
     }
 
     // Terms that need splitting
