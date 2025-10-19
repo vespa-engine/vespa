@@ -14,6 +14,9 @@
 #include "field_spec.hpp"
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.queryeval.intermediate_blueprints");
+
 namespace search::queryeval {
 
 //-----------------------------------------------------------------------------
@@ -486,6 +489,7 @@ Blueprint::UP
 WeakAndBlueprint::get_replacement()
 {
     if (childCnt() == 0) {
+        LOG(debug, "EmptyBlueprint: WeakAnd has no children");
         return std::make_unique<EmptyBlueprint>();
     }
     if (childCnt() == 1) {

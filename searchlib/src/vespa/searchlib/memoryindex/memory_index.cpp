@@ -190,6 +190,11 @@ MemoryIndex::createBlueprint(const IRequestContext & requestContext,
 {
     uint32_t fieldId = _schema.getIndexFieldId(field.getName());
     if (fieldId == Schema::UNKNOWN_FIELD_ID || _hiddenFields[fieldId]) {
+        if (fieldId == Schema::UNKNOWN_FIELD_ID) {
+            LOG(debug, "EmptyBlueprint: Unknown field '%s' in memory index", field.getName().c_str());
+        } else {
+            LOG(debug, "EmptyBlueprint: Hidden field '%s' in memory index", field.getName().c_str());
+        }
         return std::make_unique<EmptyBlueprint>(field);
     }
     CreateBlueprintVisitor visitor(*this, requestContext, field, fieldId, *_fieldIndexes);

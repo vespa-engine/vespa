@@ -13,6 +13,9 @@
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/vespalib/util/issue.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.matching.blueprintbuilder");
+
 using namespace search::queryeval;
 using search::query::Node;
 
@@ -35,6 +38,7 @@ struct Mixer {
     Blueprint::UP mix(Blueprint::UP indexes) {
         if ( ! attributes) {
             if ( ! indexes) {
+                LOG(debug, "EmptyBlueprint: term has no attributes and no indexes");
                 return std::make_unique<EmptyBlueprint>();
             }
             return indexes;
@@ -131,6 +135,7 @@ private:
             }
             _result = std::move(se);
         } else {
+            LOG(debug, "EmptyBlueprint: SameElement operator has unexpected number of fields (expected 1, got %zu)", n.numFields());
             vespalib::Issue::report("SameElement operator searches in unexpected number of fields. Expected 1 but was %zu", n.numFields());
             _result = std::make_unique<EmptyBlueprint>();
         }
@@ -194,6 +199,7 @@ protected:
         _result = std::make_unique<AlwaysTrueBlueprint>();
     }
     void visit(ProtonFalse &) override {
+        LOG(debug, "EmptyBlueprint: ProtonFalse query node (expected behavior)");
         _result = std::make_unique<EmptyBlueprint>();
     }
     void visit(ProtonFuzzyTerm &n)      override { buildTerm(n); }

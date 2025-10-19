@@ -400,6 +400,9 @@ make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribut
     if (location.bounding_box.x.low > location.bounding_box.x.high ||
         location.bounding_box.y.low > location.bounding_box.y.high)
     {
+        LOG(debug, "EmptyBlueprint: Location has invalid bounding box (x:[%d,%d] y:[%d,%d])",
+            location.bounding_box.x.low, location.bounding_box.x.high,
+            location.bounding_box.y.low, location.bounding_box.y.high);
         return std::make_unique<queryeval::EmptyBlueprint>(field);
     }
     ZCurve::RangeVector rangeVector = ZCurve::find_ranges(
@@ -634,6 +637,7 @@ public:
     void visitPredicate(PredicateQuery &query) {
         const auto *attr = dynamic_cast<const PredicateAttribute *>(&_attr);
         if (!attr) {
+            LOG(debug, "EmptyBlueprint: PredicateQuery on non-predicate attribute '%s'", _field.getName().c_str());
             Issue::report("Trying to apply a PredicateQuery node to a non-predicate attribute.");
             setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
         } else {
@@ -658,6 +662,7 @@ public:
                         .diversityCutoffStrict(parsed_term.getDiversityCutoffStrict());
                 setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, stack, scParams));
             } else {
+                LOG(debug, "EmptyBlueprint: Invalid diversity attribute for field '%s'", _field.getName().c_str());
                 setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
             }
         } else {
@@ -755,6 +760,8 @@ public:
     }
 
     void fail_nearest_neighbor_term(query::NearestNeighborTerm&n, const std::string& error_msg) {
+        LOG(debug, "EmptyBlueprint: NearestNeighborTerm(%s, %s) failed: %s",
+            _field.getName().c_str(), n.get_query_tensor_name().c_str(), error_msg.c_str());
         Issue::report("NearestNeighborTerm(%s, %s): %s. Returning empty blueprint",
                       _field.getName().c_str(), n.get_query_tensor_name().c_str(), error_msg.c_str());
         setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
@@ -830,6 +837,7 @@ AttributeBlueprintFactory::createBlueprint(const IRequestContext & requestContex
 {
     const IAttributeVector *attr(requestContext.getAttribute(field.getName()));
     if (attr == nullptr) {
+        LOG(debug, "EmptyBlueprint: Attribute not found: %s", field.getName().c_str());
         Issue::report("attribute not found: %s", field.getName().c_str());
         return std::make_unique<queryeval::EmptyBlueprint>(field);
     }
@@ -838,6 +846,8 @@ AttributeBlueprintFactory::createBlueprint(const IRequestContext & requestContex
         const_cast<Node &>(term).accept(visitor);
         return visitor.getResult();
     } catch (const vespalib::UnsupportedOperationException &e) {
+        LOG(debug, "EmptyBlueprint: Unsupported operation for attribute %s: %s",
+            field.getName().c_str(), e.what());
         Issue::report(e);
         return std::make_unique<queryeval::EmptyBlueprint>(field);
     }

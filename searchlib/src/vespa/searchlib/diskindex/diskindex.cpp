@@ -215,6 +215,7 @@ createBlueprintHelper(DiskIndex & diskIndex, const IRequestContext & requestCont
         const_cast<Node &>(term).accept(visitor);
         return visitor.getResult();
     }
+    LOG(debug, "EmptyBlueprint: Unknown field '%s' in disk index", field.getName().c_str());
     return std::make_unique<EmptyBlueprint>(field);
 }
 
@@ -232,6 +233,7 @@ Blueprint::UP
 DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term)
 {
     if (fields.empty()) {
+        LOG(debug, "EmptyBlueprint: Empty FieldSpecList in disk index");
         return std::make_unique<EmptyBlueprint>();
     }
 
