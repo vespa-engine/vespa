@@ -531,7 +531,7 @@ private:
 
     template <typename NodeType>
     void splitTerm(NodeType &node) {
-        // If we're forced to use a specific field (inside a phrase), use only that field
+        // If we're forced to use a specific field (inside SameElement), use only that field
         if (_force_field_id != search::fef::IllegalFieldId) {
             // Find the matching field index
             for (size_t i = 0; i < node.numFields(); ++i) {
@@ -827,14 +827,17 @@ void FieldSplitterVisitor::replicateTermForField<ProtonWordAlternatives>(ProtonW
     auto &replica = _builder.add_word_alternatives(
         replicate_subterms(node), getFieldNameOrView(node, field_idx), node.getId(), node.getWeight());
     copyState(node, replica);
+    if (node.numFields() == 0) {
+        // this happens when WordAlternatives is inside Phrase
+        //
+        return;
+    }
     copyProtonTermDataForField(node, replica, field_idx);
 
-    // If there are children, copy the field entry to them
-    if (!replica.children.empty()) {
-        const auto &field_entry = node.field(field_idx);
-        for (auto& child : replica.children) {
-            child->useFieldEntry(field_entry);
-        }
+    // Copy the correct field entry to the children:
+    const auto &field_entry = node.field(field_idx);
+    for (auto& child : replica.children) {
+        child->useFieldEntry(field_entry);
     }
 }
 
