@@ -1317,8 +1317,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (docprocElement == null)
             return null;
 
-        ContainerThreadpool threadpool = new ContainerDocproc.Threadpool(deployState, spec); // .... create anonymous instance by subclassing
-
+        ContainerThreadpool threadpool = new ContainerDocproc.Threadpool(deployState, docprocElement);
         addIncludes(docprocElement);
         ContainerDocproc.Options docprocOptions = DocprocOptionsBuilder.build(docprocElement, deployState.getDeployLogger());
         DocprocChains chains = new DomDocprocChainsBuilder(null, false, threadpool).build(deployState, cluster, docprocElement);
