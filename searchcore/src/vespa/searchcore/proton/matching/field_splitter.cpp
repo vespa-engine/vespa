@@ -338,14 +338,15 @@ std::string protonTreeToString(Node &root) {
  *       Equiv(child2_author))
  *
  * Special handling:
- * - Phrase nodes: Children are forced to use the same field as the phrase
+ * - Phrase nodes: Children won't have fields, so they are visited as-is
+ * - SameElement nodes: Children are forced to use the same field as the SameElement
  * - Equiv nodes: Gathers children by field, creating one Equiv per field
  * - Multi-term nodes: WeightedSet, DotProduct, WandTerm, InTerm, WordAlternatives
- * - Forced field mode: When inside a Phrase, children must use the phrase's field
+ * - Forced field mode: When inside a SameElement, children must use the SameElement's field
  *
  * State:
  * - _builder: QueryBuilder for constructing the transformed tree
- * - _force_field_id: When set, forces children to use this specific field (for Phrase)
+ * - _force_field_id: When set, forces children to use this specific field (for SameElement)
  * - _has_error: Set when field splitting fails (e.g., forced field not found)
  *
  * Usage:
@@ -360,25 +361,27 @@ private:
     uint32_t _force_field_id = search::fef::IllegalFieldId;
     bool _has_error = false;
 
+    // ===== Node Traversal Helpers =====
+
     void visitNodes(const std::vector<Node *> &nodes) {
         for (auto node : nodes) {
             node->accept(*this);
         }
     }
 
-    // Helper to split and visit children with a forced field
+    // Helper to visit children with a forced field (used for SameElement)
+    // Sets _force_field_id temporarily so that child terms only use the specified field
     void splitAndVisitChildrenForField(const std::vector<Node *> &nodes, uint32_t field_id) {
-        // Save and restore forced field id
         uint32_t saved_field_id = _force_field_id;
         _force_field_id = field_id;
-        for (Node *child : nodes) {
-            child->accept(*this);
-        }
+        visitNodes(nodes);
         _force_field_id = saved_field_id;
     }
 
+    // ===== Field Analysis Helpers =====
+
     // Helper to get field IDs from a ProtonTermData node
-    std::set<uint32_t> getFieldIds(const ProtonTermData &term_data) const {
+    static std::set<uint32_t> getFieldIds(const ProtonTermData &term_data) {
         std::set<uint32_t> fields;
         for (size_t i = 0; i < term_data.numFields(); ++i) {
             fields.insert(term_data.field(i).getFieldId());
@@ -387,48 +390,52 @@ private:
     }
 
     // Helper to check if all children have the same field set
-    bool allChildrenHaveSameFields(const std::vector<Node *> &children, const std::set<uint32_t> &expected_fields) const {
+    static bool allChildrenHaveSameFields(const std::vector<Node *> &children, const std::set<uint32_t> &expected_fields) {
         for (Node *child : children) {
             auto* term_data = dynamic_cast<ProtonTermData*>(child);
-            if (!term_data || term_data->numFields() == 0) {
+            if (!term_data || term_data->numFields() != expected_fields.size()) {
                 return false;
             }
-
-            std::set<uint32_t> child_fields = getFieldIds(*term_data);
-            if (child_fields != expected_fields) {
+            if (getFieldIds(*term_data) != expected_fields) {
                 return false;
             }
         }
         return true;
     }
 
-    // Helper to create a non-split SameElement (pass-through)
-    void handleWithoutSplit(ProtonSameElement &node) {
+    // ===== Node-Specific Helpers =====
+
+    // Helper to create SameElement replica with common properties
+    ProtonSameElement& createSameElementReplica(ProtonSameElement &node) {
         auto &replica = _builder.addSameElement(node.getChildren().size(), node.getView(),
                                                node.getId(), node.getWeight());
         replica.set_expensive(node.is_expensive());
+        return replica;
+    }
 
+    // Helper to create a non-split SameElement (pass-through)
+    void handleWithoutSplit(ProtonSameElement &node) {
+        auto &replica = createSameElementReplica(node);
         // Copy ProtonTermData state - should have exactly one field when not splitting
         if (node.numFields() == 1) {
             copyProtonTermDataForField(node, replica, 0);
         }
-
         visitNodes(node.getChildren());
     }
 
     // Helper to split SameElement across multiple fields
+    // Children are forced to use each specific field via splitAndVisitChildrenForField
     void splitSameElementByFields(ProtonSameElement &node, const std::set<uint32_t> &fields) {
         _builder.addOr(fields.size());
-
         for (uint32_t field_id : fields) {
-            auto &replica = _builder.addSameElement(node.getChildren().size(), node.getView(),
-                                                   node.getId(), node.getWeight());
-            replica.set_expensive(node.is_expensive());
+            createSameElementReplica(node);
             splitAndVisitChildrenForField(node.getChildren(), field_id);
         }
     }
 
-    void copyState(const search::query::Term &original, search::query::Term &replica) {
+    // ===== Term State Copying Helpers =====
+
+    static void copyState(const search::query::Term &original, search::query::Term &replica) {
         replica.setRanked(original.isRanked());
         replica.setPositionData(original.usePositionData());
         replica.set_prefix_match(original.prefix_match());
@@ -436,47 +443,44 @@ private:
 
     // Helper to copy ProtonTermData state for a specific field
     template <typename TermType>
-    void copyProtonTermDataForField(TermType &original, TermType &replica, size_t field_idx) {
+    static void copyProtonTermDataForField(TermType &original, TermType &replica, size_t field_idx) {
         // Copy the specific field entry from original to replica
         if (field_idx < original.numFields()) {
-            const auto &field_entry = original.field(field_idx);
-            replica.copyFieldEntry(field_entry);
+            replica.copyFieldEntry(original.field(field_idx));
         }
     }
 
     // Helper to replicate subterms for multi-term nodes
-    std::unique_ptr<TermVector> replicate_subterms(const MultiTerm& original) {
+    static std::unique_ptr<TermVector> replicate_subterms(const MultiTerm& original) {
         uint32_t num_terms = original.getNumTerms();
         switch (original.getType()) {
         case MultiTerm::Type::STRING: {
             auto replica = std::make_unique<StringTermVector>(num_terms);
             for (uint32_t i = 0; i < num_terms; i++) {
-                auto v = original.getAsString(i);
-                replica->addTerm(v.first);
+                replica->addTerm(original.getAsString(i).first);
             }
             return replica;
         }
         case MultiTerm::Type::WEIGHTED_STRING: {
             auto replica = std::make_unique<WeightedStringTermVector>(num_terms);
             for (uint32_t i = 0; i < num_terms; i++) {
-                auto v = original.getAsString(i);
-                replica->addTerm(v.first, v.second);
+                auto [term, weight] = original.getAsString(i);
+                replica->addTerm(term, weight);
             }
             return replica;
         }
         case MultiTerm::Type::INTEGER: {
             auto replica = std::make_unique<IntegerTermVector>(num_terms);
             for (uint32_t i = 0; i < num_terms; i++) {
-                auto v = original.getAsInteger(i);
-                replica->addTerm(v.first);
+                replica->addTerm(original.getAsInteger(i).first);
             }
             return replica;
         }
         case MultiTerm::Type::WEIGHTED_INTEGER: {
             auto replica = std::make_unique<WeightedIntegerTermVector>(num_terms);
             for (uint32_t i = 0; i < num_terms; i++) {
-                auto v = original.getAsInteger(i);
-                replica->addTerm(v.first, v.second);
+                auto [value, weight] = original.getAsInteger(i);
+                replica->addTerm(value, weight);
             }
             return replica;
         }
@@ -485,6 +489,8 @@ private:
         }
         return std::make_unique<WeightedStringTermVector>(num_terms);
     }
+
+    // ===== Error Handling Helpers =====
 
     // Helper to get node type name for error reporting
     template <typename NodeType>
@@ -507,6 +513,18 @@ private:
         else return "UnknownNode";
     }
 
+    // ===== Term Splitting Logic =====
+
+    // Helper to get the view/field name for a term being replicated
+    // Uses the field name from field_idx if available, otherwise falls back to the node's view
+    template <typename NodeType>
+    const std::string& getFieldNameOrView(NodeType &node, size_t field_idx) const {
+        if (field_idx < node.numFields()) {
+            return node.field(field_idx).getName();
+        }
+        return node.getView();
+    }
+
     // Helper to replicate a term for a specific field
     template <typename NodeType>
     void replicateTermForField(NodeType &node, size_t field_idx);
@@ -523,6 +541,8 @@ private:
                 }
             }
             // Field not found - report error and set error flag
+            LOG(debug, "field splitting for %s failed: forced field_id %u not found in node's %zu fields",
+                getNodeTypeName<NodeType>(), _force_field_id, node.numFields());
             vespalib::Issue::report("field splitting for %s failed: forced field_id %u not found in node's %zu fields",
                                    getNodeTypeName<NodeType>(), _force_field_id, node.numFields());
             _has_error = true;
@@ -590,66 +610,58 @@ public:
         visitNodes(node.getChildren());
     }
 
-    void visit(ProtonEquiv &node) override {
-        // Approach: Determine which fields are present in each child,
-        // then create one Equiv per field containing only children that have that field
-
-        // Build map: field_id -> list of original child indices that have this field
+    // Helper to build field-to-children mapping for Equiv nodes
+    std::map<uint32_t, std::vector<size_t>> buildFieldToChildrenMap(const std::vector<Node *> &children) {
         std::map<uint32_t, std::vector<size_t>> field_to_children;
-        const auto& children = node.getChildren();
-
         for (size_t child_idx = 0; child_idx < children.size(); ++child_idx) {
-            Node *child = children[child_idx];
-            if (auto* term_data = dynamic_cast<ProtonTermData*>(child)) {
+            if (auto* term_data = dynamic_cast<ProtonTermData*>(children[child_idx])) {
                 for (size_t i = 0; i < term_data->numFields(); ++i) {
-                    uint32_t field_id = term_data->field(i).getFieldId();
-                    field_to_children[field_id].push_back(child_idx);
+                    field_to_children[term_data->field(i).getFieldId()].push_back(child_idx);
                 }
             }
         }
+        return field_to_children;
+    }
+
+    // Helper to create and populate an Equiv node for a specific field
+    void createEquivForField(ProtonEquiv &node, uint32_t field_id,
+                            const std::vector<size_t> &child_indices) {
+        auto &replica = _builder.addEquiv(child_indices.size(), node.getId(), node.getWeight());
+
+        // Visit each child with forced field
+        uint32_t saved_field_id = _force_field_id;
+        _force_field_id = field_id;
+        for (size_t idx : child_indices) {
+            node.getChildren()[idx]->accept(*this);
+        }
+        _force_field_id = saved_field_id;
+
+        // Resolve field metadata from children
+        replica.resolveFromChildren(replica.getChildren());
+    }
+
+    void visit(ProtonEquiv &node) override {
+        // Build map: field_id -> list of original child indices that have this field
+        auto field_to_children = buildFieldToChildrenMap(node.getChildren());
 
         if (field_to_children.empty()) {
+            LOG(debug, "field splitting for Equiv node failed: no fields found in any children (id=%d, weight=%d, num_children=%zu)",
+                node.getId(), node.getWeight().percent(), node.getChildren().size());
             vespalib::Issue::report("field splitting for Equiv node failed: no fields found in any children (id=%d, weight=%d, num_children=%zu)",
-                                   node.getId(), node.getWeight().percent(), children.size());
+                                   node.getId(), node.getWeight().percent(), node.getChildren().size());
             _has_error = true;
             return;
         }
 
         if (field_to_children.size() == 1) {
             // Only one field - create single Equiv with all children
-            uint32_t field_id = field_to_children.begin()->first;
-            const auto& child_indices = field_to_children.begin()->second;
-
-            auto &replica = _builder.addEquiv(child_indices.size(), node.getId(), node.getWeight());
-
-            // Visit each child with forced field
-            uint32_t saved_field_id = _force_field_id;
-            _force_field_id = field_id;
-            for (size_t idx : child_indices) {
-                children[idx]->accept(*this);
-            }
-            _force_field_id = saved_field_id;
-
-            // Resolve field metadata from children
-            replica.resolveFromChildren(replica.getChildren());
+            const auto& [field_id, child_indices] = *field_to_children.begin();
+            createEquivForField(node, field_id, child_indices);
         } else {
             // Multiple fields - create OR with one Equiv per field
             _builder.addOr(field_to_children.size());
-
-            for (auto& [field_id, child_indices] : field_to_children) {
-                // Create Equiv with only the children that have this field
-                auto &replica = _builder.addEquiv(child_indices.size(), node.getId(), node.getWeight());
-
-                // Visit each child with forced field
-                uint32_t saved_field_id = _force_field_id;
-                _force_field_id = field_id;
-                for (size_t idx : child_indices) {
-                    children[idx]->accept(*this);
-                }
-                _force_field_id = saved_field_id;
-
-                // Resolve field metadata from children
-                replica.resolveFromChildren(replica.getChildren());
+            for (const auto& [field_id, child_indices] : field_to_children) {
+                createEquivForField(node, field_id, child_indices);
             }
         }
     }
@@ -658,35 +670,29 @@ public:
         splitTerm(node);
     }
 
-    void visit(ProtonSameElement &node) override {
-        // Check if we can split this SameElement by fields
-        // SameElement is-a ProtonTermData, so check its fields first
-        // We can split if:
+    // Helper to determine if SameElement can be split by fields
+    bool canSplitSameElement(ProtonSameElement &node) const {
+        // Can split if:
         // 1. SameElement has multiple fields
-        // 2. All children have the same set of fields
-
-        // Check SameElement's own fields first
+        // 2. All children have the same set of fields as the SameElement
         if (node.numFields() <= 1) {
-            // No splitting needed - single field or no fields
-            LOG(debug, "SameElement not split: has %zu field(s)", node.numFields());
-            handleWithoutSplit(node);
-            return;
+            return false;
         }
+        return allChildrenHaveSameFields(node.getChildren(), getFieldIds(node));
+    }
 
-        // Get the field set from SameElement
-        std::set<uint32_t> same_element_fields = getFieldIds(node);
-
-        // Check if all children have the same field set as SameElement
-        if (!allChildrenHaveSameFields(node.getChildren(), same_element_fields)) {
-            // Children have different fields or lack field info - can't split
-            LOG(debug, "SameElement not split: children have different fields or lack field info");
+    void visit(ProtonSameElement &node) override {
+        if (!canSplitSameElement(node)) {
+            LOG(debug, "SameElement not split: has %zu field(s), children have incompatible fields",
+                node.numFields());
             handleWithoutSplit(node);
             return;
         }
 
         // All children have the same multiple fields as SameElement - split like Phrase
-        LOG(debug, "Splitting SameElement across %zu fields", same_element_fields.size());
-        splitSameElementByFields(node, same_element_fields);
+        auto fields = getFieldIds(node);
+        LOG(debug, "Splitting SameElement across %zu fields", fields.size());
+        splitSameElementByFields(node, fields);
     }
 
     // Terms that need splitting
@@ -771,82 +777,32 @@ public:
 };
 
 // Template specializations for replicateTermForField
-template <>
-void FieldSplitterVisitor::replicateTermForField<ProtonNumberTerm>(ProtonNumberTerm &node, size_t field_idx) {
-    auto &replica = _builder.addNumberTerm(
-        node.getTerm(), node.field(field_idx).getName(),
-        node.getId(), node.getWeight());
-    copyState(node, replica);
-    copyProtonTermDataForField(node, replica, field_idx);
+// Helper macro to reduce boilerplate for simple term types
+#define REPLICATE_SIMPLE_TERM(TermType, builderMethod) \
+template <> \
+void FieldSplitterVisitor::replicateTermForField<TermType>(TermType &node, size_t field_idx) { \
+    auto &replica = _builder.builderMethod( \
+        node.getTerm(), getFieldNameOrView(node, field_idx), \
+        node.getId(), node.getWeight()); \
+    copyState(node, replica); \
+    copyProtonTermDataForField(node, replica, field_idx); \
 }
 
-template <>
-void FieldSplitterVisitor::replicateTermForField<ProtonStringTerm>(ProtonStringTerm &node, size_t field_idx) {
-    auto &replica = _builder.addStringTerm(
-        node.getTerm(), node.field(field_idx).getName(),
-        node.getId(), node.getWeight());
-    copyState(node, replica);
-    copyProtonTermDataForField(node, replica, field_idx);
-}
+REPLICATE_SIMPLE_TERM(ProtonNumberTerm, addNumberTerm)
+REPLICATE_SIMPLE_TERM(ProtonStringTerm, addStringTerm)
+REPLICATE_SIMPLE_TERM(ProtonPrefixTerm, addPrefixTerm)
+REPLICATE_SIMPLE_TERM(ProtonSubstringTerm, addSubstringTerm)
+REPLICATE_SIMPLE_TERM(ProtonSuffixTerm, addSuffixTerm)
+REPLICATE_SIMPLE_TERM(ProtonRangeTerm, addRangeTerm)
+REPLICATE_SIMPLE_TERM(ProtonLocationTerm, addLocationTerm)
+REPLICATE_SIMPLE_TERM(ProtonRegExpTerm, addRegExpTerm)
 
-template <>
-void FieldSplitterVisitor::replicateTermForField<ProtonPrefixTerm>(ProtonPrefixTerm &node, size_t field_idx) {
-    auto &replica = _builder.addPrefixTerm(
-        node.getTerm(), node.field(field_idx).getName(),
-        node.getId(), node.getWeight());
-    copyState(node, replica);
-    copyProtonTermDataForField(node, replica, field_idx);
-}
-
-template <>
-void FieldSplitterVisitor::replicateTermForField<ProtonSubstringTerm>(ProtonSubstringTerm &node, size_t field_idx) {
-    auto &replica = _builder.addSubstringTerm(
-        node.getTerm(), node.field(field_idx).getName(),
-        node.getId(), node.getWeight());
-    copyState(node, replica);
-    copyProtonTermDataForField(node, replica, field_idx);
-}
-
-template <>
-void FieldSplitterVisitor::replicateTermForField<ProtonSuffixTerm>(ProtonSuffixTerm &node, size_t field_idx) {
-    auto &replica = _builder.addSuffixTerm(
-        node.getTerm(), node.field(field_idx).getName(),
-        node.getId(), node.getWeight());
-    copyState(node, replica);
-    copyProtonTermDataForField(node, replica, field_idx);
-}
-
-template <>
-void FieldSplitterVisitor::replicateTermForField<ProtonRangeTerm>(ProtonRangeTerm &node, size_t field_idx) {
-    auto &replica = _builder.addRangeTerm(
-        node.getTerm(), node.field(field_idx).getName(),
-        node.getId(), node.getWeight());
-    copyState(node, replica);
-    copyProtonTermDataForField(node, replica, field_idx);
-}
-
-template <>
-void FieldSplitterVisitor::replicateTermForField<ProtonLocationTerm>(ProtonLocationTerm &node, size_t field_idx) {
-    auto &replica = _builder.addLocationTerm(
-        node.getTerm(), node.field(field_idx).getName(),
-        node.getId(), node.getWeight());
-    copyState(node, replica);
-    copyProtonTermDataForField(node, replica, field_idx);
-}
-
-template <>
-void FieldSplitterVisitor::replicateTermForField<ProtonRegExpTerm>(ProtonRegExpTerm &node, size_t field_idx) {
-    auto &replica = _builder.addRegExpTerm(
-        node.getTerm(), node.field(field_idx).getName(),
-        node.getId(), node.getWeight());
-    copyState(node, replica);
-    copyProtonTermDataForField(node, replica, field_idx);
-}
+#undef REPLICATE_SIMPLE_TERM
 
 template <>
 void FieldSplitterVisitor::replicateTermForField<ProtonFuzzyTerm>(ProtonFuzzyTerm &node, size_t field_idx) {
     auto &replica = _builder.addFuzzyTerm(
-        node.getTerm(), node.field(field_idx).getName(),
+        node.getTerm(), getFieldNameOrView(node, field_idx),
         node.getId(), node.getWeight(),
         node.max_edit_distance(), node.prefix_lock_length(), node.prefix_match());
     copyState(node, replica);
@@ -855,26 +811,21 @@ void FieldSplitterVisitor::replicateTermForField<ProtonFuzzyTerm>(ProtonFuzzyTer
 
 template <>
 void FieldSplitterVisitor::replicateTermForField<ProtonPhrase>(ProtonPhrase &node, size_t field_idx) {
-    const std::string &field_name = node.field(field_idx).getName();
-    uint32_t field_id = node.field(field_idx).getFieldId();
-
-    auto &replica = _builder.addPhrase(node.getChildren().size(), field_name,
+    auto &replica = _builder.addPhrase(node.getChildren().size(), getFieldNameOrView(node, field_idx),
                                       node.getId(), node.getWeight());
     replica.set_expensive(node.is_expensive());
     copyState(node, replica);
     copyProtonTermDataForField(node, replica, field_idx);
 
-    // Process children with the forced field - they will only use this field
-    splitAndVisitChildrenForField(node.getChildren(), field_id);
+    // Process children normally - they won't have fields
+    visitNodes(node.getChildren());
 }
 
 template <>
 void FieldSplitterVisitor::replicateTermForField<ProtonWordAlternatives>(ProtonWordAlternatives &node, size_t field_idx) {
-    const std::string &field_name = node.field(field_idx).getName();
-
     // Replicate the term vector - WordAlternatives uses subterms like other multi-terms
     auto &replica = _builder.add_word_alternatives(
-        replicate_subterms(node), field_name, node.getId(), node.getWeight());
+        replicate_subterms(node), getFieldNameOrView(node, field_idx), node.getId(), node.getWeight());
     copyState(node, replica);
     copyProtonTermDataForField(node, replica, field_idx);
 
@@ -887,43 +838,29 @@ void FieldSplitterVisitor::replicateTermForField<ProtonWordAlternatives>(ProtonW
     }
 }
 
-template <>
-void FieldSplitterVisitor::replicateTermForField<ProtonWeightedSetTerm>(ProtonWeightedSetTerm &node, size_t field_idx) {
-    const std::string &field_name = node.field(field_idx).getName();
-
-    auto &replica = _builder.addWeightedSetTerm(
-        replicate_subterms(node), node.getType(), field_name, node.getId(), node.getWeight());
-    copyState(node, replica);
-    copyProtonTermDataForField(node, replica, field_idx);
+// Helper macro for multi-term nodes with subterms
+#define REPLICATE_MULTITERM(TermType, builderMethod) \
+template <> \
+void FieldSplitterVisitor::replicateTermForField<TermType>(TermType &node, size_t field_idx) { \
+    auto &replica = _builder.builderMethod( \
+        replicate_subterms(node), node.getType(), getFieldNameOrView(node, field_idx), \
+        node.getId(), node.getWeight()); \
+    copyState(node, replica); \
+    copyProtonTermDataForField(node, replica, field_idx); \
 }
 
-template <>
-void FieldSplitterVisitor::replicateTermForField<ProtonDotProduct>(ProtonDotProduct &node, size_t field_idx) {
-    const std::string &field_name = node.field(field_idx).getName();
+REPLICATE_MULTITERM(ProtonWeightedSetTerm, addWeightedSetTerm)
+REPLICATE_MULTITERM(ProtonDotProduct, addDotProduct)
+REPLICATE_MULTITERM(ProtonInTerm, add_in_term)
 
-    auto &replica = _builder.addDotProduct(
-        replicate_subterms(node), node.getType(), field_name, node.getId(), node.getWeight());
-    copyState(node, replica);
-    copyProtonTermDataForField(node, replica, field_idx);
-}
+#undef REPLICATE_MULTITERM
 
 template <>
 void FieldSplitterVisitor::replicateTermForField<ProtonWandTerm>(ProtonWandTerm &node, size_t field_idx) {
-    const std::string &field_name = node.field(field_idx).getName();
-
     auto &replica = _builder.addWandTerm(
-        replicate_subterms(node), node.getType(), field_name, node.getId(), node.getWeight(),
+        replicate_subterms(node), node.getType(), getFieldNameOrView(node, field_idx),
+        node.getId(), node.getWeight(),
         node.getTargetNumHits(), node.getScoreThreshold(), node.getThresholdBoostFactor());
-    copyState(node, replica);
-    copyProtonTermDataForField(node, replica, field_idx);
-}
-
-template <>
-void FieldSplitterVisitor::replicateTermForField<ProtonInTerm>(ProtonInTerm &node, size_t field_idx) {
-    const std::string &field_name = node.field(field_idx).getName();
-
-    auto &replica = _builder.add_in_term(
-        replicate_subterms(node), node.getType(), field_name, node.getId(), node.getWeight());
     copyState(node, replica);
     copyProtonTermDataForField(node, replica, field_idx);
 }
@@ -937,10 +874,10 @@ Node::UP FieldSplitter::split_terms(Node::UP root) {
     Node::UP result = visitor.build();
     if (!result) {
         // Error during splitting, return original tree
-        LOG(info, "field splitting failed, returning original tree");
+        LOG(debug, "field splitting failed, returning original tree");
         return root;
     }
-    LOG(info, "field splitting completed, result tree:\n%s", protonTreeToString(*result).c_str());
+    LOG(debug, "field splitting completed, result tree:\n%s", protonTreeToString(*result).c_str());
     return result;
 }
 
