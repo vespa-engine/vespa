@@ -89,7 +89,7 @@ private:
         for (size_t i = 0; i < n.numFields(); ++i) {
             specs.add(n.field(i).fieldSpec());
         }
-        auto eq = std::make_unique<EquivBlueprint>(std::move(specs), search::fef::MatchDataLayout());
+        auto eq = std::make_unique<EquivBlueprint>(std::move(specs), EquivBlueprint::allocate_outside_equiv_tag{});
         for (auto node : n.getChildren()) {
             double w = getWeightFromNode(*node).percent();
             eq->addTerm(build(_requestContext, *node, _context), w / eqw);
@@ -111,7 +111,7 @@ private:
         for (size_t i = 0; i < n.numFields(); ++i) {
             specs.add(n.field(i).fieldSpec());
         }
-        auto eq = std::make_unique<EquivBlueprint>(std::move(specs), search::fef::MatchDataLayout());
+        auto eq = std::make_unique<EquivBlueprint>(std::move(specs), EquivBlueprint::allocate_outside_equiv_tag{});
         assert(term_bps.size() == n.getNumTerms());
         for (uint32_t idx = 0; idx < n.getNumTerms(); idx++) {
             auto pair = n.getAsString(idx);

@@ -16,7 +16,10 @@ private:
     std::vector<double>        _exactness;
 
 public:
+    struct allocate_outside_equiv_tag {};
+
     EquivBlueprint(FieldSpecBaseList fields, fef::MatchDataLayout subtree_mdl);
+    EquivBlueprint(FieldSpecBaseList fields, allocate_outside_equiv_tag);
     ~EquivBlueprint() override;
 
     // used by create visitor
@@ -34,6 +37,7 @@ public:
     bool isEquiv() const noexcept final { return true; }
 
     const std::vector<Blueprint::UP>& childrenTerms() const { return _terms; }
+    bool use_internal_match_data() const noexcept { return !_layout.empty(); }
 };
 
 }

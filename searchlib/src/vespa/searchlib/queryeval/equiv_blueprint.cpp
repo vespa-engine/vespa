@@ -51,6 +51,16 @@ EquivBlueprint::EquivBlueprint(FieldSpecBaseList fields,
 {
 }
 
+EquivBlueprint::EquivBlueprint(FieldSpecBaseList fields,
+                               allocate_outside_equiv_tag)
+    : ComplexLeafBlueprint(std::move(fields)),
+      _estimate(),
+      _layout(),
+      _terms(),
+      _exactness()
+{
+}
+
 EquivBlueprint::~EquivBlueprint() = default;
 
 void
@@ -86,7 +96,7 @@ EquivBlueprint::createSearchImpl(fef::MatchData& global_md) const {
     }
     // conditional internal matchdata:
     fef::MatchData::UP my_md = {};
-    if (! _layout.empty()) {
+    if (use_internal_match_data()) {
         my_md = _layout.createMatchData();
     }
     fef::MatchData& use_md = (my_md ? *my_md : global_md);
