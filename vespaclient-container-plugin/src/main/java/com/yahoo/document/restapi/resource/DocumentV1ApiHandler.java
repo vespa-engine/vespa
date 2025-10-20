@@ -275,21 +275,19 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             for (String path : handlers.keySet()) {
                 if (requestPath.matches(path)) {
                     Map<Method, Handler> methods = handlers.get(path);
-                    if (methods.containsKey(request.getMethod()))
+                    if (methods.containsKey(request.getMethod())) {
                         return methods.get(request.getMethod()).handle(request, new DocumentPath(requestPath, request.getUri().getRawPath()), responseHandler);
-
-                    if (request.getMethod() == OPTIONS)
+                    }
+                    if (request.getMethod() == OPTIONS) {
                         options(methods.keySet(), responseHandler);
-
+                    }
                     methodNotAllowed(request, methods.keySet(), responseHandler);
                 }
             }
             notFound(request, handlers.keySet(), responseHandler);
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             badRequest(request, e, responseHandler);
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             serverError(request, e, responseHandler);
         }
         return ignoredContent;
@@ -1293,7 +1291,11 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                 }
             } catch (IllegalArgumentException e) {
                 log.fine(() -> "Failed to parse Accept header '%s': %s".formatted(combinedAcceptHeader, e.getMessage()));
-                // TODO should we reject with a Bad Request instead?
+                // The source exception will contain an internal lexer/parser error string, which is
+                // likely to cause more confusion than it clears up. Just return a generic error with
+                // a link to relevant documentation. IllegalArgumentExceptions are mapped to 400 Bad Request.
+                throw new IllegalArgumentException("The request contained an unparseable HTTP Accept header. See: " +
+                                                   "https://docs.vespa.ai/en/reference/document-v1-api-reference.html#accept");
             }
         } // else: for backwards compatibility, always assume application/json is accepted
         return false;
@@ -1443,14 +1445,14 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     /** Returns the last property with the given name, if present, or throws if this is empty or blank. */
     private static Optional<String> getProperty(HttpRequest request, String name) {
-        if ( ! request.parameters().containsKey(name))
+        if ( ! request.parameters().containsKey(name)) {
             return Optional.empty();
-
+        }
         List<String> values = request.parameters().get(name);
         String value;
-        if (values == null || values.isEmpty() || (value = values.get(values.size() - 1)) == null || value.isEmpty())
+        if (values == null || values.isEmpty() || (value = values.get(values.size() - 1)) == null || value.isEmpty()) {
             throw new IllegalArgumentException("Expected non-empty value for request property '" + name + "'");
-
+        }
         return Optional.of(value);
     }
 
@@ -1459,9 +1461,11 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private static void disallow(HttpRequest request, String... properties) {
-        for (String property : properties)
-            if (request.parameters().containsKey(property))
+        for (String property : properties) {
+            if (request.parameters().containsKey(property)) {
                 throw new IllegalArgumentException("May not specify '" + property + "' at '" + request.getUri().getRawPath() + "'");
+            }
+        }
     }
 
     private class MeasuringResponseHandler implements ResponseHandler {
@@ -1537,16 +1541,16 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             throw new IllegalArgumentException("Your Vespa deployment has no content clusters, so the document API is not enabled");
 
         return wanted.map(cluster -> {
-            if ( ! clusters.containsKey(cluster))
+            if ( ! clusters.containsKey(cluster)) {
                 throw new IllegalArgumentException("Your Vespa deployment has no content cluster '" + cluster + "', only '" +
                                                    String.join("', '", clusters.keySet()) + "'");
-
+            }
             return clusters.get(cluster);
         }).orElseGet(() -> {
-            if (clusters.size() > 1)
+            if (clusters.size() > 1) {
                 throw new IllegalArgumentException("Please specify one of the content clusters in your Vespa deployment: '" +
                                                    String.join("', '", clusters.keySet()) + "'");
-
+            }
             return clusters.values().iterator().next();
         });
     }
@@ -1557,9 +1561,10 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                                .orElseThrow(() -> new IllegalArgumentException("There is no document type '" + type + "' in cluster '" + cluster.name() +
                                                                                                "', only '" + String.join("', '", cluster.documentBuckets.keySet()) + "'")))
                            .or(() -> bucketSpace.map(space -> {
-                               if ( ! bucketSpaces.contains(space))
+                               if ( ! bucketSpaces.contains(space)) {
                                    throw new IllegalArgumentException("Bucket space '" + space + "' is not a known bucket space; expected one of " +
                                                                       String.join(", ", bucketSpaces));
+                               }
                                return space;
                            }))
                            .orElse(FixedBucketSpaces.defaultSpace());
