@@ -94,49 +94,4 @@ TermMatchDataMerger::merge(uint32_t docid,
     }
 }
 
-void
-TermMatchDataMerger::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
-{
-    if (!_output.valid()) {
-        return;
-    }
-    ElementIdExtractor::get_element_ids(*_output[0], docid, element_ids);
-    if (_output.size() > 1) {
-        std::vector<uint32_t> temp_element_ids;
-        std::vector<uint32_t> result;
-        for (size_t i = 1; i < _output.size(); ++i) {
-            temp_element_ids.clear();
-            result.clear();
-            ElementIdExtractor::get_element_ids(*_output[i], docid, temp_element_ids);
-            if (!temp_element_ids.empty()) {
-                std::set_union(element_ids.begin(), element_ids.end(), temp_element_ids.begin(), temp_element_ids.end(),
-                               std::back_inserter(result));
-                std::swap(result, element_ids);
-            }
-        }
-    }
-}
-
-void
-TermMatchDataMerger::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids)
-{
-    if (element_ids.empty()) {
-        return;
-    }
-    if (!_output.valid()) {
-        element_ids.clear();
-        return;
-    }
-    if (_output.size() == 1) {
-        ElementIdExtractor::and_element_ids_into(*_output[0], docid, element_ids);
-        return;
-    }
-    std::vector<uint32_t> temp_element_ids;
-    std::vector<uint32_t> result;
-    get_element_ids(docid, temp_element_ids);
-    std::set_intersection(element_ids.begin(), element_ids.end(), temp_element_ids.begin(), temp_element_ids.end(),
-                          std::back_inserter(result));
-    std::swap(result, element_ids);
-}
-
 }

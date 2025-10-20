@@ -123,12 +123,14 @@ OrSearch::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
     std::vector<uint32_t> result;
     for (auto& child : others) {
         temp_element_ids.clear();
-        result.clear();
         child->get_element_ids(docid, temp_element_ids);
-        std::set_union(element_ids.begin(), element_ids.end(),
-                       temp_element_ids.begin(), temp_element_ids.end(),
-                       std::back_inserter(result));
-        std::swap(element_ids, result);
+        if (!temp_element_ids.empty()) {
+            result.clear();
+            std::set_union(element_ids.begin(), element_ids.end(),
+                           temp_element_ids.begin(), temp_element_ids.end(),
+                           std::back_inserter(result));
+            std::swap(element_ids, result);
+        }
     }
 }
 

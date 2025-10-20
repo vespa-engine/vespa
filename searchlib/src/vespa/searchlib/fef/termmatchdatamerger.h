@@ -35,8 +35,6 @@ public:
     ~TermMatchDataMerger();
 
     void merge(uint32_t docid);
-    void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids);
-    void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids);
 };
 
 }
