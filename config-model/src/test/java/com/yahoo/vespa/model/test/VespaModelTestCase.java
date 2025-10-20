@@ -458,7 +458,6 @@ public class VespaModelTestCase {
                     .build();
 
             var model = new VespaModel(new NullConfigModelRegistry(), deployState);
-            var builder = new ContainerThreadpoolConfig.Builder();
             var b = model.getConfig(ContainerThreadpoolConfig.class, configId);
             assertEquals(availableProcessors / 2, b.maxThreads());
             assertEquals(availableProcessors / 2, b.minThreads());
@@ -484,6 +483,123 @@ public class VespaModelTestCase {
             var deployState = new DeployState.Builder()
                     .applicationPackage(app)
                     .properties(properties.setDocumentHandlerThreadpoolThread(-10.0))
+                    .build();
+
+            var model = new VespaModel(new NullConfigModelRegistry(), deployState);
+            var builder = new ContainerThreadpoolConfig.Builder();
+            model.getConfig(builder, configId);
+
+            ContainerThreadpoolConfig config = builder.build();
+            assertEquals(10, config.maxThreads());
+            assertEquals(10, config.minThreads());
+        }
+    }
+
+    @Test
+    void testDocumentProcessorHandlerThreadpoolThreadsConfigModelWiring() throws IOException, SAXException {
+
+
+        String configId = "default/component/com.yahoo.docproc.jdisc.DocumentProcessingHandler/threadpool@docproc-handler";
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        {
+            var services = """
+                        <services version='1.0'>
+                          <container version='1.0' id='default'>
+                            <search/>
+                            <document-processing>
+                              <threadpool>
+                                <threads>0.5</threads>
+                              </threadpool>
+                            </document-processing>
+                          </container>
+                          <content id="music" version="1.0">"
+                            <redundancy>1</redundancy>"
+                            <nodes count="1">
+                                <resources disk="24Gb" />
+                            </nodes>
+                            <documents>
+                              <document type="music" mode="index"/>
+                            </documents>
+                          </content>
+                        </services>""";
+            var app = new MockApplicationPackage.Builder().withServices(services)
+                    .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
+                    .build();
+
+            var deployState = new DeployState.Builder()
+                    .applicationPackage(app)
+                    .build();
+
+            var model = new VespaModel(new NullConfigModelRegistry(), deployState);
+            var b = model.getConfig(ContainerThreadpoolConfig.class, configId);
+            assertEquals(availableProcessors / 2, b.maxThreads());
+            assertEquals(availableProcessors / 2, b.minThreads());
+        }
+
+        {
+            var services = """
+                        <services version='1.0'>
+                          <container version='1.0' id='default'>
+                            <search/>
+                            <document-processing>
+                              <threadpool>
+                                <threads>1</threads>
+                              </threadpool>
+                            </document-processing>
+                          </container>
+                          <content id="music" version="1.0">"
+                            <redundancy>1</redundancy>"
+                            <nodes count="1">
+                                <resources disk="24Gb" />
+                            </nodes>
+                            <documents>
+                              <document type="music" mode="index"/>
+                            </documents>
+                          </content>
+                        </services>""";
+            var app = new MockApplicationPackage.Builder().withServices(services)
+                    .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
+                    .build();
+
+
+            var deployState = new DeployState.Builder()
+                    .applicationPackage(app)
+                    .build();
+
+            var model = new VespaModel(new NullConfigModelRegistry(), deployState);
+            var b = model.getConfig(ContainerThreadpoolConfig.class, configId);
+
+            assertEquals(b.maxThreads(), availableProcessors);
+            assertEquals(b.minThreads(), availableProcessors);
+        }
+
+        {
+            var services = """
+                        <services version='1.0'>
+                          <container version='1.0' id='default'>
+                            <search/>
+                            <document-processing>
+                              <threadpool>
+                                <threads>-10</threads>
+                              </threadpool>
+                            </document-processing>
+                          </container>
+                          <content id="music" version="1.0">"
+                            <redundancy>1</redundancy>"
+                            <nodes count="1">
+                                <resources disk="24Gb" />
+                            </nodes>
+                            <documents>
+                              <document type="music" mode="index"/>
+                            </documents>
+                          </content>
+                        </services>""";
+            var app = new MockApplicationPackage.Builder().withServices(services)
+                    .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
+                    .build();
+
+            var deployState = new DeployState.Builder()
+                    .applicationPackage(app)
                     .build();
 
             var model = new VespaModel(new NullConfigModelRegistry(), deployState);
