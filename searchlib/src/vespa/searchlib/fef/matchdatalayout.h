@@ -46,6 +46,8 @@ public:
      * @return auto-pointer to a match data object
      **/
     MatchData::UP createMatchData() const;
+
+    bool empty() const noexcept { return _fieldIds.empty(); }
 };
 
 }

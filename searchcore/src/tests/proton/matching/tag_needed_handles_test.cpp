@@ -276,7 +276,8 @@ TEST_F(TagNeededHandlesTest, unpack_for_near_children_with_equiv)
     query_builder.addStringTerm(baz_term, view, term_id + 3, string_weight);
     auto root = query_builder.build();
     prepare(*root);
-    EXPECT_EQ((HandleSet{0, 1, 2, 3}), normal_features_handles());
+    // (1 string term + 1 equiv + 2 children of equiv) * 2 fields = 8:
+    EXPECT_EQ((HandleSet{0, 1, 2, 3, 4, 5, 6, 7}), normal_features_handles());
     EXPECT_EQ((ThresholdVector{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}), extract_thresholds(*root));
 }
 
