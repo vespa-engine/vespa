@@ -101,7 +101,7 @@ ProtonTermData::setDocumentFrequency(uint32_t estHits, uint32_t docIdLimit)
     }
 }
 
-void ProtonTermData::copyFieldEntry(const FieldEntry &source) {
+void ProtonTermData::useFieldEntry(const FieldEntry &source) {
     _fields.clear();
     _fields.emplace_back(source.getName(), source.getFieldId(), source._field_spec.get_filter_threshold());
     FieldEntry &target = _fields.back();

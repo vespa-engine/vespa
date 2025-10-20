@@ -446,7 +446,7 @@ private:
     static void copyProtonTermDataForField(TermType &original, TermType &replica, size_t field_idx) {
         // Copy the specific field entry from original to replica
         if (field_idx < original.numFields()) {
-            replica.copyFieldEntry(original.field(field_idx));
+            replica.useFieldEntry(original.field(field_idx));
         }
     }
 
@@ -833,7 +833,7 @@ void FieldSplitterVisitor::replicateTermForField<ProtonWordAlternatives>(ProtonW
     if (!replica.children.empty()) {
         const auto &field_entry = node.field(field_idx);
         for (auto& child : replica.children) {
-            child->copyFieldEntry(field_entry);
+            child->useFieldEntry(field_entry);
         }
     }
 }
