@@ -101,6 +101,15 @@ ProtonTermData::setDocumentFrequency(uint32_t estHits, uint32_t docIdLimit)
     }
 }
 
+void ProtonTermData::useFieldEntry(const FieldEntry &source) {
+    _fields.clear();
+    _fields.emplace_back(source.getName(), source.getFieldId(), source._field_spec.get_filter_threshold());
+    FieldEntry &target = _fields.back();
+    target._field_spec = source._field_spec;
+    target.attribute_field = source.attribute_field;
+    target.setDocFreq(source.get_matching_doc_count(), source.get_total_doc_count());
+}
+
 const ProtonTermData::FieldEntry *
 ProtonTermData::lookupField(uint32_t fieldId) const
 {
