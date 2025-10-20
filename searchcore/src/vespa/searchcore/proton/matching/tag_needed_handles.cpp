@@ -86,6 +86,9 @@ void
 TagNeededHandlesVisitor::visit(ProtonNodeTypes::WordAlternatives& n)
 {
     maybe_visit_field_specs(n);
+    for (const auto & child : n.children) {
+        visitTerm(*child);
+    }
 }
 
 void
