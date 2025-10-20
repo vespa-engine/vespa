@@ -67,6 +67,8 @@ public:
     void resolveFromChildren(const std::vector<search::query::Node *> &children);
     void allocateTerms(search::fef::MatchDataLayout &mdl);
     void setDocumentFrequency(uint32_t estHits, uint32_t numDocs);
+    // clear fields, and use just the provided entry:
+    void useFieldEntry(const FieldEntry &source);
 
     // ITermData interface
     [[nodiscard]] std::optional<std::string> query_tensor_name() const override { return std::nullopt; }
