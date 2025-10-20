@@ -91,19 +91,6 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_SERVER_UNENCRYPTED_CONNECTIONS_ESTABLISHED.baseName());
         addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED.baseName());
 
-        // C++ TLS metrics
-        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_TLS_HANDSHAKES_FAILED.count());
-        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_PEER_AUTHORIZATION_FAILURES.count());
-        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_CLIENT_TLS_CONNECTIONS_ESTABLISHED.count());
-        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_SERVER_TLS_CONNECTIONS_ESTABLISHED.count());
-        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_CLIENT_INSECURE_CONNECTIONS_ESTABLISHED.count());
-        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_SERVER_INSECURE_CONNECTIONS_ESTABLISHED.count());
-        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_TLS_CONNECTIONS_BROKEN.count());
-        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_FAILED_TLS_CONFIG_RELOADS.count());
-        // C++ capability metrics
-        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_RPC_CAPABILITY_CHECKS_FAILED.count());
-        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_STATUS_CAPABILITY_CHECKS_FAILED.count());
-
         // NodeAdmin certificate
         addMetric(metrics, NodeAdminMetrics.ENDPOINT_CERTIFICATE_EXPIRY_SECONDS.baseName());
         addMetric(metrics, NodeAdminMetrics.NODE_CERTIFICATE_EXPIRY_SECONDS.baseName());
@@ -449,10 +436,6 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, StorageMetrics.VDS_DATASTORED_ALLDISKS_BYTES.average());
         addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_AVERAGEVISITORLIFETIME, EnumSet.of(max, sum, count));
         addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_AVERAGEQUEUEWAIT, EnumSet.of(max, sum, count));
-        addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_QUEUESIZE, EnumSet.of(max, sum, count));
-        addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_COMPLETED.rate());
-        addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_CREATED.rate());
-        addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_FAILED.rate());
         addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_AVERAGEMESSAGESENDTIME, EnumSet.of(max, sum, count));
         addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_AVERAGEPROCESSINGTIME, EnumSet.of(max, sum, count));
 
