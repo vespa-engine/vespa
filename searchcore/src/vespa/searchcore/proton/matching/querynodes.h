@@ -126,7 +126,6 @@ using ProtonTrue =        search::query::SimpleTrue;
 using ProtonFalse =       search::query::SimpleFalse;
 
 struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv> {
-    search::fef::MatchDataLayout children_mdl;
     using ProtonTermBase::ProtonTermBase;
     ~ProtonEquiv() override;
 };

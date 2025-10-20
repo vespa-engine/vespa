@@ -76,9 +76,21 @@ EquivBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 }
 
 SearchIterator::UP
-EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &outputs) const
-{
-    fef::MatchData::UP md = _layout.createMatchData();
+EquivBlueprint::createSearchImpl(fef::MatchData& global_md) const {
+    // same code as in LeafBlueprint :
+    const State &state = getState();
+    fef::TermFieldMatchDataArray outputs;
+    outputs.reserve(state.numFields());
+    for (size_t i = 0; i < state.numFields(); ++i) {
+        outputs.add(state.field(i).resolve(global_md));
+    }
+    // conditional internal matchdata:
+    fef::MatchData::UP my_md = {};
+    if (! _layout.empty()) {
+        my_md = _layout.createMatchData();
+    }
+    fef::MatchData& use_md = (my_md ? *my_md : global_md);
+    // from old createLeafSearch:
     MultiSearch::Children children;
     children.reserve(_terms.size());
     fef::TermMatchDataMerger::Inputs childMatch;
@@ -89,13 +101,18 @@ EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &outputs) co
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
         for (size_t j = 0; j < childState.numFields(); ++j) {
-            auto *child_term_field_match_data = childState.field(j).resolve(*md);
+            auto *child_term_field_match_data = childState.field(j).resolve(use_md);
             unpack_needs[child_term_field_match_data->getFieldId()].notify(*child_term_field_match_data);
             childMatch.emplace_back(child_term_field_match_data, _exactness[i]);
         }
-        children.push_back(_terms[i]->createSearch(*md));
+        children.push_back(_terms[i]->createSearch(use_md));
     }
-    return EquivSearch::create(std::move(children), std::move(md), childMatch, outputs, strict());
+    return EquivSearch::create(std::move(children), std::move(my_md), childMatch, outputs, strict());
+}
+
+SearchIterator::UP EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &) const {
+    assert(false); // should not be called
+    return {};
 }
 
 SearchIterator::UP

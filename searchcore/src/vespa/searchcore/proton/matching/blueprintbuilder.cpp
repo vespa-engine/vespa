@@ -89,23 +89,21 @@ private:
         for (size_t i = 0; i < n.numFields(); ++i) {
             specs.add(n.field(i).fieldSpec());
         }
-        auto *eq = new EquivBlueprint(std::move(specs), n.children_mdl);
-        _result.reset(eq);
+        auto eq = std::make_unique<EquivBlueprint>(std::move(specs), search::fef::MatchDataLayout());
         for (auto node : n.getChildren()) {
             double w = getWeightFromNode(*node).percent();
             eq->addTerm(build(_requestContext, *node, _context), w / eqw);
         }
-        _result->setDocIdLimit(_context.getDocIdLimit());
-        n.setDocumentFrequency(_result->getState().estimate().estHits, _context.getDocIdLimit());
+        eq->setDocIdLimit(_context.getDocIdLimit());
+        n.setDocumentFrequency(eq->getState().estimate().estHits, _context.getDocIdLimit());
+        _result = std::move(eq);
     }
 
     void buildWordAlternatives(ProtonWordAlternatives &n) {
         assert(n.children.size() == n.getNumTerms());
         double eqw = n.getWeight().percent();
-        search::fef::MatchDataLayout layout;
         std::vector<std::unique_ptr<Blueprint>> term_bps;
         for (const auto& tp : n.children) {
-            tp->allocateTerms(layout);
             term_bps.emplace_back(build(_requestContext, *tp, _context));
         }
         FieldSpecBaseList specs;
@@ -113,16 +111,16 @@ private:
         for (size_t i = 0; i < n.numFields(); ++i) {
             specs.add(n.field(i).fieldSpec());
         }
-        auto *eq = new EquivBlueprint(std::move(specs), layout);
-        _result.reset(eq);
+        auto eq = std::make_unique<EquivBlueprint>(std::move(specs), search::fef::MatchDataLayout());
         assert(term_bps.size() == n.getNumTerms());
         for (uint32_t idx = 0; idx < n.getNumTerms(); idx++) {
             auto pair = n.getAsString(idx);
             double w = pair.second.percent();
             eq->addTerm(std::move(term_bps[idx]), w / eqw);
         }
-        _result->setDocIdLimit(_context.getDocIdLimit());
-        n.setDocumentFrequency(_result->getState().estimate().estHits, _context.getDocIdLimit());
+        eq->setDocIdLimit(_context.getDocIdLimit());
+        n.setDocumentFrequency(eq->getState().estimate().estHits, _context.getDocIdLimit());
+        _result = std::move(eq);
     }
 
     void buildSameElement(ProtonSameElement &n) {

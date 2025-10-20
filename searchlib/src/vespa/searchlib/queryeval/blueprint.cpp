@@ -865,7 +865,7 @@ void
 LeafBlueprint::set_tree_size(uint32_t value)
 {
     _state.tree_size(value);
-    notifyChange();    
+    notifyChange();
 }
 
 //-----------------------------------------------------------------------------

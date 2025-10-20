@@ -36,6 +36,7 @@ public:
     void visitTerm(TermNode& n) { maybe_visit_field_specs(n); }
 
     void visit(ProtonNodeTypes::Equiv& n) override;
+    void visit(ProtonNodeTypes::WordAlternatives& n) override;
     void visit(ProtonNodeTypes::Near& n) override;
     void visit(ProtonNodeTypes::ONear& n) override;
     void visit(ProtonNodeTypes::Phrase& n) override;
@@ -78,9 +79,13 @@ void
 TagNeededHandlesVisitor::visit(ProtonNodeTypes::Equiv& n)
 {
     maybe_visit_field_specs(n);
-    ++_changed_match_data;
     visitChildren(n);
-    --_changed_match_data;
+}
+
+void
+TagNeededHandlesVisitor::visit(ProtonNodeTypes::WordAlternatives& n)
+{
+    maybe_visit_field_specs(n);
 }
 
 void

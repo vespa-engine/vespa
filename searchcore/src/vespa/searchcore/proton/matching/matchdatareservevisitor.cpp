@@ -15,8 +15,7 @@ MatchDataReserveVisitor::~MatchDataReserveVisitor() = default;
 void
 MatchDataReserveVisitor::visit(ProtonNodeTypes::Equiv& n)
 {
-    MatchDataReserveVisitor subAllocator(n.children_mdl);
-    subAllocator.visitChildren(n);
+    visitChildren(n);
     n.allocateTerms(_mdl);
 }
 
@@ -25,6 +24,15 @@ MatchDataReserveVisitor::visit(ProtonNodeTypes::SameElement& n)
 {
     visitChildren(n);
     n.allocateTerms(_mdl);
+}
+
+void
+MatchDataReserveVisitor::visit(ProtonNodeTypes::WordAlternatives& n)
+{
+    n.allocateTerms(_mdl);
+    for (const auto & child : n.children) {
+        child->allocateTerms(_mdl);
+    }
 }
 
 }
