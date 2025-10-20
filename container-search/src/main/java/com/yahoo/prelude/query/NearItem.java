@@ -4,6 +4,7 @@ package com.yahoo.prelude.query;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.compress.IntegerCompressor;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
+import com.yahoo.search.dispatch.rpc.ProtobufSerialization;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
@@ -78,7 +79,7 @@ public class NearItem extends CompositeItem {
     protected void encodeThis(ByteBuffer buffer) {
         super.encodeThis(buffer);
         IntegerCompressor.putCompressedPositiveNumber(distance, buffer);
-        if (numNegativeItems != 0) {
+        if (numNegativeItems != 0 && !ProtobufSerialization.isProtobufAlsoSerialized()) {
             throw new IllegalArgumentException("cannot serialize negative items in old protocol");
         }
     }
