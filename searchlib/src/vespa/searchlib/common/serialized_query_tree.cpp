@@ -3,7 +3,7 @@
 #include "serialized_query_tree.h"
 #include <vespa/searchlib/engine/search_protocol_proto.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include <vespa/searchlib/query/proto_tree_iterator.h>
+#include <vespa/searchlib/query/from_proto.h>
 
 namespace search {
 
