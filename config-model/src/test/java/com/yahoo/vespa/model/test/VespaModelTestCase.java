@@ -426,8 +426,6 @@ public class VespaModelTestCase {
 
     @Test
     void testDocumentProcessingThreadpoolFromProperties() throws IOException, SAXException {
-
-
         String configId = "default/component/com.yahoo.docproc.jdisc.DocumentProcessingHandler/threadpool@docproc-handler";
         int availableProcessors = Runtime.getRuntime().availableProcessors();
         {
@@ -453,12 +451,10 @@ public class VespaModelTestCase {
             var deployState = makeDeployStateWithDocprocThreadpoolProperties(-10.0);
 
             var model = new VespaModel(new NullConfigModelRegistry(), deployState);
-            var builder = new ContainerThreadpoolConfig.Builder();
-            model.getConfig(builder, configId);
+            var b = model.getConfig(ContainerThreadpoolConfig.class, configId);
 
-            ContainerThreadpoolConfig config = builder.build();
-            assertEquals(10, config.maxThreads());
-            assertEquals(10, config.minThreads());
+            assertEquals(10, b.maxThreads());
+            assertEquals(10, b.minThreads());
         }
     }
 
@@ -515,22 +511,24 @@ public class VespaModelTestCase {
             var deployState = makeDeployStateWithDocprocThreadpool(1);
 
             var model = new VespaModel(new NullConfigModelRegistry(), deployState);
-            var b = model.getConfig(ContainerThreadpoolConfig.class, configId);
+            var builder = new ContainerThreadpoolConfig.Builder();
+            model.getConfig(builder, configId);
+            ContainerThreadpoolConfig config = builder.build();
 
-            assertEquals(b.maxThreads(), availableProcessors);
-            assertEquals(b.minThreads(), availableProcessors);
+            assertEquals(availableProcessors, config.maxThreads());
+            assertEquals(availableProcessors, config.minThreads());
         }
 
         {
-            var deployState = makeDeployStateWithDocprocThreadpool(-10);
+            var deployState = makeDeployStateWithDocprocThreadpool(-7);
 
             var model = new VespaModel(new NullConfigModelRegistry(), deployState);
             var builder = new ContainerThreadpoolConfig.Builder();
             model.getConfig(builder, configId);
 
             ContainerThreadpoolConfig config = builder.build();
-            assertEquals(10, config.maxThreads());
-            assertEquals(10, config.minThreads());
+            assertEquals(7, config.maxThreads());
+            assertEquals(7, config.minThreads());
         }
     }
 
