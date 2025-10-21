@@ -122,7 +122,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
 
     public ApplicationContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
-        super(parent, configSubId, clusterId, deployState, true, 10);
+        super(parent, configSubId, clusterId, deployState, true);
         this.tlsClientAuthority = deployState.tlsClientAuthority();
         previousHosts = Collections.unmodifiableSet(deployState.getPreviousModel().stream()
                                                                .map(Model::allocatedHosts)

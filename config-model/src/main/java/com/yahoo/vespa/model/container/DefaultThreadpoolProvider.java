@@ -15,16 +15,14 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolConfig.Producer {
 
     private final ContainerCluster<?> cluster;
-    private final int defaultWorkerThreads;
 
-    DefaultThreadpoolProvider(ContainerCluster<?> cluster, int defaultWorkerThreads) {
+    DefaultThreadpoolProvider(ContainerCluster<?> cluster) {
         super(new ComponentModel(
                 BundleInstantiationSpecification.fromStrings(
                         "default-threadpool",
                         ThreadPoolProvider.class.getName(),
                         null)));
         this.cluster = cluster;
-        this.defaultWorkerThreads = defaultWorkerThreads;
     }
 
     @Override
@@ -35,7 +33,7 @@ class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolCon
             builder.corePoolSize(-2).maxthreads(-100).queueSize(0);
         } else {
             // Container clusters such as logserver, metricsproxy and clustercontroller
-            builder.corePoolSize(defaultWorkerThreads).maxthreads(defaultWorkerThreads).queueSize(50);
+            builder.corePoolSize(4).maxthreads(4).queueSize(50);
         }
     }
 }
