@@ -172,8 +172,36 @@ jobs:
           release_url="$(cat /tmp/vespa-cli-release-url.txt)"
           echo "release-url=${release_url}" > "${GITHUB_OUTPUT}"
 
+      - name: Check Homebrew Status
+        id: check-homebrew
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Check if BrewTestBot has already updated or created a PR for this version
+          version="${VERSION}"
+
+          # Check for open PRs in homebrew-core that mention this version
+          prs=$(gh pr list --repo Homebrew/homebrew-core --search "vespa-cli ${version}" --json number,title --limit 1)
+
+          if [[ $(echo "${prs}" | jq 'length') -gt 0 ]]; then
+            echo "Found existing PR(s) for version ${version} in homebrew-core"
+            echo "needs-publish=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # Check if the version already exists in the formula
+          formula_url="https://raw.githubusercontent.com/Homebrew/homebrew-core/master/Formula/v/vespa-cli.rb"
+          if curl -sf "${formula_url}" | grep -q "version \"${version}\""; then
+            echo "Version ${version} already exists in homebrew-core"
+            echo "needs-publish=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          echo "Version ${version} not found in homebrew-core, publishing needed"
+          echo "needs-publish=true" >> "${GITHUB_OUTPUT}"
+
       - name: Publish to Homebrew
-        if: steps.github-release.outputs.release-url != ''
+        if: steps.github-release.outputs.release-url != '' && steps.check-homebrew.outputs.needs-publish == 'true'
         env:
           GITHUB_RELEASE_URL: ${{ steps.github-release.outputs.release-url }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
@@ -182,6 +210,6 @@ jobs:
           make -- --dist-homebrew
 
       - name: Install via Homebrew
-        if: steps.github-release.outputs.release-url != ''
+        if: steps.github-release.outputs.release-url != '' && steps.check-homebrew.outputs.needs-publish == 'true'
         run: |
           make install-brew
