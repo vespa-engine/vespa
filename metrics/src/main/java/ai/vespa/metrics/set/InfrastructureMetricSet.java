@@ -28,7 +28,7 @@ import static ai.vespa.metrics.Suffix.sum;
 public class InfrastructureMetricSet {
 
     public static final MetricSet infrastructureMetricSet = new MetricSet("infrastructure",
-            getInfrastructureMetrics(), Set.of(MicrometerMetrics.asMetricSet()));
+            getInfrastructureMetrics());
 
     private static Set<Metric> getInfrastructureMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
