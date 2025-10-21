@@ -36,6 +36,12 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
         if (threadpoolElem == null) options = new UserOptions(null, null, null);
         else {
             // TODO Vespa 9 Remove min-threads, max-threads and queue-size
+
+            // TODO Vespa 9 Remove variable pool size (aka 'boost')
+            //      It's rarely used and the semantics are confusing.
+            //      The number of threads are scaled up after the queue is full, which is surprising,
+            //      as one would expect the pool size to scale before queuing up tasks.
+            //      This is a Java limitation in the thread pool class from the standard library.
             Double max = null;
             Double min = null;
             Double queue = null;
