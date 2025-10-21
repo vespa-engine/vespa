@@ -239,6 +239,13 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION);
 
+    public static final UnboundIntFlag DOCUMENT_PROCESSOR_THREADPOOL_THREADS = defineIntFlag(
+            "document-processor-threadpool-threads", 1,
+            List.of("johsol"), "2025-10-17", "2026-01-01",
+            "Adjust document processor handler threadpool size",
+            "Takes effect at redeployment",
+            APPLICATION);
+
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
             List.of("andreer", "olaa"), "2023-10-06", "2025-11-01",

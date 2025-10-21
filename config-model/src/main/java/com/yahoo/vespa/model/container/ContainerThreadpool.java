@@ -21,9 +21,9 @@ import java.util.logging.Level;
 public abstract class ContainerThreadpool extends SimpleComponent implements ContainerThreadpoolConfig.Producer {
 
     private final String name;
-    private final UserOptions options;
+    protected final UserOptions options;
 
-    record UserOptions(Double max, Double min, Double queue){}
+    protected record UserOptions(Double max, Double min, Double queue){}
 
     protected ContainerThreadpool(DeployState ds, String name, Element parent) {
         super(new ComponentModel(

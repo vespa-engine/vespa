@@ -21,6 +21,7 @@ import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.net.HostName;
@@ -221,6 +222,7 @@ public class VespaModelTestCase {
 
     static class MyLogger implements DeployLogger {
         List<Pair<Level, String>> msgs = new ArrayList<>();
+
         @Override
         public void log(Level level, String message) {
             msgs.add(new Pair<>(level, message));
@@ -313,7 +315,7 @@ public class VespaModelTestCase {
 
     @Test
     void testNoNodesCount() {
-         var services =
+        var services =
                 """
                         <services version='1.0'>
                           <container version='1.0' id='default'>
@@ -328,20 +330,20 @@ public class VespaModelTestCase {
         var deployState = new DeployState.Builder()
                 .applicationPackage(app)
                 .properties(new TestProperties()
-                                    .setHostedVespa(true)
-                                    .setApplicationId(ApplicationId.from("foo", "bar", "default-t")))
+                        .setHostedVespa(true)
+                        .setApplicationId(ApplicationId.from("foo", "bar", "default-t")))
                 .build();
         var model = new TestDriver(true).buildModel(deployState);
         assertEquals(1, model.getHosts().size()); // node count 1 if not specified
     }
 
-    private void assertContainsWarning(List<Pair<Level,String>> msgs, String text) {
+    private void assertContainsWarning(List<Pair<Level, String>> msgs, String text) {
         boolean foundCorrectWarning = false;
         for (var msg : msgs)
             if (msg.getFirst().getName().equals("WARNING") && msg.getSecond().equals(text)) {
                 foundCorrectWarning = true;
             }
-        if (! foundCorrectWarning) for (var msg : msgs) System.err.println("MSG: "+msg);
+        if (!foundCorrectWarning) for (var msg : msgs) System.err.println("MSG: " + msg);
         assertTrue(msgs.size() > 0);
         assertTrue(foundCorrectWarning);
     }
@@ -349,23 +351,23 @@ public class VespaModelTestCase {
     @Test
     void testMallocImpl() throws IOException, SAXException {
         var services = """
-                        <services version='1.0'>
-                          <container version='1.0' id='default'>
-                            <search/>
-                          </container>
-                          <content id="music" version="1.0">"
-                            <redundancy>1</redundancy>"
-                            <nodes count="1">
-                                <resources disk="24Gb" />
-                            </nodes>
-                            <documents>
-                              <document type="music" mode="index"/>
-                            </documents>
-                          </content>
-                        </services>""";
+                <services version='1.0'>
+                  <container version='1.0' id='default'>
+                    <search/>
+                  </container>
+                  <content id="music" version="1.0">"
+                    <redundancy>1</redundancy>"
+                    <nodes count="1">
+                        <resources disk="24Gb" />
+                    </nodes>
+                    <documents>
+                      <document type="music" mode="index"/>
+                    </documents>
+                  </content>
+                </services>""";
         var app = new MockApplicationPackage.Builder().withServices(services)
-                                                      .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
-                                                      .build();
+                .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
+                .build();
 
         {
             var model = createModel(app, ClusterSpec.Type.container, "mimalloc");
@@ -420,6 +422,151 @@ public class VespaModelTestCase {
             assertTrue(container.getStartupCommand().orElse("").contains(libraryPath));
         }
 
+    }
+
+    @Test
+    void testDocumentProcessingThreadpoolFromProperties() throws IOException, SAXException {
+        String configId = "default/component/com.yahoo.docproc.jdisc.DocumentProcessingHandler/threadpool@docproc-handler";
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        {
+            var deployState = makeDeployStateWithDocprocThreadpoolProperties(0.5);
+
+            var model = new VespaModel(new NullConfigModelRegistry(), deployState);
+            var b = model.getConfig(ContainerThreadpoolConfig.class, configId);
+            assertEquals(availableProcessors / 2, b.maxThreads());
+            assertEquals(availableProcessors / 2, b.minThreads());
+        }
+
+        {
+            var deployState = makeDeployStateWithDocprocThreadpoolProperties(null);
+
+            var model = new VespaModel(new NullConfigModelRegistry(), deployState);
+            var b = model.getConfig(ContainerThreadpoolConfig.class, configId);
+
+            assertEquals(b.maxThreads(), availableProcessors);
+            assertEquals(b.minThreads(), availableProcessors);
+        }
+
+        {
+            var deployState = makeDeployStateWithDocprocThreadpoolProperties(-10.0);
+
+            var model = new VespaModel(new NullConfigModelRegistry(), deployState);
+            var b = model.getConfig(ContainerThreadpoolConfig.class, configId);
+
+            assertEquals(10, b.maxThreads());
+            assertEquals(10, b.minThreads());
+        }
+    }
+
+    private DeployState makeDeployStateWithDocprocThreadpoolProperties(Double threads) {
+        var services = """
+                <services version='1.0'>
+                  <container version='1.0' id='default'>
+                    <search/>
+                    <document-processing />
+                  </container>
+                  <content id="music" version="1.0">"
+                    <redundancy>1</redundancy>"
+                    <nodes count="1">
+                        <resources disk="24Gb" />
+                    </nodes>
+                    <documents>
+                      <document type="music" mode="index"/>
+                    </documents>
+                  </content>
+                </services>""";
+        var app = new MockApplicationPackage.Builder().withServices(services)
+                .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
+                .build();
+
+        var properties = new TestProperties()
+                .setHostedVespa(true)
+                .setApplicationId(ApplicationId.from("foo", "bar", "default-t"));
+
+        if (threads == null) {
+            return new DeployState.Builder()
+                    .applicationPackage(app)
+                    .build();
+        }
+
+        return new DeployState.Builder()
+                .applicationPackage(app)
+                .properties(properties.setDocumentHandlerThreadpoolThread(threads))
+                .build();
+    }
+
+    @Test
+    void testDocumentProcessingThreadpoolFromConfigModel() throws IOException, SAXException {
+        String configId = "default/component/com.yahoo.docproc.jdisc.DocumentProcessingHandler/threadpool@docproc-handler";
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        {
+            var deployState = makeDeployStateWithDocprocThreadpool(0.5);
+
+            var model = new VespaModel(new NullConfigModelRegistry(), deployState);
+            var builder = new ContainerThreadpoolConfig.Builder();
+            model.getConfig(builder, configId);
+
+            ContainerThreadpoolConfig config = builder.build();
+            assertEquals(availableProcessors / 2, config.maxThreads());
+            assertEquals(availableProcessors / 2, config.minThreads());
+        }
+
+        {
+            var deployState = makeDeployStateWithDocprocThreadpool(1);
+
+            var model = new VespaModel(new NullConfigModelRegistry(), deployState);
+            var builder = new ContainerThreadpoolConfig.Builder();
+            model.getConfig(builder, configId);
+
+            ContainerThreadpoolConfig config = builder.build();
+            assertEquals(availableProcessors, config.maxThreads());
+            assertEquals(availableProcessors, config.minThreads());
+        }
+
+        {
+            var deployState = makeDeployStateWithDocprocThreadpool(-7);
+
+            var model = new VespaModel(new NullConfigModelRegistry(), deployState);
+            var builder = new ContainerThreadpoolConfig.Builder();
+            model.getConfig(builder, configId);
+
+            ContainerThreadpoolConfig config = builder.build();
+            assertEquals(7, config.maxThreads());
+            assertEquals(7, config.minThreads());
+        }
+    }
+
+    private DeployState makeDeployStateWithDocprocThreadpool(double threads) {
+        var services = """
+                <services version='1.0'>
+                  <container version='1.0' id='default'>
+                    <search/>
+                    <document-processing>
+                      <threadpool>
+                        <threads>"""
+                + threads +
+                """
+                                </threads>
+                              </threadpool>
+                            </document-processing>
+                          </container>
+                          <content id="music" version="1.0">"
+                            <redundancy>1</redundancy>"
+                            <nodes count="1">
+                                <resources disk="24Gb" />
+                            </nodes>
+                            <documents>
+                              <document type="music" mode="index"/>
+                            </documents>
+                          </content>
+                        </services>""";
+        var app = new MockApplicationPackage.Builder().withServices(services)
+                .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
+                .build();
+
+        return new DeployState.Builder()
+                .applicationPackage(app)
+                .build();
     }
 
 }
