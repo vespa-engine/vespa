@@ -5,7 +5,6 @@
 namespace {
 
 class QueryVisitor : public IQueryExprVisitor {
-private:
     juniper::SpecialTokenRegistry& _registry;
 
 public:
@@ -13,7 +12,11 @@ public:
     void VisitQueryNode(QueryNode*) override {}
     void RevisitQueryNode(QueryNode*) override {}
     void VisitQueryTerm(QueryTerm* t) override {
-        if (t->isSpecialToken()) { _registry.addSpecialToken(t); }
+        // Zero-length special tokens make little sense since they can match any
+        // possible input without consuming any characters. So skip adding these.
+        if (t->isSpecialToken() && (t->ucs4_len > 0)) {
+            _registry.addSpecialToken(t);
+        }
     }
 };
 
@@ -73,6 +76,7 @@ const char* SpecialTokenRegistry::tokenize(const char* buf, const char* bufend, 
     CharStream stream(buf, bufend, dstbuf, dstbufend);
     bool       foundWordChar = false;
     while (!foundWordChar && stream.hasMoreChars() && stream.hasMoreSpace()) {
+        // TODO this seems like a good fit for a trie, or similar structure
         for (size_t i = 0; i < _specialTokens.size(); ++i) {
             const ucs4_t* qsrc = _specialTokens[i]->ucs4_term();
             const ucs4_t* qend = qsrc + _specialTokens[i]->ucs4_len;
