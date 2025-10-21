@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchlib/query/query_stack_iterator.h>
 #include <memory>
 #include <string_view>
 #include <vector>
@@ -10,7 +11,6 @@ namespace searchlib::searchprotocol::protobuf { class QueryTree; }
 
 namespace search {
 
-class QueryStackIterator;
 class SimpleQueryStackDumpIterator;
 class SerializedQueryTree;
 
