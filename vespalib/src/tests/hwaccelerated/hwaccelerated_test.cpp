@@ -132,8 +132,8 @@ TEST_F(HwAcceleratedTest, dot_product_impls_match_source_of_truth) {
 
 template <std::integral T>
 void verify_euclidean_distance_no_overflow(std::span<const IAccelerated*> accels, size_t test_length) {
-    std::vector<T> lhs(test_length);
-    std::vector<T> rhs(test_length);
+    std::vector<T> lhs(test_length + 100);
+    std::vector<T> rhs(test_length + 100);
     std::fill(lhs.begin(), lhs.end(), std::numeric_limits<T>::min());
     std::fill(rhs.begin(), rhs.end(), std::numeric_limits<T>::max());
     ASSERT_GE(test_length, 100);
@@ -158,8 +158,8 @@ TEST_F(HwAcceleratedTest, chunked_i8_euclidean_distance_does_not_overflow) {
 
 template <std::integral T>
 void verify_dot_product_no_overflow(std::span<const IAccelerated*> accels, size_t test_length) {
-    std::vector<T> lhs(test_length);
-    std::vector<T> rhs(test_length);
+    std::vector<T> lhs(test_length + 100);
+    std::vector<T> rhs(test_length + 100);
     std::fill(lhs.begin(), lhs.end(), std::numeric_limits<T>::min());
     std::fill(rhs.begin(), rhs.end(), std::numeric_limits<T>::min());
     ASSERT_GE(test_length, 100);
