@@ -139,41 +139,21 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
 
     public static class Threadpool extends ContainerThreadpool {
 
-        private final double threadsScale;
-        private final int queueSize;
+        private final double threads;
 
         public Threadpool(DeployState ds, Element options) {
             super(ds, "docproc-handler", options);
-            var userOptions = this.options;
-            System.out.println(userOptions);
-            // We support only max == min for docproc handler threadpool
-            if (userOptions.max() == null) {
-                threadsScale = ds.featureFlags().documentProcessorHandlerThreadpoolThreads();
-            } else {
-                threadsScale = -userOptions.max();
-            }
-            if (userOptions.queue() == null) {
-                queueSize = -40;
-            } else {
-                queueSize = -userOptions.queue().intValue();
-            }
+            threads = ds.featureFlags().documentProcessorHandlerThreadpoolThreads();
         }
 
         @Override
         public void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder) {
-            double wantedNumber;
-            if (threadsScale > 0) {
-                var processors = Runtime.getRuntime().availableProcessors();
-                wantedNumber = Math.max(processors * threadsScale, 1);
-            } else {
-                wantedNumber = Math.max(-threadsScale, 1);
-            }
-
             builder.maxThreadExecutionTimeSeconds(190)
                     .keepAliveTime(5.0)
                     .maxThreads((int)wantedNumber)
                     .minThreads((int)wantedNumber)
-                    .queueSize(queueSize);
+                    // currently not having queue.
+                    .queueSize(0);
         }
 
     }

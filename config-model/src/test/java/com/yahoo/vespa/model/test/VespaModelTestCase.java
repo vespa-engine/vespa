@@ -501,10 +501,14 @@ public class VespaModelTestCase {
         int availableProcessors = Runtime.getRuntime().availableProcessors();
         {
             var deployState = makeDeployStateWithDocprocThreadpool(0.5);
+
             var model = new VespaModel(new NullConfigModelRegistry(), deployState);
-            var b = model.getConfig(ContainerThreadpoolConfig.class, configId);
-            assertEquals(availableProcessors / 2, b.maxThreads());
-            assertEquals(availableProcessors / 2, b.minThreads());
+            var builder = new ContainerThreadpoolConfig.Builder();
+            model.getConfig(builder, configId);
+
+            ContainerThreadpoolConfig config = builder.build();
+            assertEquals(availableProcessors / 2, config.maxThreads());
+            assertEquals(availableProcessors / 2, config.minThreads());
         }
 
         {
@@ -513,8 +517,8 @@ public class VespaModelTestCase {
             var model = new VespaModel(new NullConfigModelRegistry(), deployState);
             var builder = new ContainerThreadpoolConfig.Builder();
             model.getConfig(builder, configId);
-            ContainerThreadpoolConfig config = builder.build();
 
+            ContainerThreadpoolConfig config = builder.build();
             assertEquals(availableProcessors, config.maxThreads());
             assertEquals(availableProcessors, config.minThreads());
         }
