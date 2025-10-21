@@ -3,6 +3,7 @@ package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -25,9 +26,11 @@ public final class ClusterSpec {
     private final Optional<DockerImage> dockerImageRepo;
     private final ZoneEndpoint zoneEndpoint;
     private final boolean stateful;
+    private final List<SidecarSpec> sidecars;
 
     private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive,
-                        Optional<DockerImage> dockerImageRepo, ZoneEndpoint zoneEndpoint, boolean stateful) {
+                        Optional<DockerImage> dockerImageRepo, ZoneEndpoint zoneEndpoint, boolean stateful,
+                        List<SidecarSpec> sidecars) {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
@@ -41,6 +44,7 @@ public final class ClusterSpec {
         }
         this.zoneEndpoint = Objects.requireNonNull(zoneEndpoint);
         this.stateful = stateful;
+        this.sidecars = sidecars;
     }
 
     /** Returns the cluster type */
@@ -73,12 +77,15 @@ public final class ClusterSpec {
     /** Returns whether this cluster has state */
     public boolean isStateful() { return stateful; }
 
+    /** Returns the sidecars configured for this cluster */
+    public List<SidecarSpec> sidecars() { return sidecars; }
+
     public ClusterSpec with(Optional<Group> newGroup) {
-        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint, stateful);
+        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint, stateful, sidecars);
     }
 
     public ClusterSpec withExclusivity(boolean exclusive) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint, stateful);
+        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint, stateful, sidecars);
     }
 
     /** Creates a ClusterSpec when requesting a cluster */
@@ -102,6 +109,7 @@ public final class ClusterSpec {
         private boolean exclusive = false;
         private ZoneEndpoint zoneEndpoint = ZoneEndpoint.defaultEndpoint;
         private boolean stateful;
+        private List<SidecarSpec> sidecars = List.of();
 
         private Builder(Type type, Id id) {
             this.type = type;
@@ -110,7 +118,7 @@ public final class ClusterSpec {
         }
 
         public ClusterSpec build() {
-            return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint, stateful);
+            return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint, stateful, sidecars);
         }
 
         public Builder group(Group groupId) {
@@ -147,7 +155,11 @@ public final class ClusterSpec {
             this.stateful = stateful;
             return this;
         }
-
+        
+        public Builder sidecars(List<SidecarSpec> sidecars) {
+            this.sidecars = sidecars;
+            return this;
+        }
     }
 
     @Override
@@ -167,12 +179,13 @@ public final class ClusterSpec {
                groupId.equals(that.groupId) &&
                vespaVersion.equals(that.vespaVersion) &&
                dockerImageRepo.equals(that.dockerImageRepo) &&
-               zoneEndpoint.equals(that.zoneEndpoint);
+               zoneEndpoint.equals(that.zoneEndpoint) && 
+               sidecars.equals(that.sidecars);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint, stateful);
+        return Objects.hash(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint, stateful, sidecars);
     }
 
     /**

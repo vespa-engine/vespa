@@ -28,8 +28,10 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
@@ -159,6 +161,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private final boolean httpServerEnabled;
     protected DeployLogger deployLogger;
 
+    private final List<SidecarSpec> sidecars = new ArrayList<>();
+    
     public static final List<ConfigModelId> configModelIds = List.of(ConfigModelId.fromName(CONTAINER_TAG));
 
     private static final String xmlRendererId = RendererRegistry.xmlRendererId.getName();
@@ -240,8 +244,36 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addAthenzServiceIdentityProvider(cluster, context);
 
         addParameterStoreValidationHandler(cluster, deployState);
+        addSidecars(cluster, deployState);
     }
+    
+    private void addSidecars(ApplicationContainerCluster cluster, DeployState deployState) {
+        var isPublicCloud = deployState.zone().system().isPublicCloudLike();
+        var hasOnnxModels =  !cluster.onnxModelCostCalculator().models().isEmpty();
+        var useTritonFlagValue = deployState.featureFlags().useTriton();
 
+        if (useTritonFlagValue && isPublicCloud && hasOnnxModels) {
+            var hasGpu = cluster.getContainers().stream()
+                    .noneMatch(container -> container.getHostResource().advertisedResources().gpuResources().isZero());
+            
+            // Hardcoding values so that changes are reviewed and tested.
+            var spec = SidecarSpec.builder()
+                    .id(0)
+                    .name("triton")
+                    .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.08-py3"))
+                    .minCpu(1) // Currently sidecar must have at least one CPU.
+                    .hasGpu(hasGpu)
+                    .volumeMounts(List.of("/models"))
+                    .command(List.of(
+                            "tritonserver",
+                            "--log-verbose=1",
+                            "--model-repository=/models",
+                            "--model-control-mode=explicit")
+                    ).build();
+
+            sidecars.add(spec);
+        }
+    }
 
     private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {
         if ( ! deployState.isHosted()) return;
@@ -1153,7 +1185,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                             zoneEndpoint(context, clusterId),
                                             deployState.getDeployLogger(),
                                             false,
-                                            context.clusterInfo().build());
+                                            context.clusterInfo().build(), 
+                                            sidecars);
             return createNodesFromHosts(hosts, cluster, context.getDeployState());
         }
         else {
@@ -1190,7 +1223,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                                       zoneEndpoint(context, clusterId),
                                                                                       deployLogger,
                                                                                       getZooKeeper(containerElement) != null,
-                                                                                      context.clusterInfo().build());
+                                                                                      context.clusterInfo().build(),
+                                                                                      sidecars);
             return createNodesFromHosts(hosts, cluster, context.getDeployState());
         }
         catch (IllegalArgumentException e) {

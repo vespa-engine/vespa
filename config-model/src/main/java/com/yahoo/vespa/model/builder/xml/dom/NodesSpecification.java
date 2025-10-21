@@ -14,6 +14,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.HostResource;
@@ -259,7 +260,7 @@ public class NodesSpecification {
                                                           DeployLogger logger,
                                                           boolean stateful,
                                                           ClusterInfo clusterInfo) {
-        return provision(hostSystem, clusterType, clusterId, ZoneEndpoint.defaultEndpoint, logger, stateful, clusterInfo);
+        return provision(hostSystem, clusterType, clusterId, ZoneEndpoint.defaultEndpoint, logger, stateful, clusterInfo, List.of());
     }
 
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
@@ -268,14 +269,17 @@ public class NodesSpecification {
                                                           ZoneEndpoint zoneEndpoint,
                                                           DeployLogger logger,
                                                           boolean stateful,
-                                                          ClusterInfo info) {
+                                                          ClusterInfo info,
+                                                          List<SidecarSpec> sidecars) {
         ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId)
-                                         .vespaVersion(version)
-                                         .exclusive(exclusive)
-                                         .dockerImageRepository(dockerImageRepo)
-                                         .loadBalancerSettings(zoneEndpoint)
-                                         .stateful(stateful)
-                                         .build();
+                .vespaVersion(version)
+                .exclusive(exclusive)
+                .dockerImageRepository(dockerImageRepo)
+                .loadBalancerSettings(zoneEndpoint)
+                .stateful(stateful)
+                .sidecars(sidecars)
+                .build();
+
         return hostSystem.allocateHosts(cluster, Capacity.from(min, max, groupSize, required, canFail, cloudAccount, info), logger);
     }
 
