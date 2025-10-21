@@ -179,8 +179,9 @@ double my_hwy_square_euclidean_distance_int8(const int8_t* HWY_RESTRICT a,
 {
     // If we cannot possibly overflow intermediate i32 accumulators we can directly
     // compute the distance without requiring any chunking. Max chunk size is defined
-    // by the number of worst-case sums of -128**2 that can fit into an i32.
-    constexpr size_t max_n_per_chunk = INT32_MAX / (INT8_MIN*INT8_MIN);
+    // by the number of worst-case sums of +/-255**2 that can fit into an i32.
+    // +/-255 is due to widening subtraction so that the max is 127 - (-128) or (-127) - 128.
+    constexpr size_t max_n_per_chunk = INT32_MAX / (255 * 255);
     return compute_chunked_sum<max_n_per_chunk, double>(sub_mul_add_i8_to_i32, a, b, sz);
 }
 
