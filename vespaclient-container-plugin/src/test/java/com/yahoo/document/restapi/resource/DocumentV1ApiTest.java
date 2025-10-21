@@ -1199,6 +1199,21 @@ public class DocumentV1ApiTest {
     }
 
     @Test
+    void malformed_accept_header_returns_400_bad_request() {
+        var driver = new RequestHandlerTestDriver(handler);
+        access.session.expect((__, ___) -> { throw new AssertionError("Not supposed to happen"); });
+        var request = driver.createRequest("http://localhost/document/v1?cluster=content&stream=true", HttpRequest.Method.GET);
+        request.headers().add("Accept", "Vazelina Bilopphøggers");
+        var response = driver.sendRequest(request, "");
+        assertSameJson("{" +
+                "  \"pathId\": \"/document/v1\"," +
+                "  \"message\": \"The request contained an unparseable HTTP Accept header. See: " +
+                                 "https://docs.vespa.ai/en/reference/document-v1-api-reference.html#accept\"" +
+                "}", response.readAll());
+        assertEquals(400, response.getStatus());
+    }
+
+    @Test
     public void batch_update_rewrites_tas_condition_with_timestamp_predicate_if_provided_by_backend() {
         var driver = new RequestHandlerTestDriver(handler); // try-with-resources hangs the test on assertion failure, which isn't optimal
         List<AckToken> tokens = List.of(new AckToken(null), new AckToken(null), new AckToken(null), new AckToken(null));
