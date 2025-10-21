@@ -50,7 +50,7 @@ specific version. By default, Vespa Cloud chooses a suitable version for you.
 		Example: `$ vespa deploy .
 $ vespa deploy -t cloud
 $ vespa deploy -t cloud -z dev.aws-us-east-1c  # -z can be omitted here as this zone is the default
-$ vespa deploy -t cloud -z perf.aws-us-east-1c`,
+$ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 		Args:              cobra.MaximumNArgs(1),
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,

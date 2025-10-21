@@ -238,7 +238,7 @@ func updateRegions(cli *CLI, stdin *bufio.Reader, deploymentXML xml.Deployment, 
 
 func promptRegions(cli *CLI, stdin *bufio.Reader, deploymentXML xml.Deployment, system vespa.System) (string, error) {
 	fmt.Fprintln(cli.Stdout, color.CyanString("> Deployment regions"))
-	fmt.Fprintf(cli.Stdout, "Documentation: %s\n", color.GreenString("https://cloud.vespa.ai/en/reference/zones"))
+	fmt.Fprintf(cli.Stdout, "Documentation: %s\n", color.GreenString("https://docs.vespa.ai/en/cloud/zones.html"))
 	fmt.Fprintf(cli.Stdout, "Example: %s\n\n", color.YellowString("aws-us-east-1c,aws-us-west-2a"))
 	var currentRegions []string
 	for _, r := range deploymentXML.Prod.Regions {

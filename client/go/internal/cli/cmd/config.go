@@ -113,8 +113,8 @@ zone
 
 Specifies a custom zone to use when connecting to a Vespa Cloud application.
 This is only relevant for cloud and hosted targets and defaults to a dev zone.
-See https://cloud.vespa.ai/en/reference/zones for available zones. Examples:
-dev.aws-us-east-1c, dev.gcp-us-central1-f, perf.aws-us-east-1c`,
+See https://docs.vespa.ai/en/cloud/zones.html for available zones. Examples:
+dev.aws-us-east-1c, dev.gcp-us-central1-f`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      false,
 		Args:              cobra.MinimumNArgs(1),
@@ -142,7 +142,7 @@ $ vespa config set application my-tenant.my-application.my-instance
 $ vespa config set instance other-instance
 
 # Set an option in local configuration, for the current application only
-$ vespa config set --local zone perf.us-north-1`,
+$ vespa config set --local zone dev.aws-us-east-1c`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(2),
