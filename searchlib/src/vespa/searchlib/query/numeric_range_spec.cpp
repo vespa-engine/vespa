@@ -2,6 +2,7 @@
 
 #include "numeric_range_spec.h"
 #include <vespa/vespalib/locale/c.h>
+#include <cstdlib>
 #include <cmath>
 #include <charconv>
 
