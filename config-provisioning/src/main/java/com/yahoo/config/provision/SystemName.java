@@ -76,6 +76,8 @@ public enum SystemName {
 
     public boolean isProductionLike() { return this == main || this == Public || this == kubernetes; }
 
+    public boolean isHostedLike() { return this == main || this == cd || this == Public || this == PublicCd; }
+
     public static Set<SystemName> all() { return EnumSet.allOf(SystemName.class); }
 
     public static Set<SystemName> allOf(Predicate<SystemName> predicate) {
