@@ -13,7 +13,7 @@
   <version>8-SNAPSHOT</version>
   <name>${project.artifactId}</name>
   <properties>
-    <zookeeper.version>3.9.3</zookeeper.version>
+    <zookeeper.version>3.9.4</zookeeper.version>
   </properties>
   <dependencies>
     <dependency>
