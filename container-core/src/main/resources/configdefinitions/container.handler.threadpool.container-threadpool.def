@@ -12,6 +12,15 @@ maxThreads int default=0
 ## Negative value is interpreted as scale factor ( vcpu*abs(minThreads) )
 minThreads int default=0
 
+##
+## THIS IS THE NEW REALTIVE VALUES.
+
+## The minimum number of threads relative to number of cores (vcpu)
+relativeMinThreads double default=0
+
+## The maximum number of threads relative to number of cores (vcpu)
+relativeMaxThreads double default=0
+
 ## The number of seconds that excess idle threads will wait for new tasks before terminating
 keepAliveTime double default=5.0
 
