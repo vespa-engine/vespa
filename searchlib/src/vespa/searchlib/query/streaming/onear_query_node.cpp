@@ -16,17 +16,30 @@ template <typename MatchResult>
 void
 ONearQueryNode::evaluate_helper(MatchResult& match_result) const
 {
-    HitIteratorPack itr_pack(getChildren());
+    auto& children = getChildren();
+    if (num_negative_terms() >= children.size()) {
+        return; // No positive terms
+    }
+    size_t num_positive_terms = children.size() - num_negative_terms();
+    HitIteratorPack itr_pack(std::span(children.begin(), num_positive_terms));
     if (!itr_pack.all_valid()) {
-        return; // No terms, or an empty term found
+        return; // Empty positive term found
+    }
+    std::vector<HitList> negative_hit_lists;
+    negative_hit_lists.resize(num_negative_terms());
+    NegativeTermChecker filter(*this);
+    for (size_t i = 0; i < num_negative_terms(); ++i) {
+        filter.add(children[num_positive_terms + i]->evaluateHits(negative_hit_lists[i]));
     }
     std::span<HitIterator> others(itr_pack.begin() + 1, itr_pack.end());
     if (others.empty()) {
         auto& front = itr_pack.front();
         while (front.valid()) {
-            match_result.register_match(front->key().element_id());
-            if constexpr (MatchResult::shortcut_return) {
-                return;
+            if (filter.check_window(*front, *front)) {
+                match_result.register_match(front->key().element_id());
+                if constexpr (MatchResult::shortcut_return) {
+                    return;
+                }
             }
             ++front;
         }
@@ -55,10 +68,12 @@ ONearQueryNode::evaluate_helper(MatchResult& match_result) const
             prev_term_pos = cur_term_pos;
         }
         if (match) {
-            match_result.register_match(front->element_id());
-            if constexpr (MatchResult::shortcut_return) {
-                return;
-            };
+            if (filter.check_window(*front, *others.back())) {
+                match_result.register_match(front->element_id());
+                if constexpr (MatchResult::shortcut_return) {
+                    return;
+                }
+            }
         }
     }
 }

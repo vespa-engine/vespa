@@ -5,7 +5,7 @@
 namespace search::streaming {
 
 
-HitIteratorPack::HitIteratorPack(const QueryNodeList& children)
+HitIteratorPack::HitIteratorPack(std::span<const std::unique_ptr<QueryNode>> children)
     : _iterators(),
       _hit_lists(),
       _field_element(std::make_pair(0, 0))
@@ -18,7 +18,7 @@ HitIteratorPack::HitIteratorPack(const QueryNodeList& children)
     }
 }
 
-HitIteratorPack::HitIteratorPack(const std::vector<std::unique_ptr<QueryTerm>>& children)
+HitIteratorPack::HitIteratorPack(std::span<const std::unique_ptr<QueryTerm>> children)
     : _iterators(),
       _hit_lists(),
       _field_element(std::make_pair(0, 0))
