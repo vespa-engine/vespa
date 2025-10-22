@@ -2,21 +2,17 @@
 
 namespace=container.handler.threadpool
 
-## Maximum number of thread in the thread pool
-## 0 is translated to vcpu*4
-## Negative value is interpreted as scale factor ( vcpu*abs(maxThreads) )
-maxThreads int default=0
+## Maximum number of thread in the thread pool (absolute)
+maxThreads int default=-1
 
-## Minimum number of thread in the thread pool
-## 0 is translated to vcpu*2
-## Negative value is interpreted as scale factor ( vcpu*abs(minThreads) )
-minThreads int default=0
+## Minimum number of thread in the thread pool (absolute)
+minThreads int default=-1
 
 ## Minimum number of threads relative to number of cores (vcpu)
-relativeMinThreads double default=0
+relativeMinThreads double default=-1.0
 
 ## Maximum number of threads relative to number of cores (vcpu)
-relativeMaxThreads double default=0
+relativeMaxThreads double default=-1.0
 
 ## The number of seconds that excess idle threads will wait for new tasks before terminating
 keepAliveTime double default=5.0
@@ -25,7 +21,7 @@ keepAliveTime double default=5.0
 queueSize int default=-1
 
 ## Max queue capacity relative to number of cores
-relativeQueueSize double default=-1
+relativeQueueSize double default=-1.0
 
 ## The max time the container tolerates having no threads available before it shuts down to
 ## get out of a bad state. This should be set a bit higher than the expected max execution
