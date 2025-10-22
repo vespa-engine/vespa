@@ -309,48 +309,75 @@ std::string protonTreeToString(Node &root) {
 using ProtonBuilder = QueryBuilder<ProtonNodeTypes>;
 
 template<typename T>
-T& genericAddSimpleTerm(QueryBuilder<ProtonNodeTypes>& builder,
-                        const std::string & term, const std::string & view, int32_t id, search::query::Weight weight);
+T& genericAddSimpleTerm(ProtonBuilder& builder,
+                        const std::string & term,
+                        const std::string & view,
+                        int32_t id,
+                        search::query::Weight weight);
 
 template<>
 ProtonNodeTypes::StringTerm&
 genericAddSimpleTerm<ProtonNodeTypes::StringTerm>(ProtonBuilder& builder,
-                                                  const std::string & term, const std::string & view, int32_t id, search::query::Weight weight) {
+                                                  const std::string & term,
+                                                  const std::string & view,
+                                                  int32_t id,
+                                                  search::query::Weight weight)
+{
     return builder.addStringTerm(term, view, id, weight);
 }
 
 template<>
 ProtonNodeTypes::NumberTerm&
 genericAddSimpleTerm<ProtonNodeTypes::NumberTerm>(ProtonBuilder& builder,
-                                                  const std::string & term, const std::string & view, int32_t id, search::query::Weight weight) {
+                                                  const std::string & term,
+                                                  const std::string & view,
+                                                  int32_t id,
+                                                  search::query::Weight weight)
+{
     return builder.addNumberTerm(term, view, id, weight);
 }
 
 template<>
 ProtonNodeTypes::PrefixTerm&
 genericAddSimpleTerm<ProtonNodeTypes::PrefixTerm>(ProtonBuilder& builder,
-                                                  const std::string & term, const std::string & view, int32_t id, search::query::Weight weight) {
+                                                  const std::string & term,
+                                                  const std::string & view,
+                                                  int32_t id,
+                                                  search::query::Weight weight)
+{
     return builder.addPrefixTerm(term, view, id, weight);
 }
 
 template<>
 ProtonNodeTypes::SubstringTerm&
 genericAddSimpleTerm<ProtonNodeTypes::SubstringTerm>(ProtonBuilder& builder,
-                                                     const std::string & term, const std::string & view, int32_t id, search::query::Weight weight) {
+                                                     const std::string & term,
+                                                     const std::string & view,
+                                                     int32_t id,
+                                                     search::query::Weight weight)
+{
     return builder.addSubstringTerm(term, view, id, weight);
 }
 
 template<>
 ProtonNodeTypes::SuffixTerm&
 genericAddSimpleTerm<ProtonNodeTypes::SuffixTerm>(ProtonBuilder& builder,
-                                                  const std::string & term, const std::string & view, int32_t id, search::query::Weight weight) {
+                                                  const std::string & term,
+                                                  const std::string & view,
+                                                  int32_t id,
+                                                  search::query::Weight weight)
+{
     return builder.addSuffixTerm(term, view, id, weight);
 }
 
 template<>
 ProtonNodeTypes::RegExpTerm&
 genericAddSimpleTerm<ProtonNodeTypes::RegExpTerm>(ProtonBuilder& builder,
-                                                  const std::string & term, const std::string & view, int32_t id, search::query::Weight weight) {
+                                                  const std::string & term,
+                                                  const std::string & view,
+                                                  int32_t id,
+                                                  search::query::Weight weight)
+{
     return builder.addRegExpTerm(term, view, id, weight);
 }
 
@@ -406,7 +433,7 @@ genericAddSimpleTerm<ProtonNodeTypes::RegExpTerm>(ProtonBuilder& builder,
 class FieldSplitterVisitor : public search::query::CustomTypeVisitor<ProtonNodeTypes>
 {
 private:
-    QueryBuilder<ProtonNodeTypes> _builder;
+    ProtonBuilder _builder;
     uint32_t _force_field_id = search::fef::IllegalFieldId;
     bool _has_error = false;
 
@@ -439,7 +466,9 @@ private:
     }
 
     // Helper to check if all children have the same field set
-    static bool allChildrenHaveSameFields(const std::vector<Node *> &children, const std::set<uint32_t> &expected_fields) {
+    static bool allChildrenHaveSameFields(const std::vector<Node *> &children,
+                                          const std::set<uint32_t> &expected_fields)
+    {
         for (Node *child : children) {
             auto* term_data = dynamic_cast<ProtonTermData*>(child);
             if (!term_data || term_data->numFields() != expected_fields.size()) {
@@ -701,10 +730,14 @@ public:
         auto field_to_children = buildFieldToChildrenMap(node.getChildren());
 
         if (field_to_children.empty()) {
-            LOG(debug, "field splitting for Equiv node failed: no fields found in any children (id=%d, weight=%d, num_children=%zu)",
+            LOG(debug, "field splitting for Equiv node failed: "
+                "no fields found in any children (id=%d, weight=%d, num_children=%zu)",
                 node.getId(), node.getWeight().percent(), node.getChildren().size());
-            vespalib::Issue::report("field splitting for Equiv node failed: no fields found in any children (id=%d, weight=%d, num_children=%zu)",
-                                   node.getId(), node.getWeight().percent(), node.getChildren().size());
+            vespalib::Issue::report("field splitting for Equiv node failed: "
+                                   "no fields found in any children "
+                                   "(id=%d, weight=%d, num_children=%zu)",
+                                   node.getId(), node.getWeight().percent(),
+                                   node.getChildren().size());
             _has_error = true;
             return;
         }
@@ -876,7 +909,9 @@ void FieldSplitterVisitor::replicateTermForField<ProtonPhrase>(ProtonPhrase &nod
 }
 
 template <>
-void FieldSplitterVisitor::replicateTermForField<ProtonWordAlternatives>(ProtonWordAlternatives &node, size_t field_idx) {
+void FieldSplitterVisitor::replicateTermForField<ProtonWordAlternatives>(ProtonWordAlternatives &node,
+                                                                         size_t field_idx)
+{
     // Replicate the term vector - WordAlternatives uses subterms like other multi-terms
     auto &replica = _builder.add_word_alternatives(
         replicate_subterms(node), getFieldNameOrView(node, field_idx), node.getId(), node.getWeight());
