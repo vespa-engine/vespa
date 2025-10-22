@@ -48,11 +48,9 @@ public class Significance implements Cloneable {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if (o instanceof Significance other) {
-            if ( ! Objects.equals(this.useModel, other.useModel)) return false;
-            return true;
-        }
-        return false;
+        if ( ! (o instanceof Significance other)) return false;
+        if ( ! Objects.equals(this.useModel, other.useModel)) return false;
+        return true;
     }
 
     @Override

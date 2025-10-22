@@ -51,19 +51,15 @@ public class SecondPhase implements Cloneable {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if (o instanceof SecondPhase other) {
-            if ( ! Objects.equals(this.rankScoreDropLimit, other.rankScoreDropLimit)) return false;
-            return true;
-        }
-        return false;
+        if ( ! (o instanceof SecondPhase other)) return false;
+        if ( ! Objects.equals(this.rankScoreDropLimit, other.rankScoreDropLimit)) return false;
+        return true;
     }
 
     @Override
     public SecondPhase clone() {
         try {
-            SecondPhase clone = (SecondPhase)super.clone();
-            clone.rankScoreDropLimit = this.rankScoreDropLimit;
-            return clone;
+            return (SecondPhase)super.clone();
         }
         catch (CloneNotSupportedException e) {
             throw new RuntimeException("Won't happen", e);

@@ -103,20 +103,14 @@ public class Diversity implements Cloneable {
 
     @Override
     public int hashCode() {
-        int hash = 0;
-        if (attribute != null) hash += 11 * attribute.hashCode();
-        if (minGroups != null) hash += 13 * minGroups.hashCode();
-        if (cutoffFactor != null) hash += 17 * cutoffFactor.hashCode();
-        if (cutoffStrategy != null) hash += 19 * cutoffStrategy.hashCode();
-        return hash;
+        return Objects.hash(attribute, minGroups, cutoffStrategy, cutoffFactor);
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof Diversity)) return false;
+        if ( ! (o instanceof Diversity other)) return false;
 
-        Diversity other = (Diversity)o;
         if ( ! Objects.equals(this.attribute, other.attribute)) return false;
         if ( ! Objects.equals(this.minGroups, other.minGroups)) return false;
         if ( ! Objects.equals(this.cutoffFactor, other.cutoffFactor)) return false;

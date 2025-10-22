@@ -4,6 +4,7 @@ package com.yahoo.prelude;
 import com.yahoo.text.Utf8;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 import java.util.StringTokenizer;
 
 /**
@@ -267,10 +268,7 @@ public class Location implements Cloneable {
         return ser.toString();
     }
 
-    /**
-     * Returns width of bounding box (actual width if rectangle, bounding square if circle)
-     * @return width of bounding box
-     */
+    /** Returns width of bounding box (actual width if rectangle, bounding square if circle). */
     public int getBoundingWidth() {
         if (renderCircle) {
             return this.r * 2;
@@ -279,10 +277,7 @@ public class Location implements Cloneable {
         }
     }
 
-    /**
-     * Returns height of bounding box (actual height if rectangle, bounding square if circle)
-     * @return height of bounding box
-     */
+    /** Returns height of bounding box (actual height if rectangle, bounding square if circle). */
     public int getBoundingHeight() {
         if (renderCircle) {
             return this.r * 2;
@@ -304,8 +299,7 @@ public class Location implements Cloneable {
     @Override
     public boolean equals(Object other) {
         if (other == this) return true;
-        if (! (other instanceof Location)) return false;
-        Location l = (Location)other;
+        if (! (other instanceof Location l)) return false;
         return dimensions == l.dimensions
                && renderCircle == l.renderCircle
                && renderRectangle == l.renderRectangle
@@ -316,7 +310,8 @@ public class Location implements Cloneable {
                && this.y2 == l.y2
                && this.x == l.x
                && this.y == l.y
-               && this.r == l.r;
+               && this.r == l.r
+               && Objects.equals(attribute, l.attribute);
     }
 
     @Override
@@ -357,17 +352,16 @@ public class Location implements Cloneable {
     }
 
     public String bbInDegrees() {
-        return "" +
-                (y1 * 0.000001) + ", " +
-                (x1 * 0.000001) + ", " +
-                (y2 * 0.000001) + ", " +
-                (x2 * 0.000001);
+        return (y1 * 0.000001) + ", " +
+               (x1 * 0.000001) + ", " +
+               (y2 * 0.000001) + ", " +
+               (x2 * 0.000001);
     }
 
     /**
      * Get the bounding box as a BoundingBox record.
      * May only be called when hasBoundingBox() returns true.
-     **/
+     */
     public BoundingBox getBoundingBox() {
         checkBoundingBox();
         double north = y2 * 0.000001;
@@ -391,7 +385,7 @@ public class Location implements Cloneable {
      * Obtain degrees longitude (East-West direction); negative numbers are degrees West.
      * Expected range is [-180.0,+180.0] only.
      * May only be called when isGeoCircle() returns true.
-     **/
+     */
     public double degEW() {
         checkGeoCircle();
         return 0.000001 * x;
@@ -420,6 +414,5 @@ public class Location implements Cloneable {
         buffer.put(loc);
         return loc.length;
     }
-
 
 }

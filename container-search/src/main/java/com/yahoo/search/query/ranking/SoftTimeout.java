@@ -93,19 +93,14 @@ public class SoftTimeout implements Cloneable {
 
     @Override
     public int hashCode() {
-        int hash = 0;
-        if (enabled != null) hash += 11;
-        if (factor != null) hash += 13 * factor.hashCode();
-        if (tailcost != null) hash += 17 * tailcost.hashCode();
-        return hash;
+        return Objects.hash(enabled, factor, tailcost);
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof SoftTimeout)) return false;
+        if ( ! (o instanceof SoftTimeout other)) return false;
 
-        SoftTimeout other = (SoftTimeout)o;
         if ( ! Objects.equals(this.enabled, other.enabled)) return false;
         if ( ! Objects.equals(this.factor, other.factor)) return false;
         if ( ! Objects.equals(this.tailcost, other.tailcost)) return false;

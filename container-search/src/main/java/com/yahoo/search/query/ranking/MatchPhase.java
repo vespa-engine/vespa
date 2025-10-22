@@ -117,21 +117,14 @@ public class MatchPhase implements Cloneable {
 
     @Override
     public int hashCode() {
-        int hash = 0;
-        hash += 13 * Boolean.hashCode(ascending);
-        hash += 19 * diversity.hashCode();
-        if (attribute != null) hash += 11 * attribute.hashCode();
-        if (maxHits != null) hash += 17 * maxHits.hashCode();
-        hash += 23 * maxFilterCoverage.hashCode();
-        return hash;
+        return Objects.hash(ascending, attribute, maxHits, diversity, maxFilterCoverage);
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof MatchPhase)) return false;
+        if ( ! (o instanceof MatchPhase other)) return false;
 
-        MatchPhase other = (MatchPhase)o;
         if ( this.ascending != other.ascending) return false;
         if ( ! Objects.equals(this.attribute, other.attribute)) return false;
         if ( ! Objects.equals(this.maxHits, other.maxHits)) return false;
