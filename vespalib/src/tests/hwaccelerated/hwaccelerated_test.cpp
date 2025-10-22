@@ -81,14 +81,18 @@ void verify_euclidean_distance(std::span<const IAccelerated*> accelerators, size
 
 // Max number of elements that can be covered in one computed_chunked_sum() call
 // for our current chunked use cases (dot product + Euclidean distance).
-constexpr uint32_t max_chunk_i32_boundary = INT32_MAX / (INT8_MIN*INT8_MIN);
+constexpr uint32_t euclidean_max_chunk_i32_boundary = INT32_MAX / (-255 * -255);
+constexpr uint32_t dot_max_chunk_i32_boundary = INT32_MAX / (-128 * -128);
 
 constexpr std::span<const size_t> test_lengths() noexcept {
     // verify_... checks all suffixes from offsets [0, 32), so test lengths must be at least this long.
-    // Lengths relative to max_chunk_i32_boundary are for testing chunk overflow handling.
+    // Lengths relative to max_chunk_i32_boundary limits are for testing chunk overflow handling.
     static size_t lengths[] = {
-        32u, 64u, 256u, 1024u, max_chunk_i32_boundary - 1, max_chunk_i32_boundary,
-        max_chunk_i32_boundary + 1, max_chunk_i32_boundary + 256
+        32u, 64u, 256u, 1024u,
+        euclidean_max_chunk_i32_boundary - 1, euclidean_max_chunk_i32_boundary,
+        euclidean_max_chunk_i32_boundary + 1, euclidean_max_chunk_i32_boundary + 256,
+        dot_max_chunk_i32_boundary - 1, dot_max_chunk_i32_boundary,
+        dot_max_chunk_i32_boundary + 1, dot_max_chunk_i32_boundary + 256
     };
     return lengths;
 }
@@ -124,6 +128,57 @@ TEST_F(HwAcceleratedTest, dot_product_impls_match_source_of_truth) {
     for (size_t test_length : test_lengths()) {
         GTEST_DO(verify_dot_product(accelerators, test_length));
     }
+}
+
+template <std::integral T>
+void verify_euclidean_distance_no_overflow(std::span<const IAccelerated*> accels, size_t test_length) {
+    std::vector<T> lhs(test_length + 100);
+    std::vector<T> rhs(test_length + 100);
+    std::fill(lhs.begin(), lhs.end(), std::numeric_limits<T>::min());
+    std::fill(rhs.begin(), rhs.end(), std::numeric_limits<T>::max());
+    ASSERT_GE(test_length, 100);
+    for (size_t i = test_length - 100; i < test_length + 100; i++) {
+        int64_t sum = 0;
+        for (size_t j = 0; j < i; j++) {
+            auto d = lhs[j] - rhs[j];
+            sum += d * d;
+        }
+        for (const auto* accel : accels) {
+            LOG(spam, "verify_euclidean_distance_no_overflow(accel=%s, len=%zu)", accel->friendly_name().c_str(), i);
+            auto computed = static_cast<int64_t>(accel->squaredEuclideanDistance(lhs.data(), rhs.data(), i));
+            ASSERT_EQ(sum, computed) << "overflow at length " << i << " for accel " << accel->friendly_name();
+        }
+    }
+}
+
+TEST_F(HwAcceleratedTest, chunked_i8_euclidean_distance_does_not_overflow) {
+    auto accelerators = all_accelerators_to_test();
+    verify_euclidean_distance_no_overflow<int8_t>(accelerators, euclidean_max_chunk_i32_boundary);
+}
+
+template <std::integral T>
+void verify_dot_product_no_overflow(std::span<const IAccelerated*> accels, size_t test_length) {
+    std::vector<T> lhs(test_length + 100);
+    std::vector<T> rhs(test_length + 100);
+    std::fill(lhs.begin(), lhs.end(), std::numeric_limits<T>::min());
+    std::fill(rhs.begin(), rhs.end(), std::numeric_limits<T>::min());
+    ASSERT_GE(test_length, 100);
+    for (size_t i = test_length - 100; i < test_length + 100; i++) {
+        int64_t sum = 0;
+        for (size_t j = 0; j < i; j++) {
+            sum += lhs[j] * rhs[j];
+        }
+        for (const auto* accel : accels) {
+            LOG(spam, "verify_dot_product_no_overflow(accel=%s, len=%zu)", accel->friendly_name().c_str(), i);
+            int64_t computed = accel->dotProduct(lhs.data(), rhs.data(), i);
+            ASSERT_EQ(sum, computed) << "overflow at length " << i << " for accel " << accel->friendly_name();
+        }
+    }
+}
+
+TEST_F(HwAcceleratedTest, chunked_i8_dot_product_does_not_overflow) {
+    auto accelerators = all_accelerators_to_test();
+    verify_dot_product_no_overflow<int8_t>(accelerators, dot_max_chunk_i32_boundary);
 }
 
 // TODO dedupe with hamming_test.cpp

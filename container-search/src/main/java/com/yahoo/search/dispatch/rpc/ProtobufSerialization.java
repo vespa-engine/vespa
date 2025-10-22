@@ -42,6 +42,16 @@ import java.util.function.Consumer;
 
 public class ProtobufSerialization {
 
+    /**
+     * Returns true if protobuf query tree serialization is being performed in addition to the old format.
+     * During the transition period, this allows old format serialization to skip exceptions for features
+     * that are only supported in the protobuf format, since the backend will use the protobuf format when
+     * both are present.
+     */
+    public static boolean isProtobufAlsoSerialized() {
+        return isProtobufAlsoSerialized.get();
+    }
+
     /*
      * This is a thread local buffer that is used as scratchpad during serialization.
      * - avoids the unnecessary cost of allocating and initializing a buffer that is too large.
@@ -50,6 +60,14 @@ public class ProtobufSerialization {
      * There is a limited number of threads that will use this so the upper bound should be fine.
      */
     private static final ThreadLocal<GrowableByteBuffer> threadLocalBuffer = ThreadLocal.withInitial(() -> new GrowableByteBuffer(4096));
+
+    /*
+     * Tracks whether protobuf query tree serialization is being performed in addition to the old format.
+     * Used during the transition period to allow old format serialization to skip exceptions for
+     * features that are only supported in the protobuf format, since the backend will use the
+     * protobuf format when both are present.
+     */
+    private static final ThreadLocal<Boolean> isProtobufAlsoSerialized = ThreadLocal.withInitial(() -> false);
 
     static byte[] serializeSearchRequest(Query query, int hits, String serverId, double requestTimeout, QrSearchersConfig qrSearchersConfig) {
         return convertFromQuery(query, hits, serverId, requestTimeout, qrSearchersConfig).toByteArray();
@@ -70,8 +88,14 @@ public class ProtobufSerialization {
         }
         GrowableByteBuffer scratchPad = threadLocalBuffer.get();
         var queryTree = query.getModel().getQueryTree();
-        builder.setQueryTreeBlob(serializeQueryTree(queryTree, scratchPad));
-        if (qrSearchersConfig.sendProtobufQuerytree()) {
+        boolean sendProtobuf = qrSearchersConfig.sendProtobufQuerytree();
+        try {
+            isProtobufAlsoSerialized.set(sendProtobuf);
+            builder.setQueryTreeBlob(serializeQueryTree(queryTree, scratchPad));
+        } finally {
+            isProtobufAlsoSerialized.set(false);
+        }
+        if (sendProtobuf) {
             builder.setQueryTree(queryTree.toProtobufQueryTree());
         }
         if (query.getGroupingSessionCache() || query.getRanking().getQueryCache()) {
@@ -219,8 +243,14 @@ public class ProtobufSerialization {
         var ranking = query.getRanking();
         var featureMap = ranking.getFeatures().asMap();
 
-        builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree(), scratchPad));
-        if (qrSearchersConfig.sendProtobufQuerytree()) {
+        boolean sendProtobuf = qrSearchersConfig.sendProtobufQuerytree();
+        try {
+            isProtobufAlsoSerialized.set(sendProtobuf);
+            builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree(), scratchPad));
+        } finally {
+            isProtobufAlsoSerialized.set(false);
+        }
+        if (sendProtobuf) {
             builder.setQueryTree(query.getModel().getQueryTree().toProtobufQueryTree());
         }
 
