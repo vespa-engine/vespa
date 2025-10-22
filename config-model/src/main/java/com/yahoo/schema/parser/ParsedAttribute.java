@@ -55,9 +55,9 @@ public class ParsedAttribute extends ParsedBlock {
     }
 
     public void setEnableOnlyBitVector(boolean value) { this.enableOnlyBitVector = value; }
-    public void setFastAccess(boolean value) { this.enableFastAccess = true; }
-    public void setFastRank(boolean value) { this.enableFastRank = true; }
-    public void setFastSearch(boolean value) { this.enableFastSearch = true; }
-    public void setMutable(boolean value) { this.enableMutable = true; }
-    public void setPaged(boolean value) { this.enablePaged = true; }
+    public void setFastAccess(boolean value) { this.enableFastAccess = value; }
+    public void setFastRank(boolean value) { this.enableFastRank = value; }
+    public void setFastSearch(boolean value) { this.enableFastSearch = value; }
+    public void setMutable(boolean value) { this.enableMutable = value; }
+    public void setPaged(boolean value) { this.enablePaged = value; }
 }
