@@ -2,6 +2,7 @@
 
 #include "equiv_query_node.h"
 #include "phrase_query_node.h"
+#include "query_visitor.h"
 #include "queryterm.hpp"
 
 using search::common::ElementIds;
@@ -113,6 +114,11 @@ std::vector<std::unique_ptr<QueryTerm>>
 EquivQueryNode::steal_terms()
 {
     return std::move(_terms);
+}
+
+void
+EquivQueryNode::accept(QueryVisitor &visitor) {
+    visitor.visit(*this);
 }
 
 }

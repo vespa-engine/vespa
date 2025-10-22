@@ -2,6 +2,7 @@
 
 #include "phrase_query_node.h"
 #include "hit_iterator_pack.h"
+#include "query_visitor.h"
 #include "queryterm.hpp"
 
 using search::common::ElementIds;
@@ -89,6 +90,11 @@ PhraseQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef
     const HitList & hit_list = evaluateHits(list);
     unpack_match_data_helper(docid, td, match_data, hit_list, *get_terms().front(), is_filter(), index_env,
                              element_ids);
+}
+
+void
+PhraseQueryNode::accept(QueryVisitor &visitor) {
+    visitor.visit(*this);
 }
 
 }

@@ -6,6 +6,8 @@
 
 namespace search::streaming {
 
+class QueryVisitor;
+
 /**
    N-ary "EQUIV" operator that merges terms from nodes below.
 */
@@ -22,6 +24,7 @@ public:
     bool multi_index_terms() const noexcept override;
     const EquivQueryNode* as_equiv_query_node() const noexcept override;
     std::vector<std::unique_ptr<QueryTerm>> steal_terms();
+    void accept(QueryVisitor &visitor);
 };
 
 }

@@ -1,26 +1,44 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchlib_query_streaming OBJECT
     SOURCES
+    and_not_query_node.cpp
+    and_query_node.cpp
     dot_product_term.cpp
     equiv_query_node.cpp
+    false_node.cpp
     fuzzy_term.cpp
     hit.cpp
     hit_iterator_pack.cpp
     in_term.cpp
+    location_term.cpp
     multi_term.cpp
     near_query_node.cpp
     nearest_neighbor_query_node.cpp
+    number_term.cpp
     onear_query_node.cpp
+    or_query_node.cpp
     phrase_query_node.cpp
+    predicate_query.cpp
+    prefix_term.cpp
     query.cpp
     query_builder.cpp
+    query_connector.cpp
     query_term_data.cpp
+    query_visitor.cpp
     querynode.cpp
     querynoderesultbase.cpp
     queryterm.cpp
-    same_element_query_node.cpp
-    wand_term.cpp
-    weighted_set_term.cpp
+    range_term.cpp
+    rank_with_query_node.cpp
     regexp_term.cpp
+    same_element_query_node.cpp
+    string_term.cpp
+    substring_term.cpp
+    suffix_term.cpp
+    true_node.cpp
+    wand_term.cpp
+    weak_and_query_node.cpp
+    weighted_set_term.cpp
+    word_alternatives.cpp
     DEPENDS
 )

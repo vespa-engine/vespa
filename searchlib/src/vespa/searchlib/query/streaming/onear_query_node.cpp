@@ -2,6 +2,7 @@
 
 #include "onear_query_node.h"
 #include "hit_iterator_pack.h"
+#include "query_visitor.h"
 #include <vespa/searchlib/queryeval/near_search_utils.h>
 #include <span>
 
@@ -82,6 +83,11 @@ ONearQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
     ElementIdMatchResult match_result(element_ids);;
     evaluate_helper(match_result);
     match_result.maybe_sort_element_ids();
+}
+
+void
+ONearQueryNode::accept(QueryVisitor &visitor) {
+    visitor.visit(*this);
 }
 
 }

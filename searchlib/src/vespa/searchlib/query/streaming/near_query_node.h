@@ -7,6 +7,8 @@
 
 namespace search::streaming {
 
+class QueryVisitor;
+
 /**
    N-ary Near operator. All terms must be within the given distance.
 */
@@ -47,6 +49,7 @@ public:
     size_t distance()          const { return _distance; }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     bool isFlattenable(ParseItem::ItemType) const override { return false; }
+    void accept(QueryVisitor &visitor);
 };
 
 }

@@ -1,126 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "queryterm.h"
-#include <vespa/searchlib/parsequery/parse.h>
-#include <optional>
+#include "query_connector.h"
+#include "true_node.h"
+#include "false_node.h"
+#include "and_query_node.h"
+#include "and_not_query_node.h"
+#include "or_query_node.h"
+#include "rank_with_query_node.h"
 
 namespace search { class SerializedQueryTree; }
 
 namespace search::streaming {
-
-/**
-   Base class for all N-ary query operators.
-   Implements the width, depth, print, and collect all leafs operators(terms).
-*/
-class QueryConnector : public QueryNode
-{
-public:
-    explicit QueryConnector(const char * opName) noexcept;
-    ~QueryConnector() override;
-    const HitList & evaluateHits(HitList & hl) override;
-    void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
-                           search::common::ElementIds element_ids) override;
-    void reset() override;
-    void getLeaves(QueryTermList & tl) override;
-    void getLeaves(ConstQueryTermList & tl) const override;
-    size_t depth() const override;
-    size_t width() const override;
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    void setIndex(std::string index) override { _index = std::move(index); }
-    const std::string & getIndex() const override { return _index; }
-    static std::unique_ptr<QueryConnector> create(ParseItem::ItemType type, const QueryNodeResultFactory& factory);
-    virtual bool isFlattenable(ParseItem::ItemType type) const { (void) type; return false; }
-    const QueryNodeList & getChildren() const { return _children; }
-    virtual void addChild(std::unique_ptr<QueryNode> child);
-    size_t size() const { return _children.size(); }
-    const std::unique_ptr<QueryNode> & operator [](size_t index) const { return _children[index]; }
-private:
-    std::string _opName;
-    std::string _index;
-    QueryNodeList _children;
-protected:
-    std::optional<bool> _cached_evaluate_result;
-};
-
-/**
-   True operator. Matches everything.
-*/
-class TrueNode : public QueryConnector
-{
-public:
-    TrueNode() noexcept : QueryConnector("AND") { }
-    ~TrueNode() override;
-    bool evaluate() override;
-    void get_element_ids(std::vector<uint32_t>& element_ids) override;
-};
-
-/** False operator. Matches nothing. */
-class FalseNode : public QueryConnector
-{
-public:
-    FalseNode() noexcept : QueryConnector("AND") { }
-    ~FalseNode() override;
-    bool evaluate() override;
-    void get_element_ids(std::vector<uint32_t>& element_ids) override;
-};
-
-/**
-   N-ary Or operator that simply ANDs all the nodes together.
-*/
-class AndQueryNode : public QueryConnector
-{
-public:
-    AndQueryNode() noexcept : QueryConnector("AND") { }
-    explicit AndQueryNode(const char * opName) noexcept : QueryConnector(opName) { }
-    ~AndQueryNode() override;
-    bool evaluate() override;
-    bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_AND; }
-    void get_element_ids(std::vector<uint32_t>& element_ids) override;
-};
-
-/**
-   N-ary special AndNot operator. n[0] & !n[1] & !n[2] .. & !n[j].
-*/
-class AndNotQueryNode : public QueryConnector
-{
-public:
-    AndNotQueryNode() noexcept : QueryConnector("ANDNOT") { }
-    ~AndNotQueryNode() override;
-    bool evaluate() override;
-    bool isFlattenable(ParseItem::ItemType) const override { return false; }
-    void get_element_ids(std::vector<uint32_t>& element_ids) override;
-};
-
-/**
-   N-ary Or operator that simply ORs all the nodes together.
-*/
-class OrQueryNode : public QueryConnector
-{
-public:
-    OrQueryNode() noexcept : QueryConnector("OR") { }
-    explicit OrQueryNode(const char * opName) noexcept : QueryConnector(opName) { }
-    ~OrQueryNode() override;
-    bool evaluate() override;
-    bool isFlattenable(ParseItem::ItemType type) const override {
-        return (type == ParseItem::ITEM_OR) ||
-               (type == ParseItem::ITEM_WEAK_AND);
-    }
-    void get_element_ids(std::vector<uint32_t>& element_ids) override;
-};
-
-/**
-   N-ary RankWith operator
-*/
-class RankWithQueryNode : public QueryConnector
-{
-public:
-    RankWithQueryNode() noexcept : QueryConnector("RANK") { }
-    explicit RankWithQueryNode(const char * opName) noexcept : QueryConnector(opName) { }
-    ~RankWithQueryNode() override;
-    bool evaluate() override;
-    void get_element_ids(std::vector<uint32_t>& element_ids) override;
-};
 
 /**
    Query packages the query tree. The usage pattern is like this.

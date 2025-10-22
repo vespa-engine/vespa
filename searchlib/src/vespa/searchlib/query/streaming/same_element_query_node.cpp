@@ -2,6 +2,7 @@
 
 #include "same_element_query_node.h"
 #include "query_term_data.h"
+#include "query_visitor.h"
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <algorithm>
@@ -162,6 +163,11 @@ SameElementQueryNode::get_hidden_leaves(ConstQueryTermList & tl) const
     for (auto& child : _children) {
         child->getLeaves(tl);
     }
+}
+
+void
+SameElementQueryNode::accept(QueryVisitor &visitor) {
+    visitor.visit(*this);
 }
 
 }

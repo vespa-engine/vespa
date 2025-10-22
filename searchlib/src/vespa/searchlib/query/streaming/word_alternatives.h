@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 #pragma once
 
 #include "multi_term.h"
@@ -8,21 +7,21 @@ namespace search::streaming {
 
 class QueryVisitor;
 
+
+class QueryVisitor;
+
 /**
-   N-ary phrase operator. All terms must be satisfied and have the correct order
-   with distance to next term equal to 1.
-*/
-class PhraseQueryNode : public MultiTerm
-{
+ * A word alternatives query term for streaming search.
+ * Represents a set of alternative word forms that should match.
+ */
+class WordAlternatives : public MultiTerm {
 public:
-    PhraseQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms);
-    ~PhraseQueryNode() override;
-    bool evaluate() override;
-    const HitList & evaluateHits(HitList & hl) override;
+    WordAlternatives(std::unique_ptr<QueryNodeResultBase> result_base, const string& index,
+                     std::unique_ptr<query::TermVector> terms, Normalizing normalize_mode);
+    ~WordAlternatives() override;
     void get_element_ids(std::vector<uint32_t>& element_ids) override;
     void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
                            const fef::IIndexEnvironment& index_env, search::common::ElementIds element_ids) override;
-    size_t width() const override;
     void accept(QueryVisitor &visitor);
 };
 

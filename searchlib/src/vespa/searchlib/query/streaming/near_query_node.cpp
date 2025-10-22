@@ -2,6 +2,7 @@
 
 #include "near_query_node.h"
 #include "hit_iterator_pack.h"
+#include "query_visitor.h"
 #include <vespa/searchlib/queryeval/near_search_utils.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/util/priority_queue.h>
@@ -85,6 +86,11 @@ NearQueryNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     AndQueryNode::visitMembers(visitor);
     visit(visitor, "distance", static_cast<uint64_t>(_distance));
+}
+
+void
+NearQueryNode::accept(QueryVisitor &visitor) {
+    visitor.visit(*this);
 }
 
 }

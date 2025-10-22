@@ -6,6 +6,8 @@
 
 namespace search::streaming {
 
+class QueryVisitor;
+
 /**
    N-ary Ordered near operator. The terms must be in order and the distance between
    the first and last must not exceed the given distance.
@@ -21,6 +23,7 @@ public:
     ~ONearQueryNode() override;
     bool evaluate() override;
     void get_element_ids(std::vector<uint32_t>& element_ids) override;
+    void accept(QueryVisitor &visitor);
 };
 
 }

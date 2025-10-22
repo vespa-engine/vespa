@@ -7,6 +7,8 @@
 
 namespace search::streaming {
 
+class QueryVisitor;
+
 /**
    N-ary Same element operator. All terms must be within the same element.
 */
@@ -33,6 +35,7 @@ public:
     void get_hidden_leaves(QueryTermList & tl);
     void get_hidden_leaves(ConstQueryTermList & tl) const;
     const QueryNodeList& get_children() const noexcept { return _children; }
+    void accept(QueryVisitor &visitor);
 };
 
 }
