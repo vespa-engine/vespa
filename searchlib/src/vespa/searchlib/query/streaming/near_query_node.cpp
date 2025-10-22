@@ -4,7 +4,6 @@
 #include "hit_iterator_pack.h"
 #include <vespa/searchlib/queryeval/near_search_utils.h>
 #include <vespa/vespalib/objects/visit.hpp>
-#include <vespa/vespalib/util/priority_queue.h>
 
 using search::queryeval::near_search_utils::BoolMatchResult;
 using search::queryeval::near_search_utils::ElementIdMatchResult;
@@ -20,29 +19,37 @@ NearQueryNode::evaluate_helper(MatchResult& match_result) const
 {
     PriorityQueue<HitIterator> queue;
     std::vector<HitList> hit_lists;
-    HitKey max_key(0, 0, 0);
+    Hit max_pos(0, 0, 0, 0);
     auto& children = getChildren();
-    if (children.empty()) {
-        return; // No terms
+    if (num_negative_terms() >= children.size()) {
+        return; // No positive terms
     }
-    hit_lists.reserve(children.size());
-    for (auto& child : children) {
-        auto& hit_list = child->evaluateHits(hit_lists.emplace_back());
-        if (hit_list.empty()) {
-            return; // Empty term
+    hit_lists.resize(children.size());
+    NegativeTermChecker filter(*this);
+    size_t num_positive_terms = children.size() - num_negative_terms();
+    for (size_t i = 0; i < children.size(); ++i) {
+        auto& hit_list = children[i]->evaluateHits(hit_lists[i]);
+        if (i < num_positive_terms) {
+            if (hit_list.empty()) {
+                return; // Empty term
+            }
+            if (max_pos.key() < hit_list.front().key()) {
+                max_pos = hit_list.front();
+            }
+            queue.push(HitIterator(hit_list));
+        } else {
+            filter.add(hit_list);
         }
-        if (max_key < hit_list.front().key()) {
-            max_key = hit_list.front().key();
-        }
-        queue.push(HitIterator(hit_list));
     }
     for (;;) {
         auto& front = queue.front();
         auto last_allowed = calc_window_end_pos(*front);
-        if (!(last_allowed < max_key)) {
-            match_result.register_match(front.get_field_element().second);
-            if constexpr (MatchResult::shortcut_return) {
-                return;
+        if (!(last_allowed < max_pos.key())) {
+            if (filter.check_window(*front, max_pos)) {
+                match_result.register_match(front.get_field_element().second);
+                if constexpr (MatchResult::shortcut_return) {
+                    return;
+                }
             }
         }
         do {
@@ -51,9 +58,9 @@ NearQueryNode::evaluate_helper(MatchResult& match_result) const
                 return;
             }
             last_allowed = calc_window_end_pos(*front);
-        } while (last_allowed < max_key);
-        if (max_key < front->key()) {
-            max_key = front->key();
+        } while (last_allowed < max_pos.key());
+        if (max_pos.key() < front->key()) {
+            max_pos = *front;
         }
         queue.adjust();
     }
@@ -85,6 +92,8 @@ NearQueryNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     AndQueryNode::visitMembers(visitor);
     visit(visitor, "distance", static_cast<uint64_t>(_distance));
+    visit(visitor, "num_negative_terms", static_cast<uint64_t>(_num_negative_terms));
+    visit(visitor, "exclusion_distance", static_cast<uint64_t>(_exclusion_distance));
 }
 
 }
