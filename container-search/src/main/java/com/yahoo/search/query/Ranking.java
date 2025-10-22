@@ -305,15 +305,16 @@ public class Ranking implements Cloneable {
     public Ranking clone() {
         try {
             Ranking clone = (Ranking) super.clone();
-
-            if (sorting != null) clone.sorting = this.sorting.clone();
-
-            clone.rankProperties = this.rankProperties.clone();
-            clone.rankFeatures = this.rankFeatures.cloneFor(clone);
-            clone.matchPhase = this.matchPhase.clone();
-            clone.globalPhase = this.globalPhase.clone();
-            clone.matching = this.matching.clone();
-            clone.softTimeout = this.softTimeout.clone();
+            if (this.location != null) clone.location = this.location.clone();
+            if (this.sorting != null) clone.sorting = this.sorting.clone();
+            if (this.rankProperties != null) clone.rankProperties = this.rankProperties.clone();
+            if (this.rankFeatures != null) clone.rankFeatures = this.rankFeatures.cloneFor(clone);
+            if (this.matchPhase != null) clone.matchPhase = this.matchPhase.clone();
+            if (this.secondPhase != null) clone.secondPhase = this.secondPhase.clone();
+            if (this.globalPhase != null) clone.globalPhase = this.globalPhase.clone();
+            if (this.matching != null) clone.matching = this.matching.clone();
+            if (this.softTimeout != null) clone.softTimeout = this.softTimeout.clone();
+            if (this.significance != null) clone.significance = this.significance.clone();
             return clone;
         }
         catch (CloneNotSupportedException e) {
@@ -332,19 +333,30 @@ public class Ranking implements Cloneable {
         if (o == this) return true;
         if( ! (o instanceof Ranking other)) return false;
 
-        if ( ! QueryHelper.equals(rankProperties, other.rankProperties)) return false;
-        if ( ! QueryHelper.equals(rankFeatures, other.rankFeatures)) return false;
-        if ( ! QueryHelper.equals(freshness, other.freshness)) return false;
-        if ( ! QueryHelper.equals(this.sorting, other.sorting)) return false;
-        if ( ! QueryHelper.equals(this.location, other.location)) return false;
-        if ( ! QueryHelper.equals(this.profile, other.profile)) return false;
-        if ( ! QueryHelper.equals(this.globalPhase, other.globalPhase)) return false;
+        if ( ! Objects.equals(location, other.location)) return false;
+        if ( ! Objects.equals(profile, other.profile)) return false;
+        if ( ! Objects.equals(sorting, other.sorting)) return false;
+        if ( ! Objects.equals(freshness, other.freshness)) return false;
+        if ( ! Objects.equals(queryCache, other.queryCache)) return false;
+        if ( ! Objects.equals(rerankCount, other.rerankCount)) return false;
+        if ( ! Objects.equals(keepRankCount, other.keepRankCount)) return false;
+        if ( ! Objects.equals(rankScoreDropLimit, other.rankScoreDropLimit)) return false;
+        if ( ! Objects.equals(rankProperties, other.rankProperties)) return false;
+        if ( ! Objects.equals(rankFeatures, other.rankFeatures)) return false;
+        if ( ! Objects.equals(matchPhase, other.matchPhase)) return false;
+        if ( ! Objects.equals(secondPhase, other.secondPhase)) return false;
+        if ( ! Objects.equals(globalPhase, other.globalPhase)) return false;
+        if ( ! Objects.equals(matching, other.matching)) return false;
+        if ( ! Objects.equals(softTimeout, other.softTimeout)) return false;
+        if ( ! Objects.equals(significance, other.significance)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(rankFeatures, rankProperties, matchPhase, globalPhase, softTimeout, matching, sorting, location, profile);
+        return Objects.hash(location, profile, sorting, listFeatures, freshness, queryCache,
+                            rerankCount, keepRankCount, rankScoreDropLimit, rankProperties,
+                            rankFeatures, matchPhase, secondPhase, globalPhase, matching, softTimeout, significance);
     }
 
 }

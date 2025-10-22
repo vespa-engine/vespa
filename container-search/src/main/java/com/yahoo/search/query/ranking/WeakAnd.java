@@ -85,12 +85,13 @@ public class WeakAnd implements Cloneable {
         if (o == null || getClass() != o.getClass()) return false;
         WeakAnd weakAnd = (WeakAnd) o;
         return Objects.equals(stopwordLimit, weakAnd.stopwordLimit) &&
-                Objects.equals(adjustTarget, weakAnd.adjustTarget) &&
-                Objects.equals(allowDropAll, weakAnd.allowDropAll);
+               Objects.equals(adjustTarget, weakAnd.adjustTarget) &&
+               Objects.equals(allowDropAll, weakAnd.allowDropAll);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(stopwordLimit, adjustTarget, allowDropAll);
     }
+
 }
