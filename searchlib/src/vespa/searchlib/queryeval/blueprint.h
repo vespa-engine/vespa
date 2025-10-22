@@ -520,7 +520,7 @@ public:
     Blueprint::UP removeChild(size_t n);
     Blueprint::UP removeLastChild() { return removeChild(childCnt() - 1); }
     SearchIteratorUP createSearchImpl(fef::MatchData &md) const override;
-    
+
     virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
     virtual FieldSpecBaseList exposeFields() const = 0;
     virtual void sort(Children &children, InFlow in_flow) const = 0;
@@ -578,6 +578,7 @@ public:
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;
     void set_matching_phase(MatchingPhase matching_phase) noexcept override;
+    fef::TermFieldMatchDataArray resolveFields(fef::MatchData &md) const;
     SearchIteratorUP createSearchImpl(fef::MatchData &md) const override;
     const LeafBlueprint * asLeaf() const noexcept final { return this; }
 
@@ -607,4 +608,3 @@ void visit(vespalib::ObjectVisitor &self, std::string_view name,
            const search::queryeval::Blueprint &obj);
 void visit(vespalib::ObjectVisitor &self, std::string_view name,
            const search::queryeval::Blueprint *obj);
-

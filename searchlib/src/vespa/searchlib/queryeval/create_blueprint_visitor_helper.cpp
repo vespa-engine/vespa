@@ -12,6 +12,9 @@
 #include "split_float.h"
 #include "irequestcontext.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".queryeval.create_blueprint_visitor_helper");
+
 namespace search::queryeval {
 
 CreateBlueprintVisitorHelper::CreateBlueprintVisitorHelper(Searchable &searchable, const FieldSpec &field, const IRequestContext & requestContext)
@@ -49,30 +52,41 @@ void
 CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
     auto phrase = std::make_unique<SimplePhraseBlueprint>(_field, n.is_expensive());
     for (const query::Node * child : n.getChildren()) {
-        FieldSpecList fields;
-        fields.add(phrase->getNextChildField(_field));
-        phrase->addTerm(_searchable.createBlueprint(_requestContext, fields, *child));
+        if (const auto *term = dynamic_cast<const query::Term *>(child)) {
+            FieldSpec inner = term->inner_field_spec(_field);
+            if (inner.getHandle() == fef::IllegalHandle) {
+                LOG(debug, "EmptyBlueprint: invalid handle for child of Phrase");
+                return;
+            }
+            LOG(debug, "Phrase inner handle: %d", inner.getHandle());
+            phrase->addTerm(_searchable.createBlueprint(_requestContext, inner, *child));
+        } else {
+            LOG(debug, "EmptyBlueprint: child of Phrase is not a Term");
+            return;
+        }
     }
     setResult(std::move(phrase));
 }
 
 void CreateBlueprintVisitorHelper::visitWordAlternatives(query::WordAlternatives &n) {
-    fef::MatchDataLayout layout;
     std::vector<std::unique_ptr<Blueprint>> blueprints;
-    for (size_t i = 0; i < n.getNumTerms(); ++i) {
-        fef::TermFieldHandle handle = layout.allocTermField(_field.getFieldId());
-        FieldSpec inner{_field.getName(), _field.getFieldId(), handle, false};
-        auto pair = n.getAsString(i);
-        query::SimpleStringTerm term(std::string(pair.first), _field.getName(), 0, pair.second); // TODO Temporary
-        blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner, term));
+    const auto &children = n.getChildren();
+    for (const auto& child : children) {
+        FieldSpec inner = child->inner_field_spec(_field);
+        fef::TermFieldHandle handle = inner.getHandle();
+        if (handle == fef::IllegalHandle) {
+            LOG(debug, "EmptyBlueprint: invalid handle for child of WordAlternatives");
+            return;
+        }
+        LOG(debug, "WordAlternatives inner handle: %d", handle);
+        blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner, *child));
     }
     double eqw = n.getWeight().percent();
     FieldSpecBaseList fields;
     fields.add(_field);
-    auto eq = std::make_unique<EquivBlueprint>(fields, std::move(layout));
-    for (size_t i = 0; i < n.getNumTerms(); ++i) {
-        auto pair = n.getAsString(i);
-        double w = pair.second.percent();
+    auto eq = std::make_unique<EquivBlueprint>(fields, EquivBlueprint::allocate_outside_equiv_tag());
+    for (size_t i = 0; i < children.size(); ++i) {
+        double w = children[i]->getWeight().percent();
         eq->addTerm(std::move(blueprints[i]), w / eqw);
     }
     setResult(std::move(eq));

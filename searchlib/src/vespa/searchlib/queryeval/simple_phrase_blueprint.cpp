@@ -6,6 +6,9 @@
 #include <vespa/vespalib/objects/visit.hpp>
 #include <map>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".queryeval.simple_phrase_blueprint");
+
 namespace search::queryeval {
 
 SimplePhraseBlueprint::SimplePhraseBlueprint(const FieldSpec &field, bool expensive)
@@ -67,10 +70,9 @@ SimplePhraseBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 }
 
 SearchIterator::UP
-SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const
-{
+SimplePhraseBlueprint::createSearchImpl(fef::MatchData& md) const {
+    fef::TermFieldMatchDataArray tfmda = resolveFields(md);
     assert(tfmda.size() == 1);
-    fef::MatchData::UP md = _layout.createMatchData();
     fef::TermFieldMatchDataArray childMatch;
     SimplePhraseSearch::Children children;
     children.reserve(_terms.size());
@@ -78,11 +80,12 @@ SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmd
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
         assert(childState.numFields() == 1);
-        auto *child_term_field_match_data = childState.field(0).resolve(*md);
+        auto *child_term_field_match_data = childState.field(0).resolve(md);
         child_term_field_match_data->setNeedInterleavedFeatures(tfmda[0]->needs_interleaved_features());
+        LOG(debug, "phrase force need handle=%d\n", childState.field(0).getHandle());
         child_term_field_match_data->setNeedNormalFeatures(true);
         childMatch.add(child_term_field_match_data);
-        children.push_back(_terms[i]->createSearch(*md));
+        children.push_back(_terms[i]->createSearch(md));
         order_map.insert(std::make_pair(childState.estimate().estHits, i));
     }
     std::vector<uint32_t> eval_order;
@@ -91,8 +94,15 @@ SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmd
         eval_order.push_back(child.second);
     }
     return std::make_unique<SimplePhraseSearch>(std::move(children),
-                                                std::move(md), std::move(childMatch),
+                                                std::unique_ptr<fef::MatchData>(), std::move(childMatch),
                                                 std::move(eval_order), *tfmda[0], strict());
+}
+
+SearchIterator::UP
+SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &) const
+{
+    assert(false); // should not be called
+    return {};
 }
 
 SearchIterator::UP

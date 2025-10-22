@@ -238,6 +238,20 @@ create_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type,
 
 template <class NodeTypes>
 typename NodeTypes::WordAlternatives *
+create_word_alternatives(std::vector<std::unique_ptr<typename NodeTypes::StringTerm>> children,
+                        const std::string & view, int32_t id, Weight weight) {
+    return new typename NodeTypes::WordAlternatives(std::move(children), view, id, weight);
+}
+
+template <class NodeTypes>
+typename NodeTypes::WordAlternatives *
+create_word_alternatives(std::vector<std::unique_ptr<StringTerm>> children,
+                        const std::string & view, int32_t id, Weight weight) {
+    return new typename NodeTypes::WordAlternatives(std::move(children), view, id, weight);
+}
+
+template <class NodeTypes>
+typename NodeTypes::WordAlternatives *
 create_word_alternatives(std::unique_ptr<TermVector> terms, const std::string & view, int32_t id, Weight weight) {
     return new typename NodeTypes::WordAlternatives(std::move(terms), view, id, weight);
 }
@@ -402,6 +416,20 @@ public:
                                             const string & view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(create_in_term<NodeTypes>(std::move(terms), type, view, id, weight));
+    }
+
+    /*
+    typename NodeTypes::WordAlternatives& add_word_alternatives(std::vector<std::unique_ptr<typename NodeTypes::StringTerm>> children,
+                                                                const string & view, int32_t id, Weight weight) {
+        adjustWeight(weight);
+        return addTerm(create_word_alternatives<NodeTypes>(std::move(children), view, id, weight));
+    }
+    */
+
+    typename NodeTypes::WordAlternatives& add_word_alternatives(auto children,
+                                                                const string & view, int32_t id, Weight weight) {
+        adjustWeight(weight);
+        return addTerm(create_word_alternatives<NodeTypes>(std::move(children), view, id, weight));
     }
 
     typename NodeTypes::WordAlternatives& add_word_alternatives(std::unique_ptr<TermVector> terms, const string & view, int32_t id, Weight weight) {

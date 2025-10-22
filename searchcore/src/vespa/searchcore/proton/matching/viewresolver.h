@@ -22,8 +22,6 @@ private:
     using Map = vespalib::hash_map<std::string, std::vector<std::string> >;
     Map _map;
 
-
-
 public:
     /**
      * Add a field to the given view. Public only for testing.

@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <cassert>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.matching.handlerecorder");
+
 using search::fef::MatchData;
 using search::fef::MatchDataDetails;
 using search::fef::TermFieldHandle;
@@ -92,6 +95,8 @@ void
 HandleRecorder::register_handle(TermFieldHandle handle,
                                 MatchDataDetails requested_details)
 {
+    LOG(debug, "register handle %d", handle);
+
     // There should be no registration of handles that is not recorded.
     // That will lead to issues later on.
     if (_T_recorder != nullptr) {
@@ -106,6 +111,7 @@ HandleRecorder::add(TermFieldHandle handle,
                     MatchDataDetails requested_details)
 
 {
+    LOG(debug, "add handle %d", handle);
     if (requested_details == MatchDataDetails::Normal ||
         requested_details == MatchDataDetails::Interleaved) {
         _handles[handle] = static_cast<MatchDataDetails>(static_cast<int>(_handles[handle]) | static_cast<int>(requested_details));
@@ -121,8 +127,10 @@ HandleRecorder::tag_match_data(MatchData &match_data)
         auto &tfmd = *match_data.resolveTermField(handle);
         auto recorded = _handles.find(handle);
         if (recorded == _handles.end()) {
+            LOG(debug, "handle %d not needed", handle);
             tfmd.tagAsNotNeeded();
         } else {
+            LOG(debug, "handle %d needed", handle);
             tfmd.setNeedNormalFeatures((static_cast<int>(recorded->second) & static_cast<int>(MatchDataDetails::Normal)) != 0);
             tfmd.setNeedInterleavedFeatures((static_cast<int>(recorded->second) & static_cast<int>(MatchDataDetails::Interleaved)) != 0);
         }

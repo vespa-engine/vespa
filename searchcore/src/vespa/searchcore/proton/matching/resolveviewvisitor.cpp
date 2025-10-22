@@ -41,10 +41,23 @@ ResolveViewVisitor::visit(ProtonNodeTypes::Equiv& n)
 }
 
 void ResolveViewVisitor::visit(ProtonNodeTypes::WordAlternatives& n) {
-    for (const auto& tp : n.children) {
-        visitTerm(*tp);
-    }
+    LOG(debug, "resolve WordAlternatives");
     visitTerm(n);
+    ViewResolver fixedResolver;
+    LOG(debug, "ResolveViewVisitor visit WordAlternatives with %zd fields, use fixedResolver %p",
+        n.numFields(), &fixedResolver);
+    for (size_t i = 0; i < n.numFields(); i++) {
+        fixedResolver.add("", n.field(i).getName());
+    }
+    ResolveViewVisitor fixedVisitor(fixedResolver, _indexEnv);
+    for (const auto& child : n.getChildren()) {
+        auto* protonTerm = dynamic_cast<ProtonStringTerm *>(child.get());
+        if (protonTerm) {
+            protonTerm->accept(fixedVisitor);
+        } else {
+            LOG(warning, "child of WordAlternatives is not a ProtonStringTerm");
+        }
+    }
 }
 
 void
@@ -52,6 +65,19 @@ ResolveViewVisitor::visit(ProtonNodeTypes::SameElement& n)
 {
     visitChildren(n);
     visitTerm(n);
+}
+
+
+void ResolveViewVisitor::visit(ProtonNodeTypes::Phrase& n) {
+    visitTerm(n);
+    ViewResolver fixedResolver;
+    LOG(debug, "ResolveViewVisitor visit Phrase with %zd fields, use fixedResolver %p",
+        n.numFields(), &fixedResolver);
+    for (size_t i = 0; i < n.numFields(); i++) {
+        fixedResolver.add("", n.field(i).getName());
+    }
+    ResolveViewVisitor fixedVisitor(fixedResolver, _indexEnv);
+    fixedVisitor.visitChildren(n);
 }
 
 } // namespace

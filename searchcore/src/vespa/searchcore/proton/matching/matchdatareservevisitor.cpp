@@ -2,6 +2,9 @@
 
 #include "matchdatareservevisitor.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.matching.matchdatareservevisitor");
+
 namespace proton::matching {
 
 MatchDataReserveVisitor::MatchDataReserveVisitor(search::fef::MatchDataLayout& mdl)
@@ -29,10 +32,21 @@ MatchDataReserveVisitor::visit(ProtonNodeTypes::SameElement& n)
 void
 MatchDataReserveVisitor::visit(ProtonNodeTypes::WordAlternatives& n)
 {
+    LOG(debug, "allocateTerms for WordAlternatives %zd fields", n.numFields());
     n.allocateTerms(_mdl);
-    for (const auto & child : n.children) {
-        child->allocateTerms(_mdl);
+    for (const auto & child : n.getChildren()) {
+        auto* protonTerm = dynamic_cast<ProtonTermData*>(child.get());
+        assert(protonTerm);
+        protonTerm->allocateTerms(_mdl);
     }
+}
+
+void
+MatchDataReserveVisitor::visit(ProtonNodeTypes::Phrase& n)
+{
+    LOG(debug, "allocateTerms for Phrase");
+    n.allocateTerms(_mdl);
+    visitChildren(n);
 }
 
 }

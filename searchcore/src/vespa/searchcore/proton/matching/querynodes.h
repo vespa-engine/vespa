@@ -103,14 +103,27 @@ struct ProtonTermBase : public Base,
     [[nodiscard]] uint32_t getPhraseLength() const final { return numTerms<Base>(*this); }
     [[nodiscard]] search::query::Weight getWeight() const final { return Base::getWeight(); }
     [[nodiscard]] uint32_t getUniqueId() const final { return Base::getId(); }
+
 };
 
 template <typename Base>
 ProtonTermBase<Base>::~ProtonTermBase() = default;
 
 template <typename Base>
-struct ProtonTerm final : public ProtonTermBase<Base> {
+struct ProtonTermWithFields : public ProtonTermBase<Base> {
     using ProtonTermBase<Base>::ProtonTermBase;
+    using ProtonTermBase<Base>::numFields;
+    using ProtonTermBase<Base>::field;
+    ~ProtonTermWithFields() override;
+    virtual search::queryeval::FieldSpec inner_field_spec(const search::queryeval::FieldSpec& parentSpec) const override;
+};
+
+template <typename Base>
+ProtonTermWithFields<Base>::~ProtonTermWithFields() = default;
+
+template <typename Base>
+struct ProtonTerm final : public ProtonTermWithFields<Base> {
+    using ProtonTermWithFields<Base>::ProtonTermWithFields;
     ~ProtonTerm() override;
 };
 
@@ -162,17 +175,13 @@ using ProtonRegExpTerm =      ProtonTerm<search::query::RegExpTerm>;
 using ProtonFuzzyTerm =       ProtonTerm<search::query::FuzzyTerm>;
 using ProtonInTerm =          ProtonTerm<search::query::InTerm>;
 
-struct ProtonWordAlternatives final : public ProtonTermBase<search::query::WordAlternatives> {
-    std::vector<std::unique_ptr<ProtonStringTerm>> children;
-    ProtonWordAlternatives(std::unique_ptr<search::query::TermVector> terms, const std::string & view, int32_t id, search::query::Weight weight)
-      : ProtonTermBase(std::move(terms), view, id, weight)
-    {
-        for (uint32_t idx = 0; idx < getNumTerms(); idx++) {
-            auto pair = getAsString(idx);
-            auto tp = std::make_unique<ProtonStringTerm>(std::string(pair.first), getView(), 0, pair.second);
-            children.emplace_back(std::move(tp));
-        }
-    }
+struct ProtonWordAlternatives final : public ProtonTermWithFields<search::query::WordAlternatives> {
+    ProtonWordAlternatives(std::vector<std::unique_ptr<search::query::StringTerm>> children,
+                           const std::string & view, int32_t id, search::query::Weight weight);
+    ProtonWordAlternatives(std::vector<std::unique_ptr<ProtonStringTerm>> children,
+                           const std::string & view, int32_t id, search::query::Weight weight);
+    // compatibility constructor
+    ProtonWordAlternatives(std::unique_ptr<search::query::TermVector> terms, const std::string & view, int32_t id, search::query::Weight weight);
     ~ProtonWordAlternatives() override;
 };
 

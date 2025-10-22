@@ -6,6 +6,9 @@
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("proton.matching.tag_needed_handles");
+
 using search::fef::FieldType;
 using search::fef::IIndexEnvironment;
 using search::query::TemplateTermVisitor;
@@ -24,6 +27,9 @@ class TagNeededHandlesVisitor : public TemplateTermVisitor<TagNeededHandlesVisit
     bool original_match_data() const noexcept { return _changed_match_data == 0u; }
 
     void maybe_visit_field_specs(ProtonTermData& n) {
+        LOG(debug, "maybe_visit_field_specs %s %zd fields",
+            needs_normal_features() ? "needs_normal_features for" : "ignore",
+            n.numFields());
         if (needs_normal_features()) {
             visit_field_specs(n);
         }
@@ -61,8 +67,13 @@ TagNeededHandlesVisitor::visit_field_specs(ProtonTermData& n)
         auto& tfd = n.field(i);
         auto field_id = tfd.getFieldId();
         auto* field_info = _index_env.getField(field_id);
+        LOG(debug, "check field %s id=%d type=%s",
+            tfd.getName().c_str(), field_id,
+            (field_info == nullptr) ? "NULL" : (field_info->type() == FieldType::INDEX ? "index" : "whatever"));
+
         if (field_info != nullptr && field_info->type() == FieldType::INDEX) {
             if (original_match_data()) {
+                LOG(debug, "record in HandleRecorder");
                 auto handle = tfd.getHandle(); // Records in HandleRecorder
                 (void) handle;
             }
@@ -86,6 +97,9 @@ void
 TagNeededHandlesVisitor::visit(ProtonNodeTypes::WordAlternatives& n)
 {
     maybe_visit_field_specs(n);
+    for (auto & child : n.getChildren()) {
+        child->accept(*this);
+    }
 }
 
 void
@@ -109,9 +123,7 @@ TagNeededHandlesVisitor::visit(ProtonNodeTypes::Phrase& n)
 {
     maybe_visit_field_specs(n);
     ++_inspecting_ancestor_nodes;
-    ++_changed_match_data;
     visitChildren(n);
-    --_changed_match_data;
     --_inspecting_ancestor_nodes;
 }
 

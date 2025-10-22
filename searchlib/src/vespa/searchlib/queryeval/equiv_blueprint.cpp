@@ -7,6 +7,9 @@
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".queryeval.equiv_blueprint");
+
 namespace search::queryeval {
 
 namespace {
@@ -24,6 +27,9 @@ public:
 
     void observe(const fef::TermFieldMatchData &output)
     {
+        LOG(debug, "UnpackNeed observe: field=%d %s\n",
+            output.getFieldId(),
+            (output.needs_normal_features() ? "needs normal features" : "can be ignored"));
         if (output.needs_normal_features()) {
             _needs_normal_features = true;
         }
@@ -87,13 +93,7 @@ EquivBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 
 SearchIterator::UP
 EquivBlueprint::createSearchImpl(fef::MatchData& global_md) const {
-    // same code as in LeafBlueprint :
-    const State &state = getState();
-    fef::TermFieldMatchDataArray outputs;
-    outputs.reserve(state.numFields());
-    for (size_t i = 0; i < state.numFields(); ++i) {
-        outputs.add(state.field(i).resolve(global_md));
-    }
+    fef::TermFieldMatchDataArray outputs = resolveFields(global_md);
     // conditional internal matchdata:
     fef::MatchData::UP my_md = {};
     if (use_internal_match_data()) {
@@ -111,6 +111,7 @@ EquivBlueprint::createSearchImpl(fef::MatchData& global_md) const {
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
         for (size_t j = 0; j < childState.numFields(); ++j) {
+            LOG(debug, "resolving child field %zd handle %d", j, childState.field(j).getHandle());
             auto *child_term_field_match_data = childState.field(j).resolve(use_md);
             unpack_needs[child_term_field_match_data->getFieldId()].notify(*child_term_field_match_data);
             childMatch.emplace_back(child_term_field_match_data, _exactness[i]);

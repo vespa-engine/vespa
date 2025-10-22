@@ -328,7 +328,13 @@ class QueryNodeConverter : public QueryVisitor {
     void visit(WordAlternatives& node) override {
         createTermNode(node, ParseItem::ITEM_WORD_ALTERNATIVES);
         appendCompressedPositiveNumber(node.getNumTerms());
-        createMultiTermNodes(node);
+        for (const auto & term : node.getChildren()) {
+            append_type_and_features(ParseItem::ITEM_PURE_WEIGHTED_STRING, static_cast<uint8_t>(ParseItem::IF_WEIGHT));
+            const std::string& word = term->getTerm();
+            auto weight = term->getWeight();
+            appendCompressedNumber(weight.percent());
+            appendString(word);
+        }
     }
 
 public:

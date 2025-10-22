@@ -818,15 +818,20 @@ LeafBlueprint::set_matching_phase(MatchingPhase) noexcept
 {
 }
 
-SearchIterator::UP
-LeafBlueprint::createSearchImpl(fef::MatchData &md) const
-{
+fef::TermFieldMatchDataArray LeafBlueprint::resolveFields(fef::MatchData &md) const {
     const State &state = getState();
     fef::TermFieldMatchDataArray tfmda;
     tfmda.reserve(state.numFields());
     for (size_t i = 0; i < state.numFields(); ++i) {
         tfmda.add(state.field(i).resolve(md));
     }
+    return tfmda;
+}
+
+SearchIterator::UP
+LeafBlueprint::createSearchImpl(fef::MatchData &md) const
+{
+    fef::TermFieldMatchDataArray tfmda = resolveFields(md);
     return createLeafSearch(tfmda);
 }
 

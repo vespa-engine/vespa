@@ -236,8 +236,22 @@ private:
         copyState(node, _builder.add_in_term(replicate_subterms(node), node.getType(), node.getView(), node.getId(), node.getWeight()));
     }
 
+    std::vector<std::unique_ptr<StringTerm>> replicate_word_alternatives_children(const WordAlternatives& node) {
+        std::vector<std::unique_ptr<StringTerm>> children;
+        children.reserve(node.getNumTerms());
+        for (const auto& child : node.getChildren()) {
+            QueryReplicator<NodeTypes> replicator;
+            auto replicated = replicator.replicate(*child);
+            auto* string_term = dynamic_cast<StringTerm*>(replicated.release());
+            if (string_term) {
+                children.emplace_back(string_term);
+            }
+        }
+        return children;
+    }
+
     void visit(WordAlternatives& node) override {
-        copyState(node, _builder.add_word_alternatives(replicate_subterms(node), node.getView(), node.getId(), node.getWeight()));
+        copyState(node, _builder.add_word_alternatives(replicate_word_alternatives_children(node), node.getView(), node.getId(), node.getWeight()));
     }
 };
 

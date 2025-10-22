@@ -25,6 +25,7 @@ public:
     void visit(ProtonNodeTypes::Equiv& n) override;
     void visit(ProtonNodeTypes::WordAlternatives& n) override;
     void visit(ProtonNodeTypes::SameElement &n) override;
+    void visit(ProtonNodeTypes::Phrase &n) override;
 };
 
 }
