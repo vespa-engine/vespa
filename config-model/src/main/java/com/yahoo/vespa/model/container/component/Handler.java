@@ -85,9 +85,9 @@ public class Handler extends Component<Component<?, ?>, ComponentModel> {
         public void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder) {
             builder.maxThreadExecutionTimeSeconds(190)
                     .keepAliveTime(5.0)
-                    .relativeMaxThreads(2)
-                    .relativeMinThreads(2)
-                    .relativeQueueSize(40);
+                    .maxThreads(-2)
+                    .minThreads(-2)
+                    .queueSize(-40);
         }
     }
 

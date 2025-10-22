@@ -67,9 +67,9 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
         public void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder) {
             builder.maxThreadExecutionTimeSeconds(190)
                     .keepAliveTime(5.0)
-                    .relativeMaxThreads(threads)
-                    .relativeMinThreads(threads)
-                    .relativeQueueSize(40);
+                    .maxThreads(-threads)
+                    .minThreads(-threads)
+                    .queueSize(-40);
         }
 
     }

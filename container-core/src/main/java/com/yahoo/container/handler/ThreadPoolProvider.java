@@ -39,33 +39,14 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
      * as {@link ThreadpoolConfig} is currently public api.
      */
     private static ContainerThreadpoolConfig translateConfig(ThreadpoolConfig config) {
-        var builder = new ContainerThreadpoolConfig.Builder()
+        return new ContainerThreadpoolConfig(
+                new ContainerThreadpoolConfig.Builder()
+                        .maxThreads(config.maxthreads())
+                        .minThreads(config.corePoolSize())
                         .name(config.name())
+                        .queueSize(config.queueSize())
                         .keepAliveTime(config.keepAliveTime())
-                        .maxThreadExecutionTimeSeconds(config.maxThreadExecutionTimeSeconds());
-
-        int max = config.maxthreads();
-        if  (max > 0) {
-            builder.maxThreads(max);
-        } else {
-            builder.relativeMaxThreads(-max);
-        }
-
-        int min = config.corePoolSize();
-        if  (min > 0) {
-            builder.minThreads(min);
-        } else {
-            builder.relativeMinThreads(-min);
-        }
-
-        int queueSize = config.queueSize();
-        if  (queueSize > 0) {
-            builder.queueSize(queueSize);
-        } else {
-            builder.relativeQueueSize(-queueSize);
-        }
-
-        return new ContainerThreadpoolConfig(builder);
+                        .maxThreadExecutionTimeSeconds(config.maxThreadExecutionTimeSeconds()));
     }
 
     /**
