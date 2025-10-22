@@ -133,6 +133,7 @@ struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv> {
 };
 struct ProtonSameElement final : public ProtonTermBase<search::query::SameElement> {
     bool expose_match_data_for_same_element = true;
+    std::vector<search::fef::TermFieldHandle> descendants_index_handles; // handles with early unpack
     using ProtonTermBase::ProtonTermBase;
     ~ProtonSameElement() override;
 };
