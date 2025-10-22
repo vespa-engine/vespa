@@ -306,6 +306,55 @@ std::string protonTreeToString(Node &root) {
     return visitor.str();
 }
 
+using ProtonBuilder = QueryBuilder<ProtonNodeTypes>;
+
+template<typename T>
+T& genericAddSimpleTerm(QueryBuilder<ProtonNodeTypes>& builder,
+                        const std::string & term, const std::string & view, int32_t id, search::query::Weight weight);
+
+template<>
+ProtonNodeTypes::StringTerm&
+genericAddSimpleTerm<ProtonNodeTypes::StringTerm>(ProtonBuilder& builder,
+                                                  const std::string & term, const std::string & view, int32_t id, search::query::Weight weight) {
+    return builder.addStringTerm(term, view, id, weight);
+}
+
+template<>
+ProtonNodeTypes::NumberTerm&
+genericAddSimpleTerm<ProtonNodeTypes::NumberTerm>(ProtonBuilder& builder,
+                                                  const std::string & term, const std::string & view, int32_t id, search::query::Weight weight) {
+    return builder.addNumberTerm(term, view, id, weight);
+}
+
+template<>
+ProtonNodeTypes::PrefixTerm&
+genericAddSimpleTerm<ProtonNodeTypes::PrefixTerm>(ProtonBuilder& builder,
+                                                  const std::string & term, const std::string & view, int32_t id, search::query::Weight weight) {
+    return builder.addPrefixTerm(term, view, id, weight);
+}
+
+template<>
+ProtonNodeTypes::SubstringTerm&
+genericAddSimpleTerm<ProtonNodeTypes::SubstringTerm>(ProtonBuilder& builder,
+                                                     const std::string & term, const std::string & view, int32_t id, search::query::Weight weight) {
+    return builder.addSubstringTerm(term, view, id, weight);
+}
+
+template<>
+ProtonNodeTypes::SuffixTerm&
+genericAddSimpleTerm<ProtonNodeTypes::SuffixTerm>(ProtonBuilder& builder,
+                                                  const std::string & term, const std::string & view, int32_t id, search::query::Weight weight) {
+    return builder.addSuffixTerm(term, view, id, weight);
+}
+
+template<>
+ProtonNodeTypes::RegExpTerm&
+genericAddSimpleTerm<ProtonNodeTypes::RegExpTerm>(ProtonBuilder& builder,
+                                                  const std::string & term, const std::string & view, int32_t id, search::query::Weight weight) {
+    return builder.addRegExpTerm(term, view, id, weight);
+}
+
+
 /**
  * FieldSplitterVisitor - Visitor that splits multi-field query terms into separate per-field terms
  *
@@ -527,7 +576,14 @@ private:
 
     // Helper to replicate a term for a specific field
     template <typename NodeType>
-    void replicateTermForField(NodeType &node, size_t field_idx);
+    void replicateTermForField(NodeType &node, size_t field_idx) {
+        // Default implementation for simple term types that work with genericAddSimpleTerm
+        auto &replica = genericAddSimpleTerm<NodeType>(_builder,
+            node.getTerm(), getFieldNameOrView(node, field_idx),
+            node.getId(), node.getWeight());
+        copyState(node, replica);
+        copyProtonTermDataForField(node, replica, field_idx);
+    }
 
     template <typename NodeType>
     void splitTerm(NodeType &node) {
@@ -777,27 +833,25 @@ public:
 };
 
 // Template specializations for replicateTermForField
-// Helper macro to reduce boilerplate for simple term types
-#define REPLICATE_SIMPLE_TERM(TermType, builderMethod) \
-template <> \
-void FieldSplitterVisitor::replicateTermForField<TermType>(TermType &node, size_t field_idx) { \
-    auto &replica = _builder.builderMethod( \
-        node.getTerm(), getFieldNameOrView(node, field_idx), \
-        node.getId(), node.getWeight()); \
-    copyState(node, replica); \
-    copyProtonTermDataForField(node, replica, field_idx); \
+// Only specialized for term types that don't fit the default pattern
+
+template <>
+void FieldSplitterVisitor::replicateTermForField<ProtonRangeTerm>(ProtonRangeTerm &node, size_t field_idx) {
+    auto &replica = _builder.addRangeTerm(
+        node.getTerm(), getFieldNameOrView(node, field_idx),
+        node.getId(), node.getWeight());
+    copyState(node, replica);
+    copyProtonTermDataForField(node, replica, field_idx);
 }
 
-REPLICATE_SIMPLE_TERM(ProtonNumberTerm, addNumberTerm)
-REPLICATE_SIMPLE_TERM(ProtonStringTerm, addStringTerm)
-REPLICATE_SIMPLE_TERM(ProtonPrefixTerm, addPrefixTerm)
-REPLICATE_SIMPLE_TERM(ProtonSubstringTerm, addSubstringTerm)
-REPLICATE_SIMPLE_TERM(ProtonSuffixTerm, addSuffixTerm)
-REPLICATE_SIMPLE_TERM(ProtonRangeTerm, addRangeTerm)
-REPLICATE_SIMPLE_TERM(ProtonLocationTerm, addLocationTerm)
-REPLICATE_SIMPLE_TERM(ProtonRegExpTerm, addRegExpTerm)
-
-#undef REPLICATE_SIMPLE_TERM
+template <>
+void FieldSplitterVisitor::replicateTermForField<ProtonLocationTerm>(ProtonLocationTerm &node, size_t field_idx) {
+    auto &replica = _builder.addLocationTerm(
+        node.getTerm(), getFieldNameOrView(node, field_idx),
+        node.getId(), node.getWeight());
+    copyState(node, replica);
+    copyProtonTermDataForField(node, replica, field_idx);
+}
 
 template <>
 void FieldSplitterVisitor::replicateTermForField<ProtonFuzzyTerm>(ProtonFuzzyTerm &node, size_t field_idx) {
