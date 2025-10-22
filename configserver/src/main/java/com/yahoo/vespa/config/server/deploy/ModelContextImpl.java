@@ -209,7 +209,6 @@ public class ModelContextImpl implements ModelContext {
         private final int documentV1QueueSize;
         private final int maxContentNodeMaintenanceOpConcurrency;
         private final int maxDocumentOperationRequestSizeMib;
-        private final int maxDistributorDocumentOperationSizeMib;
         private final Sidecars sidecarsForTest;
         private final boolean useTriton;
         private final int searchCoreMaxOutstandingMoveOps;
@@ -258,7 +257,6 @@ public class ModelContextImpl implements ModelContext {
             this.documentV1QueueSize = Flags.DOCUMENT_V1_QUEUE_SIZE.bindTo(source).with(appId).with(version).value();
             this.maxContentNodeMaintenanceOpConcurrency = Flags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY.bindTo(source).with(appId).with(version).value();
             this.maxDocumentOperationRequestSizeMib = Flags.MAX_DOCUMENT_OPERATION_REQUEST_SIZE_MIB.bindTo(source).with(appId).with(version).value();
-            this.maxDistributorDocumentOperationSizeMib = Flags.MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB.bindTo(source).with(appId).with(version).value();
             this.sidecarsForTest = Flags.SIDECARS_FOR_TEST.bindTo(source).with(appId).with(version).value();
             this.useTriton = Flags.USE_TRITON.bindTo(source).with(appId).with(version).value();
             this.searchCoreMaxOutstandingMoveOps = Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS.bindTo(source).with(appId).with(version).value();
@@ -307,7 +305,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public int documentV1QueueSize() { return documentV1QueueSize; }
         @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
         @Override public int maxDocumentOperationRequestSizeMib() { return maxDocumentOperationRequestSizeMib; }
-        @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
         @Override public Object sidecarsForTest() { return sidecarsForTest; }
         @Override public boolean useTriton() { return useTriton; }
         @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
