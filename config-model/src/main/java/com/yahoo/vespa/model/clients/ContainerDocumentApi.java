@@ -138,8 +138,8 @@ public class ContainerDocumentApi {
 
         @Override
         protected void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder) {
-            builder.relativeMaxThreads(4)
-                    .relativeMinThreads(4)
+            builder.maxThreads(-4)
+                    .minThreads(-4)
                     .queueSize(500);
         }
     }
