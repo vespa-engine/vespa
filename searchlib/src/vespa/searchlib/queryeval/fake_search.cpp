@@ -14,7 +14,7 @@ FakeSearch::FakeSearch(const std::string &tag, const std::string &field,
                        const std::string &term, const FakeResult &res,
                        fef::TermFieldMatchDataArray tfmda)
     : _tag(tag), _field(field), _term(term),
-      _result(res), _offset(0), _tfmda(std::move(tfmda)),
+      _result(res), _offset(0), _unpacked(false), _tfmda(std::move(tfmda)),
       _ctx(nullptr)
 {
     assert(_tfmda.size() == 1);
@@ -25,6 +25,7 @@ FakeSearch::~FakeSearch() = default;
 void
 FakeSearch::doSeek(uint32_t docid)
 {
+    _unpacked = false;
     while (valid() && docid > currId()) {
         next();
     }
@@ -38,6 +39,9 @@ FakeSearch::doSeek(uint32_t docid)
 void
 FakeSearch::doUnpack(uint32_t docid)
 {
+    if (_unpacked) {
+        return;
+    }
     using PosCtx = fef::TermFieldMatchDataPosition;
     using Doc = FakeResult::Document;
     using Elem = FakeResult::Element;
@@ -64,6 +68,7 @@ FakeSearch::doUnpack(uint32_t docid)
         _tfmda[0]->setNumOccs(doc.num_occs);
         _tfmda[0]->setFieldLength(doc.field_length);
     }
+    _unpacked = true;
 }
 
 void

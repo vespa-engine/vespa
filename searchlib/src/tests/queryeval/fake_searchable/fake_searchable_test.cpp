@@ -394,4 +394,33 @@ TEST_F(FakeSearchableTest, require_that_relevant_data_can_be_obtained_from_fake_
     EXPECT_EQ(attr_ctx->find(6, 0, elem_weight), -1);
 }
 
+TEST_F(FakeSearchableTest, require_that_repeated_unpack_for_same_docid_is_ignored)
+{
+    constexpr uint32_t docid = 5;
+    constexpr uint32_t field_id = 1;
+    constexpr TermFieldHandle handle = 1;
+    constexpr uint32_t docid_limit = 100;
+    source.addResult("fieldfoo", "word1", FakeResult().doc(docid).elem(2).pos(3).elem(4).pos(5));
+    SimpleStringTerm termNode("word1", "viewfoo", 1, w);
+    FieldSpecList fields;
+    fields.add(FieldSpec("fieldfoo", field_id, handle));
+    auto bp = source.createBlueprint(req_ctx, fields, termNode);
+    MatchData::UP md = MatchData::makeTestInstance(100, 10);
+    bp->basic_plan(true, docid_limit);
+    bp->fetchPostings(ExecuteInfo::FULL);
+    SearchIterator::UP search = bp->createSearch(*md);
+    search->initFullRange();
+
+    EXPECT_TRUE(search->seek(docid));
+    auto& tfmd = *md->resolveTermField(handle);
+    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+    EXPECT_EQ(0u, tfmd.size());
+    search->unpack(docid);
+    EXPECT_EQ(docid, tfmd.getDocId());
+    EXPECT_EQ(2u, tfmd.size());
+    tfmd.reset(TermFieldMatchData::invalidId());
+    search->unpack(docid);
+    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
