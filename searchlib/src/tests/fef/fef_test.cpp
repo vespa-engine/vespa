@@ -15,6 +15,8 @@ using search::feature_t;
 
 namespace {
 
+constexpr uint32_t docid3 = 3;
+
 std::vector<uint32_t> elems(std::vector<uint32_t> element_ids) {
     return element_ids;
 }
@@ -118,13 +120,10 @@ TEST(FefTest, test_TermFieldMatchDataAppend)
     }
 }
 
-TEST(FefTest, TermFieldMatchDataCanFilterElements)
+TEST(FefTest, term_field_match_data_filter_elements_normal)
 {
     TermFieldMatchData tfmd;
-    constexpr uint32_t docid2 = 2;
-    constexpr uint32_t docid3 = 3;
-    constexpr uint32_t docid4 = 4;
-    set_elems(tfmd, docid3, { 1, 3, 5, 7, 9 });
+    set_elems(tfmd, docid3, {1, 3, 5, 7, 9});
     EXPECT_EQ(elems({1, 3, 5, 7, 9}), get_elems(tfmd, docid3));
     filter_elems(tfmd, docid3, {1, 2, 3, 7, 8, 9, 10});
     EXPECT_EQ(elems({1, 3, 7, 9}), get_elems(tfmd, docid3));
@@ -132,19 +131,44 @@ TEST(FefTest, TermFieldMatchDataCanFilterElements)
     EXPECT_EQ(elems({1, 3}), get_elems(tfmd, docid3));
     filter_elems(tfmd, docid3, {2, 3});
     EXPECT_EQ(elems({3}), get_elems(tfmd, docid3));
+    EXPECT_EQ(docid3, tfmd.getDocId());
     filter_elems(tfmd, docid3, {1, 2});
     EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
     EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
-    set_elems(tfmd, docid3, { 1, 3});
-    filter_elems(tfmd, docid2, {}); // Don't filter future match data
+}
+
+TEST(FefTest, term_field_match_data_filter_elements_future_match_data)
+{
+    TermFieldMatchData tfmd;
+    constexpr uint32_t docid2 = 2;
+    set_elems(tfmd, docid3, {1, 3});
+    filter_elems(tfmd, docid2, {});
     EXPECT_EQ(elems({1, 3}), get_elems(tfmd, docid3));
-    filter_elems(tfmd, docid4, {1, 2, 3}); // Clear past match data
+    EXPECT_EQ(docid3, tfmd.getDocId());
+}
+
+TEST(FefTest, term_field_match_data_filter_elements_past_match_data)
+{
+    TermFieldMatchData tfmd;
+    constexpr uint32_t docid4 = 4;
+    set_elems(tfmd, docid3, {1, 3});
+    filter_elems(tfmd, docid4, {1, 2, 3});
     EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
     EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
-    set_elems(tfmd, docid3, { 1, 3});
-    filter_elems(tfmd, docid3, {}); // Clear empty (after filtering) match data
+}
+
+TEST(FefTest, term_field_match_data_filter_elements_empty_filter)
+{
+    TermFieldMatchData tfmd;
+    set_elems(tfmd, docid3, {1, 3});
+    filter_elems(tfmd, docid3, {});
     EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
     EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+}
+
+TEST(FefTest, term_field_match_data_filter_elements_empty_match_data)
+{
+    TermFieldMatchData tfmd;
     set_elems(tfmd, docid3, {});
     EXPECT_EQ(docid3, tfmd.getDocId());
     filter_elems(tfmd, docid3, {1, 2, 3}); // Clear empty (before and after filtering) match data
