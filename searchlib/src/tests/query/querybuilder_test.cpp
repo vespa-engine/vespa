@@ -555,9 +555,7 @@ struct MyInTerm : InTerm {
 };
 
 struct MyWordAlternatives : WordAlternatives {
-    MyWordAlternatives(std::unique_ptr<TermVector> terms, const string& v, int32_t i, Weight w)
-      : WordAlternatives(std::move(terms), v, i, w)
-    {}
+    using WordAlternatives::WordAlternatives;
     ~MyWordAlternatives() override;
 };
 

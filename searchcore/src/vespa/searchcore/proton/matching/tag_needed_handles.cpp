@@ -100,6 +100,9 @@ void
 TagNeededHandlesVisitor::visit(ProtonNodeTypes::WordAlternatives& n)
 {
     maybe_visit_field_specs(n, n.isRanked());
+    for (const auto &child : n.getChildren()) {
+        child->accept(*this);
+    }
 }
 
 void

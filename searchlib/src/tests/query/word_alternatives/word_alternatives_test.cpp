@@ -70,9 +70,7 @@ Node::UP createQueryTree() {
 }
 
 struct MyWordAlternatives : WordAlternatives {
-    MyWordAlternatives(std::unique_ptr<TermVector> terms, const string& v, int32_t i, Weight w)
-      : WordAlternatives(std::move(terms), v, i, w)
-    {}
+    using WordAlternatives::WordAlternatives;
     ~MyWordAlternatives() override;
 };
 
@@ -94,10 +92,12 @@ struct Expectation {
     void check_wa1(Node *p) {
         if (auto wap = as_wa(p)) {
             EXPECT_EQ(wap->getView(), view[1]);
+            const auto& children = wap->getChildren();
             ASSERT_EQ(wap->getNumTerms(), 3);
-            EXPECT_EQ(wap->getAsString(0).first, word[0]);
-            EXPECT_EQ(wap->getAsString(1).first, word[1]);
-            EXPECT_EQ(wap->getAsString(2).first, word[2]);
+            ASSERT_EQ(children.size(), 3);
+            EXPECT_EQ(children[0]->getTerm(), word[0]);
+            EXPECT_EQ(children[1]->getTerm(), word[1]);
+            EXPECT_EQ(children[2]->getTerm(), word[2]);
             if (use_my_node) {
                 EXPECT_EQ(vespalib::getClassName(*wap), "MyWordAlternatives");
             } else {
@@ -108,17 +108,21 @@ struct Expectation {
     void check_wa2(Node *p) {
         if (auto wap = as_wa(p)) {
             EXPECT_EQ(wap->getView(), view[2]);
+            const auto& children = wap->getChildren();
             ASSERT_EQ(wap->getNumTerms(), 2);
-            EXPECT_EQ(wap->getAsString(0).first, word[3]);
-            EXPECT_EQ(wap->getAsString(1).first, word[4]);
+            ASSERT_EQ(children.size(), 2);
+            EXPECT_EQ(children[0]->getTerm(), word[3]);
+            EXPECT_EQ(children[1]->getTerm(), word[4]);
         }
     }
     void check_wa3(Node *p) {
         if (auto wap = as_wa(p)) {
             EXPECT_EQ(wap->getView(), view[2]);
+            const auto& children = wap->getChildren();
             ASSERT_EQ(wap->getNumTerms(), 2);
-            EXPECT_EQ(wap->getAsString(0).first, word[5]);
-            EXPECT_EQ(wap->getAsString(1).first, word[6]);
+            ASSERT_EQ(children.size(), 2);
+            EXPECT_EQ(children[0]->getTerm(), word[5]);
+            EXPECT_EQ(children[1]->getTerm(), word[6]);
         }
     }
     void check_phr(Node *p) {
@@ -133,11 +137,13 @@ struct Expectation {
     void check_wa4(Node *p) {
         if (auto wap = as_wa(p)) {
             EXPECT_EQ(wap->getView(), view[3]);
+            const auto& children = wap->getChildren();
             ASSERT_EQ(wap->getNumTerms(), 4);
-            EXPECT_EQ(wap->getAsString(0).first, word[7]);
-            EXPECT_EQ(wap->getAsString(1).first, word[8]);
-            EXPECT_EQ(wap->getAsString(2).first, word[9]);
-            EXPECT_EQ(wap->getAsString(3).first, word[10]);
+            ASSERT_EQ(children.size(), 4);
+            EXPECT_EQ(children[0]->getTerm(), word[7]);
+            EXPECT_EQ(children[1]->getTerm(), word[8]);
+            EXPECT_EQ(children[2]->getTerm(), word[9]);
+            EXPECT_EQ(children[3]->getTerm(), word[10]);
         }
     }
     void check(Node *p) {

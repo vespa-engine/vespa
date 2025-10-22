@@ -100,11 +100,12 @@ private:
     }
 
     void buildWordAlternatives(ProtonWordAlternatives &n) {
-        assert(n.children.size() == n.getNumTerms());
+        const auto& children = n.getChildren();
+        assert(children.size() == n.getNumTerms());
         double eqw = n.getWeight().percent();
         std::vector<std::unique_ptr<Blueprint>> term_bps;
-        for (const auto& tp : n.children) {
-            term_bps.emplace_back(build(_requestContext, *tp, _context));
+        for (const auto& child : children) {
+            term_bps.emplace_back(build(_requestContext, *child, _context));
         }
         FieldSpecBaseList specs;
         specs.reserve(n.numFields());
@@ -114,8 +115,8 @@ private:
         auto eq = std::make_unique<EquivBlueprint>(std::move(specs), EquivBlueprint::allocate_outside_equiv_tag{});
         assert(term_bps.size() == n.getNumTerms());
         for (uint32_t idx = 0; idx < n.getNumTerms(); idx++) {
-            auto pair = n.getAsString(idx);
-            double w = pair.second.percent();
+            const auto& child = children[idx];
+            double w = child->getWeight().percent();
             eq->addTerm(std::move(term_bps[idx]), w / eqw);
         }
         eq->setDocIdLimit(_context.getDocIdLimit());

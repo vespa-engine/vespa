@@ -263,14 +263,21 @@ public:
     virtual ~InTerm() = 0;
 };
 
-class WordAlternatives : public QueryNodeMixin<WordAlternatives, MultiTerm>, public Term {
+class WordAlternatives : public QueryNodeMixin<WordAlternatives, TermNode> {
+    std::vector<std::unique_ptr<StringTerm>> _children;
 public:
     virtual ~WordAlternatives() = 0;
+    const std::vector<std::unique_ptr<StringTerm>> &getChildren() const noexcept { return _children; }
+    uint32_t getNumTerms() const noexcept { return _children.size(); }
 
-    WordAlternatives(std::unique_ptr<TermVector> terms, const std::string & view, int32_t id, Weight weight)
-      : QueryNodeMixinType(std::move(terms), Type::WEIGHTED_STRING),
-        Term(view, id, weight)
+    WordAlternatives(std::vector<std::unique_ptr<StringTerm>> children,
+                     const std::string & view, int32_t id, Weight weight)
+      : QueryNodeMixinType(view, id, weight),
+        _children(std::move(children))
     {}
+
+    // compatibility layer
+    WordAlternatives(std::unique_ptr<TermVector> terms, const std::string & view, int32_t id, Weight weight);
 };
 
 

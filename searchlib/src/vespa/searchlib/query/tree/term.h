@@ -3,6 +3,7 @@
 
 #include "node.h"
 #include <vespa/searchlib/query/weight.h>
+#include <vespa/searchlib/queryeval/field_spec.h>
 #include <string>
 
 namespace search::query {
@@ -14,11 +15,11 @@ namespace search::query {
 class Term
 {
     std::string _view;
-    int32_t          _id;
-    Weight           _weight;
-    bool             _ranked;
-    bool             _position_data;
-    bool             _prefix_match;
+    int32_t     _id;
+    Weight      _weight;
+    bool        _ranked;
+    bool        _position_data;
+    bool        _prefix_match;
 
 public:
     virtual ~Term() = 0;
@@ -41,6 +42,9 @@ public:
     static bool isPossibleRangeTerm(std::string_view term) noexcept {
         return (term[0] == '[' || term[0] == '<' || term[0] == '>');
     }
+
+    virtual queryeval::FieldSpec inner_field_spec(const queryeval::FieldSpec& parentSpec) const;
+
 protected:
     Term(const std::string & view, int32_t id, Weight weight);
 };
