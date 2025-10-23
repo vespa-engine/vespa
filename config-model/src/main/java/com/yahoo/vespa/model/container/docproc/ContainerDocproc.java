@@ -143,8 +143,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
 
         public Threadpool(DeployState ds, Element options) {
             super(ds, "docproc-handler", options);
-            // threads = ds.featureFlags().documentProcessorHandlerThreadpoolThreads();
-            threads = 1.0;
+            threads = ds.featureFlags().docprocHandlerThreadpool();
         }
 
         @Override
