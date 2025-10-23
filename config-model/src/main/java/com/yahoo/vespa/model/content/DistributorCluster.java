@@ -103,7 +103,9 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
             var featureFlags = deployState.getProperties().featureFlags();
             int maxInhibitedGroups = featureFlags.maxActivationInhibitedOutOfSyncGroups();
             int contentLayerMetadataFeatureLevel = featureFlags.contentLayerMetadataFeatureLevel();
-            int maxDocumentOperationSizeMib = maxDocumentSizeInMib(clusterElement, deployState.getDeployLogger());
+            int maxDocumentOperationSizeMib = maxDocumentSizeInMib(featureFlags.maxDistributorDocumentOperationSizeMib(),
+                                                                   clusterElement,
+                                                                   deployState.getDeployLogger());
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
@@ -174,14 +176,14 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
         return parent.getName();
     }
 
-    private static int maxDocumentSizeInMib(ModelElement clusterElement, DeployLogger deployLogger) {
+    private static int maxDocumentSizeInMib(int featureFlagValue, ModelElement clusterElement, DeployLogger deployLogger) {
         var tuning = clusterElement.child("tuning");
-        if (tuning == null) return 0;
+        if (tuning == null) return featureFlagValue;
         var maxSize = tuning.child("max-document-size");
-        if (maxSize == null) return 0;
+        if (maxSize == null) return featureFlagValue;
 
         var configuredValue = maxSize.asString();
-        int maxDocumentSize = 0;
+        int maxDocumentSize = featureFlagValue;
         if (configuredValue != null && ! configuredValue.isEmpty()) {
             // The configured value has units, but the config expects it in MiB, extract the value and convert
             maxDocumentSize = (int) (BinaryUnit.valueOf(configuredValue) / 1024 / 1024);
