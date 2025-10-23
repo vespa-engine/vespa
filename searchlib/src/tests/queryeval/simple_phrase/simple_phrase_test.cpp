@@ -234,6 +234,10 @@ TEST(SimplePhraseTest, requireThatPhrasesAreUnpacked) {
                     EXPECT_EQ(0u, test.tmd().getNumOccs());
                     EXPECT_EQ(0u, test.tmd().getFieldLength());
                 }
+                // Repeated unpack should not do anything
+                test.writable_term_field_match_data().reset(doc_no_match);
+                search->unpack(doc_match);
+                EXPECT_EQ(doc_no_match, test.tmd().getDocId());
             }
         }
     }

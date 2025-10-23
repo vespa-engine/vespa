@@ -173,6 +173,7 @@ SimplePhraseSearch::SimplePhraseSearch(Children children,
       _childMatch(std::move(childMatch)),
       _eval_order(std::move(eval_order)),
       _tmd(tmd),
+      _unpacked_docid(beginId()),
       _strict(strict),
       _iterators(getChildren().size())
 {
@@ -208,10 +209,21 @@ SimplePhraseSearch::doStrictSeek(uint32_t doc_id) {
 
 void
 SimplePhraseSearch::doUnpack(uint32_t doc_id) {
+    if (_unpacked_docid == doc_id) {
+        return;
+    }
     // All children have already been unpacked before this call is made.
 
     _tmd.reset(doc_id);
     PhraseMatcher(_childMatch, _eval_order, _iterators).fillPositions(_tmd);
+    _unpacked_docid = doc_id;
+}
+
+void
+SimplePhraseSearch::initRange(uint32_t begin_id, uint32_t end_id)
+{
+    MultiSearch::initRange(begin_id, end_id);
+    _unpacked_docid = beginId();
 }
 
 void
