@@ -239,6 +239,13 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION);
 
+    public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
+            "docproc-handler-threadpool", 1.0,
+            List.of("johsol"), "2025-10-17", "2026-01-01",
+            "Adjust document processor handler threadpool size (scale the number of threads with cpu cores, 1 means same number of threads as cpu cores))",
+            "Takes effect at redeployment",
+            APPLICATION);
+
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
             List.of("andreer", "olaa"), "2023-10-06", "2025-11-01",
