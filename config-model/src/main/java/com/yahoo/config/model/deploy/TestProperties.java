@@ -134,7 +134,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
     @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
     @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
-    @Override public int searchNodeInitializerThreads() { return 0; }
     @Override public int searchNodeInitializerThreads(String clusterId) { return searchNodeInitializerThreads.getOrDefault(clusterId, 0); }
     @Override public String mallocImpl(Optional<ClusterSpec.Type> clusterType) {
         return clusterType.map(c -> mallocImpl.get(c)).orElse(null);
