@@ -81,6 +81,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useNewPrepareForRestart = false;
     private Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
+    private double docprocHandlerThreadpool = 1.0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -139,6 +140,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return clusterType.map(c -> mallocImpl.get(c)).orElse(null);
     }
     @Override public boolean useTriton() { return useTriton; }
+    @Override public double docprocHandlerThreadpool() { return docprocHandlerThreadpool; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -342,6 +344,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     public TestProperties setSearchCoreMaxOutstandingMoveOps(int value) {
         this.searchCoreMaxOutstandingMoveOps = value;
         return this;
+    }
+
+    public void setDocprocHandlerThreadpool(double threads) {
+        this.docprocHandlerThreadpool = threads;
     }
 
     public TestProperties setMallocImpl(ClusterSpec.Type clusterType, String mallocImpl) {
