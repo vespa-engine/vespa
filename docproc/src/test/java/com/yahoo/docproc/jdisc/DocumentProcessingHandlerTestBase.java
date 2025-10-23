@@ -5,11 +5,13 @@ import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
+import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.container.jdisc.messagebus.NetworkMultiplexerProvider;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.docproc.CallStack;
+import com.yahoo.docproc.SimpleContainerThreadPool;
 import com.yahoo.docproc.impl.DocprocService;
 import com.yahoo.docproc.jdisc.messagebus.MbusRequestContext;
 
@@ -66,13 +68,15 @@ public abstract class DocumentProcessingHandlerTestBase {
 
         ContainerBuilder builder = driver.parent().newContainerBuilder();
         ComponentRegistry<DocprocService> registry = new ComponentRegistry<>();
+        ContainerThreadPool threadPool = new SimpleContainerThreadPool();
 
         handler = new DocumentProcessingHandler(registry,
                 new ComponentRegistry<>(),
                 new ComponentRegistry<>(),
                 new DocumentProcessingHandlerParameters().
                         setDocumentTypeManager(documentTypeManager).
-                        setContainerDocumentConfig(new ContainerDocumentConfig(new ContainerDocumentConfig.Builder())));
+                        setContainerDocumentConfig(new ContainerDocumentConfig(new ContainerDocumentConfig.Builder())),
+                threadPool);
         builder.serverBindings().bind("mbus://*/*", handler);
 
         ReferencedResource<SharedSourceSession> sessionRef = sessionCache.retainSource(new SourceSessionParams());
@@ -84,7 +88,7 @@ public abstract class DocumentProcessingHandlerTestBase {
         List<Pair<String, CallStack>> callStacks = getCallStacks();
         List<AbstractResource> resources = new ArrayList<>();
         for (Pair<String, CallStack> callStackPair : callStacks) {
-            DocprocService service = new DocprocService(callStackPair.getFirst());
+            DocprocService service = new DocprocService(callStackPair.getFirst(), threadPool);
             service.setCallStack(callStackPair.getSecond());
             service.setInService(true);
 
