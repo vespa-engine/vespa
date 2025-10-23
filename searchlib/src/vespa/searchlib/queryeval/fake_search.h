@@ -17,7 +17,7 @@ private:
     std::string             _term;
     FakeResult                   _result;
     uint32_t                     _offset;
-    bool                         _unpacked;
+    uint32_t                     _unpacked_docid;
     fef::TermFieldMatchDataArray _tfmda;
     const attribute::ISearchContext *_ctx;
 
@@ -39,7 +39,7 @@ public:
     void initRange(uint32_t begin, uint32_t end) override {
         SearchIterator::initRange(begin, end);
         _offset = 0;
-        _unpacked = false;
+        _unpacked_docid = beginId();
     }
     const PostingInfo *getPostingInfo() const override { return _result.postingInfo(); }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;

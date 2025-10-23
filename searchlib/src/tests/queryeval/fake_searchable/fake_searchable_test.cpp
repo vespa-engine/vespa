@@ -397,6 +397,7 @@ TEST_F(FakeSearchableTest, require_that_relevant_data_can_be_obtained_from_fake_
 TEST_F(FakeSearchableTest, require_that_repeated_unpack_for_same_docid_is_ignored)
 {
     constexpr uint32_t docid = 5;
+    constexpr uint32_t another_docid = 10;
     constexpr uint32_t field_id = 1;
     constexpr TermFieldHandle handle = 1;
     constexpr uint32_t docid_limit = 100;
@@ -418,9 +419,9 @@ TEST_F(FakeSearchableTest, require_that_repeated_unpack_for_same_docid_is_ignore
     search->unpack(docid);
     EXPECT_EQ(docid, tfmd.getDocId());
     EXPECT_EQ(2u, tfmd.size());
-    tfmd.reset(TermFieldMatchData::invalidId());
+    tfmd.reset(another_docid);
     search->unpack(docid);
-    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+    EXPECT_EQ(another_docid, tfmd.getDocId());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
