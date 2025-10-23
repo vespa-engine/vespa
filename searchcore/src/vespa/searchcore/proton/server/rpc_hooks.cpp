@@ -22,7 +22,7 @@ using vespalib::compression::CompressionConfig;
 
 namespace proton::experimental {
 
-bool enable_prepare_restart2 = false;
+bool enable_prepare_restart2 = true;
 
 class ConsiderEnablePrepareRestart2
 {
@@ -33,7 +33,7 @@ public:
 ConsiderEnablePrepareRestart2::ConsiderEnablePrepareRestart2()
 {
     const char *env = getenv("VESPA_ENABLE_PREPARE_RESTART2");
-    enable_prepare_restart2 = (env != nullptr && strcmp(env, "true") == 0);
+    enable_prepare_restart2 = (env == nullptr || strcmp(env, "false") != 0);
 }
 
 ConsiderEnablePrepareRestart2 consider_enable_prepare_restart2;
