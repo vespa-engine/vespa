@@ -11,7 +11,7 @@
 #include "termnodes.h"
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/query/numeric_range_spec.h>
-#include <vespa/searchlib/engine/search_protocol.pb.h>
+#include <vespa/searchlib/engine/search_protocol_proto.h>
 #include <cassert>
 
 namespace search::query {
