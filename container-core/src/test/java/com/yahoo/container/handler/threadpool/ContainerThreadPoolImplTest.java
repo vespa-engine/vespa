@@ -11,10 +11,13 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -28,7 +31,7 @@ public class ContainerThreadPoolImplTest {
     @Test
     final void testThreadPool() throws InterruptedException {
         Metric metrics = new MetricMock();
-        ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder().maxThreads(1));
+        ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder().maxThreads(1).minThreads(1).queueSize(1));
         ContainerThreadPool threadPool = new ContainerThreadpoolImpl(config, metrics);
         Executor exec = threadPool.executor();
         Tuple2<Receiver.MessageState, Boolean> reply;
@@ -59,13 +62,22 @@ public class ContainerThreadPoolImplTest {
         fail("Pool did not reject tasks after shutdown.");
     }
 
-    private ThreadPoolExecutor createPool(int maxThreads, int queueSize) {
-        return createPool(new MetricMock(), maxThreads, queueSize);
+    private ThreadPoolExecutor createPoolWithAbsoluteValues(Metric metric, int maxThreads, int queueSize) {
+        return createPool(metric, maxThreads, queueSize, 0, -1);
+    }
+    private ThreadPoolExecutor createPoolWithRelativeValues(Metric metric, int relativeThreads, int relativeQueueSize) {
+        return createPool(metric, 0, -1, relativeThreads, relativeQueueSize);
     }
     private ThreadPoolExecutor createPool(Metric metric, int maxThreads, int queueSize) {
+        return createPool(metric, maxThreads, queueSize, 0, -1);
+    }
+    private ThreadPoolExecutor createPool(Metric metric, int maxThreads, int queueSize, int relativeMaxThreads, int relativeQueueSize) {
         ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder()
                 .maxThreads(maxThreads)
                 .minThreads(maxThreads)
+                .relativeMaxThreads(relativeMaxThreads)
+                .relativeMinThreads(relativeMaxThreads)
+                .relativeQueueSize(relativeQueueSize)
                 .queueSize(queueSize));
         ContainerThreadPool threadPool = new ContainerThreadpoolImpl(
                 config, metric, new MockProcessTerminator(), CPUS);
@@ -89,31 +101,22 @@ public class ContainerThreadPoolImplTest {
     }
 
     @Test
-    void testThatThreadPoolSizeAutoDetected() {
+    void testThatThreadPoolSizeMustBeConfigured() {
         MetricMock metrics = new MetricMock();
-        ThreadPoolExecutor executor = createPool(metrics, 0, 0);
-        assertEquals(CPUS * 4, executor.getMaximumPoolSize());
-        assertEquals(0, executor.getQueue().remainingCapacity());
-        assertEquals(7, metrics.innvocations().size());
-        assertEquals(64L, metrics.innvocations().get("serverThreadPoolSize").val);
-        assertEquals(64L, metrics.innvocations().get(ContainerMetrics.JDISC_THREAD_POOL_MAX_ALLOWED_SIZE.baseName()).val);
-        assertEquals(0L, metrics.innvocations().get("serverActiveThreads").val);
-        assertEquals(64L, metrics.innvocations().get(ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_CAPACITY.baseName()).val);
-        assertEquals(0L, metrics.innvocations().get(ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_SIZE.baseName()).val);
+        assertThrows(IllegalArgumentException.class, () -> createPoolWithAbsoluteValues(metrics, 0, 1));
+        assertThrows(IllegalArgumentException.class, () -> createPoolWithRelativeValues(metrics, 0, 1));
+        assertDoesNotThrow(() -> createPoolWithRelativeValues(metrics, 1, 1));
+        assertDoesNotThrow(() -> createPoolWithAbsoluteValues(metrics, 1, 1));
     }
 
     @Test
-    void testThatQueueSizeAutoDetected() {
-        ThreadPoolExecutor executor = createPool(24, -50);
-        assertEquals(24, executor.getMaximumPoolSize());
-        assertEquals(24 * 50, executor.getQueue().remainingCapacity());
-    }
-
-    @Test
-    void testThatThreadPoolSizeAndQueueSizeAutoDetected() {
-        ThreadPoolExecutor executor = createPool(0, -100);
-        assertEquals(CPUS * 4, executor.getMaximumPoolSize());
-        assertEquals(CPUS * 4 * 100, executor.getQueue().remainingCapacity());
+    void testThatQueueSizeMustBeConfigured() {
+        MetricMock metrics = new MetricMock();
+        assertThrows(IllegalArgumentException.class, () -> createPoolWithAbsoluteValues(metrics, 1, -1));
+        assertThrows(IllegalArgumentException.class, () -> createPoolWithRelativeValues(metrics,  1, -1));
+        assertDoesNotThrow(() -> createPoolWithAbsoluteValues(metrics, 1, 0));
+        assertDoesNotThrow(() -> createPoolWithRelativeValues(metrics,  1, 1));
+        assertDoesNotThrow(() -> createPoolWithAbsoluteValues(metrics, 1, 1));
     }
 
     private static class FlipIt implements Runnable {
