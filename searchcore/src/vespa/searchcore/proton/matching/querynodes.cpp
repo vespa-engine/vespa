@@ -5,6 +5,7 @@
 #include "viewresolver.h"
 #include "handlerecorder.h"
 #include <vespa/vespalib/util/issue.h>
+#include <vespa/vespalib/util/classname.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.querynodes");
@@ -129,6 +130,21 @@ ProtonTermData::FieldEntry::getHandle(MatchDataDetails requested_details) const
     return handle;
 }
 
+template <typename Base>
+search::queryeval::FieldSpec ProtonTermWithFields<Base>::inner_field_spec(const search::queryeval::FieldSpec& parentSpec) const {
+    std::string me = vespalib::getClassName(*this);
+    LOG(debug, "ProtonTerm[%s] inner_field_spec[%d] check my %zd fields", me.c_str(), parentSpec.getFieldId(), numFields());
+    for (size_t i = 0; i < numFields(); i++) {
+        const auto& f = field(i);
+        if (f._field_spec.getFieldId() == parentSpec.getFieldId()) {
+            LOG(debug, "found my field with handle %d\n", f._field_spec.getHandle());
+            return f._field_spec;
+        }
+    }
+    LOG(warning, "inner_field_spec: no match for field id=%d in my %zd fields", parentSpec.getFieldId(), numFields());
+    return search::query::Term::inner_field_spec(parentSpec);
+}
+
 template struct ProtonTerm<search::query::LocationTerm>;
 template struct ProtonTerm<search::query::NumberTerm>;
 template struct ProtonTerm<search::query::Phrase>;
@@ -150,5 +166,52 @@ ProtonEquiv::~ProtonEquiv() = default;
 ProtonWordAlternatives::~ProtonWordAlternatives() = default;
 ProtonSameElement::~ProtonSameElement() = default;
 ProtonNearestNeighborTerm::~ProtonNearestNeighborTerm() = default;
+
+namespace {
+
+std::vector<std::unique_ptr<search::query::StringTerm>>
+upcast_proton_children(std::vector<std::unique_ptr<ProtonStringTerm>> children)
+{
+    std::vector<std::unique_ptr<search::query::StringTerm>> base_children;
+    base_children.reserve(children.size());
+    for (auto& child : children) {
+        base_children.emplace_back(std::move(child));
+    }
+    return base_children;
+}
+
+std::vector<std::unique_ptr<search::query::StringTerm>>
+convert_from_term_vector(const search::query::TermVector& terms, const std::string & view)
+{
+    std::vector<std::unique_ptr<search::query::StringTerm>> proton_children;
+    proton_children.reserve(terms.size());
+    for (uint32_t i = 0; i < terms.size(); i++) {
+        auto pair = terms.getAsString(i);
+        std::string word(pair.first);
+        auto tp = std::make_unique<ProtonStringTerm>(word, view, 0, pair.second);
+        proton_children.emplace_back(std::move(tp));
+    }
+    return proton_children;
+}
+
+}
+
+ProtonWordAlternatives::ProtonWordAlternatives(std::vector<std::unique_ptr<search::query::StringTerm>> children,
+                                               const std::string & view, int32_t id, search::query::Weight weight)
+  : ProtonTermWithFields(std::move(children), view, id, weight)
+{
+}
+
+ProtonWordAlternatives::ProtonWordAlternatives(std::vector<std::unique_ptr<ProtonStringTerm>> children,
+                                               const std::string & view, int32_t id, search::query::Weight weight)
+  : ProtonTermWithFields(upcast_proton_children(std::move(children)), view, id, weight)
+{
+}
+
+ProtonWordAlternatives::ProtonWordAlternatives(std::unique_ptr<search::query::TermVector> terms,
+                                               const std::string & view, int32_t id, search::query::Weight weight)
+  : ProtonTermWithFields(convert_from_term_vector(*terms, view), view, id, weight)
+{
+}
 
 }

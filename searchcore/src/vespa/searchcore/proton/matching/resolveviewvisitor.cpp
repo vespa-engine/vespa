@@ -41,10 +41,10 @@ ResolveViewVisitor::visit(ProtonNodeTypes::Equiv& n)
 }
 
 void ResolveViewVisitor::visit(ProtonNodeTypes::WordAlternatives& n) {
-    for (const auto& tp : n.children) {
-        visitTerm(*tp);
-    }
     visitTerm(n);
+    for (const auto& child : n.getChildren()) {
+        child->accept(*this);
+    }
 }
 
 void
