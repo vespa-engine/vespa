@@ -110,14 +110,23 @@ QueryBuilder::build(const QueryNode * parent, const QueryNodeResultFactory& fact
             if (qn) {
                 auto * qc = dynamic_cast<QueryConnector *> (qn.get());
                 auto * nqn = dynamic_cast<NearQueryNode *> (qc);
+                uint32_t num_negative_terms = 0;
                 if (nqn) {
                     nqn->distance(queryRep.getNearDistance());
+                    num_negative_terms = queryRep.getNegativeTerms();
+                    nqn->num_negative_terms(num_negative_terms);
+                    nqn->exclusion_distance(queryRep.getExclusionDistance());
                 }
                 if (type == ParseItem::ITEM_WEAK_AND) {
                     qn->setIndex(queryRep.index_as_string());
                 }
+                HiddenTermsGuard hidden_terms_guard(*this);
+                size_t num_positive = (num_negative_terms > arity) ? 0 : (arity - num_negative_terms);
                 for (size_t i=0; i < arity; i++) {
                     queryRep.next();
+                    if (i == num_positive) {
+                        hidden_terms_guard.activate();
+                    }
                     if (qc->isFlattenable(queryRep.getType())) {
                         arity += queryRep.getArity();
                     } else {
