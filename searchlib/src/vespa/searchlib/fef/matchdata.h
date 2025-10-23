@@ -94,7 +94,10 @@ public:
      * @return term field match data
      * @param handle term field handle
      **/
-    TermFieldMatchData *resolveTermField(TermFieldHandle handle) { return &_termFields[handle]; }
+    TermFieldMatchData *resolveTermField(TermFieldHandle handle) {
+        // fprintf(stderr, "MD %p resolve %d (of %zd)\n", this, handle, _termFields.size());
+        return &_termFields[handle];
+    }
 
     /**
      * Resolve a term field handle into a pointer to the actual data.

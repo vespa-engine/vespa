@@ -292,9 +292,10 @@ struct SourceBlenderAdapter {
 struct SimplePhraseAdapter {
     FieldSpec field;
     SimplePhraseBlueprint blueprint;
+    MatchDataLayout fake_layout;
     SimplePhraseAdapter() : field("foo", 3, 7), blueprint(field, false) {}
     void addChild(std::unique_ptr<Blueprint> child) {
-        auto child_field = blueprint.getNextChildField(field);
+        auto child_field = blueprint.getNextChildField(field, fake_layout);
         auto term = std::make_unique<LeafProxy>(child_field, std::move(child));
         blueprint.addTerm(std::move(term));
     }
@@ -304,7 +305,10 @@ struct SimplePhraseAdapter {
     auto createFilterSearch(Constraint constraint) const {
         return blueprint.createFilterSearch(constraint);
     }
+    ~SimplePhraseAdapter();
 };
+
+SimplePhraseAdapter::~SimplePhraseAdapter() = default;
 
 //enable Make-ing equiv
 struct EquivAdapter {

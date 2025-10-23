@@ -1255,18 +1255,19 @@ TEST(IntermediateBlueprintsTest, require_that_children_does_not_optimize_when_pa
     search::fef::TermFieldHandle idxth21 = subLayout.allocTermField(2);
     search::fef::TermFieldHandle idxth22 = subLayout.allocTermField(2);
     search::fef::TermFieldHandle idxth1 = subLayout.allocTermField(1);
+    search::fef::MatchDataLayout mdl;
     Blueprint::UP top_up(
             ap((new EquivBlueprint(fields, subLayout))->
                addTerm(index.getIndex().createBlueprint(requestContext,
                                                         FieldSpec("f2", 2, idxth22, true),
-                                                        makeTerm("w2")),
+                                                        makeTerm("w2"), mdl),
                        1.0).
                addTerm(index.getIndex().createBlueprint(requestContext,
                                                         FieldSpec("f1", 1, idxth1),
-                                                        makeTerm("w1")),
+                                                        makeTerm("w1"), mdl),
                        1.0).
                addTerm(index.getIndex().createBlueprint(requestContext,
-                                                        FieldSpec("f2", 2, idxth21), makeTerm("w2")),
+                                                        FieldSpec("f2", 2, idxth21), makeTerm("w2"), mdl),
                        1.0)));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->basic_plan(true, 1000);

@@ -161,8 +161,9 @@ public:
     CreateBlueprintVisitor(DiskIndex& diskIndex,
                            const IRequestContext & requestContext,
                            const FieldSpec &field,
-                           uint32_t fieldId)
-        : CreateBlueprintVisitorHelper(diskIndex, field, requestContext),
+                           uint32_t fieldId,
+                           fef::MatchDataLayout &global_layout)
+        : CreateBlueprintVisitorHelper(diskIndex, field, requestContext, global_layout),
           _diskIndex(diskIndex),
           _field_index(_diskIndex.get_field_index(fieldId)),
           _field(field)
@@ -208,10 +209,11 @@ public:
 
 Blueprint::UP
 createBlueprintHelper(DiskIndex & diskIndex, const IRequestContext & requestContext,
-                      const FieldSpec &field, uint32_t fieldId, const Node &term)
+                      const FieldSpec &field, uint32_t fieldId, const Node &term,
+                      fef::MatchDataLayout &global_layout)
 {
     if (fieldId != Schema::UNKNOWN_FIELD_ID) {
-        CreateBlueprintVisitor visitor(diskIndex, requestContext, field, fieldId);
+        CreateBlueprintVisitor visitor(diskIndex, requestContext, field, fieldId, global_layout);
         const_cast<Node &>(term).accept(visitor);
         return visitor.getResult();
     }
@@ -221,15 +223,17 @@ createBlueprintHelper(DiskIndex & diskIndex, const IRequestContext & requestCont
 }
 
 Blueprint::UP
-DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term)
+DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term,
+                           fef::MatchDataLayout &global_layout)
 {
     std::vector<uint32_t> fieldIds;
     fieldIds.push_back(_schema.getIndexFieldId(field.getName()));
-    return createBlueprintHelper(*this, requestContext, field, fieldIds[0], term);
+    return createBlueprintHelper(*this, requestContext, field, fieldIds[0], term, global_layout);
 }
 
 Blueprint::UP
-DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term)
+DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term,
+                           fef::MatchDataLayout &global_layout)
 {
     if (fields.empty()) {
         return std::make_unique<EmptyBlueprint>();
@@ -247,7 +251,7 @@ DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSp
     auto orbp = std::make_unique<OrBlueprint>();
     for (size_t i(0); i< fields.size(); i++) {
         const FieldSpec & field = fields[i];
-        orbp->addChild(createBlueprintHelper(*this, requestContext, field, _schema.getIndexFieldId(field.getName()), term));
+        orbp->addChild(createBlueprintHelper(*this, requestContext, field, _schema.getIndexFieldId(field.getName()), term, global_layout));
     }
     if (orbp->childCnt() == 1) {
         return orbp->removeChild(0);

@@ -111,7 +111,8 @@ struct WS {
         Node::UP node = createNode();
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle, ac.getAttribute(field)->getIsFilter()));
-        queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
+        search::fef::MatchDataLayout mdl;
+        queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node, mdl);
         bp->basic_plan(strict, 100);
         bp->fetchPostings(queryeval::ExecuteInfo::FULL);
         SearchIterator::UP sb = bp->createSearch(*md);
@@ -128,7 +129,8 @@ struct WS {
         Node::UP node = createNode();
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle));
-        queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
+        search::fef::MatchDataLayout mdl;
+        queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node, mdl);
         bp->basic_plan(strict, 100);
         bp->fetchPostings(queryeval::ExecuteInfo::FULL);
         SearchIterator::UP sb = bp->createSearch(*md);

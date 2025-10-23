@@ -23,9 +23,10 @@ public:
     std::unique_ptr<search::queryeval::Blueprint>
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpec &field,
-                    const Node &term) override
+                    const Node &term,
+                    search::fef::MatchDataLayout &global_layout) override
     {
-        return _fake.createBlueprint(requestContext, field, term);
+        return _fake.createBlueprint(requestContext, field, term, global_layout);
     }
 
     search::IndexStats get_index_stats(bool) const override {

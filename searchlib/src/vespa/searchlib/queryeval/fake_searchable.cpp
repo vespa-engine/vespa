@@ -51,7 +51,7 @@ class LookupVisitor : public CreateBlueprintVisitorHelper
 
 public:
     LookupVisitor(Searchable &searchable, const IRequestContext & requestContext,
-                  const Map &map, const std::string &tag, bool is_attr, const FieldSpec &field);
+                  const Map &map, const std::string &tag, bool is_attr, const FieldSpec &field, fef::MatchDataLayout &global_layout);
 
     ~LookupVisitor() override;
     template <class TermNode>
@@ -72,8 +72,8 @@ public:
 
 template <class Map>
 LookupVisitor<Map>::LookupVisitor(Searchable &searchable, const IRequestContext & requestContext,
-                                  const Map &map, const std::string &tag, bool is_attr, const FieldSpec &field)
-    : CreateBlueprintVisitorHelper(searchable, field, requestContext),
+                                  const Map &map, const std::string &tag, bool is_attr, const FieldSpec &field, fef::MatchDataLayout &global_layout)
+    : CreateBlueprintVisitorHelper(searchable, field, requestContext, global_layout),
       _map(map),
       _tag(tag),
       _is_attr(is_attr)
@@ -103,9 +103,10 @@ LookupVisitor<Map>::visitTerm(TermNode &n) {
 Blueprint::UP
 FakeSearchable::createBlueprint(const IRequestContext & requestContext,
                                 const FieldSpec &field,
-                                const search::query::Node &term)
+                                const search::query::Node &term,
+                                fef::MatchDataLayout &global_layout)
 {
-    LookupVisitor<Map> visitor(*this, requestContext, _map, _tag, _is_attr, field);
+    LookupVisitor<Map> visitor(*this, requestContext, _map, _tag, _is_attr, field, global_layout);
     const_cast<Node &>(term).accept(visitor);
     return visitor.getResult();
 }

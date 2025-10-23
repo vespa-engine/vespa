@@ -14,6 +14,7 @@
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <filesystem>
@@ -259,7 +260,8 @@ DiskIndexTest::search(const FieldIndex& field_index, const DictionaryLookupResul
 Blueprint::UP
 DiskIndexTest::create_blueprint(const FieldSpec& field, const search::query::Node& term, uint32_t docid_limit)
 {
-    auto b = _index->createBlueprint(_requestContext, field, term);
+    search::fef::MatchDataLayout mdl;
+    auto b = _index->createBlueprint(_requestContext, field, term, mdl);
     b->basic_plan(true, docid_limit);
     b->fetchPostings(search::queryeval::ExecuteInfo::FULL);
     return b;
@@ -334,22 +336,23 @@ DiskIndexTest::requireThatWeCanReadBitVector()
 void
 DiskIndexTest::requireThatBlueprintIsCreated()
 {
+    search::fef::MatchDataLayout mdl;
     { // unknown field
-        auto b = _index->createBlueprint(_requestContext, FieldSpec("none", 0, 0), makeTerm("w1"));
+        auto b = _index->createBlueprint(_requestContext, FieldSpec("none", 0, 0), makeTerm("w1"), mdl);
         EXPECT_TRUE(dynamic_cast<EmptyBlueprint *>(b.get()) != nullptr);
     }
     { // unknown word
-        auto b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("none"));
+        auto b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("none"), mdl);
         EXPECT_TRUE(dynamic_cast<EmptyBlueprint *>(b.get()) != nullptr);
     }
     { // known field & word with hits
-        auto b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("w1"));
+        auto b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("w1"), mdl);
         EXPECT_TRUE(dynamic_cast<DiskTermBlueprint *>(b.get()) != nullptr);
         EXPECT_EQ(2u, b->getState().estimate().estHits);
         EXPECT_TRUE(!b->getState().estimate().empty);
     }
     { // known field & word without hits
-        auto b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("w2"));
+        auto b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("w2"), mdl);
         EXPECT_TRUE((dynamic_cast<DiskTermBlueprint *>(b.get()) != nullptr) ||
                     (dynamic_cast<EmptyBlueprint *>(b.get()) != nullptr));
         EXPECT_EQ(0u, b->getState().estimate().estHits);

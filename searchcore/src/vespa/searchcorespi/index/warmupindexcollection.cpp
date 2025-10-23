@@ -57,11 +57,11 @@ public:
     WarmupTask(std::unique_ptr<MatchData> md, std::shared_ptr<WarmupIndexCollection> warmup);
     ~WarmupTask() override;
     WarmupTask &createBlueprint(const FieldSpec &field, const Node &term) {
-        _bluePrint = _warmup->createBlueprint(_requestContext, field, term);
+        _bluePrint = _warmup->createBlueprint(_requestContext, field, term, _mdl);
         return *this;
     }
     WarmupTask &createBlueprint(const FieldSpecList &fields, const Node &term) {
-        _bluePrint = _warmup->createBlueprint(_requestContext, fields, term);
+        _bluePrint = _warmup->createBlueprint(_requestContext, fields, term, _mdl);
         return *this;
     }
 private:
@@ -71,6 +71,7 @@ private:
     std::unique_ptr<MatchData>                     _matchData;
     std::unique_ptr<search::queryeval::Blueprint>  _bluePrint;
     WarmupRequestContext                           _requestContext;
+    MatchDataLayout                                _mdl;
 };
 }
 
@@ -197,21 +198,23 @@ WarmupIndexCollection::handledBefore(uint32_t fieldId, const Node &term)
 Blueprint::UP
 WarmupIndexCollection::createBlueprint(const IRequestContext & requestContext,
                                        const FieldSpec &field,
-                                       const Node &term)
+                                       const Node &term,
+                                       search::fef::MatchDataLayout &global_layout)
 {
     FieldSpecList fsl;
     fsl.add(field);
-    return createBlueprint(requestContext, fsl,term);
+    return createBlueprint(requestContext, fsl, term, global_layout);
 }
 
 Blueprint::UP
 WarmupIndexCollection::createBlueprint(const IRequestContext & requestContext,
                                        const FieldSpecList &fields,
-                                       const Node &term)
+                                       const Node &term,
+                                       search::fef::MatchDataLayout &global_layout)
 {
     if ( _warmupEndTime == vespalib::steady_time()) {
         // warmup done
-        return _next->createBlueprint(requestContext, fields, term);
+        return _next->createBlueprint(requestContext, fields, term, global_layout);
     }
     MatchDataLayout mdl;
     FieldSpecList fsl;
@@ -227,7 +230,7 @@ WarmupIndexCollection::createBlueprint(const IRequestContext & requestContext,
         task->createBlueprint(fsl, term);
         fireWarmup(std::move(task));
     }
-    return _prev->createBlueprint(requestContext, fields, term);
+    return _prev->createBlueprint(requestContext, fields, term, global_layout);
 }
 
 search::IndexStats

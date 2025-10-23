@@ -99,7 +99,7 @@ testSearch(Searchable &source, const string &term, uint32_t doc_id)
 
     SimpleStringTerm node(term, field_name, 0, search::query::Weight(0));
     Blueprint::UP result = source.createBlueprint(requestContext,
-            FieldSpecList().add(FieldSpec(field_name, 0, handle)), node);
+            FieldSpecList().add(FieldSpec(field_name, 0, handle)), node, mdl);
     result->basic_plan(true, 1000);
     result->fetchPostings(search::queryeval::ExecuteInfo::FULL);
     SearchIterator::UP search_iterator = result->createSearch(*match_data);

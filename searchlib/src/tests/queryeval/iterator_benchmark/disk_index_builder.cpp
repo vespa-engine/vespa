@@ -6,6 +6,7 @@
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <filesystem>
 
 using search::diskindex::DiskIndex;
@@ -64,7 +65,8 @@ public:
     std::unique_ptr<Blueprint> create_blueprint(const FieldSpec& field,
                                                 const search::query::Node& term) override {
         FakeRequestContext req_ctx;
-        return _index->createBlueprint(req_ctx, field, term);
+        search::fef::MatchDataLayout mdl;
+        return _index->createBlueprint(req_ctx, field, term, mdl);
     }
 };
 

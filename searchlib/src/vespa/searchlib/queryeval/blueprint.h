@@ -582,7 +582,7 @@ public:
     const LeafBlueprint * asLeaf() const noexcept final { return this; }
 
     virtual bool getRange(std::string & from, std::string & to) const;
-    virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, fef::MatchData &md) const;
+    virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, fef::MatchData &global_md) const;
     virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const = 0;
 };
 

@@ -14,7 +14,6 @@ class SimplePhraseBlueprint : public ComplexLeafBlueprint
 private:
     FieldSpec                  _field;
     HitEstimate                _estimate;
-    fef::MatchDataLayout       _layout;
     std::vector<Blueprint::UP> _terms;
 
 public:
@@ -25,14 +24,17 @@ public:
     ~SimplePhraseBlueprint() override;
 
     // used by create visitor
-    FieldSpec getNextChildField(const FieldSpec &outer);
+    FieldSpec getNextChildField(const FieldSpec &outer, fef::MatchDataLayout &layout) const {
+        return {outer.getName(), outer.getFieldId(), layout.allocTermField(outer.getFieldId()), false};
+    }
 
     // used by create visitor
     void addTerm(Blueprint::UP term);
 
     void sort(InFlow in_flow) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
-    
+
+    SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, fef::MatchData &global_md) const override;
     SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;

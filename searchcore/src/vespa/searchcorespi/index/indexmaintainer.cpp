@@ -126,18 +126,20 @@ public:
     std::unique_ptr<Blueprint>
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpec &field,
-                    const Node &term) override
+                    const Node &term,
+                    search::fef::MatchDataLayout &global_layout) override
     {
         FieldSpecList fsl;
         fsl.add(field);
-        return _index->createBlueprint(requestContext, fsl, term);
+        return _index->createBlueprint(requestContext, fsl, term, global_layout);
     }
     std::unique_ptr<Blueprint>
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpecList &fields,
-                    const Node &term) override
+                    const Node &term,
+                    search::fef::MatchDataLayout &global_layout) override
     {
-        return _index->createBlueprint(requestContext, fields, term);
+        return _index->createBlueprint(requestContext, fields, term, global_layout);
     }
     search::IndexStats get_index_stats(bool clear_disk_io_stats) const override;
     search::SerialNum getSerialNum() const override {

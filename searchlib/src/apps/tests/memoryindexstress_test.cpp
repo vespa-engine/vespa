@@ -315,7 +315,7 @@ Fixture::readWork(uint32_t cnt)
         FieldSpec field(fieldName, fieldId, handle);
         FieldSpecList fields;
         fields.add(field);
-        auto result = index.createBlueprint(requestContext, fields, term);
+        auto result = index.createBlueprint(requestContext, fields, term, mdl);
         bool failed = false;
         EXPECT_TRUE(result) << (failed = true, "Did not get blueprint");
         if (failed) {
@@ -412,7 +412,7 @@ verifyResult(const FakeResult &expect, Searchable &index, std::string fieldName,
     FieldSpecList fields;
     fields.add(field);
 
-    auto result = index.createBlueprint(requestContext, fields, term);
+    auto result = index.createBlueprint(requestContext, fields, term, mdl);
     bool failed = false;
     EXPECT_TRUE(result) << (failed = true, "");
     if (failed) {

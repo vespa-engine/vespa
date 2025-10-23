@@ -8,6 +8,7 @@
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 
 using namespace search::queryeval;
 using namespace search::query;
@@ -56,8 +57,10 @@ TEST_F(FakeSearchableTest, require_that_term_search_works) {
     SimpleStringTerm termNode("word1", "viewfoo", 1, w);
 
     FieldSpecList fields;
-    fields.add(FieldSpec("fieldfoo", 1, 1));
-    auto bp = source.createBlueprint(req_ctx, fields, termNode);
+    search::fef::MatchDataLayout mdl;
+    mdl.allocTermField(0);
+    fields.add(FieldSpec("fieldfoo", 1, mdl.allocTermField(1)));
+    auto bp = source.createBlueprint(req_ctx, fields, termNode, mdl);
     for (int i = 0; i <= 1; ++i) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
@@ -110,9 +113,11 @@ TEST_F(FakeSearchableTest, require_that_phrase_search_works) {
     phraseNode.append(Node::UP(new SimpleStringTerm("word1", "viewfoo", 2, w)));
     phraseNode.append(Node::UP(new SimpleStringTerm("word2", "viewfoo", 3, w)));
 
+    search::fef::MatchDataLayout mdl;
+    mdl.allocTermField(0);
     FieldSpecList fields;
-    fields.add(FieldSpec("fieldfoo", 1, 1));
-    auto bp = source.createBlueprint(req_ctx, fields, phraseNode);
+    fields.add(FieldSpec("fieldfoo", 1, mdl.allocTermField(1)));
+    auto bp = source.createBlueprint(req_ctx, fields, phraseNode, mdl);
     for (int i = 0; i <= 1; ++i) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
@@ -163,8 +168,10 @@ TEST_F(FakeSearchableTest, require_that_weigheted_set_search_works) {
     weightedSet.addTerm("friend2", Weight(2));
 
     FieldSpecList fields;
-    fields.add(FieldSpec("fieldfoo", 1, 1));
-    auto bp = source.createBlueprint(req_ctx, fields, weightedSet);
+    search::fef::MatchDataLayout mdl;
+    mdl.allocTermField(0);
+    fields.add(FieldSpec("fieldfoo", 1, mdl.allocTermField(1)));
+    auto bp = source.createBlueprint(req_ctx, fields, weightedSet, mdl);
     for (int i = 0; i <= 1; ++i) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
@@ -234,9 +241,11 @@ TEST_F(FakeSearchableTest, require_that_multi_field_search_works) {
     SimpleStringTerm termNode("word1", "viewfoobar", 1, w);
 
     FieldSpecList fields;
-    fields.add(FieldSpec("fieldfoo", 1, 1));
-    fields.add(FieldSpec("fieldbar", 2, 2));
-    auto bp = source.createBlueprint(req_ctx, fields, termNode);
+    search::fef::MatchDataLayout mdl;
+    mdl.allocTermField(0);
+    fields.add(FieldSpec("fieldfoo", 1, mdl.allocTermField(1)));
+    fields.add(FieldSpec("fieldbar", 2, mdl.allocTermField(2)));
+    auto bp = source.createBlueprint(req_ctx, fields, termNode, mdl);
     for (int i = 0; i <= 1; ++i) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
@@ -320,8 +329,9 @@ TEST_F(FakeSearchableTest, require_that_phrase_with_empty_child_works) {
     phraseNode.append(Node::UP(new SimpleStringTerm("word2", "viewfoo", 3, w)));
 
     FieldSpecList fields;
-    fields.add(FieldSpec("fieldfoo", 1, 1));
-    auto bp = source.createBlueprint(req_ctx, fields, phraseNode);
+    search::fef::MatchDataLayout mdl;
+    fields.add(FieldSpec("fieldfoo", 1, mdl.allocTermField(1)));
+    auto bp = source.createBlueprint(req_ctx, fields, phraseNode, mdl);
     for (int i = 0; i <= 1; ++i) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
@@ -344,8 +354,10 @@ TEST_F(FakeSearchableTest, require_that_match_data_is_compressed_for_attributes)
                      FakeResult().doc(5).elem(2).weight(6).pos(3).elem(4).weight(8).pos(5));
     SimpleStringTerm termNode("word1", "viewfoo", 1, w);
     FieldSpecList fields;
-    fields.add(FieldSpec("attrfoo", 1, 1));
-    auto bp = source.createBlueprint(req_ctx, fields, termNode);
+    search::fef::MatchDataLayout mdl;
+    mdl.allocTermField(0);
+    fields.add(FieldSpec("attrfoo", 1, mdl.allocTermField(1)));
+    auto bp = source.createBlueprint(req_ctx, fields, termNode, mdl);
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     bp->basic_plan(false, 100);
     bp->fetchPostings(ExecuteInfo::FULL);
@@ -372,8 +384,9 @@ TEST_F(FakeSearchableTest, require_that_relevant_data_can_be_obtained_from_fake_
                      FakeResult().doc(5).elem(2).weight(6).pos(3).elem(4).weight(8).pos(5));
     SimpleStringTerm termNode("word1", "viewfoo", 1, w);
     FieldSpecList fields;
-    fields.add(FieldSpec("attrfoo", 1, 1));
-    auto bp = source.createBlueprint(req_ctx, fields, termNode);
+    search::fef::MatchDataLayout mdl;
+    fields.add(FieldSpec("attrfoo", 1, mdl.allocTermField(1)));
+    auto bp = source.createBlueprint(req_ctx, fields, termNode, mdl);
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     bp->basic_plan(false, 100);
     bp->fetchPostings(ExecuteInfo::FULL);

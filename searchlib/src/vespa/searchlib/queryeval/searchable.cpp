@@ -9,17 +9,18 @@ namespace search::queryeval {
 Blueprint::UP
 Searchable::createBlueprint(const IRequestContext & requestContext,
                             const FieldSpecList &fields,
-                            const search::query::Node &term)
+                            const search::query::Node &term,
+                            search::fef::MatchDataLayout &global_layout)
 {
     if (fields.empty()) {
         return std::make_unique<EmptyBlueprint>();
     }
     if (fields.size() == 1) {
-        return createBlueprint(requestContext, fields[0], term);
+        return createBlueprint(requestContext, fields[0], term, global_layout);
     }
     auto b = std::make_unique<OrBlueprint>();
     for (size_t i = 0; i < fields.size(); ++i) {
-        b->addChild(createBlueprint(requestContext, fields[i], term));
+        b->addChild(createBlueprint(requestContext, fields[i], term, global_layout));
     }
     return b;
 }
