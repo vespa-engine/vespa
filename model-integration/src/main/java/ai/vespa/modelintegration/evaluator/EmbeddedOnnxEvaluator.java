@@ -6,6 +6,7 @@ import ai.onnxruntime.OnnxTensor;
 import ai.onnxruntime.OnnxValue;
 import ai.onnxruntime.OrtException;
 import ai.onnxruntime.OrtSession;
+import ai.vespa.modelintegration.utils.ModelPathOrData;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -32,11 +33,11 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
     private boolean isCudaLoaded;
 
     EmbeddedOnnxEvaluator(String modelPath, OnnxEvaluatorOptions options, EmbeddedOnnxRuntime runtime) {
-        session = createSession(EmbeddedOnnxRuntime.ModelPathOrData.of(modelPath), runtime, options, true);
+        session = createSession(ModelPathOrData.of(modelPath), runtime, options, true);
     }
 
     EmbeddedOnnxEvaluator(byte[] data, OnnxEvaluatorOptions options, EmbeddedOnnxRuntime runtime) {
-        session = createSession(EmbeddedOnnxRuntime.ModelPathOrData.of(data), runtime, options, true);
+        session = createSession(ModelPathOrData.of(data), runtime, options, true);
     }
 
     @Override
@@ -148,7 +149,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
     }
 
     private EmbeddedOnnxRuntime.ReferencedOrtSession createSession(
-            EmbeddedOnnxRuntime.ModelPathOrData model,
+            ModelPathOrData model,
             EmbeddedOnnxRuntime runtime,
             OnnxEvaluatorOptions options,
             boolean tryCuda) {

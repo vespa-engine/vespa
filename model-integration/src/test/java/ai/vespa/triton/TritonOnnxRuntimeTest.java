@@ -40,22 +40,32 @@ class TritonOnnxRuntimeTest {
                         .modelControlMode(TritonConfig.ModelControlMode.EXPLICIT)
                         .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
                         .build());
+
+        var modelBaseName = "dummy_transformer";
+        var modelHash = "3100035948148863490";
+        var testModelFilePath = String.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
+        var testModelConfigPath = "src/test/triton/config.pbtxt";
+        var modelName = String.format("%s_%s", modelBaseName, modelHash);
+        var modelFilePath = String.format("%s/1/model.onnx", modelName);
+        var modelConfigPath = String.format("%s/config.pbtxt",modelName);
+        
         try {
             var evaluator = assertDoesNotThrow(() -> runtime.evaluatorOf(
-                    "src/test/models/onnx/transformer/dummy_transformer.onnx",
+                    testModelFilePath,
                     new OnnxEvaluatorOptions.Builder()
                             .setExecutionMode(OnnxEvaluatorOptions.ExecutionMode.PARALLEL)
                             .setThreads(5, 5)
                             .build()));
             assertNotNull(evaluator);
-            var configFile = tritonContainer.getModelRepositoryPath().resolve("dummy_transformer/config.pbtxt");
+            
+            var configFile = tritonContainer.getModelRepositoryPath().resolve(modelConfigPath);
             var expectedFilePermissions = PosixFilePermissions.fromString("rw-r--r--");
             assertEquals(expectedFilePermissions, Files.getPosixFilePermissions(configFile));
             var actualConfig = Files.readString(Paths.get(configFile.toString()));
-            var expectedConfig = Files.readString(Paths.get("src/test/triton/config.pbtxt"));
+            var expectedConfig = Files.readString(Paths.get(testModelConfigPath));
             assertEquals(expectedConfig, actualConfig);
 
-            var modelFile = tritonContainer.getModelRepositoryPath().resolve("dummy_transformer/1/model.onnx");
+            var modelFile = tritonContainer.getModelRepositoryPath().resolve(modelFilePath);
             assertEquals(expectedFilePermissions, Files.getPosixFilePermissions(modelFile));
             evaluator.close();
         } finally {
