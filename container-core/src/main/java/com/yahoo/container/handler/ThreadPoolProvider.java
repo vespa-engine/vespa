@@ -45,13 +45,26 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
                         .maxThreadExecutionTimeSeconds(config.maxThreadExecutionTimeSeconds());
 
         int max = config.maxthreads();
+        int min = config.corePoolSize();
+
+        // If one  is absolute, and the other is relative, set both to the absolute thread count.
+        if (max > 0 && min < 0) {
+            min = max;
+        } else if (min > 0 && max < 0) {
+            max = min;
+        }
+
+        // Ensure min is less than max
+        if (Math.abs(min) > Math.abs(max)) {
+            min  = max;
+        }
+
         if  (max > 0) {
             builder.maxThreads(max);
         } else {
             builder.relativeMaxThreads(-max);
         }
 
-        int min = config.corePoolSize();
         if  (min > 0) {
             builder.minThreads(min);
         } else {
