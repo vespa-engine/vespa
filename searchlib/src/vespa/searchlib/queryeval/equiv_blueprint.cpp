@@ -87,7 +87,6 @@ EquivBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 
 SearchIterator::UP
 EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &outputs, fef::MatchData& global_md) const {
-    // fprintf(stderr, "EquivBlueprint::createSearchImpl: %s\n", use_internal_match_data() ? "use internal MD" : "use global MD");
     // same code as in LeafBlueprint :
     // conditional internal matchdata:
     fef::MatchData::UP my_md = {};
@@ -106,13 +105,6 @@ EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &outputs, fe
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
         for (size_t j = 0; j < childState.numFields(); ++j) {
-            /*
-            fprintf(stderr, "child %zd field %zd [%d/%d] resolve using %p",
-                    i, j,
-                    childState.field(j).getFieldId(),
-                    childState.field(j).getHandle(),
-                    &use_md);
-            */
             auto *child_term_field_match_data = childState.field(j).resolve(use_md);
             unpack_needs[child_term_field_match_data->getFieldId()].notify(*child_term_field_match_data);
             childMatch.emplace_back(child_term_field_match_data, _exactness[i]);

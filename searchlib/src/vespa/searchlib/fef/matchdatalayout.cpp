@@ -10,8 +10,6 @@ namespace search::fef {
 MatchDataLayout::MatchDataLayout()
     : _fieldIds()
 {
-    // auto backtrace = vespalib::getStackTrace(0);
-    // fprintf(stderr, "created MDL %p from:%s\n", this, backtrace.c_str());
 }
 
 MatchDataLayout::~MatchDataLayout() = default;
@@ -24,7 +22,6 @@ MatchDataLayout::createMatchData() const
     for (size_t i = 0; i < _fieldIds.size(); ++i) {
         md->resolveTermField(i)->setFieldId(_fieldIds[i]);
     }
-    // fprintf(stderr, "MDL %p creating MD %p size %zd\n", this, md.get(), _fieldIds.size());
     return md;
 }
 

@@ -100,7 +100,6 @@ public:
         {
             // and one to be used by the phrase blueprint
             FieldSpec spec = _phrase.getNextChildField(_phrase_fs, _layout);
-            // fprintf(stderr, "add %s:%s id=%d handle=%d\n", field.c_str(), term.c_str(), spec.getFieldId(), spec.getHandle());
             FieldSpecList fields;
             fields.add(spec);
             _phrase.addTerm(_index.createBlueprint(_requestContext, fields, term_node, _layout));
@@ -166,7 +165,6 @@ PhraseSearchTest::PhraseSearchTest(bool expiredDoom)
     _layout.allocTermField(fieldId);
     _layout.allocTermField(fieldId);
     _layout.allocTermField(fieldId);
-    // fprintf(stderr, "new phrase field=%d handle=%d\n", fieldId, _phrase_fs.getHandle());
 }
 
 PhraseSearchTest::~PhraseSearchTest() = default;
@@ -215,7 +213,6 @@ TEST(SimplePhraseTest, requireThatStrictIteratorFindsNextMatch) {
 
 TEST(SimplePhraseTest, requireThatPhrasesAreUnpacked) {
     for (bool useBlueprint: {false, true}) {
-        // fprintf(stderr, "useBlueprint: %s\n", useBlueprint ? "true" : "false");
         for (bool unpack_normal_features: {false, true}) {
             for (bool unpack_interleaved_features: {false, true}) {
                 PhraseSearchTest test;

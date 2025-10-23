@@ -95,7 +95,6 @@ public:
      * @param handle term field handle
      **/
     TermFieldMatchData *resolveTermField(TermFieldHandle handle) {
-        // fprintf(stderr, "MD %p resolve %d (of %zd)\n", this, handle, _termFields.size());
         return &_termFields[handle];
     }
 

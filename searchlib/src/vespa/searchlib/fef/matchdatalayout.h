@@ -33,7 +33,6 @@ public:
      * @return handle to be used with match data objects
      **/
     TermFieldHandle allocTermField(uint32_t fieldId) {
-        // fprintf(stderr, "MDL %p allocate[%d] -> handle %zd\n", this, fieldId, _fieldIds.size());
         _fieldIds.push_back(fieldId);
         return _fieldIds.size() - 1;
     }
