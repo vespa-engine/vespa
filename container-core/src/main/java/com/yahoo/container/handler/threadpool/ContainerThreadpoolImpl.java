@@ -25,8 +25,6 @@ import java.util.logging.Logger;
 public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCloseable, ContainerThreadPool {
 
     private static final Logger log = Logger.getLogger(ContainerThreadpoolImpl.class.getName());
-    private static final int MIN_QUEUE_SIZE = 650;
-    private static final int MIN_THREADS_WHEN_SCALE_FACTOR = 8;
 
     private final ExecutorServiceWrapper threadpool;
 
@@ -41,10 +39,42 @@ public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCl
 
     ContainerThreadpoolImpl(ContainerThreadpoolConfig config, Metric metric, ProcessTerminator processTerminator,
                             int cpus) {
+        boolean hasAbsThreads = (config.minThreads() >= 0 && config.maxThreads() > 0);
+        boolean hasRelThreads = (config.relativeMinThreads() >= 0 && config.relativeMaxThreads() > 0);
+
+        if (!hasAbsThreads && !hasRelThreads) {
+            throw new IllegalArgumentException("Requires either absolute or relative thread min/max to be configured. "
+                    + summarizeConfigToString(config, cpus));
+        }
+
+        if (hasAbsThreads == hasRelThreads) {
+            throw new IllegalArgumentException("Cannot have both absolute and relative min/max configured at the same time. "
+                    + summarizeConfigToString(config, cpus));
+        }
+
+        if (config.minThreads() > config.maxThreads() || config.relativeMinThreads() > config.relativeMaxThreads()) {
+            throw new IllegalArgumentException("Min cannot be greater than max. "
+                    + summarizeConfigToString(config, cpus));
+        }
+
+        boolean hasAbsQueueSize = (config.queueSize() >= 0);
+        boolean hasRelQueueSize = (config.relativeQueueSize() >= 0);
+
+        if (!hasAbsQueueSize && !hasRelQueueSize) {
+            throw new IllegalArgumentException("Requires either absolute or relative queueSize to be configured. "
+                    + summarizeConfigToString(config, cpus));
+        }
+
+        if (hasAbsQueueSize == hasRelQueueSize) {
+            throw new IllegalArgumentException("Cannot have both absolute and relative configured at the same time. "
+                    + summarizeConfigToString(config, cpus));
+        }
+
         String name = config.name();
-        int maxThreads = maxThreads(config, cpus);
-        int minThreads = minThreads(config, maxThreads, cpus);
-        int queueSize = queueSize(config, maxThreads);
+        int maxThreads = maxThreads(config, cpus, hasRelThreads);
+        int minThreads = minThreads(config, cpus, hasRelThreads);
+        int queueSize = queueSize(config, maxThreads, hasRelQueueSize);
+
         log.config(String.format("Threadpool '%s': min=%d, max=%d, queue=%d", name, minThreads, maxThreads, queueSize));
 
         ThreadPoolMetric threadPoolMetric = new ThreadPoolMetric(metric, name);
@@ -92,22 +122,38 @@ public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCl
         return size == 0 ? new SynchronousQueue<>(false) : new ArrayBlockingQueue<>(size);
     }
 
-    private static int maxThreads(ContainerThreadpoolConfig config, int cpus) {
-        if (config.maxThreads() > 0) return config.maxThreads();
-        else if (config.maxThreads() == 0) return 4 * cpus;
-        else return Math.max(MIN_THREADS_WHEN_SCALE_FACTOR, Math.abs(config.maxThreads()) * cpus);
+    private static int maxThreads(ContainerThreadpoolConfig config, int cpus, boolean relative) {
+        if (relative) {
+            return (int) Math.round(config.relativeMaxThreads() * cpus);
+        } else {
+            return config.maxThreads();
+        }
     }
 
-    private static int minThreads(ContainerThreadpoolConfig config, int max, int cpus) {
-        int threads;
-        if (config.minThreads() > 0) threads = config.minThreads();
-        else if (config.minThreads() == 0) threads = 4 * cpus;
-        else threads = Math.max(MIN_THREADS_WHEN_SCALE_FACTOR, Math.abs(config.minThreads()) * cpus);
-        return Math.min(threads, max);
+    private static int minThreads(ContainerThreadpoolConfig config, int cpus, boolean relative) {
+        if (relative) {
+            return (int) Math.round(config.relativeMinThreads() * cpus);
+        } else {
+            return config.minThreads();
+        }
     }
 
-    private int queueSize(ContainerThreadpoolConfig config, int maxThreads) {
-        return config.queueSize() >= 0 ? config.queueSize() : Math.max(MIN_QUEUE_SIZE, Math.abs(config.queueSize()) * maxThreads);
+    private int queueSize(ContainerThreadpoolConfig config, int maxThreads, boolean relative) {
+        if (relative) {
+            return (int) Math.round(config.relativeQueueSize() * maxThreads);
+        } else {
+            return config.queueSize();
+        }
+    }
+
+    /** Summary string of the config for exceptions. */
+    private static String summarizeConfigToString(ContainerThreadpoolConfig c, int cpus) {
+        return String.format(
+                "abs[min=%d,max=%d,queue=%d] rel[min=%.3f,max=%.3f,queue=%.3f] cpus=%d",
+                c.minThreads(), c.maxThreads(), c.queueSize(),
+                c.relativeMinThreads(), c.relativeMaxThreads(), c.relativeQueueSize(),
+                cpus
+        );
     }
 
 }

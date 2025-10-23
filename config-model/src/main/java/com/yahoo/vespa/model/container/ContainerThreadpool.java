@@ -23,7 +23,7 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
     private final String name;
     private final UserOptions options;
 
-    record UserOptions(Double max, Double min, Double queue){}
+    record UserOptions(Double max, Double min, Double queueSize, boolean isRelative){}
 
     protected ContainerThreadpool(DeployState ds, String name, Element parent) {
         super(new ComponentModel(
@@ -33,7 +33,7 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
                         null)));
         this.name = name;
         var threadpoolElem = XmlHelper.getOptionalChild(parent, "threadpool").orElse(null);
-        if (threadpoolElem == null) options = new UserOptions(null, null, null);
+        if (threadpoolElem == null) options = new UserOptions(null, null, null, false);
         else {
             // TODO Vespa 9 Remove min-threads, max-threads and queue-size
 
@@ -45,31 +45,41 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
             Double max = null;
             Double min = null;
             Double queue = null;
-            var minElem = XmlHelper.getOptionalChild(threadpoolElem, "min-threads").orElse(null);
-            if (minElem != null) ds.getDeployLogger().logApplicationPackage(Level.WARNING, "For <threadpool>: <min-threads> is deprecated, use <threads> instead");
-            var maxElem = XmlHelper.getOptionalChild(threadpoolElem, "max-threads").orElse(null);
-            if (maxElem != null) ds.getDeployLogger().logApplicationPackage(Level.WARNING, "For <threadpool>: <max-threads> is deprecated, use <threads> with 'boost' instead");
-            var queueElem = XmlHelper.getOptionalChild(threadpoolElem, "queue").orElse(null);
-            var queueSizeElem = XmlHelper.getOptionalChild(threadpoolElem, "queue-size").orElse(null);
-            if (queueSizeElem != null) ds.getDeployLogger().logApplicationPackage(Level.WARNING, "For <threadpool>: <queue-size> is deprecated, use <queue> instead");
+            boolean isRelative;
             var threadsElem = XmlHelper.getOptionalChild(threadpoolElem, "threads").orElse(null);
             if (threadsElem != null) {
-                min = parseMultiplier(threadsElem.getTextContent());
-                max = threadsElem.hasAttribute("boost") ? parseMultiplier(threadsElem.getAttribute("boost")) : min;
-            } else if (minElem != null) {
-                min = parseFixed(minElem.getTextContent());
+                // New syntax with values relative to number of CPU cores
+                min = Double.parseDouble(threadsElem.getTextContent());
+                max = threadsElem.hasAttribute("boost") ? Double.parseDouble(threadsElem.getAttribute("boost")) : min;
+                var queueElem = XmlHelper.getOptionalChild(threadpoolElem, "queue").orElse(null);
+                if (queueElem != null) queue = Double.parseDouble(queueElem.getTextContent());
+                isRelative = true;
+            } else {
+                // Old syntax with absolute values
+                var minElem = XmlHelper.getOptionalChild(threadpoolElem, "min-threads").orElse(null);
+                if (minElem != null) ds.getDeployLogger()
+                        .logApplicationPackage(Level.WARNING, "For <threadpool>: <min-threads> is deprecated, use <threads> instead");
+                var maxElem = XmlHelper.getOptionalChild(threadpoolElem, "max-threads").orElse(null);
+                if (maxElem != null) ds.getDeployLogger()
+                        .logApplicationPackage(Level.WARNING, "For <threadpool>: <max-threads> is deprecated, use <threads> with 'boost' instead");
+                if (minElem != null) {
+                    min = Double.parseDouble(minElem.getTextContent());
+                }
+                if (maxElem != null) {
+                    max = Double.parseDouble(maxElem.getTextContent());
+                }
+                var queueSizeElem = XmlHelper.getOptionalChild(threadpoolElem, "queue-size").orElse(null);
+                if (queueSizeElem != null) ds.getDeployLogger()
+                        .logApplicationPackage(Level.WARNING, "For <threadpool>: <queue-size> is deprecated, use <queue> instead");
+                if (queueSizeElem != null) queue = Double.parseDouble(queueSizeElem.getTextContent());
+                isRelative = false;
             }
-            if (max == null && maxElem != null) {
-                max = parseFixed(maxElem.getTextContent());
-            }
-            if (queueElem != null) queue = parseMultiplier(queueElem.getTextContent());
-            else if (queueSizeElem != null) queue = parseFixed(queueSizeElem.getTextContent());
-            options = new UserOptions(max, min, queue);
+            if (max != null && max <= 0) throw new IllegalArgumentException("Thread pool 'max' must be positive");
+            if (min != null && min < 0) throw new IllegalArgumentException("Thread pool 'min' must be positive");
+            if (queue != null && queue < 0) throw new IllegalArgumentException("Thread pool 'queue' must be positive");
+            options = new UserOptions(max, min, queue, isRelative);
         }
     }
-
-    private static Double parseMultiplier(String text) { return -parseFixed(text); }
-    private static Double parseFixed(String text) { return Double.parseDouble(text); }
 
     // Must be implemented by subclasses to set values that may be overridden by user options.
     protected abstract void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder);
@@ -80,19 +90,22 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
 
         builder.name(this.name);
         if (options.max() != null) {
-            int max = (int) Math.round(options.max());
-            if (options.max() != 0 && max == 0) max = options.max() > 0 ? 1 : -1;
-            builder.maxThreads(max);
+            if (options.isRelative())
+                builder.relativeMaxThreads(options.max());
+            else
+                builder.maxThreads(options.max().intValue());
         }
         if (options.min() != null) {
-            int min = (int) Math.round(options.min());
-            if (options.min() != 0 && min == 0) min = options.min() > 0 ? 1 : -1;
-            builder.minThreads(min);
+            if (options.isRelative())
+                builder.relativeMinThreads(options.min());
+            else
+                builder.minThreads(options.min().intValue());
         }
-        if (options.queue() != null) {
-            int queue = (int) Math.round(options.queue());
-            if (options.queue() != 0 && queue == 0) queue = options.queue() > 0 ? 1 : -1;
-            builder.queueSize(queue);
+        if (options.queueSize() != null) {
+            if (options.isRelative())
+                builder.relativeQueueSize(options.queueSize());
+            else
+                builder.queueSize(options.queueSize().intValue());
         }
     }
 }
