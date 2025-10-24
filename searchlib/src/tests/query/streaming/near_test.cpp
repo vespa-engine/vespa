@@ -115,12 +115,20 @@ protected:
     struct NearSpec {
         std::string _terms;
         uint32_t _window;
+        std::string _negative_terms;
+        uint32_t _exclusion_distance;
         std::optional<std::vector<uint32_t>> _field_ids;
         NearTest* _test;
 
         NearSpec(const std::string& terms, uint32_t window, NearTest* test)
-            : _terms(terms), _window(window), _field_ids(std::nullopt), _test(test) {}
+            : _terms(terms), _window(window), _negative_terms(), _exclusion_distance(0), _field_ids(std::nullopt), _test(test) {}
         ~NearSpec();
+
+        NearSpec& avoid(const std::string& terms, uint32_t exclusion_distance) {
+            _negative_terms = terms;
+            _exclusion_distance = exclusion_distance;
+            return *this;
+        }
 
         template <typename... Args>
         NearSpec& fields(Args... field_ids) {
@@ -266,8 +274,15 @@ NearTest::NearSpec::verify(const search::queryeval::FakeIndex& index, uint32_t d
     auto* near_node = static_cast<NearQueryNode*>(root.get());
     near_node->distance(_window);
 
+    // Set negative term parameters if we have negative terms
+    if (!_negative_terms.empty()) {
+        near_node->num_negative_terms(_negative_terms.size());
+        near_node->exclusion_distance(_exclusion_distance);
+    }
+
     // Create term nodes and add hits
-    for (char ch : _terms) {
+    std::string all_terms = _terms + _negative_terms;
+    for (char ch : all_terms) {
         auto hits = index.get_streaming_hits(ch, docid, _field_ids);
 
         // Determine max field_id from actual hits
@@ -279,7 +294,7 @@ NearTest::NearSpec::verify(const search::queryeval::FakeIndex& index, uint32_t d
         vespalib::asciistream term_str;
         term_str << ch;
         auto term = std::make_unique<QueryTerm>(std::make_unique<search::streaming::QueryTermData>(),
-                                                term_str.str(), "field", QueryTerm::Type::WORD);
+                                                term_str.str(), "view", QueryTerm::Type::WORD);
         term->resizeFieldId(max_field_id);
 
         for (const auto& hit : hits) {
@@ -465,6 +480,70 @@ TEST_P(NearTest, multi_field_visual_test)
         near("ABC", 4).fields(0, 1).verify(docs, 69, {1});
         near("ABC", 4).fields(1).verify(docs, 69, {1});
     }
+}
+
+TEST_P(NearTest, non_matching_negative_term)
+{
+    auto docs = index().doc(69).elem(1, "AB");
+
+    near("AB", 4).avoid("X", 3).verify(docs, 69, {1});
+}
+
+TEST_P(NearTest, negative_term_retry_window)
+{
+    auto docs = index().doc(69)
+        .elem(1, "X.A.A.B...X")
+        .elem(2, "X.A.A.B..X.");
+
+    near("AB", 4).avoid("X", 3).verify(docs, 69, {1});
+}
+
+TEST_P(NearTest, quantum_brick)
+{
+    auto docs = index().doc(69)
+        .elem(1, "AB").elem(2, "X").elem(3, "AB")
+        .elem(4, "AB").elem(5, " X ").elem(6, "BA");
+    _element_gap_setting.emplace(1);
+
+    if (GetParam().ordered()) {
+        near("AB", 1).avoid("X", 2).verify(docs, 69, {4});
+    } else {
+        near("AB", 1).avoid("X", 2).verify(docs, 69, {4, 6});
+    }
+}
+
+TEST_P(NearTest, zero_exclusion_distance)
+{
+    auto docs = index().doc(69)
+        .elem(1, "xAxBx")
+        .elem(2, "xA.Bx");
+
+    near("AB", 2).avoid("x", 0).verify(docs, 69, {2});
+}
+
+TEST_P(NearTest, multiple_negative_terms)
+{
+    auto docs = index().doc(69)
+        .elem(1, "yxyAxByxy")
+        .elem(2, "xyxAyBxyx")
+        .elem(3, "yxyA.Byxy")
+        .elem(4, "xyxB.Axyx");
+
+    if (GetParam().ordered()) {
+        near("AB", 2).avoid("xy", 0).verify(docs, 69, {3});
+    } else {
+        near("AB", 2).avoid("xy", 0).verify(docs, 69, {3,4});
+    }
+}
+
+TEST_P(NearTest, single_positive_term)
+{
+    auto docs = index().doc(69)
+        .elem(1, "XX..A...X")
+        .elem(2, "X...A..XX")
+        .elem(3, "X...A...X");
+
+    near("A", 1).avoid("X", 3).verify(docs, 69, {3});
 }
 
 auto test_values = ::testing::Values(TestParam(false), TestParam(true));

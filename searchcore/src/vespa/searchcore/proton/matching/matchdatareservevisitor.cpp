@@ -30,8 +30,8 @@ void
 MatchDataReserveVisitor::visit(ProtonNodeTypes::WordAlternatives& n)
 {
     n.allocateTerms(_mdl);
-    for (const auto & child : n.children) {
-        child->allocateTerms(_mdl);
+    for (const auto & child : n.getChildren()) {
+        child->accept(*this);
     }
 }
 

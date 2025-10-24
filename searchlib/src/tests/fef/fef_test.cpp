@@ -3,13 +3,42 @@
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/filter_threshold.h>
 #include <vespa/searchlib/fef/objectstore.h>
+#include <vespa/searchlib/queryeval/element_id_extractor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("fef_test");
 
 using namespace search::fef;
+using search::queryeval::ElementIdExtractor;
 using std::shared_ptr;
 using search::feature_t;
+
+namespace {
+
+constexpr uint32_t docid3 = 3;
+
+std::vector<uint32_t> elems(std::vector<uint32_t> element_ids) {
+    return element_ids;
+}
+
+void set_elems(TermFieldMatchData& tfmd, uint32_t docid, const std::vector<uint32_t>& element_ids) {
+    tfmd.reset(docid);
+    for (auto element_id: element_ids) {
+        tfmd.appendPosition({element_id, 0, 1, 1});
+    }
+}
+
+std::vector<uint32_t> get_elems(TermFieldMatchData& tfmd, uint32_t docid) {
+    std::vector<uint32_t> element_ids;
+    ElementIdExtractor::get_element_ids(tfmd, docid, element_ids);
+    return element_ids;
+}
+
+void filter_elems(TermFieldMatchData& tfmd, uint32_t docid, const std::vector<uint32_t>& element_ids) {
+    tfmd.filter_elements(docid, { element_ids.data(), element_ids.size() });
+}
+
+}
 
 TEST(FefTest, test_layout)
 {
@@ -89,6 +118,62 @@ TEST(FefTest, test_TermFieldMatchDataAppend)
         EXPECT_EQ(std::numeric_limits<uint16_t>::max(), tmd.size());
         EXPECT_EQ(std::numeric_limits<uint16_t>::max(), tmd.capacity());
     }
+}
+
+TEST(FefTest, term_field_match_data_filter_elements_normal)
+{
+    TermFieldMatchData tfmd;
+    set_elems(tfmd, docid3, {1, 3, 5, 7, 9});
+    EXPECT_EQ(elems({1, 3, 5, 7, 9}), get_elems(tfmd, docid3));
+    filter_elems(tfmd, docid3, {1, 2, 3, 7, 8, 9, 10});
+    EXPECT_EQ(elems({1, 3, 7, 9}), get_elems(tfmd, docid3));
+    filter_elems(tfmd, docid3, {1, 2, 3});
+    EXPECT_EQ(elems({1, 3}), get_elems(tfmd, docid3));
+    filter_elems(tfmd, docid3, {2, 3});
+    EXPECT_EQ(elems({3}), get_elems(tfmd, docid3));
+    EXPECT_EQ(docid3, tfmd.getDocId());
+    filter_elems(tfmd, docid3, {1, 2});
+    EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
+    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+}
+
+TEST(FefTest, term_field_match_data_filter_elements_future_match_data)
+{
+    TermFieldMatchData tfmd;
+    constexpr uint32_t docid2 = 2;
+    set_elems(tfmd, docid3, {1, 3});
+    filter_elems(tfmd, docid2, {});
+    EXPECT_EQ(elems({1, 3}), get_elems(tfmd, docid3));
+    EXPECT_EQ(docid3, tfmd.getDocId());
+}
+
+TEST(FefTest, term_field_match_data_filter_elements_past_match_data)
+{
+    TermFieldMatchData tfmd;
+    constexpr uint32_t docid4 = 4;
+    set_elems(tfmd, docid3, {1, 3});
+    filter_elems(tfmd, docid4, {1, 2, 3});
+    EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
+    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+}
+
+TEST(FefTest, term_field_match_data_filter_elements_empty_filter)
+{
+    TermFieldMatchData tfmd;
+    set_elems(tfmd, docid3, {1, 3});
+    filter_elems(tfmd, docid3, {});
+    EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
+    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+}
+
+TEST(FefTest, term_field_match_data_filter_elements_empty_match_data)
+{
+    TermFieldMatchData tfmd;
+    set_elems(tfmd, docid3, {});
+    EXPECT_EQ(docid3, tfmd.getDocId());
+    filter_elems(tfmd, docid3, {1, 2, 3}); // Clear empty (before and after filtering) match data
+    EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
+    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
 }
 
 TEST(FefTest, verify_size_of_essential_fef_classes) {

@@ -115,13 +115,13 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"bjorncs"}) default int documentV1QueueSize() { return -1; /* use default from config def */ }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxContentNodeMaintenanceOpConcurrency() { return -1; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default int maxDocumentOperationRequestSizeMib() { return 2048; }
-        @ModelFeatureFlag(owners = {"vekterli"}) default int maxDistributorDocumentOperationSizeMib() { return 128; }
+        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.599") default int maxDistributorDocumentOperationSizeMib() { return 128; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default Object sidecarsForTest() { return null; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean useTriton() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default boolean useNewPrepareForRestart() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default int searchNodeInitializerThreads() { return 0; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean useNewPrepareForRestart() { return true; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.599") default int searchNodeInitializerThreads() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
-        @ModelFeatureFlag(owners = {"hmusum", "johsol"}, removeAfter = "8.584.3") default String useMallocImpl() { return ""; }
+        @ModelFeatureFlag(owners = {"johsol"}) default double docprocHandlerThreadpool() { return 1.0; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

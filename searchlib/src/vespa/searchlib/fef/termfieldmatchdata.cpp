@@ -154,4 +154,42 @@ TermFieldMatchData::appendPositionToAllocatedVector(const TermFieldMatchDataPosi
     _data._positions._positions[_sz++] = pos;
 }
 
+void
+TermFieldMatchData::filter_elements(uint32_t docid, std::span<const uint32_t> element_ids)
+{
+    if (docid < getDocId()) {
+        return; // Don't touch future match data
+    }
+    if (element_ids.empty() || _sz == 0 || docid != getDocId()) {
+        resetOnlyDocId(invalidId()); // Clear past or empty match data
+        return;
+    }
+    auto el_itr = element_ids.begin();
+    auto pos = begin();
+    auto pose = end();
+    auto wpos = mutable_begin();
+    for (; pos != pose; ++pos) {
+        while (*el_itr < pos->getElementId()) {
+            ++el_itr;
+            if (el_itr == element_ids.end()) {
+                _sz = wpos - begin();
+                if (_sz == 0) {
+                    resetOnlyDocId(invalidId());
+                }
+                return;
+            }
+        }
+        if (*el_itr == pos->getElementId()) {
+            if (wpos != pos) {
+                *wpos = *pos;
+            }
+            ++wpos;
+        }
+    }
+    _sz = wpos - begin();
+    if (_sz == 0) {
+        resetOnlyDocId(invalidId());
+    }
+}
+
 }

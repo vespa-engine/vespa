@@ -7,7 +7,7 @@
 #include <vespa/searchlib/common/feature.h>
 #include <cstring>
 #include <limits>
-
+#include <span>
 
 namespace search::fef {
 
@@ -48,6 +48,7 @@ private:
     void appendPositionToAllocatedVector(const TermFieldMatchDataPosition &pos);
     void allocateVector();
     void resizePositionVector(size_t sz) __attribute__((noinline));
+    MutablePositionsIterator mutable_begin() { return allocated() ? getMultiple() : getFixed(); }
 
     static constexpr uint16_t ILLEGAL_FIELD_ID = std::numeric_limits<uint16_t>::max();
     static constexpr uint16_t RAW_SCORE_FLAG = 1;
@@ -292,6 +293,8 @@ public:
             _flags &= ~UNPACK_INTERLEAVED_FEATURES_FLAG;
         }
     }
+
+    void filter_elements(uint32_t docid, std::span<const uint32_t> element_ids);
 
     /**
      * Special docId value indicating that no data has been saved yet.

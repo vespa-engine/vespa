@@ -14,9 +14,12 @@ using search::fef::TermFieldMatchData;
 
 namespace search::queryeval {
 
-SameElementBlueprint::SameElementBlueprint(const FieldSpec &field, bool expensive)
+SameElementBlueprint::SameElementBlueprint(const FieldSpec &field,
+                                           const std::vector<search::fef::TermFieldHandle>& descendants_index_handles,
+                                           bool expensive)
     : IntermediateBlueprint(),
       _field(field),
+      _descendants_index_handles(descendants_index_handles),
       _expensive(expensive)
 {
 }
@@ -107,8 +110,14 @@ SameElementBlueprint::create_same_element_search(MatchData& md, TermFieldMatchDa
     for (const auto & child : children) {
         sub_searches.push_back(child->createSearch(md));
     }
+    std::vector<TermFieldMatchData*> descendants_index_tfmd;
+    descendants_index_tfmd.reserve(_descendants_index_handles.size());
+    for (auto handle : _descendants_index_handles) {
+        descendants_index_tfmd.emplace_back(md.resolveTermField(handle));
+    }
     // match data for subtree (subtree_md) must be owned by search iterator
-    return std::make_unique<SameElementSearch>(tfmd, std::move(sub_searches), strict());
+    return std::make_unique<SameElementSearch>(tfmd, std::move(descendants_index_tfmd), std::move(sub_searches),
+                                               strict());
 }
 
 SearchIterator::UP

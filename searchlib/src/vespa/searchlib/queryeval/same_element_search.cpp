@@ -9,6 +9,7 @@
 #include <cassert>
 
 using TFMD = search::fef::TermFieldMatchData;
+using search::fef::TermFieldMatchData;
 
 namespace search::queryeval {
 
@@ -40,11 +41,14 @@ SameElementSearch::check_element_match(uint32_t docid)
     return !_matchingElements.empty();
 }
 
-SameElementSearch::SameElementSearch(fef::TermFieldMatchData &tfmd,
+SameElementSearch::SameElementSearch(TermFieldMatchData &tfmd,
+                                     std::vector<TermFieldMatchData*> descendants_index_tfmd,
                                      std::vector<std::unique_ptr<SearchIterator>> children,
                                      bool strict)
     : _tfmd(tfmd),
+      _descendants_index_tfmd(std::move(descendants_index_tfmd)),
       _children(std::move(children)),
+      _matchingElements(),
       _strict(strict)
 {
     _tfmd.reset(0);

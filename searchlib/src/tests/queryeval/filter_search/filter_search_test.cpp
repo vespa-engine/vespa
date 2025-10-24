@@ -28,6 +28,7 @@ namespace search::fef { class MatchData; }
 using namespace search::queryeval;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
+using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchDataArray;
 using search::queryeval::test::MockElementGapInspector;
 using vespalib::Trinary;
@@ -402,7 +403,8 @@ struct SameElementAdapter {
     }
     void make_blueprint() const {
         if (!blueprint) {
-            blueprint = std::make_unique<SameElementBlueprint>(field, false);
+            std::vector<TermFieldHandle> descendants_index_handles;
+            blueprint = std::make_unique<SameElementBlueprint>(field, descendants_index_handles, false);
             for (auto& child : children) {
                 blueprint->addChild(std::move(child));
             }

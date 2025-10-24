@@ -117,6 +117,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -944,6 +945,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     if (inferenceMemoryBytes > containerMemoryBytes) {
                         throw new IllegalArgumentException(
                                 String.format(
+                                        Locale.US,
                                         "Inference memory cannot exceed available node memory (%.2f GiB), got: %s",
                                         nodeMemoryGiB, inferenceMemoryString
                                 ));

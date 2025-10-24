@@ -28,7 +28,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.SharedHosts;
-import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
@@ -209,11 +208,11 @@ public class ModelContextImpl implements ModelContext {
         private final int documentV1QueueSize;
         private final int maxContentNodeMaintenanceOpConcurrency;
         private final int maxDocumentOperationRequestSizeMib;
-        private final int maxDistributorDocumentOperationSizeMib;
         private final Sidecars sidecarsForTest;
         private final boolean useTriton;
         private final int searchCoreMaxOutstandingMoveOps;
         private final boolean useNewPrepareForRestart;
+        private double docprocHandlerThreadpool;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.useNonPublicEndpointForTest = Flags.USE_NON_PUBLIC_ENDPOINT_FOR_TEST.bindTo(source).with(appId).with(version).value();
@@ -258,11 +257,11 @@ public class ModelContextImpl implements ModelContext {
             this.documentV1QueueSize = Flags.DOCUMENT_V1_QUEUE_SIZE.bindTo(source).with(appId).with(version).value();
             this.maxContentNodeMaintenanceOpConcurrency = Flags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY.bindTo(source).with(appId).with(version).value();
             this.maxDocumentOperationRequestSizeMib = Flags.MAX_DOCUMENT_OPERATION_REQUEST_SIZE_MIB.bindTo(source).with(appId).with(version).value();
-            this.maxDistributorDocumentOperationSizeMib = Flags.MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB.bindTo(source).with(appId).with(version).value();
             this.sidecarsForTest = Flags.SIDECARS_FOR_TEST.bindTo(source).with(appId).with(version).value();
             this.useTriton = Flags.USE_TRITON.bindTo(source).with(appId).with(version).value();
             this.searchCoreMaxOutstandingMoveOps = Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS.bindTo(source).with(appId).with(version).value();
             this.useNewPrepareForRestart = Flags.USE_NEW_PREPARE_FOR_RESTART_METHOD.bindTo(source).with(appId).with(version).value();
+            this.docprocHandlerThreadpool = Flags.DOCPROC_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
@@ -307,11 +306,11 @@ public class ModelContextImpl implements ModelContext {
         @Override public int documentV1QueueSize() { return documentV1QueueSize; }
         @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
         @Override public int maxDocumentOperationRequestSizeMib() { return maxDocumentOperationRequestSizeMib; }
-        @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
         @Override public Object sidecarsForTest() { return sidecarsForTest; }
         @Override public boolean useTriton() { return useTriton; }
         @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
         @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
+        @Override public double docprocHandlerThreadpool() { return docprocHandlerThreadpool; }
     }
 
     public static class Properties implements ModelContext.Properties {

@@ -76,12 +76,12 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int contentLayerMetadataFeatureLevel = 0;
     private boolean logserverOtelCol = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
-    private int maxDistributorDocumentOperationSizeMib = -1;
     private int searchCoreMaxOutstandingMoveOps = 100;
     private Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
     private boolean useNewPrepareForRestart = false;
     private Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
+    private double docprocHandlerThreadpool = 1.0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -132,15 +132,14 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
-    @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
     @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
     @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
-    @Override public int searchNodeInitializerThreads() { return 0; }
     @Override public int searchNodeInitializerThreads(String clusterId) { return searchNodeInitializerThreads.getOrDefault(clusterId, 0); }
     @Override public String mallocImpl(Optional<ClusterSpec.Type> clusterType) {
         return clusterType.map(c -> mallocImpl.get(c)).orElse(null);
     }
     @Override public boolean useTriton() { return useTriton; }
+    @Override public double docprocHandlerThreadpool() { return docprocHandlerThreadpool; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -341,14 +340,13 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setMaxDistributorDocumentOperationSizeMib(int maxSizeMib) {
-        this.maxDistributorDocumentOperationSizeMib = maxSizeMib;
-        return this;
-    }
-
     public TestProperties setSearchCoreMaxOutstandingMoveOps(int value) {
         this.searchCoreMaxOutstandingMoveOps = value;
         return this;
+    }
+
+    public void setDocprocHandlerThreadpool(double threads) {
+        this.docprocHandlerThreadpool = threads;
     }
 
     public TestProperties setMallocImpl(ClusterSpec.Type clusterType, String mallocImpl) {

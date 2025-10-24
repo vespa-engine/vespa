@@ -171,10 +171,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private List<Client> clients = List.of();
 
     public ContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity) {
-        this(parent, configSubId, clusterId, deployState, zooKeeperLocalhostAffinity, 4);
-    }
-
-    public ContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity, int defaultPoolNumThreads) {
         super(parent, configSubId);
         this.name = clusterId;
         this.isHostedVespa = stateIsHosted(deployState);
@@ -186,7 +182,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
         addCommonVespaBundles();
         addSimpleComponent(VoidRequestLog.class);
-        addComponent(new DefaultThreadpoolProvider(this, defaultPoolNumThreads));
+        addComponent(new DefaultThreadpoolProvider(this));
         defaultHandlerThreadpool = new Handler.DefaultHandlerThreadpool(deployState, null);
         addComponent(defaultHandlerThreadpool);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);

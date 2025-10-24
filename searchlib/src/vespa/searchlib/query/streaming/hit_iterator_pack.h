@@ -4,6 +4,7 @@
 
 #include "hit_iterator.h"
 #include "queryterm.h"
+#include <span>
 
 namespace search::streaming {
 
@@ -19,8 +20,8 @@ class HitIteratorPack
     std::vector<HitList> _hit_lists;
     FieldElement _field_element;
 public:
-    explicit HitIteratorPack(const QueryNodeList& children);
-    explicit HitIteratorPack(const std::vector<std::unique_ptr<QueryTerm>>& children);
+    explicit HitIteratorPack(std::span<const std::unique_ptr<QueryNode>> children);
+    explicit HitIteratorPack(std::span<const std::unique_ptr<QueryTerm>> children);
     HitIteratorPack(const HitIteratorPack&) = delete;
     ~HitIteratorPack();
     HitIteratorPack& operator=(const HitIteratorPack&) = delete;

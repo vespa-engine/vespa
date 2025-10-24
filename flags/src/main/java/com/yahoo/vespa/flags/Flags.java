@@ -239,6 +239,13 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION);
 
+    public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
+            "docproc-handler-threadpool", 1.0,
+            List.of("johsol"), "2025-10-17", "2026-01-01",
+            "Adjust document processor handler threadpool size (scale the number of threads with cpu cores, 1 means same number of threads as cpu cores))",
+            "Takes effect at redeployment",
+            APPLICATION);
+
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
             List.of("andreer", "olaa"), "2023-10-06", "2025-11-01",
@@ -329,15 +336,6 @@ public class Flags {
             INSTANCE_ID
     );
 
-    public static final UnboundIntFlag MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB = defineIntFlag(
-            "max-distributor-document-operation-size-mib", 128,
-            List.of("vekterli", "hmusum"), "2025-03-17", "2025-11-01",
-            "Sets the maximum size in MiB of a document operation (Put or Update) that a distributor " +
-            "will accept when it arrives over the Document API. Any value outside (1, 2048) implies " +
-            "effectively unbounded behavior. Setting this value too low will have the obvious consequences.",
-            "Takes effect immediately",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag DEFER_OS_UPGRADE = defineFeatureFlag(
             "defer-os-upgrade", false,
             List.of("olaa"), "2025-04-09", "2025-11-01",
@@ -394,7 +392,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag USE_NEW_PREPARE_FOR_RESTART_METHOD = defineFeatureFlag(
-            "use-new-prepare-for-restart-method", false,
+            "use-new-prepare-for-restart-method", true,
             List.of("hmusum"), "2025-06-17", "2025-12-01",
             "Whether to use new logic and new RPC method to do prepareForRestart for content nodes",
             "Takes effect at next tick",

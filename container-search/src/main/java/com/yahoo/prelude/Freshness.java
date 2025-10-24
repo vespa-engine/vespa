@@ -62,7 +62,7 @@ public class Freshness {
     @Override
     public String toString() {
         StringBuilder ser = new StringBuilder();
-        /** convert long value to string */
+        // convert long value to string
         String dateTime = Long.toString(refSecondsSinceEpoch);
         ser.append(dateTime);
         return ser.toString().trim();

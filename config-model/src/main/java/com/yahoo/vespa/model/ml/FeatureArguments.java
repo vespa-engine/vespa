@@ -56,7 +56,7 @@ public class FeatureArguments {
 
     private static String asString(ExpressionNode node) {
         if ( ! (node instanceof ConstantNode))
-            throw new IllegalArgumentException("Expected a constant string as argument, but got '" + node);
+            throw new IllegalArgumentException("Expected a constant string as argument, but got '" + node + "'");
         return stripQuotes(node.toString());
     }
 

@@ -116,8 +116,8 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
 
         ContainerThreadpoolConfig config = root.getConfig(
                 ContainerThreadpoolConfig.class, "cluster1/component/com.yahoo.vespa.http.server.FeedHandler/threadpool@feedapi-handler");
-        assertEquals(-4, config.maxThreads());
-        assertEquals(-4, config.minThreads());
+        assertEquals(4, config.relativeMaxThreads());
+        assertEquals(4, config.relativeMinThreads());
     }
 
     @Test
