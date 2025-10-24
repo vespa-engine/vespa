@@ -987,8 +987,8 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    void flush_on_shutdown_is_default_on_for_hosted() throws Exception {
-        assertPrepareRestartCommand(createOneNodeCluster(true));
+    void flush_on_shutdown_is_default_off_for_hosted() throws Exception {
+        assertNoPreShutdownCommand(createOneNodeCluster(true));
     }
 
     @Test
