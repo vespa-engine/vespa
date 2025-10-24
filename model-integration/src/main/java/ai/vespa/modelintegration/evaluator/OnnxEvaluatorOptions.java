@@ -1,6 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.modelintegration.evaluator;
 
+import net.jpountz.xxhash.XXHashFactory;
+
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -18,7 +21,12 @@ public record OnnxEvaluatorOptions(
         boolean gpuDeviceRequired,
         /* Optional runtime specific raw config */Optional<String> rawConfig) {
 
-
+    // Unlike hashCode, this hash doesn't change between runs
+    public long calculateHash() {
+        var bytes = toString().getBytes(StandardCharsets.UTF_8);
+        return XXHashFactory.fastestInstance().hash64().hash(bytes, 0, bytes.length, 0);
+    }
+    
     public OnnxEvaluatorOptions {
         Objects.requireNonNull(executionMode, "executionMode cannot be null");
         Objects.requireNonNull(rawConfig, "rawConfig cannot be null");
