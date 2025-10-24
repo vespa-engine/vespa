@@ -54,12 +54,8 @@ private:
 };
 class WarmupTask : public vespalib::Executor::Task {
 public:
-    WarmupTask(std::unique_ptr<MatchData> md, std::shared_ptr<WarmupIndexCollection> warmup);
+    WarmupTask(MatchDataLayout mdl, std::shared_ptr<WarmupIndexCollection> warmup);
     ~WarmupTask() override;
-    WarmupTask &createBlueprint(const FieldSpec &field, const Node &term) {
-        _bluePrint = _warmup->createBlueprint(_requestContext, field, term, _mdl);
-        return *this;
-    }
     WarmupTask &createBlueprint(const FieldSpecList &fields, const Node &term) {
         _bluePrint = _warmup->createBlueprint(_requestContext, fields, term, _mdl);
         return *this;
@@ -216,7 +212,8 @@ WarmupIndexCollection::createBlueprint(const IRequestContext & requestContext,
         // warmup done
         return _next->createBlueprint(requestContext, fields, term, global_layout);
     }
-    MatchDataLayout mdl;
+    // must make a copy here
+    MatchDataLayout mdl = global_layout.copy();
     FieldSpecList fsl;
     bool needWarmUp(false);
     for(size_t i(0); i < fields.size(); i++) {
@@ -226,7 +223,7 @@ WarmupIndexCollection::createBlueprint(const IRequestContext & requestContext,
         needWarmUp = needWarmUp || ! handledBefore(fs.getFieldId(), term);
     }
     if (needWarmUp) {
-        auto task = std::make_unique<WarmupTask>(mdl.createMatchData(), shared_from_this());
+        auto task = std::make_unique<WarmupTask>(std::move(mdl), shared_from_this());
         task->createBlueprint(fsl, term);
         fireWarmup(std::move(task));
     }
@@ -290,12 +287,12 @@ const vespalib::eval::Value*
 WarmupRequestContext::get_query_tensor(const std::string&) const {
     return {};
 }
-WarmupTask::WarmupTask(std::unique_ptr<MatchData> md, std::shared_ptr<WarmupIndexCollection> warmup)
+WarmupTask::WarmupTask(MatchDataLayout mdl, std::shared_ptr<WarmupIndexCollection> warmup)
     : _warmup(std::move(warmup)),
       _retainGuard(_warmup->pendingTasks()),
-      _matchData(std::move(md)),
       _bluePrint(),
-      _requestContext()
+      _requestContext(),
+      _mdl(std::move(mdl))
 {
 }
 
@@ -309,6 +306,7 @@ WarmupTask::run()
         uint32_t dummy_docid_limit = 1337;
         _bluePrint->basic_plan(true, dummy_docid_limit);
         _bluePrint->fetchPostings(search::queryeval::ExecuteInfo::FULL);
+        _matchData = _mdl.createMatchData();
         SearchIterator::UP it(_bluePrint->createSearch(*_matchData));
         it->initFullRange();
         for (uint32_t docId = it->seekFirst(1); !it->isAtEnd(); docId = it->seekNext(docId+1)) {

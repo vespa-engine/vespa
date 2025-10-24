@@ -70,6 +70,7 @@ struct WS {
         fields.add(FieldSpec(field, fieldId, handle));
         search::fef::MatchDataLayout mdl;
         auto bp = searchable.createBlueprint(requestContext, fields, *node, mdl);
+        EXPECT_TRUE(mdl.empty());
         bp->basic_plan(strict, 1000);
         bp->fetchPostings(ExecuteInfo::FULL);
         auto sb = bp->createSearch(*md);
@@ -87,6 +88,7 @@ struct WS {
         fields.add(FieldSpec(field, fieldId, handle, field_is_filter));
         search::fef::MatchDataLayout mdl;
         auto bp = searchable.createBlueprint(requestContext, fields, *node, mdl);
+        EXPECT_TRUE(mdl.empty());
         bp->basic_plan(strict, 1000);
         bp->fetchPostings(ExecuteInfo::FULL);
         auto sb = bp->createSearch(*md);

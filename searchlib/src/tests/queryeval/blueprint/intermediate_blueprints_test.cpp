@@ -1030,9 +1030,9 @@ TEST(IntermediateBlueprintsTest, test_Equiv_Blueprint) {
     fields.add(FieldSpecBase(1, 1));
     fields.add(FieldSpecBase(2, 2));
     fields.add(FieldSpecBase(3, 3));
-    EquivBlueprint b(fields, subLayout);
+    EquivBlueprint b(fields, subLayout.copy());
     {
-        EquivBlueprint &o = *(new EquivBlueprint(fields, subLayout));
+        EquivBlueprint &o = *(new EquivBlueprint(fields, std::move(subLayout)));
         o.addTerm(ap(MyLeafSpec(5).addField(1, 4).create()), 1.0);
         o.addTerm(ap(MyLeafSpec(10).addField(1, 5).create()), 1.0);
         o.addTerm(ap(MyLeafSpec(20).addField(1, 6).create()), 1.0);
@@ -1257,7 +1257,7 @@ TEST(IntermediateBlueprintsTest, require_that_children_does_not_optimize_when_pa
     search::fef::TermFieldHandle idxth1 = subLayout.allocTermField(1);
     search::fef::MatchDataLayout mdl;
     Blueprint::UP top_up(
-            ap((new EquivBlueprint(fields, subLayout))->
+            ap((new EquivBlueprint(fields, std::move(subLayout)))->
                addTerm(index.getIndex().createBlueprint(requestContext,
                                                         FieldSpec("f2", 2, idxth22, true),
                                                         makeTerm("w2"), mdl),
@@ -1269,6 +1269,7 @@ TEST(IntermediateBlueprintsTest, require_that_children_does_not_optimize_when_pa
                addTerm(index.getIndex().createBlueprint(requestContext,
                                                         FieldSpec("f2", 2, idxth21), makeTerm("w2"), mdl),
                        1.0)));
+    EXPECT_TRUE(mdl.empty());
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->basic_plan(true, 1000);
     top_up->fetchPostings(ExecuteInfo::FULL);
@@ -1302,7 +1303,7 @@ TEST(IntermediateBlueprintsTest, require_that_unpack_optimization_is_not_overrul
     search::fef::TermFieldHandle idxth2 = subLayout.allocTermField(2);
     search::fef::TermFieldHandle idxth3 = subLayout.allocTermField(3);
     Blueprint::UP top_up(
-            ap((new EquivBlueprint(fields, subLayout))->
+            ap((new EquivBlueprint(fields, std::move(subLayout)))->
                addTerm(ap((new OrBlueprint())->
                           addChild(ap(MyLeafSpec(20).addField(1,idxth1).create())).
                           addChild(ap(MyLeafSpec(20).addField(2,idxth2).create())).

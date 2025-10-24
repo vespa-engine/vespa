@@ -22,9 +22,15 @@ public:
     MatchDataLayout();
     MatchDataLayout(MatchDataLayout &&) noexcept = default;
     MatchDataLayout & operator=(MatchDataLayout &&) noexcept = default;
-    MatchDataLayout(const MatchDataLayout &) = default;
+    MatchDataLayout(const MatchDataLayout &) = delete;
     MatchDataLayout & operator=(const MatchDataLayout &) = delete;
     ~MatchDataLayout();
+
+    MatchDataLayout copy() {
+        MatchDataLayout result;
+        result._fieldIds = _fieldIds;
+        return result;
+    }
 
     /**
      * Allocate space for a term field match data structure.

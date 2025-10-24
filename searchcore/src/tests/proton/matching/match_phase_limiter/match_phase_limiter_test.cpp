@@ -64,7 +64,7 @@ struct MockSearch : SearchIterator {
     ~MockSearch() override;
     void doSeek(uint32_t docid) override { last_seek = docid; setDocId(docid); }
     void doUnpack(uint32_t docid) override { last_unpack = docid; }
-    vespalib::Trinary is_strict() const override { return _strict; } 
+    vespalib::Trinary is_strict() const override { return _strict; }
     bool strict() const { return (is_strict() == vespalib::Trinary::True); }
 };
 
@@ -476,6 +476,7 @@ verifyLocateRange(const std::string & from, const std::string & to,
     search::fef::MatchDataLayout mdl;
     search::query::SimpleNumberTerm term(fmt("[%s;%s]", from.c_str(), to.c_str()), fieldSpec.getName(), 0, search::query::Weight(1));
     Blueprint::UP bp = f.attrSearchable.createBlueprint(f.requestContext, fieldSpec, term, mdl);
+    EXPECT_EQ(mdl.empty(), true);
     EXPECT_FALSE(LocateRangeItemFromQuery(*bp, 0).locate().valid());
     EXPECT_TRUE(LocateRangeItemFromQuery(*bp, fieldSpec.getFieldId()).locate().valid());
     LocateRangeItemFromQuery locator(*bp, fieldSpec.getFieldId());
@@ -498,6 +499,7 @@ verifyRangeIsReflectedInLimiter(const std::string & from, const std::string & to
     search::fef::MatchDataLayout mdl;
     search::query::SimpleNumberTerm term(fmt("[%s;%s]", from.c_str(), to.c_str()), fieldSpec.getName(), 0, search::query::Weight(1));
     Blueprint::UP bp = f.attrSearchable.createBlueprint(f.requestContext, fieldSpec, term, mdl);
+    EXPECT_TRUE(mdl.empty());
     LocateRangeItemFromQuery locator(*bp, fieldSpec.getFieldId());
     RangeLimitMetaInfo rangeInfo = locator.locate();
     EXPECT_EQ(from, rangeInfo.low());

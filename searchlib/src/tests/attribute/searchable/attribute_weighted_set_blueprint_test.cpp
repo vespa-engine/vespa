@@ -90,9 +90,8 @@ struct WS {
         EXPECT_EQ(fieldId, tmp->resolveTermField(handle)->getFieldId());
     }
 
-    WS &add(const std::string &token, uint32_t weight) {
+    void add(const std::string &token, uint32_t weight) {
         tokens.emplace_back(token, weight);
-        return *this;
     }
 
     Node::UP createNode() const {
@@ -107,14 +106,15 @@ struct WS {
     createSearch(Searchable &searchable, const std::string &field, bool strict) const {
         AttributeContext ac(attribute_manager);
         FakeRequestContext requestContext(&ac);
-        MatchData::UP md = layout.createMatchData();
         Node::UP node = createNode();
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle, ac.getAttribute(field)->getIsFilter()));
-        search::fef::MatchDataLayout mdl;
+        MatchDataLayout mdl;
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node, mdl);
+        EXPECT_TRUE(mdl.empty());
         bp->basic_plan(strict, 100);
         bp->fetchPostings(queryeval::ExecuteInfo::FULL);
+        MatchData::UP md = layout.createMatchData();
         SearchIterator::UP sb = bp->createSearch(*md);
         return sb;
     }
@@ -125,14 +125,15 @@ struct WS {
     FakeResult search(Searchable &searchable, const std::string &field, bool strict) const {
         AttributeContext ac(attribute_manager);
         FakeRequestContext requestContext(&ac);
-        MatchData::UP md = layout.createMatchData();
         Node::UP node = createNode();
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle));
-        search::fef::MatchDataLayout mdl;
+        MatchDataLayout mdl;
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node, mdl);
+        EXPECT_TRUE(mdl.empty());
         bp->basic_plan(strict, 100);
         bp->fetchPostings(queryeval::ExecuteInfo::FULL);
+        MatchData::UP md = layout.createMatchData();
         SearchIterator::UP sb = bp->createSearch(*md);
         FakeResult result;
         sb->initRange(1, 10);
@@ -197,7 +198,8 @@ TEST(AttributeWeightedSetBlueprintTest, attribute_weighted_set_single_token_filt
     AttributeBlueprintFactory adapter;
 
     FakeResult expect = FakeResult().doc(3).elem(0).weight(30).pos(0);
-    WS ws = WS(manager).add("3", 30);
+    WS ws(manager);
+    ws.add("3", 30);
 
     EXPECT_EQ("search::FilterAttributeIteratorStrict<search::attribute::SingleNumericSearchContext<long, search::attribute::NumericMatcher<long> > >",
                  normalize_class_name(ws.createSearch(adapter, "integer", true)->getClassName()));

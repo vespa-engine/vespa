@@ -66,7 +66,9 @@ public:
                                                 const search::query::Node& term) override {
         FakeRequestContext req_ctx;
         search::fef::MatchDataLayout mdl;
-        return _index->createBlueprint(req_ctx, field, term, mdl);
+        auto bp = _index->createBlueprint(req_ctx, field, term, mdl);
+        assert(mdl.empty());
+        return bp;
     }
 };
 

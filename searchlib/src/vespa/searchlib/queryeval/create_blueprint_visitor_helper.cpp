@@ -54,9 +54,7 @@ CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
     auto phrase = std::make_unique<SimplePhraseBlueprint>(_field, n.is_expensive());
     for (const query::Node * child : n.getChildren()) {
         FieldSpecList fields;
-        auto field_id = _field.getFieldId();
-        auto handle = _global_layout.allocTermField(field_id);
-        FieldSpec inner{_field.getName(), field_id, handle, false};
+        FieldSpec inner = SimplePhraseBlueprint::next_child_field(_field, _global_layout);
         fields.add(inner);
         phrase->addTerm(_searchable.createBlueprint(_requestContext, fields, *child, _global_layout));
     }
@@ -70,9 +68,9 @@ void CreateBlueprintVisitorHelper::visitWordAlternatives(query::WordAlternatives
         FieldSpec inner = child->inner_field_spec(_field);
         fef::TermFieldHandle handle = inner.getHandle();
         if (handle == fef::IllegalHandle) {
-            LOG(debug, "invalid handle for child of WordAlternatives, allocating");
-            handle = _global_layout.allocTermField(_field.getFieldId());
-            FieldSpec inner2{_field.getName(), _field.getFieldId(), handle, false};
+            // happens for WordAlternatives inside phrase:
+            LOG(debug, "no handle yet for child of WordAlternatives, allocating");
+            FieldSpec inner2 = SimplePhraseBlueprint::next_child_field(_field, _global_layout);
             blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner2, *child, _global_layout));
         } else {
             LOG(debug, "WordAlternatives inner handle: %d", handle);

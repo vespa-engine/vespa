@@ -310,7 +310,6 @@ Fixture::readWork(uint32_t cnt)
 
         MatchDataLayout mdl;
         TermFieldHandle handle = mdl.allocTermField(fieldId);
-        MatchData::UP match_data = mdl.createMatchData();
 
         FieldSpec field(fieldName, fieldId, handle);
         FieldSpecList fields;
@@ -328,6 +327,7 @@ Fixture::readWork(uint32_t cnt)
             ++nonEmptyCount;
         }
         result->fetchPostings(ExecuteInfo::FULL);
+        MatchData::UP match_data = mdl.createMatchData();
         SearchIterator::UP search = result->createSearch(*match_data);
         EXPECT_TRUE(search) << (failed = true, "Did not get search iterator");
         if (failed) {
@@ -406,7 +406,6 @@ verifyResult(const FakeResult &expect, Searchable &index, std::string fieldName,
 
     MatchDataLayout mdl;
     TermFieldHandle handle = mdl.allocTermField(fieldId);
-    MatchData::UP match_data = mdl.createMatchData();
 
     FieldSpec field(fieldName, fieldId, handle);
     FieldSpecList fields;
@@ -423,6 +422,7 @@ verifyResult(const FakeResult &expect, Searchable &index, std::string fieldName,
     EXPECT_EQ(expect.inspect().empty(), result->getState().estimate().empty);
 
     result->fetchPostings(ExecuteInfo::FULL);
+    MatchData::UP match_data = mdl.createMatchData();
     SearchIterator::UP search = result->createSearch(*match_data);
     EXPECT_TRUE(search) << (failed = true, "");
     if (failed){

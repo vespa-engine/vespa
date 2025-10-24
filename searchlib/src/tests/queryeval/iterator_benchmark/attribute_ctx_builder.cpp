@@ -121,7 +121,9 @@ public:
         AttributeBlueprintFactory factory;
         FakeRequestContext req_ctx(_attr_ctx.get());
         search::fef::MatchDataLayout mdl;
-        return factory.createBlueprint(req_ctx, field_spec, term, mdl);
+        auto bp = factory.createBlueprint(req_ctx, field_spec, term, mdl);
+        assert(mdl.empty());
+        return bp;
     }
 };
 

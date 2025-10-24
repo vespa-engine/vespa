@@ -99,7 +99,7 @@ public:
         }
         {
             // and one to be used by the phrase blueprint
-            FieldSpec spec = _phrase.getNextChildField(_phrase_fs, _layout);
+            FieldSpec spec = SimplePhraseBlueprint::next_child_field(_phrase_fs, _layout);
             FieldSpecList fields;
             fields.add(spec);
             _phrase.addTerm(_index.createBlueprint(_requestContext, fields, term_node, _layout));
@@ -274,15 +274,15 @@ TEST(SimplePhraseTest, requireThatBlueprintExposesFieldWithEstimate) {
     EXPECT_EQ(true, phrase.getState().estimate().empty);
     EXPECT_EQ(0u, phrase.getState().estimate().estHits);
 
-    phrase.addTerm(Blueprint::UP(new MyTerm(phrase.getNextChildField(f, layout), 10)));
+    phrase.addTerm(Blueprint::UP(new MyTerm(SimplePhraseBlueprint::next_child_field(f, layout), 10)));
     EXPECT_EQ(false, phrase.getState().estimate().empty);
     EXPECT_EQ(10u, phrase.getState().estimate().estHits);
 
-    phrase.addTerm(Blueprint::UP(new MyTerm(phrase.getNextChildField(f, layout), 5)));
+    phrase.addTerm(Blueprint::UP(new MyTerm(SimplePhraseBlueprint::next_child_field(f, layout), 5)));
     EXPECT_EQ(false, phrase.getState().estimate().empty);
     EXPECT_EQ(5u, phrase.getState().estimate().estHits);
 
-    phrase.addTerm(Blueprint::UP(new MyTerm(phrase.getNextChildField(f, layout), 20)));
+    phrase.addTerm(Blueprint::UP(new MyTerm(SimplePhraseBlueprint::next_child_field(f, layout), 20)));
     EXPECT_EQ(false, phrase.getState().estimate().empty);
     EXPECT_EQ(5u, phrase.getState().estimate().estHits);
 }
@@ -292,7 +292,7 @@ TEST(SimplePhraseTest, requireThatBlueprintForcesPositionDataOnChildren) {
     FieldSpec f("foo", 1, 1, true);
     SimplePhraseBlueprint phrase(f, false);
     EXPECT_TRUE(f.isFilter());
-    EXPECT_TRUE(!phrase.getNextChildField(f, layout).isFilter());
+    EXPECT_TRUE(!SimplePhraseBlueprint::next_child_field(f, layout).isFilter());
 }
 
 } // namespace

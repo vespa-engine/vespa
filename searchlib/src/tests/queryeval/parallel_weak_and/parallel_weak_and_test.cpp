@@ -175,6 +175,7 @@ struct WandBlueprintSpec
         fields.add(FieldSpec(field, fieldId, handle));
         MatchDataLayout mdl;
         Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, term, mdl);
+        EXPECT_TRUE(mdl.empty());
         EXPECT_TRUE(dynamic_cast<ParallelWeakAndBlueprint*>(bp.get()) != nullptr);
         return bp;
     }

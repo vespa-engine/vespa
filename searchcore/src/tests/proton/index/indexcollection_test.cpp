@@ -184,6 +184,7 @@ TEST_F(IndexCollectionTest, warmup_can_create_blueprint)
     search::query::SimpleStringTerm term("what", "dummy", 1, search::query::Weight(100));
     search::fef::MatchDataLayout mdl;
     auto blueprint = indexcollection->createBlueprint(requestContext, fields, term, mdl);
+    EXPECT_TRUE(mdl.empty());
     EXPECT_TRUE(blueprint);
 }
 

@@ -20,6 +20,7 @@ public:
     virtual ~IWarmupDone() = default;
     virtual void warmupDone(std::shared_ptr<WarmupIndexCollection> current) = 0;
 };
+
 /**
  * Index collection that holds a reference to the active one and a new one that
  * is to be warmed up.

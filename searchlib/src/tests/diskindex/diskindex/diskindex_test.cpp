@@ -262,6 +262,7 @@ DiskIndexTest::create_blueprint(const FieldSpec& field, const search::query::Nod
 {
     search::fef::MatchDataLayout mdl;
     auto b = _index->createBlueprint(_requestContext, field, term, mdl);
+    EXPECT_TRUE(mdl.empty());
     b->basic_plan(true, docid_limit);
     b->fetchPostings(search::queryeval::ExecuteInfo::FULL);
     return b;
@@ -358,6 +359,7 @@ DiskIndexTest::requireThatBlueprintIsCreated()
         EXPECT_EQ(0u, b->getState().estimate().estHits);
         EXPECT_TRUE(b->getState().estimate().empty);
     }
+    EXPECT_TRUE(mdl.empty());
 }
 
 void

@@ -24,7 +24,7 @@ public:
     ~SimplePhraseBlueprint() override;
 
     // used by create visitor
-    FieldSpec getNextChildField(const FieldSpec &outer, fef::MatchDataLayout &layout) const {
+    static FieldSpec next_child_field(const FieldSpec &outer, fef::MatchDataLayout &layout) {
         return {outer.getName(), outer.getFieldId(), layout.allocTermField(outer.getFieldId()), false};
     }
 

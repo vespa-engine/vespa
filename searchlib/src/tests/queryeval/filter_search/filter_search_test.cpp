@@ -295,7 +295,7 @@ struct SimplePhraseAdapter {
     MatchDataLayout fake_layout;
     SimplePhraseAdapter() : field("foo", 3, 7), blueprint(field, false) {}
     void addChild(std::unique_ptr<Blueprint> child) {
-        auto child_field = blueprint.getNextChildField(field, fake_layout);
+        auto child_field = SimplePhraseBlueprint::next_child_field(field, fake_layout);
         auto term = std::make_unique<LeafProxy>(child_field, std::move(child));
         blueprint.addTerm(std::move(term));
     }
