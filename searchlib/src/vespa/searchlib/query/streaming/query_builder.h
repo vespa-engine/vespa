@@ -37,8 +37,6 @@ class QueryBuilder {
     void adjust_index(std::string& index, bool ranked);
     bool hidden_terms() const noexcept { return _hidden_terms != 0u; }
 public:
-    static bool                _expose_match_data_for_same_element_descendants;
-
     QueryBuilder();
     ~QueryBuilder();
     std::unique_ptr<QueryNode> build(const QueryNode * parent, const QueryNodeResultFactory& factory, QueryStackIterator & queryRep, bool allowRewrite);

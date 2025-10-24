@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sameelementmodifier.h"
+#include <vespa/searchlib/queryeval/same_element_flags.h>
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".matching.sameelementmodifier");
 
 using search::query::Term;
+using search::queryeval::SameElementFlags;
 
 namespace proton::matching {
 
@@ -41,7 +43,7 @@ SameElementDescendantModifier::visit_term(Term& term)
 {
     if (term.getView().empty()) {
         term.setView(_same_element_view);
-        if (term.isRanked() && !hidden_terms() && SameElementModifier::can_hide_match_data_for_same_element) {
+        if (term.isRanked() && !hidden_terms() && SameElementFlags::expose_descendants()) {
             _expose_match_data_for_same_element = false;
         }
     } else {
@@ -62,9 +64,6 @@ SameElementDescendantModifier::visit(ProtonNodeTypes::AndNot& n)
         --_hidden_terms;
     }
 }
-
-// TODO: Set to true when features for descendants of sameElement are exposed.
-bool SameElementModifier::can_hide_match_data_for_same_element = false;
 
 SameElementModifier::SameElementModifier()
     : search::query::TemplateTermVisitor<SameElementModifier, ProtonNodeTypes>()
