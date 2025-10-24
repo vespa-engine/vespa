@@ -128,6 +128,9 @@ QueryBuilder::build(const QueryNode * parent, const QueryNodeResultFactory& fact
                         hidden_terms_guard.activate();
                     }
                     if (qc->isFlattenable(queryRep.getType())) {
+                        if (i < num_positive) {
+                            num_positive += queryRep.getArity();
+                        }
                         arity += queryRep.getArity();
                     } else {
                         qc->addChild(build(qc, factory, queryRep, allowRewrite && !disableRewrite(qn.get())));
