@@ -185,20 +185,22 @@ same_element_query_ids(bool structured, bool ranked, bool negative)
     return result_ids;
 }
 
-TEST(TermDataExtractorTest, requireThatSameElementIsExtractedAsOneOrZeroTerms)
+TEST(TermDataExtractorTest, requireThatSameElementIsExtractedAsExpectedNumberOfTerms)
 {
-    EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(true, true, false));
     {
         SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(false);
+        EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(true, true, false));
         EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(false, true, false));
         EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(false, true, true));
+        EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(false, false, false));
     }
     {
         SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(true);
+        EXPECT_EQ((std::vector<uint32_t>{id[3], id[0], id[1], id[2]}), same_element_query_ids(true, true, false));
         EXPECT_EQ((std::vector<uint32_t>{id[0], id[1], id[2]}), same_element_query_ids(false, true, false));
         EXPECT_EQ((std::vector<uint32_t>{id[3], id[0], id[2]}), same_element_query_ids(false, true, true));
+        EXPECT_EQ((std::vector<uint32_t>{id[3], id[0], id[2]}), same_element_query_ids(false, false, false));
     }
-    EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(false, false, false));
 }
 
 }  // namespace
