@@ -2,4 +2,7 @@
 
 #pragma once
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnonnull"
 #include <vespa/searchlib/engine/search_protocol.pb.h>
+#pragma GCC diagnostic pop

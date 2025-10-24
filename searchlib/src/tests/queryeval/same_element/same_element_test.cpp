@@ -41,6 +41,7 @@ std::unique_ptr<SameElementBlueprint> make_blueprint(QueryTweak query_tweak, Mat
                                                      const std::vector<FakeResult> &children, bool fake_attr) {
     std::vector<std::unique_ptr<Blueprint>> bp_children;
     bp_children.reserve(children.size());
+    std::vector<TermFieldHandle> descendants_index_handles;
     std::unique_ptr<IntermediateBlueprint> bp_tweak;
     for (size_t i = 0; i < children.size(); ++i) {
         switch (query_tweak) {
@@ -60,6 +61,7 @@ std::unique_ptr<SameElementBlueprint> make_blueprint(QueryTweak query_tweak, Mat
         uint32_t field_id = i;
         std::string field_name = vespalib::make_string("f%u", field_id);
         FieldSpec field(field_name, field_id, mdl.allocTermField(field_id), false);
+        descendants_index_handles.emplace_back(field.getHandle());
         auto fake = std::make_unique<FakeBlueprint>(field, children[i]);
         fake->is_attr(fake_attr);
         if (bp_tweak) {
@@ -71,7 +73,8 @@ std::unique_ptr<SameElementBlueprint> make_blueprint(QueryTweak query_tweak, Mat
     if (bp_tweak) {
         bp_children.emplace_back(std::move(bp_tweak));
     }
-    auto result = std::make_unique<SameElementBlueprint>(make_field_spec(mdl), false);
+    auto result = std::make_unique<SameElementBlueprint>(make_field_spec(mdl), descendants_index_handles,
+                                                         false);
     for (auto& fake : bp_children) {
         result->addChild(std::move(fake));
     }

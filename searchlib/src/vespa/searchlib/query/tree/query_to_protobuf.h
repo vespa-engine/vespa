@@ -11,7 +11,7 @@
 #include "termnodes.h"
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/query/numeric_range_spec.h>
-#include <vespa/searchlib/engine/search_protocol.pb.h>
+#include <vespa/searchlib/engine/search_protocol_proto.h>
 #include <cassert>
 
 namespace search::query {
@@ -425,7 +425,14 @@ private:
     void visit(WordAlternatives& node) override {
         auto* item = _item_stack.back()->mutable_item_word_alternatives();
         copyTermState(node, item->mutable_properties());
-        serializeMultiTerm(node, item->mutable_weighted_strings(), nullptr);
+        auto * weighted_strings = item->mutable_weighted_strings();
+        for (const auto & term : node.getChildren()) {
+            const std::string& word = term->getTerm();
+            auto weight = term->getWeight();
+            auto* ws = weighted_strings->Add();
+            ws->set_value(word);
+            ws->set_weight(weight.percent());
+        }
     }
 };
 

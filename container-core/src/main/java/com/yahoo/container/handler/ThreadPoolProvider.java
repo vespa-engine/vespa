@@ -39,14 +39,46 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
      * as {@link ThreadpoolConfig} is currently public api.
      */
     private static ContainerThreadpoolConfig translateConfig(ThreadpoolConfig config) {
-        return new ContainerThreadpoolConfig(
-                new ContainerThreadpoolConfig.Builder()
-                        .maxThreads(config.maxthreads())
-                        .minThreads(config.corePoolSize())
+        var builder = new ContainerThreadpoolConfig.Builder()
                         .name(config.name())
-                        .queueSize(config.queueSize())
                         .keepAliveTime(config.keepAliveTime())
-                        .maxThreadExecutionTimeSeconds(config.maxThreadExecutionTimeSeconds()));
+                        .maxThreadExecutionTimeSeconds(config.maxThreadExecutionTimeSeconds());
+
+        int max = config.maxthreads();
+        int min = config.corePoolSize();
+
+        // If one  is absolute, and the other is relative, set both to the absolute thread count.
+        if (max > 0 && min < 0) {
+            min = max;
+        } else if (min > 0 && max < 0) {
+            max = min;
+        }
+
+        // Ensure min is less than max
+        if (Math.abs(min) > Math.abs(max)) {
+            min  = max;
+        }
+
+        if  (max > 0) {
+            builder.maxThreads(max);
+        } else {
+            builder.relativeMaxThreads(-max);
+        }
+
+        if  (min > 0) {
+            builder.minThreads(min);
+        } else {
+            builder.relativeMinThreads(-min);
+        }
+
+        int queueSize = config.queueSize();
+        if  (queueSize > 0) {
+            builder.queueSize(queueSize);
+        } else {
+            builder.relativeQueueSize(-queueSize);
+        }
+
+        return new ContainerThreadpoolConfig(builder);
     }
 
     /**

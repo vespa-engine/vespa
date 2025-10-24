@@ -14,6 +14,7 @@
 using proton::matching::HandleRecorder;
 using proton::matching::MatchDataReserveVisitor;
 using proton::matching::ProtonNodeTypes;
+using proton::matching::ProtonSameElement;
 using proton::matching::ProtonTermData;
 using proton::matching::ResolveViewVisitor;
 using proton::matching::ViewResolver;
@@ -23,6 +24,7 @@ using search::fef::FieldType;
 using search::fef::FilterThreshold;
 using search::fef::MatchDataDetails;
 using search::fef::MatchDataLayout;
+using search::fef::TermFieldHandle;
 using search::fef::test::IndexEnvironment;
 using search::query::Intermediate;
 using search::query::Node;
@@ -32,6 +34,7 @@ using search::query::Weight;
 using CollectionType = FieldInfo::CollectionType;
 
 using HandleSet = std::set<uint32_t>;
+using HandleVector = std::vector<TermFieldHandle>;
 using ThresholdVector = std::vector<float>;
 
 namespace search::fef {
@@ -135,7 +138,7 @@ protected:
     static void SetUpTestSuite();
     static void TearDownTestSuite();
     void prepare(Node& query);
-    std::set<uint32_t> normal_features_handles();
+    HandleSet normal_features_handles();
     ThresholdVector extract_thresholds(Node& query);
 };
 
@@ -320,6 +323,9 @@ TEST_F(TagNeededHandlesTest, unpack_for_same_element_children)
     prepare(*root);
     EXPECT_EQ((HandleSet{0, 1, 2, 3}), normal_features_handles());
     EXPECT_EQ((ThresholdVector{0.0, 0.5, 1.0, 1.0, 1.0, 1.0}), extract_thresholds(*root));
+    auto* se = dynamic_cast<ProtonSameElement*>(root.get());
+    ASSERT_NE(nullptr, se);
+    EXPECT_EQ((HandleVector{0, 1, 2, 3}), se->descendants_index_handles);
 }
 
 TEST_F(TagNeededHandlesTest, unpack_for_same_element_with_phrase_child)
@@ -336,6 +342,42 @@ TEST_F(TagNeededHandlesTest, unpack_for_same_element_with_phrase_child)
     prepare(*root);
     EXPECT_EQ((HandleSet{0, 1, 2, 3}), normal_features_handles());
     EXPECT_EQ((ThresholdVector{0.0, 0.5, 1.0, 1.0, 1.0, 1.0}), extract_thresholds(*root));
+    auto* se = dynamic_cast<ProtonSameElement*>(root.get());
+    ASSERT_NE(nullptr, se);
+    EXPECT_EQ((HandleVector{0, 1, 2, 3}), se->descendants_index_handles);
+}
+
+TEST_F(TagNeededHandlesTest, unpack_for_same_element_children_one_unranked)
+{
+    QueryBuilder<ProtonNodeTypes> query_builder;
+    constexpr uint32_t term_count = 2;
+    query_builder.addSameElement(term_count, view, term_id, string_weight);
+    query_builder.addStringTerm(foo_term, view, term_id + 1, string_weight);
+    query_builder.addStringTerm(bar_term, view, term_id + 2, string_weight).setRanked(false);
+    auto root = query_builder.build();
+    prepare(*root);
+    EXPECT_EQ((HandleSet{0, 1, 2, 3}), normal_features_handles());
+    EXPECT_EQ((ThresholdVector{0.0, 0.5, 1.0, 1.0, 1.0, 1.0}), extract_thresholds(*root));
+    auto* se = dynamic_cast<ProtonSameElement*>(root.get());
+    ASSERT_NE(nullptr, se);
+    EXPECT_EQ((HandleVector{0, 1}), se->descendants_index_handles);
+}
+
+TEST_F(TagNeededHandlesTest, unpack_for_same_element_children_one_hidden)
+{
+    QueryBuilder<ProtonNodeTypes> query_builder;
+    constexpr uint32_t term_count = 1;
+    query_builder.addSameElement(term_count, view, term_id, string_weight);
+    query_builder.addAndNot(2);
+    query_builder.addStringTerm(foo_term, view, term_id + 1, string_weight);
+    query_builder.addStringTerm(bar_term, view, term_id + 2, string_weight);
+    auto root = query_builder.build();
+    prepare(*root);
+    EXPECT_EQ((HandleSet{0, 1, 2, 3}), normal_features_handles());
+    EXPECT_EQ((ThresholdVector{0.0, 0.5, 1.0, 1.0, 1.0, 1.0}), extract_thresholds(*root));
+    auto* se = dynamic_cast<ProtonSameElement*>(root.get());
+    ASSERT_NE(nullptr, se);
+    EXPECT_EQ((HandleVector{0, 1}), se->descendants_index_handles);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -2,6 +2,10 @@
 
 #include "term.h"
 #include <cassert>
+#include <vespa/vespalib/util/classname.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.query.tree.term");
 
 namespace search::query {
 
@@ -24,6 +28,16 @@ void Term::setStateFrom(const Term& other) {
     assert(_view == other.getView());
     assert(_id == other.getId());
     assert(_weight == other.getWeight());
+}
+
+queryeval::FieldSpec Term::inner_field_spec(const queryeval::FieldSpec& parentSpec) const {
+    auto me = vespalib::getClassName(*this);
+    LOG(warning, "fallback inner_field_spec called for %s", me.c_str());
+    // should not be called, always returns spec with invalid handle
+    const std::string& name = parentSpec.getName();
+    uint32_t fieldId = parentSpec.getFieldId();
+    fef::FilterThreshold threshold = parentSpec.get_filter_threshold();
+    return queryeval::FieldSpec(name, fieldId, fef::IllegalHandle, threshold);
 }
 
 }

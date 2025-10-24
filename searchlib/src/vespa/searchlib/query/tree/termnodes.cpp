@@ -3,6 +3,7 @@
 #include "termnodes.h"
 #include "weighted_integer_term_vector.h"
 #include "weighted_string_term_vector.h"
+#include "simplequery.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <charconv>
 #include <cassert>
@@ -14,6 +15,19 @@ namespace search::query {
 StringTerm::StringTerm(const Type &term, std::string view, int32_t id, Weight weight)
     : QueryNodeMixinType(term, std::move(view), id, weight)
 {}
+
+
+WordAlternatives::WordAlternatives(std::unique_ptr<TermVector> terms, const std::string & view, int32_t id, Weight weight)
+  : QueryNodeMixinType(view, id, weight),
+    _children()
+{
+    _children.reserve(terms->size());
+    for (uint32_t i = 0; i < terms->size(); i++) {
+        auto pair = terms->getAsString(i);
+        std::string word(pair.first);
+        _children.emplace_back(std::make_unique<SimpleStringTerm>(word, view, id, pair.second));
+    }
+}
 
 NumberTerm::~NumberTerm() = default;
 PrefixTerm::~PrefixTerm() = default;

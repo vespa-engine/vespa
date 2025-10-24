@@ -65,7 +65,6 @@ public class Matching implements Cloneable {
     private Double explorationSlack = null;
     private Double targetHitsMaxAdjustmentFactor = null;
     private Double filterThreshold = null;
-
     private WeakAnd weakAnd = new WeakAnd();
 
     public Double getTermwiseLimit() { return termwiseLimit; }
@@ -181,23 +180,24 @@ public class Matching implements Cloneable {
         if (o == null || getClass() != o.getClass()) return false;
         Matching matching = (Matching) o;
         return Objects.equals(termwiseLimit, matching.termwiseLimit) &&
-                Objects.equals(numThreadsPerSearch, matching.numThreadsPerSearch) &&
-                Objects.equals(numSearchPartitions, matching.numSearchPartitions) &&
-                Objects.equals(minHitsPerThread, matching.minHitsPerThread) &&
-                Objects.equals(postFilterThreshold, matching.postFilterThreshold) &&
-                Objects.equals(approximateThreshold, matching.approximateThreshold) &&
-                Objects.equals(filterFirstThreshold, matching.filterFirstThreshold) &&
-                Objects.equals(filterFirstExploration, matching.filterFirstExploration) &&
-                Objects.equals(explorationSlack, matching.explorationSlack) &&
-                Objects.equals(targetHitsMaxAdjustmentFactor, matching.targetHitsMaxAdjustmentFactor) &&
-                Objects.equals(filterThreshold, matching.filterThreshold) &&
-                Objects.equals(weakAnd, matching.weakAnd);
+               Objects.equals(numThreadsPerSearch, matching.numThreadsPerSearch) &&
+               Objects.equals(numSearchPartitions, matching.numSearchPartitions) &&
+               Objects.equals(minHitsPerThread, matching.minHitsPerThread) &&
+               Objects.equals(postFilterThreshold, matching.postFilterThreshold) &&
+               Objects.equals(approximateThreshold, matching.approximateThreshold) &&
+               Objects.equals(filterFirstThreshold, matching.filterFirstThreshold) &&
+               Objects.equals(filterFirstExploration, matching.filterFirstExploration) &&
+               Objects.equals(explorationSlack, matching.explorationSlack) &&
+               Objects.equals(targetHitsMaxAdjustmentFactor, matching.targetHitsMaxAdjustmentFactor) &&
+               Objects.equals(filterThreshold, matching.filterThreshold) &&
+               Objects.equals(weakAnd, matching.weakAnd);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(termwiseLimit, numThreadsPerSearch, numSearchPartitions, minHitsPerThread,
-                postFilterThreshold, approximateThreshold, filterFirstThreshold, filterFirstExploration, explorationSlack, targetHitsMaxAdjustmentFactor, filterThreshold, weakAnd);
+                            postFilterThreshold, approximateThreshold, filterFirstThreshold, filterFirstExploration,
+                            explorationSlack, targetHitsMaxAdjustmentFactor, filterThreshold, weakAnd);
     }
 }
 

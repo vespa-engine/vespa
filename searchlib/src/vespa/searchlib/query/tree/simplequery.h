@@ -78,9 +78,7 @@ struct SimpleInTerm : InTerm {
     ~SimpleInTerm() override;
 };
 struct SimpleWordAlternatives : WordAlternatives {
-    SimpleWordAlternatives(std::unique_ptr<TermVector> terms, const std::string & view, int32_t id, Weight weight)
-      : WordAlternatives(std::move(terms), view, id, weight)
-    {}
+    using WordAlternatives::WordAlternatives;
     ~SimpleWordAlternatives() override;
 };
 struct SimpleRank : Rank

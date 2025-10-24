@@ -118,8 +118,13 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        for (Expression expression : this) {
-            context.execute(expression);
+        try {
+            for (Expression expression : this) {
+                context.execute(expression);
+            }
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Error executing '" + this + "'", e);
         }
     }
 
