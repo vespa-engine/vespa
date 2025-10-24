@@ -76,7 +76,7 @@ public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCl
         int minThreads = minThreads(config, cpus, hasRelThreads);
         int queueSize = queueSize(config, maxThreads, hasRelQueueSize);
 
-        log.config(String.format("Threadpool '%s': min=%d, max=%d, queue=%d", name, minThreads, maxThreads, queueSize));
+        log.config(String.format("Threadpool '%s': min=%d, max=%d, queue=%s", name, minThreads, maxThreads, queueSizeToString(queueSize)));
 
         ThreadPoolMetric threadPoolMetric = new ThreadPoolMetric(metric, name);
         WorkerCompletionTimingThreadPoolExecutor executor =
@@ -160,6 +160,13 @@ public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCl
                 c.relativeMinThreads(), c.relativeMaxThreads(), c.relativeQueueSize(),
                 cpus
         );
+    }
+
+    private String queueSizeToString(int queueSize) {
+        if (queueSize == Integer.MAX_VALUE) {
+            return "unlimited";
+        }
+        return Integer.toString(queueSize);
     }
 
 }
