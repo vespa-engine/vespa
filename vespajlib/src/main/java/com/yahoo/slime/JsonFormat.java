@@ -3,6 +3,7 @@ package com.yahoo.slime;
 
 import com.yahoo.io.AbstractByteWriter;
 import com.yahoo.io.ByteWriter;
+import com.yahoo.tensor.serialization.DataDisclosure;
 import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8String;
@@ -36,6 +37,11 @@ public final class JsonFormat implements SlimeFormat {
     @Override
     public void encode(OutputStream os, Slime slime) throws IOException {
         new Encoder(slime.get(), os, indent).encode();
+    }
+
+    @Override
+    public void encode(OutputStream os, Slime slime, DataDisclosure dataDisclosure) throws IOException {
+        throw new RuntimeException("omg no way dude");
     }
 
     public void encode(OutputStream os, Inspector value) throws IOException {
