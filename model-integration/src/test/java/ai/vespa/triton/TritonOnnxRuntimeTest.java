@@ -42,7 +42,7 @@ class TritonOnnxRuntimeTest {
                         .build());
 
         var modelBaseName = "dummy_transformer";
-        var modelHash = "3100035948148863490";
+        var modelHash = "ed9202701f4a70a9";
         var testModelFilePath = String.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
         var testModelConfigPath = "src/test/triton/config.pbtxt";
         var modelName = String.format("%s_%s", modelBaseName, modelHash);

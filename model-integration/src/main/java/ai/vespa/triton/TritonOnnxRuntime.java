@@ -100,7 +100,9 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         var fileName = Paths.get(modelPath).getFileName().toString();
         var baseName = fileName.substring(0, fileName.lastIndexOf('.')); // remove file extension
         var modelHash = ModelPathOrData.of(modelPath).calculateHash();
-        return baseName + "_" + modelHash; // add hash to avoid conflicts
+        var optionsHash = options.calculateHash();
+        var combinedHash = Long.toHexString(31 * modelHash + optionsHash);
+        return baseName + "_" + combinedHash; // add hash to avoid conflicts
     }
 
     // Generate a default model config based on evaluator options.
