@@ -22,6 +22,7 @@ class SimplePhraseSearch : public MultiSearch
     fef::TermFieldMatchDataArray _childMatch;
     std::vector<uint32_t>        _eval_order;
     fef::TermFieldMatchData     &_tmd;
+    uint32_t                     _unpacked_docid;
     bool                         _strict;
 
     using It = fef::TermFieldMatchData::PositionsIterator;
@@ -50,6 +51,7 @@ public:
     ~SimplePhraseSearch() override;
     void doSeek(uint32_t doc_id) override;
     void doUnpack(uint32_t doc_id) override;
+    void initRange(uint32_t begin_id, uint32_t end_id) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
     void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) override;
