@@ -18,7 +18,7 @@ public class FailingWithErrorTestCase {
 
     @Test
     public void testErrors() {
-        DocprocService service = new DocprocService("failing");
+        DocprocService service = new DocprocService("failing", new SimpleContainerThreadPool());
         DocumentProcessor first = new ErrorThrowingProcessor();
         service.setCallStack(new CallStack().addLast(first));
         service.setInService(true);
