@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 import java.util.Optional;
 
 /**
- * Union object that contains model file path or data.
+ * Union object that contains either model file path or data.
  *
  * @author bjorncs
  */

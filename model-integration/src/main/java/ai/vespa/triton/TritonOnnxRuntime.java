@@ -10,7 +10,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.vespa.defaults.Defaults;
 import inference.ModelConfigOuterClass;
-import org.apache.commons.io.FilenameUtils;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -98,9 +97,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     }
     
     static String createModelName(String modelPath, OnnxEvaluatorOptions options) {
-        var fileName = FilenameUtils.getBaseName(modelPath);
-        var modelHash = ModelPathOrData.of(modelPath).calculateHash(); // added hash to avoid conflicts
-        return fileName + "_" + modelHash;
+        var fileName = Paths.get(modelPath).getFileName().toString();
+        var baseName = fileName.substring(0, fileName.lastIndexOf('.')); // remove file extension
+        var modelHash = ModelPathOrData.of(modelPath).calculateHash();
+        return baseName + "_" + modelHash; // add hash to avoid conflicts
     }
 
     // Generate a default model config based on evaluator options.
