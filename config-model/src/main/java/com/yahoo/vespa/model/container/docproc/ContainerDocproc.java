@@ -152,8 +152,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
                     .keepAliveTime(5.0)
                     .relativeMaxThreads(threads)
                     .relativeMinThreads(threads)
-                    // currently not having queue.
-                    .queueSize(0);
+                    .queueSize(Integer.MAX_VALUE);
         }
 
     }

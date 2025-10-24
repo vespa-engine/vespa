@@ -10,6 +10,7 @@ import com.yahoo.jdisc.Metric;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -118,7 +119,12 @@ public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCl
         }
     }
 
+    /** For the components requiring infinite queue, they must specify Integer.MAX_VALUE */
     private static BlockingQueue<Runnable> createQueue(int size) {
+        if (size == Integer.MAX_VALUE) {
+            return new LinkedBlockingQueue<>();
+        }
+
         return size == 0 ? new SynchronousQueue<>(false) : new ArrayBlockingQueue<>(size);
     }
 
