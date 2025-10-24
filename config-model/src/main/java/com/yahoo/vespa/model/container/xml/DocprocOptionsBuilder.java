@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import org.w3c.dom.Element;
 import java.util.Set;
@@ -16,7 +17,8 @@ public class DocprocOptionsBuilder {
                 getTime(spec.getAttribute("maxqueuewait")),
                 getFactor(spec.getAttribute("maxconcurrentfactor")),
                 getFactor(spec.getAttribute("documentexpansionfactor")),
-                getInt(spec.getAttribute("containercorememory")));
+                getInt(spec.getAttribute("containercorememory")),
+                XML.getChild(spec, "threadpool"));
     }
 
     private static Integer getInt(String integer) {
