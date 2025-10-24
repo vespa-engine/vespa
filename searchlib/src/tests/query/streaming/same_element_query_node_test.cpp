@@ -13,6 +13,7 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/element_id_extractor.h>
+#include <vespa/searchlib/queryeval/same_element_flags.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
@@ -27,6 +28,7 @@ using search::query::SimpleQueryNodeTypes;
 using search::query::StackDumpCreator;
 using search::query::Weight;
 using search::queryeval::ElementIdExtractor;
+using search::queryeval::SameElementFlags;
 using search::SerializedQueryTree;
 using search::streaming::HitList;
 using search::streaming::Query;
@@ -51,25 +53,6 @@ private:
 };
 
 AllowRewrite::~AllowRewrite() = default;
-
-class QueryBuilderTweak {
-    using QueryBuilder = search::streaming::QueryBuilder;
-    bool _old_expose_match_data_for_same_element_descendants;
-public:
-    QueryBuilderTweak(bool expose_match_data_for_same_element_descendants);
-    ~QueryBuilderTweak();
-};
-
-QueryBuilderTweak::QueryBuilderTweak(bool expose_match_data_for_same_element_descendants)
-    : _old_expose_match_data_for_same_element_descendants(QueryBuilder::_expose_match_data_for_same_element_descendants)
-{
-    QueryBuilder::_expose_match_data_for_same_element_descendants = expose_match_data_for_same_element_descendants;
-}
-
-QueryBuilderTweak::~QueryBuilderTweak()
-{
-    QueryBuilder::_expose_match_data_for_same_element_descendants = _old_expose_match_data_for_same_element_descendants;
-}
 
 }
 
@@ -307,13 +290,13 @@ TEST_F(SameElementQueryNodeTest, and_below_same_element)
     EXPECT_TRUE(evaluate_query(QueryTweak::AND, elementsvv9));
     EXPECT_EQ((std::vector<uint32_t>{ 9 }), get_element_ids(QueryTweak::AND, elementsvv9));
     {
-        QueryBuilderTweak query_builder_tweak(false);
+        SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(false);
         SCOPED_TRACE("query_builder_tweak false");
         EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::AND, elementsvv3));
         EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::AND, elementsvv9));
     }
     {
-        QueryBuilderTweak query_builder_tweak(true);
+        SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(true);
         SCOPED_TRACE("query_builder_tweak true");
         EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 7, 12 }, { 7, 12 } }),
                   extract_element_ids(QueryTweak::AND, elementsvv3));
@@ -331,13 +314,13 @@ TEST_F(SameElementQueryNodeTest, or_below_same_element)
     EXPECT_TRUE(evaluate_query(QueryTweak::OR, elementsvv9));
     EXPECT_EQ((std::vector<uint32_t>{ 4, 6, 9 }), get_element_ids(QueryTweak::OR, elementsvv9));
     {
-        QueryBuilderTweak query_builder_tweak(false);
+        SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(false);
         SCOPED_TRACE("query_builder_tweak false");
         EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::OR, elementsvv3));
         EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::OR, elementsvv9));
     }
     {
-        QueryBuilderTweak query_builder_tweak(true);
+        SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(true);
         SCOPED_TRACE("query_builder_tweak true");
         EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 5, 10 }, { 7, 12 } }),
                   extract_element_ids(QueryTweak::OR, elementsvv3));

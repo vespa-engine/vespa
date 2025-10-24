@@ -3,10 +3,12 @@
 #include "termdataextractor.h"
 #include "querynodes.h"
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
+#include <vespa/searchlib/queryeval/same_element_flags.h>
 
 using search::fef::ITermData;
 using search::query::Node;
 using search::query::TemplateTermVisitor;
+using search::queryeval::SameElementFlags;
 using std::vector;
 
 namespace proton::matching {
@@ -58,6 +60,9 @@ public:
     void visit(ProtonNodeTypes::SameElement &n) override {
         if (n.expose_match_data_for_same_element) {
             visitTerm(n);
+        }
+        if (SameElementFlags::expose_descendants()) {
+            visitChildren(n);
         }
     }
 

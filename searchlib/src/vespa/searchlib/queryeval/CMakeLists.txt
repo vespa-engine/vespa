@@ -50,6 +50,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     profiled_iterator.cpp
     ranksearch.cpp
     same_element_blueprint.cpp
+    same_element_flags.cpp
     same_element_search.cpp
     searchable.cpp
     searchiterator.cpp
