@@ -4,6 +4,7 @@ namespace=config.docproc
 # Depreacated and a noop
 maxqueuetimems int default=-1
 
+# TODO remove in Vespa 9
 # The number of threads in the DocprocHandler worker thread pool
-# Default is number of cpu's, but any positive number larger than 0 will be used explicit.
+# numthreads no longer has an effect.
 numthreads int default=-1
