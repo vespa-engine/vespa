@@ -254,10 +254,6 @@
           </config>
         </documentprocessor>
       </chain>
-      <threadpool>
-        <threads>2.5</threads>
-        <queue>2.5</queue>
-      </threadpool>
     </document-processing>
 
   </container>

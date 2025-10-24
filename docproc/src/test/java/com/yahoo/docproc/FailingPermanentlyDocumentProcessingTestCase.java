@@ -29,7 +29,7 @@ public class FailingPermanentlyDocumentProcessingTestCase {
     @Test
     public void testFailingProcessing() {
         // Set up service programmatically
-        DocprocService service = new DocprocService("failing-permanently", new SimpleContainerThreadPool());
+        DocprocService service = new DocprocService("failing-permanently");
         DocumentProcessor first = new SettingValueProcessor("done 1");
         DocumentProcessor second = new FailingProcessor("done 2");
         DocumentProcessor third = new SettingValueProcessor("done 3");

@@ -239,7 +239,7 @@ public class Content extends ConfigModel {
                 if (targetCluster == null)
                     targetCluster = content.containers.iterator().next().getCluster();
 
-                addDocproc(targetCluster, modelContext.getDeployState());
+                addDocproc(targetCluster);
                 indexingCluster.setClusterName(targetCluster.getName());
                 addIndexingChainsTo(targetCluster, content, indexingCluster);
             }
@@ -318,7 +318,7 @@ public class Content extends ConfigModel {
             indexingCluster.addDefaultHandlersWithVip();
             indexingCluster.addAllPlatformBundles();
             indexingCluster.addAccessLog();
-            addDocproc(indexingCluster, modelContext.getDeployState());
+            addDocproc(indexingCluster);
 
             List<ApplicationContainer> nodes = new ArrayList<>();
             int index = 0;
@@ -350,10 +350,9 @@ public class Content extends ConfigModel {
             return null;
         }
 
-        private void addDocproc(ContainerCluster<?> cluster, DeployState deployState) {
+        private void addDocproc(ContainerCluster<?> cluster) {
             if (cluster.getDocproc() == null) {
-                DocprocChains chains = new DocprocChains(cluster, "docprocchains",
-                        new ContainerDocproc.Threadpool(deployState, null));
+                DocprocChains chains = new DocprocChains(cluster, "docprocchains");
                 ContainerDocproc containerDocproc = new ContainerDocproc(cluster, chains);
                 cluster.setDocproc(containerDocproc);
             }
