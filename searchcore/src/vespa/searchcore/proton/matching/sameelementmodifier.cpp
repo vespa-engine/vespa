@@ -12,13 +12,16 @@ namespace proton::matching {
 class SameElementDescendantModifier : public search::query::TemplateTermVisitor<SameElementDescendantModifier, ProtonNodeTypes>
 {
     const std::string& _same_element_view;
+    uint32_t                 _hidden_terms;
     bool _expose_match_data_for_same_element;
+    bool hidden_terms() const noexcept { return _hidden_terms != 0u; }
 public:
     SameElementDescendantModifier(const std::string& same_element_view);
     ~SameElementDescendantModifier() override;
     void visit_term(Term& term);
     template <class TermNode>
     void visitTerm(TermNode &n) { visit_term(n); }
+    void visit(ProtonNodeTypes::AndNot& n) override;
     bool expose_match_data_for_same_element() const noexcept { return _expose_match_data_for_same_element; }
 };
 
@@ -26,6 +29,7 @@ public:
 SameElementDescendantModifier::SameElementDescendantModifier(const std::string& same_element_view)
     : search::query::TemplateTermVisitor<SameElementDescendantModifier, ProtonNodeTypes>(),
       _same_element_view(same_element_view),
+      _hidden_terms(0u),
       _expose_match_data_for_same_element(true)
 {
 }
@@ -37,11 +41,25 @@ SameElementDescendantModifier::visit_term(Term& term)
 {
     if (term.getView().empty()) {
         term.setView(_same_element_view);
-        if (term.isRanked() && SameElementModifier::can_hide_match_data_for_same_element) {
+        if (term.isRanked() && !hidden_terms() && SameElementModifier::can_hide_match_data_for_same_element) {
             _expose_match_data_for_same_element = false;
         }
     } else {
         term.setView(_same_element_view + "." + term.getView());
+    }
+}
+
+void
+SameElementDescendantModifier::visit(ProtonNodeTypes::AndNot& n)
+{
+    auto& children = n.getChildren();
+    if (!children.empty()) {
+        children[0]->accept(*this);
+        ++_hidden_terms;
+        for (uint32_t i = 1; i < children.size(); ++i) {
+            children[i]->accept(*this);
+        }
+        --_hidden_terms;
     }
 }
 

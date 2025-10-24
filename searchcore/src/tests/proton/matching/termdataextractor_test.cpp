@@ -160,11 +160,14 @@ TEST(TermDataExtractorTest, requireThatNegativeTermsAreSkipped) {
 }
 
 std::vector<uint32_t>
-same_element_query_ids(bool structured, bool ranked)
+same_element_query_ids(bool structured, bool ranked, bool negative)
 {
     QueryBuilder<ProtonNodeTypes> query_builder;
     query_builder.addAnd(2);
-    query_builder.addSameElement(2, field, id[3], Weight(7));
+    query_builder.addSameElement(negative ? 1 : 2, field, id[3], Weight(7));
+    if (negative) {
+        query_builder.addAndNot(2);
+    }
     query_builder.addStringTerm("term1", field, id[0], Weight(1));
     query_builder.addStringTerm("term2", structured ? field : "", id[1], Weight(1)).setRanked(ranked);
     query_builder.addStringTerm("term3", field, id[2], Weight(1));
@@ -200,16 +203,18 @@ SameElementModifierTweak::~SameElementModifierTweak()
 
 TEST(TermDataExtractorTest, requireThatSameElementIsExtractedAsOneOrZeroTerms)
 {
-    EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(true, true));
+    EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(true, true, false));
     {
         SameElementModifierTweak same_element_modifier_tweak(false);
-        EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(false, true));
+        EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(false, true, false));
+        EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(false, true, true));
     }
     {
         SameElementModifierTweak same_element_modifier_tweak(true);
-        EXPECT_EQ((std::vector<uint32_t>{id[2]}), same_element_query_ids(false, true));
+        EXPECT_EQ((std::vector<uint32_t>{id[2]}), same_element_query_ids(false, true, false));
+        EXPECT_EQ((std::vector<uint32_t>{id[3],id[2]}), same_element_query_ids(false, true, true));
     }
-    EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(false, false));
+    EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(false, false, false));
 }
 
 }  // namespace
