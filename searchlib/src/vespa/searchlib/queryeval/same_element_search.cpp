@@ -41,6 +41,14 @@ SameElementSearch::check_element_match(uint32_t docid)
     return !_matchingElements.empty();
 }
 
+void
+SameElementSearch::filter_descendants_match_data(uint32_t docid, std::span<const uint32_t> element_ids)
+{
+    for (auto* tfmd : _descendants_index_tfmd) {
+        tfmd->filter_elements(docid, element_ids);
+    }
+}
+
 SameElementSearch::SameElementSearch(TermFieldMatchData &tfmd,
                                      std::vector<TermFieldMatchData*> descendants_index_tfmd,
                                      std::vector<std::unique_ptr<SearchIterator>> children,
@@ -68,18 +76,24 @@ SameElementSearch::initRange(uint32_t begin_id, uint32_t end_id)
 
 void
 SameElementSearch::doSeek(uint32_t docid) {
-    if (check_docid_match(docid) && check_element_match(docid)) {
+    bool docid_match = check_docid_match(docid);
+    if (docid_match && check_element_match(docid)) {
+        filter_descendants_match_data(docid, _matchingElements);
         setDocId(docid);
     } else if (_strict) {
         docid = std::max(docid + 1, _children[0]->getDocId());
         while (!isAtEnd(docid)) {
             if (check_docid_match(docid) && check_element_match(docid)) {
+                filter_descendants_match_data(docid, _matchingElements);
                 setDocId(docid);
                 return;
             }
             docid = std::max(docid + 1, _children[0]->getDocId());
         }
+        filter_descendants_match_data(docid, std::span<uint32_t>());
         setAtEnd();
+    } else if (docid_match) {
+        filter_descendants_match_data(docid, std::span<uint32_t>());
     }
 }
 
@@ -87,6 +101,11 @@ void
 SameElementSearch::doUnpack(uint32_t docid)
 {
     _tfmd.resetOnlyDocId(docid);
+    for (const auto &child : _children) {
+        child->unpack(docid);
+    }
+    // Need to filter descendants again due to FakeSearch and SimplePhraseSearch overwrititing filtered match data
+    filter_descendants_match_data(docid, _matchingElements);
 }
 
 void
