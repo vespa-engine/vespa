@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/searchlib/queryeval/element_id_extractor.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
@@ -8,6 +9,7 @@
 #include <vespa/searchlib/queryeval/same_element_search.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <optional>
 
 using namespace search::fef;
 using namespace search::queryeval;
@@ -18,12 +20,37 @@ enum class QueryTweak {
     OR            // Last child is OR with two term nodes
 };
 
+using OptElems = std::optional<std::vector<uint32_t>>;
+
 void verify_elements(SameElementSearch &se, uint32_t docid, const std::initializer_list<uint32_t> list) {
     SCOPED_TRACE("verify elements, docid=" + std::to_string(docid));
     std::vector<uint32_t> expect(list);
     std::vector<uint32_t> actual;
     se.find_matching_elements(docid, actual);
     EXPECT_EQ(actual, expect);
+}
+
+void verify_md_elements(MatchData& md, const std::string& label, uint32_t docid, std::vector<OptElems> exp)
+{
+    SCOPED_TRACE("verify md_elements, " + label + ", docid=" + std::to_string(docid));
+    std::vector<OptElems> act;
+    act.reserve(exp.size());
+    for (uint32_t i = 0; i < exp.size(); ++i) {
+        act.emplace_back();
+        auto& tfmd = *md.resolveTermField(i);
+        if (tfmd.getDocId() == docid) {
+            ElementIdExtractor::get_element_ids(tfmd, docid, act.back().emplace());
+        }
+    }
+    EXPECT_EQ(exp, act);
+}
+
+OptElems hit(std::vector<uint32_t> elems) {
+    return elems;
+}
+
+OptElems nohit() {
+    return std::nullopt;
 }
 
 FieldSpec make_field_spec(MatchDataLayout& mdl) {
@@ -192,17 +219,30 @@ TEST(SameElementTest, require_that_children_are_sorted) {
 
 TEST(SameElementTest, require_that_and_below_same_element_works)
 {
-    auto a = make_result({{3, {5, 7, 10, 12}}, {9, {4, 6, 9, 10}}});
-    auto b = make_result({{3, {4, 7, 12, 14}}, {9, {3, 9, 13}}});
+    auto a = make_result({{3, {5, 7, 10, 12}}, {7, {5, 7}}, {9, {4, 6, 9, 10}}});
+    auto b = make_result({{3, {4, 7, 12, 14}}, {7, {6}}, {9, {3, 9, 13}}});
     auto mdl = make_match_data_layout();
-    auto bp = finalize(make_blueprint(QueryTweak::AND, *mdl, {a, b}, false), true);
+    auto bp = finalize(make_blueprint(QueryTweak::AND, *mdl, {a, b}, false), false);
     auto md = mdl->createMatchData();
     auto search = bp->createSearch(*md);
     search->initRange(1, 1000);
     auto *se = dynamic_cast<SameElementSearch*>(search.get());
     ASSERT_TRUE(se != nullptr);
     verify_elements(*se, 3, {7, 12});
+    verify_elements(*se, 7, {});
     verify_elements(*se, 9, {9});
+    md->soft_reset();
+    search->initRange(1, 1000);
+    EXPECT_TRUE(search->seek(3));
+    verify_md_elements(*md, "before unpack", 3, { hit({7, 12}), hit({7, 12}) });
+    search->unpack(3);
+    verify_md_elements(*md, "after unpack", 3, { hit({7, 12}), hit({7, 12}) });
+    EXPECT_FALSE(search->seek(7));
+    verify_md_elements(*md, "before unpack", 7, { nohit(), nohit() });
+    EXPECT_TRUE(search->seek(9));
+    verify_md_elements(*md, "before unpack", 9, { hit({9}), hit({9}) });
+    search->unpack(9);
+    verify_md_elements(*md, "after unpack", 9, { hit({9}), hit({9}) });
 }
 
 TEST(SameElementTest, require_that_or_below_same_element_works)
