@@ -9,17 +9,21 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
+import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
+import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.FloatFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.UriFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
@@ -678,6 +682,51 @@ public class ScriptTestCase {
 
         var update1 = updates.get(0).getOutput().getFieldUpdate("string1").getValueUpdate(0);
         assertTrue(update1 instanceof ClearValueUpdate);
+    }
+
+    @Test
+    public void testGetValue() {
+        String script = """
+        {
+          ( input my_byte | to_int ) * 2 + (input my_map | get_value 2 | get_field my_field ) | to_byte | attribute my_output
+        }
+        """;
+
+        var tester = new ScriptTester();
+        var expression = tester.scriptFrom(script);
+
+        DocumentType docType = new DocumentType("test");
+        Field field1 = new Field("my_byte", DataType.BYTE);
+        StructDataType myStruct = new StructDataType("my_struct");
+        myStruct.addField(new Field("my_field", DataType.INT));
+        var mapType = new MapDataType(DataType.INT, myStruct);
+        Field field2 = new Field("my_map", mapType);
+        Field field3 = new Field("my_output", DataType.BYTE);
+        docType.addField(field1);
+        docType.addField(field2);
+        docType.addField(field3);
+
+        DocumentUpdate update = new DocumentUpdate(docType, "id:foo:test::1");
+        update.addFieldUpdate(FieldUpdate.createAssign(field1, new ByteFieldValue(60)));
+        var map = new MapFieldValue<>(mapType);
+        var struct1 = new Struct(myStruct);
+        struct1.setFieldValue("my_field", 3);
+        map.put(new IntegerFieldValue(1), struct1);
+        var struct2 = new Struct(myStruct);
+        struct2.setFieldValue("my_field", 7);
+        map.put(new IntegerFieldValue(2), struct2);
+        update.addFieldUpdate(FieldUpdate.createAssign(field2, map));
+
+        FieldValuesFactory factory = new FieldValuesFactory();
+
+        List<UpdateFieldValues> updates = factory.asFieldValues(update);
+        expression.resolve(update);
+        for (var fieldValueUpdate : updates)
+            expression.execute(fieldValueUpdate);
+
+        var update1 = updates.get(0).getOutput().getFieldUpdate("my_output").getValueUpdate(0);
+        assertTrue(update1 instanceof AssignValueUpdate);
+        assertEquals((byte)(60 * 2 + 7), update1.getValue().getWrappedValue());
     }
 
 }

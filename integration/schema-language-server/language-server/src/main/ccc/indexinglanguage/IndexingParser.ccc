@@ -195,6 +195,7 @@ TOKEN :
     <GENERATE: "generate"> |
     <GET_FIELD: "get_field"> |
     <GET_LANGUAGE: "get_language"> |
+    <GET_VALUE: "get_value"> |
     <GET_VAR: "get_var"> |
     <GUARD: "guard"> |
     <HASH: "hash"> |
@@ -353,6 +354,8 @@ Expression value() :
       val = forEachExp()            |
       val = generateExp()           |
       val = getFieldExp()           |
+      val = getLanguageExp()        |
+      val = getValueExp()           |
       val = getVarExp()             |
       val = guardExp()              |
       val = hashExp()               |
@@ -518,10 +521,10 @@ Expression generateExp() :
 
 Expression getFieldExp() :
 {
-    String val;
+    String val = null;
 }
  
-    ( <GET_FIELD> val = identifierStr() )
+    ( <GET_FIELD> val = ( identifierStr() | integerValue() ) )
     { return new GetFieldExpression(val); }
 ;
 
@@ -529,6 +532,15 @@ Expression getLanguageExp() : { }
 
     ( <GET_LANGUAGE> )
     { return new GetLanguageExpression(); }
+;
+
+Expression getValueExp() :
+{
+    String key;
+}
+
+    ( <GET_VALUE> key = valueString() )
+    { return new GetValueExpression(key); }
 ;
 
 Expression getVarExp() :
@@ -906,18 +918,25 @@ List<String> arguments() :
     NumericFieldValue numericArgument;
     List<String> arguments = new ArrayList<String>();
 }
-    (
-        (SCAN(argument = identifierStr() { arguments.add(argument); } |
-              numericArgument = numericValue() { arguments.add(numericArgument.getNumber().toString()); }))*
-    )
+    ( valueString() )*
     { return arguments; }
+;
+
+/** A number, identifier, or quoted string */
+String valueString() :
+{
+    String value;
+    NumericFieldValue numericValue;
+}
+    numericValue = numericValue() { return numericValue.getNumber().toString(); } |
+    value = stringLiteral() { return value; } |
+    value = identifierStr() { return value; }
 ;
 
 String identifierStr() :
 {
     String val;
 }
- 
     ( val = stringLiteral()      |
       ( <ATTRIBUTE>              |
         <BASE64_DECODE>          |
@@ -937,6 +956,8 @@ String identifierStr() :
         <FOR_EACH>               |
         <GENERATE>               |
         <GET_FIELD>              |
+        <GET_LANGUAGE>           |
+        <GET_VALUE>              |
         <GET_VAR>                |
         <GUARD>                  |
         <HASH>                   |
@@ -986,7 +1007,6 @@ String identifierStr() :
         <ZCURVE>                 ) { val = lastConsumedToken.toString(); } )
     { return val; }
 ;
-
 
 String fieldName() :
 {
