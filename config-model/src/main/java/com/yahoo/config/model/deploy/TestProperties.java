@@ -76,6 +76,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int contentLayerMetadataFeatureLevel = 0;
     private boolean logserverOtelCol = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
+    private int maxDistributorDocumentOperationSizeMib = -1;
     private int searchCoreMaxOutstandingMoveOps = 100;
     private Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
     private boolean useNewPrepareForRestart = true;
@@ -132,6 +133,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
+    @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
     @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
     @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
     @Override public int searchNodeInitializerThreads(String clusterId) { return searchNodeInitializerThreads.getOrDefault(clusterId, 0); }
@@ -337,6 +339,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setMaxContentNodeMaintenanceOpConcurrency(int maxConcurrency) {
         this.maxContentNodeMaintenanceOpConcurrency = maxConcurrency;
+        return this;
+    }
+
+    public TestProperties setMaxDistributorDocumentOperationSizeMib(int maxSizeMib) {
+        this.maxDistributorDocumentOperationSizeMib = maxSizeMib;
         return this;
     }
 
