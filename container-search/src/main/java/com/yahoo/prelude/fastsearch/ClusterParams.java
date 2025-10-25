@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
+import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.schema.SchemaInfo;
 
 /**
@@ -16,12 +17,18 @@ public class ClusterParams {
     private final String defaultSummary;
     private final DocumentdbInfoConfig documentdbInfoConfig;
     private final SchemaInfo schemaInfo;
+    private final QrSearchersConfig qrSearchersConfig;
 
     public ClusterParams(String name) {
-        this(name, "server.0", null, null, null);
+        this(name, "server.0", null, null, null, null);
     }
     public ClusterParams(String name, String serverId, String defaultSummary,
                          DocumentdbInfoConfig documentdbInfoConfig, SchemaInfo schemaInfo) {
+        this(name, serverId, defaultSummary, documentdbInfoConfig, schemaInfo, null);
+    }
+    public ClusterParams(String name, String serverId, String defaultSummary,
+                         DocumentdbInfoConfig documentdbInfoConfig, SchemaInfo schemaInfo,
+                         QrSearchersConfig qrSearchersConfig) {
         this.searcherName = name;
         this.serverId = serverId;
         if (defaultSummary != null && defaultSummary.isEmpty())
@@ -30,6 +37,7 @@ public class ClusterParams {
             this.defaultSummary = defaultSummary;
         this.documentdbInfoConfig = documentdbInfoConfig;
         this.schemaInfo = schemaInfo;
+        this.qrSearchersConfig = qrSearchersConfig;
     }
 
     public String getServerId() { return serverId; }
@@ -37,4 +45,5 @@ public class ClusterParams {
     public String getDefaultSummary() { return defaultSummary; }
     public DocumentdbInfoConfig getDocumentdbInfoConfig() { return documentdbInfoConfig; }
     public SchemaInfo getSchemaInfo() { return schemaInfo; }
+    public QrSearchersConfig getQrSearchersConfig() { return qrSearchersConfig; }
 }

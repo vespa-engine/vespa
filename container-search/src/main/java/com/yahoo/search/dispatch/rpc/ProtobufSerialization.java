@@ -52,6 +52,15 @@ public class ProtobufSerialization {
         return isProtobufAlsoSerialized.get();
     }
 
+    /**
+     * Sets whether protobuf query tree serialization is being performed in addition to the old format.
+     * This is used during the transition period to suppress exceptions in old format encoding for features
+     * only supported in protobuf, since the backend will prefer the protobuf format when both are present.
+     */
+    public static void setProtobufAlsoSerialized(boolean value) {
+        isProtobufAlsoSerialized.set(value);
+    }
+
     /*
      * This is a thread local buffer that is used as scratchpad during serialization.
      * - avoids the unnecessary cost of allocating and initializing a buffer that is too large.
