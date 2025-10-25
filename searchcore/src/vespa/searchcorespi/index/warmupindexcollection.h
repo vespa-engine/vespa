@@ -20,6 +20,7 @@ public:
     virtual ~IWarmupDone() = default;
     virtual void warmupDone(std::shared_ptr<WarmupIndexCollection> current) = 0;
 };
+
 /**
  * Index collection that holds a reference to the active one and a new one that
  * is to be warmed up.
@@ -45,9 +46,9 @@ public:
 
     // Implements IndexSearchable
     std::unique_ptr<search::queryeval::Blueprint>
-    createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term) override;
+    createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term, search::fef::MatchDataLayout &global_layout) override;
     std::unique_ptr<search::queryeval::Blueprint>
-    createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term) override;
+    createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term, search::fef::MatchDataLayout &global_layout) override;
     search::IndexStats get_index_stats(bool clear_disk_io_stats) const override;
     search::SerialNum getSerialNum() const override;
     void accept(IndexSearchableVisitor &visitor) const override;

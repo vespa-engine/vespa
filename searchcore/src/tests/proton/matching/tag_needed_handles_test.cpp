@@ -308,7 +308,7 @@ TEST_F(TagNeededHandlesTest, hidden_unpack_for_phrase_children)
     auto root = query_builder.build();
     prepare(*root);
     EXPECT_EQ(HandleSet{}, normal_features_handles());
-    // view is not resolved for phrase children, SimplePhraseBlueprint::getNextChildField disables filter
+    // view is not resolved for phrase children, SimplePhraseBlueprint::next_child_field disables filter
     EXPECT_EQ((ThresholdVector{0.0, 0.5}), extract_thresholds(*root));
 }
 

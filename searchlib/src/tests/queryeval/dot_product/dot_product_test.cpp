@@ -72,7 +72,9 @@ struct DP {
         Node::UP node = createNode();
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle, field_is_filter));
-        queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
+        search::fef::MatchDataLayout mdl;
+        queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node, mdl);
+        EXPECT_TRUE(mdl.empty());
         bp->basic_plan(strict, 10);
         bp->fetchPostings(ExecuteInfo::FULL);
         SearchIterator::UP sb = bp->createSearch(*md);

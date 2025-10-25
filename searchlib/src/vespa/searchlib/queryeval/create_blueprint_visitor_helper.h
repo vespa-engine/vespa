@@ -11,6 +11,8 @@
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <memory>
 
+namespace search::fef { class MatchDataLayout; }
+
 namespace search::queryeval {
 
 class IRequestContext;
@@ -23,6 +25,8 @@ private:
     const IRequestContext & _requestContext;
     Searchable            & _searchable;
     FieldSpec               _field;
+    fef::MatchDataLayout &_global_layout;
+
     std::unique_ptr<Blueprint>  _result;
 
 protected:
@@ -31,7 +35,7 @@ protected:
     attribute::SearchContextParams createContextParams(bool isFilter) const;
     bool is_search_multi_threaded() const noexcept;
 public:
-    CreateBlueprintVisitorHelper(Searchable &searchable, const FieldSpec &field, const IRequestContext & requestContext);
+    CreateBlueprintVisitorHelper(Searchable &searchable, const FieldSpec &field, const IRequestContext & requestContext, fef::MatchDataLayout &global_layout);
     ~CreateBlueprintVisitorHelper() override;
 
     template <typename T>

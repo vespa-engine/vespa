@@ -608,8 +608,8 @@ private:
 
 public:
     CreateBlueprintVisitor(Searchable &searchable, const IRequestContext &requestContext,
-                           const FieldSpec &field, const IAttributeVector &attr)
-        : CreateBlueprintVisitorHelper(searchable, field, requestContext),
+                           const FieldSpec &field, const IAttributeVector &attr, fef::MatchDataLayout &global_layout)
+        : CreateBlueprintVisitorHelper(searchable, field, requestContext, global_layout),
           _field(field),
           _attr(attr),
           _dps(attr.as_docid_posting_store()),
@@ -826,7 +826,8 @@ CreateBlueprintVisitor::~CreateBlueprintVisitor() = default;
 Blueprint::UP
 AttributeBlueprintFactory::createBlueprint(const IRequestContext & requestContext,
                                            const FieldSpec &field,
-                                           const query::Node &term)
+                                           const query::Node &term,
+                                           fef::MatchDataLayout &global_layout)
 {
     const IAttributeVector *attr(requestContext.getAttribute(field.getName()));
     if (attr == nullptr) {
@@ -834,7 +835,7 @@ AttributeBlueprintFactory::createBlueprint(const IRequestContext & requestContex
         return std::make_unique<queryeval::EmptyBlueprint>(field);
     }
     try {
-        CreateBlueprintVisitor visitor(*this, requestContext, field, *attr);
+        CreateBlueprintVisitor visitor(*this, requestContext, field, *attr, global_layout);
         const_cast<Node &>(term).accept(visitor);
         return visitor.getResult();
     } catch (const vespalib::UnsupportedOperationException &e) {

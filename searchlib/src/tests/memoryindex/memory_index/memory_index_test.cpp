@@ -216,13 +216,12 @@ verifyResult(const FakeResult &expect,
 
     MatchDataLayout mdl;
     TermFieldHandle handle = mdl.allocTermField(fieldId);
-    MatchData::UP match_data = mdl.createMatchData();
 
     FieldSpec field(fieldName, fieldId, handle);
     FieldSpecList fields;
     fields.add(field);
 
-    auto result = index.createBlueprint(requestContext, fields, term);
+    auto result = index.createBlueprint(requestContext, fields, term, mdl);
     bool valid_result = result.get() != nullptr;
     EXPECT_TRUE(valid_result);
     if (!valid_result) {
@@ -233,6 +232,7 @@ verifyResult(const FakeResult &expect,
 
     result->basic_plan(true, 100);
     result->fetchPostings(search::queryeval::ExecuteInfo::FULL);
+    MatchData::UP match_data = mdl.createMatchData();
     SearchIterator::UP search = result->createSearch(*match_data);
     bool valid_search = search.get() != nullptr;
     EXPECT_TRUE(valid_search);
@@ -528,7 +528,6 @@ TEST(MemoryIndexTest, require_that_we_can_fake_bit_vector)
         MatchDataLayout mdl;
         FakeRequestContext requestContext;
         TermFieldHandle handle = mdl.allocTermField(fieldId);
-        MatchData::UP match_data = mdl.createMatchData();
 
         // filter field
         FieldSpec field(title, fieldId, handle, true);
@@ -536,11 +535,12 @@ TEST(MemoryIndexTest, require_that_we_can_fake_bit_vector)
         fields.add(field);
 
         Searchable &searchable = index.index;
-        auto res = searchable.createBlueprint(requestContext, fields, makeTerm(foo));
+        auto res = searchable.createBlueprint(requestContext, fields, makeTerm(foo), mdl);
         EXPECT_TRUE(res);
 
         res->basic_plan(true, 100);
         res->fetchPostings(search::queryeval::ExecuteInfo::FULL);
+        MatchData::UP match_data = mdl.createMatchData();
         SearchIterator::UP search = res->createSearch(*match_data);
         EXPECT_TRUE(search);
         EXPECT_TRUE(dynamic_cast<BooleanMatchIteratorWrapper *>(search.get()) != nullptr);

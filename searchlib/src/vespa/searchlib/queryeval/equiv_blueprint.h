@@ -28,7 +28,7 @@ public:
     void sort(InFlow in_flow) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
 
-    SearchIteratorUP createSearchImpl(fef::MatchData& md) const override;
+    SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, fef::MatchData& md) const override;
     SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override;
 

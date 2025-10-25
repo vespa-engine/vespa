@@ -3,6 +3,7 @@
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchcorespi/index/warmupindexcollection.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -181,7 +182,9 @@ TEST_F(IndexCollectionTest, warmup_can_create_blueprint)
     FieldSpecList fields;
     fields.add(FieldSpec("dummy", 1, search::fef::IllegalHandle));
     search::query::SimpleStringTerm term("what", "dummy", 1, search::query::Weight(100));
-    auto blueprint = indexcollection->createBlueprint(requestContext, fields, term);
+    search::fef::MatchDataLayout mdl;
+    auto blueprint = indexcollection->createBlueprint(requestContext, fields, term, mdl);
+    EXPECT_TRUE(mdl.empty());
     EXPECT_TRUE(blueprint);
 }
 

@@ -67,7 +67,8 @@ public:
     std::unique_ptr<queryeval::Blueprint>
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpec &field,
-                    const search::query::Node &term) override;
+                    const search::query::Node &term,
+                    fef::MatchDataLayout &global_layout) override;
     ~FakeSearchable() override;
 };
 

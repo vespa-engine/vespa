@@ -11,6 +11,7 @@
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/location.h>
 #include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
@@ -118,8 +119,10 @@ do_search(const Node &node, IAttributeManager &attribute_manager, bool expect_at
     FakeRequestContext requestContext(&ac);
     MatchData::UP md(MatchData::makeTestInstance(1, 1));
     AttributeBlueprintFactory source;
-    Blueprint::UP result = source.createBlueprint(requestContext, FieldSpec(field, 0, 0), node);
+    search::fef::MatchDataLayout mdl;
+    Blueprint::UP result = source.createBlueprint(requestContext, FieldSpec(field, 0, 0), node, mdl);
     assert(result.get());
+    EXPECT_TRUE(mdl.empty());
     EXPECT_TRUE(!result->getState().estimate().empty);
     EXPECT_EQ(DOCID_LIMIT, result->getState().estimate().estHits);
     if (expect_attribute_search_context) {
@@ -312,7 +315,9 @@ public:
     }
     ~BlueprintFactoryFixture() {}
     Blueprint::UP create_blueprint(const Node& term) {
-        auto result = source.createBlueprint(request_ctx, FieldSpec(attr_name, 0, 0), term);
+        search::fef::MatchDataLayout mdl;
+        auto result = source.createBlueprint(request_ctx, FieldSpec(attr_name, 0, 0), term, mdl);
+        EXPECT_TRUE(mdl.empty());
         result->basic_plan(true, DOCID_LIMIT);
         result->fetchPostings(queryeval::ExecuteInfo::FULL);
         return result;

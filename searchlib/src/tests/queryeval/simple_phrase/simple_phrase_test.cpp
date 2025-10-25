@@ -18,6 +18,7 @@ LOG_SETUP("simple_phrase_test");
 using namespace search::queryeval;
 
 using search::fef::MatchData;
+using search::fef::MatchDataLayout;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldHandle;
 using search::query::SimpleStringTerm;
@@ -60,6 +61,7 @@ class PhraseSearchTest
 private:
     FakeRequestContext      _requestContext;
     FakeSearchable          _index;
+    MatchDataLayout         _layout;
     FieldSpec               _phrase_fs;
     SimplePhraseBlueprint   _phrase;
     std::vector<Blueprint::UP> _children;
@@ -92,15 +94,15 @@ public:
         {
             // make one child blueprint for explicit use
             FieldSpecList fields;
-            fields.add(FieldSpec(field, fieldId,
-                                 childHandle(_children.size())));
-            _children.push_back(_index.createBlueprint(_requestContext, fields, term_node));
+            fields.add(FieldSpec(field, fieldId, childHandle(_children.size()))); // _layout.allocTermField(fieldId)));
+            _children.push_back(_index.createBlueprint(_requestContext, fields, term_node, _layout));
         }
         {
             // and one to be used by the phrase blueprint
+            FieldSpec spec = SimplePhraseBlueprint::next_child_field(_phrase_fs, _layout);
             FieldSpecList fields;
-            fields.add(_phrase.getNextChildField(_phrase_fs));
-            _phrase.addTerm(_index.createBlueprint(_requestContext, fields, term_node));
+            fields.add(spec);
+            _phrase.addTerm(_index.createBlueprint(_requestContext, fields, term_node, _layout));
         }
         _order.push_back(_order.size());
         return *this;
@@ -151,6 +153,7 @@ public:
 PhraseSearchTest::PhraseSearchTest(bool expiredDoom)
     : _requestContext(nullptr, expiredDoom ? vespalib::steady_time(): vespalib::steady_time::max()),
       _index(),
+      _layout(),
       _phrase_fs(field, fieldId, phrase_handle),
       _phrase(_phrase_fs, false),
       _children(),
@@ -158,7 +161,12 @@ PhraseSearchTest::PhraseSearchTest(bool expiredDoom)
       _order(),
       _pos(1),
       _strict(false)
-{}
+{
+    _layout.allocTermField(fieldId);
+    _layout.allocTermField(fieldId);
+    _layout.allocTermField(fieldId);
+}
+
 PhraseSearchTest::~PhraseSearchTest() = default;
 
 TEST(SimplePhraseTest, requireThatIteratorFindsSimplePhrase) {
@@ -216,7 +224,7 @@ TEST(SimplePhraseTest, requireThatPhrasesAreUnpacked) {
                 test.writable_term_field_match_data().setNeedInterleavedFeatures(unpack_interleaved_features);
                 test.fetchPostings(useBlueprint);
                 unique_ptr<SearchIterator> search(test.createSearch(useBlueprint));
-                EXPECT_TRUE(search->seek(doc_match));
+                ASSERT_TRUE(search->seek(doc_match));
                 search->unpack(doc_match);
 
                 EXPECT_EQ(doc_match, test.tmd().getDocId());
@@ -260,6 +268,7 @@ TEST(SimplePhraseTest, requireThatTermsCanBeEvaluatedInPriorityOrder) {
 }
 
 TEST(SimplePhraseTest, requireThatBlueprintExposesFieldWithEstimate) {
+    MatchDataLayout layout;
     FieldSpec f("foo", 1, 1);
     SimplePhraseBlueprint phrase(f, false);
     ASSERT_TRUE(phrase.getState().numFields() == 1);
@@ -269,24 +278,25 @@ TEST(SimplePhraseTest, requireThatBlueprintExposesFieldWithEstimate) {
     EXPECT_EQ(true, phrase.getState().estimate().empty);
     EXPECT_EQ(0u, phrase.getState().estimate().estHits);
 
-    phrase.addTerm(Blueprint::UP(new MyTerm(phrase.getNextChildField(f), 10)));
+    phrase.addTerm(Blueprint::UP(new MyTerm(SimplePhraseBlueprint::next_child_field(f, layout), 10)));
     EXPECT_EQ(false, phrase.getState().estimate().empty);
     EXPECT_EQ(10u, phrase.getState().estimate().estHits);
 
-    phrase.addTerm(Blueprint::UP(new MyTerm(phrase.getNextChildField(f), 5)));
+    phrase.addTerm(Blueprint::UP(new MyTerm(SimplePhraseBlueprint::next_child_field(f, layout), 5)));
     EXPECT_EQ(false, phrase.getState().estimate().empty);
     EXPECT_EQ(5u, phrase.getState().estimate().estHits);
 
-    phrase.addTerm(Blueprint::UP(new MyTerm(phrase.getNextChildField(f), 20)));
+    phrase.addTerm(Blueprint::UP(new MyTerm(SimplePhraseBlueprint::next_child_field(f, layout), 20)));
     EXPECT_EQ(false, phrase.getState().estimate().empty);
     EXPECT_EQ(5u, phrase.getState().estimate().estHits);
 }
 
 TEST(SimplePhraseTest, requireThatBlueprintForcesPositionDataOnChildren) {
+    MatchDataLayout layout;
     FieldSpec f("foo", 1, 1, true);
     SimplePhraseBlueprint phrase(f, false);
     EXPECT_TRUE(f.isFilter());
-    EXPECT_TRUE(!phrase.getNextChildField(f).isFilter());
+    EXPECT_TRUE(!SimplePhraseBlueprint::next_child_field(f, layout).isFilter());
 }
 
 } // namespace

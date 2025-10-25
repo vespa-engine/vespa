@@ -98,7 +98,7 @@ AttributeLimiter::create_match_data(size_t want_hits, size_t max_group_size, dou
         SimpleRangeTerm node(range, _attribute_name, no_unique_id, Weight(0));
         FieldSpecList field; // single field API is protected
         field.add(FieldSpec(_attribute_name, my_field_id, my_handle));
-        _blueprint = _searchable_attributes.createBlueprint(_requestContext, field, node);
+        _blueprint = _searchable_attributes.createBlueprint(_requestContext, field, node, layout);
         uint32_t dummy_docid_limit = 1337;
         _blueprint->basic_plan(strictSearch, dummy_docid_limit);
         //TODO use_estimate must be switched to true quite soon

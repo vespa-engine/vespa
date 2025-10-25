@@ -144,11 +144,11 @@ Fixture::getIterator(Node &node, ISearchContext &context) {
     MatchDataLayout mdl;
     MatchDataReserveVisitor mdr_visitor(mdl);
     node.accept(mdr_visitor);
-    _match_data = mdl.createMatchData();
 
-    _blueprint = BlueprintBuilder::build(_requestContext, node, context);
+    _blueprint = BlueprintBuilder::build(_requestContext, node, context, mdl);
     _blueprint->basic_plan(true, 1000);
     _blueprint->fetchPostings(ExecuteInfo::FULL);
+    _match_data = mdl.createMatchData();
     SearchIterator::UP search(_blueprint->createSearch(*_match_data));
     search->initFullRange();
     return search;
@@ -293,7 +293,7 @@ TEST(QueryTest, requireThatTermsAreLookedUp)
     MatchDataReserveVisitor visitor(mdl);
     node->accept(visitor);
 
-    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, *node, context);
+    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, *node, context, mdl);
 
     LookupTestCheckerVisitor checker;
     node->accept(checker);
@@ -330,7 +330,7 @@ TEST(QueryTest, requireThatTermsAreLookedUpInMultipleFieldsFromAView)
     MatchDataReserveVisitor visitor(mdl);
     node->accept(visitor);
 
-    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, *node, context);
+    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, *node, context, mdl);
 
     LookupTestCheckerVisitor checker;
     node->accept(checker);
@@ -351,7 +351,7 @@ TEST(QueryTest, requireThatAttributeTermsAreLookedUpInAttributeSource)
     MatchDataReserveVisitor visitor(mdl);
     node.accept(visitor);
 
-    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, node, context);
+    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, node, context, mdl);
     EXPECT_TRUE(!blueprint->getState().estimate().empty);
     EXPECT_EQ(1u, blueprint->getState().estimate().estHits);
 }
@@ -369,7 +369,7 @@ TEST(QueryTest, requireThatAttributeTermDataHandlesAreAllocated)
     MatchDataReserveVisitor reserve_visitor(mdl);
     node.accept(reserve_visitor);
 
-    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, node, context);
+    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, node, context, mdl);
     MatchData::UP match_data = mdl.createMatchData();
     EXPECT_EQ(1u, match_data->getNumTermFields());
     EXPECT_TRUE(node.field(0).attribute_field);
@@ -432,7 +432,7 @@ TEST(QueryTest, requireThatTermDataIsFilledIn)
     MatchDataReserveVisitor reserve_visitor(mdl);
     node->accept(reserve_visitor);
 
-    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, *node, context);
+    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, *node, context, mdl);
 
     SetUpTermDataTestCheckerVisitor checker;
     node->accept(checker);
@@ -659,7 +659,7 @@ TEST(QueryTest, requireThatIllegalFieldsAreIgnored)
     MatchDataReserveVisitor reserve_visitor(mdl);
     node.accept(reserve_visitor);
 
-    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, node, context);
+    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, node, context, mdl);
     EXPECT_EQ(0u, node.numFields());
     MatchData::UP match_data = mdl.createMatchData();
     EXPECT_EQ(0u, match_data->getNumTermFields());
@@ -816,10 +816,10 @@ TEST(QueryTest, requireThatFakeFieldSearchDumpsDiffer)
     fields1.add(FieldSpec("field1", fieldId, handle));
     fields2.add(FieldSpec("field2", fieldId, handle));
 
-    Blueprint::UP l1(a.createBlueprint(requestContext, fields1, n1)); // reference
-    Blueprint::UP l2(a.createBlueprint(requestContext, fields1, n2)); // term
-    Blueprint::UP l3(a.createBlueprint(requestContext, fields2, n3)); // field
-    Blueprint::UP l4(b.createBlueprint(requestContext, fields1, n1)); // tag
+    Blueprint::UP l1(a.createBlueprint(requestContext, fields1, n1, mdl)); // reference
+    Blueprint::UP l2(a.createBlueprint(requestContext, fields1, n2, mdl)); // term
+    Blueprint::UP l3(a.createBlueprint(requestContext, fields2, n3, mdl)); // field
+    Blueprint::UP l4(b.createBlueprint(requestContext, fields1, n1, mdl)); // tag
 
     l1->basic_plan(true, 1000);
     l2->basic_plan(true, 1000);
@@ -853,7 +853,7 @@ TEST(QueryTest, requireThatNoDocsGiveZeroDocFrequency)
     MatchDataReserveVisitor reserve_visitor(mdl);
     node.accept(reserve_visitor);
 
-    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, node, context);
+    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, node, context, mdl);
 
     EXPECT_EQ(1u, node.numFields());
     EXPECT_EQ(0u, node.field(0).get_doc_freq().frequency);
@@ -882,7 +882,7 @@ TEST(QueryTest, requireThatWeakAndBlueprintsAreCreatedCorrectly)
     MatchDataReserveVisitor reserve_visitor(mdl);
     wand.accept(reserve_visitor);
 
-    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, wand, context);
+    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, wand, context, mdl);
     auto *wbp = dynamic_cast<WeakAndBlueprint*>(blueprint.get());
     ASSERT_TRUE(wbp != nullptr);
     ASSERT_EQ(2u, wbp->getWeights().size());
@@ -917,7 +917,7 @@ TEST(QueryTest, requireThatParallelWandBlueprintsAreCreatedCorrectly)
     MatchDataReserveVisitor reserve_visitor(mdl);
     wand.accept(reserve_visitor);
 
-    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, wand, context);
+    Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, wand, context, mdl);
     auto *wbp = dynamic_cast<ParallelWeakAndBlueprint*>(blueprint.get());
     ASSERT_TRUE(wbp != nullptr);
     EXPECT_EQ(9000, wbp->getScoreThreshold());
@@ -1090,11 +1090,12 @@ TEST(QueryTest, requireThatConstBoolBlueprintsAreCreatedCorrectly)
     context.addIdx(0).idx(0).getFake()
         .addResult(field, "foo", FakeResult().doc(1).doc(3));
 
-    Blueprint::UP t_blueprint = BlueprintBuilder::build(requestContext, true_node, context);
+    MatchDataLayout mdl;
+    Blueprint::UP t_blueprint = BlueprintBuilder::build(requestContext, true_node, context, mdl);
     auto *tbp = dynamic_cast<AlwaysTrueBlueprint*>(t_blueprint.get());
     EXPECT_TRUE(tbp != nullptr);
 
-    Blueprint::UP f_blueprint = BlueprintBuilder::build(requestContext, false_node, context);
+    Blueprint::UP f_blueprint = BlueprintBuilder::build(requestContext, false_node, context, mdl);
     auto *fbp = dynamic_cast<EmptyBlueprint*>(f_blueprint.get());
     EXPECT_TRUE(fbp != nullptr);
 }

@@ -95,13 +95,13 @@ testSearch(Searchable &source, const string &term, uint32_t doc_id)
     uint32_t fieldId = 0;
     MatchDataLayout mdl;
     TermFieldHandle handle = mdl.allocTermField(fieldId);
-    MatchData::UP match_data = mdl.createMatchData();
 
     SimpleStringTerm node(term, field_name, 0, search::query::Weight(0));
     Blueprint::UP result = source.createBlueprint(requestContext,
-            FieldSpecList().add(FieldSpec(field_name, 0, handle)), node);
+            FieldSpecList().add(FieldSpec(field_name, 0, handle)), node, mdl);
     result->basic_plan(true, 1000);
     result->fetchPostings(search::queryeval::ExecuteInfo::FULL);
+    MatchData::UP match_data = mdl.createMatchData();
     SearchIterator::UP search_iterator = result->createSearch(*match_data);
     search_iterator->initFullRange();
     ASSERT_TRUE(search_iterator.get());
