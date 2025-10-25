@@ -492,6 +492,7 @@ public class ClusterSearcherTestCase {
                                    clusterConfig.build(),
                                    documentDbConfig.build(),
                                    new SchemaInfo(List.of(schema.build()), List.of()),
+                                   qrSearchersConfig.build(),
                                    dispatchers,
                                    null,
                                    vipStatus,
