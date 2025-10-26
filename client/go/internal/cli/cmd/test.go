@@ -343,7 +343,16 @@ func compare(expected interface{}, actual interface{}, path string) (string, str
 	case float64:
 		v, ok := actual.(float64)
 		typeMatch = ok
-		valueMatch = ok && math.Abs(u-v) < 1e-9
+		if ok {
+			absDiff := math.Abs(u - v)
+			// Allow match if absolute difference is small
+			valueMatch = absDiff < 1e-9
+			// Or if relative difference is less than 4 ULP (4 * machine epsilon)
+			if !valueMatch && u != 0 {
+				ulpSlack := math.Abs(u) * 0x1p-50
+				valueMatch = absDiff <= ulpSlack
+			}
+		}
 	case string:
 		v, ok := actual.(string)
 		typeMatch = ok
