@@ -114,9 +114,14 @@ public class SearchHandler extends LoggingRequestHandler {
                          ComponentRegistry<Embedder> embedders,
                          ExecutionFactory executionFactory,
                          ZoneInfo zoneInfo) {
-        this(metric, threadpool.executor(), queryProfileRegistry, embedders, executionFactory,
+        this(metric,
+             threadpool.executor(),
+             queryProfileRegistry,
+             embedders,
+             executionFactory,
              config.numQueriesToTraceOnDebugAfterConstruction(),
-                config.hostResponseHeaderKey().isEmpty() ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()),
+             config.hostResponseHeaderKey().isEmpty() ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()),
+             config.warmup(),
              zoneInfo);
     }
 
@@ -127,6 +132,7 @@ public class SearchHandler extends LoggingRequestHandler {
                           ExecutionFactory executionFactory,
                           long numQueriesToTraceOnDebugAfterStartup,
                           Optional<String> hostResponseHeaderKey,
+                          boolean warmup,
                           ZoneInfo zoneInfo) {
         super(executor, metric, true);
 
@@ -142,7 +148,11 @@ public class SearchHandler extends LoggingRequestHandler {
         metric.set(SEARCH_CONNECTIONS, 0.0d, null);
         this.zoneInfo = zoneInfo;
 
-        warmup();
+        if (warmup) {
+            warmup();
+        } else {
+            log.log(Level.INFO, "SearchHandler not warmed up at startup as per configuration");
+        }
     }
 
     Metric metric() { return metric; }
