@@ -349,7 +349,7 @@ func compare(expected interface{}, actual interface{}, path string) (string, str
 			valueMatch = absDiff < 1e-9
 			// Or if relative difference is less than 4 ULP (4 * machine epsilon)
 			if !valueMatch && u != 0 {
-				ulpSlack := math.Abs(u) * 0x1p-50
+				ulpSlack := math.Abs(u) * 4 * 0x1p-23 // 4 * FLT_EPSILON
 				valueMatch = absDiff <= ulpSlack
 			}
 		}

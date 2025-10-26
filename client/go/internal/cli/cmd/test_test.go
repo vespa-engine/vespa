@@ -232,39 +232,39 @@ func TestCompareFloatingPointApproxEqual(t *testing.T) {
 		// Small absolute differences (< 1e-9)
 		{
 			name:     "tiny positive difference",
-			expected: 1.0,
-			actual:   1.00000000010000000827, // 1.0 + 1e-10
+			expected: 0.001,
+			actual:   0.00100000000010, // 0.001 + 1e-10
 			wantFail: false,
 		},
 		{
 			name:     "tiny negative difference",
-			expected: 1.0,
-			actual:   0.99999999989999999173, // 1.0 - 1e-10
+			expected: 0.001,
+			actual:   0.00099999999990, // 0.001 - 1e-10
 			wantFail: false,
 		},
 		{
 			name:     "at absolute threshold",
-			expected: 1.0,
-			actual:   1.00000000099000008191, // 1.0 + 9.9e-10
+			expected: 0.001,
+			actual:   0.00100000000099, // 0.001 + 9.9e-10
 			wantFail: false,
 		},
 		{
-			name:     "slightly above absolute threshold",
-			expected: 1.0,
-			actual:   1.00000000110000009101, // 1.0 + 1.1e-9
+			name:     "above absolute threshold",
+			expected: 0.001,
+			actual:   0.00100001, // 0.001 + 1e-8, above 1e-9 absolute threshold
 			wantFail: true,
 		},
 		// ULP-based relative differences
 		{
 			name:     "large numbers within ULP tolerance",
 			expected: 1e15,
-			actual:   1.000000000000000500000e+15, // diff 0.5, within 4 ULP tolerance (0x1p-50 = ~0.888)
+			actual:   1.0000000000004e+15, // diff 400000, within 4 ULP tolerance (4 * 0x1p-23 = 4 * FLT_EPSILON ≈ 476837)
 			wantFail: false,
 		},
 		{
 			name:     "large numbers outside ULP tolerance",
 			expected: 1e15,
-			actual:   1.000000000000001750000e+15, // diff 1.75, outside 4 ULP tolerance
+			actual:   1.0000006e+15, // diff 600000, outside 4 ULP tolerance (~476837)
 			wantFail: true,
 		},
 		// Negative numbers
@@ -336,7 +336,7 @@ func TestCompareFloatingPointApproxEqual(t *testing.T) {
 				"value": 1.23456789,
 			},
 			actual: map[string]interface{}{
-				"value": 1.23456790,
+				"value": 1.23457789, // diff 0.00001, well outside tolerance
 			},
 			wantFail: true,
 		},
