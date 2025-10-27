@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -204,17 +203,13 @@ public class XmlReadingTestCase {
 
     @Test
     void testInvalid2() {
-        Locale defaultLocale = Locale.getDefault();
         try {
-            Locale.setDefault(Locale.ENGLISH);
             new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/invalidxml2");
             fail("Should have failed");
         }
         catch (IllegalArgumentException e) {
+            e.printStackTrace();
             assertEquals("Could not parse 'unparseable.xml', error at line 2, column 21: Element type \"query-profile\" must be followed by either attribute specifications, \">\" or \"/>\".", Exceptions.toMessageString(e));
-        }
-        finally {
-            Locale.setDefault(defaultLocale);
         }
     }
 
