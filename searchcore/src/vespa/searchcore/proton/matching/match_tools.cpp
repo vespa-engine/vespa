@@ -212,12 +212,13 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.extractTerms(_queryEnv.terms());
         _query.extractLocations(_queryEnv.locations());
         trace.addEvent(5, "Build query execution plan");
-        _query.reserveHandles(_requestContext, searchContext, _mdl);
+        _query.reserve_handles(_mdl);
         {
             HandleRecorder recorder;
             _query.tag_needed_handles(recorder, _queryEnv.getIndexEnvironment());
             _needed_handles = std::move(recorder).steal_handles();
         }
+        _query.make_blueprint(_requestContext, searchContext, _mdl);
         trace.addEvent(5, "Optimize query execution plan");
         bool sort_by_cost = SortBlueprintsByCost::check(_queryEnv.getProperties(), rankSetup.sort_blueprints_by_cost());
         double hitRate = std::min(1.0, double(maxNumHits)/double(searchContext.getDocIdLimit()));
