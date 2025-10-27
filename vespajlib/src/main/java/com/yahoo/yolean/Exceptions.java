@@ -14,7 +14,7 @@ import java.util.function.Function;
 public class Exceptions {
 
     /**
-     * <p>Returns a user friendly error message string which includes information from all nested exceptions.</p>
+     * <p>Returns a user-friendly error message string which includes information from all nested exceptions.</p>
      *
      * <p>The form of this string is
      * <code>e.getMessage(): e.getCause().getMessage(): e.getCause().getCause().getMessage()...</code>
