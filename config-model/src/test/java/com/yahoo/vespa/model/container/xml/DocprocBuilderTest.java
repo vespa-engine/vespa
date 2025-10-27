@@ -65,10 +65,6 @@ public class DocprocBuilderTest extends DomBuilderTest {
                 "    <chain id='chein'>",
                 "      <documentprocessor id='docproc2'/>",
                 "    </chain>",
-                "    <threadpool>",
-                "      <threads>0.5</threads>",
-                "      <queue>1</queue>",
-                "    </threadpool>",
                 "  </document-processing>",
                 "</container>");
     }
@@ -140,11 +136,6 @@ public class DocprocBuilderTest extends DomBuilderTest {
         assertNotNull(intermediateClient);
         assertEquals("com.yahoo.container.jdisc.messagebus.MbusClientProvider", intermediateClient.classId());
         assertEquals("com.yahoo.container.jdisc.messagebus.MbusClientProvider", intermediateClient.bundle());
-
-        ComponentsConfig.Components threadpool = components.get("threadpool@docproc-handler");
-        assertNotNull(threadpool);
-        assertEquals("com.yahoo.container.handler.threadpool.ContainerThreadpoolImpl", threadpool.classId());
-        assertEquals("com.yahoo.container.handler.threadpool.ContainerThreadpoolImpl", threadpool.bundle());
     }
 
     @Test

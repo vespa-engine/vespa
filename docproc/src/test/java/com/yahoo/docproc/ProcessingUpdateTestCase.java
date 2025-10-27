@@ -51,7 +51,7 @@ public class ProcessingUpdateTestCase {
         update = new DocumentUpdate(articleType, new DocumentId("id:grape:article::2"));
         update.addFieldUpdate(upd);
 
-        DocprocService service = new DocprocService("update", new SimpleContainerThreadPool());
+        DocprocService service = new DocprocService("update");
         DocumentProcessor firstP = new TitleDocumentProcessor();
         service.setCallStack(new CallStack().addLast(firstP));
         service.setInService(true);

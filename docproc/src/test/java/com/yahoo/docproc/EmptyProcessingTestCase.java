@@ -11,7 +11,7 @@ public class EmptyProcessingTestCase {
 
     @Test
     public void emptyProcessing() {
-        DocprocService service = new DocprocService("juba", new SimpleContainerThreadPool());
+        DocprocService service = new DocprocService("juba");
         DocumentProcessor processor = new IncrementingDocumentProcessor();
         CallStack stack = new CallStack("juba");
         stack.addLast(processor);
