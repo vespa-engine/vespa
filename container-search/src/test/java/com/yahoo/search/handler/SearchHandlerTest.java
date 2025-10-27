@@ -72,7 +72,7 @@ public class SearchHandlerTest {
     }
 
     @Test
-    synchronized void testWorkingReconfiguration() throws Exception {
+    synchronized void testWorkingReconfiguration() {
         try (var tester = new SearchHandlerTester()) {
             tester.assertJsonResult("http://localhost?query=abc");
 
