@@ -155,6 +155,16 @@ TermFieldMatchData::appendPositionToAllocatedVector(const TermFieldMatchDataPosi
 }
 
 void
+TermFieldMatchData::finish_filter_elements()
+{
+    if (_sz == 0) {
+        resetOnlyDocId(invalidId());
+    } else if (needs_interleaved_features()) {
+        setNumOccs(_sz);
+    }
+}
+
+void
 TermFieldMatchData::filter_elements(uint32_t docid, std::span<const uint32_t> element_ids)
 {
     if (docid < getDocId()) {
@@ -173,9 +183,7 @@ TermFieldMatchData::filter_elements(uint32_t docid, std::span<const uint32_t> el
             ++el_itr;
             if (el_itr == element_ids.end()) {
                 _sz = wpos - begin();
-                if (_sz == 0) {
-                    resetOnlyDocId(invalidId());
-                }
+                finish_filter_elements();
                 return;
             }
         }
@@ -187,9 +195,7 @@ TermFieldMatchData::filter_elements(uint32_t docid, std::span<const uint32_t> el
         }
     }
     _sz = wpos - begin();
-    if (_sz == 0) {
-        resetOnlyDocId(invalidId());
-    }
+    finish_filter_elements();
 }
 
 }
