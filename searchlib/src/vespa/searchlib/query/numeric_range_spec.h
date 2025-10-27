@@ -32,7 +32,7 @@ struct NumericRangeSpec {
     bool has_upper_limit() const noexcept { return fp_upper_limit < std::numeric_limits<double>::infinity(); }
     bool has_range_limit() const noexcept { return rangeLimit != 0; }
 
-    bool with_diversity() const noexcept { return ! diversityAttribute.empty(); }
+    bool with_diversity() const noexcept { return (maxPerGroup != 0) || ! diversityAttribute.empty(); }
     bool with_diversity_cutoff() const noexcept {
         return diversityCutoffGroups != std::numeric_limits<uint32_t>::max();
     }

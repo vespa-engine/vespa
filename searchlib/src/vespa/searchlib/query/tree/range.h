@@ -1,7 +1,7 @@
-// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 #pragma once
 
+#include <vespa/searchlib/query/numeric_range_spec.h>
+#include <memory>
 #include <string>
 
 namespace vespalib { class asciistream; }
@@ -9,19 +9,24 @@ namespace vespalib { class asciistream; }
 namespace search::query {
 
 class Range {
-    std::string _range;
+    std::unique_ptr<NumericRangeSpec> _spec;
 
 public:
-    Range() noexcept : _range() {}
+    Range() noexcept : _spec() {}
     Range(int64_t f, int64_t t);
-    Range(std::string range) noexcept : _range(std::move(range)) {}
+    Range(std::string range);
+    Range(std::unique_ptr<NumericRangeSpec> spec) noexcept : _spec(std::move(spec)) {}
+    Range(const Range& other);
+    Range(Range&& other) noexcept = default;
+    Range& operator=(const Range& other);
+    Range& operator=(Range&& other) noexcept = default;
+    ~Range();
 
-    const std::string & getRangeString() const { return _range; }
+    const NumericRangeSpec* getSpec() const { return _spec.get(); }
+    std::string getRangeString() const;
 };
 
-inline bool operator==(const Range &r1, const Range &r2) {
-    return r1.getRangeString() == r2.getRangeString();
-}
+bool operator==(const Range &r1, const Range &r2);
 
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Range &range);
 

@@ -765,7 +765,7 @@ TEST(QueryBuilderTest, require_that_Query_Tree_Creator_Can_Create_Queries_From_S
 
 TEST(QueryBuilderTest, require_that_All_Range_Syntaxes_Work) {
 
-    Range range0("[2,42.1]");
+    Range range0("[2;42.1]");
     Range range1(">10");
     Range range2("<45.23");
 
