@@ -18,8 +18,6 @@ import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.Executors;
 
@@ -37,13 +35,15 @@ public class SearchHandlerTest {
     @Test
     void testNullQuery() {
         try (var tester = new SearchHandlerTester()) {
-            assertEquals("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                         "<result total-hit-count=\"0\">\n" +
-                         "  <hit relevancy=\"1.0\">\n" +
-                         "    <field name=\"relevancy\">1.0</field>\n" +
-                         "    <field name=\"uri\">testHit</field>\n" +
-                         "  </hit>\n" +
-                         "</result>\n",
+            assertEquals("""
+                                 <?xml version="1.0" encoding="utf-8" ?>
+                                 <result total-hit-count="0">
+                                   <hit relevancy="1.0">
+                                     <field name="relevancy">1.0</field>
+                                     <field name="uri">testHit</field>
+                                   </hit>
+                                 </result>
+                                 """,
                          tester.sendRequest("http://localhost?format=xml").readAll()
             );
         }
@@ -284,14 +284,6 @@ public class SearchHandlerTest {
             throw new NoClassDefFoundError(); // Simulate typical OSGi problem
         }
 
-        private static File newFolder(File root, String... subDirs) throws IOException {
-            String subFolder = String.join("/", subDirs);
-            File result = new File(root, subFolder);
-            if (!result.mkdirs()) {
-                throw new IOException("Couldn't create folders " + root);
-            }
-            return result;
-        }
     }
 
     /** Referenced from config */
@@ -308,14 +300,6 @@ public class SearchHandlerTest {
             return result;
         }
 
-        private static File newFolder(File root, String... subDirs) throws IOException {
-            String subFolder = String.join("/", subDirs);
-            File result = new File(root, subFolder);
-            if (!result.mkdirs()) {
-                throw new IOException("Couldn't create folders " + root);
-            }
-            return result;
-        }
     }
 
     /** Referenced from config */
@@ -328,14 +312,6 @@ public class SearchHandlerTest {
             return result;
         }
 
-        private static File newFolder(File root, String... subDirs) throws IOException {
-            String subFolder = String.join("/", subDirs);
-            File result = new File(root, subFolder);
-            if (!result.mkdirs()) {
-                throw new IOException("Couldn't create folders " + root);
-            }
-            return result;
-        }
     }
 
     /** Referenced from config */
@@ -350,14 +326,6 @@ public class SearchHandlerTest {
             return result;
         }
 
-        private static File newFolder(File root, String... subDirs) throws IOException {
-            String subFolder = String.join("/", subDirs);
-            File result = new File(root, subFolder);
-            if (!result.mkdirs()) {
-                throw new IOException("Couldn't create folders " + root);
-            }
-            return result;
-        }
     }
 
     /** Referenced from config */
@@ -380,15 +348,6 @@ public class SearchHandlerTest {
             catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        }
-
-        private static File newFolder(File root, String... subDirs) throws IOException {
-            String subFolder = String.join("/", subDirs);
-            File result = new File(root, subFolder);
-            if (!result.mkdirs()) {
-                throw new IOException("Couldn't create folders " + root);
-            }
-            return result;
         }
 
     }
@@ -415,15 +374,6 @@ public class SearchHandlerTest {
             }
         }
 
-        private static File newFolder(File root, String... subDirs) throws IOException {
-            String subFolder = String.join("/", subDirs);
-            File result = new File(root, subFolder);
-            if (!result.mkdirs()) {
-                throw new IOException("Couldn't create folders " + root);
-            }
-            return result;
-        }
-
     }
 
     /** Referenced from config */
@@ -436,15 +386,6 @@ public class SearchHandlerTest {
         @Override
         public HttpResponse handle(HttpRequest httpRequest) {
             return null;
-        }
-
-        private static File newFolder(File root, String... subDirs) throws IOException {
-            String subFolder = String.join("/", subDirs);
-            File result = new File(root, subFolder);
-            if (!result.mkdirs()) {
-                throw new IOException("Couldn't create folders " + root);
-            }
-            return result;
         }
 
     }
@@ -461,15 +402,6 @@ public class SearchHandlerTest {
             return null;
         }
 
-        private static File newFolder(File root, String... subDirs) throws IOException {
-            String subFolder = String.join("/", subDirs);
-            File result = new File(root, subFolder);
-            if (!result.mkdirs()) {
-                throw new IOException("Couldn't create folders " + root);
-            }
-            return result;
-        }
-
     }
 
     /** Referenced from config */
@@ -484,15 +416,6 @@ public class SearchHandlerTest {
             throw new RuntimeException();
         }
 
-        private static File newFolder(File root, String... subDirs) throws IOException {
-            String subFolder = String.join("/", subDirs);
-            File result = new File(root, subFolder);
-            if (!result.mkdirs()) {
-                throw new IOException("Couldn't create folders " + root);
-            }
-            return result;
-        }
-
     }
 
     /** Referenced from config */
@@ -505,15 +428,6 @@ public class SearchHandlerTest {
         @Override
         public HttpResponse handle(HttpRequest httpRequest) {
             throw new RuntimeException();
-        }
-
-        private static File newFolder(File root, String... subDirs) throws IOException {
-            String subFolder = String.join("/", subDirs);
-            File result = new File(root, subFolder);
-            if (!result.mkdirs()) {
-                throw new IOException("Couldn't create folders " + root);
-            }
-            return result;
         }
 
     }
@@ -541,24 +455,6 @@ public class SearchHandlerTest {
 
         public Result build() { return result; }
 
-        private static File newFolder(File root, String... subDirs) throws IOException {
-            String subFolder = String.join("/", subDirs);
-            File result = new File(root, subFolder);
-            if (!result.mkdirs()) {
-                throw new IOException("Couldn't create folders " + root);
-            }
-            return result;
-        }
-
-    }
-
-    private static File newFolder(File root, String... subDirs) throws IOException {
-        String subFolder = String.join("/", subDirs);
-        File result = new File(root, subFolder);
-        if (!result.mkdirs()) {
-            throw new IOException("Couldn't create folders " + root);
-        }
-        return result;
     }
 
 }
