@@ -680,7 +680,8 @@ TEST(QueryTest, requireThatQueryGluesEverythingTogether)
     FakeSearchContext context;
     context.setLimit(42);
     MatchDataLayout mdl;
-    query.reserveHandles(requestContext, context, mdl);
+    query.reserve_handles(mdl);
+    query.make_blueprint(requestContext, context, mdl);
     MatchData::UP md = mdl.createMatchData();
     EXPECT_EQ(1u, md->getNumTermFields());
 
@@ -712,7 +713,8 @@ checkQueryAddsLocation(const string &loc_in, const string &loc_out) {
     FakeSearchContext context;
     context.addIdx(0).setLimit(42);
     MatchDataLayout mdl;
-    query.reserveHandles(requestContext, context, mdl);
+    query.reserve_handles(mdl);
+    query.make_blueprint(requestContext, context, mdl);
     MatchData::UP md = mdl.createMatchData();
     EXPECT_EQ(2u, md->getNumTermFields());
 
@@ -743,7 +745,8 @@ void verifyThatRankBlueprintAndAndNotStaysOnTopAfterLocation(QueryBuilder<Proton
 
     FakeRequestContext requestContext;
     MatchDataLayout mdl;
-    query.reserveHandles(requestContext, context, mdl);
+    query.reserve_handles(mdl);
+    query.make_blueprint(requestContext, context, mdl);
     const IntermediateBlueprint * root = dynamic_cast<const T1 *>(query.peekRoot());
     ASSERT_TRUE(root != nullptr);
     EXPECT_EQ(2u, root->childCnt());
@@ -942,7 +945,8 @@ TEST(QueryTest, requireThatWhiteListBlueprintCanBeUsed)
 
     FakeRequestContext requestContext;
     MatchDataLayout mdl;
-    query.reserveHandles(requestContext, context, mdl);
+    query.reserve_handles(mdl);
+    query.make_blueprint(requestContext, context, mdl);
     MatchData::UP md = mdl.createMatchData();
 
     query.optimize(true, true);
@@ -971,7 +975,8 @@ void verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing(QueryBuilder<Pr
 
     FakeRequestContext requestContext;
     MatchDataLayout mdl;
-    query.reserveHandles(requestContext, context, mdl);
+    query.reserve_handles(mdl);
+    query.make_blueprint(requestContext, context, mdl);
     const IntermediateBlueprint * root = dynamic_cast<const T1 *>(query.peekRoot());
     ASSERT_TRUE(root != nullptr);
     EXPECT_EQ(2u, root->childCnt());
