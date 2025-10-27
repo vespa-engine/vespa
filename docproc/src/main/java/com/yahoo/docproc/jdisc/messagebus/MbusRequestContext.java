@@ -23,6 +23,7 @@ import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.jdisc.MbusRequest;
 import com.yahoo.messagebus.jdisc.MbusResponse;
+import com.yahoo.yolean.Exceptions;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -113,20 +114,9 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
 
     @Override
     public void processingFailed(Exception exception) {
-        ErrorCode errorCode;
-        if (exception instanceof TransientFailureException) {
-            errorCode = ErrorCode.ERROR_ABORTED;
-        } else {
-            errorCode = ErrorCode.ERROR_PROCESSING_FAILURE;
-        }
-        StringBuilder errorMsg = new StringBuilder("Processing failed.");
-        if (exception instanceof HandledProcessingException) {
-            errorMsg.append(" Error message: ").append(exception.getMessage());
-        } else if (exception != null) {
-            errorMsg.append(" Error message: ").append(exception);
-        }
-        errorMsg.append(" -- See Vespa log for details.");
-        processingFailed(errorCode, errorMsg.toString());
+        var errorCode = exception instanceof TransientFailureException ? ErrorCode.ERROR_ABORTED : ErrorCode.ERROR_PROCESSING_FAILURE;
+        processingFailed(errorCode, "Processing failed. Error message: " +
+                                    Exceptions.toMessageString(exception) + " -- See Vespa log for details.");
     }
 
     @Override

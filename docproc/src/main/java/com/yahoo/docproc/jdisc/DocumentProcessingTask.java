@@ -94,11 +94,11 @@ public class DocumentProcessingTask implements Runnable {
             iterator.remove();
             if (requestContext.hasExpired()) {
                 DocumentProcessor.Progress progress = DocumentProcessor.Progress.FAILED;
-                final String location;
+                String location;
                 if (processing != null) {
                     final CallStack callStack = processing.callStack();
                     if (callStack != null) {
-                        final Call lastPopped = callStack.getLastPopped();
+                        Call lastPopped = callStack.getLastPopped();
                         if (lastPopped != null) {
                             location = lastPopped.toString();
                         } else {
@@ -131,17 +131,17 @@ public class DocumentProcessingTask implements Runnable {
             } else if (DocumentProcessor.Progress.FAILED.equals(progress)) {
                 logProcessingFailure(processing, null);
                 requestContext.processingFailed(RequestContext.ErrorCode.ERROR_PROCESSING_FAILURE,
-                        progress.getReason().orElse("Document processing failed."));
+                                                progress.getReason().orElse("Document processing failed."));
                 return progress;
             } else if (DocumentProcessor.Progress.INVALID_INPUT.equals(progress)) {
                 log.log(Level.FINE,
                         () -> "Invalid input for '" + processing + "' at " + processing.callStack().getLastPopped());
                 requestContext.processingFailed(RequestContext.ErrorCode.ERROR_INVALID_INPUT,
-                        progress.getReason().orElse("Document processing failed due to invalid input."));
+                                                progress.getReason().orElse("Document processing failed due to invalid input."));
             } else if (DocumentProcessor.Progress.PERMANENT_FAILURE.equals(progress)) {
                 logProcessingFailure(processing, null);
                 requestContext.processingFailed(RequestContext.ErrorCode.ERROR_PROCESSING_FAILURE,
-                        progress.getReason().orElse("Document processing failed."));
+                                                progress.getReason().orElse("Document processing failed."));
                 return progress;
             }
         }
@@ -188,7 +188,7 @@ public class DocumentProcessingTask implements Runnable {
     }
 
     private static void logProcessingFailure(Processing processing, Exception exception) {
-        //LOGGING ONLY:
+        // LOGGING ONLY:
         String errorMsg = processing + " failed at " + processing.callStack().getLastPopped();
         if (exception != null) {
             if (exception instanceof HandledProcessingException) {
@@ -201,7 +201,7 @@ public class DocumentProcessingTask implements Runnable {
         } else {
             log.log(Level.WARNING, errorMsg);
         }
-        //LOGGING OF STACK TRACE:
+        // LOGGING OF STACK TRACE:
         if (exception != null) {
             StringWriter backtrace = new StringWriter();
             exception.printStackTrace(new PrintWriter(backtrace));
