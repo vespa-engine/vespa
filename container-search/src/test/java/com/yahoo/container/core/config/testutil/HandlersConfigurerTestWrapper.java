@@ -62,7 +62,6 @@ public class HandlersConfigurerTestWrapper {
             "container-mbus.cfg",
             "specialtokens.cfg",
             "documentdb-info.cfg",
-            "qr-search.cfg",
             "query-profiles.cfg"
     };
     private final Set<File> createdFiles = new LinkedHashSet<>();
