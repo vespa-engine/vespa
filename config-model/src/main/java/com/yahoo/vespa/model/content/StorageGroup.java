@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
+import com.yahoo.vespa.model.builder.xml.dom.DomStorageNodeBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -391,12 +392,13 @@ public class StorageGroup {
         private record XmlNodeBuilder(ModelElement clusterElement, ModelElement element) {
 
             public StorageNode build(DeployState deployState, ContentCluster parent, StorageGroup storageGroup) {
-                        StorageNode sNode = new StorageNode.Builder().build(deployState, parent.getStorageCluster(), element.getXml());
-                        PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, storageGroup, element);
-                        new Distributor.Builder(clusterElement, provider).build(deployState, parent.getDistributorNodes(), element.getXml());
-                        return sNode;
-                    }
-                }
+                StorageNode sNode = new DomStorageNodeBuilder().build(deployState, parent.getStorageCluster(), element.getXml());
+                PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, storageGroup, element);
+                new Distributor.Builder(clusterElement, provider).build(deployState, parent.getDistributorNodes(), element.getXml());
+                return sNode;
+            }
+
+        }
 
         /**
          * Creates a content group builder from a group and/or nodes element.
