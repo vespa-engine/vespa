@@ -834,6 +834,24 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testNearestNeighborWithHnswTuningParameters() {
+        assertParse("select foo from bar where {targetHits: 10, hnsw.approximateThreshold: 0.05} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.approximateThreshold=0.05}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.explorationSlack: 0.1} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.explorationSlack=0.1}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.filterFirstExploration: 0.3} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.filterFirstExploration=0.3}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.filterFirstThreshold: 0.2} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.filterFirstThreshold=0.2}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.postFilterThreshold: 0.8} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.postFilterThreshold=0.8}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.targetHitsMaxAdjustmentFactor: 20.0} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.targetHitsMaxAdjustmentFactor=20.0}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.filterFirstThreshold: 0.1, hnsw.filterFirstExploration: 0.25, hnsw.postFilterThreshold: 0.9} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.filterFirstExploration=0.25,hnsw.filterFirstThreshold=0.1,hnsw.postFilterThreshold=0.9}");
+    }
+
+    @Test
     void testTrueAndFalse() {
         assertParse("select foo from bar where true", "TRUE");
         assertParse("select foo from bar where false", "FALSE");

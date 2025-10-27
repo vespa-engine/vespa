@@ -177,7 +177,13 @@ public class YqlParser implements Parser {
     public static final String GEO_BOUNDING_BOX = "geoBoundingBox";
     public static final String GEO_LOCATION = "geoLocation";
     public static final String HIT_LIMIT = "hitLimit";
-    public static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits";
+    public static final String HNSW_APPROXIMATE_THRESHOLD = "hnsw.approximateThreshold"; // default 0.05
+    public static final String HNSW_EXPLORATION_SLACK = "hnsw.explorationSlack"; // 'adaptive beam', default 0.0 (aka off)
+    public static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits"; // 'ef' in HNSW
+    public static final String HNSW_FILTER_FIRST_EXPLORATION = "hnsw.filterFirstExploration"; // acorn-1 aggression, default 0.3
+    public static final String HNSW_FILTER_FIRST_THRESHOLD = "hnsw.filterFirstThreshold"; // 'acorn-1', default 0.0 (aka off)
+    public static final String HNSW_POST_FILTER_THRESHOLD = "hnsw.postFilterThreshold"; // default 1.0 (aka off)
+    public static final String HNSW_TARGET_HITS_MAX_ADJUSTMENT_FACTOR = "hnsw.targetHitsMaxAdjustmentFactor"; // for post-filter, default 20
     public static final String IMPLICIT_TRANSFORMS = "implicitTransforms";
     public static final String LABEL = "label";
     public static final String NEAR = "near";
@@ -575,6 +581,32 @@ public class YqlParser implements Parser {
         Boolean allowApproximate = getAnnotation(ast, APPROXIMATE,
                                                  Boolean.class, Boolean.TRUE, "allow approximate nearest neighbor search");
         item.setAllowApproximate(allowApproximate);
+
+        Double hnswApproximateThreshold = getAnnotation(ast, HNSW_APPROXIMATE_THRESHOLD, Double.class, null, "force brute-force NN when filter keeps less than threshold");
+        if (hnswApproximateThreshold != null) {
+            item.setHnswApproximateThreshold(hnswApproximateThreshold);
+        }
+        Double hnswExplorationSlack = getAnnotation(ast, HNSW_EXPLORATION_SLACK, Double.class, null, "slack for adaptive beam search");
+        if (hnswExplorationSlack != null) {
+            item.setHnswExplorationSlack(hnswExplorationSlack);
+        }
+        Double hnswFilterFirstExploration = getAnnotation(ast, HNSW_FILTER_FIRST_EXPLORATION, Double.class, null, "tune how aggressively the filter-first heuristic explores the graph");
+        if (hnswFilterFirstExploration != null) {
+            item.setHnswFilterFirstExploration(hnswFilterFirstExploration);
+        }
+        Double hnswFilterFirstThreshold = getAnnotation(ast, HNSW_FILTER_FIRST_THRESHOLD, Double.class, null, "enable filter-first heuristic when filter keeps less than threshold");
+        if (hnswFilterFirstThreshold != null) {
+            item.setHnswFilterFirstThreshold(hnswFilterFirstThreshold);
+        }
+        Double hnswPostFilterThreshold = getAnnotation(ast, HNSW_POST_FILTER_THRESHOLD, Double.class, null, "enable post-filter when filter keeps more than threshold");
+        if (hnswPostFilterThreshold != null) {
+            item.setHnswPostFilterThreshold(hnswPostFilterThreshold);
+        }
+        Double hnswTargetHitsMaxAdjustmentFactor = getAnnotation(ast, HNSW_TARGET_HITS_MAX_ADJUSTMENT_FACTOR, Double.class, null, "max expansion for post-filter strategy");
+        if (hnswTargetHitsMaxAdjustmentFactor != null) {
+            item.setHnswTargetHitsMaxAdjustmentFactor(hnswTargetHitsMaxAdjustmentFactor);
+        }
+
         String label = getAnnotation(ast, LABEL, String.class, null, "item label");
         if (label != null) {
             item.setLabel(label);
