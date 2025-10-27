@@ -36,10 +36,10 @@ public class SearchHandlerTester implements AutoCloseable {
     @TempDir
     public File tempfolder;
 
-    public RequestHandlerTestDriver      driver     = null;
-    public HandlersConfigurerTestWrapper configurer = null;
-    private MockMetric                   metric;
-    public SearchHandler                 searchHandler;
+    public RequestHandlerTestDriver       driver     = null;
+    private HandlersConfigurerTestWrapper configurer = null;
+    private MockMetric                    metric;
+    public SearchHandler                  searchHandler;
 
     public SearchHandlerTester() {
         this(null);
@@ -77,7 +77,18 @@ public class SearchHandlerTester implements AutoCloseable {
         return driver.sendRequest(url);
     }
 
-    public void copyDirectory(String dir) {
+    public void reconfigure(String configFileOverrides) {
+        try {
+            copyDirectory(configFileOverrides);
+            generateComponentsConfigForActive();
+            configurer.reloadConfig();
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void copyDirectory(String dir) {
         try {
             IOUtils.copyDirectory(new File(testDir, dir), new File(tempDir), 1);
         }
@@ -86,7 +97,7 @@ public class SearchHandlerTester implements AutoCloseable {
         }
     }
 
-    public void generateComponentsConfigForActive() throws IOException {
+    private void generateComponentsConfigForActive() throws IOException {
         File activeConfig = new File(tempDir);
         SearchChainConfigurerTestCase.
                 createComponentsConfig(new File(activeConfig, "chains.cfg").getPath(),

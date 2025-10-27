@@ -76,12 +76,7 @@ public class SearchHandlerTest {
         try (var tester = new SearchHandlerTester()) {
             tester.assertJsonResult("http://localhost?query=abc");
 
-            // reconfiguration
-            tester.copyDirectory("handlers2");
-            tester.generateComponentsConfigForActive();
-            tester.configurer.reloadConfig();
-
-            // ...and check the resulting config
+            tester.reconfigure("handlers2");
             SearchHandler newSearchHandler = tester.fetchSearchHandler();
             assertNotSame(tester.searchHandler, newSearchHandler, "Have a new instance of the search handler");
             assertNotNull(tester.fetchSearchHandler().getSearchChainRegistry().getChain("hello"), "Have the new search chain");
