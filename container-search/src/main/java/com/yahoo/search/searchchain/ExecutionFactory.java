@@ -2,14 +2,12 @@
 package com.yahoo.search.searchchain;
 
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.chain.ChainsConfigurer;
 import com.yahoo.component.chain.model.ChainsModel;
 import com.yahoo.component.chain.model.ChainsModelBuilder;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
@@ -27,7 +25,6 @@ import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -50,7 +47,6 @@ public class ExecutionFactory extends AbstractComponent {
     private final Executor executor;
 
     // TODO: Fix tests depending on HandlersConfigurerTestWrapper so that this constructor can be removed
-    @Beta
     @Inject
     public ExecutionFactory(ChainsConfig chainsConfig,
                             IndexInfoConfig indexInfo,

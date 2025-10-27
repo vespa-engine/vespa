@@ -146,7 +146,6 @@ public class SearchChainConfigurerTestCase {
     void testSearcherConfigUpdate() throws IOException {
         File cfgDir = getCfgDir();
         copyFile(testDir + "handlers.cfg", cfgDir +  "/handlers.cfg");
-        copyFile(testDir + "qr-search.cfg", cfgDir +  "/qr-search.cfg");
         copyFile(testDir + "qr-searchers.cfg", cfgDir +  "/qr-searchers.cfg");
         copyFile(testDir + "index-info.cfg", cfgDir +  "/index-info.cfg");
         copyFile(testDir + "schema-info.cfg", cfgDir +  "/schema-info.cfg");
@@ -200,7 +199,6 @@ public class SearchChainConfigurerTestCase {
     void testChainsConfigUpdate() throws IOException {
         File cfgDir = getCfgDir();
         copyFile(testDir + "handlers.cfg", cfgDir +  "/handlers.cfg");
-        copyFile(testDir + "qr-search.cfg", cfgDir +  "/qr-search.cfg");
         copyFile(testDir + "qr-searchers.cfg", cfgDir +  "/qr-searchers.cfg");
         copyFile(testDir + "index-info.cfg", cfgDir +  "/index-info.cfg");
         copyFile(testDir + "schema-info.cfg", cfgDir +  "/schema-info.cfg");
