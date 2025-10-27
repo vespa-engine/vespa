@@ -3,7 +3,6 @@ package com.yahoo.docproc.impl;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
-import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.docproc.CallStack;
 import com.yahoo.docproc.DocumentProcessor;
@@ -16,8 +15,6 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -78,11 +75,6 @@ public class DocprocService extends AbstractComponent {
      */
     public DocprocService(String name, ContainerThreadPool threadpool) {
         this(new ComponentId(name, null), threadpool);
-    }
-
-    @Override
-    public void deconstruct() {
-        threadPool.close();
     }
 
     public DocumentTypeManager getDocumentTypeManager() {
