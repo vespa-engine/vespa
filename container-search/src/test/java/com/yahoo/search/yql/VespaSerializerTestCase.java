@@ -165,6 +165,17 @@ public class VespaSerializerTestCase {
     }
 
     @Test
+    void testNearestNeighborWithHnswTuningParameters() {
+        parseAndConfirm("{targetNumHits: 10, hnsw.approximateThreshold: 0.05}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetNumHits: 10, hnsw.explorationSlack: 0.1}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetNumHits: 10, hnsw.filterFirstExploration: 0.3}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetNumHits: 10, hnsw.filterFirstThreshold: 0.2}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetNumHits: 10, hnsw.postFilterThreshold: 0.8}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetNumHits: 10, hnsw.targetHitsMaxAdjustmentFactor: 20.0}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetNumHits: 10, hnsw.filterFirstExploration: 0.25, hnsw.filterFirstThreshold: 0.1, hnsw.postFilterThreshold: 0.9}nearestNeighbor(semantic_embedding, my_property)");
+    }
+
+    @Test
     void testTrueAndFalse() {
         parseAndConfirm("true");
         parseAndConfirm("false");

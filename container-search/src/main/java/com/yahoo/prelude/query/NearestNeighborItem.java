@@ -26,6 +26,12 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     private boolean approximate = true;
     private String field;
     private final String queryTensorName;
+    private Double hnswApproximateThreshold = null;
+    private Double hnswExplorationSlack = null;
+    private Double hnswFilterFirstExploration = null;
+    private Double hnswFilterFirstThreshold = null;
+    private Double hnswPostFilterThreshold = null;
+    private Double hnswTargetHitsMaxAdjustmentFactor = null;
 
     public NearestNeighborItem(String fieldName, String queryTensorName) {
         this.field = fieldName;
@@ -50,6 +56,24 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     /** Returns the name of the query tensor */
     public String getQueryTensorName() { return queryTensorName; }
 
+    /** Returns the approximate threshold for HNSW */
+    public Double getHnswApproximateThreshold() { return hnswApproximateThreshold; }
+
+    /** Returns the exploration slack for HNSW */
+    public Double getHnswExplorationSlack() { return hnswExplorationSlack; }
+
+    /** Returns the filter-first exploration parameter for HNSW */
+    public Double getHnswFilterFirstExploration() { return hnswFilterFirstExploration; }
+
+    /** Returns the filter-first threshold for HNSW */
+    public Double getHnswFilterFirstThreshold() { return hnswFilterFirstThreshold; }
+
+    /** Returns the post-filter threshold for HNSW */
+    public Double getHnswPostFilterThreshold() { return hnswPostFilterThreshold; }
+
+    /** Returns the target hits max adjustment factor for HNSW */
+    public Double getHnswTargetHitsMaxAdjustmentFactor() { return hnswTargetHitsMaxAdjustmentFactor; }
+
     /** Set the K number of hits to produce */
     public void setTargetNumHits(int target) { this.targetNumHits = target; }
 
@@ -61,6 +85,24 @@ public class NearestNeighborItem extends SimpleTaggableItem {
 
     /** Set whether approximation is allowed */
     public void setAllowApproximate(boolean value) { this.approximate = value; }
+
+    /** Set the approximate threshold for HNSW */
+    public void setHnswApproximateThreshold(Double value) { this.hnswApproximateThreshold = value; }
+
+    /** Set the exploration slack for HNSW */
+    public void setHnswExplorationSlack(Double value) { this.hnswExplorationSlack = value; }
+
+    /** Set the filter-first exploration parameter for HNSW */
+    public void setHnswFilterFirstExploration(Double value) { this.hnswFilterFirstExploration = value; }
+
+    /** Set the filter-first threshold for HNSW */
+    public void setHnswFilterFirstThreshold(Double value) { this.hnswFilterFirstThreshold = value; }
+
+    /** Set the post-filter threshold for HNSW */
+    public void setHnswPostFilterThreshold(Double value) { this.hnswPostFilterThreshold = value; }
+
+    /** Set the target hits max adjustment factor for HNSW */
+    public void setHnswTargetHitsMaxAdjustmentFactor(Double value) { this.hnswTargetHitsMaxAdjustmentFactor = value; }
 
     @Override
     public void setIndexName(String index) { this.field = index; }
@@ -94,7 +136,20 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         buffer.append(",hnsw.exploreAdditionalHits=").append(hnswExploreAdditionalHits);
         buffer.append(",distanceThreshold=").append(distanceThreshold);
         buffer.append(",approximate=").append(approximate);
-        buffer.append(",targetHits=").append(targetNumHits).append("}");
+        buffer.append(",targetHits=").append(targetNumHits);
+        if (hnswApproximateThreshold != null)
+            buffer.append(",hnsw.approximateThreshold=").append(hnswApproximateThreshold);
+        if (hnswExplorationSlack != null)
+            buffer.append(",hnsw.explorationSlack=").append(hnswExplorationSlack);
+        if (hnswFilterFirstExploration != null)
+            buffer.append(",hnsw.filterFirstExploration=").append(hnswFilterFirstExploration);
+        if (hnswFilterFirstThreshold != null)
+            buffer.append(",hnsw.filterFirstThreshold=").append(hnswFilterFirstThreshold);
+        if (hnswPostFilterThreshold != null)
+            buffer.append(",hnsw.postFilterThreshold=").append(hnswPostFilterThreshold);
+        if (hnswTargetHitsMaxAdjustmentFactor != null)
+            buffer.append(",hnsw.targetHitsMaxAdjustmentFactor=").append(hnswTargetHitsMaxAdjustmentFactor);
+        buffer.append("}");
     }
 
     @Override
@@ -106,6 +161,18 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         discloser.addProperty("distanceThreshold", distanceThreshold);
         discloser.addProperty("approximate", approximate);
         discloser.addProperty("targetHits", targetNumHits);
+        if (hnswApproximateThreshold != null)
+            discloser.addProperty("hnsw.approximateThreshold", hnswApproximateThreshold);
+        if (hnswExplorationSlack != null)
+            discloser.addProperty("hnsw.explorationSlack", hnswExplorationSlack);
+        if (hnswFilterFirstExploration != null)
+            discloser.addProperty("hnsw.filterFirstExploration", hnswFilterFirstExploration);
+        if (hnswFilterFirstThreshold != null)
+            discloser.addProperty("hnsw.filterFirstThreshold", hnswFilterFirstThreshold);
+        if (hnswPostFilterThreshold != null)
+            discloser.addProperty("hnsw.postFilterThreshold", hnswPostFilterThreshold);
+        if (hnswTargetHitsMaxAdjustmentFactor != null)
+            discloser.addProperty("hnsw.targetHitsMaxAdjustmentFactor", hnswTargetHitsMaxAdjustmentFactor);
     }
 
     @Override
@@ -118,13 +185,22 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         if (this.approximate != other.approximate) return false;
         if ( ! this.field.equals(other.field)) return false;
         if ( ! this.queryTensorName.equals(other.queryTensorName)) return false;
+        if ( ! Objects.equals(this.hnswApproximateThreshold, other.hnswApproximateThreshold)) return false;
+        if ( ! Objects.equals(this.hnswExplorationSlack, other.hnswExplorationSlack)) return false;
+        if ( ! Objects.equals(this.hnswFilterFirstExploration, other.hnswFilterFirstExploration)) return false;
+        if ( ! Objects.equals(this.hnswFilterFirstThreshold, other.hnswFilterFirstThreshold)) return false;
+        if ( ! Objects.equals(this.hnswPostFilterThreshold, other.hnswPostFilterThreshold)) return false;
+        if ( ! Objects.equals(this.hnswTargetHitsMaxAdjustmentFactor, other.hnswTargetHitsMaxAdjustmentFactor)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), targetNumHits, hnswExploreAdditionalHits,
-                            distanceThreshold, approximate, field, queryTensorName);
+                            distanceThreshold, approximate, field, queryTensorName,
+                            hnswApproximateThreshold, hnswExplorationSlack,
+                            hnswFilterFirstExploration, hnswFilterFirstThreshold,
+                            hnswPostFilterThreshold, hnswTargetHitsMaxAdjustmentFactor);
     }
 
     @Override
@@ -136,6 +212,24 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         builder.setAllowApproximate(approximate);
         builder.setExploreAdditionalHits(hnswExploreAdditionalHits);
         builder.setDistanceThreshold(distanceThreshold);
+        if (hnswApproximateThreshold != null) {
+            builder.setApproximateThreshold(hnswApproximateThreshold);
+        }
+        if (hnswExplorationSlack != null) {
+            builder.setExplorationSlack(hnswExplorationSlack);
+        }
+        if (hnswFilterFirstExploration != null) {
+            builder.setFilterFirstExploration(hnswFilterFirstExploration);
+        }
+        if (hnswFilterFirstThreshold != null) {
+            builder.setFilterFirstThreshold(hnswFilterFirstThreshold);
+        }
+        if (hnswPostFilterThreshold != null) {
+            builder.setPostFilterThreshold(hnswPostFilterThreshold);
+        }
+        if (hnswTargetHitsMaxAdjustmentFactor != null) {
+            builder.setTargetHitsMaxAdjustmentFactor(hnswTargetHitsMaxAdjustmentFactor);
+        }
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemNearestNeighbor(builder.build())
                 .build();
