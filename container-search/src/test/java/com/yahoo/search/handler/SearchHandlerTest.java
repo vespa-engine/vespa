@@ -228,7 +228,7 @@ public class SearchHandlerTest {
     @Test
     void testForwardingHandlers() throws Exception {
         try (var tester = new SearchHandlerTester()) {
-            tester.assertHandlerResponse(200, tester.jsonResult, "ForwardingAsync");
+            tester.assertHandlerResponse(200, SearchHandlerTester.jsonResult, "ForwardingAsync");
 
             // Fails because we are forwarding from a sync to an async handler -
             // the sync handler will respond with status 500 because the async one has not produced a response yet.
