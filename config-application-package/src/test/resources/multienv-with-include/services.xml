@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<services version="1.0" xmlns:deploy="vespa" xmlns:preprocess="properties">
+    <preprocess:include deploy:environment="dev" file="container-dev.xml" />
+    <preprocess:include deploy:environment="prod" file="container-prod.xml" />
+</services>

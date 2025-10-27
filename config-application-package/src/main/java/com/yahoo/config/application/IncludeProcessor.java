@@ -50,6 +50,8 @@ class IncludeProcessor implements PreProcessor {
             boolean required = ! elem.hasAttribute("required") || Boolean.parseBoolean(elem.getAttribute("required"));
             FileWrapper file = currentFolder.child(filename);
 
+            ckeckForDeployAttributeInsideInclude(elem, filename);
+
             Document subFile = IncludeProcessor.parseIncludeFile(file, parent.getTagName(), required);
             includeFile(file.parent().orElseThrow(() -> new NoSuchElementException(file + " has no parent")),
                         subFile.getDocumentElement());
@@ -60,6 +62,19 @@ class IncludeProcessor implements PreProcessor {
             parent.removeChild(elem);
             //System.out.println("document after removing child: " + documentAsString(doc));
             list = currentElement.getElementsByTagNameNS(XmlPreProcessor.preprocessNamespaceUri, "include");
+        }
+    }
+
+    private static void ckeckForDeployAttributeInsideInclude(Element elem, String filename) {
+        var attributes = elem.getAttributes();
+        for (int i=0; i < attributes.getLength(); i++) {
+            var item = attributes.item(i);
+            String nodeName = item.getNodeName();
+            if (nodeName.startsWith("deploy:")) {
+                throw new IllegalArgumentException("Using '"  + nodeName +
+                                                   "' within a 'preprocess:include' is not supported: 'preprocess:include file=" +
+                                                   filename + ", please use " + nodeName + " in the included file instead");
+            }
         }
     }
 

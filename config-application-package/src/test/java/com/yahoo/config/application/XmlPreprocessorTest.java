@@ -12,6 +12,9 @@ import org.w3c.dom.Document;
 import java.io.File;
 import java.io.StringReader;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+
 /**
  * @author hmusum
  */
@@ -310,6 +313,26 @@ public class XmlPreprocessorTest {
                                                Cloud.defaultCloud().name(),
                                                Tags.empty()).run());
         TestBase.assertDocument(expectedProd, docDev);
+    }
+
+    @Test
+    public void testIncludeWithDeployEnvironment() throws Exception {
+        var appDir = new File("src/test/resources/multienv-with-include");
+        var services = new File(appDir, "services.xml");
+
+        var exception = assertThrows(IllegalArgumentException.class, () ->
+                new XmlPreProcessor(appDir,
+                                    services,
+                                    InstanceName.defaultName(),
+                                    Environment.prod,
+                                    RegionName.defaultName(),
+                                    Cloud.defaultCloud()
+                                         .name(),
+                                    Tags.empty()).run());
+        assertEquals("Using 'deploy:environment' within a 'preprocess:include' is not supported: " +
+                     "'preprocess:include file=container-dev.xml, please use " +
+                     "deploy:environment in the included file instead",
+                     exception.getMessage());
     }
 
 }
