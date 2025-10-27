@@ -418,7 +418,9 @@ TEST_F(FakeSearchableTest, require_that_repeated_unpack_for_same_docid_is_ignore
     SimpleStringTerm termNode("word1", "viewfoo", 1, w);
     FieldSpecList fields;
     fields.add(FieldSpec("fieldfoo", field_id, handle));
-    auto bp = source.createBlueprint(req_ctx, fields, termNode);
+    search::fef::MatchDataLayout mdl;
+    auto bp = source.createBlueprint(req_ctx, fields, termNode, mdl);
+    EXPECT_TRUE(mdl.empty());
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     bp->basic_plan(true, docid_limit);
     bp->fetchPostings(ExecuteInfo::FULL);
