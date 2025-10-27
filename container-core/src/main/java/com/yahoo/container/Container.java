@@ -12,7 +12,6 @@ import com.yahoo.vespa.config.ConfigTransformer;
 import com.yahoo.vespa.config.UrlDownloader;
 
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 /**
  * The container instance. This is a Vespa internal object, external code should
@@ -32,8 +31,6 @@ public class Container {
     private volatile ComponentRegistry<AbstractComponent> componentRegistry;
     private volatile FileAcquirer fileAcquirer;
     private volatile UrlDownloader urlDownloader;
-
-    private static final Logger logger = Logger.getLogger(Container.class.getName());
 
     // TODO: Make this final again.
     private static Container instance = new Container();

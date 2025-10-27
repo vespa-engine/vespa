@@ -3,6 +3,8 @@
 #include "matchdatalayout.h"
 #include <cassert>
 
+#include <vespa/vespalib/util/backtrace.h>
+
 namespace search::fef {
 
 MatchDataLayout::MatchDataLayout()

@@ -173,7 +173,9 @@ struct WandBlueprintSpec
     Blueprint::UP blueprint(Searchable &searchable, const std::string &field, const search::query::Node &term) const {
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle));
-        Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, term);
+        MatchDataLayout mdl;
+        Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, term, mdl);
+        EXPECT_TRUE(mdl.empty());
         EXPECT_TRUE(dynamic_cast<ParallelWeakAndBlueprint*>(bp.get()) != nullptr);
         return bp;
     }

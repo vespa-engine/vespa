@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
@@ -14,11 +15,15 @@ import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -76,6 +81,7 @@ public class AllocatedHostsSerializer {
     private static final String hostSpecCurrentVespaVersionKey = "currentVespaVersion";
     private static final String hostSpecNetworkPortsKey = "ports";
 
+    private static final String sidecarsKey = "sidecars";
 
     public static byte[] toJson(AllocatedHosts allocatedHosts) throws IOException {
         Slime slime = new Slime();
@@ -97,6 +103,11 @@ public class AllocatedHostsSerializer {
             if ( ! membership.cluster().zoneEndpoint().isDefault())
                 toSlime(object.setObject(loadBalancerSettingsKey), membership.cluster().zoneEndpoint());
             membership.cluster().dockerImageRepo().ifPresent(repo -> object.setString(hostSpecDockerImageRepoKey, repo.untagged()));
+            
+            var sidecars = membership.cluster().sidecars();
+            if (!sidecars.isEmpty()) {
+                sidecarsToSlime(sidecars, object.setArray(sidecarsKey));
+            }
         });
         toSlime(host.realResources(), object.setObject(realResourcesKey));
         toSlime(host.advertisedResources(), object.setObject(advertisedResourcesKey));
@@ -118,6 +129,31 @@ public class AllocatedHostsSerializer {
             gpuObject.setString(gpuTypeKey, resources.gpuResources().type().toString());
             gpuObject.setLong(gpuCountKey, resources.gpuResources().count());
             gpuObject.setDouble(gpuMemoryKey, resources.gpuResources().memoryGiB());
+        }
+    }
+
+    private static void sidecarsToSlime(List<SidecarSpec> sidecars, Cursor arrayCursor) {
+        for (var sidecar : sidecars) {
+            var cursor = arrayCursor.addObject();
+            cursor.setLong("id", sidecar.id());
+            cursor.setString("name", sidecar.name());
+            cursor.setString("image", sidecar.image().asString());
+
+            var resourcesCursor = cursor.setObject("resources");
+            var resources = sidecar.resources();
+            resourcesCursor.setDouble("maxCpu", resources.maxCpu());
+            resourcesCursor.setDouble("minCpu", resources.minCpu());
+            resourcesCursor.setDouble("memoryGiB", resources.memoryGiB());
+            resourcesCursor.setBool("hasGpu", resources.hasGpu());
+
+            var volumeMountsCursor = cursor.setArray("volumeMounts");
+            sidecar.volumeMounts().forEach(volumeMountsCursor::addString);
+
+            var envsCursor = cursor.setObject("envs");
+            sidecar.envs().forEach(envsCursor::setString);
+
+            var commandCursor = cursor.setArray("command");
+            sidecar.command().forEach(commandCursor::addString);
         }
     }
 
@@ -232,7 +268,8 @@ public class AllocatedHostsSerializer {
                                       object.field(hostSpecDockerImageRepoKey).valid()
                                       ? Optional.of(DockerImage.fromString(object.field(hostSpecDockerImageRepoKey).asString()))
                                       : Optional.empty(),
-                                      zoneEndpoint(object.field(loadBalancerSettingsKey)));
+                                      zoneEndpoint(object.field(loadBalancerSettingsKey)), 
+                                      sidecarsFromSlime(object.field(sidecarsKey)));
     }
 
     private static void toSlime(Cursor settingsObject, ZoneEndpoint settings) {
@@ -285,4 +322,47 @@ public class AllocatedHostsSerializer {
         return Optional.of(DockerImage.fromString(inspector.asString()));
     }
 
+    private static List<SidecarSpec> sidecarsFromSlime(Inspector arrayInspector) {
+        var sidecars = new ArrayList<SidecarSpec>();
+
+        arrayInspector.traverse((ArrayTraverser) (specIdx, specInspector) -> {
+            var id = specInspector.field("id").asLong();
+            var name = specInspector.field("name").asString();
+            var image = DockerImage.fromString(specInspector.field("image").asString());
+
+            var resourcesInspector = specInspector.field("resources");
+            var maxCpu = resourcesInspector.field("maxCpu").asDouble();
+            var minCpu = resourcesInspector.field("minCpu").asDouble();
+            var memoryGiB = resourcesInspector.field("memoryGiB").asDouble();
+            var hasGpu = resourcesInspector.field("hasGpu").asBool();
+
+            var volumeMounts = new ArrayList<String>();
+            specInspector.field("volumeMounts").traverse((ArrayTraverser) (idx, elem) -> {
+                volumeMounts.add(elem.asString());
+            });
+
+            var envs = new HashMap<String, String>();
+            specInspector.field("envs").traverse((ObjectTraverser) (key, value) -> envs.put(key, value.asString()));
+
+            var command = new ArrayList<String>();
+            specInspector.field("command").traverse((ArrayTraverser) (idx, elem) -> command.add(elem.asString()));
+
+            var sidecar = SidecarSpec.builder()
+                    .id(id)
+                    .name(name)
+                    .image(image)
+                    .maxCpu(maxCpu)
+                    .minCpu(minCpu)
+                    .memoryGiB(memoryGiB)
+                    .hasGpu(hasGpu)
+                    .volumeMounts(volumeMounts)
+                    .envs(envs)
+                    .command(command)
+                    .build();
+
+            sidecars.add(sidecar);
+        });
+
+        return sidecars;
+    }
 }

@@ -8,6 +8,7 @@
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 
 using namespace search::attribute;
 using namespace search::attribute::test;
@@ -119,7 +120,10 @@ public:
                                                 const search::query::Node& term) override {
         AttributeBlueprintFactory factory;
         FakeRequestContext req_ctx(_attr_ctx.get());
-        return factory.createBlueprint(req_ctx, field_spec, term);
+        search::fef::MatchDataLayout mdl;
+        auto bp = factory.createBlueprint(req_ctx, field_spec, term, mdl);
+        assert(mdl.empty());
+        return bp;
     }
 };
 

@@ -827,6 +827,11 @@ LeafBlueprint::createSearchImpl(fef::MatchData &md) const
     for (size_t i = 0; i < state.numFields(); ++i) {
         tfmda.add(state.field(i).resolve(md));
     }
+    return createLeafSearch(tfmda, md);
+}
+
+// default implementation
+SearchIterator::UP LeafBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, fef::MatchData &) const {
     return createLeafSearch(tfmda);
 }
 

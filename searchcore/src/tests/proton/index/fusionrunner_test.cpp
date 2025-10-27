@@ -232,7 +232,6 @@ FusionRunnerTest::checkResults(uint32_t fusion_id, const uint32_t *ids, size_t s
 
     MatchDataLayout mdl;
     TermFieldHandle handle = mdl.allocTermField(fieldId);
-    MatchData::UP match_data = mdl.createMatchData();
 
     FieldSpec field(field_name, fieldId, handle);
     FieldSpecList fields;
@@ -240,9 +239,10 @@ FusionRunnerTest::checkResults(uint32_t fusion_id, const uint32_t *ids, size_t s
 
     search::queryeval::Searchable &searchable = disk_index;
     SimpleStringTerm node(term, field_name, fieldId, search::query::Weight(0));
-    Blueprint::UP blueprint = searchable.createBlueprint(requestContext, fields, node);
+    Blueprint::UP blueprint = searchable.createBlueprint(requestContext, fields, node, mdl);
     blueprint->basic_plan(true, 1000);
     blueprint->fetchPostings(search::queryeval::ExecuteInfo::FULL);
+    MatchData::UP match_data = mdl.createMatchData();
     SearchIterator::UP search = blueprint->createSearch(*match_data);
     search->initFullRange();
     for (size_t i = 0; i < size; ++i) {

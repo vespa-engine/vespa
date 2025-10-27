@@ -147,8 +147,9 @@ public:
                            const IRequestContext & requestContext,
                            const FieldSpec &field,
                            uint32_t fieldId,
-                           FieldIndexCollection &fieldIndexes)
-        : CreateBlueprintVisitorHelper(searchable, field, requestContext),
+                           FieldIndexCollection &fieldIndexes,
+                           fef::MatchDataLayout &global_layout)
+        : CreateBlueprintVisitorHelper(searchable, field, requestContext, global_layout),
           _field(field),
           _fieldId(fieldId),
           _fieldIndexes(fieldIndexes) {}
@@ -186,13 +187,14 @@ public:
 Blueprint::UP
 MemoryIndex::createBlueprint(const IRequestContext & requestContext,
                              const FieldSpec &field,
-                             const Node &term)
+                             const Node &term,
+                             fef::MatchDataLayout &global_layout)
 {
     uint32_t fieldId = _schema.getIndexFieldId(field.getName());
     if (fieldId == Schema::UNKNOWN_FIELD_ID || _hiddenFields[fieldId]) {
         return std::make_unique<EmptyBlueprint>(field);
     }
-    CreateBlueprintVisitor visitor(*this, requestContext, field, fieldId, *_fieldIndexes);
+    CreateBlueprintVisitor visitor(*this, requestContext, field, fieldId, *_fieldIndexes, global_layout);
     const_cast<Node &>(term).accept(visitor);
     return visitor.getResult();
 }
@@ -200,9 +202,10 @@ MemoryIndex::createBlueprint(const IRequestContext & requestContext,
 std::unique_ptr<queryeval::Blueprint>
 MemoryIndex::createBlueprint(const queryeval::IRequestContext & requestContext,
                              const queryeval::FieldSpecList &fields,
-                             const query::Node &term)
+                             const query::Node &term,
+                             fef::MatchDataLayout &global_layout)
 {
-    return queryeval::Searchable::createBlueprint(requestContext, fields, term);
+    return queryeval::Searchable::createBlueprint(requestContext, fields, term, global_layout);
 }
 
 vespalib::MemoryUsage

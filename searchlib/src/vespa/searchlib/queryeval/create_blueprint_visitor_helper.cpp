@@ -17,10 +17,11 @@ LOG_SETUP(".queryeval.create_blueprint_visitor_helper");
 
 namespace search::queryeval {
 
-CreateBlueprintVisitorHelper::CreateBlueprintVisitorHelper(Searchable &searchable, const FieldSpec &field, const IRequestContext & requestContext)
+CreateBlueprintVisitorHelper::CreateBlueprintVisitorHelper(Searchable &searchable, const FieldSpec &field, const IRequestContext & requestContext, fef::MatchDataLayout &global_layout)
     : _requestContext(requestContext),
       _searchable(searchable),
       _field(field),
+      _global_layout(global_layout),
       _result()
 {}
 
@@ -53,33 +54,33 @@ CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
     auto phrase = std::make_unique<SimplePhraseBlueprint>(_field, n.is_expensive());
     for (const query::Node * child : n.getChildren()) {
         FieldSpecList fields;
-        fields.add(phrase->getNextChildField(_field));
-        phrase->addTerm(_searchable.createBlueprint(_requestContext, fields, *child));
+        FieldSpec inner = SimplePhraseBlueprint::next_child_field(_field, _global_layout);
+        fields.add(inner);
+        phrase->addTerm(_searchable.createBlueprint(_requestContext, fields, *child, _global_layout));
     }
     setResult(std::move(phrase));
 }
 
 void CreateBlueprintVisitorHelper::visitWordAlternatives(query::WordAlternatives &n) {
-    fef::MatchDataLayout layout;
     std::vector<std::unique_ptr<Blueprint>> blueprints;
     const auto &children = n.getChildren();
     for (const auto& child : children) {
         FieldSpec inner = child->inner_field_spec(_field);
         fef::TermFieldHandle handle = inner.getHandle();
         if (handle == fef::IllegalHandle) {
-            LOG(debug, "invalid handle for child of WordAlternatives, allocating");
-            handle = layout.allocTermField(_field.getFieldId());
-            FieldSpec inner2{_field.getName(), _field.getFieldId(), handle, false};
-            blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner2, *child));
+            // happens for WordAlternatives inside phrase:
+            LOG(debug, "no handle yet for child of WordAlternatives, allocating");
+            FieldSpec inner2 = SimplePhraseBlueprint::next_child_field(_field, _global_layout);
+            blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner2, *child, _global_layout));
         } else {
             LOG(debug, "WordAlternatives inner handle: %d", handle);
-            blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner, *child));
+            blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner, *child, _global_layout));
         }
     }
     double eqw = n.getWeight().percent();
     FieldSpecBaseList fields;
     fields.add(_field);
-    auto eq = std::make_unique<EquivBlueprint>(fields, std::move(layout));
+    auto eq = std::make_unique<EquivBlueprint>(fields, EquivBlueprint::allocate_outside_equiv_tag{});
     for (size_t i = 0; i < children.size(); ++i) {
         double w = children[i]->getWeight().percent();
         eq->addTerm(std::move(blueprints[i]), w / eqw);
@@ -119,7 +120,7 @@ CreateBlueprintVisitorHelper::createWeightedSet(std::unique_ptr<WS> bp, NODE &n)
         auto term = n.getAsString(i);
         query::SimpleStringTerm node(std::string(term.first), n.getView(), 0, term.second); // TODO Temporary
         childField.setBase(bp->getNextChildField(_field));
-        bp->addTerm(_searchable.createBlueprint(_requestContext, childField, node), term.second.percent(), estimate);
+        bp->addTerm(_searchable.createBlueprint(_requestContext, childField, node, _global_layout), term.second.percent(), estimate);
     }
     bp->complete(estimate);
     setResult(std::move(bp));

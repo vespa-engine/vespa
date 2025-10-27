@@ -8,6 +8,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -95,6 +97,43 @@ public class AllocatedHostsSerializerTest {
                                Optional.of(new NetworkPorts(List.of(new NetworkPorts.Allocation(1234, "service1", "configId1", "suffix1"),
                                                       new NetworkPorts.Allocation(4567, "service2", "configId2", "suffix2")))),
                                Optional.empty()));
+
+        hosts.add(new HostSpec("with-sidecars",
+                smallSlowDiskSpeedNode,
+                bigSlowDiskSpeedNode,
+                anyDiskSpeedNode,
+                ClusterMembership.from(
+                        "container/test/0/0", Version.fromString("6.73.1"),
+                        Optional.empty(), List.of(
+                                SidecarSpec.builder()
+                                        .id(0)
+                                        .name("sidecar1")
+                                        .image(DockerImage.fromString("registry1/namespace1/repo1:tag1"))
+                                        .maxCpu(2)
+                                        .minCpu(1)
+                                        .memoryGiB(1)
+                                        .hasGpu(false)
+                                        .volumeMounts(List.of("/mount11", "/mount12"))
+                                        .envs(Map.of("VAR11", "val11", "VAR12", "val12"))
+                                        .command(List.of("run1", "--arg11", "val11", "--arg12", "--val12"))
+                                        .build(),
+                                SidecarSpec.builder()
+                                        .id(1)
+                                        .name("sidecar2")
+                                        .image(DockerImage.fromString("registry2/namespace2/repo2:tag2"))
+                                        .maxCpu(4)
+                                        .minCpu(2)
+                                        .memoryGiB(2)
+                                        .hasGpu(true)
+                                        .volumeMounts(List.of("/mount21", "/mount22"))
+                                        .envs(Map.of("VAR21", "val21", "VAR22", "val22"))
+                                        .command(List.of("run2", "--arg21", "val21", "--arg22", "--val22"))
+                                        .build()
+                        )
+                ),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()));
 
         assertAllocatedHosts(AllocatedHosts.withHosts(hosts));
     }

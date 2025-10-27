@@ -11,7 +11,10 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.tensor.IndexedTensor;
+import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Iterator;
@@ -140,32 +143,33 @@ public class EmbedExpression extends Expression  {
     @SuppressWarnings("unchecked")
     private Tensor embedArrayValue(TensorType targetType, ExecutionContext context) {
         var input = (Array<StringFieldValue>)context.getCurrentValue();
-        var builder = Tensor.Builder.of(targetType);
-        if (targetType.rank() == 2)
-            if (targetType.indexedSubtype().rank() == 1)
+        if (targetType.rank() == 2) {
+            if (targetType.indexedSubtype().rank() == 1) {
+                var builder = MixedTensor.BoundBuilder.of(targetType);
                 embedArrayValueToRank2Tensor(input, builder, context);
-            else if(targetType.mappedSubtype().rank() == 2)
+                return builder.build();
+            } else if (targetType.mappedSubtype().rank() == 2) {
+                var builder = Tensor.Builder.of(targetType);
                 embedArrayValueToRank2MappedTensor(input, builder, context);
-            else
+                return builder.build();
+            } else {
                 throw new IllegalArgumentException("Embedding an array into " + targetType + " is not supported");
-        else
+            }
+        } else {
+            var builder = Tensor.Builder.of(targetType);
             embedArrayValueToRank3Tensor(input, builder, context);
-        return builder.build();
+            return builder.build();
+        }
     }
 
     private void embedArrayValueToRank2Tensor(Array<StringFieldValue> input,
-                                              Tensor.Builder builder,
+                                              MixedTensor.BoundBuilder builder,
                                               ExecutionContext context) {
-        String mappedDimension = builder.type().mappedSubtype().dimensions().get(0).name();
-        String indexedDimension = builder.type().indexedSubtype().dimensions().get(0).name();
         for (int i = 0; i < input.size(); i++) {
-            Tensor tensor = embed(input.get(i).getString(), builder.type().indexedSubtype(), context);
-            for (Iterator<Tensor.Cell> cells = tensor.cellIterator(); cells.hasNext(); ) {
-                Tensor.Cell cell = cells.next();
-                builder.cell()
-                       .label(mappedDimension, i)
-                       .label(indexedDimension, cell.getKey().numericLabel(0))
-                       .value(cell.getValue());
+            IndexedTensor tensor = embedAsIndexed1d(input.get(i).getString(), builder.type().indexedSubtype(), context);
+            var denseSubspaceBuilder = builder.denseSubspaceBuilder(TensorAddress.of(i));
+            for (long j = 0; j < tensor.size(); j++) {
+                denseSubspaceBuilder.cellByDirectIndex(j, tensor.get(j));
             }
         }
     }
@@ -219,6 +223,36 @@ public class EmbedExpression extends Expression  {
                                           new Embedder.Context(destination, context.getCache()).setLanguage(context.resolveLanguage(linguistics))
                                                                                                .setEmbedderId(embedder.id()),
                                           targetType);
+    }
+
+    /**
+     * Helper method that calls embed, checks that the result is a 1-d indexed tensor, and returns it as an IndexedTensor.
+     *
+     * @param input the string to embed
+     * @param targetType the expected tensor type
+     * @param context the execution context
+     * @return the embedded tensor as an IndexedTensor
+     * @throws IllegalArgumentException if the result is not a 1-d indexed tensor
+     */
+    private IndexedTensor embedAsIndexed1d(String input, TensorType targetType, ExecutionContext context) {
+        Tensor result = embed(input, targetType, context);
+
+        if (!(result instanceof IndexedTensor indexedResult)) {
+            throw new IllegalArgumentException("Expected embed to return an IndexedTensor, but got " +
+                                             result.getClass().getSimpleName());
+        }
+
+        if (indexedResult.type().rank() != 1) {
+            throw new IllegalArgumentException("Expected embed to return a 1-d tensor, but got rank " +
+                                             indexedResult.type().rank());
+        }
+
+        if (!indexedResult.type().dimensions().get(0).isIndexed()) {
+            throw new IllegalArgumentException("Expected embed to return an indexed tensor, but got " +
+                                             indexedResult.type().dimensions().get(0).type());
+        }
+
+        return indexedResult;
     }
 
     private TensorType getOutputTensorType() {
