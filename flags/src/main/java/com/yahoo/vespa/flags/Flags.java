@@ -51,28 +51,28 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
-            List.of("hakonhall"), "2025-03-19", "2025-11-01",
+            List.of("hakonhall"), "2025-03-19", "2025-12-01",
             "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
     public static final UnboundBooleanFlag NEW_ADDRESS_ALLOCATION = defineFeatureFlag(
             "new-address-allocation", false,
-            List.of("hakonhall"), "2025-10-06", "2025-11-06",
+            List.of("hakonhall"), "2025-10-06", "2025-12-06",
             "Whether to use new address allocation during provisioning",
             "Takes effect on next host being provisioned",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag MULTI_IP = defineFeatureFlag(
             "multi-ip", false,
-            List.of("hakonhall"), "2025-10-10", "2025-11-10",
+            List.of("hakonhall"), "2025-10-10", "2025-12-10",
             "Whether to allow storing >1 IP address for any given IP version",
             "Takes effect on next host being provisioned",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag LOCKED_GCP_PROVISION = defineFeatureFlag(
             "locked-gcp-provision", true,
-            List.of("hakonhall"), "2025-08-05", "2025-11-05",
+            List.of("hakonhall"), "2025-08-05", "2025-12-05",
             "Whether to provision GCP hosts under the application- and unallocated- locks, even though it takes ~1m.",
             "Takes effect on next host being provisioned");
 
