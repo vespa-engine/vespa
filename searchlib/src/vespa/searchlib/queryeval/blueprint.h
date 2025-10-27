@@ -520,7 +520,7 @@ public:
     Blueprint::UP removeChild(size_t n);
     Blueprint::UP removeLastChild() { return removeChild(childCnt() - 1); }
     SearchIteratorUP createSearchImpl(fef::MatchData &md) const override;
-    
+
     virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
     virtual FieldSpecBaseList exposeFields() const = 0;
     virtual void sort(Children &children, InFlow in_flow) const = 0;
@@ -582,6 +582,7 @@ public:
     const LeafBlueprint * asLeaf() const noexcept final { return this; }
 
     virtual bool getRange(std::string & from, std::string & to) const;
+    virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, fef::MatchData &global_md) const;
     virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const = 0;
 };
 
@@ -607,4 +608,3 @@ void visit(vespalib::ObjectVisitor &self, std::string_view name,
            const search::queryeval::Blueprint &obj);
 void visit(vespalib::ObjectVisitor &self, std::string_view name,
            const search::queryeval::Blueprint *obj);
-

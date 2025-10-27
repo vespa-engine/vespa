@@ -144,11 +144,13 @@ public:
     // Implements Searchable
     std::unique_ptr<queryeval::Blueprint> createBlueprint(const queryeval::IRequestContext & requestContext,
                                                           const queryeval::FieldSpec &field,
-                                                          const query::Node &term) override;
+                                                          const query::Node &term,
+                                                          fef::MatchDataLayout &global_layout) override;
 
     std::unique_ptr<queryeval::Blueprint> createBlueprint(const queryeval::IRequestContext & requestContext,
                                                           const queryeval::FieldSpecList &fields,
-                                                          const query::Node &term) override;
+                                                          const query::Node &term,
+                                                          fef::MatchDataLayout &global_layout) override;
 
     virtual uint32_t getDocIdLimit() const {
         // Used to get docId range.

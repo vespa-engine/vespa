@@ -60,6 +60,7 @@ class BlueprintBuilderVisitor :
 private:
     const IRequestContext & _requestContext;
     ISearchContext &_context;
+    search::fef::MatchDataLayout &_global_layout;
     Blueprint::UP   _result;
 
     void buildChildren(IntermediateBlueprint &parent, const std::vector<Node *> &children);
@@ -77,7 +78,7 @@ private:
         Blueprint::UP result(wand);
         for (auto node : n.getChildren()) {
             uint32_t weight = getWeightFromNode(*node).percent();
-            wand->addTerm(build(_requestContext, *node, _context), weight);
+            wand->addTerm(build(_requestContext, *node, _context, _global_layout), weight);
         }
         _result = std::move(result);
     }
@@ -92,7 +93,7 @@ private:
         auto eq = std::make_unique<EquivBlueprint>(std::move(specs), EquivBlueprint::allocate_outside_equiv_tag{});
         for (auto node : n.getChildren()) {
             double w = getWeightFromNode(*node).percent();
-            eq->addTerm(build(_requestContext, *node, _context), w / eqw);
+            eq->addTerm(build(_requestContext, *node, _context, _global_layout), w / eqw);
         }
         eq->setDocIdLimit(_context.getDocIdLimit());
         n.setDocumentFrequency(eq->getState().estimate().estHits, _context.getDocIdLimit());
@@ -105,7 +106,7 @@ private:
         double eqw = n.getWeight().percent();
         std::vector<std::unique_ptr<Blueprint>> term_bps;
         for (const auto& child : children) {
-            term_bps.emplace_back(build(_requestContext, *child, _context));
+            term_bps.emplace_back(build(_requestContext, *child, _context, _global_layout));
         }
         FieldSpecBaseList specs;
         specs.reserve(n.numFields());
@@ -129,7 +130,7 @@ private:
             auto se = std::make_unique<SameElementBlueprint>(n.field(0).fieldSpec(),
                                                              n.descendants_index_handles, n.is_expensive());
             for (auto* node : n.getChildren()) {
-                se->addChild(build(_requestContext, *node, _context));
+                se->addChild(build(_requestContext, *node, _context, _global_layout));
             }
             _result = std::move(se);
         } else {
@@ -147,14 +148,14 @@ private:
             assert(field.getFieldId() != search::fef::IllegalFieldId);
             assert(field.getHandle() != search::fef::IllegalHandle);
             if (field.attribute_field) {
-                mixer.addAttribute(_context.getAttributes().createBlueprint(_requestContext, field.fieldSpec(), n));
+                mixer.addAttribute(_context.getAttributes().createBlueprint(_requestContext, field.fieldSpec(), n, _global_layout));
             } else {
                 indexFields.add(field.fieldSpec());
             }
         }
         Blueprint::UP indexBlueprint;
         if (!indexFields.empty()) {
-            indexBlueprint = _context.getIndexes().createBlueprint(_requestContext, indexFields, n);
+            indexBlueprint = _context.getIndexes().createBlueprint(_requestContext, indexFields, n, _global_layout);
         }
         _result = mixer.mix(std::move(indexBlueprint));
         _result->setDocIdLimit(_context.getDocIdLimit());
@@ -202,17 +203,18 @@ protected:
     void visit(ProtonInTerm& n)         override { buildTerm(n); }
 
 public:
-    BlueprintBuilderVisitor(const IRequestContext & requestContext, ISearchContext &context) :
+    BlueprintBuilderVisitor(const IRequestContext & requestContext, ISearchContext &context, search::fef::MatchDataLayout &global_layout) :
         _requestContext(requestContext),
         _context(context),
+        _global_layout(global_layout),
         _result()
     { }
     Blueprint::UP build() {
         assert(_result);
         return std::move(_result);
     }
-    static Blueprint::UP build(const IRequestContext & requestContext, Node &node, ISearchContext &context) {
-        BlueprintBuilderVisitor visitor(requestContext, context);
+    static Blueprint::UP build(const IRequestContext & requestContext, Node &node, ISearchContext &context, search::fef::MatchDataLayout &global_layout) {
+        BlueprintBuilderVisitor visitor(requestContext, context, global_layout);
         node.accept(visitor);
         Blueprint::UP result = visitor.build();
         return result;
@@ -225,7 +227,7 @@ BlueprintBuilderVisitor::buildChildren(IntermediateBlueprint &parent, const std:
 {
     parent.reserve(children.size());
     for (auto child : children) {
-        parent.addChild(build(_requestContext, *child, _context));
+        parent.addChild(build(_requestContext, *child, _context, _global_layout));
     }
 }
 
@@ -259,9 +261,9 @@ lastConsequtiveRankOrAndNot(Blueprint * blueprint) {
 
 Blueprint::UP
 BlueprintBuilder::build(const IRequestContext & requestContext,
-                        Node &node, Blueprint::UP whiteList, ISearchContext &context)
+                        Node &node, Blueprint::UP whiteList, ISearchContext &context, MatchDataLayout &global_layout)
 {
-    auto blueprint = BlueprintBuilderVisitor::build(requestContext, node, context);
+    auto blueprint = BlueprintBuilderVisitor::build(requestContext, node, context, global_layout);
     if (whiteList) {
         auto andBlueprint = std::make_unique<AndBlueprint>();
         IntermediateBlueprint * rankOrAndNot = lastConsequtiveRankOrAndNot(blueprint.get());

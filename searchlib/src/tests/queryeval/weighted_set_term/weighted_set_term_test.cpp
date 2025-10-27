@@ -10,6 +10,7 @@
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/test/weightedchildrenverifiers.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -67,9 +68,11 @@ struct WS {
         Node::UP node = createNode();
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle));
-        auto bp = searchable.createBlueprint(requestContext, fields, *node);
+        search::fef::MatchDataLayout mdl;
+        auto bp = searchable.createBlueprint(requestContext, fields, *node, mdl);
+        EXPECT_TRUE(mdl.empty());
         bp->basic_plan(strict, 1000);
-        bp->fetchPostings(ExecuteInfo::FULL);        
+        bp->fetchPostings(ExecuteInfo::FULL);
         auto sb = bp->createSearch(*md);
         return (dynamic_cast<WeightedSetTermSearch*>(sb.get()) != nullptr);
     }
@@ -83,7 +86,9 @@ struct WS {
         Node::UP node = createNode();
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle, field_is_filter));
-        auto bp = searchable.createBlueprint(requestContext, fields, *node);
+        search::fef::MatchDataLayout mdl;
+        auto bp = searchable.createBlueprint(requestContext, fields, *node, mdl);
+        EXPECT_TRUE(mdl.empty());
         bp->basic_plan(strict, 1000);
         bp->fetchPostings(ExecuteInfo::FULL);
         auto sb = bp->createSearch(*md);

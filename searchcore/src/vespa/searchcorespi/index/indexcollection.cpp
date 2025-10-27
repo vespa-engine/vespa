@@ -166,13 +166,14 @@ private:
     const IIndexCollection  &_indexes;
     const FieldSpecList     &_fields;
     const IRequestContext   &_requestContext;
+    search::fef::MatchDataLayout &_global_layout;
     Blueprint::UP            _result;
 
     template <typename NodeType>
     void visitTerm(NodeType &n) {
         Mixer mixer(_indexes.getSourceSelector());
         for (size_t i = 0; i < _indexes.getSourceCount(); ++i) {
-            Blueprint::UP blueprint = _indexes.getSearchable(i).createBlueprint(_requestContext, _fields, n);
+            Blueprint::UP blueprint = _indexes.getSearchable(i).createBlueprint(_requestContext, _fields, n, _global_layout);
             blueprint->setSourceId(_indexes.getSourceId(i));
             mixer.addIndex(std::move(blueprint));
         }
@@ -212,10 +213,12 @@ private:
 public:
     CreateBlueprintVisitor(const IIndexCollection &indexes,
                            const FieldSpecList &fields,
-                           const IRequestContext & requestContext)
+                           const IRequestContext & requestContext,
+                           search::fef::MatchDataLayout &global_layout)
         : _indexes(indexes),
           _fields(fields),
           _requestContext(requestContext),
+          _global_layout(global_layout),
           _result() {}
 
     Blueprint::UP getResult() { return std::move(_result); }
@@ -226,19 +229,21 @@ public:
 Blueprint::UP
 IndexCollection::createBlueprint(const IRequestContext & requestContext,
                                  const FieldSpec &field,
-                                 const Node &term)
+                                 const Node &term,
+                                 search::fef::MatchDataLayout &global_layout)
 {
     FieldSpecList fields;
     fields.add(field);
-    return createBlueprint(requestContext, fields, term);
+    return createBlueprint(requestContext, fields, term, global_layout);
 }
 
 Blueprint::UP
 IndexCollection::createBlueprint(const IRequestContext & requestContext,
                                  const FieldSpecList &fields,
-                                 const Node &term)
+                                 const Node &term,
+                                 search::fef::MatchDataLayout &global_layout)
 {
-    CreateBlueprintVisitor visitor(*this, fields, requestContext);
+    CreateBlueprintVisitor visitor(*this, fields, requestContext, global_layout);
     const_cast<Node &>(term).accept(visitor);
     return visitor.getResult();
 }

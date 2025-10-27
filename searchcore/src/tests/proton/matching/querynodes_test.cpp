@@ -50,7 +50,6 @@ using search::queryeval::EmptySearch;
 using search::queryeval::FakeRequestContext;
 using search::queryeval::FakeResult;
 using search::queryeval::FakeSearch;
-using search::queryeval::FieldSpec;
 using search::queryeval::ISourceSelector;
 using search::queryeval::NearSearch;
 using search::queryeval::ONearSearch;
@@ -200,11 +199,11 @@ public:
         FakeRequestContext requestContext;
         MatchDataReserveVisitor reserve_visitor(mdl);
         node.accept(reserve_visitor);
-        MatchData::UP match_data = mdl.createMatchData();
 
-        Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, node, context);
+        Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, node, context, mdl);
         blueprint->basic_plan(true, 1000);
         blueprint->fetchPostings(search::queryeval::ExecuteInfo::FULL);
+        MatchData::UP match_data = mdl.createMatchData();
         return blueprint->createSearch(*match_data)->asString();
     }
 

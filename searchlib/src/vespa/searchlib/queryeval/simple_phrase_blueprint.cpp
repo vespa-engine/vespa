@@ -12,7 +12,6 @@ SimplePhraseBlueprint::SimplePhraseBlueprint(const FieldSpec &field, bool expens
     : ComplexLeafBlueprint(field),
       _field(field),
       _estimate(),
-      _layout(),
       _terms()
 {
     if (expensive) {
@@ -21,12 +20,6 @@ SimplePhraseBlueprint::SimplePhraseBlueprint(const FieldSpec &field, bool expens
 }
 
 SimplePhraseBlueprint::~SimplePhraseBlueprint() = default;
-
-FieldSpec
-SimplePhraseBlueprint::getNextChildField(const FieldSpec &outer)
-{
-    return {outer.getName(), outer.getFieldId(), _layout.allocTermField(outer.getFieldId()), false};
-}
 
 void
 SimplePhraseBlueprint::addTerm(Blueprint::UP term)
@@ -67,10 +60,14 @@ SimplePhraseBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 }
 
 SearchIterator::UP
-SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const
-{
+SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &) const {
+    assert(false);
+    return {};
+}
+
+SearchIterator::UP
+SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, fef::MatchData &global_md) const {
     assert(tfmda.size() == 1);
-    fef::MatchData::UP md = _layout.createMatchData();
     fef::TermFieldMatchDataArray childMatch;
     SimplePhraseSearch::Children children;
     children.reserve(_terms.size());
@@ -78,11 +75,11 @@ SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmd
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
         assert(childState.numFields() == 1);
-        auto *child_term_field_match_data = childState.field(0).resolve(*md);
+        auto *child_term_field_match_data = childState.field(0).resolve(global_md);
         child_term_field_match_data->setNeedInterleavedFeatures(tfmda[0]->needs_interleaved_features());
         child_term_field_match_data->setNeedNormalFeatures(true);
         childMatch.add(child_term_field_match_data);
-        children.push_back(_terms[i]->createSearch(*md));
+        children.push_back(_terms[i]->createSearch(global_md));
         order_map.insert(std::make_pair(childState.estimate().estHits, i));
     }
     std::vector<uint32_t> eval_order;
@@ -90,6 +87,7 @@ SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmd
     for (const auto & child : order_map) {
         eval_order.push_back(child.second);
     }
+    std::unique_ptr<fef::MatchData> md;
     return std::make_unique<SimplePhraseSearch>(std::move(children),
                                                 std::move(md), std::move(childMatch),
                                                 std::move(eval_order), *tfmda[0], strict());

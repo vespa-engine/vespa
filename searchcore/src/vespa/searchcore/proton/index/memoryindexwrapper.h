@@ -38,16 +38,18 @@ public:
     std::unique_ptr<search::queryeval::Blueprint>
     createBlueprint(const search::queryeval::IRequestContext & requestContext,
                     const search::queryeval::FieldSpec &field,
-                    const search::query::Node &term) override
+                    const search::query::Node &term,
+                    search::fef::MatchDataLayout &global_layout) override
     {
-        return _index.createBlueprint(requestContext, field, term);
+        return _index.createBlueprint(requestContext, field, term, global_layout);
     }
     std::unique_ptr<search::queryeval::Blueprint>
     createBlueprint(const search::queryeval::IRequestContext & requestContext,
                     const search::queryeval::FieldSpecList &fields,
-                    const search::query::Node &term) override
+                    const search::query::Node &term,
+                    search::fef::MatchDataLayout &global_layout) override
     {
-        return _index.createBlueprint(requestContext, fields, term);
+        return _index.createBlueprint(requestContext, fields, term, global_layout);
     }
     search::IndexStats get_index_stats(bool) const override {
         return _index.get_stats();

@@ -208,13 +208,14 @@ TEST(WordAlternativesTest, require_that_blueprints_can_be_built) {
     fef::MatchDataLayout layout;
     auto handle = layout.allocTermField(42);
     fields.add(FieldSpec(view[2], 42, handle));
-    auto bp = fake_index.createBlueprint(req_ctx, fields, *p);
+    auto bp = fake_index.createBlueprint(req_ctx, fields, *p, layout);
     EXPECT_TRUE(bool(bp));
-    // printf("Got blueprint: '%s'\n", bp->asString().c_str());
+    // fprintf(stderr, "Got blueprint: '%s'\n", bp->asString().c_str());
     bp->sort(InFlow(true, 1.0));
     EXPECT_TRUE(bp->strict());
     auto md = layout.createMatchData();
-    EXPECT_EQ(1, md->getNumTermFields());
+    // 7 handles: Phrase[0] + WA[1] + words[2,3] in WA  + WA[4] + words[5,6] in WA
+    EXPECT_EQ(7, md->getNumTermFields());
     auto &tfmd = *md->resolveTermField(handle);
     auto s = bp->createSearch(*md);
     EXPECT_TRUE(s->is_strict() == vespalib::Trinary::True);

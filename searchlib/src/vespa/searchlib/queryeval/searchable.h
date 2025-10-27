@@ -5,6 +5,7 @@
 #include <memory>
 
 namespace search::query { class Node; }
+namespace search::fef { class MatchDataLayout; }
 
 namespace search::queryeval {
 
@@ -38,10 +39,12 @@ public:
      * @param requestContext that belongs to the query
      * @param fields the set of fields to search
      * @param term the query tree term
+     * @param global_layout the global match data layout
      **/
     virtual std::unique_ptr<Blueprint> createBlueprint(const IRequestContext & requestContext,
                                                        const FieldSpecList &fields,
-                                                       const search::query::Node &term);
+                                                       const search::query::Node &term,
+                                                       search::fef::MatchDataLayout &global_layout);
     /**
      * Create a blueprint searching a single field.
      *
@@ -49,10 +52,12 @@ public:
      * @param requestContext that belongs to the query
      * @param field the field to search
      * @param term the query tree term
+     * @param global_layout the global match data layout
      **/
     virtual std::unique_ptr<Blueprint> createBlueprint(const IRequestContext & requestContext,
                                                        const FieldSpec &field,
-                                                       const search::query::Node &term) = 0;
+                                                       const search::query::Node &term,
+                                                       search::fef::MatchDataLayout &global_layout) = 0;
 };
 
 }

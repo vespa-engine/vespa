@@ -219,8 +219,7 @@ Result do_search(IAttributeManager &attribute_manager, const Node &node, bool st
     AttributeBlueprintFactory source;
     MatchDataLayout mdl;
     TermFieldHandle handle = mdl.allocTermField(fieldId);
-    MatchData::UP match_data = mdl.createMatchData();
-    Blueprint::UP bp = source.createBlueprint(requestContext, FieldSpec(field, fieldId, handle), node);
+    Blueprint::UP bp = source.createBlueprint(requestContext, FieldSpec(field, fieldId, handle), node, mdl);
     EXPECT_TRUE(bp);
     if (!bp) {
         return {0, true};
@@ -228,6 +227,7 @@ Result do_search(IAttributeManager &attribute_manager, const Node &node, bool st
     Result result(bp->getState().estimate().estHits, bp->getState().estimate().empty);
     bp->basic_plan(strict, 100);
     bp->fetchPostings(queryeval::ExecuteInfo::FULL);
+    MatchData::UP match_data = mdl.createMatchData();
     SearchIterator::UP iterator = bp->createSearch(*match_data);
     EXPECT_TRUE(iterator);
     if (!iterator) {
