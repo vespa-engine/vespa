@@ -6,3 +6,6 @@ hostResponseHeaderKey string default=""
 
 ## For debugging, number of requests to add trace and timing information too if debugging is enabled.
 numQueriesToTraceOnDebugAfterConstruction int default=1000
+
+## Whether to warmup the search handler or not
+warmup bool default=true

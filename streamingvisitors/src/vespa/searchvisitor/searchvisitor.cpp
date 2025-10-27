@@ -20,6 +20,7 @@
 #include <vespa/searchlib/attribute/single_raw_ext_attribute.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
+#include <vespa/searchlib/engine/search_protocol_proto.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/searchlib/tensor/tensor_ext_attribute.h>
@@ -43,6 +44,7 @@ using document::PositionDataType;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::SerializedQueryTree;
+using search::SerializedQueryTreeSP;
 using search::aggregation::HitsAggregationResult;
 using search::attribute::IAttributeVector;
 using search::attribute::make_sort_blob_writer;
@@ -524,7 +526,21 @@ SearchVisitor::init(const Parameters & params)
             _fieldSearchSpecMap.buildFromConfig(additionalFields);
 
             QueryTermDataFactory addOnFactory(this, &_element_gap_inspector);
-            auto serialized_query_tree = SerializedQueryTree::fromStackDump(std::vector<char>(queryBlob.begin(), queryBlob.end()));
+            // Check if protobuf query tree is available (preferred over stack dump)
+            Parameters::ValueRef protoQueryTree;
+            SerializedQueryTreeSP serialized_query_tree;
+            if (params.lookup("querytree", protoQueryTree)) {
+                LOG(debug, "Received protobuf query tree of %zu bytes", protoQueryTree.size());
+                auto proto_tree = std::make_unique<SerializedQueryTree::ProtobufQueryTree>();
+                if (proto_tree->ParseFromArray(protoQueryTree.data(), protoQueryTree.size())) {
+                    serialized_query_tree = SerializedQueryTree::fromProtobuf(std::move(proto_tree));
+                } else {
+                    Issue::report("Failed to parse protobuf query tree, falling back to stack dump");
+                    serialized_query_tree = SerializedQueryTree::fromStackDump(std::vector<char>(queryBlob.begin(), queryBlob.end()));
+                }
+            } else {
+                serialized_query_tree = SerializedQueryTree::fromStackDump(std::vector<char>(queryBlob.begin(), queryBlob.end()));
+            }
             _query = Query(addOnFactory, *serialized_query_tree);
             _searchBuffer->reserve(0x10000);
 

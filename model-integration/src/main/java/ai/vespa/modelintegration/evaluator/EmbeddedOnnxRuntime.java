@@ -4,21 +4,16 @@ package ai.vespa.modelintegration.evaluator;
 import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtException;
 import ai.onnxruntime.OrtSession;
+import ai.vespa.modelintegration.utils.ModelPathOrData;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.refcount.DebugReferencesWithStack;
 import com.yahoo.jdisc.refcount.References;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
-import net.jpountz.xxhash.XXHashFactory;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -151,7 +146,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
     }
 
     ReferencedOrtSession acquireSession(ModelPathOrData model, OnnxEvaluatorOptions vespaOpts, boolean loadCuda) throws OrtException {
-        var sessionId = new OrtSessionId(calculateModelHash(model), vespaOpts, loadCuda);
+        var sessionId = new OrtSessionId(model.calculateHash(), vespaOpts, loadCuda);
         synchronized (monitor) {
             var sharedSession = sessions.get(sessionId);
             if (sharedSession != null) {
@@ -169,25 +164,6 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
         synchronized (monitor) { sessions.put(sessionId, sharedSession); }
         sharedSession.references().release(); // Release initial reference
         return referencedSession;
-    }
-
-    private static long calculateModelHash(ModelPathOrData model) {
-        if (model.path().isPresent()) {
-            try (var hasher = XXHashFactory.fastestInstance().newStreamingHash64(0);
-                 var in = Files.newInputStream(Paths.get(model.path().get()))) {
-                byte[] buffer = new byte[8192];
-                int bytesRead;
-                while ((bytesRead = in.read(buffer)) != -1) {
-                    hasher.update(buffer, 0, bytesRead);
-                }
-                return hasher.getValue();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        } else {
-            var data = model.data().get();
-            return XXHashFactory.fastestInstance().hash64().hash(data, 0, data.length, 0);
-        }
     }
 
     private OnnxEvaluatorOptions overrideOptions(OnnxEvaluatorOptions vespaOpts) {
@@ -214,14 +190,6 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
 
         OrtSession instance() { return instance; }
         @Override public void close() { ref.close(); }
-    }
-
-    record ModelPathOrData(Optional<String> path, Optional<byte[]> data) {
-        static ModelPathOrData of(String path) { return new ModelPathOrData(Optional.of(path), Optional.empty()); }
-        static ModelPathOrData of(byte[] data) { return new ModelPathOrData(Optional.empty(), Optional.of(data)); }
-        ModelPathOrData {
-            if (path.isEmpty() == data.isEmpty()) throw new IllegalArgumentException("Either path or data must be non-empty");
-        }
     }
 
     // Assumes options are never modified after being stored in `onnxSessions`

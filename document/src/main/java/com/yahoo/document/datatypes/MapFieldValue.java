@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 
-
 /**
  * Vespa map. Backed by and parametrized by FieldValue
  *

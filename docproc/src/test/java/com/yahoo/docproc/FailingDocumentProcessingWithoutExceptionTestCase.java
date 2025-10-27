@@ -26,7 +26,7 @@ public class FailingDocumentProcessingWithoutExceptionTestCase {
     @Test
     public void testFailingProcessing() {
         // Set up service programmatically
-        DocprocService service = new DocprocService("failing-no-exception");
+        DocprocService service = new DocprocService("failing-no-exception", new SimpleContainerThreadPool());
         DocumentProcessor first = new SettingValueProcessor("done 1");
         DocumentProcessor second = new FailingProcessor("done 2");
         DocumentProcessor third = new SettingValueProcessor("done 3");

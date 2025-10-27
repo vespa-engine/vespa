@@ -168,7 +168,7 @@ Response:
 wrong-float-value.json: failed
 Step 1:
 Unexpected value at /root/children/0/relevance
-Expected: 0.381862373599
+Expected: 0.3819
 Actual:   0.38186238359951247
 Requested: GET at http://127.0.0.1:8080/search/
 Response:

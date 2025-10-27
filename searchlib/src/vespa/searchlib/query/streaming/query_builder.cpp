@@ -16,11 +16,13 @@
 #include <vespa/searchlib/query/streaming/wand_term.h>
 #include <vespa/searchlib/query/streaming/weighted_set_term.h>
 #include <vespa/searchlib/query/tree/term_vector.h>
+#include <vespa/searchlib/queryeval/same_element_flags.h>
 #include <vespa/searchlib/queryeval/split_float.h>
 #include <charconv>
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.query.streaming.query_builder");
 
+using search::queryeval::SameElementFlags;
 using search::queryeval::SplitFloat;
 
 namespace search::streaming {
@@ -63,8 +65,6 @@ public:
         }
     }
 };
-
-bool QueryBuilder::_expose_match_data_for_same_element_descendants = false;
 
 QueryBuilder::QueryBuilder()
     : _same_element_view(),
@@ -128,6 +128,9 @@ QueryBuilder::build(const QueryNode * parent, const QueryNodeResultFactory& fact
                         hidden_terms_guard.activate();
                     }
                     if (qc->isFlattenable(queryRep.getType())) {
+                        if (i < num_positive) {
+                            num_positive += queryRep.getArity();
+                        }
                         arity += queryRep.getArity();
                     } else {
                         qc->addChild(build(qc, factory, queryRep, allowRewrite && !disableRewrite(qn.get())));
@@ -397,7 +400,7 @@ QueryBuilder::build_same_element_term(const QueryNodeResultFactory& factory, Que
     sen->setWeight(queryRep.GetWeight());
     sen->setUniqueId(queryRep.getUniqueId());
     HiddenTermsGuard hidden_terms_guard(*this);
-    if (!_expose_match_data_for_same_element_descendants) {
+    if (!SameElementFlags::expose_descendants()) {
         hidden_terms_guard.activate();
     }
     for (size_t i = 0; i < arity; ++i) {

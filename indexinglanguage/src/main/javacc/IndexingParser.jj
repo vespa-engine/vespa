@@ -179,6 +179,7 @@ TOKEN :
     <FOR_EACH: "for_each"> |
     <GET_FIELD: "get_field"> |
     <GET_LANGUAGE: "get_language"> |
+    <GET_VALUE: "get_value"> |
     <GET_VAR: "get_var"> |
     <GUARD: "guard"> |
     <HASH: "hash"> |
@@ -215,7 +216,7 @@ TOKEN :
     <TOKENIZE: "tokenize"> |
     <TO_ARRAY: "to_array"> |
     <TO_BOOL: "to_bool"> |
-     <TO_BYTE: "to_byte"> |
+    <TO_BYTE: "to_byte"> |
     <TO_DOUBLE: "to_double"> |
     <TO_FLOAT: "to_float"> |
     <TO_INT: "to_int"> |
@@ -333,6 +334,7 @@ Expression value() :
       val = forEachExp()            |
       val = getFieldExp()           |
       val = getLanguageExp()        |
+      val = getValueExp()           |
       val = getVarExp()             |
       val = guardExp()              |
       val = hashExp()               |
@@ -489,6 +491,15 @@ Expression getLanguageExp() : { }
 {
     ( <GET_LANGUAGE> )
     { return new GetLanguageExpression(); }
+}
+
+Expression getValueExp() :
+{
+    String key;
+}
+{
+    ( <GET_VALUE> ( key = valueString() ) )
+    { return new GetValueExpression(key); }
 }
 
 Expression getVarExp() :
@@ -872,15 +883,23 @@ Expression executionValueExp() : { }
 List<String> arguments() :
 {
     String argument;
-    NumericFieldValue numericArgument;
     List<String> arguments = new ArrayList<String>();
 }
 {
-      ( LOOKAHEAD(2)
-          argument = identifier() { arguments.add(argument); } |
-          numericArgument = numericValue() { arguments.add(numericArgument.getNumber().toString()); }
-      )*
+      ( argument = valueString() { arguments.add(argument); } )*
       { return arguments; }
+}
+
+/** A number, identifier, or quoted string */
+String valueString() :
+{
+    String value;
+    NumericFieldValue numericValue;
+}
+{
+    numericValue = numericValue() { return numericValue.getNumber().toString(); } |
+    value = string() { return value; } |
+    value = identifier() { return value; }
 }
 
 String identifier() :
@@ -908,6 +927,7 @@ String identifier() :
         <GENERATE>               |
         <GET_FIELD>              |
         <GET_LANGUAGE>           |
+        <GET_VALUE>              |
         <GET_VAR>                |
         <GUARD>                  |
         <HASH>                   |

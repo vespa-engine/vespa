@@ -8,6 +8,7 @@ import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.core.documentapi.VespaDocumentAccess;
 import com.yahoo.container.handler.VipStatus;
+import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.IndexedBackend;
@@ -73,6 +74,7 @@ public class ClusterSearcher extends Searcher {
                            ClusterConfig clusterConfig,
                            DocumentdbInfoConfig documentDbConfig,
                            SchemaInfo schemaInfo,
+                           QrSearchersConfig qrSearchersConfig,
                            ComponentRegistry<Dispatcher> dispatchers,
                            GlobalPhaseRanker globalPhaseRanker,
                            VipStatus vipStatus,
@@ -88,7 +90,7 @@ public class ClusterSearcher extends Searcher {
         maxQueryCacheTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryCacheTimeout(), DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
 
         VespaBackend streaming = null, indexed = null;
-        ClusterParams clusterParams = makeClusterParams(searchClusterName, documentDbConfig, schemaInfo);
+        ClusterParams clusterParams = makeClusterParams(searchClusterName, documentDbConfig, schemaInfo, qrSearchersConfig);
         for (DocumentdbInfoConfig.Documentdb docDb : documentDbConfig.documentdb()) {
             if (docDb.mode() == DocumentdbInfoConfig.Documentdb.Mode.Enum.INDEX) {
                 if (indexed == null) {
@@ -105,10 +107,10 @@ public class ClusterSearcher extends Searcher {
         }
     }
 
-    private static ClusterParams makeClusterParams(String searchclusterName, DocumentdbInfoConfig documentDbConfig, SchemaInfo schemaInfo)
+    private static ClusterParams makeClusterParams(String searchclusterName, DocumentdbInfoConfig documentDbConfig, SchemaInfo schemaInfo, QrSearchersConfig qrSearchersConfig)
     {
         return new ClusterParams(searchclusterName + ".num" + 0, UUID.randomUUID().toString(),
-                                 null, documentDbConfig, schemaInfo);
+                                 null, documentDbConfig, schemaInfo, qrSearchersConfig);
     }
 
     private static IndexedBackend searchDispatch(ClusterParams clusterParams,

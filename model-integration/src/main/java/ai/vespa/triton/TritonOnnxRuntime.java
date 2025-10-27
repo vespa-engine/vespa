@@ -5,6 +5,7 @@ import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
+import ai.vespa.modelintegration.utils.ModelPathOrData;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.vespa.defaults.Defaults;
@@ -42,11 +43,18 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        if (!client.isHealthy())
+        if (!client.isHealthy()) {
             throw new IllegalStateException("Triton server is not healthy! (target=%s)".formatted(config.target()));
+        }
+
+        var modelName = createModelName(modelPath, options);
         var isExplicitControlMode = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
-        if (isExplicitControlMode) copyModelToRepository(modelPath, options);
-        return new TritonOnnxEvaluator(client, modelName(modelPath), isExplicitControlMode);
+        
+        if (isExplicitControlMode) {
+            copyModelToRepository(modelName, modelPath, options);
+        }
+        
+        return new TritonOnnxEvaluator(client, modelName, isExplicitControlMode);
     }
 
     @Override
@@ -55,10 +63,9 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     }
 
     /** Copies the model file to the model repository and serializes the config */
-    private void copyModelToRepository(String externalModelPath, OnnxEvaluatorOptions options) {
+    private void copyModelToRepository(String modelName, String externalModelPath, OnnxEvaluatorOptions options) {
         var modelRepositoryPath = Defaults.getDefaults().underVespaHome(config.modelRepositoryPath());
-        var modelBasePath = Paths.get(modelRepositoryPath, modelName(externalModelPath));
-        
+        var modelBasePath = Paths.get(modelRepositoryPath, modelName);
         var modelVersionPath = modelBasePath.resolve("1");
         var modelFilePath = modelVersionPath.resolve("model.onnx");
         var modelConfigPath = modelBasePath.resolve("config.pbtxt");
@@ -71,7 +78,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
             Files.copy(Paths.get(externalModelPath), modelFilePath, StandardCopyOption.REPLACE_EXISTING);
             var modelConfig = options.rawConfig()
-                    .orElseGet(() -> generateConfigFromEvaluatorOptions(externalModelPath, options).toString());
+                    .orElseGet(() -> generateConfigFromEvaluatorOptions(modelName, options).toString());
             Files.writeString(modelConfigPath, modelConfig);
 
             // To ensure that the Triton can read the model files, explicitly grant world read
@@ -88,18 +95,20 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         modelPerms.add(PosixFilePermission.OTHERS_READ);
         Files.setPosixFilePermissions(path, modelPerms);
     }
-
-    // Hackish name to deduce model name from path.
-    // It should ideally include a suffix based on the model's hash/timestamp/file size to avoid conflicts
-    static String modelName(String modelPath) {
-        var name = modelPath.substring(modelPath.lastIndexOf('/') + 1);
-        return name.substring(0, name.lastIndexOf('.'));
+    
+    static String createModelName(String modelPath, OnnxEvaluatorOptions options) {
+        var fileName = Paths.get(modelPath).getFileName().toString();
+        var baseName = fileName.substring(0, fileName.lastIndexOf('.')); // remove file extension
+        var modelHash = ModelPathOrData.of(modelPath).calculateHash();
+        var optionsHash = options.calculateHash();
+        var combinedHash = Long.toHexString(31 * modelHash + optionsHash);
+        return baseName + "_" + combinedHash; // add hash to avoid conflicts
     }
 
     // Generate a default model config based on evaluator options.
     // These are not necqessarily optimal but should closely match the effective configuration for the embedded ONNX runtime.
     private static ModelConfigOuterClass.ModelConfig generateConfigFromEvaluatorOptions(
-            String modelPaths, OnnxEvaluatorOptions options) {
+            String modelName,OnnxEvaluatorOptions options) {
         // Similar to EmbeddedOnnxRuntime.overrideOptions(), relies on Triton to fall back to CPU if GPU is not available.
         var kind = options.gpuDeviceRequired()
                 ? ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU
@@ -107,13 +116,13 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                         ? ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_AUTO
                         : ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU;
         return ModelConfigOuterClass.ModelConfig.newBuilder()
-                .setName(modelName(modelPaths))
+                .setName(modelName)
                 .addInstanceGroup(ModelConfigOuterClass.ModelInstanceGroup.newBuilder()
                         .setCount(1)
                         .setKind(kind)
                         .build())
                 .setPlatform("onnxruntime_onnx")
-                .setMaxBatchSize(1) // No batching for now.
+                .setMaxBatchSize(1)
                 .putParameters("enable_mem_area", ModelConfigOuterClass.ModelParameter.newBuilder()
                         .setStringValue("0")
                         .build())

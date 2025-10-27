@@ -24,13 +24,17 @@ interface Visitor {
     record Context(String searchCluster,
                    String schema,
                    int traceLevelOverride,
-                   PartialSummaryHandler partialSummaryHandler)
+                   PartialSummaryHandler partialSummaryHandler,
+                   boolean sendProtobufQuerytree)
     {
         Context(String searchCluster, String schema) {
             this(searchCluster, schema, 0);
         }
         Context(String searchCluster, String schema, int traceLevelOverride) {
             this(searchCluster, schema, traceLevelOverride, null);
+        }
+        Context(String searchCluster, String schema, int traceLevelOverride, PartialSummaryHandler partialSummaryHandler) {
+            this(searchCluster, schema, traceLevelOverride, partialSummaryHandler, false);
         }
     }
 

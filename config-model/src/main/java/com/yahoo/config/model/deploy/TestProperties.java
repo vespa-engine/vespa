@@ -78,7 +78,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxContentNodeMaintenanceOpConcurrency = -1;
     private int searchCoreMaxOutstandingMoveOps = 100;
     private Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
-    private boolean useNewPrepareForRestart = false;
+    private boolean useNewPrepareForRestart = true;
     private Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
     private double docprocHandlerThreadpool = 1.0;

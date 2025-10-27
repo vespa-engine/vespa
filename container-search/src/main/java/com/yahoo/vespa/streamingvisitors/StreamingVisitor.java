@@ -18,6 +18,7 @@ import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
+import com.yahoo.search.dispatch.rpc.ProtobufSerialization;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.query.Model;
 import com.yahoo.search.query.Ranking;
@@ -146,9 +147,19 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         }
 
         EncodedData ed = new EncodedData();
-        encodeQueryData(query, 0, ed);
-        params.setLibraryParameter("query", ed.getEncodedData());
-        params.setLibraryParameter("querystackcount", String.valueOf(ed.getReturned()));
+        boolean sendProtobuf = context.sendProtobufQuerytree();
+        ProtobufSerialization.setProtobufAlsoSerialized(sendProtobuf);
+        try {
+            encodeQueryData(query, 0, ed);
+            params.setLibraryParameter("query", ed.getEncodedData());
+            params.setLibraryParameter("querystackcount", String.valueOf(ed.getReturned()));
+        } finally {
+            ProtobufSerialization.setProtobufAlsoSerialized(false);
+        }
+        if (sendProtobuf) {
+            var protobufTree = query.getModel().getQueryTree().toProtobufQueryTree();
+            params.setLibraryParameter("querytree", protobufTree.toByteArray());
+        }
         params.setLibraryParameter("searchcluster", context.searchCluster().getBytes(StandardCharsets.UTF_8));
         params.setLibraryParameter("schema", context.schema().getBytes(StandardCharsets.UTF_8));
 

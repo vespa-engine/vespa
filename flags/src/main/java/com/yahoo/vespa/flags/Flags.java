@@ -417,7 +417,7 @@ public class Flags {
 
     public static final UnboundStringFlag VESPA_USE_MALLOC_IMPL = defineStringFlag(
             "vespa-use-malloc-impl", "",
-            List.of("hmusum", "johsol"), "2025-09-10", "2025-11-10",
+            List.of("hmusum", "johsol"), "2025-09-10", "2026-01-10",
             "Which malloc implementation to use  " +
                     "Valid values: 'vespamalloc', 'mimalloc', '' (empty string, meaning default malloc implementation).",
             "Takes effect at next reboot of the node",

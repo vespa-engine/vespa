@@ -8,6 +8,7 @@
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <memory>
+#include <span>
 #include <vector>
 
 namespace search::queryeval {
@@ -30,6 +31,7 @@ private:
     void fetch_matching_elements(uint32_t docid, std::vector<uint32_t> &dst);
     bool check_docid_match(uint32_t docid);
     bool check_element_match(uint32_t docid);
+    void filter_descendants_match_data(uint32_t docid, std::span<const uint32_t> element_ids);
 
 public:
     SameElementSearch(fef::TermFieldMatchData &tfmd,
