@@ -84,7 +84,7 @@ public class HandlersConfigurerTestWrapper {
 
     // TODO: Remove once tests use ConfigSet rather than dir:
     private void createIfNotExists(String dir, String file) throws IOException {
-        final File f = new File(dir + "/" + file);
+        File f = new File(dir + "/" + file);
         if (f.createNewFile()) {
             createdFiles.add(f);
         }
