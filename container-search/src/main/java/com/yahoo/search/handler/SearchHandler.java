@@ -148,11 +148,8 @@ public class SearchHandler extends LoggingRequestHandler {
         metric.set(SEARCH_CONNECTIONS, 0.0d, null);
         this.zoneInfo = zoneInfo;
 
-        if (warmup) {
+        if (warmup)
             warmup();
-        } else {
-            log.log(Level.INFO, "SearchHandler not warmed up at startup as per configuration");
-        }
     }
 
     Metric metric() { return metric; }
