@@ -29,7 +29,7 @@ public class CallbackTestCase {
 
     @Before
     public void setUp() {
-        service = new DocprocService("callback");
+        service = new DocprocService("callback", new SimpleContainerThreadPool());
         service.setCallStack(new CallStack().addNext(new TestCallbackDp()));
         service.setInService(true);
 

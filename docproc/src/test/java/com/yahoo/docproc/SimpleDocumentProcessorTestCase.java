@@ -29,7 +29,7 @@ public class SimpleDocumentProcessorTestCase {
     private static DocprocService setupDocprocService(SimpleDocumentProcessor processor, Metric metric) {
         CallStack stack = new CallStack("default", metric);
         stack.addLast(processor);
-        DocprocService service = new DocprocService("default");
+        DocprocService service = new DocprocService("default", new SimpleContainerThreadPool());
         service.setCallStack(stack);
         service.setInService(true);
         return service;
