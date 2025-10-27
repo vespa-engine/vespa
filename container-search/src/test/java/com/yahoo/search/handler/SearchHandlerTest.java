@@ -107,36 +107,20 @@ public class SearchHandlerTest {
     }
 
     @Test
-    void testInvalidYqlQuery() throws Exception {
-        try (var tester = new SearchHandlerTester()) {
-            tester.copyDirectory("config_yql");
-            tester.generateComponentsConfigForActive();
-            tester.configurer.reloadConfig();
-
-            SearchHandler newSearchHandler = tester.fetchSearchHandler();
-            assertNotSame(tester.searchHandler, newSearchHandler, "Have a new instance of the search handler");
-            try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(newSearchHandler)) {
-                RequestHandlerTestDriver.MockResponseHandler responseHandler = newDriver.sendRequest(
-                        "http://localhost/search/?yql=select%20*%20from%20foo%20where%20bar%20%3E%201453501295%27%3B");
-                responseHandler.readAll();
-                assertEquals(400, responseHandler.getStatus());
-                assertEquals(Request.RequestType.READ, responseHandler.getResponse().getRequestType());
-            }
-        }
-    }
-
-    @Test
-    void testRequestType() throws Exception {
-        try (var tester = new SearchHandlerTester()) {
-            tester.copyDirectory("config_yql");
-            tester.generateComponentsConfigForActive();
-            tester.configurer.reloadConfig();
-
+    void testRequests() {
+        try (var tester = new SearchHandlerTester("config_yql")) {
             SearchHandler newSearchHandler = tester.fetchSearchHandler();
             try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(newSearchHandler)) {
                 RequestHandlerTestDriver.MockResponseHandler responseHandler = newDriver.sendRequest(
                         "http://localhost/search/?query=foo");
                 responseHandler.readAll();
+                assertEquals(200, responseHandler.getStatus());
+                assertEquals(Request.RequestType.READ, responseHandler.getResponse().getRequestType());
+
+                responseHandler = newDriver.sendRequest(
+                        "http://localhost/search/?yql=select%20*%20from%20foo%20where%20bar%20%3E%201453501295%27%3B");
+                responseHandler.readAll();
+                assertEquals(400, responseHandler.getStatus());
                 assertEquals(Request.RequestType.READ, responseHandler.getResponse().getRequestType());
             }
         }
