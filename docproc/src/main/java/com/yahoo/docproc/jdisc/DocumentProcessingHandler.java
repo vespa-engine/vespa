@@ -10,7 +10,6 @@ import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
-import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.docproc.AbstractConcreteDocumentFactory;
 import com.yahoo.docproc.CallStack;
 import com.yahoo.docproc.impl.DocprocService;
@@ -54,11 +53,11 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     private DocumentProcessingHandler(ComponentRegistry<DocprocService> docprocServiceRegistry,
                                       ComponentRegistry<DocumentProcessor> documentProcessorComponentRegistry,
                                       ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
+                                      int numThreads,
                                       DocumentTypeManager documentTypeManager,
                                       ChainsModel chainsModel, SchemaMap schemaMap,
                                       Metric metric,
-                                      ContainerDocumentConfig containerDocConfig,
-                                      ContainerThreadPool threadPool) {
+                                      ContainerDocumentConfig containerDocConfig) {
         this.docprocServiceRegistry = docprocServiceRegistry;
         this.docFactoryRegistry = docFactoryRegistry;
         this.containerDocConfig = containerDocConfig;
@@ -72,22 +71,26 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
 
             for (Chain<DocumentProcessor> chain : chainRegistry.allComponents()) {
                 log.config("Setting up call stack for chain " + chain.getId());
-                DocprocService service = new DocprocService(chain.getId(), convertToCallStack(chain, metric), documentTypeManager, threadPool);
+                DocprocService service = new DocprocService(chain.getId(), convertToCallStack(chain, metric), documentTypeManager, computeNumThreads(numThreads));
                 service.setInService(true);
                 docprocServiceRegistry.register(service.getId(), service);
             }
         }
     }
 
+    private static int computeNumThreads(int maxThreads) {
+        return (maxThreads > 0) ? maxThreads : Runtime.getRuntime().availableProcessors();
+    }
+
     DocumentProcessingHandler(ComponentRegistry<DocprocService> docprocServiceRegistry,
                               ComponentRegistry<DocumentProcessor> documentProcessorComponentRegistry,
                               ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
-                              DocumentProcessingHandlerParameters params,
-                              ContainerThreadPool threadPool) {
+                              DocumentProcessingHandlerParameters params) {
         this(docprocServiceRegistry, documentProcessorComponentRegistry, docFactoryRegistry,
+             params.getMaxNumThreads(),
              params.getDocumentTypeManager(), params.getChainsModel(), params.getSchemaMap(),
              params.getMetric(),
-             params.getContainerDocConfig(), threadPool);
+             params.getContainerDocConfig());
     }
 
     @Inject
@@ -98,8 +101,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                                      DocumentTypeManager documentTypeManager,
                                      DocprocConfig docprocConfig,
                                      ContainerDocumentConfig containerDocConfig,
-                                     Metric metric,
-                                     ContainerThreadPool threadPool) {
+                                     Metric metric) {
         this(new ComponentRegistry<>(),
              documentProcessorComponentRegistry, docFactoryRegistry,
                 new DocumentProcessingHandlerParameters()
@@ -107,8 +109,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                      .setDocumentTypeManager(documentTypeManager)
                      .setChainsModel(buildFromConfig(chainsConfig)).setSchemaMap(configureMapping(mappingConfig))
                      .setMetric(metric)
-                     .setContainerDocumentConfig(containerDocConfig),
-                threadPool);
+                     .setContainerDocumentConfig(containerDocConfig));
         docprocServiceRegistry.freeze();
     }
 

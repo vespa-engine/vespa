@@ -10,7 +10,6 @@ import com.yahoo.jdisc.Metric;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -76,7 +75,7 @@ public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCl
         int minThreads = minThreads(config, cpus, hasRelThreads);
         int queueSize = queueSize(config, maxThreads, hasRelQueueSize);
 
-        log.config(String.format("Threadpool '%s': min=%d, max=%d, queue=%s", name, minThreads, maxThreads, queueSizeToString(queueSize)));
+        log.config(String.format("Threadpool '%s': min=%d, max=%d, queue=%d", name, minThreads, maxThreads, queueSize));
 
         ThreadPoolMetric threadPoolMetric = new ThreadPoolMetric(metric, name);
         WorkerCompletionTimingThreadPoolExecutor executor =
@@ -119,12 +118,7 @@ public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCl
         }
     }
 
-    /** For the components requiring infinite queue, they must specify Integer.MAX_VALUE */
     private static BlockingQueue<Runnable> createQueue(int size) {
-        if (size == Integer.MAX_VALUE) {
-            return new LinkedBlockingQueue<>();
-        }
-
         return size == 0 ? new SynchronousQueue<>(false) : new ArrayBlockingQueue<>(size);
     }
 
@@ -160,13 +154,6 @@ public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCl
                 c.relativeMinThreads(), c.relativeMaxThreads(), c.relativeQueueSize(),
                 cpus
         );
-    }
-
-    private String queueSizeToString(int queueSize) {
-        if (queueSize == Integer.MAX_VALUE) {
-            return "unlimited";
-        }
-        return Integer.toString(queueSize);
     }
 
 }

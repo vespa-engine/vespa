@@ -71,7 +71,6 @@ import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
-import com.yahoo.vespa.model.container.ContainerThreadpool;
 import com.yahoo.vespa.model.container.DataplaneProxy;
 import com.yahoo.vespa.model.container.IdentityProvider;
 import com.yahoo.vespa.model.container.PlatformBundles;
@@ -1353,9 +1352,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (docprocElement == null)
             return null;
 
-        ContainerThreadpool docprocHandlerThreadpool = new ContainerDocproc.Threadpool(deployState, docprocElement);
         addIncludes(docprocElement);
-        DocprocChains chains = new DomDocprocChainsBuilder(null, false, docprocHandlerThreadpool).build(deployState, cluster, docprocElement);
+        DocprocChains chains = new DomDocprocChainsBuilder(null, false).build(deployState, cluster, docprocElement);
 
         ContainerDocproc.Options docprocOptions = DocprocOptionsBuilder.build(docprocElement, deployState.getDeployLogger());
         return new ContainerDocproc(cluster, chains, docprocOptions, !standaloneBuilder);

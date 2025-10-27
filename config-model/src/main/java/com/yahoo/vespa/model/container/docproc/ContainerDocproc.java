@@ -4,16 +4,12 @@ package com.yahoo.vespa.model.container.docproc;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.config.SessionConfig;
 import com.yahoo.docproc.jdisc.messagebus.MbusRequestContext;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerThreadpool;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
-import org.w3c.dom.Element;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +30,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
         this(cluster, chains, Options.empty());
     }
 
-    private ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains, Options options) {
+    public ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains, Options options) {
         this(cluster, chains, options, true);
     }
 
@@ -116,7 +112,6 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
 
     public static class Options {
 
-        public final Element threadpoolXml;
         public final Integer maxMessagesInQueue;
         public final Integer maxQueueTimeMs;
 
@@ -124,8 +119,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
         public final Double documentExpansionFactor;
         public final Integer containerCoreMemory;
 
-        public Options(Integer maxMessagesInQueue, Integer maxQueueTimeMs, Double maxConcurrentFactor, Double documentExpansionFactor, Integer containerCoreMemory, Element threadpoolXml) {
-            this.threadpoolXml = threadpoolXml;
+        public Options(Integer maxMessagesInQueue, Integer maxQueueTimeMs, Double maxConcurrentFactor, Double documentExpansionFactor, Integer containerCoreMemory) {
             this.maxMessagesInQueue = maxMessagesInQueue;
             this.maxQueueTimeMs = maxQueueTimeMs;
             this.maxConcurrentFactor = maxConcurrentFactor;
@@ -133,27 +127,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
             this.containerCoreMemory = containerCoreMemory;
         }
 
-        static Options empty() { return new Options(null, null, null, null, null, null); }
-
-    }
-
-    public static class Threadpool extends ContainerThreadpool {
-
-        private final double threads;
-
-        public Threadpool(DeployState ds, Element options) {
-            super(ds, "docproc-handler", options);
-            threads = ds.featureFlags().docprocHandlerThreadpool();
-        }
-
-        @Override
-        public void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder) {
-            builder.maxThreadExecutionTimeSeconds(190)
-                    .keepAliveTime(5.0)
-                    .relativeMaxThreads(threads)
-                    .relativeMinThreads(threads)
-                    .queueSize(Integer.MAX_VALUE);
-        }
+        static Options empty() { return new Options(null, null, null, null, null); }
 
     }
 

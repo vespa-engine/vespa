@@ -9,7 +9,6 @@ import com.yahoo.docproc.jdisc.observability.DocprocsStatusExtension;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerThreadpool;
 import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
@@ -26,12 +25,11 @@ public class DocprocChains extends Chains<DocprocChain> {
 
     private final ProcessingHandler<DocprocChains> docprocHandler;
 
-    public DocprocChains(TreeConfigProducer<? super Chains> parent, String subId, ContainerThreadpool docprocHandlerThreadpool) {
+    public DocprocChains(TreeConfigProducer<? super Chains> parent, String subId) {
         super(parent, subId);
         docprocHandler = new ProcessingHandler<>(
                 this,
-                BundleInstantiationSpecification.fromSearchAndDocproc("com.yahoo.docproc.jdisc.DocumentProcessingHandler"),
-                docprocHandlerThreadpool);
+                BundleInstantiationSpecification.fromSearchAndDocproc("com.yahoo.docproc.jdisc.DocumentProcessingHandler"));
         addComponent(docprocHandler);
         addComponent(new SimpleComponent(
                 new ComponentModel(DocprocsStatusExtension.class.getName(), null, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE)));
