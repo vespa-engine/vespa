@@ -56,7 +56,7 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
 
     /**
      * Sets the default index name to apply to all child items of this.
-     * This is useful in conjunction with using {@link PureWeightedItem}s as children.
+     * Not used at the moment (as far as we know).
      */
     @Override
     public void setIndexName(String index) {
