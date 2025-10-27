@@ -258,12 +258,32 @@ public class SearchHandlerTest {
         }
     }
 
+    @Test
+    void testWarmup() {
+        try (var tester = new SearchHandlerTester()) {
+            String result = tester.sendRequest("http://localhost?getCount=true").readAll();
+            assertEquals("{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"countHit\",\"relevance\":1.0,\"fields\":{\"count\":1}}]}}",
+                         result,
+                         "Warmup by default");
+        }
+    }
+
+    @Test
+    void testWarmupDisabled() {
+        try (var tester = new SearchHandlerTester("noWarmup")) {
+            String result = tester.sendRequest("http://localhost?getCount=true").readAll();
+            assertEquals("{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"countHit\",\"relevance\":1.0,\"fields\":{\"count\":0}}]}}",
+                         result,
+                         "Warmup configured off");
+        }
+    }
+
     /** Referenced from config */
     public static class TestSearcher extends Searcher {
 
         @Override
         public Result search(Query query, Execution execution) {
-            Result result = new Result(query);
+            Result result = execution.search(query);
             Hit hit = new Hit("testHit");
             hit.setField("uri", "testHit");
             result.hits().add(hit);
@@ -272,6 +292,28 @@ public class SearchHandlerTest {
                 result.hits().addError(new ErrorMessage(406, "Test web service code"));
 
             return result;
+        }
+
+    }
+
+    /** Referenced from config */
+    public static class QueryCountingSearcher extends Searcher {
+
+        private int queryCount = 0;
+
+        @Override
+        public Result search(Query query, Execution execution) {
+            if (query.properties().getBoolean("getCount")) {
+                Result result = new Result(query);
+                Hit hit = new Hit("countHit");
+                hit.setField("count", queryCount);
+                result.hits().add(hit);
+                return result;
+            }
+            else {
+                queryCount++;
+                return execution.search(query);
+            }
         }
 
     }

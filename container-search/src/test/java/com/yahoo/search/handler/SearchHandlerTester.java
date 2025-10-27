@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Path;
 
 import static com.yahoo.yolean.Exceptions.uncheckInterrupted;
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,6 +42,10 @@ public class SearchHandlerTester implements AutoCloseable {
     public SearchHandler                 searchHandler;
 
     public SearchHandlerTester() {
+        this(null);
+    }
+
+    public SearchHandlerTester(String configFileOverrides) {
         try {
             tempfolder = Files.createTempDirectory("").toFile();
             File cfgDir = newFolder(tempfolder, "SearchHandlerTestCase");
@@ -50,6 +53,8 @@ public class SearchHandlerTester implements AutoCloseable {
             String configId = "dir:" + tempDir;
 
             IOUtils.copyDirectory(new File(testDir), cfgDir, 1); // make configs active
+            if (configFileOverrides != null)
+                copyDirectory(configFileOverrides);
             generateComponentsConfigForActive();
 
             configurer = new HandlersConfigurerTestWrapper(new Container(), configId);
@@ -117,13 +122,15 @@ public class SearchHandlerTester implements AutoCloseable {
     }
 
     private static final String xmlResult =
-            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-            "<result total-hit-count=\"0\">\n" +
-            "  <hit relevancy=\"1.0\">\n" +
-            "    <field name=\"relevancy\">1.0</field>\n" +
-            "    <field name=\"uri\">testHit</field>\n" +
-            "  </hit>\n" +
-            "</result>\n";
+            """
+                    <?xml version="1.0" encoding="utf-8" ?>
+                    <result total-hit-count="0">
+                      <hit relevancy="1.0">
+                        <field name="relevancy">1.0</field>
+                        <field name="uri">testHit</field>
+                      </hit>
+                    </result>
+                    """;
 
     public void assertXmlResult(String request) {
         assertXmlResult(request, driver);
@@ -131,10 +138,6 @@ public class SearchHandlerTester implements AutoCloseable {
 
     public void assertXmlResult(String request, RequestHandlerTestDriver driver) {
         assertOkResult(driver.sendRequest(request), xmlResult);
-    }
-
-    public void assertXmlResult(RequestHandlerTestDriver driver) {
-        assertXmlResult("http://localhost?query=abc", driver);
     }
 
     public void assertMetricPresent(String key) {
