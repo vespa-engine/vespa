@@ -84,8 +84,9 @@ public:
 */
 class AndNotQueryNode : public QueryConnector
 {
+    bool _elementwise; // Node is descendant of SameElementQueryNode
 public:
-    AndNotQueryNode() noexcept : QueryConnector("ANDNOT") { }
+    AndNotQueryNode(bool elementwise) noexcept;
     ~AndNotQueryNode() override;
     bool evaluate() override;
     bool isFlattenable(ParseItem::ItemType) const override { return false; }

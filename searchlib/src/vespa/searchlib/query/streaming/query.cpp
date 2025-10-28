@@ -129,7 +129,6 @@ QueryConnector::create(ParseItem::ItemType type, const QueryNodeResultFactory& f
         case search::ParseItem::ITEM_AND:          return std::make_unique<AndQueryNode>();
         case search::ParseItem::ITEM_OR:
         case search::ParseItem::ITEM_WEAK_AND:     return std::make_unique<OrQueryNode>();
-        case search::ParseItem::ITEM_NOT:          return std::make_unique<AndNotQueryNode>();
         case search::ParseItem::ITEM_NEAR:         return std::make_unique<NearQueryNode>(factory.get_element_gap_inspector());
         case search::ParseItem::ITEM_ONEAR:        return std::make_unique<ONearQueryNode>(factory.get_element_gap_inspector());
         case search::ParseItem::ITEM_RANK:         return std::make_unique<RankWithQueryNode>();
@@ -209,6 +208,12 @@ AndQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
     }
 }
 
+AndNotQueryNode::AndNotQueryNode(bool elementwise) noexcept
+    : QueryConnector("ANDNOT"),
+      _elementwise(elementwise)
+{
+}
+
 AndNotQueryNode::~AndNotQueryNode() = default;
 
 bool
@@ -220,7 +225,7 @@ AndNotQueryNode::evaluate()
     auto it = getChildren().begin();
     auto mt = getChildren().end();
     bool result = it != mt && (*it)->evaluate();
-    if (result) {
+    if (result && !_elementwise) {
         for (++it; it != mt; it++) {
             if ((*it)->evaluate()) {
                 result = false;
@@ -233,8 +238,33 @@ AndNotQueryNode::evaluate()
 }
 
 void
-AndNotQueryNode::get_element_ids(std::vector<uint32_t>&)
+AndNotQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
 {
+    auto& children = getChildren();
+    if (children.empty()) {
+        return;
+    }
+    children.front()->get_element_ids(element_ids);
+    std::span others(children.begin() + 1, children.end());
+    if (others.empty() || element_ids.empty()) {
+        return;
+    }
+    std::vector<uint32_t> temp_element_ids;
+    std::vector<uint32_t> result;
+    for (auto& child : others) {
+        temp_element_ids.clear();
+        child->get_element_ids(temp_element_ids);
+        if (!temp_element_ids.empty()) {
+            result.clear();
+            std::set_difference(element_ids.begin(), element_ids.end(),
+                                temp_element_ids.begin(), temp_element_ids.end(),
+                                std::back_inserter(result));
+            std::swap(element_ids, result);
+            if (element_ids.empty()) {
+                return;
+            }
+        }
+    }
 }
 
 OrQueryNode::~OrQueryNode() = default;
