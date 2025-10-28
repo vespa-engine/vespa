@@ -68,6 +68,8 @@ private:
     uint16_t _fieldLength;
 
     Features  _data;
+
+    void finish_filter_elements();
 public:
     PositionsIterator begin() const { return allocated() ? getMultiple() : getFixed(); }
     PositionsIterator end() const { return allocated() ? getMultiple() + _sz : empty() ? getFixed() : getFixed()+1; }
