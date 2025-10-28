@@ -10,6 +10,7 @@
 #include "term_vector.h"
 #include "const_bool_nodes.h"
 #include <vespa/vespalib/util/vespa_dll_local.h>
+#include <limits>
 
 namespace search::query {
 
@@ -146,31 +147,44 @@ public:
  * The actual returned number might be higher (or lower if the query returns fewer hits).
  */
 class NearestNeighborTerm : public QueryNodeMixin<NearestNeighborTerm, TermNode> {
+public:
+    struct HnswParams {
+        std::optional<double> distance_threshold;
+        std::optional<double> approximate_threshold;
+        std::optional<double> exploration_slack;
+        std::optional<double> filter_first_exploration;
+        std::optional<double> filter_first_threshold;
+        std::optional<double> post_filter_threshold;
+        std::optional<double> target_hits_max_adjustment_factor;
+        std::optional<uint32_t> explore_additional_hits;
+
+        HnswParams() = default;
+    };
+
 private:
     std::string _query_tensor_name;
     uint32_t _target_num_hits;
     bool _allow_approximate;
-    uint32_t _explore_additional_hits;
-    double _distance_threshold;
+    HnswParams _hnsw_params;
 
 public:
     NearestNeighborTerm(std::string_view query_tensor_name, std::string field_name,
                         int32_t id, Weight weight, uint32_t target_num_hits,
-                        bool allow_approximate, uint32_t explore_additional_hits,
-                        double distance_threshold)
+                        bool allow_approximate,
+                        HnswParams hnsw_params = HnswParams())
         : QueryNodeMixinType(std::move(field_name), id, weight),
           _query_tensor_name(query_tensor_name),
           _target_num_hits(target_num_hits),
           _allow_approximate(allow_approximate),
-          _explore_additional_hits(explore_additional_hits),
-          _distance_threshold(distance_threshold)
+          _hnsw_params(std::move(hnsw_params))
     {}
     ~NearestNeighborTerm() override;
     const std::string& get_query_tensor_name() const { return _query_tensor_name; }
     uint32_t get_target_num_hits() const { return _target_num_hits; }
     bool get_allow_approximate() const { return _allow_approximate; }
-    uint32_t get_explore_additional_hits() const { return _explore_additional_hits; }
-    double get_distance_threshold() const { return _distance_threshold; }
+    uint32_t get_explore_additional_hits() const { return _hnsw_params.explore_additional_hits.value_or(0); }
+    const HnswParams& get_hnsw_params() const { return _hnsw_params; }
+    double get_distance_threshold() const { return _hnsw_params.distance_threshold.value_or(std::numeric_limits<double>::infinity()); }
 };
 
 class MultiTerm : public Node {

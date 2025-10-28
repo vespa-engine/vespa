@@ -447,14 +447,30 @@ public:
     bool handle(const ItemNearestNeighbor& item) {
         auto d = fillTermProperties(item.properties());
 
-        std::string_view query_tensor_name = item.query_tensor_name();
-        uint32_t targetNumHits = item.target_num_hits();
-        bool allowApproximate = item.allow_approximate();
-        uint32_t exploreAdditionalHits = item.explore_additional_hits();
-        double distanceThreshold = item.distance_threshold();
-        auto &term = _builder.add_nearest_neighbor_term(query_tensor_name, d.index_view, d.uniqueId, d.weight,
-                                           targetNumHits, allowApproximate, exploreAdditionalHits,
-                                           distanceThreshold);
+        typename NodeTypes::NearestNeighborTerm::HnswParams hnsw_params;
+        hnsw_params.distance_threshold = item.distance_threshold();
+        hnsw_params.explore_additional_hits = item.explore_additional_hits();
+        if (item.has_approximate_threshold()) {
+            hnsw_params.approximate_threshold = item.approximate_threshold();
+        }
+        if (item.has_exploration_slack()) {
+            hnsw_params.exploration_slack = item.exploration_slack();
+        }
+        if (item.has_filter_first_exploration()) {
+            hnsw_params.filter_first_exploration = item.filter_first_exploration();
+        }
+        if (item.has_filter_first_threshold()) {
+            hnsw_params.filter_first_threshold = item.filter_first_threshold();
+        }
+        if (item.has_post_filter_threshold()) {
+            hnsw_params.post_filter_threshold = item.post_filter_threshold();
+        }
+        if (item.has_target_hits_max_adjustment_factor()) {
+            hnsw_params.target_hits_max_adjustment_factor = item.target_hits_max_adjustment_factor();
+        }
+
+        auto &term = _builder.add_nearest_neighbor_term(item.query_tensor_name(), d.index_view, d.uniqueId, d.weight,
+                                                        item.target_num_hits(), item.allow_approximate(), hnsw_params);
         // not meaningful?
         if (d.noRankFlag) term.setRanked(false);
         // not meaningful?

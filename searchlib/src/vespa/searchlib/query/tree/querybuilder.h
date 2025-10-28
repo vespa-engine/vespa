@@ -214,12 +214,12 @@ template <class NodeTypes>
 typename NodeTypes::NearestNeighborTerm *
 create_nearest_neighbor_term(std::string_view query_tensor_name, std::string field_name,
                              int32_t id, Weight weight, uint32_t target_num_hits,
-                             bool allow_approximate, uint32_t explore_additional_hits,
-                             double distance_threshold)
+                             bool allow_approximate,
+                             typename NodeTypes::NearestNeighborTerm::HnswParams hnsw_params)
 {
     return new typename NodeTypes::NearestNeighborTerm(query_tensor_name, field_name, id, weight,
-                                                       target_num_hits, allow_approximate, explore_additional_hits,
-                                                       distance_threshold);
+                                                       target_num_hits, allow_approximate,
+                                                       std::move(hnsw_params));
 }
 
 template <class NodeTypes>
@@ -400,11 +400,11 @@ public:
     }
     typename NodeTypes::NearestNeighborTerm &add_nearest_neighbor_term(string_view query_tensor_name, string field_name,
                                                                        int32_t id, Weight weight, uint32_t target_num_hits,
-                                                                       bool allow_approximate, uint32_t explore_additional_hits,
-                                                                       double distance_threshold)
+                                                                       bool allow_approximate,
+                                                                       typename NodeTypes::NearestNeighborTerm::HnswParams hnsw_params = typename NodeTypes::NearestNeighborTerm::HnswParams())
     {
         adjustWeight(weight);
-        return addTerm(create_nearest_neighbor_term<NodeTypes>(query_tensor_name, field_name, id, weight, target_num_hits, allow_approximate, explore_additional_hits, distance_threshold));
+        return addTerm(create_nearest_neighbor_term<NodeTypes>(query_tensor_name, field_name, id, weight, target_num_hits, allow_approximate, std::move(hnsw_params)));
     }
     typename NodeTypes::TrueQueryNode &add_true_node() {
         return addTerm(create_true<NodeTypes>());

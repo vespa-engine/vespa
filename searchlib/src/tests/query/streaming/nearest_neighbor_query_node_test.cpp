@@ -74,7 +74,10 @@ TEST_F(NearestNeighborQueryNodeTest, unpack_match_data_for_nearest_neighbor_quer
     constexpr uint32_t target_num_hits = 100;
     constexpr bool allow_approximate = false;
     constexpr uint32_t explore_additional_hits = 800;
-    builder.add_nearest_neighbor_term("qtensor", "field", id, Weight(weight), target_num_hits, allow_approximate, explore_additional_hits, distance_threshold);
+    search::query::NearestNeighborTerm::HnswParams hnsw_params;
+    hnsw_params.distance_threshold = distance_threshold;
+    hnsw_params.explore_additional_hits = explore_additional_hits;
+    builder.add_nearest_neighbor_term("qtensor", "field", id, Weight(weight), target_num_hits, allow_approximate, hnsw_params);
     build_query(builder);
     QueryTermList term_list;
     _query->getLeaves(term_list);
