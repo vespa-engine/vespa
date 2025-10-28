@@ -73,6 +73,18 @@ void optimize_source_blenders(IntermediateBlueprint &self, size_t begin_idx) {
 
 //-----------------------------------------------------------------------------
 
+AndNotBlueprint::AndNotBlueprint()
+    : IntermediateBlueprint(),
+      _elementwise(false)
+{
+}
+
+AndNotBlueprint::AndNotBlueprint(bool elementwise)
+    : IntermediateBlueprint(),
+      _elementwise(elementwise)
+{
+}
+
 AndNotBlueprint::~AndNotBlueprint() = default;
 
 FlowStats
@@ -186,12 +198,15 @@ AndNotBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
         }
         return AndNotSearch::create(std::move(rearranged), strict());
     }
-    return AndNotSearch::create(std::move(sub_searches), strict());
+    return AndNotSearch::create(std::move(sub_searches), _elementwise, strict());
 }
 
 SearchIterator::UP
 AndNotBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
+    if (_elementwise) {
+        return create_first_child_filter(get_children(), constraint);
+    }
     return create_andnot_filter(get_children(), strict(), constraint);
 }
 

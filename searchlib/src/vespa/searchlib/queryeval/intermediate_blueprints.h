@@ -16,7 +16,10 @@ class ISourceSelector;
 
 class AndNotBlueprint : public IntermediateBlueprint
 {
+    bool _elementwise;
 public:
+    AndNotBlueprint();
+    AndNotBlueprint(bool elementwise);
     ~AndNotBlueprint() override;
     bool supports_termwise_children() const override { return true; }
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
@@ -36,7 +39,7 @@ private:
     uint8_t calculate_cost_tier() const override {
         return (childCnt() > 0) ? get_children()[0]->getState().cost_tier() : State::COST_TIER_NORMAL;
     }
-    bool may_need_unpack(size_t index) const override { return index == 0; }
+    bool may_need_unpack(size_t index) const override { return index == 0 || _elementwise; }
 };
 
 //-----------------------------------------------------------------------------
