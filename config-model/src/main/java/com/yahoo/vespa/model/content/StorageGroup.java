@@ -320,7 +320,7 @@ public class StorageGroup {
 
                 StorageNode searchNode = new StorageNode(deployState.getProperties(), parent.getStorageCluster(), 1.0, distributionKey , false);
                 searchNode.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
-                PersistenceEngine provider = parent.getPersistence().create(deployState, searchNode, storageGroup, null);
+                PersistenceEngine provider = parent.getPersistence().create(deployState, searchNode, storageGroup);
                 searchNode.initService(deployState);
 
                 Distributor distributor = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), distributionKey, null, provider);
@@ -503,8 +503,7 @@ public class StorageGroup {
             sNode.setHostResource(hostResource);
             sNode.initService(deployState);
 
-            // TODO: Supplying null as XML is not very nice
-            PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, parentGroup, null);
+            PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, parentGroup);
             Distributor d = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), clusterMembership.index(), null, provider);
             d.setHostResource(sNode.getHostResource());
             d.initService(deployState);

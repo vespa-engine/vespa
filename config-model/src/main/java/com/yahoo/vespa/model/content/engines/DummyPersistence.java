@@ -21,7 +21,16 @@ public class DummyPersistence extends PersistenceEngine {
     public static class Factory implements PersistenceFactory {
 
         @Override
+        public PersistenceEngine create(DeployState deployState, StorageNode storageNode, StorageGroup parentGroup) {
+            return create(storageNode);
+        }
+
+        @Override
         public PersistenceEngine create(DeployState deployState, StorageNode storageNode, StorageGroup parentGroup, ModelElement storageNodeElement) {
+            return create(storageNode);
+        }
+
+        private PersistenceEngine create(StorageNode storageNode) {
             return new DummyPersistence(storageNode);
         }
 

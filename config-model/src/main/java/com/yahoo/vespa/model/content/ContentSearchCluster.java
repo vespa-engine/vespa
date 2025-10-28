@@ -124,28 +124,35 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         return (searchCluster != null) ? searchCluster.getSearchNodes() : nonIndexed;
     }
 
-    public void addSearchNode(DeployState deployState, ContentNode node, StorageGroup parentGroup, ModelElement element) {
-        TreeConfigProducer<AnyConfigProducer> parent = (searchCluster != null) ? searchCluster : this;
-
+    public void addSearchNode(DeployState deployState, ContentNode node, StorageGroup parentGroup) {
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
-        SearchNode searchNode;
-        if (element == null) {
-            searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
-                                           clusterName, node, flushOnShutdown, tuning, deployState.isHosted(),
-                                           syncTransactionLog,
-                                           deployState.getProperties().mallocImpl(Optional.of(ClusterSpec.Type.content)));
-            searchNode.setHostResource(node.getHostResource());
-            searchNode.initService(deployState);
-        } else {
-            searchNode = new SearchNode.Builder("" + node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
-                                                tuning, syncTransactionLog)
-                    .build(deployState, parent, element.getXml());
-        }
+        SearchNode searchNode = SearchNode.create(parent(), "" + node.getDistributionKey(), node.getDistributionKey(),
+                                                  spec, clusterName, node, flushOnShutdown, tuning,
+                                                  deployState.isHosted(), syncTransactionLog,
+                                                  deployState.getProperties().mallocImpl(Optional.of(ClusterSpec.Type.content)));
+        searchNode.setHostResource(node.getHostResource());
+        searchNode.initService(deployState);
+        addSearchNode(searchNode);
+    }
+
+    public void addSearchNode(DeployState deployState, ContentNode node, StorageGroup parentGroup, ModelElement element) {
+        NodeSpec spec = getNextSearchNodeSpec(parentGroup);
+        SearchNode searchNode = new SearchNode.Builder("" + node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
+                                                       tuning, syncTransactionLog)
+                .build(deployState, parent(), element.getXml());
+        addSearchNode(searchNode);
+    }
+
+    private void addSearchNode(SearchNode searchNode) {
         if (searchCluster != null) {
             searchCluster.addSearcher(searchNode);
         } else {
             nonIndexed.add(searchNode);
         }
+    }
+
+    private TreeConfigProducer<AnyConfigProducer> parent() {
+        return searchCluster != null ? searchCluster : this;
     }
 
     /** Translates group ids to continuous 0-base "row" id integers */

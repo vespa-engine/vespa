@@ -21,6 +21,8 @@ public abstract class PersistenceEngine extends TreeConfigProducer<AnyConfigProd
      */
     public interface PersistenceFactory {
 
+        PersistenceEngine create(DeployState deployState, StorageNode storageNode, StorageGroup parentGroup);
+
         PersistenceEngine create(DeployState deployState, StorageNode storageNode, StorageGroup parentGroup, ModelElement storageNodeElement);
 
         ContentCluster.DistributionMode getDefaultDistributionMode();
