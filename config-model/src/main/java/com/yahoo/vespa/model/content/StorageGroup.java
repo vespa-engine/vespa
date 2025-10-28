@@ -318,15 +318,17 @@ public class StorageGroup {
             private StorageNode buildSingleNode(DeployState deployState, ContentCluster parent) {
                 int distributionKey = 0;
 
-                StorageNode searchNode = new StorageNode(deployState.getProperties(), parent.getStorageCluster(), 1.0, distributionKey , false);
-                searchNode.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
-                PersistenceEngine provider = parent.getPersistence().create(deployState, searchNode, storageGroup);
-                searchNode.initService(deployState);
+                StorageNode storageNode = new StorageNode(deployState.getProperties(), parent.getStorageCluster(), 1.0, distributionKey , false);
+                storageNode.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
+
+                parent.getSearch().addSearchNode(deployState, storageNode, storageGroup);
+                PersistenceEngine provider = parent.getPersistence().create(storageNode);
+                storageNode.initService(deployState);
 
                 Distributor distributor = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), distributionKey, null, provider);
-                distributor.setHostResource(searchNode.getHostResource());
+                distributor.setHostResource(storageNode.getHostResource());
                 distributor.initService(deployState);
-                return searchNode;
+                return storageNode;
             }
             
             /**
@@ -393,7 +395,8 @@ public class StorageGroup {
 
             public StorageNode build(DeployState deployState, ContentCluster parent, StorageGroup storageGroup) {
                 StorageNode sNode = new DomStorageNodeBuilder().build(deployState, parent.getStorageCluster(), element.getXml());
-                PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, storageGroup, element);
+                parent.getSearch().addSearchNode(deployState, sNode, storageGroup, element);
+                PersistenceEngine provider = parent.getPersistence().create(sNode);
                 new Distributor.Builder(clusterElement, provider).build(deployState, parent.getDistributorNodes(), element.getXml());
                 return sNode;
             }
@@ -503,7 +506,8 @@ public class StorageGroup {
             sNode.setHostResource(hostResource);
             sNode.initService(deployState);
 
-            PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, parentGroup);
+            parent.getSearch().addSearchNode(deployState, sNode, parentGroup);
+            PersistenceEngine provider = parent.getPersistence().create(sNode);
             Distributor d = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), clusterMembership.index(), null, provider);
             d.setHostResource(sNode.getHostResource());
             d.initService(deployState);

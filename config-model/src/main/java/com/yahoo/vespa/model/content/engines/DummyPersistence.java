@@ -1,10 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.engines;
 
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
-import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
-import com.yahoo.vespa.model.content.StorageGroup;
 import com.yahoo.vespa.model.content.StorageNode;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
@@ -21,16 +18,7 @@ public class DummyPersistence extends PersistenceEngine {
     public static class Factory implements PersistenceFactory {
 
         @Override
-        public PersistenceEngine create(DeployState deployState, StorageNode storageNode, StorageGroup parentGroup) {
-            return create(storageNode);
-        }
-
-        @Override
-        public PersistenceEngine create(DeployState deployState, StorageNode storageNode, StorageGroup parentGroup, ModelElement storageNodeElement) {
-            return create(storageNode);
-        }
-
-        private PersistenceEngine create(StorageNode storageNode) {
+        public PersistenceEngine create(StorageNode storageNode) {
             return new DummyPersistence(storageNode);
         }
 
