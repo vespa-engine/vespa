@@ -141,7 +141,7 @@ search::queryeval::FieldSpec ProtonTermWithFields<Base>::inner_field_spec(const 
             return f._field_spec;
         }
     }
-    LOG(warning, "inner_field_spec: no match for field id=%d in my %zd fields", parentSpec.getFieldId(), numFields());
+    LOG(debug, "inner_field_spec: no match for field id=%d in my %zd fields", parentSpec.getFieldId(), numFields());
     return search::query::Term::inner_field_spec(parentSpec);
 }
 
