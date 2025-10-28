@@ -1,225 +1,139 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
+
 #include <vespa/searchlib/common/bitvector.h>
-#include <vespa/vespalib/util/signalhandler.h>
+#include <benchmark/benchmark.h>
 #include <cassert>
-#include <iostream>
+#include <memory>
+#include <random>
 #include <string>
-#include <unistd.h>
 #include <vector>
 
-LOG_SETUP("bitvectorbenchmark");
+#include <vespa/log/log.h>
+LOG_SETUP("bitvector_benchmark");
 
 namespace search {
 
-class BitVectorBenchmark
-{
-private:
-    std::vector<BitVector *> _bv;
+struct BitVectorBenchmark : benchmark::Fixture {
+    std::vector<std::unique_ptr<BitVector>> _bv;
     std::vector<unsigned int> _bvc;
-    void testCountSpeed1();
-    void testCountSpeed2();
-    void testCountSpeed3();
-    void testOrSpeed1();
-    void testOrSpeed2();
-    static void usage();
-    void init(size_t n);
-public:
+
     BitVectorBenchmark();
-    ~BitVectorBenchmark();
-    int main(int argc, char **argv);
+    ~BitVectorBenchmark() override;
+
+    void SetUp(const benchmark::State& state) override {
+        const size_t n = state.range();
+        auto a = BitVector::create(n);
+        auto b = BitVector::create(n);
+        std::minstd_rand prng;
+        prng.seed(1);
+        std::uniform_int_distribution<size_t> dist10(0, 9); // closed interval
+        for (size_t i = 0; i < n; i += dist10(prng)) {
+            a->flipBit(i);
+        }
+        for (size_t i = 0; i < n; i += dist10(prng)) {
+            b->flipBit(i);
+        }
+        a->invalidateCachedCount();
+        b->invalidateCachedCount();
+        _bvc.push_back(a->countTrueBits());
+        _bv.emplace_back(std::move(a));
+        _bvc.push_back(b->countTrueBits());
+        _bv.emplace_back(std::move(b));
+    }
+
+    void TearDown(const benchmark::State&) override {
+        _bv.clear();
+        _bvc.clear();
+    }
 };
 
-BitVectorBenchmark::BitVectorBenchmark() :
-    _bv()
-{
-}
+BitVectorBenchmark::BitVectorBenchmark() = default;
+BitVectorBenchmark::~BitVectorBenchmark() = default;
 
-BitVectorBenchmark::~BitVectorBenchmark()
-{
-    for(size_t i(0); i < _bv.size(); i++) {
-        delete _bv[i];
+BENCHMARK_DEFINE_F(BitVectorBenchmark, or_speed)(benchmark::State& state) {
+    for (auto _ : state) {
+        _bv[0]->orWith(*_bv[1]);
     }
+    state.SetItemsProcessed(state.range() * state.iterations());
 }
 
-void BitVectorBenchmark::usage()
-{
-    std::cout << "usage: bitvectorbenchmark [-n numBits] [-t operation]" << std::endl;
-}
-
-void BitVectorBenchmark::init(size_t n)
-{
-    BitVector *a(BitVector::create(n).release());
-    BitVector *b(BitVector::create(n).release());
-    srand(1);
-    for(size_t i(0), j(0); i < n; i += rand()%10, j++) {
-        a->flipBit(i);
+BENCHMARK_DEFINE_F(BitVectorBenchmark, count_speed)(benchmark::State& state) {
+    for (auto _ : state) {
+        _bv[0]->invalidateCachedCount();
+        unsigned int cnt = _bv[0]->countTrueBits();
+        assert(cnt == _bvc[0]);
+        benchmark::DoNotOptimize(cnt);
     }
-    for(size_t i(0), j(0); i < n; i += rand()%10, j++) {
-        b->flipBit(i);
+    state.SetItemsProcessed(state.range() * state.iterations());
+}
+
+template <typename BitFn>
+void do_benchmark_fn_in_state_bit_range(benchmark::State& state, BitFn bit_fn) {
+    std::minstd_rand prng;
+    prng.seed(1);
+    assert(state.range() > 0);
+    std::uniform_int_distribution<size_t> dist(0, state.range() - 1); // closed interval
+    for (auto _ : state) {
+        auto result = bit_fn(dist(prng));
+        benchmark::DoNotOptimize(result);
     }
-    a->invalidateCachedCount();
-    b->invalidateCachedCount();
-    _bv.push_back(a);
-    _bvc.push_back(a->countTrueBits());
-    _bv.push_back(b);
-    _bvc.push_back(b->countTrueBits());
+    state.SetItemsProcessed(state.iterations());
 }
 
-void BitVectorBenchmark::testOrSpeed1()
-{
-    _bv[0]->orWith(*_bv[1]);
+BENCHMARK_DEFINE_F(BitVectorBenchmark, get_next_true_bit_with_random_bits_set)(benchmark::State& state) {
+    do_benchmark_fn_in_state_bit_range(state, [&](size_t bit_idx) {
+        return _bv[0]->getNextTrueBit(bit_idx);
+    });
 }
 
-void BitVectorBenchmark::testCountSpeed1()
-{
-    _bv[0]->invalidateCachedCount();
-    unsigned int cnt = _bv[0]->countTrueBits();
-    assert(cnt == _bvc[0]);
-    (void) cnt;
+BENCHMARK_DEFINE_F(BitVectorBenchmark, get_next_false_bit_with_random_bits_set)(benchmark::State& state) {
+    do_benchmark_fn_in_state_bit_range(state, [&](size_t bit_idx) {
+        return _bv[0]->getNextFalseBit(bit_idx);
+    });
 }
 
-static int bitTab[256] = {
-    0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4,
-    1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,
-    1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,
-    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
-    1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,
-    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
-    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
-    3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
-    1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,
-    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
-    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
-    3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
-    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
-    3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
-    3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
-    4,5,5,6,5,6,6,7,5,6,6,7,6,7,7,8
-};
+namespace {
 
-void BitVectorBenchmark::testCountSpeed2()
-{
-    const unsigned char * p = reinterpret_cast<const unsigned char *>(_bv[0]->getStart());
-    size_t sz = _bv[0]->size()/8;
-    size_t sum0(0);
-    size_t sum1(0);
-    size_t sum2(0);
-    size_t sum3(0);
-    for (size_t i(0); i < sz; i+=4) {
-            sum0 += bitTab[p[i+0]];
-            sum1 += bitTab[p[i+1]];
-            sum2 += bitTab[p[i+2]];
-            sum3 += bitTab[p[i+3]];
+size_t scan(BitVector& bv) __attribute__((noinline));
+
+size_t scan(BitVector& bv) {
+    size_t count(0);
+    for (BitVector::Index i(bv.getFirstTrueBit()), m(bv.size()); i < m; i = bv.getNextTrueBit(i+1)) {
+        count++;
     }
-    assert(sum0 + sum1 + sum2 + sum3 == _bvc[0]);
+    return count;
 }
 
-
-static int
-popCount(unsigned int bits)
-{
-    unsigned int odd =  bits & 0x55555555;
-    unsigned int even = bits & 0xaaaaaaaa;
-    bits = odd + (even >> 1);
-    odd =  bits & 0x33333333;
-    even = bits & 0xcccccccc;
-    bits = odd + (even >> 2);
-    odd =  bits & 0x0f0f0f0f;
-    even = bits & 0xf0f0f0f0;
-    bits = odd + (even >> 4);
-    odd =  bits & 0x00ff00ff;
-    even = bits & 0xff00ff00;
-    bits = odd + (even >> 8);
-    odd =  bits & 0x0000ffff;
-    even = bits & 0xffff0000;
-    bits = odd + (even >> 16);
-    return bits;
 }
 
-
-void
-BitVectorBenchmark::testCountSpeed3()
-{
-    const unsigned int * p = static_cast<const unsigned int *>(_bv[0]->getStart());
-    const unsigned int * pe = p + (_bv[0]->size()/(sizeof(uint32_t)*8));
-    size_t sum(0);
-    for (; p < pe; ++p) {
-        sum += popCount(*p);
+BENCHMARK_DEFINE_F(BitVectorBenchmark, get_next_true_bit_scan_with_random_bits_set)(benchmark::State& state) {
+    for (auto _ : state) {
+        auto result = scan(*_bv[0]);
+        benchmark::DoNotOptimize(result);
     }
-    assert(sum == _bvc[0]);
+    state.SetItemsProcessed(state.range() * state.iterations());
 }
 
-void BitVectorBenchmark::testOrSpeed2()
-{
-    using T = uint64_t;
-    T * a = reinterpret_cast<T *>(_bv[0]->getStart());
-    const T * b = reinterpret_cast<const T *>(_bv[1]->getStart());
-    size_t sz = _bv[0]->size()/(8*sizeof(*a));
-    for (size_t i(0); i < sz; i+=2) {
-            a[i] |= b[i];
-            a[i+1] |= b[i+1];
-    //        a[i+2] |= b[i+2];
-    //        a[i+3] |= b[i+3];
+BENCHMARK_DEFINE_F(BitVectorBenchmark, get_next_true_bit_scan_with_all_bits_set)(benchmark::State& state) {
+    auto bv = BitVector::create(state.range());
+    bv->setInterval(0, bv->size());
+    for (auto _ : state) {
+        auto result = scan(*bv);
+        benchmark::DoNotOptimize(result);
     }
+    state.SetItemsProcessed(state.range() * state.iterations());
 }
 
-int BitVectorBenchmark::main(int argc, char **argv)
-{
-    std::string operation;
-    size_t numBits(8*1000000);
-    int opt;
-    bool optError = false;
-    while ((opt = getopt(argc, argv, "n:t:")) != -1) {
-        switch (opt) {
-        case 'n':
-            numBits = strtoll(optarg, nullptr, 10);
-            break;
-        case 't':
-            operation = optarg;
-            break;
-        default:
-            optError = true;
-            break;
-        }
-    }
 
-    if ((argc != optind ) || optError) {
-        usage();
-        return -1;
-    }
+BENCHMARK_REGISTER_F(BitVectorBenchmark, or_speed)->RangeMultiplier(4)->Range(1024, 8<<22);
+BENCHMARK_REGISTER_F(BitVectorBenchmark, count_speed)->RangeMultiplier(4)->Range(1024, 8<<22);
+// Test with large bit vectors to determine effect of last level cache misses
+BENCHMARK_REGISTER_F(BitVectorBenchmark, get_next_true_bit_with_random_bits_set)->RangeMultiplier(8)->Range(1024, 8<<25);
+BENCHMARK_REGISTER_F(BitVectorBenchmark, get_next_false_bit_with_random_bits_set)->RangeMultiplier(8)->Range(1024, 8<<25);
 
-    init(numBits);
-    for (size_t i(0); i < operation.size(); i++) {
-        char op(operation[i]);
-        size_t splitBits1 = rand() % numBits;
-        size_t splitBits2 = rand() % numBits;
-        if (splitBits1 > splitBits2)
-            std::swap(splitBits1, splitBits2);
-        for (size_t j(0); j < 1000; j++) {
-            if (op == 'c') {
-                testCountSpeed1();
-            } else if (op == 'd') {
-                testCountSpeed2();
-            } else if (op == 'e') {
-                testCountSpeed3();
-            } else if (op == 'o') {
-                testOrSpeed1();
-            } else if (op == 'p') {
-                testOrSpeed2();
-            } else {
-                std::cerr << "Unknown operation " << op << std::endl;
-            }
-        }
-    }
+BENCHMARK_REGISTER_F(BitVectorBenchmark, get_next_true_bit_scan_with_random_bits_set)->RangeMultiplier(8)->Range(1024, 8<<22);
+BENCHMARK_REGISTER_F(BitVectorBenchmark, get_next_true_bit_scan_with_all_bits_set)->RangeMultiplier(8)->Range(1024, 8<<22);
 
-    return 0;
-}
-}
+} // search
 
-int main(int argc, char ** argv) {
-    vespalib::SignalHandler::PIPE.ignore();
-    search::BitVectorBenchmark myapp;
-    return myapp.main(argc, argv);
-}
-
+BENCHMARK_MAIN();
