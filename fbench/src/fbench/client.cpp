@@ -104,15 +104,16 @@ int UrlReader::nextUrl(char *buf, int buflen)
 {
     if (_leftOvers) {
         if ( _args._usePostMode && _args._singleQueryFile && _reader.GetFilePos() >= _args._queryfileEndOffset ) {
-            // reached logical EOF
+            // reached logical EOF, discard leftover and treat like EOF
             _leftOvers = nullptr;
-            return -1;
+            // Fall through to regular EOF handling below
+        } else {
+            int sz = std::min(_leftOversLen, buflen-1);
+            strncpy(buf, _leftOvers, sz);
+            buf[sz] = '\0';
+            _leftOvers = nullptr;
+            return _leftOversLen;
         }
-        int sz = std::min(_leftOversLen, buflen-1);
-        strncpy(buf, _leftOvers, sz);
-        buf[sz] = '\0';
-        _leftOvers = nullptr;
-        return _leftOversLen;
     }
     int ll = findUrl(buf, buflen);
     if (ll > 0) {
