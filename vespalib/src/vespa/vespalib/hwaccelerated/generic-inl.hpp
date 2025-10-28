@@ -7,6 +7,7 @@
 #error "VESPA_HWACCEL_INCLUDE_DEFINITIONS not set"
 #endif
 
+#include "fn_table.h"
 #include "private_helpers.hpp"
 #include <cblas.h>
 
@@ -90,69 +91,59 @@ bitOperation(Operation operation, void * aOrg, const void * bOrg, size_t bytes) 
     }
 }
 
-}
-
-float
-VESPA_HWACCEL_TARGET_TYPE::dotProduct(const float * a, const float * b, size_t sz) const noexcept
-{
-    return cblas_sdot(sz, a, 1, b, 1);
-}
-
-float
-VESPA_HWACCEL_TARGET_TYPE::dotProduct(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept
-{
-    return multiplyAdd<float, BFloat16, 16>(a, b, sz);
-}
-
-double
-VESPA_HWACCEL_TARGET_TYPE::dotProduct(const double * a, const double * b, size_t sz) const noexcept
-{
-    return cblas_ddot(sz, a, 1, b, 1);
-}
-
-int64_t
-VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int8_t * a, const int8_t * b, size_t sz) const noexcept
-{
+int64_t my_dot_product_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
     return helper::multiplyAdd(a, b, sz);
 }
-
-int64_t
-VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int16_t * a, const int16_t * b, size_t sz) const noexcept
-{
+int64_t my_dot_product_i16(const int16_t* a, const int16_t* b, size_t sz) noexcept {
     return multiplyAdd<int64_t, int16_t, 8>(a, b, sz);
 }
-int64_t
-VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int32_t * a, const int32_t * b, size_t sz) const noexcept
-{
+int64_t my_dot_product_i32(const int32_t* a, const int32_t* b, size_t sz) noexcept {
     return multiplyAdd<int64_t, int32_t, 8>(a, b, sz);
 }
-
-long long
-VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int64_t * a, const int64_t * b, size_t sz) const noexcept
-{
+int64_t my_dot_product_i64(const int64_t* a, const int64_t* b, size_t sz) noexcept {
     return multiplyAdd<long long, int64_t, 8>(a, b, sz);
 }
-
-void
-VESPA_HWACCEL_TARGET_TYPE::orBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept
-{
+float my_dot_product_bf16(const BFloat16* a, const BFloat16* b, size_t sz) noexcept {
+    return multiplyAdd<float, BFloat16, 16>(a, b, sz);
+}
+float my_dot_product_f32(const float* a, const float* b, size_t sz) noexcept {
+    return cblas_sdot(sz, a, 1, b, 1);
+}
+double my_dot_product_f64(const double* a, const double* b, size_t sz) noexcept {
+    return cblas_ddot(sz, a, 1, b, 1);
+}
+double my_squared_euclidean_distance_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
+    return helper::squaredEuclideanDistance(a, b, sz);
+}
+double my_squared_euclidean_distance_bf16(const BFloat16* a, const BFloat16* b, size_t sz) noexcept {
+    // This is around 10x the perf of the naive loop in mixed_l2_distance.cpp
+    return squaredEuclideanDistanceT<float, BFloat16, 16>(a, b, sz);
+}
+double my_squared_euclidean_distance_f32(const float* a, const float* b, size_t sz) noexcept {
+    return squaredEuclideanDistanceT<float, float, 16>(a, b, sz);
+}
+double my_squared_euclidean_distance_f64(const double* a, const double* b, size_t sz) noexcept {
+    return squaredEuclideanDistanceT<double, double, 16>(a, b, sz);
+}
+size_t my_binary_hamming_distance(const void* lhs, const void* rhs, size_t sz) noexcept {
+    return helper::autovec_binary_hamming_distance(lhs, rhs, sz);
+}
+size_t my_population_count(const uint64_t* buf, size_t sz) noexcept {
+    return helper::populationCount(buf, sz);
+}
+void my_convert_bfloat16_to_float(const uint16_t* src, float* dest, size_t sz) noexcept {
+    helper::convert_bfloat16_to_float(src, dest, sz);
+}
+void my_or_bit(void* aOrg, const void* bOrg, size_t bytes) noexcept {
     bitOperation<8>([](uint64_t a, uint64_t b) { return a | b; }, aOrg, bOrg, bytes);
 }
-
-void
-VESPA_HWACCEL_TARGET_TYPE::andBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept
-{
+void my_and_bit(void* aOrg, const void* bOrg, size_t bytes) noexcept {
     bitOperation<8>([](uint64_t a, uint64_t b) { return a & b; }, aOrg, bOrg, bytes);
 }
-void
-VESPA_HWACCEL_TARGET_TYPE::andNotBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept
-{
+void my_and_not_bit(void* aOrg, const void* bOrg, size_t bytes) noexcept {
     bitOperation<8>([](uint64_t a, uint64_t b) { return a & ~b; }, aOrg, bOrg, bytes);
 }
-
-void
-VESPA_HWACCEL_TARGET_TYPE::notBit(void * aOrg, size_t bytes) const noexcept
-{
+void my_not_bit(void* aOrg, size_t bytes) noexcept {
     auto a(static_cast<uint64_t *>(aOrg));
     const size_t sz(bytes/sizeof(uint64_t));
     for (size_t i(0); i < sz; i++) {
@@ -163,51 +154,158 @@ VESPA_HWACCEL_TARGET_TYPE::notBit(void * aOrg, size_t bytes) const noexcept
         ac[i] = ~ac[i];
     }
 }
+void my_and_128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) noexcept {
+    helper::andChunks<16, 8>(offset, src, dest);
+}
+void my_or_128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) noexcept {
+    helper::orChunks<16, 8>(offset, src, dest);
+}
+TargetInfo my_target_info() noexcept {
+    // We assume any auto-vectorized target > 128 bits will override with correct info
+    return {"AutoVec", VESPA_HWACCEL_TARGET_NAME, 16};
+}
+
+} // anon ns
+
+float
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const float* a, const float* b, size_t sz) const noexcept {
+    return my_dot_product_f32(a, b, sz);
+}
+
+float
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept {
+    return my_dot_product_bf16(a, b, sz);
+}
+
+double
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const double* a, const double* b, size_t sz) const noexcept {
+    return my_dot_product_f64(a, b, sz);
+}
+
+int64_t
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int8_t* a, const int8_t* b, size_t sz) const noexcept {
+    return my_dot_product_i8(a, b, sz);
+}
+
+int64_t
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int16_t* a, const int16_t* b, size_t sz) const noexcept {
+    return my_dot_product_i16(a, b, sz);
+}
+int64_t
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int32_t* a, const int32_t* b, size_t sz) const noexcept {
+    return my_dot_product_i32(a, b, sz);
+}
+
+long long
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int64_t* a, const int64_t* b, size_t sz) const noexcept {
+    return my_dot_product_i64(a, b, sz);
+}
+
+void
+VESPA_HWACCEL_TARGET_TYPE::orBit(void* aOrg, const void* bOrg, size_t bytes) const noexcept {
+    my_or_bit(aOrg, bOrg, bytes);
+}
+
+void
+VESPA_HWACCEL_TARGET_TYPE::andBit(void* aOrg, const void* bOrg, size_t bytes) const noexcept {
+    my_and_bit(aOrg, bOrg, bytes);
+}
+void
+VESPA_HWACCEL_TARGET_TYPE::andNotBit(void* aOrg, const void* bOrg, size_t bytes) const noexcept {
+    my_and_not_bit(aOrg, bOrg, bytes);
+}
+
+void
+VESPA_HWACCEL_TARGET_TYPE::notBit(void* aOrg, size_t bytes) const noexcept {
+    my_not_bit(aOrg, bytes);
+}
 
 void
 VESPA_HWACCEL_TARGET_TYPE::convert_bfloat16_to_float(const uint16_t * src, float * dest, size_t sz) const noexcept {
-    helper::convert_bfloat16_to_float(src, dest, sz);
+    my_convert_bfloat16_to_float(src, dest, sz);
 }
 
 size_t
 VESPA_HWACCEL_TARGET_TYPE::populationCount(const uint64_t *a, size_t sz) const noexcept {
-    return helper::populationCount(a, sz);
+    return my_population_count(a, sz);
 }
 
 size_t
 VESPA_HWACCEL_TARGET_TYPE::binary_hamming_distance(const void* lhs, const void* rhs, size_t sz) const noexcept {
-    return helper::autovec_binary_hamming_distance(lhs, rhs, sz);
+    return my_binary_hamming_distance(lhs, rhs, sz);
 }
 
 double
-VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) const noexcept {
-    return helper::squaredEuclideanDistance(a, b, sz);
+VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const int8_t* a, const int8_t* b, size_t sz) const noexcept {
+    return my_squared_euclidean_distance_i8(a, b, sz);
 }
 
 double
-VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const float * a, const float * b, size_t sz) const noexcept {
-    return squaredEuclideanDistanceT<float, float, 16>(a, b, sz);
+VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const float* a, const float* b, size_t sz) const noexcept {
+    return my_squared_euclidean_distance_f32(a, b, sz);
 }
 
 double
-VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const double * a, const double * b, size_t sz) const noexcept {
-    return squaredEuclideanDistanceT<double, double, 16>(a, b, sz);
+VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const double* a, const double* b, size_t sz) const noexcept {
+    return my_squared_euclidean_distance_f64(a, b, sz);
 }
 
 double
 VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept {
-    // This is around 10x the perf of the naive loop in mixed_l2_distance.cpp
-    return squaredEuclideanDistanceT<float, BFloat16, 16>(a, b, sz);
+    return my_squared_euclidean_distance_bf16(a, b, sz);
 }
 
 void
-VESPA_HWACCEL_TARGET_TYPE::and128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
-    helper::andChunks<16, 8>(offset, src, dest);
+VESPA_HWACCEL_TARGET_TYPE::and128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) const noexcept {
+    my_and_128(offset, src, dest);
 }
 
 void
-VESPA_HWACCEL_TARGET_TYPE::or128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
-    helper::orChunks<16, 8>(offset, src, dest);
+VESPA_HWACCEL_TARGET_TYPE::or128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) const noexcept {
+    my_or_128(offset, src, dest);
 }
+
+namespace {
+
+#define VESPA_HWACCEL_ASSIGN_TABLE_FN_VISITOR(fn_type, fn_field, fn_id) \
+    ft.fn_field = my_ ## fn_field;
+
+[[nodiscard]] dispatch::FnTable build_fn_table() {
+    dispatch::FnTable ft(my_target_info());
+    // Use function table visitor macro to ensure we don't miss including any baseline implementations
+    VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_ASSIGN_TABLE_FN_VISITOR);
+    return ft;
+}
+
+} // anon ns
+
+TargetInfo
+VESPA_HWACCEL_TARGET_TYPE::target_info() const noexcept {
+    return my_target_info();
+}
+
+const dispatch::FnTable&
+VESPA_HWACCEL_TARGET_TYPE::fn_table() const {
+    static const dispatch::FnTable tbl = build_fn_table();
+    return tbl;
+}
+
+#ifdef VESPA_HWACCEL_DEFINE_BASELINE_DISPATCH_FN_PTRS
+
+// Create _definitions_ of the extern declarations in fn_table.h that will initially
+// point to our baseline implementations.
+
+namespace dispatch {
+
+#define VESPA_HWACCEL_MY_BASELINE_FN_PTR_NAME(name) my_ ## name
+
+#define VESPA_HWACCEL_DEFINE_DISPATCH_FN_PTR(fn_type, fn_field, fn_id) \
+    fn_type VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(fn_field) = VESPA_HWACCEL_MY_BASELINE_FN_PTR_NAME(fn_field);
+
+VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_DEFINE_DISPATCH_FN_PTR);
+
+}
+
+#endif // VESPA_HWACCEL_DEFINE_BASELINE_DISPATCH_FN_PTRS
 
 } // vespalib::hwaccelerated

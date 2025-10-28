@@ -2,8 +2,10 @@
 
 #include "data_utils.h"
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <vespa/vespalib/hwaccelerated/fn_table.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
 #include <vespa/vespalib/hwaccelerated/highway.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <limits>
 #include <random>
 
@@ -13,6 +15,20 @@ LOG_SETUP("hwaccelerated_test");
 using namespace ::testing;
 
 namespace vespalib::hwaccelerated {
+
+class ScopedFnTableOverride {
+    dispatch::FnTable _original_fn_table;
+public:
+    explicit ScopedFnTableOverride(const dispatch::FnTable& new_sparse_table)
+        : _original_fn_table(dispatch::active_fn_table())
+    {
+        auto composite_table = dispatch::build_composite_fn_table(new_sparse_table, _original_fn_table, false);
+        dispatch::thread_unsafe_update_function_dispatch_pointers(composite_table);
+    }
+    ~ScopedFnTableOverride() {
+        dispatch::thread_unsafe_update_function_dispatch_pointers(_original_fn_table);
+    }
+};
 
 // TODO reconcile run-time startup verification in `iaccelerated.cpp` with what's in here!
 //  Ideally we want to run our tests on hardware that has enough bells and whistles in terms
@@ -29,9 +45,13 @@ void verify_euclidean_distance(std::span<const IAccelerated*> accels, size_t tes
             sum += d * d;
         }
         for (const auto* accel : accels) {
-            LOG(spam, "verify_euclidean_distance(accel=%s, len=%zu, offset=%zu)", accel->target_name(), test_length, j);
-            auto computed = static_cast<double>(accel->squaredEuclideanDistance(&a[j], &b[j], test_length - j));
-            ASSERT_NEAR(sum, computed, sum*approx_factor) << accel->target_name();
+            LOG(spam, "verify_euclidean_distance(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(), test_length, j);
+            double computed = accel->squaredEuclideanDistance(&a[j], &b[j], test_length - j);
+            ASSERT_NEAR(sum, computed, sum*approx_factor) << "(IAccelerated) " << accel->target_info().to_string();
+
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            computed = vec_fn::squared_euclidean_distance(&a[j], &b[j], test_length - j);
+            ASSERT_NEAR(sum, computed, sum*approx_factor) << "(fn table) " << accel->target_info().to_string();
         }
     }
 }
@@ -45,9 +65,13 @@ void verify_dot_product(std::span<const IAccelerated*> accels, size_t test_lengt
             sum += a[i] * b[i];
         }
         for (const auto* accel : accels) {
-            LOG(spam, "verify_dot_product(accel=%s, len=%zu, offset=%zu)", accel->target_name(), test_length, j);
+            LOG(spam, "verify_dot_product(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(), test_length, j);
             auto computed = static_cast<double>(accel->dotProduct(&a[j], &b[j], test_length - j));
-            ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << accel->target_name();
+            ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << "(IAccelerated) " << accel->target_info().to_string();
+
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            computed = static_cast<double>(vec_fn::dot_product(&a[j], &b[j], test_length - j));
+            ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << "(fn table) " << accel->target_info().to_string();
         }
     }
 }
@@ -101,7 +125,7 @@ struct HwAcceleratedTest : Test {
     static void SetUpTestSuite() {
         fprintf(stderr, "Testing accelerators:\n");
         for (const auto* accel : all_accelerators_to_test()) {
-            fprintf(stderr, "%s\n", accel->friendly_name().c_str());
+            fprintf(stderr, "%s\n", accel->target_info().to_string().c_str());
         }
     }
 };
@@ -109,7 +133,7 @@ struct HwAcceleratedTest : Test {
 TEST_F(HwAcceleratedTest, euclidean_distance_impls_match_source_of_truth) {
     auto accelerators = all_accelerators_to_test();
     for (size_t test_length : test_lengths()) {
-        GTEST_DO(verify_euclidean_distance(accelerators, test_length));
+        ASSERT_NO_FATAL_FAILURE(verify_euclidean_distance(accelerators, test_length)) << "with length " << test_length;
     }
 }
 
@@ -126,7 +150,7 @@ void verify_dot_product(std::span<const IAccelerated*> accelerators, size_t test
 TEST_F(HwAcceleratedTest, dot_product_impls_match_source_of_truth) {
     auto accelerators = all_accelerators_to_test();
     for (size_t test_length : test_lengths()) {
-        GTEST_DO(verify_dot_product(accelerators, test_length));
+        ASSERT_NO_FATAL_FAILURE(verify_dot_product(accelerators, test_length)) << "with length " << test_length;
     }
 }
 
@@ -144,9 +168,13 @@ void verify_euclidean_distance_no_overflow(std::span<const IAccelerated*> accels
             sum += d * d;
         }
         for (const auto* accel : accels) {
-            LOG(spam, "verify_euclidean_distance_no_overflow(accel=%s, len=%zu)", accel->friendly_name().c_str(), i);
+            LOG(spam, "verify_euclidean_distance_no_overflow(accel=%s, len=%zu)", accel->target_info().to_string().c_str(), i);
             auto computed = static_cast<int64_t>(accel->squaredEuclideanDistance(lhs.data(), rhs.data(), i));
-            ASSERT_EQ(sum, computed) << "overflow at length " << i << " for accel " << accel->friendly_name();
+            ASSERT_EQ(sum, computed) << "(IAccelerated) overflow at length " << i << " for accel " << accel->target_info().to_string();
+
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            computed = static_cast<int64_t>(vec_fn::squared_euclidean_distance(lhs.data(), rhs.data(), i));
+            ASSERT_EQ(sum, computed) << "(fn table) overflow at length " << i << " for accel " << accel->target_info().to_string();
         }
     }
 }
@@ -169,9 +197,13 @@ void verify_dot_product_no_overflow(std::span<const IAccelerated*> accels, size_
             sum += lhs[j] * rhs[j];
         }
         for (const auto* accel : accels) {
-            LOG(spam, "verify_dot_product_no_overflow(accel=%s, len=%zu)", accel->friendly_name().c_str(), i);
+            LOG(spam, "verify_dot_product_no_overflow(accel=%s, len=%zu)", accel->target_info().to_string().c_str(), i);
             int64_t computed = accel->dotProduct(lhs.data(), rhs.data(), i);
-            ASSERT_EQ(sum, computed) << "overflow at length " << i << " for accel " << accel->friendly_name();
+            ASSERT_EQ(sum, computed) << "(IAccelerated) overflow at length " << i << " for accel " << accel->target_info().to_string();
+
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            computed = vec_fn::dot_product(lhs.data(), rhs.data(), i);
+            ASSERT_EQ(sum, computed) << "(fn table) overflow at length " << i << " for accel " << accel->target_info().to_string();
         }
     }
 }
@@ -236,20 +268,21 @@ void check_with_flipping(std::span<const IAccelerated*> accels, void* mem_a, voi
     memset(mem_a, 0, sz);
     memset(mem_b, 0, sz);
     size_t dist = 0;
-    for (const auto* accel : accels) {
-        ASSERT_EQ(accel->binary_hamming_distance(mem_a, mem_b, sz), dist) << accel->friendly_name();
-    }
+    auto check_accelerators = [&] {
+        for (const auto* accel : accels) {
+            ASSERT_EQ(accel->binary_hamming_distance(mem_a, mem_b, sz), dist) << "(IAccelerated) " << accel->target_info().to_string();
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            ASSERT_EQ(vec_fn::binary_hamming_distance(mem_a, mem_b, sz), dist) << "(fn table) " << accel->target_info().to_string();
+        }
+    };
+    ASSERT_NO_FATAL_FAILURE(check_accelerators());
     while (dist * 2 < sz) {
         flip_one_bit(mem_a, mem_b, sz);
         ++dist;
-        for (const auto* accel : accels) {
-            ASSERT_EQ(accel->binary_hamming_distance(mem_a, mem_b, sz), dist) << accel->friendly_name();
-        }
+        ASSERT_NO_FATAL_FAILURE(check_accelerators());
         flip_one_bit(mem_b, mem_a, sz);
         ++dist;
-        for (const auto* accel : accels) {
-            ASSERT_EQ(accel->binary_hamming_distance(mem_a, mem_b, sz), dist) << accel->friendly_name();
-        }
+        ASSERT_NO_FATAL_FAILURE(check_accelerators());
     }
 }
 

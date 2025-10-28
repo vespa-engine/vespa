@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "target_info.h"
 #include <vespa/vespalib/util/bfloat16.h>
 #include <memory>
 #include <cstdint>
@@ -9,12 +10,15 @@
 
 namespace vespalib::hwaccelerated {
 
+namespace dispatch { struct FnTable; }
+
+class TargetInfo;
+
 /**
  * This contains an interface to all primitives that has different cpu supported accelerations.
  * The actual implementation you get by calling the static getAccelerator method.
  */
-class IAccelerated
-{
+class IAccelerated {
 public:
     virtual ~IAccelerated() = default;
     using UP = std::unique_ptr<IAccelerated>;
@@ -41,11 +45,11 @@ public:
     // OR 128 bytes from multiple, optionally inverted sources
     virtual void or128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) const noexcept = 0;
 
-    [[nodiscard]] virtual const char* implementation_name() const noexcept { return "AutoVec"; }
-    // Returns a static string representing the name of the underlying accelerator target (e.g. "AVX3", "NEON" etc.)
-    [[nodiscard]] virtual const char* target_name() const noexcept { return "Unknown"; }
+    [[nodiscard]] virtual TargetInfo target_info() const noexcept = 0;
 
-    [[nodiscard]] virtual std::string friendly_name() const;
+    // The function table entries must be valid for the lifetime of the process,
+    // entirely independent of the lifetime of `this`.
+    [[nodiscard]] virtual const dispatch::FnTable& fn_table() const = 0;
 
     static std::unique_ptr<IAccelerated> create_baseline_auto_vectorized_target();
     static std::unique_ptr<IAccelerated> create_best_auto_vectorized_target();
