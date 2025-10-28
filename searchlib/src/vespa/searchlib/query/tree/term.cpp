@@ -32,8 +32,8 @@ void Term::setStateFrom(const Term& other) {
 
 queryeval::FieldSpec Term::inner_field_spec(const queryeval::FieldSpec& parentSpec) const {
     auto me = vespalib::getClassName(*this);
-    LOG(warning, "fallback inner_field_spec called for %s", me.c_str());
-    // should not be called, always returns spec with invalid handle
+    LOG(debug, "fallback inner_field_spec called for %s", me.c_str());
+    // should mostly not be called, always returns spec with invalid handle
     const std::string& name = parentSpec.getName();
     uint32_t fieldId = parentSpec.getFieldId();
     fef::FilterThreshold threshold = parentSpec.get_filter_threshold();
