@@ -4,7 +4,7 @@
 
 namespace search::queryeval {
 
-bool SameElementFlags::_expose_descendants = false;
+bool SameElementFlags::_expose_descendants = true;
 
 SameElementFlags::ExposeDescendantsTweak::ExposeDescendantsTweak(bool expose_descendants_in)
     : _old_expose_descendants(_expose_descendants)
