@@ -420,7 +420,7 @@ QueryBuilder::build_and_not(const QueryNodeResultFactory& factory, QueryStackIte
 {
     HiddenTermsGuard hidden_terms_guard(*this);
     auto arity = queryRep.getArity();
-    auto and_not = std::make_unique<AndNotQueryNode>();
+    auto and_not = std::make_unique<AndNotQueryNode>(_same_element_view.has_value());
     for (size_t i = 0; i < arity; ++i) {
         queryRep.next();
         if (i == 1u) {
