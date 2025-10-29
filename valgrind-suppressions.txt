@@ -715,3 +715,84 @@
    fun:_ZN3re23RE2C1ERKNS_11StringPieceERKNS0_7OptionsE
    ...
 }
+{
+   almalinux 9 thread local storage init
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:UnknownInlinedFun
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.34
+   fun:_ZNSt6thread15_M_start_threadESt10unique_ptrINS_6_StateESt14default_deleteIS1_EEPFvvE
+   ...
+}
+{
+   for LLVM 19 (almalinux 9) 1
+   Memcheck:Cond
+   ...
+   fun:_ZN4llvm13MCELFStreamer19emitSymbolAttributeEPNS_8MCSymbolENS_12MCSymbolAttrE
+   fun:_ZN4llvm10AsmPrinter18emitFunctionHeaderEv
+   fun:_ZN4llvm10AsmPrinter16emitFunctionBodyEv
+   ...
+}
+{
+   for LLVM 19 (almalinux 9) 2
+   Memcheck:Value8
+   fun:UnknownInlinedFun
+   fun:_ZN4llvm13MCELFStreamer19emitSymbolAttributeEPNS_8MCSymbolENS_12MCSymbolAttrE
+   fun:_ZN4llvm10AsmPrinter18emitFunctionHeaderEv
+   fun:_ZN4llvm10AsmPrinter16emitFunctionBodyEv
+   ...
+}
+{
+   for LLVM 19 (almalinux 9) 3
+   Memcheck:Cond
+   fun:_ZN4llvm24AArch64TargetELFStreamer6finishEv
+   fun:_ZN4llvm10MCStreamer6finishENS_5SMLocE
+   fun:_ZN4llvm10AsmPrinter14doFinalizationERNS_6ModuleE
+   fun:_ZN4llvm13FPPassManager14doFinalizationERNS_6ModuleE
+   ...
+}
+{
+   for LLVM 19 (almalinux 9) 4
+   Memcheck:Cond
+   fun:isInSymtab
+   fun:computeSymbolTable
+   fun:_ZN12_GLOBAL__N_19ELFWriter11writeObjectERN4llvm11MCAssemblerE
+   fun:_ZN4llvm15ELFObjectWriter11writeObjectERNS_11MCAssemblerE
+   ...
+}
+{
+   for LLVM 19 (almalinux 9) 5
+   Memcheck:Cond
+   ...
+   fun:_ZN4llvm15RuntimeDyldImpl14loadObjectImplERKNS_6object10ObjectFileE
+   fun:_ZN4llvm14RuntimeDyldELF10loadObjectERKNS_6object10ObjectFileE
+   fun:_ZN4llvm11RuntimeDyld10loadObjectERKNS_6object10ObjectFileE
+   ...
+}
+{
+   for LLVM 19 (almalinux 9) 6
+   Memcheck:Cond
+   ...
+   fun:_ZNK4llvm15ELFObjectWriter24shouldRelocateWithSymbolERKNS_11MCAssemblerERKNS_7MCValueEPKNS_11MCSymbolELFEmj
+   fun:_ZN4llvm15ELFObjectWriter16recordRelocationERNS_11MCAssemblerEPKNS_10MCFragmentERKNS_7MCFixupENS_7MCValueERm
+   fun:handleFixup
+   fun:_ZN4llvm11MCAssembler6layoutEv
+   ...
+}
+{
+   for LLVM 19 (almalinux 9) 7
+   Memcheck:Cond
+   ...
+   fun:computeSymbolTable
+   fun:_ZN12_GLOBAL__N_19ELFWriter11writeObjectERN4llvm11MCAssemblerE
+   fun:_ZN4llvm15ELFObjectWriter11writeObjectERNS_11MCAssemblerE
+   fun:UnknownInlinedFun
+   fun:_ZN4llvm16MCObjectStreamer10finishImplEv
+   fun:_ZN4llvm13MCELFStreamer10finishImplEv
+   fun:_ZN4llvm10AsmPrinter14doFinalizationERNS_6ModuleE
+   fun:_ZN4llvm13FPPassManager14doFinalizationERNS_6ModuleE
+   ...
+}

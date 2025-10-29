@@ -165,6 +165,8 @@ public class MinimalMain {
         }
         if (!bundleLocation.contains("/")) {
             bundleLocation = Defaults.getDefaults().underVespaHome("lib/jars/" + bundleLocation);
+        } else if (!bundleLocation.startsWith("/")) {
+            bundleLocation = Defaults.getDefaults().underVespaHome(bundleLocation);
         }
         if (!Files.exists(Path.of(bundleLocation))) {
             throw new LauncherException("Bundle not found: " + bundleLocation, 1);

@@ -227,11 +227,15 @@ Query::setWhiteListBlueprint(Blueprint::UP whiteListBlueprint)
 }
 
 void
-Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &context, MatchDataLayout &mdl)
+Query::reserve_handles(MatchDataLayout& mdl)
 {
     MatchDataReserveVisitor reserve_visitor(mdl);
     _query_tree->accept(reserve_visitor);
+}
 
+void
+Query::make_blueprint(const IRequestContext& requestContext, ISearchContext& context, MatchDataLayout& mdl)
+{
     _blueprint = BlueprintBuilder::build(requestContext, *_query_tree, std::move(_whiteListBlueprint), context, mdl);
     LOG(debug, "original blueprint:\n%s\n", _blueprint->asString().c_str());
 }

@@ -324,7 +324,12 @@ message ItemNearestNeighbor {
     bool allow_approximate = 4;
     uint32 explore_additional_hits = 5;
     double distance_threshold = 6;
-    // TODO add Acorn-1 etc
+    optional double approximate_threshold = 7;
+    optional double exploration_slack = 8;
+    optional double filter_first_exploration = 9;
+    optional double filter_first_threshold = 10;
+    optional double post_filter_threshold = 11;
+    optional double target_hits_max_adjustment_factor = 12;
 }
 message ItemGeoLocationTerm {
     TermItemProperties properties = 1;

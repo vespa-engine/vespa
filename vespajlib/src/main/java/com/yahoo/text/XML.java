@@ -26,6 +26,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -150,7 +151,7 @@ public class XML {
             buffer.append(string.substring(0, i));
         }
 
-        // i is at the first codepoint which needs replacing
+        // 'i' is at the first codepoint which needs replacing
         // Don't guard against double-escaping, as:
         // don't try to be clever (LCJ).
         for (; i < string.length(); i = string.offsetByCodePoints(i, 1)) {
@@ -171,6 +172,7 @@ public class XML {
      */
     public static Document getDocument(File xmlFile) {
         try {
+            Locale.setDefault(Locale.US); // The SAX parser generates localized error messages
             return getDocumentBuilder().parse(xmlFile);
         }
         catch (IOException e) {
@@ -192,6 +194,7 @@ public class XML {
      */
     public static Document getDocument(Reader reader) {
         try {
+            Locale.setDefault(Locale.US); // The SAX parser generates localized error messages
             return getDocumentBuilder().parse(new InputSource(reader));
         }
         catch (IOException e) {

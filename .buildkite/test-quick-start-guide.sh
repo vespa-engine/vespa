@@ -17,7 +17,7 @@ echo "Setting up documentation test environment..."
 git clone -q --depth 1 https://github.com/vespa-engine/documentation
 cd documentation
 python3 -m pip install -qqq -r test/requirements.txt --user
-echo -e "urls:\n    - en/vespa-quick-start.html" > test/_quick-start.yaml
+echo -e "urls:\n    - en/deploy-an-application-local.html" > test/_deploy-an-application-local.yaml
 
 echo "Downloading Vespa CLI..."
 # Get the required vespa CLI
@@ -30,6 +30,6 @@ fi
 curl -fsSL "https://github.com/vespa-engine/vespa/releases/download/v${VESPA_CLI_VERSION}/vespa-cli_${VESPA_CLI_VERSION}_linux_${GO_ARCH}.tar.gz" | tar -zxf - -C /opt
 ln -sf "/opt/vespa-cli_${VESPA_CLI_VERSION}_linux_${GO_ARCH}/bin/vespa" /usr/local/bin/
 
-echo "Running quick start guide test..."
+echo "Running deploy an application locally test..."
 # Run test
-python3 test/test.py -v -c test/_quick-start.yaml
+python3 test/test.py -v -c test/_deploy-an-application-local.yaml
