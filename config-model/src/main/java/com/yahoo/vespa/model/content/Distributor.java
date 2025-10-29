@@ -31,12 +31,16 @@ public class Distributor extends ContentNode implements StorDistributormanagerCo
 
         @Override
         protected Distributor doBuild(DeployState deployState, TreeConfigProducer<Distributor> ancestor, Element producerSpec) {
-            return new Distributor(deployState.getProperties(), (DistributorCluster)ancestor, new ModelElement(producerSpec).integerAttribute("distribution-key"),
-                                   clusterXml.integerAttribute("distributor-base-port"), persistenceProvider);
+            return new Distributor(deployState.getProperties(),
+                                   (DistributorCluster)ancestor,
+                                   new ModelElement(producerSpec).integerAttribute("distribution-key"),
+                                   clusterXml.integerAttribute("distributor-base-port"), // TODO: Undocumented, remove support for this
+                                   persistenceProvider);
         }
     }
 
-    Distributor(ModelContext.Properties properties, DistributorCluster parent, int distributionKey, Integer distributorBasePort, PersistenceEngine provider) {
+    Distributor(ModelContext.Properties properties, DistributorCluster parent, int distributionKey,
+                Integer distributorBasePort, PersistenceEngine provider) {
         super(properties.featureFlags(), parent, parent.getClusterName(),
              StorageNode.rootFolder + parent.getClusterName() + "/distributor/" + distributionKey, distributionKey);
 

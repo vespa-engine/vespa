@@ -7,23 +7,16 @@ import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.documentmodel.NewDocumentType;
-import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.model.builder.xml.dom.DomSearchTuningBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
-import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
-import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.IndexingCluster;
 import com.yahoo.vespa.model.search.NodeSpec;
-import com.yahoo.vespa.model.search.SchemaDefinitionXMLHandler;
-import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.search.Tuning;
-import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.LinkedHashMap;
-import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
@@ -70,72 +62,14 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final int searchCoreMaxOutstandingMoveOps;
     private final int searchNodeInitializerThreads;
 
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<ContentSearchCluster> {
-
-        private final Map<String, NewDocumentType> documentDefinitions;
-        private final Set<NewDocumentType> globallyDistributedDocuments;
-
-        public Builder(Map<String, NewDocumentType> documentDefinitions,
-                       Set<NewDocumentType> globallyDistributedDocuments) {
-            this.documentDefinitions = documentDefinitions;
-            this.globallyDistributedDocuments = globallyDistributedDocuments;
-        }
-
-        @Override
-        protected ContentSearchCluster doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
-            ModelElement clusterElem = new ModelElement(producerSpec);
-            String clusterName = ContentCluster.getClusterId(clusterElem);
-            Boolean flushOnShutdownElem = clusterElem.childAsBoolean("engine.proton.flush-on-shutdown");
-            Boolean syncTransactionLog = clusterElem.childAsBoolean("engine.proton.sync-transactionlog");
-
-            var search = new ContentSearchCluster(ancestor, clusterName, deployState.getProperties().featureFlags(),
-                                                  documentDefinitions, globallyDistributedDocuments,
-                                                  getFlushOnShutdown(flushOnShutdownElem, deployState),
-                                                  syncTransactionLog,
-                                                  deployState.getProperties().searchNodeInitializerThreads(clusterName));
-
-            ModelElement tuning = clusterElem.childByPath("engine.proton.tuning");
-            if (tuning != null) {
-                search.setTuning(new DomSearchTuningBuilder().build(deployState, search, tuning.getXml()));
-            }
-
-            buildSearchCluster(deployState, clusterElem, clusterName, search);
-            return search;
-        }
-
-        private boolean getFlushOnShutdown(Boolean flushOnShutdownElem, DeployState deployState) {
-            boolean useNewPrepareForRestart = deployState.featureFlags().useNewPrepareForRestart();
-            return Objects.requireNonNullElse(flushOnShutdownElem, ! deployState.isHosted() || ! useNewPrepareForRestart);
-        }
-
-        private Double getQueryTimeout(ModelElement clusterElem) {
-            return clusterElem.childAsDouble("engine.proton.query-timeout");
-        }
-
-        private void buildSearchCluster(DeployState deployState, ModelElement clusterElem,
-                                        String clusterName, ContentSearchCluster search) {
-            ModelElement docElem = clusterElem.child("documents");
-            if (docElem == null) return;
-
-            Double visibilityDelay = clusterElem.childAsDouble("engine.proton.visibility-delay");
-            if (visibilityDelay != null) {
-                search.setVisibilityDelay(visibilityDelay);
-            }
-
-            var isc = new IndexedSearchCluster(search, clusterName, search, deployState.featureFlags());
-            search.addSearchCluster(deployState, isc, getQueryTimeout(clusterElem), docElem.subElements("document"));
-        }
-    }
-
-    private ContentSearchCluster(TreeConfigProducer<?> parent,
-                                 String clusterName,
-                                 ModelContext.FeatureFlags featureFlags,
-                                 Map<String, NewDocumentType> documentDefinitions,
-                                 Set<NewDocumentType> globallyDistributedDocuments,
-                                 boolean flushOnShutdown,
-                                 Boolean syncTransactionLog,
-                                 int searchNodeInitializeThreads)
-    {
+    public ContentSearchCluster(TreeConfigProducer<?> parent,
+                                String clusterName,
+                                ModelContext.FeatureFlags featureFlags,
+                                Map<String, NewDocumentType> documentDefinitions,
+                                Set<NewDocumentType> globallyDistributedDocuments,
+                                boolean flushOnShutdown,
+                                Boolean syncTransactionLog,
+                                int searchNodeInitializeThreads) {
         super(parent, "search");
         this.indexingCluster = new IndexingCluster();
         this.clusterName = clusterName;
@@ -152,39 +86,13 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     }
 
     public void setVisibilityDelay(double delay) {
-        this.visibilityDelay=delay;
+        this.visibilityDelay = delay;
         if (searchCluster != null) {
             searchCluster.setVisibilityDelay(delay);
         }
     }
 
-    private void addSearchCluster(DeployState deployState, IndexedSearchCluster cluster, Double queryTimeout, List<ModelElement> documentDefs) {
-        addSchemas(deployState, documentDefs, cluster);
-
-        if (queryTimeout != null) {
-            cluster.setQueryTimeout(queryTimeout);
-        }
-        cluster.deriveFromSchemas(deployState);
-        if ( ! cluster.schemas().values().stream().allMatch(schemaInfo -> schemaInfo.getIndexMode() == SchemaInfo.IndexMode.STORE_ONLY)) {
-            addCluster(cluster);
-        }
-    }
-
-
-    private void addSchemas(DeployState deployState, List<ModelElement> searchDefs, SearchCluster sc) {
-        for (ModelElement e : searchDefs) {
-            SchemaDefinitionXMLHandler schemaDefinitionXMLHandler = new SchemaDefinitionXMLHandler(e);
-            Schema schema = schemaDefinitionXMLHandler.findResponsibleSchema(deployState.getSchemas());
-            if (schema == null)
-                throw new IllegalArgumentException("Schema '" + schemaDefinitionXMLHandler.getName() + "' referenced in " +
-                                                   this + " does not exist");
-            if (schema.isDocumentsOnly()) continue;
-
-            sc.add(new SchemaInfo(schema, e.stringAttribute("mode"), deployState.rankProfileRegistry(), null));
-        }
-    }
-
-    private void addCluster(IndexedSearchCluster sc) {
+    public void addCluster(IndexedSearchCluster sc) {
         if (searchCluster != null) {
             throw new IllegalArgumentException("Duplicate indexed cluster '" + searchCluster.getClusterName() + "'");
         }
@@ -216,28 +124,35 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         return (searchCluster != null) ? searchCluster.getSearchNodes() : nonIndexed;
     }
 
-    public void addSearchNode(DeployState deployState, ContentNode node, StorageGroup parentGroup, ModelElement element) {
-        TreeConfigProducer<AnyConfigProducer> parent = (searchCluster != null) ? searchCluster : this;
-
+    public void addSearchNode(DeployState deployState, ContentNode node, StorageGroup parentGroup) {
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
-        SearchNode searchNode;
-        if (element == null) {
-            searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
-                                           clusterName, node, flushOnShutdown, tuning, deployState.isHosted(),
-                                           syncTransactionLog,
-                                           deployState.getProperties().mallocImpl(Optional.of(ClusterSpec.Type.content)));
-            searchNode.setHostResource(node.getHostResource());
-            searchNode.initService(deployState);
-        } else {
-            searchNode = new SearchNode.Builder("" + node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
-                                                tuning, syncTransactionLog)
-                    .build(deployState, parent, element.getXml());
-        }
+        SearchNode searchNode = SearchNode.create(parent(), "" + node.getDistributionKey(), node.getDistributionKey(),
+                                                  spec, clusterName, node, flushOnShutdown, tuning,
+                                                  deployState.isHosted(), syncTransactionLog,
+                                                  deployState.getProperties().mallocImpl(Optional.of(ClusterSpec.Type.content)));
+        searchNode.setHostResource(node.getHostResource());
+        searchNode.initService(deployState);
+        addSearchNode(searchNode);
+    }
+
+    public void addSearchNode(DeployState deployState, ContentNode node, StorageGroup parentGroup, ModelElement element) {
+        NodeSpec spec = getNextSearchNodeSpec(parentGroup);
+        SearchNode searchNode = new SearchNode.Builder("" + node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
+                                                       tuning, syncTransactionLog)
+                .build(deployState, parent(), element.getXml());
+        addSearchNode(searchNode);
+    }
+
+    private void addSearchNode(SearchNode searchNode) {
         if (searchCluster != null) {
             searchCluster.addSearcher(searchNode);
         } else {
             nonIndexed.add(searchNode);
         }
+    }
+
+    private TreeConfigProducer<AnyConfigProducer> parent() {
+        return searchCluster != null ? searchCluster : this;
     }
 
     /** Translates group ids to continuous 0-base "row" id integers */
@@ -380,7 +295,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         }
     }
     public IndexedSearchCluster getSearchCluster() { return searchCluster; }
-    public boolean hasSearchCluster()       { return searchCluster != null; }
+    public boolean hasSearchCluster() { return searchCluster != null; }
     public IndexingCluster getIndexingDocproc() { return indexingCluster; }
     public String getClusterName() { return clusterName; }
 

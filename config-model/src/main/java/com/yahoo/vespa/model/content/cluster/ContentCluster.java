@@ -31,6 +31,7 @@ import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ReindexingContext;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
+import com.yahoo.vespa.model.builder.xml.dom.DomContentSearchClusterBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.container.Container;
@@ -126,7 +127,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             ContentCluster c = new ContentCluster(context.getParentProducer(), clusterId, documentDefinitions,
                                                   globallyDistributedDocuments, routingSelection,
                                                   deployState);
-            c.search = new ContentSearchCluster.Builder(documentDefinitions, globallyDistributedDocuments)
+            c.search = new DomContentSearchClusterBuilder(documentDefinitions, globallyDistributedDocuments)
                     .build(deployState, c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
             c.storageNodes = new StorageCluster.Builder().build(deployState, c, w3cContentElement);

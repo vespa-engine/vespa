@@ -1,12 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.engines;
 
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
-import com.yahoo.vespa.model.content.StorageGroup;
 import com.yahoo.vespa.model.content.StorageNode;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
@@ -21,7 +18,7 @@ public abstract class PersistenceEngine extends TreeConfigProducer<AnyConfigProd
      */
     public interface PersistenceFactory {
 
-        PersistenceEngine create(DeployState deployState, StorageNode storageNode, StorageGroup parentGroup, ModelElement storageNodeElement);
+        PersistenceEngine create(StorageNode storageNode);
 
         ContentCluster.DistributionMode getDefaultDistributionMode();
 

@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
+import com.yahoo.vespa.model.builder.xml.dom.DomStorageNodeBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -317,15 +318,17 @@ public class StorageGroup {
             private StorageNode buildSingleNode(DeployState deployState, ContentCluster parent) {
                 int distributionKey = 0;
 
-                StorageNode searchNode = new StorageNode(deployState.getProperties(), parent.getStorageCluster(), 1.0, distributionKey , false);
-                searchNode.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
-                PersistenceEngine provider = parent.getPersistence().create(deployState, searchNode, storageGroup, null);
-                searchNode.initService(deployState);
+                StorageNode storageNode = new StorageNode(deployState.getProperties(), parent.getStorageCluster(), 1.0, distributionKey , false);
+                storageNode.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
+
+                parent.getSearch().addSearchNode(deployState, storageNode, storageGroup);
+                PersistenceEngine provider = parent.getPersistence().create(storageNode);
+                storageNode.initService(deployState);
 
                 Distributor distributor = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), distributionKey, null, provider);
-                distributor.setHostResource(searchNode.getHostResource());
+                distributor.setHostResource(storageNode.getHostResource());
                 distributor.initService(deployState);
-                return searchNode;
+                return storageNode;
             }
             
             /**
@@ -391,12 +394,14 @@ public class StorageGroup {
         private record XmlNodeBuilder(ModelElement clusterElement, ModelElement element) {
 
             public StorageNode build(DeployState deployState, ContentCluster parent, StorageGroup storageGroup) {
-                        StorageNode sNode = new StorageNode.Builder().build(deployState, parent.getStorageCluster(), element.getXml());
-                        PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, storageGroup, element);
-                        new Distributor.Builder(clusterElement, provider).build(deployState, parent.getDistributorNodes(), element.getXml());
-                        return sNode;
-                    }
-                }
+                StorageNode sNode = new DomStorageNodeBuilder().build(deployState, parent.getStorageCluster(), element.getXml());
+                parent.getSearch().addSearchNode(deployState, sNode, storageGroup, element);
+                PersistenceEngine provider = parent.getPersistence().create(sNode);
+                new Distributor.Builder(clusterElement, provider).build(deployState, parent.getDistributorNodes(), element.getXml());
+                return sNode;
+            }
+
+        }
 
         /**
          * Creates a content group builder from a group and/or nodes element.
@@ -501,8 +506,8 @@ public class StorageGroup {
             sNode.setHostResource(hostResource);
             sNode.initService(deployState);
 
-            // TODO: Supplying null as XML is not very nice
-            PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, parentGroup, null);
+            parent.getSearch().addSearchNode(deployState, sNode, parentGroup);
+            PersistenceEngine provider = parent.getPersistence().create(sNode);
             Distributor d = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), clusterMembership.index(), null, provider);
             d.setHostResource(sNode.getHostResource());
             d.initService(deployState);
