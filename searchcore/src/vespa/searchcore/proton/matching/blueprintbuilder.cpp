@@ -164,7 +164,7 @@ private:
 
 protected:
     void visit(ProtonAnd &n)         override { buildIntermediate(new AndBlueprint(), n); }
-    void visit(ProtonAndNot &n)      override { buildIntermediate(new AndNotBlueprint(), n); }
+    void visit(ProtonAndNot &n)      override { buildIntermediate(new AndNotBlueprint(n.elementwise), n); }
     void visit(ProtonOr &n)          override { buildIntermediate(new OrBlueprint(), n); }
     void visit(ProtonWeakAnd &n)     override { buildWeakAnd(n); }
     void visit(ProtonEquiv &n)       override { buildEquiv(n); }

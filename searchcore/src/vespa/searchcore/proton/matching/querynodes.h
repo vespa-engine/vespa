@@ -131,7 +131,6 @@ template <typename Base>
 ProtonTerm<Base>::~ProtonTerm() = default;
 
 using ProtonAnd =         search::query::SimpleAnd;
-using ProtonAndNot =      search::query::SimpleAndNot;
 using ProtonNear =        search::query::SimpleNear;
 using ProtonONear =       search::query::SimpleONear;
 using ProtonOr =          search::query::SimpleOr;
@@ -139,6 +138,12 @@ using ProtonRank =        search::query::SimpleRank;
 using ProtonWeakAnd =     search::query::SimpleWeakAnd;
 using ProtonTrue =        search::query::SimpleTrue;
 using ProtonFalse =       search::query::SimpleFalse;
+
+struct ProtonAndNot final : public search::query::SimpleAndNot {
+    bool elementwise = false;
+    using search::query::SimpleAndNot::SimpleAndNot;
+    ~ProtonAndNot() override;
+};
 
 struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv> {
     using ProtonTermBase::ProtonTermBase;
