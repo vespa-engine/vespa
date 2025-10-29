@@ -7,7 +7,7 @@ import java.util.Set;
 public class Validation {
     static final Set<String> validDiskSpeeds = Set.of("slow", "fast", "any");
     static final Set<String> validStorageTypes = Set.of("remote", "local", "any");
-    static final Set<String> validClusterTypes = Set.of("container", "content", "combined", "admin");
+    static final Set<String> validClusterTypes = Set.of("container", "content", "admin");
     static final Set<String> validArchitectures = Set.of("arm64", "x86_64", "any");
 
     static double requirePositive(String name, Double value) {
