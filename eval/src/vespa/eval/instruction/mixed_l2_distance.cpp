@@ -3,7 +3,7 @@
 #include "mixed_l2_distance.h"
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
 #include <vespa/vespalib/util/require.h>
 
 #include <vespa/log/log.h>
@@ -15,16 +15,14 @@ using namespace tensor_function;
 
 namespace {
 
-static const auto &hw = hwaccelerated::IAccelerated::getAccelerator();
-
 template <typename T>
 double h_sq_l2(const T *a, const T *b, size_t len) {
-    return hw.squaredEuclideanDistance(a, b, len);
+    return hwaccelerated::squared_euclidean_distance(a, b, len);
 }
 
 template <>
 double h_sq_l2<Int8Float>(const Int8Float *a, const Int8Float *b, size_t len) {
-    return hw.squaredEuclideanDistance((const int8_t *)a, (const int8_t *)b, len);
+    return hwaccelerated::squared_euclidean_distance((const int8_t *)a, (const int8_t *)b, len);
 }
 
 struct MixedSqL2Param {

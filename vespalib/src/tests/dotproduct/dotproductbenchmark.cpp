@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <functional>
 #include <iostream>
@@ -8,7 +8,6 @@
 #include <vector>
 
 using namespace vespalib;
-using vespalib::hwaccelerated::IAccelerated;
 
 class Benchmark {
 public:
@@ -49,19 +48,17 @@ public:
     FullBenchmark(size_t numDocs, size_t numValue);
     ~FullBenchmark() override;
     void compute(size_t docId) const override {
-        _dp.dotProduct(&_query[0], &_values[docId * _query.size()], _query.size());
+        (void)hwaccelerated::dot_product(&_query[0], &_values[docId * _query.size()], _query.size());
     }
 private:
     std::vector<T> _values;
     std::vector<T> _query;
-    const IAccelerated & _dp;
 };
 
 template <typename T>
 FullBenchmark<T>::FullBenchmark(size_t numDocs, size_t numValues)
     : _values(numDocs*numValues),
-      _query(numValues),
-      _dp(IAccelerated::getAccelerator())
+      _query(numValues)
 {
     for (size_t i(0); i < numDocs; i++) {
         for (size_t j(0); j < numValues; j++) {

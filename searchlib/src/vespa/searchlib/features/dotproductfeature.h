@@ -7,7 +7,6 @@
 #include <vespa/searchcommon/attribute/i_multi_value_read_view.h>
 #include <vespa/searchcommon/attribute/multivalue.h>
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search::fef { class Property; }
@@ -168,8 +167,7 @@ class DotProductExecutorBase : public fef::FeatureExecutor {
 public:
     using V  = std::vector<BaseType>;
 private:
-    const vespalib::hwaccelerated::IAccelerated   & _multiplier;
-    V                                             _queryVector;
+    V _queryVector;
     virtual std::span<const BaseType> getAttributeValues(uint32_t docid) = 0;
 public:
     DotProductExecutorBase(const V & queryVector);

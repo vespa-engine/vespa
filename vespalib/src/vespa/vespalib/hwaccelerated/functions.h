@@ -4,7 +4,7 @@
 
 #include "fn_table.h"
 
-namespace vespalib::hwaccelerated::vec_fn {
+namespace vespalib::hwaccelerated {
 
 // These are freestanding functions that will be dispatched to the vectorized implementation
 // expected to bring the best performance for the currently running CPU architecture.

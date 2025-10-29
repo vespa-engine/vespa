@@ -8,6 +8,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stash.h>
@@ -20,7 +21,6 @@ using namespace search::fef;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TypedCells;
 using vespalib::Issue;
-using vespalib::hwaccelerated::IAccelerated;
 
 namespace search::features {
 namespace dotproduct::wset {
@@ -213,7 +213,6 @@ namespace dotproduct::array {
 template <typename BaseType>
 DotProductExecutorBase<BaseType>::DotProductExecutorBase(const V & queryVector)
     : FeatureExecutor(),
-      _multiplier(IAccelerated::getAccelerator()),
       _queryVector(queryVector)
 {
 }
@@ -225,7 +224,7 @@ template <typename BaseType>
 void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {
     auto values = getAttributeValues(docId);
     size_t commonRange = std::min(values.size(), _queryVector.size());
-    outputs().set_number(0, _multiplier.dotProduct(
+    outputs().set_number(0, vespalib::hwaccelerated::dot_product(
             &_queryVector[0], values.data(), commonRange));
 }
 

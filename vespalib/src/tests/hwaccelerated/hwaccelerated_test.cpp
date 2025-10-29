@@ -3,8 +3,8 @@
 #include "data_utils.h"
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/hwaccelerated/fn_table.h>
-#include <vespa/vespalib/hwaccelerated/functions.h>
 #include <vespa/vespalib/hwaccelerated/highway.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <limits>
 #include <random>
@@ -50,7 +50,7 @@ void verify_euclidean_distance(std::span<const IAccelerated*> accels, size_t tes
             ASSERT_NEAR(sum, computed, sum*approx_factor) << "(IAccelerated) " << accel->target_info().to_string();
 
             ScopedFnTableOverride fn_scope(accel->fn_table());
-            computed = vec_fn::squared_euclidean_distance(&a[j], &b[j], test_length - j);
+            computed = squared_euclidean_distance(&a[j], &b[j], test_length - j);
             ASSERT_NEAR(sum, computed, sum*approx_factor) << "(fn table) " << accel->target_info().to_string();
         }
     }
@@ -70,7 +70,7 @@ void verify_dot_product(std::span<const IAccelerated*> accels, size_t test_lengt
             ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << "(IAccelerated) " << accel->target_info().to_string();
 
             ScopedFnTableOverride fn_scope(accel->fn_table());
-            computed = static_cast<double>(vec_fn::dot_product(&a[j], &b[j], test_length - j));
+            computed = static_cast<double>(dot_product(&a[j], &b[j], test_length - j));
             ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << "(fn table) " << accel->target_info().to_string();
         }
     }
@@ -173,7 +173,7 @@ void verify_euclidean_distance_no_overflow(std::span<const IAccelerated*> accels
             ASSERT_EQ(sum, computed) << "(IAccelerated) overflow at length " << i << " for accel " << accel->target_info().to_string();
 
             ScopedFnTableOverride fn_scope(accel->fn_table());
-            computed = static_cast<int64_t>(vec_fn::squared_euclidean_distance(lhs.data(), rhs.data(), i));
+            computed = static_cast<int64_t>(squared_euclidean_distance(lhs.data(), rhs.data(), i));
             ASSERT_EQ(sum, computed) << "(fn table) overflow at length " << i << " for accel " << accel->target_info().to_string();
         }
     }
@@ -202,7 +202,7 @@ void verify_dot_product_no_overflow(std::span<const IAccelerated*> accels, size_
             ASSERT_EQ(sum, computed) << "(IAccelerated) overflow at length " << i << " for accel " << accel->target_info().to_string();
 
             ScopedFnTableOverride fn_scope(accel->fn_table());
-            computed = vec_fn::dot_product(lhs.data(), rhs.data(), i);
+            computed = dot_product(lhs.data(), rhs.data(), i);
             ASSERT_EQ(sum, computed) << "(fn table) overflow at length " << i << " for accel " << accel->target_info().to_string();
         }
     }
@@ -272,7 +272,7 @@ void check_with_flipping(std::span<const IAccelerated*> accels, void* mem_a, voi
         for (const auto* accel : accels) {
             ASSERT_EQ(accel->binary_hamming_distance(mem_a, mem_b, sz), dist) << "(IAccelerated) " << accel->target_info().to_string();
             ScopedFnTableOverride fn_scope(accel->fn_table());
-            ASSERT_EQ(vec_fn::binary_hamming_distance(mem_a, mem_b, sz), dist) << "(fn table) " << accel->target_info().to_string();
+            ASSERT_EQ(binary_hamming_distance(mem_a, mem_b, sz), dist) << "(fn table) " << accel->target_info().to_string();
         }
     };
     ASSERT_NO_FATAL_FAILURE(check_accelerators());

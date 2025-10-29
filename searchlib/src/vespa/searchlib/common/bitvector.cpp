@@ -5,7 +5,7 @@
 #include "partialbitvector.h"
 #include "read_stats.h"
 #include <vespa/searchlib/util/file_settings.h>
-#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/vespalib/util/round_up_to_page_size.h>
@@ -20,8 +20,8 @@ LOG_SETUP(".searchlib.common.bitvector");
 
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
-using vespalib::hwaccelerated::IAccelerated;
 using vespalib::alloc::Alloc;
+namespace hwaccelerated = vespalib::hwaccelerated;
 
 namespace {
 
@@ -45,11 +45,10 @@ struct BitVector::OrParts : vespalib::Runnable
           _byte_size((size + 7)/8)
     {}
     void run() override {
-        const auto & accelerator = IAccelerated::getAccelerator();
         BitVector * master = _vectors[0];
         Word * destination = master->getWordIndex(_offset);
         for (uint32_t i(1); i < _vectors.size(); i++) {
-            accelerator.orBit(destination, _vectors[i]->getWordIndex(_offset), _byte_size);
+            hwaccelerated::or_bit(destination, _vectors[i]->getWordIndex(_offset), _byte_size);
         }
     }
     std::span<BitVector* const> _vectors;
@@ -225,7 +224,7 @@ BitVector::countInterval(Range range_in) const
         ++endw;
     }
     if (startw < endw) {
-        res += IAccelerated::getAccelerator().populationCount(bitValues + startw, endw - startw);
+        res += hwaccelerated::population_count(bitValues + startw, endw - startw);
     }
     if (partialEnd) {
         res += std::popcount(load(bitValues[endw]) & ~endBits(last));
@@ -243,12 +242,12 @@ BitVector::orWith(const BitVector & right)
     if (right.size() < size()) {
         ssize_t commonBytes = numActiveBytes(range.start(), range.end()) - sizeof(Word);
         if (commonBytes > 0) {
-            IAccelerated::getAccelerator().orBit(getWordIndex(range.start()), right.getWordIndex(range.start()), commonBytes);
+            hwaccelerated::or_bit(getWordIndex(range.start()), right.getWordIndex(range.start()), commonBytes);
         }
         Index last(range.end() - 1);
         store(getWordIndex(last)[0], getWordIndex(last)[0] | (load(right.getWordIndex(last)[0]) & ~endBits(last)));
     } else {
-        IAccelerated::getAccelerator().orBit(getWordIndex(range.start()), right.getWordIndex(range.start()), getActiveBytes());
+        hwaccelerated::or_bit(getWordIndex(range.start()), right.getWordIndex(range.start()), getActiveBytes());
     }
     repairEnds();
     invalidateCachedCount();
@@ -277,7 +276,7 @@ BitVector::andWith(const BitVector & right)
     }
 
     uint32_t commonBytes = std::min(getActiveBytes(), numActiveBytes(getStartIndex(), right.size()));
-    IAccelerated::getAccelerator().andBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
+    hwaccelerated::and_bit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
     if (right.size() < size()) {
         clearInterval(right.size(), size());
     }
@@ -296,12 +295,12 @@ BitVector::andNotWith(const BitVector& right)
     if (right.size() < size()) {
         ssize_t commonBytes = numActiveBytes(range.start(), range.end()) - sizeof(Word);
         if (commonBytes > 0) {
-            IAccelerated::getAccelerator().andNotBit(getWordIndex(range.start()), right.getWordIndex(range.start()), commonBytes);
+            hwaccelerated::and_not_bit(getWordIndex(range.start()), right.getWordIndex(range.start()), commonBytes);
         }
         Index last(range.end() - 1);
         store(getWordIndex(last)[0], getWordIndex(last)[0] & ~(load(right.getWordIndex(last)[0]) & ~endBits(last)));
     } else {
-        IAccelerated::getAccelerator().andNotBit(getWordIndex(range.start()), right.getWordIndex(range.start()), getActiveBytes());
+        hwaccelerated::and_not_bit(getWordIndex(range.start()), right.getWordIndex(range.start()), getActiveBytes());
     }
 
     repairEnds();
@@ -310,7 +309,7 @@ BitVector::andNotWith(const BitVector& right)
 
 void
 BitVector::notSelf() {
-    IAccelerated::getAccelerator().notBit(getActiveStart(), getActiveBytes());
+    hwaccelerated::not_bit(getActiveStart(), getActiveBytes());
     setGuardBit();
     invalidateCachedCount();
 }

@@ -2,7 +2,7 @@
 
 #include "euclidean_distance.h"
 #include "temporary_vector_store.h"
-#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
 #include <cmath>
 
 using vespalib::typify_invoke;
@@ -15,22 +15,19 @@ using vespalib::eval::Int8Float;
 
 template <typename VectorStoreType>
 class BoundEuclideanDistance final : public BoundDistanceFunction {
-private:
     using FloatType = VectorStoreType::FloatType;
-    const vespalib::hwaccelerated::IAccelerated & _computer;
     mutable VectorStoreType _tmpSpace;
     const std::span<const FloatType> _lhs_vector;
 public:
     explicit BoundEuclideanDistance(TypedCells lhs)
-        : _computer(vespalib::hwaccelerated::IAccelerated::getAccelerator()),
-          _tmpSpace(lhs.size),
+        : _tmpSpace(lhs.size),
           _lhs_vector(_tmpSpace.storeLhs(lhs))
     {}
     double calc(TypedCells rhs) const noexcept override {
         std::span<const FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         auto a = _lhs_vector.data();
         auto b = rhs_vector.data();
-        return _computer.squaredEuclideanDistance(cast(a), cast(b), _lhs_vector.size());
+        return vespalib::hwaccelerated::squared_euclidean_distance(cast(a), cast(b), _lhs_vector.size());
     }
     double convert_threshold(double threshold) const noexcept override {
         return threshold*threshold;

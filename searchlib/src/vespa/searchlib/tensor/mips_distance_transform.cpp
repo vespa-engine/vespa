@@ -2,21 +2,20 @@
 
 #include "mips_distance_transform.h"
 #include "temporary_vector_store.h"
-#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
 #include <cmath>
 #include <variant>
 
 using vespalib::eval::Int8Float;
+namespace hwaccelerated = vespalib::hwaccelerated;
 
 namespace search::tensor {
 
 template <typename VectorStoreType, bool extra_dim>
 class BoundMipsDistanceFunction final : public BoundDistanceFunction {
-private:
     using FloatType = VectorStoreType::FloatType;
     mutable VectorStoreType _tmpSpace;
     const std::span<const FloatType> _lhs_vector;
-    const vespalib::hwaccelerated::IAccelerated & _computer;
     double _max_sq_norm;
     using ExtraDimT = std::conditional_t<extra_dim,double,std::monostate>;
     [[no_unique_address]] ExtraDimT _lhs_extra_dim;
@@ -25,12 +24,11 @@ public:
     BoundMipsDistanceFunction(TypedCells lhs, MaximumSquaredNormStore& sq_norm_store)
         : BoundDistanceFunction(),
           _tmpSpace(lhs.size),
-          _lhs_vector(_tmpSpace.storeLhs(lhs)),
-          _computer(vespalib::hwaccelerated::IAccelerated::getAccelerator())
+          _lhs_vector(_tmpSpace.storeLhs(lhs))
     {
         const FloatType * a = _lhs_vector.data();
         if constexpr (extra_dim) {
-            double lhs_sq_norm = _computer.dotProduct(cast(a), cast(a), lhs.size);
+            double lhs_sq_norm = hwaccelerated::dot_product(cast(a), cast(a), lhs.size);
             _max_sq_norm = sq_norm_store.get_max(lhs_sq_norm);
             _lhs_extra_dim = std::sqrt(_max_sq_norm - lhs_sq_norm);
         } else {
@@ -46,9 +44,9 @@ public:
         std::span<const FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         const FloatType * a = _lhs_vector.data();
         const FloatType * b = rhs_vector.data();
-        double dp = _computer.dotProduct(cast(a), cast(b), rhs.size);
+        double dp = hwaccelerated::dot_product(cast(a), cast(b), rhs.size);
         if constexpr (extra_dim) {
-            double rhs_sq_norm = _computer.dotProduct(cast(b), cast(b), rhs.size);
+            double rhs_sq_norm = hwaccelerated::dot_product(cast(b), cast(b), rhs.size);
             // avoid sqrt(negative) for robustness:
             double diff = std::max(0.0, _max_sq_norm - rhs_sq_norm);
             double rhs_extra_dim = std::sqrt(diff);
