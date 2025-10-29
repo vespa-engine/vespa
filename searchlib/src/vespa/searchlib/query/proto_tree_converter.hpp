@@ -298,50 +298,58 @@ public:
 
     bool handle(const ItemIntegerRangeTerm& item) {
         auto d = fillTermProperties(item.properties());
-        auto b_mark = item.lower_inclusive() ? "[" : "<";
-        auto e_mark = item.upper_inclusive() ? "]" : ">";
-        std::string tmp = std::format("{}{};{}", b_mark, item.lower_limit(), item.upper_limit());
-        if (item.has_range_limit() || item.with_diversity()) {
-            tmp += std::format(";{}", item.range_limit());
-            if (item.with_diversity()) {
-                tmp += std::format(";{};{}",
-                                   item.diversity_attribute(),
-                                   item.diversity_max_per_group());
-                if (item.with_diversity_cutoff()) {
-                    tmp += std::format(";{}", item.diversity_cutoff_groups());
-                    if (item.diversity_cutoff_strict()) {
-                        tmp += ";strict";
-                    }
-                }
+        auto spec = std::make_unique<NumericRangeSpec>();
+        spec->valid = true;
+        spec->valid_integers = true;
+        spec->lower_inclusive = item.lower_inclusive();
+        spec->upper_inclusive = item.upper_inclusive();
+        spec->int64_lower_limit = item.lower_limit();
+        spec->int64_upper_limit = item.upper_limit();
+        spec->fp_lower_limit = static_cast<double>(item.lower_limit());
+        spec->fp_upper_limit = static_cast<double>(item.upper_limit());
+
+        if (item.has_range_limit()) {
+            spec->rangeLimit = item.range_limit();
+        }
+        if (item.with_diversity()) {
+            spec->diversityAttribute = item.diversity_attribute();
+            spec->maxPerGroup = item.diversity_max_per_group();
+            if (item.with_diversity_cutoff()) {
+                spec->diversityCutoffGroups = item.diversity_cutoff_groups();
+                spec->diversityCutoffStrict = item.diversity_cutoff_strict();
             }
         }
-        tmp += e_mark;
-        auto &term = _builder.addNumberTerm(tmp, d.index_view, d.uniqueId, d.weight);
+
+        query::Range range(std::move(spec));
+        auto &term = _builder.addRangeTerm(range, d.index_view, d.uniqueId, d.weight);
         if (d.noRankFlag) term.setRanked(false);
         if (d.noPositionDataFlag) term.setPositionData(false);
         return true;
     }
     bool handle(const ItemFloatingPointRangeTerm& item) {
         auto d = fillTermProperties(item.properties());
-        auto b_mark = item.lower_inclusive() ? "[" : "<";
-        auto e_mark = item.upper_inclusive() ? "]" : ">";
-        std::string tmp = std::format("{}{};{}", b_mark, item.lower_limit(), item.upper_limit());
-        if (item.has_range_limit() || item.with_diversity()) {
-            tmp += std::format(";{}", item.range_limit());
-            if (item.with_diversity()) {
-                tmp += std::format(";{};{}",
-                                   item.diversity_attribute(),
-                                   item.diversity_max_per_group());
-                if (item.with_diversity_cutoff()) {
-                    tmp += std::format(";{}", item.diversity_cutoff_groups());
-                    if (item.diversity_cutoff_strict()) {
-                        tmp += ";strict";
-                    }
-                }
+        auto spec = std::make_unique<NumericRangeSpec>();
+        spec->valid = true;
+        spec->valid_integers = false;
+        spec->lower_inclusive = item.lower_inclusive();
+        spec->upper_inclusive = item.upper_inclusive();
+        spec->fp_lower_limit = item.lower_limit();
+        spec->fp_upper_limit = item.upper_limit();
+
+        if (item.has_range_limit()) {
+            spec->rangeLimit = item.range_limit();
+        }
+        if (item.with_diversity()) {
+            spec->diversityAttribute = item.diversity_attribute();
+            spec->maxPerGroup = item.diversity_max_per_group();
+            if (item.with_diversity_cutoff()) {
+                spec->diversityCutoffGroups = item.diversity_cutoff_groups();
+                spec->diversityCutoffStrict = item.diversity_cutoff_strict();
             }
         }
-        tmp += e_mark;
-        auto &term = _builder.addNumberTerm(tmp, d.index_view, d.uniqueId, d.weight);
+
+        query::Range range(std::move(spec));
+        auto &term = _builder.addRangeTerm(range, d.index_view, d.uniqueId, d.weight);
         if (d.noRankFlag) term.setRanked(false);
         if (d.noPositionDataFlag) term.setPositionData(false);
         return true;

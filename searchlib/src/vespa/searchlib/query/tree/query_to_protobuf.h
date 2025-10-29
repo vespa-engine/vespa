@@ -277,9 +277,8 @@ private:
     }
 
     void visit(RangeTerm &node) override {
-        // Parse the range string format using NumericRangeSpec
-        const auto& range_str = node.getTerm().getRangeString();
-        auto spec = NumericRangeSpec::fromString(range_str);
+        // Get the spec directly from the Range
+        const auto* spec = node.getTerm().getSpec();
 
         if (!spec || !spec->valid) {
             return;
