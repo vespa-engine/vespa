@@ -162,8 +162,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private final boolean rpcServerEnabled;
     private final boolean httpServerEnabled;
     protected DeployLogger deployLogger;
-
-    private final List<SidecarSpec> sidecars = new ArrayList<>();
     
     public static final List<ConfigModelId> configModelIds = List.of(ConfigModelId.fromName(CONTAINER_TAG));
 
@@ -246,24 +244,24 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addAthenzServiceIdentityProvider(cluster, context);
 
         addParameterStoreValidationHandler(cluster, deployState);
-        addSidecars(cluster, deployState);
     }
     
-    private void addSidecars(ApplicationContainerCluster cluster, DeployState deployState) {
+    private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
+        var sidecars = new ArrayList<SidecarSpec>(); 
+        
         var isPublicCloud = deployState.zone().system().isPublicCloudLike();
         var hasOnnxModels =  !cluster.onnxModelCostCalculator().models().isEmpty();
         var useTritonFlagValue = deployState.featureFlags().useTriton();
 
         if (useTritonFlagValue && isPublicCloud && hasOnnxModels) {
-            var hasGpu = cluster.getContainers().stream()
-                    .noneMatch(container -> container.getHostResource().advertisedResources().gpuResources().isZero());
-            
-            // Hardcoding values so that changes are reviewed and tested.
+            var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero(); 
+
+            // Hardcoded values for changes to be reviewed and tested
             var spec = SidecarSpec.builder()
                     .id(0)
                     .name("triton")
-                    .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.08-py3"))
-                    .minCpu(1) // Currently sidecar must have at least one CPU.
+                    .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.09-py3"))
+                    .minCpu(1) // Must have at least one CPU
                     .hasGpu(hasGpu)
                     .volumeMounts(List.of("/models"))
                     .command(List.of(
@@ -275,6 +273,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             sidecars.add(spec);
         }
+        
+        return sidecars;
     }
 
     private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {
@@ -1182,6 +1182,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             deployState.getDeployLogger().logApplicationPackage(Level.INFO, "Using " + nodeCount + " nodes in " + cluster);
             var nodesSpec = NodesSpecification.dedicated(nodeCount, context);
             ClusterSpec.Id clusterId = ClusterSpec.Id.from(cluster.getName());
+            var sidecars = getSidecars(cluster, deployState, nodesSpec);
             var hosts = nodesSpec.provision(hostSystem,
                                             ClusterSpec.Type.container,
                                             clusterId,
@@ -1220,6 +1221,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             var nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
             requireFixedSizeSingularNodeIfTester(context, nodesSpecification);
             var clusterId = ClusterSpec.Id.from(cluster.name());
+            var sidecars = getSidecars(cluster, context.getDeployState(), nodesSpecification);
             Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
                                                                                       ClusterSpec.Type.container,
                                                                                       clusterId,
