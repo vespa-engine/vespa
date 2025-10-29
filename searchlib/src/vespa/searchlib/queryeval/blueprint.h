@@ -17,7 +17,10 @@ namespace vespalib::slime {
     struct Cursor;
     struct Inserter;
 }
-namespace search { class MatchingElementsFields; }
+namespace search {
+    class MatchingElementsFields;
+    struct NumericRangeSpec;
+}
 namespace search::attribute { class ISearchContext; }
 namespace search::fef {
     class TermFieldMatchDataArray;
@@ -581,7 +584,7 @@ public:
     SearchIteratorUP createSearchImpl(fef::MatchData &md) const override;
     const LeafBlueprint * asLeaf() const noexcept final { return this; }
 
-    virtual bool getRange(std::string & from, std::string & to) const;
+    virtual bool getRange(search::NumericRangeSpec & range_spec) const;
     virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, fef::MatchData &global_md) const;
     virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const = 0;
 };

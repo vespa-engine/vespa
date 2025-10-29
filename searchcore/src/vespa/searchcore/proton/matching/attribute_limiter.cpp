@@ -87,7 +87,7 @@ AttributeLimiter::create_match_data(size_t want_hits, size_t max_group_size, dou
         RangeLimitMetaInfo rangeInfo = _rangeQueryLocator.locate();
         const uint32_t no_unique_id = 0;
 
-        auto spec = std::make_unique<search::NumericRangeSpec>(rangeInfo.low(), rangeInfo.high());
+        auto spec = std::make_unique<search::NumericRangeSpec>(rangeInfo.range_spec());
 
         // Set range limit (negative for descending)
         spec->rangeLimit = _descending ? -static_cast<int32_t>(want_hits) : static_cast<int32_t>(want_hits);

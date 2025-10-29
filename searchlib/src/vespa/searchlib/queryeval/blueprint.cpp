@@ -836,7 +836,7 @@ SearchIterator::UP LeafBlueprint::createLeafSearch(const fef::TermFieldMatchData
 }
 
 bool
-LeafBlueprint::getRange(std::string &, std::string &) const {
+LeafBlueprint::getRange(search::NumericRangeSpec &) const {
     return false;
 }
 

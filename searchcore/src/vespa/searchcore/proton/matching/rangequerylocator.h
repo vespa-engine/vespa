@@ -3,7 +3,7 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
+#include <vespa/searchlib/query/numeric_range_spec.h>
 
 namespace search::queryeval { class Blueprint; }
 
@@ -12,17 +12,15 @@ namespace proton::matching {
 class RangeLimitMetaInfo {
 public:
     RangeLimitMetaInfo();
-    RangeLimitMetaInfo(std::string_view low, std::string_view high, size_t estimate);
+    RangeLimitMetaInfo(const search::NumericRangeSpec& range_spec, size_t estimate);
     ~RangeLimitMetaInfo();
-    const std::string & low() const { return _low; }
-    const std::string & high() const { return _high; }
+    const search::NumericRangeSpec& range_spec() const { return _range_spec; }
     bool valid() const { return _valid; }
     size_t estimate() const { return _estimate; }
 private:
-    bool             _valid;
-    size_t           _estimate;
-    std::string _low;
-    std::string _high;
+    bool                       _valid;
+    size_t                     _estimate;
+    search::NumericRangeSpec   _range_spec;
 };
 
 class RangeQueryLocator {
