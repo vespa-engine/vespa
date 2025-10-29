@@ -86,11 +86,21 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
     _distance_heap.set_distance_threshold(_hnsw_params.distance_threshold);
     uint32_t est_hits = _attr_tensor.get_num_docs();
     setEstimate(HitEstimate(est_hits, false));
-    auto nns_index = _attr_tensor.nearest_neighbor_index();
-    set_want_global_filter(nns_index && _approximate);
 }
 
 NearestNeighborBlueprint::~NearestNeighborBlueprint() = default;
+
+bool
+NearestNeighborBlueprint::want_global_filter(GlobalFilterLimits& limits) const
+{
+    auto nns_index = _attr_tensor.nearest_neighbor_index();
+    if (nns_index && _approximate) {
+        limits.lower_limit = _hnsw_params.global_filter_lower_limit;
+        limits.upper_limit = _hnsw_params.global_filter_upper_limit;
+        return true;
+    }
+    return false;
+}
 
 void
 NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio)
@@ -181,7 +191,8 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     }
 
     visitor.openStruct("global_filter", "GlobalFilter");
-    visitor.visitBool("wanted", getState().want_global_filter());
+    GlobalFilterLimits limits;
+    visitor.visitBool("wanted", want_global_filter(limits));
     visitor.visitBool("set", _global_filter_set);
     visitor.visitBool("calculated", _global_filter->is_active());
     visitor.visitFloat("lower_limit", _hnsw_params.global_filter_lower_limit);

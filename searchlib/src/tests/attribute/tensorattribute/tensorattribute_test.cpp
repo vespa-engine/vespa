@@ -43,6 +43,7 @@ using search::AttributeGuard;
 using search::AttributeVector;
 using search::attribute::DistanceMetric;
 using search::attribute::HnswIndexParams;
+using search::queryeval::Blueprint;
 using search::queryeval::GlobalFilter;
 using search::queryeval::NearestNeighborBlueprint;
 using search::tensor::DefaultNearestNeighborIndexFactory;
@@ -1564,21 +1565,24 @@ TEST(TensorAttributeTest, NN_blueprint_wants_global_filter_when_having_index)
 {
     NearestNeighborBlueprintFixture f;
     auto bp = f.make_blueprint();
-    EXPECT_TRUE(bp->getState().want_global_filter());
+    Blueprint::GlobalFilterLimits limits;
+    EXPECT_TRUE(bp->want_global_filter(limits));
 }
 
 TEST(TensorAttributeTest, NN_blueprint_do_NOT_want_global_filter_when_explicitly_using_brute_force)
 {
     NearestNeighborBlueprintFixture f;
     auto bp = f.make_blueprint(false);
-    EXPECT_FALSE(bp->getState().want_global_filter());
+    Blueprint::GlobalFilterLimits limits;
+    EXPECT_FALSE(bp->want_global_filter(limits));
 }
 
 TEST(TensorAttributeTest, NN_blueprint_do_NOT_want_global_filter_when_NOT_having_index_for_implicit_brute_force)
 {
     NearestNeighborBlueprintWithoutIndexFixture f;
     auto bp = f.make_blueprint();
-    EXPECT_FALSE(bp->getState().want_global_filter());
+    Blueprint::GlobalFilterLimits limits;
+    EXPECT_FALSE(bp->want_global_filter(limits));
 }
 
 auto test_values = ::testing::Values(1u, 2u);

@@ -77,6 +77,7 @@ public:
     const vespalib::eval::Value& get_query_tensor() const { return _query_tensor; }
     uint32_t get_target_hits() const { return _target_hits; }
     uint32_t get_adjusted_target_hits() const { return _adjusted_target_hits; }
+    bool want_global_filter(GlobalFilterLimits& limits) const override;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
     Algorithm get_algorithm() const { return _algorithm; }
     double get_distance_threshold() const { return _hnsw_params.distance_threshold; }

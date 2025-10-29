@@ -1106,17 +1106,22 @@ TEST(QueryTest, requireThatConstBoolBlueprintsAreCreatedCorrectly)
 }
 
 class GlobalFilterBlueprint : public SimpleBlueprint {
+private:
+    bool _want_global_filter;
 public:
     std::shared_ptr<const GlobalFilter> filter;
     double estimated_hit_ratio;
     GlobalFilterBlueprint(const SimpleResult& result, bool want_global_filter)
         : search::queryeval::SimpleBlueprint(result),
+          _want_global_filter(want_global_filter),
           filter(),
           estimated_hit_ratio(-1.0)
     {
-        set_want_global_filter(want_global_filter);
     }
     ~GlobalFilterBlueprint() override;
+    bool want_global_filter(Blueprint::GlobalFilterLimits&) const override {
+        return _want_global_filter;
+    }
     void set_global_filter(const GlobalFilter& filter_, double estimated_hit_ratio_) override {
         filter = filter_.shared_from_this();
         estimated_hit_ratio = estimated_hit_ratio_;
