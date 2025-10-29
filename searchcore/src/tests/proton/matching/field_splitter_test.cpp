@@ -357,6 +357,193 @@ TEST_F(FieldSplitterTest, dot_product_with_single_field_not_split) {
 }
 
 //==============================================================================
+// Near and ONear Node Tests
+//==============================================================================
+
+TEST_F(FieldSplitterTest, near_with_single_field_not_split) {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addNear(2, 10, 0, 0);  // distance=10, no negative terms
+    builder.addStringTerm("term1", FIELD1, 1, TERM_WEIGHT);
+    builder.addStringTerm("term2", FIELD1, 2, TERM_WEIGHT);
+    Node::UP root = builder.build();
+
+    Node::UP result = buildAndSplit(std::move(root));
+
+    ASSERT_TRUE(result);
+    auto* near_node = dynamic_cast<ProtonNear*>(result.get());
+    ASSERT_TRUE(near_node);
+    EXPECT_EQ(2u, near_node->getChildren().size());
+    EXPECT_EQ(10u, near_node->getDistance());
+}
+
+TEST_F(FieldSplitterTest, near_with_multi_field_view_splits) {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addNear(2, 10, 0, 0);  // distance=10, no negative terms
+    builder.addStringTerm("term1", VIEW, 1, TERM_WEIGHT);
+    builder.addStringTerm("term2", VIEW, 2, TERM_WEIGHT);
+    Node::UP root = builder.build();
+
+    Node::UP result = buildAndSplit(std::move(root));
+
+    ASSERT_TRUE(result);
+    // Should create OR with 3 Near nodes (one per field)
+    auto* or_node = dynamic_cast<ProtonOr*>(result.get());
+    ASSERT_TRUE(or_node);
+    EXPECT_EQ(3u, or_node->getChildren().size());
+
+    // Each child should be a Near node with correct distance
+    for (auto* child : or_node->getChildren()) {
+        auto* near = dynamic_cast<ProtonNear*>(child);
+        ASSERT_TRUE(near);
+        EXPECT_EQ(2u, near->getChildren().size());
+        EXPECT_EQ(10u, near->getDistance());
+    }
+}
+
+TEST_F(FieldSplitterTest, onear_with_single_field_not_split) {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addONear(2, 10, 0, 0);  // distance=10, no negative terms
+    builder.addStringTerm("term1", FIELD1, 1, TERM_WEIGHT);
+    builder.addStringTerm("term2", FIELD1, 2, TERM_WEIGHT);
+    Node::UP root = builder.build();
+
+    Node::UP result = buildAndSplit(std::move(root));
+
+    ASSERT_TRUE(result);
+    auto* onear_node = dynamic_cast<ProtonONear*>(result.get());
+    ASSERT_TRUE(onear_node);
+    EXPECT_EQ(2u, onear_node->getChildren().size());
+    EXPECT_EQ(10u, onear_node->getDistance());
+}
+
+TEST_F(FieldSplitterTest, onear_with_multi_field_view_splits) {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addONear(2, 10, 0, 0);  // distance=10, no negative terms
+    builder.addStringTerm("term1", VIEW, 1, TERM_WEIGHT);
+    builder.addStringTerm("term2", VIEW, 2, TERM_WEIGHT);
+    Node::UP root = builder.build();
+
+    Node::UP result = buildAndSplit(std::move(root));
+
+    ASSERT_TRUE(result);
+    // Should create OR with 3 ONear nodes (one per field)
+    auto* or_node = dynamic_cast<ProtonOr*>(result.get());
+    ASSERT_TRUE(or_node);
+    EXPECT_EQ(3u, or_node->getChildren().size());
+
+    // Each child should be an ONear node with correct distance
+    for (auto* child : or_node->getChildren()) {
+        auto* onear = dynamic_cast<ProtonONear*>(child);
+        ASSERT_TRUE(onear);
+        EXPECT_EQ(2u, onear->getChildren().size());
+        EXPECT_EQ(10u, onear->getDistance());
+    }
+}
+
+TEST_F(FieldSplitterTest, near_with_mixed_fields_splits_correctly) {
+    // Create a NEAR where children have overlapping but different field sets
+    // This tests that only children with the same field are grouped together
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addNear(3, 10, 0, 0);  // distance=10, no negative terms
+    builder.addStringTerm("term1", FIELD1, 1, TERM_WEIGHT);
+    builder.addStringTerm("term2", FIELD1, 2, TERM_WEIGHT);
+    builder.addStringTerm("term3", FIELD2, 3, TERM_WEIGHT);
+    Node::UP root = builder.build();
+
+    Node::UP result = buildAndSplit(std::move(root));
+
+    ASSERT_TRUE(result);
+    // Should create OR with 2 Near nodes (one for field1, one for field2)
+    auto* or_node = dynamic_cast<ProtonOr*>(result.get());
+    ASSERT_TRUE(or_node);
+    EXPECT_EQ(2u, or_node->getChildren().size());
+
+    // First Near should have 2 children (term1 and term2 for field1)
+    auto* near1 = dynamic_cast<ProtonNear*>(or_node->getChildren()[0]);
+    ASSERT_TRUE(near1);
+    EXPECT_EQ(2u, near1->getChildren().size());
+
+    // Second Near should have 1 child (term3 for field2)
+    auto* near2 = dynamic_cast<ProtonNear*>(or_node->getChildren()[1]);
+    ASSERT_TRUE(near2);
+    EXPECT_EQ(1u, near2->getChildren().size());
+}
+
+TEST_F(FieldSplitterTest, onear_with_three_terms_multi_field_splits) {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addONear(3, 5, 0, 0);  // distance=5, 3 terms, no negative terms
+    builder.addStringTerm("term1", VIEW, 1, TERM_WEIGHT);
+    builder.addStringTerm("term2", VIEW, 2, TERM_WEIGHT);
+    builder.addStringTerm("term3", VIEW, 3, TERM_WEIGHT);
+    Node::UP root = builder.build();
+
+    Node::UP result = buildAndSplit(std::move(root));
+
+    ASSERT_TRUE(result);
+    auto* or_node = dynamic_cast<ProtonOr*>(result.get());
+    ASSERT_TRUE(or_node);
+    EXPECT_EQ(3u, or_node->getChildren().size());
+
+    // Each child should be an ONear with 3 children
+    for (auto* child : or_node->getChildren()) {
+        auto* onear = dynamic_cast<ProtonONear*>(child);
+        ASSERT_TRUE(onear);
+        EXPECT_EQ(3u, onear->getChildren().size());
+        EXPECT_EQ(5u, onear->getDistance());
+    }
+}
+
+TEST_F(FieldSplitterTest, near_with_word_alternatives_and_equiv_splits) {
+    QueryBuilder<ProtonNodeTypes> builder;
+
+    // Create NEAR with WordAlternatives and Equiv children
+    builder.addNear(2, 10, 0, 0);  // distance=10, no negative terms
+    {
+        // First child: WordAlternatives
+        std::vector<std::unique_ptr<ProtonStringTerm>> alternatives;
+        alternatives.push_back(std::make_unique<ProtonStringTerm>("alt1", VIEW, 1, TERM_WEIGHT));
+        alternatives.push_back(std::make_unique<ProtonStringTerm>("alt2", VIEW, 2, TERM_WEIGHT));
+        builder.add_word_alternatives(std::move(alternatives), VIEW, 3, TERM_WEIGHT);
+    }
+    {
+        // Second child: Equiv
+        builder.addEquiv(2, 4, TERM_WEIGHT);
+        builder.addStringTerm("syn1", VIEW, 5, TERM_WEIGHT);
+        builder.addStringTerm("syn2", VIEW, 6, TERM_WEIGHT);
+    }
+
+    Node::UP root = builder.build();
+
+    Node::UP result = buildAndSplit(std::move(root));
+
+    ASSERT_TRUE(result);
+    // Should create OR with 3 Near nodes (one per field)
+    auto* or_node = dynamic_cast<ProtonOr*>(result.get());
+    ASSERT_TRUE(or_node);
+    EXPECT_EQ(3u, or_node->getChildren().size());
+
+    // Each child should be a Near node with 2 children (WordAlternatives and Equiv)
+    for (auto* child : or_node->getChildren()) {
+        auto* near = dynamic_cast<ProtonNear*>(child);
+        ASSERT_TRUE(near);
+        EXPECT_EQ(2u, near->getChildren().size());
+        EXPECT_EQ(10u, near->getDistance());
+
+        // First child should be WordAlternatives with single field
+        auto* word_alt = dynamic_cast<ProtonWordAlternatives*>(near->getChildren()[0]);
+        ASSERT_TRUE(word_alt);
+        EXPECT_EQ(1u, word_alt->numFields());
+        EXPECT_EQ(2u, word_alt->getNumTerms());
+
+        // Second child should be Equiv with single field
+        auto* equiv = dynamic_cast<ProtonEquiv*>(near->getChildren()[1]);
+        ASSERT_TRUE(equiv);
+        EXPECT_EQ(1u, equiv->numFields());
+        EXPECT_EQ(2u, equiv->getChildren().size());
+    }
+}
+
+//==============================================================================
 // Complex Scenarios
 //==============================================================================
 

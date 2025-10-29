@@ -700,15 +700,61 @@ public:
     }
 
     void visit(ProtonNear &node) override {
-        _builder.addNear(node.getChildren().size(), node.getDistance(),
-                        node.num_negative_terms(), node.exclusion_distance());
-        visitNodes(node.getChildren());
+        // Build map: field_id -> list of original child indices that have this field
+        auto field_to_children = buildFieldToChildrenMap(node.getChildren());
+
+        if (field_to_children.empty()) {
+            LOG(debug, "field splitting for Near node failed: "
+                "no fields found in any children (distance=%zu, num_children=%zu)",
+                node.getDistance(), node.getChildren().size());
+            vespalib::Issue::report("field splitting for Near node failed: "
+                                   "no fields found in any children "
+                                   "(distance=%zu, num_children=%zu)",
+                                   node.getDistance(), node.getChildren().size());
+            _has_error = true;
+            return;
+        }
+
+        if (field_to_children.size() == 1) {
+            // Only one field - create single Near with all children
+            const auto& [field_id, child_indices] = *field_to_children.begin();
+            createNearForField(node, field_id, child_indices);
+        } else {
+            // Multiple fields - create OR with one Near per field
+            _builder.addOr(field_to_children.size());
+            for (const auto& [field_id, child_indices] : field_to_children) {
+                createNearForField(node, field_id, child_indices);
+            }
+        }
     }
 
     void visit(ProtonONear &node) override {
-        _builder.addONear(node.getChildren().size(), node.getDistance(),
-                         node.num_negative_terms(), node.exclusion_distance());
-        visitNodes(node.getChildren());
+        // Build map: field_id -> list of original child indices that have this field
+        auto field_to_children = buildFieldToChildrenMap(node.getChildren());
+
+        if (field_to_children.empty()) {
+            LOG(debug, "field splitting for ONear node failed: "
+                "no fields found in any children (distance=%zu, num_children=%zu)",
+                node.getDistance(), node.getChildren().size());
+            vespalib::Issue::report("field splitting for ONear node failed: "
+                                   "no fields found in any children "
+                                   "(distance=%zu, num_children=%zu)",
+                                   node.getDistance(), node.getChildren().size());
+            _has_error = true;
+            return;
+        }
+
+        if (field_to_children.size() == 1) {
+            // Only one field - create single ONear with all children
+            const auto& [field_id, child_indices] = *field_to_children.begin();
+            createONearForField(node, field_id, child_indices);
+        } else {
+            // Multiple fields - create OR with one ONear per field
+            _builder.addOr(field_to_children.size());
+            for (const auto& [field_id, child_indices] : field_to_children) {
+                createONearForField(node, field_id, child_indices);
+            }
+        }
     }
 
     // Helper to build field-to-children mapping for Equiv nodes
@@ -741,6 +787,36 @@ public:
         replica.resolveFromChildren(replica.getChildren());
     }
 
+    // Helper to create and populate a Near node for a specific field
+    void createNearForField(ProtonNear &node, uint32_t field_id,
+                           const std::vector<size_t> &child_indices) {
+        _builder.addNear(child_indices.size(), node.getDistance(),
+                        node.num_negative_terms(), node.exclusion_distance());
+
+        // Visit each child with forced field
+        uint32_t saved_field_id = _force_field_id;
+        _force_field_id = field_id;
+        for (size_t idx : child_indices) {
+            node.getChildren()[idx]->accept(*this);
+        }
+        _force_field_id = saved_field_id;
+    }
+
+    // Helper to create and populate an ONear node for a specific field
+    void createONearForField(ProtonONear &node, uint32_t field_id,
+                            const std::vector<size_t> &child_indices) {
+        _builder.addONear(child_indices.size(), node.getDistance(),
+                         node.num_negative_terms(), node.exclusion_distance());
+
+        // Visit each child with forced field
+        uint32_t saved_field_id = _force_field_id;
+        _force_field_id = field_id;
+        for (size_t idx : child_indices) {
+            node.getChildren()[idx]->accept(*this);
+        }
+        _force_field_id = saved_field_id;
+    }
+
     void visit(ProtonEquiv &node) override {
         // Build map: field_id -> list of original child indices that have this field
         auto field_to_children = buildFieldToChildrenMap(node.getChildren());
@@ -755,6 +831,22 @@ public:
                                    node.getId(), node.getWeight().percent(),
                                    node.getChildren().size());
             _has_error = true;
+            return;
+        }
+
+        // If we're forced to use a specific field (e.g., inside a NEAR/ONEAR), use only that field
+        if (_force_field_id != search::fef::IllegalFieldId) {
+            auto it = field_to_children.find(_force_field_id);
+            if (it != field_to_children.end()) {
+                createEquivForField(node, it->first, it->second);
+            } else {
+                LOG(debug, "field splitting for Equiv node failed: forced field_id %u not found",
+                    _force_field_id);
+                vespalib::Issue::report("field splitting for Equiv node failed: "
+                                       "forced field_id %u not found",
+                                       _force_field_id);
+                _has_error = true;
+            }
             return;
         }
 
