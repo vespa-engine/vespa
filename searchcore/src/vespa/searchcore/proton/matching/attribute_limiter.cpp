@@ -87,22 +87,18 @@ AttributeLimiter::create_match_data(size_t want_hits, size_t max_group_size, dou
         RangeLimitMetaInfo rangeInfo = _rangeQueryLocator.locate();
         const uint32_t no_unique_id = 0;
 
-        // Create NumericRangeSpec directly instead of building a string
-        auto spec = search::NumericRangeSpec::fromString(
-            fmt("[%s;%s]", rangeInfo.low().c_str(), rangeInfo.high().c_str()));
+        auto spec = std::make_unique<search::NumericRangeSpec>(rangeInfo.low(), rangeInfo.high());
 
-        if (spec && spec->valid) {
-            // Set range limit (negative for descending)
-            spec->rangeLimit = _descending ? -static_cast<int32_t>(want_hits) : static_cast<int32_t>(want_hits);
+        // Set range limit (negative for descending)
+        spec->rangeLimit = _descending ? -static_cast<int32_t>(want_hits) : static_cast<int32_t>(want_hits);
 
-            // Set diversity parameters if needed
-            if (max_group_size < want_hits) {
-                size_t cutoffGroups = (_diversityCutoffFactor * want_hits) / max_group_size;
-                spec->diversityAttribute = _diversity_attribute;
-                spec->maxPerGroup = max_group_size;
-                spec->diversityCutoffGroups = cutoffGroups;
-                spec->diversityCutoffStrict = (_diversityCutoffStrategy == DiversityCutoffStrategy::STRICT);
-            }
+        // Set diversity parameters if needed
+        if (max_group_size < want_hits) {
+            size_t cutoffGroups = (_diversityCutoffFactor * want_hits) / max_group_size;
+            spec->diversityAttribute = _diversity_attribute;
+            spec->maxPerGroup = max_group_size;
+            spec->diversityCutoffGroups = cutoffGroups;
+            spec->diversityCutoffStrict = (_diversityCutoffStrategy == DiversityCutoffStrategy::STRICT);
         }
 
         Range range(std::move(spec));
