@@ -1454,12 +1454,22 @@ public:
                                                              double global_filter_lower_limit = 0.05,
                                                              double target_hits_max_adjustment_factor = 20.0) {
         search::queryeval::FieldSpec field("foo", 0, 0);
+        NearestNeighborBlueprint::HnswParams hnsw_params{
+            .explore_additional_hits = 5,
+            .distance_threshold = 100100.25,
+            .global_filter_lower_limit = global_filter_lower_limit,
+            .global_filter_lower_limit_is_override = false,
+            .global_filter_upper_limit = 1.0,
+            .filter_first_upper_limit = 0.0,
+            .filter_first_exploration = 0.3,
+            .exploration_slack = 0.0,
+            .target_hits_max_adjustment_factor = target_hits_max_adjustment_factor
+        };
         auto bp = std::make_unique<NearestNeighborBlueprint>(
             field,
             std::make_unique<DistanceCalculator>(this->as_dense_tensor(),
                                                  create_query_tensor(vec_2d(17, 42))),
-            3, approximate, 5, 100100.25,
-            global_filter_lower_limit, 1.0, 0.0, 0.3, 0.0, target_hits_max_adjustment_factor, vespalib::Doom::never());
+            3, approximate, hnsw_params, vespalib::Doom::never());
         EXPECT_EQ(11u, bp->getState().estimate().estHits);
         EXPECT_EQ(100100.25 * 100100.25, bp->get_distance_threshold());
         return bp;

@@ -31,7 +31,8 @@ public:
         uint32_t explore_additional_hits;
         double distance_threshold;
         double global_filter_lower_limit;
-        double global_filter_upper_limit;
+        bool global_filter_lower_limit_is_override;
+        std::optional<double> global_filter_upper_limit;
         double filter_first_upper_limit;
         double filter_first_exploration;
         double exploration_slack;
@@ -61,14 +62,8 @@ private:
 public:
     NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                              std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
-                             uint32_t target_hits, bool approximate, uint32_t explore_additional_hits,
-                             double distance_threshold,
-                             double global_filter_lower_limit,
-                             double global_filter_upper_limit,
-                             double filter_first_upper_limit,
-                             double filter_first_exploration,
-                             double exploration_slack,
-                             double target_hits_max_adjustment_factor,
+                             uint32_t target_hits, bool approximate,
+                             const HnswParams& hnsw_params,
                              const vespalib::Doom& doom);
     NearestNeighborBlueprint(const NearestNeighborBlueprint&) = delete;
     NearestNeighborBlueprint& operator=(const NearestNeighborBlueprint&) = delete;

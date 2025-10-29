@@ -769,18 +769,22 @@ public:
             auto calc = tensor::DistanceCalculator::make_with_validation(_attr, *query_tensor);
             const auto& params = getRequestContext().get_create_blueprint_params();
             const auto& hnsw_params = n.get_hnsw_params();
+            queryeval::NearestNeighborBlueprint::HnswParams blueprint_hnsw_params{
+                .explore_additional_hits = n.get_explore_additional_hits(),
+                .distance_threshold = n.get_distance_threshold(),
+                .global_filter_lower_limit = hnsw_params.approximate_threshold.value_or(params.global_filter_lower_limit),
+                .global_filter_lower_limit_is_override = hnsw_params.approximate_threshold.has_value(),
+                .global_filter_upper_limit = hnsw_params.post_filter_threshold.value_or(params.global_filter_upper_limit),
+                .filter_first_upper_limit = hnsw_params.filter_first_threshold.value_or(params.filter_first_upper_limit),
+                .filter_first_exploration = hnsw_params.filter_first_exploration.value_or(params.filter_first_exploration),
+                .exploration_slack = hnsw_params.exploration_slack.value_or(params.exploration_slack),
+                .target_hits_max_adjustment_factor = hnsw_params.target_hits_max_adjustment_factor.value_or(params.target_hits_max_adjustment_factor)
+            };
             setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field,
                                                                             std::move(calc),
                                                                             n.get_target_num_hits(),
                                                                             n.get_allow_approximate(),
-                                                                            n.get_explore_additional_hits(),
-                                                                            n.get_distance_threshold(),
-                                                                            hnsw_params.approximate_threshold.value_or(params.global_filter_lower_limit),
-                                                                            hnsw_params.post_filter_threshold.value_or(params.global_filter_upper_limit),
-                                                                            hnsw_params.filter_first_threshold.value_or(params.filter_first_upper_limit),
-                                                                            hnsw_params.filter_first_exploration.value_or(params.filter_first_exploration),
-                                                                            hnsw_params.exploration_slack.value_or(params.exploration_slack),
-                                                                            hnsw_params.target_hits_max_adjustment_factor.value_or(params.target_hits_max_adjustment_factor),
+                                                                            blueprint_hnsw_params,
                                                                             getRequestContext().getDoom()));
         } catch (const vespalib::IllegalArgumentException& ex) {
             return fail_nearest_neighbor_term(n, ex.getMessage());
