@@ -50,7 +50,22 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
             if (threadsElem != null) {
                 // New syntax with values relative to number of CPU cores
                 min = Double.parseDouble(threadsElem.getTextContent());
-                max = threadsElem.hasAttribute("boost") ? Double.parseDouble(threadsElem.getAttribute("boost")) : min;
+
+                // Until variable pool size is removed, prefer max to boost.
+                var maxAttribute = XmlHelper.getOptionalAttribute(threadsElem, "max").orElse(null);
+                var boostAttribute = XmlHelper.getOptionalAttribute(threadsElem, "boost").orElse(null);
+                if (maxAttribute != null && boostAttribute != null) {
+                    throw new IllegalArgumentException("For <threads>: both 'max' and 'boost' cannot be specified at the same time. Please use 'max' only.");
+                } else if (maxAttribute != null) {
+                    max = Double.parseDouble(maxAttribute);
+                } else if (boostAttribute != null) {
+                    ds.getDeployLogger()
+                            .logApplicationPackage(Level.WARNING, "For <threads>: the 'boost' attribute is deprecated, use 'max' instead.");
+                    max = Double.parseDouble(boostAttribute);
+                } else {
+                    max = min;
+                }
+
                 var queueElem = XmlHelper.getOptionalChild(threadpoolElem, "queue").orElse(null);
                 if (queueElem != null) queue = Double.parseDouble(queueElem.getTextContent());
                 isRelative = true;
@@ -61,7 +76,7 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
                         .logApplicationPackage(Level.WARNING, "For <threadpool>: <min-threads> is deprecated, use <threads> instead");
                 var maxElem = XmlHelper.getOptionalChild(threadpoolElem, "max-threads").orElse(null);
                 if (maxElem != null) ds.getDeployLogger()
-                        .logApplicationPackage(Level.WARNING, "For <threadpool>: <max-threads> is deprecated, use <threads> with 'boost' instead");
+                        .logApplicationPackage(Level.WARNING, "For <threadpool>: <max-threads> is deprecated, use <threads> with 'max' instead");
                 if (minElem != null) {
                     min = Double.parseDouble(minElem.getTextContent());
                 }

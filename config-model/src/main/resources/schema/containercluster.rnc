@@ -146,7 +146,12 @@ Threadpool = element threadpool {
         element min-threads { xsd:nonNegativeInteger } &
         element queue-size { xsd:nonNegativeInteger }
     )|(
-        element threads { xsd:double { minExclusive = "0.0" } & attribute boost { xsd:double { minExclusive = "0.0" } }? }? &
+        element threads {
+            xsd:double { minExclusive = "0.0" } &
+            ( attribute max { xsd:double { minExclusive = "0.0" } }
+            | attribute boost { xsd:double { minExclusive = "0.0" } }
+            | empty )
+        }? &
         element queue { xsd:double { minInclusive = "0.0" } }?
     ))
 }
