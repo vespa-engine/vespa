@@ -16,6 +16,7 @@
 #include <vespa/searchlib/common/locationiterators.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
+#include <vespa/searchlib/query/streaming/queryterm.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
 #include <vespa/searchlib/queryeval/create_blueprint_params.h>
@@ -254,13 +255,16 @@ public:
         uint64_t estHits(0);
         const IAttributeVector &attr(_attribute);
         for (const ZCurve::Range & r : rangeVector) {
-            query::Range qr(r.min(), r.max());
-            query::SimpleRangeTerm rt(qr, "", 0, query::Weight(0));
-            string stack(StackDumpCreator::create(rt));
-            _rangeSearches.push_back(attr.createSearchContext(QueryTermDecoder::decodeTerm(stack), scParams));
+            auto range_spec = std::make_unique<NumericRangeSpec>();
+            range_spec->valid = true;
+            range_spec->valid_integers = true;
+            range_spec->int64_lower_limit = r.min();
+            range_spec->int64_upper_limit = r.max();
+            auto term = std::make_unique<streaming::QueryTerm>(QueryTermSimple::Type::WORD, "", std::move(range_spec));
+            _rangeSearches.push_back(attr.createSearchContext(std::move(term), scParams));
             _estimates.push_back(_rangeSearches.back()->calc_hit_estimate());
             estHits += _estimates.back().est_hits();
-            LOG(debug, "Range '%s' estHits %" PRId64, qr.getRangeString().c_str(), estHits);
+            LOG(debug, "Range [%" PRId64 ",%" PRId64 "] estHits %" PRId64, r.min(), r.max(), estHits);
         }
         if (estHits > attr.getNumDocs()) {
             estHits = attr.getNumDocs();
@@ -646,22 +650,24 @@ public:
     void visit(PrefixTerm & n) override { visitTerm(n); }
 
     void visit(RangeTerm &n) override {
-        const string stack = StackDumpCreator::create(n);
-        const string term = queryeval::termAsString(n);
-        QueryTermSimple parsed_term(term, QueryTermSimple::Type::WORD);
+        const NumericRangeSpec* spec = n.getTerm().getSpec();
         SearchContextParams scParams = createContextParams(_field.isFilter());
-        if (parsed_term.getMaxPerGroup() > 0) {
-            const IAttributeVector *diversity(getRequestContext().getAttribute(std::string(parsed_term.getDiversityAttribute())));
+        if (spec && spec->with_diversity()) {
+            const IAttributeVector *diversity(getRequestContext().getAttribute(std::string(spec->diversityAttribute)));
             if (check_valid_diversity_attr(diversity)) {
                 scParams.diversityAttribute(diversity)
-                        .diversityCutoffGroups(parsed_term.getDiversityCutoffGroups())
-                        .diversityCutoffStrict(parsed_term.getDiversityCutoffStrict());
-                setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, stack, scParams));
+                        .diversityCutoffGroups(spec->diversityCutoffGroups)
+                        .diversityCutoffStrict(spec->diversityCutoffStrict);
+                auto range_spec = std::make_unique<NumericRangeSpec>(*spec);
+                auto term = std::make_unique<streaming::QueryTerm>(QueryTermSimple::Type::WORD, "", std::move(range_spec));
+                setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, std::move(term), scParams));
             } else {
                 setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
             }
         } else {
-            setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, stack, scParams));
+            auto range_spec = spec ? std::make_unique<NumericRangeSpec>(*spec) : std::make_unique<NumericRangeSpec>();
+            auto term = std::make_unique<streaming::QueryTerm>(QueryTermSimple::Type::WORD, "", std::move(range_spec));
+            setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, std::move(term), scParams));
         }
     }
 
