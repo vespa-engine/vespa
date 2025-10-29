@@ -1081,6 +1081,25 @@ TEST(QueryTest, requireThatSameElementIteratorsCanBeBuilt)
     EXPECT_TRUE(iterator->seek(8));
 }
 
+TEST(QueryTest, andnot_below_same_element_is_elementwise)
+{
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addSameElement(1, "top", 0, Weight(1));
+    builder.addAndNot(2);
+    builder.addStringTerm("xyz", "f1", 1, Weight(1));
+    builder.addStringTerm("abc", "f2", 2, Weight(1));
+    auto query = builder.build();
+    auto root = dynamic_cast<search::query::SameElement *>(query.get());
+    ASSERT_NE(nullptr, root);
+    EXPECT_EQ(root->getChildren().size(), 1u);
+    auto child = dynamic_cast<ProtonAndNot*>(root->getChildren()[0]);
+    ASSERT_NE(nullptr, child);
+    EXPECT_FALSE(child->elementwise);
+    SameElementModifier sem;
+    query->accept(sem);
+    EXPECT_TRUE(child->elementwise);
+}
+
 TEST(QueryTest, requireThatConstBoolBlueprintsAreCreatedCorrectly)
 {
     using search::queryeval::AlwaysTrueBlueprint;

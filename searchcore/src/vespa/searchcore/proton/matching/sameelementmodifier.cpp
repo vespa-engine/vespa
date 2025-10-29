@@ -75,6 +75,7 @@ SameElementDescendantModifier::visit_term(Term& term)
 void
 SameElementDescendantModifier::visit(ProtonNodeTypes::AndNot& n)
 {
+    n.elementwise = true;
     auto& children = n.getChildren();
     if (!children.empty()) {
         children[0]->accept(*this);

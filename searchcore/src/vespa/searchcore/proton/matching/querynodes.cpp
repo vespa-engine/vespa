@@ -162,6 +162,7 @@ template struct ProtonTerm<search::query::FuzzyTerm>;
 template struct ProtonTerm<search::query::InTerm>;
 template struct ProtonTerm<search::query::WordAlternatives>;
 
+ProtonAndNot::~ProtonAndNot() = default;
 ProtonEquiv::~ProtonEquiv() = default;
 ProtonWordAlternatives::~ProtonWordAlternatives() = default;
 ProtonSameElement::~ProtonSameElement() = default;
