@@ -89,9 +89,15 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
                 if (queueSizeElem != null) queue = Double.parseDouble(queueSizeElem.getTextContent());
                 isRelative = false;
             }
-            if (max != null && max <= 0) throw new IllegalArgumentException("Thread pool 'max' must be positive");
-            if (min != null && min < 0) throw new IllegalArgumentException("Thread pool 'min' must be positive");
-            if (queue != null && queue < 0) throw new IllegalArgumentException("Thread pool 'queue' must be positive");
+
+            if (min != null && min < 0)
+                throw new IllegalArgumentException("For <threadpool>: <threads> must be positive.");
+            if (max != null && max <= 0)
+                throw new IllegalArgumentException("For <threadpool>: 'max' on <threads> must be positive.");
+            if (queue != null && queue < 0)
+                throw new IllegalArgumentException("For <threadpool>: <queue> must be positive.");
+            if (min != null && max != null && min > max)
+                throw new IllegalArgumentException("For <threadpool>: 'max' on <threads> must be greater than <threads>.");
             options = new UserOptions(max, min, queue, isRelative);
         }
     }
