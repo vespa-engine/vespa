@@ -6,6 +6,7 @@ import com.yahoo.config.ModelReference;
 import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
+import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
@@ -19,6 +20,7 @@ import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 import static com.yahoo.vespa.model.container.xml.ModelIdResolver.HF_TOKENIZER;
 import static com.yahoo.vespa.model.container.xml.ModelIdResolver.ONNX_MODEL;
+import static com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig.ConcurrencyType;
 
 
 /**
@@ -29,7 +31,6 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
     private final OnnxModelOptions onnxModelOptions;
     private final ModelReference modelRef;
     private final ModelReference vocabRef;
-    private final FileReference modelConfigRef;
     private final Integer maxTokens;
     private final String transformerInputIds;
     private final String transformerAttentionMask;
@@ -42,6 +43,12 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
 
     private String prependDocument;
 
+    private Integer batchingMaxSize;
+    private String batchingMaxDelay;
+    private ConcurrencyType.Enum concurrencyType;
+    private String concurrencyValue;
+    private final FileReference modelConfigOverrideRef;
+    
     public HuggingFaceEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.HuggingFaceEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         var model = Model.fromXml(state, xml, "transformer-model", Set.of(ONNX_MODEL)).orElseThrow();
@@ -52,10 +59,6 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
                 getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new));
         modelRef = model.modelReference();
         vocabRef = Model.fromXmlOrImplicitlyFromOnnxModel(state, xml, model, "tokenizer-model", Set.of(HF_TOKENIZER)).modelReference();
-        modelConfigRef = getChildValue(xml, "internal-model-config-path")
-                .filter(value -> !value.isBlank())
-                .map(value -> state.getFileRegistry().addFile(value))
-                .orElse(null);
         maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
         transformerInputIds = getChildValue(xml, "transformer-input-ids").orElse(null);
         transformerAttentionMask = getChildValue(xml, "transformer-attention-mask").orElse(null);
@@ -68,14 +71,37 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
             prependQuery = getChildValue(prepend, "query").orElse(null);
             prependDocument = getChildValue(prepend, "document").orElse(null);
         }
-
+        
+        var batching = getChild(xml, "batching");
+        if (batching != null) {
+            batchingMaxSize = XML.attribute("max-size", batching).map(value -> {
+                try {
+                    return Integer.parseUnsignedInt(value);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException(
+                            "Batching max-size should be a positive integer, provided: " + value, e);
+                }
+            }).orElse(null);
+            batchingMaxDelay = XML.attribute("max-delay", batching).orElse(null);
+        }
+        
+        var concurrency = getChild(xml, "concurrency");
+        if (concurrency != null) {
+            concurrencyType = XML.attribute("type", concurrency).map(ConcurrencyType.Enum::valueOf).orElse(null);
+            concurrencyValue = concurrency.getNodeValue();
+        }
+        
+        modelConfigOverrideRef = getChildValue(xml, "model-config-overrride")
+                .filter(value -> !value.isBlank())
+                .map(value -> state.getFileRegistry().addFile(value))
+                .orElse(null);
+        
         model.registerOnnxModelCost(cluster, onnxModelOptions);
     }
 
     @Override
     public void getConfig(HuggingFaceEmbedderConfig.Builder b) {
         b.transformerModel(modelRef).tokenizerPath(vocabRef);
-        if (modelConfigRef != null) b.internalModelConfigPath(Optional.of(modelConfigRef));
         if (maxTokens != null) b.transformerMaxTokens(maxTokens);
         if (transformerInputIds != null) b.transformerInputIds(transformerInputIds);
         if (transformerAttentionMask != null) b.transformerAttentionMask(transformerAttentionMask);
@@ -89,6 +115,8 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
         onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
         onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
         onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
+        if (batchingMaxSize != null) b.batchingMaxSize(batchingMaxSize);
+
     }
 
 }

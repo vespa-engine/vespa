@@ -33,5 +33,12 @@ transformerIntraOpThreads int default=-4
 # GPU device id, -1 for CPU
 transformerGpuDevice      int default=0
 
-# Path to model config file, e.g. for Triton. Internal and undocumented for now.
-internalModelConfigPath path optional
+batchingMaxSize int default=1
+batchingMaxDelay string default=100ms
+
+# Number of inferences executed concurrently
+concurrencyType enum { absolute, relative } default=absolute
+concurrency int default=-1
+
+# Path to model config file, e.g. for Triton.
+modelConfigOverride path optional
