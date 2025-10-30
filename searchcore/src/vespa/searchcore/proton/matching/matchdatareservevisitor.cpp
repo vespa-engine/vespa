@@ -35,4 +35,9 @@ MatchDataReserveVisitor::visit(ProtonNodeTypes::WordAlternatives& n)
     }
 }
 
+void MatchDataReserveVisitor::visit(ProtonNodeTypes::Phrase& n) {
+    n.allocateTerms(_mdl);
+    visitChildren(n);
+}
+
 }
