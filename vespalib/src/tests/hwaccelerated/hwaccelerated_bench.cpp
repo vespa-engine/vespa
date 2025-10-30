@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "data_utils.h"
+#include "scoped_fn_table_override.h"
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
 #include <vespa/vespalib/hwaccelerated/highway.h>
 #include <benchmark/benchmark.h>
 #include <format>
@@ -42,13 +44,14 @@ void register_accel_binary_arg_benchmark(std::string_view name, std::unique_ptr<
     std::string instance_name = std::format("{}/{}/{}/{}", name, type_string<T>(), accel_target.implementation_name(), accel_target.target_name());
     auto bench_fn = [fn = std::forward<Fn>(fn), accel = std::move(accel)](benchmark::State& state) {
         auto [a, b] = create_and_fill_lhs_rhs<T>(state.range());
+        ScopedFnTableOverride fn_scope(accel->fn_table());
         for (auto _ : state) {
             // A tiny bit dirty, but beats duplicating a bunch of code.
-            constexpr bool is_void_fn = std::is_same_v<void, decltype(fn(*accel, a.data(), b.data(), state.range()))>;
+            constexpr bool is_void_fn = std::is_same_v<void, decltype(fn(a.data(), b.data(), state.range()))>;
             if constexpr (is_void_fn) {
                 // Note that this is expected to mutate `a`, so different iterations do not
                 // necessarily use the same input data. Should not be not an issue in practice(tm).
-                fn(*accel, a.data(), b.data(), state.range());
+                fn(a.data(), b.data(), state.range());
                 // _Technically_ the compiler could stare into the void and realize the above
                 // code has no side effects since the output is not used for anything. Avoid this
                 // by having the void stare back (clobber output memory with an opaque access).
@@ -56,7 +59,7 @@ void register_accel_binary_arg_benchmark(std::string_view name, std::unique_ptr<
                 benchmark::DoNotOptimize(clobber_data);
                 benchmark::ClobberMemory(); // Compiler write barrier
             } else {
-                auto result = fn(*accel, a.data(), b.data(), state.range());
+                auto result = fn(a.data(), b.data(), state.range());
                 benchmark::DoNotOptimize(result);
             }
         }
@@ -80,45 +83,45 @@ void register_benchmarks(std::string_view name, Fn fn) {
 }
 
 void register_all_benchmark_suites() {
-    auto euclidean_dist_fn = [](const IAccelerated& accelerator, const auto* lhs, const auto* rhs, size_t my_sz) {
-        return accelerator.squaredEuclideanDistance(lhs, rhs, my_sz);
+    auto euclidean_dist_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
+        return squared_euclidean_distance(lhs, rhs, my_sz);
     };
     register_benchmarks<double>("Squared Euclidean Distance", euclidean_dist_fn);
     register_benchmarks<float>("Squared Euclidean Distance", euclidean_dist_fn);
     register_benchmarks<BFloat16>("Squared Euclidean Distance", euclidean_dist_fn);
     register_benchmarks<int8_t>("Squared Euclidean Distance", euclidean_dist_fn);
 
-    auto dot_product_fn = [](const IAccelerated& accelerator, const auto* lhs, const auto* rhs, size_t my_sz) {
-        return accelerator.dotProduct(lhs, rhs, my_sz);
+    auto dot_product_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
+        return dot_product(lhs, rhs, my_sz);
     };
     register_benchmarks<double>("Dot Product", dot_product_fn);
     register_benchmarks<float>("Dot Product", dot_product_fn);
     register_benchmarks<BFloat16>("Dot Product", dot_product_fn);
     register_benchmarks<int8_t>("Dot Product", dot_product_fn);
 
-    auto binary_hamming_fn = [](const IAccelerated& accelerator, const auto* lhs, const auto* rhs, size_t my_sz) {
-        return accelerator.binary_hamming_distance(lhs, rhs, my_sz);
+    auto binary_hamming_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
+        return binary_hamming_distance(lhs, rhs, my_sz);
     };
     register_benchmarks<uint8_t>("Binary Hamming Distance", binary_hamming_fn);
 
-    auto popcount_fn = [](const IAccelerated& accelerator, const auto* lhs, const auto* rhs, size_t my_sz) {
+    auto popcount_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
         (void)rhs; // ... a little bit sneaky; overestimates bytes processed/sec by 2x
-        return accelerator.populationCount(lhs, my_sz);
+        return population_count(lhs, my_sz);
     };
     register_benchmarks<uint64_t>("Popcount", popcount_fn);
 
-    auto and_fn = [](const IAccelerated& accel, auto* lhs, const auto* rhs, size_t my_sz) {
-        accel.andBit(lhs, rhs, my_sz);
+    auto and_fn = [](auto* lhs, const auto* rhs, size_t my_sz) {
+        and_bit(lhs, rhs, my_sz);
     };
     register_benchmarks<uint8_t>("Bitwise AND", and_fn);
 
-    auto or_fn = [](const IAccelerated& accel, auto* lhs, const auto* rhs, size_t my_sz) {
-        return accel.orBit(lhs, rhs, my_sz);
+    auto or_fn = [](auto* lhs, const auto* rhs, size_t my_sz) {
+        return or_bit(lhs, rhs, my_sz);
     };
     register_benchmarks<uint8_t>("Bitwise OR", or_fn);
 
-    auto and_not_fn = [](const IAccelerated& accel, auto* lhs, const auto* rhs, size_t my_sz) {
-        return accel.andNotBit(lhs, rhs, my_sz);
+    auto and_not_fn = [](auto* lhs, const auto* rhs, size_t my_sz) {
+        return and_not_bit(lhs, rhs, my_sz);
     };
     register_benchmarks<uint8_t>("Bitwise ANDNOT", and_not_fn);
 }
