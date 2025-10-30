@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "data_utils.h"
+#include "scoped_fn_table_override.h"
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/hwaccelerated/fn_table.h>
 #include <vespa/vespalib/hwaccelerated/highway.h>
@@ -15,20 +16,6 @@ LOG_SETUP("hwaccelerated_test");
 using namespace ::testing;
 
 namespace vespalib::hwaccelerated {
-
-class ScopedFnTableOverride {
-    dispatch::FnTable _original_fn_table;
-public:
-    explicit ScopedFnTableOverride(const dispatch::FnTable& new_sparse_table)
-        : _original_fn_table(dispatch::active_fn_table())
-    {
-        auto composite_table = dispatch::build_composite_fn_table(new_sparse_table, _original_fn_table, false);
-        dispatch::thread_unsafe_update_function_dispatch_pointers(composite_table);
-    }
-    ~ScopedFnTableOverride() {
-        dispatch::thread_unsafe_update_function_dispatch_pointers(_original_fn_table);
-    }
-};
 
 // TODO reconcile run-time startup verification in `iaccelerated.cpp` with what's in here!
 //  Ideally we want to run our tests on hardware that has enough bells and whistles in terms
