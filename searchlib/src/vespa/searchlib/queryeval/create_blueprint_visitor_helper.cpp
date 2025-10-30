@@ -53,8 +53,18 @@ void
 CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
     auto phrase = std::make_unique<SimplePhraseBlueprint>(_field, n.is_expensive());
     for (const query::Node * child : n.getChildren()) {
+        const query::Term *term = dynamic_cast<const query::Term *>(child);
+        if (! term) {
+            LOG(warning, "unexpected non-term inside phrase");
+            setResult(std::make_unique<EmptyBlueprint>());
+            return;
+        }
         FieldSpecList fields;
-        FieldSpec inner = SimplePhraseBlueprint::next_child_field(_field, _global_layout);
+        FieldSpec inner = term->inner_field_spec(_field);
+        fef::TermFieldHandle handle = inner.getHandle();
+        if (handle == fef::IllegalHandle) {
+            inner = SimplePhraseBlueprint::next_child_field(_field, _global_layout);
+        }
         fields.add(inner);
         phrase->addTerm(_searchable.createBlueprint(_requestContext, fields, *child, _global_layout));
     }
@@ -68,14 +78,10 @@ void CreateBlueprintVisitorHelper::visitWordAlternatives(query::WordAlternatives
         FieldSpec inner = child->inner_field_spec(_field);
         fef::TermFieldHandle handle = inner.getHandle();
         if (handle == fef::IllegalHandle) {
-            // happens for WordAlternatives inside phrase:
             LOG(debug, "no handle yet for child of WordAlternatives, allocating");
-            FieldSpec inner2 = SimplePhraseBlueprint::next_child_field(_field, _global_layout);
-            blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner2, *child, _global_layout));
-        } else {
-            LOG(debug, "WordAlternatives inner handle: %d", handle);
-            blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner, *child, _global_layout));
+            inner = SimplePhraseBlueprint::next_child_field(_field, _global_layout);
         }
+        blueprints.emplace_back(_searchable.createBlueprint(_requestContext, inner, *child, _global_layout));
     }
     double eqw = n.getWeight().percent();
     FieldSpecBaseList fields;
