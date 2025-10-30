@@ -4,7 +4,7 @@ package com.yahoo.search.dispatch.searchcluster;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 /**
- * Polcies for group availability.
+ * Policies for group availability.
  *
  * @author bratseth
  */
