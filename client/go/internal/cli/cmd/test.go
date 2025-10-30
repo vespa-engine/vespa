@@ -539,7 +539,7 @@ func (s seenClusters) warmup(step step, defaultCluster string, defaultParameters
 	if step.Request.URI != "" {
 		requestUrl, err := url.ParseRequestURI(step.Request.URI)
 		if err != nil {
-			context.cli.printDebug("warmup: failed to parse URI ", step.Request.URI, ": ", err)
+			context.cli.printInfo("warmup: failed to parse URI ", step.Request.URI, ": ", err)
 			return
 		}
 		if requestUrl.IsAbs() {
@@ -556,14 +556,14 @@ func (s seenClusters) warmup(step step, defaultCluster string, defaultParameters
 
 	// Skip if no waiter available
 	if waiter == nil {
-		context.cli.printDebug("warmup: no waiter available, skipping")
+		context.cli.printInfo("warmup: no waiter available, skipping")
 		return
 	}
 
 	// Get target
 	target, err := context.target()
 	if err != nil {
-		context.cli.printDebug("warmup: failed to get target for cluster ", cluster, ": ", err)
+		context.cli.printInfo("warmup: failed to get target for cluster ", cluster, ": ", err)
 		return
 	}
 
@@ -573,7 +573,7 @@ func (s seenClusters) warmup(step step, defaultCluster string, defaultParameters
 		context.cli.printDebug("warmup: discovering service for cluster ", cluster)
 		service, err = waiter.Service(target, cluster)
 		if err != nil {
-			context.cli.printDebug("warmup: failed to discover service for cluster ", cluster, ": ", err)
+			context.cli.printInfo("warmup: failed to discover service for cluster ", cluster, ": ", err)
 			return
 		}
 		context.clusters[cluster] = service
@@ -583,7 +583,7 @@ func (s seenClusters) warmup(step step, defaultCluster string, defaultParameters
 	fullURL := joinURL(service.BaseURL, "/")
 	warmupUrl, err := url.ParseRequestURI(fullURL)
 	if err != nil {
-		context.cli.printDebug("warmup: failed to parse warmup URL ", fullURL, ": ", err)
+		context.cli.printInfo("warmup: failed to parse warmup URL ", fullURL, ": ", err)
 		return
 	}
 
@@ -623,5 +623,5 @@ func (s seenClusters) warmup(step step, defaultCluster string, defaultParameters
 	}
 
 	// All retries failed
-	context.cli.printDebug("warmup: failed to warm up cluster ", cluster, " after ", maxRetries, " attempts: ", lastErr)
+	context.cli.printInfo("warmup: failed to warm up cluster ", cluster, " after ", maxRetries, " attempts: ", lastErr)
 }
