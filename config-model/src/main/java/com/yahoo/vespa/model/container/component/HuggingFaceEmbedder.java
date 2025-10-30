@@ -15,12 +15,12 @@ import java.util.Set;
 
 import static com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig.PoolingStrategy;
 import static com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig.TransformerExecutionMode;
+import static com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig.ConcurrencyType;
 import static com.yahoo.text.XML.getChild;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 import static com.yahoo.vespa.model.container.xml.ModelIdResolver.HF_TOKENIZER;
 import static com.yahoo.vespa.model.container.xml.ModelIdResolver.ONNX_MODEL;
-import static com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig.ConcurrencyType;
 
 
 /**
@@ -45,8 +45,8 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
 
     private Integer batchingMaxSize;
     private String batchingMaxDelay;
-    private ConcurrencyType.Enum concurrencyType;
-    private String concurrencyValue;
+    private String concurrencyType;
+    private Integer concurrency;
     private final FileReference modelConfigOverrideRef;
     
     public HuggingFaceEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
@@ -71,10 +71,10 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
             prependQuery = getChildValue(prepend, "query").orElse(null);
             prependDocument = getChildValue(prepend, "document").orElse(null);
         }
-        
-        var batching = getChild(xml, "batching");
-        if (batching != null) {
-            batchingMaxSize = XML.attribute("max-size", batching).map(value -> {
+
+        var batchingElement = getChild(xml, "batching");
+        if (batchingElement != null) {
+            batchingMaxSize = XML.attribute("max-size", batchingElement).map(value -> {
                 try {
                     return Integer.parseUnsignedInt(value);
                 } catch (NumberFormatException e) {
@@ -82,20 +82,19 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
                             "Batching max-size should be a positive integer, provided: " + value, e);
                 }
             }).orElse(null);
-            batchingMaxDelay = XML.attribute("max-delay", batching).orElse(null);
+            batchingMaxDelay = XML.attribute("max-delay", batchingElement).orElse(null);
         }
-        
-        var concurrency = getChild(xml, "concurrency");
-        if (concurrency != null) {
-            concurrencyType = XML.attribute("type", concurrency).map(ConcurrencyType.Enum::valueOf).orElse(null);
-            concurrencyValue = concurrency.getNodeValue();
+
+        var concurrencyElement = getChild(xml, "concurrency");
+        if (concurrencyElement != null) {
+            concurrencyType = XML.attribute("type", concurrencyElement).orElse(null);
+            concurrency = Optional.ofNullable(concurrencyElement.getNodeValue()).map(Integer::parseInt).orElse(null);
         }
-        
-        modelConfigOverrideRef = getChildValue(xml, "model-config-overrride")
+
+        modelConfigOverrideRef = getChildValue(xml, "model-config-override")
                 .filter(value -> !value.isBlank())
-                .map(value -> state.getFileRegistry().addFile(value))
-                .orElse(null);
-        
+                .map(value -> state.getFileRegistry().addFile(value)).orElse(null);
+
         model.registerOnnxModelCost(cluster, onnxModelOptions);
     }
 
@@ -109,14 +108,17 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
         if (transformerOutput != null) b.transformerOutput(transformerOutput);
         if (normalize != null) b.normalize(normalize);
         if (poolingStrategy != null) b.poolingStrategy(PoolingStrategy.Enum.valueOf(poolingStrategy));
-        if(prependQuery != null) b.prependQuery(prependQuery);
-        if(prependDocument != null) b.prependDocument(prependDocument);
-        onnxModelOptions.executionMode().ifPresent(value -> b.transformerExecutionMode(TransformerExecutionMode.Enum.valueOf(value)));
+        if (prependQuery != null) b.prependQuery(prependQuery);
+        if (prependDocument != null) b.prependDocument(prependDocument);
+        onnxModelOptions.executionMode().ifPresent(
+                value -> b.transformerExecutionMode(TransformerExecutionMode.Enum.valueOf(value)));
         onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
         onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
         onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
         if (batchingMaxSize != null) b.batchingMaxSize(batchingMaxSize);
-
+        if (batchingMaxDelay != null) b.batchingMaxDelay(batchingMaxDelay);
+        if (concurrencyType != null) b.concurrencyType(ConcurrencyType.Enum.valueOf(concurrencyType));
+        if (concurrency != null) b.concurrency(concurrency);
+        if (modelConfigOverrideRef != null) b.modelConfigOverride(Optional.of(modelConfigOverrideRef));
     }
-
 }
