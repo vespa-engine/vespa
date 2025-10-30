@@ -410,10 +410,12 @@ public:
         // Euclidean to be slower than under NEON. SVE2 does have this, but int8 operations
         // are still slightly slower for the SVEs. So tag as suboptimal for now.
         ft.tag_fns_as_suboptimal({FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_I8, FnTable::FnId::DOT_PRODUCT_I8});
+        // f64 is a tiny bit slower for dot products on SVE/SVE2.
+        ft.tag_fns_as_suboptimal({FnTable::FnId::DOT_PRODUCT_F64});
 #if HWY_TARGET != HWY_SVE2_128
         // f32/f64 dot products are slightly slower across the board on non-fixed width SVE/SVE2.
-        // SVE2_128, however, is slightly _faster_ for longer vectors.
-        ft.tag_fns_as_suboptimal({FnTable::FnId::DOT_PRODUCT_F32, FnTable::FnId::DOT_PRODUCT_F64});
+        // SVE2_128, however, is overall _faster_ for f32.
+        ft.tag_fns_as_suboptimal({FnTable::FnId::DOT_PRODUCT_F32});
 #endif // HWY_TARGET != HWY_SVE2_128
 #endif // (HWY_TARGET & HWY_ALL_SVE) != 0
         return ft;
