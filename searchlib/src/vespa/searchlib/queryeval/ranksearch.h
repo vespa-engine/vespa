@@ -25,6 +25,7 @@ protected:
 
 public:
     static SearchIterator::UP create(ChildrenIterators children, bool strict);
+    void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
 };
 
 }

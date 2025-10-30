@@ -18,7 +18,8 @@ enum class QueryTweak {
     NORMAL,       // All children of query root are term nodes
     AND,          // Last child is AND with two term nodes
     OR,           // Last child is OR with two term nodes
-    ANDNOT        // Last child is ANDNOT with two term nodes
+    ANDNOT,       // Last child is ANDNOT with two term nodes
+    RANK          // Last child is RANK with two term nodes
 };
 
 using OptElems = std::optional<std::vector<uint32_t>>;
@@ -86,6 +87,11 @@ std::unique_ptr<SameElementBlueprint> make_blueprint(QueryTweak query_tweak, Mat
             case QueryTweak::ANDNOT:
                 if (i + 2 == children.size()) {
                     bp_tweak = std::make_unique<AndNotBlueprint>(true);
+                }
+                break;
+            case QueryTweak::RANK:
+                if (i + 2 == children.size()) {
+                    bp_tweak = std::make_unique<RankBlueprint>();
                 }
                 break;
             default:
@@ -283,6 +289,36 @@ TEST(SameElementTest, require_that_and_not_below_same_element_works)
     verify_elements(*se, 5, {});
     ASSERT_TRUE(se->seek(9));
     verify_elements(*se, 9, {6});
+}
+
+TEST(SameElementTest, require_that_rank_below_same_element_works)
+{
+    auto a = make_result({{3, {5, 7, 10, 12}}, {5, {5, 10}}, {9, {4, 5, 9}}});
+    auto b = make_result({{3, {7, 12}}, {5, {5, 7, 10, 12}}, {9, {4, 9, 12}}});
+    auto mdl = make_match_data_layout();
+    auto bp = finalize(make_blueprint(QueryTweak::RANK, *mdl, {a, b}, false), true);
+    auto md = mdl->createMatchData();
+    auto search = bp->createSearch(*md);
+    search->initRange(1, 1000);
+    auto *se = dynamic_cast<SameElementSearch*>(search.get());
+    ASSERT_TRUE(se != nullptr);
+    ASSERT_TRUE(se->seek(3));
+    verify_elements(*se, 3, {5, 7, 10, 12});
+    ASSERT_TRUE(se->seek(5));
+    verify_elements(*se, 5, {5, 10});
+    ASSERT_TRUE(se->seek(9));
+    verify_elements(*se, 9, {4, 5, 9});
+    md->soft_reset();
+    search->initRange(1, 1000);
+    EXPECT_TRUE(search->seek(3));
+    search->unpack(3);
+    verify_md_elements(*md, "after unpack", 3, { hit({5, 7, 10, 12}), hit({7, 12}) });
+    EXPECT_TRUE(search->seek(5));
+    search->unpack(5);
+    verify_md_elements(*md, "after unpack", 5, { hit({5, 10}), hit({5, 10}) });
+    EXPECT_TRUE(search->seek(9));
+    search->unpack(9);
+    verify_md_elements(*md, "after unpack", 9, { hit({4, 5, 9}), hit({4, 9}) });
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
