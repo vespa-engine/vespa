@@ -26,14 +26,17 @@ namespace HWY_NAMESPACE {
 namespace hn = hwy::HWY_NAMESPACE;
 namespace {
 // Must always be undef'd to ensure we expand the correct HWY_ATTR per target.
-#undef VESPA_NOEXCEPT_HWY_ATTR
+#undef VESPA_HWY_LAMBDA
 // Clang and GCC refuse to parse `noexcept HWY_ATTR` and `HWY_ATTR noexcept`,
 // respectively. GCC seems to be the one that is technically correct(tm), but
 // we still want Clang to compile, so hide the dirt under a macro carpet.
+// Also force lambda inlining to avoid GCC doing some wild codegen with vector
+// register spilling to stack temporaries if it decides to break the lambda
+// out as a separate logical function.
 #if defined(__clang__)
-#define VESPA_NOEXCEPT_HWY_ATTR HWY_ATTR noexcept
+#define VESPA_HWY_LAMBDA HWY_ATTR __attribute__((always_inline)) noexcept
 #else
-#define VESPA_NOEXCEPT_HWY_ATTR noexcept HWY_ATTR
+#define VESPA_HWY_LAMBDA noexcept HWY_ATTR __attribute__((always_inline))
 #endif
 
 // Many of the Highway functions used within this file are fairly self-explanatory
@@ -104,7 +107,7 @@ float my_hwy_dot_bf16(const BFloat16* HWY_RESTRICT a,
     const hn::Repartition<float, decltype(dbf16)> df32;
     // Since we're widening the element type, loading e.g. 8 lanes of BF16 in a single
     // 128-bit vector requires us to process 2 vectors of 4 lanes of float32.
-    auto kernel_fn = [df32](auto lhs, auto rhs, auto& acc0, auto& acc1) VESPA_NOEXCEPT_HWY_ATTR {
+    auto kernel_fn = [df32](auto lhs, auto rhs, auto& acc0, auto& acc1) VESPA_HWY_LAMBDA {
         acc0 = hn::ReorderWidenMulAccumulate(df32, lhs, rhs, acc0, acc1);
     };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<4>, HasAccumulatorArity<2>>;
@@ -120,7 +123,7 @@ double my_hwy_square_euclidean_distance(const T* HWY_RESTRICT a,
     const hn::ScalableTag<T> d;
     // `HWY_ATTR` is needed to ensure lambdas have the expected codegen target.
     // See https://google.github.io/highway/en/master/faq.html#boilerplate
-    const auto kernel_fn = [](auto lhs, auto rhs, auto& accu) VESPA_NOEXCEPT_HWY_ATTR {
+    const auto kernel_fn = [](auto lhs, auto rhs, auto& accu) VESPA_HWY_LAMBDA {
         const auto sub = hn::Sub(lhs, rhs);
         accu = hn::MulAdd(sub, sub, accu); // note: using fused multiply-add
     };
@@ -142,7 +145,7 @@ double my_hwy_square_euclidean_distance_bf16(const BFloat16* HWY_RESTRICT a,
     const hn::ScalableTag<hwy::bfloat16_t>        dbf16;
     const hn::Repartition<float, decltype(dbf16)> df;
 
-    auto kernel_fn = [df](auto lhs, auto rhs, auto& acc0, auto& acc1) VESPA_NOEXCEPT_HWY_ATTR {
+    auto kernel_fn = [df](auto lhs, auto rhs, auto& acc0, auto& acc1) VESPA_HWY_LAMBDA {
         hn::Vec<decltype(df)> sub_lo, sub_hi;
         ReorderWidenSub(df, lhs, rhs, sub_lo, sub_hi);
         acc0 = hn::MulAdd(sub_lo, sub_lo, acc0);
@@ -163,7 +166,7 @@ int32_t sub_mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a,
     const hn::Repartition<int16_t, decltype(d8)>  d16;
     const hn::Repartition<int32_t, decltype(d16)> d32;
 
-    auto kernel_fn = [d16, d32](auto lhs, auto rhs, auto& acc0, auto& acc1, auto& acc2, auto& acc3) VESPA_NOEXCEPT_HWY_ATTR {
+    auto kernel_fn = [d16, d32](auto lhs, auto rhs, auto& acc0, auto& acc1, auto& acc2, auto& acc3) VESPA_HWY_LAMBDA {
         hn::Vec<decltype(d16)> sub_l_i16, sub_u_i16;
         ReorderWidenSub(d16, lhs, rhs, sub_l_i16, sub_u_i16);
         acc0 = hn::ReorderWidenMulAccumulate(d32, sub_l_i16, sub_l_i16, acc0, acc1);
@@ -192,7 +195,7 @@ double my_hwy_square_euclidean_distance_int8(const int8_t* HWY_RESTRICT a,
 HWY_INLINE
 size_t my_hwy_popcount(const uint64_t* a, const size_t sz) noexcept {
     const hn::ScalableTag<uint64_t> d;
-    const auto kernel_fn = [](auto v, auto& accu) VESPA_NOEXCEPT_HWY_ATTR {
+    const auto kernel_fn = [](auto v, auto& accu) VESPA_HWY_LAMBDA {
         accu = hn::Add(hn::PopulationCount(v), accu);
     };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<8>, HasAccumulatorArity<1>>;
@@ -218,7 +221,7 @@ size_t my_hwy_binary_hamming_distance(const void* HWY_RESTRICT untyped_lhs,
     const hn::ScalableTag<uint8_t> d8;
     const hn::RepartitionToWideX3<decltype(d8)> d64;
 
-    const auto kernel_fn = [d64](auto lhs, auto rhs, auto& accu) VESPA_NOEXCEPT_HWY_ATTR {
+    const auto kernel_fn = [d64](auto lhs, auto rhs, auto& accu) VESPA_HWY_LAMBDA {
         auto lhs_u64 = hn::BitCast(d64, lhs);
         auto rhs_u64 = hn::BitCast(d64, rhs);
         accu = hn::Add(hn::PopulationCount(hn::Xor(lhs_u64, rhs_u64)), accu);
@@ -238,7 +241,7 @@ int32_t mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a,
     const hn::ScalableTag<int8_t> d8;
 #if HWY_TARGET != HWY_NEON
     const hn::Repartition<int32_t, decltype(d8)> d32;
-    const auto kernel_fn = [d32](auto lhs_i8, auto rhs_i8, auto& accu) VESPA_NOEXCEPT_HWY_ATTR {
+    const auto kernel_fn = [d32](auto lhs_i8, auto rhs_i8, auto& accu) VESPA_HWY_LAMBDA {
         accu = hn::SumOfMulQuadAccumulate(d32, lhs_i8, rhs_i8, accu);
     };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<8>, HasAccumulatorArity<1>>;
@@ -258,7 +261,7 @@ int32_t mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a,
     const hn::Repartition<int16_t, decltype(d8)>  d16;
     const hn::Repartition<int32_t, decltype(d16)> d32;
 
-    const auto kernel_fn = [d16, d32](auto lhs_i8, auto rhs_i8, auto& acc0, auto& acc1, auto& acc2, auto& acc3) VESPA_NOEXCEPT_HWY_ATTR {
+    const auto kernel_fn = [d16, d32](auto lhs_i8, auto rhs_i8, auto& acc0, auto& acc1, auto& acc2, auto& acc3) VESPA_HWY_LAMBDA {
         const auto lhs_i16_lo = hn::PromoteLowerTo(d16, lhs_i8);
         const auto lhs_i16_hi = hn::PromoteUpperTo(d16, lhs_i8);
         const auto rhs_i16_lo = hn::PromoteLowerTo(d16, rhs_i8);
