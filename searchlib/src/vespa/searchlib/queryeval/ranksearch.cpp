@@ -15,6 +15,16 @@ RankSearch::doSeek(uint32_t docid)
     }
 }
 
+void
+RankSearch::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    auto& children = getChildren();
+    if (children.empty()) {
+        return;
+    }
+    children.front()->get_element_ids(docid, element_ids);
+}
+
 namespace {
 /**
  * A simple implementation of the strict Rank search operation.
