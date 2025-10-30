@@ -322,8 +322,13 @@ RankWithQueryNode::evaluate()
 }
 
 void
-RankWithQueryNode::get_element_ids(std::vector<uint32_t>&)
+RankWithQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
 {
+    auto& children = getChildren();
+    if (children.empty()) {
+        return;
+    }
+    children.front()->get_element_ids(element_ids);
 }
 
 Query::Query() = default;
