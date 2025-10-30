@@ -188,7 +188,7 @@ public:
     const attribute::ISearchContext *get_attribute_search_context() const noexcept final {
         return _search_context.get();
     }
-    bool getRange(std::string &from, std::string &to) const override;
+    bool getRange(search::NumericRangeSpec &range_spec) const override;
 };
 
 AttributeFieldBlueprint::~AttributeFieldBlueprint() = default;
@@ -566,19 +566,26 @@ DirectWandBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept
 }
 
 bool
-AttributeFieldBlueprint::getRange(std::string &from, std::string &to) const {
+AttributeFieldBlueprint::getRange(search::NumericRangeSpec &range_spec) const {
     if (_type == INT) {
         Int64Range range = _search_context->getAsIntegerTerm();
-        char buf[32];
-        auto res = std::to_chars(buf, buf + sizeof(buf), range.lower(), 10);
-        from = std::string_view(buf, res.ptr - buf);
-        res = std::to_chars(buf, buf + sizeof(buf), range.upper(), 10);
-        to = std::string_view(buf, res.ptr - buf);
+        range_spec.valid = true;
+        range_spec.valid_integers = true;
+        range_spec.lower_inclusive = true;
+        range_spec.upper_inclusive = true;
+        range_spec.int64_lower_limit = range.lower();
+        range_spec.int64_upper_limit = range.upper();
+        range_spec.fp_lower_limit = static_cast<double>(range.lower());
+        range_spec.fp_upper_limit = static_cast<double>(range.upper());
         return true;
     } else if (_type == FLOAT) {
         DoubleRange range = _search_context->getAsDoubleTerm();
-        from = vespalib::make_string("%g", range.lower());
-        to = vespalib::make_string("%g", range.upper());
+        range_spec.valid = true;
+        range_spec.valid_integers = false;
+        range_spec.lower_inclusive = true;
+        range_spec.upper_inclusive = true;
+        range_spec.fp_lower_limit = range.lower();
+        range_spec.fp_upper_limit = range.upper();
         return true;
     }
     return false;
