@@ -264,7 +264,7 @@ public class Dispatcher extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        // The clustermonitor must be shutdown first as it uses the invokerfactory through the searchCluster.
+        // The cluster monitor must be shutdown first as it uses the invoker factory through the searchCluster
         clusterMonitor.shutdown();
         if (rpcResourcePool != null) {
             rpcResourcePool.close();

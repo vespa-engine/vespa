@@ -22,7 +22,7 @@ public interface NodeManager<T> {
 
     /**
      * Called when a node should be pinged.
-     * This *must* lead to either a call to ClusterMonitor.failed or ClusterMonitor.responded
+     * This *must* lead to either a call to ClusterMonitor#failed or ClusterMonitor#responded
      */
     void ping(ClusterMonitor<T> clusterMonitor, T node, Executor executor);
 
