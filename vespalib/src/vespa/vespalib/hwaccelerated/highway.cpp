@@ -406,17 +406,16 @@ public:
         // Additionally, BF16 squared Euclidean distance is reduced on Axion and Graviton 4
         // SVE+SVE2 (but _not_ on Graviton 3 SVE... need auto-tuning on startup).
         ft.tag_fns_as_suboptimal({FnTable::FnId::DOT_PRODUCT_BF16, FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_BF16});
+        // SVE (1st edition) does not have signed subtraction with widening, causing i8
+        // Euclidean to be slower than under NEON. SVE2 does have this, but int8 operations
+        // are still slightly slower for the SVEs. So tag as suboptimal for now.
+        ft.tag_fns_as_suboptimal({FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_I8, FnTable::FnId::DOT_PRODUCT_I8});
 #if HWY_TARGET != HWY_SVE2_128
         // f32/f64 dot products are slightly slower across the board on non-fixed width SVE/SVE2.
         // SVE2_128, however, is slightly _faster_ for longer vectors.
         ft.tag_fns_as_suboptimal({FnTable::FnId::DOT_PRODUCT_F32, FnTable::FnId::DOT_PRODUCT_F64});
-#endif
+#endif // HWY_TARGET != HWY_SVE2_128
 #endif // (HWY_TARGET & HWY_ALL_SVE) != 0
-#if HWY_TARGET == HWY_SVE || HWY_TARGET == HWY_SVE_256
-        // SVE (1st edition) does not have signed subtraction with widening, causing
-        // i8 Euclidean to be slower than under NEON.
-        ft.tag_fns_as_suboptimal({FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_I8});
-#endif
         return ft;
     }
 
