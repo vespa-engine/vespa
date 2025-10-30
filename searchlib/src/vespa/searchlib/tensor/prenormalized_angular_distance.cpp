@@ -2,30 +2,28 @@
 
 #include "prenormalized_angular_distance.h"
 #include "temporary_vector_store.h"
-#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
 
 using vespalib::eval::Int8Float;
 using vespalib::eval::TypifyCellType;
 using vespalib::typify_invoke;
+namespace hwaccelerated = vespalib::hwaccelerated;
 
 namespace search::tensor {
 
 template <typename VectorStoreType>
 class BoundPrenormalizedAngularDistance final : public BoundDistanceFunction {
-private:
     using FloatType = VectorStoreType::FloatType;
-    const vespalib::hwaccelerated::IAccelerated & _computer;
     mutable VectorStoreType _tmpSpace;
     const std::span<const FloatType> _lhs;
     double _lhs_norm_sq;
 public:
     explicit BoundPrenormalizedAngularDistance(TypedCells lhs)
-        : _computer(vespalib::hwaccelerated::IAccelerated::getAccelerator()),
-          _tmpSpace(lhs.size),
+        : _tmpSpace(lhs.size),
           _lhs(_tmpSpace.storeLhs(lhs))
     {
         auto a = _lhs.data();
-        _lhs_norm_sq = _computer.dotProduct(cast(a), cast(a), lhs.size);
+        _lhs_norm_sq = hwaccelerated::dot_product(cast(a), cast(a), lhs.size);
         if (_lhs_norm_sq <= 0.0) {
             _lhs_norm_sq = 1.0;
         }
@@ -34,7 +32,7 @@ public:
         std::span<const FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         auto a = _lhs.data();
         auto b = rhs_vector.data();
-        double dot_product = _computer.dotProduct(cast(a), cast(b), _lhs.size());
+        double dot_product = hwaccelerated::dot_product(cast(a), cast(b), _lhs.size());
         double distance = _lhs_norm_sq - dot_product;
         return distance;
     }

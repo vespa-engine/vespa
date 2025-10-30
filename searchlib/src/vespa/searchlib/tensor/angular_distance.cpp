@@ -2,7 +2,7 @@
 
 #include "angular_distance.h"
 #include "temporary_vector_store.h"
-#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
 #include <numbers>
 #include <cmath>
 
@@ -10,34 +10,32 @@ using vespalib::typify_invoke;
 using vespalib::eval::TypifyCellType;
 using vespalib::eval::TypedCells;
 using vespalib::eval::Int8Float;
+namespace hwaccelerated = vespalib::hwaccelerated;
 
 namespace search::tensor {
 
 template <typename VectorStoreType>
 class BoundAngularDistance final : public BoundDistanceFunction {
-private:
     using FloatType = VectorStoreType::FloatType;
-    const vespalib::hwaccelerated::IAccelerated & _computer;
     mutable VectorStoreType _tmpSpace;
     const std::span<const FloatType> _lhs;
     double _lhs_norm_sq;
 public:
     explicit BoundAngularDistance(TypedCells lhs)
-        : _computer(vespalib::hwaccelerated::IAccelerated::getAccelerator()),
-          _tmpSpace(lhs.size),
+        : _tmpSpace(lhs.size),
           _lhs(_tmpSpace.storeLhs(lhs))
     {
         auto a = _lhs.data();
-        _lhs_norm_sq = _computer.dotProduct(cast(a), cast(a), lhs.size);
+        _lhs_norm_sq = hwaccelerated::dot_product(cast(a), cast(a), lhs.size);
     }
     double calc(TypedCells rhs) const noexcept override {
         size_t sz = _lhs.size();
         std::span<const FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         auto a = _lhs.data();
         auto b = rhs_vector.data();
-        double b_norm_sq = _computer.dotProduct(cast(b), cast(b), sz);
+        double b_norm_sq = hwaccelerated::dot_product(cast(b), cast(b), sz);
         double squared_norms = _lhs_norm_sq * b_norm_sq;
-        double dot_product = _computer.dotProduct(cast(a), cast(b), sz);
+        double dot_product = hwaccelerated::dot_product(cast(a), cast(b), sz);
         double div = (squared_norms > 0) ? sqrt(squared_norms) : 1.0;
         double cosine_similarity = dot_product / div;
         double distance = 1.0 - cosine_similarity; // in range [0,2]
