@@ -9,7 +9,7 @@ import com.yahoo.schema.document.RankType;
 import java.util.List;
 
 /**
- * Helper for converting ParsedRankProfile etc to RankProfile with settings
+ * Helper for converting ParsedRankProfile etc. to RankProfile with settings
  *
  * @author arnej27959
  */
@@ -28,7 +28,12 @@ public class ParsedRankingConverter {
 
     void convertRankProfile(Schema schema, ParsedRankProfile parsed) {
         try {
-            RankProfile profile = createProfile(schema, parsed.name());
+            if (parsed.outer().isPresent()) {
+                if ( ! parsed.getInherited().contains(parsed.outer().get().name()))
+                    throw new IllegalArgumentException("Inner profile '" + parsed.name() + "' must inherit '" +
+                                                       parsed.outer().get().name() + "'");
+            }
+            RankProfile profile = createProfile(schema, parsed.fullName());
             populateFrom(parsed, profile);
             rankProfileRegistry.add(profile);
         }
@@ -43,7 +48,12 @@ public class ParsedRankingConverter {
     }
 
     private void populateFrom(ParsedRankProfile parsed, RankProfile profile) {
-        parsed.getInherited().forEach(profile::inherit);
+        for (var inherited : parsed.getInherited()) {
+            String namePrefix = "";
+            if (parsed.outer().isPresent() && parsed.outer().get().outer().isPresent())
+                namePrefix = parsed.outer().get().outer().get().fullName() + ".";
+            profile.inherit(namePrefix + inherited);
+        }
         parsed.isStrict().ifPresent(profile::setStrict);
         parsed.isUseSignificanceModel().ifPresent(profile::setUseSignificanceModel);
         parsed.getConstants().values().forEach(profile::add);

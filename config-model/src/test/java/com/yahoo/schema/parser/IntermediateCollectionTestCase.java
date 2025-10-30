@@ -56,16 +56,16 @@ public class IntermediateCollectionTestCase {
         collection.addSchemaFromFile("src/test/derived/deriver/grandparent.sd");
         collection.addSchemaFromFile("src/test/derived/deriver/parent.sd");
         var schemes = collection.getParsedSchemas();
-        assertEquals(schemes.size(), 3);
+        assertEquals(3, schemes.size());
         var schema = schemes.get("child");
-        assertTrue(schema != null);
-        assertEquals(schema.name(), "child");
+        assertNotNull(schema);
+        assertEquals("child", schema.name());
         schema = schemes.get("parent");
-        assertTrue(schema != null);
-        assertEquals(schema.name(), "parent");
+        assertNotNull(schema);
+        assertEquals("parent", schema.name());
         schema = schemes.get("grandparent");
-        assertTrue(schema != null);
-        assertEquals(schema.name(), "grandparent");
+        assertNotNull(schema);
+        assertEquals("grandparent", schema.name());
     }
 
     NamedReader readerOf(String fileName) throws Exception {
@@ -82,16 +82,16 @@ public class IntermediateCollectionTestCase {
         collection.addSchemaFromReader(readerOf("src/test/derived/deriver/grandparent.sd"));
         collection.addSchemaFromReader(readerOf("src/test/derived/deriver/parent.sd"));
         var schemes = collection.getParsedSchemas();
-        assertEquals(schemes.size(), 3);
+        assertEquals(3, schemes.size());
         var schema = schemes.get("child");
-        assertTrue(schema != null);
-        assertEquals(schema.name(), "child");
+        assertNotNull(schema);
+        assertEquals("child", schema.name());
         schema = schemes.get("parent");
-        assertTrue(schema != null);
-        assertEquals(schema.name(), "parent");
+        assertNotNull(schema);
+        assertEquals("parent", schema.name());
         schema = schemes.get("grandparent");
-        assertTrue(schema != null);
-        assertEquals(schema.name(), "grandparent");
+        assertNotNull(schema);
+        assertEquals("grandparent", schema.name());
     }
 
     ParsedRankProfile get(List<ParsedRankProfile> all, String name) {
@@ -108,24 +108,24 @@ public class IntermediateCollectionTestCase {
         collection.addRankProfileFile("test", "src/test/derived/rankprofilemodularity/test/outside_schema1.profile");
         collection.addRankProfileFile("test", readerOf("src/test/derived/rankprofilemodularity/test/subdirectory/outside_schema2.profile"));
         var schemes = collection.getParsedSchemas();
-        assertEquals(schemes.size(), 1);
+        assertEquals(1, schemes.size());
         var schema = schemes.get("test");
-        assertTrue(schema != null);
-        assertEquals(schema.name(), "test");
+        assertNotNull(schema);
+        assertEquals("test", schema.name());
         var rankProfiles = schema.getRankProfiles();
-        assertEquals(rankProfiles.size(), 7);
+        assertEquals(8, rankProfiles.size());
         var outside = get(rankProfiles, "outside_schema1");
-        assertTrue(outside != null);
-        assertEquals(outside.name(), "outside_schema1");
+        assertNotNull(outside);
+        assertEquals("outside_schema1", outside.name());
         var functions = outside.getFunctions();
-        assertEquals(functions.size(), 1);
-        assertEquals(functions.get(0).name(), "fo1");
+        assertEquals(1, functions.size());
+        assertEquals("fo1", functions.get(0).name());
         outside = get(rankProfiles, "outside_schema2");
-        assertTrue(outside != null);
-        assertEquals(outside.name(), "outside_schema2");
+        assertNotNull(outside);
+        assertEquals("outside_schema2", outside.name());
         functions = outside.getFunctions();
-        assertEquals(functions.size(), 1);
-        assertEquals(functions.get(0).name(), "fo2");
+        assertEquals(1, functions.size());
+        assertEquals("fo2", functions.get(0).name());
     }
 
     @Test
@@ -134,7 +134,7 @@ public class IntermediateCollectionTestCase {
         var ex = assertThrows(IllegalArgumentException.class, () ->
                 collection.addSchemaFromReader(readerOf("src/test/cfg/application/sdfilenametest/schemas/notmusic.sd")));
         assertEquals("The file containing schema 'music' must be named 'music.sd', but is 'notmusic.sd'",
-                ex.getMessage());
+                     ex.getMessage());
     }
 
     @Test
@@ -161,15 +161,15 @@ public class IntermediateCollectionTestCase {
         collection.addSchemaFromFile("src/test/derived/deriver/parent.sd");
         collection.resolveInternalConnections();
         var schemes = collection.getParsedSchemas();
-        assertEquals(schemes.size(), 3);
+        assertEquals(3, schemes.size());
         var childDoc = schemes.get("child").getDocument();
         var inherits = childDoc.getResolvedInherits();
-        assertEquals(inherits.size(), 1);
+        assertEquals(1, inherits.size());
         var parentDoc = inherits.get(0);
-        assertEquals(parentDoc.name(), "parent");
+        assertEquals("parent", parentDoc.name());
         inherits = parentDoc.getResolvedInherits();
-        assertEquals(inherits.size(), 1);
-        assertEquals(inherits.get(0).name(), "grandparent");
+        assertEquals(1, inherits.size());
+        assertEquals("grandparent", inherits.get(0).name());
     }
 
     @Test
@@ -178,7 +178,7 @@ public class IntermediateCollectionTestCase {
         collection.addSchemaFromString("schema foo inherits bar { document foo {} }");
         collection.addSchemaFromString("schema bar inherits qux { document bar {} }");
         collection.addSchemaFromString("schema qux inherits foo { document qux {} }");
-        assertEquals(collection.getParsedSchemas().size(), 3);
+        assertEquals(3, collection.getParsedSchemas().size());
         var ex = assertThrows(IllegalArgumentException.class, () ->
                 collection.resolveInternalConnections());
         assertTrue(ex.getMessage().startsWith("Inheritance/reference cycle for schemas: "));
@@ -190,7 +190,7 @@ public class IntermediateCollectionTestCase {
         collection.addSchemaFromString("schema foo { document foo inherits bar {} }");
         collection.addSchemaFromString("schema bar { document bar inherits qux {} }");
         collection.addSchemaFromString("schema qux { document qux inherits foo {} }");
-        assertEquals(collection.getParsedSchemas().size(), 3);
+        assertEquals(3, collection.getParsedSchemas().size());
         var ex = assertThrows(IllegalArgumentException.class, () ->
                 collection.resolveInternalConnections());
         System.err.println("ex: " + ex.getMessage());

@@ -127,7 +127,7 @@ public class IntermediateCollection {
             var stream = new SimpleCharStream(IOUtils.readAll(reader.getReader()));
             var parser = new SchemaParser(stream, deployLogger);
             try {
-                parser.rankProfile(schema);
+                parser.rankProfile(schema, null);
             } catch (ParseException | TokenMgrException e) {
                 throw new ParseException("Failed parsing rank-profile from '" + reader.getName() + "': " +
                                          stream.formatException(Exceptions.toMessageString(e)));

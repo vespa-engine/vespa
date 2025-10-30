@@ -429,7 +429,7 @@ void rootSchemaItem(ParsedSchema schema) : { }
       | searchStemming(schema)
       | importField(schema)
       | rankingConstant(schema) // Deprecated: TODO: Vespa > 8: Emit warning
-      | rankProfile(schema)
+      | rankProfile(schema, null)
       | documentSummary(schema)
       | fieldOutsideDoc(schema)
       | indexOutsideDoc(schema)
@@ -1758,14 +1758,14 @@ String rankingConstantErrorMessage(String name) : {}
  *
  * @param schema the schema object to add content to
  */
-void rankProfile(ParsedSchema schema) :
+void rankProfile(ParsedSchema schema, ParsedRankProfile outer) :
 {
     String name;
     ParsedRankProfile profile;
 }
 {
     ( <MODEL> | <RANK_PROFILE> ) name = identifierWithDash()
-    { profile = new ParsedRankProfile(name); }
+    { profile = new ParsedRankProfile(name, outer); }
     [inheritsRankProfile(profile)]
     lbrace() (rankProfileItem(schema, profile) (<NL>)*)* <RBRACE>
     {
@@ -1813,6 +1813,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
       | significance(profile)
       | weakand(profile)
       | filterThreshold(profile))
+      | rankProfile(schema, profile)
 }
 
 /**
