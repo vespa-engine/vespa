@@ -31,8 +31,7 @@ public:
         uint32_t explore_additional_hits;
         double distance_threshold;
         double global_filter_lower_limit;
-        bool global_filter_lower_limit_is_override;
-        std::optional<double> global_filter_upper_limit;
+        double global_filter_upper_limit;
         double filter_first_upper_limit;
         double filter_first_exploration;
         double exploration_slack;
@@ -82,7 +81,7 @@ public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         return default_flow_stats(docid_limit, getState().estimate().estHits, 0);
     }
-    
+
     std::unique_ptr<SearchIterator> createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda) const override;
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);

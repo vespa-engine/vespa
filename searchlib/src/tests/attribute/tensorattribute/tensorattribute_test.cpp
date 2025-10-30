@@ -1458,7 +1458,6 @@ public:
             .explore_additional_hits = 5,
             .distance_threshold = 100100.25,
             .global_filter_lower_limit = global_filter_lower_limit,
-            .global_filter_lower_limit_is_override = false,
             .global_filter_upper_limit = 1.0,
             .filter_first_upper_limit = 0.0,
             .filter_first_exploration = 0.3,

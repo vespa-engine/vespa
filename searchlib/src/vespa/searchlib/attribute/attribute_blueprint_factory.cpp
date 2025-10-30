@@ -773,7 +773,6 @@ public:
                 .explore_additional_hits = n.get_explore_additional_hits(),
                 .distance_threshold = n.get_distance_threshold(),
                 .global_filter_lower_limit = hnsw_params.approximate_threshold.value_or(params.global_filter_lower_limit),
-                .global_filter_lower_limit_is_override = hnsw_params.approximate_threshold.has_value(),
                 .global_filter_upper_limit = hnsw_params.post_filter_threshold.value_or(params.global_filter_upper_limit),
                 .filter_first_upper_limit = hnsw_params.filter_first_threshold.value_or(params.filter_first_upper_limit),
                 .filter_first_exploration = hnsw_params.filter_first_exploration.value_or(params.filter_first_exploration),

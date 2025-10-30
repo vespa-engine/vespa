@@ -61,7 +61,6 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _hnsw_params{.explore_additional_hits = hnsw_params.explore_additional_hits,
                    .distance_threshold = convert_distance_threshold(hnsw_params.distance_threshold, *_distance_calc),
                    .global_filter_lower_limit = hnsw_params.global_filter_lower_limit,
-                   .global_filter_lower_limit_is_override = hnsw_params.global_filter_lower_limit_is_override,
                    .global_filter_upper_limit = hnsw_params.global_filter_upper_limit,
                    .filter_first_upper_limit = hnsw_params.filter_first_upper_limit,
                    .filter_first_exploration = hnsw_params.filter_first_exploration,
@@ -89,12 +88,8 @@ NearestNeighborBlueprint::want_global_filter(GlobalFilterLimits& limits) const
 {
     auto nns_index = _attr_tensor.nearest_neighbor_index();
     if (nns_index && _approximate) {
-        if (_hnsw_params.global_filter_lower_limit_is_override) {
-            limits.lower_limit = _hnsw_params.global_filter_lower_limit;
-        }
-        if (_hnsw_params.global_filter_upper_limit.has_value()) {
-            limits.upper_limit = _hnsw_params.global_filter_upper_limit.value();
-        }
+        limits.lower_limit = _hnsw_params.global_filter_lower_limit;
+        limits.upper_limit = _hnsw_params.global_filter_upper_limit;
         return true;
     }
     return false;
@@ -194,9 +189,7 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     visitor.visitBool("set", _global_filter_set);
     visitor.visitBool("calculated", _global_filter->is_active());
     visitor.visitFloat("lower_limit", _hnsw_params.global_filter_lower_limit);
-    if (_hnsw_params.global_filter_upper_limit.has_value()) {
-        visitor.visitFloat("upper_limit", _hnsw_params.global_filter_upper_limit.value());
-    }
+    visitor.visitFloat("upper_limit", _hnsw_params.global_filter_upper_limit);
     if (_global_filter_hits.has_value()) {
         visitor.visitInt("hits", _global_filter_hits.value());
     }
