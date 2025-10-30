@@ -146,7 +146,9 @@ func runTest(testPath string, context testContext, waiter *Waiter) (string, erro
 		fmt.Fprintln(context.cli.Stderr)
 		return "", errHint(fmt.Errorf("a test must have at least one step, but none were found in %s", testPath), "See https://docs.vespa.ai/en/reference/testing")
 	}
+	seen := make(seenClusters)
 	for i, step := range test.Steps {
+		seen.warmup(step, test.Defaults.Cluster, defaultParameters, context, waiter)
 		stepName := fmt.Sprintf("Step %d", i+1)
 		if step.Name != "" {
 			stepName += ": " + step.Name
@@ -510,4 +512,103 @@ func (t *testContext) target() (vespa.Target, error) {
 		t.lazyTarget = target
 	}
 	return t.lazyTarget, nil
+}
+
+type seenClusters map[string]bool
+
+func (s seenClusters) warmup(step step, defaultCluster string, defaultParameters map[string]string, context testContext, waiter *Waiter) {
+	// Determine which cluster to use
+	cluster := step.Request.Cluster
+	if cluster == "" {
+		cluster = defaultCluster
+	}
+
+	// Skip if already warmed up
+	if s[cluster] {
+		return
+	}
+
+	// Skip in dry-run mode
+	if context.dryRun {
+		return
+	}
+
+	// Check if this is an external endpoint (only if URI is explicitly set)
+	if step.Request.URI != "" {
+		requestUrl, err := url.ParseRequestURI(step.Request.URI)
+		if err != nil {
+			fmt.Fprintf(context.cli.Stderr, "warmup: failed to parse URI %s: %v\n", step.Request.URI, err)
+			return
+		}
+		if requestUrl.IsAbs() {
+			return // Skip external endpoints
+		}
+	}
+
+	// Skip for production tests
+	if filepath.Base(context.testsPath) == "production-test" {
+		return
+	}
+
+	// Skip if no waiter available
+	if waiter == nil {
+		return
+	}
+
+	// Get target
+	target, err := context.target()
+	if err != nil {
+		fmt.Fprintf(context.cli.Stderr, "warmup: failed to get target for cluster %s: %v\n", cluster, err)
+		return
+	}
+
+	// Discover and cache the service if not already cached
+	service, ok := context.clusters[cluster]
+	if !ok {
+		service, err = waiter.Service(target, cluster)
+		if err != nil {
+			fmt.Fprintf(context.cli.Stderr, "warmup: failed to discover service for cluster %s: %v\n", cluster, err)
+			return
+		}
+		context.clusters[cluster] = service
+	}
+
+	// Make a simple GET / request to warm up the cluster
+	warmupUrl, err := url.ParseRequestURI(service.BaseURL + "/")
+	if err != nil {
+		fmt.Fprintf(context.cli.Stderr, "warmup: failed to parse warmup URL %s: %v\n", service.BaseURL+"/", err)
+		return
+	}
+
+	header := http.Header{}
+	header.Set("Content-Type", "application/json")
+
+	// Execute the warmup request with retries
+	maxRetries := 10
+	var lastErr error
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		request := &http.Request{
+			URL:    warmupUrl,
+			Method: "GET",
+			Header: header,
+			Body:   nil,
+		}
+
+		_, err = service.Do(request, 60*time.Second)
+
+		if err == nil {
+			// Success - mark cluster as seen
+			s[cluster] = true
+			return
+		}
+
+		lastErr = err
+		if attempt < maxRetries {
+			// Linear backoff: 1s, 2s, 3s, ..., 10s
+			time.Sleep(time.Duration(attempt) * time.Second)
+		}
+	}
+
+	// All retries failed
+	fmt.Fprintf(context.cli.Stderr, "warmup: failed to execute GET / request for cluster %s after %d attempts: %v\n", cluster, maxRetries, lastErr)
 }
