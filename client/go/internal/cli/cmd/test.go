@@ -238,7 +238,8 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 			}
 			context.clusters[cluster] = service
 		}
-		requestUrl, err = url.ParseRequestURI(service.BaseURL + requestUri)
+		fullURL := joinURL(service.BaseURL, requestUri)
+		requestUrl, err = url.ParseRequestURI(fullURL)
 		if err != nil {
 			return "", "", err
 		}
@@ -525,6 +526,7 @@ func (s seenClusters) warmup(step step, defaultCluster string, defaultParameters
 
 	// Skip if already warmed up
 	if s[cluster] {
+		context.cli.printDebug("warmup: cluster '", cluster, "' already warmed up, skipping")
 		return
 	}
 
@@ -537,51 +539,58 @@ func (s seenClusters) warmup(step step, defaultCluster string, defaultParameters
 	if step.Request.URI != "" {
 		requestUrl, err := url.ParseRequestURI(step.Request.URI)
 		if err != nil {
-			fmt.Fprintf(context.cli.Stderr, "warmup: failed to parse URI %s: %v\n", step.Request.URI, err)
+			context.cli.printDebug("warmup: failed to parse URI ", step.Request.URI, ": ", err)
 			return
 		}
 		if requestUrl.IsAbs() {
-			return // Skip external endpoints
+			context.cli.printDebug("warmup: skipping external endpoint: ", step.Request.URI)
+			return
 		}
 	}
 
 	// Skip for production tests
 	if filepath.Base(context.testsPath) == "production-test" {
+		context.cli.printDebug("warmup: skipping production test")
 		return
 	}
 
 	// Skip if no waiter available
 	if waiter == nil {
+		context.cli.printDebug("warmup: no waiter available, skipping")
 		return
 	}
 
 	// Get target
 	target, err := context.target()
 	if err != nil {
-		fmt.Fprintf(context.cli.Stderr, "warmup: failed to get target for cluster %s: %v\n", cluster, err)
+		context.cli.printDebug("warmup: failed to get target for cluster ", cluster, ": ", err)
 		return
 	}
 
 	// Discover and cache the service if not already cached
 	service, ok := context.clusters[cluster]
 	if !ok {
+		context.cli.printDebug("warmup: discovering service for cluster ", cluster)
 		service, err = waiter.Service(target, cluster)
 		if err != nil {
-			fmt.Fprintf(context.cli.Stderr, "warmup: failed to discover service for cluster %s: %v\n", cluster, err)
+			context.cli.printDebug("warmup: failed to discover service for cluster ", cluster, ": ", err)
 			return
 		}
 		context.clusters[cluster] = service
 	}
 
 	// Make a simple GET / request to warm up the cluster
-	warmupUrl, err := url.ParseRequestURI(service.BaseURL + "/")
+	fullURL := joinURL(service.BaseURL, "/")
+	warmupUrl, err := url.ParseRequestURI(fullURL)
 	if err != nil {
-		fmt.Fprintf(context.cli.Stderr, "warmup: failed to parse warmup URL %s: %v\n", service.BaseURL+"/", err)
+		context.cli.printDebug("warmup: failed to parse warmup URL ", fullURL, ": ", err)
 		return
 	}
 
 	header := http.Header{}
 	header.Set("Content-Type", "application/json")
+
+	context.cli.printDebug("warmup: sending GET ", warmupUrl.String(), " for cluster ", cluster)
 
 	// Execute the warmup request with retries
 	maxRetries := 10
@@ -598,17 +607,21 @@ func (s seenClusters) warmup(step step, defaultCluster string, defaultParameters
 
 		if err == nil {
 			// Success - mark cluster as seen
+			context.cli.printDebug("warmup: successfully warmed up cluster ", cluster)
 			s[cluster] = true
 			return
 		}
 
 		lastErr = err
+		context.cli.printDebug("warmup: attempt ", attempt, " failed for cluster ", cluster, ": ", err)
 		if attempt < maxRetries {
 			// Linear backoff: 1s, 2s, 3s, ..., 10s
-			time.Sleep(time.Duration(attempt) * time.Second)
+			backoff := time.Duration(attempt) * time.Second
+			context.cli.printDebug("warmup: retrying in", backoff)
+			time.Sleep(backoff)
 		}
 	}
 
 	// All retries failed
-	fmt.Fprintf(context.cli.Stderr, "warmup: failed to execute GET / request for cluster %s after %d attempts: %v\n", cluster, maxRetries, lastErr)
+	context.cli.printDebug("warmup: failed to warm up cluster ", cluster, " after ", maxRetries, " attempts: ", lastErr)
 }
