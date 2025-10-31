@@ -30,13 +30,14 @@ namespace {
 // Clang and GCC refuse to parse `noexcept HWY_ATTR` and `HWY_ATTR noexcept`,
 // respectively. GCC seems to be the one that is technically correct(tm), but
 // we still want Clang to compile, so hide the dirt under a macro carpet.
-// Also force lambda inlining to avoid GCC doing some wild codegen with vector
-// register spilling to stack temporaries if it decides to break the lambda
-// out as a separate logical function.
+// Force lambda caller inlining to avoid GCC doing some wild codegen with vector
+// register spilling to stack temporaries if it decides to break the lambda out
+// as a separate logical function. For good measure, also ensure that we inline
+// the lambda's _callees_. This mirrors the most prudent parts of HWY_API.
 #if defined(__clang__)
-#define VESPA_HWY_LAMBDA HWY_ATTR __attribute__((always_inline)) noexcept
+#define VESPA_HWY_LAMBDA HWY_ATTR __attribute__((always_inline, flatten)) noexcept
 #else
-#define VESPA_HWY_LAMBDA noexcept HWY_ATTR __attribute__((always_inline))
+#define VESPA_HWY_LAMBDA noexcept HWY_ATTR __attribute__((always_inline, flatten))
 #endif
 
 // Many of the Highway functions used within this file are fairly self-explanatory
