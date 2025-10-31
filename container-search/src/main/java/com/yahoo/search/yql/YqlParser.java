@@ -419,7 +419,7 @@ public class YqlParser implements Parser {
             case GEO_LOCATION: return buildGeoLocation(ast);
             case NEAREST_NEIGHBOR: return buildNearestNeighbor(ast);
             case PREDICATE: return buildPredicate(ast);
-            case RANK: return buildRank(ast);
+            case RANK: return buildRank(ast, currentField);
             case WEAK_AND: return buildWeakAnd(ast);
             case USER_INPUT: return buildUserInput(ast);
             case NON_EMPTY: return ensureNonEmpty(ast);
@@ -1390,8 +1390,8 @@ public class YqlParser implements Parser {
         return convertVarArgs(spec, 1, weakAnd, null);
     }
 
-    private CompositeItem buildRank(OperatorNode<ExpressionOperator> spec) {
-        return convertVarArgs(spec, 1, new RankItem(), null);
+    private CompositeItem buildRank(OperatorNode<ExpressionOperator> spec, String currentField) {
+        return convertVarArgs(spec, 1, new RankItem(), currentField);
     }
 
     private CompositeItem convertVarArgs(OperatorNode<ExpressionOperator> ast, int argIdx, CompositeItem out,
