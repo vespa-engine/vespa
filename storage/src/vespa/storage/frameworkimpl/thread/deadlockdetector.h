@@ -1,14 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @class storage::DeadLockDetector
- * @ingroup common
- *
- * Threads register in the deadlock detector and calls registerTick
- * periodically. If they do not tick often enough, the deadlock detector
- * will shut down the node.
- *
- * @brief A class for detecting whether storage has entered a deadlock.
- */
 
 #pragma once
 
@@ -26,13 +16,18 @@ namespace storage {
 
 namespace framework { class Thread; }
 
+/**
+ * Threads register in the deadlock detector and call registerTick periodically.
+ * If a thread does not tick often enough, the deadlock detector will by default
+ * dump a backtrace of the thread to the Vespa log.
+ */
 struct DeadLockDetector : private framework::Runnable,
                           private framework::HtmlStatusReporter
 {
     enum State { OK, WARNED, HALTED };
 
-    DeadLockDetector(StorageComponentRegister&,
-                     AppKiller::UP killer = std::make_unique<RealAppKiller>());
+    DeadLockDetector(StorageComponentRegister&, AppKiller::UP killer);
+    explicit DeadLockDetector(StorageComponentRegister&); // creates with RealAppKiller
     ~DeadLockDetector() override;
 
     void enableWarning(bool enable); // Thread-safe
