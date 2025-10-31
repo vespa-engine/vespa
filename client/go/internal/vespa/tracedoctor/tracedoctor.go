@@ -59,16 +59,21 @@ func (out *output) fmt(format string, args ...interface{}) {
 type Context struct {
 	root                slime.Value
 	timing              *timing
-	selectMedianNode    bool
+	showMedianNode      bool
 	showDispatchedQuery bool
+	makePrompt          bool
 }
 
-func (ctx *Context) SelectMedianNode() {
-	ctx.selectMedianNode = true
+func (ctx *Context) ShowMedianNode() {
+	ctx.showMedianNode = true
 }
 
 func (ctx *Context) ShowDispatchedQuery() {
 	ctx.showDispatchedQuery = true
+}
+
+func (ctx *Context) MakePrompt() {
+	ctx.makePrompt = true
 }
 
 func NewContext(root slime.Value) *Context {
@@ -83,19 +88,24 @@ func (ctx *Context) analyzeThread(trace protonTrace, thread threadTrace, peer *t
 	if peer != nil {
 		overview = append(overview, peer.extractSummary())
 	}
+	matchThreadSummaryPrompt(ctx, out)
 	renderThreadSummaries(out, overview...)
 	out.fmt("looking into thread #%d\n", thread.id)
+	matchThreadTimelinePrompt(ctx, out)
 	thread.timeline().render(out)
 	queryPerf := trace.extractQuery()
 	queryPerf.importMatchPerf(thread)
 	out.fmt("match profiling for thread #%d (total time was %.3f ms)\n", thread.id, thread.matchTimeMs())
+	matchProfilingPrompt(ctx, out)
 	queryPerf.render(out)
 	if firstPhasePerf := thread.firstPhasePerf(); firstPhasePerf.impact() != 0.0 {
 		out.fmt("first phase rank profiling for thread #%d (total time was %.3f ms)\n", thread.id, thread.firstPhaseTimeMs())
+		firstPhaseProfilingPrompt(ctx, out)
 		firstPhasePerf.render(out)
 	}
 	if secondPhasePerf := thread.secondPhasePerf(); secondPhasePerf.impact() != 0.0 {
 		out.fmt("second phase rank profiling for thread #%d (total time was %.3f ms)\n", thread.id, thread.secondPhaseTimeMs())
+		secondPhaseProfilingPrompt(ctx, out)
 		secondPhasePerf.render(out)
 	}
 }
@@ -105,14 +115,18 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out
 	if peer != nil {
 		overview = append(overview, peer.extractSummary())
 	}
+	protonSummaryPrompt(ctx, out)
 	renderProtonSummaries(out, overview...)
 	out.fmt("looking into node %s\n", trace.desc())
+	protonTimelinePrompt(ctx, out)
 	trace.timeline().render(out)
-	if ann := newAnnProbe(trace); ann.impact() != 0.0 {
+	if ann := newAnnProbe(trace); ann.useful() {
+		annQueryDetailsPrompt(ctx, out)
 		ann.render(out)
 	}
 	if globalFilterPerf := trace.globalFilterPerf(); globalFilterPerf.impact() != 0.0 {
 		out.fmt("global filter profiling\n")
+		globalFilterProfilingPrompt(ctx, out)
 		globalFilterPerf.render(out)
 	}
 	threads := trace.findThreadTraces()
@@ -180,11 +194,16 @@ func (ctx *Context) maybeShowDispatchedQuery(group protonTraceGroup, out *output
 
 func (ctx *Context) Analyze(stdout io.Writer) error {
 	out := &output{out: stdout}
+	promptSetup(ctx, out)
+	introPrompt(ctx, out)
+	timingsPrompt(ctx, out)
 	ctx.timing.render(out)
 	groups := groupProtonTraces(findProtonTraces(ctx.root))
 	if len(groups) > 0 {
 		out.fmt("found %d search%s\n", len(groups), suffix(len(groups), "es"))
+		searchMetaPrompt(ctx, out)
 		searchMeta{groups}.render(out)
+		searchNodeRefPrompt(ctx, out)
 		idx := selectSlowestGroup(groups)
 		out.fmt("looking into search #%d\n", idx)
 		ctx.maybeShowDispatchedQuery(groups[idx], out)
@@ -195,12 +214,16 @@ func (ctx *Context) Analyze(stdout io.Writer) error {
 		} else {
 			median = nil
 		}
-		if ctx.selectMedianNode && median != nil {
-			out.fmt("user directive: select median node\n")
-			ctx.analyzeProtonTrace(*median, worst, out)
-		} else {
-			ctx.analyzeProtonTrace(*worst, median, out)
+		ctx.analyzeProtonTrace(*worst, median, out)
+		if ctx.showMedianNode && median != nil {
+			slowToMedianPrompt(ctx, out)
+			if !ctx.makePrompt {
+				out.fmt("full median node analysis (requested by user)\n")
+			}
+			out.fmt("median node was: %s: %.3f ms\n", median.desc(), median.durationMs())
+			ctx.analyzeProtonTrace(*median, nil, out)
 		}
 	}
+	outroPrompt(ctx, out)
 	return out.err
 }

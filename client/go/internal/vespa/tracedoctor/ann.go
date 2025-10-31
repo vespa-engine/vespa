@@ -52,11 +52,15 @@ func (p *annProbe) analyze() {
 	p.nodes = p.trace.findAnnNodes()
 }
 
+func (p *annProbe) useful() bool {
+	return len(p.nodes) > 0
+}
+
 func (p *annProbe) impact() float64 {
-	if len(p.nodes) > 0 {
+	if p.useful() {
 		return p.annTime
 	}
-	return 0.0
+	return 0
 }
 
 func (p *annProbe) render(out *output) {
