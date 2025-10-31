@@ -10,6 +10,7 @@ endif()
 
 vespa_add_library(vespa_hwaccelerated
     SOURCES
+    fp8_luts.cpp
     fn_table.cpp
     iaccelerated.cpp
     highway.cpp

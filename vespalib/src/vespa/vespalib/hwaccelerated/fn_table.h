@@ -15,6 +15,9 @@
 
 namespace vespalib::hwaccelerated::dispatch {
 
+struct Fp8E5M3Tag {};
+struct Fp8E4M3FNTag {};
+
 // Function pointer type declarations, since C function pointer syntax leaves a bit to be desired.
 using DotProductI8Fn  = int64_t (*)(const int8_t* a,  const int8_t* b,  size_t sz) noexcept;
 using DotProductI16Fn = int64_t (*)(const int16_t* a, const int16_t* b, size_t sz) noexcept;
@@ -24,6 +27,9 @@ using DotProductI64Fn = int64_t (*)(const int64_t* a, const int64_t* b, size_t s
 using DotProductBF16Fn = float (*)(const BFloat16* a, const BFloat16* b, size_t sz) noexcept;
 using DotProductF32Fn  = float (*)(const float* a, const float* b, size_t sz) noexcept;
 using DotProductF64Fn  = double (*)(const double* a, const double* b, size_t sz) noexcept;
+
+using DotProductF8E4M3FNFn = float (*)(const uint8_t* a, const uint8_t* b, size_t sz, Fp8E4M3FNTag) noexcept;
+using DotProductF8E5M3Fn = float (*)(const uint8_t* a, const uint8_t* b, size_t sz, Fp8E5M3Tag) noexcept;
 
 using SquaredEuclideanDistanceI8Fn   = double (*)(const int8_t* a, const int8_t* b, size_t sz) noexcept;
 using SquaredEuclideanDistanceBF16Fn = double (*)(const BFloat16* a, const BFloat16* b, size_t sz) noexcept;
@@ -67,6 +73,9 @@ struct FnTable {
     DotProductF32Fn  dot_product_f32  = nullptr;
     DotProductF64Fn  dot_product_f64  = nullptr;
 
+    DotProductF8E4M3FNFn dot_product_f8_e4m3fn = nullptr;
+    DotProductF8E5M3Fn   dot_product_f8_e5m2   = nullptr;
+
     SquaredEuclideanDistanceI8Fn   squared_euclidean_distance_i8   = nullptr;
     SquaredEuclideanDistanceBF16Fn squared_euclidean_distance_bf16 = nullptr;
     SquaredEuclideanDistanceF32Fn  squared_euclidean_distance_f32  = nullptr;
@@ -94,6 +103,8 @@ struct FnTable {
         DOT_PRODUCT_BF16,
         DOT_PRODUCT_F32,
         DOT_PRODUCT_F64,
+        DOT_PRODUCT_F8_E4M3FN,
+        DOT_PRODUCT_F8_E5M2,
         SQUARED_EUCLIDEAN_DISTANCE_I8,
         SQUARED_EUCLIDEAN_DISTANCE_BF16,
         SQUARED_EUCLIDEAN_DISTANCE_F32,
@@ -169,6 +180,8 @@ struct FnTable {
     VISITOR(DotProductBF16Fn,               dot_product_bf16,                FnTable::FnId::DOT_PRODUCT_BF16)                \
     VISITOR(DotProductF32Fn,                dot_product_f32,                 FnTable::FnId::DOT_PRODUCT_F32)                 \
     VISITOR(DotProductF64Fn,                dot_product_f64,                 FnTable::FnId::DOT_PRODUCT_F64)                 \
+    VISITOR(DotProductF8E4M3FNFn,           dot_product_f8_e4m3fn,           FnTable::FnId::DOT_PRODUCT_F8_E4M3FN)           \
+    VISITOR(DotProductF8E5M3Fn,             dot_product_f8_e5m2,             FnTable::FnId::DOT_PRODUCT_F8_E5M2)             \
     VISITOR(SquaredEuclideanDistanceI8Fn,   squared_euclidean_distance_i8,   FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_I8)   \
     VISITOR(SquaredEuclideanDistanceBF16Fn, squared_euclidean_distance_bf16, FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_BF16) \
     VISITOR(SquaredEuclideanDistanceF32Fn,  squared_euclidean_distance_f32,  FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_F32)  \

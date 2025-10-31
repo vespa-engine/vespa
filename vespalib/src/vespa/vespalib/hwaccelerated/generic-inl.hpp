@@ -7,6 +7,7 @@
 #error "VESPA_HWACCEL_INCLUDE_DEFINITIONS not set"
 #endif
 
+#include "fp8_luts.h"
 #include "fn_table.h"
 #include "private_helpers.hpp"
 #include <cblas.h>
@@ -112,6 +113,38 @@ float my_dot_product_f32(const float* a, const float* b, size_t sz) noexcept {
 double my_dot_product_f64(const double* a, const double* b, size_t sz) noexcept {
     return cblas_ddot(sz, a, 1, b, 1);
 }
+
+// FIXME very specific to u32->f32 luts right now
+template <typename AccuT, typename T, size_t UNROLL>
+AccuT
+multiply_add_via_lut(const uint32_t* lut, const T* a, const T* b, size_t sz) noexcept
+{
+    AccuT partial[UNROLL];
+    for (size_t i = 0; i < UNROLL; i++) {
+        partial[i] = 0;
+    }
+    size_t i = 0;
+    for (; i + UNROLL <= sz; i+= UNROLL) {
+        for (size_t j = 0; j < UNROLL; j++) {
+            partial[j] += std::bit_cast<AccuT>(lut[a[i+j]]) * std::bit_cast<AccuT>(lut[b[i+j]]); // FIXME
+        }
+    }
+    for (;i < sz; i++) {
+        partial[i % UNROLL] += std::bit_cast<AccuT>(lut[a[i]]) * std::bit_cast<AccuT>(lut[b[i]]); // TODO
+    }
+    AccuT sum = 0;
+    for (size_t j = 0; j < UNROLL; j++) {
+        sum += partial[j];
+    }
+    return sum;
+}
+
+float my_dot_product_f8_e4m3fn(const uint8_t* a, const uint8_t* b, size_t sz, dispatch::Fp8E4M3FNTag) noexcept {
+    return multiply_add_via_lut<float, uint8_t, 16>(fp8_e4m3fn_f32_bits_lut, a, b, sz);
+}
+float my_dot_product_f8_e5m2(const uint8_t* a, const uint8_t* b, size_t sz, dispatch::Fp8E5M3Tag) noexcept {
+    return multiply_add_via_lut<float, uint8_t, 16>(fp8_e5m2_f32_bits_lut, a, b, sz);
+}
 double my_squared_euclidean_distance_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
     return helper::squaredEuclideanDistance(a, b, sz);
 }
@@ -160,6 +193,21 @@ void my_and_128(size_t offset, const std::vector<std::pair<const void*, bool>>& 
 void my_or_128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) noexcept {
     helper::orChunks<16, 8>(offset, src, dest);
 }
+
+[[maybe_unused]]
+void my_convert_fp8_e5m2_to_f32(const uint8_t* src, float* dest, size_t sz) noexcept {
+    for (size_t i = 0; i < sz; ++i) {
+        dest[i] = std::bit_cast<float>(fp8_e5m2_f32_bits_lut[src[i]]);
+    }
+}
+
+[[maybe_unused]]
+void my_convert_fp8_e4m3fn_to_f32(const uint8_t* src, float* dest, size_t sz) noexcept {
+    for (size_t i = 0; i < sz; ++i) {
+        dest[i] = std::bit_cast<float>(fp8_e4m3fn_f32_bits_lut[src[i]]);
+    }
+}
+
 constexpr uint16_t baseline_vector_bytes() noexcept {
 #if defined(__AVX512F__)
     return 64;

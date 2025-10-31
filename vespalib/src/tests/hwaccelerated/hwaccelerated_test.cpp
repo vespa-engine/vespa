@@ -6,9 +6,14 @@
 #include <vespa/vespalib/hwaccelerated/fn_table.h>
 #include <vespa/vespalib/hwaccelerated/highway.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
+#include <vespa/vespalib/hwaccelerated/float8.h>
+#include <vespa/vespalib/hwaccelerated/fp8_luts.h>
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <limits>
 #include <random>
+#include <stdfloat>
+
+#include <iomanip>
 
 #include <vespa/log/log.h>
 LOG_SETUP("hwaccelerated_test");
@@ -16,7 +21,6 @@ LOG_SETUP("hwaccelerated_test");
 using namespace ::testing;
 
 namespace vespalib::hwaccelerated {
-
 // TODO reconcile run-time startup verification in `iaccelerated.cpp` with what's in here!
 //  Ideally we want to run our tests on hardware that has enough bells and whistles in terms
 //  of supported targets that we don't have to re-run the same vectorization checks literally
@@ -52,6 +56,25 @@ void verify_dot_product(std::span<const IAccelerated*> accels, size_t test_lengt
             LOG(spam, "verify_dot_product(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(), test_length, j);
             ScopedFnTableOverride fn_scope(accel->fn_table());
             auto computed = static_cast<double>(dot_product(&a[j], &b[j], test_length - j));
+            ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << accel->target_info().to_string();
+        }
+    }
+}
+
+// FP8 types have such low practical range (of which many are NaNs and/or Inf)
+// that we use a custom test routine that prunes away all non-finite numbers.
+template <typename T>
+void verify_fp8_dot_product(std::span<const IAccelerated*> accels, size_t test_length, double approx_factor) {
+    auto [a, b] = create_and_fill_lhs_rhs<uint8_t>(test_length, T::is_finite); // don't include NaN/Inf
+    for (size_t j = 0; j < 32; j++) {
+        float sum = 0;
+        for (size_t i = j; i < test_length; i++) {
+            sum += T(a[i]).to_float() * T(b[i]).to_float();
+        }
+        for (const auto* accel : accels) {
+            LOG(spam, "verify_fp8_dot_product(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(), test_length, j);
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            auto computed = dot_product(&a[j], &b[j], test_length - j, typename T::TagType{});
             ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << accel->target_info().to_string();
         }
     }
@@ -127,6 +150,8 @@ void verify_dot_product(std::span<const IAccelerated*> accelerators, size_t test
     verify_dot_product<float>(accelerators, testLength, 0.0001);
     verify_dot_product<BFloat16>(accelerators, testLength, 0.001f);
     verify_dot_product<double>(accelerators, testLength, 0.0);
+    verify_fp8_dot_product<Float8E4M3FN>(accelerators, testLength, 0.0001);
+    verify_fp8_dot_product<Float8E5M2>(accelerators, testLength, 0.0001);
 }
 
 TEST_F(HwAcceleratedTest, dot_product_impls_match_source_of_truth) {
@@ -344,6 +369,142 @@ TEST(CompositeFnTableTest, for_each_present_fn_invokes_callback_for_non_nullptr_
         seen_fns += " ";
     });
     EXPECT_EQ(seen_fns, "dot_product_i8 population_count ");
+}
+
+constexpr float fp32_inf = std::numeric_limits<float>::infinity();
+constexpr float fp32_nan = std::numeric_limits<float>::quiet_NaN();
+
+// 16 MSBs of raw bitwise representation of FP8E5M2 => F32 (16 LSBs are always zero).
+// I.e. this is exactly their BFloat16 representation.
+constexpr uint16_t fp8_e5m2_hi16_bits_lut[256] = {
+    0x0000, 0x3780, 0x3800, 0x3840, 0x3880, 0x38a0, 0x38c0, 0x38e0,
+    0x3900, 0x3920, 0x3940, 0x3960, 0x3980, 0x39a0, 0x39c0, 0x39e0,
+    0x3a00, 0x3a20, 0x3a40, 0x3a60, 0x3a80, 0x3aa0, 0x3ac0, 0x3ae0,
+    0x3b00, 0x3b20, 0x3b40, 0x3b60, 0x3b80, 0x3ba0, 0x3bc0, 0x3be0,
+    0x3c00, 0x3c20, 0x3c40, 0x3c60, 0x3c80, 0x3ca0, 0x3cc0, 0x3ce0,
+    0x3d00, 0x3d20, 0x3d40, 0x3d60, 0x3d80, 0x3da0, 0x3dc0, 0x3de0,
+    0x3e00, 0x3e20, 0x3e40, 0x3e60, 0x3e80, 0x3ea0, 0x3ec0, 0x3ee0,
+    0x3f00, 0x3f20, 0x3f40, 0x3f60, 0x3f80, 0x3fa0, 0x3fc0, 0x3fe0,
+    0x4000, 0x4020, 0x4040, 0x4060, 0x4080, 0x40a0, 0x40c0, 0x40e0,
+    0x4100, 0x4120, 0x4140, 0x4160, 0x4180, 0x41a0, 0x41c0, 0x41e0,
+    0x4200, 0x4220, 0x4240, 0x4260, 0x4280, 0x42a0, 0x42c0, 0x42e0,
+    0x4300, 0x4320, 0x4340, 0x4360, 0x4380, 0x43a0, 0x43c0, 0x43e0,
+    0x4400, 0x4420, 0x4440, 0x4460, 0x4480, 0x44a0, 0x44c0, 0x44e0,
+    0x4500, 0x4520, 0x4540, 0x4560, 0x4580, 0x45a0, 0x45c0, 0x45e0,
+    0x4600, 0x4620, 0x4640, 0x4660, 0x4680, 0x46a0, 0x46c0, 0x46e0,
+    0x4700, 0x4720, 0x4740, 0x4760, 0x7f80, 0x7fc0, 0x7fc0, 0x7fc0,
+    0x8000, 0xb780, 0xb800, 0xb840, 0xb880, 0xb8a0, 0xb8c0, 0xb8e0,
+    0xb900, 0xb920, 0xb940, 0xb960, 0xb980, 0xb9a0, 0xb9c0, 0xb9e0,
+    0xba00, 0xba20, 0xba40, 0xba60, 0xba80, 0xbaa0, 0xbac0, 0xbae0,
+    0xbb00, 0xbb20, 0xbb40, 0xbb60, 0xbb80, 0xbba0, 0xbbc0, 0xbbe0,
+    0xbc00, 0xbc20, 0xbc40, 0xbc60, 0xbc80, 0xbca0, 0xbcc0, 0xbce0,
+    0xbd00, 0xbd20, 0xbd40, 0xbd60, 0xbd80, 0xbda0, 0xbdc0, 0xbde0,
+    0xbe00, 0xbe20, 0xbe40, 0xbe60, 0xbe80, 0xbea0, 0xbec0, 0xbee0,
+    0xbf00, 0xbf20, 0xbf40, 0xbf60, 0xbf80, 0xbfa0, 0xbfc0, 0xbfe0,
+    0xc000, 0xc020, 0xc040, 0xc060, 0xc080, 0xc0a0, 0xc0c0, 0xc0e0,
+    0xc100, 0xc120, 0xc140, 0xc160, 0xc180, 0xc1a0, 0xc1c0, 0xc1e0,
+    0xc200, 0xc220, 0xc240, 0xc260, 0xc280, 0xc2a0, 0xc2c0, 0xc2e0,
+    0xc300, 0xc320, 0xc340, 0xc360, 0xc380, 0xc3a0, 0xc3c0, 0xc3e0,
+    0xc400, 0xc420, 0xc440, 0xc460, 0xc480, 0xc4a0, 0xc4c0, 0xc4e0,
+    0xc500, 0xc520, 0xc540, 0xc560, 0xc580, 0xc5a0, 0xc5c0, 0xc5e0,
+    0xc600, 0xc620, 0xc640, 0xc660, 0xc680, 0xc6a0, 0xc6c0, 0xc6e0,
+    0xc700, 0xc720, 0xc740, 0xc760, 0xff80, 0xffc0, 0xffc0, 0xffc0,
+};
+
+// Same for FP8E5M2_FNUZ (finite numbers only, unsigned zero)
+constexpr uint16_t fp8_e5m2_fnuz_hi16_bits_lut[256] = {
+    0x0000, 0x3a80, 0x3b00, 0x3b40, 0x3b80, 0x3ba0, 0x3bc0, 0x3be0,
+    0x3c00, 0x3c10, 0x3c20, 0x3c30, 0x3c40, 0x3c50, 0x3c60, 0x3c70,
+    0x3c80, 0x3c90, 0x3ca0, 0x3cb0, 0x3cc0, 0x3cd0, 0x3ce0, 0x3cf0,
+    0x3d00, 0x3d10, 0x3d20, 0x3d30, 0x3d40, 0x3d50, 0x3d60, 0x3d70,
+    0x3d80, 0x3d90, 0x3da0, 0x3db0, 0x3dc0, 0x3dd0, 0x3de0, 0x3df0,
+    0x3e00, 0x3e10, 0x3e20, 0x3e30, 0x3e40, 0x3e50, 0x3e60, 0x3e70,
+    0x3e80, 0x3e90, 0x3ea0, 0x3eb0, 0x3ec0, 0x3ed0, 0x3ee0, 0x3ef0,
+    0x3f00, 0x3f10, 0x3f20, 0x3f30, 0x3f40, 0x3f50, 0x3f60, 0x3f70,
+    0x3f80, 0x3f90, 0x3fa0, 0x3fb0, 0x3fc0, 0x3fd0, 0x3fe0, 0x3ff0,
+    0x4000, 0x4010, 0x4020, 0x4030, 0x4040, 0x4050, 0x4060, 0x4070,
+    0x4080, 0x4090, 0x40a0, 0x40b0, 0x40c0, 0x40d0, 0x40e0, 0x40f0,
+    0x4100, 0x4110, 0x4120, 0x4130, 0x4140, 0x4150, 0x4160, 0x4170,
+    0x4180, 0x4190, 0x41a0, 0x41b0, 0x41c0, 0x41d0, 0x41e0, 0x41f0,
+    0x4200, 0x4210, 0x4220, 0x4230, 0x4240, 0x4250, 0x4260, 0x4270,
+    0x4280, 0x4290, 0x42a0, 0x42b0, 0x42c0, 0x42d0, 0x42e0, 0x42f0,
+    0x4300, 0x4310, 0x4320, 0x4330, 0x4340, 0x4350, 0x4360, 0x4370,
+    0xffc0, 0xba80, 0xbb00, 0xbb40, 0xbb80, 0xbba0, 0xbbc0, 0xbbe0,
+    0xbc00, 0xbc10, 0xbc20, 0xbc30, 0xbc40, 0xbc50, 0xbc60, 0xbc70,
+    0xbc80, 0xbc90, 0xbca0, 0xbcb0, 0xbcc0, 0xbcd0, 0xbce0, 0xbcf0,
+    0xbd00, 0xbd10, 0xbd20, 0xbd30, 0xbd40, 0xbd50, 0xbd60, 0xbd70,
+    0xbd80, 0xbd90, 0xbda0, 0xbdb0, 0xbdc0, 0xbdd0, 0xbde0, 0xbdf0,
+    0xbe00, 0xbe10, 0xbe20, 0xbe30, 0xbe40, 0xbe50, 0xbe60, 0xbe70,
+    0xbe80, 0xbe90, 0xbea0, 0xbeb0, 0xbec0, 0xbed0, 0xbee0, 0xbef0,
+    0xbf00, 0xbf10, 0xbf20, 0xbf30, 0xbf40, 0xbf50, 0xbf60, 0xbf70,
+    0xbf80, 0xbf90, 0xbfa0, 0xbfb0, 0xbfc0, 0xbfd0, 0xbfe0, 0xbff0,
+    0xc000, 0xc010, 0xc020, 0xc030, 0xc040, 0xc050, 0xc060, 0xc070,
+    0xc080, 0xc090, 0xc0a0, 0xc0b0, 0xc0c0, 0xc0d0, 0xc0e0, 0xc0f0,
+    0xc100, 0xc110, 0xc120, 0xc130, 0xc140, 0xc150, 0xc160, 0xc170,
+    0xc180, 0xc190, 0xc1a0, 0xc1b0, 0xc1c0, 0xc1d0, 0xc1e0, 0xc1f0,
+    0xc200, 0xc210, 0xc220, 0xc230, 0xc240, 0xc250, 0xc260, 0xc270,
+    0xc280, 0xc290, 0xc2a0, 0xc2b0, 0xc2c0, 0xc2d0, 0xc2e0, 0xc2f0,
+    0xc300, 0xc310, 0xc320, 0xc330, 0xc340, 0xc350, 0xc360, 0xc370,
+};
+
+namespace N_NEON_BF16 { // tee hee
+void yolo_fp8e4m3_fp16(const uint8_t* a, uint16_t* out, size_t sz) noexcept;
+void yolo_fp8e4m3_bf16(const uint8_t* a, uint16_t* out, size_t sz) noexcept;
+}
+
+TEST(Fp8Test, yolo_via_fp16) {
+    constexpr size_t N = 16;
+    uint8_t buf[N];
+    uint16_t out[N];
+
+    for (uint32_t i = 0; i < 256; i += N) {
+        for (uint32_t j = 0; j < N; ++j) {
+            buf[j] = i+j;
+            out[j] = 0xffff;
+        }
+        N_NEON_BF16::yolo_fp8e4m3_fp16(buf, out, N);
+        for (uint32_t j = 0; j < N; ++j) {
+            const auto fp16_as_u16 = std::bit_cast<uint16_t>(static_cast<std::float16_t>(std::bit_cast<float>(fp8_e4m3fn_f32_bits_lut[buf[j]])));
+            EXPECT_EQ(out[j], fp16_as_u16) << "for E4M3FN value " << j;
+        }
+    }
+}
+
+TEST(Fp8Test, yolo_via_bf16) {
+    constexpr size_t N = 16;
+    uint8_t buf[N];
+    uint16_t out[N];
+
+    for (uint32_t i = 0; i < 256; i += N) {
+        for (uint32_t j = 0; j < N; ++j) {
+            buf[j] = i+j;
+            out[j] = 0xffff;
+        }
+        N_NEON_BF16::yolo_fp8e4m3_bf16(buf, out, N);
+        for (uint32_t j = 0; j < N; ++j) {
+            const uint16_t fp32_as_u16 = fp8_e4m3fn_f32_bits_lut[buf[j]] >> 16;
+            EXPECT_EQ(out[j], fp32_as_u16) << "for E4M3FN value " << j;
+        }
+    }
+}
+
+TEST(Fp8TableGen, DISABLED_dump_fp16_bits) {
+    for (uint32_t i = 0; i < 256; ++i) {
+        auto fp16_as_u16 = std::bit_cast<uint16_t>(static_cast<std::float16_t>(std::bit_cast<float>(fp8_e4m3fn_f32_bits_lut[i])));
+        const uint8_t fp8_e5_bits = (fp16_as_u16 & 0x7fff) >> 8;
+        std::println(std::cout, "{:04b} {:04b} -> {:016b} -> {:016b} -> {:015b} -> {:08b}{}",
+                     i >> 4, i & 0xf, (fp8_e4m3fn_f32_bits_lut[i] >> 16), fp16_as_u16,
+                     fp16_as_u16 & 0x7fff, fp8_e5_bits, ((i & 0x7f) == 0x7f || (i & 0b01111000) == 0) ? " (SPECIAL)" : "");
+    }
+}
+
+TEST(Fp8TableGen, DISABLED_dump_bf16_bits) {
+    for (uint32_t i = 0; i < 256; ++i) {
+        uint16_t fp32_as_u16 = fp8_e4m3fn_f32_bits_lut[i] >> 16;
+        std::println(std::cout, "{:04b} {:04b} -> {:016b} -> {:08b} {:08b} {}",
+                     i >> 4, i & 0xf, fp32_as_u16, uint16_t(fp32_as_u16 << 1) >> 8, uint16_t(fp32_as_u16 << 1) & 0xff,
+                     ((i & 0x7f) == 0x7f || (i & 0b01111000) == 0) ? " (SPECIAL)" : "");
+    }
 }
 
 } // vespalib::hwaccelerated
