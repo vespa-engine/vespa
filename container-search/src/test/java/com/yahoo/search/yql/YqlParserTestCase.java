@@ -442,6 +442,12 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testSameElementWithNestedRank() {
+        assertParse("select * from sources * where myStringArray contains sameElement(rank('a', 'b'))",
+            "myStringArray:{(RANK a b)}");
+    }
+
+    @Test
     void testPhrase() {
         assertParse("select foo from bar where baz contains phrase(\"a\", \"b\")",
                 "baz:\"a b\"");
