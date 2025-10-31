@@ -40,6 +40,11 @@ DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg, AppKiller:
     _thread = _component->startThread(*this);
 }
 
+DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg)
+    : DeadLockDetector(compReg, std::make_unique<RealAppKiller>())
+{
+}
+
 DeadLockDetector::~DeadLockDetector()
 {
     if (_thread) {
@@ -68,7 +73,7 @@ DeadLockDetector::enableShutdown(bool enable)
 }
 
 namespace {
-    struct VisitorWrapper : public framework::ThreadVisitor {
+    struct VisitorWrapper : framework::ThreadVisitor {
         std::map<std::string, DeadLockDetector::State>& _states;
         DeadLockDetector::ThreadVisitor& _visitor;
 
@@ -80,10 +85,8 @@ namespace {
         }
 
         void visitThread(const framework::Thread& thread) override {
-            if (_states.find(thread.getId()) == _states.end()) {
-                _states[thread.getId()] = DeadLockDetector::OK;
-            }
-            _visitor.visitThread(thread, _states[thread.getId()]);
+            auto state_iter = _states.try_emplace(thread.getId(), DeadLockDetector::State::OK).first;
+            _visitor.visitThread(thread, state_iter->second);
         }
     };
 }
@@ -137,8 +140,7 @@ DeadLockDetector::getBucketLockInfo() const
 }
 
 namespace {
-    struct ThreadChecker : public DeadLockDetector::ThreadVisitor
-    {
+    struct ThreadChecker : DeadLockDetector::ThreadVisitor {
         DeadLockDetector& _detector;
         vespalib::steady_time _currentTime;
 
@@ -250,7 +252,7 @@ namespace {
 
     ThreadTable::~ThreadTable() = default;
 
-    struct ThreadStatusWriter : public DeadLockDetector::ThreadVisitor {
+    struct ThreadStatusWriter : DeadLockDetector::ThreadVisitor {
         ThreadTable& _table;
         vespalib::steady_time _time;
 
