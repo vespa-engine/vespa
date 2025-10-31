@@ -10,6 +10,7 @@ using search::fef::FieldType;
 using search::fef::IIndexEnvironment;
 using search::fef::IllegalHandle;
 using search::fef::TermFieldHandle;
+using search::query::Node;
 using search::query::TemplateTermVisitor;
 
 namespace proton::matching {
@@ -35,6 +36,7 @@ class TagNeededHandlesVisitor : public TemplateTermVisitor<TagNeededHandlesVisit
         return std::vector<TermFieldHandle>(handles.begin(), handles.end());
     }
     bool hidden_terms() const noexcept { return _hidden_terms != 0u; }
+    void visit_nearlike_children(const std::vector<Node*>& children, size_t num_negative_terms);
 public:
     TagNeededHandlesVisitor(const search::fef::IIndexEnvironment& index_env);
     ~TagNeededHandlesVisitor() override;
@@ -85,6 +87,22 @@ TagNeededHandlesVisitor::visit_field_specs(ProtonTermData& n, bool ranked)
 }
 
 void
+TagNeededHandlesVisitor::visit_nearlike_children(const std::vector<Node*>& children, size_t num_negative_terms)
+{
+    size_t cnt = children.size() - std::min(num_negative_terms, children.size());
+    for (size_t i = 0; i < cnt; ++i) {
+        children[i]->accept(*this);
+    }
+    if (cnt < children.size()) {
+        ++_hidden_terms;
+        for (size_t i = cnt; i < children.size(); ++i) {
+            children[i]->accept(*this);
+        }
+        --_hidden_terms;
+    }
+}
+
+void
 TagNeededHandlesVisitor::visit(ProtonNodeTypes::Equiv& n)
 {
     maybe_visit_field_specs(n, true);
@@ -95,16 +113,18 @@ void
 TagNeededHandlesVisitor::visit(ProtonNodeTypes::WordAlternatives& n)
 {
     maybe_visit_field_specs(n, n.isRanked());
+    ++_hidden_terms;
     for (const auto &child : n.getChildren()) {
         child->accept(*this);
     }
+    --_hidden_terms;
 }
 
 void
 TagNeededHandlesVisitor::visit(ProtonNodeTypes::Near& n)
 {
     ++_inspecting_ancestor_nodes;
-    visitChildren(n);
+    visit_nearlike_children(n.getChildren(), n.num_negative_terms());
     --_inspecting_ancestor_nodes;
 }
 
@@ -112,7 +132,7 @@ void
 TagNeededHandlesVisitor::visit(ProtonNodeTypes::ONear& n)
 {
     ++_inspecting_ancestor_nodes;
-    visitChildren(n);
+    visit_nearlike_children(n.getChildren(), n.num_negative_terms());
     --_inspecting_ancestor_nodes;
 }
 
@@ -121,7 +141,9 @@ TagNeededHandlesVisitor::visit(ProtonNodeTypes::Phrase& n)
 {
     maybe_visit_field_specs(n, n.isRanked());
     ++_inspecting_ancestor_nodes;
+    ++_hidden_terms;
     visitChildren(n);
+    --_hidden_terms;
     --_inspecting_ancestor_nodes;
 }
 

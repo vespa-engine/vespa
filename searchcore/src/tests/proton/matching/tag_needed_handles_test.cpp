@@ -347,6 +347,34 @@ TEST_F(TagNeededHandlesTest, unpack_for_same_element_with_phrase_child)
     EXPECT_EQ((HandleVector{0, 1, 2, 3}), se->descendants_index_handles);
 }
 
+TEST_F(TagNeededHandlesTest, unpack_for_same_element_with_near_child)
+{
+    QueryBuilder<ProtonNodeTypes> query_builder;
+    constexpr uint32_t term_count = 2;
+    constexpr uint32_t near_term_count = 2;
+    constexpr uint32_t near_distance = 5;
+    constexpr uint32_t exclusion_distance = 2;
+    for (uint32_t near_negative_term_count = 0; near_negative_term_count < 2; ++near_negative_term_count) {
+        SCOPED_TRACE("negative_terms=" + std::to_string(near_negative_term_count));
+        query_builder.addSameElement(term_count, view, term_id, string_weight);
+        query_builder.addStringTerm(foo_term, view, term_id + 1, string_weight);
+        query_builder.addNear(near_term_count, near_distance, near_negative_term_count, exclusion_distance);
+        query_builder.addStringTerm(bar_term, view, term_id + 2, string_weight);
+        query_builder.addStringTerm(baz_term, view, term_id + 3, string_weight);
+        auto root = query_builder.build();
+        prepare(*root);
+        EXPECT_EQ((HandleSet{0, 1, 2, 3, 4, 5}), normal_features_handles());
+        EXPECT_EQ((ThresholdVector{0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}), extract_thresholds(*root));
+        auto *se = dynamic_cast<ProtonSameElement *>(root.get());
+        ASSERT_NE(nullptr, se);
+        if (near_negative_term_count == 0) {
+            EXPECT_EQ((HandleVector{0, 1, 2, 3, 4, 5}), se->descendants_index_handles);
+        } else {
+            EXPECT_EQ((HandleVector{0, 1, 2, 3}), se->descendants_index_handles);
+        }
+    }
+}
+
 TEST_F(TagNeededHandlesTest, unpack_for_same_element_children_one_unranked)
 {
     QueryBuilder<ProtonNodeTypes> query_builder;
