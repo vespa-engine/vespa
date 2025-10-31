@@ -106,11 +106,10 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
 
     public static class Builder {
 
-        /** The admin model of this system or null if none (which only happens in tests) */
         private final Admin admin;
 
         public Builder(Admin admin) {
-            this.admin = admin;
+            this.admin = Objects.requireNonNull(admin, "admin cannot be null");
         }
         
         public ContentCluster build(ConfigModelContext context, Element w3cContentElement) {
