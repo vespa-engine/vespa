@@ -10,6 +10,7 @@
 #include "matching_phase.h"
 #include "multisearch.h"
 #include <vespa/searchlib/common/bitvector.h>
+#include <optional>
 #include <span>
 
 namespace vespalib { class ObjectVisitor; }
@@ -135,6 +136,15 @@ public:
         }
     };
 
+    struct GlobalFilterLimits {
+        std::optional<double> lower_limit;
+        std::optional<double> upper_limit;
+
+        constexpr GlobalFilterLimits() noexcept = default;
+        constexpr GlobalFilterLimits(std::optional<double> lower, std::optional<double> upper) noexcept
+            : lower_limit(lower), upper_limit(upper) {}
+    };
+
     class State
     {
     private:
@@ -143,7 +153,6 @@ public:
         uint32_t          _tree_size : 20;
         bool              _estimateEmpty : 1;
         bool              _allow_termwise_eval : 1;
-        bool              _want_global_filter : 1;
         uint8_t           _cost_tier;
 
     public:
@@ -192,8 +201,6 @@ public:
         uint32_t tree_size() const noexcept { return _tree_size; }
         void allow_termwise_eval(bool value) noexcept { _allow_termwise_eval = value; }
         bool allow_termwise_eval() const noexcept { return _allow_termwise_eval; }
-        void want_global_filter(bool value) noexcept { _want_global_filter = value; }
-        bool want_global_filter() const noexcept { return _want_global_filter; }
         void cost_tier(uint8_t value) noexcept { _cost_tier = value; }
         uint8_t cost_tier() const noexcept { return _cost_tier; }
     };
@@ -350,10 +357,20 @@ public:
     virtual bool always_needs_unpack() const { return false; }
 
     /**
+     * Indicates whether this blueprint wants a global filter.
+     *
+     * @param limits Output parameter where blueprint can provide override limits.
+     * @return true if global filter is wanted, false otherwise.
+     */
+    virtual bool want_global_filter(GlobalFilterLimits&) const {
+        return false;
+    }
+
+    /**
      * Sets the global filter on the query blueprint tree.
      *
      * This function is implemented by leaf blueprints that want the global filter,
-     * signaled by LeafBlueprint::set_want_global_filter().
+     * signaled by returning true from want_global_filter().
      *
      * @param global_filter The global filter that is calculated once per query if wanted.
      * @param estimated_hit_ratio The estimated hit ratio of the query (in the range [0.0, 1.0]).
@@ -482,7 +499,6 @@ private:
     virtual uint8_t calculate_cost_tier() const;
     uint32_t calculate_tree_size() const;
     bool infer_allow_termwise_eval() const;
-    bool infer_want_global_filter() const;
 
     size_t count_termwise_nodes(const UnpackInfo &unpack) const;
     virtual AnyFlow my_flow(InFlow in_flow) const = 0;
@@ -537,6 +553,8 @@ public:
 
     UnpackInfo calculateUnpackInfo(const fef::MatchData & md) const;
     IntermediateBlueprint * asIntermediate() noexcept final { return this; }
+
+    bool want_global_filter(GlobalFilterLimits& limits) const override;
 };
 
 
@@ -555,7 +573,6 @@ protected:
         _state.allow_termwise_eval(value);
         notifyChange();
     }
-    void set_want_global_filter(bool value);
     void set_tree_size(uint32_t value);
 
     explicit LeafBlueprint(bool allow_termwise_eval) noexcept

@@ -123,9 +123,10 @@ TEST(IntermediateBlueprintsTest, test_AndNot_Blueprint) {
         AndNotBlueprint a;
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQ(0u, a.exposeFields().size());
-        EXPECT_EQ(false, a.getState().want_global_filter());
+        Blueprint::GlobalFilterLimits limits;
+        EXPECT_EQ(false, a.want_global_filter(limits));
         a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
-        EXPECT_EQ(true, a.getState().want_global_filter());
+        EXPECT_EQ(true, a.want_global_filter(limits));
         auto empty_global_filter = GlobalFilter::create();
         EXPECT_FALSE(empty_global_filter->is_active());
         a.set_global_filter(*empty_global_filter, 1.0);
@@ -225,9 +226,10 @@ TEST(IntermediateBlueprintsTest, test_And_Blueprint) {
         AndBlueprint a;
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQ(0u, a.exposeFields().size());
-        EXPECT_EQ(false, a.getState().want_global_filter());
+        Blueprint::GlobalFilterLimits limits;
+        EXPECT_EQ(false, a.want_global_filter(limits));
         a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
-        EXPECT_EQ(true, a.getState().want_global_filter());
+        EXPECT_EQ(true, a.want_global_filter(limits));
         auto empty_global_filter = GlobalFilter::create();
         a.set_global_filter(*empty_global_filter, 1.0);
         EXPECT_EQ(false, got_global_filter(a.getChild(0)));
@@ -289,9 +291,10 @@ TEST(IntermediateBlueprintsTest, test_Or_Blueprint) {
         o.addChild(ap(MyLeafSpec(0, true).create()));
         EXPECT_EQ(0u, a->getState().numFields());
 
-        EXPECT_EQ(false, o.getState().want_global_filter());
+        Blueprint::GlobalFilterLimits limits;
+        EXPECT_EQ(false, o.want_global_filter(limits));
         o.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
-        EXPECT_EQ(true, o.getState().want_global_filter());
+        EXPECT_EQ(true, o.want_global_filter(limits));
         auto empty_global_filter = GlobalFilter::create();
         o.set_global_filter(*empty_global_filter, 1.0);
         EXPECT_EQ(false, got_global_filter(o.getChild(0)));
@@ -416,9 +419,10 @@ TEST(IntermediateBlueprintsTest, test_Rank_Blueprint) {
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQ(0u, a.exposeFields().size());
 
-        EXPECT_EQ(false, a.getState().want_global_filter());
+        Blueprint::GlobalFilterLimits limits;
+        EXPECT_EQ(false, a.want_global_filter(limits));
         a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
-        EXPECT_EQ(true, a.getState().want_global_filter());
+        EXPECT_EQ(true, a.want_global_filter(limits));
         auto empty_global_filter = GlobalFilter::create();
         a.set_global_filter(*empty_global_filter, 1.0);
         EXPECT_EQ(false, got_global_filter(a.getChild(0)));

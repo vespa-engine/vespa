@@ -146,9 +146,12 @@ private:
             bool allow_approximate = queryStack.getAllowApproximate();
             uint32_t explore_additional_hits = queryStack.getExploreAdditionalHits();
             double distance_threshold = queryStack.getDistanceThreshold();
+            typename NodeTypes::NearestNeighborTerm::HnswParams hnsw_params;
+            hnsw_params.distance_threshold = distance_threshold;
+            hnsw_params.explore_additional_hits = explore_additional_hits;
             builder.add_nearest_neighbor_term(query_tensor_name, queryStack.index_as_string(), id, weight,
-                                              target_num_hits, allow_approximate, explore_additional_hits,
-                                              distance_threshold);
+                                              target_num_hits, allow_approximate,
+                                              hnsw_params);
         } else if (type == ParseItem::ITEM_TRUE) {
             builder.add_true_node();
         } else if (type == ParseItem::ITEM_FALSE) {

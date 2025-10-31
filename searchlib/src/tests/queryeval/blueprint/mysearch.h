@@ -106,6 +106,7 @@ class MyLeaf : public SimpleLeafBlueprint
 {
     using TFMDA = search::fef::TermFieldMatchDataArray;
     bool _got_global_filter = false;
+    bool _want_global_filter = false;
     double _cost = 1.0;
 
 public:
@@ -136,12 +137,17 @@ public:
         set_cost_tier(value);
         return *this;
     }
+    MyLeaf &want_global_filter(bool value) {
+        _want_global_filter = value;
+        return *this;
+    }
+    bool want_global_filter(GlobalFilterLimits&) const override {
+        return _want_global_filter;
+    }
     void set_global_filter(const GlobalFilter &, double) override {
         _got_global_filter = true;
     }
     bool got_global_filter() const { return _got_global_filter; }
-    // make public
-    using LeafBlueprint::set_want_global_filter;
 
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
@@ -187,7 +193,7 @@ public:
         if (_cost_tier > 0) {
             leaf->cost_tier(_cost_tier);
         }
-        leaf->set_want_global_filter(_want_global_filter);
+        leaf->want_global_filter(_want_global_filter);
         return leaf;
     }
 };

@@ -1125,17 +1125,22 @@ TEST(QueryTest, requireThatConstBoolBlueprintsAreCreatedCorrectly)
 }
 
 class GlobalFilterBlueprint : public SimpleBlueprint {
+private:
+    bool _want_global_filter;
 public:
     std::shared_ptr<const GlobalFilter> filter;
     double estimated_hit_ratio;
     GlobalFilterBlueprint(const SimpleResult& result, bool want_global_filter)
         : search::queryeval::SimpleBlueprint(result),
+          _want_global_filter(want_global_filter),
           filter(),
           estimated_hit_ratio(-1.0)
     {
-        set_want_global_filter(want_global_filter);
     }
     ~GlobalFilterBlueprint() override;
+    bool want_global_filter(Blueprint::GlobalFilterLimits&) const override {
+        return _want_global_filter;
+    }
     void set_global_filter(const GlobalFilter& filter_, double estimated_hit_ratio_) override {
         filter = filter_.shared_from_this();
         estimated_hit_ratio = estimated_hit_ratio_;
@@ -1221,7 +1226,10 @@ TEST(QueryTest, wand_term_needs_ranking)
 TEST(QueryTest, nearest_neighbor_term_needs_ranking)
 {
     QueryBuilder<ProtonNodeTypes> builder;
-    builder.add_nearest_neighbor_term("qtensor", "f1", 1, Weight(1), 10, true, 100, 1.5);
+    search::query::NearestNeighborTerm::HnswParams hnsw_params;
+    hnsw_params.distance_threshold = 1.5;
+    hnsw_params.explore_additional_hits = 100;
+    builder.add_nearest_neighbor_term("qtensor", "f1", 1, Weight(1), 10, true, hnsw_params);
     EXPECT_TRUE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
 }
 

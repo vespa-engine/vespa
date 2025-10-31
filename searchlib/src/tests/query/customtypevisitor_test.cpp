@@ -123,8 +123,15 @@ struct MyRegExpTerm : InitTerm<RegExpTerm> {
 };
 
 struct MyNearestNeighborTerm : NearestNeighborTerm {
-    MyNearestNeighborTerm() : NearestNeighborTerm("qt", "fn", 0, Weight(42), 10, true, 666, 1234.5) {}
+    MyNearestNeighborTerm() : NearestNeighborTerm("qt", "fn", 0, Weight(42), 10, true, make_hnsw_params()) {}
     ~MyNearestNeighborTerm() override;
+private:
+    static HnswParams make_hnsw_params() {
+        HnswParams params;
+        params.distance_threshold = 1234.5;
+        params.explore_additional_hits = 666;
+        return params;
+    }
 };
 
 struct MyTrue : TrueQueryNode {
