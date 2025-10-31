@@ -64,4 +64,33 @@ using Float4E2M1ToFloat8E5M2Conv   = Float4E2M1Conv<uint8_t,  5, 15>;
 using Float4E2M1ToFloat8E4M3FnConv = Float4E2M1Conv<uint8_t,  4, 7>;
 using Float4E2M1ToFloat32Conv      = Float4E2M1Conv<uint32_t, 8, 127>;
 
+// Represents 2x FP4E2M1 floats packed into a single u8, with the first
+// FP4 in the 4 lower bits and the second FP4 in the 4 upper bits.
+struct Float4E2M1_X2 {
+    using native_type = uint8_t;
+
+    native_type _bits;
+    constexpr Float4E2M1_X2() noexcept : _bits(0) {}
+    constexpr explicit Float4E2M1_X2(native_type v) noexcept : _bits(v) {}
+
+    [[nodiscard]] static constexpr float to_float(uint8_t lo4bits) noexcept {
+        constexpr float nibble_lut[16] = {
+            0.f,  0.5f,  1.f,  1.5f,  2.f,  3.f,  4.f,  6.f,
+           -0.f, -0.5f, -1.f, -1.5f, -2.f, -3.f, -4.f, -6.f
+       };
+        return nibble_lut[lo4bits];
+    }
+
+    [[nodiscard]] constexpr float to_float_lo() const noexcept {
+        return to_float(_bits & 0x0f);
+    }
+    [[nodiscard]] constexpr float to_float_hi() const noexcept {
+        return to_float(_bits >> 4);
+    }
+    [[nodiscard]] static constexpr bool is_finite(native_type) noexcept {
+        return true; // No Inf/NaN
+    }
+    [[nodiscard]] static constexpr MicroFloatKind kind() noexcept { return MicroFloatKind::FP4_E2M1; }
+};
+
 } // vespalib::hwaccelerated

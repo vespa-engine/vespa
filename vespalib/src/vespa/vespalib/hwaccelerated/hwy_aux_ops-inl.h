@@ -24,6 +24,36 @@ namespace HWY_NAMESPACE {
 
 namespace hn = hwy::HWY_NAMESPACE;
 
+#if (HWY_TARGET & HWY_ALL_SVE) != 0
+
+template <typename D, typename V>
+HWY_API
+auto ReorderPromoteFirstTo(D d, V v) noexcept {
+    return hn::PromoteEvenTo(d, v);
+}
+
+template <typename D, typename V>
+HWY_API
+auto ReorderPromoteSecondTo(D d, V v) noexcept {
+    return hn::PromoteOddTo(d, v);
+}
+
+#else // (HWY_TARGET & HWY_ALL_SVE) != 0
+
+template <typename D, typename V>
+HWY_API
+auto ReorderPromoteFirstTo(D d, V v) noexcept {
+    return hn::PromoteUpperTo(d, v);
+}
+
+template <typename D, typename V>
+HWY_API
+auto ReorderPromoteSecondTo(D d, V v) noexcept {
+    return hn::PromoteLowerTo(d, v);
+}
+
+#endif // (HWY_TARGET & HWY_ALL_SVE) != 0
+
 #if HWY_TARGET == HWY_SVE2 || HWY_TARGET == HWY_SVE2_128
 
 // Both GCC and Clang will under NEON peephole-optimize the sequence
@@ -74,8 +104,51 @@ void ReorderWidenSub(hn::Simd<int16_t, N, kPow2>,
 template <typename D, typename V>
 HWY_API
 void ReorderWidenSub(D d, V a, V b, hn::VFromD<D>& sub0, hn::VFromD<D>& sub1) noexcept {
+    // TODO use reordered promotion?
     sub0 = hn::Sub(hn::PromoteLowerTo(d, a), hn::PromoteLowerTo(d, b));
     sub1 = hn::Sub(hn::PromoteUpperTo(d, a), hn::PromoteUpperTo(d, b));
+}
+
+// F16->F32 ReorderWidenMulAccumulate
+
+#if HWY_TARGET == HWY_SVE2 || HWY_TARGET == HWY_SVE2_128
+
+// TODO AVX512_FP16 for AVX3_SPR <== actually, only f16 intermediate calculation format... Why? :I
+
+template <size_t N, int kPow2>
+HWY_API
+svfloat32_t MyReorderWidenMulAccumulate(hn::Simd<hwy::float32_t, N, kPow2>,
+                                        const svfloat16_t lhs, const svfloat16_t rhs,
+                                        const svfloat32_t sum0, svfloat32_t& sum1) noexcept
+{
+    sum1 = svmlalt_f32(sum1, lhs, rhs);
+    return svmlalb_f32(sum0, lhs, rhs);
+}
+
+#elif HWY_TARGET == HWY_NEON_BF16
+
+#if defined(__ARM_FEATURE_FP16_FML) // just +fp16 by itself is not enough, need +fp16fml
+
+template <typename DF, HWY_IF_F32_D(DF)>
+HWY_API
+hn::Vec128<float> MyReorderWidenMulAccumulate(DF, hn::Vec128<hwy::float16_t> lhs, hn::Vec128<hwy::float16_t> rhs,
+                                              const hn::Vec128<float> sum0, hn::Vec128<float>& sum1) noexcept
+{
+    sum1 = hn::Vec128<float>(vfmlalq_high_f16(sum1.raw, lhs.raw, rhs.raw));
+    return hn::Vec128<float>(vfmlalq_low_f16(sum0.raw, lhs.raw, rhs.raw));
+}
+
+#endif // defined(__ARM_FEATURE_FP16_FML)
+
+#endif // HWY_TARGET == HWY_NEON_BF16
+
+template <typename DF, typename VBF, HWY_IF_F32_D(DF), HWY_IF_F16(hn::TFromV<VBF>)>
+HWY_API
+hn::VFromD<DF> MyReorderWidenMulAccumulate(DF df32, VBF lhs, VBF rhs, const hn::VFromD<DF> sum0, hn::VFromD<DF>& sum1) noexcept {
+    // TODO use reordered promotion?
+    // FIXME f16->f32 on AArch64 has a latency of 4 cycles and only a throughput of 1...!
+    sum1 = hn::MulAdd(hn::PromoteUpperTo(df32, lhs), hn::PromoteUpperTo(df32, rhs), sum1);
+    return hn::MulAdd(hn::PromoteLowerTo(df32, lhs), hn::PromoteLowerTo(df32, rhs), sum0);
 }
 
 } // HWY_NAMESPACE
