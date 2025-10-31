@@ -25,5 +25,4 @@ public class DomStorageNodeBuilder extends VespaDomBuilder.DomConfigProducerBuil
         return new StorageNode(deployState.getProperties(), (StorageCluster)ancestor, capacity, e.integerAttribute("distribution-key"), false);
     }
 
-
 }

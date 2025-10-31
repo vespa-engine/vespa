@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
+import com.yahoo.vespa.model.builder.xml.dom.DomDistributorBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomStorageNodeBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
@@ -325,7 +326,7 @@ public class StorageGroup {
                 PersistenceEngine provider = parent.getPersistence().create(storageNode);
                 storageNode.initService(deployState);
 
-                Distributor distributor = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), distributionKey, null, provider);
+                Distributor distributor = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), distributionKey, provider);
                 distributor.setHostResource(storageNode.getHostResource());
                 distributor.initService(deployState);
                 return storageNode;
@@ -397,7 +398,7 @@ public class StorageGroup {
                 StorageNode sNode = new DomStorageNodeBuilder().build(deployState, parent.getStorageCluster(), element.getXml());
                 parent.getSearch().addSearchNode(deployState, sNode, storageGroup, element);
                 PersistenceEngine provider = parent.getPersistence().create(sNode);
-                new Distributor.Builder(clusterElement, provider).build(deployState, parent.getDistributorNodes(), element.getXml());
+                new DomDistributorBuilder(provider).build(deployState, parent.getDistributorNodes(), element.getXml());
                 return sNode;
             }
 
@@ -508,7 +509,7 @@ public class StorageGroup {
 
             parent.getSearch().addSearchNode(deployState, sNode, parentGroup);
             PersistenceEngine provider = parent.getPersistence().create(sNode);
-            Distributor d = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), clusterMembership.index(), null, provider);
+            Distributor d = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), clusterMembership.index(), provider);
             d.setHostResource(sNode.getHostResource());
             d.initService(deployState);
             return sNode;
