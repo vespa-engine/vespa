@@ -8,10 +8,14 @@
 #include <vespa/vespalib/hwaccelerated/float8_luts.h>
 #include <vespa/vespalib/hwaccelerated/highway.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
+#include <vespa/vespalib/hwaccelerated/float8.h>
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <gmock/gmock.h>
 #include <limits>
 #include <random>
+#include <stdfloat>
+
+#include <iomanip>
 
 #include <vespa/log/log.h>
 LOG_SETUP("hwaccelerated_test");
@@ -55,6 +59,43 @@ void verify_dot_product(std::span<const IAccelerated*> accels, size_t test_lengt
             LOG(spam, "verify_dot_product(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(), test_length, j);
             ScopedFnTableOverride fn_scope(accel->fn_table());
             auto computed = static_cast<double>(dot_product(&a[j], &b[j], test_length - j));
+            ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << accel->target_info().to_string();
+        }
+    }
+}
+
+// FP8 types have such low practical range (of which many are NaNs and/or Inf)
+// that we use a custom test routine that prunes away all non-finite numbers.
+template <typename T>
+void verify_fp8_dot_product(std::span<const IAccelerated*> accels, size_t test_length, double approx_factor) {
+    auto [a, b] = create_and_fill_lhs_rhs<uint8_t>(test_length, T::is_finite); // don't include NaN/Inf
+    for (size_t j = 0; j < 32; j++) {
+        float sum = 0;
+        for (size_t i = j; i < test_length; i++) {
+            sum += T(a[i]).to_float() * T(b[i]).to_float();
+        }
+        for (const auto* accel : accels) {
+            LOG(spam, "verify_fp8_dot_product(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(), test_length, j);
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            auto computed = dot_product(&a[j], &b[j], test_length - j, T::kind());
+            ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << accel->target_info().to_string();
+        }
+    }
+}
+[[maybe_unused]]
+void verify_fp4_dot_product(std::span<const IAccelerated*> accels, size_t test_length, double approx_factor) {
+    auto [a, b] = create_and_fill_lhs_rhs<uint8_t>(test_length); // All bit patterns are finite values for FP4 E2M1
+    for (size_t j = 0; j < 32; j++) {
+        float sum = 0;
+        for (size_t i = j; i < test_length; i++) {
+            using Fp4 = Float4E2M1_X2;
+            sum += (Fp4::to_float(a[i] & 0x0f) * Fp4::to_float(b[i] & 0x0f))
+                 + (Fp4::to_float(a[i] >> 4)   * Fp4::to_float(b[i] >> 4));
+        }
+        for (const auto* accel : accels) {
+            LOG(spam, "verify_fp4_dot_product(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(), test_length, j);
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            auto computed = dot_product(&a[j], &b[j], test_length - j, MicroFloatKind::FP4_E2M1);
             ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << accel->target_info().to_string();
         }
     }
@@ -128,8 +169,11 @@ void verify_dot_product(std::span<const IAccelerated*> accelerators, size_t test
     verify_dot_product<int32_t>(accelerators, testLength, 0.0);
     verify_dot_product<int64_t>(accelerators, testLength, 0.0);
     verify_dot_product<float>(accelerators, testLength, 0.0001);
-    verify_dot_product<BFloat16>(accelerators, testLength, 0.001f);
+    verify_dot_product<BFloat16>(accelerators, testLength, 0.001);
     verify_dot_product<double>(accelerators, testLength, 0.0);
+    verify_fp8_dot_product<Float8E4M3FN>(accelerators, testLength, 0.0001);
+    verify_fp8_dot_product<Float8E5M2>(accelerators, testLength, 0.0001);
+    verify_fp4_dot_product(accelerators, testLength, 0.00001);
 }
 
 TEST_F(HwAcceleratedTest, dot_product_impls_match_source_of_truth) {

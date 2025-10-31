@@ -4,6 +4,8 @@
 #include "scoped_fn_table_override.h"
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
+#include <vespa/vespalib/hwaccelerated/float4.h>
+#include <vespa/vespalib/hwaccelerated/float8.h>
 #include <vespa/vespalib/hwaccelerated/highway.h>
 #include <benchmark/benchmark.h>
 #include <format>
@@ -33,18 +35,40 @@ constexpr std::string_view type_string() noexcept {
         return "double";
     } else if constexpr (std::is_same_v<T, uint64_t>) {
         return "uint64";
+    } else if constexpr (std::is_same_v<T, Float8E4M3FN>) {
+        return "Float8E4M3FN";
+    } else if constexpr (std::is_same_v<T, Float8E5M2>) {
+        return "Float8E5M2";
+    } else if constexpr (std::is_same_v<T, Float4E2M1_X2>) {
+        return "Float4E2M1_X2";
     } else {
         static_assert(type_dependent_false_v<T>, "type not known for stringification");
         return "";
     }
 }
 
+template <typename T> struct NativeFromT { using type = T; };
+template <> struct NativeFromT<Float8E4M3FN> { using type = uint8_t; };
+template <> struct NativeFromT<Float8E5M2> { using type = uint8_t; };
+template <> struct NativeFromT<Float4E2M1_X2> { using type = uint8_t; };
+
+template <typename> struct IsFinite {
+    template <typename T2>
+    constexpr bool operator()(T2) const noexcept { return true; }
+};
+template <> struct IsFinite<Float8E4M3FN> {
+    constexpr bool operator()(uint8_t v) const noexcept { return Float8E4M3FN::is_finite(v); }
+};
+template <> struct IsFinite<Float8E5M2> {
+    constexpr bool operator()(uint8_t v) const noexcept { return Float8E5M2::is_finite(v); }
+};
+
 template <typename T, typename Fn>
 void register_accel_binary_arg_benchmark(std::string_view name, std::unique_ptr<IAccelerated> accel, Fn&& fn) {
     const auto accel_target = accel->target_info();
     std::string instance_name = std::format("{}/{}/{}/{}", name, type_string<T>(), accel_target.implementation_name(), accel_target.target_name());
     auto bench_fn = [fn = std::forward<Fn>(fn), accel = std::move(accel)](benchmark::State& state) {
-        auto [a, b] = create_and_fill_lhs_rhs<T>(state.range());
+        auto [a, b] = create_and_fill_lhs_rhs<typename NativeFromT<T>::type>(state.range(), IsFinite<T>{});
         ScopedFnTableOverride fn_scope(accel->fn_table());
         for (auto _ : state) {
             // A tiny bit dirty, but beats duplicating a bunch of code.
@@ -102,6 +126,19 @@ void register_all_benchmark_suites() {
     register_benchmarks<float>("Dot Product",    FnTable::FnId::DOT_PRODUCT_F32,  dot_product_fn);
     register_benchmarks<BFloat16>("Dot Product", FnTable::FnId::DOT_PRODUCT_BF16, dot_product_fn);
     register_benchmarks<int8_t>("Dot Product",   FnTable::FnId::DOT_PRODUCT_I8,   dot_product_fn);
+
+    auto dot_product_fp8_e4m3fn_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
+        return dot_product(lhs, rhs, my_sz, Float8E4M3FN::kind());
+    };
+    register_benchmarks<Float8E4M3FN>("Dot Product", FnTable::FnId::DOT_PRODUCT_MICRO_FLOAT, dot_product_fp8_e4m3fn_fn);
+    auto dot_product_fp8_e5m2_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
+        return dot_product(lhs, rhs, my_sz, Float8E5M2::kind());
+    };
+    register_benchmarks<Float8E5M2>("Dot Product", FnTable::FnId::DOT_PRODUCT_MICRO_FLOAT, dot_product_fp8_e5m2_fn);
+    auto dot_product_fp4_e2m1_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
+        return dot_product(lhs, rhs, my_sz, Float4E2M1_X2::kind());
+    };
+    register_benchmarks<Float4E2M1_X2>("Dot Product", FnTable::FnId::DOT_PRODUCT_MICRO_FLOAT, dot_product_fp4_e2m1_fn);
 
     auto binary_hamming_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
         return binary_hamming_distance(lhs, rhs, my_sz);
