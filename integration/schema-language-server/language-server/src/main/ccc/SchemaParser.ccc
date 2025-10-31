@@ -2180,7 +2180,7 @@ void rankProfile(ParsedSchema schema, ParsedRankProfile outer) :
     ( <MODEL> | <RANK_PROFILE> ) name = identifierWithDashStr
     { profile = new ParsedRankProfile(name, outer); identifierToken = lastConsumedToken; }
     [inheritsRankProfile(profile)]
-    openLbrace() (rankProfileItem(schema, outer) | <NL>)* <RBRACE>
+    openLbrace() (rankProfileItem(schema, profile) | <NL>)* <RBRACE>
     {
         if (schema != null) {
             try {
