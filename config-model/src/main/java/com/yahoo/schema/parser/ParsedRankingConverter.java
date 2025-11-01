@@ -28,11 +28,11 @@ public class ParsedRankingConverter {
 
     void convertRankProfile(Schema schema, ParsedRankProfile parsed) {
         try {
-            if (parsed.outer().isPresent()) {
-                if ( ! parsed.getInherited().contains(parsed.outer().get().name()))
+            parsed.outer().ifPresent(parent -> {
+                if ( ! parsed.getInherited().contains(parent.name()))
                     throw new IllegalArgumentException("Inner profile '" + parsed.name() + "' must inherit '" +
-                                                       parsed.outer().get().name() + "'");
-            }
+                                                       parent.name() + "'");
+            });
             RankProfile profile = createProfile(schema, parsed.fullName());
             populateFrom(parsed, profile);
             rankProfileRegistry.add(profile);
@@ -49,9 +49,7 @@ public class ParsedRankingConverter {
 
     private void populateFrom(ParsedRankProfile parsed, RankProfile profile) {
         for (var inherited : parsed.getInherited()) {
-            String namePrefix = "";
-            if (parsed.outer().isPresent() && parsed.outer().get().outer().isPresent())
-                namePrefix = parsed.outer().get().outer().get().fullName() + ".";
+            String namePrefix = parsed.outer().map(p -> p.namespacePrefix()).orElse("");
             profile.inherit(namePrefix + inherited);
         }
         parsed.isStrict().ifPresent(profile::setStrict);

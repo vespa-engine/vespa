@@ -79,11 +79,12 @@ public class ParsedRankProfile extends ParsedBlock {
         this.outer = outer;
     }
 
+    String namespacePrefix() {
+        return outer().map(parent -> parent.fullName() + ".").orElse("");
+    }
+
     String fullName() {
-        if (outer().isPresent())
-            return outer().get().fullName() + "." + name();
-        else
-            return name();
+        return namespacePrefix() + name();
     }
 
     Optional<ParsedRankProfile> outer() { return Optional.ofNullable(outer); }
