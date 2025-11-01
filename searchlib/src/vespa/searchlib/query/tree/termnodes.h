@@ -11,6 +11,7 @@
 #include "const_bool_nodes.h"
 #include <vespa/vespalib/util/vespa_dll_local.h>
 #include <limits>
+#include <optional>
 
 namespace search::query {
 
