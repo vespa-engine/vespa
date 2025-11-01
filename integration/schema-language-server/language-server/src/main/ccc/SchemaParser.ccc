@@ -617,7 +617,7 @@ ParsedSchema Root :
  * This rule should only be used for parsing *.profile files.
  */
 void RootRankProfile : { }
-    (<NL>)* rankProfile(null) (<NL>)* <EOF>
+    (<NL>)* rankProfile(null, null) (<NL>)* <EOF>
 ;
 
 
@@ -655,7 +655,7 @@ rootSchemaItem(ParsedSchema schema) : {}
        | searchStemming(schema)
        | importField(schema)
        | rankingConstant(schema) // Deprecated: TODO: Vespa > 8: Emit warning
-       | rankProfile(schema)
+       | rankProfile(schema, null)
        | documentSummary(schema)
        | fieldOutsideDoc(schema)
        | indexOutsideDoc(schema)
@@ -2170,7 +2170,7 @@ String rankingConstantErrorMessage(String name) : {}
  *
  * @param schema the schema object to add content to
  */
-void rankProfile(ParsedSchema schema) :
+void rankProfile(ParsedSchema schema, ParsedRankProfile outer) :
 {
     String name;
     ParsedRankProfile profile;
@@ -2178,7 +2178,7 @@ void rankProfile(ParsedSchema schema) :
 }
 
     ( <MODEL> | <RANK_PROFILE> ) name = identifierWithDashStr
-    { profile = new ParsedRankProfile(name); identifierToken = lastConsumedToken; }
+    { profile = new ParsedRankProfile(name, outer); identifierToken = lastConsumedToken; }
     [inheritsRankProfile(profile)]
     openLbrace() (rankProfileItem(schema, profile) | <NL>)* <RBRACE>
     {
@@ -2232,6 +2232,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
        | significanceElm(profile)
        | weakandElm(profile)
        | filterThreshold(profile)
+       | rankProfile(schema, profile)
     )
 ;
 

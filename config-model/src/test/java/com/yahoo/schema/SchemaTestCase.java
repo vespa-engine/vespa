@@ -13,6 +13,7 @@ import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -690,6 +691,91 @@ public class SchemaTestCase {
         catch (Exception e) {
             assertEquals("schema 'doc' error: duplicate field 'duplicated': Also defined as a document field",
                          e.getMessage());
+        }
+    }
+
+    @Test
+    void testInnerRankProfiles() throws Exception {
+        String schema =
+                """
+                schema doc {
+                    document doc {
+                    }
+                    rank-profile outer {
+                        first-phase {
+                            expression: 1
+                        }
+                        rank-profile inner1 inherits outer {
+                            first-phase {
+                                expression: 2
+                            }
+                        }
+                        rank-profile inner2 inherits outer {
+                            first-phase {
+                                expression: 3
+                            }
+                            rank-profile grandinner inherits inner2 {
+                                first-phase {
+                                    expression: 4
+                                }
+                                rank-profile grandgrandinner inherits grandinner {
+                                    first-phase {
+                                        expression: 5
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+        assertEquals(7, application.rankProfileRegistry().rankProfilesOf(application.schemas().get("doc")).size());
+
+        var inner1 = application.rankProfileRegistry().get("doc", "outer.inner1");
+        assertNotNull(inner1);
+        assertEquals("outer.inner1", inner1.name());
+        assertEquals("2", inner1.getFirstPhase().function().getBody().getRoot().toString());
+
+        var inner2 = application.rankProfileRegistry().get("doc", "outer.inner2");
+        assertNotNull(inner2);
+        assertEquals("outer.inner2", inner2.name());
+        assertEquals("3", inner2.getFirstPhase().function().getBody().getRoot().toString());
+
+        var grandinner = application.rankProfileRegistry().get("doc", "outer.inner2.grandinner");
+        assertNotNull(grandinner);
+        assertEquals("outer.inner2.grandinner", grandinner.name());
+        assertEquals("4", grandinner.getFirstPhase().function().getBody().getRoot().toString());
+
+        var grandgrandinner = application.rankProfileRegistry().get("doc", "outer.inner2.grandinner.grandgrandinner");
+        assertNotNull(grandgrandinner);
+        assertEquals("outer.inner2.grandinner.grandgrandinner", grandgrandinner.name());
+        assertEquals("5", grandgrandinner.getFirstPhase().function().getBody().getRoot().toString());
+    }
+
+    @Test
+    void testInnerRankProfileMustInheritOuter() throws Exception {
+        String schema =
+                """
+                schema doc {
+                    document doc {
+                    }
+                    rank-profile outer {
+                        rank-profile inner1 { # missing inherits outer
+                        }
+                    }
+                }""";
+        try {
+            ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+            builder.addSchema(schema);
+            var application = builder.build(true);
+            new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("In rank-profile 'inner1': Inner profile 'inner1' must inherit 'outer'",
+                         Exceptions.toMessageString(e));
         }
     }
 
