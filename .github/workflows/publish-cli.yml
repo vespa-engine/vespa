@@ -180,11 +180,11 @@ jobs:
           # Check if BrewTestBot has already updated or created a PR for this version
           version="${VERSION}"
 
-          # Check for open PRs in homebrew-core that mention this version
-          prs=$(gh pr list --repo Homebrew/homebrew-core --search "vespa-cli ${version}" --json number,title --limit 1)
+          # Check for open/merged PRs in homebrew-core that mention this version
+          prs=$(gh pr list --repo Homebrew/homebrew-core --search "vespa-cli ${version}"  --json number,title,state --limit 1 --state all)
 
-          if [[ $(echo "${prs}" | jq 'length') -gt 0 ]]; then
-            echo "Found existing PR(s) for version ${version} in homebrew-core"
+          if [[ $(echo "${prs}" | jq -r 'length') -gt 0 ]]; then
+            printf "Found existing PR(s) for version %s in homebrew-core with state: %s\n" "${version}" "$(echo "${prs}" | jq -r '.[0].state')"
             echo "needs-publish=false" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
