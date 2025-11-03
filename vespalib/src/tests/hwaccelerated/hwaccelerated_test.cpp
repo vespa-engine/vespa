@@ -289,6 +289,62 @@ TEST_F(HwAcceleratedTest, binary_hamming_distance_with_alignments) {
     }
 }
 
+using namespace dispatch;
+
+void PrintTo(const TargetInfo& info, std::ostream* os) {
+    *os << info.to_string();
+}
+
+int64_t my_dot_i8_a(const int8_t*, const int8_t*, size_t sz) noexcept {
+    return sz;
+}
+
+int64_t my_dot_i8_b(const int8_t*, const int8_t*, size_t sz) noexcept {
+    return sz;
+}
+
+size_t my_popcount(const uint64_t*, size_t sz) noexcept {
+    return sz;
+}
+
+TargetInfo a_info("BoringImpl", "Dusty calculator", 128);
+TargetInfo b_info("MyCoolImpl", "Liquid cooled 6502", 1024);
+
+TEST(CompositeFnTableTest, functions_and_target_info_are_inherited_when_not_present) {
+    FnTable a(a_info);
+    a.dot_product_i8 = my_dot_i8_a;
+    a.population_count = my_popcount;
+    FnTable b(b_info);
+    b.dot_product_i8 = my_dot_i8_b;
+    b.tag_fns_as_suboptimal({FnTable::FnId::DOT_PRODUCT_I8}); // should not matter here
+
+    // `c` is `b` built "on top" of `a`
+    FnTable c = build_composite_fn_table(b, a, false); // _do not_ exclude suboptimal
+    EXPECT_FALSE(c.is_complete());
+    EXPECT_EQ(c.dot_product_i8, my_dot_i8_b);
+    EXPECT_EQ(c.fn_target_info(FnTable::FnId::DOT_PRODUCT_I8), b_info);
+    EXPECT_EQ(c.population_count, my_popcount);
+    EXPECT_EQ(c.fn_target_info(FnTable::FnId::POPULATION_COUNT), a_info);
+    EXPECT_FALSE(c.dot_product_bf16); // not set
+}
+
+TEST(CompositeFnTableTest, suboptimal_functions_are_not_used_when_exclusion_is_requested) {
+    FnTable a(a_info);
+    a.dot_product_i8 = my_dot_i8_a;
+    FnTable b(b_info);
+    b.dot_product_i8 = my_dot_i8_b;
+    b.population_count = my_popcount;
+    b.tag_fns_as_suboptimal({FnTable::FnId::DOT_PRODUCT_I8});
+
+    FnTable c = build_composite_fn_table(b, a, true); // _exclude_ suboptimal
+    EXPECT_FALSE(c.is_complete());
+    // b's i8 dot product would be suboptimal and is not used. Use a's instead.
+    EXPECT_EQ(c.dot_product_i8, my_dot_i8_a);
+    EXPECT_EQ(c.fn_target_info(FnTable::FnId::DOT_PRODUCT_I8), a_info);
+    EXPECT_EQ(c.population_count, my_popcount);
+    EXPECT_EQ(c.fn_target_info(FnTable::FnId::POPULATION_COUNT), b_info);
+}
+
 } // vespalib::hwaccelerated
 
 GTEST_MAIN_RUN_ALL_TESTS()

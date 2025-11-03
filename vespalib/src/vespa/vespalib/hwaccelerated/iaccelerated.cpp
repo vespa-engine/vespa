@@ -572,16 +572,16 @@ IAccelerated::getAccelerator() {
 namespace dispatch {
 
 #define VESPA_HWACCEL_PATCH_FN_TABLE_VISITOR(fn_type, fn_field, fn_id) \
-    if ((src_tbl.fn_field) != nullptr && (ignore_suboptimal || !src_tbl.fn_is_tagged_as_suboptimal(fn_id))) { \
+    if ((src_tbl.fn_field) != nullptr && (!exclude_suboptimal || !src_tbl.fn_is_tagged_as_suboptimal(fn_id))) { \
         composite_tbl.fn_field = src_tbl.fn_field; \
         composite_tbl.fn_target_infos[static_cast<size_t>(fn_id)] = src_tbl.fn_target_infos[static_cast<size_t>(fn_id)]; \
     }
 
-FnTable build_composite_fn_table(std::span<const FnTable> fn_tables, bool ignore_suboptimal) noexcept {
+FnTable build_composite_fn_table(std::span<const FnTable> fn_tables, bool exclude_suboptimal) noexcept {
     assert(!fn_tables.empty());
     FnTable composite_tbl;
     // Start at the back (worst) and move towards the front (best), patching in present
-    // function pointers as we go (assuming not suboptimal & ignored). Painter's algorithm
+    // function pointers as we go (assuming not suboptimal & excluded). Painter's algorithm
     // for function pointers!
     for (const auto& src_tbl : std::ranges::reverse_view(fn_tables)) {
         VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_PATCH_FN_TABLE_VISITOR);
@@ -591,12 +591,12 @@ FnTable build_composite_fn_table(std::span<const FnTable> fn_tables, bool ignore
 
 FnTable build_composite_fn_table(const FnTable& fn_table,
                                  const FnTable& base_table,
-                                 bool ignore_suboptimal) noexcept
+                                 bool exclude_suboptimal) noexcept
 {
     std::vector<FnTable> fn_tables;
     fn_tables.emplace_back(fn_table);
     fn_tables.emplace_back(base_table);
-    return build_composite_fn_table(fn_tables, ignore_suboptimal);
+    return build_composite_fn_table(fn_tables, exclude_suboptimal);
 }
 
 FnTable optimal_composite_fn_table() noexcept {
