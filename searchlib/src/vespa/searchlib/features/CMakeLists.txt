@@ -70,6 +70,7 @@ vespa_add_library(searchlib_features OBJECT
     tensor_attribute_executor.cpp
     tensor_factory_blueprint.cpp
     tensor_from_labels_feature.cpp
+    tensor_from_structs_feature.cpp
     tensor_from_weighted_set_feature.cpp
     term_field_md_feature.cpp
     termdistancecalculator.cpp

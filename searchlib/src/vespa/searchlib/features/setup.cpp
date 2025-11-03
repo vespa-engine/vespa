@@ -53,6 +53,7 @@
 #include "second_phase_feature.h"
 #include "subqueries_feature.h"
 #include "tensor_from_labels_feature.h"
+#include "tensor_from_structs_feature.h"
 #include "tensor_from_weighted_set_feature.h"
 #include "term_field_md_feature.h"
 #include "termdistancefeature.h"
@@ -117,6 +118,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<SecondPhaseBlueprint>());
     registry.addPrototype(std::make_shared<SubqueriesBlueprint>());
     registry.addPrototype(std::make_shared<TensorFromLabelsBlueprint>());
+    registry.addPrototype(std::make_shared<TensorFromStructsBlueprint>());
     registry.addPrototype(std::make_shared<TensorFromWeightedSetBlueprint>());
     registry.addPrototype(std::make_shared<TermBlueprint>());
     registry.addPrototype(std::make_shared<TermDistanceBlueprint>());
