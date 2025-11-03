@@ -5,6 +5,7 @@ package jvm
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
@@ -45,6 +46,9 @@ func (opts *Options) AddDefaultHeapSizeArgs(minHeapSize, maxHeapSize AmountOfMem
 }
 
 func (opts *Options) MaybeAddHugepages(heapSize AmountOfMemory) {
+	if runtime.GOOS != "linux" {
+		return
+	}
 	thpSize := getTransparentHugepageSize()
 	if thpSize.numBytes*2 < heapSize.numBytes {
 		trace.Trace("add UseTransparentHugePages, 2 * thpSize", thpSize, " < maxHeap", heapSize)

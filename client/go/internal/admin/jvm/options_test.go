@@ -2,6 +2,7 @@
 package jvm
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -62,15 +63,22 @@ func TestHeapSizeMulti(t *testing.T) {
 
 func TestHeapSizeAdd(t *testing.T) {
 	var (
-		gg = MegaBytesOfMemory(12345)
-		hh = MegaBytesOfMemory(23456)
+		gg           = MegaBytesOfMemory(12345)
+		hh           = MegaBytesOfMemory(23456)
+		hasHugePages = runtime.GOOS == "linux"
 	)
 	o := newDummyContainer().JvmOptions()
 	o.AddDefaultHeapSizeArgs(gg, hh)
-	assert.Equal(t, 3, len(o.jvmArgs))
+	if hasHugePages {
+		assert.Equal(t, 3, len(o.jvmArgs))
+	} else {
+		assert.Equal(t, 2, len(o.jvmArgs))
+	}
 	assert.Equal(t, "-Xms12345m", o.jvmArgs[0])
 	assert.Equal(t, "-Xmx23456m", o.jvmArgs[1])
-	assert.Equal(t, "-XX:+UseTransparentHugePages", o.jvmArgs[2])
+	if hasHugePages {
+		assert.Equal(t, "-XX:+UseTransparentHugePages", o.jvmArgs[2])
+	}
 }
 
 func TestHeapSizeNoAdd(t *testing.T) {
