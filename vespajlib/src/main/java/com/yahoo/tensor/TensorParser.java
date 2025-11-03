@@ -75,8 +75,10 @@ class TensorParser {
             if (type.isEmpty() || type.get().equals(TensorType.empty)) {
                 try {
                     return Tensor.Builder.of(TensorType.empty).cell(Double.parseDouble(tensorString)).build();
-                } catch (NumberFormatException e) { // TODO: Number only here
-                    throw new IllegalArgumentException("Excepted a number, hex string, or a string starting by {, [ or tensor(...)");
+                } catch (NumberFormatException e) {
+                    var message = type.isEmpty() ? "Expected a number, hex string, or a string starting by {, [ or tensor(...)"
+                                                 : "Expected a number";
+                    throw new IllegalArgumentException(message);
                 }
             }
             else {
@@ -107,7 +109,7 @@ class TensorParser {
             return builder.build();
         }
         catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Excepted a number or a string starting by '{' or 'tensor('");
+            throw new IllegalArgumentException("Expected a number or a string starting by '{' or 'tensor('");
         }
     }
 
@@ -137,7 +139,7 @@ class TensorParser {
             return builder.build();
         }
         catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Excepted a number or a string starting by '{' or 'tensor('");
+            throw new IllegalArgumentException("Expected a number or a string starting by '{' or 'tensor('");
         }
     }
 
@@ -152,7 +154,7 @@ class TensorParser {
 
         // Use a generic message as the user may not have meant to end up here when supplying non-hex characters
         if (valueString.chars().anyMatch(ch -> (Character.digit(ch, 16) == -1)))
-            return Optional.of("Excepted a number, hex string, or a string starting by {, [ or tensor(...)");
+            return Optional.of("Expected a number, hex string, or a string starting by {, [ or tensor(...)");
 
         if (valueString.length() != numHexDigits)
             return Optional.of("Expected " + numHexDigits + " hex digits, but got " + valueString.length());

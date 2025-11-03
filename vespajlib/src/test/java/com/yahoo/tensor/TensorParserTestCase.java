@@ -427,8 +427,11 @@ public class TensorParserTestCase {
                      "Expected 20 hex digits, but got 8",
                      () -> TensorParser.tensorFrom("a93c573d", Optional.of(TensorType.fromSpec("tensor<bfloat16>(x[5])"))));
         assertError("Could not parse 'hello' as a tensor of type tensor<bfloat16>(x[5]): " +
-                    "Excepted a number, hex string, or a string starting by {, [ or tensor(...)",
+                    "Expected a number, hex string, or a string starting by {, [ or tensor(...)",
                     () -> TensorParser.tensorFrom("hello", Optional.of(TensorType.fromSpec("tensor<bfloat16>(x[5])"))));
+        assertError("Could not parse '' as a tensor of type tensor<bfloat16>(): " +
+                    "Expected a number",
+                    () -> TensorParser.tensorFrom("", Optional.of(TensorType.fromSpec("tensor<bfloat16>()"))));
     }
 
     private void assertError(String expectedMessage, Supplier<Tensor> supplier) {

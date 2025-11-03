@@ -125,7 +125,7 @@ public class TensorTestCase {
         }
         catch (IllegalArgumentException expected) {
             assertEquals("Could not parse '--' as a tensor: " +
-                         "Excepted a number, hex string, or a string starting by {, [ or tensor(...)",
+                         "Expected a number, hex string, or a string starting by {, [ or tensor(...)",
                          Exceptions.toMessageString(expected));
         }
     }
