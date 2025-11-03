@@ -34,4 +34,22 @@ std::string FnTable::to_string() const {
     return fns;
 }
 
+#define VESPA_HWACCEL_INVOKE_CALLBACK(fn_type, fn_field, fn_id) \
+    if ((fn_field) != nullptr) { callback(fn_id); }
+
+void FnTable::for_each_present_fn(const std::function<void(FnId)>& callback) const {
+    VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_INVOKE_CALLBACK);
+}
+
+#define VESPA_HWACCEL_SWITCH_CASE_PER_FN_ENTRY(fn_type, fn_field, fn_id) \
+    case fn_id: return #fn_field;
+
+std::string_view FnTable::id_to_fn_name(FnId id) noexcept {
+    switch (id) {
+    VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_SWITCH_CASE_PER_FN_ENTRY);
+    case FnId::MAX_ID_SENTINEL: abort();
+    }
+    abort();
+}
+
 } // vespalib::hwaccelerated::dispatch
