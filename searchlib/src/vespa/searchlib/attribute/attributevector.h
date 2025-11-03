@@ -342,7 +342,6 @@ public:
     bool isEnumeratedSaveFormat() const;
     bool load();
     bool load(vespalib::Executor * executor);
-//    void commit(bool force) {         commit(force ? CommitParam::UpdateStats::FORCE : CommitParam::UpdateStats::SKIP);     }
     void commit() { commit(CommitParam::UpdateStats::SKIP); }
     void commit(CommitParam::UpdateStats updateStats);
     void commit(const CommitParam & param);
