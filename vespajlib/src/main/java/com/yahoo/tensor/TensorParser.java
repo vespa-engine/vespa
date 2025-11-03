@@ -75,14 +75,18 @@ class TensorParser {
             if (type.isEmpty() || type.get().equals(TensorType.empty)) {
                 try {
                     return Tensor.Builder.of(TensorType.empty).cell(Double.parseDouble(tensorString)).build();
-                } catch (NumberFormatException e) {
-                    // handled below
+                } catch (NumberFormatException e) { // TODO: Number only here
+                    throw new IllegalArgumentException("Excepted a number, hex string, or a string starting by {, [ or tensor(...)");
                 }
             }
-            if (type.isPresent() && validHexString(type.get(), valueString))
-                return tensorFromDenseValueString(valueString, type, dimensionOrder);
+            else {
+                var invalidHexStringReason = invalidHexString(type.get(), valueString);
+                if (invalidHexStringReason.isPresent())
+                    throw new IllegalArgumentException(invalidHexStringReason.get());
+                else
+                    return tensorFromDenseValueString(valueString, type, dimensionOrder);
+            }
 
-            throw new IllegalArgumentException("Excepted a number, hex string, or a string starting by {, [ or tensor(...)");
         }
     }
 
@@ -137,19 +141,22 @@ class TensorParser {
         }
     }
 
-    private static boolean validHexString(TensorType type, String valueString) {
-        long sz = 1;
-        for (var d : type.dimensions()) {
-            sz *= d.size().orElse(0L);
-        }
-        int numHexDigits = (int)(sz * 2 * type.valueType().sizeOfCell());
-        if (sz == 0
-            || type.dimensions().isEmpty()
-            || valueString.length() != numHexDigits
-            || valueString.chars().anyMatch(ch -> (Character.digit(ch, 16) == -1))) {
-            return false;
-        }
-        return true;
+    /** Returns the reason this isn't a valid hex string, or empoty if it is valid. */
+    private static Optional<String> invalidHexString(TensorType type, String valueString) {
+        long size = 1;
+        for (var d : type.dimensions())
+            size *= d.size().orElse(0L);
+
+        int numHexDigits = (int)(size * 2 * type.valueType().sizeOfCell());
+        if (size == 0 || type.dimensions().isEmpty()) return Optional.of("Tensor type has zero values");
+
+        // Use a generic message as the user may not have meant to end up here when supplying non-hex characters
+        if (valueString.chars().anyMatch(ch -> (Character.digit(ch, 16) == -1)))
+            return Optional.of("Excepted a number, hex string, or a string starting by {, [ or tensor(...)");
+
+        if (valueString.length() != numHexDigits)
+            return Optional.of("Expected " + numHexDigits + " hex digits, but got " + valueString.length());
+        return Optional.empty();
     }
 
     private static Tensor tensorFromDenseValueString(String valueString,
@@ -317,7 +324,7 @@ class TensorParser {
             if (string.charAt(position) != '[') {
                 int stopPos = stopCharIndex(position);
                 String hexToken = string.substring(position, stopPos);
-                if (validHexString(builder.type(), hexToken)) {
+                if (invalidHexString(builder.type(), hexToken).isEmpty()) {
                     double[] values = decodeHexString(hexToken, builder.type().valueType());
                     int i = 0;
                     while (indexes.hasNext()) {
