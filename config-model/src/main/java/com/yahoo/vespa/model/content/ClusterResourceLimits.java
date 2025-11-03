@@ -40,7 +40,6 @@ public class ClusterResourceLimits {
         private final boolean hostedVespa;
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
-        private final double resourceLimitLowWatermarkDifference;
         private final double resourceLimitLowAddressSpace;
         private final DeployLogger deployLogger;
 
@@ -50,16 +49,14 @@ public class ClusterResourceLimits {
         public Builder(boolean hostedVespa,
                        double resourceLimitDisk,
                        double resourceLimitMemory,
-                       double resourceLimitLowWatermarkDifference,
                        double resourceLimitLowAddressSpace,
                        DeployLogger deployLogger) {
             this.hostedVespa = hostedVespa;
             this.resourceLimitDisk = resourceLimitDisk;
             this.resourceLimitMemory = resourceLimitMemory;
-            this.resourceLimitLowWatermarkDifference = resourceLimitLowWatermarkDifference;
             this.resourceLimitLowAddressSpace = resourceLimitLowAddressSpace;
             this.deployLogger = deployLogger;
-            verifyLimits(resourceLimitDisk, resourceLimitMemory, resourceLimitLowWatermarkDifference, resourceLimitLowAddressSpace);
+            verifyLimits(resourceLimitDisk, resourceLimitMemory, resourceLimitLowAddressSpace);
         }
 
         public ClusterResourceLimits build(ModelElement clusterElem) {
@@ -115,16 +112,12 @@ public class ClusterResourceLimits {
             deriveContentNodeLimit(nodeBuilder.getDiskLimit(), ctrlBuilder.getDiskLimit(), 0.6, nodeBuilder::setDiskLimit);
             deriveContentNodeLimit(nodeBuilder.getMemoryLimit(), ctrlBuilder.getMemoryLimit(), 0.5, nodeBuilder::setMemoryLimit);
             deriveContentNodeLimit(nodeBuilder.getAddressSpaceLimit(), ctrlBuilder.getAddressSpaceLimit(), 0.5, nodeBuilder::setAddressSpaceLimit);
-
-            ctrlBuilder.setLowWatermarkDifference(resourceLimitLowWatermarkDifference);
-            nodeBuilder.setLowWatermarkDifference(resourceLimitLowWatermarkDifference);
         }
 
         private void considerSettingDefaultClusterControllerLimit(Optional<Double> clusterControllerLimit,
                                                                   Optional<Double> contentNodeLimit,
                                                                   Consumer<Double> setter,
                                                                   double resourceLimit) {
-            // TODO: remove this when feed block in distributor is default enabled.
             if (clusterControllerLimit.isEmpty() && contentNodeLimit.isEmpty()) {
                 setter.accept(resourceLimit);
             }
@@ -155,11 +148,9 @@ public class ClusterResourceLimits {
         }
 
 
-        private void verifyLimits(double resourceLimitDisk, double resourceLimitMemory,
-                                  double resourceLimitLowWatermarkDifference, double resourceLimitAddressSpace) {
+        private void verifyLimits(double resourceLimitDisk, double resourceLimitMemory, double resourceLimitAddressSpace) {
             verifyLimitInRange(resourceLimitDisk, "disk");
             verifyLimitInRange(resourceLimitMemory, "memory");
-            verifyLimitInRange(resourceLimitLowWatermarkDifference, "low watermark difference");
             verifyLimitInRange(resourceLimitAddressSpace, "address space");
         }
 
