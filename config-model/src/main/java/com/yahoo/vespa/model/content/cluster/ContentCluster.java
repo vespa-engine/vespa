@@ -47,7 +47,6 @@ import com.yahoo.vespa.model.content.ReservedDocumentTypeNameValidator;
 import com.yahoo.vespa.model.content.StorageGroup;
 import com.yahoo.vespa.model.content.StorageNode;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
-import com.yahoo.vespa.model.content.engines.ProtonEngine;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.routing.DocumentProtocol;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
@@ -128,7 +127,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                                                   deployState);
             c.search = new DomContentSearchClusterBuilder(documentDefinitions, globallyDistributedDocuments)
                     .build(deployState, c, contentElement.getXml());
-            c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
+            c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c.search);
             c.storageNodes = new StorageCluster.Builder().build(deployState, c, w3cContentElement);
             c.distributorNodes = new DistributorCluster.Builder(c).build(deployState, c, w3cContentElement);
             c.rootGroup = new StorageGroup.Builder(contentElement, context).buildRootGroup(deployState, c, c.search.isStreaming());
@@ -140,23 +139,12 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             c.search.handleRedundancy(c.redundancy);
             setupSearchCluster(c.search, contentElement, deployState.getDeployLogger());
 
-            if (c.search.hasIndexed() && !(c.persistenceFactory instanceof ProtonEngine.Factory) )
-                throw new IllegalArgumentException("Indexed search requires proton as engine");
-
-            if (documentsElement != null) {
-                ModelElement e = documentsElement.child("document-processing");
-                if (e != null)
-                    setupDocumentProcessing(c, e);
-            } else if (c.persistenceFactory != null) {
-                throw new IllegalArgumentException("The <documents> element is mandatory in content cluster '" + clusterId + "'");
-            }
-
-            ModelElement tuning = contentElement.child("tuning");
-            if (tuning != null)
-                setupTuning(c, tuning);
-
             if (context.getParentProducer().getRoot() == null) return c;
+            if (documentsElement == null)
+                throw new IllegalArgumentException("The <documents> element is mandatory in content cluster '" + clusterId + "'");
 
+            setupDocumentProcessing(c, documentsElement.child("document-processing"));
+            setupTuning(c, contentElement.child("tuning"));
             addClusterControllers(context, contentElement, c, deployState);
             return c;
         }
@@ -234,6 +222,8 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         }
 
         private void setupDocumentProcessing(ContentCluster c, ModelElement e) {
+            if (e == null) return;
+
             String docprocCluster = e.stringAttribute("cluster");
             if (docprocCluster != null && !docprocCluster.isBlank())
                 c.getSearch().getIndexingDocproc().setClusterName(docprocCluster.trim());
@@ -244,6 +234,8 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         }
 
         private void setupTuning(ContentCluster c, ModelElement tuning) {
+            if (tuning == null) return;
+
             ModelElement distribution = tuning.child("distribution");
             if (distribution != null) {
                 String attr = distribution.stringAttribute("type");
