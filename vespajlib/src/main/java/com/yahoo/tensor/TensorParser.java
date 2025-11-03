@@ -33,8 +33,7 @@ class TensorParser {
         }
     }
 
-    static Tensor tensorFromBody(String tensorString, Optional<TensorType> explicitType) {
-        Optional<TensorType> type;
+    static Tensor tensorFromBody(String tensorString, Optional<TensorType> type) {
         String valueString;
 
         // The order in which dimensions are written in the type string.
@@ -50,14 +49,13 @@ class TensorParser {
             String typeString = tensorString.substring(0, colonIndex);
             dimensionOrder = new ArrayList<>();
             TensorType typeFromString = TensorTypeParser.fromSpec(typeString, dimensionOrder);
-            if (explicitType.isPresent() && ! explicitType.get().equals(typeFromString))
+            if (type.isPresent() && ! type.get().equals(typeFromString))
                 throw new IllegalArgumentException("Got tensor with type string '" + typeString + "', but was " +
-                                                   "passed type " + explicitType.get());
+                                                   "passed type " + type.get());
             type = Optional.of(typeFromString);
             valueString = tensorString.substring(colonIndex + 1);
         }
         else {
-            type = explicitType;
             valueString = tensorString;
             dimensionOrder = null;
         }
@@ -74,16 +72,16 @@ class TensorParser {
             return tensorFromDenseValueString(valueString, type, dimensionOrder);
         }
         else {
-            if (type.isPresent() && validHexString(type.get(), valueString))
-                return tensorFromDenseValueString(valueString, type, dimensionOrder);
-
-            if (explicitType.isEmpty() || explicitType.get().equals(TensorType.empty)) {
+            if (type.isEmpty() || type.get().equals(TensorType.empty)) {
                 try {
                     return Tensor.Builder.of(TensorType.empty).cell(Double.parseDouble(tensorString)).build();
                 } catch (NumberFormatException e) {
                     // handled below
                 }
             }
+            if (type.isPresent() && validHexString(type.get(), valueString))
+                return tensorFromDenseValueString(valueString, type, dimensionOrder);
+
             throw new IllegalArgumentException("Excepted a number, hex string, or a string starting by {, [ or tensor(...)");
         }
     }
