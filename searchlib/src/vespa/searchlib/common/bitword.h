@@ -12,7 +12,7 @@ class BitWord {
 public:
     using Word = uint64_t;
     using Index = uint32_t;
-    static constexpr Word startBits(Index index) noexcept { return (std::numeric_limits<Word>::max() >> 1) >> (WordLen - 1 - bitNum(index)); }
+    static constexpr Word startBits(Index index) noexcept { return ~(std::numeric_limits<Word>::max() << bitNum(index)); }
     static constexpr size_t WordLen = sizeof(Word)*8;
     static constexpr uint8_t bitNum(Index idx) noexcept { return (idx % WordLen); }
     static constexpr Word endBits(Index index) noexcept { return (std::numeric_limits<Word>::max() - 1) << bitNum(index); }
