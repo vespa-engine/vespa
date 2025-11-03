@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 namespace vespalib::hwaccelerated {
 
@@ -46,6 +47,12 @@ public:
     }
     [[nodiscard]] constexpr uint16_t vector_width_bits() const noexcept {
         return _vector_width_bytes * 8;
+    }
+
+    [[nodiscard]] constexpr bool operator==(const TargetInfo& rhs) const noexcept {
+        return (std::string_view{_implementation_name} == rhs._implementation_name &&
+                std::string_view{_target_name} == rhs._target_name &&
+                _vector_width_bytes == rhs._vector_width_bytes);
     }
 
     [[nodiscard]] std::string to_string() const;

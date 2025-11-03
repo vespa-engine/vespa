@@ -185,8 +185,8 @@ VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_DECLARE_DISPATCH_FN_PTR);
 // fn_tables is in "best to worst" order (i.e. best is at front, worst is at back),
 // meaning that if a function is present (non-null) in a "better" table, it will be
 // preferred over one in a "worse" table, _unless_ the function is tagged as suboptimal
-// by the table _and_ `ignore_suboptimal == true`. In the latter case, the function is
-// ignored in favor of the one from the technically worse table. This is to avoid
+// by the table _and_ `exclude_suboptimal == true`. In the latter case, the function is
+// excluded in favor of the one from the technically worse table. This is to avoid
 // including functions with known suboptimal performance vs. another "worse" target.
 //
 // If the union of non-null input function pointers across all input tables is equal
@@ -196,12 +196,12 @@ VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_DECLARE_DISPATCH_FN_PTR);
 // the returned table is also complete.
 //
 // Information about suboptimal functions is not preserved in the returned table.
-[[nodiscard]] FnTable build_composite_fn_table(std::span<const FnTable> fn_tables, bool ignore_suboptimal) noexcept;
+[[nodiscard]] FnTable build_composite_fn_table(std::span<const FnTable> fn_tables, bool exclude_suboptimal) noexcept;
 
 // Convenience function to build a composite table on top of a single other function table
 [[nodiscard]] FnTable build_composite_fn_table(const FnTable& fn_table,
                                                const FnTable& base_table,
-                                               bool ignore_suboptimal) noexcept;
+                                               bool exclude_suboptimal) noexcept;
 
 // Returns the function table that is presumed to be optimal for the architecture the
 // process is currently running on.
