@@ -175,7 +175,7 @@ BitVector::setInterval(Index start_in, Index end_in)
     Index endw = wordNum(last);
 
     if (endw > startw) {
-        store(_words[startw], _words[startw] | checkTab(range.start()));
+        store(_words[startw], _words[startw] | ~startBits(range.start()));
         for (Index i = startw + 1; i < endw; ++i) {
             store_unchecked(_words[i], allBits());
         }
