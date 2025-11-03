@@ -74,19 +74,17 @@ class TensorParser {
             return tensorFromDenseValueString(valueString, type, dimensionOrder);
         }
         else {
-            var t = maybeFromBinaryValueString(valueString, type, dimensionOrder);
-            if (t.isPresent()) { return t.get(); }
+            var tensor = maybeFromBinaryValueString(valueString, type, dimensionOrder);
+            if (tensor.isPresent()) return tensor.get();
 
-            if (explicitType.isPresent() && ! explicitType.get().equals(TensorType.empty))
-                throw new IllegalArgumentException("Got a zero-dimensional tensor value ('" + tensorString +
-                                                   "') where type " + explicitType.get() + " is required");
-            try {
-                return Tensor.Builder.of(TensorType.empty).cell(Double.parseDouble(tensorString)).build();
+            if (explicitType.isEmpty() || explicitType.get().equals(TensorType.empty)) {
+                try {
+                    return Tensor.Builder.of(TensorType.empty).cell(Double.parseDouble(tensorString)).build();
+                } catch (NumberFormatException e) {
+                    // handled below
+                }
             }
-            catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Excepted a number or a string starting by {, [ or tensor(...):, got '" +
-                                                   tensorString + "'");
-            }
+            throw new IllegalArgumentException("Excepted a number, hex string, or a string starting by {, [ or tensor(...)");
         }
     }
 
@@ -150,27 +148,18 @@ class TensorParser {
         if (sz == 0
             || type.dimensions().isEmpty()
             || valueString.length() != numHexDigits
-            || valueString.chars().anyMatch(ch -> (Character.digit(ch, 16) == -1)))
-        {
+            || valueString.chars().anyMatch(ch -> (Character.digit(ch, 16) == -1))) {
             return false;
         }
         return true;
     }
 
-    private static Optional<Tensor> maybeFromBinaryValueString(
-            String valueString,
-            Optional<TensorType> optType,
-            List<String> dimensionOrder)
-    {
-        if (optType.isEmpty()) {
-            return Optional.empty();
-        }
-        var type = optType.get();
-        if (validHexString(type, valueString)) {
-            var tensor = tensorFromDenseValueString(valueString, optType, dimensionOrder);
-            return Optional.of(tensor);
-        }
-        return Optional.empty();
+    private static Optional<Tensor> maybeFromBinaryValueString(String valueString,
+                                                               Optional<TensorType> type,
+                                                               List<String> dimensionOrder) {
+        if (type.isEmpty()) return Optional.empty();
+        if ( ! validHexString(type.get(), valueString)) return Optional.empty();
+        return Optional.of(tensorFromDenseValueString(valueString, type, dimensionOrder));
     }
 
     private static Tensor tensorFromDenseValueString(String valueString,
