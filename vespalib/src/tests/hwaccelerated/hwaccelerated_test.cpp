@@ -345,6 +345,19 @@ TEST(CompositeFnTableTest, suboptimal_functions_are_not_used_when_exclusion_is_r
     EXPECT_EQ(c.fn_target_info(FnTable::FnId::POPULATION_COUNT), b_info);
 }
 
+TEST(CompositeFnTableTest, for_each_present_fn_invokes_callback_for_non_nullptr_fns) {
+    FnTable tbl(b_info);
+    tbl.dot_product_i8 = my_dot_i8_b;
+    tbl.population_count = my_popcount;
+
+    std::string seen_fns;
+    tbl.for_each_present_fn([&](FnTable::FnId id) {
+        seen_fns += FnTable::id_to_fn_name(id);
+        seen_fns += " ";
+    });
+    EXPECT_EQ(seen_fns, "dot_product_i8 population_count ");
+}
+
 } // vespalib::hwaccelerated
 
 GTEST_MAIN_RUN_ALL_TESTS()

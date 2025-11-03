@@ -6,10 +6,12 @@
 #include <vespa/vespalib/util/bfloat16.h>
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <initializer_list>
 #include <span>
 #include <vector>
 #include <string>
+#include <string_view>
 
 namespace vespalib::hwaccelerated::dispatch {
 
@@ -131,10 +133,18 @@ struct FnTable {
         return fn_target_infos[static_cast<size_t>(fn_id)];
     }
 
+    // Invokes `callback` with the FnId of each non-nullptr function pointer in this
+    // function table.
+    void for_each_present_fn(const std::function<void(FnId)>& callback) const;
+
     [[nodiscard]] std::string to_string() const;
 
     // Returns true iff all function pointers are non-nullptr
     [[nodiscard]] bool is_complete() const noexcept;
+
+    // Returns a static string containing the name of the function field for a valid
+    // FnId. Example: FnId::DOT_PRODUCT_I8 -> "dot_product_i8"
+    [[nodiscard]] static std::string_view id_to_fn_name(FnId id) noexcept;
 };
 
 // Cheeky function table macro that can be used to avoid having to remember to update
