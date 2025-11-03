@@ -64,13 +64,20 @@ SingleRawAttribute::onCommit()
             context->compact(std::span<AtomicEntryRef>(&_ref_vector[0], _ref_vector.size()));
         }
         incGeneration();
-        updateStat(true);
+        updateStat(CommitParam::UpdateStats::FORCE);
     }
 }
 
 void
-SingleRawAttribute::onUpdateStat()
+SingleRawAttribute::onUpdateStat(CommitParam::UpdateStats updateStats)
 {
+    if (updateStats == CommitParam::UpdateStats::SKIP) {
+        return;
+    }
+    if (updateStats == CommitParam::UpdateStats::SIZES_ONLY) {
+        this->updateSizes(_ref_vector.size(), _ref_vector.size());
+        return;
+    }
     vespalib::MemoryUsage total = update_stat();
     this->updateStatistics(_ref_vector.size(),
                            _ref_vector.size(),

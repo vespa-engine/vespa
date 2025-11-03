@@ -79,7 +79,8 @@ AttributePopulator::handleExisting(uint32_t lid, const std::shared_ptr<document:
     search::SerialNum serialNum(nextSerialNum());
     _writer.put(serialNum, *doc, lid, std::make_shared<PopulateDoneContext>(doc));
     vespalib::Gate gate;
-    _writer.forceCommit(serialNum, std::make_shared<vespalib::GateCallback>(gate));
+    search::CommitParam commit_param(serialNum, search::CommitParam::UpdateStats::SKIP);
+    _writer.forceCommit(commit_param, std::make_shared<vespalib::GateCallback>(gate));
     gate.await();
 }
 

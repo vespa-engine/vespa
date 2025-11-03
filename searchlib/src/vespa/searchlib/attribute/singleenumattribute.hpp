@@ -102,29 +102,36 @@ SingleValueEnumAttribute<B>::onCommit()
         remapper->done();
         remapper.reset();
         this->incGeneration();
-        this->updateStat(true);
+        this->updateStat(CommitParam::UpdateStats::FORCE);
     }
     if (this->_enumStore.consider_compact_dictionary(this->getConfig().getCompactionStrategy())) {
         this->incGeneration();
-        this->updateStat(true);
+        this->updateStat(CommitParam::UpdateStats::FORCE);
     }
     auto *pab = this->getIPostingListAttributeBase();
     if (pab != nullptr) {
         if (pab->consider_compact_worst_btree_nodes(this->getConfig().getCompactionStrategy())) {
             this->incGeneration();
-            this->updateStat(true);
+            this->updateStat(CommitParam::UpdateStats::FORCE);
         }
         if (pab->consider_compact_worst_buffers(this->getConfig().getCompactionStrategy())) {
             this->incGeneration();
-            this->updateStat(true);
+            this->updateStat(CommitParam::UpdateStats::FORCE);
         }
     }
 }
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::onUpdateStat()
+SingleValueEnumAttribute<B>::onUpdateStat(CommitParam::UpdateStats updateStats)
 {
+    if (updateStats == CommitParam::UpdateStats::SKIP) {
+        return;
+    }
+    if (updateStats == CommitParam::UpdateStats::SIZES_ONLY) {
+        this->updateSizes(_enumIndices.size(), this->_enumStore.get_num_uniques());
+        return;
+    }
     // update statistics
     vespalib::MemoryUsage total = _enumIndices.getMemoryUsage();
     auto& compaction_strategy = this->getConfig().getCompactionStrategy();

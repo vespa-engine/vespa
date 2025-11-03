@@ -210,7 +210,7 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
         return false;
     } else {
         attr->set_reserved_doc_values();
-        attr->commit(CommitParam(serialNum));
+        attr->commit(CommitParam(serialNum, CommitParam::UpdateStats::SKIP));
         EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), timer.elapsed());
         MemoryUsageLogger::log("finish load attribute", label);
     }
@@ -233,7 +233,7 @@ AttributeInitializer::setupEmptyAttribute(AttributeVectorSP &attr, search::Seria
     }
     LOG(info, "Returning empty attribute vector for '%s'", attr->getBaseFileName().c_str());
     _factory.setupEmpty(attr, _currentSerialNum);
-    attr->commit(CommitParam(serialNum));
+    attr->commit(CommitParam(serialNum, CommitParam::UpdateStats::SKIP));
 }
 
 AttributeVector::SP

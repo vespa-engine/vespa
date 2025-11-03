@@ -346,7 +346,7 @@ TEST(AttributeFlushTest, require_that_flushable_attribute_manages_sync_token_inf
     EXPECT_TRUE(fa->initFlush(0, std::make_shared<search::FlushToken>()).get() == nullptr);
     EXPECT_TRUE(!info.load());
 
-    av->commit(CommitParam(10)); // last sync token = 10
+    av->commit(CommitParam(10, CommitParam::UpdateStats::SKIP)); // last sync token = 10
     EXPECT_EQ(0u, fa->getFlushedSerialNum());
     EXPECT_TRUE(fa->initFlush(10, std::make_shared<search::FlushToken>()).get() != nullptr);
     fa->initFlush(10, std::make_shared<search::FlushToken>())->run();
@@ -356,7 +356,7 @@ TEST(AttributeFlushTest, require_that_flushable_attribute_manages_sync_token_inf
     EXPECT_TRUE(info.snapshots()[0].valid);
     EXPECT_EQ(10u, info.snapshots()[0].syncToken);
 
-    av->commit(CommitParam(20)); // last sync token = 20
+    av->commit(CommitParam(20, CommitParam::UpdateStats::SKIP)); // last sync token = 20
     EXPECT_EQ(10u, fa->getFlushedSerialNum());
     fa->initFlush(20, std::make_shared<search::FlushToken>())->run();
     EXPECT_EQ(20u, fa->getFlushedSerialNum());
@@ -385,7 +385,7 @@ TEST(AttributeFlushTest, require_that_cleanup_is_performed_after_flush)
     Fixture f;
     AttributeVector::SP av = f.addAttribute("a6");
     av->addDocs(1);
-    av->commit(CommitParam(30));
+    av->commit(CommitParam(30, CommitParam::UpdateStats::SKIP));
 
     // fake up some snapshots
     std::string base = "flush/a6";
@@ -419,7 +419,7 @@ TEST(AttributeFlushTest, require_that_flush_stats_are_updated)
     AttributeManager &am = f._m;
     AttributeVector::SP av = f.addAttribute("a7");
     av->addDocs(1);
-    av->commit(CommitParam(100));
+    av->commit(CommitParam(100, CommitParam::UpdateStats::SKIP));
     IFlushTarget::SP ft = am.getFlushable("a7");
     ft->initFlush(101, std::make_shared<search::FlushToken>())->run();
     FlushStats stats = ft->getLastFlushStats();
@@ -433,13 +433,13 @@ TEST(AttributeFlushTest, require_that_only_one_flusher_can_run_at_the_same_time)
     AttributeManager &am = f._m;
     AttributeVector::SP av = f.addAttribute("a8");
     av->addDocs(10000);
-    av->commit(CommitParam(9));
+    av->commit(CommitParam(9, CommitParam::UpdateStats::SKIP));
     IFlushTarget::SP ft = am.getFlushable("a8");
     (static_cast<FlushableAttribute *>(ft.get()))->setCleanUpAfterFlush(false);
     vespalib::ThreadStackExecutor exec(16);
 
     for (size_t i = 10; i < 100; ++i) {
-        av->commit(CommitParam(i));
+        av->commit(CommitParam(i, CommitParam::UpdateStats::SKIP));
         vespalib::Executor::Task::UP task = ft->initFlush(i, std::make_shared<search::FlushToken>());
         if (task) {
             exec.execute(std::move(task));
@@ -509,7 +509,7 @@ TEST(AttributeFlushTest, require_that_shrink_works)
     AttributeWriter aw(f._msp);
     
     av->addDocs(1000 - av->getNumDocs());
-    av->commit(CommitParam(50));
+    av->commit(CommitParam(50, CommitParam::UpdateStats::SKIP));
     IFlushTarget::SP ft = am.getShrinker("a10");
     EXPECT_EQ(ft->getApproxMemoryGain().getBefore(),
               ft->getApproxMemoryGain().getAfter());

@@ -87,7 +87,7 @@ populate_attribute(AttributeType& attr, const std::vector<DataType>& values)
         attr.update(40, values[4]);
         attr.update(41, values[5]);
     }
-    attr.commit(true);
+    attr.commit(CommitParam::UpdateStats::FORCE);
 }
 
 std::shared_ptr<AttributeVector>

@@ -23,7 +23,7 @@ public:
     void onCommit() override;
     bool addDoc(DocId & doc) override;
     void onAddDocs(DocId docIdLimit) override;
-    void onUpdateStat() override;
+    void onUpdateStat(CommitParam::UpdateStats updateStats) override;
     bool onLoad(vespalib::Executor *executor) override;
     void onSave(IAttributeSaveTarget &saveTarget) override;
     void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;

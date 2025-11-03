@@ -34,6 +34,7 @@ using search::AttributeFactory;
 using search::AttributeVector;
 using search::AttributeMemoryFileBufferWriter;
 using search::BufferWriter;
+using search::CommitParam;
 using search::FloatingPointAttribute;
 using search::IAttributeFileWriter;
 using search::IntegerAttribute;
@@ -130,7 +131,7 @@ public:
     }
 
     bool bufEqual(const Buffer &lhs, const Buffer &rhs) const;
- 
+
     bool operator==(const MemAttr &rhs) const;
 
     uint64_t size_on_disk() const noexcept override { return 0; }
@@ -324,7 +325,7 @@ MemAttr::bufEqual(const Buffer &lhs, const Buffer &rhs) const
     EXPECT_TRUE(vespalib::memcmp_safe(lhs->getData(), rhs->getData(), lhs->getDataLen()) == 0) << (success = false, "");
     return success;
 }
- 
+
 bool
 MemAttr::operator==(const MemAttr &rhs) const
 {
@@ -356,7 +357,7 @@ EnumeratedSaveTest::addDocs(const AttributePtr &v, size_t sz)
         }
         EXPECT_TRUE( docId+1 == sz );
         EXPECT_TRUE( v->getNumDocs() == sz );
-        v->commit(true);
+        v->commit(CommitParam::UpdateStats::FORCE);
     }
 }
 
@@ -801,7 +802,7 @@ EnumeratedSaveTest::testReload(AttributePtr v0,
     bool supportsEnumerated = (fastSearch ||
                                cfg.basicType() == BasicType::STRING) &&
                               !flagAttr;
-    
+
 
     Config check_cfg(cfg);
     check_cfg.setFastSearch(fastSearch);
@@ -874,7 +875,7 @@ EnumeratedSaveTest::test(BasicType bt, CollectionType ct,
     MemAttr::SP mv0 = saveMem(*v0);
     MemAttr::SP mv1 = saveMem(*v1);
     MemAttr::SP mv2 = saveMem(*v2);
-    
+
     MemAttr::SP emv0 = saveBoth(v0);
     MemAttr::SP emv1 = saveBoth(v1);
     MemAttr::SP emv2 = saveBoth(v2);

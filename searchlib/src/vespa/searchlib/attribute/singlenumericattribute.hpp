@@ -62,13 +62,17 @@ SingleValueNumericAttribute<B>::onCommit()
 
 template <typename B>
 void
-SingleValueNumericAttribute<B>::onUpdateStat()
+SingleValueNumericAttribute<B>::onUpdateStat(CommitParam::UpdateStats updateStats)
 {
-    vespalib::MemoryUsage usage = _data.getMemoryUsage();
-    usage.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
-    usage.merge(this->getChangeVectorMemoryUsage());
-    this->updateStatistics(_data.size(), _data.size(),
-                           usage.allocatedBytes(), usage.usedBytes(), usage.deadBytes(), usage.allocatedBytesOnHold());
+    if (updateStats == CommitParam::UpdateStats::SIZES_ONLY) {
+        this->updateSizes(_data.size(), _data.size());
+    } else if (updateStats == CommitParam::UpdateStats::FORCE) {
+        vespalib::MemoryUsage usage = _data.getMemoryUsage();
+        usage.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
+        usage.merge(this->getChangeVectorMemoryUsage());
+        this->updateStatistics(_data.size(), _data.size(),
+                               usage.allocatedBytes(), usage.usedBytes(), usage.deadBytes(), usage.allocatedBytesOnHold());
+    }
 }
 
 template <typename B>

@@ -114,7 +114,7 @@ void
 forceCommitAndWait(IFeedView & feedView, SerialNum serialNum, T keepAlive) {
     vespalib::Gate gate;
     using Keep = vespalib::KeepAlive<std::pair<T, std::shared_ptr<IDestructorCallback>>>;
-    feedView.forceCommit(CommitParam(serialNum),
+    feedView.forceCommit(CommitParam(serialNum, CommitParam::UpdateStats::SKIP),
                           std::make_shared<Keep>(std::make_pair(std::move(keepAlive), std::make_shared<GateCallback>(gate))));
     gate.await();
 }
@@ -381,7 +381,7 @@ DocumentDB::enterOnlineState()
     // Called by executor thread
     assert(_writeService.master().isCurrentThread());
     // Ensure that all replayed operations are committed to memory structures
-    _feedView.get()->forceCommitAndWait(CommitParam(_feedHandler->getSerialNum()));
+    _feedView.get()->forceCommitAndWait(CommitParam(_feedHandler->getSerialNum(), CommitParam::UpdateStats::SKIP));
 
     (void) _state->enterOnlineState();
     // Consider delayed pruning of transaction log and config history
@@ -550,7 +550,7 @@ DocumentDB::close()
     // Abort any ongoing maintenance
     stopMaintenance();
     masterExecute([this]() {
-        _feedView.get()->forceCommitAndWait(search::CommitParam(getCurrentSerialNumber()));
+        _feedView.get()->forceCommitAndWait(search::CommitParam(getCurrentSerialNumber(), search::CommitParam::UpdateStats::SKIP));
         tearDownReferences();
     });
     _writeService.master().sync();
@@ -559,7 +559,7 @@ DocumentDB::close()
     _refCount.waitForZeroRefCount();
 
     masterExecute([this] () {
-        _feedView.get()->forceCommitAndWait(search::CommitParam(getCurrentSerialNumber()));
+        _feedView.get()->forceCommitAndWait(search::CommitParam(getCurrentSerialNumber(), search::CommitParam::UpdateStats::SKIP));
     });
     _writeService.master().sync();
 

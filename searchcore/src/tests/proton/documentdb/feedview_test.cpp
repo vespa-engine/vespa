@@ -46,6 +46,7 @@ using document::StringFieldValue;
 using proton::matching::SessionManager;
 using proton::test::MockGidToLidChangeHandler;
 using search::AttributeVector;
+using search::CommitParam;
 using search::DocumentMetaData;
 using vespalib::IDestructorCallback;
 using vespalib::Gate;
@@ -630,7 +631,8 @@ struct FixtureBase
     }
 
     void performForceCommit(IDestructorCallback::SP onDone) {
-        getFeedView().forceCommit(serial, std::move(onDone));
+        CommitParam commit_param(serial, CommitParam::UpdateStats::SKIP);
+        getFeedView().forceCommit(commit_param, std::move(onDone));
     }
     void forceCommitAndWait() {
         Gate gate;
@@ -664,7 +666,7 @@ struct FixtureBase
     uint32_t get_notified_lid(document::GlobalId gid) { return _gidToLidChangeHandler->get_lid(gid); }
     void populateBeforeCompactLidSpace();
 
-    void dms_commit() { _dmsc->get().commit(search::CommitParam(serial)); }
+    void dms_commit() { _dmsc->get().commit(search::CommitParam(serial, search::CommitParam::UpdateStats::SKIP)); }
 };
 
 

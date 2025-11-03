@@ -59,7 +59,7 @@ TensorExtAttribute::onCommit()
 }
 
 void
-TensorExtAttribute::onUpdateStat()
+TensorExtAttribute::onUpdateStat(CommitParam::UpdateStats)
 {
 }
 

@@ -83,4 +83,11 @@ Status::updateStatistics(uint64_t numValues, uint64_t numUniqueValue, uint64_t a
     store_relaxed(_onHoldMax,       std::max(load_relaxed(_onHoldMax), onHold));
 }
 
+void
+Status::updateSizes(uint64_t numValues, uint64_t numUniqueValue)
+{
+    store_relaxed(_numValues,       numValues);
+    store_relaxed(_numUniqueValues, numUniqueValue);
+}
+
 }

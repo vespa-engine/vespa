@@ -106,7 +106,7 @@ make_attribute(const Config& cfg, std::string_view field_name, uint32_t num_docs
             populate_attribute<IntegerAttribute, false, false>(real, docid_limit, hit_specs, disjunct_terms);
         }
     }
-    attr->commit(true);
+    attr->commit(CommitParam::UpdateStats::FORCE);
     return attr;
 }
 

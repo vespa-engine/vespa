@@ -12,8 +12,8 @@ namespace search {
 class CommitParam
 {
 public:
-    enum class UpdateStats { SKIP, FORCE};
-    CommitParam(SerialNum serialNum) noexcept : CommitParam(serialNum, UpdateStats::SKIP) {}
+    enum class UpdateStats { SKIP, FORCE, SIZES_ONLY };
+ // explicit CommitParam(SerialNum serialNum) noexcept : CommitParam(serialNum, UpdateStats::SKIP) {}
     CommitParam(SerialNum serialNum, UpdateStats updateStats) noexcept : CommitParam(serialNum, serialNum, updateStats) {}
     CommitParam(SerialNum firstSerialNum, SerialNum lastSerialNum, UpdateStats updateStats) noexcept
         : _firstSerialNum(firstSerialNum),
@@ -21,7 +21,7 @@ public:
           _updateStats(updateStats)
     {}
 
-    bool forceUpdateStats() const { return _updateStats == UpdateStats::FORCE; }
+    UpdateStats getUpdateStats() const { return _updateStats; }
     SerialNum firstSerialNum() const { return _firstSerialNum; }
     SerialNum lastSerialNum() const { return _lastSerialNum; }
 

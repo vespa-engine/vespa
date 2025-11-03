@@ -4,6 +4,7 @@
 #include <vespa/searchlib/attribute/multi_value_mapping.hpp>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/searchlib/attribute/save_utils.h>
+#include <vespa/searchlib/common/commit_param.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/hash_set.h>
@@ -15,6 +16,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("multivaluemapping_test");
 
+using search::CommitParam;
 using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::CompactionSpec;
 using vespalib::datastore::CompactionStrategy;
@@ -35,7 +37,7 @@ class MyAttribute : public search::NotImplementedAttribute
     using ConstArrayRef = std::span<const MultiValueType>;
     MvMapping &_mvMapping;
     void onCommit() override { }
-    void onUpdateStat() override { }
+    void onUpdateStat(CommitParam::UpdateStats) override { }
     void onShrinkLidSpace() override {
         uint32_t committedDocIdLimit = getCommittedDocIdLimit();
         _mvMapping.shrink(committedDocIdLimit);

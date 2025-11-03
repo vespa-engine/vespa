@@ -310,11 +310,12 @@ public:
                               Timestamp(0u), docSize, lid, 0u));
         LOG_ASSERT(putRes.ok());
         uint64_t serialNum = _ddb->getFeedHandler().inc_serial_num();
-        dms.commit(CommitParam(serialNum));
+        dms.commit(CommitParam(serialNum, CommitParam::UpdateStats::SKIP));
         _aw->put(serialNum, doc, lid, std::shared_ptr<IDestructorCallback>());
         {
             vespalib::Gate gate;
-            _aw->forceCommit(serialNum, std::make_shared<GateCallback>(gate));
+            CommitParam commit_param(serialNum, CommitParam::UpdateStats::SKIP);
+            _aw->forceCommit(commit_param, std::make_shared<GateCallback>(gate));
             gate.await();
         }
         _sa->put(serialNum, lid, doc);

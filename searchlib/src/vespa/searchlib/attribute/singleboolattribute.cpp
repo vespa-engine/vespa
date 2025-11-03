@@ -92,7 +92,14 @@ SingleBoolAttribute::onAddDocs(DocId docIdLimit) {
 }
 
 void
-SingleBoolAttribute::onUpdateStat() {
+SingleBoolAttribute::onUpdateStat(CommitParam::UpdateStats updateStats) {
+    if (updateStats == CommitParam::UpdateStats::SKIP) {
+        return;
+    }
+    if (updateStats == CommitParam::UpdateStats::SIZES_ONLY) {
+        this->updateSizes(_bv.writer().size(), _bv.writer().size());
+        return;
+    }
     vespalib::MemoryUsage usage;
     usage.setAllocatedBytes(_bv.writer().extraByteSize());
     usage.setUsedBytes(_bv.writer().sizeBytes());

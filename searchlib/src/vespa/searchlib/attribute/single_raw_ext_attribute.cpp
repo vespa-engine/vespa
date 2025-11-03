@@ -25,7 +25,7 @@ SingleRawExtAttribute::onCommit()
 }
 
 void
-SingleRawExtAttribute::onUpdateStat()
+SingleRawExtAttribute::onUpdateStat(CommitParam::UpdateStats)
 {
 }
 

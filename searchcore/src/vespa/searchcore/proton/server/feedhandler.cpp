@@ -306,7 +306,7 @@ void
 FeedHandler::performEof()
 {
     assert(_writeService.master().isCurrentThread());
-    _activeFeedView->forceCommitAndWait(CommitParam(load_relaxed(_serialNum)));
+    _activeFeedView->forceCommitAndWait(CommitParam(load_relaxed(_serialNum), CommitParam::UpdateStats::SKIP));
     LOG(debug, "Visiting done for transaction log domain '%s', eof received", _tlsMgr.getDomainName().c_str());
     // Replay must be complete
     if (_replay_end_serial_num != load_relaxed(_serialNum)) {
@@ -330,7 +330,7 @@ FeedHandler::performFlushDone(SerialNum flushedSerial)
     // pretends to have been flushed at resurrect time.
     if (flushedSerial <= _prunedSerialNum) {
         return;                                // Cannot unprune.
-    } 
+    }
     if (!_owner.getAllowPrune()) {
         _prunedSerialNum = flushedSerial;
         _delayedPrune = true;
@@ -549,7 +549,7 @@ FeedHandler::initiateCommit(vespalib::steady_time start_time) {
     if (_activeFeedView) {
         using KeepAlivePair = vespalib::KeepAlive<std::pair<CommitResult, DoneCallback>>;
         auto pair = std::make_pair(std::move(commitResult), std::move(onCommitDoneContext));
-        _activeFeedView->forceCommit(CommitParam(load_relaxed(_serialNum), CommitParam::UpdateStats::SKIP), std::make_shared<KeepAlivePair>(std::move(pair)));
+        _activeFeedView->forceCommit(CommitParam(load_relaxed(_serialNum), CommitParam::UpdateStats::SIZES_ONLY), std::make_shared<KeepAlivePair>(std::move(pair)));
     }
 }
 
@@ -761,7 +761,7 @@ FeedHandler::syncTls(SerialNum syncTo)
     SerialNum syncedTo(_tlsWriter->sync(syncTo));
     {
         std::lock_guard<std::mutex> guard(_syncLock);
-        if (_syncedSerialNum < syncedTo) 
+        if (_syncedSerialNum < syncedTo)
             _syncedSerialNum = syncedTo;
     }
 }

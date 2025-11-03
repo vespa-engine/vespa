@@ -61,14 +61,14 @@ struct PredicateBlueprintTest : public ::testing::Test {
         index().indexEmptyDocument(doc_id);
         setIntervalRange(doc_id, ir);
         predicate().updateMaxIntervalRange(ir);
-        predicate().commit(false);
+        predicate().commit(CommitParam::UpdateStats::SKIP);
     }
     void indexDocument(uint32_t doc_id, const PredicateTreeAnnotations &annotations, IntervalRange ir = 0xffff) {
         resize(doc_id);
         index().indexDocument(doc_id, annotations);
         setIntervalRange(doc_id, ir);
         predicate().updateMaxIntervalRange(ir);
-        predicate().commit(false);
+        predicate().commit(CommitParam::UpdateStats::SKIP);
     }
 };
 

@@ -309,7 +309,8 @@ MyDocumentSubDB::handlePruneRemovedDocuments(const PruneRemovedDocumentsOperatio
     const LidVector &lidsToRemove(lidCtx.getLidVector());
     _metaStore.removeBatch(lidsToRemove, lidCtx.getDocIdLimit());
     _metaStore.removes_complete(lidsToRemove);
-    _metaStore.commit(serialNum);
+    CommitParam commit_param(serialNum, CommitParam::UpdateStats::SKIP);
+    _metaStore.commit(commit_param);
     for (auto lid : lidsToRemove) {
         _docs.erase(lid);
     }
@@ -356,7 +357,7 @@ MyDocumentSubDB::handleRemove(RemoveOperationWithDocId &op)
         needCommit = true;
     }
     if (needCommit) {
-        _metaStore.commit(CommitParam(serialNum));
+        _metaStore.commit(CommitParam(serialNum, CommitParam::UpdateStats::SKIP));
     }
 }
 
@@ -410,7 +411,7 @@ MyDocumentSubDB::handleMove(const MoveOperation &op)
         needCommit = true;
     }
     if (needCommit) {
-        _metaStore.commit(CommitParam(serialNum));
+        _metaStore.commit(CommitParam(serialNum, CommitParam::UpdateStats::SKIP));
     }
 }
 

@@ -12,12 +12,13 @@
 #include <vespa/log/log.h>
 LOG_SETUP("enum_attribute_compaction_test");
 
+using search::AttributeVector;
+using search::CommitParam;
 using search::IntegerAttribute;
 using search::StringAttribute;
-using search::AttributeVector;
-using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
+using search::attribute::Config;
 using EnumHandle = search::attribute::IAttributeVector::EnumHandle;
 
 template <typename VectorType> struct TestData;
@@ -193,7 +194,7 @@ CompactionTest<VectorType>::test_enum_store_compaction()
     uint32_t last_cleared_doc_id = 0;
     for (doc_id = 1; doc_id < doc_count; doc_id += 2) {
         _v->clearDoc(doc_id);
-        _v->commit(true);
+        _v->commit(CommitParam::UpdateStats::FORCE);
         enum_handles[doc_id] = enum_handles[0];
         last_cleared_doc_id = doc_id;
         if (count_changed_enum_handles(enum_handles, canary_stride) != 0) {

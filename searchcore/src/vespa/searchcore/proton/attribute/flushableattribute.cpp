@@ -64,7 +64,7 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncT
       _syncToken(syncToken),
       _flushFile("")
 {
-    fattr._attr->commit(CommitParam(syncToken));
+    fattr._attr->commit(CommitParam(syncToken, CommitParam::UpdateStats::SKIP));
     AttributeVector &attr = *_fattr._attr;
     // Called by attribute field writer executor
     _flushFile = writer.getSnapshotDir(_syncToken) + "/" + attr.getName();

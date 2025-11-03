@@ -71,13 +71,20 @@ MultiValueNumericAttribute<B, M>::onCommit()
     this->_changes.clear();
     if (this->_mvMapping.consider_compact(this->getConfig().getCompactionStrategy())) {
         this->incGeneration();
-        this->updateStat(true);
+        this->updateStat(CommitParam::UpdateStats::FORCE);
     }
 }
 
 template <typename B, typename M>
-void MultiValueNumericAttribute<B, M>::onUpdateStat()
+void MultiValueNumericAttribute<B, M>::onUpdateStat(CommitParam::UpdateStats updateStats)
 {
+    if (updateStats == CommitParam::UpdateStats::SKIP) {
+        return;
+    }
+    if (updateStats == CommitParam::UpdateStats::SIZES_ONLY) {
+        this->updateSizes(this->_mvMapping.getTotalValueCnt(), this->_mvMapping.getTotalValueCnt());
+        return;
+    }
     auto& compaction_strategy = this->getConfig().getCompactionStrategy();
     vespalib::MemoryUsage usage = this->_mvMapping.update_stat(compaction_strategy);
     usage.merge(this->getChangeVectorMemoryUsage());

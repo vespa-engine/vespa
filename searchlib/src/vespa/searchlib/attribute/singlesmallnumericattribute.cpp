@@ -94,11 +94,18 @@ SingleValueSmallNumericAttribute::addDoc(DocId & doc) {
 }
 
 void
-SingleValueSmallNumericAttribute::onUpdateStat()
+SingleValueSmallNumericAttribute::onUpdateStat(CommitParam::UpdateStats updateStats)
 {
+    if (updateStats == CommitParam::UpdateStats::SKIP) {
+        return;
+    }
+    uint32_t numDocs = B::getNumDocs();
+    if (updateStats == CommitParam::UpdateStats::SIZES_ONLY) {
+        updateSizes(numDocs, numDocs);
+        return;
+    }
     vespalib::MemoryUsage usage = _wordData.getMemoryUsage();
     usage.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
-    uint32_t numDocs = B::getNumDocs();
     updateStatistics(numDocs, numDocs,
                      usage.allocatedBytes(), usage.usedBytes(),
                      usage.deadBytes(), usage.allocatedBytesOnHold());

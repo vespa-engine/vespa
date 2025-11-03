@@ -78,7 +78,7 @@ make_memory_allocator(const std::string& name, const search::attribute::Config& 
 
 bool
 exists(std::string_view name) {
-    return fs::exists(fs::path(name)); 
+    return fs::exists(fs::path(name));
 }
 
 }
@@ -111,12 +111,12 @@ AttributeVector::AttributeVector(std::string_view baseFileName, const Config &c)
 AttributeVector::~AttributeVector() = default;
 
 void
-AttributeVector::updateStat(bool force) {
-    if (force) {
-        onUpdateStat();
-    } else if (_nextStatUpdateTime < vespalib::steady_clock::now()) {
-        onUpdateStat();
+AttributeVector::updateStat(CommitParam::UpdateStats updateStats) {
+    if (_nextStatUpdateTime < vespalib::steady_clock::now()) {
+        onUpdateStat(CommitParam::UpdateStats::FORCE);
         _nextStatUpdateTime = vespalib::steady_clock::now() + 5s;
+    } else if (updateStats != CommitParam::UpdateStats::SKIP) {
+        onUpdateStat(updateStats);
     }
 }
 
@@ -142,11 +142,11 @@ AttributeVector::isEnumerated(const vespalib::GenericHeader &header)
 }
 
 void
-AttributeVector::commit(bool forceUpdateStats)
+AttributeVector::commit(CommitParam::UpdateStats updateStats)
 {
     onCommit();
     updateCommittedDocIdLimit();
-    updateStat(forceUpdateStats);
+    updateStat(updateStats);
     _loaded = true;
 }
 
@@ -158,7 +158,7 @@ AttributeVector::commit(const CommitParam & param)
             getStatus().getLastSyncToken(), param.firstSerialNum());
         LOG_ABORT("should not be reached");
     }
-    commit(param.forceUpdateStats());
+    commit(param.getUpdateStats());
     _status.setLastSyncToken(param.lastSerialNum());
 }
 
@@ -204,6 +204,12 @@ AttributeVector::updateStatistics(uint64_t numValues, uint64_t numUniqueValue, u
     _status.updateStatistics(numValues, numUniqueValue, allocated, used, dead, onHold);
 }
 
+void
+AttributeVector::updateSizes(uint64_t numValues, uint64_t numUniqueValue)
+{
+    _status.updateSizes(numValues, numUniqueValue);
+}
+
 vespalib::MemoryUsage
 AttributeVector::getEnumStoreValuesMemoryUsage() const
 {
@@ -238,9 +244,9 @@ AttributeVector::headerTypeOK(const vespalib::GenericHeader &header) const
     return header.hasTag(dataTypeTag) &&
         header.hasTag(collectionTypeTag) &&
         header.hasTag(docIdLimitTag) &&
-        header.getTag(dataTypeTag).asString() == 
+        header.getTag(dataTypeTag).asString() ==
         getConfig().basicType().asString() &&
-        header.getTag(collectionTypeTag).asString() == 
+        header.getTag(collectionTypeTag).asString() ==
         getConfig().collectionType().asString();
 }
 
@@ -347,7 +353,7 @@ AttributeVector::isEnumeratedSaveFormat() const
                                                 datFile.GetFileName()));
     }
     datHeader.readFile(datFile);
-    
+
     return isEnumerated(datHeader);
 }
 
@@ -364,7 +370,7 @@ AttributeVector::load(vespalib::Executor * executor) {
     if (loaded) {
         commit();
         incGeneration();
-        updateStat(true);
+        updateStat(CommitParam::UpdateStats::FORCE);
         _initialization_status->end_loading();
     }
     _loaded = loaded;
@@ -508,7 +514,7 @@ AttributeVector::shrinkLidSpace()
         pab->forwardedShrinkLidSpace(committed_doc_id_limit);
     }
     incGeneration();
-    updateStat(true);
+    updateStat(CommitParam::UpdateStats::FORCE);
 }
 
 void AttributeVector::onShrinkLidSpace() {}
@@ -694,7 +700,7 @@ bool
 AttributeVector::commitIfChangeVectorTooLarge() {
     bool needCommit = getChangeVectorMemoryUsage().usedBytes() > getConfig().getMaxUnCommittedMemory();
     if (needCommit) {
-        commit(false);
+        commit(CommitParam::UpdateStats::SKIP);
     }
     return needCommit;
 }
@@ -716,7 +722,7 @@ AttributeVector::drain_hold(uint64_t hold_limit)
     incGeneration();
     for (int retry = 0; retry < 40; ++retry) {
         reclaim_unused_memory();
-        updateStat(true);
+        updateStat(CommitParam::UpdateStats::FORCE);
         if (_status.getOnHold() <= hold_limit) {
             return;
         }
@@ -727,14 +733,14 @@ AttributeVector::drain_hold(uint64_t hold_limit)
 void
 AttributeVector::update_config(const Config& cfg)
 {
-    commit(true);
+    commit(CommitParam::UpdateStats::FORCE);
     _config->setGrowStrategy(cfg.getGrowStrategy());
     if (cfg.getCompactionStrategy() == _config->getCompactionStrategy()) {
         return;
     }
     drain_hold(1_Mi); // Wait until 1MiB or less on hold
     _config->setCompactionStrategy(cfg.getCompactionStrategy());
-    updateStat(true);
+    updateStat(CommitParam::UpdateStats::FORCE);
     commit(); // might trigger compaction
     drain_hold(1_Mi); // Wait until 1MiB or less on hold
 }
