@@ -3,9 +3,9 @@ package com.yahoo.vespa.model.content.engines;
 
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.model.content.StorageNode;
-import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
 public class DummyPersistence extends PersistenceEngine {
+
     public DummyPersistence(StorageNode parent) {
         super(parent, "provider");
     }
@@ -22,9 +22,5 @@ public class DummyPersistence extends PersistenceEngine {
             return new DummyPersistence(storageNode);
         }
 
-        @Override
-        public ContentCluster.DistributionMode getDefaultDistributionMode() {
-            return ContentCluster.DistributionMode.LOOSE;
-        }
     }
 }

@@ -20,7 +20,9 @@ public abstract class PersistenceEngine extends TreeConfigProducer<AnyConfigProd
 
         PersistenceEngine create(StorageNode storageNode);
 
-        ContentCluster.DistributionMode getDefaultDistributionMode();
+        default ContentCluster.DistributionMode getDefaultDistributionMode() {
+            return ContentCluster.DistributionMode.LOOSE;
+        }
 
     }
 

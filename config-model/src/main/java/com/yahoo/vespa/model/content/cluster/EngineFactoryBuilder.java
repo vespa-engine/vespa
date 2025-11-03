@@ -19,12 +19,12 @@ public class EngineFactoryBuilder {
             }
 
             if (persistence.child("proton") != null) {
-                return new ProtonEngine.Factory(contentSearchCluster);
+                return new ProtonEngine.Factory();
             } else if (persistence.child("dummy") != null) {
                 return new DummyPersistence.Factory();
             }
         }
 
-        return new ProtonEngine.Factory(contentSearchCluster);
+        return new ProtonEngine.Factory();
     }
 }
