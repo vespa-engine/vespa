@@ -63,7 +63,7 @@ public:
     MultiValueEnumAttribute(const std::string & baseFileName, const AttributeVector::Config & cfg);
 
     void onCommit() override;
-    void onUpdateStat() override;
+    void onUpdateStat(CommitParam::UpdateStats updateStats) override;
 
     void reclaim_memory(generation_t oldest_used_gen) override;
     void before_inc_generation(generation_t current_gen) override;

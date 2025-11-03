@@ -45,7 +45,7 @@ protected:
 
     bool findEnum(BaseType value, EnumHandle & e) const override;
     void onCommit() override;
-    void onUpdateStat() override { }
+    void onUpdateStat(CommitParam::UpdateStats) override { }
     bool addDoc(DocId & ) override;
 
     std::vector<BaseType>   _data;
@@ -148,7 +148,7 @@ protected:
     bool findEnum(const char * value, EnumHandle & e) const override;
     std::vector<EnumHandle> findFoldedEnums(const char *) const override;
     void onCommit() override;
-    void onUpdateStat() override { }
+    void onUpdateStat(CommitParam::UpdateStats) override { }
     bool addDoc(DocId & ) override;
 
 protected:

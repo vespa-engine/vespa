@@ -901,7 +901,7 @@ struct DocumentHandler
         _f.runInMaster([&]() {
             feedView->preparePut(op);
             feedView->handlePut(FeedToken(), op);
-            feedView->forceCommit(CommitParam(op.getSerialNum()), std::make_shared<vespalib::GateCallback>(gate));
+            feedView->forceCommit(CommitParam(op.getSerialNum(), CommitParam::UpdateStats::SKIP), std::make_shared<vespalib::GateCallback>(gate));
         });
         gate.await();
     }
@@ -911,7 +911,7 @@ struct DocumentHandler
         _f.runInMaster([&]() {
             auto onDone = std::make_shared<vespalib::GateCallback>(gate);
             feedView->handleMove(op, onDone);
-            feedView->forceCommit(CommitParam(op.getSerialNum()), onDone);
+            feedView->forceCommit(CommitParam(op.getSerialNum(), CommitParam::UpdateStats::SKIP), onDone);
         });
         gate.await();
     }
@@ -922,7 +922,7 @@ struct DocumentHandler
         _f.runInMaster([&]() {
             feedView->prepareRemove(op);
             feedView->handleRemove(FeedToken(), op);
-            feedView->forceCommit(CommitParam(op.getSerialNum()), std::make_shared<vespalib::GateCallback>(gate));
+            feedView->forceCommit(CommitParam(op.getSerialNum(), CommitParam::UpdateStats::SKIP), std::make_shared<vespalib::GateCallback>(gate));
         });
         gate.await();
     }

@@ -770,7 +770,7 @@ StoreOnlyFeedView::heartBeat(SerialNum serialNum, const DoneCallback& onDone)
 {
     assert(_writeService.master().isCurrentThread());
     _metaStore.reclaim_unused_memory();
-    _metaStore.commit(CommitParam(serialNum));
+    _metaStore.commit(CommitParam(serialNum, CommitParam::UpdateStats::SKIP));
     heartBeatSummary(serialNum, onDone);
     heartBeatIndexedFields(serialNum, onDone);
     heartBeatAttributes(serialNum, onDone);
@@ -802,7 +802,7 @@ StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, con
                                                                 _gidToLidChangeHandler.grab_pending_changes(),
                                                                 onDone));
         commitContext->holdUnblockShrinkLidSpace();
-        internalForceCommit(CommitParam(serialNum), commitContext);
+        internalForceCommit(CommitParam(serialNum, CommitParam::UpdateStats::SKIP), commitContext);
     }
     if (useDocumentStore(serialNum)) {
         vespalib::Gate gate;

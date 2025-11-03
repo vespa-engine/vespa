@@ -103,19 +103,26 @@ TensorAttribute::onCommit()
         }
         _compactGeneration = getCurrentGeneration();
         incGeneration();
-        updateStat(true);
+        updateStat(CommitParam::UpdateStats::FORCE);
     }
     if (_index) {
         if (_index->consider_compact(getConfig().getCompactionStrategy())) {
             incGeneration();
-            updateStat(true);
+            updateStat(CommitParam::UpdateStats::FORCE);
         }
     }
 }
 
 void
-TensorAttribute::onUpdateStat()
+TensorAttribute::onUpdateStat(CommitParam::UpdateStats updateStats)
 {
+    if (updateStats == CommitParam::UpdateStats::SKIP) {
+        return;
+    }
+    if (updateStats == CommitParam::UpdateStats::SIZES_ONLY) {
+        this->updateSizes(_refVector.size(), _refVector.size());
+        return;
+    }
     vespalib::MemoryUsage total = update_stat();
     this->updateStatistics(_refVector.size(),
                            _refVector.size(),

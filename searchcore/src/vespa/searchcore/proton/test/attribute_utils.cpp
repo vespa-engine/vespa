@@ -8,6 +8,7 @@
 using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
+using search::CommitParam;
 
 namespace proton::test {
 
@@ -18,7 +19,7 @@ AttributeUtils::fillAttribute(search::AttributeVector & attr, uint32_t numDocs, 
     for (uint32_t i = 1; i < ia.getNumDocs(); ++i) {
         ia.update(i, value);
     }
-    ia.commit(search::CommitParam(lastSyncToken));
+    ia.commit(search::CommitParam(lastSyncToken, CommitParam::UpdateStats::SKIP));
 }
 
 void
@@ -31,7 +32,7 @@ AttributeUtils::fillAttribute(search::AttributeVector & attr, uint32_t from, uin
     for (uint32_t i = from; i < to; ++i) {
         ia.update(i, value);
     }
-    ia.commit(search::CommitParam(lastSyncToken));
+    ia.commit(search::CommitParam(lastSyncToken, CommitParam::UpdateStats::SKIP));
 }
 
 const Config &

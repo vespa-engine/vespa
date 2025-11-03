@@ -150,7 +150,7 @@ MultiValueEnumAttribute<B, M>::onCommit()
     this->reclaim_unused_memory();
     if (this->_mvMapping.consider_compact(this->getConfig().getCompactionStrategy())) {
         this->incGeneration();
-        this->updateStat(true);
+        this->updateStat(CommitParam::UpdateStats::FORCE);
     }
     auto remapper = this->_enumStore.consider_compact_values(this->getConfig().getCompactionStrategy());
     if (remapper) {
@@ -158,29 +158,36 @@ MultiValueEnumAttribute<B, M>::onCommit()
         remapper->done();
         remapper.reset();
         this->incGeneration();
-        this->updateStat(true);
+        this->updateStat(CommitParam::UpdateStats::FORCE);
     }
     if (this->_enumStore.consider_compact_dictionary(this->getConfig().getCompactionStrategy())) {
         this->incGeneration();
-        this->updateStat(true);
+        this->updateStat(CommitParam::UpdateStats::FORCE);
     }
     auto *pab = this->getIPostingListAttributeBase();
     if (pab != nullptr) {
         if (pab->consider_compact_worst_btree_nodes(this->getConfig().getCompactionStrategy())) {
             this->incGeneration();
-            this->updateStat(true);
+            this->updateStat(CommitParam::UpdateStats::FORCE);
         }
         if (pab->consider_compact_worst_buffers(this->getConfig().getCompactionStrategy())) {
             this->incGeneration();
-            this->updateStat(true);
+            this->updateStat(CommitParam::UpdateStats::FORCE);
         }
     }
 }
 
 template <typename B, typename M>
 void
-MultiValueEnumAttribute<B, M>::onUpdateStat()
+MultiValueEnumAttribute<B, M>::onUpdateStat(CommitParam::UpdateStats updateStats)
 {
+    if (updateStats == CommitParam::UpdateStats::SKIP) {
+        return;
+    }
+    if (updateStats == CommitParam::UpdateStats::SIZES_ONLY) {
+        this->updateSizes(this->_mvMapping.getTotalValueCnt(), this->_enumStore.get_num_uniques());
+        return;
+    }
     // update statistics
     vespalib::MemoryUsage total;
     auto& compaction_strategy = this->getConfig().getCompactionStrategy();

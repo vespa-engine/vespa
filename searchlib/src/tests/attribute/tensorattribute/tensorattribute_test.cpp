@@ -41,6 +41,7 @@ using document::WrongTensorTypeException;
 using search::AddressSpaceUsage;
 using search::AttributeGuard;
 using search::AttributeVector;
+using search::CommitParam;
 using search::attribute::DistanceMetric;
 using search::attribute::HnswIndexParams;
 using search::queryeval::Blueprint;
@@ -592,7 +593,7 @@ struct Fixture {
     }
 
     search::attribute::Status getStatus() {
-        _attr->commit(true);
+        _attr->commit(CommitParam::UpdateStats::FORCE);
         return _attr->getStatus();
     }
 
@@ -810,8 +811,8 @@ Fixture::testCompaction()
         if ((iter & (iter - 1)) == 0) {
             // Temporarily drop read guard when iter crosses a power of 2.
             guard.reset();
-            _attr->commit(true);
-            _attr->commit(true);
+            _attr->commit(CommitParam::UpdateStats::FORCE);
+            _attr->commit(CommitParam::UpdateStats::FORCE);
             guard = _attr->makeReadGuard(false);
         }
         newStatus = getStatus();

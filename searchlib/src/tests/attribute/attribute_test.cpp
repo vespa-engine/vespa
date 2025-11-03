@@ -505,7 +505,7 @@ void AttributeTest::testReload(const AttributePtr & a)
     EXPECT_TRUE( a->save(b->getBaseFileName()) );
     EXPECT_NE(0, a->size_on_disk());
     EXPECT_NE(zero_flush_duration, a->last_flush_duration());
-    a->commit(true);
+    a->commit(CommitParam::UpdateStats::FORCE);
     {
         double actSize = statSize(*b);
         EXPECT_LE(actSize, a->size_on_disk());
@@ -914,7 +914,7 @@ AttributeTest::testSingle()
         fillNumeric(nibbleValues, numUniqueNibbles);
         {
             AttributePtr ptr = createAttribute("sv-int32", Config(BasicType::INT32, CollectionType::SINGLE));
-            ptr->updateStat(true);
+            ptr->updateStat(CommitParam::UpdateStats::FORCE);
             EXPECT_EQ(4224u, ptr->getStatus().getAllocated());
             EXPECT_EQ(0u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
@@ -929,7 +929,7 @@ AttributeTest::testSingle()
             Config cfg(BasicType::INT32, CollectionType::SINGLE);
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-post-int32", cfg);
-            ptr->updateStat(true);
+            ptr->updateStat(CommitParam::UpdateStats::FORCE);
             EXPECT_EQ(338972u, ptr->getStatus().getAllocated());
             EXPECT_EQ(101512u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
@@ -941,7 +941,7 @@ AttributeTest::testSingle()
         fillNumeric(values, numUniques);
         {
             AttributePtr ptr = createAttribute("sv-float", Config(BasicType::FLOAT, CollectionType::SINGLE));
-            ptr->updateStat(true);
+            ptr->updateStat(CommitParam::UpdateStats::FORCE);
             EXPECT_EQ(4224u, ptr->getStatus().getAllocated());
             EXPECT_EQ(0u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
@@ -951,7 +951,7 @@ AttributeTest::testSingle()
             Config cfg(BasicType::FLOAT, CollectionType::SINGLE);
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-post-float", cfg);
-            ptr->updateStat(true);
+            ptr->updateStat(CommitParam::UpdateStats::FORCE);
             EXPECT_EQ(338972u, ptr->getStatus().getAllocated());
             EXPECT_EQ(101512u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
@@ -964,7 +964,7 @@ AttributeTest::testSingle()
         fillString(values, numUniques);
         {
             AttributePtr ptr = createAttribute("sv-string", Config(BasicType::STRING, CollectionType::SINGLE));
-            ptr->updateStat(true);
+            ptr->updateStat(CommitParam::UpdateStats::FORCE);
             EXPECT_EQ(116048u + sizeof_large_string_entry + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
             EXPECT_EQ(52684u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
@@ -974,7 +974,7 @@ AttributeTest::testSingle()
             Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-fs-string", cfg);
-            ptr->updateStat(true);
+            ptr->updateStat(CommitParam::UpdateStats::FORCE);
             EXPECT_EQ(344368u + sizeof_large_string_entry + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
             EXPECT_EQ(104300u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
@@ -1106,7 +1106,7 @@ AttributeTest::testArray()
         fillNumeric(values, numUniques);
         {
             AttributePtr ptr = createAttribute("a-int32", Config(BasicType::INT32, CollectionType::ARRAY));
-            ptr->updateStat(true);
+            ptr->updateStat(CommitParam::UpdateStats::FORCE);
             EXPECT_EQ(293856u, ptr->getStatus().getAllocated());
             EXPECT_EQ(253668u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
@@ -1116,7 +1116,7 @@ AttributeTest::testArray()
             Config cfg(BasicType::INT8, CollectionType::ARRAY);
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("flags", cfg);
-            ptr->updateStat(true);
+            ptr->updateStat(CommitParam::UpdateStats::FORCE);
             EXPECT_EQ(293856u, ptr->getStatus().getAllocated());
             EXPECT_EQ(253668u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
@@ -1126,7 +1126,7 @@ AttributeTest::testArray()
             Config cfg(BasicType::INT32, CollectionType::ARRAY);
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("a-fs-int32", cfg);
-            ptr->updateStat(true);
+            ptr->updateStat(CommitParam::UpdateStats::FORCE);
             EXPECT_EQ(650492u, ptr->getStatus().getAllocated());
             EXPECT_EQ(355200u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
@@ -1145,7 +1145,7 @@ AttributeTest::testArray()
             Config cfg(BasicType::FLOAT, CollectionType::ARRAY);
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("a-fs-float", cfg);
-            ptr->updateStat(true);
+            ptr->updateStat(CommitParam::UpdateStats::FORCE);
             EXPECT_EQ(650492u, ptr->getStatus().getAllocated());
             EXPECT_EQ(355200u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
@@ -1157,7 +1157,7 @@ AttributeTest::testArray()
         fillString(values, numUniques);
         {
             AttributePtr ptr = createAttribute("a-string", Config(BasicType::STRING, CollectionType::ARRAY));
-            ptr->updateStat(true);
+            ptr->updateStat(CommitParam::UpdateStats::FORCE);
             EXPECT_EQ(405680u + sizeof_large_string_entry + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
             EXPECT_EQ(306352u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
@@ -1167,7 +1167,7 @@ AttributeTest::testArray()
             Config cfg(BasicType::STRING, CollectionType::ARRAY);
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("afs-string", cfg);
-            ptr->updateStat(true);
+            ptr->updateStat(CommitParam::UpdateStats::FORCE);
             EXPECT_EQ(655888u + sizeof_large_string_entry + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
             EXPECT_EQ(357988u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
@@ -1733,7 +1733,7 @@ AttributeTest::testStatus()
         for (uint32_t i = 0; i < numDocs; ++i) {
             EXPECT_TRUE(appendToVector(sa, i, 1, values));
         }
-        ptr->commit(true);
+        ptr->commit(CommitParam::UpdateStats::FORCE);
         EXPECT_EQ(ptr->getStatus().getNumDocs(), 100u);
         EXPECT_EQ(ptr->getStatus().getNumValues(), 100u);
         EXPECT_EQ(ptr->getStatus().getNumUniqueValues(), 2u);
@@ -1756,7 +1756,7 @@ AttributeTest::testStatus()
         for (uint32_t i = 0; i < numDocs; ++i) {
             EXPECT_TRUE(appendToVector(sa, i, numValuesPerDoc, values));
         }
-        ptr->commit(true);
+        ptr->commit(CommitParam::UpdateStats::FORCE);
         EXPECT_EQ(ptr->getStatus().getNumDocs(), numDocs);
         EXPECT_EQ(ptr->getStatus().getNumValues(), numDocs*numValuesPerDoc);
         EXPECT_EQ(ptr->getStatus().getNumUniqueValues(), numUniq + 1);
@@ -1859,7 +1859,7 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
     EXPECT_EQ(0u, ia.getCurrentGeneration());
     EXPECT_TRUE(ia.addDoc(docId));
     EXPECT_EQ(0u, ia.getCurrentGeneration());
-    ia.commit(true);
+    ia.commit(CommitParam::UpdateStats::FORCE);
     EXPECT_EQ(1u, ia.getCurrentGeneration());
     uint64_t lastAllocated;
     uint64_t lastOnHold;
@@ -1878,7 +1878,7 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
         AttributeGuard ag(attr); // guard on generation 1
         EXPECT_TRUE(ia.addDoc(docId)); // inc gen
         EXPECT_EQ(2u, ia.getCurrentGeneration());
-        ia.commit(true);
+        ia.commit(CommitParam::UpdateStats::FORCE);
         EXPECT_EQ(3u, ia.getCurrentGeneration());
         if (exactStatus) {
             EXPECT_EQ(6u + changeVectorAllocated, ia.getStatus().getAllocated());
@@ -1894,7 +1894,7 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
     EXPECT_EQ(3u, ia.getCurrentGeneration());
     {
         AttributeGuard ag(attr); // guard on generation 3
-        ia.commit(true);
+        ia.commit(CommitParam::UpdateStats::FORCE);
         EXPECT_EQ(4u, ia.getCurrentGeneration());
         if (exactStatus) {
             EXPECT_EQ(4u + changeVectorAllocated, ia.getStatus().getAllocated());
@@ -1922,7 +1922,7 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
             lastOnHold = ia.getStatus().getOnHold();
         }
     }
-    ia.commit(true);
+    ia.commit(CommitParam::UpdateStats::FORCE);
     EXPECT_EQ(7u, ia.getCurrentGeneration());
     if (exactStatus) {
         EXPECT_EQ(6u + changeVectorAllocated, ia.getStatus().getAllocated());

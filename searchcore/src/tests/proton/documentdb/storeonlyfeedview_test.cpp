@@ -272,7 +272,7 @@ struct FixtureBase {
     void force_commit() {
         vespalib::Gate gate;
         runInMaster([this, &gate]() {
-            feedview->forceCommit(search::CommitParam(serial_num), std::make_shared<vespalib::GateCallback>(gate));
+            feedview->forceCommit(search::CommitParam(serial_num, search::CommitParam::UpdateStats::SKIP), std::make_shared<vespalib::GateCallback>(gate));
         });
         gate.await();
     }

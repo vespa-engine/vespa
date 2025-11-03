@@ -53,7 +53,7 @@ private:
     void reclaim_memory(generation_t oldest_used_gen) override;
     void before_inc_generation(generation_t current_gen) override;
     void onCommit() override;
-    void onUpdateStat() override;
+    void onUpdateStat(CommitParam::UpdateStats updateStats) override;
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
     bool onLoad(vespalib::Executor *executor) override;
     uint64_t getUniqueValueCount() const override;

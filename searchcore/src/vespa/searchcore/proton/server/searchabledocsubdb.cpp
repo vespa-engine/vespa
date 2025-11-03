@@ -252,7 +252,7 @@ SearchableDocSubDB::reconfigure(std::unique_ptr<Configure> configure)
 {
     assert(_writeService.master().isCurrentThread());
 
-    getFeedView()->forceCommitAndWait(search::CommitParam(_getSerialNum.getSerialNum()));
+    getFeedView()->forceCommitAndWait(search::CommitParam(_getSerialNum.getSerialNum(), search::CommitParam::UpdateStats::SKIP));
 
     // Everything should be quiet now.
 

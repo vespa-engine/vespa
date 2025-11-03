@@ -11,8 +11,9 @@
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_compaction_test");
 
-using search::IntegerAttribute;
 using search::AttributeVector;
+using search::CommitParam;
+using search::IntegerAttribute;
 using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
@@ -56,7 +57,7 @@ void cleanAttribute(AttributeVector &v, DocIdRange range)
     for (uint32_t docId = range.begin(); docId < range.end(); ++docId) {
         v.clearDoc(docId);
     }
-    v.commit(true);
+    v.commit(CommitParam::UpdateStats::FORCE);
     v.incGeneration();
 }
 
@@ -82,7 +83,7 @@ void populateAttribute(IntegerAttribute &v, DocIdRange range, uint32_t values)
             v.commit();
         }
     }
-    v.commit(true);
+    v.commit(CommitParam::UpdateStats::FORCE);
     v.incGeneration();
 }
 
@@ -103,13 +104,13 @@ void hammerAttribute(IntegerAttribute &v, DocIdRange range, uint32_t count)
         }
         work += range.size();
         if (work >= 100000) {
-            v.commit(true);
+            v.commit(CommitParam::UpdateStats::FORCE);
             work = 0;
         } else {
             v.commit();
         }
     }
-    v.commit(true);
+    v.commit(CommitParam::UpdateStats::FORCE);
     v.incGeneration();
 }
 
@@ -153,7 +154,7 @@ public:
     void populate(DocIdRange range, uint32_t values) { populateAttribute(_v, range, values); }
     void hammer(DocIdRange range, uint32_t count) { hammerAttribute(_v, range, count); }
     void clean(DocIdRange range) { cleanAttribute(*_v, range); }
-    AttributeStatus getStatus() { _v->commit(true); return _v->getStatus(); }
+    AttributeStatus getStatus() { _v->commit(CommitParam::UpdateStats::FORCE); return _v->getStatus(); }
     AttributeStatus getStatus(const std::string &prefix) {
         AttributeStatus status(getStatus());
         LOG(info, "status %s: allocated=%" PRIu64 ", used=%" PRIu64 ", dead=%" PRIu64 ", onHold=%" PRIu64 ", waste=%f",
@@ -214,7 +215,7 @@ populate_and_hammer(Fixture& f, bool take_attribute_guard)
             f.populate(range1, 1000);
             f.hammer(range2, 101);
         }
-        f._v->commit(true);
+        f._v->commit(CommitParam::UpdateStats::FORCE);
         f._v->commit();
     } else {
         f.populate(range1, 1000);

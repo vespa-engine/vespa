@@ -58,7 +58,7 @@ Flusher(DocumentMetaStoreFlushTarget &dmsft,
 {
     // Called by document db executor
     DocumentMetaStore &dms = *_dmsft._dms;
-    dms.commit(CommitParam(syncToken));
+    dms.commit(CommitParam(syncToken, CommitParam::UpdateStats::SKIP));
     _flushDir = writer.getSnapshotDir(syncToken);
     std::string newBaseFileName(_flushDir + "/" + dms.getName());
     _saver = dms.initSave(newBaseFileName);

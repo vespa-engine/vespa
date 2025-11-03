@@ -317,7 +317,8 @@ FastAccessDocSubDB::onReprocessDone(SerialNum serialNum)
     vespalib::Gate gate;
     {
         auto onDone = std::make_shared<vespalib::GateCallback>(gate);
-        attrWriter->forceCommit(serialNum, onDone);
+        search::CommitParam commit_param(serialNum, search::CommitParam::UpdateStats::SKIP);
+        attrWriter->forceCommit(commit_param, onDone);
         _writeService.summary().execute(vespalib::makeLambdaTask([done = std::move(onDone)]() { (void) done; }));
     }
     gate.await();

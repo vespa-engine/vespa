@@ -17,6 +17,8 @@ public:
     void updateStatistics(uint64_t numValues, uint64_t numUniqueValue, uint64_t allocated,
                           uint64_t used, uint64_t dead, uint64_t onHold);
 
+    void updateSizes(uint64_t numValues, uint64_t numUniqueValue);
+
     uint64_t getNumDocs()                  const { return _numDocs.load(std::memory_order_relaxed); }
     uint64_t getNumValues()                const { return _numValues.load(std::memory_order_relaxed); }
     uint64_t getNumUniqueValues()          const { return _numUniqueValues.load(std::memory_order_relaxed); }

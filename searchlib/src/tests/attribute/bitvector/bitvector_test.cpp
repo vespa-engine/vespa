@@ -18,6 +18,7 @@ using search::AttributeFactory;
 using search::AttributeVector;
 using search::BitVector;
 using search::BitVectorIterator;
+using search::CommitParam;
 using search::FloatingPointAttribute;
 using search::IntegerAttribute;
 using search::ParseItem;
@@ -252,7 +253,7 @@ BitVectorTest::addDocs(const AttributePtr &v, size_t sz)
         v->clearDoc(docId);
     }
     EXPECT_TRUE(v->getNumDocs() == sz);
-    v->commit(true);
+    v->commit(CommitParam::UpdateStats::FORCE);
 }
 
 

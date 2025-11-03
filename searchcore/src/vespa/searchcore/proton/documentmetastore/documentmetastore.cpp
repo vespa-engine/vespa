@@ -221,7 +221,7 @@ DocumentMetaStore::onCommit()
         _gid_to_lid_map_write_itr_prepare_serial_num = 0u;
         _gid_to_lid_map_write_itr.begin(_gidToLidMap.getRoot());
         incGeneration();
-        updateStat(true);
+        updateStat(CommitParam::UpdateStats::FORCE);
     } else if (_changesSinceCommit > 0) {
         incGeneration();
         _changesSinceCommit = 0;
@@ -229,8 +229,15 @@ DocumentMetaStore::onCommit()
 }
 
 void
-DocumentMetaStore::onUpdateStat()
+DocumentMetaStore::onUpdateStat(CommitParam::UpdateStats updateStats)
 {
+    if (updateStats == CommitParam::UpdateStats::SKIP) {
+        return;
+    }
+    if (updateStats == CommitParam::UpdateStats::SIZES_ONLY) {
+        updateSizes(_metaDataStore.size(), _metaDataStore.size());
+        return;
+    }
     auto &compaction_strategy = getConfig().getCompactionStrategy();
     vespalib::MemoryUsage usage = _metaDataStore.getMemoryUsage();
     usage.merge(_lidAlloc.getMemoryUsage());
@@ -253,7 +260,7 @@ DocumentMetaStore::before_inc_generation(generation_t current_gen)
     _gidToLidMap.getAllocator().freeze();
     _gidToLidMap.getAllocator().assign_generation(current_gen);
     getGenerationHolder().assign_generation(current_gen);
-    updateStat(false);
+    updateStat(CommitParam::UpdateStats::SKIP);
 }
 
 void
@@ -443,7 +450,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
     _gidToLidMap.getAllocator().freeze(); // create initial frozen tree
     generation_t generation = getGenerationHandler().getCurrentGeneration();
     _gidToLidMap.getAllocator().assign_generation(generation);
-    updateStat(true);
+    updateStat(CommitParam::UpdateStats::FORCE);
 }
 
 DocumentMetaStore::~DocumentMetaStore()
