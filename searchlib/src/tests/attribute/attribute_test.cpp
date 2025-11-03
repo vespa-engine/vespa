@@ -1910,7 +1910,7 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
         AttributeGuard ag(attr); // guard on generation 4
         EXPECT_TRUE(ia.addDoc(docId)); // inc gen
         EXPECT_EQ(5u, ia.getCurrentGeneration());
-        ia.commit();
+        ia.commit(CommitParam::UpdateStats::FORCE);
         EXPECT_EQ(6u, ia.getCurrentGeneration());
         if (exactStatus) {
             EXPECT_EQ(10u + changeVectorAllocated, ia.getStatus().getAllocated());

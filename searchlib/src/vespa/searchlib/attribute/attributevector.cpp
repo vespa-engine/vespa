@@ -112,24 +112,11 @@ AttributeVector::~AttributeVector() = default;
 
 void
 AttributeVector::updateStat(CommitParam::UpdateStats updateStats) {
-
-    switch (updateStats) {
-        case CommitParam::UpdateStats::FORCE:
-            onUpdateStat(updateStats);
-            break;
-        case CommitParam::UpdateStats::SIZES_ONLY:
-            if (_nextStatUpdateTime < vespalib::steady_clock::now()) {
-                onUpdateStat(CommitParam::UpdateStats::FORCE);
-                _nextStatUpdateTime = vespalib::steady_clock::now() + 5s;
-            } else {
-                onUpdateStat(updateStats);
-            }
-            break;
-        case CommitParam::UpdateStats::SKIP:
-            if (_nextStatUpdateTime < vespalib::steady_clock::now()) {
-                onUpdateStat(CommitParam::UpdateStats::FORCE);
-                _nextStatUpdateTime = vespalib::steady_clock::now() + 5s;
-            }
+    if (_nextStatUpdateTime < vespalib::steady_clock::now()) {
+        onUpdateStat(CommitParam::UpdateStats::FORCE);
+        _nextStatUpdateTime = vespalib::steady_clock::now() + 5s;
+    } else if (updateStats != CommitParam::UpdateStats::SKIP) {
+        onUpdateStat(updateStats);
     }
 }
 
