@@ -8,6 +8,7 @@ import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.tensor.functions.TensorFunction;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -123,8 +124,9 @@ public class TensorTestCase {
             fail("Expected parse error");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("Excepted a number or a string starting by {, [ or tensor(...):, got '--'",
-                         expected.getCause().getMessage());
+            assertEquals("Could not parse '--' as a tensor: " +
+                         "Excepted a number, hex string, or a string starting by {, [ or tensor(...)",
+                         Exceptions.toMessageString(expected));
         }
     }
 

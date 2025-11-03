@@ -74,8 +74,8 @@ class TensorParser {
             return tensorFromDenseValueString(valueString, type, dimensionOrder);
         }
         else {
-            var tensor = maybeFromBinaryValueString(valueString, type, dimensionOrder);
-            if (tensor.isPresent()) return tensor.get();
+            if (type.isPresent() && validHexString(type.get(), valueString))
+                return tensorFromDenseValueString(valueString, type, dimensionOrder);
 
             if (explicitType.isEmpty() || explicitType.get().equals(TensorType.empty)) {
                 try {
@@ -152,14 +152,6 @@ class TensorParser {
             return false;
         }
         return true;
-    }
-
-    private static Optional<Tensor> maybeFromBinaryValueString(String valueString,
-                                                               Optional<TensorType> type,
-                                                               List<String> dimensionOrder) {
-        if (type.isEmpty()) return Optional.empty();
-        if ( ! validHexString(type.get(), valueString)) return Optional.empty();
-        return Optional.of(tensorFromDenseValueString(valueString, type, dimensionOrder));
     }
 
     private static Tensor tensorFromDenseValueString(String valueString,
