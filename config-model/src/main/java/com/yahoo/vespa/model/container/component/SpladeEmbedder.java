@@ -5,6 +5,7 @@ import com.yahoo.config.ModelReference;
 import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.SpladeEmbedderConfig;
+import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
@@ -57,11 +58,12 @@ public class SpladeEmbedder extends TypedComponent implements SpladeEmbedderConf
         onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
         onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
         onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
-        onnxModelOptions.batchingMaxSize().ifPresent(b::batchingMaxSize);
-        onnxModelOptions.batchingMaxDelayMillis().ifPresent(b::batchingMaxDelay);
-        onnxModelOptions.concurrencyFactorType().ifPresent(value -> b.concurrencyType(SpladeEmbedderConfig.ConcurrencyType.Enum.valueOf(value)));
-        onnxModelOptions.concurrencyFactor().ifPresent(b::concurrency);
-        onnxModelOptions.modelConfigOverride().ifPresent(value -> b.modelConfigOverride(Optional.of(value)));
+        onnxModelOptions.batchingMaxSize().ifPresent(b.batching::maxSize);
+        onnxModelOptions.batchingMaxDelayMillis().ifPresent(b.batching::maxDelayMillis);
+        onnxModelOptions.concurrencyFactorType().ifPresent(
+                value -> b.concurrency.factorType(SpladeEmbedderConfig.Concurrency.FactorType.Enum.valueOf(value)));
+        onnxModelOptions.concurrencyFactor().ifPresent(b.concurrency::factor);
+        b.modelConfigOverride(onnxModelOptions.modelConfigOverride());
     }
 
 }

@@ -78,11 +78,11 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
             Files.copy(Paths.get(externalModelPath), modelFilePath, StandardCopyOption.REPLACE_EXISTING);
             var modelConfig = options.modelConfigOverride()
-                    .map(fileRef -> {
+                    .map(path -> {
                         try {
-                            return Files.readString(Paths.get(fileRef.value()));
+                            return Files.readString(path);
                         } catch (IOException e) {
-                            throw new UncheckedIOException("Failed to read model config override file: " + fileRef.value(), e);
+                            throw new UncheckedIOException("Failed to read model config override file: " + path, e);
                         }
                     })
                     .orElseGet(() -> generateConfigFromEvaluatorOptions(modelName, options).toString());
