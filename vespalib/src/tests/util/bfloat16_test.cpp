@@ -136,6 +136,7 @@ TEST(BFloat16Test, check_special_values) {
     EXPECT_TRUE(std::numeric_limits<float>::has_signaling_NaN);
     EXPECT_TRUE(std::numeric_limits<BFloat16>::has_quiet_NaN);
     EXPECT_TRUE(std::numeric_limits<BFloat16>::has_signaling_NaN);
+    EXPECT_TRUE(std::numeric_limits<BFloat16>::has_infinity);
     float f_inf = std::numeric_limits<float>::infinity();
     float f_neg = -f_inf;
     float f_qnan = std::numeric_limits<float>::quiet_NaN();
