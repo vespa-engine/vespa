@@ -96,7 +96,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     @Inject
     public HuggingFaceEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, HuggingFaceEmbedderConfig config, ModelPathHelper modelHelper) {
         this.runtime = runtime;
-        var optionsBuilder = new OnnxEvaluatorOptions.Builder()
+        
+        var onnxOptsBuilder = new OnnxEvaluatorOptions.Builder()
                 .setExecutionMode(config.transformerExecutionMode().toString())
                 .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads())
                 .setBatching(config.batching().maxSize(), config.batching().maxDelayMillis())
@@ -105,9 +106,9 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                 )
                 .setModelConfigOverride(config.modelConfigOverride());
         if (config.transformerGpuDevice() >= 0)
-            optionsBuilder.setGpuDevice(config.transformerGpuDevice());
+            onnxOptsBuilder.setGpuDevice(config.transformerGpuDevice());
+        var onnxOpts = onnxOptsBuilder.build();
         
-        var onnxOpts = optionsBuilder.build();
         var resolver = new OnnxExternalDataResolver(modelHelper);
         evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxOpts);
 

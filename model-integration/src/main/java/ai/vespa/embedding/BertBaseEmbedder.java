@@ -58,20 +58,22 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         outputName = config.transformerOutput();
         poolingStrategy = PoolingStrategy.fromString(config.poolingStrategy().toString());
 
-        var optionsBuilder = new OnnxEvaluatorOptions.Builder()
+        var onnxOptsBuilder = new OnnxEvaluatorOptions.Builder()
                 .setExecutionMode(config.onnxExecutionMode().toString())
                 .setThreads(config.onnxInterOpThreads(), config.onnxIntraOpThreads())
-                .setGpuDevice(config.onnxGpuDevice())
-                .setBatchingMaxSize(config.batching().maxSize())
-                .setBatchingMaxDelay(config.batching().maxDelayMillis())
-                .setConcurrency(config.concurrency().factor(), config.concurrency().factorType().toString());
-        config.modelConfigOverride().ifPresent(path ->
-                optionsBuilder.setModelConfigOverride(new com.yahoo.config.FileReference(path.toString())));
-        OnnxEvaluatorOptions options = optionsBuilder.build();
-
+                .setBatching(config.batching().maxSize(), config.batching().maxDelayMillis())
+                .setConcurrency(
+                        config.concurrency().factor(), OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
+                                config.concurrency().factorType().toString())
+                )
+                .setModelConfigOverride(config.modelConfigOverride());
+        if (config.onnxGpuDevice() >= 0)
+            onnxOptsBuilder.setGpuDevice(config.onnxGpuDevice());
+        var onnxOpts = onnxOptsBuilder.build();
+        
         tokenizer = new WordPieceEmbedder.Builder(config.tokenizerVocab().toString()).build();
         var resolver = new OnnxExternalDataResolver();
-        this.evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), options);
+        this.evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxOpts);
 
         validateModel();
     }

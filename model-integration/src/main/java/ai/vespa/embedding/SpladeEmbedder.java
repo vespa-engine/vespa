@@ -70,16 +70,19 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
             builder.setTruncation(true).setMaxLength(maxLength);
         }
         this.tokenizer = builder.build();
+
         var onnxOptsBuilder = new OnnxEvaluatorOptions.Builder()
                 .setExecutionMode(config.transformerExecutionMode().toString())
                 .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads())
-                .setGpuDevice(config.transformerGpuDevice())
-                .setBatchingMaxSize(config.batching().maxSize())
-                .setBatchingMaxDelay(config.batching().maxDelayMillis())
-                .setConcurrency(config.concurrency().factor(), config.concurrency().factorType().toString());
-        config.modelConfigOverride().ifPresent(path ->
-                onnxOptsBuilder.setModelConfigOverride(new com.yahoo.config.FileReference(path.toString())));
+                .setBatching(config.batching().maxSize(), config.batching().maxDelayMillis())
+                .setConcurrency(config.concurrency().factor(), OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
+                        config.concurrency().factorType().toString())
+                )
+                .setModelConfigOverride(config.modelConfigOverride());
+        if (config.transformerGpuDevice() >= 0)
+            onnxOptsBuilder.setGpuDevice(config.transformerGpuDevice());
         var onnxOpts = onnxOptsBuilder.build();
+        
         var resolver = new OnnxExternalDataResolver();
         evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxOpts);
         validateModel();
