@@ -64,7 +64,7 @@ public:
     static constexpr bool is_signed = true;
     static constexpr bool is_integer = false;
     static constexpr bool is_exact = false;
-    static constexpr bool has_infinity = false;
+    static constexpr bool has_infinity = true;
     static constexpr bool has_quiet_NaN = true;
     static constexpr bool has_signaling_NaN = true;
     static constexpr bool has_denorm = true;
