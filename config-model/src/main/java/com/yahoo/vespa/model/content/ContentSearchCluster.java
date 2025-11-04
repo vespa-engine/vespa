@@ -145,7 +145,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
     private void addSearchNode(SearchNode searchNode) {
         if (searchCluster != null) {
-            searchCluster.addSearcher(searchNode);
+            searchCluster.addSearchNode(searchNode);
         } else {
             nonIndexed.add(searchNode);
         }

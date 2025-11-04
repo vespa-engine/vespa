@@ -35,8 +35,8 @@ public class IndexedSearchCluster extends SearchCluster {
         dispatchWarmup = featureFlags.queryDispatchWarmup();
     }
 
-    public void addSearcher(SearchNode searcher) {
-        searchNodes.add(searcher);
+    public void addSearchNode(SearchNode searchNode) {
+        searchNodes.add(searchNode);
     }
 
     public List<SearchNode> getSearchNodes() { return Collections.unmodifiableList(searchNodes); }

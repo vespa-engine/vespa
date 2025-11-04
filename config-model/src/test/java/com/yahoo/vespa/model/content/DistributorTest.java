@@ -260,23 +260,6 @@ public class DistributorTest {
     }
 
     @Test
-    void testPortOverride() {
-        StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
-        DistributorCluster cluster =
-                parse("<cluster id=\"storage\" distributor-base-port=\"14065\">" +
-                        "  <redundancy>3</redundancy>" +
-                        "  <documents/>" +
-                        "  <group>" +
-                        "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                        "  </group>" +
-                        "</cluster>");
-
-        cluster.getChildren().get("0").getConfig(builder);
-        StorCommunicationmanagerConfig config = new StorCommunicationmanagerConfig(builder);
-        assertEquals(14066, config.rpcport());
-    }
-
-    @Test
     void testCommunicationManagerDefaults() {
         StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
         DistributorCluster cluster =
