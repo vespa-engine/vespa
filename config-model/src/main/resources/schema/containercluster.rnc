@@ -218,8 +218,7 @@ DocprocInContainer = element document-processing {
     ChainInDocprocInContainerCluster* &
     GenericConfig*  &
     element threadpool {
-        element threads { xsd:double { minExclusive = "0.0" } }? &
-        element queue { xsd:double { minInclusive = "0.0" } }?
+        element threads { xsd:double { minExclusive = "0.0" } }?
     }?
 }
 ChainInDocprocInContainerCluster = element chain {
