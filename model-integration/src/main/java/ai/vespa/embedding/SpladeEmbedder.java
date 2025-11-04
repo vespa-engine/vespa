@@ -70,22 +70,28 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
             builder.setTruncation(true).setMaxLength(maxLength);
         }
         this.tokenizer = builder.build();
+        var resolver = new OnnxExternalDataResolver();
+        var onnxEvalOpts = buildOnnxEvaluatorOptions(config);
+        evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxEvalOpts);
+        validateModel();
+    }
 
-        var onnxOptsBuilder = new OnnxEvaluatorOptions.Builder()
+    private static OnnxEvaluatorOptions buildOnnxEvaluatorOptions(SpladeEmbedderConfig config) {
+        var concurrencyFactorType = OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
+                config.concurrency().factorType().toString());
+
+        var builder = new OnnxEvaluatorOptions.Builder()
                 .setExecutionMode(config.transformerExecutionMode().toString())
                 .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads())
                 .setBatching(config.batching().maxSize(), config.batching().maxDelayMillis())
-                .setConcurrency(config.concurrency().factor(), OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
-                        config.concurrency().factorType().toString())
-                )
+                .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
                 .setModelConfigOverride(config.modelConfigOverride());
-        if (config.transformerGpuDevice() >= 0)
-            onnxOptsBuilder.setGpuDevice(config.transformerGpuDevice());
-        var onnxOpts = onnxOptsBuilder.build();
-        
-        var resolver = new OnnxExternalDataResolver();
-        evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxOpts);
-        validateModel();
+
+        if (config.transformerGpuDevice() >= 0) {
+            builder.setGpuDevice(config.transformerGpuDevice());
+        }
+
+        return builder.build();
     }
 
     private void validateModel() {

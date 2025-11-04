@@ -96,21 +96,9 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     @Inject
     public HuggingFaceEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, HuggingFaceEmbedderConfig config, ModelPathHelper modelHelper) {
         this.runtime = runtime;
-        
-        var onnxOptsBuilder = new OnnxEvaluatorOptions.Builder()
-                .setExecutionMode(config.transformerExecutionMode().toString())
-                .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads())
-                .setBatching(config.batching().maxSize(), config.batching().maxDelayMillis())
-                .setConcurrency(config.concurrency().factor(), OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
-                        config.concurrency().factorType().toString())
-                )
-                .setModelConfigOverride(config.modelConfigOverride());
-        if (config.transformerGpuDevice() >= 0)
-            onnxOptsBuilder.setGpuDevice(config.transformerGpuDevice());
-        var onnxOpts = onnxOptsBuilder.build();
-        
         var resolver = new OnnxExternalDataResolver(modelHelper);
-        evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxOpts);
+        var onnxEvalOpts = buildOnnxEvaluatorOptions(config);
+        evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxEvalOpts);
 
         this.analysis = analyze(evaluator, config);
         normalize = config.normalize();
@@ -131,6 +119,24 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
             builder.setTruncation(true).setMaxLength(maxLength);
         }
         this.tokenizer = builder.build();
+    }
+
+    private static OnnxEvaluatorOptions buildOnnxEvaluatorOptions(HuggingFaceEmbedderConfig config) {
+        var concurrencyFactorType = OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
+                config.concurrency().factorType().toString());
+
+        var builder = new OnnxEvaluatorOptions.Builder()
+                .setExecutionMode(config.transformerExecutionMode().toString())
+                .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads())
+                .setBatching(config.batching().maxSize(), config.batching().maxDelayMillis())
+                .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
+                .setModelConfigOverride(config.modelConfigOverride());
+
+        if (config.transformerGpuDevice() >= 0) {
+            builder.setGpuDevice(config.transformerGpuDevice());
+        }
+
+        return builder.build();
     }
 
     private static void validateName(Map<String, TensorType> types, String name, String type) {

@@ -58,6 +58,7 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
             prependQuery = getChildValue(prepend, "query").orElse(null);
             prependDocument = getChildValue(prepend, "document").orElse(null);
         }
+
         model.registerOnnxModelCost(cluster, onnxModelOptions);
     }
 

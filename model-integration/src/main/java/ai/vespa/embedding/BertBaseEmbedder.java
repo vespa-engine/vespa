@@ -57,25 +57,29 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         tokenTypeIdsName = config.transformerTokenTypeIds();
         outputName = config.transformerOutput();
         poolingStrategy = PoolingStrategy.fromString(config.poolingStrategy().toString());
-
-        var onnxOptsBuilder = new OnnxEvaluatorOptions.Builder()
+        tokenizer = new WordPieceEmbedder.Builder(config.tokenizerVocab().toString()).build();
+        var resolver = new OnnxExternalDataResolver();
+        var onnxEvalOpts = buildOnnxEvaluatorOptions(config);
+        this.evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxEvalOpts);
+        validateModel();
+    }
+    
+    private static OnnxEvaluatorOptions buildOnnxEvaluatorOptions(BertBaseEmbedderConfig config) {
+        var concurrencyFactorType = OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
+                config.concurrency().factorType().toString());
+        
+        var builder = new OnnxEvaluatorOptions.Builder()
                 .setExecutionMode(config.onnxExecutionMode().toString())
                 .setThreads(config.onnxInterOpThreads(), config.onnxIntraOpThreads())
                 .setBatching(config.batching().maxSize(), config.batching().maxDelayMillis())
-                .setConcurrency(
-                        config.concurrency().factor(), OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
-                                config.concurrency().factorType().toString())
-                )
+                .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
                 .setModelConfigOverride(config.modelConfigOverride());
-        if (config.onnxGpuDevice() >= 0)
-            onnxOptsBuilder.setGpuDevice(config.onnxGpuDevice());
-        var onnxOpts = onnxOptsBuilder.build();
         
-        tokenizer = new WordPieceEmbedder.Builder(config.tokenizerVocab().toString()).build();
-        var resolver = new OnnxExternalDataResolver();
-        this.evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxOpts);
-
-        validateModel();
+        if (config.onnxGpuDevice() >= 0) {
+            builder.setGpuDevice(config.onnxGpuDevice());
+        }
+        
+        return builder.build();
     }
 
     private void validateModel() {
