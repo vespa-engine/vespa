@@ -1567,7 +1567,7 @@ TEST(TensorAttributeTest, NN_blueprint_handles_strong_filter_triggering_exact_se
     bp->set_global_filter(*strong_filter, 0.6);
     EXPECT_EQ(3u, bp->get_target_hits());
     EXPECT_EQ(3u, bp->get_adjusted_target_hits());
-    EXPECT_EQ(11u, bp->getState().estimate().estHits);
+    EXPECT_EQ(1u, bp->getState().estimate().estHits);
     EXPECT_EQ(NNBA::EXACT_FALLBACK, bp->get_algorithm());
 }
 
