@@ -364,7 +364,7 @@ private:
 
         Index index(wordNum(start));
         Index lastIndex(wordNum(last));
-        Word word(conv(load(_words[index])) & checkTab(start));
+        Word word(conv(load(_words[index])) & ~startBits(start));
         for ( ; index < lastIndex; word = conv(load(_words[++index]))) {
             foreach_bit(func, word, index << numWordBits());
         }
@@ -374,7 +374,7 @@ private:
     Index getNextBit(WordConverter conv, Index start) const noexcept {
         Index index(wordNum(start));
         const Word *words(_words);
-        Word t(conv(load(words[index])) & checkTab(start));
+        Word t(conv(load(words[index])) & ~startBits(start));
 
         // In order to avoid a test an extra guard bit is added
         // after the bitvector as a termination.

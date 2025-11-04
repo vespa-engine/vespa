@@ -88,7 +88,7 @@ uint32_t
 MultiBitVector<Update>::strictSeek(uint32_t docId) noexcept
 {
     bool atEnd;
-    for (atEnd = updateLastValue(docId), _lastValue = _lastValue & BitWord::checkTab(docId);
+    for (atEnd = updateLastValue(docId), _lastValue = _lastValue & ~BitWord::startBits(docId);
          __builtin_expect(_lastValue == 0, Update::isAnd()) && __builtin_expect(! atEnd, true); // And is likely to have few bits, while Or has many.
          atEnd = updateLastValue(_lastMaxDocIdLimit));
     return (__builtin_expect(!atEnd, true))
