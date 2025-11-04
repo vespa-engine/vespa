@@ -347,7 +347,7 @@ public class JsonRendererTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Could not set 'presentation.format.tensors' to 'unknown': Value must be 'long', 'short', 'long-value', or 'short-value', not 'unknown'",
+            assertEquals("Could not set 'presentation.format.tensors': Value must be 'long', 'short', 'long-value', or 'short-value', not 'unknown'",
                          Exceptions.toMessageString(e));
         }
     }

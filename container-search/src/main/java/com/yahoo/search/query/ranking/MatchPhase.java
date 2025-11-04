@@ -85,7 +85,7 @@ public class MatchPhase implements Cloneable {
 
     public void setMaxFilterCoverage(double maxFilterCoverage) {
         if ((maxFilterCoverage < 0.0) || (maxFilterCoverage > 1.0)) {
-            throw new IllegalInputException("maxFilterCoverage must be in the range [0.0, 1.0]. It is " + maxFilterCoverage);
+            throw new IllegalInputException("maxFilterCoverage must be in the range [0.0, 1.0], but is " + maxFilterCoverage);
         }
 
         this.maxFilterCoverage = maxFilterCoverage;

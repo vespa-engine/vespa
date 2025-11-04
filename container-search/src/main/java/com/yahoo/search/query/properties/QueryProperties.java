@@ -191,6 +191,19 @@ public class QueryProperties extends Properties {
         return super.get(key, context, substitution);
     }
 
+    @Override
+    public void set(CompoundName key, Object value, Map<String,String> context) {
+        try {
+            setInternal(key, value, context);
+        }
+        catch (IllegalAssignmentException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            throw new IllegalInputException("Could not set '" + key + "'", e);
+        }
+    }
+
     private void setInternal(CompoundName key, Object value, Map<String,String> context) {
         GetterSetter propertyAccessor = propertyAccessors.get(key);
         if (propertyAccessor != null && propertyAccessor.setter != null) {
@@ -204,14 +217,14 @@ public class QueryProperties extends Properties {
                 chained().requireSettable(key, value, context);
                 if (key.get(1).equals(Ranking.FEATURES)) {
                     setRankFeature(query, restKey, toSpecifiedType(restKey, value,
-                            profileRegistry.getTypeRegistry().getComponent("features"),
-                            context));
+                                                                   profileRegistry.getTypeRegistry().getComponent("features"),
+                                                                   context));
                     return;
                 } else if (key.get(1).equals(Ranking.PROPERTIES)) {
                     Ranking ranking = query.getRanking();
                     ranking.getProperties().put(restKey, toSpecifiedType(restKey, value,
-                            profileRegistry.getTypeRegistry().getComponent("properties"),
-                            context));
+                                                                         profileRegistry.getTypeRegistry().getComponent("properties"),
+                                                                         context));
                     return;
                 }
             }
@@ -221,20 +234,6 @@ public class QueryProperties extends Properties {
             throwIllegalParameter(key.rest().toString(), key.first());
         } else {
             super.set(key, value, context);
-        }
-    }
-
-    @Override
-    public void set(CompoundName key, Object value, Map<String,String> context) {
-        // Note: The defaults here are never used
-        try {
-            setInternal(key, value, context);
-        }
-        catch (Exception e) { // Make sure error messages are informative. This should be moved out of this properties implementation
-            if (e.getMessage() != null && e.getMessage().startsWith("Could not set"))
-                throw e;
-            else
-                throw new IllegalInputException("Could not set '" + key + "' to '" + value + "'", e);
         }
     }
 
