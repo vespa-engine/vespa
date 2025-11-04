@@ -205,21 +205,21 @@ public class Flags {
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2025-11-01",
+            List.of("andreer"), "2023-08-21", "2026-02-01",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
             "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2025-11-01",
+            List.of("andreer"), "2023-08-28", "2026-02-01",
             "Always use IPv6 target groups for load balancers in aws",
             "Takes effect on next load-balancer provisioning",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
             "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2025-11-01",
+            List.of("andreer"), "2023-08-28", "2026-02-01",
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
@@ -355,7 +355,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag CREATE_TENANT_ROLES = defineFeatureFlag(
             "create-tenant-roles", true,
-            List.of("andreer"), "2025-04-28", "2025-11-01",
+            List.of("andreer"), "2025-04-28", "2026-02-01",
             "Whether to create tenant specific roles",
             "Takes effect immediately",
             TENANT_ID
@@ -378,7 +378,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
             "delete-tenant-roles", false,
-            List.of("andreer"), "2025-05-05", "2025-11-01",
+            List.of("andreer"), "2025-05-05", "2026-02-01",
             "Whether to delete tenant specific roles",
             "Role deletion happens when tenant is next processed by TenantRoleMaintainer",
             TENANT_ID
