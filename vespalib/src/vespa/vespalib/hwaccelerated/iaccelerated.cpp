@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fn_table.h"
+#include "functions.h"
 #include "iaccelerated.h"
 #include "highway.h"
 #ifdef __x86_64__
@@ -287,7 +288,7 @@ EnabledTargetLevel EnabledTargetLevel::create_from_env_var() {
 }
 
 template<typename T>
-std::vector<T> createAndFill(size_t sz) {
+std::vector<T> create_and_fill(size_t sz) {
     std::vector<T> v(sz);
     for (size_t i(0); i < sz; i++) {
         v[i] = rand()%100;
@@ -297,18 +298,17 @@ std::vector<T> createAndFill(size_t sz) {
 
 template <typename T, typename SumT = T>
 void
-verifyDotproduct(const IAccelerated & accel)
-{
-    const size_t testLength(255);
+verify_dot_product() {
+    constexpr size_t test_length = 255;
     srand(1);
-    std::vector<T> a = createAndFill<T>(testLength);
-    std::vector<T> b = createAndFill<T>(testLength);
+    std::vector<T> a = create_and_fill<T>(test_length);
+    std::vector<T> b = create_and_fill<T>(test_length);
     for (size_t j(0); j < 0x20; j++) {
         SumT sum(0);
-        for (size_t i(j); i < testLength; i++) {
+        for (size_t i(j); i < test_length; i++) {
             sum += a[i]*b[i];
         }
-        SumT hwComputedSum(accel.dotProduct(&a[j], &b[j], testLength - j));
+        SumT hwComputedSum(dot_product(&a[j], &b[j], test_length - j));
         if (sum != hwComputedSum) {
             fprintf(stderr, "Accelerator is not computing dotproduct correctly.\n");
             LOG_ABORT("should not be reached");
@@ -318,17 +318,17 @@ verifyDotproduct(const IAccelerated & accel)
 
 template <typename T, typename SumT = T>
 void
-verifyEuclideanDistance(const IAccelerated & accel) {
-    const size_t testLength(255);
+verify_euclidean_distance() {
+    constexpr size_t test_length = 255;
     srand(1);
-    std::vector<T> a = createAndFill<T>(testLength);
-    std::vector<T> b = createAndFill<T>(testLength);
+    std::vector<T> a = create_and_fill<T>(test_length);
+    std::vector<T> b = create_and_fill<T>(test_length);
     for (size_t j(0); j < 0x20; j++) {
         SumT sum(0);
-        for (size_t i(j); i < testLength; i++) {
+        for (size_t i(j); i < test_length; i++) {
             sum += (a[i] - b[i]) * (a[i] - b[i]);
         }
-        SumT hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
+        SumT hwComputedSum(squared_euclidean_distance(&a[j], &b[j], test_length - j));
         if (sum != hwComputedSum) {
             fprintf(stderr, "Accelerator is not computing euclidean distance correctly.\n");
             LOG_ABORT("should not be reached");
@@ -337,8 +337,7 @@ verifyEuclideanDistance(const IAccelerated & accel) {
 }
 
 void
-verifyPopulationCount(const IAccelerated & accel)
-{
+verify_population_count() {
     const uint64_t words[7] = {0x123456789abcdef0L,  // 32
                                0x0000000000000000L,  // 0
                                0x8000000000000000L,  // 1
@@ -347,16 +346,16 @@ verifyPopulationCount(const IAccelerated & accel)
                                0x00000000000000001,  // 1
                                0xffffffffffffffff};  // 64
     constexpr size_t expected = 32 + 0 + 1 + 48 + 32 + 1 + 64;
-    size_t hwComputedPopulationCount = accel.populationCount(words, VESPA_NELEMS(words));
+    size_t hwComputedPopulationCount = population_count(words, VESPA_NELEMS(words));
     if (hwComputedPopulationCount != expected) {
-        fprintf(stderr, "Accelerator is not computing populationCount correctly.Expected %zu, computed %zu\n",
+        fprintf(stderr, "Accelerator is not computing populationCount correctly. Expected %zu, computed %zu\n",
                 expected, hwComputedPopulationCount);
         LOG_ABORT("should not be reached");
     }
 }
 
 void
-fill(std::vector<uint64_t> & v, size_t n) {
+fill(std::vector<uint64_t>& v, size_t n) {
     v.reserve(n);
     for (size_t i(0); i < n; i++) {
         v.emplace_back(random());
@@ -364,54 +363,54 @@ fill(std::vector<uint64_t> & v, size_t n) {
 }
 
 void
-simpleAndWith(std::vector<uint64_t> & dest, const std::vector<uint64_t> & src) {
+simple_and_with(std::vector<uint64_t>& dest, const std::vector<uint64_t>& src) {
     for (size_t i(0); i < dest.size(); i++) {
         dest[i] &= src[i];
     }
 }
 
 void
-simpleOrWith(std::vector<uint64_t> & dest, const std::vector<uint64_t> & src) {
+simple_or_with(std::vector<uint64_t>& dest, const std::vector<uint64_t>& src) {
     for (size_t i(0); i < dest.size(); i++) {
         dest[i] |= src[i];
     }
 }
 
 std::vector<uint64_t>
-simpleInvert(const std::vector<uint64_t> & src) {
+simple_invert(const std::vector<uint64_t>& src) {
     std::vector<uint64_t> inverted;
     inverted.reserve(src.size());
-    for (unsigned long i : src) {
+    for (uint64_t i : src) {
         inverted.push_back(~i);
     }
     return inverted;
 }
 
 std::vector<uint64_t>
-optionallyInvert(bool invert, std::vector<uint64_t> v) {
-    return invert ? simpleInvert(v) : std::move(v);
+optionally_invert(bool invert, std::vector<uint64_t> v) {
+    return invert ? simple_invert(v) : std::move(v);
 }
 
-bool shouldInvert(bool invertSome) {
+bool should_invert(bool invertSome) {
     return invertSome ? (random() & 1) : false;
 }
 
 void
-verifyOr64(const IAccelerated & accel, const std::vector<std::vector<uint64_t>> & vectors,
-           size_t offset, size_t num_vectors, bool invertSome)
+verify_or_128(const std::vector<std::vector<uint64_t>>& vectors,
+              size_t offset, size_t num_vectors, bool invertSome)
 {
     std::vector<std::pair<const void *, bool>> vRefs;
     for (size_t j(0); j < num_vectors; j++) {
-        vRefs.emplace_back(&vectors[j][0], shouldInvert(invertSome));
+        vRefs.emplace_back(&vectors[j][0], should_invert(invertSome));
     }
 
-    std::vector<uint64_t> expected = optionallyInvert(vRefs[0].second, vectors[0]);
+    std::vector<uint64_t> expected = optionally_invert(vRefs[0].second, vectors[0]);
     for (size_t j = 1; j < num_vectors; j++) {
-        simpleOrWith(expected, optionallyInvert(vRefs[j].second, vectors[j]));
+        simple_or_with(expected, optionally_invert(vRefs[j].second, vectors[j]));
     }
 
     uint64_t dest[16] __attribute((aligned(64)));
-    accel.or128(offset * sizeof(uint64_t), vRefs, dest);
+    or_128(offset * sizeof(uint64_t), vRefs, dest);
     int diff = memcmp(&expected[offset], dest, sizeof(dest));
     if (diff != 0) {
         LOG_ABORT("Accelerator fails to compute correct 128 bytes OR");
@@ -419,20 +418,20 @@ verifyOr64(const IAccelerated & accel, const std::vector<std::vector<uint64_t>> 
 }
 
 void
-verifyAnd64(const IAccelerated & accel, const std::vector<std::vector<uint64_t>> & vectors,
-           size_t offset, size_t num_vectors, bool invertSome)
+verify_and_128(const std::vector<std::vector<uint64_t>>& vectors,
+               size_t offset, size_t num_vectors, bool invertSome)
 {
     std::vector<std::pair<const void *, bool>> vRefs;
     for (size_t j(0); j < num_vectors; j++) {
-        vRefs.emplace_back(&vectors[j][0], shouldInvert(invertSome));
+        vRefs.emplace_back(&vectors[j][0], should_invert(invertSome));
     }
-    std::vector<uint64_t> expected = optionallyInvert(vRefs[0].second, vectors[0]);
+    std::vector<uint64_t> expected = optionally_invert(vRefs[0].second, vectors[0]);
     for (size_t j = 1; j < num_vectors; j++) {
-        simpleAndWith(expected, optionallyInvert(vRefs[j].second, vectors[j]));
+        simple_and_with(expected, optionally_invert(vRefs[j].second, vectors[j]));
     }
 
     uint64_t dest[16] __attribute((aligned(64)));
-    accel.and128(offset * sizeof(uint64_t), vRefs, dest);
+    and_128(offset * sizeof(uint64_t), vRefs, dest);
     int diff = memcmp(&expected[offset], dest, sizeof(dest));
     if (diff != 0) {
         LOG_ABORT("Accelerator fails to compute correct 128 bytes AND");
@@ -440,62 +439,49 @@ verifyAnd64(const IAccelerated & accel, const std::vector<std::vector<uint64_t>>
 }
 
 void
-verifyOr64(const IAccelerated & accel) {
+verify_or_128() {
     std::vector<std::vector<uint64_t>> vectors(3) ;
-    for (auto & v : vectors) {
+    for (auto& v : vectors) {
         fill(v, 32);
     }
     for (size_t offset = 0; offset < 16; offset++) {
         for (size_t i = 1; i < vectors.size(); i++) {
-            verifyOr64(accel, vectors, offset, i, false);
-            verifyOr64(accel, vectors, offset, i, true);
+            verify_or_128(vectors, offset, i, false);
+            verify_or_128(vectors, offset, i, true);
         }
     }
 }
 
 void
-verifyAnd64(const IAccelerated & accel) {
+verify_and_128() {
     std::vector<std::vector<uint64_t>> vectors(3);
-    for (auto & v : vectors) {
+    for (auto& v : vectors) {
         fill(v, 32);
     }
     for (size_t offset = 0; offset < 16; offset++) {
         for (size_t i = 1; i < vectors.size(); i++) {
-            verifyAnd64(accel, vectors, offset, i, false);
-            verifyAnd64(accel, vectors, offset, i, true);
+            verify_and_128(vectors, offset, i, false);
+            verify_and_128(vectors, offset, i, true);
         }
     }
 }
 
-class RuntimeVerificator
-{
-public:
-    RuntimeVerificator();
-private:
-    static void verify(const IAccelerated & accelerated) {
-        verifyDotproduct<float>(accelerated);
-        verifyDotproduct<double>(accelerated);
-        verifyDotproduct<int8_t, int64_t>(accelerated);
-        verifyDotproduct<int32_t, int64_t>(accelerated);
-        verifyDotproduct<int64_t>(accelerated);
-        verifyEuclideanDistance<int8_t, int64_t>(accelerated);
-        verifyEuclideanDistance<float>(accelerated);
-        verifyEuclideanDistance<double>(accelerated);
-        verifyPopulationCount(accelerated);
-        verifyAnd64(accelerated);
-        verifyOr64(accelerated);
-    }
-};
-
-RuntimeVerificator::RuntimeVerificator()
-{
-    verify(*IAccelerated::create_baseline_auto_vectorized_target());
-    verify(*IAccelerated::create_best_accelerator_impl_and_target());
+void verify_active_function_table() {
+    verify_dot_product<float>();
+    verify_dot_product<double>();
+    verify_dot_product<int8_t, int64_t>();
+    verify_dot_product<int32_t, int64_t>();
+    verify_dot_product<int64_t>();
+    verify_euclidean_distance<int8_t, int64_t>();
+    verify_euclidean_distance<float>();
+    verify_euclidean_distance<double>();
+    verify_population_count();
+    verify_and_128();
+    verify_or_128();
 }
 
 // Simple wrapper to debug log created impl+target once during process startup.
 IAccelerated::UP create_and_log_best_accelerator() {
-    static RuntimeVerificator verify_accelerator_once;
     auto accel = IAccelerated::create_best_accelerator_impl_and_target();
     LOG(debug, "Created accelerator %s", accel->target_info().to_string().c_str());
     return accel;
@@ -623,6 +609,8 @@ struct BuildFnTableAndPatchFunctionsAtStartup {
 
 BuildFnTableAndPatchFunctionsAtStartup::BuildFnTableAndPatchFunctionsAtStartup() {
     thread_unsafe_update_function_dispatch_pointers(optimal_composite_fn_table());
+    // "Power on self-test" of active vectorization kernels
+    verify_active_function_table();
 }
 
 BuildFnTableAndPatchFunctionsAtStartup build_fn_table_once;
