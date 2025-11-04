@@ -21,9 +21,9 @@ private:
     bool                             _is_filter_field;
     bool                             _fetchPostingsDone;
     index::PostingListHandle         _postingHandle;
-    std::shared_ptr<BitVector>       _bitVector;
+    std::shared_ptr<const BitVector>       _bitVector;
     mutable std::mutex               _mutex;
-    mutable std::shared_ptr<BitVector> _late_bitvector;
+    mutable std::shared_ptr<const BitVector> _late_bitvector;
 
     bool use_bitvector() const;
     const BitVector* get_bitvector() const;
