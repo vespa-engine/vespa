@@ -11,42 +11,48 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
- * Minimal launcher that run the specified main method using the same Apache Felix integration as in {@link com.yahoo.jdisc.core.StandaloneMain}.
+ * Minimal launcher that runs the specified main method using the same Apache Felix integration as in {@link com.yahoo.jdisc.core.StandaloneMain}.
  * None of the other JDisc framework features are enabled (e.g. no DI, no server/client providers).
- * This is useful that building CLI tools that utilizes existing bundles, removing the need for building self-contained fat jars.
+ * This is useful for building CLI tools that utilize existing bundles, removing the need for building self-contained fat jars.
  *
- * This utility can later be improved by generating a local OSGi Bundle Repository from known bundle locations,
- * and then resolving dependencies when installing bundles. For now, each necessary bundle must be explicitly listed.
+ * <p>This utility uses automatic bundle dependency resolution. It scans available bundles in {@code $VESPA_HOME/lib/jars}
+ * and additional directories specified in {@code bundle.additionalLocations}, creates an index (stored per main bundle symbolic name),
+ * and automatically resolves and installs all required dependencies for the main bundle.
  *
  * <p>System properties:
  * <ul>
- *   <li>bundle.locations - Comma-separated list of bundle paths. Each path can be:
+ *   <li>bundle.additionalLocations - (Optional) Comma-separated list of additional directories to scan for bundles.
+ *     Each directory path can be:
  *     <ul>
- *       <li>Absolute path: "/absolute/path/to/bundle.jar"</li>
- *       <li>Relative path: "custom/dir/bundle.jar" (resolved relative to $VESPA_HOME)</li>
- *       <li>Simple filename: "my-bundle.jar" (resolved to $VESPA_HOME/lib/jars/my-bundle.jar)</li>
+ *       <li>Absolute path: "/absolute/path/to/bundle/dir"</li>
+ *       <li>Relative path: "custom/dir" (resolved relative to $VESPA_HOME)</li>
+ *       <li>Simple name: "mydir" (resolved to $VESPA_HOME/lib/jars/mydir)</li>
  *     </ul>
  *   </li>
- *   <li>main.bundle - Bundle containing the main class (bundle symbolic name or path)</li>
+ *   <li>bundle.blacklist - (Optional) Regular expression pattern to exclude bundles from scanning. Example: {@code "(foo|bar)\.jar"}</li>
+ *   <li>main.bundle - Bundle symbolic name of the bundle containing the main class</li>
  *   <li>main.class - The fully qualified class name containing main method</li>
  * </ul>
  *
  * @author bjorncs
  */
 public class MinimalMain {
+    private static final String CACHE_BASE_DIR = System.getProperty("user.home") + "/.vespa/osgi-bundle-cache";
+
+    private static final Logger log = Logger.getLogger(MinimalMain.class.getName());
 
     static {
-        // Required for jdisc-preinstall directives
-        System.setProperty("jdisc.bundle.path", Defaults.getDefaults().underVespaHome("lib/jars"));
+        System.setProperty("jdisc.bundle.path", Defaults.getDefaults().underVespaHome("lib/jars/"));
     }
-
-    private static final String CACHE_BASE_DIR = System.getProperty("user.home") + "/.vespa/osgi-bundle-cache";
 
     private static class LauncherException extends RuntimeException {
         final int exitCode;
@@ -67,6 +73,7 @@ public class MinimalMain {
             run(args);
         } catch (LauncherException e) {
             System.err.println(e.getMessage());
+            e.printStackTrace(System.err);
             System.exit(e.exitCode);
         } catch (Exception e) {
             System.err.println("Unexpected error: " + e.getMessage());
@@ -76,13 +83,10 @@ public class MinimalMain {
     }
 
     private static void run(String[] args) throws Exception {
-        var bundleLocations = System.getProperty("bundle.locations");
+        var additionalLocations = System.getProperty("bundle.additionalLocations");
         var mainBundleName = System.getProperty("main.bundle");
         var mainClassName = System.getProperty("main.class");
 
-        if (bundleLocations == null || bundleLocations.isEmpty()) {
-            throw new LauncherException("System property 'bundle.locations' is required", 1);
-        }
         if (mainBundleName == null || mainBundleName.isEmpty()) {
             throw new LauncherException("System property 'main.bundle' is required", 1);
         }
@@ -90,40 +94,66 @@ public class MinimalMain {
             throw new LauncherException("System property 'main.class' is required", 1);
         }
 
-        var cacheDir = createFelixBundleCacheDirectory();
+        var cacheDir = createFelixBundleCacheDirectory(mainClassName);
         var framework = new FelixFramework(
                 new FelixParams()
                         .setLoggerEnabled(false) // Disable verbose Felix logging
                         .setCachePath(cacheDir.toString()));
         framework.start();
 
-        var bundlePaths = Arrays.stream(bundleLocations.split(","))
-                .map(location -> resolveBundlePath(location.trim()))
-                .toList();
-        var bundles = new ArrayList<Bundle>();
-        for (var bundlePath : bundlePaths) {
-            bundles.addAll(framework.installBundle("file:" + bundlePath));
-        }
-        framework.startBundles(bundles, false);
+        var additionalDirectories = parseBundleLocationDirectories(additionalLocations);
+        var bundlePaths = resolveRequiredBundles(framework, mainBundleName, additionalDirectories);
 
-        var targetBundle = resolveMainBundle(mainBundleName, bundles, bundlePaths);
+        var bundles = new LinkedHashSet<Bundle>();
+        for (var bundlePath : bundlePaths) {
+            bundles.addAll(framework.installBundle(bundlePath));
+
+        }
+        framework.startBundles(List.copyOf(bundles), false);
+
+        var targetBundle = resolveMainBundle(mainBundleName, bundles);
         var mainClassInstance = resolveMainClass(targetBundle, mainClassName);
         var mainMethod = resolveMainMethod(mainClassInstance, mainClassName);
         mainMethod.invoke(null, (Object) args);
     }
 
-    private static Bundle resolveMainBundle(String mainBundle, List<Bundle> bundles, List<String> bundlePaths) {
-        // First try matching by symbolic name
-        for (var bundle : bundles) {
-            if (mainBundle.equals(bundle.getSymbolicName())) return bundle;
+    private static List<String> resolveRequiredBundles(
+            FelixFramework framework, String mainBundleSymbolicName, List<String> additionalDirectories) {
+        try {
+            var blacklistPattern = createBlacklistPattern();
+            var bundleIndexer = new BundleIndexer(Path.of(Defaults.getDefaults().underVespaHome("lib/jars")), blacklistPattern);
+            var indexPath = bundleIndexer.createIndexIfMissing(additionalDirectories, mainBundleSymbolicName);
+            return new BundleResolver(framework.bundleContext(), indexPath).resolve(mainBundleSymbolicName);
+        } catch (Exception e) {
+            throw new LauncherException("Failed to resolve bundle dependencies: " + e.getMessage(), 1, e);
         }
+    }
 
-        // If not found, try matching by resolved path
-        var resolvedMainBundle = resolveBundlePath(mainBundle);
-        for (int i = 0; i < bundlePaths.size(); i++) {
-            if (resolvedMainBundle.equals(bundlePaths.get(i))) return bundles.get(i);
+    private static Pattern createBlacklistPattern() {
+        var blacklistProperty = System.getProperty("bundle.blacklist");
+        if (blacklistProperty == null || blacklistProperty.isEmpty()) return null;
+        return Pattern.compile(blacklistProperty);
+    }
+
+    private static List<String> parseBundleLocationDirectories(String bundleLocations) {
+        if (bundleLocations == null || bundleLocations.isEmpty()) return List.of();
+        return Arrays.stream(bundleLocations.split(","))
+                .map(String::trim)
+                .map(MinimalMain::resolveBundleDirectory)
+                .toList();
+    }
+
+    private static String resolveBundleDirectory(String location) {
+        if (location.startsWith("/")) return location;
+        if (location.contains("/")) return Defaults.getDefaults().underVespaHome(location);
+        return Defaults.getDefaults().underVespaHome("lib/jars/" + location);
+    }
+
+    private static Bundle resolveMainBundle(String mainBundleSymbolicName, Collection<Bundle> bundles) {
+        for (var bundle : bundles) {
+            if (mainBundleSymbolicName.equals(bundle.getSymbolicName())) return bundle;
         }
-        throw new LauncherException("Main bundle not found: " + mainBundle, 1);
+        throw new LauncherException("Main bundle not found: " + mainBundleSymbolicName, 1);
     }
 
     private static Method resolveMainMethod(Class<?> mainClassInstance, String mainClass) {
@@ -142,35 +172,19 @@ public class MinimalMain {
         }
     }
 
-    private static Path createFelixBundleCacheDirectory() throws IOException {
+    private static Path createFelixBundleCacheDirectory(String mainClassName) throws IOException {
         var cacheBaseDir = Path.of(CACHE_BASE_DIR);
         Files.createDirectories(cacheBaseDir);
-        var cacheDir = Files.createTempDirectory(cacheBaseDir, "minimal-main-");
+        var cacheDir = Files.createTempDirectory(cacheBaseDir, mainClassName + "-");
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                Files.walk(cacheDir)
-                        .sorted(Comparator.reverseOrder())
+            try (var paths = Files.walk(cacheDir)) {
+                paths.sorted(Comparator.reverseOrder())
                         .map(Path::toFile)
                         .forEach(File::delete);
             } catch (IOException e) {
-                System.err.println("Failed to delete cache directory: " + e.getMessage());
+                log.warning("Failed to delete cache directory: " + e.getMessage());
             }
         }));
         return cacheDir;
-    }
-
-    private static String resolveBundlePath(String bundleLocation) {
-        if (!bundleLocation.endsWith(".jar")) {
-            bundleLocation = bundleLocation + "-jar-with-dependencies.jar";
-        }
-        if (!bundleLocation.contains("/")) {
-            bundleLocation = Defaults.getDefaults().underVespaHome("lib/jars/" + bundleLocation);
-        } else if (!bundleLocation.startsWith("/")) {
-            bundleLocation = Defaults.getDefaults().underVespaHome(bundleLocation);
-        }
-        if (!Files.exists(Path.of(bundleLocation))) {
-            throw new LauncherException("Bundle not found: " + bundleLocation, 1);
-        }
-        return bundleLocation;
     }
 }
