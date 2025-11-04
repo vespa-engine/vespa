@@ -101,7 +101,7 @@ BitVectorDictionary::lookup(uint64_t wordNum) {
     return BitVectorDictionaryLookupResult(itr - _entries.begin());
 }
 
-std::unique_ptr<BitVector>
+std::unique_ptr<const BitVector>
 BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_result, ReadStats& read_stats)
 {
     if (!lookup_result.valid()) {
@@ -111,7 +111,7 @@ BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_resul
     return BitVector::create(_docIdLimit, *_datFile, offset, _entries[lookup_result.idx]._numDocs, read_stats);
 }
 
-std::unique_ptr<BitVector>
+std::unique_ptr<const BitVector>
 BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_result)
 {
     ReadStats read_stats;

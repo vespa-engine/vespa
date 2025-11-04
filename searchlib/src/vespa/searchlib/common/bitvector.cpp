@@ -373,7 +373,7 @@ private:
               int64_t offset, Index doccount);
 };
 
-BitVector::UP
+std::unique_ptr<const BitVector>
 BitVector::create(Index numberOfElements, FastOS_FileInterface &file,
                   int64_t offset, Index doccount, ReadStats& read_stats)
 {

@@ -82,9 +82,9 @@ public:
         return _posting_file->get_posting_list_file_range(lookup_result);
     }
     index::BitVectorDictionaryLookupResult lookup_bit_vector(const search::index::DictionaryLookupResult& lookup_result) const;
-    std::shared_ptr<BitVector> read_uncached_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
-    std::shared_ptr<BitVector> read(const IPostingListCache::BitVectorKey& key, IPostingListCache::Context& ctx) const override;
-    std::shared_ptr<BitVector> read_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
+    std::shared_ptr<const BitVector> read_uncached_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
+    std::shared_ptr<const BitVector> read(const IPostingListCache::BitVectorKey& key, IPostingListCache::Context& ctx) const override;
+    std::shared_ptr<const BitVector> read_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
     PostingListFileRange get_bitvector_file_range(index::BitVectorDictionaryLookupResult lookup_result) const {
         return _bit_vector_dict->get_bitvector_file_range(lookup_result);
     }

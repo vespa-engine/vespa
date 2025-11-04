@@ -20,7 +20,7 @@ public:
     BackingStore();
     ~BackingStore();
     bool read(const Key& key, PostingListHandle& value, Context& ctx) const;
-    bool read(const BitVectorKey& key, std::shared_ptr<BitVector>& value, Context& ctx) const;
+    bool read(const BitVectorKey& key, std::shared_ptr<const BitVector>& value, Context& ctx) const;
 };
 
 PostingListCache::BackingStore::BackingStore() = default;
@@ -35,7 +35,7 @@ PostingListCache::BackingStore::read(const Key& key, PostingListHandle& value, C
 }
 
 bool
-PostingListCache::BackingStore::read(const BitVectorKey& key, std::shared_ptr<BitVector>& value, Context& ctx) const
+PostingListCache::BackingStore::read(const BitVectorKey& key, std::shared_ptr<const BitVector>& value, Context& ctx) const
 {
     value = ctx.backing_store_file->read(key, ctx);
     return true;
@@ -68,11 +68,11 @@ PostingListCache::Cache::Cache(BackingStore& backing_store, size_t max_bytes, si
 PostingListCache::Cache::~Cache() = default;
 
 struct BitVectorCacheValueSize {
-    size_t operator() (const std::shared_ptr<BitVector>& bv) const noexcept { return bv->get_allocated_bytes(true); }
+    size_t operator() (const std::shared_ptr<const BitVector>& bv) const noexcept { return bv->get_allocated_bytes(true); }
 };
 
 using BitVectorCacheParams = vespalib::CacheParam<
-    vespalib::LruParam<IPostingListCache::BitVectorKey, std::shared_ptr<BitVector>>,
+    vespalib::LruParam<IPostingListCache::BitVectorKey, std::shared_ptr<const BitVector>>,
     const PostingListCache::BackingStore,
     vespalib::zero<IPostingListCache::BitVectorKey>,
     BitVectorCacheValueSize
@@ -123,7 +123,7 @@ PostingListCache::read(const Key& key, Context& ctx) const
     return _cache->read(key, ctx);
 }
 
-std::shared_ptr<BitVector>
+std::shared_ptr<const BitVector>
 PostingListCache::read(const BitVectorKey& key, Context& ctx) const
 {
     return _bitvector_cache->read(key, ctx);

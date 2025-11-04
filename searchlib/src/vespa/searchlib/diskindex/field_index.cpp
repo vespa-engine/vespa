@@ -232,7 +232,7 @@ FieldIndex::lookup_bit_vector(const DictionaryLookupResult& lookup_result) const
     return _bit_vector_dict->lookup(lookup_result.wordNum);
 }
 
-std::shared_ptr<BitVector>
+std::shared_ptr<const BitVector>
 FieldIndex::read_uncached_bit_vector(BitVectorDictionaryLookupResult lookup_result) const
 {
     ReadStats read_stats;
@@ -242,14 +242,14 @@ FieldIndex::read_uncached_bit_vector(BitVectorDictionaryLookupResult lookup_resu
     return result;
 }
 
-std::shared_ptr<BitVector>
+std::shared_ptr<const BitVector>
 FieldIndex::read(const IPostingListCache::BitVectorKey& key, IPostingListCache::Context& ctx) const
 {
     ctx.cache_miss = true;
     return read_uncached_bit_vector(key.lookup_result);
 }
 
-std::shared_ptr<BitVector>
+std::shared_ptr<const BitVector>
 FieldIndex::read_bit_vector(BitVectorDictionaryLookupResult lookup_result) const
 {
     if (!_bit_vector_dict || !lookup_result.valid()) {

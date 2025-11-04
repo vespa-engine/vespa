@@ -16,7 +16,7 @@ public:
     MockFile();
     ~MockFile() override;
     PostingListHandle read(const PostingListCache::Key& key, PostingListCache::Context& ctx) const override;
-    std::shared_ptr<BitVector> read(const PostingListCache::BitVectorKey& key, PostingListCache::Context& ctx) const override;
+    std::shared_ptr<const BitVector> read(const PostingListCache::BitVectorKey& key, PostingListCache::Context& ctx) const override;
 };
 
 MockFile::MockFile()
@@ -36,7 +36,7 @@ MockFile::read(const PostingListCache::Key& key, PostingListCache::Context& ctx)
     return handle;
 }
 
-std::shared_ptr<BitVector>
+std::shared_ptr<const BitVector>
 MockFile::read(const PostingListCache::BitVectorKey& key, PostingListCache::Context& ctx) const
 {
     EXPECT_NE(0, key.lookup_result.idx);
@@ -62,7 +62,7 @@ protected:
         _ctx.cache_miss = false;
         return _cache.read(_key, _ctx);
     }
-    std::shared_ptr<BitVector> read_bv() {
+    std::shared_ptr<const BitVector> read_bv() {
         _ctx.cache_miss = false;
         return _cache.read(_bv_key, _ctx);
     }

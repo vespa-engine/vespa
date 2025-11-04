@@ -68,9 +68,9 @@ public:
      * @param read_stats statistics to be updated when reading bit vector
      * @return the loaded bit vector or empty if lookup result was invalid.
      **/
-    std::unique_ptr<BitVector> read_bitvector(index::BitVectorDictionaryLookupResult lookup_result,
-                                              ReadStats &read_stats);
-    std::unique_ptr<BitVector> read_bitvector(index::BitVectorDictionaryLookupResult lookup_result);
+    std::unique_ptr<const BitVector> read_bitvector(index::BitVectorDictionaryLookupResult lookup_result,
+                                                    ReadStats &read_stats);
+    std::unique_ptr<const BitVector> read_bitvector(index::BitVectorDictionaryLookupResult lookup_result);
     index::PostingListFileRange get_bitvector_file_range(index::BitVectorDictionaryLookupResult lookup_result) const;
 
     uint32_t getDocIdLimit() const noexcept { return _docIdLimit; }
