@@ -38,6 +38,8 @@ TensorFromStructsBlueprint::TensorFromStructsBlueprint()
 {
 }
 
+TensorFromStructsBlueprint::~TensorFromStructsBlueprint() = default;
+
 bool
 TensorFromStructsBlueprint::setup(const search::fef::IIndexEnvironment &env,
                                    const search::fef::ParameterList &params)
@@ -115,9 +117,13 @@ public:
         _keyBuffer.allocate(_keyAttribute->getMaxValueCount());
         _valueBuffer.allocate(_valueAttribute->getMaxValueCount());
     }
+    ~TensorFromStructsExecutor() override;
 
     void execute(uint32_t docId) override;
 };
+
+template <typename KeyBufferType>
+TensorFromStructsExecutor<KeyBufferType>::~TensorFromStructsExecutor() = default;
 
 template <typename KeyBufferType>
 void

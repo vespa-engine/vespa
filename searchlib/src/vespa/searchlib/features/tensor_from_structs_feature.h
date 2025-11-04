@@ -26,6 +26,7 @@ private:
 
 public:
     TensorFromStructsBlueprint();
+    ~TensorFromStructsBlueprint() override;
     fef::Blueprint::UP createInstance() const override {
         return Blueprint::UP(new TensorFromStructsBlueprint());
     }

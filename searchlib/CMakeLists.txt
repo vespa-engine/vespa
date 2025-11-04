@@ -159,6 +159,7 @@ vespa_define_module(
     src/tests/features/subqueries
     src/tests/features/tensor
     src/tests/features/tensor_from_labels
+    src/tests/features/tensor_from_structs
     src/tests/features/tensor_from_weighted_set
     src/tests/features/text_similarity_feature
     src/tests/features/util
