@@ -292,7 +292,8 @@ public class QueryTestCase {
             fail("Above statement should throw");
         } catch (IllegalArgumentException e) {
             // As expected.
-            assertTrue(Exceptions.toMessageString(e).contains("Could not set 'timeout' to 'nalle': Error parsing 'nalle': Invalid number 'nalle'"));
+            assertEquals("Could not set 'timeout': Error parsing 'nalle': Invalid number 'nalle'",
+                         Exceptions.toMessageString(e));
         }
     }
 

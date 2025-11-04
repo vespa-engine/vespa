@@ -1,7 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
+import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
+
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -414,6 +419,30 @@ public class TensorParserTestCase {
         assertEquals(expected, Tensor.from(type, "{'a': 'a102', 'b': 'A304'}"));
         assertEquals(expected, Tensor.from(type, "{'blocks': {'a': 'a102', 'b': 'A304'}}"));
         assertEquals(expected, Tensor.from(type, "{'blocks': [{'address': {'key': 'a'}, 'values': 'a102'}, {'address':{'key': 'b'}, 'values': 'A304'}]}"));
+    }
+
+    @Test
+    public void testErrorHandlingValue() {
+         assertError("Could not parse 'a93c573d' as a tensor of type tensor<bfloat16>(x[5]): " +
+                     "Expected 20 hex digits, but got 8",
+                     () -> TensorParser.tensorFrom("a93c573d", Optional.of(TensorType.fromSpec("tensor<bfloat16>(x[5])"))));
+        assertError("Could not parse 'hello' as a tensor of type tensor<bfloat16>(x[5]): " +
+                    "Expected a number, hex string, or a string starting by {, [ or tensor(...)",
+                    () -> TensorParser.tensorFrom("hello", Optional.of(TensorType.fromSpec("tensor<bfloat16>(x[5])"))));
+        assertError("Could not parse '' as a tensor of type tensor<bfloat16>(): " +
+                    "Expected a number",
+                    () -> TensorParser.tensorFrom("", Optional.of(TensorType.fromSpec("tensor<bfloat16>()"))));
+    }
+
+    private void assertError(String expectedMessage, Supplier<Tensor> supplier) {
+        try {
+            supplier.get();
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals(expectedMessage, Exceptions.toMessageString(e));
+        }
+
     }
 
 }

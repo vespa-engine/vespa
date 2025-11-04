@@ -449,8 +449,8 @@ public class QueryProfileTypeTestCase {
         }
         catch (IllegalArgumentException e) {
             assertEquals("Could not set 'ranking.features.query(myTensor1)' to 'tensor(x[3]):[0.1, 0.2, 0.3]': " +
-                    "Require a tensor of type tensor(a{},b{})",
-                    Exceptions.toMessageString(e));
+                         "Require a tensor of type tensor(a{},b{})",
+                         Exceptions.toMessageString(e));
         }
         try {
             query.properties().set("ranking.features.query(myTensor1)", Tensor.from(tensorString));
@@ -458,8 +458,8 @@ public class QueryProfileTypeTestCase {
         }
         catch (IllegalArgumentException e) {
             assertEquals("Could not set 'ranking.features.query(myTensor1)' to 'tensor(x[3]):[0.1, 0.2, 0.3]': " +
-                    "Require a tensor of type tensor(a{},b{})",
-                    Exceptions.toMessageString(e));
+                         "Require a tensor of type tensor(a{},b{})",
+                         Exceptions.toMessageString(e));
         }
     }
 

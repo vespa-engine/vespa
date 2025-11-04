@@ -55,11 +55,11 @@ public class Sorting implements Cloneable {
 
     /**
      * Creates a new sorting from the given string and returns it, or returns null if the argument does not contain
-     * any sorting criteria (e.g it is null or the empty string)
+     * any sorting criteria (e.g. it is null or the empty string)
      */
     public static Sorting fromString(String sortSpec) {
         if (sortSpec == null) return null;
-        if ("".equals(sortSpec)) return null;
+        if (sortSpec.isEmpty()) return null;
         return new Sorting(sortSpec);
     }
 
@@ -106,7 +106,7 @@ public class Sorting implements Cloneable {
                             } else if (STRENGTH_IDENTICAL.equalsIgnoreCase(s)) {
                                 strength = UcaSorter.Strength.IDENTICAL;
                             } else {
-                                throw new IllegalInputException("Unknown collation strength: '" + s + "'");
+                                throw new IllegalInputException("Unknown collation strength: '" + s + "' in '" + rawSortSpec + "'");
                             }
                         }
                         sorter = new UcaSorter(canonic(attrName, indexFacts), locale, strength);
@@ -115,9 +115,9 @@ public class Sorting implements Cloneable {
                     }
                 } else {
                     if (functionName.isEmpty()) {
-                        throw new IllegalInputException("No sort function specified at " + tokenizer.spec());
+                        throw new IllegalInputException("No sort function specified in '" + rawSortSpec + "'");
                     } else {
-                        throw new IllegalInputException("Unknown sort function '" + functionName + "' at " + tokenizer.spec());
+                        throw new IllegalInputException("Unknown sort function '" + functionName + "' in '" + rawSortSpec + "'");
                     }
                 }
             } else {

@@ -11,6 +11,7 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
+import com.yahoo.search.query.properties.IllegalAssignmentException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -472,7 +473,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
             setNode(name, value, null, binding, registry);
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalInputException("Could not set '" + name + "' to '" + value + "'", e);
+            throw new IllegalAssignmentException(name, value, e);
         }
     }
 
@@ -484,9 +485,9 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
     Boolean isLocalOverridable(String localName, DimensionBinding binding) {
         if (localLookup(localName, binding) == null) return null; // Not set
         if ( ! binding.isNull() && getVariants() != null) {
-            Boolean variantIsOverriable = getVariants().isOverridable(localName, binding.getValues());
-            if (variantIsOverriable != null)
-                return variantIsOverriable;
+            Boolean variantIsOverridable = getVariants().isOverridable(localName, binding.getValues());
+            if (variantIsOverridable != null)
+                return variantIsOverridable;
         }
         Boolean isLocalInstanceOverridable = isLocalInstanceOverridable(localName);
         if (isLocalInstanceOverridable != null)

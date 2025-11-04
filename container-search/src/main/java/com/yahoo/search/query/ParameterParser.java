@@ -34,7 +34,7 @@ public class ParameterParser {
         time = time.trim();
         try {
             int unitOffset = findUnitOffset(time);
-            double measure = Double.valueOf(time.substring(0, unitOffset));
+            double measure = Double.parseDouble(time.substring(0, unitOffset));
             double multiplier = parseUnit(time.substring(unitOffset));
             return (long) (measure * multiplier);
         } catch (RuntimeException e) {

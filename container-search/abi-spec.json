@@ -7145,6 +7145,18 @@
       "public static final com.yahoo.search.query.profile.types.QueryProfileType argumentType"
     ]
   },
+  "com.yahoo.search.query.properties.IllegalAssignmentException" : {
+    "superClass" : "java.lang.IllegalArgumentException",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.processing.request.CompoundName, java.lang.Object, java.lang.Throwable)",
+      "public void <init>(com.yahoo.processing.request.CompoundName, java.lang.Object, java.lang.String)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.query.properties.PropertyAliases" : {
     "superClass" : "com.yahoo.search.query.Properties",
     "interfaces" : [ ],

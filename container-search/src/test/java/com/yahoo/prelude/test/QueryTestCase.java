@@ -177,21 +177,21 @@ public class QueryTestCase {
     void testInvalidSortFunction() {
         assertQueryError(
                 "?query=test&sortspec=-ucca(name,en_US)",
-                "Could not set 'ranking.sorting' to '-ucca(name,en_US)': Unknown sort function 'ucca' at [-ucca(][name,en_US)]");
+                "Could not set 'ranking.sorting': Unknown sort function 'ucca' in '-ucca(name,en_US)'");
     }
 
     @Test
     void testMissingSortFunction() {
         assertQueryError(
                 "?query=test&sortspec=-(name)",
-                "Could not set 'ranking.sorting' to '-(name)': No sort function specified at [-(][name)]");
+                "Could not set 'ranking.sorting': No sort function specified in '-(name)'");
     }
 
     @Test
     void testInvalidUcaStrength() {
         assertQueryError(
                 "?query=test&sortspec=-uca(name,en_US,tertary)",
-                "Could not set 'ranking.sorting' to '-uca(name,en_US,tertary)': Unknown collation strength: 'tertary'");
+                "Could not set 'ranking.sorting': Unknown collation strength: 'tertary' in '-uca(name,en_US,tertary)'");
     }
 
     public void checkSortSpecUcaUSOptional(String spec) {
@@ -243,56 +243,56 @@ public class QueryTestCase {
     void testNegativeHitValue() {
         assertQueryError(
                 "?query=test&hits=-1",
-                "Could not set 'hits' to '-1': 'hits' must be a positive number, not -1");
+                "Could not set 'hits': 'hits' must be a positive number, not -1");
     }
 
     @Test
     void testNaNHitValue() {
         assertQueryError(
                 "?query=test&hits=NaN",
-                "Could not set 'hits' to 'NaN': 'NaN' is not a valid integer");
+                "Could not set 'hits': 'NaN' is not a valid integer");
     }
 
     @Test
     void testNoneHitValue() {
         assertQueryError(
                 "?query=test&hits=(none)",
-                "Could not set 'hits' to '(none)': '(none)' is not a valid integer");
+                "Could not set 'hits': '(none)' is not a valid integer");
     }
 
     @Test
     void testNegativeOffsetValue() {
         assertQueryError(
                 "?query=test&offset=-1",
-                "Could not set 'offset' to '-1': 'offset' must be a positive number, not -1");
+                "Could not set 'offset': 'offset' must be a positive number, not -1");
     }
 
     @Test
     void testNaNOffsetValue() {
         assertQueryError(
                 "?query=test&offset=NaN",
-                "Could not set 'offset' to 'NaN': 'NaN' is not a valid integer");
+                "Could not set 'offset': 'NaN' is not a valid integer");
     }
 
     @Test
     void testNoneOffsetValue() {
         assertQueryError(
                 "?query=test&offset=(none)",
-                "Could not set 'offset' to '(none)': '(none)' is not a valid integer");
+                "Could not set 'offset': '(none)' is not a valid integer");
     }
 
     @Test
     void testNoneHitsNegativeOffsetValue() {
         assertQueryError(
                 "?query=test&hits=(none)",
-                "Could not set 'hits' to '(none)': '(none)' is not a valid integer");
+                "Could not set 'hits': '(none)' is not a valid integer");
     }
 
     @Test
     void testFeedbackIsTransferredToResult() {
         assertQueryError(
                 "?query=test&hits=(none)",
-                "Could not set 'hits' to '(none)': '(none)' is not a valid integer");
+                "Could not set 'hits': '(none)' is not a valid integer");
     }
 
     @Test

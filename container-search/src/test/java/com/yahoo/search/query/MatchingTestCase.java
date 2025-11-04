@@ -2,6 +2,7 @@
 package com.yahoo.search.query;
 
 import com.yahoo.search.Query;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -95,8 +96,9 @@ public class MatchingTestCase {
             new Query("?query=test&ranking.matching."+key+"="+value);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Could not set 'ranking.matching." + key + "' to '" + value +"'", e.getMessage());
-            assertEquals(expectKey + " must be in the range [0.0, 1.0]. It is " + value, e.getCause().getMessage());
+            assertEquals("Could not set 'ranking.matching." + key + "': " +
+                         expectKey + " must be in the range [0.0, 1.0], but is " + value,
+                         Exceptions.toMessageString(e));
         }
     }
 

@@ -15,7 +15,7 @@ import com.yahoo.search.query.profile.types.ConversionContext;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
-import com.yahoo.tensor.Tensor;
+import com.yahoo.search.query.properties.IllegalAssignmentException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -163,14 +163,8 @@ public class QueryProfileProperties extends Properties {
             }
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalInputException("Could not set '" + name + "' to '" + toShortString(value) + "'", e);
+            throw new IllegalAssignmentException(name, value, e);
         }
-    }
-
-    private String toShortString(Object value) {
-        if (value == null) return "null";
-        if ( ! (value instanceof Tensor)) return value.toString();
-        return ((Tensor)value).toAbbreviatedString();
     }
 
     private Object convertByType(CompoundName name, Object value, Map<String, String> context) {
