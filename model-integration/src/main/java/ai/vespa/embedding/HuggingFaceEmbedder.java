@@ -98,10 +98,15 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         this.runtime = runtime;
         var optionsBuilder = new OnnxEvaluatorOptions.Builder()
                 .setExecutionMode(config.transformerExecutionMode().toString())
-                .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads());
+                .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads())
+                .setBatching(config.batching().maxSize(), config.batching().maxDelayMillis())
+                .setConcurrency(config.concurrency().factor(), OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
+                        config.concurrency().factorType().toString())
+                )
+                .setModelConfigOverride(config.modelConfigOverride());
         if (config.transformerGpuDevice() >= 0)
             optionsBuilder.setGpuDevice(config.transformerGpuDevice());
-
+        
         var onnxOpts = optionsBuilder.build();
         var resolver = new OnnxExternalDataResolver(modelHelper);
         evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxOpts);

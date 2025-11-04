@@ -77,7 +77,14 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                     PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxr-x")));
 
             Files.copy(Paths.get(externalModelPath), modelFilePath, StandardCopyOption.REPLACE_EXISTING);
-            var modelConfig = options.rawConfig()
+            var modelConfig = options.modelConfigOverride()
+                    .map(fileRef -> {
+                        try {
+                            return Files.readString(Paths.get(fileRef.value()));
+                        } catch (IOException e) {
+                            throw new UncheckedIOException("Failed to read model config override file: " + fileRef.value(), e);
+                        }
+                    })
                     .orElseGet(() -> generateConfigFromEvaluatorOptions(modelName, options).toString());
             Files.writeString(modelConfigPath, modelConfig);
 
@@ -115,14 +122,14 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 : (options.gpuDeviceNumber() >= 0)
                         ? ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_AUTO
                         : ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU;
-        return ModelConfigOuterClass.ModelConfig.newBuilder()
+        var configBuilder = ModelConfigOuterClass.ModelConfig.newBuilder()
                 .setName(modelName)
                 .addInstanceGroup(ModelConfigOuterClass.ModelInstanceGroup.newBuilder()
-                        .setCount(1)
+                        .setCount(options.numModelInstances())
                         .setKind(kind)
                         .build())
                 .setPlatform("onnxruntime_onnx")
-                .setMaxBatchSize(1)
+                .setMaxBatchSize(options.batchingMaxSize())
                 .putParameters("enable_mem_area", ModelConfigOuterClass.ModelParameter.newBuilder()
                         .setStringValue("0")
                         .build())
@@ -134,7 +141,34 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                         .build())
                 .putParameters("inter_op_thread_count", ModelConfigOuterClass.ModelParameter.newBuilder()
                         .setStringValue(Integer.toString(options.interOpThreads()))
-                        .build())
-                .build();
+                        .build());
+
+        // Add dynamic batching if batch size is greater than 1
+        if (options.batchingMaxSize() > 1) {
+            var dynamicBatchingBuilder = ModelConfigOuterClass.ModelDynamicBatching.newBuilder();
+            // Convert milliseconds to microseconds
+            long delayMicros = options.batchingMaxDelayMillis() * 1000L;
+            dynamicBatchingBuilder.setMaxQueueDelayMicroseconds(delayMicros);
+            configBuilder.setDynamicBatching(dynamicBatchingBuilder.build());
+        }
+
+        return configBuilder.build();
+    }
+
+    /**
+     * Parses a duration string (e.g., "100ms", "1s", "500us") and converts it to microseconds.
+     */
+    private static long parseDurationToMicroseconds(String duration) {
+        duration = duration.trim().toLowerCase();
+        if (duration.endsWith("ms")) {
+            return Long.parseLong(duration.substring(0, duration.length() - 2)) * 1000;
+        } else if (duration.endsWith("us")) {
+            return Long.parseLong(duration.substring(0, duration.length() - 2));
+        } else if (duration.endsWith("s")) {
+            return Long.parseLong(duration.substring(0, duration.length() - 1)) * 1_000_000;
+        } else {
+            // Assume microseconds if no unit specified
+            return Long.parseLong(duration);
+        }
     }
 }

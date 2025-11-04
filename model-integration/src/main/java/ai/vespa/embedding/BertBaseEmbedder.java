@@ -58,10 +58,15 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         outputName = config.transformerOutput();
         poolingStrategy = PoolingStrategy.fromString(config.poolingStrategy().toString());
 
-        OnnxEvaluatorOptions.Builder optionsBuilder = new OnnxEvaluatorOptions.Builder()
+        var optionsBuilder = new OnnxEvaluatorOptions.Builder()
                 .setExecutionMode(config.onnxExecutionMode().toString())
-                .setThreads(config.onnxInterOpThreads(), config.onnxIntraOpThreads());
-        if (config.onnxGpuDevice() >= 0) optionsBuilder.setGpuDevice(config.onnxGpuDevice());
+                .setThreads(config.onnxInterOpThreads(), config.onnxIntraOpThreads())
+                .setGpuDevice(config.onnxGpuDevice())
+                .setBatchingMaxSize(config.batching().maxSize())
+                .setBatchingMaxDelay(config.batching().maxDelayMillis())
+                .setConcurrency(config.concurrency().factor(), config.concurrency().factorType().toString());
+        config.modelConfigOverride().ifPresent(path ->
+                optionsBuilder.setModelConfigOverride(new com.yahoo.config.FileReference(path.toString())));
         OnnxEvaluatorOptions options = optionsBuilder.build();
 
         tokenizer = new WordPieceEmbedder.Builder(config.tokenizerVocab().toString()).build();

@@ -8,6 +8,7 @@ import com.yahoo.embedding.SpladeEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
+import java.util.Optional;
 import java.util.Set;
 
 import static com.yahoo.text.XML.getChildValue;
@@ -30,11 +31,7 @@ public class SpladeEmbedder extends TypedComponent implements SpladeEmbedderConf
     public SpladeEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.SpladeEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         var model = Model.fromXml(state, xml, "transformer-model", Set.of(ONNX_MODEL)).orElseThrow();
-        this.onnxModelOptions = new OnnxModelOptions(
-                getChildValue(xml, "onnx-execution-mode"),
-                getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt),
-                getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt),
-                getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new));
+        this.onnxModelOptions = OnnxModelOptionsParser.fromXml(xml, state);
         modelRef = model.modelReference();
         vocabRef = Model.fromXmlOrImplicitlyFromOnnxModel(state, xml, model, "tokenizer-model", Set.of(HF_TOKENIZER)).modelReference();
         maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
@@ -60,6 +57,11 @@ public class SpladeEmbedder extends TypedComponent implements SpladeEmbedderConf
         onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
         onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
         onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
+        onnxModelOptions.batchingMaxSize().ifPresent(b::batchingMaxSize);
+        onnxModelOptions.batchingMaxDelayMillis().ifPresent(b::batchingMaxDelay);
+        onnxModelOptions.concurrencyFactorType().ifPresent(value -> b.concurrencyType(SpladeEmbedderConfig.ConcurrencyType.Enum.valueOf(value)));
+        onnxModelOptions.concurrencyFactor().ifPresent(b::concurrency);
+        onnxModelOptions.modelConfigOverride().ifPresent(value -> b.modelConfigOverride(Optional.of(value)));
     }
 
 }

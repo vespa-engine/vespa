@@ -4,6 +4,7 @@ package ai.vespa.modelintegration.evaluator;
 import net.jpountz.xxhash.XXHashFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -12,6 +13,7 @@ import java.util.Optional;
  *
  * @author lesters
  * @author bjorncs
+ * @author glebashnik
  */
 public record OnnxEvaluatorOptions(
         ExecutionMode executionMode,
@@ -19,17 +21,20 @@ public record OnnxEvaluatorOptions(
         int intraOpThreads,
         int gpuDeviceNumber,
         boolean gpuDeviceRequired,
-        /* Optional runtime specific raw config */Optional<String> rawConfig) {
+        int batchingMaxSize,
+        int batchingMaxDelayMillis,
+        int numModelInstances,
+        Optional<Path> modelConfigOverride
+) {
 
     // Unlike hashCode, this hash doesn't change between runs
     public long calculateHash() {
         var bytes = toString().getBytes(StandardCharsets.UTF_8);
         return XXHashFactory.fastestInstance().hash64().hash(bytes, 0, bytes.length, 0);
     }
-    
+
     public OnnxEvaluatorOptions {
         Objects.requireNonNull(executionMode, "executionMode cannot be null");
-        Objects.requireNonNull(rawConfig, "rawConfig cannot be null");
     }
 
     public static OnnxEvaluatorOptions createDefault() {
@@ -46,13 +51,26 @@ public record OnnxEvaluatorOptions(
         }
     }
 
+    public enum ConcurrencyFactorType {
+        ABSOLUTE,
+        RELATIVE;
+
+        public static ConcurrencyFactorType fromString(String type) {
+            if ("relative".equalsIgnoreCase(type)) return RELATIVE;
+            return ABSOLUTE;
+        }
+    }
+
     public static class Builder {
         private ExecutionMode executionMode;
         private int interOpThreads;
         private int intraOpThreads;
         private int gpuDeviceNumber;
         private boolean gpuDeviceRequired;
-        private String rawConfig;
+        private int batchingMaxSize;
+        private int batchingMaxDelayMillis;
+        private int numModelInstances;
+        private Optional<Path> modelConfigOverride;
 
         public Builder() {
             executionMode = ExecutionMode.SEQUENTIAL;
@@ -61,7 +79,10 @@ public record OnnxEvaluatorOptions(
             intraOpThreads = quarterVcpu;
             gpuDeviceNumber = -1;
             gpuDeviceRequired = false;
-            rawConfig = null;
+            batchingMaxSize = 1;
+            batchingMaxDelayMillis = 1;
+            numModelInstances = 1;
+            modelConfigOverride = Optional.empty();
         }
 
         public Builder(OnnxEvaluatorOptions options) {
@@ -70,7 +91,10 @@ public record OnnxEvaluatorOptions(
             this.intraOpThreads = options.intraOpThreads();
             this.gpuDeviceNumber = options.gpuDeviceNumber();
             this.gpuDeviceRequired = options.gpuDeviceRequired();
-            this.rawConfig = options.rawConfig().orElse(null);
+            this.batchingMaxSize = options.batchingMaxSize();
+            this.batchingMaxDelayMillis = options.batchingMaxDelayMillis();
+            this.numModelInstances = options.numModelInstances();
+            this.modelConfigOverride = options.modelConfigOverride;
         }
 
         public Builder setExecutionMode(String mode) {
@@ -118,12 +142,30 @@ public record OnnxEvaluatorOptions(
             return this;
         }
 
-        /**
-         * Sets the raw config as a string. It's runtime specific - for Triton it's the content of config.pbtxt
-         * Settings this overrides other options such as {@link #setExecutionMode}, {@link #setInterOpThreads} and {@link #setIntraOpThreads}.
-         */
-        public Builder setRawConfig(String config) {
-            this.rawConfig = config;
+        public Builder setBatching(int maxSize, int batchMaxDelayMillis) {
+            this.batchingMaxSize = maxSize;
+            this.batchingMaxDelayMillis = batchMaxDelayMillis;
+            return this;
+        }
+
+        public Builder setConcurrency(double concurrencyFactor, ConcurrencyFactorType concurrencyFactorType) {
+            this.numModelInstances = calculateNumModelInstances(concurrencyFactor, concurrencyFactorType);
+            return this;
+        }
+
+        private static int calculateNumModelInstances(double concurrencyFactor, ConcurrencyFactorType type) {
+            if (type == ConcurrencyFactorType.ABSOLUTE) {
+                return Math.max(1, Math.toIntExact(Math.round(concurrencyFactor)));
+            } else if (type == ConcurrencyFactorType.RELATIVE) {
+                int numCores = Runtime.getRuntime().availableProcessors();
+                return Math.max(1, Math.toIntExact(Math.round(concurrencyFactor * numCores)));
+            } else {
+                throw new IllegalArgumentException("Unhandled concurrency factor type: " + type.toString());
+            }
+        }
+
+        public Builder setModelConfigOverride(Optional<Path> configFile) {
+            this.modelConfigOverride = configFile;
             return this;
         }
 
@@ -134,7 +176,11 @@ public record OnnxEvaluatorOptions(
                     intraOpThreads,
                     gpuDeviceNumber,
                     gpuDeviceRequired,
-                    Optional.ofNullable(rawConfig));
+                    batchingMaxSize,
+                    batchingMaxDelayMillis,
+                    numModelInstances,
+                    modelConfigOverride
+            );
         }
     }
 

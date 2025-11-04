@@ -37,11 +37,7 @@ public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConf
     public BertEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.BertBaseEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         var model = Model.fromXml(state, xml, "transformer-model", Set.of(ONNX_MODEL)).orElseThrow();
-        this.onnxModelOptions = new OnnxModelOptions(
-                getChildValue(xml, "onnx-execution-mode"),
-                getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt),
-                getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt),
-                getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new));
+        this.onnxModelOptions = OnnxModelOptionsParser.fromXml(xml, state);
         modelRef = model.modelReference();
         vocabRef = Model.fromXml(state, xml, "tokenizer-vocab", Set.of(BERT_VOCAB)).orElseThrow().modelReference();
         maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
@@ -70,6 +66,12 @@ public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConf
         onnxModelOptions.interOpThreads().ifPresent(b::onnxInterOpThreads);
         onnxModelOptions.intraOpThreads().ifPresent(b::onnxIntraOpThreads);
         onnxModelOptions.gpuDevice().ifPresent(value -> b.onnxGpuDevice(value.deviceNumber()));
+        onnxModelOptions.batchingMaxSize().ifPresent(b.batching::maxSize);
+        onnxModelOptions.batchingMaxDelayMillis().ifPresent(b.batching::maxDelayMillis);
+        onnxModelOptions.concurrencyFactorType().ifPresent(
+                value -> b.concurrency.factorType(BertBaseEmbedderConfig.Concurrency.FactorType.Enum.valueOf(value)));
+        onnxModelOptions.concurrencyFactor().ifPresent(b.concurrency::factor);
+        b.modelConfigOverride(onnxModelOptions.modelConfigOverride());
     }
 
 }

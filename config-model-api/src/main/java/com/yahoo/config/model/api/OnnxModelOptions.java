@@ -1,6 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
+import com.yahoo.config.FileReference;
+
+import javax.swing.text.html.Option;
+import java.nio.file.Path;
 import java.util.Optional;
 
 /**
@@ -10,30 +14,92 @@ import java.util.Optional;
  * @author hmusum
  */
 public record OnnxModelOptions(Optional<String> executionMode, Optional<Integer> interOpThreads,
-                               Optional<Integer> intraOpThreads, Optional<GpuDevice> gpuDevice) {
+                               Optional<Integer> intraOpThreads, Optional<GpuDevice> gpuDevice,
+                               Optional<Integer> batchingMaxSize, Optional<Integer> batchingMaxDelayMillis,
+                               Optional<String> concurrencyFactorType, Optional<Double> concurrencyFactor,
+                               Optional<FileReference> modelConfigOverride) {
 
     public OnnxModelOptions(String executionMode, int interOpThreads, int intraOpThreads, GpuDevice gpuDevice) {
-        this(Optional.of(executionMode), Optional.of(interOpThreads), Optional.of(intraOpThreads), Optional.of(gpuDevice));
+        this(
+                Optional.of(executionMode), Optional.of(interOpThreads), Optional.of(intraOpThreads),
+                Optional.of(gpuDevice), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty()
+        );
     }
 
     public static OnnxModelOptions empty() {
-        return new OnnxModelOptions(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+        return new OnnxModelOptions(
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()
+        );
     }
 
     public OnnxModelOptions withExecutionMode(String executionMode) {
-        return new OnnxModelOptions(Optional.ofNullable(executionMode), interOpThreads, intraOpThreads, gpuDevice);
+        return new OnnxModelOptions(
+                Optional.ofNullable(executionMode), interOpThreads, intraOpThreads, gpuDevice,
+                batchingMaxSize, batchingMaxDelayMillis, concurrencyFactorType, concurrencyFactor, modelConfigOverride
+        );
     }
 
     public OnnxModelOptions withInterOpThreads(Integer interOpThreads) {
-        return new OnnxModelOptions(executionMode, Optional.ofNullable(interOpThreads), intraOpThreads, gpuDevice);
+        return new OnnxModelOptions(
+                executionMode, Optional.ofNullable(interOpThreads), intraOpThreads, gpuDevice,
+                batchingMaxSize, batchingMaxDelayMillis, concurrencyFactorType, concurrencyFactor, modelConfigOverride
+        );
     }
 
     public OnnxModelOptions withIntraOpThreads(Integer intraOpThreads) {
-        return new OnnxModelOptions(executionMode, interOpThreads, Optional.ofNullable(intraOpThreads), gpuDevice);
+        return new OnnxModelOptions(
+                executionMode, interOpThreads, Optional.ofNullable(intraOpThreads), gpuDevice,
+                batchingMaxSize, batchingMaxDelayMillis, concurrencyFactorType, concurrencyFactor, modelConfigOverride
+        );
     }
 
     public OnnxModelOptions withGpuDevice(GpuDevice gpuDevice) {
-        return new OnnxModelOptions(executionMode, interOpThreads, intraOpThreads, Optional.ofNullable(gpuDevice));
+        return new OnnxModelOptions(
+                executionMode, interOpThreads, intraOpThreads, Optional.ofNullable(gpuDevice),
+                batchingMaxSize, batchingMaxDelayMillis, concurrencyFactorType, concurrencyFactor, modelConfigOverride
+        );
+    }
+
+    public OnnxModelOptions withBatchingMaxSize(Integer batchingMaxSize) {
+        return new OnnxModelOptions(
+                executionMode, interOpThreads, intraOpThreads, gpuDevice,
+                Optional.ofNullable(batchingMaxSize), batchingMaxDelayMillis, concurrencyFactorType,
+                concurrencyFactor, modelConfigOverride
+        );
+    }
+
+    public OnnxModelOptions withBatchingMaxDelayMillis(Integer batchingMaxDelayMillis) {
+        return new OnnxModelOptions(
+                executionMode, interOpThreads, intraOpThreads, gpuDevice,
+                batchingMaxSize, Optional.ofNullable(batchingMaxDelayMillis), concurrencyFactorType,
+                concurrencyFactor, modelConfigOverride
+        );
+    }
+
+    public OnnxModelOptions withConcurrencyType(String concurrencyType) {
+        return new OnnxModelOptions(
+                executionMode, interOpThreads, intraOpThreads, gpuDevice,
+                batchingMaxSize, batchingMaxDelayMillis, Optional.ofNullable(concurrencyType),
+                concurrencyFactor, modelConfigOverride
+        );
+    }
+
+    public OnnxModelOptions withConcurrencyFactorType(Double concurrencyFactor) {
+        return new OnnxModelOptions(
+                executionMode, interOpThreads, intraOpThreads, gpuDevice,
+                batchingMaxSize, batchingMaxDelayMillis, concurrencyFactorType, Optional.ofNullable(concurrencyFactor),
+                modelConfigOverride
+        );
+    }
+
+    public OnnxModelOptions withModelConfigOverride(FileReference modelConfigOverride) {
+        return new OnnxModelOptions(
+                executionMode, interOpThreads, intraOpThreads, gpuDevice,
+                batchingMaxSize, batchingMaxDelayMillis, concurrencyFactorType, concurrencyFactor,
+                Optional.ofNullable(modelConfigOverride)
+        );
     }
 
     public record GpuDevice(int deviceNumber, boolean required) {

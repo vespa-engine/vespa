@@ -102,12 +102,16 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
                 c -> this.skipTokens.addAll(
                         tokenizer.encode(Character.toString((char) c), null).ids())
         );
-        var optionsBuilder = new OnnxEvaluatorOptions.Builder()
+        var onnxOptsBuilder = new OnnxEvaluatorOptions.Builder()
                 .setExecutionMode(config.transformerExecutionMode().toString())
-                .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads());
-        if (config.transformerGpuDevice() >= 0)
-            optionsBuilder.setGpuDevice(config.transformerGpuDevice());
-        var onnxOpts = optionsBuilder.build();
+                .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads())
+                .setGpuDevice(config.transformerGpuDevice())
+                .setBatchingMaxSize(config.batching().maxSize())
+                .setBatchingMaxDelay(config.batching().maxDelayMillis())
+                .setConcurrency(config.concurrency().factor(), config.concurrency().factorType().toString());
+        config.modelConfigOverride().ifPresent(path ->
+                onnxOptsBuilder.setModelConfigOverride(new com.yahoo.config.FileReference(path.toString())));
+        var onnxOpts = onnxOptsBuilder.build();
         var resolver = new OnnxExternalDataResolver();
         evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxOpts);
 

@@ -48,11 +48,7 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
     public ColBertEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.ColBertEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         var model = Model.fromXml(state, xml, "transformer-model", Set.of(ONNX_MODEL)).orElseThrow();
-        this.onnxModelOptions = new OnnxModelOptions(
-                getChildValue(xml, "onnx-execution-mode"),
-                getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt),
-                getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt),
-                getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new));
+        this.onnxModelOptions = OnnxModelOptionsParser.fromXml(xml, state);
         modelRef = model.modelReference();
         vocabRef = Model.fromXmlOrImplicitlyFromOnnxModel(state, xml, model, "tokenizer-model", Set.of(HF_TOKENIZER)).modelReference();
         maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
@@ -89,6 +85,12 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
         onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
         onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
         onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
+        onnxModelOptions.batchingMaxSize().ifPresent(b.batching::maxSize);
+        onnxModelOptions.batchingMaxDelayMillis().ifPresent(b.batching::maxDelayMillis);
+        onnxModelOptions.concurrencyFactorType().ifPresent(
+                value -> b.concurrency.factorType(ColBertEmbedderConfig.Concurrency.FactorType.Enum.valueOf(value)));
+        onnxModelOptions.concurrencyFactor().ifPresent(b.concurrency::factor);
+        b.modelConfigOverride(onnxModelOptions.modelConfigOverride());
     }
 
 }
