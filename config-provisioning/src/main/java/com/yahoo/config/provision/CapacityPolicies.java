@@ -209,7 +209,6 @@ public class CapacityPolicies {
 
     // The lowest amount of resources that can be shared (i.e. a matching host flavor for this exists)
     private NodeResources smallestSharedResources() {
-        if (zone.system().isKubernetesLike()) throw new IllegalStateException("Not expecting shared nodes in Kubernetes");
         return zone.cloud().name() == CloudName.GCP
                 ? new NodeResources(1, 4, 50, 0.3)
                 : new NodeResources(0.5, 2, 50, 0.3);
