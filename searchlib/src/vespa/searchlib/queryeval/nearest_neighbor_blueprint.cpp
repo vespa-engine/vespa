@@ -106,10 +106,10 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, d
         if (_global_filter->is_active()) { // pre-filtering case
             _global_filter_hits = _global_filter->count();
             _global_filter_hit_ratio = static_cast<double>(_global_filter_hits.value()) / est_hits;
+            est_hits = std::min(est_hits, _global_filter_hits.value());
             if (_global_filter_hit_ratio.value() < _hnsw_params.global_filter_lower_limit) {
                 _algorithm = Algorithm::EXACT_FALLBACK;
-            } else {
-                est_hits = std::min(est_hits, _global_filter_hits.value());
+                setEstimate(HitEstimate(est_hits, false));
             }
         } else { // post-filtering case
             // The goal is to expose 'targetHits' hits to first-phase ranking.
