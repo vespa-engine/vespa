@@ -408,9 +408,8 @@ public:
         // f64 is a tiny bit slower for dot products on SVE/SVE2.
         ft.tag_fns_as_suboptimal({FnTable::FnId::DOT_PRODUCT_F64});
 #if HWY_TARGET == HWY_SVE || HWY_TARGET == HWY_SVE_256
-        // Squared Euclidean distance is slower for f32/f64 on SVE/SVE_256 (Graviton 3)
-        ft.tag_fns_as_suboptimal({FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_F32,
-                                  FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_F64});
+        // Squared Euclidean distance is slower for f64 on SVE/SVE_256 (Graviton 3)
+        ft.tag_fns_as_suboptimal({FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_F64});
 #endif // HWY_TARGET == HWY_SVE || HWY_TARGET == HWY_SVE_256
 #if HWY_TARGET != HWY_SVE2_128
         // f32/f64 dot products are slightly slower across the board on non-fixed width SVE/SVE2.
