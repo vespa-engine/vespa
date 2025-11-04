@@ -17,6 +17,7 @@ import java.util.logging.Level;
  * Component definition for a {@link java.util.concurrent.Executor} using {@link ContainerThreadPool}.
  *
  * @author bjorncs
+ * @author johsol
  */
 public abstract class ContainerThreadpool extends SimpleComponent implements ContainerThreadpoolConfig.Producer {
 
@@ -110,23 +111,35 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
         setDefaultConfigValues(builder);
 
         builder.name(this.name);
+
+        // If absolute value is set in config model, clear the relative value. And vice versa.
+        // They could be set as default values in setDefaultConfigValues.
         if (options.max() != null) {
-            if (options.isRelative())
+            if (options.isRelative()) {
                 builder.relativeMaxThreads(options.max());
-            else
+                builder.maxThreads(-1);
+            } else {
                 builder.maxThreads(options.max().intValue());
+                builder.relativeMaxThreads(-1);
+            }
         }
         if (options.min() != null) {
-            if (options.isRelative())
+            if (options.isRelative()) {
                 builder.relativeMinThreads(options.min());
-            else
+                builder.minThreads(-1);
+            } else {
                 builder.minThreads(options.min().intValue());
+                builder.relativeMinThreads(-1);
+            }
         }
         if (options.queueSize() != null) {
-            if (options.isRelative())
+            if (options.isRelative()) {
                 builder.relativeQueueSize(options.queueSize());
-            else
+                builder.queueSize(-1);
+            } else {
                 builder.queueSize(options.queueSize().intValue());
+                builder.relativeQueueSize(-1);
+            }
         }
     }
 }
