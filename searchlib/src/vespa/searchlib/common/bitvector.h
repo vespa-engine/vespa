@@ -276,7 +276,8 @@ public:
      * @param numberOfElements  The size of the bit vector in bits.
      * @param file              The file from which to read the bit vector.
      * @param offset            Where bitvector image is located in the file.
-     * @param doccount          Number of bits set in bitvector
+     * @param entry_size        The size of the bitvector image in the file.
+     * @param doccount          Number of bits set in bitvector.
      */
     static std::unique_ptr<const BitVector> create(Index numberOfElements, FastOS_FileInterface &file,
                                                    int64_t offset, size_t entry_size,
@@ -292,8 +293,9 @@ public:
      * TODO: Extend to handle both AND/OR
      */
     static void parallellOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVector* const> vectors);
-    static Index num_words_plain(Index bits) noexcept { return wordNum(bits + (WordLen - 1)); }
-    static Index legacy_num_bytes_with_single_guard_bit(Index bits) noexcept {
+    // number of words used for a bitvector without guard bits.
+    static constexpr Index num_words_plain(Index bits) noexcept { return wordNum(bits + (WordLen - 1)); }
+    static constexpr Index legacy_num_bytes_with_single_guard_bit(Index bits) noexcept {
         return num_words_plain(bits + 1) * sizeof(Word);
     }
     static Index numWords(Index bits) noexcept { return wordNum(bits + 1 + (WordLen - 1)); }

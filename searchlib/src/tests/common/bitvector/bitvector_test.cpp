@@ -825,7 +825,7 @@ TEST(BitvectorTest, reset_term_field_match_data_on_unpack)
     EXPECT_TRUE(check_full_term_field_match_data_reset_on_unpack(true, true));
 }
 
-TEST(BitvectorTest, fixup_after_short_read)
+TEST(BitvectorTest, fixup_count_and_guard_bit_and_zero_remaining_data_bits_after_short_read)
 {
     AllocatedBitVector bv(256);
     bv.setBit(5);
