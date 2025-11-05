@@ -13,7 +13,7 @@
                 <query>search_query:</query>
                 <document>search_document:</document>
             </prepend>
-            <internal-model-config-path>files/config.pbtxt</internal-model-config-path>
+            <model-config-override>files/config.pbtxt</model-config-override>
         </component>
     </container>
     <config name="ai.vespa.llm.clients.triton">

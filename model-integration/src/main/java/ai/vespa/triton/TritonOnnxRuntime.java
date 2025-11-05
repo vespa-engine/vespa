@@ -21,9 +21,10 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 
 /**
- * Experimental Triton ONNX runtime.
+ * ONNX Runtime implementation that uses Triton Inference Server for model inference.
  *
  * @author bjorncs
+ * @author glebashnik
  */
 public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime {
 
@@ -49,11 +50,11 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
         var modelName = createModelName(modelPath, options);
         var isExplicitControlMode = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
-        
+
         if (isExplicitControlMode) {
             copyModelToRepository(modelName, modelPath, options);
         }
-        
+
         return new TritonOnnxEvaluator(client, modelName, isExplicitControlMode);
     }
 
@@ -62,14 +63,16 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         client.close();
     }
 
-    /** Copies the model file to the model repository and serializes the config */
+    /**
+     * Copies the model file to the model repository and serializes the config
+     */
     private void copyModelToRepository(String modelName, String externalModelPath, OnnxEvaluatorOptions options) {
         var modelRepositoryPath = Defaults.getDefaults().underVespaHome(config.modelRepositoryPath());
-        var modelBasePath = Paths.get(modelRepositoryPath, modelName);
-        var modelVersionPath = modelBasePath.resolve("1");
+        var modelRootPath = Paths.get(modelRepositoryPath, modelName);
+        var modelVersionPath = modelRootPath.resolve("1");
         var modelFilePath = modelVersionPath.resolve("model.onnx");
-        var modelConfigPath = modelBasePath.resolve("config.pbtxt");
-        
+        var modelConfigPath = modelRootPath.resolve("config.pbtxt");
+
         try {
             // Create directory for model name and version with correct permissions
             Files.createDirectories(
@@ -85,7 +88,8 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                             throw new UncheckedIOException("Failed to read model config override file: " + path, e);
                         }
                     })
-                    .orElseGet(() -> generateConfigFromEvaluatorOptions(modelName, options).toString());
+                    .orElseGet(() -> generateConfigFromEvaluatorOptions(modelName, options)
+                            .toString());
             Files.writeString(modelConfigPath, modelConfig);
 
             // To ensure that the Triton can read the model files, explicitly grant world read
@@ -102,7 +106,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         modelPerms.add(PosixFilePermission.OTHERS_READ);
         Files.setPosixFilePermissions(path, modelPerms);
     }
-    
+
     static String createModelName(String modelPath, OnnxEvaluatorOptions options) {
         var fileName = Paths.get(modelPath).getFileName().toString();
         var baseName = fileName.substring(0, fileName.lastIndexOf('.')); // remove file extension
@@ -112,63 +116,54 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         return baseName + "_" + combinedHash; // add hash to avoid conflicts
     }
 
-    // Generate a default model config based on evaluator options.
-    // These are not necqessarily optimal but should closely match the effective configuration for the embedded ONNX runtime.
     private static ModelConfigOuterClass.ModelConfig generateConfigFromEvaluatorOptions(
-            String modelName,OnnxEvaluatorOptions options) {
-        // Similar to EmbeddedOnnxRuntime.overrideOptions(), relies on Triton to fall back to CPU if GPU is not available.
-        var kind = options.gpuDeviceRequired()
+            String modelName, OnnxEvaluatorOptions options) {
+        // Similar to EmbeddedOnnxRuntime.overrideOptions(), relies on Triton to fall back to CPU if GPU is not
+        // available.
+        var deviceKind = options.gpuDeviceRequired()
                 ? ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU
                 : (options.gpuDeviceNumber() >= 0)
                         ? ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_AUTO
                         : ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU;
+
         var configBuilder = ModelConfigOuterClass.ModelConfig.newBuilder()
                 .setName(modelName)
                 .addInstanceGroup(ModelConfigOuterClass.ModelInstanceGroup.newBuilder()
                         .setCount(options.numModelInstances())
-                        .setKind(kind)
+                        .setKind(deviceKind)
                         .build())
                 .setPlatform("onnxruntime_onnx")
                 .setMaxBatchSize(options.batchingMaxSize())
-                .putParameters("enable_mem_area", ModelConfigOuterClass.ModelParameter.newBuilder()
-                        .setStringValue("0")
-                        .build())
-                .putParameters("enable_mem_pattern", ModelConfigOuterClass.ModelParameter.newBuilder()
-                        .setStringValue("0")
-                        .build())
-                .putParameters("intra_op_thread_count", ModelConfigOuterClass.ModelParameter.newBuilder()
-                        .setStringValue(Integer.toString(options.intraOpThreads()))
-                        .build())
-                .putParameters("inter_op_thread_count", ModelConfigOuterClass.ModelParameter.newBuilder()
-                        .setStringValue(Integer.toString(options.interOpThreads()))
-                        .build());
+                .putParameters(
+                        "enable_mem_area",
+                        ModelConfigOuterClass.ModelParameter.newBuilder()
+                                .setStringValue("0")
+                                .build())
+                .putParameters(
+                        "enable_mem_pattern",
+                        ModelConfigOuterClass.ModelParameter.newBuilder()
+                                .setStringValue("0")
+                                .build())
+                .putParameters(
+                        "intra_op_thread_count",
+                        ModelConfigOuterClass.ModelParameter.newBuilder()
+                                .setStringValue(Integer.toString(options.intraOpThreads()))
+                                .build())
+                .putParameters(
+                        "inter_op_thread_count",
+                        ModelConfigOuterClass.ModelParameter.newBuilder()
+                                .setStringValue(Integer.toString(options.interOpThreads()))
+                                .build());
 
         // Add dynamic batching if batch size is greater than 1
         if (options.batchingMaxSize() > 1) {
-            var dynamicBatchingBuilder = ModelConfigOuterClass.ModelDynamicBatching.newBuilder();
-            // Convert milliseconds to microseconds
             long delayMicros = options.batchingMaxDelayMillis() * 1000L;
-            dynamicBatchingBuilder.setMaxQueueDelayMicroseconds(delayMicros);
-            configBuilder.setDynamicBatching(dynamicBatchingBuilder.build());
+            var dynamicBatching = ModelConfigOuterClass.ModelDynamicBatching.newBuilder()
+                    .setMaxQueueDelayMicroseconds(delayMicros)
+                    .build();
+            configBuilder.setDynamicBatching(dynamicBatching);
         }
 
         return configBuilder.build();
-    }
-
-    /**
-     * Parses a duration string (e.g., "100ms", "1s", "500us") and converts it to microseconds.
-     */
-    private static long parseDurationToMicroseconds(String duration) {
-        duration = duration.trim().toLowerCase();
-        if (duration.endsWith("ms")) {
-            return Long.parseLong(duration.substring(0, duration.length() - 2)) * 1000;
-        } else if (duration.endsWith("us")) {
-            return Long.parseLong(duration.substring(0, duration.length() - 2));
-        } else if (duration.endsWith("s")) {
-            return Long.parseLong(duration.substring(0, duration.length() - 1)) * 1_000_000;
-        } else {
-            // Assume microseconds if no unit specified
-            return Long.parseLong(duration);
-        }
     }
 }

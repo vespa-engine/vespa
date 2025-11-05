@@ -84,7 +84,7 @@ public class OnnxModelOptionsParser {
 
         return options;
     }
-    
+
     private static int parseMillis(String duration) {
         return Math.toIntExact(new Duration(duration).getMilliSeconds());
     }

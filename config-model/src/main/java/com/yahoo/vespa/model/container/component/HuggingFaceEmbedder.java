@@ -74,15 +74,17 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
         if (poolingStrategy != null) b.poolingStrategy(PoolingStrategy.Enum.valueOf(poolingStrategy));
         if (prependQuery != null) b.prependQuery(prependQuery);
         if (prependDocument != null) b.prependDocument(prependDocument);
-        onnxModelOptions.executionMode().ifPresent(
-                value -> b.transformerExecutionMode(TransformerExecutionMode.Enum.valueOf(value)));
+        onnxModelOptions
+                .executionMode()
+                .ifPresent(value -> b.transformerExecutionMode(TransformerExecutionMode.Enum.valueOf(value)));
         onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
         onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
         onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
         onnxModelOptions.batchingMaxSize().ifPresent(b.batching::maxSize);
         onnxModelOptions.batchingMaxDelayMillis().ifPresent(b.batching::maxDelayMillis);
-        onnxModelOptions.concurrencyFactorType().ifPresent(
-                value -> b.concurrency.factorType(FactorType.Enum.valueOf(value)));
+        onnxModelOptions
+                .concurrencyFactorType()
+                .ifPresent(value -> b.concurrency.factorType(FactorType.Enum.valueOf(value)));
         onnxModelOptions.concurrencyFactor().ifPresent(b.concurrency::factor);
         b.modelConfigOverride(onnxModelOptions.modelConfigOverride());
     }

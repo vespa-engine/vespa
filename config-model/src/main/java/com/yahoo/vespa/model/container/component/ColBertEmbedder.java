@@ -81,16 +81,19 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
         if (transformerPadToken != null) b.transformerPadToken(transformerPadToken);
         if (queryTokenId != null) b.queryTokenId(queryTokenId);
         if (documentTokenId != null) b.documentTokenId(documentTokenId);
-        onnxModelOptions.executionMode().ifPresent(value -> b.transformerExecutionMode(TransformerExecutionMode.Enum.valueOf(value)));
+        onnxModelOptions
+                .executionMode()
+                .ifPresent(value -> b.transformerExecutionMode(TransformerExecutionMode.Enum.valueOf(value)));
         onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
         onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
         onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
         onnxModelOptions.batchingMaxSize().ifPresent(b.batching::maxSize);
         onnxModelOptions.batchingMaxDelayMillis().ifPresent(b.batching::maxDelayMillis);
-        onnxModelOptions.concurrencyFactorType().ifPresent(
-                value -> b.concurrency.factorType(ColBertEmbedderConfig.Concurrency.FactorType.Enum.valueOf(value)));
+        onnxModelOptions
+                .concurrencyFactorType()
+                .ifPresent(value ->
+                        b.concurrency.factorType(ColBertEmbedderConfig.Concurrency.FactorType.Enum.valueOf(value)));
         onnxModelOptions.concurrencyFactor().ifPresent(b.concurrency::factor);
         b.modelConfigOverride(onnxModelOptions.modelConfigOverride());
     }
-
 }

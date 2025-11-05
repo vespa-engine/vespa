@@ -5,11 +5,9 @@ import com.yahoo.config.ModelReference;
 import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.SpladeEmbedderConfig;
-import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
-import java.util.Optional;
 import java.util.Set;
 
 import static com.yahoo.text.XML.getChildValue;
@@ -53,15 +51,19 @@ public class SpladeEmbedder extends TypedComponent implements SpladeEmbedderConf
         if (transformerTokenTypeIds != null) b.transformerTokenTypeIds(transformerTokenTypeIds);
         if (transformerOutput != null) b.transformerOutput(transformerOutput);
         if (termScoreThreshold != null) b.termScoreThreshold(termScoreThreshold);
-
-        onnxModelOptions.executionMode().ifPresent(value -> b.transformerExecutionMode(SpladeEmbedderConfig.TransformerExecutionMode.Enum.valueOf(value)));
+        onnxModelOptions
+                .executionMode()
+                .ifPresent(value ->
+                        b.transformerExecutionMode(SpladeEmbedderConfig.TransformerExecutionMode.Enum.valueOf(value)));
         onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
         onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
         onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
         onnxModelOptions.batchingMaxSize().ifPresent(b.batching::maxSize);
         onnxModelOptions.batchingMaxDelayMillis().ifPresent(b.batching::maxDelayMillis);
-        onnxModelOptions.concurrencyFactorType().ifPresent(
-                value -> b.concurrency.factorType(SpladeEmbedderConfig.Concurrency.FactorType.Enum.valueOf(value)));
+        onnxModelOptions
+                .concurrencyFactorType()
+                .ifPresent(value ->
+                        b.concurrency.factorType(SpladeEmbedderConfig.Concurrency.FactorType.Enum.valueOf(value)));
         onnxModelOptions.concurrencyFactor().ifPresent(b.concurrency::factor);
         b.modelConfigOverride(onnxModelOptions.modelConfigOverride());
     }
