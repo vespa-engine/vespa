@@ -51,6 +51,8 @@ public interface Flag<T, F extends Flag<T, F>> {
               .with(Dimension.INSTANCE_ID, applicationId.serializedForm());
     }
 
+    default F with(Optional<ApplicationId> applicationId) { return applicationId.map(this::with).orElse(self()); }
+
     /** Sets the tenant and application dimensions. */
     default F with(TenantName tenantName, ApplicationName applicationName) {
         return with(tenantName)

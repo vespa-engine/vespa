@@ -515,7 +515,7 @@ public class PermanentFlags {
             "refresh-identity-after", "",
             "Refresh the identity document and certificates issued before this timestamp. Timestamp in ISO8601 format",
             "Takes effect on next host admin tick",
-            HOSTNAME
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, HOSTNAME
     );
 
     public static final UnboundListFlag<String> LOG_REQUEST_CONTENT = defineListFlag(
