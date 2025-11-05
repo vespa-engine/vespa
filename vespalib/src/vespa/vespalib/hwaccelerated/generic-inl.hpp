@@ -9,6 +9,7 @@
 
 #include "fn_table.h"
 #include "private_helpers.hpp"
+#include <hwy/detect_targets.h>
 #include <cblas.h>
 
 namespace vespalib::hwaccelerated {
@@ -161,11 +162,12 @@ void my_or_128(size_t offset, const std::vector<std::pair<const void*, bool>>& s
     helper::orChunks<16, 8>(offset, src, dest);
 }
 constexpr uint16_t baseline_vector_bytes() noexcept {
-#ifdef __x86_64__
-    // We use Haswell as our x64 baseline, which is AVX2 and thus has 256 bit register width.
+#if HWY_BASELINE_TARGETS & HWY_BASELINE_AVX3
+    return 64;
+#elif HWY_BASELINE_TARGETS & HWY_BASELINE_AVX2
     return 32;
 #else
-    // AArch64 always has a 128 bit NEON baseline
+    // Assume 128 bits for aarch64 NEON and < AVX2 x64
     return 16;
 #endif
 }
