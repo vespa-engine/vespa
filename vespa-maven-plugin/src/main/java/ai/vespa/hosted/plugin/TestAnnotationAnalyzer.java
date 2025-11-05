@@ -49,7 +49,7 @@ class TestAnnotationAnalyzer {
 
         private String className;
 
-        AsmClassVisitor() { super(Opcodes.ASM7); }
+        AsmClassVisitor() { super(Opcodes.ASM8); }
 
         @Override
         public void visit(
