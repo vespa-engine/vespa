@@ -160,9 +160,17 @@ void my_and_128(size_t offset, const std::vector<std::pair<const void*, bool>>& 
 void my_or_128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) noexcept {
     helper::orChunks<16, 8>(offset, src, dest);
 }
+constexpr uint16_t baseline_vector_bytes() noexcept {
+#ifdef __x86_64__
+    // We use Haswell as our x64 baseline, which is AVX2 and thus has 256 bit register width.
+    return 32;
+#else
+    // AArch64 always has a 128 bit NEON baseline
+    return 16;
+#endif
+}
 TargetInfo my_target_info() noexcept {
-    // We assume any auto-vectorized target > 128 bits will override with correct info
-    return {"AutoVec", VESPA_HWACCEL_TARGET_NAME, 16};
+    return {"AutoVec", VESPA_HWACCEL_TARGET_NAME, baseline_vector_bytes()};
 }
 
 } // anon ns
