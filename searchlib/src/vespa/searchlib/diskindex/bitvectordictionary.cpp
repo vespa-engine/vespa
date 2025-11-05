@@ -56,7 +56,7 @@ BitVectorDictionary::open(const std::string &pathPrefix,
             _vectorSize = idxHeader.getTag(ENTRY_SIZE).asInteger();
         } else {
             constexpr size_t LEGACY_ALIGNMENT = 0x40;
-            BitVector::Index bytes = BitVector::numBytes(_docIdLimit);
+            BitVector::Index bytes = BitVector::legacy_num_bytes_with_single_guard_bit(_docIdLimit);
             _vectorSize = bytes + (-bytes & (LEGACY_ALIGNMENT - 1));
         }
 
@@ -108,7 +108,7 @@ BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_resul
         return {};
     }
     int64_t offset = ((int64_t) _vectorSize) * lookup_result.idx + _datHeaderLen;
-    return BitVector::create(_docIdLimit, *_datFile, offset, _entries[lookup_result.idx]._numDocs, read_stats);
+    return BitVector::create(_docIdLimit, *_datFile, offset, _vectorSize, _entries[lookup_result.idx]._numDocs, read_stats);
 }
 
 std::unique_ptr<const BitVector>

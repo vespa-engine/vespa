@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <algorithm>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -822,6 +823,25 @@ TEST(BitvectorTest, reset_term_field_match_data_on_unpack)
     EXPECT_FALSE(check_full_term_field_match_data_reset_on_unpack(true, false));
     EXPECT_TRUE(check_full_term_field_match_data_reset_on_unpack(false, true));
     EXPECT_TRUE(check_full_term_field_match_data_reset_on_unpack(true, true));
+}
+
+TEST(BitvectorTest, fixup_after_short_read)
+{
+    AllocatedBitVector bv(256);
+    bv.setBit(5);
+    bv.invalidateCachedCount();
+    EXPECT_EQ(1, bv.countTrueBits());
+
+    constexpr size_t short_read_bytes = 16;
+    auto buf = Alloc::alloc(bv.getFileBytes(), 256_Mi);
+    memcpy(buf.get(), bv.getStart(), bv.getFileBytes());
+    ASSERT_LT(short_read_bytes, bv.getFileBytes());
+    memset(static_cast<char*>(buf.get()) + short_read_bytes, 0xff, bv.getFileBytes() - short_read_bytes);
+    constexpr BitVector::Index ignored_true_bits = 42;
+    AllocatedBitVector bv2(bv.size(), std::move(buf), 0, short_read_bytes, ignored_true_bits);
+    EXPECT_EQ(1, bv2.countTrueBits());
+    EXPECT_TRUE(bv2.testBit(bv2.size()));
+    EXPECT_TRUE(bv == bv2);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

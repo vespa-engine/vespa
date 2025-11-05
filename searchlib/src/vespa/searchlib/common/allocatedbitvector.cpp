@@ -48,11 +48,26 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements) :
     clear();
 }
 
-AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Alloc buffer, size_t offset) :
-    BitVector(static_cast<char *>(buffer.get()) + offset, numberOfElements),
-    _capacityBits(numberOfElements),
-    _alloc(std::move(buffer))
+AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Alloc buffer, size_t offset, size_t entry_size,
+                                       Index true_bits)
+    : BitVector(static_cast<char *>(buffer.get()) + offset, numberOfElements),
+      _capacityBits(numberOfElements),
+      _alloc(std::move(buffer))
 {
+    setTrueBits(true_bits);
+    size_t vectorsize = getFileBytes(numberOfElements);
+    if (vectorsize > entry_size) {
+        // Fixup after reading fewer bytes than expected, e.g. due to file format changes.
+        char* entry_end = static_cast<char*>(_alloc.get()) + offset + entry_size;
+        memset(entry_end, '\0', vectorsize - entry_size);
+        if (wordNum(size()) * sizeof(Word) >= entry_size) {
+            // Loss of guard bit and data bits only occurs in bitvector unit test.
+            set_bit_no_range_check(size());
+            if (wordNum(size()) * sizeof(Word) > entry_size) {
+               updateCount();
+            }
+        }
+    }
 }
 
 AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBits, const void * rhsBuf, size_t rhsSize, const Alloc* init_alloc) :
