@@ -64,7 +64,8 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         validateModel();
     }
 
-    private static OnnxEvaluatorOptions buildOnnxEvaluatorOptions(BertBaseEmbedderConfig config) {
+    // Package-private for testing
+    static OnnxEvaluatorOptions buildOnnxEvaluatorOptions(BertBaseEmbedderConfig config) {
         var concurrencyFactorType = OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
                 config.concurrency().factorType().toString());
 

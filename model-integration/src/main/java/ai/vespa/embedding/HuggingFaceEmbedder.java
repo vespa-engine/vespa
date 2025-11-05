@@ -121,7 +121,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         this.tokenizer = builder.build();
     }
 
-    private static OnnxEvaluatorOptions buildOnnxEvaluatorOptions(HuggingFaceEmbedderConfig config) {
+    // Package-private for testing
+    static OnnxEvaluatorOptions buildOnnxEvaluatorOptions(HuggingFaceEmbedderConfig config) {
         var concurrencyFactorType = OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
                 config.concurrency().factorType().toString());
 

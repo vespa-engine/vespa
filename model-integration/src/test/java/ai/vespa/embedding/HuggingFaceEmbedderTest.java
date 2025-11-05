@@ -2,8 +2,10 @@
 package ai.vespa.embedding;
 
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.modelintegration.utils.ModelPathHelper;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.language.process.Embedder;
@@ -16,6 +18,8 @@ import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.Tensors;
 import org.junit.Test;
+
+import java.util.Optional;
 
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -274,6 +278,45 @@ public class HuggingFaceEmbedderTest {
         var context = new MapContext();
         context.put("input", new TensorValue(packed));
         return unpacker.evaluate(context).asTensor();
+    }
+
+    @Test
+    public void testBuildOnnxEvaluatorOptions() {
+        var builder = new HuggingFaceEmbedderConfig.Builder();
+        // Required fields
+        builder.tokenizerPath(ModelReference.valueOf("dummy-tokenizer.json"));
+        builder.transformerModel(ModelReference.valueOf("dummy-model.onnx"));
+
+        // ONNX evaluator options
+        builder.transformerExecutionMode(HuggingFaceEmbedderConfig.TransformerExecutionMode.Enum.parallel);
+        builder.transformerInterOpThreads(4);
+        builder.transformerIntraOpThreads(8);
+        builder.transformerGpuDevice(2);
+
+        var batchingBuilder = new HuggingFaceEmbedderConfig.Batching.Builder();
+        batchingBuilder.maxSize(10);
+        batchingBuilder.maxDelayMillis(50);
+        builder.batching(batchingBuilder);
+
+        var concurrencyBuilder = new HuggingFaceEmbedderConfig.Concurrency.Builder();
+        concurrencyBuilder.factor(3.0);
+        concurrencyBuilder.factorType(HuggingFaceEmbedderConfig.Concurrency.FactorType.Enum.absolute);
+        builder.concurrency(concurrencyBuilder);
+
+        builder.modelConfigOverride(Optional.of(new FileReference("/path/to/config.pbtxt")));
+
+        var config = builder.build();
+        var options = HuggingFaceEmbedder.buildOnnxEvaluatorOptions(config);
+
+        assertEquals(OnnxEvaluatorOptions.ExecutionMode.PARALLEL, options.executionMode());
+        assertEquals(4, options.interOpThreads());
+        assertEquals(8, options.intraOpThreads());
+        assertEquals(2, options.gpuDeviceNumber());
+        assertEquals(10, options.batchingMaxSize());
+        assertEquals(50, options.batchingMaxDelayMillis());
+        assertEquals(3, options.numModelInstances());
+        assertTrue(options.modelConfigOverride().isPresent());
+        assertEquals("/path/to/config.pbtxt", options.modelConfigOverride().get().toString());
     }
 
     static class MockModelPathHelper implements ModelPathHelper {

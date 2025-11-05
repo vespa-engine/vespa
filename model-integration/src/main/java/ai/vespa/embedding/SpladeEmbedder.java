@@ -76,7 +76,8 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         validateModel();
     }
 
-    private static OnnxEvaluatorOptions buildOnnxEvaluatorOptions(SpladeEmbedderConfig config) {
+    // Package-private for testing
+    static OnnxEvaluatorOptions buildOnnxEvaluatorOptions(SpladeEmbedderConfig config) {
         var concurrencyFactorType = OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
                 config.concurrency().factorType().toString());
 

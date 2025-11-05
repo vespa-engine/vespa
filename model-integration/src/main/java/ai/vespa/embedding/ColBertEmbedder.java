@@ -108,7 +108,8 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         validateModel();
     }
 
-    private static OnnxEvaluatorOptions buildOnnxEvaluatorOptions(ColBertEmbedderConfig config) {
+    // Package-private for testing
+    static OnnxEvaluatorOptions buildOnnxEvaluatorOptions(ColBertEmbedderConfig config) {
         var concurrencyFactorType = OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
                 config.concurrency().factorType().toString());
 

@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.embedding;
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.SpladeEmbedderConfig;
 import com.yahoo.language.process.Embedder;
@@ -10,6 +12,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -86,6 +89,45 @@ public class SpladeEmbedderTest {
         builder.termScoreThreshold(scoreThreshold);
         builder.transformerGpuDevice(-1);
         return  new SpladeEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build(), useCustomReduce);
+    }
+
+    @Test
+    public void testBuildOnnxEvaluatorOptions() {
+        var builder = new SpladeEmbedderConfig.Builder();
+        // Required fields
+        builder.tokenizerPath(ModelReference.valueOf("dummy-tokenizer.json"));
+        builder.transformerModel(ModelReference.valueOf("dummy-model.onnx"));
+
+        // ONNX evaluator options
+        builder.transformerExecutionMode(SpladeEmbedderConfig.TransformerExecutionMode.Enum.parallel);
+        builder.transformerInterOpThreads(4);
+        builder.transformerIntraOpThreads(8);
+        builder.transformerGpuDevice(2);
+
+        var batchingBuilder = new SpladeEmbedderConfig.Batching.Builder();
+        batchingBuilder.maxSize(10);
+        batchingBuilder.maxDelayMillis(50);
+        builder.batching(batchingBuilder);
+
+        var concurrencyBuilder = new SpladeEmbedderConfig.Concurrency.Builder();
+        concurrencyBuilder.factor(3.0);
+        concurrencyBuilder.factorType(SpladeEmbedderConfig.Concurrency.FactorType.Enum.absolute);
+        builder.concurrency(concurrencyBuilder);
+
+        builder.modelConfigOverride(Optional.of(new FileReference("/path/to/config.pbtxt")));
+
+        var config = builder.build();
+        var options = SpladeEmbedder.buildOnnxEvaluatorOptions(config);
+
+        assertEquals(OnnxEvaluatorOptions.ExecutionMode.PARALLEL, options.executionMode());
+        assertEquals(4, options.interOpThreads());
+        assertEquals(8, options.intraOpThreads());
+        assertEquals(2, options.gpuDeviceNumber());
+        assertEquals(10, options.batchingMaxSize());
+        assertEquals(50, options.batchingMaxDelayMillis());
+        assertEquals(3, options.numModelInstances());
+        assertTrue(options.modelConfigOverride().isPresent());
+        assertEquals("/path/to/config.pbtxt", options.modelConfigOverride().get().toString());
     }
 
 }
