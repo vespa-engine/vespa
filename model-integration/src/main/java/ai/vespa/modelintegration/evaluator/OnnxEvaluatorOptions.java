@@ -71,10 +71,19 @@ public record OnnxEvaluatorOptions(
         private int batchingMaxDelayMillis;
         private int numModelInstances;
         private Optional<Path> modelConfigOverride;
+        private int availableProcessors;
+
 
         public Builder() {
+            this(Runtime.getRuntime().availableProcessors());
+        }
+
+        // availableProcessors is injected for testing, 
+        // Mockito can't mock Runtime.getRuntime().availableProcessors() because it is native.
+        public Builder(int availableProcessors) {
             executionMode = ExecutionMode.SEQUENTIAL;
-            int quarterVcpu = Math.max(1, (int) Math.ceil(Runtime.getRuntime().availableProcessors() / 4d));
+            this.availableProcessors = availableProcessors;
+            int quarterVcpu = Math.max(1, (int) Math.ceil(availableProcessors / 4d));
             interOpThreads = quarterVcpu;
             intraOpThreads = quarterVcpu;
             gpuDeviceNumber = -1;
@@ -153,12 +162,11 @@ public record OnnxEvaluatorOptions(
             return this;
         }
 
-        private static int calculateNumModelInstances(double concurrencyFactor, ConcurrencyFactorType type) {
+        private int calculateNumModelInstances(double concurrencyFactor, ConcurrencyFactorType type) {
             if (type == ConcurrencyFactorType.ABSOLUTE) {
                 return Math.max(1, Math.toIntExact(Math.round(concurrencyFactor)));
             } else if (type == ConcurrencyFactorType.RELATIVE) {
-                int numCores = Runtime.getRuntime().availableProcessors();
-                return Math.max(1, Math.toIntExact(Math.round(concurrencyFactor * numCores)));
+                return Math.max(1, Math.toIntExact(Math.round(concurrencyFactor * availableProcessors)));
             } else {
                 throw new IllegalArgumentException("Unhandled concurrency factor type: " + type.toString());
             }

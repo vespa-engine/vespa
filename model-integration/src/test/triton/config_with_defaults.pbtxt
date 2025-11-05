@@ -1,4 +1,4 @@
-name: "dummy_transformer_ed9202701f4a70a9"
+name: "dummy_transformer_cf7031134cdbbcc8"
 platform: "onnxruntime_onnx"
 max_batch_size: 1
 instance_group {
@@ -20,12 +20,12 @@ parameters {
 parameters {
   key: "inter_op_thread_count"
   value {
-    string_value: "5"
+    string_value: "2"
   }
 }
 parameters {
   key: "intra_op_thread_count"
   value {
-    string_value: "5"
+    string_value: "2"
   }
 }

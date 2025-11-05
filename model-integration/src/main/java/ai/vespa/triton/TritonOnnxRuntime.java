@@ -6,6 +6,7 @@ import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.modelintegration.utils.ModelPathOrData;
+import com.google.protobuf.TextFormat;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.vespa.defaults.Defaults;
@@ -80,16 +81,11 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                     PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxr-x")));
 
             Files.copy(Paths.get(externalModelPath), modelFilePath, StandardCopyOption.REPLACE_EXISTING);
+
             var modelConfig = options.modelConfigOverride()
-                    .map(path -> {
-                        try {
-                            return Files.readString(path);
-                        } catch (IOException e) {
-                            throw new UncheckedIOException("Failed to read model config override file: " + path, e);
-                        }
-                    })
-                    .orElseGet(() -> generateConfigFromEvaluatorOptions(modelName, options)
-                            .toString());
+                    .map(path -> prepareModelConfigOverride(path, modelName))
+                    .orElseGet(() -> generateConfigFromEvaluatorOptions(modelName, options))
+                    .toString();
             Files.writeString(modelConfigPath, modelConfig);
 
             // To ensure that the Triton can read the model files, explicitly grant world read
@@ -114,6 +110,28 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         var optionsHash = options.calculateHash();
         var combinedHash = Long.toHexString(31 * modelHash + optionsHash);
         return baseName + "_" + combinedHash; // add hash to avoid conflicts
+    }
+
+    private ModelConfigOuterClass.ModelConfig prepareModelConfigOverride(Path configPath, String modelName) {
+        String configStr;
+
+        try {
+            configStr = Files.readString(configPath);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed to read model config override file: " + configPath, e);
+        }
+
+        ModelConfigOuterClass.ModelConfig config;
+
+        try {
+            config = TextFormat.parse(configStr, ModelConfigOuterClass.ModelConfig.class);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed to parse model config override:\n" + configStr, e);
+        }
+
+        // Replace model name with the generated name.
+        // Makes overridden model names consistent with generated ones and avoids conflicts.
+        return config.toBuilder().setName(modelName).build();
     }
 
     private static ModelConfigOuterClass.ModelConfig generateConfigFromEvaluatorOptions(

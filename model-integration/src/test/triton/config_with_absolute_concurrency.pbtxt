@@ -1,0 +1,31 @@
+name: "dummy_transformer_8876a2dd6db2c318"
+platform: "onnxruntime_onnx"
+max_batch_size: 1
+instance_group {
+  count: 2
+  kind: KIND_CPU
+}
+parameters {
+  key: "enable_mem_area"
+  value {
+    string_value: "0"
+  }
+}
+parameters {
+  key: "enable_mem_pattern"
+  value {
+    string_value: "0"
+  }
+}
+parameters {
+  key: "inter_op_thread_count"
+  value {
+    string_value: "2"
+  }
+}
+parameters {
+  key: "intra_op_thread_count"
+  value {
+    string_value: "2"
+  }
+}
