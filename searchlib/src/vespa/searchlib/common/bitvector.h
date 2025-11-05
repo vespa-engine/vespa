@@ -35,6 +35,8 @@ public:
         [[nodiscard]] Index start() const noexcept { return _start; }
         [[nodiscard]] Index end() const noexcept { return _end; }
         [[nodiscard]] bool validNonZero() const noexcept { return _end > _start; }
+        [[nodiscard]] bool partial_start() const noexcept { return bitNum(_start) != 0u; }
+        [[nodiscard]] bool partial_end() const noexcept { return bitNum(_end) != 0u; }
     private:
         Index _start;
         Index _end;
