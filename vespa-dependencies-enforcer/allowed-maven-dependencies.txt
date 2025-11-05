@@ -23,7 +23,7 @@ com.github.docker-java:docker-java-api:3.3.6
 com.github.docker-java:docker-java-transport-zerodep:3.3.6
 com.github.docker-java:docker-java-transport:3.3.6
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
-com.google.api.grpc:proto-google-common-protos:2.51.0
+com.google.api.grpc:proto-google-common-protos:${proto-google-common-protos.vespa.version}
 com.google.code.findbugs:jsr305:${findbugs.vespa.version}
 com.google.code.gson:gson:${gson.vespa.version}
 com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.version}
