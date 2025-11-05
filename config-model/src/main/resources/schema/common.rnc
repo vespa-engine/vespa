@@ -165,7 +165,7 @@ OnnxModelExecutionParams =
     }? &
     element concurrency {
         attribute type { "absolute" | "relative" }? &
-        xsd:integer
+        xsd:double { minExclusive = "0.0" }
     }? &
     # Path to model config file, e.g. Triton model config
     element model-config-override { xsd:string }?

@@ -43,7 +43,7 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
     public HuggingFaceEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.HuggingFaceEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         var model = Model.fromXml(state, xml, "transformer-model", Set.of(ONNX_MODEL)).orElseThrow();
-        this.onnxModelOptions = OnnxModelOptionsParser.fromXml(xml, state);
+        onnxModelOptions = OnnxModelOptionsParser.fromXml(xml, state);
         modelRef = model.modelReference();
         vocabRef = Model.fromXmlOrImplicitlyFromOnnxModel(state, xml, model, "tokenizer-model", Set.of(HF_TOKENIZER)).modelReference();
         maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);

@@ -79,15 +79,6 @@ public class EmbedderTestCase {
     }
     
     @Test
-    void testHuggingfaceEmbedderWithModelConfigOverridePath() throws Exception {
-        var model = loadModel(Path.fromString("src/test/cfg/application/embed_triton/"), true);
-        var cluster = model.getContainerClusters().get("container");
-        var embedderCfg = assertHuggingfaceEmbedderComponentPresent(cluster);
-        assertTrue(embedderCfg.modelConfigOverride().isPresent());
-        assertEquals("files/config.pbtxt", embedderCfg.modelConfigOverride().get().toString());
-    }
-    
-    @Test
     void huggingfaceEmbedder_selfhosted() throws Exception {
         var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), false);
         var cluster = model.getContainerClusters().get("container");
@@ -100,6 +91,20 @@ public class EmbedderTestCase {
         assertEquals(-1, tokenizerCfg.maxLength());
         assertEquals("Represent this sentence for searching relevant passages:", embedderCfg.prependQuery());
         assertEquals("passage:", embedderCfg.prependDocument());
+        // Verify ONNX parameters
+        assertEquals(HuggingFaceEmbedderConfig.TransformerExecutionMode.Enum.parallel, embedderCfg.transformerExecutionMode());
+        assertEquals(10, embedderCfg.transformerIntraOpThreads());
+        assertEquals(8, embedderCfg.transformerInterOpThreads());
+        assertEquals(1, embedderCfg.transformerGpuDevice());
+        // Verify batching parameters
+        assertEquals(16, embedderCfg.batching().maxSize());
+        assertEquals(100, embedderCfg.batching().maxDelayMillis());
+        // Verify concurrency parameters
+        assertEquals(HuggingFaceEmbedderConfig.Concurrency.FactorType.Enum.relative, embedderCfg.concurrency().factorType());
+        assertEquals(2.0, embedderCfg.concurrency().factor(), 0.001);
+        // Verify model-config-override
+        assertTrue(embedderCfg.modelConfigOverride().isPresent());
+        assertEquals("files/hf_config.pbtxt", embedderCfg.modelConfigOverride().get().toString());
     }
 
     @Test
@@ -131,6 +136,20 @@ public class EmbedderTestCase {
         var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
         assertEquals("https://my/url/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
         assertEquals(-1, tokenizerCfg.maxLength());
+        // Verify ONNX parameters
+        assertEquals(SpladeEmbedderConfig.TransformerExecutionMode.Enum.parallel, embedderCfg.transformerExecutionMode());
+        assertEquals(10, embedderCfg.transformerIntraOpThreads());
+        assertEquals(8, embedderCfg.transformerInterOpThreads());
+        assertEquals(1, embedderCfg.transformerGpuDevice());
+        // Verify batching parameters
+        assertEquals(8, embedderCfg.batching().maxSize());
+        assertEquals(50, embedderCfg.batching().maxDelayMillis());
+        // Verify concurrency parameters
+        assertEquals(SpladeEmbedderConfig.Concurrency.FactorType.Enum.absolute, embedderCfg.concurrency().factorType());
+        assertEquals(4.0, embedderCfg.concurrency().factor(), 0.001);
+        // Verify model-config-override
+        assertTrue(embedderCfg.modelConfigOverride().isPresent());
+        assertEquals("files/splade_config.pbtxt", embedderCfg.modelConfigOverride().get().toString());
     }
 
     @Test
@@ -148,6 +167,20 @@ public class EmbedderTestCase {
         assertEquals(2, embedderCfg.documentTokenId());
         assertEquals(0, embedderCfg.transformerPadToken());
         assertEquals(103, embedderCfg.transformerMaskToken());
+        // Verify ONNX parameters
+        assertEquals(ColBertEmbedderConfig.TransformerExecutionMode.Enum.parallel, embedderCfg.transformerExecutionMode());
+        assertEquals(10, embedderCfg.transformerIntraOpThreads());
+        assertEquals(8, embedderCfg.transformerInterOpThreads());
+        assertEquals(1, embedderCfg.transformerGpuDevice());
+        // Verify batching parameters
+        assertEquals(12, embedderCfg.batching().maxSize());
+        assertEquals(150, embedderCfg.batching().maxDelayMillis());
+        // Verify concurrency parameters
+        assertEquals(ColBertEmbedderConfig.Concurrency.FactorType.Enum.relative, embedderCfg.concurrency().factorType());
+        assertEquals(1.5, embedderCfg.concurrency().factor(), 0.001);
+        // Verify model-config-override
+        assertTrue(embedderCfg.modelConfigOverride().isPresent());
+        assertEquals("files/colbert_config.pbtxt", embedderCfg.modelConfigOverride().get().toString());
     }
 
     @Test
@@ -175,6 +208,20 @@ public class EmbedderTestCase {
         assertEquals("https://my/url/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
         assertEquals("files/vocab.txt", modelReference(embedderCfg, "tokenizerVocab").path().orElseThrow().value());
         assertEquals("", embedderCfg.transformerTokenTypeIds());
+        // Verify ONNX parameters
+        assertEquals(BertBaseEmbedderConfig.OnnxExecutionMode.Enum.parallel, embedderCfg.onnxExecutionMode());
+        assertEquals(4, embedderCfg.onnxIntraOpThreads());
+        assertEquals(8, embedderCfg.onnxInterOpThreads());
+        assertEquals(1, embedderCfg.onnxGpuDevice());
+        // Verify batching parameters
+        assertEquals(32, embedderCfg.batching().maxSize());
+        assertEquals(200, embedderCfg.batching().maxDelayMillis());
+        // Verify concurrency parameters
+        assertEquals(BertBaseEmbedderConfig.Concurrency.FactorType.Enum.absolute, embedderCfg.concurrency().factorType());
+        assertEquals(2.0, embedderCfg.concurrency().factor(), 0.001);
+        // Verify model-config-override
+        assertTrue(embedderCfg.modelConfigOverride().isPresent());
+        assertEquals("files/bert_config.pbtxt", embedderCfg.modelConfigOverride().get().toString());
     }
 
     @Test
