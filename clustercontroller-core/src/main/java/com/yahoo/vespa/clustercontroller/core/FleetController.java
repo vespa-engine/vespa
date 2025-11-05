@@ -1152,7 +1152,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
 
                 if (Instant.now().isAfter(endTime)) {
                     throw new IllegalStateException("Did not get all " + distNodeCount + " distributors and " + storNodeCount
-                            + " storage nodes registered in slobrok within timeout of " + timeout + ". (Got "
+                            + " storage nodes registered in location broker within timeout of " + timeout + ". (Got "
                             + distCount + " distributors and " + storCount + " storage nodes)");
                 }
                 monitor.wait(10);

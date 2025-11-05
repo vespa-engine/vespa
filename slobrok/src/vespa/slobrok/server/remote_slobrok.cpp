@@ -101,7 +101,7 @@ void RemoteSlobrok::handleFetchResult() {
         }
     } else {
         if (_remFetchReq->GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD) {
-            LOG(debug, "partner slobrok too old - not mirroring");
+            LOG(debug, "partner location broker too old - not mirroring");
         } else {
             LOG(debug, "fetchLocalView() failed with partner %s: %s",
                 getName().c_str(), _remFetchReq->GetErrorMessage());            
@@ -125,12 +125,12 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
         return;
     }
     if (req == _remAddPeerReq) {
-        // handle response after asking remote slobrok to add me as a peer:
+        // handle response after asking remote location broker to add me as a peer:
         if (req->IsError()) {
             FRT_Values &args = *req->GetParams();
             const char *myname = args[0]._string._str;
             const char *myspec = args[1]._string._str;
-            LOG(info, "addPeer(%s, %s) on remote slobrok %s at %s: %s",
+            LOG(info, "addPeer(%s, %s) on remote location broker %s at %s: %s",
                 myname, myspec, getName().c_str(), getSpec().c_str(), req->GetErrorMessage());
             req->internal_subref();
             _remAddPeerReq = nullptr;

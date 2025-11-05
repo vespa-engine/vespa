@@ -126,7 +126,7 @@ public class ExternPolicy implements DocumentProtocolRoutingPolicy {
                              "Could not resolve any recipients from '" + pattern + "'.");
             }
         } else {
-            ctx.setError(ErrorCode.APP_TRANSIENT_ERROR, "Extern slobrok not ready.");
+            ctx.setError(ErrorCode.APP_TRANSIENT_ERROR, "Extern location broker not ready.");
         }
     }
 

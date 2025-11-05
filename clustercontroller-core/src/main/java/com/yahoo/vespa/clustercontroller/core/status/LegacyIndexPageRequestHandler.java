@@ -285,7 +285,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         sb.append("<tr><td><nobr>Cluster name</nobr></td><td align=\"right\">").append(escaped(options.clusterName())).append("</td></tr>");
         sb.append("<tr><td><nobr>Fleet controller index</nobr></td><td align=\"right\">").append(options.fleetControllerIndex()).append("/").append(options.fleetControllerCount()).append("</td></tr>");
 
-        sb.append("<tr><td><nobr>Slobrok connection spec</nobr></td><td align=\"right\">").append(escaped(slobrokspecs)).append("</td></tr>");
+        sb.append("<tr><td><nobr>Location broker spec</nobr></td><td align=\"right\">").append(escaped(slobrokspecs)).append("</td></tr>");
         sb.append("<tr><td><nobr>RPC port</nobr></td><td align=\"right\">").append(options.rpcPort() == 0 ? "Pick random available" : options.rpcPort()).append("</td></tr>");
         sb.append("<tr><td><nobr>HTTP port</nobr></td><td align=\"right\">").append(options.httpPort() == 0 ? "Pick random available" : options.httpPort()).append("</td></tr>");
         sb.append("<tr><td><nobr>Master cooldown period</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.masterZooKeeperCooldownPeriod())).append("</td></tr>");

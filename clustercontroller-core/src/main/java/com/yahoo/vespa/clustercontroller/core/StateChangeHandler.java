@@ -161,7 +161,7 @@ public class StateChangeHandler {
     }
 
     public void handleNewNode(NodeInfo node) {
-        String message = "Found new node " + node + " in slobrok at " + node.getRpcAddress();
+        String message = "Found new node " + node + " in location broker at " + node.getRpcAddress();
         eventLog.add(NodeEvent.forBaseline(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
     }
 
@@ -169,18 +169,18 @@ public class StateChangeHandler {
         long timeNow = timer.getCurrentTimeInMillis();
 
         if (node.getLatestNodeStateRequestTime() != null) {
-            eventLog.add(NodeEvent.forBaseline(node, "Node is no longer in slobrok, but we still have a pending state request.", NodeEvent.Type.REPORTED, timeNow), isMaster);
+            eventLog.add(NodeEvent.forBaseline(node, "Node is no longer found, but we still have a pending state request.", NodeEvent.Type.REPORTED, timeNow), isMaster);
         } else {
-            eventLog.add(NodeEvent.forBaseline(node, "Node is no longer in slobrok. No pending state request to node.", NodeEvent.Type.REPORTED, timeNow), isMaster);
+            eventLog.add(NodeEvent.forBaseline(node, "Node is no longer found. No pending state request to node.", NodeEvent.Type.REPORTED, timeNow), isMaster);
         }
 
         if (node.getReportedState().getState().equals(STOPPING)) {
-            log.log(FINE, () -> "Node " + node.getNode() + " is no longer in slobrok. Was in stopping state, so assuming it has shut down normally. Setting node down");
+            log.log(FINE, () -> "Node " + node.getNode() + " is no longer found. Was in stopping state, so assuming it has shut down normally. Setting node down");
             NodeState ns = node.getReportedState().clone();
             ns.setState(DOWN);
             handleNewReportedNodeState(currentClusterState, node, ns.clone(), nodeListener);
         } else {
-            log.log(FINE, () -> "Node " + node.getNode() + " no longer in slobrok was in state " + node.getReportedState() + ". Waiting to see if it reappears in slobrok");
+            log.log(FINE, () -> "Node " + node.getNode() + " no longer found; was in state " + node.getReportedState() + ". Waiting to see if it reappears");
         }
 
         stateMayHaveChanged = true;
@@ -219,12 +219,12 @@ public class StateChangeHandler {
     }
 
     public void handleNewRpcAddress(NodeInfo node) {
-        String message = "Node " + node + " has a new address in slobrok: " + node.getRpcAddress();
+        String message = "Node " + node + " has a new address: " + node.getRpcAddress();
         eventLog.add(NodeEvent.forBaseline(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
     }
 
     public void handleReturnedRpcAddress(NodeInfo node) {
-        String message = "Node got back into slobrok with same address as before: " + node.getRpcAddress();
+        String message = "Node got back with same address as before: " + node.getRpcAddress();
         eventLog.add(NodeEvent.forBaseline(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
     }
 
@@ -338,7 +338,7 @@ public class StateChangeHandler {
             && node.lastSeenInSlobrok() + maxSlobrokDisconnectGracePeriod <= currentTime)
         {
             final String desc = String.format(
-                    "Set node down as it has been out of slobrok for %d ms which " +
+                    "Set node down as it has been missing for %d ms which " +
                     "is more than the max limit of %d ms.",
                     currentTime - node.lastSeenInSlobrok(),
                     maxSlobrokDisconnectGracePeriod);

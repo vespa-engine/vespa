@@ -157,7 +157,7 @@ public class SlobrokClient implements NodeLookup {
                 context.log(log,
                             Level.WARNING,
                             "Node " + nodeInfo
-                            + " was tagged NOT in slobrok even though it is. It was in the following lists:"
+                            + " was tagged NOT found even though it is. It was in the following lists:"
                             + (newNodes.contains(nodeInfo.getNode()) ? " newNodes" : "")
                             + (missingNodeInfos.contains(nodeInfo) ? " missingNodes" : "")
                             + (alteredRpcAddressNodes.contains(nodeInfo.getNode()) ? " alteredNodes" : "")
@@ -210,7 +210,7 @@ public class SlobrokClient implements NodeLookup {
     private Map<Node, SlobrokData> getSlobrokData(String pattern) {
         Map<Node, SlobrokData> result = new TreeMap<>();
         List<Mirror.Entry> entries = mirror.lookup(pattern);
-        context.log(log, Level.FINEST, () -> "Looking for slobrok entries with pattern '" + pattern + "'. Found " + entries.size() + " entries.");
+        context.log(log, Level.FINEST, () -> "Looking for location broker entries with pattern '" + pattern + "'. Found " + entries.size() + " entries.");
         for (Mirror.Entry entry : entries) {
             StringTokenizer st = new StringTokenizer(entry.getName(), "/");
             String addressType = st.nextToken();

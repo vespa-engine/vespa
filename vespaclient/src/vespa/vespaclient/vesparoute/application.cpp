@@ -190,7 +190,7 @@ Application::printHelp() const
            "  --routes                        Prints a list of all available routes.\n"
            "  --routingconfigid <id>          Sets the config id that supplies the routing tables.\n"
            "  --services                      Prints a list of all available services.\n"
-           "  --slobrokconfigid <id>          Sets the config id that supplies the slobrok server list.\n"
+           "  --slobrokconfigid <id>          Sets the config id that supplies the location broker server list.\n"
            "  --verify                        All hops and routes are verified when routing.\n");
 }
 
