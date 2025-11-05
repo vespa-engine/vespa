@@ -34,7 +34,6 @@ public class FastContentWriter extends CompletableFuture<Boolean> implements Aut
      * @throws NullPointerException If the <em>content</em> argument is null.
      */
     public FastContentWriter(ContentChannel out) {
-        Objects.requireNonNull(out, "out");
         this.out = out;
     }
 
@@ -77,6 +76,9 @@ public class FastContentWriter extends CompletableFuture<Boolean> implements Aut
      * @param buf The ByteBuffer to write.
      */
     public void write(ByteBuffer buf) {
+        if (out == null) {
+            return;
+        }
         numPendingCompletions.incrementAndGet();
         try {
             out.write(buf, completionHandler);
@@ -92,6 +94,10 @@ public class FastContentWriter extends CompletableFuture<Boolean> implements Aut
      */
     @Override
     public void close() {
+        if (out == null) {
+            complete(true);
+            return;
+        }
         numPendingCompletions.incrementAndGet();
         closed.set(true);
         try {
