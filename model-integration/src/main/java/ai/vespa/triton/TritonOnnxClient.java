@@ -18,6 +18,7 @@ import inference.GRPCInferenceServiceGrpc;
 import inference.GrpcService;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.AbstractBlockingStub;
 import io.grpc.stub.AbstractStub;
@@ -30,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -57,6 +57,11 @@ public class TritonOnnxClient implements AutoCloseable {
         public TritonException(String message, Throwable cause) {
             super(message, cause);
         }
+    }
+
+    @FunctionalInterface
+    private interface GrpcInvocation<T, S extends AbstractBlockingStub<S>> {
+        T apply(S stub) throws StatusException;
     }
 
     @Inject
@@ -366,11 +371,13 @@ public class TritonOnnxClient implements AutoCloseable {
     }
 
 
-    // Converts StatusRuntimeException to TritonException
-    private <T, S extends AbstractBlockingStub<S>> T invokeGrpc(S stub, Function<S, T> invocation,
+    // Converts StatusRuntimeException and StatusException to TritonException
+    private <T, S extends AbstractBlockingStub<S>> T invokeGrpc(S stub, GrpcInvocation<T, S> invocation,
                                                                 String errorMessage) {
         try {
             return invocation.apply(stub);
+        } catch (StatusException e) {
+            throw new TritonException(errorMessage, e);
         } catch (StatusRuntimeException e) {
             throw new TritonException(errorMessage, e);
         }
