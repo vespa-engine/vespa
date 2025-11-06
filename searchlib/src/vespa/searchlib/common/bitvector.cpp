@@ -100,7 +100,7 @@ BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity, cons
     Alloc alloc = (init_alloc != nullptr) ? init_alloc->create(sz) : Alloc::alloc(sz, MMAP_LIMIT);
     assert(alloc.size()/sizeof(Word) >= words);
     // Clear padding
-    size_t usedBytes = numBytes(end - start);
+    size_t usedBytes = numActiveBytes(start, end);
     memset(static_cast<char *>(alloc.get()) + usedBytes, 0, alloc.size() - usedBytes);
     return alloc;
 }
