@@ -108,7 +108,7 @@ SearchIteratorVerifier::verify_get_hits(bool strict) const {
     EXPECT_TRUE(iterator->seek(FIRST_LEGAL));
     EXPECT_EQ(FIRST_LEGAL, iterator->getDocId());
     BitVector::UP hits = iterator->get_hits(1);
-    for (size_t i(0); i < FIRST_LEGAL; i++) {
+    for (size_t i(hits->getStartIndex()); i < FIRST_LEGAL; i++) {
         EXPECT_FALSE(hits->testBit(i));
     }
     EXPECT_TRUE(hits->testBit(FIRST_LEGAL));
