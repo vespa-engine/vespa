@@ -98,7 +98,7 @@ public class ClusterInfo {
             storageNodeInfo.put(nodeInfo.getNodeIndex(), (StorageNodeInfo) nodeInfo);
         }
         allNodeInfo.put(nodeInfo.getNode(), nodeInfo);
-        nodeInfo.setReportedState(nodeInfo.getReportedState().setDescription("Node not seen in slobrok."), 0);
+        nodeInfo.setReportedState(nodeInfo.getReportedState().setDescription("Node missing."), 0);
     }
 
     /** Returns true if no nodes are down or unknown */

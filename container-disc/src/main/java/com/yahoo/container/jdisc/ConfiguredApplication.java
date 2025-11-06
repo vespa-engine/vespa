@@ -290,7 +290,7 @@ public final class ConfiguredApplication implements Application {
                                 log.log(Level.INFO, "Rpc host changed from " + currRpc.host() + " to " + newRpc.host());
                             }
                             if ( ! Objects.equals(currRpc.slobrokId(), newRpc.slobrokId())) {
-                                log.log(Level.INFO, "Rpc slobrokid changed from " + currRpc.slobrokId() + " to " + newRpc.slobrokId());
+                                log.log(Level.INFO, "Rpc location broker ID changed from " + currRpc.slobrokId() + " to " + newRpc.slobrokId());
                             }
                             try {
                                 reListenRpc(newConfig);

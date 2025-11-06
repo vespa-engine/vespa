@@ -122,16 +122,16 @@ public class StateChangeHandlerTest {
 
     private void markNodeOutOfSlobrok(Node node) {
         final ClusterState stateBefore = currentClusterState();
-        log.info("Marking " + node + " out of slobrok");
+        log.info("Marking " + node + " missing");
         cluster.getNodeInfo(node).markRpcAddressOutdated(clock);
         nodeStateChangeHandler.handleMissingNode(stateBefore, cluster.getNodeInfo(node), nodeStateUpdateListener);
-        assertTrue(eventLog.toString().contains("Node is no longer in slobrok"), eventLog.toString());
+        assertTrue(eventLog.toString().contains("Node is no longer found"), eventLog.toString());
         eventLog.clear();
     }
 
     private void markNodeBackIntoSlobrok(Node node, State state) {
         final ClusterState stateBefore = currentClusterState();
-        log.info("Marking " + node + " back in slobrok");
+        log.info("Marking " + node + " back in location broker");
         cluster.getNodeInfo(node).markRpcAddressLive();
         nodeStateChangeHandler.handleReturnedRpcAddress(cluster.getNodeInfo(node));
         nodeStateChangeHandler.handleNewReportedNodeState(

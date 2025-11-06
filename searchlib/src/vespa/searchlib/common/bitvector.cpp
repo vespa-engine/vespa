@@ -238,19 +238,28 @@ void
 BitVector::orWith(const BitVector & right)
 {
     Range range = sanitize(right.range());
-    if ( ! range.validNonZero()) return;
-
-    if (right.size() < size()) {
-        ssize_t commonBytes = numActiveBytes(range.start(), range.end()) - sizeof(Word);
-        if (commonBytes > 0) {
-            hwaccelerated::or_bit(getWordIndex(range.start()), right.getWordIndex(range.start()), commonBytes);
-        }
-        Index last(range.end() - 1);
-        store(getWordIndex(last)[0], getWordIndex(last)[0] | (load(right.getWordIndex(last)[0]) & ~endBits(last)));
-    } else {
-        hwaccelerated::or_bit(getWordIndex(range.start()), right.getWordIndex(range.start()), getActiveBytes());
+    if ( ! range.validNonZero()) {
+        return;
     }
-    repairEnds();
+
+    Index wn = wordNum(range.start());
+    Index last = range.end() - 1;
+    Index lastwn = wordNum(last);
+    if (wn == lastwn) {
+        _words[wn] |= (right._words[wn] & ~(startBits(range.start()) | endBits(last)));
+    } else {
+        if (range.partial_start()) {
+            _words[wn] |= (right._words[wn] & ~startBits(range.start()));
+            ++wn;
+        }
+        size_t common_bytes = (lastwn - wn + (range.partial_end() ? 0 : 1)) * sizeof(Word);
+        if (common_bytes != 0u) {
+            hwaccelerated::or_bit(&_words[wn], &right._words[wn], common_bytes);
+        }
+        if (range.partial_end()) {
+            _words[lastwn] |= (right._words[lastwn] & ~endBits(last));
+        }
+    }
     invalidateCachedCount();
 }
 

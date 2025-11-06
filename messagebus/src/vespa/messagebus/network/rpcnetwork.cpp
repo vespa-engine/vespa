@@ -223,7 +223,7 @@ RPCNetwork::waitUntilReady(duration timeout) const
         std::this_thread::sleep_for(10ms);
     }
     if (! hasConfig) {
-        LOG(error, "failed to get config for slobroks in %2.2f seconds", vespalib::to_s(timeout));
+        LOG(error, "failed to get config for location brokers in %2.2f seconds", vespalib::to_s(timeout));
     } else if (! _mirror->ready()) {
         auto brokers = brokerList.logString();
         LOG(warning, "mirror (of %s) failed to become ready in %2.2f seconds", brokers.c_str(), vespalib::to_s(timeout));

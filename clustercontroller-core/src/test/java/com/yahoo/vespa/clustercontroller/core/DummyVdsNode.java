@@ -286,7 +286,7 @@ public class DummyVdsNode {
 
         m = new Method("vespa.storage.connect", "s", "i", this::rpc_storageConnect);
         m.methodDesc("Binds connection to a storage API handle");
-        m.paramDesc(0, "somearg", "Argument looking like slobrok address of the ones we're asking for some reason");
+        m.paramDesc(0, "somearg", "Argument looking like location broker address of the ones we're asking for some reason");
         m.returnDesc(0, "returnCode", "Returncode of request. Should be 0 = OK");
         supervisor.addMethod(m);
 

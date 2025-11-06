@@ -57,7 +57,7 @@ public:
     uint16_t node_index() const noexcept override { return getIndex(); }
 
     /**
-     * Returns the slobrok address of the given storage node.
+     * Returns the location broker address of the given storage node.
      */
     api::StorageMessageAddress node_address(uint16_t node_index) const noexcept override;
 

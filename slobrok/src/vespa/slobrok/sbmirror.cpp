@@ -32,7 +32,7 @@ MirrorAPI::MirrorAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config)
 {
     _configurator->poll();
     if (!_slobrokSpecs.ok()) {
-        throw vespalib::IllegalStateException("Not able to initialize MirrorAPI due to missing or bad slobrok specs");
+        throw vespalib::IllegalStateException("Not able to initialize MirrorAPI due to missing or bad location broker specs");
     }
     ScheduleNow();
 }

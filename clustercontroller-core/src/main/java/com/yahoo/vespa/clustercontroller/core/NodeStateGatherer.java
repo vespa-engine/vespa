@@ -64,8 +64,8 @@ public class NodeStateGatherer {
             if (requestTime != null && (currentTime - requestTime < nodeStateRequestTimeoutMS)) continue; // pending request
             if (info.getTimeForNextStateRequestAttempt() > currentTime) continue; // too early
 
-            if (info.getRpcAddress() == null || info.isNotInSlobrok()) { // Cannot query state of node without RPC address or not in slobrok
-                log.log(Level.FINE, () -> "Not sending getNodeState request to node " + info.getNode() + ": Not in slobrok");
+            if (info.getRpcAddress() == null || info.isNotInSlobrok()) { // Cannot query state of node without RPC address or missing
+                log.log(Level.FINE, () -> "Not sending getNodeState request to node " + info.getNode() + ": Not found");
                 NodeState reportedState = info.getReportedState().clone();
                 if (( ! reportedState.getState().equals(DOWN) && currentTime - info.lastSeenInSlobrok() > maxSlobrokDisconnectGracePeriod)
                     || reportedState.getState().equals(STOPPING)) // Don't wait for grace period if we expect node to be stopping
@@ -73,9 +73,9 @@ public class NodeStateGatherer {
                     log.log(Level.FINE, () -> "Setting reported state to DOWN "
                             + (reportedState.getState().equals(STOPPING)
                                 ? "as node completed stopping."
-                                : "as node has been out of slobrok longer than " + maxSlobrokDisconnectGracePeriod + " ms."));
+                                : "as node has been missing longer than " + maxSlobrokDisconnectGracePeriod + " ms."));
                     if (reportedState.getState().oneOf("iur") || ! reportedState.hasDescription()) {
-                        reportedState.setDescription("Set node down as it has been out of slobrok for " +
+                        reportedState.setDescription("Set node down as it has been missing for " +
                                                              (currentTime - info.lastSeenInSlobrok()) +
                                                              " ms which is more than the max limit of " +
                                                              maxSlobrokDisconnectGracePeriod + " ms.");
@@ -183,7 +183,7 @@ public class NodeStateGatherer {
                 } else if (msg.equals("jrt: Connection closed by peer") || msg.equals("Connection reset by peer")) {
                     msg = "Connection error: Closed at other end. (Node or switch likely shut down)";
                     if (info.isNotInSlobrok()) {
-                        msg += " Node is no longer in slobrok.";
+                        msg += " Node is no longer found.";
                     }
                     if (info.getReportedState().getState().oneOf("ui")) {
                         eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), Level.INFO);
