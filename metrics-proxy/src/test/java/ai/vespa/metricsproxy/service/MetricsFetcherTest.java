@@ -31,7 +31,7 @@ public class MetricsFetcherTest {
     Metrics fetch(String data) throws IOException {
         RemoteMetricsFetcher fetcher = new RemoteMetricsFetcher(new DummyService(0, "dummy/id/0"), port);
         MetricsCollector collector = new MetricsCollector();
-        fetcher.createMetrics(data, collector, 0);
+        fetcher.createMetrics(data, collector);
         return collector.metrics;
     }
 
@@ -81,12 +81,14 @@ public class MetricsFetcherTest {
         String jsonData;
         Metrics metrics = null;
 
-        jsonData = "";
+        jsonData = "<";
         try {
             metrics = fetch(jsonData);
             fail("Should have an IOException instead");
         } catch (IOException e) {
-            assertEquals("Expected start of object, got null", e.getMessage());
+            assertEquals("Unexpected character ('<' (code 60)): expected a valid value (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\n" +
+                                 " at [Source: (String)\"<\"; line: 1, column: 1]",
+                         e.getMessage());
         }
         assertNull(metrics);
 
