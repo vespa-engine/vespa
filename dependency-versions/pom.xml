@@ -151,6 +151,7 @@
         <plexus-utils.vespa.version>4.0.1</plexus-utils.vespa.version>
         <plexus-xml.vespa.version>4.0.4</plexus-xml.vespa.version>
         <plexus-classworlds.vespa.version>2.8.0</plexus-classworlds.vespa.version>
+        <proto-google-common-protos.vespa.version>2.51.0</proto-google-common-protos.vespa.version>
         <protobuf.vespa.version>3.25.5</protobuf.vespa.version>
         <questdb.vespa.version>7.4.2</questdb.vespa.version>
         <re2j.vespa.version>1.8</re2j.vespa.version>
