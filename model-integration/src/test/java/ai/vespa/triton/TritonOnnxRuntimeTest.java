@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.time.Duration;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -52,8 +53,8 @@ class TritonOnnxRuntimeTest {
     }
 
     @Test
-    void load_model_with_bathing() throws IOException {
-        var opts = optsBuilder.setBatching(10, 100).build();
+    void load_model_with_batching() throws IOException {
+        var opts = optsBuilder.setBatching(10, Duration.ofMillis(100)).build();
         assertLoadModel("src/test/triton/config_with_batching.pbtxt", opts);
     }
 

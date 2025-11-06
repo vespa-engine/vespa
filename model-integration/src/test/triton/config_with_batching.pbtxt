@@ -1,4 +1,4 @@
-name: "dummy_transformer_1f9e78061725e8c5"
+name: "dummy_transformer_52c16d0957c62493"
 platform: "onnxruntime_onnx"
 max_batch_size: 10
 instance_group {

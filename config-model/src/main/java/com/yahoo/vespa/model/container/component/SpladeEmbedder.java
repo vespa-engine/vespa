@@ -59,7 +59,7 @@ public class SpladeEmbedder extends TypedComponent implements SpladeEmbedderConf
         onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
         onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
         onnxModelOptions.batchingMaxSize().ifPresent(b.batching::maxSize);
-        onnxModelOptions.batchingMaxDelayMillis().ifPresent(b.batching::maxDelayMillis);
+        onnxModelOptions.batchingMaxDelay().ifPresent(delay -> b.batching.maxDelayMillis(delay.toMillis()));
         onnxModelOptions
                 .concurrencyFactorType()
                 .ifPresent(value ->

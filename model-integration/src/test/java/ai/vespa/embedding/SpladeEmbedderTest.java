@@ -124,7 +124,7 @@ public class SpladeEmbedderTest {
         assertEquals(8, options.intraOpThreads());
         assertEquals(2, options.gpuDeviceNumber());
         assertEquals(10, options.batchingMaxSize());
-        assertEquals(50, options.batchingMaxDelayMillis());
+        assertEquals(50, options.batchingMaxDelay().toMillis());
         assertEquals(3, options.numModelInstances());
         assertTrue(options.modelConfigOverride().isPresent());
         assertEquals("/path/to/config.pbtxt", options.modelConfigOverride().get().toString());

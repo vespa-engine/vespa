@@ -59,7 +59,7 @@ public class OnnxModelOptionsParser {
 
             options = XML.attribute("max-delay", batchingElement)
                     .map(OnnxModelOptionsParser::parseMillis)
-                    .map(options::withBatchingMaxDelayMillis)
+                    .map(options::withBatchingMaxDelay)
                     .orElse(options);
         }
 
@@ -85,7 +85,7 @@ public class OnnxModelOptionsParser {
         return options;
     }
 
-    private static int parseMillis(String duration) {
-        return Math.toIntExact(new Duration(duration).getMilliSeconds());
+    private static java.time.Duration parseMillis(String duration) {
+        return java.time.Duration.ofMillis(new Duration(duration).getMilliSeconds());
     }
 }

@@ -5,6 +5,7 @@ import com.yahoo.config.FileReference;
 
 import javax.swing.text.html.Option;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Optional;
 
 /**
@@ -12,10 +13,11 @@ import java.util.Optional;
  * values in this class change, reload is needed.
  *
  * @author hmusum
+ * @author glebashnik
  */
 public record OnnxModelOptions(Optional<String> executionMode, Optional<Integer> interOpThreads,
                                Optional<Integer> intraOpThreads, Optional<GpuDevice> gpuDevice,
-                               Optional<Integer> batchingMaxSize, Optional<Integer> batchingMaxDelayMillis,
+                               Optional<Integer> batchingMaxSize, Optional<Duration> batchingMaxDelay,
                                Optional<String> concurrencyFactorType, Optional<Double> concurrencyFactor,
                                Optional<FileReference> modelConfigOverride) {
 
@@ -37,43 +39,43 @@ public record OnnxModelOptions(Optional<String> executionMode, Optional<Integer>
     public OnnxModelOptions withExecutionMode(String executionMode) {
         return new OnnxModelOptions(
                 Optional.ofNullable(executionMode), interOpThreads, intraOpThreads, gpuDevice,
-                batchingMaxSize, batchingMaxDelayMillis, concurrencyFactorType, concurrencyFactor, modelConfigOverride
+                batchingMaxSize, batchingMaxDelay, concurrencyFactorType, concurrencyFactor, modelConfigOverride
         );
     }
 
     public OnnxModelOptions withInterOpThreads(Integer interOpThreads) {
         return new OnnxModelOptions(
                 executionMode, Optional.ofNullable(interOpThreads), intraOpThreads, gpuDevice,
-                batchingMaxSize, batchingMaxDelayMillis, concurrencyFactorType, concurrencyFactor, modelConfigOverride
+                batchingMaxSize, batchingMaxDelay, concurrencyFactorType, concurrencyFactor, modelConfigOverride
         );
     }
 
     public OnnxModelOptions withIntraOpThreads(Integer intraOpThreads) {
         return new OnnxModelOptions(
                 executionMode, interOpThreads, Optional.ofNullable(intraOpThreads), gpuDevice,
-                batchingMaxSize, batchingMaxDelayMillis, concurrencyFactorType, concurrencyFactor, modelConfigOverride
+                batchingMaxSize, batchingMaxDelay, concurrencyFactorType, concurrencyFactor, modelConfigOverride
         );
     }
 
     public OnnxModelOptions withGpuDevice(GpuDevice gpuDevice) {
         return new OnnxModelOptions(
                 executionMode, interOpThreads, intraOpThreads, Optional.ofNullable(gpuDevice),
-                batchingMaxSize, batchingMaxDelayMillis, concurrencyFactorType, concurrencyFactor, modelConfigOverride
+                batchingMaxSize, batchingMaxDelay, concurrencyFactorType, concurrencyFactor, modelConfigOverride
         );
     }
 
     public OnnxModelOptions withBatchingMaxSize(Integer batchingMaxSize) {
         return new OnnxModelOptions(
                 executionMode, interOpThreads, intraOpThreads, gpuDevice,
-                Optional.ofNullable(batchingMaxSize), batchingMaxDelayMillis, concurrencyFactorType,
+                Optional.ofNullable(batchingMaxSize), batchingMaxDelay, concurrencyFactorType,
                 concurrencyFactor, modelConfigOverride
         );
     }
 
-    public OnnxModelOptions withBatchingMaxDelayMillis(Integer batchingMaxDelayMillis) {
+    public OnnxModelOptions withBatchingMaxDelay(Duration batchingMaxDelay) {
         return new OnnxModelOptions(
                 executionMode, interOpThreads, intraOpThreads, gpuDevice,
-                batchingMaxSize, Optional.ofNullable(batchingMaxDelayMillis), concurrencyFactorType,
+                batchingMaxSize, Optional.ofNullable(batchingMaxDelay), concurrencyFactorType,
                 concurrencyFactor, modelConfigOverride
         );
     }
@@ -81,7 +83,7 @@ public record OnnxModelOptions(Optional<String> executionMode, Optional<Integer>
     public OnnxModelOptions withConcurrencyType(String concurrencyType) {
         return new OnnxModelOptions(
                 executionMode, interOpThreads, intraOpThreads, gpuDevice,
-                batchingMaxSize, batchingMaxDelayMillis, Optional.ofNullable(concurrencyType),
+                batchingMaxSize, batchingMaxDelay, Optional.ofNullable(concurrencyType),
                 concurrencyFactor, modelConfigOverride
         );
     }
@@ -89,7 +91,7 @@ public record OnnxModelOptions(Optional<String> executionMode, Optional<Integer>
     public OnnxModelOptions withConcurrencyFactorType(Double concurrencyFactor) {
         return new OnnxModelOptions(
                 executionMode, interOpThreads, intraOpThreads, gpuDevice,
-                batchingMaxSize, batchingMaxDelayMillis, concurrencyFactorType, Optional.ofNullable(concurrencyFactor),
+                batchingMaxSize, batchingMaxDelay, concurrencyFactorType, Optional.ofNullable(concurrencyFactor),
                 modelConfigOverride
         );
     }
@@ -97,7 +99,7 @@ public record OnnxModelOptions(Optional<String> executionMode, Optional<Integer>
     public OnnxModelOptions withModelConfigOverride(FileReference modelConfigOverride) {
         return new OnnxModelOptions(
                 executionMode, interOpThreads, intraOpThreads, gpuDevice,
-                batchingMaxSize, batchingMaxDelayMillis, concurrencyFactorType, concurrencyFactor,
+                batchingMaxSize, batchingMaxDelay, concurrencyFactorType, concurrencyFactor,
                 Optional.ofNullable(modelConfigOverride)
         );
     }

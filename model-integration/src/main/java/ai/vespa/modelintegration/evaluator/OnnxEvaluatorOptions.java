@@ -5,6 +5,7 @@ import net.jpountz.xxhash.XXHashFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -22,7 +23,7 @@ public record OnnxEvaluatorOptions(
         int gpuDeviceNumber,
         boolean gpuDeviceRequired,
         int batchingMaxSize,
-        int batchingMaxDelayMillis,
+        Duration batchingMaxDelay,
         int numModelInstances,
         Optional<Path> modelConfigOverride
 ) {
@@ -68,7 +69,7 @@ public record OnnxEvaluatorOptions(
         private int gpuDeviceNumber;
         private boolean gpuDeviceRequired;
         private int batchingMaxSize;
-        private int batchingMaxDelayMillis;
+        private Duration batchingMaxDelay;
         private int numModelInstances;
         private Optional<Path> modelConfigOverride;
         private int availableProcessors;
@@ -89,7 +90,7 @@ public record OnnxEvaluatorOptions(
             gpuDeviceNumber = -1;
             gpuDeviceRequired = false;
             batchingMaxSize = 1;
-            batchingMaxDelayMillis = 1;
+            batchingMaxDelay = Duration.ofMillis(1);
             numModelInstances = 1;
             modelConfigOverride = Optional.empty();
         }
@@ -101,7 +102,7 @@ public record OnnxEvaluatorOptions(
             this.gpuDeviceNumber = options.gpuDeviceNumber();
             this.gpuDeviceRequired = options.gpuDeviceRequired();
             this.batchingMaxSize = options.batchingMaxSize();
-            this.batchingMaxDelayMillis = options.batchingMaxDelayMillis();
+            this.batchingMaxDelay = options.batchingMaxDelay;
             this.numModelInstances = options.numModelInstances();
             this.modelConfigOverride = options.modelConfigOverride;
         }
@@ -151,9 +152,9 @@ public record OnnxEvaluatorOptions(
             return this;
         }
 
-        public Builder setBatching(int maxSize, int batchMaxDelayMillis) {
+        public Builder setBatching(int maxSize, Duration maxDelay) {
             this.batchingMaxSize = maxSize;
-            this.batchingMaxDelayMillis = batchMaxDelayMillis;
+            this.batchingMaxDelay = maxDelay;
             return this;
         }
 
@@ -185,7 +186,7 @@ public record OnnxEvaluatorOptions(
                     gpuDeviceNumber,
                     gpuDeviceRequired,
                     batchingMaxSize,
-                    batchingMaxDelayMillis,
+                    batchingMaxDelay,
                     numModelInstances,
                     modelConfigOverride
             );

@@ -39,7 +39,7 @@ transformerGpuDevice      int default=0
 # `maxDelayMillis` is specified in milliseconds.
 # The default settings disables dynamic batching.
 batching.maxSize int default=1
-batching.maxDelayMillis int default=1
+batching.maxDelayMillis long default=1
 
 # Concurrency creates several model instances for concurrent inference.
 # This increases throughput without affecting latency at the cost of memory used by each model instance.

@@ -175,9 +175,8 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
         // Add dynamic batching if batch size is greater than 1
         if (options.batchingMaxSize() > 1) {
-            long delayMicros = options.batchingMaxDelayMillis() * 1000L;
             var dynamicBatching = ModelConfigOuterClass.ModelDynamicBatching.newBuilder()
-                    .setMaxQueueDelayMicroseconds(delayMicros)
+                    .setMaxQueueDelayMicroseconds(options.batchingMaxDelay().toMillis() * 1000L)
                     .build();
             configBuilder.setDynamicBatching(dynamicBatching);
         }

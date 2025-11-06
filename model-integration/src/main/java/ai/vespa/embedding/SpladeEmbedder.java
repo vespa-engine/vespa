@@ -18,6 +18,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.Reduce;
 
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -84,7 +85,7 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         var builder = new OnnxEvaluatorOptions.Builder()
                 .setExecutionMode(config.transformerExecutionMode().toString())
                 .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads())
-                .setBatching(config.batching().maxSize(), config.batching().maxDelayMillis())
+                .setBatching(config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()))
                 .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
                 .setModelConfigOverride(config.modelConfigOverride());
 

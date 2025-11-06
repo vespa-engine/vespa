@@ -67,7 +67,7 @@ public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConf
         onnxModelOptions.intraOpThreads().ifPresent(b::onnxIntraOpThreads);
         onnxModelOptions.gpuDevice().ifPresent(value -> b.onnxGpuDevice(value.deviceNumber()));
         onnxModelOptions.batchingMaxSize().ifPresent(b.batching::maxSize);
-        onnxModelOptions.batchingMaxDelayMillis().ifPresent(b.batching::maxDelayMillis);
+        onnxModelOptions.batchingMaxDelay().ifPresent(delay -> b.batching.maxDelayMillis(delay.toMillis()));
         onnxModelOptions
                 .concurrencyFactorType()
                 .ifPresent(value ->
