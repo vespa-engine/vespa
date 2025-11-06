@@ -54,6 +54,8 @@ public class VespaServiceTest {
     // TODO: Make it possible to test this without running a HTTP server to create the response
     public void testMetricsFetching() {
         VespaService service = VespaService.create("service1", "id", httpServer.port());
+        service.setPid(1);
+        service.setAlive(true);
         assertEquals(28, getMetric("queries.count", service.getMetrics()).getValue().intValue());
 
         // Shutdown server and check that no metrics are returned (should use empty metrics
