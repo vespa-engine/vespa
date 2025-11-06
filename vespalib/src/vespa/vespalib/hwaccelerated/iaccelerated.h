@@ -51,11 +51,11 @@ public:
     // entirely independent of the lifetime of `this`.
     [[nodiscard]] virtual const dispatch::FnTable& fn_table() const = 0;
 
-    static std::unique_ptr<IAccelerated> create_baseline_auto_vectorized_target();
-    static std::unique_ptr<IAccelerated> create_best_auto_vectorized_target();
-    static std::unique_ptr<IAccelerated> create_best_accelerator_impl_and_target();
-
-    static const IAccelerated& getAccelerator() __attribute__((noinline));
+    // Returns all auto-vectorized accelerator targets that are supported by the current
+    // architecture and runtime. The targets are ordered in decreasing order of preference,
+    // i.e. element 0 is considered the most preferred target to use.
+    // Always returns at least 1 element.
+    static std::vector<std::unique_ptr<IAccelerated>> create_supported_auto_vectorized_targets();
 };
 
 }

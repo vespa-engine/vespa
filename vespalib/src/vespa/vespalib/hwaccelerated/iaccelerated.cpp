@@ -480,79 +480,55 @@ void verify_active_function_table() {
     verify_or_128();
 }
 
-// Simple wrapper to debug log created impl+target once during process startup.
-IAccelerated::UP create_and_log_best_accelerator() {
-    auto accel = IAccelerated::create_best_accelerator_impl_and_target();
-    LOG(debug, "Created accelerator %s", accel->target_info().to_string().c_str());
-    return accel;
-}
-
 // noexcept note: it is technically possible that something transitive here
 // will throw, but then we _want_ the process to immediately terminate.
 [[nodiscard]] FnTable build_optimal_fn_table() noexcept {
     std::vector<FnTable> fn_tables;
+    // Both Highway and auto-vectorized target vectors are ordered so that the best targets
+    // are at the front and the worst targets are at the back.
+    // Since we prefer Highway over auto-vectorization, append the latter's targets at the end.
     const auto target_level = enabled_target_level();
     if (target_level.with_highway()) {
-        // `hwy_targets` has the best target at the front
         for (const auto& hwy_target : Highway::create_supported_targets()) {
             fn_tables.emplace_back(hwy_target->fn_table());
         }
     }
-    // Finally, add the auto-vectorized fallback table at the end.
-    fn_tables.emplace_back(dispatch::complete_baseline_fn_table());
+    for (const auto& auto_vec_target : IAccelerated::create_supported_auto_vectorized_targets()) {
+        fn_tables.emplace_back(auto_vec_target->fn_table());
+    }
     return dispatch::build_composite_fn_table(fn_tables, true);
 }
 
 } // anon ns
 
-IAccelerated::UP IAccelerated::create_baseline_auto_vectorized_target() {
-    // Important: must never recurse into create_best_auto_vectorized_target(),
-    // as it defers to this function as a fallback.
-#ifdef __x86_64__
-    return std::make_unique<X64GenericAccelerator>();
-#else
-    return std::make_unique<NeonAccelerator>();
-#endif
-}
-
-IAccelerated::UP IAccelerated::create_best_auto_vectorized_target() {
+std::vector<std::unique_ptr<IAccelerated>>
+IAccelerated::create_supported_auto_vectorized_targets() {
     const auto target_level = enabled_target_level();
+    std::vector<std::unique_ptr<IAccelerated>> targets;
 #ifdef __x86_64__
     if (target_level.is_enabled(target::AVX3_DL)) {
-        return std::make_unique<Avx3DlAccelerator>();
+        targets.emplace_back(std::make_unique<Avx3DlAccelerator>());
     }
     if (target_level.is_enabled(target::AVX3)) {
-        return std::make_unique<Avx3Accelerator>();
+        targets.emplace_back(std::make_unique<Avx3Accelerator>());
     }
     if (target_level.is_enabled(target::AVX2)) {
-        return std::make_unique<Avx2Accelerator>();
+        targets.emplace_back(std::make_unique<Avx2Accelerator>());
     }
+    targets.emplace_back(std::make_unique<X64GenericAccelerator>());
 #else // aarch64
     if (target_level.is_enabled(target::SVE2)) {
-        return std::make_unique<Sve2Accelerator>();
+        targets.emplace_back(std::make_unique<Sve2Accelerator>());
     }
     if (target_level.is_enabled(target::SVE)) {
-        return std::make_unique<SveAccelerator>();
+        targets.emplace_back(std::make_unique<SveAccelerator>());
     }
     if (target_level.is_enabled(target::NEON_FP16_DOTPROD)) {
-        return std::make_unique<NeonFp16DotprodAccelerator>();
+        targets.emplace_back(std::make_unique<NeonFp16DotprodAccelerator>());
     }
+    targets.emplace_back(std::make_unique<NeonAccelerator>());
 #endif
-    return create_baseline_auto_vectorized_target();
-}
-
-std::unique_ptr<IAccelerated> IAccelerated::create_best_accelerator_impl_and_target() {
-    const auto target_level = enabled_target_level();
-    if (target_level.with_highway()) {
-        return Highway::create_best_target();
-    }
-    return create_best_auto_vectorized_target();
-}
-
-const IAccelerated&
-IAccelerated::getAccelerator() {
-    static auto accelerator = create_and_log_best_accelerator();
-    return *accelerator;
+    return targets;
 }
 
 namespace dispatch {
@@ -588,17 +564,6 @@ FnTable build_composite_fn_table(const FnTable& fn_table,
 FnTable optimal_composite_fn_table() noexcept {
     static auto global_table = build_optimal_fn_table();
     return global_table;
-}
-
-FnTable complete_baseline_fn_table() noexcept {
-    // The "best" auto-vectorized target may itself be sparse, whereas the baseline auto-vectorized
-    // target is guaranteed to be complete. Fuse the two together like a 1980's children's action
-    // cartoon show where we with our powers combined can take down the bad guy. It's possible for the
-    // two targets to be identical (e.g. NEON vs NEON); this is effectively a no-op.
-    static auto baseline_table = build_composite_fn_table(IAccelerated::create_best_auto_vectorized_target()->fn_table(),
-                                                          IAccelerated::create_baseline_auto_vectorized_target()->fn_table(),
-                                                          true);
-    return baseline_table;
 }
 
 namespace {
