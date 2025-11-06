@@ -12,6 +12,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 
@@ -104,11 +105,11 @@ BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity, cons
     return alloc;
 }
 
-BitVector::BitVector(void * buf, Index start, Index end) noexcept :
-    _words(static_cast<Word *>(buf) - wordNum(start)),
-    _startOffset(start),
-    _sz(end),
-    _numTrueBits(invalidCount())
+BitVector::BitVector(void * buf, Index start, Index end) noexcept
+    : _words(static_cast<Word *>(buf) - wordNum(start)),
+      _startOffset(start),
+      _sz(end),
+      _numTrueBits(invalidCount())
 {
     assert((reinterpret_cast<size_t>(_words) & (sizeof(Word) - 1ul)) == 0);
 }
@@ -375,25 +376,24 @@ private:
 
 std::unique_ptr<const BitVector>
 BitVector::create(Index numberOfElements, FastOS_FileInterface &file,
-                  int64_t offset, Index doccount, ReadStats& read_stats)
+                  int64_t offset, size_t entry_size, Index doccount, ReadStats& read_stats)
 {
     UP bv;
     if (file.IsMemoryMapped()) {
         size_t pad_before = offset - vespalib::round_down_to_page_boundary(offset);
-        read_stats.read_bytes = vespalib::round_up_to_page_size(pad_before + getFileBytes(numberOfElements));
+        read_stats.read_bytes = vespalib::round_up_to_page_size(pad_before + entry_size);
         bv = std::make_unique<MMappedBitVector>(numberOfElements, file, offset, doccount);
     } else {
         size_t padbefore, padafter;
         size_t vectorsize = getFileBytes(numberOfElements);
-        file.DirectIOPadding(offset, vectorsize, padbefore, padafter);
+        file.DirectIOPadding(offset, entry_size, padbefore, padafter);
         assert((padbefore & (getAlignment() - 1)) == 0);
-        AllocatedBitVector::Alloc alloc = Alloc::alloc(padbefore + vectorsize + padafter,
+        AllocatedBitVector::Alloc alloc = Alloc::alloc(padbefore + std::max(entry_size + padafter, vectorsize),
                                                        MMAP_LIMIT, FileSettings::DIRECTIO_ALIGNMENT);
         void * alignedBuffer = alloc.get();
-        file.ReadBuf(alignedBuffer, padbefore + vectorsize + padafter, offset - padbefore);
-        read_stats.read_bytes = padbefore + vectorsize + padafter;
-        bv = std::make_unique<AllocatedBitVector>(numberOfElements, std::move(alloc), padbefore);
-        bv->setTrueBits(doccount);
+        file.ReadBuf(alignedBuffer, padbefore + entry_size + padafter, offset - padbefore);
+        read_stats.read_bytes = padbefore + entry_size + padafter;
+        bv = std::make_unique<AllocatedBitVector>(numberOfElements, std::move(alloc), padbefore, entry_size, doccount);
         // Check guard bit for getNextTrueBit()
         assert(bv->testBit(bv->size()));
     }
