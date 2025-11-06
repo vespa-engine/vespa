@@ -75,11 +75,10 @@ void register_benchmarks(std::string_view name, Fn fn) {
     for (auto& t : hwy_targets) {
         register_accel_binary_arg_benchmark<T>(name, std::move(t), fn);
     }
-    auto baseline_accel = IAccelerated::create_baseline_auto_vectorized_target();
-    register_accel_binary_arg_benchmark<T>(name, std::move(baseline_accel), fn);
-
-    auto best_autovec_accel = IAccelerated::create_best_auto_vectorized_target();
-    register_accel_binary_arg_benchmark<T>(name, std::move(best_autovec_accel), fn);
+    auto auto_vec_targets = IAccelerated::create_supported_auto_vectorized_targets();
+    for (auto& t : auto_vec_targets) {
+        register_accel_binary_arg_benchmark<T>(name, std::move(t), fn);
+    }
 }
 
 void register_all_benchmark_suites() {

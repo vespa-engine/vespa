@@ -217,13 +217,6 @@ VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_DECLARE_DISPATCH_FN_PTR);
 // process is currently running on.
 [[nodiscard]] FnTable optimal_composite_fn_table() noexcept;
 
-// Returns a function table containing functions from one or more auto-vectorized
-// implementations for this architecture. This table is always complete and can therefore
-// be used as a fallback when building other composite tables. Note that this table may
-// itself may be a composite of functions from the "best" auto-vectorized table on top of
-// one or more "lesser" auto-vectorized tables. It's tables all the way down!
-[[nodiscard]] FnTable complete_baseline_fn_table() noexcept;
-
 // Returns a reference to the globally active function table. Its contents will usually be
 // equal to that of `optimal_composite_fn_table()` unless overridden at runtime.
 [[nodiscard]] const FnTable& active_fn_table() noexcept;

@@ -33,12 +33,9 @@ void verify_euclidean_distance(std::span<const IAccelerated*> accels, size_t tes
         }
         for (const auto* accel : accels) {
             LOG(spam, "verify_euclidean_distance(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(), test_length, j);
-            double computed = accel->squaredEuclideanDistance(&a[j], &b[j], test_length - j);
-            ASSERT_NEAR(sum, computed, sum*approx_factor) << "(IAccelerated) " << accel->target_info().to_string();
-
             ScopedFnTableOverride fn_scope(accel->fn_table());
-            computed = squared_euclidean_distance(&a[j], &b[j], test_length - j);
-            ASSERT_NEAR(sum, computed, sum*approx_factor) << "(fn table) " << accel->target_info().to_string();
+            double computed = squared_euclidean_distance(&a[j], &b[j], test_length - j);
+            ASSERT_NEAR(sum, computed, sum*approx_factor) << accel->target_info().to_string();
         }
     }
 }
@@ -53,32 +50,30 @@ void verify_dot_product(std::span<const IAccelerated*> accels, size_t test_lengt
         }
         for (const auto* accel : accels) {
             LOG(spam, "verify_dot_product(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(), test_length, j);
-            auto computed = static_cast<double>(accel->dotProduct(&a[j], &b[j], test_length - j));
-            ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << "(IAccelerated) " << accel->target_info().to_string();
-
             ScopedFnTableOverride fn_scope(accel->fn_table());
-            computed = static_cast<double>(dot_product(&a[j], &b[j], test_length - j));
-            ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << "(fn table) " << accel->target_info().to_string();
+            auto computed = static_cast<double>(dot_product(&a[j], &b[j], test_length - j));
+            ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << accel->target_info().to_string();
         }
     }
 }
 
-const IAccelerated* baseline_accelerator() {
-    static auto baseline = IAccelerated::create_baseline_auto_vectorized_target();
-    return baseline.get();
+void fill_auto_vectorized_accelerators(std::vector<const IAccelerated*>& accels) {
+    static const auto auto_vec_targets = IAccelerated::create_supported_auto_vectorized_targets();
+    for (const auto& t : auto_vec_targets) {
+        accels.emplace_back(t.get()); // note: _static_ lifetime
+    }
 }
 
 void fill_highway_accelerators(std::vector<const IAccelerated*>& accels) {
-    static auto hwy_targets = Highway::create_supported_targets();
+    static const auto hwy_targets = Highway::create_supported_targets();
     for (const auto& t : hwy_targets) {
-        accels.emplace_back(t.get());
+        accels.emplace_back(t.get()); // note: _static_ lifetime
     }
 }
 
 std::vector<const IAccelerated*> all_accelerators_to_test() {
     std::vector<const IAccelerated*> accels;
-    accels.emplace_back(baseline_accelerator());
-    accels.emplace_back(&IAccelerated::getAccelerator());
+    fill_auto_vectorized_accelerators(accels);
     fill_highway_accelerators(accels);
     return accels;
 }
@@ -156,12 +151,9 @@ void verify_euclidean_distance_no_overflow(std::span<const IAccelerated*> accels
         }
         for (const auto* accel : accels) {
             LOG(spam, "verify_euclidean_distance_no_overflow(accel=%s, len=%zu)", accel->target_info().to_string().c_str(), i);
-            auto computed = static_cast<int64_t>(accel->squaredEuclideanDistance(lhs.data(), rhs.data(), i));
-            ASSERT_EQ(sum, computed) << "(IAccelerated) overflow at length " << i << " for accel " << accel->target_info().to_string();
-
             ScopedFnTableOverride fn_scope(accel->fn_table());
-            computed = static_cast<int64_t>(squared_euclidean_distance(lhs.data(), rhs.data(), i));
-            ASSERT_EQ(sum, computed) << "(fn table) overflow at length " << i << " for accel " << accel->target_info().to_string();
+            auto computed = static_cast<int64_t>(squared_euclidean_distance(lhs.data(), rhs.data(), i));
+            ASSERT_EQ(sum, computed) << "overflow at length " << i << " for accel " << accel->target_info().to_string();
         }
     }
 }
@@ -185,12 +177,9 @@ void verify_dot_product_no_overflow(std::span<const IAccelerated*> accels, size_
         }
         for (const auto* accel : accels) {
             LOG(spam, "verify_dot_product_no_overflow(accel=%s, len=%zu)", accel->target_info().to_string().c_str(), i);
-            int64_t computed = accel->dotProduct(lhs.data(), rhs.data(), i);
-            ASSERT_EQ(sum, computed) << "(IAccelerated) overflow at length " << i << " for accel " << accel->target_info().to_string();
-
             ScopedFnTableOverride fn_scope(accel->fn_table());
-            computed = dot_product(lhs.data(), rhs.data(), i);
-            ASSERT_EQ(sum, computed) << "(fn table) overflow at length " << i << " for accel " << accel->target_info().to_string();
+            int64_t computed = dot_product(lhs.data(), rhs.data(), i);
+            ASSERT_EQ(sum, computed) << "overflow at length " << i << " for accel " << accel->target_info().to_string();
         }
     }
 }
@@ -257,9 +246,8 @@ void check_with_flipping(std::span<const IAccelerated*> accels, void* mem_a, voi
     size_t dist = 0;
     auto check_accelerators = [&] {
         for (const auto* accel : accels) {
-            ASSERT_EQ(accel->binary_hamming_distance(mem_a, mem_b, sz), dist) << "(IAccelerated) " << accel->target_info().to_string();
             ScopedFnTableOverride fn_scope(accel->fn_table());
-            ASSERT_EQ(binary_hamming_distance(mem_a, mem_b, sz), dist) << "(fn table) " << accel->target_info().to_string();
+            ASSERT_EQ(binary_hamming_distance(mem_a, mem_b, sz), dist) << accel->target_info().to_string();
         }
     };
     ASSERT_NO_FATAL_FAILURE(check_accelerators());
