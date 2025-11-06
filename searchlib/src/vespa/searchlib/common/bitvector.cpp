@@ -246,10 +246,10 @@ BitVector::orWith(const BitVector & right)
     Index last = range.end() - 1;
     Index lastwn = wordNum(last);
     if (wn == lastwn) {
-        store(_words[wn], _words[wn] | (right._words[wn] & ~(startBits(range.start()) | endBits(last))));
+        _words[wn] |= (right._words[wn] & ~(startBits(range.start()) | endBits(last)));
     } else {
         if (range.partial_start()) {
-            store(_words[wn], _words[wn] | (right._words[wn] & ~startBits(range.start())));
+            _words[wn] |= (right._words[wn] & ~startBits(range.start()));
             ++wn;
         }
         size_t common_bytes = (lastwn - wn + (range.partial_end() ? 0 : 1)) * sizeof(Word);
@@ -257,7 +257,7 @@ BitVector::orWith(const BitVector & right)
             hwaccelerated::or_bit(&_words[wn], &right._words[wn], common_bytes);
         }
         if (range.partial_end()) {
-            store(_words[lastwn], _words[lastwn] | (right._words[lastwn] & ~endBits(last)));
+            _words[lastwn] |= (right._words[lastwn] & ~endBits(last));
         }
     }
     invalidateCachedCount();
