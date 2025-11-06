@@ -1609,7 +1609,6 @@
       "record"
     ],
     "methods" : [
-      "public void <init>(java.lang.String, int, int, com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
       "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public static com.yahoo.config.model.api.OnnxModelOptions empty()",
       "public com.yahoo.config.model.api.OnnxModelOptions withExecutionMode(java.lang.String)",
@@ -1617,7 +1616,7 @@
       "public com.yahoo.config.model.api.OnnxModelOptions withIntraOpThreads(java.lang.Integer)",
       "public com.yahoo.config.model.api.OnnxModelOptions withGpuDevice(com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
       "public com.yahoo.config.model.api.OnnxModelOptions withBatchingMaxSize(java.lang.Integer)",
-      "public com.yahoo.config.model.api.OnnxModelOptions withBatchingMaxDelayMillis(java.lang.Integer)",
+      "public com.yahoo.config.model.api.OnnxModelOptions withBatchingMaxDelay(java.time.Duration)",
       "public com.yahoo.config.model.api.OnnxModelOptions withConcurrencyType(java.lang.String)",
       "public com.yahoo.config.model.api.OnnxModelOptions withConcurrencyFactorType(java.lang.Double)",
       "public com.yahoo.config.model.api.OnnxModelOptions withModelConfigOverride(com.yahoo.config.FileReference)",
@@ -1629,7 +1628,7 @@
       "public java.util.Optional intraOpThreads()",
       "public java.util.Optional gpuDevice()",
       "public java.util.Optional batchingMaxSize()",
-      "public java.util.Optional batchingMaxDelayMillis()",
+      "public java.util.Optional batchingMaxDelay()",
       "public java.util.Optional concurrencyFactorType()",
       "public java.util.Optional concurrencyFactor()",
       "public java.util.Optional modelConfigOverride()"

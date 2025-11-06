@@ -20,30 +20,3 @@ transformerOutput string default=logits
 
 # score threshold to control sparseness
 termScoreThreshold double default=0.0
-
-# Settings for ONNX model evaluation
-transformerExecutionMode enum { parallel, sequential } default=sequential
-transformerInterOpThreads int default=1
-transformerIntraOpThreads int default=-4
-# GPU device id, -1 for CPU
-transformerGpuDevice      int default=0
-
-# Controls dynamic batching that combines up to `maxSize` requests within `maxDelayMillis` into a single inference call.
-# This increases throughput at the cost of latency.
-# This is especially effective for generating embeddings during feeding on GPU.
-# `maxDelayMillis` is specified in milliseconds.
-# The default settings disables dynamic batching.
-batching.maxSize int default=1
-batching.maxDelayMillis long default=1
-
-# Concurrency creates several model instances for concurrent inference.
-# This increases throughput without affecting latency at the cost of memory used by each model instance.
-# This is especially effective for embedding queries on multi-core CPU.
-# With `factorType=absolute`, `factor` is rounded to set the number of model instances.
-# With `factorType=relative`, `factor` is multiplied with the number of CPU cores and rounded to set the number of model instances.
-# Default settings creates a single model instance.
-concurrency.factorType enum { absolute, relative } default=absolute
-concurrency.factor double default=1.0
-
-# Path to model config file, e.g. `config.pbtxt` used by Triton inference server.
-modelConfigOverride path optional

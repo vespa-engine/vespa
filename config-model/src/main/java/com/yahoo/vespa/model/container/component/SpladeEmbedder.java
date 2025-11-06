@@ -2,7 +2,6 @@
 
 package com.yahoo.vespa.model.container.component;
 import com.yahoo.config.ModelReference;
-import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.SpladeEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -15,9 +14,7 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
 import static com.yahoo.vespa.model.container.xml.ModelIdResolver.HF_TOKENIZER;
 import static com.yahoo.vespa.model.container.xml.ModelIdResolver.ONNX_MODEL;
 
-public class SpladeEmbedder extends TypedComponent implements SpladeEmbedderConfig.Producer {
-
-    private final OnnxModelOptions onnxModelOptions;
+public class SpladeEmbedder extends OnnxEmbedder implements SpladeEmbedderConfig.Producer {
     private final ModelReference modelRef;
     private final ModelReference vocabRef;
     private final Integer maxTokens;
@@ -28,9 +25,8 @@ public class SpladeEmbedder extends TypedComponent implements SpladeEmbedderConf
     private final Double termScoreThreshold;
 
     public SpladeEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
-        super("ai.vespa.embedding.SpladeEmbedder", INTEGRATION_BUNDLE_NAME, xml);
+        super("ai.vespa.embedding.SpladeEmbedder", INTEGRATION_BUNDLE_NAME, xml, state);
         var model = Model.fromXml(state, xml, "transformer-model", Set.of(ONNX_MODEL)).orElseThrow();
-        onnxModelOptions = OnnxModelOptionsParser.fromXml(xml, state);
         modelRef = model.modelReference();
         vocabRef = Model.fromXmlOrImplicitlyFromOnnxModel(state, xml, model, "tokenizer-model", Set.of(HF_TOKENIZER)).modelReference();
         maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
@@ -51,21 +47,6 @@ public class SpladeEmbedder extends TypedComponent implements SpladeEmbedderConf
         if (transformerTokenTypeIds != null) b.transformerTokenTypeIds(transformerTokenTypeIds);
         if (transformerOutput != null) b.transformerOutput(transformerOutput);
         if (termScoreThreshold != null) b.termScoreThreshold(termScoreThreshold);
-        onnxModelOptions
-                .executionMode()
-                .ifPresent(value ->
-                        b.transformerExecutionMode(SpladeEmbedderConfig.TransformerExecutionMode.Enum.valueOf(value)));
-        onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
-        onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
-        onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
-        onnxModelOptions.batchingMaxSize().ifPresent(b.batching::maxSize);
-        onnxModelOptions.batchingMaxDelay().ifPresent(delay -> b.batching.maxDelayMillis(delay.toMillis()));
-        onnxModelOptions
-                .concurrencyFactorType()
-                .ifPresent(value ->
-                        b.concurrency.factorType(SpladeEmbedderConfig.Concurrency.FactorType.Enum.valueOf(value)));
-        onnxModelOptions.concurrencyFactor().ifPresent(b.concurrency::factor);
-        b.modelConfigOverride(onnxModelOptions.modelConfigOverride());
     }
 
 }

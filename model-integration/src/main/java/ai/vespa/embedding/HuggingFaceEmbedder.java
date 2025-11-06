@@ -12,6 +12,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.language.huggingface.HuggingFaceTokenizer;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.onnx.OnnxEvaluatorConfig;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -95,17 +96,19 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     }
 
     @Inject
-    public HuggingFaceEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, HuggingFaceEmbedderConfig config, ModelPathHelper modelHelper) {
+    public HuggingFaceEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, HuggingFaceEmbedderConfig embedderConfig, OnnxEvaluatorConfig onnxConfig, ModelPathHelper modelHelper) {
         this.runtime = runtime;
+        
         var resolver = new OnnxExternalDataResolver(modelHelper);
-        var onnxEvalOpts = buildOnnxEvaluatorOptions(config);
-        evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxEvalOpts);
-
-        this.analysis = analyze(evaluator, config);
-        normalize = config.normalize();
-        prependQuery = config.prependQuery();
-        prependDocument = config.prependDocument();
-        var tokenizerPath = modelHelper.getModelPathResolvingIfNecessary(config.tokenizerPathReference());
+        var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
+        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig);
+        evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
+        
+        this.analysis = analyze(evaluator, embedderConfig);
+        normalize = embedderConfig.normalize();
+        prependQuery = embedderConfig.prependQuery();
+        prependDocument = embedderConfig.prependDocument();
+        var tokenizerPath = modelHelper.getModelPathResolvingIfNecessary(embedderConfig.tokenizerPathReference());
         var builder = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
                 .addDefaultModel(tokenizerPath)
@@ -114,31 +117,12 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         log.fine(() -> "'%s' has info '%s'".formatted(tokenizerPath, info));
         if (info.maxLength() == -1 || info.truncation() != LONGEST_FIRST) {
             // Force truncation to max token vector length accepted by model if tokenizer.json contains no valid truncation configuration
-            int maxLength = info.maxLength() > 0 && info.maxLength() <= config.transformerMaxTokens()
+            int maxLength = info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens()
                     ? info.maxLength()
-                    : config.transformerMaxTokens();
+                    : embedderConfig.transformerMaxTokens();
             builder.setTruncation(true).setMaxLength(maxLength);
         }
         this.tokenizer = builder.build();
-    }
-
-    // Package-private for testing
-    static OnnxEvaluatorOptions buildOnnxEvaluatorOptions(HuggingFaceEmbedderConfig config) {
-        var concurrencyFactorType = OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
-                config.concurrency().factorType().toString());
-
-        var builder = new OnnxEvaluatorOptions.Builder()
-                .setExecutionMode(config.transformerExecutionMode().toString())
-                .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads())
-                .setBatching(config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()))
-                .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
-                .setModelConfigOverride(config.modelConfigOverride());
-
-        if (config.transformerGpuDevice() >= 0) {
-            builder.setGpuDevice(config.transformerGpuDevice());
-        }
-
-        return builder.build();
     }
 
     private static void validateName(Map<String, TensorType> types, String name, String type) {

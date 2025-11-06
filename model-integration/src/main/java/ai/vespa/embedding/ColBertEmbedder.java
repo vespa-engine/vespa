@@ -11,6 +11,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.ColBertEmbedderConfig;
 import com.yahoo.language.huggingface.HuggingFaceTokenizer;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.onnx.OnnxEvaluatorConfig;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
@@ -68,22 +69,22 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
     public record TransformerInput(List<Long> inputIds, List<Long> attentionMask) {}
 
     @Inject
-    public ColBertEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, ColBertEmbedderConfig config) {
+    public ColBertEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, ColBertEmbedderConfig embedderConfig, OnnxEvaluatorConfig onnxConfig) {
         this.runtime = runtime;
-        inputIdsName = config.transformerInputIds();
-        attentionMaskName = config.transformerAttentionMask();
-        outputName = config.transformerOutput();
-        maxTransformerTokens = config.transformerMaxTokens();
-        maxDocumentTokens = Math.min(config.maxDocumentTokens(), maxTransformerTokens);
-        maxQueryTokens = Math.min(config.maxQueryTokens(), maxTransformerTokens);
-        startSequenceToken = config.transformerStartSequenceToken();
-        endSequenceToken = config.transformerEndSequenceToken();
-        maskSequenceToken = config.transformerMaskToken();
-        padSequenceToken = config.transformerPadToken();
-        querySequenceToken = config.queryTokenId();
-        documentSequenceToken = config.documentTokenId();
+        inputIdsName = embedderConfig.transformerInputIds();
+        attentionMaskName = embedderConfig.transformerAttentionMask();
+        outputName = embedderConfig.transformerOutput();
+        maxTransformerTokens = embedderConfig.transformerMaxTokens();
+        maxDocumentTokens = Math.min(embedderConfig.maxDocumentTokens(), maxTransformerTokens);
+        maxQueryTokens = Math.min(embedderConfig.maxQueryTokens(), maxTransformerTokens);
+        startSequenceToken = embedderConfig.transformerStartSequenceToken();
+        endSequenceToken = embedderConfig.transformerEndSequenceToken();
+        maskSequenceToken = embedderConfig.transformerMaskToken();
+        padSequenceToken = embedderConfig.transformerPadToken();
+        querySequenceToken = embedderConfig.queryTokenId();
+        documentSequenceToken = embedderConfig.documentTokenId();
 
-        var tokenizerPath = Paths.get(config.tokenizerPath().toString());
+        var tokenizerPath = Paths.get(embedderConfig.tokenizerPath().toString());
         var builder = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(false)
                 .addDefaultModel(tokenizerPath)
@@ -92,9 +93,9 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         if (info.maxLength() == -1 || info.truncation() != LONGEST_FIRST) {
             // Force truncation
             // to max length accepted by model if tokenizer.json contains no valid truncation configuration
-            int maxLength = info.maxLength() > 0 && info.maxLength() <= config.transformerMaxTokens()
+            int maxLength = info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens()
                     ? info.maxLength()
-                    : config.transformerMaxTokens();
+                    : embedderConfig.transformerMaxTokens();
             builder.setTruncation(true).setMaxLength(maxLength);
         }
         this.tokenizer = builder.build();
@@ -103,31 +104,15 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
                 c -> this.skipTokens.addAll(
                         tokenizer.encode(Character.toString((char) c), null).ids())
         );
+        
         var resolver = new OnnxExternalDataResolver();
-        var onnxEvalOpts = buildOnnxEvaluatorOptions(config);
-        evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxEvalOpts);
+        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig);
+        var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
+        this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
+        
         validateModel();
     }
-
-    // Package-private for testing
-    static OnnxEvaluatorOptions buildOnnxEvaluatorOptions(ColBertEmbedderConfig config) {
-        var concurrencyFactorType = OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
-                config.concurrency().factorType().toString());
-
-        var builder = new OnnxEvaluatorOptions.Builder()
-                .setExecutionMode(config.transformerExecutionMode().toString())
-                .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads())
-                .setBatching(config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()))
-                .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
-                .setModelConfigOverride(config.modelConfigOverride());
-
-        if (config.transformerGpuDevice() >= 0) {
-            builder.setGpuDevice(config.transformerGpuDevice());
-        }
-
-        return builder.build();
-    }
-
+    
     private void validateModel() {
         Map<String, TensorType> inputs = evaluator.getInputInfo();
         validateName(inputs, inputIdsName, "input");

@@ -1,18 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.embedding;
 
-import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
-import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.onnx.OnnxEvaluatorConfig;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
@@ -75,46 +73,8 @@ public class BertBaseEmbedderTest {
     }
 
     private static BertBaseEmbedder newBertBaseEmbedder(BertBaseEmbedderConfig cfg) {
-        return new BertBaseEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), cfg);
-    }
-
-    @Test
-    public void testBuildOnnxEvaluatorOptions() {
-        var builder = new BertBaseEmbedderConfig.Builder();
-        // Required fields
-        builder.tokenizerVocab(ModelReference.valueOf("dummy-vocab.txt"));
-        builder.transformerModel(ModelReference.valueOf("dummy-model.onnx"));
-
-        // ONNX evaluator options
-        builder.onnxExecutionMode(BertBaseEmbedderConfig.OnnxExecutionMode.Enum.parallel);
-        builder.onnxInterOpThreads(4);
-        builder.onnxIntraOpThreads(8);
-        builder.onnxGpuDevice(2);
-
-        var batchingBuilder = new BertBaseEmbedderConfig.Batching.Builder();
-        batchingBuilder.maxSize(10);
-        batchingBuilder.maxDelayMillis(50);
-        builder.batching(batchingBuilder);
-
-        var concurrencyBuilder = new BertBaseEmbedderConfig.Concurrency.Builder();
-        concurrencyBuilder.factor(3.0);
-        concurrencyBuilder.factorType(BertBaseEmbedderConfig.Concurrency.FactorType.Enum.absolute);
-        builder.concurrency(concurrencyBuilder);
-
-        builder.modelConfigOverride(Optional.of(new FileReference("/path/to/config.pbtxt")));
-
-        var config = builder.build();
-        var options = BertBaseEmbedder.buildOnnxEvaluatorOptions(config);
-
-        assertEquals(OnnxEvaluatorOptions.ExecutionMode.PARALLEL, options.executionMode());
-        assertEquals(4, options.interOpThreads());
-        assertEquals(8, options.intraOpThreads());
-        assertEquals(2, options.gpuDeviceNumber());
-        assertEquals(10, options.batchingMaxSize());
-        assertEquals(50, options.batchingMaxDelay().toMillis());
-        assertEquals(3, options.numModelInstances());
-        assertTrue(options.modelConfigOverride().isPresent());
-        assertEquals("/path/to/config.pbtxt", options.modelConfigOverride().get().toString());
+        var onnxConfig = new OnnxEvaluatorConfig.Builder().build();
+        return new BertBaseEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), cfg, onnxConfig);
     }
 
 }

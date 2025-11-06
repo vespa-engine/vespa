@@ -10,6 +10,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.wordpiece.WordPieceEmbedder;
+import com.yahoo.onnx.OnnxEvaluatorConfig;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -48,40 +49,24 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
     private final OnnxEvaluator evaluator;
 
     @Inject
-    public BertBaseEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, BertBaseEmbedderConfig config) {
+    public BertBaseEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, BertBaseEmbedderConfig embedderConfig, OnnxEvaluatorConfig onnxConfig) {
         this.runtime = runtime;
-        maxTokens = config.transformerMaxTokens();
-        startSequenceToken = config.transformerStartSequenceToken();
-        endSequenceToken = config.transformerEndSequenceToken();
-        inputIdsName = config.transformerInputIds();
-        attentionMaskName = config.transformerAttentionMask();
-        tokenTypeIdsName = config.transformerTokenTypeIds();
-        outputName = config.transformerOutput();
-        poolingStrategy = PoolingStrategy.fromString(config.poolingStrategy().toString());
-        tokenizer = new WordPieceEmbedder.Builder(config.tokenizerVocab().toString()).build();
+        maxTokens = embedderConfig.transformerMaxTokens();
+        startSequenceToken = embedderConfig.transformerStartSequenceToken();
+        endSequenceToken = embedderConfig.transformerEndSequenceToken();
+        inputIdsName = embedderConfig.transformerInputIds();
+        attentionMaskName = embedderConfig.transformerAttentionMask();
+        tokenTypeIdsName = embedderConfig.transformerTokenTypeIds();
+        outputName = embedderConfig.transformerOutput();
+        poolingStrategy = PoolingStrategy.fromString(embedderConfig.poolingStrategy().toString());
+        tokenizer = new WordPieceEmbedder.Builder(embedderConfig.tokenizerVocab().toString()).build();
+        
         var resolver = new OnnxExternalDataResolver();
-        var onnxEvalOpts = buildOnnxEvaluatorOptions(config);
-        this.evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxEvalOpts);
+        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig);
+        var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
+        this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
+        
         validateModel();
-    }
-
-    // Package-private for testing
-    static OnnxEvaluatorOptions buildOnnxEvaluatorOptions(BertBaseEmbedderConfig config) {
-        var concurrencyFactorType = OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
-                config.concurrency().factorType().toString());
-
-        var builder = new OnnxEvaluatorOptions.Builder()
-                .setExecutionMode(config.onnxExecutionMode().toString())
-                .setThreads(config.onnxInterOpThreads(), config.onnxIntraOpThreads())
-                .setBatching(config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()))
-                .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
-                .setModelConfigOverride(config.modelConfigOverride());
-
-        if (config.onnxGpuDevice() >= 0) {
-            builder.setGpuDevice(config.onnxGpuDevice());
-        }
-
-        return builder.build();
     }
 
     private void validateModel() {

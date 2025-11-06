@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.config.ModelReference;
-import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.ColBertEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -10,7 +9,6 @@ import org.w3c.dom.Element;
 
 import java.util.Set;
 
-import static com.yahoo.embedding.ColBertEmbedderConfig.TransformerExecutionMode;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 import static com.yahoo.vespa.model.container.xml.ModelIdResolver.HF_TOKENIZER;
@@ -19,10 +17,10 @@ import static com.yahoo.vespa.model.container.xml.ModelIdResolver.ONNX_MODEL;
 
 /**
  * @author bergum
+ * @author glebashnik
  */
-public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderConfig.Producer {
+public class ColBertEmbedder extends OnnxEmbedder implements ColBertEmbedderConfig.Producer {
 
-    private final OnnxModelOptions onnxModelOptions;
     private final ModelReference modelRef;
     private final ModelReference vocabRef;
 
@@ -46,9 +44,8 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
     private final String transformerOutput;
 
     public ColBertEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
-        super("ai.vespa.embedding.ColBertEmbedder", INTEGRATION_BUNDLE_NAME, xml);
+        super("ai.vespa.embedding.ColBertEmbedder", INTEGRATION_BUNDLE_NAME, xml, state);
         var model = Model.fromXml(state, xml, "transformer-model", Set.of(ONNX_MODEL)).orElseThrow();
-        onnxModelOptions = OnnxModelOptionsParser.fromXml(xml, state);
         modelRef = model.modelReference();
         vocabRef = Model.fromXmlOrImplicitlyFromOnnxModel(state, xml, model, "tokenizer-model", Set.of(HF_TOKENIZER)).modelReference();
         maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
@@ -81,19 +78,5 @@ public class ColBertEmbedder extends TypedComponent implements ColBertEmbedderCo
         if (transformerPadToken != null) b.transformerPadToken(transformerPadToken);
         if (queryTokenId != null) b.queryTokenId(queryTokenId);
         if (documentTokenId != null) b.documentTokenId(documentTokenId);
-        onnxModelOptions
-                .executionMode()
-                .ifPresent(value -> b.transformerExecutionMode(TransformerExecutionMode.Enum.valueOf(value)));
-        onnxModelOptions.interOpThreads().ifPresent(b::transformerInterOpThreads);
-        onnxModelOptions.intraOpThreads().ifPresent(b::transformerIntraOpThreads);
-        onnxModelOptions.gpuDevice().ifPresent(value -> b.transformerGpuDevice(value.deviceNumber()));
-        onnxModelOptions.batchingMaxSize().ifPresent(b.batching::maxSize);
-        onnxModelOptions.batchingMaxDelay().ifPresent(delay -> b.batching.maxDelayMillis(delay.toMillis()));
-        onnxModelOptions
-                .concurrencyFactorType()
-                .ifPresent(value ->
-                        b.concurrency.factorType(ColBertEmbedderConfig.Concurrency.FactorType.Enum.valueOf(value)));
-        onnxModelOptions.concurrencyFactor().ifPresent(b.concurrency::factor);
-        b.modelConfigOverride(onnxModelOptions.modelConfigOverride());
     }
 }

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.modelintegration.evaluator;
 
+import com.yahoo.onnx.OnnxEvaluatorConfig;
 import net.jpountz.xxhash.XXHashFactory;
 
 import java.nio.charset.StandardCharsets;
@@ -42,6 +43,30 @@ public record OnnxEvaluatorOptions(
         return new Builder().build();
     }
 
+    public static OnnxEvaluatorOptions of(OnnxEvaluatorConfig config) {
+        return of(config, Runtime.getRuntime().availableProcessors());
+    }
+
+    // availableProcessors is injected to simplify testing
+    public static OnnxEvaluatorOptions of(OnnxEvaluatorConfig config, int availableProcessors) {
+        var concurrencyFactorType = OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
+                config.concurrency().factorType().toString());
+
+        var builder = new OnnxEvaluatorOptions.Builder(availableProcessors)
+                .setExecutionMode(config.executionMode().toString())
+                .setThreads(config.interOpThreads(), config.intraOpThreads())
+                .setBatching(config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()))
+                .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
+                .setModelConfigOverride(config.modelConfigOverride());
+
+        if (config.gpuDevice() >= 0) {
+            builder.setGpuDevice(config.gpuDevice());
+        }
+
+        return builder.build();
+    }
+
+
     public enum ExecutionMode {
         SEQUENTIAL,
         PARALLEL;
@@ -79,8 +104,7 @@ public record OnnxEvaluatorOptions(
             this(Runtime.getRuntime().availableProcessors());
         }
 
-        // availableProcessors is injected for testing, 
-        // Mockito can't mock Runtime.getRuntime().availableProcessors() because it is native.
+        // availableProcessors is injected to simplify testing
         public Builder(int availableProcessors) {
             executionMode = ExecutionMode.SEQUENTIAL;
             this.availableProcessors = availableProcessors;
