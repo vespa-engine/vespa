@@ -9,7 +9,6 @@
 
 #include "fn_table.h"
 #include "private_helpers.hpp"
-#include <hwy/detect_targets.h>
 #include <cblas.h>
 
 namespace vespalib::hwaccelerated {
@@ -162,9 +161,9 @@ void my_or_128(size_t offset, const std::vector<std::pair<const void*, bool>>& s
     helper::orChunks<16, 8>(offset, src, dest);
 }
 constexpr uint16_t baseline_vector_bytes() noexcept {
-#if HWY_BASELINE_TARGETS & HWY_BASELINE_AVX3
+#if defined(__AVX512F__)
     return 64;
-#elif HWY_BASELINE_TARGETS & HWY_BASELINE_AVX2
+#elif defined(__AVX2__)
     return 32;
 #else
     // Assume 128 bits for aarch64 NEON and < AVX2 x64
