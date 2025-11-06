@@ -84,9 +84,17 @@ BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVect
             parts.emplace_back(vectors, offset, bits_per_thread);
             offset += bits_per_thread;
         }
-        parts.emplace_back(vectors, offset, size - offset);
+        parts.emplace_back(vectors, offset, size - bitNum(size) - offset);
         thread_bundle.run(parts);
-        master->repairEnds();
+        if (bitNum(size) != 0u) {
+            Index last = size - 1;
+            Index lastwn = wordNum(last);
+            Word last_word = master->_words[lastwn];
+            for (uint32_t i = 1; i < vectors.size(); i++) {
+                last_word |= (vectors[i]->_words[lastwn] & ~endBits(last));
+            }
+            master->_words[lastwn] = last_word;
+        }
     }
 }
 
