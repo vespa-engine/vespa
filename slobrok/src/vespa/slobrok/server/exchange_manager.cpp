@@ -118,7 +118,7 @@ ExchangeManager::healthCheck()
         if (remoteList.size() != 0) {
             std::string diff = diffLists(newWorldList, remoteList);
             if (! diff.empty()) {
-                LOG(warning, "Peer slobrok at %s may have problems, differences from consensus map: %s",
+                LOG(warning, "Peer location broker at %s may have problems, differences from consensus map: %s",
                     partner->getName().c_str(), diff.c_str());
                 someBad = true;
             }

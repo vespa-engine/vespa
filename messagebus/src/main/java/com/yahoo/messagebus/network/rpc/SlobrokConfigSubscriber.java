@@ -25,13 +25,13 @@ public final class SlobrokConfigSubscriber implements ConfigSubscriber.SingleSub
      * @param configId the id of the config to subscribe to
      */
     public SlobrokConfigSubscriber(String configId) {
-        log.log(Level.FINE, "new slobrok config subscriber with config id: "+configId);
+        log.log(Level.FINE, "new location brokerconfig subscriber with config id: "+configId);
         subscriber = new ConfigSubscriber();
         subscriber.subscribe(this, SlobroksConfig.class, configId);
     }
 
     public SlobrokConfigSubscriber(SlobroksConfig slobroksConfig) {
-        log.log(Level.FINE, "new slobrok config subscriber with fixed list: "+slobroksConfig);
+        log.log(Level.FINE, "new location brokerconfig subscriber with fixed list: "+slobroksConfig);
         configure(slobroksConfig);
     }
 

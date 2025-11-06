@@ -72,7 +72,7 @@ public class ServiceTest extends StateRestApiTest {
                              },
                              "unit" : {
                                "state" : "down",
-                               "reason" : "Node not seen in slobrok."
+                               "reason" : "Node missing."
                              },
                              "user" : {
                                "state" : "up",

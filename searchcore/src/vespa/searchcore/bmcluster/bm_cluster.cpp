@@ -192,11 +192,11 @@ void
 BmCluster::wait_slobrok(const std::string &name)
 {
     auto &mirror = _rpc_client->slobrok_mirror();
-    LOG(info, "Waiting for %s in slobrok", name.c_str());
+    LOG(info, "Waiting for %s to be found", name.c_str());
     for (;;) {
         auto specs = mirror.lookup(name);
         if (!specs.empty()) {
-            LOG(info, "Found %s in slobrok", name.c_str());
+            LOG(info, "Found %s in location broker", name.c_str());
             return;
         }
         std::this_thread::sleep_for(100ms);
