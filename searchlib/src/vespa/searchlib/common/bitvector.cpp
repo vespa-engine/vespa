@@ -84,9 +84,11 @@ BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVect
             parts.emplace_back(vectors, offset, bits_per_thread);
             offset += bits_per_thread;
         }
+        // Don't handle partial words in OrParts
         parts.emplace_back(vectors, offset, size - bitNum(size) - offset);
         thread_bundle.run(parts);
         if (bitNum(size) != 0u) {
+            // Handle partial words at end of bitvectors
             Index last = size - 1;
             Index lastwn = wordNum(last);
             Word last_word = master->_words[lastwn];
