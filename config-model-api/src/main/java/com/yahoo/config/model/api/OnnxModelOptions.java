@@ -3,8 +3,6 @@ package com.yahoo.config.model.api;
 
 import com.yahoo.config.FileReference;
 
-import javax.swing.text.html.Option;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
 
