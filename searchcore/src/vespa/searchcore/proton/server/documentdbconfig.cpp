@@ -179,7 +179,7 @@ std::shared_ptr<Config>
 emptyConfig(std::shared_ptr<Config> config)
 {
     std::shared_ptr<Config> empty(std::make_shared<Config>());
-    
+
     if (!config || *config != *empty) {
         return empty;
     }
@@ -190,10 +190,7 @@ template <>
 std::shared_ptr<SummaryConfig>
 emptyConfig(std::shared_ptr<SummaryConfig> config)
 {
-    auto  empty(std::make_shared<SummaryConfigBuilder>());
-    if (config) {
-        empty->usev8geopositions = config->usev8geopositions;
-    }
+    auto empty(std::make_shared<SummaryConfigBuilder>());
     empty->defaultsummaryid = 0;
     empty->classes.emplace_back();
     auto& default_summary_class = empty->classes.back();

@@ -172,10 +172,8 @@ public class JsonSerializationHelper {
     public static void serializeStructField(FieldWriter fieldWriter, JsonGenerator generator, FieldBase field, Struct value) {
         DataType dt = value.getDataType();
         if (dt instanceof GeoPosType gpt) {
-            if (gpt.renderJsonAsVespa8()) {
-                serializeGeoPos(generator, field, value, gpt);
-                return;
-            }
+            serializeGeoPos(generator, field, value, gpt);
+            return;
         }
         serializeStructuredField(fieldWriter, generator, field, value);
     }

@@ -103,7 +103,7 @@ void checkWritePositionField(AttrType &attr,
     }
 
     MyAttributeManager attribute_man(attr);
-    PositionsDFW::UP writer = PositionsDFW::create(attr.getName().c_str(), &attribute_man, false);
+    PositionsDFW::UP writer = PositionsDFW::create(attr.getName().c_str(), &attribute_man);
     ASSERT_TRUE(writer.get());
     MyGetDocsumsStateCallback callback;
     GetDocsumsState state(callback);
@@ -122,10 +122,10 @@ void checkWritePositionField(AttrType &attr,
 TEST(PositionsDFWTest, require_that_2D_position_field_is_written)
 {
     SingleInt64ExtAttribute attr("foo");
-    checkWritePositionField(attr, 0x3e, "{x:6,y:7,latlong:'N0.000007;E0.000006'}");
-    checkWritePositionField(attr,  007, "{x:-1,y:-1,latlong:'S0.000001;W0.000001'}");
-    checkWritePositionField(attr, 0x42, "{x:0,y:-1,latlong:'S0.000001;E0.000000'}");
-    checkWritePositionField(attr, 0x17, "{x:-16711935,y:16711935,latlong:'N16.711935;W16.711935'}");
+    checkWritePositionField(attr, 0x3e, "{lng:0.000006,lat:0.000007,latlong:'N0.000007;E0.000006'}");
+    checkWritePositionField(attr,  007, "{lng:-0.000001,lat:-0.000001,latlong:'S0.000001;W0.000001'}");
+    checkWritePositionField(attr, 0x42, "{lng:0.0,lat:-0.000001,latlong:'S0.000001;E0.000000'}");
+    checkWritePositionField(attr, 0x17, "{lng:-16.711935,lat:16.711935,latlong:'N16.711935;W16.711935'}");
     checkWritePositionField(attr,   42, "null");
 }
 

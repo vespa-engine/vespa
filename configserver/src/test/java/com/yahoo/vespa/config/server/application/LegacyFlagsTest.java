@@ -45,8 +45,6 @@ public class LegacyFlagsTest {
     public void testThatLegacyOverridesWork() throws Exception {
         File testApp = new File("src/test/apps/legacy-flag");
         var appPkg = FilesApplicationPackage.fromDir(testApp, Map.of());
-        var flag = Flags.USE_V8_GEO_POSITIONS.bindTo(LegacyFlags.from(appPkg, new InMemoryFlagSource()));
-        assertTrue(flag.value());
         /* rest here tests that having a "legacy" XML tag doesn't break other things, but without actually using it: */
         VespaModel model = new VespaModel(appPkg);
         ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("foo").build();
@@ -55,7 +53,7 @@ public class LegacyFlagsTest {
                                   new MetricUpdater(Metrics.createTestMetrics(), Metrics.createDimensions(applicationId)), applicationId);
         assertNotNull(app.getModel());
         /*
-        // Note: no feature flags active with this code path
+        // Note: no feature flags currently active with this code path, but if we need any, test could look somewhat like this:
         ConfigDefinitionKey cdk = new ConfigDefinitionKey(DocumentmanagerConfig.CONFIG_DEF_NAME, DocumentmanagerConfig.CONFIG_DEF_NAMESPACE);
         ConfigDefinition cdd = new ConfigDefinition(cdk.getName(), DocumentmanagerConfig.CONFIG_DEF_SCHEMA);
         var cfgBuilder = app.getModel().getConfigInstance(new ConfigKey<>(cdk.getName(), "client", cdk.getNamespace()), cdd);

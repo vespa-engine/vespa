@@ -24,32 +24,27 @@ public class ExportingTestCase extends AbstractExportingTestCase {
 
     @Test
     void testPositionArray() throws IOException, ParseException {
-        assertCorrectDeriving("position_array",
-                new TestProperties().setUseV8GeoPositions(true));
+        assertCorrectDeriving("position_array");
     }
 
     @Test
     void testPositionAttribute() throws IOException, ParseException {
-        assertCorrectDeriving("position_attribute",
-                new TestProperties().setUseV8GeoPositions(true));
+        assertCorrectDeriving("position_attribute");
     }
 
     @Test
     void testPositionExtra() throws IOException, ParseException {
-        assertCorrectDeriving("position_extra",
-                new TestProperties().setUseV8GeoPositions(true));
+        assertCorrectDeriving("position_extra");
     }
 
     @Test
     void testPositionNoSummary() throws IOException, ParseException {
-        assertCorrectDeriving("position_nosummary",
-                new TestProperties().setUseV8GeoPositions(true));
+        assertCorrectDeriving("position_nosummary");
     }
 
     @Test
     void testPositionSummary() throws IOException, ParseException {
-        assertCorrectDeriving("position_summary",
-                new TestProperties().setUseV8GeoPositions(true));
+        assertCorrectDeriving("position_summary");
     }
 
     @Test

@@ -45,8 +45,8 @@ make_tokens_dfw(const std::string& source, VsmfieldsConfig& fields_config)
 
 }
 
-DocsumFieldWriterFactory::DocsumFieldWriterFactory(bool use_v8_geo_positions, const IDocsumEnvironment& env, const IQueryTermFilterFactory& query_term_filter_factory, const vespa::config::search::vsm::VsmfieldsConfig& vsm_fields_config)
-    : search::docsummary::DocsumFieldWriterFactory(use_v8_geo_positions, env, query_term_filter_factory),
+DocsumFieldWriterFactory::DocsumFieldWriterFactory(const IDocsumEnvironment& env, const IQueryTermFilterFactory& query_term_filter_factory, const vespa::config::search::vsm::VsmfieldsConfig& vsm_fields_config)
+    : search::docsummary::DocsumFieldWriterFactory(env, query_term_filter_factory),
       _vsm_fields_config(vsm_fields_config)
 {
 }

@@ -881,13 +881,13 @@ TEST(DocSummaryTest, requireThatPositionsAreUsed)
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     EXPECT_TRUE(assertSlime("{docsums:["
                             "{docsum:{sp2:1047758"
-                            ",sp2x:{x:1002, y:1003, latlong:'N0.001003;E0.001002'}"
+                            ",sp2x:{lng:0.001002, lat:0.001003, latlong:'N0.001003;E0.001002'}"
                             ",ap2:[1047806,1048322]"
-                            ",ap2x:[{x:1006, y:1007, latlong:'N0.001007;E0.001006'},"
-                            "{x:1008, y:1009, latlong:'N0.001009;E0.001008'}]"
+                            ",ap2x:[{lng:0.001006, lat:0.001007, latlong:'N0.001007;E0.001006'},"
+                            "{lng:0.001008, lat:0.001009, latlong:'N0.001009;E0.001008'}]"
                             ",wp2:[{item:1048370,weight:43},{item:1048382,weight:44}]"
-                            ",wp2x:[{ x:1012, y:1013, latlong:'N0.001013;E0.001012'},"
-                            "{ x:1014, y:1015, latlong:'N0.001015;E0.001014'}]}"
+                            ",wp2x:[{ lng:0.001012, lat:0.001013, latlong:'N0.001013;E0.001012'},"
+                            "{ lng:0.001014, lat:0.001015, latlong:'N0.001015;E0.001014'}]}"
                             "}]}", *rep));
 }
 

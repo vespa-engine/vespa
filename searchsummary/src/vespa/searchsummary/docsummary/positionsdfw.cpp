@@ -113,67 +113,12 @@ AbsDistanceDFW::insert_field(uint32_t docid,
 
 //--------------------------------------------------------------------------
 
-PositionsDFW::PositionsDFW(const std::string & attrName, bool useV8geoPositions) :
-    AttrDFW(attrName),
-    _useV8geoPositions(useV8geoPositions)
+PositionsDFW::PositionsDFW(const std::string & attrName) :
+    AttrDFW(attrName)
 {
 }
 
 namespace {
-
-void
-insertPos(int64_t docxy, vespalib::slime::Inserter &target)
-{
-
-    int32_t docx = 0;
-    int32_t docy = 0;
-    vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
-    if (docx == 0 && docy == INT_MIN) {
-        LOG(spam, "skipping empty zcurve value");
-        return;
-    }
-    vespalib::slime::Cursor &obj = target.insertObject();
-    obj.setLong("y", docy);
-    obj.setLong("x", docx);
-
-    double degrees_ns = to_degrees(docy);
-    double degrees_ew = to_degrees(docx);
-
-    vespalib::asciistream latlong;
-    latlong << vespalib::FloatSpec::fixed;
-    if (degrees_ns < 0) {
-        latlong << "S" << (-degrees_ns);
-    } else {
-        latlong << "N" << degrees_ns;
-    }
-    latlong << ";";
-    if (degrees_ew < 0) {
-        latlong << "W" << (-degrees_ew);
-    } else {
-        latlong << "E" << degrees_ew;
-    }
-    obj.setString("latlong", vespalib::Memory(latlong.view()));
-}
-
-void
-insertFromAttr(const attribute::IAttributeVector &attribute, uint32_t docid, vespalib::slime::Inserter &target)
-{
-    IntegerContent pos;
-    pos.fill(attribute, docid);
-    uint32_t numValues = pos.size();
-    LOG(debug, "docid=%d, numValues=%d", docid, numValues);
-    if (numValues > 0) {
-        if (attribute.getCollectionType() == attribute::CollectionType::SINGLE) {
-            insertPos(pos[0], target);
-        } else {
-            vespalib::slime::Cursor &arr = target.insertArray();
-            for (uint32_t i = 0; i < numValues; i++) {
-                vespalib::slime::ArrayInserter ai(arr);
-                insertPos(pos[i], ai);
-            }
-        }
-    }
-}
 
 void insertPosV8(int64_t docxy, vespalib::slime::Inserter &target) {
     int32_t docx = 0;
@@ -232,16 +177,12 @@ PositionsDFW::insert_field(uint32_t docid,
                            ElementIds,
                            vespalib::slime::Inserter &target) const
 {
-    if (_useV8geoPositions) {
-        insertV8FromAttr(get_attribute(dsState), docid, target);
-    } else {
-        insertFromAttr(get_attribute(dsState), docid, target);
-    }
+    insertV8FromAttr(get_attribute(dsState), docid, target);
 }
 
 //--------------------------------------------------------------------------
 
-PositionsDFW::UP PositionsDFW::create(const char *attribute_name, const IAttributeManager *attribute_manager, bool useV8geoPositions) {
+PositionsDFW::UP PositionsDFW::create(const char *attribute_name, const IAttributeManager *attribute_manager) {
     if (attribute_manager != nullptr) {
         if (!attribute_name) {
             LOG(debug, "createPositionsDFW: missing attribute name '%p'", attribute_name);
@@ -258,7 +199,7 @@ PositionsDFW::UP PositionsDFW::create(const char *attribute_name, const IAttribu
             return {};
         }
     }
-    return std::make_unique<PositionsDFW>(attribute_name, useV8geoPositions);
+    return std::make_unique<PositionsDFW>(attribute_name);
 }
 
 std::unique_ptr<DocsumFieldWriter>
