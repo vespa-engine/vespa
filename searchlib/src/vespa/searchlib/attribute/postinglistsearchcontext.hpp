@@ -132,7 +132,7 @@ PostingListSearchContextT<DataT>::fillBitVector(const ExecuteInfo & exec_info)
     for (const auto & part : parts) {
         vectors.push_back(part._bv);
     }
-    BitVector::parallellOr(thread_bundle, vectors);
+    BitVector::parallelOr(thread_bundle, vectors);
 }
 
 template <typename DataT>
