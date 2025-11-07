@@ -386,8 +386,28 @@ BitVector::andNotWith(const BitVector& right)
 
 void
 BitVector::notSelf() {
-    hwaccelerated::not_bit(getActiveStart(), getActiveBytes());
-    setGuardBit();
+    Range range = this->range();
+    if (!range.validNonZero()) {
+        return;
+    }
+    Index wn = wordNum(range.start());
+    Index last = range.end() - 1;
+    Index lastwn = wordNum(last);
+    if (wn == lastwn) {
+        _words[wn] ^= ~(startBits(range.start()) | endBits(last));
+    } else {
+        if (range.partial_start()) {
+            _words[wn] ^= ~startBits(range.start());
+            ++wn;
+        }
+        size_t common_bytes = (lastwn - wn + (range.partial_end() ? 0 : 1)) * sizeof(Word);
+        if (common_bytes != 0u) {
+            hwaccelerated::not_bit(&_words[wn], common_bytes);
+        }
+        if (range.partial_end()) {
+            _words[lastwn] ^= ~endBits(last);
+        }
+    }
     invalidateCachedCount();
 }
 
