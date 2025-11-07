@@ -119,10 +119,12 @@ protected:
     /**
      * Will update statistics by calling onUpdateStat if necessary.
      */
-    void updateStat(bool forceUpdate);
+    void updateStat(CommitParam::UpdateStats updateStats);
 
     void updateStatistics(uint64_t numValues, uint64_t numUniqueValue, uint64_t allocated,
                           uint64_t used, uint64_t dead, uint64_t onHold);
+
+    void updateSizes(uint64_t numValues, uint64_t numUniqueValue);
 
     AttributeVector(std::string_view baseFileName, const Config & c);
 
@@ -340,8 +342,8 @@ public:
     bool isEnumeratedSaveFormat() const;
     bool load();
     bool load(vespalib::Executor * executor);
-    void commit() { commit(false); }
-    void commit(bool forceUpdateStats);
+    void commit() { commit(CommitParam::UpdateStats::SKIP); }
+    void commit(CommitParam::UpdateStats updateStats);
     void commit(const CommitParam & param);
     void setCreateSerialNum(uint64_t createSerialNum);
     uint64_t getCreateSerialNum() const;
@@ -442,7 +444,7 @@ private:
     /// Clean up [0, firstUsed>
     virtual void reclaim_memory(generation_t oldest_used_gen);
     virtual void before_inc_generation(generation_t current_gen);
-    virtual void onUpdateStat() = 0;
+    virtual void onUpdateStat(CommitParam::UpdateStats updateStats) = 0;
     friend class AttributeTest;
 
 public:

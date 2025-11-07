@@ -837,6 +837,38 @@ public class ToProtobufTest {
     }
 
     @Test
+    void testConvertFromQueryWithNearestNeighborItemWithHnswTuningParameters() {
+        NearestNeighborItem nearestNeighbor = new NearestNeighborItem("myvector", "query_vector");
+        nearestNeighbor.setTargetNumHits(50);
+        nearestNeighbor.setHnswApproximateThreshold(0.05);
+        nearestNeighbor.setHnswExplorationSlack(0.1);
+        nearestNeighbor.setHnswFilterFirstExploration(0.3);
+        nearestNeighbor.setHnswFilterFirstThreshold(0.2);
+        nearestNeighbor.setHnswPostFilterThreshold(0.8);
+        nearestNeighbor.setHnswTargetHitsMaxAdjustmentFactor(20.0);
+
+        assertConvertsToJson(nearestNeighbor, """
+            {
+              "itemNearestNeighbor": {
+                "properties": {
+                  "index": "myvector"
+                },
+                "queryTensorName": "query_vector",
+                "targetNumHits": 50,
+                "allowApproximate": true,
+                "distanceThreshold": "Infinity",
+                "approximateThreshold": 0.05,
+                "explorationSlack": 0.1,
+                "filterFirstExploration": 0.3,
+                "filterFirstThreshold": 0.2,
+                "postFilterThreshold": 0.8,
+                "targetHitsMaxAdjustmentFactor": 20.0
+              }
+            }
+            """);
+    }
+
+    @Test
     void testConvertFromQueryWithGeoLocationItem() {
         Location location = new Location();
         location.setAttribute("myloc");

@@ -38,6 +38,7 @@ using proton::bucketdb::XXH64ChecksumAggregator;
 using search::AttributeFileSaveTarget;
 using search::AttributeGuard;
 using search::AttributeVector;
+using search::CommitParam;
 using search::DocumentMetaData;
 using search::GrowStrategy;
 using search::LidUsageStats;
@@ -579,7 +580,7 @@ TEST(DocumentMetaStore, stats_are_updated)
     lastUsed = dms.getStatus().getUsed();
 
     addGid(dms, gid2, bucketId2, time2);
-    dms.commit(true);
+    dms.commit(CommitParam::UpdateStats::FORCE);
     EXPECT_EQ(3u, dms.getStatus().getNumDocs());
     EXPECT_EQ(3u, dms.getStatus().getNumValues());
     EXPECT_GE(dms.getStatus().getAllocated(), lastAllocated);
@@ -1607,7 +1608,7 @@ TEST(DocumentMetaStoreTest, get_lid_usage_stats_works)
     EXPECT_EQ(0u, s.getHighestUsedLid());
 
     putGid(dms, createGid(1), 1);
-    
+
     s = dms.getLidUsageStats();
     EXPECT_EQ(2u, s.getLidLimit());
     EXPECT_EQ(1u, s.getUsedLids());
@@ -1633,7 +1634,7 @@ TEST(DocumentMetaStoreTest, get_lid_usage_stats_works)
 
     dms.remove(1, 0u);
     dms.removes_complete({ 1 });
-    
+
     s = dms.getLidUsageStats();
     EXPECT_EQ(4u, s.getLidLimit());
     EXPECT_EQ(2u, s.getUsedLids());
@@ -1642,7 +1643,7 @@ TEST(DocumentMetaStoreTest, get_lid_usage_stats_works)
 
     dms.remove(3, 0u);
     dms.removes_complete({ 3 });
-    
+
     s = dms.getLidUsageStats();
     EXPECT_EQ(4u, s.getLidLimit());
     EXPECT_EQ(1u, s.getUsedLids());
@@ -1651,7 +1652,7 @@ TEST(DocumentMetaStoreTest, get_lid_usage_stats_works)
 
     dms.remove(2, 0u);
     dms.removes_complete({ 2 });
-    
+
     s = dms.getLidUsageStats();
     EXPECT_EQ(4u, s.getLidLimit());
     EXPECT_EQ(0u, s.getUsedLids());
@@ -1679,7 +1680,7 @@ TEST(DocumentMetaStoreTest, move_works)
     GlobalId gid;
     uint32_t lid = 0u;
     dms.constructFreeList();
-    
+
     EXPECT_EQ(1u, dms.getNumDocs());
     EXPECT_EQ(0u, dms.getNumUsedLids());
     assertPut(bucketId1, time1, 1u, gid1, dms);
@@ -2045,7 +2046,7 @@ namespace {
 void try_compact_document_meta_store(DocumentMetaStore &dms)
 {
     dms.reclaim_unused_memory();
-    dms.commit(true);
+    dms.commit(CommitParam::UpdateStats::FORCE);
 }
 
 }
@@ -2058,10 +2059,10 @@ TEST(DocumentMetaStoreTest, gid_to_lid_map_can_be_compacted)
     for (uint32_t i = 1; i < full_size; ++i) {
         addLid(*dms, i);
     }
-    dms->commit(true);
+    dms->commit(CommitParam::UpdateStats::FORCE);
     AttributeGuard guard(dms);
     remove(full_size - 1, 100, *dms);
-    dms->commit(true);
+    dms->commit(CommitParam::UpdateStats::FORCE);
     auto status_before = dms->getStatus();
     EXPECT_LT(0, status_before.getOnHold());
     guard = AttributeGuard();

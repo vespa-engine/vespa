@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.content.cluster;
 
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
+import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.engines.DummyPersistence;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
@@ -10,20 +11,20 @@ import com.yahoo.vespa.model.content.engines.ProtonEngine;
  * Creates the correct engine factory from XML.
  */
 public class EngineFactoryBuilder {
-    public PersistenceEngine.PersistenceFactory build(ModelElement clusterElem, ContentCluster c) {
+    public PersistenceEngine.PersistenceFactory build(ModelElement clusterElem, ContentSearchCluster contentSearchCluster) {
         ModelElement persistence = clusterElem.child("engine");
         if (persistence != null) {
-            if (c.getSearch().hasIndexed() && persistence.child("proton") == null) {
+            if (contentSearchCluster.hasIndexed() && persistence.child("proton") == null) {
                 throw new IllegalArgumentException("Persistence engine does not allow for indexed search. Please use <proton> as your engine.");
             }
 
             if (persistence.child("proton") != null) {
-                return new ProtonEngine.Factory(c.getSearch());
+                return new ProtonEngine.Factory();
             } else if (persistence.child("dummy") != null) {
                 return new DummyPersistence.Factory();
             }
         }
 
-        return new ProtonEngine.Factory(c.getSearch());
+        return new ProtonEngine.Factory();
     }
 }

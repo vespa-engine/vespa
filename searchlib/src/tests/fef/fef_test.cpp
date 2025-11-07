@@ -26,6 +26,8 @@ void set_elems(TermFieldMatchData& tfmd, uint32_t docid, const std::vector<uint3
     for (auto element_id: element_ids) {
         tfmd.appendPosition({element_id, 0, 1, 1});
     }
+    tfmd.setNumOccs(element_ids.size());
+    tfmd.setFieldLength(100);
 }
 
 std::vector<uint32_t> get_elems(TermFieldMatchData& tfmd, uint32_t docid) {
@@ -125,12 +127,16 @@ TEST(FefTest, term_field_match_data_filter_elements_normal)
     TermFieldMatchData tfmd;
     set_elems(tfmd, docid3, {1, 3, 5, 7, 9});
     EXPECT_EQ(elems({1, 3, 5, 7, 9}), get_elems(tfmd, docid3));
+    EXPECT_EQ(5, tfmd.getNumOccs());
     filter_elems(tfmd, docid3, {1, 2, 3, 7, 8, 9, 10});
     EXPECT_EQ(elems({1, 3, 7, 9}), get_elems(tfmd, docid3));
+    EXPECT_EQ(4, tfmd.getNumOccs());
     filter_elems(tfmd, docid3, {1, 2, 3});
     EXPECT_EQ(elems({1, 3}), get_elems(tfmd, docid3));
+    EXPECT_EQ(2, tfmd.getNumOccs());
     filter_elems(tfmd, docid3, {2, 3});
     EXPECT_EQ(elems({3}), get_elems(tfmd, docid3));
+    EXPECT_EQ(1, tfmd.getNumOccs());
     EXPECT_EQ(docid3, tfmd.getDocId());
     filter_elems(tfmd, docid3, {1, 2});
     EXPECT_EQ(elems({}), get_elems(tfmd, docid3));

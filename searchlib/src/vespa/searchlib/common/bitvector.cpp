@@ -5,13 +5,14 @@
 #include "partialbitvector.h"
 #include "read_stats.h"
 #include <vespa/searchlib/util/file_settings.h>
-#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 
@@ -20,8 +21,8 @@ LOG_SETUP(".searchlib.common.bitvector");
 
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
-using vespalib::hwaccelerated::IAccelerated;
 using vespalib::alloc::Alloc;
+namespace hwaccelerated = vespalib::hwaccelerated;
 
 namespace {
 
@@ -45,11 +46,10 @@ struct BitVector::OrParts : vespalib::Runnable
           _byte_size((size + 7)/8)
     {}
     void run() override {
-        const auto & accelerator = IAccelerated::getAccelerator();
         BitVector * master = _vectors[0];
         Word * destination = master->getWordIndex(_offset);
         for (uint32_t i(1); i < _vectors.size(); i++) {
-            accelerator.orBit(destination, _vectors[i]->getWordIndex(_offset), _byte_size);
+            hwaccelerated::or_bit(destination, _vectors[i]->getWordIndex(_offset), _byte_size);
         }
     }
     std::span<BitVector* const> _vectors;
@@ -58,7 +58,7 @@ struct BitVector::OrParts : vespalib::Runnable
 };
 
 void
-BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVector* const> vectors) {
+BitVector::parallelOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVector* const> vectors) {
     constexpr uint32_t MIN_BITS_PER_THREAD = 128_Ki;
     constexpr uint32_t ALIGNMENT_BITS = 8_Ki;
     if (vectors.size() < 2) return;
@@ -84,9 +84,19 @@ BitVector::parallellOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVect
             parts.emplace_back(vectors, offset, bits_per_thread);
             offset += bits_per_thread;
         }
-        parts.emplace_back(vectors, offset, size - offset);
+        // Don't handle partial words in OrParts
+        parts.emplace_back(vectors, offset, size - bitNum(size) - offset);
         thread_bundle.run(parts);
-        master->repairEnds();
+        if (bitNum(size) != 0u) {
+            // Handle partial words at end of bitvectors
+            Index last = size - 1;
+            Index lastwn = wordNum(last);
+            Word last_word = master->_words[lastwn];
+            for (uint32_t i = 1; i < vectors.size(); i++) {
+                last_word |= (vectors[i]->_words[lastwn] & ~endBits(last));
+            }
+            master->_words[lastwn] = last_word;
+        }
     }
 }
 
@@ -100,16 +110,51 @@ BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity, cons
     Alloc alloc = (init_alloc != nullptr) ? init_alloc->create(sz) : Alloc::alloc(sz, MMAP_LIMIT);
     assert(alloc.size()/sizeof(Word) >= words);
     // Clear padding
-    size_t usedBytes = numBytes(end - start);
+    size_t usedBytes = numActiveBytes(start, end);
     memset(static_cast<char *>(alloc.get()) + usedBytes, 0, alloc.size() - usedBytes);
     return alloc;
 }
 
-BitVector::BitVector(void * buf, Index start, Index end) noexcept :
-    _words(static_cast<Word *>(buf) - wordNum(start)),
-    _startOffset(start),
-    _sz(end),
-    _numTrueBits(invalidCount())
+void
+BitVector::initialize_from(const BitVector& org)
+{
+    Range range = sanitize(org.range());
+    if (range.validNonZero()) {
+        Index wn = wordNum(range.start());
+        Index last = range.end() - 1;
+        Index lastwn = wordNum(last);
+        if (Index startwn = getStartWordNum(); wn > startwn) {
+            memset(&_words[startwn], 0, (wn - startwn) * sizeof(Word));
+        }
+        if (wn == lastwn) {
+            _words[wn] = (org._words[wn] & ~(startBits(range.start()) | endBits(last)));
+        } else {
+            if (range.partial_start()) {
+                _words[wn] = (org._words[wn] & ~startBits(range.start()));
+                ++wn;
+            }
+            size_t common_bytes = (lastwn - wn + (range.partial_end() ? 0 : 1)) * sizeof(Word);
+            if (common_bytes != 0u) {
+                memcpy(&_words[wn], &org._words[wn], common_bytes);
+            }
+            if (range.partial_end()) {
+                _words[lastwn] = (org._words[lastwn] & ~endBits(last));
+            }
+        }
+        if (Index num_words = numWords(); num_words > lastwn + 1) {
+            memset(&_words[lastwn + 1], 0, (num_words - lastwn - 1) * sizeof(Word));
+        }
+    } else {
+        memset(&_words[getStartWordNum()], 0, numActiveWords() * sizeof(Word));
+        setTrueBits(0);
+    }
+}
+
+BitVector::BitVector(void * buf, Index start, Index end) noexcept
+    : _words(static_cast<Word *>(buf) - wordNum(start)),
+      _startOffset(start),
+      _sz(end),
+      _numTrueBits(invalidCount())
 {
     assert((reinterpret_cast<size_t>(_words) & (sizeof(Word) - 1ul)) == 0);
 }
@@ -124,10 +169,28 @@ BitVector::init(void * buf,  Index start, Index end)
 }
 
 void
+BitVector::setGuardBit() noexcept
+{
+    set_bit_no_range_check(size());
+}
+
+void
+BitVector::setSize(Index sz)
+{
+    set_bit_no_range_check(sz);  // Need to place the new stop sign first
+    std::atomic_thread_fence(std::memory_order_release);
+    if (sz > _sz) {
+        // Can only remove the old stopsign if it is ahead of the new.
+        clear_bit_no_range_check(_sz);
+    }
+    vespalib::atomic::store_ref_release(_sz, sz);
+}
+
+void
 BitVector::clear()
 {
     memset(getActiveStart(), '\0', getActiveBytes());
-    set_bit_no_range_check(size()); // Guard bit
+    setGuardBit();
     setTrueBits(0);
 }
 
@@ -176,7 +239,7 @@ BitVector::setInterval(Index start_in, Index end_in)
     Index endw = wordNum(last);
 
     if (endw > startw) {
-        store(_words[startw], _words[startw] | checkTab(range.start()));
+        store(_words[startw], _words[startw] | ~startBits(range.start()));
         for (Index i = startw + 1; i < endw; ++i) {
             store_unchecked(_words[i], allBits());
         }
@@ -225,7 +288,7 @@ BitVector::countInterval(Range range_in) const
         ++endw;
     }
     if (startw < endw) {
-        res += IAccelerated::getAccelerator().populationCount(bitValues + startw, endw - startw);
+        res += hwaccelerated::population_count(bitValues + startw, endw - startw);
     }
     if (partialEnd) {
         res += std::popcount(load(bitValues[endw]) & ~endBits(last));
@@ -238,34 +301,30 @@ void
 BitVector::orWith(const BitVector & right)
 {
     Range range = sanitize(right.range());
-    if ( ! range.validNonZero()) return;
-
-    if (right.size() < size()) {
-        ssize_t commonBytes = numActiveBytes(range.start(), range.end()) - sizeof(Word);
-        if (commonBytes > 0) {
-            IAccelerated::getAccelerator().orBit(getWordIndex(range.start()), right.getWordIndex(range.start()), commonBytes);
-        }
-        Index last(range.end() - 1);
-        store(getWordIndex(last)[0], getWordIndex(last)[0] | (load(right.getWordIndex(last)[0]) & ~endBits(last)));
-    } else {
-        IAccelerated::getAccelerator().orBit(getWordIndex(range.start()), right.getWordIndex(range.start()), getActiveBytes());
+    if ( ! range.validNonZero()) {
+        return;
     }
-    repairEnds();
+
+    Index wn = wordNum(range.start());
+    Index last = range.end() - 1;
+    Index lastwn = wordNum(last);
+    if (wn == lastwn) {
+        _words[wn] |= (right._words[wn] & ~(startBits(range.start()) | endBits(last)));
+    } else {
+        if (range.partial_start()) {
+            _words[wn] |= (right._words[wn] & ~startBits(range.start()));
+            ++wn;
+        }
+        size_t common_bytes = (lastwn - wn + (range.partial_end() ? 0 : 1)) * sizeof(Word);
+        if (common_bytes != 0u) {
+            hwaccelerated::or_bit(&_words[wn], &right._words[wn], common_bytes);
+        }
+        if (range.partial_end()) {
+            _words[lastwn] |= (right._words[lastwn] & ~endBits(last));
+        }
+    }
     invalidateCachedCount();
 }
-
-void
-BitVector::repairEnds()
-{
-    if (size() != 0) {
-        Index start(getStartIndex());
-        Index last(size() - 1);
-        store(getWordIndex(start)[0], getWordIndex(start)[0] & ~startBits(start));
-        store(getWordIndex(last)[0], getWordIndex(last)[0] & ~endBits(last));
-    }
-    setGuardBit();
-}
-
 
 void
 BitVector::andWith(const BitVector & right)
@@ -276,13 +335,27 @@ BitVector::andWith(const BitVector & right)
         return;
     }
 
-    uint32_t commonBytes = std::min(getActiveBytes(), numActiveBytes(getStartIndex(), right.size()));
-    IAccelerated::getAccelerator().andBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
+    Index wn = wordNum(range.start());
+    Index last = range.end() - 1;
+    Index lastwn = wordNum(last);
+    if (wn == lastwn) {
+        _words[wn] &= (right._words[wn] | startBits(range.start()) | endBits(last));
+    } else {
+        if (range.partial_start()) {
+            _words[wn] &= (right._words[wn] | startBits(range.start()));
+            ++wn;
+        }
+        size_t common_bytes = (lastwn - wn + (range.partial_end() ? 0 : 1)) * sizeof(Word);
+        if (common_bytes != 0u) {
+            hwaccelerated::and_bit(&_words[wn], &right._words[wn], common_bytes);
+        }
+        if (range.partial_end()) {
+            _words[lastwn] &= (right._words[lastwn] | endBits(last));
+        }
+    }
     if (right.size() < size()) {
         clearInterval(right.size(), size());
     }
-
-    repairEnds();
     invalidateCachedCount();
 }
 
@@ -291,27 +364,55 @@ void
 BitVector::andNotWith(const BitVector& right)
 {
     Range range = sanitize(right.range());
-    if ( ! range.validNonZero()) return;
-
-    if (right.size() < size()) {
-        ssize_t commonBytes = numActiveBytes(range.start(), range.end()) - sizeof(Word);
-        if (commonBytes > 0) {
-            IAccelerated::getAccelerator().andNotBit(getWordIndex(range.start()), right.getWordIndex(range.start()), commonBytes);
-        }
-        Index last(range.end() - 1);
-        store(getWordIndex(last)[0], getWordIndex(last)[0] & ~(load(right.getWordIndex(last)[0]) & ~endBits(last)));
-    } else {
-        IAccelerated::getAccelerator().andNotBit(getWordIndex(range.start()), right.getWordIndex(range.start()), getActiveBytes());
+    if ( ! range.validNonZero()) {
+        return;
     }
 
-    repairEnds();
+    Index wn = wordNum(range.start());
+    Index last = range.end() - 1;
+    Index lastwn = wordNum(last);
+    if (wn == lastwn) {
+        _words[wn] &= (~right._words[wn] | startBits(range.start()) | endBits(last));
+    } else {
+        if (range.partial_start()) {
+            _words[wn] &= (~right._words[wn] | startBits(range.start()));
+            ++wn;
+        }
+        size_t common_bytes = (lastwn - wn + (range.partial_end() ? 0 : 1)) * sizeof(Word);
+        if (common_bytes != 0u) {
+            hwaccelerated::and_not_bit(&_words[wn], &right._words[wn], common_bytes);
+        }
+        if (range.partial_end()) {
+            _words[lastwn] &= (~right._words[lastwn] | endBits(last));
+        }
+    }
     invalidateCachedCount();
 }
 
 void
 BitVector::notSelf() {
-    IAccelerated::getAccelerator().notBit(getActiveStart(), getActiveBytes());
-    setGuardBit();
+    Range range = this->range();
+    if (!range.validNonZero()) {
+        return;
+    }
+    Index wn = wordNum(range.start());
+    Index last = range.end() - 1;
+    Index lastwn = wordNum(last);
+    if (wn == lastwn) {
+        _words[wn] ^= ~(startBits(range.start()) | endBits(last));
+    } else {
+        if (range.partial_start()) {
+            _words[wn] ^= ~startBits(range.start());
+            ++wn;
+        }
+        size_t common_bytes = (lastwn - wn + (range.partial_end() ? 0 : 1)) * sizeof(Word);
+        if (common_bytes != 0u) {
+            hwaccelerated::not_bit(&_words[wn], common_bytes);
+        }
+        if (range.partial_end()) {
+            _words[lastwn] ^= ~endBits(last);
+        }
+    }
     invalidateCachedCount();
 }
 
@@ -374,27 +475,26 @@ private:
               int64_t offset, Index doccount);
 };
 
-BitVector::UP
+std::unique_ptr<const BitVector>
 BitVector::create(Index numberOfElements, FastOS_FileInterface &file,
-                  int64_t offset, Index doccount, ReadStats& read_stats)
+                  int64_t offset, size_t entry_size, Index doccount, ReadStats& read_stats)
 {
     UP bv;
     if (file.IsMemoryMapped()) {
         size_t pad_before = offset - vespalib::round_down_to_page_boundary(offset);
-        read_stats.read_bytes = vespalib::round_up_to_page_size(pad_before + getFileBytes(numberOfElements));
+        read_stats.read_bytes = vespalib::round_up_to_page_size(pad_before + entry_size);
         bv = std::make_unique<MMappedBitVector>(numberOfElements, file, offset, doccount);
     } else {
         size_t padbefore, padafter;
         size_t vectorsize = getFileBytes(numberOfElements);
-        file.DirectIOPadding(offset, vectorsize, padbefore, padafter);
+        file.DirectIOPadding(offset, entry_size, padbefore, padafter);
         assert((padbefore & (getAlignment() - 1)) == 0);
-        AllocatedBitVector::Alloc alloc = Alloc::alloc(padbefore + vectorsize + padafter,
+        AllocatedBitVector::Alloc alloc = Alloc::alloc(padbefore + std::max(entry_size + padafter, vectorsize),
                                                        MMAP_LIMIT, FileSettings::DIRECTIO_ALIGNMENT);
         void * alignedBuffer = alloc.get();
-        file.ReadBuf(alignedBuffer, padbefore + vectorsize + padafter, offset - padbefore);
-        read_stats.read_bytes = padbefore + vectorsize + padafter;
-        bv = std::make_unique<AllocatedBitVector>(numberOfElements, std::move(alloc), padbefore);
-        bv->setTrueBits(doccount);
+        file.ReadBuf(alignedBuffer, padbefore + entry_size + padafter, offset - padbefore);
+        read_stats.read_bytes = padbefore + entry_size + padafter;
+        bv = std::make_unique<AllocatedBitVector>(numberOfElements, std::move(alloc), padbefore, entry_size, doccount);
         // Check guard bit for getNextTrueBit()
         assert(bv->testBit(bv->size()));
     }

@@ -7,7 +7,7 @@ import com.yahoo.vespa.model.content.ResourceLimits;
 /**
  * Builder for feed block resource limits.
  *
- * @author geirst
+ * @author Geir Storli
  */
 public class DomResourceLimitsBuilder {
 

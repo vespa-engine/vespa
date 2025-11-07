@@ -442,8 +442,8 @@ public class ContentPolicy extends SlobrokPolicy {
                             }
                             return targetSpec;
                         } else {
-                            sendRandomReason = "Want to use distributor " + target + " but it is not in slobrok. Sending to random.";
-                            log.log(Level.FINE, "Target distributor is not in slobrok");
+                            sendRandomReason = "Want to use distributor " + target + " but it is missing. Sending to random.";
+                            log.log(Level.FINE, "Target distributor is missing");
                         }
                     } else {
                         context.setContext(new MessageContext(cachedClusterState));

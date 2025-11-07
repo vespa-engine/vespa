@@ -16,6 +16,7 @@
 #include <vespa/searchlib/common/locationiterators.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
+#include <vespa/searchlib/query/streaming/queryterm.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
 #include <vespa/searchlib/queryeval/create_blueprint_params.h>
@@ -43,6 +44,7 @@
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <charconv>
+#include <limits>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attribute_blueprint_factory");
@@ -187,7 +189,7 @@ public:
     const attribute::ISearchContext *get_attribute_search_context() const noexcept final {
         return _search_context.get();
     }
-    bool getRange(std::string &from, std::string &to) const override;
+    bool getRange(search::NumericRangeSpec &range_spec) const override;
 };
 
 AttributeFieldBlueprint::~AttributeFieldBlueprint() = default;
@@ -254,13 +256,16 @@ public:
         uint64_t estHits(0);
         const IAttributeVector &attr(_attribute);
         for (const ZCurve::Range & r : rangeVector) {
-            query::Range qr(r.min(), r.max());
-            query::SimpleRangeTerm rt(qr, "", 0, query::Weight(0));
-            string stack(StackDumpCreator::create(rt));
-            _rangeSearches.push_back(attr.createSearchContext(QueryTermDecoder::decodeTerm(stack), scParams));
+            auto range_spec = std::make_unique<NumericRangeSpec>();
+            range_spec->valid = true;
+            range_spec->valid_integers = true;
+            range_spec->int64_lower_limit = r.min();
+            range_spec->int64_upper_limit = r.max();
+            auto term = std::make_unique<streaming::QueryTerm>(QueryTermSimple::Type::WORD, "", std::move(range_spec));
+            _rangeSearches.push_back(attr.createSearchContext(std::move(term), scParams));
             _estimates.push_back(_rangeSearches.back()->calc_hit_estimate());
             estHits += _estimates.back().est_hits();
-            LOG(debug, "Range '%s' estHits %" PRId64, qr.getRangeString().c_str(), estHits);
+            LOG(debug, "Range [%" PRId64 ",%" PRId64 "] estHits %" PRId64, r.min(), r.max(), estHits);
         }
         if (estHits > attr.getNumDocs()) {
             estHits = attr.getNumDocs();
@@ -562,19 +567,26 @@ DirectWandBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept
 }
 
 bool
-AttributeFieldBlueprint::getRange(std::string &from, std::string &to) const {
+AttributeFieldBlueprint::getRange(search::NumericRangeSpec &range_spec) const {
     if (_type == INT) {
         Int64Range range = _search_context->getAsIntegerTerm();
-        char buf[32];
-        auto res = std::to_chars(buf, buf + sizeof(buf), range.lower(), 10);
-        from = std::string_view(buf, res.ptr - buf);
-        res = std::to_chars(buf, buf + sizeof(buf), range.upper(), 10);
-        to = std::string_view(buf, res.ptr - buf);
+        range_spec.valid = true;
+        range_spec.valid_integers = true;
+        range_spec.lower_inclusive = true;
+        range_spec.upper_inclusive = true;
+        range_spec.int64_lower_limit = range.lower();
+        range_spec.int64_upper_limit = range.upper();
+        range_spec.fp_lower_limit = static_cast<double>(range.lower());
+        range_spec.fp_upper_limit = static_cast<double>(range.upper());
         return true;
     } else if (_type == FLOAT) {
         DoubleRange range = _search_context->getAsDoubleTerm();
-        from = vespalib::make_string("%g", range.lower());
-        to = vespalib::make_string("%g", range.upper());
+        range_spec.valid = true;
+        range_spec.valid_integers = false;
+        range_spec.lower_inclusive = true;
+        range_spec.upper_inclusive = true;
+        range_spec.fp_lower_limit = range.lower();
+        range_spec.fp_upper_limit = range.upper();
         return true;
     }
     return false;
@@ -646,23 +658,23 @@ public:
     void visit(PrefixTerm & n) override { visitTerm(n); }
 
     void visit(RangeTerm &n) override {
-        const string stack = StackDumpCreator::create(n);
-        const string term = queryeval::termAsString(n);
-        QueryTermSimple parsed_term(term, QueryTermSimple::Type::WORD);
+        const NumericRangeSpec* spec = n.getTerm().getSpec();
         SearchContextParams scParams = createContextParams(_field.isFilter());
-        if (parsed_term.getMaxPerGroup() > 0) {
-            const IAttributeVector *diversity(getRequestContext().getAttribute(std::string(parsed_term.getDiversityAttribute())));
-            if (check_valid_diversity_attr(diversity)) {
-                scParams.diversityAttribute(diversity)
-                        .diversityCutoffGroups(parsed_term.getDiversityCutoffGroups())
-                        .diversityCutoffStrict(parsed_term.getDiversityCutoffStrict());
-                setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, stack, scParams));
-            } else {
+
+        if (spec && spec->with_diversity()) {
+            const IAttributeVector *diversity(getRequestContext().getAttribute(std::string(spec->diversityAttribute)));
+            if (!check_valid_diversity_attr(diversity)) {
                 setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
+                return;
             }
-        } else {
-            setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, stack, scParams));
+            scParams.diversityAttribute(diversity)
+                    .diversityCutoffGroups(spec->diversityCutoffGroups)
+                    .diversityCutoffStrict(spec->diversityCutoffStrict);
         }
+
+        auto range_spec = spec ? std::make_unique<NumericRangeSpec>(*spec) : std::make_unique<NumericRangeSpec>();
+        auto term = std::make_unique<streaming::QueryTerm>(QueryTermSimple::Type::WORD, "", std::move(range_spec));
+        setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, std::move(term), scParams));
     }
 
     void visit(StringTerm & n) override { visitTerm(n); }
@@ -767,18 +779,22 @@ public:
         try {
             auto calc = tensor::DistanceCalculator::make_with_validation(_attr, *query_tensor);
             const auto& params = getRequestContext().get_create_blueprint_params();
+            const auto& hnsw_params = n.get_hnsw_params();
+            queryeval::NearestNeighborBlueprint::HnswParams blueprint_hnsw_params{
+                .explore_additional_hits = n.get_explore_additional_hits(),
+                .distance_threshold = n.get_distance_threshold(),
+                .global_filter_lower_limit = hnsw_params.approximate_threshold.value_or(params.global_filter_lower_limit),
+                .global_filter_upper_limit = hnsw_params.post_filter_threshold.value_or(params.global_filter_upper_limit),
+                .filter_first_upper_limit = hnsw_params.filter_first_threshold.value_or(params.filter_first_upper_limit),
+                .filter_first_exploration = hnsw_params.filter_first_exploration.value_or(params.filter_first_exploration),
+                .exploration_slack = hnsw_params.exploration_slack.value_or(params.exploration_slack),
+                .target_hits_max_adjustment_factor = hnsw_params.target_hits_max_adjustment_factor.value_or(params.target_hits_max_adjustment_factor)
+            };
             setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field,
                                                                             std::move(calc),
                                                                             n.get_target_num_hits(),
                                                                             n.get_allow_approximate(),
-                                                                            n.get_explore_additional_hits(),
-                                                                            n.get_distance_threshold(),
-                                                                            params.global_filter_lower_limit,
-                                                                            params.global_filter_upper_limit,
-                                                                            params.filter_first_upper_limit,
-                                                                            params.filter_first_exploration,
-                                                                            params.exploration_slack,
-                                                                            params.target_hits_max_adjustment_factor,
+                                                                            blueprint_hnsw_params,
                                                                             getRequestContext().getDoom()));
         } catch (const vespalib::IllegalArgumentException& ex) {
             return fail_nearest_neighbor_term(n, ex.getMessage());

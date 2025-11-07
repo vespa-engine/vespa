@@ -118,8 +118,15 @@ PredicateAttribute::onCommit()
 }
 
 void
-PredicateAttribute::onUpdateStat()
+PredicateAttribute::onUpdateStat(CommitParam::UpdateStats updateStats)
 {
+    if (updateStats == CommitParam::UpdateStats::SKIP) {
+        return;
+    }
+    if (updateStats == CommitParam::UpdateStats::SIZES_ONLY) {
+        this->updateSizes(_min_feature.size(), _min_feature.size());
+        return;
+    }
     // update statistics
     vespalib::MemoryUsage combined;
     combined.merge(_min_feature.getMemoryUsage());

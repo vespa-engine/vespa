@@ -740,7 +740,10 @@ TEST(StreamingQueryTest, test_nearest_neighbor_query_node)
     constexpr bool allow_approximate = false;
     constexpr uint32_t explore_additional_hits = 800;
     constexpr double distance = 0.5;
-    builder.add_nearest_neighbor_term("qtensor", "field", id, Weight(weight), target_num_hits, allow_approximate, explore_additional_hits, distance_threshold);
+    NearestNeighborTerm::HnswParams hnsw_params;
+    hnsw_params.distance_threshold = distance_threshold;
+    hnsw_params.explore_additional_hits = explore_additional_hits;
+    builder.add_nearest_neighbor_term("qtensor", "field", id, Weight(weight), target_num_hits, allow_approximate, hnsw_params);
     auto build_node = builder.build();
     auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*build_node);
     QueryNodeResultFactory empty;

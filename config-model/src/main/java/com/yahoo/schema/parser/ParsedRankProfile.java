@@ -26,6 +26,8 @@ import java.util.Optional;
  */
 public class ParsedRankProfile extends ParsedBlock {
 
+    /** The profile enclosing this, or null if it is not an inner profile */
+    private final ParsedRankProfile outer;
     private boolean ignoreDefaultRankFeatures = false;
     private Double rankScoreDropLimit = null;
     private Double secondPhaseRankScoreDropLimit = null;
@@ -47,10 +49,10 @@ public class ParsedRankProfile extends ParsedBlock {
     private Integer reRankCount = null;
     private MatchPhaseSettings matchPhase = null;
     private DiversitySettings diversity = null;
-    private String firstPhaseExpression = null;
-    private List<String> inheritedSummaryFeatures = new ArrayList<>();
-    private List<String> inheritedMatchFeatures = new ArrayList<>();
-    private String secondPhaseExpression = null;
+    private String firstPhaseExpression     = null;
+    private final List<String> inheritedSummaryFeatures = new ArrayList<>();
+    private final List<String> inheritedMatchFeatures   = new ArrayList<>();
+    private String secondPhaseExpression    = null;
     private Boolean strict = null;
     private Boolean useSignificanceModel = null;
     private Double weakandStopwordLimit = null;
@@ -72,10 +74,20 @@ public class ParsedRankProfile extends ParsedBlock {
     private Integer globalPhaseRerankCount = null;
     private String globalPhaseExpression = null;
 
-    public ParsedRankProfile(String name) {
+    public ParsedRankProfile(String name, ParsedRankProfile outer) {
         super(name, "rank-profile");
+        this.outer = outer;
     }
 
+    String namespacePrefix() {
+        return outer().map(parent -> parent.fullName() + ".").orElse("");
+    }
+
+    String fullName() {
+        return namespacePrefix() + name();
+    }
+
+    Optional<ParsedRankProfile> outer() { return Optional.ofNullable(outer); }
     boolean getIgnoreDefaultRankFeatures() { return this.ignoreDefaultRankFeatures; }
     Optional<Double> getRankScoreDropLimit() { return Optional.ofNullable(this.rankScoreDropLimit); }
     Optional<Double> getSecondPhaseRankScoreDropLimit() { return Optional.ofNullable(this.secondPhaseRankScoreDropLimit); }

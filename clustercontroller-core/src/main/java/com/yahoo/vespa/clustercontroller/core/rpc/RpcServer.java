@@ -98,7 +98,7 @@ public class RpcServer {
         SlobrokList slist = new SlobrokList();
         slist.setup(slobrokConnectionSpecs);
         Spec spec = new Spec(HostName.getLocalhost(), acceptor.port());
-        log.log(Level.INFO, "Registering " + spec + " with slobrok at " + String.join(" ", slobrokConnectionSpecs));
+        log.log(Level.INFO, "Registering " + spec + " with location broker at " + String.join(" ", slobrokConnectionSpecs));
         register = new Register(supervisor, slist, spec);
         register.registerName(getSlobrokName());
     }
@@ -138,7 +138,7 @@ public class RpcServer {
 
         m = new Method("setNodeState", "ss", "s", this::queueRpcRequest);
         m.methodDesc("Set nodeState of a node");
-        m.paramDesc(0, "slobrokAddress", "Slobrok address of node");
+        m.paramDesc(0, "slobrokAddress", "Location broker address of node");
         m.paramDesc(1, "nodeState", "Desired nodeState of the node (complete nodeState string - [key:value ]*)");
         m.returnDesc(0, "status", "success/failure");
         supervisor.addMethod(m);
@@ -198,7 +198,7 @@ public class RpcServer {
                     int lastSlash = slobrokAddress.lastIndexOf('/');
                     int nextButLastSlash = slobrokAddress.lastIndexOf('/', lastSlash - 1);
                     if (lastSlash == -1 || nextButLastSlash == -1) {
-                        throw new IllegalStateException("Invalid slobrok address '" + slobrokAddress + "'.");
+                        throw new IllegalStateException("Invalid location broker address '" + slobrokAddress + "'.");
                     }
                     NodeType nodeType = NodeType.get(slobrokAddress.substring(nextButLastSlash + 1, lastSlash));
                     int nodeIndex = Integer.parseInt(slobrokAddress.substring(lastSlash + 1));

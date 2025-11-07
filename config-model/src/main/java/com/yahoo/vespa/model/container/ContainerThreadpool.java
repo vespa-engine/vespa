@@ -17,6 +17,7 @@ import java.util.logging.Level;
  * Component definition for a {@link java.util.concurrent.Executor} using {@link ContainerThreadPool}.
  *
  * @author bjorncs
+ * @author johsol
  */
 public abstract class ContainerThreadpool extends SimpleComponent implements ContainerThreadpoolConfig.Producer {
 
@@ -50,7 +51,22 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
             if (threadsElem != null) {
                 // New syntax with values relative to number of CPU cores
                 min = Double.parseDouble(threadsElem.getTextContent());
-                max = threadsElem.hasAttribute("boost") ? Double.parseDouble(threadsElem.getAttribute("boost")) : min;
+
+                // Until variable pool size is removed, prefer max to boost.
+                var maxAttribute = XmlHelper.getOptionalAttribute(threadsElem, "max").orElse(null);
+                var boostAttribute = XmlHelper.getOptionalAttribute(threadsElem, "boost").orElse(null);
+                if (maxAttribute != null && boostAttribute != null) {
+                    throw new IllegalArgumentException("For <threads>: both 'max' and 'boost' cannot be specified at the same time. Please use 'max' only.");
+                } else if (maxAttribute != null) {
+                    max = Double.parseDouble(maxAttribute);
+                } else if (boostAttribute != null) {
+                    ds.getDeployLogger()
+                            .logApplicationPackage(Level.WARNING, "For <threads>: the 'boost' attribute is deprecated, use 'max' instead.");
+                    max = Double.parseDouble(boostAttribute);
+                } else {
+                    max = min;
+                }
+
                 var queueElem = XmlHelper.getOptionalChild(threadpoolElem, "queue").orElse(null);
                 if (queueElem != null) queue = Double.parseDouble(queueElem.getTextContent());
                 isRelative = true;
@@ -61,7 +77,7 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
                         .logApplicationPackage(Level.WARNING, "For <threadpool>: <min-threads> is deprecated, use <threads> instead");
                 var maxElem = XmlHelper.getOptionalChild(threadpoolElem, "max-threads").orElse(null);
                 if (maxElem != null) ds.getDeployLogger()
-                        .logApplicationPackage(Level.WARNING, "For <threadpool>: <max-threads> is deprecated, use <threads> with 'boost' instead");
+                        .logApplicationPackage(Level.WARNING, "For <threadpool>: <max-threads> is deprecated, use <threads> with 'max' instead");
                 if (minElem != null) {
                     min = Double.parseDouble(minElem.getTextContent());
                 }
@@ -74,9 +90,15 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
                 if (queueSizeElem != null) queue = Double.parseDouble(queueSizeElem.getTextContent());
                 isRelative = false;
             }
-            if (max != null && max <= 0) throw new IllegalArgumentException("Thread pool 'max' must be positive");
-            if (min != null && min < 0) throw new IllegalArgumentException("Thread pool 'min' must be positive");
-            if (queue != null && queue < 0) throw new IllegalArgumentException("Thread pool 'queue' must be positive");
+
+            if (min != null && min < 0)
+                throw new IllegalArgumentException("For <threadpool>: <threads> must be positive.");
+            if (max != null && max <= 0)
+                throw new IllegalArgumentException("For <threadpool>: 'max' on <threads> must be positive.");
+            if (queue != null && queue < 0)
+                throw new IllegalArgumentException("For <threadpool>: <queue> must be positive.");
+            if (min != null && max != null && min > max)
+                throw new IllegalArgumentException("For <threadpool>: 'max' on <threads> must be greater than <threads>.");
             options = new UserOptions(max, min, queue, isRelative);
         }
     }
@@ -89,23 +111,35 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
         setDefaultConfigValues(builder);
 
         builder.name(this.name);
+
+        // If absolute value is set in config model, clear the relative value. And vice versa.
+        // They could be set as default values in setDefaultConfigValues.
         if (options.max() != null) {
-            if (options.isRelative())
+            if (options.isRelative()) {
                 builder.relativeMaxThreads(options.max());
-            else
+                builder.maxThreads(-1);
+            } else {
                 builder.maxThreads(options.max().intValue());
+                builder.relativeMaxThreads(-1);
+            }
         }
         if (options.min() != null) {
-            if (options.isRelative())
+            if (options.isRelative()) {
                 builder.relativeMinThreads(options.min());
-            else
+                builder.minThreads(-1);
+            } else {
                 builder.minThreads(options.min().intValue());
+                builder.relativeMinThreads(-1);
+            }
         }
         if (options.queueSize() != null) {
-            if (options.isRelative())
+            if (options.isRelative()) {
                 builder.relativeQueueSize(options.queueSize());
-            else
+                builder.queueSize(-1);
+            } else {
                 builder.queueSize(options.queueSize().intValue());
+                builder.relativeQueueSize(-1);
+            }
         }
     }
 }

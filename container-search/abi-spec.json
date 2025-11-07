@@ -1022,10 +1022,22 @@
       "public int getHnswExploreAdditionalHits()",
       "public boolean getAllowApproximate()",
       "public java.lang.String getQueryTensorName()",
+      "public java.lang.Double getHnswApproximateThreshold()",
+      "public java.lang.Double getHnswExplorationSlack()",
+      "public java.lang.Double getHnswFilterFirstExploration()",
+      "public java.lang.Double getHnswFilterFirstThreshold()",
+      "public java.lang.Double getHnswPostFilterThreshold()",
+      "public java.lang.Double getHnswTargetHitsMaxAdjustmentFactor()",
       "public void setTargetNumHits(int)",
       "public void setDistanceThreshold(double)",
       "public void setHnswExploreAdditionalHits(int)",
       "public void setAllowApproximate(boolean)",
+      "public void setHnswApproximateThreshold(java.lang.Double)",
+      "public void setHnswExplorationSlack(java.lang.Double)",
+      "public void setHnswFilterFirstExploration(java.lang.Double)",
+      "public void setHnswFilterFirstThreshold(java.lang.Double)",
+      "public void setHnswPostFilterThreshold(java.lang.Double)",
+      "public void setHnswTargetHitsMaxAdjustmentFactor(java.lang.Double)",
       "public void setIndexName(java.lang.String)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
@@ -7132,6 +7144,18 @@
       "public static final com.yahoo.processing.request.CompoundName MAX_QUERY_ITEMS",
       "public static final com.yahoo.search.query.profile.types.QueryProfileType argumentType"
     ]
+  },
+  "com.yahoo.search.query.properties.IllegalAssignmentException" : {
+    "superClass" : "java.lang.IllegalArgumentException",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.processing.request.CompoundName, java.lang.Object, java.lang.Throwable)",
+      "public void <init>(com.yahoo.processing.request.CompoundName, java.lang.Object, java.lang.String)"
+    ],
+    "fields" : [ ]
   },
   "com.yahoo.search.query.properties.PropertyAliases" : {
     "superClass" : "com.yahoo.search.query.Properties",

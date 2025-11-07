@@ -52,7 +52,7 @@ public class SoftTimeoutTestCase {
             new Query("?query=test&ranking.softtimeout."+key+"="+value);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Could not set 'ranking.softtimeout." + key + "' to '" + value +"'", e.getMessage());
+            assertEquals("Could not set 'ranking.softtimeout." + key + "'", e.getMessage());
             assertEquals(key + " must be in the range [0.0, 1.0], got " + value, e.getCause().getMessage());
         }
     }

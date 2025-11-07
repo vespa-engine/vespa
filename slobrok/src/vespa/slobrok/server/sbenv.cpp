@@ -266,7 +266,7 @@ SBEnv::removePeer(const std::string &name, const std::string &spec)
     }
     const RemoteSlobrok *partner = _exchanger.lookupPartner(name);
     if (partner == nullptr) {
-        return OkState(0, "remote slobrok not a partner");
+        return OkState(0, "remote location broker not a partner");
     }
     _exchanger.removePartner(spec);
     return OkState(0, "done");

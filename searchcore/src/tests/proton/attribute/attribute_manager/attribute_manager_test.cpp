@@ -422,7 +422,7 @@ TEST_F(AttributeManagerTest, require_that_predicate_attributes_are_flushed_and_l
         uint32_t doc_id;
         a1->addDoc(doc_id);
         index.indexEmptyDocument(doc_id);
-        pa.commit(CommitParam(100));
+        pa.commit(CommitParam(100, CommitParam::UpdateStats::SKIP));
 
         EXPECT_EQ(2u, a1->getNumDocs());
 
@@ -444,7 +444,7 @@ TEST_F(AttributeManagerTest, require_that_predicate_attributes_are_flushed_and_l
         PredicateTreeAnnotations annotations(3);
         annotations.interval_map[123] = {{ 0x0001ffff }};
         index.indexDocument(1, annotations);
-        pa.commit(CommitParam(200));
+        pa.commit(CommitParam(200, CommitParam::UpdateStats::SKIP));
 
         EXPECT_EQ(3u, a1->getNumDocs());
         EXPECT_TRUE(ia1.load());
@@ -574,7 +574,7 @@ TEST_F(AttributeManagerTest, require_that_extra_attribute_is_not_treated_as_remo
     Fixture f;
     AttributeVector::SP ex(createInt32Attribute("ex"));
     f._m.addExtraAttribute(ex);
-    ex->commit(CommitParam(1));
+    ex->commit(CommitParam(1, CommitParam::UpdateStats::SKIP));
 
     AttrSpecList ns;
     SequentialAttributeManager am2(f._m, AttrMgrSpec(std::move(ns), 2, 1));
@@ -952,7 +952,7 @@ TEST_F(AttributeManagerTest, late_create_serial_number_is_set_on_new_attributes)
     a1->addDoc(docid);
     EXPECT_EQ(1u, docid);
     a1->clearDoc(docid);
-    a1->commit(CommitParam(5));
+    a1->commit(CommitParam(5, CommitParam::UpdateStats::SKIP));
     AttrSpecList new_spec;
     new_spec.emplace_back("a1", INT32_SINGLE);
     new_spec.emplace_back("a2", INT32_SINGLE);

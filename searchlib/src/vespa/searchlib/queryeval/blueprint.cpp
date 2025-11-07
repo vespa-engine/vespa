@@ -97,7 +97,6 @@ Blueprint::State::State() noexcept
       _tree_size(1),
       _estimateEmpty(true),
       _allow_termwise_eval(true),
-      _want_global_filter(false),
       _cost_tier(COST_TIER_NORMAL)
 {}
 
@@ -113,7 +112,6 @@ Blueprint::State::State(FieldSpecBaseList fields_in) noexcept
       _tree_size(1),
       _estimateEmpty(true),
       _allow_termwise_eval(true),
-      _want_global_filter(false),
       _cost_tier(COST_TIER_NORMAL)
 {
 }
@@ -527,10 +525,10 @@ IntermediateBlueprint::infer_allow_termwise_eval() const
 }
 
 bool
-IntermediateBlueprint::infer_want_global_filter() const
+IntermediateBlueprint::want_global_filter(GlobalFilterLimits& limits) const
 {
     for (const Blueprint::UP &child : _children) {
-        if (child->getState().want_global_filter()) {
+        if (child->want_global_filter(limits)) {
             return true;
         }
     }
@@ -602,7 +600,6 @@ IntermediateBlueprint::calculateState() const
     state.estimate(calculateEstimate());
     state.cost_tier(calculate_cost_tier());
     state.allow_termwise_eval(infer_allow_termwise_eval());
-    state.want_global_filter(infer_want_global_filter());
     state.tree_size(calculate_tree_size());
     return state;
 }
@@ -654,8 +651,9 @@ IntermediateBlueprint::sort(InFlow in_flow)
 void
 IntermediateBlueprint::set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio)
 {
+    GlobalFilterLimits limits;  // Not used here, just checking if filter is wanted
     for (auto & child : _children) {
-        if (child->getState().want_global_filter()) {
+        if (child->want_global_filter(limits)) {
             child->set_global_filter(global_filter, estimated_hit_ratio);
         }
     }
@@ -836,7 +834,7 @@ SearchIterator::UP LeafBlueprint::createLeafSearch(const fef::TermFieldMatchData
 }
 
 bool
-LeafBlueprint::getRange(std::string &, std::string &) const {
+LeafBlueprint::getRange(search::NumericRangeSpec &) const {
     return false;
 }
 
@@ -856,13 +854,6 @@ LeafBlueprint::set_cost_tier(uint32_t value)
 {
     assert(value < 0x100);
     _state.cost_tier(value);
-    notifyChange();
-}
-
-void
-LeafBlueprint::set_want_global_filter(bool value)
-{
-    _state.want_global_filter(value);
     notifyChange();
 }
 

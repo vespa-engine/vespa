@@ -535,7 +535,7 @@ struct MockAttributeVector : NotImplementedAttribute {
 
     // Not covered by NotImplementedAttribute
     void onCommit() override {}
-    void onUpdateStat() override {}
+    void onUpdateStat(CommitParam::UpdateStats) override {}
 };
 
 struct MockSortBlobWriter : public ISortBlobWriter {

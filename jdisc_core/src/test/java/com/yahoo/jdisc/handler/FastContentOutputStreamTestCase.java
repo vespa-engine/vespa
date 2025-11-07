@@ -18,19 +18,18 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class FastContentOutputStreamTestCase {
 
     @Test
-    void requireThatNullConstructorArgumentThrows() {
-        try {
-            new FastContentOutputStream((ContentChannel) null);
-            fail();
-        } catch (NullPointerException e) {
-            assertEquals("out", e.getMessage());
-        }
-        try {
-            new FastContentOutputStream((FastContentWriter) null);
-            fail();
-        } catch (NullPointerException e) {
-            assertEquals("out", e.getMessage());
-        }
+    void requireThatNullContentChannelIsAccepted() throws Exception {
+        FastContentOutputStream out = new FastContentOutputStream((ContentChannel) null);
+
+        // write operations should be no-ops
+        out.write(42);
+        out.write(new byte[]{1, 2, 3});
+        out.write(new byte[]{1, 2, 3}, 0, 2);
+        out.flush();
+
+        // close should complete immediately
+        out.close();
+        out.get();
     }
 
     @Test

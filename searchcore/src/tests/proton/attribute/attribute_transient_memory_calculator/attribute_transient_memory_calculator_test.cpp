@@ -12,6 +12,7 @@
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
 using search::AttributeVector;
+using search::CommitParam;
 using search::attribute::Config;
 
 namespace proton {
@@ -49,7 +50,7 @@ std::shared_ptr<AttributeVector> build_attribute_vector(const std::string& name,
         integer_attribute_vector.append(doc_id, 10, 1);
         integer_attribute_vector.append(doc_id, 11, 1);
     }
-    attribute_vector->commit(true);
+    attribute_vector->commit(CommitParam::UpdateStats::FORCE);
     return attribute_vector;
 }
 

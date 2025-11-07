@@ -404,7 +404,7 @@ SearchContextTest::fillAttribute(V & vec, const std::vector<T> & values)
             EXPECT_TRUE(vec.append(doc, values[i], 1));
         }
     }
-    vec.commit(true);
+    vec.commit(CommitParam::UpdateStats::FORCE);
 }
 
 template <typename V, typename T>
@@ -415,7 +415,7 @@ SearchContextTest::resetAttribute(V & vec, const T & value)
         ASSERT_TRUE(doc < vec.getNumDocs());
         EXPECT_TRUE(vec.update(doc, value));
     }
-    vec.commit(true);
+    vec.commit(CommitParam::UpdateStats::FORCE);
 }
 
 template <typename V, typename T>
@@ -428,7 +428,7 @@ SearchContextTest::fillPostingList(PostingList<V, T> & pl, const DocRange & rang
         EXPECT_TRUE(pl.getAttribute().update(doc, pl.getValue()));
         pl.getHits().insert(doc);
     }
-    pl.getAttribute().commit(true);
+    pl.getAttribute().commit(CommitParam::UpdateStats::FORCE);
 }
 
 template <typename V, typename T>
@@ -686,7 +686,7 @@ SearchContextTest::testMultiValueSearch(V& attr, uint32_t num_docs, const std::v
 
     ASSERT_TRUE(1u < attr.getNumDocs());
     EXPECT_TRUE(attr.append(1u, values[sz - 1], 1));
-    attr.commit(true);
+    attr.commit(CommitParam::UpdateStats::FORCE);
 
     testMultiValueSearchHelper(attr, values);
 
@@ -744,7 +744,7 @@ Verifier<T, A>::Verifier(const std::vector<T> & keys, const std::string & keyAsS
         EXPECT_TRUE(nullptr != dynamic_cast<A *>(_attribute.get()));
         EXPECT_TRUE(dynamic_cast<A &>(*_attribute).update(doc, keys[(i++)%keys.size()]));
     }
-    _attribute->commit(true);
+    _attribute->commit(CommitParam::UpdateStats::FORCE);
     _sc = SearchContextTest::getSearch(*_attribute, keyAsString);
     EXPECT_TRUE(_sc->valid());
 }
@@ -1002,7 +1002,7 @@ SearchContextTest::fillForSearchIteratorUnpackingTest(IntegerAttribute * ia,
         ia->append(2, 10, 0);
         ia->append(3, 10, 50);
     }
-    ia->commit(true);
+    ia->commit(CommitParam::UpdateStats::FORCE);
     if (!extra)
         return;
     ia->addDocs(20);
@@ -1012,7 +1012,7 @@ SearchContextTest::fillForSearchIteratorUnpackingTest(IntegerAttribute * ia,
         else
             ia->append(d, 10, 1);
     }
-    ia->commit(true);
+    ia->commit(CommitParam::UpdateStats::FORCE);
 }
 
 void
@@ -1187,7 +1187,7 @@ SearchContextTest::testRangeSearch(const AttributePtr & ptr, uint32_t numDocs, s
         }
         //std::cout << "}" << std::endl;
     }
-    ptr->commit(true);
+    ptr->commit(CommitParam::UpdateStats::FORCE);
     ValueType zeroValue = 0;
     bool smallUInt = isUnsignedSmallIntAttribute(vec);
     if (smallUInt) {
@@ -1423,7 +1423,7 @@ SearchContextTest::testCaseInsensitiveSearch(const AttributePtr & ptr)
         }
     }
 
-    ptr->commit(true);
+    ptr->commit(CommitParam::UpdateStats::FORCE);
 
     const char * buffer[1];
     doc = 1;
@@ -1679,7 +1679,7 @@ SearchContextTest::requireThatSearchIsWorkingAfterClearDoc(const std::string & n
     }
     a->clearDoc(1);
     a->clearDoc(3);
-    a->commit(true);
+    a->commit(CommitParam::UpdateStats::FORCE);
     {
         ResultSetPtr rs = performSearch(v, term);
         EXPECT_EQ(2u, rs->getNumHits());
@@ -1725,7 +1725,7 @@ SearchContextTest::requireThatSearchIsWorkingAfterLoadAndClearDoc(const std::str
     EXPECT_TRUE(a->save(b->getBaseFileName()));
     EXPECT_TRUE(b->load());
     b->clearDoc(6); // goes from vector vector to single vector with count 14
-    b->commit(true);
+    b->commit(CommitParam::UpdateStats::FORCE);
     {
         ResultSetPtr rs = performSearch(dynamic_cast<VectorType &>(*b), term);
         EXPECT_EQ(14u, rs->getNumHits());
@@ -1779,10 +1779,10 @@ SearchContextTest::requireThatSearchIsWorkingAfterUpdates(const std::string & na
     addReservedDoc(*a);
     a->addDocs(2);
     va.update(1, value1);
-    va.commit(true);
+    va.commit(CommitParam::UpdateStats::FORCE);
     va.update(2, value1);
     va.update(2, value2);
-    va.commit(true);
+    va.commit(CommitParam::UpdateStats::FORCE);
     {
         ResultSetPtr rs = performSearch(va, value1);
         EXPECT_EQ(1u, rs->getNumHits()); // doc 1 should not have this value
@@ -1845,7 +1845,7 @@ TEST_F(SearchContextTest, require_that_flag_attribute_is_working_when_new_docs_a
                 fa.append(docId, 60, 1);
                 exp60.push_back(docId);
             }
-            fa.commit(true);
+            fa.commit(CommitParam::UpdateStats::FORCE);
             {
                 ResultSetPtr rs1 = performSearch(fa, "50");
                 ResultSetPtr rs2 = performSearch(fa, "<51");

@@ -57,7 +57,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<X509Certificate> operatorCertificates = List.of();
     private double resourceLimitDisk = 0.75;
     private double resourceLimitMemory = 0.8;
-    private double resourceLimitLowWatermarkDifference = 0.01;
     private double resourceLimitAddressSpace = 0.80;
     private int maxUnCommittedMemory = 123456;
     private boolean useV8GeoPositions = true;
@@ -113,7 +112,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
-    @Override public double resourceLimitLowWatermarkDifference() { return resourceLimitLowWatermarkDifference; }
     @Override public double resourceLimitAddressSpace() { return resourceLimitAddressSpace; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
@@ -256,11 +254,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setResourceLimitMemory(double value) {
         this.resourceLimitMemory = value;
-        return this;
-    }
-
-    public TestProperties setResourceLimitLowWatermarkDifference(double value) {
-        this.resourceLimitLowWatermarkDifference = value;
         return this;
     }
 

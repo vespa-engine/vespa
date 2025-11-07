@@ -72,7 +72,7 @@ public:
     PostingListCache(size_t max_bytes, size_t bitvector_max_bytes);
     ~PostingListCache() override;
     search::index::PostingListHandle read(const Key& key, Context& ctx) const override;
-    std::shared_ptr<BitVector> read(const BitVectorKey& key, Context& ctx) const override;
+    std::shared_ptr<const BitVector> read(const BitVectorKey& key, Context& ctx) const override;
     vespalib::CacheStats get_stats() const override;
     vespalib::CacheStats get_bitvector_stats() const override;
     bool enabled_for_posting_lists() const noexcept override;

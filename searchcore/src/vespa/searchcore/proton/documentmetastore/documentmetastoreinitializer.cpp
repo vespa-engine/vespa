@@ -51,7 +51,7 @@ DocumentMetaStoreInitializer::run()
             if (!_dms->load()) {
                 throw IllegalStateException(failedMsg(_docTypeName.c_str()));
             } else {
-                _dms->commit(search::CommitParam(snap.syncToken));
+                _dms->commit(search::CommitParam(snap.syncToken, search::CommitParam::UpdateStats::SKIP));
             }
             EventLogger::loadDocumentMetaStoreComplete(_subDbName, stopWatch.elapsed());
             MemoryUsageLogger::log("finished load documentmetastore", _subDbName);

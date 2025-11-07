@@ -146,7 +146,9 @@ func runTest(testPath string, context testContext, waiter *Waiter) (string, erro
 		fmt.Fprintln(context.cli.Stderr)
 		return "", errHint(fmt.Errorf("a test must have at least one step, but none were found in %s", testPath), "See https://docs.vespa.ai/en/reference/testing")
 	}
+	seen := make(seenClusters)
 	for i, step := range test.Steps {
+		seen.warmup(step, test.Defaults.Cluster, defaultParameters, context, waiter)
 		stepName := fmt.Sprintf("Step %d", i+1)
 		if step.Name != "" {
 			stepName += ": " + step.Name
@@ -236,7 +238,8 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 			}
 			context.clusters[cluster] = service
 		}
-		requestUrl, err = url.ParseRequestURI(service.BaseURL + requestUri)
+		fullURL := joinURL(service.BaseURL, requestUri)
+		requestUrl, err = url.ParseRequestURI(fullURL)
 		if err != nil {
 			return "", "", err
 		}
@@ -510,4 +513,115 @@ func (t *testContext) target() (vespa.Target, error) {
 		t.lazyTarget = target
 	}
 	return t.lazyTarget, nil
+}
+
+type seenClusters map[string]bool
+
+func (s seenClusters) warmup(step step, defaultCluster string, defaultParameters map[string]string, context testContext, waiter *Waiter) {
+	// Determine which cluster to use
+	cluster := step.Request.Cluster
+	if cluster == "" {
+		cluster = defaultCluster
+	}
+
+	// Skip if already warmed up
+	if s[cluster] {
+		context.cli.printDebug("warmup: cluster '", cluster, "' already warmed up, skipping")
+		return
+	}
+
+	// Skip in dry-run mode
+	if context.dryRun {
+		return
+	}
+
+	// Check if this is an external endpoint (only if URI is explicitly set)
+	if step.Request.URI != "" {
+		requestUrl, err := url.ParseRequestURI(step.Request.URI)
+		if err != nil {
+			context.cli.printInfo("warmup: failed to parse URI ", step.Request.URI, ": ", err)
+			return
+		}
+		if requestUrl.IsAbs() {
+			context.cli.printDebug("warmup: skipping external endpoint: ", step.Request.URI)
+			return
+		}
+	}
+
+	// Skip for production tests
+	if filepath.Base(context.testsPath) == "production-test" {
+		context.cli.printDebug("warmup: skipping production test")
+		return
+	}
+
+	// Skip if no waiter available
+	if waiter == nil {
+		context.cli.printInfo("warmup: no waiter available, skipping")
+		return
+	}
+
+	// Get target
+	target, err := context.target()
+	if err != nil {
+		context.cli.printInfo("warmup: failed to get target for cluster ", cluster, ": ", err)
+		return
+	}
+
+	// Discover and cache the service if not already cached
+	service, ok := context.clusters[cluster]
+	if !ok {
+		context.cli.printDebug("warmup: discovering service for cluster ", cluster)
+		service, err = waiter.Service(target, cluster)
+		if err != nil {
+			context.cli.printInfo("warmup: failed to discover service for cluster ", cluster, ": ", err)
+			return
+		}
+		context.clusters[cluster] = service
+	}
+
+	// Make a simple GET / request to warm up the cluster
+	fullURL := joinURL(service.BaseURL, "/")
+	warmupUrl, err := url.ParseRequestURI(fullURL)
+	if err != nil {
+		context.cli.printInfo("warmup: failed to parse warmup URL ", fullURL, ": ", err)
+		return
+	}
+
+	header := http.Header{}
+	header.Set("Content-Type", "application/json")
+
+	context.cli.printDebug("warmup: sending GET ", warmupUrl.String(), " for cluster ", cluster)
+
+	// Execute the warmup request with retries
+	maxRetries := 10
+	var lastErr error
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		request := &http.Request{
+			URL:    warmupUrl,
+			Method: "GET",
+			Header: header,
+			Body:   nil,
+		}
+
+		_, err = service.Do(request, 60*time.Second)
+
+		if err == nil {
+			// Success - mark cluster as seen
+			context.cli.printDebug("warmup: successfully warmed up cluster ", cluster)
+			s[cluster] = true
+			return
+		}
+
+		lastErr = err
+		context.cli.printDebug("warmup: attempt ", attempt, " failed for cluster ", cluster, ": ", err)
+		if attempt < maxRetries {
+			// Linear backoff: 1s, 2s, 3s, ..., 10s
+			backoff := time.Duration(attempt) * time.Second
+			context.cli.printDebug("warmup: retrying in", backoff)
+			time.Sleep(backoff)
+		}
+	}
+
+	// All retries failed
+	context.cli.printInfo("warmup: failed to warm up cluster ", cluster, " after ", maxRetries, " attempts: ", lastErr)
 }

@@ -51,7 +51,7 @@ public class VdsClusterHtmlRenderer {
             contentBuilder.append("<h2>State of content cluster '")
                     .append(clusterName)
                     .append("'.</h2>\n")
-                    .append("<p>Based on information retrieved from slobrok at generation ")
+                    .append("<p>Based on information retrieved from location broker at generation ")
                     .append(slobrokGenerationCount).append(".</p>\n");
         }
 

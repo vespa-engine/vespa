@@ -19,7 +19,7 @@ public:
     SingleRawExtAttribute(const std::string& name);
     ~SingleRawExtAttribute() override;
     void onCommit() override;
-    void onUpdateStat() override;
+    void onUpdateStat(CommitParam::UpdateStats updateStats) override;
     bool addDoc(DocId& docId) override;
     bool add(std::span<const char> v, int32_t) override;
     std::span<const char> get_raw(DocId docid) const override;

@@ -46,13 +46,13 @@ ExternPolicy::ExternPolicy(const string &param) :
     }
 
     if (spec.empty()) {
-        _error = vespalib::make_string("Extern policy needs at least one slobrok: Slobrok list '%s' resolved to no slobroks", lst.c_str());
+        _error = vespalib::make_string("Extern policy needs at least one location broker: list '%s' resolved to nothing", lst.c_str());
         return;
     }
 
     slobrok::ConfiguratorFactory config(spec);
     _mirrorWithAll = std::make_unique<MirrorAndStuff>(config);
-     LOG(debug, "Connecting to extern slobrok mirror '%s'..", lst.c_str());
+     LOG(debug, "Connecting to external location broker '%s'..", lst.c_str());
 
 
     // Parse query pattern.
@@ -91,7 +91,7 @@ ExternPolicy::select(mbus::RoutingContext &ctx)
                          vespalib::make_string("Could not resolve any recipients from '%s'.", _pattern.c_str()));
         }
     } else {
-        ctx.setError(mbus::ErrorCode::APP_TRANSIENT_ERROR, "Extern slobrok not ready.");
+        ctx.setError(mbus::ErrorCode::APP_TRANSIENT_ERROR, "Extern location broker not ready.");
     }
 
 }

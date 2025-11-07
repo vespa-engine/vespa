@@ -385,7 +385,7 @@ public class StateChangeTest extends FleetControllerTest {
                          """
                                  Event: storage.0: Now reporting state U
                                  Event: storage.0: Altered node state in cluster state from 'D' to 'U'
-                                 Event: storage.0: Node is no longer in slobrok, but we still have a pending state request.
+                                 Event: storage.0: Node is no longer found, but we still have a pending state request.
                                  """);
     }
 

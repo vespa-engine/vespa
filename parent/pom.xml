@@ -274,7 +274,7 @@
                 <plugin>
                     <groupId>io.github.ascopes</groupId>
                     <artifactId>protobuf-maven-plugin</artifactId>
-                    <version>3.6.0</version>
+                    <version>3.10.2</version>
                     <configuration>
                         <protocVersion>${protobuf.vespa.version}</protocVersion>
                         <sourceDirectories>
@@ -562,6 +562,11 @@
                 <groupId>com.github.luben</groupId>
                 <artifactId>zstd-jni</artifactId>
                 <version>${luben.zstd.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.api.grpc</groupId>
+                <artifactId>proto-google-common-protos</artifactId>
+                <version>${proto-google-common-protos.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.errorprone</groupId>

@@ -32,7 +32,7 @@ public:
     ~TensorExtAttribute() override;
     const ITensorAttribute* asTensorAttribute() const override;
     void onCommit() override;
-    void onUpdateStat() override;
+    void onUpdateStat(CommitParam::UpdateStats updateStats) override;
     bool addDoc(DocId& docId) override;
     bool add(const vespalib::eval::Value& v, int32_t) override;
     IExtendAttribute* getExtendInterface() override;

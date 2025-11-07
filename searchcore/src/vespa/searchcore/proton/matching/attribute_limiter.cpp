@@ -9,6 +9,7 @@
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/searchlib/query/tree/range.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchlib/query/numeric_range_spec.h>
 
 using namespace search::queryeval;
 using namespace search::query;
@@ -85,16 +86,22 @@ AttributeLimiter::create_match_data(size_t want_hits, size_t max_group_size, dou
     if (!_blueprint) {
         RangeLimitMetaInfo rangeInfo = _rangeQueryLocator.locate();
         const uint32_t no_unique_id = 0;
-        string range_spec = fmt("[%s;%s;%s%zu", rangeInfo.low().c_str(), rangeInfo.high().c_str(),
-                                _descending ? "-" : "", want_hits);
+
+        auto spec = std::make_unique<search::NumericRangeSpec>(rangeInfo.range_spec());
+
+        // Set range limit (negative for descending)
+        spec->rangeLimit = _descending ? -static_cast<int32_t>(want_hits) : static_cast<int32_t>(want_hits);
+
+        // Set diversity parameters if needed
         if (max_group_size < want_hits) {
             size_t cutoffGroups = (_diversityCutoffFactor * want_hits) / max_group_size;
-            range_spec.append(fmt(";%s;%zu;%zu;%s]", _diversity_attribute.c_str(), max_group_size,
-                                  cutoffGroups, toString(_diversityCutoffStrategy).c_str()));
-        } else {
-            range_spec.push_back(']');
+            spec->diversityAttribute = _diversity_attribute;
+            spec->maxPerGroup = max_group_size;
+            spec->diversityCutoffGroups = cutoffGroups;
+            spec->diversityCutoffStrict = (_diversityCutoffStrategy == DiversityCutoffStrategy::STRICT);
         }
-        Range range(range_spec);
+
+        Range range(std::move(spec));
         SimpleRangeTerm node(range, _attribute_name, no_unique_id, Weight(0));
         FieldSpecList field; // single field API is protected
         field.add(FieldSpec(_attribute_name, my_field_id, my_handle));

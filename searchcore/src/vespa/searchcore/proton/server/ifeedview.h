@@ -65,7 +65,7 @@ public:
     virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation & pruneOp, const DoneCallback& onDone) = 0;
     virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op, const DoneCallback& onDone) = 0;
     void forceCommit(CommitParam param) { forceCommit(param, IDestructorCallbackSP()); }
-    void forceCommit(search::SerialNum serialNum) { forceCommit(CommitParam(serialNum)); }
+    void forceCommit(search::SerialNum serialNum) { forceCommit(CommitParam(serialNum, CommitParam::UpdateStats::SKIP)); }
     void forceCommitAndWait(CommitParam param);
 };
 

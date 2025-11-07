@@ -56,11 +56,11 @@ public:
     public:
         virtual ~IPostingListFileBacking() = default;
         virtual search::index::PostingListHandle read(const Key& key, Context& ctx) const = 0;
-        virtual std::shared_ptr<BitVector> read(const BitVectorKey& key, Context& ctx) const = 0;
+        virtual std::shared_ptr<const BitVector> read(const BitVectorKey& key, Context& ctx) const = 0;
     };
     virtual ~IPostingListCache() = default;
     virtual search::index::PostingListHandle read(const Key& key, Context& ctx) const = 0;
-    virtual std::shared_ptr<BitVector> read(const BitVectorKey& key, Context& ctx) const = 0;
+    virtual std::shared_ptr<const BitVector> read(const BitVectorKey& key, Context& ctx) const = 0;
     virtual vespalib::CacheStats get_stats() const = 0;
     virtual vespalib::CacheStats get_bitvector_stats() const = 0;
     virtual bool enabled_for_posting_lists() const noexcept = 0;

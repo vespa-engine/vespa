@@ -25,6 +25,7 @@ using document::GlobalId;
 using generation_t = vespalib::GenerationHandler::generation_t;
 using search::AttributeGuard;
 using search::AttributeVector;
+using search::CommitParam;
 using search::QueryTermSimple;
 using search::attribute::BasicType;
 using search::attribute::Config;
@@ -108,7 +109,7 @@ struct ReferenceAttributeTest : public ::testing::Test {
     }
 
     search::attribute::Status getStatus() {
-        attr().commit(true);
+        attr().commit(CommitParam::UpdateStats::FORCE);
         return attr().getStatus();
     }
 

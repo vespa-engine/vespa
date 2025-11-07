@@ -41,7 +41,7 @@ public class WeakAnd implements Cloneable {
 
     private static void validateRange(String field, double v, double lboundIncl, double uboundIncl) {
         if (v < lboundIncl || v > uboundIncl) {
-            throw new IllegalArgumentException(String.format(Locale.US, "%s must be in the range [%.1f, %.1f]. It is %.1f",
+            throw new IllegalArgumentException(String.format(Locale.US, "%s must be in the range [%.1f, %.1f], but is %.1f",
                                                              field, lboundIncl, uboundIncl, v));
         }
     }

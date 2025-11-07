@@ -85,12 +85,12 @@ public:
      * layout. This function also prepares the createSearch function
      * for use.
      *
-     * @param context search context
      * @param mdl match data layout
      **/
-    void reserveHandles(const IRequestContext & requestContext,
-                        ISearchContext &context,
-                        search::fef::MatchDataLayout &mdl);
+    void reserve_handles(search::fef::MatchDataLayout& mdl);
+
+    void make_blueprint(const IRequestContext& requestContext, ISearchContext& context,
+                        search::fef::MatchDataLayout& mdl);
 
     void tag_needed_handles(HandleRecorder& handle_recorder, const search::fef::IIndexEnvironment& index_env);
 

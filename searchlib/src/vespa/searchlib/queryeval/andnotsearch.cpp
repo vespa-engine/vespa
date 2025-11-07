@@ -6,6 +6,12 @@
 
 namespace search::queryeval {
 
+AndNotSearch::AndNotSearch(MultiSearch::Children children, bool elementwise)
+    : MultiSearch(std::move(children)),
+      _elementwise(elementwise)
+{
+}
+
 AndNotSearch::~AndNotSearch() = default;
 
 void
@@ -15,9 +21,11 @@ AndNotSearch::doSeek(uint32_t docid)
     if (!children[0]->seek(docid)) {
         return; // not match in positive subtree
     }
-    for (uint32_t i = 1; i < children.size(); ++i) {
-        if (children[i]->seek(docid)) {
-            return; // match in negative subtree
+    if (!_elementwise) {
+        for (uint32_t i = 1; i < children.size(); ++i) {
+            if (children[i]->seek(docid)) {
+                return; // match in negative subtree
+            }
         }
     }
     setDocId(docid); // we have a match
@@ -53,7 +61,9 @@ public:
      *
      * @param children the search objects we are andnot'ing
      **/
-    explicit AndNotSearchStrict(Children children) : AndNotSearchStrictBase(std::move(children)) { }
+    explicit AndNotSearchStrict(Children children, bool elementwise)
+        : AndNotSearchStrictBase(std::move(children), elementwise)
+    { }
 
     void initRange(uint32_t beginid, uint32_t endid) override {
         AndNotSearch::initRange(beginid, endid);
@@ -74,9 +84,11 @@ AndNotSearchStrict::internalSeek(uint32_t docid)
     } else {
         hit = children[0]->seek(docid);
     }
-    for (uint32_t i = 1; hit && i < children.size(); ++i) {
-        if (children[i]->seek(docid)) {
-            hit = false;
+    if (!_elementwise) {
+        for (uint32_t i = 1; hit && i < children.size(); ++i) {
+            if (children[i]->seek(docid)) {
+                hit = false;
+            }
         }
     }
     if (hit) {
@@ -86,11 +98,13 @@ AndNotSearchStrict::internalSeek(uint32_t docid)
     uint32_t nextId = children[0]->getDocId();
     while (!isAtEnd(nextId)) {
         bool foundHit = true;
-        for (uint32_t i = 1; i < children.size(); ++i) {
-            if (children[i]->seek(nextId)) {
-                foundHit = false;
-                ++nextId;
-                break;
+        if (!_elementwise) {
+            for (uint32_t i = 1; i < children.size(); ++i) {
+                if (children[i]->seek(nextId)) {
+                    foundHit = false;
+                    ++nextId;
+                    break;
+                }
             }
         }
         if (foundHit) {
@@ -107,11 +121,16 @@ AndNotSearchStrict::internalSeek(uint32_t docid)
 
 std::unique_ptr<SearchIterator>
 AndNotSearch::create(ChildrenIterators children_in, bool strict) {
+    return create(std::move(children_in), false, strict);
+}
+
+std::unique_ptr<SearchIterator>
+AndNotSearch::create(ChildrenIterators children_in, bool elementwise, bool strict) {
     MultiSearch::Children children = std::move(children_in);
     if (strict) {
-        return std::make_unique<AndNotSearchStrict>(std::move(children));
+        return std::make_unique<AndNotSearchStrict>(std::move(children), elementwise);
     } else {
-        return SearchIterator::UP(new AndNotSearch(std::move(children)));
+        return SearchIterator::UP(new AndNotSearch(std::move(children), elementwise));
     }
 }
 
@@ -128,6 +147,35 @@ AndNotSearch::get_hits(uint32_t begin_id) {
 void
 AndNotSearch::or_hits_into(BitVector &result, uint32_t begin_id) {
     result.orWith(*get_hits(begin_id));
+}
+
+void
+AndNotSearch::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
+{
+    auto& children = getChildren();
+    if (children.empty()) {
+        return;
+    }
+    children.front()->get_element_ids(docid, element_ids);
+    std::span others(children.begin() + 1, children.end());
+    if (element_ids.empty() || others.empty()) {
+        return;
+    }
+    std::vector<uint32_t> temp_element_ids;
+    std::vector<uint32_t> result;
+    for (auto& child : others) {
+        child->get_element_ids(docid, temp_element_ids);
+        if (!temp_element_ids.empty()) {
+            result.clear();
+            std::set_difference(element_ids.begin(), element_ids.end(),
+                                temp_element_ids.begin(), temp_element_ids.end(),
+                                std::back_inserter(result));
+            std::swap(element_ids, result);
+            if (element_ids.empty()) {
+                return;
+            }
+        }
+    }
 }
 
 }

@@ -2,15 +2,11 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
-import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
-import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
-import org.w3c.dom.Element;
+
 import java.util.Optional;
 
 /**
@@ -20,31 +16,10 @@ public class Distributor extends ContentNode implements StorDistributormanagerCo
 
     PersistenceEngine provider;
 
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<Distributor, Distributor> {
-        ModelElement clusterXml;
-        PersistenceEngine persistenceProvider;
-
-        public Builder(ModelElement clusterXml, PersistenceEngine persistenceProvider) {
-            this.clusterXml = clusterXml;
-            this.persistenceProvider = persistenceProvider;
-        }
-
-        @Override
-        protected Distributor doBuild(DeployState deployState, TreeConfigProducer<Distributor> ancestor, Element producerSpec) {
-            return new Distributor(deployState.getProperties(), (DistributorCluster)ancestor, new ModelElement(producerSpec).integerAttribute("distribution-key"),
-                                   clusterXml.integerAttribute("distributor-base-port"), persistenceProvider);
-        }
-    }
-
-    Distributor(ModelContext.Properties properties, DistributorCluster parent, int distributionKey, Integer distributorBasePort, PersistenceEngine provider) {
+    public Distributor(ModelContext.Properties properties, DistributorCluster parent, int distributionKey, PersistenceEngine provider) {
         super(properties.featureFlags(), parent, parent.getClusterName(),
              StorageNode.rootFolder + parent.getClusterName() + "/distributor/" + distributionKey, distributionKey);
-
         this.provider = provider;
-
-        if (distributorBasePort != null) {
-            setBasePort(distributorBasePort);
-        }
         setMallocImpl(properties.mallocImpl(Optional.of(ClusterSpec.Type.content)));
     }
 

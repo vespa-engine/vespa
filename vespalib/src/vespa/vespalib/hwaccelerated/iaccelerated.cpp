@@ -1,5 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "fn_table.h"
+#include "functions.h"
 #include "iaccelerated.h"
 #include "highway.h"
 #ifdef __x86_64__
@@ -24,9 +26,11 @@
 #    endif
 #endif
 #include <vespa/vespalib/util/memory.h>
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <format>
+#include <ranges>
 #include <string>
 #include <vector>
 
@@ -39,6 +43,8 @@
 LOG_SETUP(".vespalib.hwaccelerated");
 
 namespace vespalib::hwaccelerated {
+
+using dispatch::FnTable;
 
 namespace {
 
@@ -142,8 +148,6 @@ namespace target {
 // This is mostly just to be able to experiment in a controlled manner with levels
 // _higher_ than what's enabled by default.
 
-// TODO make it possible to select specific targets within Highway
-constexpr uint32_t HIGHWAY           = 4;
 #ifdef __x86_64__
 constexpr uint32_t AVX3_DL           = 3;
 constexpr uint32_t AVX3              = 2;
@@ -164,7 +168,6 @@ constexpr uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
 
 [[nodiscard]] const char* level_u32_to_str(uint32_t level) noexcept {
     switch (level) {
-    case HIGHWAY:           return "HIGHWAY";
 #ifdef __x86_64__
     case AVX3_DL:           return "AVX3_DL";
     case AVX3:              return "AVX3";
@@ -181,9 +184,6 @@ constexpr uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
 }
 
 [[nodiscard]] uint32_t level_str_to_u32(const std::string& str) noexcept {
-    if (str == "HIGHWAY") {
-        return HIGHWAY;
-    }
 #ifdef __x86_64__
     if (str == "AVX3_DL") {
         return AVX3_DL;
@@ -240,34 +240,46 @@ constexpr uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
 } // target
 
 class EnabledTargetLevel {
-    const uint32_t _max_level;
+    const uint32_t _max_native_level;
+    const bool     _with_highway;
 public:
-    constexpr explicit EnabledTargetLevel(uint32_t max_level) noexcept : _max_level(max_level) {}
+    constexpr EnabledTargetLevel(uint32_t max_native_level, bool with_highway) noexcept
+        : _max_native_level(max_native_level),
+          _with_highway(with_highway)
+    {}
     [[maybe_unused]] [[nodiscard]] bool is_enabled(uint32_t level) const noexcept {
-        return level <= _max_level;
+        return level <= _max_native_level;
     }
+    [[nodiscard]] bool with_highway() const noexcept { return _with_highway; }
     [[nodiscard]] static EnabledTargetLevel create_from_env_var();
 };
 
+constexpr bool should_use_highway_by_default() noexcept {
+    return true;
+}
+
 EnabledTargetLevel EnabledTargetLevel::create_from_env_var() {
+    const uint32_t supported_level       = target::max_supported_level();
+    const uint32_t default_enabled_level = std::min(target::DEFAULT_LEVEL, supported_level);
     // This is a variable for internal testing only. If you're _not_ using this for internal
     // Vespa testing, I will break into your kitchen and make a mess out of your pots and pans.
     const char* maybe_var = getenv("VESPA_INTERNAL_VECTORIZATION_TARGET_LEVEL");
-    const uint32_t wanted_level = (maybe_var != nullptr)
-            ? target::level_str_to_u32(std::string(maybe_var))
-            : target::DEFAULT_LEVEL;
-    // Highway is always a supported level, so short-circuit if it's wanted
-    if (wanted_level == target::HIGHWAY) {
-        return EnabledTargetLevel(target::HIGHWAY);
+    if (maybe_var == nullptr) {
+        return {default_enabled_level, should_use_highway_by_default()};
     }
-    const uint32_t supported_level = target::max_supported_level();
-    if (wanted_level > supported_level && (maybe_var != nullptr)) {
+    std::string target_var(maybe_var);
+    if (target_var == "HIGHWAY") {
+        return {default_enabled_level, true};
+    }
+    // There is an explicit target override, but it's specifying an auto-vectorized target
+    const uint32_t wanted_level = target::level_str_to_u32(target_var);
+    if (wanted_level > supported_level) {
         LOG(info, "Requested vectorization target level is %s, but platform only supports %s.",
             target::level_u32_to_str(wanted_level), target::level_u32_to_str(supported_level));
     }
     const uint32_t enabled_level = std::min(wanted_level, supported_level);
     LOG(debug, "Using vectorization target level %s", target::level_u32_to_str(enabled_level));
-    return EnabledTargetLevel(enabled_level);
+    return {enabled_level, false};
 }
 
 [[nodiscard]] EnabledTargetLevel enabled_target_level() {
@@ -276,7 +288,7 @@ EnabledTargetLevel EnabledTargetLevel::create_from_env_var() {
 }
 
 template<typename T>
-std::vector<T> createAndFill(size_t sz) {
+std::vector<T> create_and_fill(size_t sz) {
     std::vector<T> v(sz);
     for (size_t i(0); i < sz; i++) {
         v[i] = rand()%100;
@@ -286,18 +298,17 @@ std::vector<T> createAndFill(size_t sz) {
 
 template <typename T, typename SumT = T>
 void
-verifyDotproduct(const IAccelerated & accel)
-{
-    const size_t testLength(255);
+verify_dot_product() {
+    constexpr size_t test_length = 255;
     srand(1);
-    std::vector<T> a = createAndFill<T>(testLength);
-    std::vector<T> b = createAndFill<T>(testLength);
+    std::vector<T> a = create_and_fill<T>(test_length);
+    std::vector<T> b = create_and_fill<T>(test_length);
     for (size_t j(0); j < 0x20; j++) {
         SumT sum(0);
-        for (size_t i(j); i < testLength; i++) {
+        for (size_t i(j); i < test_length; i++) {
             sum += a[i]*b[i];
         }
-        SumT hwComputedSum(accel.dotProduct(&a[j], &b[j], testLength - j));
+        SumT hwComputedSum(dot_product(&a[j], &b[j], test_length - j));
         if (sum != hwComputedSum) {
             fprintf(stderr, "Accelerator is not computing dotproduct correctly.\n");
             LOG_ABORT("should not be reached");
@@ -307,17 +318,17 @@ verifyDotproduct(const IAccelerated & accel)
 
 template <typename T, typename SumT = T>
 void
-verifyEuclideanDistance(const IAccelerated & accel) {
-    const size_t testLength(255);
+verify_euclidean_distance() {
+    constexpr size_t test_length = 255;
     srand(1);
-    std::vector<T> a = createAndFill<T>(testLength);
-    std::vector<T> b = createAndFill<T>(testLength);
+    std::vector<T> a = create_and_fill<T>(test_length);
+    std::vector<T> b = create_and_fill<T>(test_length);
     for (size_t j(0); j < 0x20; j++) {
         SumT sum(0);
-        for (size_t i(j); i < testLength; i++) {
+        for (size_t i(j); i < test_length; i++) {
             sum += (a[i] - b[i]) * (a[i] - b[i]);
         }
-        SumT hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
+        SumT hwComputedSum(squared_euclidean_distance(&a[j], &b[j], test_length - j));
         if (sum != hwComputedSum) {
             fprintf(stderr, "Accelerator is not computing euclidean distance correctly.\n");
             LOG_ABORT("should not be reached");
@@ -326,8 +337,7 @@ verifyEuclideanDistance(const IAccelerated & accel) {
 }
 
 void
-verifyPopulationCount(const IAccelerated & accel)
-{
+verify_population_count() {
     const uint64_t words[7] = {0x123456789abcdef0L,  // 32
                                0x0000000000000000L,  // 0
                                0x8000000000000000L,  // 1
@@ -336,16 +346,16 @@ verifyPopulationCount(const IAccelerated & accel)
                                0x00000000000000001,  // 1
                                0xffffffffffffffff};  // 64
     constexpr size_t expected = 32 + 0 + 1 + 48 + 32 + 1 + 64;
-    size_t hwComputedPopulationCount = accel.populationCount(words, VESPA_NELEMS(words));
+    size_t hwComputedPopulationCount = population_count(words, VESPA_NELEMS(words));
     if (hwComputedPopulationCount != expected) {
-        fprintf(stderr, "Accelerator is not computing populationCount correctly.Expected %zu, computed %zu\n",
+        fprintf(stderr, "Accelerator is not computing populationCount correctly. Expected %zu, computed %zu\n",
                 expected, hwComputedPopulationCount);
         LOG_ABORT("should not be reached");
     }
 }
 
 void
-fill(std::vector<uint64_t> & v, size_t n) {
+fill(std::vector<uint64_t>& v, size_t n) {
     v.reserve(n);
     for (size_t i(0); i < n; i++) {
         v.emplace_back(random());
@@ -353,54 +363,54 @@ fill(std::vector<uint64_t> & v, size_t n) {
 }
 
 void
-simpleAndWith(std::vector<uint64_t> & dest, const std::vector<uint64_t> & src) {
+simple_and_with(std::vector<uint64_t>& dest, const std::vector<uint64_t>& src) {
     for (size_t i(0); i < dest.size(); i++) {
         dest[i] &= src[i];
     }
 }
 
 void
-simpleOrWith(std::vector<uint64_t> & dest, const std::vector<uint64_t> & src) {
+simple_or_with(std::vector<uint64_t>& dest, const std::vector<uint64_t>& src) {
     for (size_t i(0); i < dest.size(); i++) {
         dest[i] |= src[i];
     }
 }
 
 std::vector<uint64_t>
-simpleInvert(const std::vector<uint64_t> & src) {
+simple_invert(const std::vector<uint64_t>& src) {
     std::vector<uint64_t> inverted;
     inverted.reserve(src.size());
-    for (unsigned long i : src) {
+    for (uint64_t i : src) {
         inverted.push_back(~i);
     }
     return inverted;
 }
 
 std::vector<uint64_t>
-optionallyInvert(bool invert, std::vector<uint64_t> v) {
-    return invert ? simpleInvert(v) : std::move(v);
+optionally_invert(bool invert, std::vector<uint64_t> v) {
+    return invert ? simple_invert(v) : std::move(v);
 }
 
-bool shouldInvert(bool invertSome) {
+bool should_invert(bool invertSome) {
     return invertSome ? (random() & 1) : false;
 }
 
 void
-verifyOr64(const IAccelerated & accel, const std::vector<std::vector<uint64_t>> & vectors,
-           size_t offset, size_t num_vectors, bool invertSome)
+verify_or_128(const std::vector<std::vector<uint64_t>>& vectors,
+              size_t offset, size_t num_vectors, bool invertSome)
 {
     std::vector<std::pair<const void *, bool>> vRefs;
     for (size_t j(0); j < num_vectors; j++) {
-        vRefs.emplace_back(&vectors[j][0], shouldInvert(invertSome));
+        vRefs.emplace_back(&vectors[j][0], should_invert(invertSome));
     }
 
-    std::vector<uint64_t> expected = optionallyInvert(vRefs[0].second, vectors[0]);
+    std::vector<uint64_t> expected = optionally_invert(vRefs[0].second, vectors[0]);
     for (size_t j = 1; j < num_vectors; j++) {
-        simpleOrWith(expected, optionallyInvert(vRefs[j].second, vectors[j]));
+        simple_or_with(expected, optionally_invert(vRefs[j].second, vectors[j]));
     }
 
     uint64_t dest[16] __attribute((aligned(64)));
-    accel.or128(offset * sizeof(uint64_t), vRefs, dest);
+    or_128(offset * sizeof(uint64_t), vRefs, dest);
     int diff = memcmp(&expected[offset], dest, sizeof(dest));
     if (diff != 0) {
         LOG_ABORT("Accelerator fails to compute correct 128 bytes OR");
@@ -408,20 +418,20 @@ verifyOr64(const IAccelerated & accel, const std::vector<std::vector<uint64_t>> 
 }
 
 void
-verifyAnd64(const IAccelerated & accel, const std::vector<std::vector<uint64_t>> & vectors,
-           size_t offset, size_t num_vectors, bool invertSome)
+verify_and_128(const std::vector<std::vector<uint64_t>>& vectors,
+               size_t offset, size_t num_vectors, bool invertSome)
 {
     std::vector<std::pair<const void *, bool>> vRefs;
     for (size_t j(0); j < num_vectors; j++) {
-        vRefs.emplace_back(&vectors[j][0], shouldInvert(invertSome));
+        vRefs.emplace_back(&vectors[j][0], should_invert(invertSome));
     }
-    std::vector<uint64_t> expected = optionallyInvert(vRefs[0].second, vectors[0]);
+    std::vector<uint64_t> expected = optionally_invert(vRefs[0].second, vectors[0]);
     for (size_t j = 1; j < num_vectors; j++) {
-        simpleAndWith(expected, optionallyInvert(vRefs[j].second, vectors[j]));
+        simple_and_with(expected, optionally_invert(vRefs[j].second, vectors[j]));
     }
 
     uint64_t dest[16] __attribute((aligned(64)));
-    accel.and128(offset * sizeof(uint64_t), vRefs, dest);
+    and_128(offset * sizeof(uint64_t), vRefs, dest);
     int diff = memcmp(&expected[offset], dest, sizeof(dest));
     if (diff != 0) {
         LOG_ABORT("Accelerator fails to compute correct 128 bytes AND");
@@ -429,124 +439,182 @@ verifyAnd64(const IAccelerated & accel, const std::vector<std::vector<uint64_t>>
 }
 
 void
-verifyOr64(const IAccelerated & accel) {
+verify_or_128() {
     std::vector<std::vector<uint64_t>> vectors(3) ;
-    for (auto & v : vectors) {
+    for (auto& v : vectors) {
         fill(v, 32);
     }
     for (size_t offset = 0; offset < 16; offset++) {
         for (size_t i = 1; i < vectors.size(); i++) {
-            verifyOr64(accel, vectors, offset, i, false);
-            verifyOr64(accel, vectors, offset, i, true);
+            verify_or_128(vectors, offset, i, false);
+            verify_or_128(vectors, offset, i, true);
         }
     }
 }
 
 void
-verifyAnd64(const IAccelerated & accel) {
+verify_and_128() {
     std::vector<std::vector<uint64_t>> vectors(3);
-    for (auto & v : vectors) {
+    for (auto& v : vectors) {
         fill(v, 32);
     }
     for (size_t offset = 0; offset < 16; offset++) {
         for (size_t i = 1; i < vectors.size(); i++) {
-            verifyAnd64(accel, vectors, offset, i, false);
-            verifyAnd64(accel, vectors, offset, i, true);
+            verify_and_128(vectors, offset, i, false);
+            verify_and_128(vectors, offset, i, true);
         }
     }
 }
 
-class RuntimeVerificator
-{
-public:
-    RuntimeVerificator();
-private:
-    static void verify(const IAccelerated & accelerated) {
-        verifyDotproduct<float>(accelerated);
-        verifyDotproduct<double>(accelerated);
-        verifyDotproduct<int8_t, int64_t>(accelerated);
-        verifyDotproduct<int32_t, int64_t>(accelerated);
-        verifyDotproduct<int64_t>(accelerated);
-        verifyEuclideanDistance<int8_t, int64_t>(accelerated);
-        verifyEuclideanDistance<float>(accelerated);
-        verifyEuclideanDistance<double>(accelerated);
-        verifyPopulationCount(accelerated);
-        verifyAnd64(accelerated);
-        verifyOr64(accelerated);
-    }
-};
-
-RuntimeVerificator::RuntimeVerificator()
-{
-    verify(*IAccelerated::create_baseline_auto_vectorized_target());
-    verify(*IAccelerated::create_best_accelerator_impl_and_target());
+void verify_active_function_table() {
+    verify_dot_product<float>();
+    verify_dot_product<double>();
+    verify_dot_product<int8_t, int64_t>();
+    verify_dot_product<int32_t, int64_t>();
+    verify_dot_product<int64_t>();
+    verify_euclidean_distance<int8_t, int64_t>();
+    verify_euclidean_distance<float>();
+    verify_euclidean_distance<double>();
+    verify_population_count();
+    verify_and_128();
+    verify_or_128();
 }
 
-// Simple wrapper to debug log created impl+target once during process startup.
-IAccelerated::UP create_and_log_best_accelerator() {
-    auto accel = IAccelerated::create_best_accelerator_impl_and_target();
-    LOG(debug, "Created accelerator of type %s for runtime target %s",
-        accel->implementation_name(), accel->target_name());
-    return accel;
+// noexcept note: it is technically possible that something transitive here
+// will throw, but then we _want_ the process to immediately terminate.
+[[nodiscard]] FnTable build_optimal_fn_table() noexcept {
+    std::vector<FnTable> fn_tables;
+    // Both Highway and auto-vectorized target vectors are ordered so that the best targets
+    // are at the front and the worst targets are at the back.
+    // Since we prefer Highway over auto-vectorization, append the latter's targets at the end.
+    const auto target_level = enabled_target_level();
+    if (target_level.with_highway()) {
+        for (const auto& hwy_target : Highway::create_supported_targets()) {
+            fn_tables.emplace_back(hwy_target->fn_table());
+        }
+    }
+    for (const auto& auto_vec_target : IAccelerated::create_supported_auto_vectorized_targets()) {
+        fn_tables.emplace_back(auto_vec_target->fn_table());
+    }
+    return dispatch::build_composite_fn_table(fn_tables, true);
 }
 
 } // anon ns
 
-IAccelerated::UP IAccelerated::create_baseline_auto_vectorized_target() {
-    // Important: must never recurse into create_best_auto_vectorized_target(),
-    // as it defers to this function as a fallback.
-#ifdef __x86_64__
-    return std::make_unique<X64GenericAccelerator>();
-#else
-    return std::make_unique<NeonAccelerator>();
-#endif
-}
-
-IAccelerated::UP IAccelerated::create_best_auto_vectorized_target() {
+std::vector<std::unique_ptr<IAccelerated>>
+IAccelerated::create_supported_auto_vectorized_targets() {
     const auto target_level = enabled_target_level();
+    std::vector<std::unique_ptr<IAccelerated>> targets;
 #ifdef __x86_64__
     if (target_level.is_enabled(target::AVX3_DL)) {
-        return std::make_unique<Avx3DlAccelerator>();
+        targets.emplace_back(std::make_unique<Avx3DlAccelerator>());
     }
     if (target_level.is_enabled(target::AVX3)) {
-        return std::make_unique<Avx3Accelerator>();
+        targets.emplace_back(std::make_unique<Avx3Accelerator>());
     }
     if (target_level.is_enabled(target::AVX2)) {
-        return std::make_unique<Avx2Accelerator>();
+        targets.emplace_back(std::make_unique<Avx2Accelerator>());
     }
+    targets.emplace_back(std::make_unique<X64GenericAccelerator>());
 #else // aarch64
     if (target_level.is_enabled(target::SVE2)) {
-        return std::make_unique<Sve2Accelerator>();
+        targets.emplace_back(std::make_unique<Sve2Accelerator>());
     }
     if (target_level.is_enabled(target::SVE)) {
-        return std::make_unique<SveAccelerator>();
+        targets.emplace_back(std::make_unique<SveAccelerator>());
     }
     if (target_level.is_enabled(target::NEON_FP16_DOTPROD)) {
-        return std::make_unique<NeonFp16DotprodAccelerator>();
+        targets.emplace_back(std::make_unique<NeonFp16DotprodAccelerator>());
     }
+    targets.emplace_back(std::make_unique<NeonAccelerator>());
 #endif
-    return create_baseline_auto_vectorized_target();
+    return targets;
 }
 
-std::unique_ptr<IAccelerated> IAccelerated::create_best_accelerator_impl_and_target() {
-    const auto target_level = enabled_target_level();
-    if (target_level.is_enabled(target::HIGHWAY)) {
-        return Highway::create_best_target();
+namespace dispatch {
+
+#define VESPA_HWACCEL_PATCH_FN_TABLE_VISITOR(fn_type, fn_field, fn_id) \
+    if ((src_tbl.fn_field) != nullptr && (!exclude_suboptimal || !src_tbl.fn_is_tagged_as_suboptimal(fn_id))) { \
+        composite_tbl.fn_field = src_tbl.fn_field; \
+        composite_tbl.fn_target_infos[static_cast<size_t>(fn_id)] = src_tbl.fn_target_infos[static_cast<size_t>(fn_id)]; \
     }
-    return create_best_auto_vectorized_target();
+
+FnTable build_composite_fn_table(std::span<const FnTable> fn_tables, bool exclude_suboptimal) noexcept {
+    assert(!fn_tables.empty());
+    FnTable composite_tbl;
+    // Start at the back (worst) and move towards the front (best), patching in present
+    // function pointers as we go (assuming not suboptimal & excluded). Painter's algorithm
+    // for function pointers!
+    for (const auto& src_tbl : std::ranges::reverse_view(fn_tables)) {
+        VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_PATCH_FN_TABLE_VISITOR);
+    }
+    return composite_tbl;
 }
 
-std::string IAccelerated::friendly_name() const {
-    return std::format("{} - {}", implementation_name(), target_name());
-}
-
-
-const IAccelerated &
-IAccelerated::getAccelerator()
+FnTable build_composite_fn_table(const FnTable& fn_table,
+                                 const FnTable& base_table,
+                                 bool exclude_suboptimal) noexcept
 {
-    static RuntimeVerificator verifyAccelerator_once;
-    static auto accelerator = create_and_log_best_accelerator();
-    return *accelerator;
+    std::vector<FnTable> fn_tables;
+    fn_tables.emplace_back(fn_table);
+    fn_tables.emplace_back(base_table);
+    return build_composite_fn_table(fn_tables, exclude_suboptimal);
 }
+
+FnTable optimal_composite_fn_table() noexcept {
+    static auto global_table = build_optimal_fn_table();
+    return global_table;
+}
+
+namespace {
+
+struct BuildFnTableAndPatchFunctionsAtStartup {
+    BuildFnTableAndPatchFunctionsAtStartup();
+};
+
+BuildFnTableAndPatchFunctionsAtStartup::BuildFnTableAndPatchFunctionsAtStartup() {
+    thread_unsafe_update_function_dispatch_pointers(optimal_composite_fn_table());
+    // "Power on self-test" of active vectorization kernels
+    verify_active_function_table();
+}
+
+BuildFnTableAndPatchFunctionsAtStartup build_fn_table_once;
+
+#define VESPA_HWACCEL_DEBUG_LOG_FN_ENTRY(fn_type, fn_field, fn_id) \
+    LOG(debug, "%s => %s", #fn_field, tbl.fn_target_info(fn_id).to_string().c_str());
+
+void debug_log_fn_table_update(const FnTable& tbl) {
+    LOG(debug, "Updating global vectorization function dispatch table:");
+    VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_DEBUG_LOG_FN_ENTRY);
+}
+
+FnTable& mutable_active_fn_table() noexcept {
+    static FnTable active_table;
+    return active_table;
+}
+
+} // anon ns
+
+const FnTable& active_fn_table() noexcept {
+    return mutable_active_fn_table(); // ... but as const
+}
+
+#define VESPA_HWACCEL_COPY_TABLE_TO_FN_PTR_VISITOR(fn_type, fn_field, fn_id) \
+    VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(fn_field) = fns.fn_field;
+
+void thread_unsafe_update_function_dispatch_pointers(const FnTable& fns) {
+    assert(fns.is_complete());
+    if (LOG_WOULD_LOG(debug)) {
+        debug_log_fn_table_update(fns);
+    }
+    // Thread safety note: we expect there to exist one singular thread during
+    // invocation of this function, meaning that all subsequent loads of the
+    // function pointers must happen-after these stores. Anything else would be
+    // a terrible sin, and we can't have any of that!
+    mutable_active_fn_table() = fns;
+    VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_COPY_TABLE_TO_FN_PTR_VISITOR);
+}
+
+} // dispatch
 
 } // vespalib::hwaccelerated

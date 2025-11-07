@@ -47,10 +47,7 @@ private:
     VESPA_DLL_LOCAL bool updateLastValueCold(uint32_t docId) noexcept __attribute__((noinline));
     VESPA_DLL_LOCAL void fetchChunk(uint32_t docId) noexcept __attribute__((noinline));
 
-    using IAccelerated = vespalib::hwaccelerated::IAccelerated;
-
     Update              _update;
-    const IAccelerated & _accel;
     alignas(64) Word    _lastWords[16];
     static constexpr size_t NumWordsInBatch = sizeof(_lastWords) / sizeof(Word);
 };

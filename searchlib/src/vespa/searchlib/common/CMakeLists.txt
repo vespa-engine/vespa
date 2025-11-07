@@ -5,7 +5,6 @@ vespa_add_library(searchlib_common OBJECT
     bitvector.cpp
     bitvectorcache.cpp
     bitvectoriterator.cpp
-    bitword.cpp
     condensedbitvectors.cpp
     documentlocations.cpp
     documentsummary.cpp

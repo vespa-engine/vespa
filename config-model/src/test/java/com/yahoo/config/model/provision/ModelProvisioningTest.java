@@ -2657,7 +2657,7 @@ public class ModelProvisioningTest {
         assertFalse(clusterSpec.get().sidecars().isEmpty());
 
         var expectedSidecarSpec = SidecarSpec.builder().id(0).name("triton").image(
-                DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.08-py3")).minCpu(1).hasGpu(false).volumeMounts(
+                DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.09-py3")).minCpu(1).hasGpu(false).volumeMounts(
                 List.of("/models")).command(List.of(
                 "tritonserver", "--log-verbose=1", "--model-repository=/models",
                 "--model-control-mode=explicit"

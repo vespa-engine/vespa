@@ -225,7 +225,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
                 "<container id='default' version='1.0'>",
                 "  <search>",
                 "    <threadpool>",
-                "      <threads boost=\"10.2\">0.4</threads>",
+                "      <threads max=\"10.2\">0.4</threads>",
                 "      <queue>50</queue>",
                 "    </threadpool>",
                 "  </search>",

@@ -86,7 +86,10 @@ TEST(QueryVisitorTest, requireThatAllNodesCanBeVisited) {
     checkVisit<SuffixTerm>(new SimpleSuffixTerm("t", "field", 0, Weight(0)));
     checkVisit<PredicateQuery>(new SimplePredicateQuery(PredicateQueryTerm::UP(), "field", 0, Weight(0)));
     checkVisit<RegExpTerm>(new SimpleRegExpTerm("t", "field", 0, Weight(0)));
-    checkVisit<NearestNeighborTerm>(new SimpleNearestNeighborTerm("query_tensor", "doc_tensor", 0, Weight(0), 123, true, 321, 100100.25));
+    NearestNeighborTerm::HnswParams hnsw_params;
+    hnsw_params.distance_threshold = 100100.25;
+    hnsw_params.explore_additional_hits = 321;
+    checkVisit<NearestNeighborTerm>(new SimpleNearestNeighborTerm("query_tensor", "doc_tensor", 0, Weight(0), 123, true, hnsw_params));
     checkVisit<TrueQueryNode>(new SimpleTrue());
     checkVisit<FalseQueryNode>(new SimpleFalse());
     checkVisit<FuzzyTerm>(new SimpleFuzzyTerm("t", "field", 0, Weight(0), 2, 0, false));

@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "data_utils.h"
+#include "scoped_fn_table_override.h"
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <vespa/vespalib/hwaccelerated/fn_table.h>
 #include <vespa/vespalib/hwaccelerated/highway.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <limits>
 #include <random>
 
@@ -29,9 +32,10 @@ void verify_euclidean_distance(std::span<const IAccelerated*> accels, size_t tes
             sum += d * d;
         }
         for (const auto* accel : accels) {
-            LOG(spam, "verify_euclidean_distance(accel=%s, len=%zu, offset=%zu)", accel->target_name(), test_length, j);
-            auto computed = static_cast<double>(accel->squaredEuclideanDistance(&a[j], &b[j], test_length - j));
-            ASSERT_NEAR(sum, computed, sum*approx_factor) << accel->target_name();
+            LOG(spam, "verify_euclidean_distance(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(), test_length, j);
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            double computed = squared_euclidean_distance(&a[j], &b[j], test_length - j);
+            ASSERT_NEAR(sum, computed, sum*approx_factor) << accel->target_info().to_string();
         }
     }
 }
@@ -45,29 +49,31 @@ void verify_dot_product(std::span<const IAccelerated*> accels, size_t test_lengt
             sum += a[i] * b[i];
         }
         for (const auto* accel : accels) {
-            LOG(spam, "verify_dot_product(accel=%s, len=%zu, offset=%zu)", accel->target_name(), test_length, j);
-            auto computed = static_cast<double>(accel->dotProduct(&a[j], &b[j], test_length - j));
-            ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << accel->target_name();
+            LOG(spam, "verify_dot_product(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(), test_length, j);
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            auto computed = static_cast<double>(dot_product(&a[j], &b[j], test_length - j));
+            ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << accel->target_info().to_string();
         }
     }
 }
 
-const IAccelerated* baseline_accelerator() {
-    static auto baseline = IAccelerated::create_baseline_auto_vectorized_target();
-    return baseline.get();
+void fill_auto_vectorized_accelerators(std::vector<const IAccelerated*>& accels) {
+    static const auto auto_vec_targets = IAccelerated::create_supported_auto_vectorized_targets();
+    for (const auto& t : auto_vec_targets) {
+        accels.emplace_back(t.get()); // note: _static_ lifetime
+    }
 }
 
 void fill_highway_accelerators(std::vector<const IAccelerated*>& accels) {
-    static auto hwy_targets = Highway::create_supported_targets();
+    static const auto hwy_targets = Highway::create_supported_targets();
     for (const auto& t : hwy_targets) {
-        accels.emplace_back(t.get());
+        accels.emplace_back(t.get()); // note: _static_ lifetime
     }
 }
 
 std::vector<const IAccelerated*> all_accelerators_to_test() {
     std::vector<const IAccelerated*> accels;
-    accels.emplace_back(baseline_accelerator());
-    accels.emplace_back(&IAccelerated::getAccelerator());
+    fill_auto_vectorized_accelerators(accels);
     fill_highway_accelerators(accels);
     return accels;
 }
@@ -101,7 +107,7 @@ struct HwAcceleratedTest : Test {
     static void SetUpTestSuite() {
         fprintf(stderr, "Testing accelerators:\n");
         for (const auto* accel : all_accelerators_to_test()) {
-            fprintf(stderr, "%s\n", accel->friendly_name().c_str());
+            fprintf(stderr, "%s\n", accel->target_info().to_string().c_str());
         }
     }
 };
@@ -109,7 +115,7 @@ struct HwAcceleratedTest : Test {
 TEST_F(HwAcceleratedTest, euclidean_distance_impls_match_source_of_truth) {
     auto accelerators = all_accelerators_to_test();
     for (size_t test_length : test_lengths()) {
-        GTEST_DO(verify_euclidean_distance(accelerators, test_length));
+        ASSERT_NO_FATAL_FAILURE(verify_euclidean_distance(accelerators, test_length)) << "with length " << test_length;
     }
 }
 
@@ -126,7 +132,7 @@ void verify_dot_product(std::span<const IAccelerated*> accelerators, size_t test
 TEST_F(HwAcceleratedTest, dot_product_impls_match_source_of_truth) {
     auto accelerators = all_accelerators_to_test();
     for (size_t test_length : test_lengths()) {
-        GTEST_DO(verify_dot_product(accelerators, test_length));
+        ASSERT_NO_FATAL_FAILURE(verify_dot_product(accelerators, test_length)) << "with length " << test_length;
     }
 }
 
@@ -144,9 +150,10 @@ void verify_euclidean_distance_no_overflow(std::span<const IAccelerated*> accels
             sum += d * d;
         }
         for (const auto* accel : accels) {
-            LOG(spam, "verify_euclidean_distance_no_overflow(accel=%s, len=%zu)", accel->friendly_name().c_str(), i);
-            auto computed = static_cast<int64_t>(accel->squaredEuclideanDistance(lhs.data(), rhs.data(), i));
-            ASSERT_EQ(sum, computed) << "overflow at length " << i << " for accel " << accel->friendly_name();
+            LOG(spam, "verify_euclidean_distance_no_overflow(accel=%s, len=%zu)", accel->target_info().to_string().c_str(), i);
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            auto computed = static_cast<int64_t>(squared_euclidean_distance(lhs.data(), rhs.data(), i));
+            ASSERT_EQ(sum, computed) << "overflow at length " << i << " for accel " << accel->target_info().to_string();
         }
     }
 }
@@ -169,9 +176,10 @@ void verify_dot_product_no_overflow(std::span<const IAccelerated*> accels, size_
             sum += lhs[j] * rhs[j];
         }
         for (const auto* accel : accels) {
-            LOG(spam, "verify_dot_product_no_overflow(accel=%s, len=%zu)", accel->friendly_name().c_str(), i);
-            int64_t computed = accel->dotProduct(lhs.data(), rhs.data(), i);
-            ASSERT_EQ(sum, computed) << "overflow at length " << i << " for accel " << accel->friendly_name();
+            LOG(spam, "verify_dot_product_no_overflow(accel=%s, len=%zu)", accel->target_info().to_string().c_str(), i);
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            int64_t computed = dot_product(lhs.data(), rhs.data(), i);
+            ASSERT_EQ(sum, computed) << "overflow at length " << i << " for accel " << accel->target_info().to_string();
         }
     }
 }
@@ -236,20 +244,20 @@ void check_with_flipping(std::span<const IAccelerated*> accels, void* mem_a, voi
     memset(mem_a, 0, sz);
     memset(mem_b, 0, sz);
     size_t dist = 0;
-    for (const auto* accel : accels) {
-        ASSERT_EQ(accel->binary_hamming_distance(mem_a, mem_b, sz), dist) << accel->friendly_name();
-    }
+    auto check_accelerators = [&] {
+        for (const auto* accel : accels) {
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            ASSERT_EQ(binary_hamming_distance(mem_a, mem_b, sz), dist) << accel->target_info().to_string();
+        }
+    };
+    ASSERT_NO_FATAL_FAILURE(check_accelerators());
     while (dist * 2 < sz) {
         flip_one_bit(mem_a, mem_b, sz);
         ++dist;
-        for (const auto* accel : accels) {
-            ASSERT_EQ(accel->binary_hamming_distance(mem_a, mem_b, sz), dist) << accel->friendly_name();
-        }
+        ASSERT_NO_FATAL_FAILURE(check_accelerators());
         flip_one_bit(mem_b, mem_a, sz);
         ++dist;
-        for (const auto* accel : accels) {
-            ASSERT_EQ(accel->binary_hamming_distance(mem_a, mem_b, sz), dist) << accel->friendly_name();
-        }
+        ASSERT_NO_FATAL_FAILURE(check_accelerators());
     }
 }
 
@@ -267,6 +275,75 @@ TEST_F(HwAcceleratedTest, binary_hamming_distance_with_alignments) {
     for (const auto& [lhs_unalign, rhs_unalign] : lhs_rhs_unalignments) {
         ASSERT_NO_FATAL_FAILURE(check_with_sizes(accelerators, lhs_unalign, rhs_unalign));
     }
+}
+
+using namespace dispatch;
+
+void PrintTo(const TargetInfo& info, std::ostream* os) {
+    *os << info.to_string();
+}
+
+int64_t my_dot_i8_a(const int8_t*, const int8_t*, size_t sz) noexcept {
+    return sz;
+}
+
+int64_t my_dot_i8_b(const int8_t*, const int8_t*, size_t sz) noexcept {
+    return sz;
+}
+
+size_t my_popcount(const uint64_t*, size_t sz) noexcept {
+    return sz;
+}
+
+TargetInfo a_info("BoringImpl", "Dusty calculator", 128);
+TargetInfo b_info("MyCoolImpl", "Liquid cooled 6502", 1024);
+
+TEST(CompositeFnTableTest, functions_and_target_info_are_inherited_when_not_present) {
+    FnTable a(a_info);
+    a.dot_product_i8 = my_dot_i8_a;
+    a.population_count = my_popcount;
+    FnTable b(b_info);
+    b.dot_product_i8 = my_dot_i8_b;
+    b.tag_fns_as_suboptimal({FnTable::FnId::DOT_PRODUCT_I8}); // should not matter here
+
+    // `c` is `b` built "on top" of `a`
+    FnTable c = build_composite_fn_table(b, a, false); // _do not_ exclude suboptimal
+    EXPECT_FALSE(c.is_complete());
+    EXPECT_EQ(c.dot_product_i8, my_dot_i8_b);
+    EXPECT_EQ(c.fn_target_info(FnTable::FnId::DOT_PRODUCT_I8), b_info);
+    EXPECT_EQ(c.population_count, my_popcount);
+    EXPECT_EQ(c.fn_target_info(FnTable::FnId::POPULATION_COUNT), a_info);
+    EXPECT_FALSE(c.dot_product_bf16); // not set
+}
+
+TEST(CompositeFnTableTest, suboptimal_functions_are_not_used_when_exclusion_is_requested) {
+    FnTable a(a_info);
+    a.dot_product_i8 = my_dot_i8_a;
+    FnTable b(b_info);
+    b.dot_product_i8 = my_dot_i8_b;
+    b.population_count = my_popcount;
+    b.tag_fns_as_suboptimal({FnTable::FnId::DOT_PRODUCT_I8});
+
+    FnTable c = build_composite_fn_table(b, a, true); // _exclude_ suboptimal
+    EXPECT_FALSE(c.is_complete());
+    // b's i8 dot product would be suboptimal and is not used. Use a's instead.
+    EXPECT_EQ(c.dot_product_i8, my_dot_i8_a);
+    EXPECT_EQ(c.fn_target_info(FnTable::FnId::DOT_PRODUCT_I8), a_info);
+    EXPECT_EQ(c.population_count, my_popcount);
+    EXPECT_EQ(c.fn_target_info(FnTable::FnId::POPULATION_COUNT), b_info);
+}
+
+TEST(CompositeFnTableTest, for_each_present_fn_invokes_callback_for_non_nullptr_fns) {
+    FnTable tbl(b_info);
+    tbl.dot_product_i8 = my_dot_i8_b;
+    tbl.population_count = my_popcount;
+
+    std::string seen_fns;
+    tbl.for_each_present_fn([&](FnTable::FnId id) {
+        seen_fns += FnTable::id_to_fn_name(id);
+        seen_fns += " ";
+    });
+    EXPECT_EQ(seen_fns, "dot_product_i8 population_count ");
 }
 
 } // vespalib::hwaccelerated

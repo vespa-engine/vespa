@@ -143,7 +143,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2025-12-01",
+            List.of("vekterli"), "2021-02-19", "2026-03-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -158,14 +158,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
-            List.of("olaa"), "2022-09-23", "2025-11-01",
+            List.of("olaa"), "2022-09-23", "2026-02-01",
             "Whether an OpenTelemetry collector should be enabled",
             "Takes effect at next tick",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
             "otelcol-logs", List.of(), String.class,
-            List.of("olaa"), "2024-01-15", "2025-11-01",
+            List.of("olaa"), "2024-01-15", "2026-02-01",
             "Determines log files handled by the OpenTelemetry collector",
             "Takes effect at next tick",
             TENANT_ID, APPLICATION, INSTANCE_ID
@@ -173,7 +173,7 @@ public class Flags {
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
-            List.of("vekterli"), "2022-11-03", "2025-12-01",
+            List.of("vekterli"), "2022-11-03", "2026-05-01",
             "Specifies which public key to use for core dump encryption.",
             "Takes effect on the next tick.",
             NODE_TYPE, HOSTNAME);
@@ -205,28 +205,28 @@ public class Flags {
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2025-11-01",
+            List.of("andreer"), "2023-08-21", "2026-02-01",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
             "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2025-11-01",
+            List.of("andreer"), "2023-08-28", "2026-02-01",
             "Always use IPv6 target groups for load balancers in aws",
             "Takes effect on next load-balancer provisioning",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
             "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2025-11-01",
+            List.of("andreer"), "2023-08-28", "2026-02-01",
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
             "content-layer-metadata-feature-level", 1,
-            List.of("vekterli"), "2022-09-12", "2025-12-01",
+            List.of("vekterli"), "2022-09-12", "2026-04-01",
             "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
             "cancellation and ephemeral content node sequence numbers for bucket replicas",
             "Takes effect at redeployment",
@@ -248,14 +248,14 @@ public class Flags {
 
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
-            List.of("andreer", "olaa"), "2023-10-06", "2025-11-01",
+            List.of("andreer", "olaa"), "2023-10-06", "2026-02-01",
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,
-            List.of("olaa"), "2024-04-03", "2025-11-01",
+            List.of("olaa"), "2024-04-03", "2026-02-01",
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
@@ -276,14 +276,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag MONITORING_JWT = defineFeatureFlag(
             "monitoring-jwt", false,
-            List.of("olaa"), "2024-07-05", "2025-11-01",
+            List.of("olaa"), "2024-07-05", "2026-02-01",
             "Whether a monitoring JWT should be issued by the controller",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL);
 
     public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
             "snapshots-enabled", false,
-            List.of("olaa"), "2024-10-22", "2025-11-01",
+            List.of("olaa"), "2024-10-22", "2026-02-01",
             "Whether node snapshots should be created when host storage is discarded",
             "Takes effect immediately");
 
@@ -296,14 +296,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENFORCE_EMAIL_DOMAIN_SSO = defineFeatureFlag(
             "enforce-email-domain-sso", false,
-            List.of("eirik"), "2024-11-07", "2025-11-01",
+            List.of("eirik"), "2024-11-07", "2026-02-01",
             "Enforce SSO login for an email domain",
             "Takes effect immediately",
             CONSOLE_USER_EMAIL);
 
     public static final UnboundListFlag<String> RESTRICT_USERS_TO_DOMAIN = defineListFlag(
             "restrict-users-to-domain", List.of(), String.class,
-            List.of("eirik"), "2024-11-07", "2025-11-01",
+            List.of("eirik"), "2024-11-07", "2026-02-01",
             "Only allow adding specific email domains as user to tenant",
             "Takes effect immediately",
             TENANT_ID);
@@ -317,7 +317,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY = defineIntFlag(
             "max-content-node-maintenance-op-concurrency", -1,
-            List.of("vekterli"), "2025-03-07", "2025-11-01",
+            List.of("vekterli"), "2025-03-07", "2026-04-01",
             "Sets the maximum concurrency for maintenance-related operations on content nodes. " +
             "Only intended as a manual emergency brake feature if a system is suddenly incapable of handling " +
             "regular maintenance pressure.",
@@ -338,7 +338,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DEFER_OS_UPGRADE = defineFeatureFlag(
             "defer-os-upgrade", false,
-            List.of("olaa"), "2025-04-09", "2025-11-01",
+            List.of("olaa"), "2025-04-09", "2026-02-01",
             "Whether OS upgrade should be deferred",
             "Takes effect immediately",
             CLOUD_ACCOUNT
@@ -355,7 +355,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag CREATE_TENANT_ROLES = defineFeatureFlag(
             "create-tenant-roles", true,
-            List.of("andreer"), "2025-04-28", "2025-11-01",
+            List.of("andreer"), "2025-04-28", "2026-02-01",
             "Whether to create tenant specific roles",
             "Takes effect immediately",
             TENANT_ID
@@ -378,7 +378,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
             "delete-tenant-roles", false,
-            List.of("andreer"), "2025-05-05", "2025-11-01",
+            List.of("andreer"), "2025-05-05", "2026-02-01",
             "Whether to delete tenant specific roles",
             "Role deletion happens when tenant is next processed by TenantRoleMaintainer",
             TENANT_ID
@@ -386,7 +386,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag AZURE_IPV6 = defineFeatureFlag(
             "azure-ipv6", false,
-            List.of("olaa"), "2025-06-10", "2025-11-01",
+            List.of("olaa"), "2025-06-10", "2026-02-01",
             "Whether Azure hosts should be provisioned with IPv6 addresses",
             "Takes effect immediately"
     );
@@ -422,6 +422,15 @@ public class Flags {
                     "Valid values: 'vespamalloc', 'mimalloc', '' (empty string, meaning default malloc implementation).",
             "Takes effect at next reboot of the node",
             TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
+    );
+
+    public static final UnboundBooleanFlag ADD_HEAP_DUMP_SUMMARY_TO_PANIC_TICKETS = defineFeatureFlag(
+            "add-heap-dump-summary-to-panic-tickets", false,
+            List.of("hmusum"), "2025-11-04", "2026-02-04",
+            "Whether to include heap dump summary generated from hprof-slurp for Java heap dumps " +
+                    "in Jira panic tickets",
+            "Takes effect at next host-admin tick",
+            APPLICATION, INSTANCE_ID, HOSTNAME
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

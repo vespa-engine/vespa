@@ -35,6 +35,8 @@ public:
         [[nodiscard]] Index start() const noexcept { return _start; }
         [[nodiscard]] Index end() const noexcept { return _end; }
         [[nodiscard]] bool validNonZero() const noexcept { return _end > _start; }
+        [[nodiscard]] bool partial_start() const noexcept { return bitNum(_start) != 0u; }
+        [[nodiscard]] bool partial_end() const noexcept { return bitNum(_end) != 0u; }
     private:
         Index _start;
         Index _end;
@@ -138,15 +140,8 @@ public:
             : getStartIndex();
     }
 
-    void setSize(Index sz) {
-        set_bit_no_range_check(sz);  // Need to place the new stop sign first
-        std::atomic_thread_fence(std::memory_order_release);
-        if (sz > _sz) {
-            // Can only remove the old stopsign if it is ahead of the new.
-            clear_bit_no_range_check(_sz);
-        }
-        vespalib::atomic::store_ref_release(_sz, sz);
-    }
+    void setGuardBit() noexcept;
+    void setSize(Index sz);
     void set_bit_no_range_check(Index idx) noexcept {
         store_unchecked(_words[wordNum(idx)], _words[wordNum(idx)] | mask(idx));
     }
@@ -276,20 +271,28 @@ public:
      * @param numberOfElements  The size of the bit vector in bits.
      * @param file              The file from which to read the bit vector.
      * @param offset            Where bitvector image is located in the file.
-     * @param doccount          Number of bits set in bitvector
+     * @param entry_size        The size of the bitvector image in the file.
+     * @param doccount          Number of bits set in bitvector.
      */
-    static UP create(Index numberOfElements, FastOS_FileInterface &file, int64_t offset, Index doccount, ReadStats& read_stats);
+    static std::unique_ptr<const BitVector> create(Index numberOfElements, FastOS_FileInterface &file,
+                                                   int64_t offset, size_t entry_size,
+                                                   Index doccount, ReadStats& read_stats);
     static UP create(Index start, Index end);
     static UP create(const BitVector & org, Index start, Index end);
     static UP create(Index numberOfElements);
     static UP create(const BitVector & rhs);
     static void consider_enable_range_check();
     /**
-     * Will slice the vectors and if possible use the thread bundle do the operation in parallell
+     * Will slice the vectors and if possible use the thread bundle do the operation in parallel
      * The result of the operation ends up in the first vector.
      * TODO: Extend to handle both AND/OR
      */
-    static void parallellOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVector* const> vectors);
+    static void parallelOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVector* const> vectors);
+    // number of words used for a bitvector without guard bits.
+    static constexpr Index num_words_plain(Index bits) noexcept { return wordNum(bits + (WordLen - 1)); }
+    static constexpr Index legacy_num_bytes_with_single_guard_bit(Index bits) noexcept {
+        return num_words_plain(bits + 1) * sizeof(Word);
+    }
     static Index numWords(Index bits) noexcept { return wordNum(bits + 1 + (WordLen - 1)); }
     static Index numBytes(Index bits) noexcept { return numWords(bits) * sizeof(Word); }
     virtual size_t get_allocated_bytes(bool include_self) const noexcept = 0;
@@ -314,6 +317,7 @@ protected:
         return allocatePaddedAndAligned(start, end, end);
     }
     static Alloc allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc = nullptr);
+    void initialize_from(const BitVector& org);
 
 private:
     struct OrParts;
@@ -335,7 +339,6 @@ private:
         return (end >= start) ? (numWords(end) - wordNum(start)) : 0;
     }
     static constexpr Index invalidCount() noexcept { return std::numeric_limits<Index>::max(); }
-    void setGuardBit() noexcept { set_bit_no_range_check(size()); }
     void incNumBits() noexcept {
         if ( isValidCount() ) {
             _numTrueBits.store(_numTrueBits.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
@@ -347,7 +350,6 @@ private:
 
         }
     }
-    VESPA_DLL_LOCAL void repairEnds();
     Range sanitize(Range range) const {
         return {std::max(range.start(), getStartIndex()),
                 std::min(range.end(), size())};
@@ -364,7 +366,7 @@ private:
 
         Index index(wordNum(start));
         Index lastIndex(wordNum(last));
-        Word word(conv(load(_words[index])) & checkTab(start));
+        Word word(conv(load(_words[index])) & ~startBits(start));
         for ( ; index < lastIndex; word = conv(load(_words[++index]))) {
             foreach_bit(func, word, index << numWordBits());
         }
@@ -374,7 +376,7 @@ private:
     Index getNextBit(WordConverter conv, Index start) const noexcept {
         Index index(wordNum(start));
         const Word *words(_words);
-        Word t(conv(load(words[index])) & checkTab(start));
+        Word t(conv(load(words[index])) & ~startBits(start));
 
         // In order to avoid a test an extra guard bit is added
         // after the bitvector as a termination.

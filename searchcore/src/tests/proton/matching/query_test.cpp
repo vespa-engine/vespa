@@ -680,7 +680,8 @@ TEST(QueryTest, requireThatQueryGluesEverythingTogether)
     FakeSearchContext context;
     context.setLimit(42);
     MatchDataLayout mdl;
-    query.reserveHandles(requestContext, context, mdl);
+    query.reserve_handles(mdl);
+    query.make_blueprint(requestContext, context, mdl);
     MatchData::UP md = mdl.createMatchData();
     EXPECT_EQ(1u, md->getNumTermFields());
 
@@ -712,7 +713,8 @@ checkQueryAddsLocation(const string &loc_in, const string &loc_out) {
     FakeSearchContext context;
     context.addIdx(0).setLimit(42);
     MatchDataLayout mdl;
-    query.reserveHandles(requestContext, context, mdl);
+    query.reserve_handles(mdl);
+    query.make_blueprint(requestContext, context, mdl);
     MatchData::UP md = mdl.createMatchData();
     EXPECT_EQ(2u, md->getNumTermFields());
 
@@ -743,7 +745,8 @@ void verifyThatRankBlueprintAndAndNotStaysOnTopAfterLocation(QueryBuilder<Proton
 
     FakeRequestContext requestContext;
     MatchDataLayout mdl;
-    query.reserveHandles(requestContext, context, mdl);
+    query.reserve_handles(mdl);
+    query.make_blueprint(requestContext, context, mdl);
     const IntermediateBlueprint * root = dynamic_cast<const T1 *>(query.peekRoot());
     ASSERT_TRUE(root != nullptr);
     EXPECT_EQ(2u, root->childCnt());
@@ -942,7 +945,8 @@ TEST(QueryTest, requireThatWhiteListBlueprintCanBeUsed)
 
     FakeRequestContext requestContext;
     MatchDataLayout mdl;
-    query.reserveHandles(requestContext, context, mdl);
+    query.reserve_handles(mdl);
+    query.make_blueprint(requestContext, context, mdl);
     MatchData::UP md = mdl.createMatchData();
 
     query.optimize(true, true);
@@ -971,7 +975,8 @@ void verifyThatRankBlueprintAndAndNotStaysOnTopAfterWhiteListing(QueryBuilder<Pr
 
     FakeRequestContext requestContext;
     MatchDataLayout mdl;
-    query.reserveHandles(requestContext, context, mdl);
+    query.reserve_handles(mdl);
+    query.make_blueprint(requestContext, context, mdl);
     const IntermediateBlueprint * root = dynamic_cast<const T1 *>(query.peekRoot());
     ASSERT_TRUE(root != nullptr);
     EXPECT_EQ(2u, root->childCnt());
@@ -1076,6 +1081,25 @@ TEST(QueryTest, requireThatSameElementIteratorsCanBeBuilt)
     EXPECT_TRUE(iterator->seek(8));
 }
 
+TEST(QueryTest, andnot_below_same_element_is_elementwise)
+{
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addSameElement(1, "top", 0, Weight(1));
+    builder.addAndNot(2);
+    builder.addStringTerm("xyz", "f1", 1, Weight(1));
+    builder.addStringTerm("abc", "f2", 2, Weight(1));
+    auto query = builder.build();
+    auto root = dynamic_cast<search::query::SameElement *>(query.get());
+    ASSERT_NE(nullptr, root);
+    EXPECT_EQ(root->getChildren().size(), 1u);
+    auto child = dynamic_cast<ProtonAndNot*>(root->getChildren()[0]);
+    ASSERT_NE(nullptr, child);
+    EXPECT_FALSE(child->elementwise);
+    SameElementModifier sem;
+    query->accept(sem);
+    EXPECT_TRUE(child->elementwise);
+}
+
 TEST(QueryTest, requireThatConstBoolBlueprintsAreCreatedCorrectly)
 {
     using search::queryeval::AlwaysTrueBlueprint;
@@ -1101,17 +1125,22 @@ TEST(QueryTest, requireThatConstBoolBlueprintsAreCreatedCorrectly)
 }
 
 class GlobalFilterBlueprint : public SimpleBlueprint {
+private:
+    bool _want_global_filter;
 public:
     std::shared_ptr<const GlobalFilter> filter;
     double estimated_hit_ratio;
     GlobalFilterBlueprint(const SimpleResult& result, bool want_global_filter)
         : search::queryeval::SimpleBlueprint(result),
+          _want_global_filter(want_global_filter),
           filter(),
           estimated_hit_ratio(-1.0)
     {
-        set_want_global_filter(want_global_filter);
     }
     ~GlobalFilterBlueprint() override;
+    bool want_global_filter(Blueprint::GlobalFilterLimits&) const override {
+        return _want_global_filter;
+    }
     void set_global_filter(const GlobalFilter& filter_, double estimated_hit_ratio_) override {
         filter = filter_.shared_from_this();
         estimated_hit_ratio = estimated_hit_ratio_;
@@ -1197,7 +1226,10 @@ TEST(QueryTest, wand_term_needs_ranking)
 TEST(QueryTest, nearest_neighbor_term_needs_ranking)
 {
     QueryBuilder<ProtonNodeTypes> builder;
-    builder.add_nearest_neighbor_term("qtensor", "f1", 1, Weight(1), 10, true, 100, 1.5);
+    search::query::NearestNeighborTerm::HnswParams hnsw_params;
+    hnsw_params.distance_threshold = 1.5;
+    hnsw_params.explore_additional_hits = 100;
+    builder.add_nearest_neighbor_term("qtensor", "f1", 1, Weight(1), 10, true, hnsw_params);
     EXPECT_TRUE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
 }
 

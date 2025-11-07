@@ -77,7 +77,7 @@ RegisterAPI::RegisterAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config
 {
     _configurator->poll();
     if ( ! _slobrokSpecs.ok()) {
-        throw NetworkSetupFailureException("Failed configuring the RegisterAPI. No valid slobrok specs from config",
+        throw NetworkSetupFailureException("Failed configuring the RegisterAPI. No valid location broker specs from config",
                                            VESPA_STRLOC);
     }
     ScheduleNow();

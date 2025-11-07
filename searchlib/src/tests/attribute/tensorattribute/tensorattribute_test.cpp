@@ -41,8 +41,10 @@ using document::WrongTensorTypeException;
 using search::AddressSpaceUsage;
 using search::AttributeGuard;
 using search::AttributeVector;
+using search::CommitParam;
 using search::attribute::DistanceMetric;
 using search::attribute::HnswIndexParams;
+using search::queryeval::Blueprint;
 using search::queryeval::GlobalFilter;
 using search::queryeval::NearestNeighborBlueprint;
 using search::tensor::DefaultNearestNeighborIndexFactory;
@@ -591,7 +593,7 @@ struct Fixture {
     }
 
     search::attribute::Status getStatus() {
-        _attr->commit(true);
+        _attr->commit(CommitParam::UpdateStats::FORCE);
         return _attr->getStatus();
     }
 
@@ -809,8 +811,8 @@ Fixture::testCompaction()
         if ((iter & (iter - 1)) == 0) {
             // Temporarily drop read guard when iter crosses a power of 2.
             guard.reset();
-            _attr->commit(true);
-            _attr->commit(true);
+            _attr->commit(CommitParam::UpdateStats::FORCE);
+            _attr->commit(CommitParam::UpdateStats::FORCE);
             guard = _attr->makeReadGuard(false);
         }
         newStatus = getStatus();
@@ -1453,12 +1455,21 @@ public:
                                                              double global_filter_lower_limit = 0.05,
                                                              double target_hits_max_adjustment_factor = 20.0) {
         search::queryeval::FieldSpec field("foo", 0, 0);
+        NearestNeighborBlueprint::HnswParams hnsw_params{
+            .explore_additional_hits = 5,
+            .distance_threshold = 100100.25,
+            .global_filter_lower_limit = global_filter_lower_limit,
+            .global_filter_upper_limit = 1.0,
+            .filter_first_upper_limit = 0.0,
+            .filter_first_exploration = 0.3,
+            .exploration_slack = 0.0,
+            .target_hits_max_adjustment_factor = target_hits_max_adjustment_factor
+        };
         auto bp = std::make_unique<NearestNeighborBlueprint>(
             field,
             std::make_unique<DistanceCalculator>(this->as_dense_tensor(),
                                                  create_query_tensor(vec_2d(17, 42))),
-            3, approximate, 5, 100100.25,
-            global_filter_lower_limit, 1.0, 0.0, 0.3, 0.0, target_hits_max_adjustment_factor, vespalib::Doom::never());
+            3, approximate, hnsw_params, vespalib::Doom::never());
         EXPECT_EQ(11u, bp->getState().estimate().estHits);
         EXPECT_EQ(100100.25 * 100100.25, bp->get_distance_threshold());
         return bp;
@@ -1556,7 +1567,7 @@ TEST(TensorAttributeTest, NN_blueprint_handles_strong_filter_triggering_exact_se
     bp->set_global_filter(*strong_filter, 0.6);
     EXPECT_EQ(3u, bp->get_target_hits());
     EXPECT_EQ(3u, bp->get_adjusted_target_hits());
-    EXPECT_EQ(11u, bp->getState().estimate().estHits);
+    EXPECT_EQ(1u, bp->getState().estimate().estHits);
     EXPECT_EQ(NNBA::EXACT_FALLBACK, bp->get_algorithm());
 }
 
@@ -1564,21 +1575,24 @@ TEST(TensorAttributeTest, NN_blueprint_wants_global_filter_when_having_index)
 {
     NearestNeighborBlueprintFixture f;
     auto bp = f.make_blueprint();
-    EXPECT_TRUE(bp->getState().want_global_filter());
+    Blueprint::GlobalFilterLimits limits;
+    EXPECT_TRUE(bp->want_global_filter(limits));
 }
 
 TEST(TensorAttributeTest, NN_blueprint_do_NOT_want_global_filter_when_explicitly_using_brute_force)
 {
     NearestNeighborBlueprintFixture f;
     auto bp = f.make_blueprint(false);
-    EXPECT_FALSE(bp->getState().want_global_filter());
+    Blueprint::GlobalFilterLimits limits;
+    EXPECT_FALSE(bp->want_global_filter(limits));
 }
 
 TEST(TensorAttributeTest, NN_blueprint_do_NOT_want_global_filter_when_NOT_having_index_for_implicit_brute_force)
 {
     NearestNeighborBlueprintWithoutIndexFixture f;
     auto bp = f.make_blueprint();
-    EXPECT_FALSE(bp->getState().want_global_filter());
+    Blueprint::GlobalFilterLimits limits;
+    EXPECT_FALSE(bp->want_global_filter(limits));
 }
 
 auto test_values = ::testing::Values(1u, 2u);

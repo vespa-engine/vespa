@@ -153,7 +153,7 @@ public class PermanentFlags {
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask), or some node-agent " +
                     "functionality (see NodeAgentTask), that should be skipped",
             "Takes effect on next host admin tick",
-            HOSTNAME, NODE_TYPE);
+            HOSTNAME, NODE_TYPE, CLAVE);
 
     public static final UnboundStringFlag DOCKER_IMAGE_REPO = defineStringFlag(
             "docker-image-repo", "",
@@ -266,15 +266,6 @@ public class PermanentFlags {
     public static final UnboundDoubleFlag RESOURCE_LIMIT_ADDRESS_SPACE = defineDoubleFlag(
             "resource-limit-address-space", 0.80,
             "Resource limit (between 0.0 and 1.0) for memory address space on content nodes, used by cluster controller for when to block feed",
-            "Takes effect on next deployment",
-            INSTANCE_ID
-    );
-
-    public static final UnboundDoubleFlag RESOURCE_LIMIT_LOW_WATERMARK_DIFFERENCE = defineDoubleFlag(
-            "resource-limit-low-watermark-difference", 0.01,
-            "Number between 0.0 and 1.0 for how much lower low watermark limit should be than content node resource limits . " +
-                    "This is an absolute number, so e.g. 0.01 implies that a resource limit of 0.8 effectively " +
-                    "becomes 0.79 for a node that is already in feed blocked state",
             "Takes effect on next deployment",
             INSTANCE_ID
     );
@@ -524,7 +515,7 @@ public class PermanentFlags {
             "refresh-identity-after", "",
             "Refresh the identity document and certificates issued before this timestamp. Timestamp in ISO8601 format",
             "Takes effect on next host admin tick",
-            HOSTNAME
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, HOSTNAME
     );
 
     public static final UnboundListFlag<String> LOG_REQUEST_CONTENT = defineListFlag(

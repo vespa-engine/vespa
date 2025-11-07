@@ -29,14 +29,16 @@ public:
      * @param numberOfElements  The size of the bit vector in bits.
      * @param buffer            The buffer backing the bit vector.
      * @param offset            Where bitvector image is located in the buffer.
+     * @param entry_size        The size of the bitvector image in the buffer.
+     * @param true_bits         The number of bits set in the bitvector.
      */
-    AllocatedBitVector(Index numberOfElements, Alloc buffer, size_t offset);
+    AllocatedBitVector(Index numberOfElements, Alloc buffer, size_t offset, size_t entry_size, Index true_bits);
 
     /**
      * Creates a new bitvector with size of numberOfElements bits and at least a capacity of capacity.
      * Copies what it can from the original vector. This is used for extending vector.
      */
-    AllocatedBitVector(Index numberOfElements, Index capacity, const void * rhsBuf, size_t rhsSize, const Alloc* init_alloc);
+    AllocatedBitVector(Index numberOfElements, Index capacity, const BitVector* org, const Alloc* init_alloc);
 
     AllocatedBitVector(const BitVector &other);
     AllocatedBitVector(const AllocatedBitVector &other);

@@ -10,14 +10,12 @@ namespace proton::matching {
 RangeLimitMetaInfo::RangeLimitMetaInfo()
     : _valid(false),
       _estimate(0),
-      _low(),
-      _high()
+      _range_spec()
 {}
-RangeLimitMetaInfo::RangeLimitMetaInfo(std::string_view low_, std::string_view high_, size_t estimate_)
+RangeLimitMetaInfo::RangeLimitMetaInfo(const search::NumericRangeSpec& range_spec_, size_t estimate_)
     : _valid(true),
       _estimate(estimate_),
-      _low(low_),
-      _high(high_)
+      _range_spec(range_spec_)
 {}
 RangeLimitMetaInfo::~RangeLimitMetaInfo() = default;
 
@@ -41,9 +39,9 @@ locateFirst(uint32_t field_id, const Blueprint & blueprint) {
         const Blueprint::State & state = blueprint.getState();
         if (state.isTermLike() && (state.numFields() == 1) && (state.field(0).getFieldId() == field_id)) {
             const LeafBlueprint * leaf = blueprint.asLeaf();
-            std::string from, too;
-            if (leaf->getRange(from, too)) {
-                return {from, too, state.estimate().estHits};
+            search::NumericRangeSpec range_spec;
+            if (leaf->getRange(range_spec)) {
+                return {range_spec, state.estimate().estHits};
             }
         }
     }

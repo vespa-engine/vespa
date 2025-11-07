@@ -481,8 +481,15 @@ verifyLocateRange(const std::string & from, const std::string & to,
     EXPECT_TRUE(LocateRangeItemFromQuery(*bp, fieldSpec.getFieldId()).locate().valid());
     LocateRangeItemFromQuery locator(*bp, fieldSpec.getFieldId());
     RangeLimitMetaInfo rangeInfo = locator.locate();
-    EXPECT_EQ(from, rangeInfo.low());
-    EXPECT_EQ(to, rangeInfo.high());
+    const auto& spec = rangeInfo.range_spec();
+    EXPECT_TRUE(spec.valid);
+    if (spec.valid_integers) {
+        EXPECT_EQ(std::stoll(from), spec.int64_lower_limit);
+        EXPECT_EQ(std::stoll(to), spec.int64_upper_limit);
+    } else {
+        EXPECT_DOUBLE_EQ(std::stod(from), spec.fp_lower_limit);
+        EXPECT_DOUBLE_EQ(std::stod(to), spec.fp_upper_limit);
+    }
 }
 
 TEST(MatchPhaseLimiterTest, require_that_RangeLocator_locates_range_from_attribute_blueprint) {
@@ -502,8 +509,15 @@ verifyRangeIsReflectedInLimiter(const std::string & from, const std::string & to
     EXPECT_TRUE(mdl.empty());
     LocateRangeItemFromQuery locator(*bp, fieldSpec.getFieldId());
     RangeLimitMetaInfo rangeInfo = locator.locate();
-    EXPECT_EQ(from, rangeInfo.low());
-    EXPECT_EQ(to, rangeInfo.high());
+    const auto& spec = rangeInfo.range_spec();
+    EXPECT_TRUE(spec.valid);
+    if (spec.valid_integers) {
+        EXPECT_EQ(std::stoll(from), spec.int64_lower_limit);
+        EXPECT_EQ(std::stoll(to), spec.int64_upper_limit);
+    } else {
+        EXPECT_DOUBLE_EQ(std::stod(from), spec.fp_lower_limit);
+        EXPECT_DOUBLE_EQ(std::stod(to), spec.fp_upper_limit);
+    }
 
     MockSearchable mockSearchable;
     MatchPhaseLimiter yes_limiter(10000, locator, mockSearchable, f.requestContext,

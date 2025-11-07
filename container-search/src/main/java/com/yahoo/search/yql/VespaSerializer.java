@@ -796,6 +796,36 @@ public class VespaSerializer {
                 comma(destination, initLen);
                 annotationKey(destination, "approximate").append(allow_approx);
             }
+            Double approximateThreshold = item.getHnswApproximateThreshold();
+            if (approximateThreshold != null) {
+                comma(destination, initLen);
+                annotationKey(destination, YqlParser.HNSW_APPROXIMATE_THRESHOLD).append(approximateThreshold);
+            }
+            Double explorationSlack = item.getHnswExplorationSlack();
+            if (explorationSlack != null) {
+                comma(destination, initLen);
+                annotationKey(destination, YqlParser.HNSW_EXPLORATION_SLACK).append(explorationSlack);
+            }
+            Double filterFirstExploration = item.getHnswFilterFirstExploration();
+            if (filterFirstExploration != null) {
+                comma(destination, initLen);
+                annotationKey(destination, YqlParser.HNSW_FILTER_FIRST_EXPLORATION).append(filterFirstExploration);
+            }
+            Double filterFirstThreshold = item.getHnswFilterFirstThreshold();
+            if (filterFirstThreshold != null) {
+                comma(destination, initLen);
+                annotationKey(destination, YqlParser.HNSW_FILTER_FIRST_THRESHOLD).append(filterFirstThreshold);
+            }
+            Double postFilterThreshold = item.getHnswPostFilterThreshold();
+            if (postFilterThreshold != null) {
+                comma(destination, initLen);
+                annotationKey(destination, YqlParser.HNSW_POST_FILTER_THRESHOLD).append(postFilterThreshold);
+            }
+            Double targetHitsMaxAdjustmentFactor = item.getHnswTargetHitsMaxAdjustmentFactor();
+            if (targetHitsMaxAdjustmentFactor != null) {
+                comma(destination, initLen);
+                annotationKey(destination, YqlParser.HNSW_TARGET_HITS_MAX_ADJUSTMENT_FACTOR).append(targetHitsMaxAdjustmentFactor);
+            }
             destination.append("}");
             destination.append(NEAREST_NEIGHBOR).append('(');
             destination.append(item.getIndexName()).append(", ");

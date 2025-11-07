@@ -142,11 +142,11 @@ struct SimpleRegExpTerm : RegExpTerm {
 struct SimpleNearestNeighborTerm : NearestNeighborTerm {
     SimpleNearestNeighborTerm(std::string_view query_tensor_name, std::string field_name,
                               int32_t id, Weight weight, uint32_t target_num_hits,
-                              bool allow_approximate, uint32_t explore_additional_hits,
-                              double distance_threshold)
+                              bool allow_approximate,
+                              HnswParams hnsw_params = HnswParams())
         : NearestNeighborTerm(query_tensor_name, std::move(field_name), id, weight,
-                              target_num_hits, allow_approximate, explore_additional_hits,
-                              distance_threshold)
+                              target_num_hits, allow_approximate,
+                              std::move(hnsw_params))
     {}
     ~SimpleNearestNeighborTerm() override;
 };

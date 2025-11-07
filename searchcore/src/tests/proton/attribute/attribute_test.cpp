@@ -201,7 +201,8 @@ public:
         commit(serialNum);
     }
     void commit(SerialNum serialNum) {
-        _aw->forceCommit(serialNum, emptyCallback);
+        CommitParam commit_param(serialNum, CommitParam::UpdateStats::SKIP);
+        _aw->forceCommit(commit_param, emptyCallback);
     }
     void assertExecuteHistory(std::vector<uint32_t> expExecuteHistory) {
         auto includeCommit = expExecuteHistory;
@@ -210,7 +211,8 @@ public:
     }
     SerialNum test_force_commit(AttributeVector &attr, SerialNum serialNum) {
         vespalib::Gate gate;
-        _aw->forceCommit(serialNum, std::make_shared<GateCallback>(gate));
+        CommitParam commit_param(serialNum, CommitParam::UpdateStats::SKIP);
+        _aw->forceCommit(commit_param, std::make_shared<GateCallback>(gate));
         gate.await();
         return attr.getStatus().getLastSyncToken();
     }
@@ -415,14 +417,14 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
     awDelayed.put(5, *doc, 4, emptyCallback);
     EXPECT_EQ(5u, a1->getNumDocs());
     EXPECT_EQ(3u, a1->getStatus().getLastSyncToken());
-    awDelayed.forceCommit(6, emptyCallback);
+    awDelayed.forceCommit(CommitParam{6, CommitParam::UpdateStats::SKIP}, emptyCallback);
     EXPECT_EQ(6u, a1->getStatus().getLastSyncToken());
 
     AttributeWriter awDelayedShort(_mgr);
     awDelayedShort.put(7, *doc, 2, emptyCallback);
     EXPECT_EQ(6u, a1->getStatus().getLastSyncToken());
     awDelayedShort.put(8, *doc, 2, emptyCallback);
-    awDelayedShort.forceCommit(8, emptyCallback);
+    awDelayedShort.forceCommit(CommitParam{8, CommitParam::UpdateStats::SKIP}, emptyCallback);
     EXPECT_EQ(8u, a1->getStatus().getLastSyncToken());
 
     verifyAttributeContent(*a1, 2, "10");
@@ -437,7 +439,7 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
     awDelayed.put(11, *doc, 2, emptyCallback);
     EXPECT_EQ(8u, a1->getStatus().getLastSyncToken());
     verifyAttributeContent(*a1, 2, "10");
-    awDelayed.forceCommit(12, emptyCallback);
+    awDelayed.forceCommit(CommitParam{12, CommitParam::UpdateStats::SKIP}, emptyCallback);
     EXPECT_EQ(12u, a1->getStatus().getLastSyncToken());
     verifyAttributeContent(*a1, 2, "30");
 }
@@ -939,7 +941,7 @@ TEST_F(TwoPhasePutTest, handles_put_in_two_phases_when_specified_for_tensor_attr
 TEST_F(TwoPhasePutTest, put_is_ignored_when_serial_number_is_older_or_equal_to_attribute)
 {
     auto doc = make_doc();
-    attr->commit(CommitParam(7));
+    attr->commit(CommitParam(7, CommitParam::UpdateStats::SKIP));
     put(7, *doc, 1);
     expect_tensor_attr_calls(0, 0);
     expect_shared_executor_tasks(1);

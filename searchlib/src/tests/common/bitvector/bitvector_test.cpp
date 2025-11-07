@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <algorithm>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -764,7 +765,7 @@ orSerial(const std::vector<BitVector::UP> & bvs) {
 }
 
 BitVector::UP
-orParallell(vespalib::ThreadBundle & thread_bundle, const std::vector<BitVector::UP> & bvs) {
+orParallel(vespalib::ThreadBundle & thread_bundle, const std::vector<BitVector::UP> & bvs) {
     BitVector::UP master = BitVector::create(*bvs[0]);
     std::vector<BitVector *> vectors;
     vectors.reserve(bvs.size());
@@ -772,11 +773,11 @@ orParallell(vespalib::ThreadBundle & thread_bundle, const std::vector<BitVector:
     for (uint32_t i(1); i < bvs.size(); i++) {
         vectors.push_back(bvs[i].get());
     }
-    BitVector::parallellOr(thread_bundle, vectors);
+    BitVector::parallelOr(thread_bundle, vectors);
     return master;
 }
 
-void verifyParallellOr(vespalib::ThreadBundle & thread_bundle, uint32_t numVectors, uint32_t numBits) {
+void verifyParallelOr(vespalib::ThreadBundle & thread_bundle, uint32_t numVectors, uint32_t numBits) {
     std::vector<BitVector::UP> bvs;
     bvs.reserve(numVectors);
     for (uint32_t i(0); i < numVectors; i++) {
@@ -784,17 +785,17 @@ void verifyParallellOr(vespalib::ThreadBundle & thread_bundle, uint32_t numVecto
         fill(*bvs.back());
     }
     auto serial = orSerial(bvs);
-    auto parallell = orParallell(thread_bundle, bvs);
-    EXPECT_TRUE(*serial == *parallell);
+    auto parallel = orParallel(thread_bundle, bvs);
+    EXPECT_TRUE(*serial == *parallel);
 }
 
-TEST(BitvectorTest, Require_that_parallell_OR_computes_same_result_as_serial) {
+TEST(BitvectorTest, Require_that_parallel_OR_computes_same_result_as_serial) {
     srand(7);
     for (uint32_t numThreads : {1, 3, 7}) {
         vespalib::SimpleThreadBundle thread_bundle(numThreads);
         for (uint32_t numVectors : {1, 2, 5}) {
             for (uint32_t numBits : {1117, 11117, 111117, 1111117, 11111117}) {
-                verifyParallellOr(thread_bundle, numVectors, numBits);
+                verifyParallelOr(thread_bundle, numVectors, numBits);
             }
         }
     }
@@ -822,6 +823,25 @@ TEST(BitvectorTest, reset_term_field_match_data_on_unpack)
     EXPECT_FALSE(check_full_term_field_match_data_reset_on_unpack(true, false));
     EXPECT_TRUE(check_full_term_field_match_data_reset_on_unpack(false, true));
     EXPECT_TRUE(check_full_term_field_match_data_reset_on_unpack(true, true));
+}
+
+TEST(BitvectorTest, fixup_count_and_guard_bit_and_zero_remaining_data_bits_after_short_read)
+{
+    AllocatedBitVector bv(256);
+    bv.setBit(5);
+    bv.invalidateCachedCount();
+    EXPECT_EQ(1, bv.countTrueBits());
+
+    constexpr size_t short_read_bytes = 16;
+    auto buf = Alloc::alloc(bv.getFileBytes(), 256_Mi);
+    memcpy(buf.get(), bv.getStart(), bv.getFileBytes());
+    ASSERT_LT(short_read_bytes, bv.getFileBytes());
+    memset(static_cast<char*>(buf.get()) + short_read_bytes, 0xff, bv.getFileBytes() - short_read_bytes);
+    constexpr BitVector::Index ignored_true_bits = 42;
+    AllocatedBitVector bv2(bv.size(), std::move(buf), 0, short_read_bytes, ignored_true_bits);
+    EXPECT_EQ(1, bv2.countTrueBits());
+    EXPECT_TRUE(bv2.testBit(bv2.size()));
+    EXPECT_TRUE(bv == bv2);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

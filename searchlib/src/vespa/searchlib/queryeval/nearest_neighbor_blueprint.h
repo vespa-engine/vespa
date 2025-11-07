@@ -27,6 +27,16 @@ public:
         INDEX_TOP_K,
         INDEX_TOP_K_WITH_FILTER
     };
+    struct HnswParams {
+        uint32_t explore_additional_hits;
+        double distance_threshold;
+        double global_filter_lower_limit;
+        double global_filter_upper_limit;
+        double filter_first_upper_limit;
+        double filter_first_exploration;
+        double exploration_slack;
+        double target_hits_max_adjustment_factor;
+    };
 private:
     std::unique_ptr<search::tensor::DistanceCalculator> _distance_calc;
     const tensor::ITensorAttribute& _attr_tensor;
@@ -34,14 +44,7 @@ private:
     uint32_t _target_hits;
     uint32_t _adjusted_target_hits;
     bool _approximate;
-    uint32_t _explore_additional_hits;
-    double _distance_threshold;
-    double _global_filter_lower_limit;
-    double _global_filter_upper_limit;
-    double _filter_first_upper_limit;
-    double _filter_first_exploration;
-    double _exploration_slack;
-    double _target_hits_max_adjustment_factor;
+    const HnswParams _hnsw_params;
     mutable NearestNeighborDistanceHeap _distance_heap;
     std::vector<search::tensor::NearestNeighborIndex::Neighbor> _found_hits;
     Algorithm _algorithm;
@@ -52,18 +55,14 @@ private:
     const vespalib::Doom& _doom;
     MatchingPhase _matching_phase;
 
+    static double convert_distance_threshold(double distance_threshold,
+                                             const search::tensor::DistanceCalculator& distance_calc);
     void perform_top_k(const search::tensor::NearestNeighborIndex* nns_index);
 public:
     NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                              std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
-                             uint32_t target_hits, bool approximate, uint32_t explore_additional_hits,
-                             double distance_threshold,
-                             double global_filter_lower_limit,
-                             double global_filter_upper_limit,
-                             double filter_first_upper_limit,
-                             double filter_first_exploration,
-                             double exploration_slack,
-                             double target_hits_max_adjustment_factor,
+                             uint32_t target_hits, bool approximate,
+                             const HnswParams& hnsw_params,
                              const vespalib::Doom& doom);
     NearestNeighborBlueprint(const NearestNeighborBlueprint&) = delete;
     NearestNeighborBlueprint& operator=(const NearestNeighborBlueprint&) = delete;
@@ -72,15 +71,17 @@ public:
     const vespalib::eval::Value& get_query_tensor() const { return _query_tensor; }
     uint32_t get_target_hits() const { return _target_hits; }
     uint32_t get_adjusted_target_hits() const { return _adjusted_target_hits; }
+    bool want_global_filter(GlobalFilterLimits& limits) const override;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
     Algorithm get_algorithm() const { return _algorithm; }
-    double get_distance_threshold() const { return _distance_threshold; }
+    double get_distance_threshold() const { return _hnsw_params.distance_threshold; }
+    const HnswParams& get_hnsw_params() const { return _hnsw_params; }
 
     void sort(InFlow in_flow) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         return default_flow_stats(docid_limit, getState().estimate().estHits, 0);
     }
-    
+
     std::unique_ptr<SearchIterator> createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda) const override;
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);

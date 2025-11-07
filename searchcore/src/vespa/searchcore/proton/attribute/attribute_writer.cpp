@@ -241,7 +241,7 @@ applyHeartBeat(SerialNum serialNum, AttributeVector &attr)
 {
     attr.reclaim_unused_memory();
     if (attr.getStatus().getLastSyncToken() <= serialNum) {
-        attr.commit(search::CommitParam(serialNum));
+        attr.commit(search::CommitParam(serialNum, search::CommitParam::UpdateStats::SKIP));
     }
 }
 
@@ -253,7 +253,7 @@ applyCommit(CommitParam param, const AttributeWriter::OnWriteDoneType& , Attribu
         if (serialNum > attr.getCreateSerialNum()) {
             attr.commit(param);
         } else {
-            attr.commit(param.forceUpdateStats());
+            attr.commit(param.getUpdateStats());
         }
     }
 }
@@ -267,11 +267,11 @@ applyCompactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum, AttributeVect
          * later config changes removing the attribute then it might
          * be smaller than expected during transaction log replay.
          */
-        attr.commit(false);
+        attr.commit(CommitParam::UpdateStats::SKIP);
         if (wantedLidLimit <= attr.getCommittedDocIdLimit()) {
             attr.compactLidSpace(wantedLidLimit);
         }
-        attr.commit(CommitParam(serialNum));
+        attr.commit(CommitParam(serialNum, CommitParam::UpdateStats::SKIP));
     }
 }
 
@@ -667,7 +667,7 @@ AttributeWriter::AttributeWriter(proton::IAttributeManager::SP mgr)
 void AttributeWriter::setupAttributeMapping() {
     for (auto attr : getWritableAttributes()) {
         _attrMap[attr->getName()] = AttributeWithInfo(attr, _attributeFieldWriter.getExecutorIdFromName(attr->getNamePrefix()));
-    }    
+    }
 }
 
 

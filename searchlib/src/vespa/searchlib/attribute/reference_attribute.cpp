@@ -185,17 +185,24 @@ ReferenceAttribute::onCommit()
     incGeneration();
     if (consider_compact_values(getConfig().getCompactionStrategy())) {
         incGeneration();
-        updateStat(true);
+        updateStat(CommitParam::UpdateStats::FORCE);
     }
     if (consider_compact_dictionary(getConfig().getCompactionStrategy())) {
         incGeneration();
-        updateStat(true);
+        updateStat(CommitParam::UpdateStats::FORCE);
     }
 }
 
 void
-ReferenceAttribute::onUpdateStat()
+ReferenceAttribute::onUpdateStat(CommitParam::UpdateStats updateStats)
 {
+    if (updateStats == CommitParam::UpdateStats::SKIP) {
+        return;
+    }
+    if (updateStats == CommitParam::UpdateStats::SIZES_ONLY) {
+        updateSizes(getTotalValueCount(), getUniqueValueCount());
+        return;
+    }
     auto& compaction_strategy = getConfig().getCompactionStrategy();
     vespalib::MemoryUsage total = _store.get_values_memory_usage();
     auto& dictionary = _store.get_dictionary();

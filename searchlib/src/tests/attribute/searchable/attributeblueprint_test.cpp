@@ -353,7 +353,10 @@ public:
         request_ctx.set_query_tensor("query_tensor", tensor_spec);
     }
     Blueprint::UP create_blueprint() {
-        query::NearestNeighborTerm term("query_tensor", attr_name, 0, Weight(0), 7, true, 33, 100100.25);
+        query::NearestNeighborTerm::HnswParams hnsw_params;
+        hnsw_params.distance_threshold = 100100.25;
+        hnsw_params.explore_additional_hits = 33;
+        query::NearestNeighborTerm term("query_tensor", attr_name, 0, Weight(0), 7, true, hnsw_params);
         return BlueprintFactoryFixture::create_blueprint(term);
     }
 };

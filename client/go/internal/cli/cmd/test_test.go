@@ -24,13 +24,15 @@ func TestSuite(t *testing.T) {
 	client := &mock.HTTPClient{}
 	searchResponse, _ := os.ReadFile("testdata/tests/response.json")
 	mockServiceStatus(client, "container")
-	client.NextStatus(200)
-	client.NextStatus(200)
+	client.NextStatus(200) // Warmup GET / for test.json
+	client.NextStatus(200) // First feed
+	client.NextStatus(200) // Second feed
 	for range 2 {
 		client.NextResponseString(200, string(searchResponse))
 	}
 	mockServiceStatus(client, "container") // Some tests do not specify cluster, which is fine since we only have one, but this causes a cache miss
 	for range 9 {
+		client.NextStatus(200) // Warmup GET / for each of the 9 wrong-*.json test files
 		client.NextResponseString(200, string(searchResponse))
 	}
 	expectedBytes, _ := os.ReadFile("testdata/tests/expected-suite.out")
@@ -41,12 +43,14 @@ func TestSuite(t *testing.T) {
 	baseUrl := "http://127.0.0.1:8080"
 	urlWithQuery := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
 	discoveryRequest := createDiscoveryRequest()
-	requests := []*http.Request{discoveryRequest, createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(urlWithQuery), createRequestWithCustomHeader(urlWithQuery)}
+	warmupRequest := createSearchRequest(baseUrl + "/")
+	requests := []*http.Request{discoveryRequest, warmupRequest, createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(urlWithQuery), createRequestWithCustomHeader(urlWithQuery)}
 	requests = append(requests, discoveryRequest)
-	requests = append(requests, createSearchRequest(baseUrl+"/search/"))
-	requests = append(requests, createSearchRequest(baseUrl+"/search/?foo=%2F"))
+	// Each of the 9 wrong-*.json test files: warmup then search
+	requests = append(requests, warmupRequest, createSearchRequest(baseUrl+"/search/"))
+	requests = append(requests, warmupRequest, createSearchRequest(baseUrl+"/search/?foo=%2F"))
 	for range 7 {
-		requests = append(requests, createSearchRequest(baseUrl+"/search/"))
+		requests = append(requests, warmupRequest, createSearchRequest(baseUrl+"/search/"))
 	}
 	assertRequests(requests, client, t)
 	assert.Equal(t, string(expectedBytes), stdout.String())
@@ -102,8 +106,9 @@ func TestSingleTest(t *testing.T) {
 	client := &mock.HTTPClient{}
 	searchResponse, _ := os.ReadFile("testdata/tests/response.json")
 	mockServiceStatus(client, "container")
-	client.NextStatus(200)
-	client.NextStatus(200)
+	client.NextStatus(200) // Warmup GET /
+	client.NextStatus(200) // First feed
+	client.NextStatus(200) // Second feed
 	client.NextResponseString(200, string(searchResponse))
 	client.NextResponseString(200, string(searchResponse))
 	cli, stdout, stderr := newTestCLI(t)
@@ -117,7 +122,8 @@ func TestSingleTest(t *testing.T) {
 	baseUrl := "http://127.0.0.1:8080"
 	rawUrl := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
 	discoveryRequest := createDiscoveryRequest()
-	assertRequests([]*http.Request{discoveryRequest, createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(rawUrl), createRequestWithCustomHeader(rawUrl)}, client, t)
+	warmupRequest := createSearchRequest(baseUrl + "/")
+	assertRequests([]*http.Request{discoveryRequest, warmupRequest, createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(rawUrl), createRequestWithCustomHeader(rawUrl)}, client, t)
 }
 
 func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
@@ -143,8 +149,9 @@ func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
 
 	searchResponse, err := os.ReadFile("testdata/tests/response.json")
 	require.Nil(t, err)
-	client.NextStatus(200)
-	client.NextStatus(200)
+	client.NextStatus(200) // Warmup GET /
+	client.NextStatus(200) // First feed
+	client.NextStatus(200) // Second feed
 	client.NextResponseString(200, string(searchResponse))
 	client.NextResponseString(200, string(searchResponse))
 
@@ -156,7 +163,8 @@ func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
 
 	baseUrl := "https://url"
 	rawUrl := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
-	assertRequests([]*http.Request{createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(rawUrl), createRequestWithCustomHeader(rawUrl)}, client, t)
+	warmupRequest := createSearchRequest(baseUrl + "/")
+	assertRequests([]*http.Request{warmupRequest, createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(rawUrl), createRequestWithCustomHeader(rawUrl)}, client, t)
 }
 
 func createFeedRequest(urlPrefix string) *http.Request {

@@ -7,7 +7,6 @@ import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.schema.RankProfile;
-import com.yahoo.search.schema.RankProfile.InputType;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.schema.internal.TensorConverter;
 import com.yahoo.search.query.Properties;
@@ -52,7 +51,7 @@ public class RankProfileInputProperties extends Properties {
                 }
             }
             catch (IllegalArgumentException e) {
-                throw new IllegalInputException("Could not set '" + name + "' to '" + value + "'", e);
+                throw new IllegalAssignmentException(name, value, e);
             }
         }
         super.set(name, value, context);
@@ -89,9 +88,9 @@ public class RankProfileInputProperties extends Properties {
     }
 
     private void throwIllegalInput(CompoundName name, Object value, TensorType expectedType) {
-        throw new IllegalInputException("Could not set '" + name + "' to '" + value + "': " +
-                                           "This input is declared in rank profile '" + query.getRanking().getProfile() +
-                                           "' as " + expectedType);
+        throw new IllegalAssignmentException(name, value,
+                                             "This input is declared in rank profile '" + query.getRanking().getProfile() +
+                                             "' as " + expectedType);
     }
 
 }

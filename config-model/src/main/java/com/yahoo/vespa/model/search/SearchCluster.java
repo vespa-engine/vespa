@@ -90,6 +90,7 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     public void deriveFromSchemas(DeployState deployState) {
         for (SchemaInfo spec : schemas().values()) {
             if (spec.fullSchema() instanceof DocumentOnlySchema) continue; // TODO verify if this special handling is necessary
+
             String schemaName = spec.fullSchema().getName();
             var derived = new DerivedConfiguration(deployState, spec.fullSchema(), spec.getIndexMode());
             documentDbs.put(schemaName, new DocumentDatabase(this, schemaName, derived));
@@ -105,7 +106,7 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
         return documentDbs.values().stream().toList();
     }
 
-    public String getClusterName()              { return clusterName; }
+    public String getClusterName() { return clusterName; }
     public final boolean hasStreaming() {
         return schemas().values().stream().anyMatch(schema -> schema.getIndexMode() == SchemaInfo.IndexMode.STREAMING);
     }

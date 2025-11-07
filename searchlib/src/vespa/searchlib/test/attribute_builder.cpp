@@ -43,7 +43,7 @@ fill_helper(AttributeVector& attr, std::span<ValueType> values)
     for (const auto& value : values) {
         real.update(docid++, value);
     }
-    attr.commit(true);
+    attr.commit(CommitParam::UpdateStats::FORCE);
 }
 
 template <typename AttrType, typename ValueType>
@@ -55,7 +55,7 @@ fill_helper(AttributeVector& attr, std::initializer_list<ValueType> values) {
     for (const auto& value : values) {
         real.update(docid++, value);
     }
-    attr.commit(true);
+    attr.commit(CommitParam::UpdateStats::FORCE);
 }
 
 template <typename AttrType, typename ValueType>
@@ -72,7 +72,7 @@ fill_array_helper(AttributeVector& attr, std::initializer_list<std::initializer_
         }
         ++docid;
     }
-    attr.commit(true);
+    attr.commit(CommitParam::UpdateStats::FORCE);
 }
 
 template <typename AttrType, typename ValueType>
@@ -89,7 +89,7 @@ fill_wset_helper(AttributeVector& attr, std::initializer_list<std::initializer_l
         }
         ++docid;
     }
-    attr.commit(true);
+    attr.commit(CommitParam::UpdateStats::FORCE);
 }
 
 }
@@ -200,7 +200,7 @@ AttributeBuilder::fill_tensor(const std::vector<std::string>& values)
         }
         ++docid;
     }
-    _attr.commit(true);
+    _attr.commit(CommitParam::UpdateStats::FORCE);
     return *this;
 }
 

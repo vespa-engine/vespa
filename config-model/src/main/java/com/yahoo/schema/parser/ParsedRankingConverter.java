@@ -9,7 +9,7 @@ import com.yahoo.schema.document.RankType;
 import java.util.List;
 
 /**
- * Helper for converting ParsedRankProfile etc to RankProfile with settings
+ * Helper for converting ParsedRankProfile etc. to RankProfile with settings
  *
  * @author arnej27959
  */
@@ -28,7 +28,12 @@ public class ParsedRankingConverter {
 
     void convertRankProfile(Schema schema, ParsedRankProfile parsed) {
         try {
-            RankProfile profile = createProfile(schema, parsed.name());
+            parsed.outer().ifPresent(parent -> {
+                if ( ! parsed.getInherited().contains(parent.name()))
+                    throw new IllegalArgumentException("Inner profile '" + parsed.name() + "' must inherit '" +
+                                                       parent.name() + "'");
+            });
+            RankProfile profile = createProfile(schema, parsed.fullName());
             populateFrom(parsed, profile);
             rankProfileRegistry.add(profile);
         }
@@ -43,7 +48,10 @@ public class ParsedRankingConverter {
     }
 
     private void populateFrom(ParsedRankProfile parsed, RankProfile profile) {
-        parsed.getInherited().forEach(profile::inherit);
+        for (var inherited : parsed.getInherited()) {
+            String namePrefix = parsed.outer().map(p -> p.namespacePrefix()).orElse("");
+            profile.inherit(namePrefix + inherited);
+        }
         parsed.isStrict().ifPresent(profile::setStrict);
         parsed.isUseSignificanceModel().ifPresent(profile::setUseSignificanceModel);
         parsed.getConstants().values().forEach(profile::add);

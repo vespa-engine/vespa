@@ -49,7 +49,8 @@ class TestAnnotationAnalyzer {
 
         private String className;
 
-        AsmClassVisitor() { super(Opcodes.ASM7); }
+        // TODO: bump to ASM9 on Vespa 9
+        AsmClassVisitor() { super(Opcodes.ASM8); }
 
         @Override
         public void visit(
