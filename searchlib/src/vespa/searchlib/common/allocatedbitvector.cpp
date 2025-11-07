@@ -79,7 +79,7 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBit
     init(_alloc.get(), 0, numberOfElements);
     if (org != nullptr) {
         initialize_from(*org);
-        set_bit_no_range_check(size());
+        set_bit_no_range_check(size()); // Guard bit
         updateCount();
     } else {
         clear();
