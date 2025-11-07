@@ -7,7 +7,7 @@ import ai.vespa.modelintegration.utils.ModelPathHelper;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.onnx.OnnxEvaluatorConfig;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;

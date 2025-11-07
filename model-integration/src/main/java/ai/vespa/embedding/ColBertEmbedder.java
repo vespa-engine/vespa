@@ -11,7 +11,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.ColBertEmbedderConfig;
 import com.yahoo.language.huggingface.HuggingFaceTokenizer;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.onnx.OnnxEvaluatorConfig;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
@@ -22,7 +22,6 @@ import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;

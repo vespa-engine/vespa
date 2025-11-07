@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.onnx.OnnxEvaluatorConfig;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.utils.Duration;
 import org.w3c.dom.Element;
@@ -13,6 +13,13 @@ import java.util.Optional;
 import static com.yahoo.text.XML.getChild;
 import static com.yahoo.text.XML.getChildValue;
 
+
+/**
+ * Base class for embedders using ONNX models.
+ * Extracts common ONNX parameters from XML to construct {@link OnnxModelOptions} and {@link OnnxEvaluatorConfig}.
+ * 
+ * @author glebashnik
+ */
 abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfig.Producer {
     final protected OnnxModelOptions onnxModelOptions;
 

@@ -1,11 +1,11 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-namespace=onnx
+package=ai.vespa.modelintegration.evaluator.config
 
 executionMode enum { parallel, sequential } default=sequential
 interOpThreads int default=1
 intraOpThreads int default=-4
 # GPU device id, -1 for CPU
-gpuDevice      int default=0
+gpuDevice int default=0
 
 # Controls dynamic batching that combines up to `maxSize` requests within `maxDelayMillis` into a single inference call.
 # This increases throughput at the cost of latency.
@@ -13,7 +13,7 @@ gpuDevice      int default=0
 # `maxDelayMillis` is specified in milliseconds.
 # The default settings disables dynamic batching.
 batching.maxSize int default=1
-batching.maxDelayMillis long default=1
+batching.maxDelayMillis long default=0
 
 # Concurrency creates several model instances for concurrent inference.
 # This increases throughput without affecting latency at the cost of memory used by each model instance.

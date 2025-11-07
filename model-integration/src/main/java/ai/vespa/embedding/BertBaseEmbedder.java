@@ -10,12 +10,11 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.wordpiece.WordPieceEmbedder;
-import com.yahoo.onnx.OnnxEvaluatorConfig;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

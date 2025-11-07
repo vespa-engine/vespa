@@ -12,13 +12,12 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.language.huggingface.HuggingFaceTokenizer;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.onnx.OnnxEvaluatorConfig;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.Tensors;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;

@@ -15,7 +15,7 @@ import com.yahoo.embedding.ColBertEmbedderConfig;
 import com.yahoo.embedding.SpladeEmbedderConfig;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.language.huggingface.config.HuggingFaceTokenizerConfig;
-import com.yahoo.onnx.OnnxEvaluatorConfig;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.config.ConfigDefinitionKey;

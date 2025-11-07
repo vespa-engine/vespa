@@ -5,7 +5,7 @@ import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.ColBertEmbedderConfig;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.onnx.OnnxEvaluatorConfig;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;

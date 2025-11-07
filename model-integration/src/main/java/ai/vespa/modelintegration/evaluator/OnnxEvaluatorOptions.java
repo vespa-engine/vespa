@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.modelintegration.evaluator;
 
-import com.yahoo.onnx.OnnxEvaluatorConfig;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import net.jpountz.xxhash.XXHashFactory;
+import onnx.Onnx;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -24,7 +25,7 @@ public record OnnxEvaluatorOptions(
         int gpuDeviceNumber,
         boolean gpuDeviceRequired,
         int batchingMaxSize,
-        Duration batchingMaxDelay,
+        Optional<Duration> batchingMaxDelay,
         int numModelInstances,
         Optional<Path> modelConfigOverride
 ) {
@@ -55,14 +56,18 @@ public record OnnxEvaluatorOptions(
         var builder = new OnnxEvaluatorOptions.Builder(availableProcessors)
                 .setExecutionMode(config.executionMode().toString())
                 .setThreads(config.interOpThreads(), config.intraOpThreads())
-                .setBatching(config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()))
+                .setBatchingMaxSize(config.batching().maxSize())
                 .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
                 .setModelConfigOverride(config.modelConfigOverride());
 
         if (config.gpuDevice() >= 0) {
             builder.setGpuDevice(config.gpuDevice());
         }
-
+        
+        if (config.batching().maxDelayMillis() > 0) {
+            builder.setBatchingMaxDelay(Duration.ofMillis(config.batching().maxDelayMillis()));
+        }
+        
         return builder.build();
     }
 
@@ -94,11 +99,12 @@ public record OnnxEvaluatorOptions(
         private int gpuDeviceNumber;
         private boolean gpuDeviceRequired;
         private int batchingMaxSize;
-        private Duration batchingMaxDelay;
+        private Optional<Duration> batchingMaxDelay;
         private int numModelInstances;
         private Optional<Path> modelConfigOverride;
-        private int availableProcessors;
 
+        // Used to calculate number of threads
+        private int availableProcessors;
 
         public Builder() {
             this(Runtime.getRuntime().availableProcessors());
@@ -107,18 +113,18 @@ public record OnnxEvaluatorOptions(
         // availableProcessors is injected to simplify testing
         public Builder(int availableProcessors) {
             executionMode = ExecutionMode.SEQUENTIAL;
-            this.availableProcessors = availableProcessors;
-            int quarterVcpu = Math.max(1, (int) Math.ceil(availableProcessors / 4d));
-            interOpThreads = quarterVcpu;
-            intraOpThreads = quarterVcpu;
+            interOpThreads = 1;
+            intraOpThreads = calculateThreads(-4, availableProcessors);
             gpuDeviceNumber = -1;
             gpuDeviceRequired = false;
             batchingMaxSize = 1;
-            batchingMaxDelay = Duration.ofMillis(1);
+            batchingMaxDelay = Optional.empty();
             numModelInstances = 1;
             modelConfigOverride = Optional.empty();
+            
+            this.availableProcessors = availableProcessors;
         }
-
+        
         public Builder(OnnxEvaluatorOptions options) {
             this.executionMode = options.executionMode();
             this.interOpThreads = options.interOpThreads();
@@ -155,14 +161,17 @@ public record OnnxEvaluatorOptions(
          * A negative number is interpreted as an inverse scaling factor <code>threads=CPU/-n</code>
          */
         public Builder setThreads(int interOp, int intraOp) {
-            interOpThreads = calculateThreads(interOp);
-            intraOpThreads = calculateThreads(intraOp);
+            interOpThreads = calculateThreads(interOp, availableProcessors);
+            intraOpThreads = calculateThreads(intraOp, availableProcessors);
             return this;
         }
 
-        private static int calculateThreads(int t) {
-            if (t >= 0) return t;
-            return Math.max(1, (int) Math.ceil(-1d * Runtime.getRuntime().availableProcessors() / t));
+        private static int calculateThreads(int threadsFactor, int availableProcessors) {
+            if (threadsFactor >= 0) {
+                return threadsFactor;
+            }
+
+            return Math.max(1, (int) Math.ceil(-1d * availableProcessors / threadsFactor));
         }
 
         public Builder setGpuDevice(int deviceNumber, boolean required) {
@@ -176,9 +185,13 @@ public record OnnxEvaluatorOptions(
             return this;
         }
 
-        public Builder setBatching(int maxSize, Duration maxDelay) {
+        public Builder setBatchingMaxSize(int maxSize) {
             this.batchingMaxSize = maxSize;
-            this.batchingMaxDelay = maxDelay;
+            return this;
+        }
+        
+        public Builder setBatchingMaxDelay(Duration maxDelay) {
+            this.batchingMaxDelay = Optional.of(maxDelay);
             return this;
         }
 

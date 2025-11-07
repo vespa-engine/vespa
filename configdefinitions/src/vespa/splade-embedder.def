@@ -20,3 +20,11 @@ transformerOutput string default=logits
 
 # score threshold to control sparseness
 termScoreThreshold double default=0.0
+
+# TODO: Parameters below are moved to onnx-evaluator.def, remove them after 2026-01-01
+# Settings for ONNX model evaluation
+transformerExecutionMode enum { parallel, sequential } default=sequential
+transformerInterOpThreads int default=1
+transformerIntraOpThreads int default=-4
+# GPU device id, -1 for CPU
+transformerGpuDevice      int default=0

@@ -54,7 +54,7 @@ class TritonOnnxRuntimeTest {
 
     @Test
     void load_model_with_batching() throws IOException {
-        var opts = optsBuilder.setBatching(10, Duration.ofMillis(100)).build();
+        var opts = optsBuilder.setBatchingMaxSize(10).setBatchingMaxDelay(Duration.ofMillis(100)).build();
         assertLoadModel("src/test/triton/config_with_batching.pbtxt", opts);
     }
 
