@@ -62,7 +62,7 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Alloc buffer, siz
         memset(entry_end, '\0', vectorsize - entry_size);
         if (wordNum(size()) * sizeof(Word) >= entry_size) {
             // Loss of guard bit and data bits only occurs in bitvector unit test.
-            set_bit_no_range_check(size());
+            setGuardBit();
             if (wordNum(size()) * sizeof(Word) > entry_size) {
                updateCount();
             }
@@ -79,7 +79,7 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBit
     init(_alloc.get(), 0, numberOfElements);
     if (org != nullptr) {
         initialize_from(*org);
-        set_bit_no_range_check(size()); // Guard bit
+        setGuardBit();
         updateCount();
     } else {
         clear();
@@ -102,7 +102,7 @@ AllocatedBitVector::AllocatedBitVector(const BitVector & rhs, std::pair<Index, I
     _capacityBits = computeCapacity(_capacityBits, _alloc.size());
     init(_alloc.get(), 0, size_capacity.first);
     initialize_from(rhs);
-    set_bit_no_range_check(size());
+    setGuardBit();
     updateCount();
 }
 

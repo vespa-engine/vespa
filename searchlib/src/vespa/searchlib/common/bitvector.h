@@ -140,15 +140,8 @@ public:
             : getStartIndex();
     }
 
-    void setSize(Index sz) {
-        set_bit_no_range_check(sz);  // Need to place the new stop sign first
-        std::atomic_thread_fence(std::memory_order_release);
-        if (sz > _sz) {
-            // Can only remove the old stopsign if it is ahead of the new.
-            clear_bit_no_range_check(_sz);
-        }
-        vespalib::atomic::store_ref_release(_sz, sz);
-    }
+    void setGuardBit() noexcept;
+    void setSize(Index sz);
     void set_bit_no_range_check(Index idx) noexcept {
         store_unchecked(_words[wordNum(idx)], _words[wordNum(idx)] | mask(idx));
     }
@@ -346,7 +339,6 @@ private:
         return (end >= start) ? (numWords(end) - wordNum(start)) : 0;
     }
     static constexpr Index invalidCount() noexcept { return std::numeric_limits<Index>::max(); }
-    void setGuardBit() noexcept { set_bit_no_range_check(size()); }
     void incNumBits() noexcept {
         if ( isValidCount() ) {
             _numTrueBits.store(_numTrueBits.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
