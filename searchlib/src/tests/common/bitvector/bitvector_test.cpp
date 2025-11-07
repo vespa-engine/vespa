@@ -765,7 +765,7 @@ orSerial(const std::vector<BitVector::UP> & bvs) {
 }
 
 BitVector::UP
-orParallell(vespalib::ThreadBundle & thread_bundle, const std::vector<BitVector::UP> & bvs) {
+orParallel(vespalib::ThreadBundle & thread_bundle, const std::vector<BitVector::UP> & bvs) {
     BitVector::UP master = BitVector::create(*bvs[0]);
     std::vector<BitVector *> vectors;
     vectors.reserve(bvs.size());
@@ -773,11 +773,11 @@ orParallell(vespalib::ThreadBundle & thread_bundle, const std::vector<BitVector:
     for (uint32_t i(1); i < bvs.size(); i++) {
         vectors.push_back(bvs[i].get());
     }
-    BitVector::parallellOr(thread_bundle, vectors);
+    BitVector::parallelOr(thread_bundle, vectors);
     return master;
 }
 
-void verifyParallellOr(vespalib::ThreadBundle & thread_bundle, uint32_t numVectors, uint32_t numBits) {
+void verifyParallelOr(vespalib::ThreadBundle & thread_bundle, uint32_t numVectors, uint32_t numBits) {
     std::vector<BitVector::UP> bvs;
     bvs.reserve(numVectors);
     for (uint32_t i(0); i < numVectors; i++) {
@@ -785,17 +785,17 @@ void verifyParallellOr(vespalib::ThreadBundle & thread_bundle, uint32_t numVecto
         fill(*bvs.back());
     }
     auto serial = orSerial(bvs);
-    auto parallell = orParallell(thread_bundle, bvs);
-    EXPECT_TRUE(*serial == *parallell);
+    auto parallel = orParallel(thread_bundle, bvs);
+    EXPECT_TRUE(*serial == *parallel);
 }
 
-TEST(BitvectorTest, Require_that_parallell_OR_computes_same_result_as_serial) {
+TEST(BitvectorTest, Require_that_parallel_OR_computes_same_result_as_serial) {
     srand(7);
     for (uint32_t numThreads : {1, 3, 7}) {
         vespalib::SimpleThreadBundle thread_bundle(numThreads);
         for (uint32_t numVectors : {1, 2, 5}) {
             for (uint32_t numBits : {1117, 11117, 111117, 1111117, 11111117}) {
-                verifyParallellOr(thread_bundle, numVectors, numBits);
+                verifyParallelOr(thread_bundle, numVectors, numBits);
             }
         }
     }
