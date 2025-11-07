@@ -32,11 +32,11 @@ class BundleIndexer {
 
     private final DataModelHelper dataModelHelper = new DataModelHelperImpl();
     private final Path libJarsDirectory;
-    private final Pattern blacklistPattern;
+    private final Pattern denyListPattern;
 
-    BundleIndexer(Path libJarsDirectory, Pattern blacklistPattern) {
+    BundleIndexer(Path libJarsDirectory, Pattern denyListPattern) {
         this.libJarsDirectory = libJarsDirectory;
-        this.blacklistPattern = blacklistPattern;
+        this.denyListPattern = denyListPattern;
     }
 
     Path createIndexIfMissing(List<String> additionalDirectories, String mainBundleSymbolicName) throws IOException {
@@ -64,7 +64,7 @@ class BundleIndexer {
         for (var directory : directories) {
             try (Stream<Path> files = Files.list(Path.of(directory))) {
                 files.filter(path -> path.toString().endsWith(".jar"))
-                     .filter(this::isNotBlacklisted)
+                     .filter(this::isNotExcluded)
                      .forEach(jarPath -> readBundleResource(jarPath).ifPresent(resources::add));
             }
         }
@@ -73,10 +73,10 @@ class BundleIndexer {
         return resources;
     }
 
-    private boolean isNotBlacklisted(Path jarPath) {
-        if (blacklistPattern == null) return true;
+    private boolean isNotExcluded(Path jarPath) {
+        if (denyListPattern == null) return true;
         var fileName = jarPath.getFileName().toString();
-        return !blacklistPattern.matcher(fileName).matches();
+        return !denyListPattern.matcher(fileName).matches();
     }
 
     private Optional<Resource> readBundleResource(Path jarPath) {

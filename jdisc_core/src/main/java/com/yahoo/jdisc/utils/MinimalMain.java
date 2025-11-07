@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
  *       <li>Simple name: "mydir" (resolved to $VESPA_HOME/lib/jars/mydir)</li>
  *     </ul>
  *   </li>
- *   <li>bundle.blacklist - (Optional) Regular expression pattern to exclude bundles from scanning. Example: {@code "(foo|bar)\.jar"}</li>
+ *   <li>bundle.denylist - (Optional) Regular expression pattern to exclude bundles from scanning. Example: {@code "(foo|bar)\.jar"}</li>
  *   <li>main.bundle - Bundle symbolic name of the bundle containing the main class</li>
  *   <li>main.class - The fully qualified class name containing main method</li>
  * </ul>
@@ -120,8 +120,8 @@ public class MinimalMain {
     private static List<String> resolveRequiredBundles(
             FelixFramework framework, String mainBundleSymbolicName, List<String> additionalDirectories) {
         try {
-            var blacklistPattern = createBlacklistPattern();
-            var bundleIndexer = new BundleIndexer(Path.of(Defaults.getDefaults().underVespaHome("lib/jars")), blacklistPattern);
+            var denylistPattern = createDenylistPattern();
+            var bundleIndexer = new BundleIndexer(Path.of(Defaults.getDefaults().underVespaHome("lib/jars")), denylistPattern);
             var indexPath = bundleIndexer.createIndexIfMissing(additionalDirectories, mainBundleSymbolicName);
             return new BundleResolver(framework.bundleContext(), indexPath).resolve(mainBundleSymbolicName);
         } catch (Exception e) {
@@ -129,10 +129,10 @@ public class MinimalMain {
         }
     }
 
-    private static Pattern createBlacklistPattern() {
-        var blacklistProperty = System.getProperty("bundle.blacklist");
-        if (blacklistProperty == null || blacklistProperty.isEmpty()) return null;
-        return Pattern.compile(blacklistProperty);
+    private static Pattern createDenylistPattern() {
+        var denylistProperty = System.getProperty("bundle.denylist");
+        if (denylistProperty == null || denylistProperty.isEmpty()) return null;
+        return Pattern.compile(denylistProperty);
     }
 
     private static List<String> parseBundleLocationDirectories(String bundleLocations) {
