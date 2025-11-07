@@ -21,7 +21,7 @@ PartialBitVector::PartialBitVector(const BitVector & org, Index start, Index end
 {
     init(_alloc.get(), start, end);
     initialize_from(org);
-    set_bit_no_range_check(size());
+    setGuardBit();
 }
 
 PartialBitVector::~PartialBitVector() = default;
