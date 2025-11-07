@@ -13,16 +13,26 @@ import java.util.Optional;
  * @author hmusum
  * @author glebashnik
  */
-public record OnnxModelOptions(Optional<String> executionMode, Optional<Integer> interOpThreads,
-                               Optional<Integer> intraOpThreads, Optional<GpuDevice> gpuDevice,
-                               Optional<Integer> batchingMaxSize, Optional<Duration> batchingMaxDelay,
-                               Optional<String> concurrencyFactorType, Optional<Double> concurrencyFactor,
-                               Optional<FileReference> modelConfigOverride) {
-
-    private OnnxModelOptions(Builder builder) {
-        this(builder.executionMode, builder.interOpThreads, builder.intraOpThreads, builder.gpuDevice,
-             builder.batchingMaxSize, builder.batchingMaxDelay, builder.concurrencyFactorType,
-             builder.concurrencyFactor, builder.modelConfigOverride);
+public record OnnxModelOptions(
+        Optional<String> executionMode,
+        Optional<Integer> interOpThreads,
+        Optional<Integer> intraOpThreads,
+        Optional<GpuDevice> gpuDevice,
+        Optional<Integer> batchingMaxSize,
+        Optional<Duration> batchingMaxDelay,
+        Optional<String> concurrencyFactorType,
+        Optional<Double> concurrencyFactor,
+        Optional<FileReference> modelConfigOverride) {
+    public OnnxModelOptions(
+            Optional<String> executionMode,
+            Optional<Integer> interOpThreads,
+            Optional<Integer> intraOpThreads,
+            Optional<GpuDevice> gpuDevice) {
+        this(new Builder()
+                .executionMode(executionMode.orElse(null))
+                .interOpThreads(interOpThreads.orElse(null))
+                .intraOpThreads(intraOpThreads.orElse(null))
+                .gpuDevice(gpuDevice.orElse(null)));
     }
 
     public OnnxModelOptions(String executionMode, int interOpThreads, int intraOpThreads, GpuDevice gpuDevice) {
@@ -33,47 +43,60 @@ public record OnnxModelOptions(Optional<String> executionMode, Optional<Integer>
                 .gpuDevice(gpuDevice));
     }
 
+    private OnnxModelOptions(Builder builder) {
+        this(
+                builder.executionMode,
+                builder.interOpThreads,
+                builder.intraOpThreads,
+                builder.gpuDevice,
+                builder.batchingMaxSize,
+                builder.batchingMaxDelay,
+                builder.concurrencyFactorType,
+                builder.concurrencyFactor,
+                builder.modelConfigOverride);
+    }
+
     public static OnnxModelOptions empty() {
         return new Builder().build();
     }
 
     public OnnxModelOptions withExecutionMode(String executionMode) {
-        return builder().executionMode(executionMode).build();
+        return toBuilder().executionMode(executionMode).build();
     }
 
     public OnnxModelOptions withInterOpThreads(Integer interOpThreads) {
-        return builder().interOpThreads(interOpThreads).build();
+        return toBuilder().interOpThreads(interOpThreads).build();
     }
 
     public OnnxModelOptions withIntraOpThreads(Integer intraOpThreads) {
-        return builder().intraOpThreads(intraOpThreads).build();
+        return toBuilder().intraOpThreads(intraOpThreads).build();
     }
 
     public OnnxModelOptions withGpuDevice(GpuDevice gpuDevice) {
-        return builder().gpuDevice(gpuDevice).build();
+        return toBuilder().gpuDevice(gpuDevice).build();
     }
 
     public OnnxModelOptions withBatchingMaxSize(Integer batchingMaxSize) {
-        return builder().batchingMaxSize(batchingMaxSize).build();
+        return toBuilder().batchingMaxSize(batchingMaxSize).build();
     }
 
     public OnnxModelOptions withBatchingMaxDelay(Duration batchingMaxDelay) {
-        return builder().batchingMaxDelay(batchingMaxDelay).build();
+        return toBuilder().batchingMaxDelay(batchingMaxDelay).build();
     }
 
     public OnnxModelOptions withConcurrencyType(String concurrencyType) {
-        return builder().concurrencyFactorType(concurrencyType).build();
+        return toBuilder().concurrencyFactorType(concurrencyType).build();
     }
 
     public OnnxModelOptions withConcurrencyFactorType(Double concurrencyFactor) {
-        return builder().concurrencyFactor(concurrencyFactor).build();
+        return toBuilder().concurrencyFactor(concurrencyFactor).build();
     }
 
     public OnnxModelOptions withModelConfigOverride(FileReference modelConfigOverride) {
-        return builder().modelConfigOverride(modelConfigOverride).build();
+        return toBuilder().modelConfigOverride(modelConfigOverride).build();
     }
 
-    private Builder builder() {
+    private Builder toBuilder() {
         return new Builder(this);
     }
 
@@ -154,12 +177,12 @@ public record OnnxModelOptions(Optional<String> executionMode, Optional<Integer>
 
     public record GpuDevice(int deviceNumber, boolean required) {
         public GpuDevice {
-            if (deviceNumber < 0) throw new IllegalArgumentException("deviceNumber cannot be negative, got " + deviceNumber);
+            if (deviceNumber < 0)
+                throw new IllegalArgumentException("deviceNumber cannot be negative, got " + deviceNumber);
         }
 
         public GpuDevice(int deviceNumber) {
             this(deviceNumber, false);
         }
     }
-
 }

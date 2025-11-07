@@ -1609,6 +1609,7 @@
       "record"
     ],
     "methods" : [
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public void <init>(java.lang.String, int, int, com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
       "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public static com.yahoo.config.model.api.OnnxModelOptions empty()",
