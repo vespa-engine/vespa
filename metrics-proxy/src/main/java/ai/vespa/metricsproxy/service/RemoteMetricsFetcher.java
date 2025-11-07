@@ -34,12 +34,10 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
             } finally {
                 EntityUtils.consumeQuietly(entity);
             }
-        } catch (IOException e) {
-            logMessage("Got exception when getting metrics for service '" + service + "'", e, fetchCount);
-        }
+        } catch (IOException ignored) {}
     }
 
-    void createMetrics(String data, MetricsParser.Collector consumer) throws IOException {
+    void createMetrics(String data, MetricsParser.Collector consumer, int fetchCount) throws IOException {
         MetricsParser.parse(data, consumer);
     }
 }
