@@ -309,19 +309,6 @@ BitVector::orWith(const BitVector & right)
 }
 
 void
-BitVector::repairEnds()
-{
-    if (size() != 0) {
-        Index start(getStartIndex());
-        Index last(size() - 1);
-        store(getWordIndex(start)[0], getWordIndex(start)[0] & ~startBits(start));
-        store(getWordIndex(last)[0], getWordIndex(last)[0] & ~endBits(last));
-    }
-    setGuardBit();
-}
-
-
-void
 BitVector::andWith(const BitVector & right)
 {
     Range range = sanitize(right.range());

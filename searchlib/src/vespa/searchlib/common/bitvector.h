@@ -358,7 +358,6 @@ private:
 
         }
     }
-    VESPA_DLL_LOCAL void repairEnds();
     Range sanitize(Range range) const {
         return {std::max(range.start(), getStartIndex()),
                 std::min(range.end(), size())};
