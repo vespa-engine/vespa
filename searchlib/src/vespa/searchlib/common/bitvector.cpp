@@ -115,6 +115,41 @@ BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity, cons
     return alloc;
 }
 
+void
+BitVector::initialize_from(const BitVector& org)
+{
+    Range range = sanitize(org.range());
+    if (range.validNonZero()) {
+        Index wn = wordNum(range.start());
+        Index last = range.end() - 1;
+        Index lastwn = wordNum(last);
+        if (Index startwn = getStartWordNum(); wn > startwn) {
+            memset(&_words[startwn], 0, (wn - startwn) * sizeof(Word));
+        }
+        if (wn == lastwn) {
+            _words[wn] = (org._words[wn] & ~(startBits(range.start()) | endBits(last)));
+        } else {
+            if (range.partial_start()) {
+                _words[wn] = (org._words[wn] & ~startBits(range.start()));
+                ++wn;
+            }
+            size_t common_bytes = (lastwn - wn + (range.partial_end() ? 0 : 1)) * sizeof(Word);
+            if (common_bytes != 0u) {
+                memcpy(&_words[wn], &org._words[wn], common_bytes);
+            }
+            if (range.partial_end()) {
+                _words[lastwn] = (org._words[lastwn] & ~endBits(last));
+            }
+        }
+        if (Index num_words = numWords(); num_words > lastwn + 1) {
+            memset(&_words[lastwn + 1], 0, (num_words - lastwn - 1) * sizeof(Word));
+        }
+    } else {
+        memset(&_words[getStartWordNum()], 0, numActiveWords() * sizeof(Word));
+        setTrueBits(0);
+    }
+}
+
 BitVector::BitVector(void * buf, Index start, Index end) noexcept
     : _words(static_cast<Word *>(buf) - wordNum(start)),
       _startOffset(start),

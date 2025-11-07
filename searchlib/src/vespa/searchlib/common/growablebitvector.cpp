@@ -26,7 +26,7 @@ GrowableBitVector::grow(BitWord::Index newSize, BitWord::Index newCapacity)
     AllocatedBitVector &self = *_stored;
     assert(newCapacity >= newSize);
     if (newCapacity != self.capacity()) {
-        auto tbv = std::make_unique<AllocatedBitVector>(newSize, newCapacity, self._alloc.get(), self.size(), &self._alloc);
+        auto tbv = std::make_unique<AllocatedBitVector>(newSize, newCapacity, &self, &self._alloc);
         if (newSize > self.size()) {
             tbv->clear_bit_and_maintain_count_no_range_check(self.size());  // Clear old guard bit.
         }
@@ -51,7 +51,7 @@ GrowableBitVector::grow(BitWord::Index newSize, BitWord::Index newCapacity)
 GrowableBitVector::GrowableBitVector(BitWord::Index newSize, BitWord::Index newCapacity,
                                      GenerationHolder &generationHolder,
                                      const Alloc *init_alloc)
-  : _stored(std::make_unique<AllocatedBitVector>(newSize, newCapacity, nullptr, 0, init_alloc)),
+  : _stored(std::make_unique<AllocatedBitVector>(newSize, newCapacity, nullptr, init_alloc)),
     _self(_stored.get()),
     _generationHolder(generationHolder)
 {

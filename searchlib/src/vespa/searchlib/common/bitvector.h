@@ -324,6 +324,7 @@ protected:
         return allocatePaddedAndAligned(start, end, end);
     }
     static Alloc allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc = nullptr);
+    void initialize_from(const BitVector& org);
 
 private:
     struct OrParts;
