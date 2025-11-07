@@ -9,23 +9,22 @@ import ai.vespa.metricsproxy.metric.HealthMetric;
  *
  * @author hmusum
  */
-public class DummyHealthMetricFetcher extends RemoteHealthMetricFetcher {
+public class DummyHealthStatusFetcher extends RemoteHealthStatusFetcher {
 
     /**
      * @param service The service to fetch metrics from
      */
-    DummyHealthMetricFetcher(VespaService service) {
+    DummyHealthStatusFetcher(VespaService service) {
         super(service, 0);
     }
 
     /**
      * Connect to remote service over http and fetch metrics
      */
+    @Override
     public HealthMetric getHealth(int fetchCount) {
-        if (service.isAlive()) {
-            return HealthMetric.getOk("Service is running - pid check only");
-        } else {
-            return HealthMetric.getDown("Service is not running - pid check only");
-        }
+        return service.isAlive()
+                ? HealthMetric.getOk("Service is running - pid check only")
+                : HealthMetric.getDown("Service is not running - pid check only");
     }
 }

@@ -42,7 +42,7 @@ public class VespaService implements Comparable<VespaService> {
 
     private final int statePort;
 
-    private final RemoteHealthMetricFetcher remoteHealthMetricFetcher;
+    private final RemoteHealthStatusFetcher remoteHealthMetricFetcher;
     private final RemoteMetricsFetcher remoteMetricsFetcher;
 
 
@@ -80,7 +80,7 @@ public class VespaService implements Comparable<VespaService> {
         this.systemMetrics.set(new Metrics());
         this.isAlive = false;
         this.remoteMetricsFetcher = (this.statePort> 0) ? new RemoteMetricsFetcher(this, this.statePort) : new DummyMetricsFetcher(this);
-        this.remoteHealthMetricFetcher = (this.statePort > 0) ? new RemoteHealthMetricFetcher(this, this.statePort) : new DummyHealthMetricFetcher(this);
+        this.remoteHealthMetricFetcher = (this.statePort > 0) ? new RemoteHealthStatusFetcher(this, this.statePort) : new DummyHealthStatusFetcher(this);
     }
 
     /**

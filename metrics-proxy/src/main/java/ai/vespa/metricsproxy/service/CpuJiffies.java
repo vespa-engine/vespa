@@ -11,13 +11,13 @@ class CpuJiffies {
     }
 
     private void parseLine(String line) {
-        String elems[];
+        String[] elems;
         String cpuId;
         long jiffies;
 
         elems = line.split("\\s+");
         cpuId = elems[0].substring(3);
-        if (cpuId.length() == 0) {
+        if (cpuId.isEmpty()) {
             this.cpuId = -1;
         } else {
             this.cpuId = Integer.parseInt(cpuId);
