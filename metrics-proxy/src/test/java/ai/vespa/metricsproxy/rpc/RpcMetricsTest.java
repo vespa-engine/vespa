@@ -106,8 +106,6 @@ public class RpcMetricsTest {
             assertEquals("#Services should be 1 for config id " + SERVICE_1_CONFIG_ID, 1, services.size());
 
             VespaService container = services.get(0);
-            container.setPid(1);
-            container.setAlive(true);
             assertEquals(MONITORING_SYSTEM + VespaService.SEPARATOR + "container", container.getMonitoringName().id);
 
             Metrics metrics = container.getMetrics();
@@ -124,8 +122,6 @@ public class RpcMetricsTest {
                 assertEquals("#Services should be 1 for config id " + SERVICE_2_CONFIG_ID, 1, services.size());
 
                 VespaService storageService = services.get(0);
-                storageService.setPid(2);
-                storageService.setAlive(true);
                 verfiyMetricsFromServiceObject(storageService);
 
                 String metricsById = getMetricsById(storageService.getConfigId(), rpcClient);
@@ -198,10 +194,7 @@ public class RpcMetricsTest {
             List<VespaService> services = tester.vespaServices().getInstancesById(SERVICE_1_CONFIG_ID);
 
             assertEquals(1, services.size());
-            VespaService vespaService = services.get(0);
-            vespaService.setPid(123);
-            vespaService.setAlive(true);
-            Metrics metrics = vespaService.getMetrics();
+            Metrics metrics = services.get(0).getMetrics();
             assertEquals("Fetched number of metrics is not correct", 2, metrics.size());
             Metric m = getMetric("foo.count", metrics);
             assertNotNull("Did not find expected metric with name 'foo.count'", m);
@@ -210,7 +203,7 @@ public class RpcMetricsTest {
             assertNotNull("Did not find expected metric with name 'bar'", m2);
 
             try (RpcClient rpcClient = new RpcClient(tester.rpcPort())) {
-                String response = getAllMetricNamesForService(vespaService.getMonitoringName().id, vespaMetricsConsumerId, rpcClient);
+                String response = getAllMetricNamesForService(services.get(0).getMonitoringName().id, vespaMetricsConsumerId, rpcClient);
                 assertEquals("foo.count=ON;output-name=foo_count,bar.count=OFF,", response);
             }
         }

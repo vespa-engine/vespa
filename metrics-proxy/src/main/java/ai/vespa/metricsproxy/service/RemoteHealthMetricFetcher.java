@@ -29,7 +29,7 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
     }
 
     /**
-     * Connect to remote service over http and fetch health
+     * Connect to remote service over http and fetch metrics
      */
     public HealthMetric getHealth(int fetchCount) {
         try (CloseableHttpResponse response = getResponse()) {
