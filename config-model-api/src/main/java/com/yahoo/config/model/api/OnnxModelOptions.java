@@ -84,11 +84,11 @@ public record OnnxModelOptions(
         return toBuilder().batchingMaxDelay(batchingMaxDelay).build();
     }
 
-    public OnnxModelOptions withConcurrencyType(String concurrencyType) {
+    public OnnxModelOptions withConcurrencyFactorType(String concurrencyType) {
         return toBuilder().concurrencyFactorType(concurrencyType).build();
     }
 
-    public OnnxModelOptions withConcurrencyFactorType(Double concurrencyFactor) {
+    public OnnxModelOptions withConcurrencyFactor(Double concurrencyFactor) {
         return toBuilder().concurrencyFactor(concurrencyFactor).build();
     }
 
@@ -177,8 +177,9 @@ public record OnnxModelOptions(
 
     public record GpuDevice(int deviceNumber, boolean required) {
         public GpuDevice {
-            if (deviceNumber < 0)
+            if (deviceNumber < 0) {
                 throw new IllegalArgumentException("deviceNumber cannot be negative, got " + deviceNumber);
+            }
         }
 
         public GpuDevice(int deviceNumber) {

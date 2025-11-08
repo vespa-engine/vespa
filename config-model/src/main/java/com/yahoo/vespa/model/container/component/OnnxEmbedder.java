@@ -70,13 +70,13 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
         var concurrencyElement = getChild(xml, "concurrency");
         if (concurrencyElement != null) {
             opts = XML.attribute("type", concurrencyElement)
-                    .map(opts::withConcurrencyType)
+                    .map(opts::withConcurrencyFactorType)
                     .orElse(opts);
 
             opts = Optional.ofNullable(concurrencyElement.getTextContent())
                     .filter(content -> !content.isBlank())
                     .map(Double::parseDouble)
-                    .map(opts::withConcurrencyFactorType)
+                    .map(opts::withConcurrencyFactor)
                     .orElse(opts);
         }
 

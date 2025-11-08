@@ -3,7 +3,6 @@ package ai.vespa.modelintegration.evaluator;
 
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import net.jpountz.xxhash.XXHashFactory;
-import onnx.Onnx;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
