@@ -49,7 +49,11 @@ public class MetricsParser {
 
     // Top level 'metrics' object, with e.g. 'time', 'status' and 'metrics'.
     private static void parse(JsonParser parser, Collector consumer) throws IOException {
-        if (parser.nextToken() != JsonToken.START_OBJECT) {
+        JsonToken firstToken = parser.nextToken();
+        if (firstToken == null) {
+            return;
+        }
+        if (firstToken != JsonToken.START_OBJECT) {
             throw new IOException("Expected start of object, got " + parser.currentToken());
         }
 
