@@ -18,12 +18,10 @@ import java.util.List;
  */
 public class Summaries extends Derived {
 
-    private final boolean useV8GeoPositions;
     private final List<SummaryClass> summaries;
 
     public Summaries(Schema schema, DeployLogger deployLogger, ModelContext.FeatureFlags featureFlags) {
         super();
-        this.useV8GeoPositions = featureFlags.useV8GeoPositions();
 
         // Make sure the default is first
         List<SummaryClass> summaries = new ArrayList<>();
@@ -42,7 +40,6 @@ public class Summaries extends Derived {
     public void getConfig(SummaryConfig.Builder builder) {
         // Replace
         builder.defaultsummaryid(summaries.isEmpty() ? -1 : summaries.get(0).hashCode());
-        builder.usev8geopositions(useV8GeoPositions);
         builder.classes(summaries.stream().map(SummaryClass::getSummaryClassConfig).toList());
     }
     public void export(String toDirectory) throws IOException {

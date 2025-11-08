@@ -254,9 +254,7 @@ SlimeFiller::visit(const RawFieldValue& value)
 void
 SlimeFiller::visit(const StructFieldValue& value)
 {
-    if (value.getDataType() == &document::PositionDataType::getInstance()
-        && ResultConfig::wantedV8geoPositions())
-    {
+    if (value.getDataType() == &document::PositionDataType::getInstance()) {
         auto xv = value.getValue("x");
         auto yv = value.getValue("y");
         if (xv && yv) {

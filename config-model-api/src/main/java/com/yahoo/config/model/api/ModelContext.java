@@ -97,7 +97,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.603") default double resourceLimitLowWatermarkDifference() { return 0.01; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitAddressSpace() { return 0.80; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forwardIssuesAsErrors() { return true; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean useV8GeoPositions() { return false; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean useV8GeoPositions() { return true; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
@@ -164,7 +164,7 @@ public interface ModelContext {
         default String mallocImpl(Optional<ClusterSpec.Type> clusterType) { return ""; }
 
         default int searchNodeInitializerThreads(String clusterId) { return 0; }
-        
+
         // Note: Used in unit tests (set to false in TestProperties) to avoid needing to deal with implicitly created node for logserver
         default boolean useDedicatedNodeForLogserver() { return true; }
 

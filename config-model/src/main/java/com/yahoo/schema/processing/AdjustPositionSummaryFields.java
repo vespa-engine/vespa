@@ -27,11 +27,8 @@ public class AdjustPositionSummaryFields extends Processor {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
-    private boolean useV8GeoPositions = false;
-
     @Override
     public void process(boolean validate, boolean documentsOnly, ModelContext.Properties properties) {
-        this.useV8GeoPositions = properties.featureFlags().useV8GeoPositions();
         process(validate, documentsOnly);
     }
 
@@ -99,10 +96,6 @@ public class AdjustPositionSummaryFields extends Processor {
     private void ensureSummaryField(DocumentSummary summary, String fieldName, DataType dataType, Source source, SummaryTransform transform) {
         SummaryField oldField = schema.getSummaryField(fieldName);
         if (oldField == null) {
-            if (useV8GeoPositions) return;
-            SummaryField newField = new SummaryField(fieldName, dataType, transform, summary);
-            newField.addSource(source);
-            summary.add(newField);
             return;
         }
         if (!oldField.getDataType().equals(dataType)) {
@@ -114,8 +107,6 @@ public class AdjustPositionSummaryFields extends Processor {
         if (oldField.getSourceCount() != 1 || !oldField.getSingleSource().equals(source.getName())) {
             fail(oldField, "has source '" + oldField.getSources().toString() + "', should have source '" + source + "'");
         }
-        if (useV8GeoPositions) return;
-        summary.add(oldField);
     }
 
     private boolean hasPositionAttribute(String name) {

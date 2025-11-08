@@ -454,16 +454,12 @@ TEST_F(SlimeFillerTest, insert_raw)
 
 TEST_F(SlimeFillerTest, insert_position)
 {
-    ResultConfig::set_wanted_v8_geo_positions(true);
     {
         SCOPED_TRACE("normal position");
         StructFieldValue position(get_data_type("position"));
         position.setValue("x", IntFieldValue(500000));
         position.setValue("y", IntFieldValue(750000));
         expect_insert(R"({"lat":0.75,"lng":0.5})", position);
-        ResultConfig::set_wanted_v8_geo_positions(false);
-        expect_insert(R"({"y":750000,"x":500000})", position);
-        ResultConfig::set_wanted_v8_geo_positions(true);
     }
     {
         SCOPED_TRACE("partial position");

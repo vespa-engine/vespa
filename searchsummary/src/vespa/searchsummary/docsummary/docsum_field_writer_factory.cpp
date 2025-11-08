@@ -23,9 +23,8 @@ using vespalib::Issue;
 
 namespace search::docsummary {
 
-DocsumFieldWriterFactory::DocsumFieldWriterFactory(bool use_v8_geo_positions, const IDocsumEnvironment& env, const IQueryTermFilterFactory& query_term_filter_factory)
-    : _use_v8_geo_positions(use_v8_geo_positions),
-      _env(env),
+DocsumFieldWriterFactory::DocsumFieldWriterFactory(const IDocsumEnvironment& env, const IQueryTermFilterFactory& query_term_filter_factory)
+    : _env(env),
       _query_term_filter_factory(query_term_filter_factory)
 {
 }
@@ -109,12 +108,12 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
         }
     } else if (command == command::positions) {
         if (has_attribute_manager()) {
-            fieldWriter = PositionsDFW::create(source.c_str(), getEnvironment().getAttributeManager(), _use_v8_geo_positions);
+            fieldWriter = PositionsDFW::create(source.c_str(), getEnvironment().getAttributeManager());
             throw_if_nullptr(fieldWriter, command);
         }
     } else if (command == command::geo_position) {
         if (has_attribute_manager()) {
-            fieldWriter = GeoPositionDFW::create(source.c_str(), getEnvironment().getAttributeManager(), _use_v8_geo_positions);
+            fieldWriter = GeoPositionDFW::create(source.c_str(), getEnvironment().getAttributeManager());
             throw_if_nullptr(fieldWriter, command);
         }
     } else if (command == command::attribute) {

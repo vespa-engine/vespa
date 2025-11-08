@@ -59,7 +59,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double resourceLimitMemory = 0.8;
     private double resourceLimitAddressSpace = 0.80;
     private int maxUnCommittedMemory = 123456;
-    private boolean useV8GeoPositions = true;
     private List<String> environmentVariables = List.of();
     private int mbus_java_num_targets = 2;
     private int mbus_java_events_before_wakeup = 1;
@@ -114,7 +113,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double resourceLimitAddressSpace() { return resourceLimitAddressSpace; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
-    @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
+    @Override public boolean useV8GeoPositions() { return true; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
     @Override public int mbusNetworkThreads() { return mbus_network_threads; }
     @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
@@ -259,11 +258,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setResourceLimitAddressSpace(double value) {
         this.resourceLimitAddressSpace = value;
-        return this;
-    }
-
-    public TestProperties setUseV8GeoPositions(boolean value) {
-        this.useV8GeoPositions = value;
         return this;
     }
 

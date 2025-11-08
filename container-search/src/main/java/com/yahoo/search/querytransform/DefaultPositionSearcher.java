@@ -26,11 +26,8 @@ import java.util.List;
 @Before(PhaseNames.TRANSFORMED_QUERY)
 public class DefaultPositionSearcher extends Searcher {
 
-    private final boolean useV8GeoPositions;
-
     @Inject
     public DefaultPositionSearcher(DocumentmanagerConfig cfg) {
-        this.useV8GeoPositions = cfg.usev8geopositions();
     }
 
     @Override
@@ -50,7 +47,7 @@ public class DefaultPositionSearcher extends Searcher {
                 location.setAttribute(facts.getDefaultPosition(null));
             }
         }
-        if (useV8GeoPositions && (location != null) && (location.getAttribute() != null)) {
+        if ((location != null) && (location.getAttribute() != null)) {
             var geoLoc = new GeoLocationItem(location);
             if (location.isGeoCircle() && location.degRadius() < 0) {
                 query.getModel().getQueryTree().withRank(geoLoc);

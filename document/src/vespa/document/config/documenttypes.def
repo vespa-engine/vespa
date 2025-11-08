@@ -6,7 +6,7 @@ namespace=document.config
 ignoreundefinedfields bool default=false
 
 ## Prefer "Vespa 8" format for the "position" type
-usev8geopositions bool default=false
+usev8geopositions bool default=true
 
 ## The Id of the documenttype. Must be unique among all document types.
 documenttype[].id int

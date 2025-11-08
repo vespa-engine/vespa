@@ -22,9 +22,8 @@ using vespalib::Issue;
 
 namespace search::docsummary {
 
-GeoPositionDFW::GeoPositionDFW(const std::string & attrName, bool useV8geoPositions) :
-    AttrDFW(attrName),
-    _useV8geoPositions(useV8geoPositions)
+GeoPositionDFW::GeoPositionDFW(const std::string & attrName) :
+    AttrDFW(attrName)
 { }
 
 namespace {
@@ -34,7 +33,7 @@ double to_degrees(int32_t microDegrees) {
     return d;
 }
 
-void fmtZcurve(int64_t zval, vespalib::slime::Inserter &target, bool useV8geoPositions) {
+void fmtZcurve(int64_t zval, vespalib::slime::Inserter &target, bool) {
     int32_t docx = 0;
     int32_t docy = 0;
     vespalib::geo::ZCurve::decode(zval, &docx, &docy);
@@ -42,15 +41,10 @@ void fmtZcurve(int64_t zval, vespalib::slime::Inserter &target, bool useV8geoPos
         LOG(spam, "skipping empty zcurve value");
     } else {
         vespalib::slime::Cursor &obj = target.insertObject();
-        if (useV8geoPositions) {
-            double degrees_ns = to_degrees(docy);
-            double degrees_ew = to_degrees(docx);
-            obj.setDouble("lat", degrees_ns);
-            obj.setDouble("lng", degrees_ew);
-        } else {
-            obj.setLong("y", docy);
-            obj.setLong("x", docx);
-        }
+        double degrees_ns = to_degrees(docy);
+        double degrees_ew = to_degrees(docx);
+        obj.setDouble("lat", degrees_ns);
+        obj.setDouble("lng", degrees_ew);
     }
 }
 
@@ -69,7 +63,7 @@ GeoPositionDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDoc
     const auto& attribute = get_attribute(dsState);
     if (attribute.hasMultiValue()) {
         uint32_t entries = attribute.getValueCount(docid);
-        if (entries == 0 && _useV8geoPositions) return;
+        if (entries == 0) return;
         Cursor &arr = target.insertArray();
         if (attribute.hasWeightedSetType()) {
             Symbol isym = arr.resolve("item");
@@ -80,7 +74,7 @@ GeoPositionDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDoc
                 Cursor &elem = arr.addObject();
                 int64_t pos = elements[i].getValue();
                 ObjectSymbolInserter obj(elem, isym);
-                fmtZcurve(pos, obj, _useV8geoPositions);
+                fmtZcurve(pos, obj, true);
                 elem.setLong(wsym, elements[i].getWeight());
             }
         } else {
@@ -94,19 +88,18 @@ GeoPositionDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDoc
             for (uint32_t i = 0; i < numValues; i++) {
                 int64_t pos = elements[i];
                 ArrayInserter obj(arr);
-                fmtZcurve(pos, obj, _useV8geoPositions);
+                fmtZcurve(pos, obj, true);
             }
         }
     } else {
         int64_t pos = attribute.getInt(docid);
-        fmtZcurve(pos, target, _useV8geoPositions);
+        fmtZcurve(pos, target, true);
     }
 }
 
 GeoPositionDFW::UP
 GeoPositionDFW::create(const char *attribute_name,
-                       const IAttributeManager *attribute_manager,
-                       bool useV8geoPositions)
+                       const IAttributeManager *attribute_manager)
 {
     if (attribute_manager != nullptr) {
         if (!attribute_name) {
@@ -124,7 +117,7 @@ GeoPositionDFW::create(const char *attribute_name,
             return {};
         }
     }
-    return std::make_unique<GeoPositionDFW>(attribute_name, useV8geoPositions);
+    return std::make_unique<GeoPositionDFW>(attribute_name);
 }
 
 }

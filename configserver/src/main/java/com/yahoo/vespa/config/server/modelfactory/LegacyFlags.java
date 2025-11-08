@@ -29,7 +29,6 @@ public class LegacyFlags {
                 if (legacyWanted) {
                     throw new IllegalArgumentException("Legacy flag '" + GEO_POSITIONS + "' no longer supported");
                 }
-                flags = flags.withBooleanFlag(Flags.USE_V8_GEO_POSITIONS.id(), ! legacyWanted);
                 break;
             case FOO_BAR:
                 // ignored

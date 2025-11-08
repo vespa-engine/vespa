@@ -76,10 +76,7 @@ public class ApplicationConfigProducerRoot extends TreeConfigProducer<AnyConfigP
         this.applicationId = applicationId;
     }
 
-    private boolean useV8GeoPositions = false;
-
     public void useFeatureFlags(ModelContext.FeatureFlags featureFlags) {
-        this.useV8GeoPositions = featureFlags.useV8GeoPositions();
     }
 
     /**
@@ -143,14 +140,12 @@ public class ApplicationConfigProducerRoot extends TreeConfigProducer<AnyConfigP
     @Override
     public void getConfig(DocumentmanagerConfig.Builder builder) {
         new DocumentManager()
-            .useV8GeoPositions(this.useV8GeoPositions)
             .produce(documentModel, builder);
     }
 
     @Override
     public void getConfig(DocumenttypesConfig.Builder builder) {
         new DocumentTypes()
-            .useV8GeoPositions(this.useV8GeoPositions)
             .produce(documentModel, builder);
     }
 

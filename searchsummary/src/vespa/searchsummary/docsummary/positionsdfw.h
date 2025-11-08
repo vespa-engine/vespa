@@ -55,16 +55,14 @@ public:
 
 class PositionsDFW : public AttrDFW
 {
-private:
-    bool _useV8geoPositions;
 public:
     using UP = std::unique_ptr<PositionsDFW>;
-    PositionsDFW(const std::string & attrName, bool useV8geoPositions);
+    PositionsDFW(const std::string & attrName);
     bool isGenerated() const override { return true; }
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
                       search::common::ElementIds selected_elements,
                       vespalib::slime::Inserter &target) const override;
-    static UP create(const char *attribute_name, const IAttributeManager *index_man, bool useV8geoPositions);
+    static UP create(const char *attribute_name, const IAttributeManager *index_man);
 };
 
 

@@ -17,13 +17,11 @@ import java.util.Locale;
  **/
 public final class GeoPosType extends StructDataType {
 
-    private final boolean useV8json;
     private static final Field F_X = new Field("x", DataType.INT);
     private static final Field F_Y = new Field("y", DataType.INT);
 
     public GeoPosType(int vespaVersion) {
         super("position");
-        this.useV8json = (vespaVersion == 8);
         assert(vespaVersion > 6);
         assert(vespaVersion < 9);
         addField(F_X);
@@ -31,7 +29,7 @@ public final class GeoPosType extends StructDataType {
     }
 
     public boolean renderJsonAsVespa8() {
-        return this.useV8json;
+        return true;
     }
 
     public double getLatitude(Struct pos) {

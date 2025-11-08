@@ -104,7 +104,7 @@ SummarySetup(const std::string & baseDir, const SummaryConfig & summaryCfg,
     _juniperConfig = std::make_unique<juniper::Juniper>(&_juniperProps, _wordFolder.get());
     auto resultConfig = std::make_unique<ResultConfig>();
     std::unique_ptr<IQueryTermFilterFactory> query_term_filter_factory = std::make_unique<QueryTermFilterFactory>(schema);
-    auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summaryCfg.usev8geopositions, *this, *query_term_filter_factory);
+    auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(*this, *query_term_filter_factory);
     auto struct_fields_mapper = make_struct_fields_mapper(*_attributeMgr->createContext());
     if (!resultConfig->readConfig(summaryCfg, make_string("SummaryManager(%s)", baseDir.c_str()),
                                   *docsum_field_writer_factory, *struct_fields_mapper)) {
