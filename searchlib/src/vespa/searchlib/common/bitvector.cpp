@@ -179,10 +179,6 @@ BitVector::setSize(Index sz)
 {
     set_bit_no_range_check(sz);  // Need to place the new stop sign first
     std::atomic_thread_fence(std::memory_order_release);
-    if (sz > _sz) {
-        // Can only remove the old stopsign if it is ahead of the new.
-        clear_bit_no_range_check(_sz);
-    }
     vespalib::atomic::store_ref_release(_sz, sz);
 }
 
