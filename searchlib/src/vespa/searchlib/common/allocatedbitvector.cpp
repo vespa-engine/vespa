@@ -60,10 +60,11 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Alloc buffer, siz
         // Fixup after reading fewer bytes than expected, e.g. due to file format changes.
         char* entry_end = static_cast<char*>(_alloc.get()) + offset + entry_size;
         memset(entry_end, '\0', vectorsize - entry_size);
-        if (wordNum(size()) * sizeof(Word) >= entry_size) {
-            // Loss of guard bit and data bits only occurs in bitvector unit test.
+        if (numBytes(size()) > entry_size) {
+            // Loss of guard bits can occur if saved bitvector had fewer guard bits than current bitvectors
             setGuardBit();
-            if (wordNum(size()) * sizeof(Word) > entry_size) {
+            // Loss of data bits only occurs in bitvector unit test.
+            if (num_bytes_plain(size()) > entry_size) {
                updateCount();
             }
         }
