@@ -367,9 +367,9 @@ public class PartialSummaryHandlerTestCase {
         var tracer = new TraceToString();
         query.getModel().getExecution().trace().accept(tracer);
         assertTrue(tracer.target.toString()
-                   .contains("requested summary=first3 does not contain all fields [SCORE, TOPIC] from query; trying fields=[SCORE, TITLE, TOPIC, WORDS] and summary=default"),
+                   .contains("requested summary=first3 does not contain all fields [SCORE, TOPIC] from query; trying fields=[SCORE, TITLE, TOPIC, WORDS] and summary=[all]"),
                    "Trace did not contain expected message, was: " + tracer.target);
-        assertEquals("default", toTest.askForSummary());
+        assertEquals("[all]", toTest.askForSummary());
         assertNotNull(toTest.askForFields());
         assertEquals(4, toTest.askForFields().size());
         assertFalse(toTest.resultAlreadyFilled());
@@ -395,13 +395,17 @@ public class PartialSummaryHandlerTestCase {
     @Test
     void enoughFields() {
         var query = createQuery("first3");
-        query.getPresentation().setSummaryFields("field1");
         var hit1 = createHit(query);
         var result = createResult(query, hit1);
+        assertEquals("first3", PartialSummaryHandler.enoughFields(null, result));
+        assertEquals("first3", PartialSummaryHandler.enoughFields(PartialSummaryHandler.DEFAULT_CLASS, result));
+        assertEquals("first3", PartialSummaryHandler.enoughFields(PartialSummaryHandler.PRESENTATION, result));
+        assertEquals("[all]", PartialSummaryHandler.enoughFields("first3", result));
+        query.getPresentation().setSummaryFields("field1");
         assertEquals("[f:field1]", PartialSummaryHandler.enoughFields(null, result));
         assertEquals("[f:field1]", PartialSummaryHandler.enoughFields(PartialSummaryHandler.DEFAULT_CLASS, result));
         assertEquals("[f:field1]", PartialSummaryHandler.enoughFields(PartialSummaryHandler.PRESENTATION, result));
-        assertEquals("default", PartialSummaryHandler.enoughFields("first3", result));
+        assertEquals("[all]", PartialSummaryHandler.enoughFields("first3", result));
     }
 
     @Test
@@ -413,7 +417,7 @@ public class PartialSummaryHandlerTestCase {
         assertEquals("[f:matchfeatures]", PartialSummaryHandler.enoughFields(null, result));
         assertEquals("[f:matchfeatures]", PartialSummaryHandler.enoughFields(PartialSummaryHandler.DEFAULT_CLASS, result));
         assertEquals("[f:matchfeatures]", PartialSummaryHandler.enoughFields(PartialSummaryHandler.PRESENTATION, result));
-        assertEquals("default", PartialSummaryHandler.enoughFields("first3", result));
+        assertEquals("[all]", PartialSummaryHandler.enoughFields("first3", result));
     }
 
     static Query createQuery(String summaryClass) {

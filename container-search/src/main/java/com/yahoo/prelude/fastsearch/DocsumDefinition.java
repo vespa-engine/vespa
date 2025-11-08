@@ -4,6 +4,8 @@ package com.yahoo.prelude.fastsearch;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.search.schema.DocumentSummary;
 
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -42,6 +44,19 @@ public class DocsumDefinition {
                 .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
+    DocsumDefinition(String name, DocsumDefinition first, Collection<DocsumDefinition> sources) {
+        this.name = name;
+        this.dynamic = sources.stream().anyMatch(dd -> dd.isDynamic());
+        Map<String, DocsumField> map = ((first == null)
+                                        ? new LinkedHashMap<>()
+                                        : new LinkedHashMap<>(first.fields()));
+        for (var source : sources) {
+            for (var entry : source.fields().entrySet()) {
+                map.computeIfAbsent(entry.getKey(), k -> entry.getValue());
+            }
+        }
+        this.fields = Map.copyOf(map);
+    }
 
 
     public String name() { return name; }
