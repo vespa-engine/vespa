@@ -82,7 +82,7 @@ ComponentDefinition =
 
 TypedComponentDefinition =
    attribute id { xsd:Name } &
-   (HuggingFaceEmbedder | HuggingFaceTokenizer | BertBaseEmbedder | ColBertEmbedder | SpladeEmbedder ) &
+   (HuggingFaceEmbedder | HuggingFaceTokenizer | BertBaseEmbedder | ColBertEmbedder | SpladeEmbedder | VoyageAIEmbedder ) &
    GenericConfig* &
    Component*
 
@@ -153,6 +153,21 @@ ColBertEmbedder =
    OnnxModelExecutionParams &
    StartOfSequence &
    EndOfSequence
+
+VoyageAIEmbedder =
+   attribute type { "voyage-ai-embedder" } &
+   element model { xsd:string }? &
+   element api-key-secret-name { xsd:string } &
+   element endpoint { xsd:string }? &
+   element max-batch-size { xsd:positiveInteger }? &
+   element timeout { xsd:positiveInteger }? &
+   element max-retries { xsd:nonNegativeInteger }? &
+   element default-input-type { "query" | "document" }? &
+   element auto-detect-input-type { xsd:boolean }? &
+   element normalize { xsd:boolean }? &
+   element truncate { xsd:boolean }? &
+   element pool-size { xsd:positiveInteger }? &
+   element cache-size { xsd:nonNegativeInteger }?
 
 OnnxModelExecutionParams =
     element onnx-execution-mode { "parallel" | "sequential" }? &

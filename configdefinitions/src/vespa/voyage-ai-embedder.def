@@ -1,0 +1,49 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+namespace=embedding.voyageai
+
+# API Configuration
+
+# Name of the secret in Vespa's secret store containing the VoyageAI API key
+apiKeySecretName string
+
+# VoyageAI API endpoint URL
+endpoint string default="https://api.voyageai.com/v1/embeddings"
+
+# VoyageAI model name (e.g., voyage-3, voyage-3-lite, voyage-code-3, voyage-finance-2)
+model string default="voyage-3"
+
+# Request Settings
+
+# Maximum number of texts to batch in a single API request
+maxBatchSize int default=128
+
+# Request timeout in milliseconds
+timeout int default=30000
+
+# Maximum number of retry attempts for failed requests
+maxRetries int default=3
+
+# Input Processing
+
+# Default input type when auto-detection is disabled
+defaultInputType enum { query, document } default=document
+
+# Automatically detect input type from Context (query vs document)
+autoDetectInputType bool default=true
+
+# Truncate inputs that exceed model's maximum token limit
+truncate bool default=true
+
+# Performance Settings
+
+# HTTP client connection pool size
+poolSize int default=5
+
+# LRU cache size for embeddings (0 to disable caching)
+cacheSize int default=1000
+
+# Output Processing
+
+# Apply L2 normalization to output embeddings
+normalize bool default=false
