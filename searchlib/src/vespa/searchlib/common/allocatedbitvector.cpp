@@ -38,10 +38,10 @@ extract_size_capacity(const AllocatedBitVector & bv) {
 
 }
 
-AllocatedBitVector::AllocatedBitVector(Index numberOfElements) :
-    BitVector(),
-    _capacityBits(numberOfElements),
-    _alloc(allocatePaddedAndAligned(numberOfElements))
+AllocatedBitVector::AllocatedBitVector(Index numberOfElements)
+    : BitVector(),
+      _capacityBits(numberOfElements),
+      _alloc(allocatePaddedAndAligned(numberOfElements))
 {
     _capacityBits = computeCapacity(_capacityBits, _alloc.size());
     init(_alloc.get(), 0, numberOfElements);
@@ -62,7 +62,7 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Alloc buffer, siz
         memset(entry_end, '\0', vectorsize - entry_size);
         if (wordNum(size()) * sizeof(Word) >= entry_size) {
             // Loss of guard bit and data bits only occurs in bitvector unit test.
-            set_bit_no_range_check(size());
+            setGuardBit();
             if (wordNum(size()) * sizeof(Word) > entry_size) {
                updateCount();
             }
@@ -70,42 +70,39 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Alloc buffer, siz
     }
 }
 
-AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBits, const void * rhsBuf, size_t rhsSize, const Alloc* init_alloc) :
-    BitVector(),
-    _capacityBits(capacityBits),
-    _alloc(allocatePaddedAndAligned(0, numberOfElements, capacityBits, init_alloc))
+AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBits, const BitVector* org, const Alloc* init_alloc)
+    : BitVector(),
+      _capacityBits(capacityBits),
+      _alloc(allocatePaddedAndAligned(0, numberOfElements, capacityBits, init_alloc))
 {
     _capacityBits = computeCapacity(_capacityBits, _alloc.size());
     init(_alloc.get(), 0, numberOfElements);
-    clear();
-    if (rhsSize > 0) {
-        size_t minCount = std::min(static_cast<size_t>(numberOfElements), rhsSize);
-        memcpy(getStart(), rhsBuf, numBytes(minCount));
-        if (minCount/8 == numberOfElements/8) {
-            static_cast<Word *>(getStart())[numWords()-1] &= ~endBits(minCount);
-        }
-        set_bit_no_range_check(size()); // Guard bit
+    if (org != nullptr) {
+        initialize_from(*org);
+        setGuardBit();
+        updateCount();
+    } else {
+        clear();
     }
-    updateCount();
 }
 
-AllocatedBitVector::AllocatedBitVector(const AllocatedBitVector & rhs) :
-    AllocatedBitVector(rhs, extract_size_capacity(rhs))
+AllocatedBitVector::AllocatedBitVector(const AllocatedBitVector & rhs)
+    : AllocatedBitVector(rhs, extract_size_capacity(rhs))
 { }
 
-AllocatedBitVector::AllocatedBitVector(const BitVector & rhs) :
-    AllocatedBitVector(rhs, extract_size_size(rhs))
+AllocatedBitVector::AllocatedBitVector(const BitVector & rhs)
+    : AllocatedBitVector(rhs, extract_size_size(rhs))
 { }
 
-AllocatedBitVector::AllocatedBitVector(const BitVector & rhs, std::pair<Index, Index> size_capacity) :
-    BitVector(),
-    _capacityBits(size_capacity.second),
-    _alloc(allocatePaddedAndAligned(0, size_capacity.first, size_capacity.second))
+AllocatedBitVector::AllocatedBitVector(const BitVector & rhs, std::pair<Index, Index> size_capacity)
+    : BitVector(),
+      _capacityBits(size_capacity.second),
+      _alloc(allocatePaddedAndAligned(0, size_capacity.first, size_capacity.second))
 {
     _capacityBits = computeCapacity(_capacityBits, _alloc.size());
-    memcpy(_alloc.get(),  rhs.getStart(), numBytes(size_capacity.first - rhs.getStartIndex()));
     init(_alloc.get(), 0, size_capacity.first);
-    set_bit_no_range_check(size());
+    initialize_from(rhs);
+    setGuardBit();
     updateCount();
 }
 

@@ -72,7 +72,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
 
         public Apply(DocumentmanagerConfig config, DocumentTypeManager manager) {
             this.manager = manager;
-            this.usev8geopositions = config.usev8geopositions();
             apply(config);
         }
 
@@ -101,7 +100,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                 for (var o : thisDataType.structtype()) {
                     int id = thisDataType.id();
                     StructDataType type = new StructDataType(id, o.name());
-                    if (usev8geopositions && looksLikePosition(type)) {
+                    if (looksLikePosition(type)) {
                         type = new GeoPosType(8);
                     }
                     inProgress(type);
@@ -317,7 +316,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
-        private final boolean usev8geopositions;
         private final DocumentTypeManager manager;
     }
 
@@ -326,8 +324,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
 
         public ApplyNewDoctypeConfig(DocumentmanagerConfig config, DocumentTypeManager manager) {
             this.manager = manager;
-            this.usev8geopositions = config.usev8geopositions();
-
             apply(config);
         }
 
@@ -435,8 +431,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             void createEmptyStructs() {
                 for (var typeconf : docTypeConfig.structtype()) {
                     if (isPositionStruct(typeconf)) {
-                        int geoVersion = usev8geopositions ? 8 : 7;
-                        addNewType(typeconf.idx(), new GeoPosType(geoVersion));
+                        addNewType(typeconf.idx(), new GeoPosType(8));
                     } else {
                         addNewType(typeconf.idx(), new StructDataType(typeconf.name()));
                     }
@@ -593,7 +588,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
-        private final boolean usev8geopositions;
         private final DocumentTypeManager manager;
     }
 

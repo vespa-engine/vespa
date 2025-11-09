@@ -92,13 +92,6 @@ private:
      **/
     static constexpr uint32_t noClassID = -1;
 public:
-
-    // whether last config seen wanted useV8geoPositions = true
-    static bool wantedV8geoPositions();
-
-    // This function should only be called by unit tests.
-    static void set_wanted_v8_geo_positions(bool value);
-
     /**
      * Discard the current configuration and start over. After this
      * method returns, the state of this object will be equal to the

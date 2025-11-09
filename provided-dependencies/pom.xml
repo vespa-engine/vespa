@@ -28,6 +28,14 @@
           <artifactId>org.apache.felix.log</artifactId>
         </exclusion>
         <exclusion>
+           <groupId>org.apache.felix</groupId>
+          <artifactId>org.apache.felix.bundlerepository</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.felix</groupId>
+          <artifactId>org.apache.felix.resolver</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.lz4</groupId>
           <artifactId>lz4-java</artifactId>
         </exclusion>

@@ -36,47 +36,6 @@ TargetInfo my_target_info() noexcept {
 }
 } // anon ns
 
-size_t
-Avx2Accelerator::populationCount(const uint64_t *a, size_t sz) const noexcept {
-    return my_population_count(a, sz);
-}
-
-double
-Avx2Accelerator::squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) const noexcept {
-    return my_squared_euclidean_distance_i8(a, b, sz);
-}
-
-double
-Avx2Accelerator::squaredEuclideanDistance(const float * a, const float * b, size_t sz) const noexcept {
-    return my_squared_euclidean_distance_f32(a, b, sz);
-}
-
-double
-Avx2Accelerator::squaredEuclideanDistance(const double * a, const double * b, size_t sz) const noexcept {
-    return my_squared_euclidean_distance_f64(a, b, sz);
-}
-
-void
-Avx2Accelerator::and128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
-    my_and_128(offset, src, dest);
-}
-
-void
-Avx2Accelerator::or128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
-    my_or_128(offset, src, dest);
-}
-
-void
-Avx2Accelerator::convert_bfloat16_to_float(const uint16_t * src, float * dest, size_t sz) const noexcept {
-    my_convert_bfloat16_to_float(src, dest, sz);
-}
-
-int64_t
-Avx2Accelerator::dotProduct(const int8_t * a, const int8_t * b, size_t sz) const noexcept {
-    return my_dot_product_i8(a, b, sz);
-}
-
-// TODO remove code duplication once we deprecate IAccelerated.
 namespace {
 
 [[nodiscard]] dispatch::FnTable build_fn_table() {

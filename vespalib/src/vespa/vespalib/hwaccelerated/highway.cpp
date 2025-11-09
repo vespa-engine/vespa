@@ -299,8 +299,6 @@ const char* my_hwy_target_name() noexcept {
     return static_cast<uint16_t>(hn::Lanes(d8)); // Presumably no vectors with more than 524K bits for some time...
 }
 
-// TODO remove code duplication once we deprecate IAccelerated.
-
 int64_t my_dot_product_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
     return my_hwy_dot_int8(a, b, sz);
 }
@@ -337,42 +335,10 @@ TargetInfo my_target_info() noexcept {
 
 } // anon ns
 
-// Since we already do a virtual dispatch via the IAccelerated interface, avoid needing an
-// additional per-function dispatch step via Highway's function tables by creating a concrete
-// implementation class per target.
 class HwyTargetAccelerator final : public PlatformGenericAccelerator {
 public:
     ~HwyTargetAccelerator() override = default;
-    float dotProduct(const float* a, const float* b, size_t sz) const noexcept override {
-        return my_hwy_dot_float(a, b, sz);
-    }
-    float dotProduct(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept override {
-        return my_hwy_dot_bf16(a, b, sz);
-    }
-    double dotProduct(const double* a, const double* b, size_t sz) const noexcept override {
-        return my_hwy_dot_double(a, b, sz);
-    }
-    int64_t dotProduct(const int8_t* a, const int8_t* b, size_t sz) const noexcept override {
-        return my_hwy_dot_int8(a, b, sz);
-    }
-    size_t populationCount(const uint64_t* a, size_t sz) const noexcept override {
-        return my_hwy_popcount(a, sz);
-    }
-    size_t binary_hamming_distance(const void* lhs, const void* rhs, size_t sz) const noexcept override {
-        return my_hwy_binary_hamming_distance(lhs, rhs, sz);
-    }
-    double squaredEuclideanDistance(const int8_t* a, const int8_t* b, size_t sz) const noexcept override {
-        return my_hwy_square_euclidean_distance_int8(a, b, sz);
-    }
-    double squaredEuclideanDistance(const float* a, const float* b, size_t sz) const noexcept override {
-        return my_hwy_square_euclidean_distance(a, b, sz);
-    }
-    double squaredEuclideanDistance(const double* a, const double* b, size_t sz) const noexcept override {
-        return my_hwy_square_euclidean_distance(a, b, sz);
-    }
-    double squaredEuclideanDistance(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept override {
-        return my_hwy_square_euclidean_distance_bf16(a, b, sz);
-    }
+
     TargetInfo target_info() const noexcept override {
         return my_target_info();
     }

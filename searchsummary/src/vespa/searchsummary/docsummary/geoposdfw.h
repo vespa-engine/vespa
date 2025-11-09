@@ -11,16 +11,13 @@ namespace search::docsummary {
  **/
 class GeoPositionDFW : public AttrDFW
 {
-private:
-    bool _useV8geoPositions;
 public:
     using UP = std::unique_ptr<GeoPositionDFW>;
-    GeoPositionDFW(const std::string & attrName, bool useV8geoPositions);
+    GeoPositionDFW(const std::string & attrName);
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
                       search::common::ElementIds selected_elements,
                       vespalib::slime::Inserter &target) const override;
-    static UP create(const char *attribute_name, const IAttributeManager *attribute_manager, bool useV8geoPositions);
+    static UP create(const char *attribute_name, const IAttributeManager *attribute_manager);
 };
 
 }
-

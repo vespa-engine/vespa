@@ -10,9 +10,6 @@ import ai.vespa.metricsproxy.metric.model.ServiceId;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
-
-import static java.util.logging.Level.INFO;
 
 
 /**
@@ -22,7 +19,6 @@ import static java.util.logging.Level.INFO;
  */
 public class VespaService implements Comparable<VespaService> {
 
-    private final static Logger log = Logger.getLogger(VespaService.class.getName());
     private static final Map<DimensionId, String> EMPTY_DIMENSIONS = Map.of();
     private static final String DEFAULT_MONITORING_PREFIX = "vespa";
     public static final String SEPARATOR = ".";
@@ -141,10 +137,6 @@ public class VespaService implements Comparable<VespaService> {
      * if a metric http port has been defined, otherwise from log file
      */
     public void consumeMetrics(MetricsParser.Collector consumer) {
-        if (!isAlive()) {
-            log.log(INFO, "Service not alive, skipping getting metrics");
-            return;
-        }
         remoteMetricsFetcher.getMetrics(consumer, metricsFetchCount.get());
         metricsFetchCount.getAndIncrement();
     }

@@ -31,7 +31,7 @@ public class MetricsFetcherTest {
     Metrics fetch(String data) throws IOException {
         RemoteMetricsFetcher fetcher = new RemoteMetricsFetcher(new DummyService(0, "dummy/id/0"), port);
         MetricsCollector collector = new MetricsCollector();
-        fetcher.createMetrics(data, collector);
+        fetcher.createMetrics(data, collector, 0);
         return collector.metrics;
     }
 

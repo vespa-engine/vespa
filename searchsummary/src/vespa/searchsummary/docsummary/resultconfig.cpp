@@ -107,21 +107,6 @@ ResultConfig::lookupResultClassId(std::string_view name) const
     return (found != _nameLookup.end()) ? found->second : ((name.empty() || (name == "default")) ? _defaultSummaryId : noClassID);
 }
 
-
-namespace {
-std::atomic<bool> global_useV8geoPositions = false;
-}
-
-bool ResultConfig::wantedV8geoPositions() {
-    return global_useV8geoPositions;
-}
-
-void
-ResultConfig::set_wanted_v8_geo_positions(bool value)
-{
-    global_useV8geoPositions = value;
-}
-
 bool
 ResultConfig::readConfig(const SummaryConfig &cfg, const std::string& configId, IDocsumFieldWriterFactory& docsum_field_writer_factory,
                          const StructFieldsMapper& struct_fields_mapper)
@@ -130,7 +115,6 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const std::string& configId, 
     reset();
     int    maxclassID = 0x7fffffff; // avoid negative classids
     _defaultSummaryId = cfg.defaultsummaryid;
-    global_useV8geoPositions = cfg.usev8geopositions;
 
     ResultClass *unionOfAll = addResultClass("[all]", 0x12345678);
     auto union_of_all_matching_elements_fields = unionOfAll->get_matching_elements_fields();

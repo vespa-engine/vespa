@@ -13,29 +13,10 @@ namespace vespalib::hwaccelerated {
  * tweaks or tricks up its sleeves) that can be compiled for distinct architecture targets
  * to get a baseline auto-vectorized set of kernels for those targets.
  */
-class VESPA_HWACCEL_TARGET_TYPE : public IAccelerated
-{
+class VESPA_HWACCEL_TARGET_TYPE : public IAccelerated {
 public:
-    float dotProduct(const float* a, const float* b, size_t sz) const noexcept override;
-    float dotProduct(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept override;
-    double dotProduct(const double* a, const double* b, size_t sz) const noexcept override;
-    int64_t dotProduct(const int8_t* a, const int8_t* b, size_t sz) const noexcept override;
-    int64_t dotProduct(const int16_t* a, const int16_t* b, size_t sz) const noexcept override;
-    int64_t dotProduct(const int32_t* a, const int32_t* b, size_t sz) const noexcept override;
-    long long dotProduct(const int64_t* a, const int64_t* b, size_t sz) const noexcept override;
-    void orBit(void* a, const void* b, size_t bytes) const noexcept override;
-    void andBit(void* a, const void* b, size_t bytes) const noexcept override;
-    void andNotBit(void* a, const void* b, size_t bytes) const noexcept override;
-    void notBit(void* a, size_t bytes) const noexcept override;
-    size_t populationCount(const uint64_t* a, size_t sz) const noexcept override;
-    size_t binary_hamming_distance(const void* lhs, const void* rhs, size_t sz) const noexcept override;
-    void convert_bfloat16_to_float(const uint16_t* src, float* dest, size_t sz) const noexcept override;
-    double squaredEuclideanDistance(const int8_t* a, const int8_t* b, size_t sz) const noexcept override;
-    double squaredEuclideanDistance(const float* a, const float* b, size_t sz) const noexcept override;
-    double squaredEuclideanDistance(const double* a, const double* b, size_t sz) const noexcept override;
-    double squaredEuclideanDistance(const BFloat16* a, const BFloat16* b, size_t sz) const noexcept override;
-    void and128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) const noexcept override;
-    void or128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) const noexcept override;
+    ~VESPA_HWACCEL_TARGET_TYPE() override = default;
+
     TargetInfo target_info() const noexcept override;
     const dispatch::FnTable& fn_table() const override;
 };

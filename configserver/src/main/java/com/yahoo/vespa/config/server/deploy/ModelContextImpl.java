@@ -181,7 +181,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean containerDumpHeapOnShutdownTimeout;
         private final int maxUnCommittedMemory;
         private final boolean forwardIssuesAsErrors;
-        private final boolean useV8GeoPositions;
         private final List<String> ignoredHttpUserAgents;
         private final int mbus_network_threads;
         private final int mbus_java_num_targets;
@@ -229,7 +228,6 @@ public class ModelContextImpl implements ModelContext {
             this.containerDumpHeapOnShutdownTimeout = PermanentFlags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT.bindTo(source).with(appId).with(version).value();
             this.maxUnCommittedMemory = PermanentFlags.MAX_UNCOMMITTED_MEMORY.bindTo(source).with(appId).with(version).value();
             this.forwardIssuesAsErrors = PermanentFlags.FORWARD_ISSUES_AS_ERRORS.bindTo(source).with(appId).with(version).value();
-            this.useV8GeoPositions = Flags.USE_V8_GEO_POSITIONS.bindTo(source).with(appId).with(version).value();
             this.ignoredHttpUserAgents = PermanentFlags.IGNORED_HTTP_USER_AGENTS.bindTo(source).with(appId).with(version).value();
             this.mbus_java_num_targets = Flags.MBUS_JAVA_NUM_TARGETS.bindTo(source).with(appId).with(version).value();
             this.mbus_java_events_before_wakeup = Flags.MBUS_JAVA_EVENTS_BEFORE_WAKEUP.bindTo(source).with(appId).with(version).value();
@@ -279,7 +277,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
         @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
         @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }
-        @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
+        @Override public boolean useV8GeoPositions() { return true; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
         @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
         @Override public int mbusJavaEventsBeforeWakeup() { return mbus_java_events_before_wakeup; }
@@ -488,10 +486,10 @@ public class ModelContextImpl implements ModelContext {
             // Luckily this is feature flag that's rarely modified.
             var flagWithClusterType = clusterType.map(type -> flag.with(CLUSTER_TYPE, type.name()))
                     .orElse(flag);
-            
+
             var flagWithContainerId = clusterId.map(id -> flagWithClusterType.with(CLUSTER_ID, id.value()))
                     .orElse(flagWithClusterType);
-            
+
             return flagWithContainerId.value();
         }
 

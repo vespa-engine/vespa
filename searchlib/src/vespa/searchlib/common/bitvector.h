@@ -140,15 +140,8 @@ public:
             : getStartIndex();
     }
 
-    void setSize(Index sz) {
-        set_bit_no_range_check(sz);  // Need to place the new stop sign first
-        std::atomic_thread_fence(std::memory_order_release);
-        if (sz > _sz) {
-            // Can only remove the old stopsign if it is ahead of the new.
-            clear_bit_no_range_check(_sz);
-        }
-        vespalib::atomic::store_ref_release(_sz, sz);
-    }
+    void setGuardBit() noexcept;
+    void setSize(Index sz);
     void set_bit_no_range_check(Index idx) noexcept {
         store_unchecked(_words[wordNum(idx)], _words[wordNum(idx)] | mask(idx));
     }
@@ -290,11 +283,11 @@ public:
     static UP create(const BitVector & rhs);
     static void consider_enable_range_check();
     /**
-     * Will slice the vectors and if possible use the thread bundle do the operation in parallell
+     * Will slice the vectors and if possible use the thread bundle do the operation in parallel
      * The result of the operation ends up in the first vector.
      * TODO: Extend to handle both AND/OR
      */
-    static void parallellOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVector* const> vectors);
+    static void parallelOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVector* const> vectors);
     // number of words used for a bitvector without guard bits.
     static constexpr Index num_words_plain(Index bits) noexcept { return wordNum(bits + (WordLen - 1)); }
     static constexpr Index legacy_num_bytes_with_single_guard_bit(Index bits) noexcept {
@@ -324,6 +317,7 @@ protected:
         return allocatePaddedAndAligned(start, end, end);
     }
     static Alloc allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc = nullptr);
+    void initialize_from(const BitVector& org);
 
 private:
     struct OrParts;
@@ -345,7 +339,6 @@ private:
         return (end >= start) ? (numWords(end) - wordNum(start)) : 0;
     }
     static constexpr Index invalidCount() noexcept { return std::numeric_limits<Index>::max(); }
-    void setGuardBit() noexcept { set_bit_no_range_check(size()); }
     void incNumBits() noexcept {
         if ( isValidCount() ) {
             _numTrueBits.store(_numTrueBits.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
@@ -357,7 +350,6 @@ private:
 
         }
     }
-    VESPA_DLL_LOCAL void repairEnds();
     Range sanitize(Range range) const {
         return {std::max(range.start(), getStartIndex()),
                 std::min(range.end(), size())};

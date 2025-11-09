@@ -255,7 +255,7 @@ public:
 };
 
 constexpr bool should_use_highway_by_default() noexcept {
-    return false; // TODO the Big Flip(tm)
+    return true;
 }
 
 EnabledTargetLevel EnabledTargetLevel::create_from_env_var() {
