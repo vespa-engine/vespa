@@ -81,12 +81,14 @@ public class MetricsFetcherTest {
         String jsonData;
         Metrics metrics = null;
 
-        jsonData = "";
+        jsonData = "<";
         try {
             metrics = fetch(jsonData);
             fail("Should have an IOException instead");
         } catch (IOException e) {
-            assertEquals("Expected start of object, got null", e.getMessage());
+            assertEquals("Unexpected character ('<' (code 60)): expected a valid value (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\n" +
+                                 " at [Source: (String)\"<\"; line: 1, column: 1]",
+                         e.getMessage());
         }
         assertNull(metrics);
 
