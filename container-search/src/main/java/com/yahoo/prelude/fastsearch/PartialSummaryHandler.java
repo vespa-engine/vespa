@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  */
 public class PartialSummaryHandler {
     public static final String DEFAULT_CLASS = "default";
-    public static final String ALL_FIELDS_CLASS = "default"; // not really true, but best we can do for now
+    public static final String ALL_FIELDS_CLASS = "[all]"; // best we can do
     public static final String PRESENTATION = "[presentation]";
 
     private static final Logger log = Logger.getLogger(PartialSummaryHandler.class.getName());
@@ -238,9 +238,16 @@ public class PartialSummaryHandler {
 
     public static String enoughFields(String summaryClass, Result result) {
         var summaryFields = result.getQuery().getPresentation().getSummaryFields();
-        if (isDefaultRequest(summaryClass) && ! summaryFields.isEmpty()) {
-            // it's enough to have the string we would use as fillMarker
-            return syntheticName(summaryFields);
+        if (isDefaultRequest(summaryClass)) {
+            if (! summaryFields.isEmpty()) {
+                // it's enough to have the string we would use as fillMarker
+                return syntheticName(summaryFields);
+            }
+            String wantSum = result.getQuery().getPresentation().getSummary();
+            if (wantSum == null) {
+                return DEFAULT_CLASS;
+            }
+            return wantSum;
         } else {
             // this is 'always' enough:
             return ALL_FIELDS_CLASS;
@@ -266,7 +273,7 @@ public class PartialSummaryHandler {
     }
 
     private void computeEffectiveDocsumDef() {
-        if ((docsumDefinitions != null) && docsumDefinitions.hasDocsum(askForSummary)) {
+        if (docsumDefinitions != null) {
             effectiveDocsumDef = docsumDefinitions.getDocsum(askForSummary);
             if (askForFields != null) {
                 effectiveDocsumDef = new DocsumDefinition("<unnamed>", effectiveDocsumDef, askForFields);

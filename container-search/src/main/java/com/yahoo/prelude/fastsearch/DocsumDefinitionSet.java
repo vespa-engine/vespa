@@ -34,10 +34,12 @@ public final class DocsumDefinitionSet {
     }
 
     public DocsumDefinitionSet(Collection<DocumentSummary> docsumDefinitions) {
-        this.definitionsByName = docsumDefinitions.stream()
-                                                  .map(DocsumDefinition::new)
-                                                  .collect(Collectors.toUnmodifiableMap(DocsumDefinition::name,
-                                                                                        summary -> summary));
+        var map = docsumDefinitions.stream()
+                .map(DocsumDefinition::new)
+                .collect(Collectors.toConcurrentMap(DocsumDefinition::name,
+                                                    summary -> summary));
+        map.computeIfAbsent("[all]", k -> new DocsumDefinition(k, map.get("default"), map.values()));
+        this.definitionsByName = Map.copyOf(map);
     }
 
     /**
