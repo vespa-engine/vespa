@@ -72,10 +72,10 @@ Test::testFieldMatchBluePrint()
             ie.getBuilder().addField(FieldType::INDEX, CollectionType::ARRAY, "abar");
             ie.getBuilder().addField(FieldType::INDEX, CollectionType::WEIGHTEDSET, "wbar");
             FT_SETUP_FAIL(pt, ie, params.add("foo"));
-            FT_SETUP_FAIL(pt, ie, params.add("abar"));
             FT_SETUP_FAIL(pt, ie, params.add("wbar"));
 
             FT_SETUP_OK(pt, ie, params.clear().add("bar"), in, out);
+            FT_SETUP_OK(pt, ie, params.clear().add("abar"), in, out);
         }
 
         { // test illegal proximity table
@@ -103,19 +103,41 @@ Test::testFieldMatchBluePrint()
         FT_DUMP_EMPTY(_factory, "fieldMatch", ie); // must be an index field
 
         ie.getBuilder().addField(FieldType::INDEX, CollectionType::ARRAY, "abar");
-        FT_DUMP_EMPTY(_factory, "fieldMatch", ie); // must be single value
-
-        ie.getBuilder().addField(FieldType::INDEX, CollectionType::WEIGHTEDSET, "wbar");
-        FT_DUMP_EMPTY(_factory, "fieldMatch", ie); // must be single value
-
-        StringList dump;
-        ie.getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "bar");
-        std::string bn = "fieldMatch(bar)";
-        dump.add(bn);
-        for (uint32_t i = 1; i < out.size(); ++i) {
-            dump.add(bn + "." + out[i]);
+        {
+            StringList dump;
+            std::string bn = "fieldMatch(abar)";
+            dump.add(bn);
+            for (uint32_t i = 1; i < out.size(); ++i) {
+                dump.add(bn + "." + out[i]);
+            }
+            FT_DUMP(_factory, "fieldMatch", ie, dump);
         }
-        FT_DUMP(_factory, "fieldMatch", ie, dump);
+        ie.getBuilder().addField(FieldType::INDEX, CollectionType::WEIGHTEDSET, "wbar");
+        {
+            FtIndexEnvironment ie2;
+            ie2.getBuilder().addField(FieldType::INDEX, CollectionType::WEIGHTEDSET, "wbar");
+            FT_DUMP_EMPTY(_factory, "fieldMatch", ie2); // weightedset not supported
+        }
+
+        {
+            StringList dump;
+            {
+                std::string bn = "fieldMatch(abar)";
+                dump.add(bn);
+                for (uint32_t i = 1; i < out.size(); ++i) {
+                    dump.add(bn + "." + out[i]);
+                }
+            }
+            ie.getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "bar");
+            {
+                std::string bn = "fieldMatch(bar)";
+                dump.add(bn);
+                for (uint32_t i = 1; i < out.size(); ++i) {
+                    dump.add(bn + "." + out[i]);
+                }
+            }
+            FT_DUMP(_factory, "fieldMatch", ie, dump);
+        }
     }
 
     { // test dumping with a filter index field
@@ -171,11 +193,11 @@ Test::testFieldMatchExecutor()
     testFieldMatchExecutorZeroCases();
     testFieldMatchExecutorExceedingIterationLimit();
     testFieldMatchExecutorRemaining();
-}    
+}
 
 
 void
-Test::testFieldMatchExecutorOutOfOrder() 
+Test::testFieldMatchExecutorOutOfOrder()
 {
     assertFieldMatch("outOfOrder:0","a","a");
     assertFieldMatch("outOfOrder:0","a b c","a b c");
@@ -188,7 +210,7 @@ Test::testFieldMatchExecutorOutOfOrder()
 
 
 void
-Test::testFieldMatchExecutorSegments() 
+Test::testFieldMatchExecutorSegments()
 {
     assertFieldMatch("segments:1","a","a");
     assertFieldMatch("segments:1","a b c","a b c");
@@ -203,7 +225,7 @@ Test::testFieldMatchExecutorSegments()
 
 
 void
-Test::testFieldMatchExecutorGaps() 
+Test::testFieldMatchExecutorGaps()
 {
     assertFieldMatch("gaps:0","a","a");
     assertFieldMatch("gaps:0","x�a","a"); // TODO: which char ?
@@ -345,7 +367,7 @@ Test::testFieldMatchExecutorWeight()
     assertFieldMatch("weight:1",     "a","a a a");
     assertFieldMatch("weight:1",     "a b c","a b c");
     assertFieldMatch("weight:1",     "a b c","x x a b x a x c x x a b x c c x");
-    
+
     assertFieldMatch("weight:0.3333","a b c","a");
     assertFieldMatch("weight:0.6667","a b c","a b");
 
