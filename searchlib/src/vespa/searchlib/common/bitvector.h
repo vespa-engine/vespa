@@ -290,8 +290,9 @@ public:
     static void parallelOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVector* const> vectors);
     // number of words used for a bitvector without guard bits.
     static constexpr Index num_words_plain(Index bits) noexcept { return wordNum(bits + (WordLen - 1)); }
+    static constexpr Index num_bytes_plain(Index bits) noexcept { return num_words_plain(bits) * sizeof(Word); }
     static constexpr Index legacy_num_bytes_with_single_guard_bit(Index bits) noexcept {
-        return num_words_plain(bits + 1) * sizeof(Word);
+        return num_bytes_plain(bits + 1);
     }
     static Index numWords(Index bits) noexcept { return wordNum(bits + 1 + (WordLen - 1)); }
     static Index numBytes(Index bits) noexcept { return numWords(bits) * sizeof(Word); }
