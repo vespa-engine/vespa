@@ -25,6 +25,7 @@ transformerEndSequenceToken   int default=102
 # Output name
 transformerOutput string default=output_0
 
+# TODO: Parameters below are moved to onnx-evaluator.def, remove them after 2026-01-01
 # Settings for ONNX model evaluation
 onnxExecutionMode enum { parallel, sequential } default=sequential
 onnxInterOpThreads int default=1

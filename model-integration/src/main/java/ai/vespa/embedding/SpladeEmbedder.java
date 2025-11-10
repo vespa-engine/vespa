@@ -11,6 +11,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.SpladeEmbedderConfig;
 import com.yahoo.language.huggingface.HuggingFaceTokenizer;
 import com.yahoo.language.process.Embedder;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.tensor.DirectIndexedAddress;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
@@ -43,19 +44,20 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
     private final OnnxEvaluator evaluator;
 
     @Inject
-    public SpladeEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, SpladeEmbedderConfig config) {
-        this(onnx, runtime, config, true);
+    public SpladeEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, SpladeEmbedderConfig embedderConfig, OnnxEvaluatorConfig onnxConfig) {
+        this(onnx, runtime, embedderConfig, onnxConfig, true);
     }
-    SpladeEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, SpladeEmbedderConfig config, boolean useCustomReduce) {
+    
+    SpladeEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, SpladeEmbedderConfig embedderConfig, OnnxEvaluatorConfig onnxConfig, boolean useCustomReduce) {
         this.runtime = runtime;
-        inputIdsName = config.transformerInputIds();
-        attentionMaskName = config.transformerAttentionMask();
-        outputName = config.transformerOutput();
-        tokenTypeIdsName = config.transformerTokenTypeIds();
-        termScoreThreshold = config.termScoreThreshold();
+        inputIdsName = embedderConfig.transformerInputIds();
+        attentionMaskName = embedderConfig.transformerAttentionMask();
+        outputName = embedderConfig.transformerOutput();
+        tokenTypeIdsName = embedderConfig.transformerTokenTypeIds();
+        termScoreThreshold = embedderConfig.termScoreThreshold();
         this.useCustomReduce = useCustomReduce;
 
-        var tokenizerPath = Paths.get(config.tokenizerPath().toString());
+        var tokenizerPath = Paths.get(embedderConfig.tokenizerPath().toString());
         var builder = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
                 .addDefaultModel(tokenizerPath)
@@ -64,20 +66,18 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         if (info.maxLength() == -1 || info.truncation() != LONGEST_FIRST) {
             // Force truncation
             // to max length accepted by model if tokenizer.json contains no valid truncation configuration
-            int maxLength = info.maxLength() > 0 && info.maxLength() <= config.transformerMaxTokens()
+            int maxLength = info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens()
                     ? info.maxLength()
-                    : config.transformerMaxTokens();
+                    : embedderConfig.transformerMaxTokens();
             builder.setTruncation(true).setMaxLength(maxLength);
         }
         this.tokenizer = builder.build();
-        var optionsBuilder = new OnnxEvaluatorOptions.Builder()
-                .setExecutionMode(config.transformerExecutionMode().toString())
-                .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads());
-        if (config.transformerGpuDevice() >= 0)
-            optionsBuilder.setGpuDevice(config.transformerGpuDevice());
-        var onnxOpts = optionsBuilder.build();
+
         var resolver = new OnnxExternalDataResolver();
-        evaluator = onnx.evaluatorOf(resolver.resolveOnnxModel(config.transformerModelReference()).toString(), onnxOpts);
+        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig);
+        var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
+        this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
+        
         validateModel();
     }
 

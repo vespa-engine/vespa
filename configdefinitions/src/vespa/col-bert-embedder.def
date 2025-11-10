@@ -32,6 +32,7 @@ documentTokenId  int default=2
 # Output name
 transformerOutput string default=contextual
 
+# TODO: Parameters below are moved to onnx-evaluator.def, remove them after 2026-01-01
 # Settings for ONNX model evaluation
 transformerExecutionMode enum { parallel, sequential } default=sequential
 transformerInterOpThreads int default=1

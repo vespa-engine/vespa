@@ -1,0 +1,36 @@
+name: "dummy_transformer"
+platform: "onnxruntime_onnx"
+max_batch_size: 2
+dynamic_batching {
+  max_queue_delay_microseconds: 20000
+}
+instance_group [
+  {
+    count: 2
+    kind: KIND_CPU
+  }
+]
+parameters {
+  key: "enable_mem_area"
+  value {
+    string_value: "0"
+  }
+}
+parameters {
+  key: "enable_mem_pattern"
+  value {
+    string_value: "0"
+  }
+}
+parameters {
+  key: "inter_op_thread_count"
+  value {
+    string_value: "3"
+  }
+}
+parameters {
+  key: "intra_op_thread_count"
+  value {
+    string_value: "6"
+  }
+}

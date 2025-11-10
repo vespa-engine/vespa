@@ -1609,20 +1609,31 @@
       "record"
     ],
     "methods" : [
-      "public void <init>(java.lang.String, int, int, com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
       "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
+      "public void <init>(java.lang.String, int, int, com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public static com.yahoo.config.model.api.OnnxModelOptions empty()",
       "public com.yahoo.config.model.api.OnnxModelOptions withExecutionMode(java.lang.String)",
       "public com.yahoo.config.model.api.OnnxModelOptions withInterOpThreads(java.lang.Integer)",
       "public com.yahoo.config.model.api.OnnxModelOptions withIntraOpThreads(java.lang.Integer)",
       "public com.yahoo.config.model.api.OnnxModelOptions withGpuDevice(com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
+      "public com.yahoo.config.model.api.OnnxModelOptions withBatchingMaxSize(java.lang.Integer)",
+      "public com.yahoo.config.model.api.OnnxModelOptions withBatchingMaxDelay(java.time.Duration)",
+      "public com.yahoo.config.model.api.OnnxModelOptions withConcurrencyFactorType(java.lang.String)",
+      "public com.yahoo.config.model.api.OnnxModelOptions withConcurrencyFactor(java.lang.Double)",
+      "public com.yahoo.config.model.api.OnnxModelOptions withModelConfigOverride(com.yahoo.config.FileReference)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
       "public java.util.Optional executionMode()",
       "public java.util.Optional interOpThreads()",
       "public java.util.Optional intraOpThreads()",
-      "public java.util.Optional gpuDevice()"
+      "public java.util.Optional gpuDevice()",
+      "public java.util.Optional batchingMaxSize()",
+      "public java.util.Optional batchingMaxDelay()",
+      "public java.util.Optional concurrencyFactorType()",
+      "public java.util.Optional concurrencyFactor()",
+      "public java.util.Optional modelConfigOverride()"
     ],
     "fields" : [ ]
   },
