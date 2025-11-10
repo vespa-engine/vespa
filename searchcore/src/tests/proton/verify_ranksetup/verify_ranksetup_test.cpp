@@ -425,8 +425,8 @@ TEST_F(VerifyRankSetupTest, require_that_dump_features_can_break_validation) {
 
 TEST_F(VerifyRankSetupTest, require_that_fieldMatch_feature_requires_single_value_field) {
     SimpleSetup f;
-    f.verify_invalid({"fieldMatch(keywords)", "fieldMatch(list)"}, SearchMode::INDEXED);
-    f.verify_valid({"fieldMatch(title)"});
+    f.verify_invalid({"fieldMatch(keywords)"}, SearchMode::INDEXED);
+    f.verify_valid({"fieldMatch(title)", "fieldMatch(list)"});
 }
 
 TEST_F(VerifyRankSetupTest, require_that_age_feature_requires_attribute_parameter) {
