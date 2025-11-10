@@ -18,5 +18,4 @@ vespa_add_library(vespaeval
     ${CMAKE_DL_LIBS}
 )
 
-set(BLA_VENDOR OpenBLAS)
 vespa_add_target_package_dependency(vespaeval BLAS)

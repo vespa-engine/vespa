@@ -27,6 +27,5 @@ set_source_files_properties(neon_fp16_dotprod.cpp PROPERTIES COMPILE_FLAGS "-O3 
 set_source_files_properties(sve.cpp               PROPERTIES COMPILE_FLAGS "-O3 -march=armv8.2-a+sve -mtune=neoverse-n1")
 set_source_files_properties(sve2.cpp              PROPERTIES COMPILE_FLAGS "-O3 -march=armv8.2-a+sve2 -mtune=neoverse-n1")
 
-set(BLA_VENDOR OpenBLAS)
 vespa_add_target_package_dependency(vespa_hwaccelerated BLAS)
 vespa_add_target_external_dependency(vespa_hwaccelerated hwy)
