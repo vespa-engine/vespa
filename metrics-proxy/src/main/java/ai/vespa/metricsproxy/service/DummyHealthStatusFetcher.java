@@ -12,14 +12,14 @@ import ai.vespa.metricsproxy.metric.HealthMetric;
 public class DummyHealthStatusFetcher extends RemoteHealthStatusFetcher {
 
     /**
-     * @param service The service to fetch metrics from
+     * @param service The service to fetch health status from
      */
     DummyHealthStatusFetcher(VespaService service) {
         super(service, 0);
     }
 
     /**
-     * Connect to remote service over http and fetch metrics
+     * Connect to remote service over http and fetch health status
      */
     @Override
     public HealthMetric getHealth(int fetchCount) {

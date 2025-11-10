@@ -39,7 +39,7 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
         }
     }
 
-    void createMetrics(String data, MetricsParser.Collector consumer, int fetchCount) throws IOException {
+    void createMetrics(String data, MetricsParser.Collector consumer) throws IOException {
         MetricsParser.parse(data, consumer);
     }
 }
