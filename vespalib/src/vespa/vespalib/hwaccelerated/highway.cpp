@@ -34,6 +34,8 @@ namespace {
 // register spilling to stack temporaries if it decides to break the lambda out
 // as a separate logical function. For good measure, also ensure that we inline
 // the lambda's _callees_. This mirrors the most prudent parts of HWY_API.
+// `HWY_ATTR` is needed to ensure lambdas have the expected codegen target.
+// See https://google.github.io/highway/en/master/faq.html#boilerplate
 #if defined(__clang__)
 #define VESPA_HWY_LAMBDA HWY_ATTR __attribute__((always_inline, flatten)) noexcept
 #else
@@ -122,8 +124,6 @@ double my_hwy_square_euclidean_distance(const T* HWY_RESTRICT a,
                                         const size_t sz) noexcept
 {
     const hn::ScalableTag<T> d;
-    // `HWY_ATTR` is needed to ensure lambdas have the expected codegen target.
-    // See https://google.github.io/highway/en/master/faq.html#boilerplate
     const auto kernel_fn = [](auto lhs, auto rhs, auto& accu) VESPA_HWY_LAMBDA {
         const auto sub = hn::Sub(lhs, rhs);
         accu = hn::MulAdd(sub, sub, accu); // note: using fused multiply-add
