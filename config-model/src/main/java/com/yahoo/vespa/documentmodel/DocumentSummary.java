@@ -153,11 +153,8 @@ public class DocumentSummary {
     public void validate(DeployLogger logger) {
         for (var inheritedName : inherited) {
             var inheritedSummary = owner.getSummary(inheritedName);
-            // TODO: Throw when no one is doing this anymore
-            if (inheritedName.equals("default"))
-                logger.logApplicationPackage(WARNING, this + " inherits '" + inheritedName +
-                                                      "', which makes no sense. Remove this inheritance");
-            else if (inheritedSummary == null )
+            // "default" will be added later by ImplicitSummaries
+            if (inheritedSummary == null && ! inheritedName.equals("default"))
                 throw new IllegalArgumentException(this + " inherits '" + inheritedName +
                                                    "', but this is not present in " + owner);
         }
