@@ -22,7 +22,8 @@ public:
     void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
-        return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::SINGLE);
+        return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::SINGLE)
+                                              .desc().indexField(fef::ParameterCollection::ARRAY);
     }
 
     bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;

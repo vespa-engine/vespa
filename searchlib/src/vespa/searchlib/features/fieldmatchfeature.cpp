@@ -145,7 +145,8 @@ FieldMatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
         const search::fef::FieldInfo * field = env.getField(i);
         if (field->type() == search::fef::FieldType::INDEX &&
-            field->collection() == CollectionType::SINGLE)
+            (field->collection() == CollectionType::SINGLE ||
+            field->collection() == CollectionType::ARRAY))
         {
             FeatureNameBuilder fnb;
             fnb.baseName(getBaseName()).parameter(field->name());
