@@ -16,6 +16,7 @@ public:
     using GenerationHeldBase = vespalib::GenerationHeldBase;
     GrowableBitVector(BitWord::Index newSize, BitWord::Index newCapacity,
                       GenerationHolder &generationHolder, const Alloc *init_alloc = nullptr);
+    ~GrowableBitVector();
 
     const BitVector &reader() const { return acquire_self(); }
     AllocatedBitVector &writer() { return *_stored; }
@@ -23,6 +24,7 @@ public:
     BitWord::Index extraByteSize() const {
         return sizeof(AllocatedBitVector) + acquire_self().extraByteSize();
     }
+    std::unique_ptr<const BitVector> make_snapshot(BitWord::Index new_size);
 
     /** Will return true if a a buffer is held */
     bool reserve(BitWord::Index newCapacity);

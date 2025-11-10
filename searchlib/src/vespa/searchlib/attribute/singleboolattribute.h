@@ -25,7 +25,7 @@ public:
     void onAddDocs(DocId docIdLimit) override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
     bool onLoad(vespalib::Executor *executor) override;
-    void onSave(IAttributeSaveTarget &saveTarget) override;
+    std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
     void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;
     void onShrinkLidSpace() override;
     void reclaim_memory(generation_t oldest_used_gen) override;

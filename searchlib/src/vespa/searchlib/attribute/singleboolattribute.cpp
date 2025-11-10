@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "singleboolattribute.h"
+#include "single_bool_attribute_saver.h"
 #include "attributevector.hpp"
 #include "iattributesavetarget.h"
 #include "ipostinglistsearchcontext.h"
@@ -19,6 +20,7 @@ namespace search {
 
 using attribute::Config;
 using attribute::HitEstimate;
+using attribute::SingleBoolAttributeSaver;
 
 SingleBoolAttribute::
 SingleBoolAttribute(const std::string &baseFileName, const GrowStrategy & grow, bool paged)
@@ -223,26 +225,11 @@ SingleBoolAttribute::onLoad(vespalib::Executor *)
     return ok;
 }
 
-void
-SingleBoolAttribute::onSave(IAttributeSaveTarget &saveTarget)
+std::unique_ptr<AttributeSaver>
+SingleBoolAttribute::onInitSave(std::string_view fileName)
 {
-    assert(!saveTarget.getEnumerated());
-    const size_t numDocs(getCommittedDocIdLimit());
-    const size_t sz(sizeof(uint32_t) + _bv.writer().sizeBytes());
-    IAttributeSaveTarget::Buffer buf(saveTarget.datWriter().allocBuf(sz));
-
-    char *p = buf->getFree();
-    const char *e = p + sz;
-    uint32_t numDocs2 = numDocs;
-    memcpy(p, &numDocs2, sizeof(uint32_t));
-    p += sizeof(uint32_t);
-    memcpy(p, _bv.writer().getStart(), _bv.writer().sizeBytes());
-    p += _bv.writer().sizeBytes();
-    assert(p == e);
-    (void) e;
-    buf->moveFreeToData(sz);
-    saveTarget.datWriter().writeBuf(std::move(buf));
-    assert(numDocs == getCommittedDocIdLimit());
+    return std::make_unique<SingleBoolAttributeSaver>(createAttributeHeader(fileName),
+                                                      _bv.make_snapshot(getCommittedDocIdLimit()));
 }
 
 void
