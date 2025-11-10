@@ -19,12 +19,12 @@ import java.util.logging.Logger;
  *
  * @author Jo Kristian Bergum
  */
-public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
-    private final static Logger log = Logger.getLogger(RemoteHealthMetricFetcher.class.getPackage().getName());
+public class RemoteHealthStatusFetcher extends HttpMetricFetcher {
+    private final static Logger log = Logger.getLogger(RemoteHealthStatusFetcher.class.getPackage().getName());
 
     private final static String HEALTH_PATH = STATE_PATH + "health";
 
-    public RemoteHealthMetricFetcher(VespaService service, int port) {
+    public RemoteHealthStatusFetcher(VespaService service, int port) {
         super(service, port, HEALTH_PATH);
     }
 
