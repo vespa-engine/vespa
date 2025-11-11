@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "singlesmallnumericattribute.h"
+#include "single_small_numeric_attribute_saver.h"
 #include "attributevector.hpp"
 #include "iattributesavetarget.h"
 #include "primitivereader.h"
@@ -11,6 +12,8 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/size_literals.h>
+
+using search::attribute::SingleSmallNumericAttributeSaver;
 
 namespace search {
 
@@ -151,28 +154,15 @@ SingleValueSmallNumericAttribute::onLoad(vespalib::Executor *)
     return ok;
 }
 
-
-void
-SingleValueSmallNumericAttribute::onSave(IAttributeSaveTarget &saveTarget)
+std::unique_ptr<AttributeSaver>
+SingleValueSmallNumericAttribute::onInitSave(std::string_view fileName)
 {
-    assert(!saveTarget.getEnumerated());
-    const size_t numDocs(getCommittedDocIdLimit());
-    const size_t numDataWords((numDocs + _valueShiftMask) >> _wordShift);
-    const size_t sz((numDataWords + 1) * sizeof(Word));
-    IAttributeSaveTarget::Buffer buf(saveTarget.datWriter().allocBuf(sz));
-
-    char *p = buf->getFree();
-    const char *e = p + sz;
-    Word numDocs2 = numDocs;
-    memcpy(p, &numDocs2, sizeof(Word));
-    p += sizeof(Word);
-    memcpy(p, &_wordData[0], numDataWords * sizeof(Word));
-    p += numDataWords * sizeof(Word);
-    assert(p == e);
-    (void) e;
-    buf->moveFreeToData(sz);
-    saveTarget.datWriter().writeBuf(std::move(buf));
-    assert(numDocs == getCommittedDocIdLimit());
+    using Saver = SingleSmallNumericAttributeSaver;
+    const size_t num_docs(getCommittedDocIdLimit());
+    const size_t num_data_words((num_docs + _valueShiftMask) >> _wordShift);
+    auto word_data_view = _wordData.make_read_view(num_data_words);
+    return std::make_unique<Saver>(createAttributeHeader(fileName), num_docs,
+                                   std::vector<uint32_t>(word_data_view.begin(), word_data_view.end()));
 }
 
 std::unique_ptr<attribute::SearchContext>
