@@ -399,7 +399,7 @@ MinHitsPerThread::lookup(const Properties &props, uint32_t defaultValue)
 
 const std::string GlobalFilterLowerLimit::NAME("vespa.matching.global_filter.lower_limit");
 
-const double GlobalFilterLowerLimit::DEFAULT_VALUE(0.05);
+const double GlobalFilterLowerLimit::DEFAULT_VALUE(0.02);
 
 double
 GlobalFilterLowerLimit::lookup(const Properties &props)
