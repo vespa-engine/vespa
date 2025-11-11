@@ -67,11 +67,13 @@ public:
         bool _sort_by_cost;
         bool _allow_force_strict;
         bool _keep_order;
+        bool _preserve_children;
     public:
         constexpr Options() noexcept
           : _sort_by_cost(false),
             _allow_force_strict(false),
-            _keep_order(false) {}
+            _keep_order(false),
+            _preserve_children(false) {}
         constexpr bool sort_by_cost() const noexcept { return _sort_by_cost; }
         constexpr Options &sort_by_cost(bool value) noexcept {
             _sort_by_cost = value;
@@ -85,6 +87,11 @@ public:
         constexpr bool keep_order() const noexcept { return _keep_order; }
         constexpr Options &keep_order(bool value) noexcept {
             _keep_order = value;
+            return *this;
+        }
+        constexpr bool preserve_children() const noexcept { return _preserve_children; }
+        constexpr Options &preserve_children(bool value) noexcept {
+            _preserve_children = value;
             return *this;
         }
     };
@@ -115,9 +122,11 @@ public:
     // optimize and sort. If you do low-level stuff directly, make
     // sure to keep the relevant options bound while doing so.
     static BindOpts bind_opts(Options opts) noexcept { return BindOpts(opts); }
+    static Options get_thread_opts() noexcept { return thread_opts(); }
     static bool opt_sort_by_cost() noexcept { return thread_opts().sort_by_cost(); }
     static bool opt_allow_force_strict() noexcept { return thread_opts().allow_force_strict(); }
     static bool opt_keep_order() noexcept { return thread_opts().keep_order(); }
+    static bool opt_preserve_children() noexcept { return thread_opts().preserve_children(); }
 
     struct HitEstimate {
         uint32_t estHits;
@@ -525,7 +534,7 @@ public:
     uint32_t enumerate(uint32_t next_id) noexcept override;
     void each_node_post_order(const std::function<void(Blueprint&)> &f) override;
 
-    void optimize(Blueprint* &self, OptimizePass pass) final;
+    void optimize(Blueprint* &self, OptimizePass pass) override;
     void sort(InFlow in_flow) override;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
 

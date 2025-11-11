@@ -142,6 +142,7 @@ private:
     AnyFlow my_flow(InFlow in_flow) const override;
 public:
     ~NearBlueprint() override;
+    void optimize(Blueprint* &self, OptimizePass pass) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
@@ -171,6 +172,7 @@ private:
     AnyFlow my_flow(InFlow in_flow) const override;
 public:
     ~ONearBlueprint() override;
+    void optimize(Blueprint* &self, OptimizePass pass) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
