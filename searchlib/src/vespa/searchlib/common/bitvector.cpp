@@ -184,6 +184,11 @@ void
 BitVector::set_dynamic_guard_bits(Index idx) noexcept
 {
     if constexpr (num_guard_bits > 1) {
+        /*
+         * Even guard bits are set to 1 and odd guard bits are set to 0 when using multiple guard bits.
+         * This avoids conflict between old and new guard bits when changing bitvector size by 1 and when
+         * bit vector size is 1 less than capacity.
+         */
         if ((idx & 1) == 0) {
             set_bit_no_range_check(idx);
             clear_bit_no_range_check(idx + 1);
