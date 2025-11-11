@@ -28,6 +28,7 @@ class BitVector : protected BitWord
 {
 public:
     using Index = BitWord::Index;
+    static constexpr Index num_guard_bits = 1;
     using UP = std::unique_ptr<BitVector>;
     class Range {
     public:
@@ -294,7 +295,7 @@ public:
     static constexpr Index legacy_num_bytes_with_single_guard_bit(Index bits) noexcept {
         return num_bytes_plain(bits + 1);
     }
-    static Index numWords(Index bits) noexcept { return wordNum(bits + 1 + (WordLen - 1)); }
+    static Index numWords(Index bits) noexcept { return wordNum(bits + num_guard_bits + (WordLen - 1)); }
     static Index numBytes(Index bits) noexcept { return numWords(bits) * sizeof(Word); }
     virtual size_t get_allocated_bytes(bool include_self) const noexcept = 0;
 protected:
