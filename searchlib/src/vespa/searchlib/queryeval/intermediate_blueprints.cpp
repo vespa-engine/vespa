@@ -148,7 +148,7 @@ AndNotBlueprint::optimize_self(OptimizePass pass)
                     addChild(child->removeLastChild());
                 }
                 removeChild(i--);
-            } else if (getChild(i).getState().estimate().empty) {
+            } else if (getChild(i).getState().estimate().empty && !opt_preserve_children()) {
                 removeChild(i--);
             }
         }
@@ -353,7 +353,7 @@ OrBlueprint::optimize_self(OptimizePass pass)
                     addChild(child->removeLastChild());
                 }
                 removeChild(i--);
-            } else if (getChild(i).getState().estimate().empty) {
+            } else if (getChild(i).getState().estimate().empty && !opt_preserve_children()) {
                 removeChild(i--);
             }
         }
@@ -571,6 +571,13 @@ WeakAndBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept
 
 NearBlueprint::~NearBlueprint() = default;
 
+void
+NearBlueprint::optimize(Blueprint* &self, OptimizePass pass)
+{
+    auto opts_guard = bind_opts(get_thread_opts().preserve_children(true));
+    IntermediateBlueprint::optimize(self, pass);
+}
+
 AnyFlow
 NearBlueprint::my_flow(InFlow in_flow) const
 {
@@ -639,6 +646,13 @@ NearBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 //-----------------------------------------------------------------------------
 
 ONearBlueprint::~ONearBlueprint() = default;
+
+void
+ONearBlueprint::optimize(Blueprint* &self, OptimizePass pass)
+{
+    auto opts_guard = bind_opts(get_thread_opts().preserve_children(true));
+    IntermediateBlueprint::optimize(self, pass);
+}
 
 AnyFlow
 ONearBlueprint::my_flow(InFlow in_flow) const
@@ -737,7 +751,7 @@ RankBlueprint::optimize_self(OptimizePass pass)
 {
     if (pass == OptimizePass::FIRST) {
         for (size_t i = 1; i < childCnt(); ++i) {
-            if (getChild(i).getState().estimate().empty) {
+            if (getChild(i).getState().estimate().empty && !opt_preserve_children()) {
                 removeChild(i--);
             }
         }
