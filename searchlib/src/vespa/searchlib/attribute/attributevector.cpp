@@ -279,26 +279,15 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget, std::string_view fileNam
     auto create_time = std::chrono::steady_clock::now();
     // First check if new style save is available.
     std::unique_ptr<AttributeSaver> saver(onInitSave(fileName));
-    if (saver) {
-        // Normally, new style save happens in background, but here it
-        // will occur in the foreground.
-        auto result = saver->save(saveTarget);
-        if (result) {
-            set_size_on_disk(saveTarget);
-            set_last_flush_duration(FileHeaderContext::make_flush_duration(create_time));
-        }
-        return result;
+    assert(saver);
+    // Normally, new style save happens in background, but here it
+    // will occur in the foreground.
+    auto result = saver->save(saveTarget);
+    if (result) {
+        set_size_on_disk(saveTarget);
+        set_last_flush_duration(FileHeaderContext::make_flush_duration(create_time));
     }
-    // New style save not available, use old style save
-    saveTarget.setHeader(createAttributeHeader(fileName));
-    if (!saveTarget.setup()) {
-        return false;
-    }
-    onSave(saveTarget);
-    saveTarget.close();
-    set_size_on_disk(saveTarget);
-    set_last_flush_duration(FileHeaderContext::make_flush_duration(create_time));
-    return true;
+    return result;
 }
 
 attribute::AttributeHeader
@@ -315,12 +304,6 @@ AttributeVector::createAttributeHeader(std::string_view fileName) const {
                                       getTotalValueCount(),
                                       getCreateSerialNum(),
                                       getVersion());
-}
-
-void
-AttributeVector::onSave(IAttributeSaveTarget &)
-{
-    LOG_ABORT("should not be reached");
 }
 
 bool
@@ -565,6 +548,7 @@ AttributeVector::initSave(std::string_view fileName)
 std::unique_ptr<AttributeSaver>
 AttributeVector::onInitSave(std::string_view)
 {
+    LOG_ABORT("should not be reached");
     return std::unique_ptr<AttributeSaver>();
 }
 
