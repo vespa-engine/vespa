@@ -59,7 +59,7 @@ namespace hn = hwy::HWY_NAMESPACE;
 
 // Using raw SVE types mirrors how overloads are done in Highway's `arm_sve-inl.h`
 template <size_t N, int kPow2>
-HWY_INLINE
+HWY_API
 void ReorderWidenSub(hn::Simd<int16_t, N, kPow2>,
                      svint8_t a, svint8_t b,
                      svint16_t& sub0, svint16_t& sub1) noexcept
@@ -72,7 +72,7 @@ void ReorderWidenSub(hn::Simd<int16_t, N, kPow2>,
 
 // Generic fallback for reordered widening subtraction
 template <typename D, typename V>
-HWY_INLINE
+HWY_API
 void ReorderWidenSub(D d, V a, V b, hn::VFromD<D>& sub0, hn::VFromD<D>& sub1) noexcept {
     sub0 = hn::Sub(hn::PromoteLowerTo(d, a), hn::PromoteLowerTo(d, b));
     sub1 = hn::Sub(hn::PromoteUpperTo(d, a), hn::PromoteUpperTo(d, b));
