@@ -29,7 +29,6 @@ class DomChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chai
     private final Collection<ComponentType<COMPONENT>> allowedComponentTypes;
 
     protected DomChainsBuilder(Collection<ComponentType<COMPONENT>> allowedComponentTypes) {
-
         this.allowedComponentTypes = new ArrayList<>(allowedComponentTypes);
     }
 
@@ -39,7 +38,7 @@ class DomChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chai
     protected final CHAINS doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element chainsElement) {
         CHAINS chains = newChainsInstance(parent);
 
-        List<Element> allChainElements = allChainElements(deployState, chainsElement);
+        List<Element> allChainElements = allChainElements(chainsElement);
         if (! allChainElements.isEmpty()) {
             ComponentsBuilder<COMPONENT> outerComponentsBuilder = readOuterComponents(deployState, chains, allChainElements);
             ChainsBuilder<COMPONENT, CHAIN> chainsBuilder = readChains(deployState, chains, allChainElements,
@@ -51,7 +50,7 @@ class DomChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chai
         return chains;
     }
 
-    private List<Element> allChainElements(DeployState deployState, Element chainsElement) {
+    private List<Element> allChainElements(Element chainsElement) {
         List<Element> chainsElements = new ArrayList<>();
         chainsElements.add(chainsElement);
 
