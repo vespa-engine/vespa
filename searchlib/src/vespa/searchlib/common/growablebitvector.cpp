@@ -40,6 +40,15 @@ GrowableBitVector::make_snapshot(BitWord::Index new_size)
     return std::make_unique<AllocatedBitVector>(new_size, new_size, &self, nullptr);
 }
 
+void
+GrowableBitVector::fixup_after_load()
+{
+    AllocatedBitVector& self = *_stored;
+    self.set_dynamic_guard_bits(self.size());
+    self.set_dynamic_guard_bits(self.capacity());
+    self.updateCount();
+}
+
 GenerationHeldBase::UP
 GrowableBitVector::grow(BitWord::Index newSize, BitWord::Index newCapacity)
 {

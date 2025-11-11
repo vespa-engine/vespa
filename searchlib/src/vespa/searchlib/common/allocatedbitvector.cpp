@@ -80,11 +80,12 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBit
     init(_alloc.get(), 0, numberOfElements);
     if (org != nullptr) {
         initialize_from(*org);
-        setGuardBit();
         updateCount();
     } else {
         clear();
     }
+    set_dynamic_guard_bits(size());
+    set_dynamic_guard_bits(capacity());
 }
 
 AllocatedBitVector::AllocatedBitVector(const AllocatedBitVector & rhs)

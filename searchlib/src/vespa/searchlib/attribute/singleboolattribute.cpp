@@ -104,7 +104,7 @@ SingleBoolAttribute::onUpdateStat(CommitParam::UpdateStats updateStats) {
     }
     vespalib::MemoryUsage usage;
     usage.setAllocatedBytes(_bv.writer().extraByteSize());
-    usage.setUsedBytes(_bv.writer().sizeBytes());
+    usage.setUsedBytes(BitVector::numBytes(getCommittedDocIdLimit()));
     usage.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     usage.merge(this->getChangeVectorMemoryUsage());
     this->updateStatistics(_bv.writer().size(), _bv.writer().size(), usage.allocatedBytes(), usage.usedBytes(),
@@ -212,10 +212,10 @@ SingleBoolAttribute::onLoad(vespalib::Executor *)
         _bv.writer().clear();
         uint32_t numDocs = attrReader.getNextData();
         _bv.extend(numDocs);
-        ssize_t bytesRead = attrReader.getReader().read(_bv.writer().getStart(), _bv.writer().sizeBytes());
-        _bv.writer().invalidateCachedCount();
-        _bv.writer().countTrueBits();
-        assert(bytesRead == _bv.writer().sizeBytes());
+        auto entry_size = BitVector::legacy_num_bytes_with_single_guard_bit(numDocs);
+        ssize_t bytesRead = attrReader.getReader().read(_bv.writer().getStart(), entry_size);
+        assert(bytesRead == entry_size);
+        _bv.fixup_after_load();
         setNumDocs(numDocs);
         setCommittedDocIdLimit(numDocs);
         set_size_on_disk(attrReader.size_on_disk());
@@ -257,7 +257,7 @@ uint64_t
 SingleBoolAttribute::getEstimatedSaveByteSize() const
 {
     constexpr uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT + sizeof(uint32_t);
-    return headerSize + _bv.reader().sizeBytes();
+    return headerSize + BitVector::legacy_num_bytes_with_single_guard_bit(getCommittedDocIdLimit());
 }
 
 void
