@@ -122,6 +122,12 @@ AllocatedBitVector::resize(Index newLength)
     clear();
 }
 
+void
+AllocatedBitVector::fixup_after_load()
+{
+    setGuardBit();
+}
+
 size_t
 AllocatedBitVector::get_allocated_bytes(bool include_self) const noexcept
 {

@@ -627,6 +627,7 @@ operator>>(nbostream &in, AllocatedBitVector &bv)
     }
     assert(bv.testBit(size));
     bv.setTrueBits(cachedHits);
+    bv.fixup_after_load();
     return in;
 }
 
