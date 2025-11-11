@@ -25,6 +25,7 @@ public:
         return sizeof(AllocatedBitVector) + acquire_self().extraByteSize();
     }
     std::unique_ptr<const BitVector> make_snapshot(BitWord::Index new_size);
+    void fixup_after_load();
 
     /** Will return true if a a buffer is held */
     bool reserve(BitWord::Index newCapacity);
