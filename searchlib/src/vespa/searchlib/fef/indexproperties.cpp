@@ -494,7 +494,7 @@ ElementGap::set_for_field(Properties& props, const std::string& field_name, cons
 
 const std::string FilterFirstUpperLimit::NAME("vespa.matching.nns.filter_first_upper_limit");
 
-const double FilterFirstUpperLimit::DEFAULT_VALUE(0.00);
+const double FilterFirstUpperLimit::DEFAULT_VALUE(0.3);
 
 double
 FilterFirstUpperLimit::lookup(const Properties &props)
