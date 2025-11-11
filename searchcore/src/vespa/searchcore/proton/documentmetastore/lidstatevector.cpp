@@ -54,8 +54,8 @@ LidStateVector::resizeVector(uint32_t newSize, uint32_t newCapacity)
 void
 LidStateVector::updateLowest(uint32_t lowest)
 {
-    lowest = _bv.writer().getNextTrueBit(lowest);
-    assert(lowest <= _bv.writer().size());
+
+    lowest = std::min(_bv.writer().getNextTrueBit(lowest), _bv.writer().size());
     _lowest.store(lowest, std::memory_order_relaxed);
 }
 
