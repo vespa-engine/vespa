@@ -9,7 +9,7 @@ namespace search {
 namespace {
 
 size_t computeCapacity(size_t capacity, size_t allocatedBytes) {
-    size_t possibleCapacity = (allocatedBytes * 8) - 1;
+    size_t possibleCapacity = (allocatedBytes * 8) - BitVector::num_guard_bits;
     assert(possibleCapacity >= capacity);
     return possibleCapacity;
 }

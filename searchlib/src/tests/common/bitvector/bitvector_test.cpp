@@ -649,45 +649,45 @@ TEST(BitvectorTest, requireThatGrowWorks)
     EXPECT_EQ(4u, v.writer().countTrueBits());
 
     EXPECT_EQ(200u, v.reader().size());
-    EXPECT_EQ(2047u, v.writer().capacity());
+    EXPECT_EQ(2048u - BitVector::num_guard_bits, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
     EXPECT_EQ(4u, v.writer().countTrueBits());
     EXPECT_TRUE(v.reserve(2048u));
     EXPECT_EQ(200u, v.reader().size()); 
-    EXPECT_EQ(4095u, v.writer().capacity());
+    EXPECT_EQ(4096u - BitVector::num_guard_bits, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
     EXPECT_EQ(4u, v.writer().countTrueBits());
     EXPECT_FALSE(v.extend(202));
     EXPECT_EQ(202u, v.reader().size()); 
-    EXPECT_EQ(4095u, v.writer().capacity());
+    EXPECT_EQ(4096u - BitVector::num_guard_bits, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
     EXPECT_EQ(4u, v.writer().countTrueBits());
     EXPECT_FALSE(v.shrink(200));
     EXPECT_EQ(200u, v.reader().size()); 
-    EXPECT_EQ(4095u, v.writer().capacity());
+    EXPECT_EQ(4096u - BitVector::num_guard_bits, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
     EXPECT_EQ(4u, v.writer().countTrueBits());
-    EXPECT_FALSE(v.reserve(4095u));
+    EXPECT_FALSE(v.reserve(4096u - BitVector::num_guard_bits));
     EXPECT_EQ(200u, v.reader().size()); 
-    EXPECT_EQ(4095u, v.writer().capacity());
+    EXPECT_EQ(4096u - BitVector::num_guard_bits, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
     EXPECT_EQ(4u, v.writer().countTrueBits());
     EXPECT_FALSE(v.shrink(202));
     EXPECT_EQ(202u, v.reader().size()); 
-    EXPECT_EQ(4095u, v.writer().capacity());
+    EXPECT_EQ(4096u - BitVector::num_guard_bits, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
     EXPECT_EQ(4u, v.writer().countTrueBits());
 
     EXPECT_FALSE(v.shrink(100));
     EXPECT_EQ(100u, v.reader().size()); 
-    EXPECT_EQ(4095u, v.writer().capacity());
+    EXPECT_EQ(4096u - BitVector::num_guard_bits, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71]", v.reader()));
     EXPECT_EQ(3u, v.writer().countTrueBits());
 
     v.writer().invalidateCachedCount();
     EXPECT_TRUE(v.reserve(5100u));
     EXPECT_EQ(100u, v.reader().size());
-    EXPECT_EQ(6143u, v.writer().capacity());
+    EXPECT_EQ(6144u - BitVector::num_guard_bits, v.writer().capacity());
     EXPECT_EQ(3u, v.writer().countTrueBits());
 
     g.assign_generation(1);
