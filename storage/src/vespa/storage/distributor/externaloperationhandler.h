@@ -8,6 +8,7 @@
 #include <atomic>
 #include <chrono>
 #include <mutex>
+#include <string_view>
 
 namespace documentapi { class TestAndSetCondition; }
 namespace storage::lib { class ClusterState; }
@@ -120,7 +121,7 @@ private:
     void bounce_with_feed_blocked(api::StorageCommand& cmd);
     std::shared_ptr<Operation> try_generate_get_operation(const std::shared_ptr<api::GetCommand>&);
     [[nodiscard]] bool message_size_is_above_put_or_update_limit(uint32_t msg_size) const noexcept;
-    void reject_as_oversized_message(api::StorageCommand& cmd);
+    void reject_as_oversized_message(api::StorageCommand& cmd, std::string_view raw_document_id);
 
     bool checkSafeTimeReached(api::StorageCommand& cmd);
     api::ReturnCode makeSafeTimeRejectionResult(TimePoint unsafeTime);
