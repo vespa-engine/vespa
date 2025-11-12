@@ -375,9 +375,9 @@ MatchToolsFactory::extract_create_blueprint_params(const RankSetup& rank_setup, 
     // This ensures that when searchable-copies=1, the ratio is 1.0.
     double active_hit_ratio = std::min(active_docids + 1, docid_limit) / static_cast<double>(docid_limit);
 
-    return {lower_limit * active_hit_ratio,
+    return {lower_limit,
             upper_limit * active_hit_ratio,
-            filter_first_upper_limit * active_hit_ratio,
+            filter_first_upper_limit,
             filter_first_exploration,
             exploration_slack,
             target_hits_max_adjustment_factor,
