@@ -8,7 +8,7 @@
         <!-- VoyageAI Embedder with all configuration options -->
         <component id="voyage-full" type="voyage-ai-embedder">
             <model>voyage-3</model>
-            <api-key-secret-name>voyage_api_key</api-key-secret-name>
+            <api-key-secret-ref>voyage_api_key</api-key-secret-ref>
             <endpoint>https://api.voyageai.com/v1/embeddings</endpoint>
             <timeout>60000</timeout>
             <max-retries>5</max-retries>
@@ -22,7 +22,7 @@
 
         <!-- VoyageAI Embedder with minimal configuration -->
         <component id="voyage-minimal" type="voyage-ai-embedder">
-            <api-key-secret-name>voyage_key</api-key-secret-name>
+            <api-key-secret-ref>voyage_key</api-key-secret-ref>
         </component>
     </container>
 </services>

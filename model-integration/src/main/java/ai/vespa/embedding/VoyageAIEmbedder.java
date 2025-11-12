@@ -52,7 +52,7 @@ import java.util.logging.Logger;
  * <pre>{@code
  * <component id="voyage" type="voyage-ai-embedder">
  *   <model>voyage-3</model>
- *   <api-key-secret-name>voyage_api_key</api-key-secret-name>
+ *   <api-key-secret-ref>voyage_api_key</api-key-secret-ref>
  * </component>
  * }</pre>
  *
@@ -92,11 +92,11 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
      * Retrieve API key from Vespa's secret store.
      */
     private Secret getApiKey(VoyageAiEmbedderConfig config, Secrets secretStore) {
-        String secretName = config.apiKeySecretName();
+        String secretName = config.apiKeySecretRef();
 
         if (secretName == null || secretName.isEmpty()) {
             throw new IllegalArgumentException(
-                "api-key-secret-name must be configured for VoyageAI embedder. " +
+                "api-key-secret-ref must be configured for VoyageAI embedder. " +
                 "Please set it in services.xml and ensure the secret is in the secret store."
             );
         }

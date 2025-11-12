@@ -157,7 +157,7 @@ ColBertEmbedder =
 VoyageAIEmbedder =
    attribute type { "voyage-ai-embedder" } &
    element model { xsd:string }? &
-   element api-key-secret-name { xsd:string } &
+   element api-key-secret-ref { xsd:string } &
    element endpoint { xsd:string }? &
    element max-batch-size { xsd:positiveInteger }? &
    element timeout { xsd:positiveInteger }? &

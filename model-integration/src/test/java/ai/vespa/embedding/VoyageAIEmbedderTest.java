@@ -147,7 +147,7 @@ public class VoyageAIEmbedderTest {
     public void testTimeoutExceeded() {
         // Create embedder with very short timeout
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretName("test_key");
+        configBuilder.apiKeySecretRef("test_key");
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
         configBuilder.timeout(2000); // 2 second timeout
@@ -182,7 +182,7 @@ public class VoyageAIEmbedderTest {
     public void testMaxRetriesSafetyLimit() {
         // Create embedder with low maxRetries
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretName("test_key");
+        configBuilder.apiKeySecretRef("test_key");
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
         configBuilder.timeout(30000); // High timeout
@@ -265,7 +265,7 @@ public class VoyageAIEmbedderTest {
     @Test
     public void testNormalization() throws Exception {
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretName("test_key");
+        configBuilder.apiKeySecretRef("test_key");
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
         configBuilder.normalize(true); // Enable normalization
@@ -300,7 +300,7 @@ public class VoyageAIEmbedderTest {
     @Test
     public void testMissingApiKeySecret() {
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretName(""); // Empty secret name
+        configBuilder.apiKeySecretRef(""); // Empty secret name
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
 
@@ -379,7 +379,7 @@ public class VoyageAIEmbedderTest {
 
     private VoyageAIEmbedder createEmbedder() {
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretName("test_key");
+        configBuilder.apiKeySecretRef("test_key");
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
         configBuilder.maxRetries(10);

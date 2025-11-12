@@ -104,7 +104,7 @@ public class VoyageAIEmbedderIntegrationTest {
         String apiKey = System.getenv("VOYAGE_API_KEY");
 
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretName("test_key");
+        configBuilder.apiKeySecretRef("test_key");
         configBuilder.model("voyage-3");
         configBuilder.normalize(true);
 
@@ -209,7 +209,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     private VoyageAIEmbedder createEmbedder(String apiKey, String model) {
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretName("test_key");
+        configBuilder.apiKeySecretRef("test_key");
         configBuilder.model(model);
         configBuilder.timeout(30000);
 

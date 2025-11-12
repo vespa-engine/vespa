@@ -94,7 +94,7 @@ field title_embedding type tensor<float>(d0[512])
 ```xml
 <component id="code-embedder" type="voyage-ai-embedder">
   <model>voyage-code-3</model>
-  <api-key-secret-name>voyage_api_key</api-key-secret-name>
+  <api-key-secret-ref>voyage_api_key</api-key-secret-ref>
 </component>
 ```
 

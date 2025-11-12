@@ -18,7 +18,7 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
  * <pre>{@code
  * <component id="voyage-embedder" type="voyage-ai-embedder">
  *   <model>voyage-3</model>
- *   <api-key-secret-name>voyage_api_key</api-key-secret-name>
+ *   <api-key-secret-ref>voyage_api_key</api-key-secret-ref>
  *   <endpoint>https://api.voyageai.com/v1/embeddings</endpoint>
  *   <timeout>30000</timeout>
  *   <auto-detect-input-type>true</auto-detect-input-type>
@@ -33,7 +33,7 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
  */
 public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedderConfig.Producer {
 
-    private final String apiKeySecretName;
+    private final String apiKeySecretRef;
     /**
      * VoyageAI API endpoint URL. Can be overridden for:
      * <ul>
@@ -76,10 +76,10 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
         super("ai.vespa.embedding.VoyageAIEmbedder", INTEGRATION_BUNDLE_NAME, xml);
 
         // Required fields
-        this.apiKeySecretName = getChildValue(xml, "api-key-secret-name")
+        this.apiKeySecretRef = getChildValue(xml, "api-key-secret-ref")
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "VoyageAI embedder requires <api-key-secret-name> element. " +
-                        "Please specify the name of the secret in Vespa's secret store."));
+                        "VoyageAI embedder requires <api-key-secret-ref> element. " +
+                        "Please specify the reference to the secret in Vespa's secret store."));
 
         // Optional fields with defaults
         this.model = getChildValue(xml, "model").orElse(null);
@@ -139,7 +139,7 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
     @Override
     public void getConfig(VoyageAiEmbedderConfig.Builder builder) {
         // Required
-        builder.apiKeySecretName(apiKeySecretName);
+        builder.apiKeySecretRef(apiKeySecretRef);
 
         // Optional - only set if provided (otherwise use defaults from .def file)
         if (model != null) {

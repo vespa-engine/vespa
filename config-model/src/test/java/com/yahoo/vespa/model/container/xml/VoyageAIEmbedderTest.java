@@ -31,7 +31,7 @@ public class VoyageAIEmbedderTest {
 
         // Verify all configuration values
         assertEquals("voyage-3", config.model());
-        assertEquals("voyage_api_key", config.apiKeySecretName());
+        assertEquals("voyage_api_key", config.apiKeySecretRef());
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint());
         assertEquals(60000, config.timeout());
         assertEquals(5, config.maxRetries());
@@ -54,7 +54,7 @@ public class VoyageAIEmbedderTest {
         VoyageAiEmbedderConfig config = getVoyageAIEmbedderConfig(cluster, "voyage-minimal");
 
         // Verify required field
-        assertEquals("voyage_key", config.apiKeySecretName());
+        assertEquals("voyage_key", config.apiKeySecretRef());
 
         // Verify defaults are used
         assertEquals("voyage-3", config.model()); // Default model
@@ -82,9 +82,9 @@ public class VoyageAIEmbedderTest {
                 </services>
                 """;
 
-        // Should fail because api-key-secret-name is required
+        // Should fail because api-key-secret-ref is required
         Exception exception = assertThrows(IllegalArgumentException.class, () -> buildModelFromXml(servicesXml));
-        assertTrue(exception.getMessage().contains("api-key-secret-name"));
+        assertTrue(exception.getMessage().contains("api-key-secret-ref"));
     }
 
     @Test
@@ -94,7 +94,7 @@ public class VoyageAIEmbedderTest {
                 <services version="1.0">
                     <container id="container" version="1.0">
                         <component id="voyage" type="voyage-ai-embedder">
-                            <api-key-secret-name>key</api-key-secret-name>
+                            <api-key-secret-ref>key</api-key-secret-ref>
                             <timeout>500</timeout>
                         </component>
                     </container>
@@ -113,7 +113,7 @@ public class VoyageAIEmbedderTest {
                 <services version="1.0">
                     <container id="container" version="1.0">
                         <component id="voyage" type="voyage-ai-embedder">
-                            <api-key-secret-name>key</api-key-secret-name>
+                            <api-key-secret-ref>key</api-key-secret-ref>
                             <default-input-type>invalid</default-input-type>
                         </component>
                     </container>
@@ -132,7 +132,7 @@ public class VoyageAIEmbedderTest {
                 <services version="1.0">
                     <container id="container" version="1.0">
                         <component id="voyage" type="voyage-ai-embedder">
-                            <api-key-secret-name>key</api-key-secret-name>
+                            <api-key-secret-ref>key</api-key-secret-ref>
                             <model>invalid-model-name</model>
                         </component>
                     </container>
@@ -157,7 +157,7 @@ public class VoyageAIEmbedderTest {
         VoyageAiEmbedderConfig fullConfig = getVoyageAIEmbedderConfig(cluster, "voyage-full");
         VoyageAiEmbedderConfig minimalConfig = getVoyageAIEmbedderConfig(cluster, "voyage-minimal");
 
-        assertNotEquals(fullConfig.apiKeySecretName(), minimalConfig.apiKeySecretName());
+        assertNotEquals(fullConfig.apiKeySecretRef(), minimalConfig.apiKeySecretRef());
         assertNotEquals(fullConfig.timeout(), minimalConfig.timeout());
     }
 

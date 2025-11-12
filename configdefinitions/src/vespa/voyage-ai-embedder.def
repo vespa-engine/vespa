@@ -4,8 +4,8 @@ namespace=embedding.voyageai
 
 # API Configuration
 
-# Name of the secret in Vespa's secret store containing the VoyageAI API key
-apiKeySecretName         string
+# Reference to the secret in Vespa's secret store containing the VoyageAI API key
+apiKeySecretRef          string
 
 # VoyageAI API endpoint URL
 endpoint                 string default="https://api.voyageai.com/v1/embeddings"
