@@ -844,4 +844,67 @@ TEST(BitvectorTest, fixup_count_and_guard_bit_and_zero_remaining_data_bits_after
     EXPECT_TRUE(bv == bv2);
 }
 
+TEST(BitvectorTest, normal_guard_bits)
+{
+    for (uint32_t num_end_padding_bits = 0; num_end_padding_bits < 2; ++num_end_padding_bits) {
+        auto bv_size = 2048u - BitVector::num_guard_bits - num_end_padding_bits;
+        SCOPED_TRACE("bv_size=" + std::to_string(bv_size));
+        AllocatedBitVector bv(bv_size);
+        EXPECT_EQ(bv_size + num_end_padding_bits, bv.capacity());
+        bv.clearInterval(0, bv_size);
+        EXPECT_EQ(bv_size, bv.getFirstTrueBit(0));
+        bv.setInterval(0, bv_size);
+        if (BitVector::num_guard_bits > 1 || num_end_padding_bits != 0) {
+            EXPECT_EQ(bv_size + 1, bv.getFirstFalseBit(0));
+        }
+    }
+}
+
+TEST(BitvectorTest, dynamic_guard_bits)
+{
+    vespalib::GenerationHolder g;
+    for (uint32_t num_end_padding_bits = 0; num_end_padding_bits < 2; ++num_end_padding_bits) {
+        auto bv_size = 2048u - BitVector::num_guard_bits - num_end_padding_bits;
+        constexpr bool single_guard_bit = (BitVector::num_guard_bits == 1);
+        /*
+         * Even guard bits are set to 1 and odd guard bits are set to 0 when using multiple guard bits.
+         * This avoids conflict between old and new guard bits when changing bitvector size by 1 and when
+         * bit vector size is 1 less than capacity.
+         */
+        constexpr uint32_t slack = single_guard_bit ? 0 : 1;
+        SCOPED_TRACE("bv_size=" + std::to_string(bv_size));
+        GrowableBitVector bv(bv_size, bv_size, g, nullptr);
+        EXPECT_EQ(bv_size + num_end_padding_bits, bv.writer().capacity());
+        bv.writer().clearInterval(0, bv_size);
+        // Only even guard bits are set to '1' when using multiple guard bits.
+        EXPECT_EQ(bv_size + ((num_end_padding_bits == 0) ? 0 : slack), bv.reader().getFirstTrueBit(0));
+        bv.shrink(257);
+        EXPECT_EQ(257 + slack, bv.reader().getFirstTrueBit(0));
+        bv.shrink(256);
+        EXPECT_EQ(256, bv.reader().getFirstTrueBit(0));
+        bv.shrink(255);
+        EXPECT_EQ(255 + slack, bv.reader().getFirstTrueBit(0));
+        bv.extend(bv_size);
+        EXPECT_EQ(bv_size + num_end_padding_bits, bv.writer().capacity());
+        bv.writer().setInterval(0, bv_size);
+        if (BitVector::num_guard_bits > 1) {
+            EXPECT_EQ(bv_size + ((num_end_padding_bits == 0) ? slack : 0), bv.reader().getFirstFalseBit(0));
+        }
+        bv.writer().clearBit(300);
+        bv.shrink(257);
+        /*
+         * Only odd guard bits are set to '0' when using multiple guard bits.
+         * No '0' guard bit is set and the whole cleared interval is overwritten by new '1'
+         * guard bit when using single guard bit and shrinking size by 1.
+         */
+        EXPECT_EQ(single_guard_bit ? 258 : 257, bv.reader().getFirstFalseBit(0));
+        bv.shrink(256);
+        EXPECT_EQ(single_guard_bit ? 258 : 257, bv.reader().getFirstFalseBit(0));
+        bv.shrink(255);
+        EXPECT_EQ(single_guard_bit ? 258 : 255, bv.reader().getFirstFalseBit(0));
+    }
+    g.assign_generation(1);
+    g.reclaim(2);
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
