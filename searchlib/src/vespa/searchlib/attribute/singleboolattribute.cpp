@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "singleboolattribute.h"
+#include "single_bool_attribute_saver.h"
 #include "attributevector.hpp"
 #include "iattributesavetarget.h"
 #include "ipostinglistsearchcontext.h"
@@ -19,6 +20,7 @@ namespace search {
 
 using attribute::Config;
 using attribute::HitEstimate;
+using attribute::SingleBoolAttributeSaver;
 
 SingleBoolAttribute::
 SingleBoolAttribute(const std::string &baseFileName, const GrowStrategy & grow, bool paged)
@@ -102,7 +104,7 @@ SingleBoolAttribute::onUpdateStat(CommitParam::UpdateStats updateStats) {
     }
     vespalib::MemoryUsage usage;
     usage.setAllocatedBytes(_bv.writer().extraByteSize());
-    usage.setUsedBytes(_bv.writer().sizeBytes());
+    usage.setUsedBytes(BitVector::numBytes(getCommittedDocIdLimit()));
     usage.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     usage.merge(this->getChangeVectorMemoryUsage());
     this->updateStatistics(_bv.writer().size(), _bv.writer().size(), usage.allocatedBytes(), usage.usedBytes(),
@@ -210,10 +212,10 @@ SingleBoolAttribute::onLoad(vespalib::Executor *)
         _bv.writer().clear();
         uint32_t numDocs = attrReader.getNextData();
         _bv.extend(numDocs);
-        ssize_t bytesRead = attrReader.getReader().read(_bv.writer().getStart(), _bv.writer().sizeBytes());
-        _bv.writer().invalidateCachedCount();
-        _bv.writer().countTrueBits();
-        assert(bytesRead == _bv.writer().sizeBytes());
+        auto entry_size = BitVector::legacy_num_bytes_with_single_guard_bit(numDocs);
+        ssize_t bytesRead = attrReader.getReader().read(_bv.writer().getStart(), entry_size);
+        assert(bytesRead == entry_size);
+        _bv.fixup_after_load();
         setNumDocs(numDocs);
         setCommittedDocIdLimit(numDocs);
         set_size_on_disk(attrReader.size_on_disk());
@@ -223,26 +225,11 @@ SingleBoolAttribute::onLoad(vespalib::Executor *)
     return ok;
 }
 
-void
-SingleBoolAttribute::onSave(IAttributeSaveTarget &saveTarget)
+std::unique_ptr<AttributeSaver>
+SingleBoolAttribute::onInitSave(std::string_view fileName)
 {
-    assert(!saveTarget.getEnumerated());
-    const size_t numDocs(getCommittedDocIdLimit());
-    const size_t sz(sizeof(uint32_t) + _bv.writer().sizeBytes());
-    IAttributeSaveTarget::Buffer buf(saveTarget.datWriter().allocBuf(sz));
-
-    char *p = buf->getFree();
-    const char *e = p + sz;
-    uint32_t numDocs2 = numDocs;
-    memcpy(p, &numDocs2, sizeof(uint32_t));
-    p += sizeof(uint32_t);
-    memcpy(p, _bv.writer().getStart(), _bv.writer().sizeBytes());
-    p += _bv.writer().sizeBytes();
-    assert(p == e);
-    (void) e;
-    buf->moveFreeToData(sz);
-    saveTarget.datWriter().writeBuf(std::move(buf));
-    assert(numDocs == getCommittedDocIdLimit());
+    return std::make_unique<SingleBoolAttributeSaver>(createAttributeHeader(fileName),
+                                                      _bv.make_snapshot(getCommittedDocIdLimit()));
 }
 
 void
@@ -270,7 +257,7 @@ uint64_t
 SingleBoolAttribute::getEstimatedSaveByteSize() const
 {
     constexpr uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT + sizeof(uint32_t);
-    return headerSize + _bv.reader().sizeBytes();
+    return headerSize + BitVector::legacy_num_bytes_with_single_guard_bit(getCommittedDocIdLimit());
 }
 
 void

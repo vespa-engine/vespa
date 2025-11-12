@@ -20,6 +20,35 @@ struct GenerationHeldAllocatedBitVector : public vespalib::GenerationHeldBase {
 
 }
 
+GrowableBitVector::GrowableBitVector(BitWord::Index newSize, BitWord::Index newCapacity,
+                                     GenerationHolder &generationHolder,
+                                     const Alloc *init_alloc)
+    : _stored(std::make_unique<AllocatedBitVector>(newSize, newCapacity, nullptr, init_alloc)),
+      _self(_stored.get()),
+      _generationHolder(generationHolder)
+{
+    assert(newSize <= newCapacity);
+}
+
+GrowableBitVector::~GrowableBitVector() = default;
+
+std::unique_ptr<const BitVector>
+GrowableBitVector::make_snapshot(BitWord::Index new_size)
+{
+    AllocatedBitVector& self = *_stored;
+    assert(new_size <= self.size());
+    return std::make_unique<AllocatedBitVector>(new_size, new_size, &self, nullptr);
+}
+
+void
+GrowableBitVector::fixup_after_load()
+{
+    AllocatedBitVector& self = *_stored;
+    self.set_dynamic_guard_bits(self.size());
+    self.set_dynamic_guard_bits(self.capacity());
+    self.updateCount();
+}
+
 GenerationHeldBase::UP
 GrowableBitVector::grow(BitWord::Index newSize, BitWord::Index newCapacity)
 {
@@ -27,9 +56,6 @@ GrowableBitVector::grow(BitWord::Index newSize, BitWord::Index newCapacity)
     assert(newCapacity >= newSize);
     if (newCapacity != self.capacity()) {
         auto tbv = std::make_unique<AllocatedBitVector>(newSize, newCapacity, &self, &self._alloc);
-        if (newSize > self.size()) {
-            tbv->clear_bit_and_maintain_count_no_range_check(self.size());  // Clear old guard bit.
-        }
         auto to_hold = std::make_unique<GenerationHeldAllocatedBitVector>(std::move(_stored));
         _self.store(tbv.get(), std::memory_order_release);
         _stored = std::move(tbv);
@@ -46,16 +72,6 @@ GrowableBitVector::grow(BitWord::Index newSize, BitWord::Index newCapacity)
         }
     }
     return {};
-}
-
-GrowableBitVector::GrowableBitVector(BitWord::Index newSize, BitWord::Index newCapacity,
-                                     GenerationHolder &generationHolder,
-                                     const Alloc *init_alloc)
-  : _stored(std::make_unique<AllocatedBitVector>(newSize, newCapacity, nullptr, init_alloc)),
-    _self(_stored.get()),
-    _generationHolder(generationHolder)
-{
-    assert(newSize <= newCapacity);
 }
 
 bool

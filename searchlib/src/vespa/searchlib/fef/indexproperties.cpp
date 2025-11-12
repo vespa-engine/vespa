@@ -399,7 +399,7 @@ MinHitsPerThread::lookup(const Properties &props, uint32_t defaultValue)
 
 const std::string GlobalFilterLowerLimit::NAME("vespa.matching.global_filter.lower_limit");
 
-const double GlobalFilterLowerLimit::DEFAULT_VALUE(0.05);
+const double GlobalFilterLowerLimit::DEFAULT_VALUE(0.02);
 
 double
 GlobalFilterLowerLimit::lookup(const Properties &props)
@@ -494,7 +494,7 @@ ElementGap::set_for_field(Properties& props, const std::string& field_name, cons
 
 const std::string FilterFirstUpperLimit::NAME("vespa.matching.nns.filter_first_upper_limit");
 
-const double FilterFirstUpperLimit::DEFAULT_VALUE(0.00);
+const double FilterFirstUpperLimit::DEFAULT_VALUE(0.3);
 
 double
 FilterFirstUpperLimit::lookup(const Properties &props)

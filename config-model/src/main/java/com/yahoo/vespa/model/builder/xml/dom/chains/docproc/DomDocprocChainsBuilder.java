@@ -22,9 +22,8 @@ import java.util.Map;
 public class DomDocprocChainsBuilder  extends DomChainsBuilder<DocumentProcessor, DocprocChain, DocprocChains> {
     private final ContainerThreadpool docProcHandlerThreadpool;
 
-    public DomDocprocChainsBuilder(Element outerChainsElem, boolean supportDocprocChainsDir, ContainerThreadpool docProcHandlerThreadpool) {
-        super(List.of(ComponentType.documentprocessor)
-        );
+    public DomDocprocChainsBuilder(ContainerThreadpool docProcHandlerThreadpool) {
+        super(List.of(ComponentType.documentprocessor));
         this.docProcHandlerThreadpool = docProcHandlerThreadpool;
     }
 

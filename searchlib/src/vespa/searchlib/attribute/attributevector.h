@@ -415,7 +415,6 @@ private:
     void divideByZeroWarning();
     virtual bool applyWeight(DocId doc, const FieldValue &fv, const ArithmeticValueUpdate &wAdjust);
     virtual bool applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust);
-    virtual void onSave(IAttributeSaveTarget & saveTarget);
     virtual bool onLoad(vespalib::Executor * executor);
 
 

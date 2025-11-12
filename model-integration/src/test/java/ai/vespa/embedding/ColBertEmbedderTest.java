@@ -5,6 +5,7 @@ import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.ColBertEmbedderConfig;
 import com.yahoo.language.process.Embedder;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
@@ -290,8 +291,8 @@ public class ColBertEmbedderTest {
         ColBertEmbedderConfig.Builder builder = new ColBertEmbedderConfig.Builder();
         builder.tokenizerPath(ModelReference.valueOf(vocabPath));
         builder.transformerModel(ModelReference.valueOf(modelPath));
-        builder.transformerGpuDevice(-1);
-        return new ColBertEmbedder(OnnxRuntime.testInstance(), runtime, builder.build());
+        var onnxConfig = new OnnxEvaluatorConfig.Builder().build();
+        return new ColBertEmbedder(OnnxRuntime.testInstance(), runtime, builder.build(), onnxConfig);
     }
 
     private static ColBertEmbedder getMultiLingualEmbedder(Embedder.Runtime runtime) {
@@ -301,7 +302,6 @@ public class ColBertEmbedderTest {
         ColBertEmbedderConfig.Builder builder = new ColBertEmbedderConfig.Builder();
         builder.tokenizerPath(ModelReference.valueOf(vocabPath));
         builder.transformerModel(ModelReference.valueOf(modelPath));
-        builder.transformerGpuDevice(-1);
 
         builder.transformerStartSequenceToken(0);
         builder.transformerPadToken(1);
@@ -310,7 +310,8 @@ public class ColBertEmbedderTest {
         builder.queryTokenId(3);
         builder.documentTokenId(4);
 
-        return new ColBertEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build());
+        var onnxConfig = new OnnxEvaluatorConfig.Builder().build();
+        return new ColBertEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build(), onnxConfig);
     }
 
     private static class CountingRuntime implements Embedder.Runtime {

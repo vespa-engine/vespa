@@ -1347,7 +1347,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private Set<Integer> portBindingOverride(DeployState deployState, ConfigModelContext context) {
         return isHostedTenantApplication(context)
                 ? getDataplanePorts(deployState)
-                : Set.<Integer>of();
+                : Set.of();
     }
 
     private ContainerDocproc buildDocproc(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
@@ -1357,7 +1357,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         ContainerThreadpool docprocHandlerThreadpool = new ContainerDocproc.Threadpool(deployState, docprocElement);
         addIncludes(docprocElement);
-        DocprocChains chains = new DomDocprocChainsBuilder(null, false, docprocHandlerThreadpool).build(deployState, cluster, docprocElement);
+        DocprocChains chains = new DomDocprocChainsBuilder(docprocHandlerThreadpool).build(deployState, cluster, docprocElement);
 
         ContainerDocproc.Options docprocOptions = DocprocOptionsBuilder.build(docprocElement, deployState.getDeployLogger());
         return new ContainerDocproc(cluster, chains, docprocOptions, !standaloneBuilder);
@@ -1465,10 +1465,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (idAttr.equals(xmlRendererId) || idAttr.equals(jsonRendererId)) {
             throw new IllegalArgumentException(String.format("Renderer id %s is reserved for internal use", idAttr));
         }
-    }
-
-    public static boolean isContainerTag(Element element) {
-        return CONTAINER_TAG.equals(element.getTagName());
     }
 
     /**

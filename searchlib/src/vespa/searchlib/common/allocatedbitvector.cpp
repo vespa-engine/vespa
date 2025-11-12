@@ -9,7 +9,7 @@ namespace search {
 namespace {
 
 size_t computeCapacity(size_t capacity, size_t allocatedBytes) {
-    size_t possibleCapacity = (allocatedBytes * 8) - 1;
+    size_t possibleCapacity = (allocatedBytes * 8) - BitVector::num_guard_bits;
     assert(possibleCapacity >= capacity);
     return possibleCapacity;
 }
@@ -60,10 +60,11 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Alloc buffer, siz
         // Fixup after reading fewer bytes than expected, e.g. due to file format changes.
         char* entry_end = static_cast<char*>(_alloc.get()) + offset + entry_size;
         memset(entry_end, '\0', vectorsize - entry_size);
-        if (wordNum(size()) * sizeof(Word) >= entry_size) {
-            // Loss of guard bit and data bits only occurs in bitvector unit test.
+        if (numBytes(size()) > entry_size) {
+            // Loss of guard bits can occur if saved bitvector had fewer guard bits than current bitvectors
             setGuardBit();
-            if (wordNum(size()) * sizeof(Word) > entry_size) {
+            // Loss of data bits only occurs in bitvector unit test.
+            if (num_bytes_plain(size()) > entry_size) {
                updateCount();
             }
         }
@@ -79,11 +80,12 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBit
     init(_alloc.get(), 0, numberOfElements);
     if (org != nullptr) {
         initialize_from(*org);
-        setGuardBit();
         updateCount();
     } else {
         clear();
     }
+    set_dynamic_guard_bits(size());
+    set_dynamic_guard_bits(capacity());
 }
 
 AllocatedBitVector::AllocatedBitVector(const AllocatedBitVector & rhs)
@@ -118,6 +120,12 @@ AllocatedBitVector::resize(Index newLength)
     _capacityBits = computeCapacity(newLength, _alloc.size());
     init(_alloc.get(), 0, newLength);
     clear();
+}
+
+void
+AllocatedBitVector::fixup_after_load()
+{
+    setGuardBit();
 }
 
 size_t

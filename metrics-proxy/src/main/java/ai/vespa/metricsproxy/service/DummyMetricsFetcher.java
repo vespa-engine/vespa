@@ -2,7 +2,7 @@
 package ai.vespa.metricsproxy.service;
 
 /**
- * Dummy class used for getting health status for a vespa service that has no HTTP service
+ * Dummy class used for getting metrics for a vespa service that has no HTTP service
  * for getting metrics
  *
  * @author hmusum

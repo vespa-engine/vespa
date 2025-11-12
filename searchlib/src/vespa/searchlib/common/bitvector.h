@@ -28,6 +28,7 @@ class BitVector : protected BitWord
 {
 public:
     using Index = BitWord::Index;
+    static constexpr Index num_guard_bits = 1;
     using UP = std::unique_ptr<BitVector>;
     class Range {
     public:
@@ -49,7 +50,6 @@ public:
     void * getStart() noexcept { return _words; }
     Range range() const noexcept { return {getStartIndex(), size()}; }
     Index size() const noexcept { return vespalib::atomic::load_ref_relaxed(_sz); }
-    Index sizeBytes() const noexcept { return numBytes(getActiveSize()); }
     bool testBit(Index idx) const noexcept {
         return ((load(_words[wordNum(idx)]) & mask(idx)) != 0);
     }
@@ -141,6 +141,7 @@ public:
     }
 
     void setGuardBit() noexcept;
+    void set_dynamic_guard_bits(Index idx) noexcept;
     void setSize(Index sz);
     void set_bit_no_range_check(Index idx) noexcept {
         store_unchecked(_words[wordNum(idx)], _words[wordNum(idx)] | mask(idx));
@@ -290,10 +291,11 @@ public:
     static void parallelOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVector* const> vectors);
     // number of words used for a bitvector without guard bits.
     static constexpr Index num_words_plain(Index bits) noexcept { return wordNum(bits + (WordLen - 1)); }
+    static constexpr Index num_bytes_plain(Index bits) noexcept { return num_words_plain(bits) * sizeof(Word); }
     static constexpr Index legacy_num_bytes_with_single_guard_bit(Index bits) noexcept {
-        return num_words_plain(bits + 1) * sizeof(Word);
+        return num_bytes_plain(bits + 1);
     }
-    static Index numWords(Index bits) noexcept { return wordNum(bits + 1 + (WordLen - 1)); }
+    static Index numWords(Index bits) noexcept { return wordNum(bits + num_guard_bits + (WordLen - 1)); }
     static Index numBytes(Index bits) noexcept { return numWords(bits) * sizeof(Word); }
     virtual size_t get_allocated_bytes(bool include_self) const noexcept = 0;
 protected:
@@ -332,7 +334,6 @@ private:
     const Word * getActiveStart() const noexcept { return getWordIndex(getStartIndex()); }
     Word * getActiveStart() noexcept { return getWordIndex(getStartIndex()); }
     Index getStartWordNum() const noexcept { return wordNum(getStartIndex()); }
-    Index getActiveSize() const noexcept { return size() - getStartIndex(); }
     size_t getActiveBytes() const noexcept { return numActiveBytes(getStartIndex(), size()); }
     size_t numActiveWords() const noexcept { return numActiveWords(getStartIndex(), size()); }
     static size_t numActiveWords(Index start, Index end) noexcept {

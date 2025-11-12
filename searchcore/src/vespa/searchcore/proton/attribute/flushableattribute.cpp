@@ -69,10 +69,7 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncT
     // Called by attribute field writer executor
     _flushFile = writer.getSnapshotDir(_syncToken) + "/" + attr.getName();
     _saver = attr.initSave(_flushFile);
-    if (!_saver) {
-        // New style background save not available, use old style save and flush to memory buffer.
-        attr.save(_saveTarget, _flushFile);
-    }
+    assert(_saver);
 }
 
 FlushableAttribute::Flusher::~Flusher() = default;
@@ -84,7 +81,8 @@ FlushableAttribute::Flusher::saveAttribute()
     SerialNumFileHeaderContext fileHeaderContext(_fattr._fileHeaderContext, _syncToken);
     bool saveSuccess = true;
     auto create_time = std::chrono::steady_clock::now();
-    if (_saver && _saver->hasGenerationGuard() && _fattr._hwInfo.disk().slow()) {
+    assert(_saver);
+    if (_saver->hasGenerationGuard() && _fattr._hwInfo.disk().slow()) {
         saveSuccess = _saver->save(_saveTarget);
         _saver.reset();
     }

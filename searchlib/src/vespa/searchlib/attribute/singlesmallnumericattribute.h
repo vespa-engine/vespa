@@ -76,7 +76,7 @@ public:
     void before_inc_generation(generation_t current_gen) override;
     bool addDoc(DocId & doc) override;
     bool onLoad(vespalib::Executor *executor) override;
-    void onSave(IAttributeSaveTarget &saveTarget) override;
+    std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
 
     std::unique_ptr<attribute::SearchContext>
     getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;

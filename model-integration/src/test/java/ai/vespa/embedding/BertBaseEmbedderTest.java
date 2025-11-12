@@ -5,6 +5,7 @@ import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.language.process.Embedder;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
@@ -13,6 +14,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
 public class BertBaseEmbedderTest {
@@ -71,7 +73,8 @@ public class BertBaseEmbedderTest {
     }
 
     private static BertBaseEmbedder newBertBaseEmbedder(BertBaseEmbedderConfig cfg) {
-        return new BertBaseEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), cfg);
+        var onnxConfig = new OnnxEvaluatorConfig.Builder().build();
+        return new BertBaseEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), cfg, onnxConfig);
     }
 
 }

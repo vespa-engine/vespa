@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.config.ModelReference;
-import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -10,7 +9,6 @@ import org.w3c.dom.Element;
 
 import java.util.Set;
 
-import static com.yahoo.embedding.BertBaseEmbedderConfig.OnnxExecutionMode;
 import static com.yahoo.embedding.BertBaseEmbedderConfig.PoolingStrategy;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
@@ -19,10 +17,10 @@ import static com.yahoo.vespa.model.container.xml.ModelIdResolver.ONNX_MODEL;
 
 /**
  * @author bjorncs
+ * @author glebashnik
  */
-public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConfig.Producer {
-
-    private final OnnxModelOptions onnxModelOptions;
+public class BertEmbedder extends OnnxEmbedder implements BertBaseEmbedderConfig.Producer {
+    
     private final ModelReference modelRef;
     private final ModelReference vocabRef;
     private final Integer maxTokens;
@@ -35,13 +33,8 @@ public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConf
     private final String poolingStrategy;
 
     public BertEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
-        super("ai.vespa.embedding.BertBaseEmbedder", INTEGRATION_BUNDLE_NAME, xml);
+        super("ai.vespa.embedding.BertBaseEmbedder", INTEGRATION_BUNDLE_NAME, xml, state);
         var model = Model.fromXml(state, xml, "transformer-model", Set.of(ONNX_MODEL)).orElseThrow();
-        this.onnxModelOptions = new OnnxModelOptions(
-                getChildValue(xml, "onnx-execution-mode"),
-                getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt),
-                getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt),
-                getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new));
         modelRef = model.modelReference();
         vocabRef = Model.fromXml(state, xml, "tokenizer-vocab", Set.of(BERT_VOCAB)).orElseThrow().modelReference();
         maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
@@ -66,10 +59,6 @@ public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConf
         if (transformerStartSequenceToken != null) b.transformerStartSequenceToken(transformerStartSequenceToken);
         if (transformerEndSequenceToken != null) b.transformerEndSequenceToken(transformerEndSequenceToken);
         if (poolingStrategy != null) b.poolingStrategy(PoolingStrategy.Enum.valueOf(poolingStrategy));
-        onnxModelOptions.executionMode().ifPresent(value -> b.onnxExecutionMode(OnnxExecutionMode.Enum.valueOf(value)));
-        onnxModelOptions.interOpThreads().ifPresent(b::onnxInterOpThreads);
-        onnxModelOptions.intraOpThreads().ifPresent(b::onnxIntraOpThreads);
-        onnxModelOptions.gpuDevice().ifPresent(value -> b.onnxGpuDevice(value.deviceNumber()));
     }
 
 }

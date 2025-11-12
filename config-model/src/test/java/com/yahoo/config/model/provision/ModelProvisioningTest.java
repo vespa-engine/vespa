@@ -2618,7 +2618,7 @@ public class ModelProvisioningTest {
                   <container version='1.0' id='container1'>
                     <nodes count='1'/>
                     <component id="modernbert" type="hugging-face-embedder">
-                        <transformer-model model-id="nomic-ai-modernbert">></transformer-model>
+                        <transformer-model model-id="nomic-ai-modernbert"></transformer-model>
                     </component>
                   </container>
                 </services>
@@ -2634,7 +2634,7 @@ public class ModelProvisioningTest {
         // Sidecars are provisioned in Cloud only.
         tester.setHosted(true);
 
-        var zone = new Zone(SystemName.Public, Environment.prod, RegionName.defaultName());
+        var zone = new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName());
 
         // Triton sidecar is enabled only for apps with ONNX models.
         // Mocking OnnModelCost since DisabledOnnxModelCost used by default returns no models.  

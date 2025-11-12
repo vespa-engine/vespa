@@ -171,18 +171,41 @@ BitVector::init(void * buf,  Index start, Index end)
 void
 BitVector::setGuardBit() noexcept
 {
-    set_bit_no_range_check(size());
+    Index idx = size();
+    if constexpr (num_guard_bits > 1) {
+        set_bit_no_range_check(idx);
+        clear_bit_no_range_check(idx + 1);
+    } else {
+        set_bit_no_range_check(idx);
+    }
+}
+
+void
+BitVector::set_dynamic_guard_bits(Index idx) noexcept
+{
+    if constexpr (num_guard_bits > 1) {
+        /*
+         * Even guard bits are set to 1 and odd guard bits are set to 0 when using multiple guard bits.
+         * This avoids conflict between old and new guard bits when changing bitvector size by 1 and when
+         * bit vector size is 1 less than capacity.
+         */
+        if ((idx & 1) == 0) {
+            set_bit_no_range_check(idx);
+            clear_bit_no_range_check(idx + 1);
+        } else {
+            clear_bit_no_range_check(idx);
+            set_bit_no_range_check(idx + 1);
+        }
+    } else {
+        set_bit_no_range_check(idx);
+    }
 }
 
 void
 BitVector::setSize(Index sz)
 {
-    set_bit_no_range_check(sz);  // Need to place the new stop sign first
+    set_dynamic_guard_bits(sz);  // Need to place the new stop sign first
     std::atomic_thread_fence(std::memory_order_release);
-    if (sz > _sz) {
-        // Can only remove the old stopsign if it is ahead of the new.
-        clear_bit_no_range_check(_sz);
-    }
     vespalib::atomic::store_ref_release(_sz, sz);
 }
 
@@ -604,6 +627,7 @@ operator>>(nbostream &in, AllocatedBitVector &bv)
     }
     assert(bv.testBit(size));
     bv.setTrueBits(cachedHits);
+    bv.fixup_after_load();
     return in;
 }
 

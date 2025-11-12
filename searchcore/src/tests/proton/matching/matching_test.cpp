@@ -1320,7 +1320,7 @@ TEST_F(MatchingTest, global_filter_params_are_scaled_with_active_hit_ratio)
 {
     CreateBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
     auto params = f.extract(5, 10);
-    EXPECT_EQ(0.12, params.global_filter_lower_limit);
+    EXPECT_EQ(0.20, params.global_filter_lower_limit);
     EXPECT_EQ(0.48, params.global_filter_upper_limit);
 }
 

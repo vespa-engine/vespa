@@ -59,6 +59,7 @@ public:
      * @param newLength the new length of the bit vector (in bits)
      */
     void resize(Index newLength);
+    void fixup_after_load(); // set guard bits
 
     size_t get_allocated_bytes(bool include_self) const noexcept override;
 

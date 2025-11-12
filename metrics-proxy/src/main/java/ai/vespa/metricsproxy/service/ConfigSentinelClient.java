@@ -89,7 +89,7 @@ public class ConfigSentinelClient extends AbstractComponent {
         String line;
         List<VespaService> updatedServices = new ArrayList<>();
         while ((line = reader.readLine()) != null) {
-            if (line.equals("")) {
+            if (line.isEmpty()) {
                 break;
             }
 
@@ -129,8 +129,8 @@ public class ConfigSentinelClient extends AbstractComponent {
             }
         }
 
-        //Could not find this service
-        //nothing wrong with that as the check is invoked per line from sentinel
+        // Could not find this service
+        // nothing wrong with that as the check is invoked per line from sentinel
         if (service == null) {
             return service;
         }

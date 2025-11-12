@@ -5,6 +5,7 @@ import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.SpladeEmbedderConfig;
 import com.yahoo.language.process.Embedder;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
@@ -84,8 +85,8 @@ public class SpladeEmbedderTest {
         builder.tokenizerPath(ModelReference.valueOf(vocabPath));
         builder.transformerModel(ModelReference.valueOf(modelPath));
         builder.termScoreThreshold(scoreThreshold);
-        builder.transformerGpuDevice(-1);
-        return  new SpladeEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build(), useCustomReduce);
+        var onnxConfig = new OnnxEvaluatorConfig.Builder().build();
+        return  new SpladeEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build(), onnxConfig, useCustomReduce);
     }
 
 }

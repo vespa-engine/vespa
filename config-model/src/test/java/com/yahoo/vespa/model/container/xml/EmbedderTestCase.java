@@ -15,6 +15,7 @@ import com.yahoo.embedding.ColBertEmbedderConfig;
 import com.yahoo.embedding.SpladeEmbedderConfig;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.language.huggingface.config.HuggingFaceTokenizerConfig;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -46,6 +47,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+
+/**
+ * @author bjorncs
+ * @author glebashnik
+ */
 public class EmbedderTestCase {
 
     @Test
@@ -79,38 +85,64 @@ public class EmbedderTestCase {
     }
     
     @Test
-    void testHuggingfaceEmbedderWithInternalModelConfigPath() throws Exception {
-        var model = loadModel(Path.fromString("src/test/cfg/application/embed_triton/"), true);
-        var cluster = model.getContainerClusters().get("container");
-        var embedderCfg = assertHuggingfaceEmbedderComponentPresent(cluster);
-        assertTrue(embedderCfg.internalModelConfigPath().isPresent());
-        assertEquals("files/config.pbtxt", embedderCfg.internalModelConfigPath().get().toString());
-    }
-    
-    @Test
     void huggingfaceEmbedder_selfhosted() throws Exception {
         var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), false);
         var cluster = model.getContainerClusters().get("container");
-        var embedderCfg = assertHuggingfaceEmbedderComponentPresent(cluster);
+        
+        var embedder = assertHuggingfaceEmbedderComponentPresent(cluster);
+        var embedderCfgBuilder = new HuggingFaceEmbedderConfig.Builder();
+        embedder.getConfig(embedderCfgBuilder);
+        var embedderCfg = embedderCfgBuilder.build();
+        
         assertEquals("my_input_ids", embedderCfg.transformerInputIds());
         assertEquals("https://my/url/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
         assertEquals(1024, embedderCfg.transformerMaxTokens());
-        var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
+        
+        var tokenizer = assertHuggingfaceTokenizerComponentPresent(cluster);
+        var tokenizerCfgBuilder = new HuggingFaceTokenizerConfig.Builder();
+        tokenizer.getConfig(tokenizerCfgBuilder);
+        var tokenizerCfg = tokenizerCfgBuilder.build();
+        
         assertEquals("https://my/url/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
         assertEquals(-1, tokenizerCfg.maxLength());
         assertEquals("Represent this sentence for searching relevant passages:", embedderCfg.prependQuery());
         assertEquals("passage:", embedderCfg.prependDocument());
+        
+        var onnxCfgBuilder = new OnnxEvaluatorConfig.Builder();
+        embedder.getConfig(onnxCfgBuilder);
+        var onnxCfg = onnxCfgBuilder.build();
+        
+        assertEquals(OnnxEvaluatorConfig.ExecutionMode.Enum.parallel, onnxCfg.executionMode());
+        assertEquals(10, onnxCfg.intraOpThreads());
+        assertEquals(8, onnxCfg.interOpThreads());
+        assertEquals(1, onnxCfg.gpuDevice());
+        assertEquals(16, onnxCfg.batching().maxSize());
+        assertEquals(100, onnxCfg.batching().maxDelayMillis());
+        assertEquals(OnnxEvaluatorConfig.Concurrency.FactorType.Enum.relative, onnxCfg.concurrency().factorType());
+        assertEquals(2.0, onnxCfg.concurrency().factor(), 0.001);
+        assertTrue(onnxCfg.modelConfigOverride().isPresent());
+        assertEquals("files/hf_config.pbtxt", onnxCfg.modelConfigOverride().get().toString());
     }
 
     @Test
     void huggingfaceEmbedder_hosted() throws Exception {
         var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), true);
         var cluster = model.getContainerClusters().get("container");
-        var embedderCfg = assertHuggingfaceEmbedderComponentPresent(cluster);
+
+        var embedder = assertHuggingfaceEmbedderComponentPresent(cluster);
+        var embedderCfgBuilder = new HuggingFaceEmbedderConfig.Builder();
+        embedder.getConfig(embedderCfgBuilder);
+        var embedderCfg = embedderCfgBuilder.build();
+
         assertEquals("my_input_ids", embedderCfg.transformerInputIds());
         assertEquals("https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
         assertEquals(1024, embedderCfg.transformerMaxTokens());
-        var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
+
+        var tokenizer = assertHuggingfaceTokenizerComponentPresent(cluster);
+        var tokenizerCfgBuilder = new HuggingFaceTokenizerConfig.Builder();
+        tokenizer.getConfig(tokenizerCfgBuilder);
+        var tokenizerCfg = tokenizerCfgBuilder.build();
+
         assertEquals("https://data.vespa-cloud.com/onnx_models/multilingual-e5-base/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
         assertEquals(-1, tokenizerCfg.maxLength());
         assertEquals("Represent this sentence for searching relevant passages:", embedderCfg.prependQuery());
@@ -121,44 +153,102 @@ public class EmbedderTestCase {
     void spladeEmbedder_selfhosted() throws Exception {
         var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), false);
         var cluster = model.getContainerClusters().get("container");
-        var embedderCfg = assertSpladeEmbedderComponentPresent(cluster);
+
+        var embedder = assertSpladeEmbedderComponentPresent(cluster);
+        var embedderCfgBuilder = new SpladeEmbedderConfig.Builder();
+        embedder.getConfig(embedderCfgBuilder);
+        var embedderCfg = embedderCfgBuilder.build();
 
         assertEquals("my_input_ids", embedderCfg.transformerInputIds());
         assertEquals("https://my/url/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
         assertEquals(0.2, embedderCfg.termScoreThreshold());
         assertEquals(1024, embedderCfg.transformerMaxTokens());
 
-        var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
+        var tokenizer = assertHuggingfaceTokenizerComponentPresent(cluster);
+        var tokenizerCfgBuilder = new HuggingFaceTokenizerConfig.Builder();
+        tokenizer.getConfig(tokenizerCfgBuilder);
+        var tokenizerCfg = tokenizerCfgBuilder.build();
+
         assertEquals("https://my/url/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
         assertEquals(-1, tokenizerCfg.maxLength());
+
+        var onnxCfgBuilder = new OnnxEvaluatorConfig.Builder();
+        embedder.getConfig(onnxCfgBuilder);
+        var onnxCfg = onnxCfgBuilder.build();
+
+        assertEquals(OnnxEvaluatorConfig.ExecutionMode.Enum.parallel, onnxCfg.executionMode());
+        assertEquals(10, onnxCfg.intraOpThreads());
+        assertEquals(8, onnxCfg.interOpThreads());
+        assertEquals(1, onnxCfg.gpuDevice());
+        assertEquals(8, onnxCfg.batching().maxSize());
+        assertEquals(50, onnxCfg.batching().maxDelayMillis());
+        assertEquals(OnnxEvaluatorConfig.Concurrency.FactorType.Enum.absolute, onnxCfg.concurrency().factorType());
+        assertEquals(4.0, onnxCfg.concurrency().factor(), 0.001);
+        assertTrue(onnxCfg.modelConfigOverride().isPresent());
+        assertEquals("files/splade_config.pbtxt", onnxCfg.modelConfigOverride().get().toString());
     }
 
     @Test
     void colBertEmbedder_selfhosted() throws Exception {
         var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), false);
         var cluster = model.getContainerClusters().get("container");
-        var embedderCfg = assertColBertEmbedderComponentPresent(cluster);
+
+        var embedder = assertColBertEmbedderComponentPresent(cluster);
+        var embedderCfgBuilder = new ColBertEmbedderConfig.Builder();
+        embedder.getConfig(embedderCfgBuilder);
+        var embedderCfg = embedderCfgBuilder.build();
+
         assertEquals("my_input_ids", embedderCfg.transformerInputIds());
         assertEquals("https://my/url/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
         assertEquals(1024, embedderCfg.transformerMaxTokens());
-        var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
+
+        var tokenizer = assertHuggingfaceTokenizerComponentPresent(cluster);
+        var tokenizerCfgBuilder = new HuggingFaceTokenizerConfig.Builder();
+        tokenizer.getConfig(tokenizerCfgBuilder);
+        var tokenizerCfg = tokenizerCfgBuilder.build();
+
         assertEquals("https://my/url/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
         assertEquals(-1, tokenizerCfg.maxLength());
         assertEquals(1, embedderCfg.queryTokenId());
         assertEquals(2, embedderCfg.documentTokenId());
         assertEquals(0, embedderCfg.transformerPadToken());
         assertEquals(103, embedderCfg.transformerMaskToken());
+
+        var onnxCfgBuilder = new OnnxEvaluatorConfig.Builder();
+        embedder.getConfig(onnxCfgBuilder);
+        var onnxCfg = onnxCfgBuilder.build();
+
+        assertEquals(OnnxEvaluatorConfig.ExecutionMode.Enum.parallel, onnxCfg.executionMode());
+        assertEquals(10, onnxCfg.intraOpThreads());
+        assertEquals(8, onnxCfg.interOpThreads());
+        assertEquals(1, onnxCfg.gpuDevice());
+        assertEquals(12, onnxCfg.batching().maxSize());
+        assertEquals(150, onnxCfg.batching().maxDelayMillis());
+        assertEquals(OnnxEvaluatorConfig.Concurrency.FactorType.Enum.relative, onnxCfg.concurrency().factorType());
+        assertEquals(1.5, onnxCfg.concurrency().factor(), 0.001);
+        assertTrue(onnxCfg.modelConfigOverride().isPresent());
+        assertEquals("files/colbert_config.pbtxt", onnxCfg.modelConfigOverride().get().toString());
     }
 
     @Test
     void colBertEmbedder_hosted() throws Exception {
         var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), true);
         var cluster = model.getContainerClusters().get("container");
-        var embedderCfg = assertColBertEmbedderComponentPresent(cluster);
+
+        var embedder = assertColBertEmbedderComponentPresent(cluster);
+        var embedderCfgBuilder = new ColBertEmbedderConfig.Builder();
+        embedder.getConfig(embedderCfgBuilder);
+        var embedderCfg = embedderCfgBuilder.build();
+
         assertEquals("my_input_ids", embedderCfg.transformerInputIds());
         assertEquals("https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
         assertEquals(1024, embedderCfg.transformerMaxTokens());
-        var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
+
+        var tokenizer = assertHuggingfaceTokenizerComponentPresent(cluster);
+        var tokenizerCfgBuilder = new HuggingFaceTokenizerConfig.Builder();
+        tokenizer.getConfig(tokenizerCfgBuilder);
+        var tokenizerCfg = tokenizerCfgBuilder.build();
+
         assertEquals("https://data.vespa-cloud.com/onnx_models/multilingual-e5-base/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
         assertEquals(-1, tokenizerCfg.maxLength());
         assertEquals(1, embedderCfg.queryTokenId());
@@ -171,17 +261,42 @@ public class EmbedderTestCase {
     void bertEmbedder_selfhosted() throws Exception {
         var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), false);
         var cluster = model.getContainerClusters().get("container");
-        var embedderCfg = assertBertEmbedderComponentPresent(cluster);
+
+        var embedder = assertBertEmbedderComponentPresent(cluster);
+        var embedderCfgBuilder = new BertBaseEmbedderConfig.Builder();
+        embedder.getConfig(embedderCfgBuilder);
+        var embedderCfg = embedderCfgBuilder.build();
+
         assertEquals("https://my/url/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
         assertEquals("files/vocab.txt", modelReference(embedderCfg, "tokenizerVocab").path().orElseThrow().value());
         assertEquals("", embedderCfg.transformerTokenTypeIds());
+
+        var onnxCfgBuilder = new OnnxEvaluatorConfig.Builder();
+        embedder.getConfig(onnxCfgBuilder);
+        var onnxCfg = onnxCfgBuilder.build();
+
+        assertEquals(OnnxEvaluatorConfig.ExecutionMode.Enum.parallel, onnxCfg.executionMode());
+        assertEquals(4, onnxCfg.intraOpThreads());
+        assertEquals(8, onnxCfg.interOpThreads());
+        assertEquals(1, onnxCfg.gpuDevice());
+        assertEquals(32, onnxCfg.batching().maxSize());
+        assertEquals(200, onnxCfg.batching().maxDelayMillis());
+        assertEquals(OnnxEvaluatorConfig.Concurrency.FactorType.Enum.absolute, onnxCfg.concurrency().factorType());
+        assertEquals(2.0, onnxCfg.concurrency().factor(), 0.001);
+        assertTrue(onnxCfg.modelConfigOverride().isPresent());
+        assertEquals("files/bert_config.pbtxt", onnxCfg.modelConfigOverride().get().toString());
     }
 
     @Test
     void bertEmbedder_hosted() throws Exception {
         var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), true);
         var cluster = model.getContainerClusters().get("container");
-        var embedderCfg = assertBertEmbedderComponentPresent(cluster);
+
+        var embedder = assertBertEmbedderComponentPresent(cluster);
+        var embedderCfgBuilder = new BertBaseEmbedderConfig.Builder();
+        embedder.getConfig(embedderCfgBuilder);
+        var embedderCfg = embedderCfgBuilder.build();
+
         assertEquals("https://data.vespa-cloud.com/onnx_models/sentence_all_MiniLM_L6_v2.onnx",
                      modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
         assertTrue(modelReference(embedderCfg, "tokenizerVocab").url().isEmpty());
@@ -291,44 +406,34 @@ public class EmbedderTestCase {
         return (Element) doc.getFirstChild();
     }
 
-    private static HuggingFaceTokenizerConfig assertHuggingfaceTokenizerComponentPresent(ApplicationContainerCluster cluster) {
+    private static HuggingFaceTokenizer assertHuggingfaceTokenizerComponentPresent(ApplicationContainerCluster cluster) {
         var hfTokenizer = (HuggingFaceTokenizer) cluster.getComponentsMap().get(new ComponentId("hf-tokenizer"));
         assertEquals("com.yahoo.language.huggingface.HuggingFaceTokenizer", hfTokenizer.getClassId().getName());
-        var cfgBuilder = new HuggingFaceTokenizerConfig.Builder();
-        hfTokenizer.getConfig(cfgBuilder);
-        return cfgBuilder.build();
+        return hfTokenizer;
     }
 
-    private static HuggingFaceEmbedderConfig assertHuggingfaceEmbedderComponentPresent(ApplicationContainerCluster cluster) {
+    private static HuggingFaceEmbedder assertHuggingfaceEmbedderComponentPresent(ApplicationContainerCluster cluster) {
         var hfEmbedder = (HuggingFaceEmbedder) cluster.getComponentsMap().get(new ComponentId("hf-embedder"));
         assertEquals("ai.vespa.embedding.HuggingFaceEmbedder", hfEmbedder.getClassId().getName());
-        var cfgBuilder = new HuggingFaceEmbedderConfig.Builder();
-        hfEmbedder.getConfig(cfgBuilder);
-        return cfgBuilder.build();
+        return hfEmbedder;
     }
 
-    private static ColBertEmbedderConfig assertColBertEmbedderComponentPresent(ApplicationContainerCluster cluster) {
+    private static ColBertEmbedder assertColBertEmbedderComponentPresent(ApplicationContainerCluster cluster) {
         var colbert = (ColBertEmbedder) cluster.getComponentsMap().get(new ComponentId("colbert"));
         assertEquals("ai.vespa.embedding.ColBertEmbedder", colbert.getClassId().getName());
-        var cfgBuilder = new ColBertEmbedderConfig.Builder();
-        colbert.getConfig(cfgBuilder);
-        return cfgBuilder.build();
+        return colbert;
     }
 
-    private static SpladeEmbedderConfig assertSpladeEmbedderComponentPresent(ApplicationContainerCluster cluster) {
+    private static SpladeEmbedder assertSpladeEmbedderComponentPresent(ApplicationContainerCluster cluster) {
         var splade = (SpladeEmbedder) cluster.getComponentsMap().get(new ComponentId("splade"));
         assertEquals("ai.vespa.embedding.SpladeEmbedder", splade.getClassId().getName());
-        var cfgBuilder = new SpladeEmbedderConfig.Builder();
-        splade.getConfig(cfgBuilder);
-        return cfgBuilder.build();
+        return splade;
     }
 
-    private static BertBaseEmbedderConfig assertBertEmbedderComponentPresent(ApplicationContainerCluster cluster) {
+    private static BertEmbedder assertBertEmbedderComponentPresent(ApplicationContainerCluster cluster) {
         var bertEmbedder = (BertEmbedder) cluster.getComponentsMap().get(new ComponentId("bert-embedder"));
         assertEquals("ai.vespa.embedding.BertBaseEmbedder", bertEmbedder.getClassId().getName());
-        var cfgBuilder = new BertBaseEmbedderConfig.Builder();
-        bertEmbedder.getConfig(cfgBuilder);
-        return cfgBuilder.build();
+        return bertEmbedder;
     }
 
     // Ugly hack to read underlying model reference from config instance
