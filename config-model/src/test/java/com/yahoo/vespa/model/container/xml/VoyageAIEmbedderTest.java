@@ -30,7 +30,7 @@ public class VoyageAIEmbedderTest {
         VoyageAiEmbedderConfig config = getVoyageAIEmbedderConfig(cluster, "voyage-full");
 
         // Verify all configuration values
-        assertEquals("voyage-3", config.model());
+        assertEquals("voyage-3.5", config.model());
         assertEquals("voyage_api_key", config.apiKeySecretRef());
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint());
         assertEquals(60000, config.timeout());
@@ -57,7 +57,7 @@ public class VoyageAIEmbedderTest {
         assertEquals("voyage_key", config.apiKeySecretRef());
 
         // Verify defaults are used
-        assertEquals("voyage-3", config.model()); // Default model
+        assertEquals("voyage-3.5", config.model()); // Default model
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint()); // Default endpoint
         assertEquals(30000, config.timeout()); // Default timeout
         assertEquals(10, config.maxRetries()); // Default retries
