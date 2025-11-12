@@ -28,7 +28,7 @@ class BitVector : protected BitWord
 {
 public:
     using Index = BitWord::Index;
-    static constexpr Index num_guard_bits = 1;
+    static constexpr Index num_guard_bits = 2;
     using UP = std::unique_ptr<BitVector>;
     class Range {
     public:
