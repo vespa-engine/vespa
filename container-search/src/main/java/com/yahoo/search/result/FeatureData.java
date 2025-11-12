@@ -118,10 +118,10 @@ public class FeatureData implements Inspectable, JsonProducer {
             target.append("\"").append(entry.getKey()).append("\":");
             if (entry.getValue().type().rank() == 0) {
                 double value = entry.getValue().asDouble();
-                if (Double.isNaN(value) || Double.isInfinite(value)) {
-                    target.append("null");
-                } else {
+                if (Double.isFinite(value)) {
                     target.append(value);
+                } else {
+                    target.append("null");
                 }
             } else {
                 byte[] encodedTensor = JsonFormat.encode(entry.getValue(), tensorOptions);
