@@ -56,7 +56,7 @@ func newInspectProfileCmd(cli *CLI) *cobra.Command {
 	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "f", "vespa_query_profile_result.json", "Name of the profile file to inspect")
 	cmd.Flags().BoolVar(&opts.showMedianNode, "show-median-node", false, "Show median node analysis")
 	cmd.Flags().BoolVar(&opts.showDispatchedQuery, "show-dispatched-query", false, "Show query sent to search nodes")
-	cmd.Flags().BoolVar(&opts.makePrompt, "make-prompt", false, "Output an AI prompt instead of human-readable analysis")
+	cmd.Flags().BoolVar(&opts.makePrompt, "make-prompt", false, "Output an LLM prompt instead of human-readable analysis")
 	return cmd
 }
 
