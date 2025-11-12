@@ -1357,6 +1357,25 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.document.annotation.SimpleAnnotations" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void add(int, int, java.lang.String)",
+      "public int getCount()",
+      "public int getFrom(int)",
+      "public int getLength(int)",
+      "public java.lang.String getTerm(int)",
+      "public com.yahoo.document.annotation.SpanTree toSpanTree(java.lang.String)",
+      "public java.lang.String toString()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.document.annotation.Span" : {
     "superClass" : "com.yahoo.document.annotation.SpanNode",
     "interfaces" : [ ],
@@ -2175,6 +2194,8 @@
       "public com.yahoo.document.annotation.SpanTree getSpanTree(java.lang.String)",
       "public com.yahoo.document.annotation.SpanTree setSpanTree(com.yahoo.document.annotation.SpanTree)",
       "public com.yahoo.document.annotation.SpanTree removeSpanTree(java.lang.String)",
+      "public com.yahoo.document.annotation.SimpleAnnotations createSimpleAnnotations()",
+      "public com.yahoo.document.annotation.SimpleAnnotations getSimpleAnnotations()",
       "public java.lang.String getString()",
       "public java.lang.Object getWrappedValue()",
       "public void printXml(com.yahoo.document.serialization.XmlStream)",

@@ -16,10 +16,13 @@ import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AlternateSpanList;
 import com.yahoo.document.annotation.Annotation;
 import com.yahoo.document.annotation.AnnotationReference;
+import com.yahoo.document.annotation.AnnotationTypes;
+import com.yahoo.document.annotation.SimpleAnnotations;
 import com.yahoo.document.annotation.Span;
 import com.yahoo.document.annotation.SpanList;
 import com.yahoo.document.annotation.SpanNode;
 import com.yahoo.document.annotation.SpanTree;
+import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
@@ -259,9 +262,15 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
     public void write(FieldBase field, StringFieldValue value) {
         byte[] stringBytes = createUTF8CharArray(value.getString());
 
+        // Check for simple or full annotations
+        SimpleAnnotations simple = value.getSimpleAnnotations();
+        Map<String, SpanTree> trees = value.getSpanTreeMap();
+        boolean hasAnnotations = (simple != null && simple.getCount() > 0) ||
+                                (trees != null && !trees.isEmpty());
+
         byte coding = 0;
         //Use bit 6 of "coding" to say whether span tree is available or not
-        if (!value.getSpanTrees().isEmpty()) {
+        if (hasAnnotations) {
             coding |= 64;
         }
         buf.put(coding);
@@ -270,34 +279,116 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         buf.put(stringBytes);
         buf.put(((byte) 0));
 
-        Map<String, SpanTree> trees = value.getSpanTreeMap();
-        if ((trees != null) && !trees.isEmpty()) {
+        if (hasAnnotations) {
             try {
                 //we don't support serialization of nested span trees, so this is safe:
                 bytePositions = calculateBytePositions(value.getString());
-                //total length. record position and go back here if necessary:
-                int posBeforeSize = buf.position();
-                buf.putInt(0);
-                buf.putInt1_2_4Bytes(trees.size());
 
-                for (SpanTree tree : trees.values()) {
-                    try {
-                        write(tree);
-                    } catch (SerializationException e) {
-                        throw e;
-                    } catch (RuntimeException e) {
-                        throw new SerializationException("Exception thrown while serializing span tree '" +
-                                                         tree.getName() + "'; string='" + value.getString() + "'", e);
-                    }
+                if (simple != null && simple.getCount() > 0) {
+                    // Direct serialization of simple annotations - no conversion!
+                    writeSimpleAnnotations(simple, value.getString());
+                } else if (trees != null && !trees.isEmpty()) {
+                    // Full SpanTree serialization
+                    writeSpanTreeMap(trees, value.getString());
                 }
-                int endPos = buf.position();
-                buf.position(posBeforeSize);
-                buf.putInt(endPos - posBeforeSize - 4); //length shall exclude itself
-                buf.position(endPos);
             } finally {
                 bytePositions = null;
             }
         }
+    }
+
+    /**
+     * Directly serialize SimpleAnnotations to wire format without creating SpanTree objects.
+     * Writes the same binary format as full SpanTree, maintaining compatibility with C++ code.
+     */
+    private void writeSimpleAnnotations(SimpleAnnotations simple, String text) {
+        //total length. record position and go back here if necessary:
+        int posBeforeSize = buf.position();
+        buf.putInt(0);  // Placeholder for total size
+        buf.putInt1_2_4Bytes(1);  // Number of trees (always 1 - "linguistics")
+
+        // Write tree name
+        new StringFieldValue(SpanTrees.LINGUISTICS).serialize(this);
+
+        // Write root SpanList containing all Spans
+        int count = simple.getCount();
+        buf.put(SpanList.ID);
+        buf.putInt1_2_4Bytes(count);
+
+        // Write all Span nodes and assign them scratchIds
+        for (int i = 0; i < count; i++) {
+            int from = simple.getFrom(i);
+            int length = simple.getLength(i);
+
+            buf.put(Span.ID);
+            int byteFrom = bytePositions[from];
+            int byteLength = bytePositions[from + length] - byteFrom;
+            buf.putInt1_2_4Bytes(byteFrom);
+            buf.putInt1_2_4Bytes(byteLength);
+        }
+
+        // Write all Annotations
+        buf.putInt1_2_4Bytes(count);
+        for (int i = 0; i < count; i++) {
+            String term = simple.getTerm(i);
+
+            // Write annotation type ID
+            buf.putInt(AnnotationTypes.TERM.getId());
+
+            // Write features byte
+            byte features = 1;  // Has span node
+            if (term != null) {
+                features |= 2;  // Has field value
+            }
+            buf.put(features);
+
+            // Size placeholder
+            int posBeforeAnnotationSize = buf.position();
+            buf.putInt1_2_4BytesAs4(0);
+
+            // Write span node reference
+            buf.putInt1_2_4Bytes(i);  // Reference to span i
+
+            // Write optional field value
+            if (term != null) {
+                buf.putInt(AnnotationTypes.TERM.getDataType().getId());
+                new StringFieldValue(term).serialize(this);
+            }
+
+            // Update annotation size
+            int endAnnotationPos = buf.position();
+            buf.position(posBeforeAnnotationSize);
+            buf.putInt1_2_4BytesAs4(endAnnotationPos - posBeforeAnnotationSize - 4);
+            buf.position(endAnnotationPos);
+        }
+
+        // Update total size
+        int endPos = buf.position();
+        buf.position(posBeforeSize);
+        buf.putInt(endPos - posBeforeSize - 4);
+        buf.position(endPos);
+    }
+
+    private void writeSpanTreeMap(Map<String, SpanTree> trees, String text) {
+        //total length. record position and go back here if necessary:
+        int posBeforeSize = buf.position();
+        buf.putInt(0);
+        buf.putInt1_2_4Bytes(trees.size());
+
+        for (SpanTree tree : trees.values()) {
+            try {
+                write(tree);
+            } catch (SerializationException e) {
+                throw e;
+            } catch (RuntimeException e) {
+                throw new SerializationException("Exception thrown while serializing span tree '" +
+                                                 tree.getName() + "'; string='" + text + "'", e);
+            }
+        }
+        int endPos = buf.position();
+        buf.position(posBeforeSize);
+        buf.putInt(endPos - posBeforeSize - 4); //length shall exclude itself
+        buf.position(endPos);
     }
 
     @Override
