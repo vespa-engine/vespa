@@ -25,7 +25,7 @@ public class VoyageAIEmbedderTest {
 
         Component<?, ?> component = cluster.getComponentsMap().get(new ComponentId("voyage-full"));
         assertNotNull(component, "VoyageAI embedder component should be present");
-        assertTrue(component instanceof VoyageAIEmbedder, "Component should be VoyageAIEmbedder");
+        assertInstanceOf(VoyageAIEmbedder.class, component, "Component should be VoyageAIEmbedder");
 
         VoyageAiEmbedderConfig config = getVoyageAIEmbedderConfig(cluster, "voyage-full");
 
@@ -33,10 +33,9 @@ public class VoyageAIEmbedderTest {
         assertEquals("voyage-3", config.model());
         assertEquals("voyage_api_key", config.apiKeySecretName());
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint());
-        assertEquals(64, config.maxBatchSize());
         assertEquals(60000, config.timeout());
         assertEquals(5, config.maxRetries());
-        assertEquals(VoyageAiEmbedderConfig.DefaultInputType.Enum.query, config.defaultInputType().value());
+        assertEquals(VoyageAiEmbedderConfig.DefaultInputType.Enum.query, config.defaultInputType());
         assertFalse(config.autoDetectInputType());
         assertTrue(config.normalize());
         assertTrue(config.truncate());
@@ -60,10 +59,9 @@ public class VoyageAIEmbedderTest {
         // Verify defaults are used
         assertEquals("voyage-3", config.model()); // Default model
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint()); // Default endpoint
-        assertEquals(128, config.maxBatchSize()); // Default batch size
         assertEquals(30000, config.timeout()); // Default timeout
-        assertEquals(3, config.maxRetries()); // Default retries
-        assertEquals(VoyageAiEmbedderConfig.DefaultInputType.Enum.document, config.defaultInputType().value());
+        assertEquals(10, config.maxRetries()); // Default retries
+        assertEquals(VoyageAiEmbedderConfig.DefaultInputType.Enum.document, config.defaultInputType());
         assertTrue(config.autoDetectInputType()); // Default auto-detect
         assertFalse(config.normalize()); // Default no normalization
         assertTrue(config.truncate()); // Default truncate
@@ -85,31 +83,8 @@ public class VoyageAIEmbedderTest {
                 """;
 
         // Should fail because api-key-secret-name is required
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            buildModelFromXml(servicesXml);
-        });
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> buildModelFromXml(servicesXml));
         assertTrue(exception.getMessage().contains("api-key-secret-name"));
-    }
-
-    @Test
-    void testVoyageAIEmbedderInvalidBatchSize() {
-        String servicesXml = """
-                <?xml version="1.0" encoding="utf-8" ?>
-                <services version="1.0">
-                    <container id="container" version="1.0">
-                        <component id="voyage" type="voyage-ai-embedder">
-                            <api-key-secret-name>key</api-key-secret-name>
-                            <max-batch-size>2000</max-batch-size>
-                        </component>
-                    </container>
-                </services>
-                """;
-
-        // Should fail because batch size > 1000
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            buildModelFromXml(servicesXml);
-        });
-        assertTrue(exception.getMessage().contains("max-batch-size"));
     }
 
     @Test
@@ -127,9 +102,7 @@ public class VoyageAIEmbedderTest {
                 """;
 
         // Should fail because timeout < 1000ms
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            buildModelFromXml(servicesXml);
-        });
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> buildModelFromXml(servicesXml));
         assertTrue(exception.getMessage().contains("timeout"));
     }
 
@@ -148,9 +121,7 @@ public class VoyageAIEmbedderTest {
                 """;
 
         // Should fail because input type must be 'query' or 'document'
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            buildModelFromXml(servicesXml);
-        });
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> buildModelFromXml(servicesXml));
         assertTrue(exception.getMessage().contains("default-input-type"));
     }
 
@@ -169,9 +140,7 @@ public class VoyageAIEmbedderTest {
                 """;
 
         // Should fail because model name must start with 'voyage'
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            buildModelFromXml(servicesXml);
-        });
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> buildModelFromXml(servicesXml));
         assertTrue(exception.getMessage().contains("voyage"));
     }
 
@@ -189,7 +158,7 @@ public class VoyageAIEmbedderTest {
         VoyageAiEmbedderConfig minimalConfig = getVoyageAIEmbedderConfig(cluster, "voyage-minimal");
 
         assertNotEquals(fullConfig.apiKeySecretName(), minimalConfig.apiKeySecretName());
-        assertNotEquals(fullConfig.maxBatchSize(), minimalConfig.maxBatchSize());
+        assertNotEquals(fullConfig.timeout(), minimalConfig.timeout());
     }
 
     // ===== Helper Methods =====
@@ -205,7 +174,7 @@ public class VoyageAIEmbedderTest {
     private VoyageAiEmbedderConfig getVoyageAIEmbedderConfig(ApplicationContainerCluster cluster, String componentId) {
         Component<?, ?> component = cluster.getComponentsMap().get(new ComponentId(componentId));
         assertNotNull(component, "Component " + componentId + " should exist");
-        assertTrue(component instanceof VoyageAIEmbedder, "Component should be VoyageAIEmbedder");
+        assertInstanceOf(VoyageAIEmbedder.class, component, "Component should be VoyageAIEmbedder");
 
         VoyageAIEmbedder embedder = (VoyageAIEmbedder) component;
         VoyageAiEmbedderConfig.Builder builder = new VoyageAiEmbedderConfig.Builder();

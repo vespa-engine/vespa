@@ -20,30 +20,58 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
  *   <model>voyage-3</model>
  *   <api-key-secret-name>voyage_api_key</api-key-secret-name>
  *   <endpoint>https://api.voyageai.com/v1/embeddings</endpoint>
- *   <max-batch-size>128</max-batch-size>
  *   <timeout>30000</timeout>
  *   <auto-detect-input-type>true</auto-detect-input-type>
  *   <normalize>false</normalize>
  * </component>
  * }</pre>
  *
- * @author Vespa Team
+ * <p><b>Note:</b> Request batching is not currently implemented. Each embed() call
+ * results in a separate API request. Batching support will be added in a future version.
+ *
+ * @author VoyageAI team
  */
 public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedderConfig.Producer {
 
     private final String apiKeySecretName;
+    /**
+     * VoyageAI API endpoint URL. Can be overridden for:
+     * <ul>
+     * <li>Using a custom proxy/gateway for API requests</li>
+     * <li>Testing with a mock server</li>
+     * <li>Using regional endpoints if available</li>
+     * </ul>
+     * Default: https://api.voyageai.com/v1/embeddings
+     */
     private final String endpoint;
     private final String model;
-    private final Integer maxBatchSize;
+    /**
+     * Request timeout in milliseconds. Also serves as the bound for retry attempts -
+     * retries will stop when the total elapsed time would exceed this timeout.
+     */
     private final Integer timeout;
+    /**
+     * Maximum number of retry attempts. Provides a safety limit in addition to the
+     * timeout-based bound to prevent excessive retry attempts.
+     */
     private final Integer maxRetries;
+    /**
+     * Default input type (query vs document) used when auto-detection is disabled.
+     * VoyageAI optimizes embeddings differently based on whether the text is a search query
+     * or a document to be indexed.
+     */
     private final String defaultInputType;
+    /**
+     * When true, automatically detects input type from the Embedder.Context destination.
+     * If the destination contains "query", it uses "query" type; otherwise "document" type.
+     */
     private final Boolean autoDetectInputType;
     private final Boolean truncate;
     private final Integer poolSize;
     private final Integer cacheSize;
     private final Boolean normalize;
 
+    @SuppressWarnings("unused") // cluster and state parameters required by Vespa component framework
     public VoyageAIEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.VoyageAIEmbedder", INTEGRATION_BUNDLE_NAME, xml);
 
@@ -56,7 +84,6 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
         // Optional fields with defaults
         this.model = getChildValue(xml, "model").orElse(null);
         this.endpoint = getChildValue(xml, "endpoint").orElse(null);
-        this.maxBatchSize = getChildValue(xml, "max-batch-size").map(Integer::parseInt).orElse(null);
         this.timeout = getChildValue(xml, "timeout").map(Integer::parseInt).orElse(null);
         this.maxRetries = getChildValue(xml, "max-retries").map(Integer::parseInt).orElse(null);
         this.defaultInputType = getChildValue(xml, "default-input-type").orElse(null);
@@ -74,19 +101,14 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
      * Validate configuration values.
      */
     public void validate() {
-        if (maxBatchSize != null && (maxBatchSize < 1 || maxBatchSize > 1000)) {
-            throw new IllegalArgumentException(
-                    "max-batch-size must be between 1 and 1000, got: " + maxBatchSize);
-        }
-
         if (timeout != null && timeout < 1000) {
             throw new IllegalArgumentException(
                     "timeout must be at least 1000ms, got: " + timeout);
         }
 
-        if (maxRetries != null && (maxRetries < 0 || maxRetries > 10)) {
+        if (maxRetries != null && (maxRetries < 0 || maxRetries > 100)) {
             throw new IllegalArgumentException(
-                    "max-retries must be between 0 and 10, got: " + maxRetries);
+                    "max-retries must be between 0 and 100, got: " + maxRetries);
         }
 
         if (poolSize != null && (poolSize < 1 || poolSize > 100)) {
@@ -125,9 +147,6 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
         }
         if (endpoint != null) {
             builder.endpoint(endpoint);
-        }
-        if (maxBatchSize != null) {
-            builder.maxBatchSize(maxBatchSize);
         }
         if (timeout != null) {
             builder.timeout(timeout);

@@ -144,22 +144,73 @@ public class VoyageAIEmbedderTest {
     }
 
     @Test
-    public void testMaxRetriesExceeded() {
-        // Mock 4 rate limit responses (max retries is 3)
+    public void testTimeoutExceeded() {
+        // Create embedder with very short timeout
+        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
+        configBuilder.apiKeySecretName("test_key");
+        configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
+        configBuilder.model("voyage-3");
+        configBuilder.timeout(2000); // 2 second timeout
+        configBuilder.maxRetries(100); // High retry count, but timeout should hit first
+
+        VoyageAIEmbedder shortTimeoutEmbedder = new VoyageAIEmbedder(
+                configBuilder.build(),
+                runtime,
+                createMockSecrets()
+        );
+
+        // Mock multiple rate limit responses (each retry waits 1 second)
+        for (int i = 0; i < 10; i++) {
+            mockServer.enqueue(new MockResponse()
+                    .setResponseCode(429)
+                    .setBody("{\"error\":\"rate_limit_exceeded\"}"));
+        }
+
+        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        Embedder.Context context = new Embedder.Context("test-embedder");
+
+        // Should fail when timeout is reached
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            shortTimeoutEmbedder.embed("test", context, targetType);
+        });
+        assertTrue(exception.getMessage().contains("timeout") || exception.getMessage().contains("exceed"));
+
+        shortTimeoutEmbedder.deconstruct();
+    }
+
+    @Test
+    public void testMaxRetriesSafetyLimit() {
+        // Create embedder with low maxRetries
+        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
+        configBuilder.apiKeySecretName("test_key");
+        configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
+        configBuilder.model("voyage-3");
+        configBuilder.timeout(30000); // High timeout
+        configBuilder.maxRetries(2); // Low retry count
+
+        VoyageAIEmbedder lowRetryEmbedder = new VoyageAIEmbedder(
+                configBuilder.build(),
+                runtime,
+                createMockSecrets()
+        );
+
+        // Mock 4 rate limit responses (max retries is 2)
         for (int i = 0; i < 4; i++) {
             mockServer.enqueue(new MockResponse()
                     .setResponseCode(429)
                     .setBody("{\"error\":\"rate_limit_exceeded\"}"));
         }
 
-        embedder = createEmbedder();
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("test-embedder");
 
         // Should fail after max retries
-        assertThrows(RuntimeException.class, () -> {
-            embedder.embed("test", context, targetType);
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            lowRetryEmbedder.embed("test", context, targetType);
         });
+        assertTrue(exception.getMessage().contains("Max retries") || exception.getMessage().contains("exceeded"));
+
+        lowRetryEmbedder.deconstruct();
     }
 
     @Test
@@ -173,9 +224,7 @@ public class VoyageAIEmbedderTest {
         Embedder.Context context = new Embedder.Context("test-embedder");
 
         // Should fail with authentication error
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            embedder.embed("test", context, targetType);
-        });
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> embedder.embed("test", context, targetType));
         assertTrue(exception.getMessage().contains("authentication"));
     }
 
@@ -193,9 +242,7 @@ public class VoyageAIEmbedderTest {
         Embedder.Context context = new Embedder.Context("test-embedder");
 
         // Should fail with dimension mismatch error
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            embedder.embed("test", context, targetType);
-        });
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> embedder.embed("test", context, targetType));
         assertTrue(exception.getMessage().contains("dimension"));
     }
 
@@ -212,9 +259,7 @@ public class VoyageAIEmbedderTest {
         Embedder.Context context = new Embedder.Context("test-embedder");
 
         // Should fail with validation error
-        assertThrows(IllegalArgumentException.class, () -> {
-            embedder.embed("test", context, invalidType);
-        });
+        assertThrows(IllegalArgumentException.class, () -> embedder.embed("test", context, invalidType));
     }
 
     @Test
@@ -308,10 +353,8 @@ public class VoyageAIEmbedderTest {
         Embedder.Context context = new Embedder.Context("test-embedder");
 
         // Should throw UnsupportedOperationException for List<Integer> embed method
-        UnsupportedOperationException exception = assertThrows(
-            UnsupportedOperationException.class,
-            () -> embedder.embed("test", context)
-        );
+        UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class,
+            () -> embedder.embed("test", context));
         assertTrue(exception.getMessage().contains("only supports embed() with TensorType"));
     }
 
@@ -327,9 +370,7 @@ public class VoyageAIEmbedderTest {
         Embedder.Context context = new Embedder.Context("test-embedder");
 
         // Should fail with parse error
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            embedder.embed("test", context, targetType);
-        });
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> embedder.embed("test", context, targetType));
         assertTrue(exception.getMessage().contains("Failed to parse") ||
                    exception.getMessage().contains("parse"));
     }
@@ -341,7 +382,7 @@ public class VoyageAIEmbedderTest {
         configBuilder.apiKeySecretName("test_key");
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
-        configBuilder.maxRetries(3);
+        configBuilder.maxRetries(10);
         configBuilder.timeout(5000);
         configBuilder.cacheSize(100);
 
@@ -349,19 +390,11 @@ public class VoyageAIEmbedderTest {
     }
 
     private Secrets createMockSecrets() {
-        return new Secrets() {
-            @Override
-            public Secret get(String key) {
-                if ("test_key".equals(key)) {
-                    return new Secret() {
-                        @Override
-                        public String current() {
-                            return "test-api-key-12345";
-                        }
-                    };
-                }
-                return null;
+        return key -> {
+            if ("test_key".equals(key)) {
+                return () -> "test-api-key-12345";
             }
+            return null;
         };
     }
 
@@ -389,6 +422,6 @@ public class VoyageAIEmbedderTest {
                     "total_tokens": 10
                   }
                 }
-                """, embedding.toString());
+                """, embedding);
     }
 }

@@ -9,9 +9,9 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Integration tests for VoyageAI embedder with real API.
@@ -19,17 +19,16 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * These tests are disabled by default and require a real VoyageAI API key.
  * To run these tests:
  * 1. Set environment variable: export VOYAGE_API_KEY="your-api-key"
- * 2. Remove @Disabled annotation or run with: mvn test -Dtest=VoyageAIEmbedderIntegrationTest
+ * 2. Run with: mvn test -Dtest=VoyageAIEmbedderIntegrationTest
  *
  * NOTE: These tests make real API calls and may incur costs.
  */
-// @Disabled("Requires real VoyageAI API key - run manually with VOYAGE_API_KEY environment variable")
+@EnabledIfEnvironmentVariable(named = "VOYAGE_API_KEY", matches = ".+")
 public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithVoyage3() {
         String apiKey = System.getenv("VOYAGE_API_KEY");
-        assumeTrue(apiKey != null && !apiKey.isEmpty(), "VOYAGE_API_KEY environment variable not set");
 
         VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
 
@@ -59,7 +58,6 @@ public class VoyageAIEmbedderIntegrationTest {
     @Test
     public void testRealAPIWithVoyage3Lite() {
         String apiKey = System.getenv("VOYAGE_API_KEY");
-        assumeTrue(apiKey != null && !apiKey.isEmpty(), "VOYAGE_API_KEY environment variable not set");
 
         VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3-lite");
 
@@ -77,7 +75,6 @@ public class VoyageAIEmbedderIntegrationTest {
     @Test
     public void testRealAPIWithCaching() {
         String apiKey = System.getenv("VOYAGE_API_KEY");
-        assumeTrue(apiKey != null && !apiKey.isEmpty(), "VOYAGE_API_KEY environment variable not set");
 
         VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
 
@@ -105,7 +102,6 @@ public class VoyageAIEmbedderIntegrationTest {
     @Test
     public void testRealAPIWithNormalization() {
         String apiKey = System.getenv("VOYAGE_API_KEY");
-        assumeTrue(apiKey != null && !apiKey.isEmpty(), "VOYAGE_API_KEY environment variable not set");
 
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretName("test_key");
@@ -140,7 +136,6 @@ public class VoyageAIEmbedderIntegrationTest {
     @Test
     public void testRealAPISemanticSimilarity() {
         String apiKey = System.getenv("VOYAGE_API_KEY");
-        assumeTrue(apiKey != null && !apiKey.isEmpty(), "VOYAGE_API_KEY environment variable not set");
 
         VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
 
@@ -168,7 +163,6 @@ public class VoyageAIEmbedderIntegrationTest {
     @Test
     public void testRealAPIInputTypes() {
         String apiKey = System.getenv("VOYAGE_API_KEY");
-        assumeTrue(apiKey != null && !apiKey.isEmpty(), "VOYAGE_API_KEY environment variable not set");
 
         VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
 
@@ -195,7 +189,6 @@ public class VoyageAIEmbedderIntegrationTest {
     @Test
     public void testRealAPILongText() {
         String apiKey = System.getenv("VOYAGE_API_KEY");
-        assumeTrue(apiKey != null && !apiKey.isEmpty(), "VOYAGE_API_KEY environment variable not set");
 
         VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
 
@@ -228,17 +221,7 @@ public class VoyageAIEmbedderIntegrationTest {
     }
 
     private Secrets createSecrets(String apiKey) {
-        return new Secrets() {
-            @Override
-            public Secret get(String key) {
-                return new Secret() {
-                    @Override
-                    public String current() {
-                        return apiKey;
-                    }
-                };
-            }
-        };
+        return key -> () -> apiKey;
     }
 
     private double cosineSimilarity(Tensor a, Tensor b) {

@@ -38,11 +38,15 @@ import java.util.logging.Logger;
  * <p>Features:
  * <ul>
  *   <li>Supports all VoyageAI models (voyage-3, voyage-code-3, etc.)</li>
- *   <li>Automatic request batching for efficiency</li>
  *   <li>LRU caching to reduce API calls</li>
  *   <li>Auto-detection of input type (query vs document)</li>
  *   <li>Exponential backoff retry on rate limits</li>
  * </ul>
+ *
+ * <p><b>Future Enhancement:</b> Request batching - Currently each embed() call results
+ * in a separate API request. A future enhancement will support batching multiple texts
+ * in a single API request for improved efficiency and reduced latency when processing
+ * multiple documents.
  *
  * <p>Configuration example in services.xml:
  * <pre>{@code
@@ -53,7 +57,7 @@ import java.util.logging.Logger;
  * }</pre>
  *
  * @see <a href="https://docs.voyageai.com/">VoyageAI Documentation</a>
- * @author Vespa Team
+ * @author VoyageAI team
  */
 @Beta
 public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
@@ -228,13 +232,21 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     }
 
     /**
-     * Call VoyageAI API with exponential backoff retry.
+     * Call VoyageAI API with retry on transient failures.
+     *
+     * <p>Retry strategy:
+     * - Retries on rate limits (429) and server errors (5xx)
+     * - Uses fixed 1-second delay between retry attempts
+     * - Bounded by global timeout: will not retry if it would exceed the configured timeout
+     * - maxRetries provides an additional safety limit to prevent excessive retry attempts
      */
     private VoyageAIResponse callAPIWithRetry(String jsonRequest)
             throws IOException, InterruptedException {
 
+        long startTime = System.currentTimeMillis();
+        long timeoutMs = config.timeout();
         int retries = 0;
-        long retryDelay = 1000; // Start with 1 second
+        long retryDelay = 1000; // Fixed 1 second delay
 
         while (true) {
             try {
@@ -251,25 +263,32 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
                     if (response.isSuccessful()) {
                         return objectMapper.readValue(responseBody, VoyageAIResponse.class);
-                    } else if (response.code() == 429 && retries < config.maxRetries()) {
-                        // Rate limited - retry with exponential backoff
+                    } else if (response.code() == 429 || response.code() >= 500) {
+                        // Calculate time remaining
+                        long elapsedTime = System.currentTimeMillis() - startTime;
+                        long timeRemaining = timeoutMs - elapsedTime;
+
+                        // Check if we have time for another retry
+                        if (timeRemaining <= retryDelay) {
+                            String errorType = response.code() == 429 ? "rate limit" : "server error";
+                            throw new IOException("VoyageAI API " + errorType + " (" + response.code() +
+                                    "). Cannot retry: would exceed timeout of " + timeoutMs + "ms. Response: " + responseBody);
+                        }
+
+                        // Safety limit check
+                        if (retries >= config.maxRetries()) {
+                            String errorType = response.code() == 429 ? "rate limited" : "server error";
+                            throw new IOException("VoyageAI API " + errorType + " (" + response.code() +
+                                    "). Max retries (" + config.maxRetries() + ") exceeded. Response: " + responseBody);
+                        }
+
+                        // Retry with fixed delay
                         retries++;
-                        log.warning("VoyageAI API rate limited (429). Retry " + retries + "/" + config.maxRetries() +
-                                " after " + retryDelay + "ms");
+                        String errorMsg = response.code() == 429 ? "rate limited" : "server error (" + response.code() + ")";
+                        log.warning("VoyageAI API " + errorMsg + ". Retry " + retries +
+                                " after " + retryDelay + "ms (timeout remaining: " + timeRemaining + "ms)");
 
                         Thread.sleep(retryDelay);
-                        retryDelay *= 2; // Exponential backoff
-                        continue;
-
-                    } else if (response.code() >= 500 && retries < config.maxRetries()) {
-                        // Server error - retry
-                        retries++;
-                        log.warning("VoyageAI API server error (" + response.code() + "). Retry " + retries + "/" +
-                                config.maxRetries() + " after " + retryDelay + "ms");
-
-                        Thread.sleep(retryDelay);
-                        retryDelay *= 2;
-                        continue;
 
                     } else if (response.code() == 401) {
                         throw new IOException("VoyageAI API authentication failed. Please check your API key. Response: " + responseBody);

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <!-- Example: VoyageAI Embedder Configuration -->
 <services version="1.0">
   <container id="default" version="1.0">
@@ -22,7 +23,6 @@
     <component id="voyage-fast" type="voyage-ai-embedder">
       <model>voyage-3-lite</model>
       <api-key-secret-name>voyage_api_key</api-key-secret-name>
-      <max-batch-size>128</max-batch-size>
       <cache-size>10000</cache-size>
       <pool-size>20</pool-size>
       <timeout>60000</timeout>
