@@ -117,7 +117,12 @@ public class FeatureData implements Inspectable, JsonProducer {
         for (Map.Entry<String, Tensor> entry : values.entrySet()) {
             target.append("\"").append(entry.getKey()).append("\":");
             if (entry.getValue().type().rank() == 0) {
-                target.append(entry.getValue().asDouble());
+                double value = entry.getValue().asDouble();
+                if (Double.isNaN(value) || Double.isInfinite(value)) {
+                    target.append("null");
+                } else {
+                    target.append(value);
+                }
             } else {
                 byte[] encodedTensor = JsonFormat.encode(entry.getValue(), tensorOptions);
                 target.append(new String(encodedTensor, StandardCharsets.UTF_8));

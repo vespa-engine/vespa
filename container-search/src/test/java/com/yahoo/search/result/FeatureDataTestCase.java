@@ -112,6 +112,35 @@ public class FeatureDataTestCase {
         assertEquals(Tensor.from("tensor(x[1]):[3.0]"), featureData.getTensor("tensor3"));
     }
 
+    @Test
+    void testNaNAndInfinityHandling() {
+        // Test with Map constructor (direct path)
+        Map<String, Tensor> features = new LinkedHashMap<>();
+        features.put("validScalar", Tensor.from(1.5));
+        features.put("nanScalar", Tensor.from(Double.NaN));
+        features.put("positiveInfinity", Tensor.from(Double.POSITIVE_INFINITY));
+        features.put("negativeInfinity", Tensor.from(Double.NEGATIVE_INFINITY));
+
+        FeatureData featureData = new FeatureData(features);
+        String json = featureData.toJson();
+
+        // NaN and Infinity should be rendered as null in JSON
+        String expectedJson = "{\"validScalar\":1.5,\"nanScalar\":null,\"positiveInfinity\":null,\"negativeInfinity\":null}";
+        assertEquals(expectedJson, json);
+
+        // Test with mutated FeatureData
+        Cursor slimeFeatures = new Slime().setObject();
+        slimeFeatures.setDouble("scalar1", 2.5);
+        FeatureData mutatedData = new FeatureData(new SlimeAdapter(slimeFeatures));
+        mutatedData.set("nanValue", Double.NaN);
+        mutatedData.set("infValue", Double.POSITIVE_INFINITY);
+        mutatedData.set("negInfValue", Double.NEGATIVE_INFINITY);
+
+        String mutatedJson = mutatedData.toJson();
+        String expectedMutatedJson = "{\"nanValue\":null,\"infValue\":null,\"negInfValue\":null,\"scalar1\":2.5}";
+        assertEquals(expectedMutatedJson, mutatedJson);
+    }
+
     static class FeatureDataTester {
 
         FeatureData featureData;
