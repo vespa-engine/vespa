@@ -370,6 +370,11 @@ public class DocumentV1ApiTest {
         visitorTrace.getRoot().addChild(new TraceNode().setStrict(false)
                                                 .addChild("Fast Car")
                                                 .addChild("Baby Can I Hold You"));
+
+        // This progress token has the same contents as the one the visitor session will be initialized with if
+        // there is no explicitly provided progress token as part of the visitor parameters.
+        ProgressToken progress = makeIncompleteProgressToken();
+
         access.visitorTrace = visitorTrace;
         access.expect(parameters -> {
             assertEquals("content", parameters.getRoute().toString());
@@ -432,12 +437,11 @@ public class DocumentV1ApiTest {
                                { "message": "Baby Can I Hold You" }
                              ]
                            }
-                         ]
-                       }""", response.readAll());
+                         ],
+                         "continuation": "%s"
+                       }""".formatted(progress.serializeToString()), response.readAll());
         assertEquals(200, response.getStatus());
         access.visitorTrace = null;
-
-        ProgressToken progress = makeIncompleteProgressToken();
 
         // GET at root is a visit. Streaming mode can be specified with &stream=true
         access.expect(tokens);
@@ -599,8 +603,9 @@ public class DocumentV1ApiTest {
         assertSameJson("""
                        {
                          "pathId": "/document/v1/space/music/docid",
-                         "documentCount": 1
-                       }""",
+                         "documentCount": 1,
+                         "continuation": "%s"
+                       }""".formatted(progress.serializeToString()),
                        response.readAll());
         assertEquals(200, response.getStatus());
         assertEquals("true", response.getResponse().headers().get("X-Vespa-Ignored-Fields").get(0).toString());
@@ -717,8 +722,9 @@ public class DocumentV1ApiTest {
                        {
                          "pathId": "/document/v1/space/music/number/123",
                          "documents": [ ],
-                         "documentCount": 0
-                       }""",
+                         "documentCount": 0,
+                         "continuation": "%s"
+                       }""".formatted(progress.serializeToString()),
                        response.readAll());
         assertEquals(200, response.getStatus());
 
@@ -1163,7 +1169,8 @@ public class DocumentV1ApiTest {
                 {"put":"id:space:music:g=a:three","fields":{}}
                 {"remove":"id:space:music::t-square-truth"}
                 {"sessionStats":{"documentCount":4}}
-                """, response.readAll());
+                {"continuation":{"token":"%s","percentFinished":0.0}}
+                """.formatted(makeIncompleteProgressToken().serializeToString()), response.readAll());
         assertEquals(200, response.getStatus());
         List<String> contentType = response.getResponse().headers().get("Content-Type");
         assertEquals(1, contentType.size());
@@ -1199,8 +1206,9 @@ public class DocumentV1ApiTest {
                              }
                            }
                          ],
-                         "documentCount": 1
-                       }""", response.readAll());
+                         "documentCount": 1,
+                         "continuation": "%s"
+                       }""".formatted(makeIncompleteProgressToken().serializeToString()), response.readAll());
         assertEquals(200, response.getStatus());
         List<String> contentType = response.getResponse().headers().get("Content-Type");
         assertEquals(1, contentType.size());
@@ -1227,12 +1235,32 @@ public class DocumentV1ApiTest {
     @Test
     void streaming_visit_timeout_with_zero_visited_buckets_emits_continuation() {
         var driver = new RequestHandlerTestDriver(handler);
-        var progress = makeIncompleteProgressToken();
         access.expect(parameters -> {
-            parameters.getControlHandler().onProgress(progress);
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "uh oh");
         });
         var request = driver.createRequest("http://localhost/document/v1?cluster=content&stream=true", HttpRequest.Method.GET);
+        var response = driver.sendRequest(request, "");
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1",
+                         "documents": [],
+                         "documentCount": 0,
+                         "message": "No buckets visited within timeout of -1ms (request timeout -5s)",
+                         "continuation": "%s"
+                       }""".formatted(makeIncompleteProgressToken().serializeToString()), response.readAll());
+        assertEquals(200, response.getStatus());
+        driver.close();
+    }
+
+    @Test
+    void initially_provided_continuation_token_is_returned_if_session_has_no_progress() {
+        var driver = new RequestHandlerTestDriver(handler);
+        var progress = makePartiallyCompleteProgressToken();
+        access.expect(parameters -> {
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "uh oh");
+        });
+        var request = driver.createRequest("http://localhost/document/v1?cluster=content&stream=true&continuation=%s"
+                .formatted(progress.serializeToString()), HttpRequest.Method.GET);
         var response = driver.sendRequest(request, "");
         assertSameJson("""
                        {
@@ -1276,8 +1304,9 @@ public class DocumentV1ApiTest {
         assertSameJson("""
                         {
                           "pathId": "/document/v1/space/music/docid",
-                          "documentCount": 1
-                        }""",
+                          "documentCount": 1,
+                          "continuation": "%s"
+                        }""".formatted(makeIncompleteProgressToken().serializeToString()),
                 response.readAll());
         assertEquals(200, response.getStatus());
         driver.close();
@@ -1306,8 +1335,9 @@ public class DocumentV1ApiTest {
         assertSameJson("""
                         {
                           "pathId": "/document/v1/",
-                          "documentCount": 1
-                        }""",
+                          "documentCount": 1,
+                          "continuation": "%s"
+                        }""".formatted(makeIncompleteProgressToken().serializeToString()),
                 response.readAll());
         assertEquals(200, response.getStatus());
         driver.close();
@@ -1324,8 +1354,9 @@ public class DocumentV1ApiTest {
                             {
                               "pathId": "/document/v1/",
                               "documents": [ ],
-                              "documentCount": 0
-                            }""",
+                              "documentCount": 0,
+                              "continuation": "%s"
+                            }""".formatted(makeIncompleteProgressToken().serializeToString()),
                     response.readAll());
             assertEquals(200, response.getStatus());
         }
@@ -1454,6 +1485,13 @@ public class DocumentV1ApiTest {
         return progress;
     }
 
+    private static ProgressToken makePartiallyCompleteProgressToken() {
+        var progress = new ProgressToken();
+        VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(16, 1), new BucketId(16, 2)), 8, progress)
+                .update(new BucketId(16, 1), new BucketId(16, 1L << 33));
+        return progress;
+    }
+
     private static ProgressToken makeCompleteProgressToken() {
         var progress = new ProgressToken();
         var iter = VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(1), new BucketId(2)), 8, progress);
@@ -1493,7 +1531,7 @@ public class DocumentV1ApiTest {
                         parameters.getLocalDataHandler().setSession(this);
                 }
                 @Override public boolean isDone() { return false; }
-                @Override public ProgressToken getProgress() { return null; }
+                @Override public ProgressToken getProgress() { return makeIncompleteProgressToken(); }
                 @Override public Trace getTrace() { return visitorTrace; }
                 @Override public boolean waitUntilDone(long timeoutMs) { return false; }
                 @Override public void ack(AckToken token) { assertTrue(outstanding.remove(token)); }
