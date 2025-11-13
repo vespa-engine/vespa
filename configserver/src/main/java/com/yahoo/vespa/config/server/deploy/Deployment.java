@@ -121,6 +121,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         prepare();
 
         validateSessionStatus(session);
+        if (sessionAlreadyActive(session))
+            return configGeneration();
 
         waitForResourcesOrTimeout(params.get(), session, provisioner);
 
@@ -134,7 +136,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             restartServicesIfNeeded(applicationId);
             storeReindexing(applicationId);
 
-            return session.getMetaData().getGeneration();
+            return configGeneration();
         }
     }
 
@@ -146,9 +148,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 : "File references: " + fileReferences;
         log.log(Level.INFO, session.logPre() + "Session " + session.getSessionId() + " activated successfully using " +
                 provisioner.map(provisioner -> provisioner.getClass().getSimpleName()).orElse("no host provisioner") +
-                ". Config generation " + session.getMetaData().getGeneration() +
+                ". Config generation " + configGeneration() +
                 activation.sourceSessionId().stream().mapToObj(id -> ". Based on session " + id).findFirst().orElse("") +
                 ". " + fileReferencesText);
+    }
+
+    private Long configGeneration() {
+        return session.getMetaData().getGeneration();
     }
 
     private void deleteSession() {
@@ -224,9 +230,11 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         long sessionId = session.getSessionId();
         if (Session.Status.NEW.equals(session.getStatus())) {
             throw new IllegalArgumentException(session.logPre() + "Session " + sessionId + " is not prepared");
-        } else if (Session.Status.ACTIVATE.equals(session.getStatus())) {
-            throw new IllegalArgumentException(session.logPre() + "Session " + sessionId + " is already active");
         }
+    }
+
+    private boolean sessionAlreadyActive(Session session) {
+        return Session.Status.ACTIVATE.equals(session.getStatus());
     }
 
     /**

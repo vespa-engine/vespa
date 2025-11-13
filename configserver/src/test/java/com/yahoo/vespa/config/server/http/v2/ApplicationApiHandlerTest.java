@@ -325,13 +325,12 @@ class ApplicationApiHandlerTest {
                        }
                        """);
 
-        // Retry activation of session 3 again, and fail.
+        // Retry activation of session 3 again, return OK, already activated.
         verifyResponse(put(3, Map.of()),
-                       400,
+                       200,
                        """
                        {
-                         "error-code": "BAD_REQUEST",
-                         "message": "app:test.default.default Session 3 is already active"
+                         "message": "Session 3 for test.default.default activated"
                        }
                        """);
     }
