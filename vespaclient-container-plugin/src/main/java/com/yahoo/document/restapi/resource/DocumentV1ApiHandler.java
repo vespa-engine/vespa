@@ -1330,6 +1330,16 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                     super.setSession(session);
                     if (session instanceof VisitorSession visitorSession) this.session.set(visitorSession);
                 }
+                void writeCurrentProgressTokenToResponse() throws IOException {
+                    ProgressToken progress = getProgress() != null ? getProgress() : parameters.getResumeToken();
+                    if (progress != null) {
+                        if (progress.isFinished()) {
+                            response.writeEpilogueContinuation(VisitorContinuation.FINISHED);
+                        } else {
+                            response.writeEpilogueContinuation(continuationFromToken(progress));
+                        }
+                    }
+                }
                 @Override public void onDone(CompletionCode code, String message) {
                     super.onDone(code, message);
                     loggingException(() -> {
@@ -1353,25 +1363,30 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                                               parameters.getSessionTimeoutMs() + "ms (request timeout -5s)",
                                                               StreamableJsonResponse.MessageSeverity.INFO); // Timeout here is not an error
                                         status = Response.Status.GATEWAY_TIMEOUT;
+                                        if (streaming) {
+                                            // When we're streaming output, we can't communicate timeouts via HTTP
+                                            // response codes since we've already sent all headers. We have no real
+                                            // choice but to emit the current progress token and letting the client
+                                            // try again. We can't _not_ do this, as the absence of a continuation
+                                            // token would make it appear as if visiting has completed successfully.
+                                            writeCurrentProgressTokenToResponse();
+                                        }
                                         break;
                                     }
                                 case SUCCESS:
                                     if (error.get() == null) {
-                                        ProgressToken progress = getProgress() != null ? getProgress() : parameters.getResumeToken();
-                                        if (progress != null) {
-                                            if (progress.isFinished()) {
-                                                response.writeEpilogueContinuation(VisitorContinuation.FINISHED);
-                                            } else {
-                                                response.writeEpilogueContinuation(continuationFromToken(progress));
-                                            }
-                                        }
-
+                                        writeCurrentProgressTokenToResponse();
                                         status = Response.Status.OK;
                                         break;
                                     }
                                 default:
                                     response.writeMessage(error.get() != null ? error.get() : message != null ? message : "Visiting failed",
                                                           StreamableJsonResponse.MessageSeverity.ERROR);
+                                    if (streaming) {
+                                        // Always attempt to write a continuation token regardless of error state when
+                                        // streaming. See timeout/aborted rationale above as to why we must do this.
+                                        writeCurrentProgressTokenToResponse();
+                                    }
                             }
                             if ( ! streaming)
                                 response.commit(status, fullyApplied);
