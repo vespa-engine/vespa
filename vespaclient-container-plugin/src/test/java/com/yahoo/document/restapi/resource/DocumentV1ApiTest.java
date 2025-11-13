@@ -1503,15 +1503,15 @@ public class DocumentV1ApiTest {
 
     private static ProgressToken makeIncompleteProgressToken() {
         var progress = new ProgressToken();
-        VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(1), new BucketId(2)), 8, progress)
-                .update(new BucketId(1), new BucketId(1));
+        VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(16, 1), new BucketId(16, 2)), 16, progress)
+                .update(new BucketId(16, 1), ProgressToken.NULL_BUCKET);
         assertFalse(progress.isFinished());
         return progress;
     }
 
     private static ProgressToken makePartiallyCompleteProgressToken() {
         var progress = new ProgressToken();
-        VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(16, 1), new BucketId(16, 2)), 8, progress)
+        VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(16, 1), new BucketId(16, 2)), 16, progress)
                 .update(new BucketId(16, 1), new BucketId(16, 1L << 33));
         assertFalse(progress.isFinished());
         return progress;
@@ -1520,7 +1520,7 @@ public class DocumentV1ApiTest {
     // Subsumes token from makePartiallyCompleteProgressToken
     private static ProgressToken makePartiallyCompleteProgressToken2() {
         var progress = new ProgressToken();
-        var iter = VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(16, 1), new BucketId(16, 2)), 8, progress);
+        var iter = VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(16, 1), new BucketId(16, 2)), 16, progress);
         iter.update(new BucketId(16, 1), ProgressToken.FINISHED_BUCKET);
         iter.update(new BucketId(16, 2), new BucketId(16, 2L << 33));
         assertFalse(progress.isFinished());
@@ -1529,9 +1529,9 @@ public class DocumentV1ApiTest {
 
     private static ProgressToken makeCompleteProgressToken() {
         var progress = new ProgressToken();
-        var iter = VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(1), new BucketId(2)), 8, progress);
-        iter.update(new BucketId(1), ProgressToken.FINISHED_BUCKET);
-        iter.update(new BucketId(2), ProgressToken.FINISHED_BUCKET);
+        var iter = VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(16, 1), new BucketId(16, 2)), 16, progress);
+        iter.update(new BucketId(16, 1), ProgressToken.FINISHED_BUCKET);
+        iter.update(new BucketId(16, 2), ProgressToken.FINISHED_BUCKET);
         assertTrue(progress.isFinished());
         return progress;
     }
