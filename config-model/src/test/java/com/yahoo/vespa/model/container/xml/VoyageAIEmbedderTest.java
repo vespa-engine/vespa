@@ -9,6 +9,7 @@ import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.VoyageAIEmbedder;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
+import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -168,7 +169,8 @@ public class VoyageAIEmbedderTest {
     }
 
     private VespaModel buildModelFromXml(String servicesXml) throws Exception {
-        return new VespaModelCreatorWithFilePkg(servicesXml).create();
+        String hosts = "<hosts><host name='localhost'><alias>node1</alias></host></hosts>";
+        return new VespaModelCreatorWithMockPkg(hosts, servicesXml).create();
     }
 
     private VoyageAiEmbedderConfig getVoyageAIEmbedderConfig(ApplicationContainerCluster cluster, String componentId) {

@@ -155,7 +155,7 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
             builder.maxRetries(maxRetries);
         }
         if (defaultInputType != null) {
-            builder.defaultInputType(DefaultInputType.Enum.valueOf(defaultInputType.toUpperCase()));
+            builder.defaultInputType(DefaultInputType.Enum.valueOf(defaultInputType.toLowerCase()));
         }
         if (autoDetectInputType != null) {
             builder.autoDetectInputType(autoDetectInputType);
