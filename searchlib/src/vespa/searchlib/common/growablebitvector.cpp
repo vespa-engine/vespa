@@ -23,7 +23,7 @@ struct GenerationHeldAllocatedBitVector : public vespalib::GenerationHeldBase {
 GrowableBitVector::GrowableBitVector(BitWord::Index newSize, BitWord::Index newCapacity,
                                      GenerationHolder &generationHolder,
                                      const Alloc *init_alloc)
-    : _stored(std::make_unique<AllocatedBitVector>(newSize, newCapacity, nullptr, init_alloc)),
+    : _stored(std::make_unique<AllocatedBitVector>(newSize, newCapacity, nullptr, init_alloc, true)),
       _self(_stored.get()),
       _generationHolder(generationHolder)
 {
@@ -37,7 +37,7 @@ GrowableBitVector::make_snapshot(BitWord::Index new_size)
 {
     AllocatedBitVector& self = *_stored;
     assert(new_size <= self.size());
-    return std::make_unique<AllocatedBitVector>(new_size, new_size, &self, nullptr);
+    return std::make_unique<AllocatedBitVector>(new_size, new_size, &self, nullptr, false);
 }
 
 void
@@ -55,7 +55,7 @@ GrowableBitVector::grow(BitWord::Index newSize, BitWord::Index newCapacity)
     AllocatedBitVector &self = *_stored;
     assert(newCapacity >= newSize);
     if (newCapacity != self.capacity()) {
-        auto tbv = std::make_unique<AllocatedBitVector>(newSize, newCapacity, &self, &self._alloc);
+        auto tbv = std::make_unique<AllocatedBitVector>(newSize, newCapacity, &self, &self._alloc, true);
         auto to_hold = std::make_unique<GenerationHeldAllocatedBitVector>(std::move(_stored));
         _self.store(tbv.get(), std::memory_order_release);
         _stored = std::move(tbv);
