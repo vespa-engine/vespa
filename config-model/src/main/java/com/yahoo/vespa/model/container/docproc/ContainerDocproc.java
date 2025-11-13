@@ -29,13 +29,18 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
 
     public final Options options;
     private final Map<Pair<String, String>, String> fieldNameSchemaMap = new HashMap<>();
+    private final boolean useSimpleAnnotations;
 
     public ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains) {
-        this(cluster, chains, Options.empty());
+        this(cluster, chains, Options.empty(), null);
     }
 
-    private ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains, Options options) {
-        this(cluster, chains, options, true);
+    public ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains, DeployState deployState) {
+        this(cluster, chains, Options.empty(), deployState, true);
+    }
+
+    private ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains, Options options, DeployState deployState) {
+        this(cluster, chains, options, deployState, true);
     }
 
     private void addSource(ContainerCluster<?> cluster, String name, SessionConfig.Type.Enum type) {
@@ -44,10 +49,11 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
         cluster.addComponent(mbusClient);
     }
 
-    public ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains, Options options, boolean addSourceClientProvider) {
+    public ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains, Options options, DeployState deployState, boolean addSourceClientProvider) {
         super(chains);
         assert (options != null) : "Null Options for " + this + " under cluster " + cluster.getName();
         this.options = options;
+        this.useSimpleAnnotations = deployState != null && deployState.featureFlags().useSimpleAnnotations();
 
         if (addSourceClientProvider) {
             addSource(cluster, "source", SessionConfig.Type.SOURCE);
@@ -80,6 +86,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
         if (getMaxQueueTimeMs() != null) {
             builder.maxqueuetimems(getMaxQueueTimeMs());
         }
+        builder.simpleAnnotations(useSimpleAnnotations);
     }
     
     @Override

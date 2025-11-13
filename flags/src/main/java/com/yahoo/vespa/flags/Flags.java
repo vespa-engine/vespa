@@ -267,6 +267,13 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag USE_SIMPLE_ANNOTATIONS = defineFeatureFlag(
+            "use-simple-annotations", false,
+            List.of("arnej"), "2025-11-13", "2026-12-31",
+            "Enable lightweight annotation representation for StringFieldValue",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     public static final UnboundBooleanFlag SEND_PROTOBUF_QUERYTREE = defineFeatureFlag(
             "send-protobuf-querytree", false,
             List.of("arnej"), "2025-10-06", "2026-03-31",
