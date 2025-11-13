@@ -200,6 +200,7 @@ public class ModelContextImpl implements ModelContext {
         private final double logserverNodeMemory;
         private final double clusterControllerNodeMemory;
         private final boolean useLegacyWandQueryParsing;
+        private final boolean useSimpleAnnotations;
         private final boolean sendProtobufQuerytree;
         private final boolean forwardAllLogLevels;
         private final long zookeeperPreAllocSize;
@@ -247,6 +248,7 @@ public class ModelContextImpl implements ModelContext {
             this.logserverNodeMemory = PermanentFlags.LOGSERVER_NODE_MEMORY.bindTo(source).with(appId).with(version).value();
             this.clusterControllerNodeMemory = PermanentFlags.CLUSTER_CONTROLLER_NODE_MEMORY.bindTo(source).with(appId).with(version).value();
             this.useLegacyWandQueryParsing = Flags.USE_LEGACY_WAND_QUERY_PARSING.bindTo(source).with(appId).with(version).value();
+            this.useSimpleAnnotations = Flags.USE_SIMPLE_ANNOTATIONS.bindTo(source).with(appId).with(version).value();
             this.sendProtobufQuerytree = Flags.SEND_PROTOBUF_QUERYTREE.bindTo(source).with(appId).with(version).value();
             this.forwardAllLogLevels = PermanentFlags.FORWARD_ALL_LOG_LEVELS.bindTo(source).with(appId).with(version).value();
             this.zookeeperPreAllocSize = Flags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB.bindTo(source).value();
@@ -295,6 +297,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double logserverNodeMemory() { return logserverNodeMemory; }
         @Override public double clusterControllerNodeMemory() { return clusterControllerNodeMemory; }
         @Override public boolean useLegacyWandQueryParsing() { return useLegacyWandQueryParsing; }
+        @Override public boolean useSimpleAnnotations() { return useSimpleAnnotations; }
         @Override public boolean sendProtobufQuerytree() { return sendProtobufQuerytree; }
         @Override public boolean forwardAllLogLevels() { return forwardAllLogLevels; }
         @Override public long zookeeperPreAllocSize() { return zookeeperPreAllocSize; }

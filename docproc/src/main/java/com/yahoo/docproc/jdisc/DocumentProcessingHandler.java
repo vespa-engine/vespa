@@ -109,6 +109,11 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                      .setMetric(metric)
                      .setContainerDocumentConfig(containerDocConfig),
                 threadPool);
+
+        // Set system property for simple annotations based on config
+        System.setProperty("vespa.indexing.simple_annotations",
+                          Boolean.toString(docprocConfig.simpleAnnotations()));
+
         docprocServiceRegistry.freeze();
     }
 

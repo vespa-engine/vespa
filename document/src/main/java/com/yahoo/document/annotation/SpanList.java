@@ -404,7 +404,7 @@ public class SpanList extends SpanNode {
 
     @Override
     public String toString() {
-        return "SpanList with " + children().size() + " children";
+        return "SpanList with " + children() + " children";
     }
 
 }
