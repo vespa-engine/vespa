@@ -516,7 +516,7 @@ public class DocumentV1ApiTest {
         // that visiting has completed.
         access.expect(parameters -> {
             assertEquals("(music) and (id.namespace=='space')", parameters.getDocumentSelection());
-            parameters.getControlHandler().onProgress(progress);
+            parameters.getControlHandler().onProgress(makePartiallyCompleteProgressToken());
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.FAILURE, "failure?");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?stream=true");
@@ -527,7 +527,7 @@ public class DocumentV1ApiTest {
                          "documentCount": 0,
                          "message": "failure?",
                          "continuation": "%s"
-                       }""".formatted(progress.serializeToString()), response.readAll());
+                       }""".formatted(makePartiallyCompleteProgressToken().serializeToString()), response.readAll());
         assertEquals(200, response.getStatus());
         assertNull(response.getResponse().headers().get("X-Vespa-Ignored-Fields"));
 
@@ -644,7 +644,6 @@ public class DocumentV1ApiTest {
             assertEquals("[id]", parameters.fieldSet());
             assertEquals(60_000, parameters.getSessionTimeoutMs());
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc2)), tokens.get(0));
-            parameters.getControlHandler().onProgress(progress);
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.ABORTED, "Huzzah?");
         });
         access.session.expect((remove, parameters) -> {
@@ -1275,6 +1274,30 @@ public class DocumentV1ApiTest {
     }
 
     @Test
+    void most_recent_progress_is_returned_as_continuation_token() {
+        var driver = new RequestHandlerTestDriver(handler);
+        access.expect(parameters -> {
+            var controlHandler = parameters.getControlHandler();
+            controlHandler.onProgress(makePartiallyCompleteProgressToken()); // Overrides request-provided progress
+            controlHandler.onProgress(makePartiallyCompleteProgressToken2()); // Overrides above progress
+            controlHandler.onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "uh oh");
+        });
+        var request = driver.createRequest("http://localhost/document/v1?cluster=content&stream=true&continuation=%s"
+                .formatted(makeIncompleteProgressToken().serializeToString()), HttpRequest.Method.GET);
+        var response = driver.sendRequest(request, "");
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1",
+                         "documents": [],
+                         "documentCount": 0,
+                         "message": "No buckets visited within timeout of -1ms (request timeout -5s)",
+                         "continuation": "%s"
+                       }""".formatted(makePartiallyCompleteProgressToken2().serializeToString()), response.readAll());
+        assertEquals(200, response.getStatus());
+        driver.close();
+    }
+
+    @Test
     public void batch_update_rewrites_tas_condition_with_timestamp_predicate_if_provided_by_backend() {
         var driver = new RequestHandlerTestDriver(handler); // try-with-resources hangs the test on assertion failure, which isn't optimal
         List<AckToken> tokens = List.of(new AckToken(null), new AckToken(null), new AckToken(null), new AckToken(null));
@@ -1482,6 +1505,7 @@ public class DocumentV1ApiTest {
         var progress = new ProgressToken();
         VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(1), new BucketId(2)), 8, progress)
                 .update(new BucketId(1), new BucketId(1));
+        assertFalse(progress.isFinished());
         return progress;
     }
 
@@ -1489,6 +1513,17 @@ public class DocumentV1ApiTest {
         var progress = new ProgressToken();
         VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(16, 1), new BucketId(16, 2)), 8, progress)
                 .update(new BucketId(16, 1), new BucketId(16, 1L << 33));
+        assertFalse(progress.isFinished());
+        return progress;
+    }
+
+    // Subsumes token from makePartiallyCompleteProgressToken
+    private static ProgressToken makePartiallyCompleteProgressToken2() {
+        var progress = new ProgressToken();
+        var iter = VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(16, 1), new BucketId(16, 2)), 8, progress);
+        iter.update(new BucketId(16, 1), ProgressToken.FINISHED_BUCKET);
+        iter.update(new BucketId(16, 2), new BucketId(16, 2L << 33));
+        assertFalse(progress.isFinished());
         return progress;
     }
 
