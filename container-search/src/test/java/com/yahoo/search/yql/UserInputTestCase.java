@@ -168,7 +168,7 @@ public class UserInputTestCase {
         builder.setParameter("yql",
                              "select * from sources * where {grammar: \"" + grammar + "\", targetHits: 17, defaultIndex: \"f\"}userInput(\"a test\")");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where ({targetNumHits: 17}weakAnd(f contains \"a\", f contains \"test\"))", query.yqlRepresentation());
+        assertEquals("select * from sources * where ({targetHits: 17}weakAnd(f contains \"a\", f contains \"test\"))", query.yqlRepresentation());
         WeakAndItem weakAnd = (WeakAndItem)query.getModel().getQueryTree().getRoot();
         assertEquals(17, weakAnd.getN());
     }
@@ -180,7 +180,7 @@ public class UserInputTestCase {
                              "select * from sources * where {targetHits: 500}userInput(@query)");
         builder.setParameter("query", "˘͈ᵕ˘͈ meaning in english");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where ({targetNumHits: 500}weakAnd((default contains ({origin: {original: \"\\u02D8\\u0348\\u1D55\\u02D8\\u0348 meaning in english\", offset: 1, length: 2}}\"\\u0348\\u1D17\") AND default contains \"\\u0348\"), default contains \"meaning\", default contains \"in\", default contains \"english\"))",
+        assertEquals("select * from sources * where ({targetHits: 500}weakAnd((default contains ({origin: {original: \"\\u02D8\\u0348\\u1D55\\u02D8\\u0348 meaning in english\", offset: 1, length: 2}}\"\\u0348\\u1D17\") AND default contains \"\\u0348\"), default contains \"meaning\", default contains \"in\", default contains \"english\"))",
                      query.yqlRepresentation());
     }
 
