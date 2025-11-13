@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.annotation.Annotation;
 import com.yahoo.document.annotation.AnnotationTypes;
+import com.yahoo.document.annotation.SimpleIndexingAnnotations;
 import com.yahoo.document.annotation.SpanNode;
 import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.annotation.SpanTrees;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Deprecated.
@@ -23,6 +25,8 @@ import java.util.Map;
  */
 // TODO: Remove on Vespa 9
 public final class FlattenExpression extends Expression {
+
+    private static final Logger log = Logger.getLogger(FlattenExpression.class.getName());
 
     @Override
     public DataType setInputType(DataType inputType, TypeContext context) {
@@ -37,7 +41,21 @@ public final class FlattenExpression extends Expression {
     @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue) context.getCurrentValue();
+
+        // Try simple path first to avoid lazy conversion overhead
+        SimpleIndexingAnnotations simple = input.getSimpleAnnotations();
+        if (simple != null) {
+            flattenSimple(input, simple, context);
+            return;
+        }
+
+        // Fallback to full SpanTree mode
         SpanTree tree = input.getSpanTree(SpanTrees.LINGUISTICS);
+        if (tree == null) {
+            // No annotations, just return the input as-is
+            return;
+        }
+
         Map<Integer, List<String>> map = new HashMap<>();
         for (Annotation anno : tree) {
             SpanNode span = anno.getSpanNode();
@@ -56,6 +74,41 @@ public final class FlattenExpression extends Expression {
             entry.add(s);
         }
         String inputVal = String.valueOf(input);
+        StringBuilder output = new StringBuilder();
+        for (int i = 0, len = inputVal.length(); i <= len; ++i) {
+            List<String> entry = map.get(i);
+            if (entry != null) {
+                Collections.sort(entry);
+                output.append(entry);
+            }
+            if (i < len) {
+                output.append(inputVal.charAt(i));
+            }
+        }
+        context.setCurrentValue(new StringFieldValue(output.toString()));
+    }
+
+    private void flattenSimple(StringFieldValue input, SimpleIndexingAnnotations simple, ExecutionContext context) {
+        String inputVal = input.getString();
+        Map<Integer, List<String>> map = new HashMap<>();
+
+        for (int i = 0; i < simple.getCount(); i++) {
+            int from = simple.getFrom(i);
+            int length = simple.getLength(i);
+            int to = from + length;
+
+            String term = simple.getTerm(i);
+            String s;
+            if (term != null) {
+                s = term;
+            } else {
+                s = inputVal.substring(from, to);
+            }
+
+            List<String> entry = map.computeIfAbsent(to, k -> new LinkedList<>());
+            entry.add(s);
+        }
+
         StringBuilder output = new StringBuilder();
         for (int i = 0, len = inputVal.length(); i <= len; ++i) {
             List<String> entry = map.get(i);

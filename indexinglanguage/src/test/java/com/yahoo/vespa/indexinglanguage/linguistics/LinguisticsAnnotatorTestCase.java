@@ -20,6 +20,7 @@ import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 import static org.junit.Assert.assertEquals;
@@ -202,6 +203,10 @@ public class LinguisticsAnnotatorTestCase {
 
     @Test
     public void requireThatExistingAnnotationsAreKept() {
+        runWithBothModes(this::requireThatExistingAnnotationsAreKeptImpl);
+    }
+
+    private void requireThatExistingAnnotationsAreKeptImpl(boolean useSimpleAnnotations) {
         SpanTree spanTree = new SpanTree(SpanTrees.LINGUISTICS);
         spanTree.spanList().span(0, 3).annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("baz")));
 
@@ -216,6 +221,10 @@ public class LinguisticsAnnotatorTestCase {
 
     @Test
     public void requireThatTokenizeCappingWorks() {
+        runWithBothModes(this::requireThatTokenizeCappingWorksImpl);
+    }
+
+    private void requireThatTokenizeCappingWorksImpl(boolean useSimpleAnnotations) {
         String shortString = "short string";
         SpanTree spanTree = new SpanTree(SpanTrees.LINGUISTICS);
         spanTree.setStringFieldValue(new StringFieldValue(shortString));
@@ -266,6 +275,10 @@ public class LinguisticsAnnotatorTestCase {
 
     @Test
     public void requireThatBinaryDataIsNotAnnotated() {
+        runWithBothModes(this::requireThatBinaryDataIsNotAnnotatedImpl);
+    }
+
+    private void requireThatBinaryDataIsNotAnnotatedImpl(boolean useSimpleAnnotations) {
         var config = new AnnotatorConfig()
                 .setMaxReplacementCharacters(10)
                 .setMaxReplacementCharactersRatio(0.1d);
@@ -285,6 +298,10 @@ public class LinguisticsAnnotatorTestCase {
 
     @Test
     public void requireReindexingBinaryDataSilentlyDropsAnnotations() {
+        runWithBothModes(this::requireReindexingBinaryDataSilentlyDropsAnnotationsImpl);
+    }
+
+    private void requireReindexingBinaryDataSilentlyDropsAnnotationsImpl(boolean useSimpleAnnotations) {
         var config = new AnnotatorConfig()
                 .setMaxReplacementCharacters(1)
                 .setMaxReplacementCharactersRatio(0.01d);
@@ -308,6 +325,30 @@ public class LinguisticsAnnotatorTestCase {
     // --------------------------------------------------------------------------------
     // Utilities
 
+    @FunctionalInterface
+    private interface TestWithMode {
+        void run(boolean useSimpleAnnotations);
+    }
+
+    private static void runWithBothModes(TestWithMode test) {
+        String oldValue = System.getProperty("vespa.indexing.simple_annotations");
+        try {
+            // Test with simple annotations disabled
+            System.setProperty("vespa.indexing.simple_annotations", "false");
+            test.run(false);
+
+            // Test with simple annotations enabled
+            System.setProperty("vespa.indexing.simple_annotations", "true");
+            test.run(true);
+        } finally {
+            if (oldValue == null) {
+                System.clearProperty("vespa.indexing.simple_annotations");
+            } else {
+                System.setProperty("vespa.indexing.simple_annotations", oldValue);
+            }
+        }
+    }
+
     private static SimpleToken token(String orig, String stem, TokenType type) {
         return token(orig, stem, type, false);
     }
@@ -327,9 +368,17 @@ public class LinguisticsAnnotatorTestCase {
     }
 
     private static void assertAnnotations(SpanTree expected, String str, AnnotatorConfig config, Linguistics linguistics) {
-        StringFieldValue val = new StringFieldValue(str);
-        assertEquals(expected != null, new LinguisticsAnnotator(linguistics, config).annotate(val));
-        assertEquals(expected, val.getSpanTree(SpanTrees.LINGUISTICS));
+        // Test with both simple and full annotation modes using shared helper
+        runWithBothModes(useSimpleAnnotations -> {
+            StringFieldValue val = new StringFieldValue(str);
+            assertEquals(expected != null, new LinguisticsAnnotator(linguistics, config).annotate(val));
+            if (!Objects.equals(expected, val.getSpanTree(SpanTrees.LINGUISTICS))) {
+                System.err.println("Mode: useSimpleAnnotations=" + useSimpleAnnotations);
+                System.err.println("expected: " + expected);
+                System.err.println("got: " + val.getSpanTree(SpanTrees.LINGUISTICS));
+            }
+            assertEquals(expected, val.getSpanTree(SpanTrees.LINGUISTICS));
+        });
     }
 
     private static Linguistics newLinguistics(List<? extends Token> tokens, Map<String, String> replacementTerms) {

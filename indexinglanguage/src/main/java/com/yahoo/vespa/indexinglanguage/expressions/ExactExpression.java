@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.annotation.Annotation;
 import com.yahoo.document.annotation.AnnotationTypes;
+import com.yahoo.document.annotation.SimpleIndexingAnnotations;
 import com.yahoo.document.annotation.Span;
 import com.yahoo.document.annotation.SpanList;
 import com.yahoo.document.annotation.SpanNode;
@@ -15,6 +16,7 @@ import com.yahoo.language.process.TokenType;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 
 import java.util.Objects;
+import java.util.logging.Logger;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
@@ -22,6 +24,8 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  * @author Simon Thoresen Hult
  */
 public final class ExactExpression extends Expression {
+
+    private static final Logger log = Logger.getLogger(ExactExpression.class.getName());
 
     private final AnnotatorConfig config;
 
@@ -53,12 +57,22 @@ public final class ExactExpression extends Expression {
         String prev = output.getString();
         String next = config.getLowercase() ? toLowerCase(prev) : prev;
 
-        SpanTree tree = output.getSpanTree(SpanTrees.LINGUISTICS);
         if (next.length() > config.getMaxTokenLength()) {
-            if (tree != null)
-                output.removeSpanTree(SpanTrees.LINGUISTICS);
+            output.removeSpanTree(SpanTrees.LINGUISTICS);
             return;
         }
+
+        // Try simple path first
+        SimpleIndexingAnnotations simple = output.createSimpleAnnotations();
+        if (simple != null) {
+            String termOverride = next.equals(prev) ? null : next;
+            simple.add(0, prev.length(), termOverride);
+            // Note: TOKEN_TYPE annotation is not created - it's unused by C++ anyway
+            return;
+        }
+
+        // Fallback to full mode
+        SpanTree tree = output.getSpanTree(SpanTrees.LINGUISTICS);
         SpanList root;
         if (tree == null) {
             root = new SpanList();
