@@ -71,7 +71,8 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Alloc buffer, siz
     }
 }
 
-AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBits, const BitVector* org, const Alloc* init_alloc)
+AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBits, const BitVector* org,
+                                       const Alloc* init_alloc, bool dynamic_guard_bits)
     : BitVector(),
       _capacityBits(capacityBits),
       _alloc(allocatePaddedAndAligned(0, numberOfElements, capacityBits, init_alloc))
@@ -84,8 +85,12 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBit
     } else {
         clear();
     }
-    set_dynamic_guard_bits(size());
-    set_dynamic_guard_bits(capacity());
+    if (dynamic_guard_bits) {
+        set_dynamic_guard_bits(size());
+        set_dynamic_guard_bits(capacity());
+    } else {
+        setGuardBit();
+    }
 }
 
 AllocatedBitVector::AllocatedBitVector(const AllocatedBitVector & rhs)

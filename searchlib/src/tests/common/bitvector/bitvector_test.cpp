@@ -3,25 +3,36 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/searchlib/common/growablebitvector.h>
 #include <vespa/searchlib/common/partialbitvector.h>
+#include <vespa/searchlib/common/read_stats.h>
 #include <vespa/searchlib/common/rankedhit.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/fastos/file.h>
+#include <vespa/vespalib/datastore/aligner.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <algorithm>
-#include <vespa/vespalib/gtest/gtest.h>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 
 using namespace search;
 
 using vespalib::alloc::Alloc;
 using vespalib::alloc::test::MemoryAllocatorObserver;
+using vespalib::datastore::Aligner;
+using vespalib::nbostream;
 using AllocStats = MemoryAllocatorObserver::Stats;
 
 namespace {
+
+const std::string testdata("bitvector_test_testdata");
 
 std::string
 toString(const BitVector & bv)
@@ -128,6 +139,15 @@ scanWithOffset(uint32_t offset)
     scan(100000,  offset, 1000000, rnd);
     scan(500000,  offset, 1000000, rnd);
     scan(1000000, offset, 1000000, rnd);
+}
+
+std::string
+param_as_string(const testing::TestParamInfo<uint32_t>& info)
+{
+    std::ostringstream os;
+    os << "old_guard_bits_";
+    os << info.param;
+    return os.str();
 }
 
 }
@@ -267,7 +287,88 @@ testNot(uint32_t offset)
     EXPECT_TRUE(assertBV(fill(A, offset), *v1));
 }
 
-TEST(BitvectorTest, requireThatSequentialOperationsOnPartialWorks)
+std::unique_ptr<const BitVector>
+make_test_bv()
+{
+    auto bv = std::make_unique<AllocatedBitVector>(2047u);
+    bv->setBit(42);
+    bv->setBit(1049);
+    return bv;
+}
+
+std::unique_ptr<nbostream>
+write_test_bv_to_nbostream(const BitVector &bv, uint32_t guard_bits, size_t alignment)
+{
+    auto out = std::make_unique<nbostream>();
+    Aligner aligner(alignment);
+    uint64_t size = bv.size();
+    uint64_t cached_hits = bv.countTrueBits();
+    uint64_t file_bytes = aligner.align(bv.num_bytes_plain(size + guard_bits));
+    *out << size << cached_hits << file_bytes;
+    out->write(bv.getStart(), std::min(bv.getFileBytes(), file_bytes));
+    if (guard_bits == BitVector::num_guard_bits) {
+        EXPECT_EQ(file_bytes, bv.getFileBytes());
+    } else {
+        EXPECT_NE(file_bytes, bv.getFileBytes());
+    }
+    if (file_bytes > bv.getFileBytes()) {
+        EXPECT_TRUE(guard_bits > BitVector::num_guard_bits);
+        std::vector<char> zerofill(file_bytes - bv.getFileBytes());
+        out->write(zerofill.data(), zerofill.size());
+    }
+    return out;
+}
+
+void
+write_test_bv_to_file(const BitVector& bv, const std::string& file_name)
+{
+    std::filesystem::path bvpath(file_name);
+    std::ofstream bvfile(bvpath, std::ios::binary);
+    auto legacy_entry_size = BitVector::legacy_num_bytes_with_single_guard_bit(bv.size());
+    bvfile.write(static_cast<const char *>(bv.getStart()), legacy_entry_size);
+    bvfile.close();
+    ASSERT_TRUE(bvfile.good());
+    std::filesystem::resize_file(bvpath, 1024u);
+}
+
+class BitVectorTest : public ::testing::Test {
+protected:
+    static std::unique_ptr<const BitVector> _file_bv;
+    static constexpr uint32_t file_alignment = 0x100;
+
+    BitVectorTest();
+    ~BitVectorTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
+};
+
+std::unique_ptr<const BitVector> BitVectorTest::_file_bv;
+
+BitVectorTest::BitVectorTest()
+    : ::testing::Test()
+{
+}
+
+BitVectorTest::~BitVectorTest() = default;
+
+void
+BitVectorTest::SetUpTestSuite()
+{
+    std::filesystem::remove_all(testdata);
+    std::filesystem::create_directory(testdata);
+    auto bv = make_test_bv();
+    write_test_bv_to_file(*bv,testdata + "/bv");
+    _file_bv = std::move(bv);
+}
+
+void
+BitVectorTest::TearDownTestSuite()
+{
+    _file_bv.reset();
+    std::filesystem::remove_all(testdata);
+}
+
+TEST_F(BitVectorTest, requireThatSequentialOperationsOnPartialWorks)
 {
     PartialBitVector p1(717,919);
 
@@ -311,7 +412,7 @@ TEST(BitvectorTest, requireThatSequentialOperationsOnPartialWorks)
     EXPECT_EQ(202u, p2.countTrueBits());
 }
 
-TEST(BitvectorTest, requireThatInitRangeStaysWithinBounds) {
+TEST_F(BitVectorTest, requireThatInitRangeStaysWithinBounds) {
     AllocatedBitVector v1(128);
     search::fef::TermFieldMatchData f;
     queryeval::SearchIterator::UP it(BitVectorIterator::create(&v1, f, true));
@@ -378,7 +479,7 @@ verifyNonOverlappingWorksAsZeroPadded(bool clear, Func func) {
     EXPECT_EQ(clear ? 0 : CNT, right->countTrueBits());
 }
 
-TEST(BitvectorTest, requireThatAndWorks) {
+TEST_F(BitVectorTest, requireThatAndWorks) {
     for (uint32_t offset(0); offset < 100; offset++) {
         testAnd(offset);
         verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
@@ -387,7 +488,7 @@ TEST(BitvectorTest, requireThatAndWorks) {
     verifyNonOverlappingWorksAsZeroPadded(true, [](BitVector & a, const BitVector & b) { a.andWith(b); });
 }
 
-TEST(BitvectorTest, requireThatOrWorks) {
+TEST_F(BitVectorTest, requireThatOrWorks) {
     for (uint32_t offset(0); offset < 100; offset++) {
         testOr(offset);
         verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
@@ -397,7 +498,7 @@ TEST(BitvectorTest, requireThatOrWorks) {
 }
 
 
-TEST(BitvectorTest, requireThatAndNotWorks) {
+TEST_F(BitVectorTest, requireThatAndNotWorks) {
     for (uint32_t offset(0); offset < 100; offset++) {
         testAndNot(offset);
         verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
@@ -406,7 +507,7 @@ TEST(BitvectorTest, requireThatAndNotWorks) {
     verifyNonOverlappingWorksAsZeroPadded(false, [](BitVector & a, const BitVector & b) { a.andNotWith(b); });
 }
 
-TEST(BitvectorTest, test_that_empty_bitvectors_does_not_crash) {
+TEST_F(BitVectorTest, test_that_empty_bitvectors_does_not_crash) {
     BitVector::UP empty = BitVector::create(0);
     EXPECT_EQ(0u, empty->countTrueBits());
     EXPECT_EQ(0u, empty->countInterval(0, 100));
@@ -418,13 +519,13 @@ TEST(BitvectorTest, test_that_empty_bitvectors_does_not_crash) {
     EXPECT_EQ(0u, empty->countInterval(0, 100));
 }
 
-TEST(BitvectorTest, requireThatNotWorks) {
+TEST_F(BitVectorTest, requireThatNotWorks) {
     for (uint32_t offset(0); offset < 100; offset++) {
         testNot(offset);
     }
 }
 
-TEST(BitvectorTest, requireThatClearWorks)
+TEST_F(BitVectorTest, requireThatClearWorks)
 {
     AllocatedBitVector v1(128);
 
@@ -438,7 +539,7 @@ TEST(BitvectorTest, requireThatClearWorks)
     EXPECT_TRUE(assertBV("[]", v1));
 }
 
-TEST(BitvectorTest, requireThatForEachWorks) {
+TEST_F(BitVectorTest, requireThatForEachWorks) {
     AllocatedBitVector v1(128);
 
     v1.setBit(7);
@@ -491,7 +592,7 @@ TEST(BitvectorTest, requireThatForEachWorks) {
 }
 
 
-TEST(BitvectorTest, requireThatSetWorks)
+TEST_F(BitVectorTest, requireThatSetWorks)
 {
     AllocatedBitVector v1(128);
 
@@ -528,7 +629,7 @@ TEST(BitvectorTest, requireThatSetWorks)
     EXPECT_TRUE(assertBV("[7,39,57,80,103]", v1));
 }
 
-TEST(BitvectorTest, test_BitWord_startBits_endBits) {
+TEST_F(BitVectorTest, test_BitWord_startBits_endBits) {
     EXPECT_EQ(BitWord::startBits(0),  0x00ul);
     EXPECT_EQ(BitWord::startBits(1),  0x01ul);
     EXPECT_EQ(BitWord::startBits(2),  0x03ul);
@@ -543,7 +644,7 @@ TEST(BitvectorTest, test_BitWord_startBits_endBits) {
     EXPECT_EQ(BitWord::endBits(63), 0x0000000000000000ul);
 }
 
-TEST(BitvectorTest, requireThatClearIntervalWorks)
+TEST_F(BitVectorTest, requireThatClearIntervalWorks)
 {
     AllocatedBitVector v1(1200);
     
@@ -583,7 +684,7 @@ TEST(BitvectorTest, requireThatClearIntervalWorks)
 }
 
 
-TEST(BitvectorTest, requireThatSetIntervalWorks)
+TEST_F(BitVectorTest, requireThatSetIntervalWorks)
 {
     AllocatedBitVector v1(1200);
     
@@ -630,13 +731,13 @@ TEST(BitvectorTest, requireThatSetIntervalWorks)
     EXPECT_EQ(0u, v1.countInterval(1, 7));
 }
 
-TEST(BitvectorTest, requireThatScanWorks)
+TEST_F(BitVectorTest, requireThatScanWorks)
 {
     scanWithOffset(0);
     scanWithOffset(19876);
 }
 
-TEST(BitvectorTest, requireThatGrowWorks)
+TEST_F(BitVectorTest, requireThatGrowWorks)
 {
     vespalib::GenerationHolder g;
     GrowableBitVector v(200, 200, g);
@@ -694,7 +795,7 @@ TEST(BitvectorTest, requireThatGrowWorks)
     g.reclaim(2);
 }
 
-TEST(BitvectorTest, require_that_growable_bit_vectors_keeps_memory_allocator)
+TEST_F(BitVectorTest, require_that_growable_bit_vectors_keeps_memory_allocator)
 {
     AllocStats stats;
     auto memory_allocator = std::make_unique<MemoryAllocatorObserver>(stats);
@@ -716,7 +817,7 @@ TEST(BitvectorTest, require_that_growable_bit_vectors_keeps_memory_allocator)
     g.reclaim(2);
 }
 
-TEST(BitvectorTest, require_that_creating_partial_nonoverlapping_vector_is_cleared) {
+TEST_F(BitVectorTest, require_that_creating_partial_nonoverlapping_vector_is_cleared) {
     AllocatedBitVector org(1000);
     org.setInterval(org.getStartIndex(), org.size());
     EXPECT_EQ(1000u, org.countTrueBits());
@@ -732,7 +833,7 @@ TEST(BitvectorTest, require_that_creating_partial_nonoverlapping_vector_is_clear
     EXPECT_EQ(0u, before->countTrueBits());
 }
 
-TEST(BitvectorTest, require_that_creating_partial_overlapping_vector_is_properly_copied) {
+TEST_F(BitVectorTest, require_that_creating_partial_overlapping_vector_is_properly_copied) {
     AllocatedBitVector org(1000);
     org.setInterval(org.getStartIndex(), org.size());
     EXPECT_EQ(1000u, org.countTrueBits());
@@ -789,7 +890,7 @@ void verifyParallelOr(vespalib::ThreadBundle & thread_bundle, uint32_t numVector
     EXPECT_TRUE(*serial == *parallel);
 }
 
-TEST(BitvectorTest, Require_that_parallel_OR_computes_same_result_as_serial) {
+TEST_F(BitVectorTest, Require_that_parallel_OR_computes_same_result_as_serial) {
     srand(7);
     for (uint32_t numThreads : {1, 3, 7}) {
         vespalib::SimpleThreadBundle thread_bundle(numThreads);
@@ -817,7 +918,7 @@ bool check_full_term_field_match_data_reset_on_unpack(bool strict, bool full_res
 
 }
 
-TEST(BitvectorTest, reset_term_field_match_data_on_unpack)
+TEST_F(BitVectorTest, reset_term_field_match_data_on_unpack)
 {
     EXPECT_FALSE(check_full_term_field_match_data_reset_on_unpack(false, false));
     EXPECT_FALSE(check_full_term_field_match_data_reset_on_unpack(true, false));
@@ -825,7 +926,7 @@ TEST(BitvectorTest, reset_term_field_match_data_on_unpack)
     EXPECT_TRUE(check_full_term_field_match_data_reset_on_unpack(true, true));
 }
 
-TEST(BitvectorTest, fixup_count_and_guard_bit_and_zero_remaining_data_bits_after_short_read)
+TEST_F(BitVectorTest, fixup_count_and_guard_bit_and_zero_remaining_data_bits_after_short_read)
 {
     AllocatedBitVector bv(256);
     bv.setBit(5);
@@ -844,7 +945,7 @@ TEST(BitvectorTest, fixup_count_and_guard_bit_and_zero_remaining_data_bits_after
     EXPECT_TRUE(bv == bv2);
 }
 
-TEST(BitvectorTest, normal_guard_bits)
+TEST_F(BitVectorTest, normal_guard_bits)
 {
     for (uint32_t num_end_padding_bits = 0; num_end_padding_bits < 2; ++num_end_padding_bits) {
         auto bv_size = 2048u - BitVector::num_guard_bits - num_end_padding_bits;
@@ -860,7 +961,7 @@ TEST(BitvectorTest, normal_guard_bits)
     }
 }
 
-TEST(BitvectorTest, dynamic_guard_bits)
+TEST_F(BitVectorTest, dynamic_guard_bits)
 {
     vespalib::GenerationHolder g;
     for (uint32_t num_end_padding_bits = 0; num_end_padding_bits < 2; ++num_end_padding_bits) {
@@ -905,6 +1006,79 @@ TEST(BitvectorTest, dynamic_guard_bits)
     }
     g.assign_generation(1);
     g.reclaim(2);
+}
+
+TEST_F(BitVectorTest, read_from_attriute_vector_file)
+{
+    vespalib::GenerationHolder g;
+    std::string bvpath(testdata + "/bv");
+    FastOS_File file;
+    file.OpenReadOnly(bvpath.c_str());
+    ASSERT_TRUE(file.IsOpened());
+    GrowableBitVector bv(1, 1, g);
+    bv.writer().clear();
+    uint32_t numDocs = _file_bv->size();
+    bv.extend(numDocs);
+    auto entry_size = BitVector::legacy_num_bytes_with_single_guard_bit(numDocs);
+    ASSERT_LE(entry_size, bv.writer().numBytes(bv.writer().size()));
+    file.ReadBuf(bv.writer().getStart(), entry_size);
+    bv.fixup_after_load();
+    auto bv_snap = bv.make_snapshot(bv.writer().size());
+    EXPECT_TRUE(*bv_snap == *_file_bv);
+    g.assign_generation(1);
+    g.reclaim(2);
+}
+
+class BitVectorCompatibilityTest : public BitVectorTest,
+                                   public testing::WithParamInterface<uint32_t> {
+protected:
+    BitVectorCompatibilityTest();
+    ~BitVectorCompatibilityTest() override;
+};
+
+BitVectorCompatibilityTest::BitVectorCompatibilityTest()
+    : BitVectorTest(),
+      testing::WithParamInterface<uint32_t>()
+{
+}
+
+BitVectorCompatibilityTest::~BitVectorCompatibilityTest() = default;
+
+INSTANTIATE_TEST_SUITE_P(BitVectorCompatibilityTest, BitVectorCompatibilityTest, testing::Values(1, 2),
+                         param_as_string);
+
+TEST_P(BitVectorCompatibilityTest, read_from_file_bitvector_dictionary_file)
+{
+    uint32_t old_guard_bits = GetParam();
+    std::string bvpath(testdata + "/bv");
+    Aligner aligner(file_alignment);
+    size_t entry_size = aligner.align(BitVector::num_bytes_plain(_file_bv->size() + old_guard_bits));
+    EXPECT_EQ(old_guard_bits == 1 ? 256 : 512, entry_size);
+    if (old_guard_bits == BitVector::num_guard_bits) {
+        EXPECT_EQ(entry_size, _file_bv->getFileBytes());
+    }
+    FastOS_File file;
+    file.OpenReadOnly(bvpath.c_str());
+    ASSERT_TRUE(file.IsOpened());
+    ReadStats read_stats;
+    auto bv = BitVector::create(_file_bv->size(), file, 0, entry_size, _file_bv->countTrueBits(), read_stats);
+    ASSERT_TRUE(bv);
+    EXPECT_TRUE(*bv == *_file_bv);
+}
+
+TEST_P(BitVectorCompatibilityTest, read_from_nbostream)
+{
+    uint32_t old_guard_bits = GetParam();
+    auto nbos = write_test_bv_to_nbostream(*_file_bv, old_guard_bits, file_alignment);
+    if (old_guard_bits == BitVector::num_guard_bits) {
+        EXPECT_EQ(_file_bv->getFileBytes() + 3 * sizeof(uint64_t), nbos->size());
+    } else {
+        EXPECT_NE(_file_bv->getFileBytes() + 3 * sizeof(uint64_t), nbos->size());
+    }
+    AllocatedBitVector bv(1u);
+    *nbos >> bv;
+    EXPECT_TRUE(bv == *_file_bv);
+    EXPECT_EQ(0u, nbos->size());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
