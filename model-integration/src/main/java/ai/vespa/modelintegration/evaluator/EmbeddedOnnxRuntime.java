@@ -144,24 +144,21 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
     private ReferencedOrtSession getOrCreateSession(ModelPathOrData model, OnnxEvaluatorOptions vespaOpts, boolean loadCuda) throws OrtException {
         var sessionId = new OrtSessionId(model.calculateHash(), vespaOpts, loadCuda);
         synchronized (monitor) {
-            var sharedSession = sessions.get(sessionId);
-            if (sharedSession != null) {
-                return sharedSession.newReference();
+            var existingSession = sessions.get(sessionId);
+            if (existingSession != null) {
+                return existingSession.newReference();
             }
+            var sessionOpts = createSessionOptions(vespaOpts, loadCuda);
+            var ortSession = model.path().isPresent()
+                    ? ortEnvironment().createSession(model.path().get(), sessionOpts)
+                    : ortEnvironment().createSession(model.data().get(), sessionOpts);
+            log.fine(() -> "Created new session (%s)".formatted(System.identityHashCode(ortSession)));
+            var sharedSession = new SharedOrtSession(sessionId, ortSession);
+            var referencedSession = sharedSession.newReference();
+            sessions.put(sessionId, sharedSession);
+            sharedSession.release(); // Release "initial reference", must be released after .newReference() to keep session alive
+            return referencedSession;
         }
-
-        var sessionOpts = createSessionOptions(vespaOpts, loadCuda);
-        // Note: identical models loaded simultaneously will result in duplicate session instances
-        var session = model.path().isPresent()
-                ? ortEnvironment().createSession(model.path().get(), sessionOpts)
-                : ortEnvironment().createSession(model.data().get(), sessionOpts);
-        log.fine(() -> "Created new session (%s)".formatted(System.identityHashCode(session)));
-
-        var sharedSession = new SharedOrtSession(sessionId, session);
-        var referencedSession = sharedSession.newReference();
-        synchronized (monitor) { sessions.put(sessionId, sharedSession); }
-        sharedSession.release(); // Release initial reference
-        return referencedSession;
     }
 
     private OnnxEvaluatorOptions overrideOptions(OnnxEvaluatorOptions vespaOpts) {
