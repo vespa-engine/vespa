@@ -7,9 +7,11 @@ import ai.onnxruntime.OrtException;
 /**
  * @author bjorncs
  */
-public class UncheckedOrtException extends RuntimeException {
+public class OnnxRuntimeException extends RuntimeException {
 
-    public UncheckedOrtException(Throwable e) { super(e.getMessage(), e); }
+    public OnnxRuntimeException(Throwable cause) { super(cause.getMessage(), cause); }
+
+    public OnnxRuntimeException(String message, Throwable cause) { super(message, cause); }
 
     @Override public synchronized OrtException getCause() { return (OrtException) super.getCause(); }
 }
