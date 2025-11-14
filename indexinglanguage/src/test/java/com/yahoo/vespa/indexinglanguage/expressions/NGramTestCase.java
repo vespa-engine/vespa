@@ -68,9 +68,9 @@ public class NGramTestCase {
     }
 
     private void testNGramsWithSimpleAnnotations(boolean useSimpleAnnotations) {
-        String oldValue = System.getProperty("vespa.indexing.simple_annotations");
+        boolean oldValue = com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.isEnabled();
         try {
-            System.setProperty("vespa.indexing.simple_annotations", String.valueOf(useSimpleAnnotations));
+            com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(useSimpleAnnotations);
 
             ExecutionContext context = new ExecutionContext(new SimpleTestAdapter());
             context.setCurrentValue(new StringFieldValue("en gul Bille sang... "));
@@ -110,11 +110,7 @@ public class NGramTestCase {
                 assertFalse(i.hasNext());
             }
         } finally {
-            if (oldValue == null) {
-                System.clearProperty("vespa.indexing.simple_annotations");
-            } else {
-                System.setProperty("vespa.indexing.simple_annotations", oldValue);
-            }
+            com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(oldValue);
         }
     }
 

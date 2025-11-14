@@ -7,7 +7,7 @@ import com.yahoo.document.annotation.Annotation;
 import com.yahoo.document.annotation.AnnotationReference;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.document.annotation.AnnotationTypes;
-import com.yahoo.document.annotation.SimpleIndexingAnnotations;
+import com.yahoo.document.annotation.internal.SimpleIndexingAnnotations;
 import com.yahoo.document.annotation.Span;
 import com.yahoo.document.annotation.SpanList;
 import com.yahoo.document.annotation.SpanNode;
@@ -100,19 +100,6 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         this.version = Document.SERIALIZED_VERSION;
     }
 
-    /**
-     * Feature flag for lightweight annotation representation.
-     * When enabled, uses SimpleIndexingAnnotations (flat arrays) instead of full SpanTree objects,
-     * reducing memory usage by 80-90% for indexing workloads.
-     * Checks environment variable first, then falls back to system property.
-     */
-    private static boolean useSimpleAnnotations() {
-        String value = System.getenv("VESPA_INDEXING_SIMPLE_ANNOTATIONS");
-        if (value == null) {
-            value = System.getProperty("vespa.indexing.simple_annotations", "false");
-        }
-        return Boolean.parseBoolean(value);
-    }
 
     @Override
     public DocumentTypeManager getTypeRepo() {
@@ -256,8 +243,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
                 int startPos = buf.position();
 
                 // Try simple path first if feature is enabled
-                boolean useSimple = useSimpleAnnotations();
-                if (useSimple && tryReadingSimpleAnnotations(value, stringArray)) {
+                if (SimpleIndexingAnnotations.isEnabled() && tryReadingSimpleAnnotations(value, stringArray)) {
                     // Successfully deserialized to SimpleIndexingAnnotations
                 } else {
                     // Either simple annotations disabled, or fallback to full SpanTree deserialization

@@ -1,6 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.document.annotation;
+package com.yahoo.document.annotation.internal;
 
+import com.yahoo.document.annotation.Annotation;
+import com.yahoo.document.annotation.AnnotationTypes;
+import com.yahoo.document.annotation.Span;
+import com.yahoo.document.annotation.SpanTree;
+import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.StringFieldValue;
 
 /**
@@ -15,6 +20,28 @@ import com.yahoo.document.datatypes.StringFieldValue;
  * @author havardpe
  */
 public final class SimpleIndexingAnnotations {
+
+    /**
+     * Global feature flag to enable/disable simple annotations representation.
+     * When enabled, uses SimpleIndexingAnnotations (flat arrays) instead of full SpanTree objects.
+     */
+    private static volatile boolean enabled = false;
+
+    /**
+     * Returns whether simple annotations are enabled.
+     * @return true if simple annotations should be used, false otherwise
+     */
+    public static boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * Sets whether simple annotations should be enabled.
+     * @param value true to enable simple annotations, false to disable
+     */
+    public static void setEnabled(boolean value) {
+        enabled = value;
+    }
 
     // Flat arrays for maximum memory density
     private int[] positions;      // [from1, len1, from2, len2, ...]

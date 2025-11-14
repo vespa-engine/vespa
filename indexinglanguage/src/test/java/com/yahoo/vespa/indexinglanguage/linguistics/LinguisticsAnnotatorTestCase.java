@@ -331,21 +331,17 @@ public class LinguisticsAnnotatorTestCase {
     }
 
     private static void runWithBothModes(TestWithMode test) {
-        String oldValue = System.getProperty("vespa.indexing.simple_annotations");
+        boolean oldValue = com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.isEnabled();
         try {
             // Test with simple annotations disabled
-            System.setProperty("vespa.indexing.simple_annotations", "false");
+            com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(false);
             test.run(false);
 
             // Test with simple annotations enabled
-            System.setProperty("vespa.indexing.simple_annotations", "true");
+            com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(true);
             test.run(true);
         } finally {
-            if (oldValue == null) {
-                System.clearProperty("vespa.indexing.simple_annotations");
-            } else {
-                System.setProperty("vespa.indexing.simple_annotations", oldValue);
-            }
+            com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(oldValue);
         }
     }
 

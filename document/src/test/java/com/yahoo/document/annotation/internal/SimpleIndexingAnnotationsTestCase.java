@@ -1,6 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.document.annotation;
+package com.yahoo.document.annotation.internal;
 
+import com.yahoo.document.annotation.Annotation;
+import com.yahoo.document.annotation.AnnotationTypes;
+import com.yahoo.document.annotation.Span;
+import com.yahoo.document.annotation.SpanTree;
+import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.io.GrowableByteBuffer;

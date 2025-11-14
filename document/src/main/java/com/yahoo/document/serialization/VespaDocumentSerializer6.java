@@ -17,7 +17,7 @@ import com.yahoo.document.annotation.AlternateSpanList;
 import com.yahoo.document.annotation.Annotation;
 import com.yahoo.document.annotation.AnnotationReference;
 import com.yahoo.document.annotation.AnnotationTypes;
-import com.yahoo.document.annotation.SimpleIndexingAnnotations;
+import com.yahoo.document.annotation.internal.SimpleIndexingAnnotations;
 import com.yahoo.document.annotation.Span;
 import com.yahoo.document.annotation.SpanList;
 import com.yahoo.document.annotation.SpanNode;

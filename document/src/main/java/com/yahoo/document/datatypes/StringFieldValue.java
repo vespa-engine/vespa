@@ -5,7 +5,7 @@ import com.yahoo.collections.CollectionComparator;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.PrimitiveDataType;
-import com.yahoo.document.annotation.SimpleIndexingAnnotations;
+import com.yahoo.document.annotation.internal.SimpleIndexingAnnotations;
 import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.serialization.FieldReader;
@@ -34,18 +34,6 @@ public class StringFieldValue extends FieldValue {
     // TODO: remove this, it's a temporary workaround for invalid data stored before unicode validation was fixed
     private static final boolean replaceInvalidUnicode = System.getProperty("vespa.replace_invalid_unicode", "false").equals("true");
 
-    /**
-     * Feature flag for lightweight annotation representation.
-     * When enabled, uses SimpleIndexingAnnotations (flat arrays) instead of full SpanTree objects.
-     * Checks environment variable first, then falls back to system property.
-     */
-    private static boolean useSimpleAnnotations() {
-        String value = System.getenv("VESPA_INDEXING_SIMPLE_ANNOTATIONS");
-        if (value == null) {
-            value = System.getProperty("vespa.indexing.simple_annotations", "false");
-        }
-        return Boolean.parseBoolean(value);
-    }
 
     private static class Factory extends PrimitiveDataType.Factory {
         @Override public FieldValue create() { return new StringFieldValue(); }
@@ -374,7 +362,7 @@ public class StringFieldValue extends FieldValue {
      * @return SimpleIndexingAnnotations instance, or null if simple mode not enabled or already using full SpanTree
      */
     public SimpleIndexingAnnotations createSimpleAnnotations() {
-        if (!useSimpleAnnotations()) {
+        if (!SimpleIndexingAnnotations.isEnabled()) {
             return null;
         }
         if (spanTrees != null && !spanTrees.isEmpty()) {

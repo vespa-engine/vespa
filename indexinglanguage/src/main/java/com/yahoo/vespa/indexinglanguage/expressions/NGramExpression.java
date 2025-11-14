@@ -3,7 +3,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.annotation.AnnotationTypes;
-import com.yahoo.document.annotation.SimpleIndexingAnnotations;
+import com.yahoo.document.annotation.internal.SimpleIndexingAnnotations;
 import com.yahoo.document.annotation.Span;
 import com.yahoo.document.annotation.SpanList;
 import com.yahoo.document.annotation.SpanTree;

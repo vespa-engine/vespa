@@ -8,7 +8,7 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.Field;
 import com.yahoo.document.annotation.Annotation;
 import com.yahoo.document.annotation.AnnotationTypes;
-import com.yahoo.document.annotation.SimpleIndexingAnnotations;
+import com.yahoo.document.annotation.internal.SimpleIndexingAnnotations;
 import com.yahoo.document.annotation.Span;
 import com.yahoo.document.annotation.SpanList;
 import com.yahoo.document.annotation.SpanTree;
@@ -163,7 +163,7 @@ public class SimpleAnnotationsSerializationTestCase {
 
     @Test
     public void testSimpleAnnotationsRoundTrip() {
-        System.setProperty("vespa.indexing.simple_annotations", "true");
+        com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(true);
         try {
             // Test with simple single annotation
             int[][] annotations = {{0, 5}};  // "hello" at position 0, length 5
@@ -173,13 +173,13 @@ public class SimpleAnnotationsSerializationTestCase {
 
             assertSemanticallyEqual("Simple round-trip", original, roundTrip);
         } finally {
-            System.clearProperty("vespa.indexing.simple_annotations");
+            com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(false);
         }
     }
 
     @Test
     public void testSpanTreeRoundTrip() {
-        System.setProperty("vespa.indexing.simple_annotations", "false");
+        com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(false);
         try {
             // Test with full SpanTree
             int[][] annotations = {{0, 5}, {6, 5}};  // "hello" and "world"
@@ -189,13 +189,13 @@ public class SimpleAnnotationsSerializationTestCase {
 
             assertSemanticallyEqual("SpanTree round-trip", original, roundTrip);
         } finally {
-            System.clearProperty("vespa.indexing.simple_annotations");
+            com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(false);
         }
     }
 
     @Test
     public void testSimpleAnnotationsWithTermOverride() {
-        System.setProperty("vespa.indexing.simple_annotations", "true");
+        com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(true);
         try {
             // Test with term override (stemming)
             int[][] annotations = {
@@ -208,13 +208,13 @@ public class SimpleAnnotationsSerializationTestCase {
 
             assertSemanticallyEqual("Simple with term override", original, roundTrip);
         } finally {
-            System.clearProperty("vespa.indexing.simple_annotations");
+            com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(false);
         }
     }
 
     @Test
     public void testMultipleAnnotationsSameSpan() {
-        System.setProperty("vespa.indexing.simple_annotations", "true");
+        com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(true);
         try {
             // Test multiple annotations on same span (stemming mode ALL)
             // "Teslas" with stems ["tesla", "teslas"]
@@ -247,7 +247,7 @@ public class SimpleAnnotationsSerializationTestCase {
             assertEquals("Same span position", span1.getFrom(), span2.getFrom());
             assertEquals("Same span length", span1.getLength(), span2.getLength());
         } finally {
-            System.clearProperty("vespa.indexing.simple_annotations");
+            com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(false);
         }
     }
 
@@ -257,20 +257,20 @@ public class SimpleAnnotationsSerializationTestCase {
         String text = "hello world";
         int[][] annotations = {{0, 5, 0, 4}, {6, 5}};  // "hello"->"hell", "world"
 
-        System.setProperty("vespa.indexing.simple_annotations", "true");
+        com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(true);
         StringFieldValue simpleVersion;
         try {
             simpleVersion = createWithSimpleAnnotations(text, annotations);
         } finally {
-            System.clearProperty("vespa.indexing.simple_annotations");
+            com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(false);
         }
 
-        System.setProperty("vespa.indexing.simple_annotations", "false");
+        com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(false);
         StringFieldValue spanTreeVersion;
         try {
             spanTreeVersion = createWithSpanTree(text, annotations);
         } finally {
-            System.clearProperty("vespa.indexing.simple_annotations");
+            com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(false);
         }
 
         // Serialize both
@@ -283,7 +283,7 @@ public class SimpleAnnotationsSerializationTestCase {
 
     @Test
     public void testEmptyAnnotations() {
-        System.setProperty("vespa.indexing.simple_annotations", "true");
+        com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(true);
         try {
             StringFieldValue value = new StringFieldValue("hello world");
             // No annotations added
@@ -293,7 +293,7 @@ public class SimpleAnnotationsSerializationTestCase {
             assertSemanticallyEqual("Empty annotations", value, roundTrip);
             assertNull("Should have no span tree", roundTrip.getSpanTree(SpanTrees.LINGUISTICS));
         } finally {
-            System.clearProperty("vespa.indexing.simple_annotations");
+            com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(false);
         }
     }
 }
