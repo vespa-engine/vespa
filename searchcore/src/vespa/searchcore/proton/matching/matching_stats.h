@@ -62,6 +62,7 @@ public:
         size_t _docsMatched;
         size_t _docsRanked;
         size_t _docsReRanked;
+        size_t _distances_computed;
         size_t _softDoomed;
         Avg    _doomOvertime;
         Avg    _active_time;
@@ -73,6 +74,7 @@ public:
               _docsMatched(0),
               _docsRanked(0),
               _docsReRanked(0),
+              _distances_computed(0),
               _softDoomed(0),
               _doomOvertime(),
               _active_time(),
@@ -86,6 +88,8 @@ public:
         size_t docsRanked() const noexcept { return _docsRanked; }
         Partition &docsReRanked(size_t value) noexcept { _docsReRanked = value; return *this; }
         size_t docsReRanked() const noexcept { return _docsReRanked; }
+        Partition &distances_computed(size_t value) noexcept { _distances_computed = value; return *this; }
+        size_t distances_computed() const noexcept { return _distances_computed; }
         Partition &softDoomed(bool v) noexcept { _softDoomed += v ? 1 : 0; return *this; }
         size_t softDoomed() const noexcept { return _softDoomed; }
         Partition & doomOvertime(vespalib::duration overtime) noexcept { _doomOvertime.set(vespalib::to_s(overtime)); return *this; }
@@ -107,9 +111,10 @@ public:
             _docsMatched += rhs._docsMatched;
             _docsRanked += rhs._docsRanked;
             _docsReRanked += rhs._docsReRanked;
+            _distances_computed += rhs._distances_computed;
             _softDoomed += rhs._softDoomed;
-            _doomOvertime.add(rhs._doomOvertime);
 
+            _doomOvertime.add(rhs._doomOvertime);
             _active_time.add(rhs._active_time);
             _wait_time.add(rhs._wait_time);
             return *this;
@@ -123,6 +128,7 @@ private:
     size_t                 _docsMatched;
     size_t                 _docsRanked;
     size_t                 _docsReRanked;
+    size_t                 _distances_computed;
     size_t                 _softDoomed;
     Avg                    _doomOvertime;
     using SoftDoomFactor = vespalib::datastore::AtomicValueWrapper<double>;
@@ -161,6 +167,9 @@ public:
 
     MatchingStats &docsReRanked(size_t value) { _docsReRanked = value; return *this; }
     size_t docsReRanked() const { return _docsReRanked; }
+
+    MatchingStats &distances_computed(size_t value) { _distances_computed = value; return *this; }
+    size_t distances_computed() const { return _distances_computed; }
 
     MatchingStats &softDoomed(size_t value) { _softDoomed = value; return *this; }
     size_t softDoomed() const { return _softDoomed; }
