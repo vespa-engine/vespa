@@ -317,10 +317,8 @@ public class StringFieldValue extends FieldValue {
         if (spanTrees.containsKey(spanTree.getName())) {
             throw new IllegalArgumentException("Span tree " + spanTree.getName() + " already exists.");
         }
-
         spanTrees.put(spanTree.getName(), spanTree);
         spanTree.setStringFieldValue(this);
-        System.err.println("did setSpanTree");
 
         return spanTree;
     }

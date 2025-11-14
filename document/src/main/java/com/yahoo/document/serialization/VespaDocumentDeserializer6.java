@@ -279,6 +279,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
             return true;
         }
         // Failed validation, reset position
+        log.warning("Failed to read SimpleIndexingAnnotations, falling back to full SpanTree deserialization");
         buf.position(savedPos);
         return false;
     }
@@ -305,6 +306,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
         int numAnnotations = buf.getInt1_2_4Bytes();
         if (numAnnotations < numSpans) {
+            log.warning("Invalid annotation count: " + numAnnotations + " annotations for " + numSpans + " spans (need at least 1:1)");
             return null;  // Should be at least 1 annotation per span
         }
 
@@ -326,6 +328,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         // Check number of trees
         int numSpanTrees = buf.getInt1_2_4Bytes();
         if (numSpanTrees != 1) {
+            log.warning("SimpleIndexingAnnotations requires exactly 1 span tree, found: " + numSpanTrees);
             return false;
         }
 
@@ -333,12 +336,14 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         StringFieldValue treeName = new StringFieldValue();
         treeName.deserialize(this);
         if (!SpanTrees.LINGUISTICS.equals(treeName.getString())) {
+            log.warning("SimpleIndexingAnnotations requires 'linguistics' span tree, found: '" + treeName.getString() + "'");
             return false;
         }
 
         // Check root node type
         byte rootType = buf.get();
         if (rootType != SpanList.ID) {
+            log.warning("SimpleIndexingAnnotations requires SpanList root node, found type: " + rootType);
             return false;
         }
 
@@ -354,6 +359,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         for (int i = 1; i <= numSpans; i++) {
             byte spanType = buf.get();
             if (spanType != Span.ID) {
+                log.warning("SimpleIndexingAnnotations requires simple Span nodes only, found type " + spanType + " at index " + i);
                 return false;  // Only simple Span nodes supported
             }
             spanFromBytes[i] = buf.getInt1_2_4Bytes();
@@ -370,6 +376,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
                                           int[] spanFromBytes, int[] spanLengthBytes, int[] stringPositions) {
         for (int i = 0; i < numAnnotations; i++) {
             if (!readAndAddSingleAnnotation(result, spanFromBytes, spanLengthBytes, stringPositions)) {
+                log.warning("Failed to read annotation " + (i + 1) + " of " + numAnnotations);
                 return false;
             }
         }
@@ -385,6 +392,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         // Validate annotation type (only TERM supported)
         int annotationTypeId = buf.getInt();
         if (annotationTypeId != AnnotationTypes.TERM.getId()) {
+            log.warning("SimpleIndexingAnnotations only supports TERM annotations, found type ID: " + annotationTypeId);
             return false;
         }
 
@@ -395,12 +403,14 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
         // Validate that annotation has a span node (required)
         if ((annotationFeatures & ANNOTATION_HAS_SPAN_NODE) == 0) {
+            log.warning("SimpleIndexingAnnotations requires all annotations to have span nodes");
             return false;
         }
 
         // Read and validate span node reference
         int spanNodeIndex = buf.getInt1_2_4Bytes();
         if (!isValidSpanIndex(spanNodeIndex, spanFromBytes.length)) {
+            log.warning("Invalid span node index: " + spanNodeIndex + " (valid range: 1-" + (spanFromBytes.length - 1) + ")");
             return false;
         }
 
@@ -418,6 +428,8 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         int byteLength = spanLengthBytes[spanNodeIndex];
 
         if (!isValidByteRange(byteFrom, byteLength, stringPositions)) {
+            log.warning("Invalid byte range: from=" + byteFrom + " length=" + byteLength +
+                       " (stringPositions.length=" + stringPositions.length + ")");
             return false;
         }
 

@@ -266,16 +266,11 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         byte[] stringBytes = createUTF8CharArray(value.getString());
 
         // Check for simple or full annotations
-        Map<String, SpanTree> trees = null;
         SimpleIndexingAnnotations simple = value.getSimpleAnnotations();
-        if (simple == null) {
-            trees = value.getSpanTreeMap();
-        }
-        System.err.println("Write SVF: " + value);
-        System.err.println("simple annotations: " + simple);
-        System.err.println("trees: " + trees);
-        boolean hasAnnotations = (simple != null && simple.getCount() > 0) ||
-                                (trees != null && !trees.isEmpty());
+        Map<String, SpanTree> trees = (simple != null) ? null : value.getSpanTreeMap();
+        boolean hasSimple = (simple != null && simple.getCount() > 0);
+        boolean hasTrees = (trees != null && !trees.isEmpty());
+        boolean hasAnnotations = hasSimple || hasTrees;
 
         byte coding = 0;
         //Use bit 6 of "coding" to say whether span tree is available or not
@@ -293,11 +288,11 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
                 //we don't support serialization of nested span trees, so this is safe:
                 bytePositions = calculateBytePositions(value.getString());
 
-                if (simple != null && simple.getCount() > 0) {
-                    // Direct serialization of simple annotations - no conversion!
+                if (hasSimple) {
+                    // Direct serialization of simple annotations
                     log.info("writing " + simple.getCount() + " simple annotations");
                     writeSimpleAnnotations(simple);
-                } else if (trees != null && !trees.isEmpty()) {
+                } else if (hasTrees) {
                     // Full SpanTree serialization
                     log.info("writing " + trees.size() + " span trees with annotations");
                     writeSpanTreeMap(trees, value.getString());

@@ -61,7 +61,6 @@ public class AlternateSpanListTestCase extends AbstractTypesTest {
             StringFieldValue value = new StringFieldValue("lkj lkj lkj lkj lkj lkj lkj lkj lkj lkj lkj lkj lkj lkj lk");
             SpanTree tree = new SpanTree("bababa", alternateSpanList);
             value.setSpanTree(tree);
-            System.err.println("doing serialize");
             serializer.write(null, value);
             buffer.flip();
         }
