@@ -109,6 +109,11 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                      .setMetric(metric)
                      .setContainerDocumentConfig(containerDocConfig),
                 threadPool);
+
+        // Set simple annotations flag based on config
+        com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(
+                docprocConfig.simpleAnnotations());
+
         docprocServiceRegistry.freeze();
     }
 

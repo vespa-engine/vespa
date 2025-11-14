@@ -8,3 +8,7 @@ maxqueuetimems int default=-1
 # The number of threads in the DocprocHandler worker thread pool
 # numthreads no longer has an effect.
 numthreads int default=-1
+
+# Enable lightweight annotation representation for StringFieldValue.
+# When enabled, uses SimpleIndexingAnnotations (flat arrays) instead of full SpanTree objects.
+simpleAnnotations bool default=false

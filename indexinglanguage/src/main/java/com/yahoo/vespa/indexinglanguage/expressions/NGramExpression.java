@@ -3,6 +3,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.annotation.AnnotationTypes;
+import com.yahoo.document.annotation.internal.SimpleIndexingAnnotations;
 import com.yahoo.document.annotation.Span;
 import com.yahoo.document.annotation.SpanList;
 import com.yahoo.document.annotation.SpanTree;
@@ -65,6 +66,15 @@ public final class NGramExpression extends Expression {
         StringFieldValue output = input.clone();
         context.setCurrentValue(output);
 
+        // Try simple path first
+        SimpleIndexingAnnotations simple = output.createSimpleAnnotations();
+        if (simple != null) {
+            annotateNGramsSimple(simple, output.getString());
+            output.setSimpleAnnotations(simple);
+            return;
+        }
+
+        // Fallback to full mode
         SpanList spanList = output.setSpanTree(new SpanTree(SpanTrees.LINGUISTICS)).spanList();
         int lastPosition = 0;
         for (Iterator<GramSplitter.Gram> it = linguistics.getGramSplitter().split(output.getString(), gramSize); it.hasNext();) {
@@ -87,6 +97,17 @@ public final class NGramExpression extends Expression {
         // handle punctuation at the end
         if (lastPosition < output.toString().length()) {
             typedSpan(lastPosition, output.toString().length() - lastPosition, TokenType.PUNCTUATION, spanList);
+        }
+    }
+
+    private void annotateNGramsSimple(SimpleIndexingAnnotations simple, String text) {
+        for (Iterator<GramSplitter.Gram> it = linguistics.getGramSplitter().split(text, gramSize); it.hasNext();) {
+            GramSplitter.Gram gram = it.next();
+            String gramString = gram.extractFrom(text);
+            String term = toLowerCase(gramString);
+            String termOverride = term.equals(gramString) ? null : term;
+            simple.add(gram.getStart(), gram.getCodePointCount(), termOverride);
+            // Note: Gaps/punctuation spans not created - C++ doesn't use TOKEN_TYPE annotations anyway
         }
     }
 
