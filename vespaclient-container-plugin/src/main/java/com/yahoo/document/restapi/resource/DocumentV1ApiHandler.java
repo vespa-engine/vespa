@@ -1314,6 +1314,11 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         return new VisitorContinuation(token.serializeToString(), token.percentFinished());
     }
 
+    private static ProgressToken cloneProgressToken(ProgressToken sourceToken) {
+        // FIXME this roundtrip feels pretty dirty, but no existing token API for deep-cloning...
+        return new ProgressToken(sourceToken.serialize());
+    }
+
     @SuppressWarnings("fallthrough")
     private void visit(HttpRequest request, VisitorParameters parameters, boolean streaming, boolean fullyApplied,
                        ResponseHandler handler, VisitCallback callback) {
@@ -1326,9 +1331,34 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             VisitorControlHandler controller = new VisitorControlHandler() {
                 final ScheduledFuture<?> abort = streaming ? visitDispatcher.schedule(this::abort, visitTimeout(request), MILLISECONDS) : null;
                 final AtomicReference<VisitorSession> session = new AtomicReference<>();
+                ProgressToken initialProgress = parameters.getResumeToken(); // may be null
                 @Override public void setSession(VisitorControlSession session) { // Workaround for broken session API ಠ_ಠ
                     super.setSession(session);
-                    if (session instanceof VisitorSession visitorSession) this.session.set(visitorSession);
+                    if (session instanceof VisitorSession visitorSession) {
+                        // If no initial progress was provided (i.e. this is the first visit of potentially many)
+                        // we must remember the progress token implicitly created by the visitor session during
+                        // its bootstrap, as this token will represent the completely unfinished visit state.
+                        // This is because a session failure prior to receiving even a single bucket will not provide
+                        // us with an onProgress control handler callback, nor will the VisitorParameters have a
+                        // token. If we then don't remember the session's bootstrap token, we won't have a token
+                        // to communicate to the client, and the client may erroneously believe that visiting has
+                        // fully completed.
+                        if (initialProgress == null) {
+                            // The session has not yet been started when setSession() is invoked, so this is thread safe.
+                            initialProgress = cloneProgressToken(visitorSession.getProgress());
+                        }
+                        this.session.set(visitorSession);
+                    }
+                }
+                void writeCurrentProgressTokenToResponse() throws IOException {
+                    ProgressToken progress = getProgress() != null ? getProgress() : initialProgress;
+                    if (progress != null) {
+                        if (progress.isFinished()) {
+                            response.writeEpilogueContinuation(VisitorContinuation.FINISHED);
+                        } else {
+                            response.writeEpilogueContinuation(continuationFromToken(progress));
+                        }
+                    }
                 }
                 @Override public void onDone(CompletionCode code, String message) {
                     super.onDone(code, message);
@@ -1353,25 +1383,30 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                                               parameters.getSessionTimeoutMs() + "ms (request timeout -5s)",
                                                               StreamableJsonResponse.MessageSeverity.INFO); // Timeout here is not an error
                                         status = Response.Status.GATEWAY_TIMEOUT;
+                                        if (streaming) {
+                                            // When we're streaming output, we can't communicate timeouts via HTTP
+                                            // response codes since we've already sent all headers. We have no real
+                                            // choice but to emit the current progress token and letting the client
+                                            // try again. We can't _not_ do this, as the absence of a continuation
+                                            // token would make it appear as if visiting has completed successfully.
+                                            writeCurrentProgressTokenToResponse();
+                                        }
                                         break;
                                     }
                                 case SUCCESS:
                                     if (error.get() == null) {
-                                        ProgressToken progress = getProgress() != null ? getProgress() : parameters.getResumeToken();
-                                        if (progress != null) {
-                                            if (progress.isFinished()) {
-                                                response.writeEpilogueContinuation(VisitorContinuation.FINISHED);
-                                            } else {
-                                                response.writeEpilogueContinuation(continuationFromToken(progress));
-                                            }
-                                        }
-
+                                        writeCurrentProgressTokenToResponse();
                                         status = Response.Status.OK;
                                         break;
                                     }
                                 default:
                                     response.writeMessage(error.get() != null ? error.get() : message != null ? message : "Visiting failed",
                                                           StreamableJsonResponse.MessageSeverity.ERROR);
+                                    if (streaming) {
+                                        // Always attempt to write a continuation token regardless of error state when
+                                        // streaming. See timeout/aborted rationale above as to why we must do this.
+                                        writeCurrentProgressTokenToResponse();
+                                    }
                             }
                             if ( ! streaming)
                                 response.commit(status, fullyApplied);
@@ -1421,11 +1456,9 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             parameters.setControlHandler(controller);
             visits.put(controller, access.createVisitorSession(parameters));
             phaser.arriveAndDeregister();
-        }
-        catch (ParseException e) {
+        } catch (ParseException e) {
             badRequest(request, new IllegalArgumentException(e), handler);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             log.log(FINE, "Failed writing response", e);
         }
     }
