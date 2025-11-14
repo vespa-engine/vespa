@@ -243,7 +243,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
                 int startPos = buf.position();
 
                 // Try simple path first if feature is enabled
-                if (SimpleIndexingAnnotations.isEnabled() && tryReadingSimpleAnnotations(value, stringArray)) {
+                if (SimpleIndexingAnnotations.isEnabled() && tryReadingSimpleAnnotations(value, stringPositions)) {
                     // Successfully deserialized to SimpleIndexingAnnotations
                 } else {
                     // Either simple annotations disabled, or fallback to full SpanTree deserialization
@@ -271,9 +271,9 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
      * Returns true if successful, false if not compatible (and resets buffer position).
      * This avoids creating intermediate SpanTree/Span/Annotation objects.
      */
-    private boolean tryReadingSimpleAnnotations(StringFieldValue value, byte[] stringArray) {
+    private boolean tryReadingSimpleAnnotations(StringFieldValue value, int[] stringPositions) {
         int savedPos = buf.position();
-        SimpleIndexingAnnotations simple = readSimpleAnnotations(stringArray);
+        SimpleIndexingAnnotations simple = readSimpleAnnotations(stringPositions);
         if (simple != null) {
             value.setSimpleAnnotations(simple);
             return true;
@@ -288,9 +288,9 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
      * Returns a populated SimpleIndexingAnnotations on success, or null if the structure
      * is not compatible with the simple representation.
      */
-    private SimpleIndexingAnnotations readSimpleAnnotations(byte[] stringArray) {
+    private SimpleIndexingAnnotations readSimpleAnnotations(int[] stringPositions) {
         // Validate header and get counts
-        if (!validateSimpleAnnotationsHeader()) {
+        if (!readSimpleAnnotationsHeader()) {
             return null;
         }
 
@@ -309,10 +309,9 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
 
         // Build SimpleIndexingAnnotations while reading and validating annotations
-        int[] stringPos = calculateStringPositions(stringArray);
         SimpleIndexingAnnotations simple = new SimpleIndexingAnnotations();
 
-        if (!buildSimpleAnnotations(simple, numAnnotations, spanFromBytes, spanLengthBytes, stringPos)) {
+        if (!buildSimpleAnnotations(simple, numAnnotations, spanFromBytes, spanLengthBytes, stringPositions)) {
             return null;
         }
 
@@ -320,10 +319,10 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
     }
 
     /**
-     * Validates the header of a simple annotations structure.
+     * Reads and validates the header of a simple annotations structure.
      * Checks: single "linguistics" span tree with SpanList root.
      */
-    private boolean validateSimpleAnnotationsHeader() {
+    private boolean readSimpleAnnotationsHeader() {
         // Check number of trees
         int numSpanTrees = buf.getInt1_2_4Bytes();
         if (numSpanTrees != 1) {
