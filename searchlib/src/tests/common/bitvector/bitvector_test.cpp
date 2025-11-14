@@ -287,15 +287,6 @@ testNot(uint32_t offset)
     EXPECT_TRUE(assertBV(fill(A, offset), *v1));
 }
 
-std::unique_ptr<const BitVector>
-make_test_bv()
-{
-    auto bv = std::make_unique<AllocatedBitVector>(2047u);
-    bv->setBit(42);
-    bv->setBit(1049);
-    return bv;
-}
-
 std::unique_ptr<nbostream>
 write_test_bv_to_nbostream(const BitVector &bv, uint32_t guard_bits, size_t alignment)
 {
@@ -328,18 +319,20 @@ write_test_bv_to_file(const BitVector& bv, const std::string& file_name)
     bvfile.write(static_cast<const char *>(bv.getStart()), legacy_entry_size);
     bvfile.close();
     ASSERT_TRUE(bvfile.good());
+    // Resize file to beyond what is needed ( 1 guard bit => 256 bytes, 2 guard bits => 512 bytes).
     std::filesystem::resize_file(bvpath, 1024u);
 }
 
 class BitVectorTest : public ::testing::Test {
 protected:
     static std::unique_ptr<const BitVector> _file_bv;
-    static constexpr uint32_t file_alignment = 0x100;
+    static constexpr uint32_t bitvector_alignment_bits = BitVector::getAlignment() * 8;
 
     BitVectorTest();
     ~BitVectorTest() override;
     static void SetUpTestSuite();
     static void TearDownTestSuite();
+    static std::unique_ptr<const BitVector> make_test_bv();
 };
 
 std::unique_ptr<const BitVector> BitVectorTest::_file_bv;
@@ -357,7 +350,7 @@ BitVectorTest::SetUpTestSuite()
     std::filesystem::remove_all(testdata);
     std::filesystem::create_directory(testdata);
     auto bv = make_test_bv();
-    write_test_bv_to_file(*bv,testdata + "/bv");
+    write_test_bv_to_file(*bv, testdata + "/bv");
     _file_bv = std::move(bv);
 }
 
@@ -366,6 +359,17 @@ BitVectorTest::TearDownTestSuite()
 {
     _file_bv.reset();
     std::filesystem::remove_all(testdata);
+}
+
+std::unique_ptr<const BitVector>
+BitVectorTest::make_test_bv()
+{
+    constexpr uint32_t bv_size = bitvector_alignment_bits - 1;
+    auto bv = std::make_unique<AllocatedBitVector>(bv_size);
+    bv->setBit(42);
+    static_assert(bv_size > 1049);
+    bv->setBit(1049);
+    return bv;
 }
 
 TEST_F(BitVectorTest, requireThatSequentialOperationsOnPartialWorks)
@@ -948,7 +952,7 @@ TEST_F(BitVectorTest, fixup_count_and_guard_bit_and_zero_remaining_data_bits_aft
 TEST_F(BitVectorTest, normal_guard_bits)
 {
     for (uint32_t num_end_padding_bits = 0; num_end_padding_bits < 2; ++num_end_padding_bits) {
-        auto bv_size = 2048u - BitVector::num_guard_bits - num_end_padding_bits;
+        auto bv_size = bitvector_alignment_bits - BitVector::num_guard_bits - num_end_padding_bits;
         SCOPED_TRACE("bv_size=" + std::to_string(bv_size));
         AllocatedBitVector bv(bv_size);
         EXPECT_EQ(bv_size + num_end_padding_bits, bv.capacity());
@@ -965,7 +969,7 @@ TEST_F(BitVectorTest, dynamic_guard_bits)
 {
     vespalib::GenerationHolder g;
     for (uint32_t num_end_padding_bits = 0; num_end_padding_bits < 2; ++num_end_padding_bits) {
-        auto bv_size = 2048u - BitVector::num_guard_bits - num_end_padding_bits;
+        auto bv_size = bitvector_alignment_bits - BitVector::num_guard_bits - num_end_padding_bits;
         constexpr bool single_guard_bit = (BitVector::num_guard_bits == 1);
         /*
          * Even guard bits are set to 1 and odd guard bits are set to 0 when using multiple guard bits.
@@ -1008,7 +1012,7 @@ TEST_F(BitVectorTest, dynamic_guard_bits)
     g.reclaim(2);
 }
 
-TEST_F(BitVectorTest, read_from_attriute_vector_file)
+TEST_F(BitVectorTest, read_from_attribute_vector_file_with_1_guard_bit_in_stored_bitvector)
 {
     vespalib::GenerationHolder g;
     std::string bvpath(testdata + "/bv");
@@ -1029,30 +1033,31 @@ TEST_F(BitVectorTest, read_from_attriute_vector_file)
     g.reclaim(2);
 }
 
-class BitVectorCompatibilityTest : public BitVectorTest,
-                                   public testing::WithParamInterface<uint32_t> {
+class BitVectorGuardBitsCompatibilityTest : public BitVectorTest,
+                                            public testing::WithParamInterface<uint32_t> {
 protected:
-    BitVectorCompatibilityTest();
-    ~BitVectorCompatibilityTest() override;
+    BitVectorGuardBitsCompatibilityTest();
+    ~BitVectorGuardBitsCompatibilityTest() override;
 };
 
-BitVectorCompatibilityTest::BitVectorCompatibilityTest()
+BitVectorGuardBitsCompatibilityTest::BitVectorGuardBitsCompatibilityTest()
     : BitVectorTest(),
       testing::WithParamInterface<uint32_t>()
 {
 }
 
-BitVectorCompatibilityTest::~BitVectorCompatibilityTest() = default;
+BitVectorGuardBitsCompatibilityTest::~BitVectorGuardBitsCompatibilityTest() = default;
 
-INSTANTIATE_TEST_SUITE_P(BitVectorCompatibilityTest, BitVectorCompatibilityTest, testing::Values(1, 2),
+INSTANTIATE_TEST_SUITE_P(BitVectorGuardBitsCompatibilityTest, BitVectorGuardBitsCompatibilityTest, testing::Values(1, 2),
                          param_as_string);
 
-TEST_P(BitVectorCompatibilityTest, read_from_file_bitvector_dictionary_file)
+TEST_P(BitVectorGuardBitsCompatibilityTest, read_from_file_bitvector_dictionary_file)
 {
     uint32_t old_guard_bits = GetParam();
     std::string bvpath(testdata + "/bv");
-    Aligner aligner(file_alignment);
+    Aligner aligner(BitVector::getAlignment());
     size_t entry_size = aligner.align(BitVector::num_bytes_plain(_file_bv->size() + old_guard_bits));
+    // Old bitvector used 2047 + old_guard_bits bits, aligned to a multiple of 256 bytes.
     EXPECT_EQ(old_guard_bits == 1 ? 256 : 512, entry_size);
     if (old_guard_bits == BitVector::num_guard_bits) {
         EXPECT_EQ(entry_size, _file_bv->getFileBytes());
@@ -1066,14 +1071,15 @@ TEST_P(BitVectorCompatibilityTest, read_from_file_bitvector_dictionary_file)
     EXPECT_TRUE(*bv == *_file_bv);
 }
 
-TEST_P(BitVectorCompatibilityTest, read_from_nbostream)
+TEST_P(BitVectorGuardBitsCompatibilityTest, read_from_nbostream)
 {
+    constexpr uint32_t entry_header_counters = 3;
     uint32_t old_guard_bits = GetParam();
-    auto nbos = write_test_bv_to_nbostream(*_file_bv, old_guard_bits, file_alignment);
+    auto nbos = write_test_bv_to_nbostream(*_file_bv, old_guard_bits, BitVector::getAlignment());
     if (old_guard_bits == BitVector::num_guard_bits) {
-        EXPECT_EQ(_file_bv->getFileBytes() + 3 * sizeof(uint64_t), nbos->size());
+        EXPECT_EQ(_file_bv->getFileBytes() + entry_header_counters * sizeof(uint64_t), nbos->size());
     } else {
-        EXPECT_NE(_file_bv->getFileBytes() + 3 * sizeof(uint64_t), nbos->size());
+        EXPECT_NE(_file_bv->getFileBytes() + entry_header_counters * sizeof(uint64_t), nbos->size());
     }
     AllocatedBitVector bv(1u);
     *nbos >> bv;
