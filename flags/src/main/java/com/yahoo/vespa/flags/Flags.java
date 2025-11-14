@@ -270,9 +270,7 @@ public class Flags {
     public static final UnboundBooleanFlag USE_SIMPLE_ANNOTATIONS = defineFeatureFlag(
             "use-simple-annotations", false,
             List.of("arnej"), "2025-11-13", "2026-12-31",
-            "Enable lightweight annotation representation for StringFieldValue. " +
-            "When enabled, uses SimpleIndexingAnnotations (flat arrays) instead of full SpanTree objects, " +
-            "reducing memory usage by 80-90% for indexing workloads.",
+            "Enable lightweight annotation representation for StringFieldValue",
             "Takes effect at redeployment",
             INSTANCE_ID);
 

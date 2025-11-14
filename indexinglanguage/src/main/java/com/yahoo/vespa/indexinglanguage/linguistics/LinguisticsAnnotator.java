@@ -120,7 +120,6 @@ public class LinguisticsAnnotator {
 
     /**
      * Lightweight annotation path - creates flat arrays instead of object graphs.
-     * 80-90% memory reduction compared to full SpanTree approach.
      * Package-private for testing.
      */
     boolean annotateSimple(SimpleIndexingAnnotations simple, String input,

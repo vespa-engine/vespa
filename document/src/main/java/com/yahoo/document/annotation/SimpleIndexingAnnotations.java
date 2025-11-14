@@ -5,14 +5,12 @@ import com.yahoo.document.datatypes.StringFieldValue;
 
 /**
  * Lightweight representation of TERM annotations for indexing.
- * Uses flat arrays instead of object graphs for 80-90% memory reduction.
+ * Uses flat arrays instead of object graphs.
  * NOT part of public API - internal optimization for indexing performance.
  *
  * This class can only represent simple TERM annotations with:
  * - Position (from, length)
  * - Optional term override (when term differs from substring)
- *
- * Memory footprint: ~8 bytes + arrays vs ~300 bytes per annotation with full SpanTree.
  *
  * @author havardpe
  */

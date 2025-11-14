@@ -15,7 +15,6 @@ import com.yahoo.language.process.TokenType;
 import com.yahoo.vespa.indexinglanguage.linguistics.LinguisticsAnnotator;
 
 import java.util.Iterator;
-import java.util.logging.Logger;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
@@ -25,8 +24,6 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  * @author bratseth
  */
 public final class NGramExpression extends Expression {
-
-    private static final Logger log = Logger.getLogger(NGramExpression.class.getName());
 
     private final Linguistics linguistics;
     private final int gramSize;

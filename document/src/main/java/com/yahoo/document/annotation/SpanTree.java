@@ -640,7 +640,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
     @Override
     public String toString() {
         return "SpanTree '" + name + "' with root: " + root +
-               ( annotations.annotations().size() > 25 ? "" :
+               ( annotations.annotations().size() > 5 ? "" :
                  ", annotations: " + annotations.annotations().stream().map(Annotation::toString).collect(Collectors.joining(", ")));
     }
 

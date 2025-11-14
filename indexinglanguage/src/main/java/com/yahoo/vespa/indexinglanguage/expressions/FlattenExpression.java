@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Deprecated.
@@ -25,8 +24,6 @@ import java.util.logging.Logger;
  */
 // TODO: Remove on Vespa 9
 public final class FlattenExpression extends Expression {
-
-    private static final Logger log = Logger.getLogger(FlattenExpression.class.getName());
 
     @Override
     public DataType setInputType(DataType inputType, TypeContext context) {

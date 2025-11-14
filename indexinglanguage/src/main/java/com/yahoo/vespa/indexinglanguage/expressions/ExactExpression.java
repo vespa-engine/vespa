@@ -16,7 +16,6 @@ import com.yahoo.language.process.TokenType;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 
 import java.util.Objects;
-import java.util.logging.Logger;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
@@ -24,8 +23,6 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  * @author Simon Thoresen Hult
  */
 public final class ExactExpression extends Expression {
-
-    private static final Logger log = Logger.getLogger(ExactExpression.class.getName());
 
     private final AnnotatorConfig config;
 

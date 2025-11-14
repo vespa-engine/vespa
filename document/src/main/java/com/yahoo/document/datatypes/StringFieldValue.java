@@ -36,8 +36,7 @@ public class StringFieldValue extends FieldValue {
 
     /**
      * Feature flag for lightweight annotation representation.
-     * When enabled, uses SimpleIndexingAnnotations (flat arrays) instead of full SpanTree objects,
-     * reducing memory usage by 80-90% for indexing workloads.
+     * When enabled, uses SimpleIndexingAnnotations (flat arrays) instead of full SpanTree objects.
      * Checks environment variable first, then falls back to system property.
      */
     private static boolean useSimpleAnnotations() {
