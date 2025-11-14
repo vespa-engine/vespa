@@ -266,8 +266,14 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         byte[] stringBytes = createUTF8CharArray(value.getString());
 
         // Check for simple or full annotations
+        Map<String, SpanTree> trees = null;
         SimpleIndexingAnnotations simple = value.getSimpleAnnotations();
-        Map<String, SpanTree> trees = value.getSpanTreeMap();
+        if (simple == null) {
+            trees = value.getSpanTreeMap();
+        }
+        System.err.println("Write SVF: " + value);
+        System.err.println("simple annotations: " + simple);
+        System.err.println("trees: " + trees);
         boolean hasAnnotations = (simple != null && simple.getCount() > 0) ||
                                 (trees != null && !trees.isEmpty());
 
@@ -289,11 +295,11 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
 
                 if (simple != null && simple.getCount() > 0) {
                     // Direct serialization of simple annotations - no conversion!
-                    log.fine("writing " + simple.getCount() + " simple annotations");
+                    log.info("writing " + simple.getCount() + " simple annotations");
                     writeSimpleAnnotations(simple);
                 } else if (trees != null && !trees.isEmpty()) {
                     // Full SpanTree serialization
-                    log.fine("writing " + trees.size() + " span tree");
+                    log.info("writing " + trees.size() + " span trees with annotations");
                     writeSpanTreeMap(trees, value.getString());
                 }
             } finally {

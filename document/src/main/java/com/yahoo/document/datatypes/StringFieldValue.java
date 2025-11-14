@@ -88,8 +88,8 @@ public class StringFieldValue extends FieldValue {
      * Validates that at most one annotation storage mechanism is active.
      */
     private AnnotationMode getAnnotationMode() {
-        boolean hasSimple = simpleAnnotations != null && simpleAnnotations.getCount() > 0;
-        boolean hasFull = spanTrees != null && !spanTrees.isEmpty();
+        boolean hasSimple = simpleAnnotations != null;
+        boolean hasFull = spanTrees != null;
 
         if (hasSimple && hasFull) {
             throw new IllegalStateException(
@@ -140,7 +140,8 @@ public class StringFieldValue extends FieldValue {
                     throw new IllegalStateException(
                         "Cannot convert from FULL to SIMPLE annotation mode");
                 }
-                // From NONE→SIMPLE is handled by createSimpleAnnotations()
+                // From NONE→SIMPLE:
+                simpleAnnotations = new SimpleIndexingAnnotations();
                 break;
 
             case FULL:
@@ -159,8 +160,9 @@ public class StringFieldValue extends FieldValue {
                 }
                 break;
         }
-
-        assertInvariant();
+        if (targetMode != getAnnotationMode()) {
+            throw new IllegalStateException("Could not switch annotation mode from " + currentMode + " to " + targetMode);
+        }
     }
 
     /**
@@ -271,9 +273,8 @@ public class StringFieldValue extends FieldValue {
      * @return an unmodifiable Collection of the span trees with annotations over this String, or an empty Collection
      */
     public Collection<SpanTree> getSpanTrees() {
-        if (simpleAnnotations != null) {
-            // Lazy conversion for API compatibility (rare path)
-            return List.of(getSpanTree(SpanTrees.LINGUISTICS));
+        if (simpleAnnotations != null && simpleAnnotations.getCount() > 0) {
+            changeAnnotationMode(AnnotationMode.FULL);
         }
         if (spanTrees == null) {
             return List.of();
@@ -292,22 +293,12 @@ public class StringFieldValue extends FieldValue {
      * @param name the name of the span tree to return
      * @return the span tree associated with the given name, or null if this does not exist.
      */
-    private SpanTree simpleAsTree() {
-        if ((simpleAnnotations == null) || (simpleAnnotations.getCount() == 0)) {
-            return null;
-        }
-        var converted = simpleAnnotations.toSpanTree(SpanTrees.LINGUISTICS);
-        converted.setStringFieldValue(this);
-        return converted;
-    }
-
     public SpanTree getSpanTree(String name) {
         // If in simple mode and requesting LINGUISTICS, promote to full mode (cache conversion)
         if (getAnnotationMode() == AnnotationMode.SIMPLE && SpanTrees.LINGUISTICS.equals(name)) {
             // Promote to full mode (one-time conversion for caching)
             changeAnnotationMode(AnnotationMode.FULL);
         }
-
         return spanTrees != null ? spanTrees.get(name) : null;
     }
 
@@ -329,6 +320,7 @@ public class StringFieldValue extends FieldValue {
 
         spanTrees.put(spanTree.getName(), spanTree);
         spanTree.setStringFieldValue(this);
+        System.err.println("did setSpanTree");
 
         return spanTree;
     }
@@ -356,7 +348,8 @@ public class StringFieldValue extends FieldValue {
     }
 
     /**
-     * Creates or returns the SimpleIndexingAnnotations for this field.
+     * Creates an empty SimpleIndexingAnnotations suiteable for this field.
+     * Must be passed to setSimpleAnnotations later to be useful.
      * Public for use by indexing expressions, but not part of stable API.
      *
      * @return SimpleIndexingAnnotations instance, or null if simple mode not enabled or already using full SpanTree
@@ -365,28 +358,18 @@ public class StringFieldValue extends FieldValue {
         if (!SimpleIndexingAnnotations.isEnabled()) {
             return null;
         }
-        if (spanTrees != null && !spanTrees.isEmpty()) {
-            // Already using full mode
+        if (getAnnotationMode() == AnnotationMode.FULL) {
             return null;
         }
-        spanTrees = null;
-        if (simpleAnnotations == null) {
-            simpleAnnotations = new SimpleIndexingAnnotations();
-        }
-        assertInvariant();
-        return simpleAnnotations;
+        return new SimpleIndexingAnnotations();
     }
 
     /**
-     * Returns the simple annotations if present and non-empty
+     * Returns the simple annotations if present
      * Public for use by serialization, but not part of stable API.
      */
     public SimpleIndexingAnnotations getSimpleAnnotations() {
-        if (simpleAnnotations != null && simpleAnnotations.getCount() != 0) {
-            return simpleAnnotations;
-        } else {
-            return null;
-        }
+        return simpleAnnotations;
     }
 
     /**

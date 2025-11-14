@@ -70,6 +70,7 @@ public final class NGramExpression extends Expression {
         SimpleIndexingAnnotations simple = output.createSimpleAnnotations();
         if (simple != null) {
             annotateNGramsSimple(simple, output.getString());
+            output.setSimpleAnnotations(simple);
             return;
         }
 

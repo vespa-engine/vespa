@@ -273,22 +273,14 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
      */
     private boolean tryReadingSimpleAnnotations(StringFieldValue value, byte[] stringArray) {
         int savedPos = buf.position();
-
-        try {
-            SimpleIndexingAnnotations simple = readSimpleAnnotations(stringArray);
-            if (simple != null) {
-                value.setSimpleAnnotations(simple);
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            return false;
-        } finally {
-            if (buf.position() != savedPos && value.getSimpleAnnotations() == null) {
-                // Failed validation, reset position
-                buf.position(savedPos);
-            }
+        SimpleIndexingAnnotations simple = readSimpleAnnotations(stringArray);
+        if (simple != null) {
+            value.setSimpleAnnotations(simple);
+            return true;
         }
+        // Failed validation, reset position
+        buf.position(savedPos);
+        return false;
     }
 
     /**
@@ -303,18 +295,17 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
 
         int numSpans = buf.getInt1_2_4Bytes();
-        int[] spanFromBytes = new int[numSpans];
-        int[] spanLengthBytes = new int[numSpans];
+        int[] spanFromBytes = new int[numSpans+1];
+        int[] spanLengthBytes = new int[numSpans+1];
 
         // Read and validate all spans
         if (!readAndValidateSpans(numSpans, spanFromBytes, spanLengthBytes)) {
             return null;
         }
 
-        // Validate annotation count matches span count
         int numAnnotations = buf.getInt1_2_4Bytes();
-        if (numAnnotations != numSpans) {
-            return null;  // Must be 1:1 correspondence
+        if (numAnnotations < numSpans) {
+            return null;  // Should be at least 1 annotation per span
         }
 
         // Build SimpleIndexingAnnotations while reading and validating annotations
@@ -360,7 +351,8 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
      * All spans must be simple Span nodes (not SpanList or AlternateSpanList).
      */
     private boolean readAndValidateSpans(int numSpans, int[] spanFromBytes, int[] spanLengthBytes) {
-        for (int i = 0; i < numSpans; i++) {
+        // NOTE: id 0 is used by the initial SpanList
+        for (int i = 1; i <= numSpans; i++) {
             byte spanType = buf.get();
             if (spanType != Span.ID) {
                 return false;  // Only simple Span nodes supported
@@ -446,7 +438,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
      * Validates that a span index is within valid bounds.
      */
     private boolean isValidSpanIndex(int spanIndex, int numSpans) {
-        return spanIndex >= 0 && spanIndex < numSpans;
+        return spanIndex > 0 && spanIndex < numSpans;
     }
 
     /**

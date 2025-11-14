@@ -65,6 +65,7 @@ public final class ExactExpression extends Expression {
             String termOverride = next.equals(prev) ? null : next;
             simple.add(0, prev.length(), termOverride);
             // Note: TOKEN_TYPE annotation is not created - it's unused by C++ anyway
+            output.setSimpleAnnotations(simple);
             return;
         }
 

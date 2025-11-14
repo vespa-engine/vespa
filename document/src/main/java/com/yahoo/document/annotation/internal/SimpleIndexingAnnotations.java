@@ -32,6 +32,7 @@ public final class SimpleIndexingAnnotations {
      * @return true if simple annotations should be used, false otherwise
      */
     public static boolean isEnabled() {
+        // System.err.println("SimpleIndexingAnnotations enabled: " + enabled);
         return enabled;
     }
 
@@ -40,6 +41,7 @@ public final class SimpleIndexingAnnotations {
      * @param value true to enable simple annotations, false to disable
      */
     public static void setEnabled(boolean value) {
+        // System.err.println("SimpleIndexingAnnotations enabled " + enabled + " -> " + value);
         enabled = value;
     }
 

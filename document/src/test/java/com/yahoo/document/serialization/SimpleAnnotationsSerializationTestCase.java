@@ -70,7 +70,7 @@ public class SimpleAnnotationsSerializationTestCase {
             String term = ann.length > 2 ? text.substring(ann[2], ann[2] + ann[3]) : null;
             simple.add(from, length, term);
         }
-
+        value.setSimpleAnnotations(simple);
         return value;
     }
 
@@ -224,6 +224,7 @@ public class SimpleAnnotationsSerializationTestCase {
 
             simple.add(0, 6, "tesla");   // First stem
             simple.add(0, 6, "teslas");  // Second stem - SAME SPAN
+            value.setSimpleAnnotations(simple);
 
             StringFieldValue roundTrip = serializeAndDeserialize(value);
 

@@ -111,7 +111,11 @@ public class LinguisticsAnnotator {
         // Try simple path first for maximum memory efficiency
         SimpleIndexingAnnotations simple = text.createSimpleAnnotations();
         if (simple != null) {
-            return annotateSimple(simple, text.getString(), tokens, termOccurrences);
+            boolean add = annotateSimple(simple, text.getString(), tokens, termOccurrences);
+            if (add) {
+                text.setSimpleAnnotations(simple);
+            }
+            return add;
         }
 
         // Fallback to full SpanTree mode
