@@ -108,6 +108,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         metrics::LongCountMetric docsMatched;
         metrics::LongCountMetric docsRanked;
         metrics::LongCountMetric docsReRanked;
+        metrics::LongCountMetric distances_computed;
         metrics::LongCountMetric queries;
         metrics::LongCountMetric softDoomedQueries;
         metrics::DoubleAverageMetric querySetupTime;
@@ -118,6 +119,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
                 metrics::LongCountMetric docsMatched;
                 metrics::LongCountMetric docsRanked;
                 metrics::LongCountMetric docsReRanked;
+                metrics::LongCountMetric distances_computed;
                 metrics::DoubleAverageMetric activeTime;
                 metrics::DoubleAverageMetric waitTime;
 
@@ -132,6 +134,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             metrics::LongCountMetric     docsMatched;
             metrics::LongCountMetric     docsRanked;
             metrics::LongCountMetric     docsReRanked;
+            metrics::LongCountMetric     distances_computed;
             metrics::LongCountMetric     queries;
             metrics::LongCountMetric     limitedQueries;
             metrics::LongCountMetric     softDoomedQueries;
