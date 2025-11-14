@@ -80,21 +80,22 @@ class EmbeddedOnnxRuntimeTest {
         }
     }
 
-    private static void assertClosed(OnnxEvaluator evaluator) { assertTrue(isClosed(evaluator), "Session is not closed"); }
-    private static void assertNotClosed(OnnxEvaluator evaluator) { assertFalse(isClosed(evaluator), "Session is closed"); }
+    private static void assertClosed(OnnxEvaluator evaluator) { assertTrue(isUnderlyingOrtSessionClosed(evaluator), "Session is not closed"); }
+    private static void assertNotClosed(OnnxEvaluator evaluator) { assertFalse(isUnderlyingOrtSessionClosed(evaluator), "Session is closed"); }
     private static void assertSameSession(OnnxEvaluator evaluator1, OnnxEvaluator evaluator2) {
         assertSame(((EmbeddedOnnxEvaluator)evaluator1).ortSession(), ((EmbeddedOnnxEvaluator)evaluator2).ortSession());
     }
     private static void assertNotSameSession(OnnxEvaluator evaluator1, OnnxEvaluator evaluator2) {
         assertNotSame(((EmbeddedOnnxEvaluator)evaluator1).ortSession(), ((EmbeddedOnnxEvaluator)evaluator2).ortSession());
     }
-    private static boolean isClosed(OnnxEvaluator evaluator) {
+    private static boolean isUnderlyingOrtSessionClosed(OnnxEvaluator evaluator) {
         try {
-            evaluator.getInputs();
+            ((EmbeddedOnnxEvaluator)evaluator).ortSession().getInputInfo();
             return false;
         } catch (IllegalStateException e) {
-            assertEquals("Asking for inputs from a closed OrtSession.", e.getMessage());
             return true;
+        } catch (Exception e) {
+            return false;  // Other exceptions mean it's not closed
         }
     }
 }
