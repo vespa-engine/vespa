@@ -63,6 +63,7 @@ public:
         size_t _docsRanked;
         size_t _docsReRanked;
         size_t _softDoomed;
+        size_t _distances_computed;
         Avg    _doomOvertime;
         Avg    _active_time;
         Avg    _wait_time;
@@ -88,6 +89,8 @@ public:
         size_t docsReRanked() const noexcept { return _docsReRanked; }
         Partition &softDoomed(bool v) noexcept { _softDoomed += v ? 1 : 0; return *this; }
         size_t softDoomed() const noexcept { return _softDoomed; }
+        Partition &distances_computed(size_t value) noexcept { _distances_computed = value; return *this; }
+        size_t distances_computed() const noexcept { return _distances_computed; }
         Partition & doomOvertime(vespalib::duration overtime) noexcept { _doomOvertime.set(vespalib::to_s(overtime)); return *this; }
         vespalib::duration doomOvertime() const noexcept { return vespalib::from_s(_doomOvertime.max()); }
 
@@ -108,8 +111,9 @@ public:
             _docsRanked += rhs._docsRanked;
             _docsReRanked += rhs._docsReRanked;
             _softDoomed += rhs._softDoomed;
-            _doomOvertime.add(rhs._doomOvertime);
+            _distances_computed += rhs._distances_computed;
 
+            _doomOvertime.add(rhs._doomOvertime);
             _active_time.add(rhs._active_time);
             _wait_time.add(rhs._wait_time);
             return *this;
@@ -123,6 +127,7 @@ private:
     size_t                 _docsMatched;
     size_t                 _docsRanked;
     size_t                 _docsReRanked;
+    size_t                 _distances_computed;
     size_t                 _softDoomed;
     Avg                    _doomOvertime;
     using SoftDoomFactor = vespalib::datastore::AtomicValueWrapper<double>;
@@ -161,6 +166,9 @@ public:
 
     MatchingStats &docsReRanked(size_t value) { _docsReRanked = value; return *this; }
     size_t docsReRanked() const { return _docsReRanked; }
+
+    MatchingStats &distances_computed(size_t value) { _distances_computed = value; return *this; }
+    size_t distances_computed() const { return _distances_computed; }
 
     MatchingStats &softDoomed(size_t value) { _softDoomed = value; return *this; }
     size_t softDoomed() const { return _softDoomed; }

@@ -26,6 +26,7 @@ MatchingStats::MatchingStats(double prev_soft_doom_factor) noexcept
       _docsMatched(0),
       _docsRanked(0),
       _docsReRanked(0),
+      _distances_computed(0),
       _softDoomed(0),
       _doomOvertime(),
       _softDoomFactor(prev_soft_doom_factor),
@@ -48,6 +49,7 @@ MatchingStats::merge_partition(const Partition &partition, size_t id)
     _docsMatched += partition.docsMatched();
     _docsRanked += partition.docsRanked();
     _docsReRanked += partition.docsReRanked();
+    _distances_computed += partition.distances_computed();
     _doomOvertime.add(partition._doomOvertime);
     if (partition.softDoomed()) {
         _softDoomed = 1;
@@ -66,6 +68,7 @@ MatchingStats::add(const MatchingStats &rhs) noexcept
     _docsMatched += rhs._docsMatched;
     _docsRanked += rhs._docsRanked;
     _docsReRanked += rhs._docsReRanked;
+    _distances_computed += rhs._distances_computed;
     _softDoomed += rhs.softDoomed();
     _doomOvertime.add(rhs._doomOvertime);
 
