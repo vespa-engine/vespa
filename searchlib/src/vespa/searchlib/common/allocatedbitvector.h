@@ -36,6 +36,13 @@ public:
     /**
      * Creates a new bitvector with size of numberOfElements bits and at least a capacity of capacity.
      * Copies what it can from the original vector. This is used for extending vector.
+     *
+     * When dynamic_guard_bits is true:
+     *   Even guard bits are set to 1 and odd guard bits are set to 0 when using multiple guard bits.
+     *   This avoids conflict between old and new guard bits when changing bitvector size by 1 and when
+     *   bit vector size is 1 less than capacity.
+     * When dynamic_guard_bits is false:
+     *   First guard bit is set to 1. A guard bit set to 0 follows when using multiple guard bits.
      */
     AllocatedBitVector(Index numberOfElements, Index capacity, const BitVector* org, const Alloc* init_alloc,
                        bool dynamic_guard_bits);
