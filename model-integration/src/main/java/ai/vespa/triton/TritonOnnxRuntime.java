@@ -9,6 +9,7 @@ import ai.vespa.modelintegration.utils.ModelPathOrData;
 import com.google.protobuf.TextFormat;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.vespa.defaults.Defaults;
 import inference.ModelConfigOuterClass;
 
@@ -20,6 +21,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * ONNX Runtime implementation that uses Triton Inference Server for model inference.
@@ -31,6 +34,28 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     private final TritonConfig config;
     private final TritonOnnxClient client;
+    private final boolean isExplicitControlMode;
+
+    // Key is the model name, which is unique - contains hash of model path and options
+    private final ConcurrentMap<String, TritonModelReference> modelReferences = new ConcurrentHashMap<>();
+
+    class TritonModelReference extends AbstractResource {
+        public final String modelName;
+
+        TritonModelReference(String modelName) {
+            this.modelName = modelName;
+        }
+
+        public void destroy() {
+            modelReferences.remove(modelName);
+            client.unloadModel(modelName);
+            try {
+                Files.delete(getModelDirInModelRepo(modelName));
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to delete from Triton repository", e);
+            }
+        }
+    }
 
     // Test constructor
     public TritonOnnxRuntime() {
@@ -41,6 +66,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     public TritonOnnxRuntime(TritonConfig config) {
         this.config = config;
         this.client = new TritonOnnxClient(config);
+        this.isExplicitControlMode = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
     }
 
     @Override
@@ -49,14 +75,14 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             throw new IllegalStateException("Triton server is not healthy! (target=%s)".formatted(config.target()));
         }
 
-        var modelName = createModelName(modelPath, options);
-        var isExplicitControlMode = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
+        var modelName = generateModelName(modelPath, options);
+        var modelReference = modelReferences.computeIfAbsent(modelName, TritonModelReference::new);
 
-        if (isExplicitControlMode) {
+        if (modelReference.retainCount() == 0 && isExplicitControlMode) {
             copyModelToRepository(modelName, modelPath, options);
         }
 
-        return new TritonOnnxEvaluator(client, modelName, isExplicitControlMode);
+        return new TritonOnnxEvaluator(modelReference, client, isExplicitControlMode);
     }
 
     @Override
@@ -64,15 +90,20 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         client.close();
     }
 
+    private Path getModelDirInModelRepo(String modelName) {
+        var modelRepositoryPath = Defaults.getDefaults().underVespaHome(config.modelRepositoryPath());
+        var modelPath = Paths.get(modelRepositoryPath, modelName);
+        return modelPath;
+    }
+
     /**
      * Copies the model file to the model repository and serializes the config
      */
     private void copyModelToRepository(String modelName, String externalModelPath, OnnxEvaluatorOptions options) {
-        var modelRepositoryPath = Defaults.getDefaults().underVespaHome(config.modelRepositoryPath());
-        var modelRootPath = Paths.get(modelRepositoryPath, modelName);
-        var modelVersionPath = modelRootPath.resolve("1");
+        var modelDirPath = getModelDirInModelRepo(modelName);
+        var modelVersionPath = modelDirPath.resolve("1");
         var modelFilePath = modelVersionPath.resolve("model.onnx");
-        var modelConfigPath = modelRootPath.resolve("config.pbtxt");
+        var modelConfigPath = modelDirPath.resolve("config.pbtxt");
 
         try {
             // Create directory for model name and version with correct permissions
@@ -103,7 +134,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         Files.setPosixFilePermissions(path, modelPerms);
     }
 
-    static String createModelName(String modelPath, OnnxEvaluatorOptions options) {
+    static String generateModelName(String modelPath, OnnxEvaluatorOptions options) {
         var fileName = Paths.get(modelPath).getFileName().toString();
         var baseName = fileName.substring(0, fileName.lastIndexOf('.')); // remove file extension
         var modelHash = ModelPathOrData.of(modelPath).calculateHash();
@@ -172,7 +203,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                         ModelConfigOuterClass.ModelParameter.newBuilder()
                                 .setStringValue(Integer.toString(options.interOpThreads()))
                                 .build());
-        
+
         if (options.batchingMaxSize() > 1) {
             var dynamicBatchingBuilder = ModelConfigOuterClass.ModelDynamicBatching.newBuilder();
             options.batchingMaxDelay()

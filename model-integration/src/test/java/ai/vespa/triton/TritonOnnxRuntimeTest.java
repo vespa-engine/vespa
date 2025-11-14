@@ -89,7 +89,7 @@ class TritonOnnxRuntimeTest {
     private void assertLoadModel(String expectedConfigPath, OnnxEvaluatorOptions evalOpts) throws IOException {
         var modelBaseName = "dummy_transformer";
         var testModelFilePath = String.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
-        var modelName = TritonOnnxRuntime.createModelName(testModelFilePath, evalOpts);
+        var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, evalOpts);
         var modelFilePath = String.format("%s/1/model.onnx", modelName);
         var modelConfigPath = String.format("%s/config.pbtxt", modelName);
 

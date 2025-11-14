@@ -17,14 +17,16 @@ import java.util.logging.Logger;
 class TritonOnnxEvaluator implements OnnxEvaluator {
     private static final Logger log = Logger.getLogger(TritonOnnxEvaluator.class.getName());
     
+    private final TritonOnnxRuntime.TritonModelReference modelReference;
     private final String modelName;
     private final TritonOnnxClient tritonClient;
     private final boolean isExplicitControlMode;
     
     private TritonOnnxClient.ModelMetadata modelMetadata;
     
-    TritonOnnxEvaluator(TritonOnnxClient tritonClient, String modelName, boolean isExplicitControlMode) {
-        this.modelName = modelName;
+    TritonOnnxEvaluator(TritonOnnxRuntime.TritonModelReference modelReference, TritonOnnxClient tritonClient, boolean isExplicitControlMode) {
+        this.modelReference = modelReference;
+        this.modelName = modelReference.modelName;
         this.tritonClient = tritonClient;
         this.isExplicitControlMode = isExplicitControlMode;
         loadModelIfNotReady();
