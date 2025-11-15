@@ -26,7 +26,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  * Tests that serialization of annotations from Java generates the
@@ -181,7 +181,7 @@ public class SerializeAnnotationsTestCase {
         StringFieldValue valueFromFile = new StringFieldValue();
         DocumentDeserializer deserializer = DocumentDeserializerFactory.createHead(docMan, new GrowableByteBuffer(serializedFromFile));
         deserializer.read(null, valueFromFile);
-        assertEquals(value, valueFromFile);
+        assertSemanticallyEqual("with adv annotations", value, valueFromFile);
     }
 
     private static ByteBuffer writeFile(StringFieldValue value, String fileName) throws IOException {
@@ -214,6 +214,68 @@ public class SerializeAnnotationsTestCase {
         channel.close();
 
         return readBuf;
+    }
+
+    /**
+     * Compare semantic contents of two StringFieldValues
+     */
+    private void assertSemanticallyEqual(String message, StringFieldValue expected, StringFieldValue actual) {
+        assertEquals(message + ": text differs", expected.getString(), actual.getString());
+
+        SpanTree expectedTree = expected.getSpanTree(SpanTrees.LINGUISTICS);
+        SpanTree actualTree = actual.getSpanTree(SpanTrees.LINGUISTICS);
+
+        if (expectedTree == null) {
+            assertNull(message + ": expected no annotations", actualTree);
+            return;
+        }
+
+        assertNotNull(message + ": expected annotations", actualTree);
+
+        // Compare span tree contents
+        assertEquals(message + ": tree name differs", expectedTree.getName(), actualTree.getName());
+
+        // Get all annotations and compare
+        var expectedAnnotations = new java.util.ArrayList<Annotation>();
+        for (var ann : expectedTree) {
+            expectedAnnotations.add(ann);
+        }
+
+        var actualAnnotations = new java.util.ArrayList<Annotation>();
+        for (var ann : actualTree) {
+            actualAnnotations.add(ann);
+        }
+
+        assertEquals(message + ": annotation count differs",
+                     expectedAnnotations.size(), actualAnnotations.size());
+
+        for (int i = 0; i < expectedAnnotations.size(); i++) {
+            Annotation expAnn = expectedAnnotations.get(i);
+            Annotation actAnn = actualAnnotations.get(i);
+
+            assertEquals(message + ": annotation " + i + " type differs",
+                        expAnn.getType(), actAnn.getType());
+
+            // Compare span positions
+            if (expAnn.getSpanNode() instanceof Span expSpan && actAnn.getSpanNode() instanceof Span actSpan) {
+                assertEquals(message + ": annotation " + i + " span from differs",
+                            expSpan.getFrom(), actSpan.getFrom());
+                assertEquals(message + ": annotation " + i + " span length differs",
+                            expSpan.getLength(), actSpan.getLength());
+            }
+
+            // Compare field values
+            FieldValue expValue = expAnn.getFieldValue();
+            FieldValue actValue = actAnn.getFieldValue();
+
+            if (expValue == null) {
+                assertNull(message + ": annotation " + i + " should have no value", actValue);
+            } else {
+                assertNotNull(message + ": annotation " + i + " should have value", actValue);
+                assertEquals(message + ": annotation " + i + " value differs",
+                            expValue.toString(), actValue.toString());
+            }
+        }
     }
 
 }
