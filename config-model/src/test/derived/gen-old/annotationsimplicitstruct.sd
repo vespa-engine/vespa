@@ -1,0 +1,19 @@
+schema annotationsimplicitstruct {
+    document annotationsimplicitstruct {
+      field structfield type sct {
+        indexing: summary
+      }
+      field structarrayfield type array<sct> {
+        indexing: summary
+      }
+      struct sct {
+        field s1 type string {}
+        field s2 type string {}
+        field s3 type sct {}
+        field s4 type foo {}
+      }
+    }
+    struct foo {
+      field s1 type int {}
+    }
+}

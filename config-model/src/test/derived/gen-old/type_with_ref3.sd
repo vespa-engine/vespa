@@ -1,0 +1,7 @@
+schema type_with_ref3 {
+    document type_with_ref3 {
+      field my_ref_field type reference<type_with_ref> {
+        indexing: attribute
+      }
+    }
+}

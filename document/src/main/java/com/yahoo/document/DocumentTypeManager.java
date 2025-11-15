@@ -165,7 +165,7 @@ public class DocumentTypeManager {
         if (type == null) {
             StringBuilder types=new StringBuilder();
             for (Integer key : dataTypes.keySet()) {
-                types.append(key).append(" ");
+                types.append(key).append("[").append(dataTypes.get(key).getName()).append("] ");
             }
             throw new IllegalArgumentException("No datatype with code " + code + ". Registered type ids: " + types);
         } else {

@@ -1,0 +1,4 @@
+schema referenced_type {
+    document referenced_type {
+    }
+}

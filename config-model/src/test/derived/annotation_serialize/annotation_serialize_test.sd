@@ -1,0 +1,17 @@
+schema annotation_serialize_test {
+    document annotation_serialize_test {
+        struct myposition {
+            field latitude type int {}
+            field longitude type int {}
+        }
+        annotation text { }
+        annotation begintag { }
+        annotation endtag { }
+        annotation body { }
+        annotation paragraph { }
+        annotation city {
+            field cityposition type myposition {}
+            field references type array<annotationreference<text>> {}
+        }
+    }
+}

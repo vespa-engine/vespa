@@ -1,0 +1,5 @@
+schema map_order {
+    document map_order {
+        field a type map<int, map<int, string>> {}
+    }
+}

@@ -1,0 +1,10 @@
+schema type_with_ref2 {
+    document type_with_ref2 {
+      field my_first_ref type reference<referenced_type> {
+        indexing: attribute
+      }
+      field my_second_ref type reference<referenced_type2> {
+        indexing: attribute
+      }
+    }
+}

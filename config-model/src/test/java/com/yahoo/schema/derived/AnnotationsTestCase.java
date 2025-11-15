@@ -44,6 +44,7 @@ public class AnnotationsTestCase extends AbstractExportingTestCase {
     @Test
     void testSimpleReference() throws IOException, ParseException {
         assertCorrectDeriving("annotationsreference");
+        assertCorrectDeriving("annotation_serialize");
     }
 
     @Test

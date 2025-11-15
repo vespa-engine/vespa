@@ -53,6 +53,44 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     }
 
     @Test
+    void generateConfigForOldSchemas() throws IOException, ParseException {
+        String dir = "src/test/derived/gen-old/";
+        {
+            ApplicationBuilder builder = new ApplicationBuilder();
+            builder.addSchemaFile(dir + "annotation_serialize_test.sd");
+            builder.build(true);
+            derive("gen-old-1", builder, builder.getSchema("annotation_serialize_test"));
+        }
+        {
+            ApplicationBuilder builder = new ApplicationBuilder();
+            builder.addSchemaFile(dir + "referenced_type.sd");
+            builder.addSchemaFile(dir + "type_with_ref.sd");
+            builder.build(true);
+            derive("gen-old-2", builder, builder.getSchema("type_with_ref"));
+        }
+        {
+            ApplicationBuilder builder = new ApplicationBuilder();
+            builder.addSchemaFile(dir + "referenced_type.sd");
+            builder.addSchemaFile(dir + "referenced_type2.sd");
+            builder.addSchemaFile(dir + "type_with_ref2.sd");
+            builder.build(true);
+            derive("gen-old-3", builder, builder.getSchema("type_with_ref2"));
+        }
+        {
+            ApplicationBuilder builder = new ApplicationBuilder();
+            builder.addSchemaFile(dir + "map_order.sd");
+            builder.build(true);
+            derive("gen-old-4", builder, builder.getSchema("map_order"));
+        }
+        {
+            ApplicationBuilder builder = new ApplicationBuilder();
+            builder.addSchemaFile(dir + "annotationsimplicitstruct.sd");
+            builder.build(true);
+            derive("gen-old-5", builder, builder.getSchema("annotationsimplicitstruct"));
+        }
+    }
+
+    @Test
     void requireThatStructTypesAreInheritedThroughDiamond() throws IOException, ParseException {
         String dir = "src/test/derived/inheritdiamond/";
         {
