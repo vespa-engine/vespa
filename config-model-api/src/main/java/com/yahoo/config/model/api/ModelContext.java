@@ -108,6 +108,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default double logserverNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default double clusterControllerNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean useSimpleAnnotations() { return false; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean sendProtobufQuerytree() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
