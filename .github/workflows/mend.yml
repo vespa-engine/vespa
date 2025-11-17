@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Mend SAST
-        uses: vespa-engine/gh-actions/mend-sast@marlon/feat/add-mend-scan-workflow
+        uses: vespa-engine/gh-actions/mend-sast@main
         with:
           mend-user: ${{ secrets.MEND_EMAIL }}
           mend-api-key: ${{ secrets.MEND_USER_KEY }}
@@ -46,7 +46,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Mend SAST
-        uses: vespa-engine/gh-actions/mend-sast@marlon/feat/add-mend-scan-workflow
+        uses: vespa-engine/gh-actions/mend-sast@main
         with:
           mend-user: ${{ secrets.MEND_EMAIL }}
           mend-api-key: ${{ secrets.MEND_USER_KEY }}
@@ -91,7 +91,7 @@ jobs:
 
 
       - name: Mend SCA
-        uses: vespa-engine/gh-actions/mend-sca@marlon/feat/add-mend-scan-workflow
+        uses: vespa-engine/gh-actions/mend-sca@main
         with:
           mend-user: ${{ secrets.MEND_EMAIL }}
           mend-api-key: ${{ secrets.MEND_USER_KEY }}
