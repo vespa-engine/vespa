@@ -23,6 +23,10 @@ private:
     MatchingStats _stats;
 
 public:
+    MatchMaster() = default;
+    MatchMaster(MatchingStats &&stats)
+        : _stats(std::move(stats)) {
+    }
     const MatchingStats & getStats() const { return _stats; }
     ResultProcessor::Result::UP match(search::engine::Trace & trace,
                                       const MatchParams &params,

@@ -9,6 +9,7 @@
 #include "sessionmanager.h"
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcore/proton/matching/matching_stats.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -285,6 +286,13 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
                                                                searchContext.getDocIdLimit(), true);
         isDoomExplicit = mtf->get_request_context().getDoom().isExplicitSoftDoom();
         traceQuery(6, request.trace(), mtf->query());
+
+        // Collect stats from blueprints
+        // Just the number of distance computations for now
+        MatchingStats::Partition::MatchingStatsCollector collector;
+        visit(collector, "", mtf->query().peekRoot());
+        my_stats.distances_computed(collector.get_distances_computed());
+
         if (!mtf->valid()) {
             return reply;
         }
@@ -310,7 +318,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
 
         size_t numThreadsPerSearch = computeNumThreadsPerSearch(mtf->estimate(), rankProperties);
         vespalib::LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);
-        MatchMaster master;
+        MatchMaster master(std::move(my_stats));
         uint32_t numParts = NumSearchPartitions::lookup(rankProperties, _rankSetup->getNumSearchPartitions());
         if (limitedThreadBundle.size() > 1) {
             attrContext.enableMultiThreadSafe();

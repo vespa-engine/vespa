@@ -182,6 +182,7 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     if (_algorithm == Algorithm::INDEX_TOP_K || _algorithm == Algorithm::INDEX_TOP_K_WITH_FILTER) {
         visitor.visitInt("top_k_hits", _found_hits.size());
     }
+    visitor.visitInt("distances_computed", 0);
 
     visitor.openStruct("global_filter", "GlobalFilter");
     GlobalFilterLimits limits;
