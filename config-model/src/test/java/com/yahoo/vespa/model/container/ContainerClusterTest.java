@@ -8,6 +8,7 @@ import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
+import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
@@ -20,6 +21,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.handler.ThreadPoolProvider;
 import com.yahoo.container.handler.ThreadpoolConfig;
+import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.Host;
@@ -30,7 +32,9 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
+import com.yahoo.vespa.model.container.xml.ContainerModelBuilderTestBase;
 import org.junit.jupiter.api.Test;
+import org.w3c.dom.Element;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,6 +51,7 @@ import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.applic
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.global;
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.zone;
 import static com.yahoo.config.provision.SystemName.main;
+import static com.yahoo.vespa.model.container.xml.ContainerModelBuilderTestBase.createModel;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -55,6 +60,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Simon Thoresen Hult
  */
 public class ContainerClusterTest {
+
+    protected MockRoot root;
 
     @Test
     void requireThatClusterInfoIsPopulated() {
@@ -516,4 +523,72 @@ public class ContainerClusterTest {
         assertEquals(0b11111111111111111111111111100010, ApplicationContainerCluster.truncateTo4SignificantBits(0b11111111111111111111111111100001));
     }
 
+    @Test
+    void defaultThreadpoolDefaultsApplicationContainerCluster() {
+        MockRoot root = new MockRoot("foo");
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                ContainerModelBuilderTestBase.nodesXml,
+                "</container>");
+
+        ContainerModelBuilderTestBase.createModel(root, clusterElem); // freezes topology
+
+        ThreadpoolConfig cfg = root.getConfig(ThreadpoolConfig.class, "default/component/default-threadpool");
+        assertEquals(-100, cfg.maxthreads());
+        assertEquals(-2,  cfg.corePoolSize());
+        assertEquals(0, cfg.queueSize());
+    }
+
+    @Test
+    void defaultThreadpoolConfigurationSetThreadsAndExpectRelative() {
+        MockRoot root = new MockRoot("foo");
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <threadpool>",
+                "    <threads>5</threads>",
+                "  </threadpool>",
+                ContainerModelBuilderTestBase.nodesXml,
+                "</container>");
+
+        ContainerModelBuilderTestBase.createModel(root, clusterElem); // freezes topology
+
+        ThreadpoolConfig cfg = root.getConfig(ThreadpoolConfig.class, "default/component/default-threadpool");
+        assertEquals(-5,  cfg.corePoolSize());
+        assertEquals(-5, cfg.maxthreads());
+    }
+
+    @Test
+    void defaultThreadpoolConfigurationSetThreadsWithMaxAndExpectRelative() {
+        MockRoot root = new MockRoot("foo");
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <threadpool>",
+                "    <threads max=\"50\">5</threads>",
+                "  </threadpool>",
+                ContainerModelBuilderTestBase.nodesXml,
+                "</container>");
+
+        ContainerModelBuilderTestBase.createModel(root, clusterElem); // freezes topology
+
+        ThreadpoolConfig cfg = root.getConfig(ThreadpoolConfig.class, "default/component/default-threadpool");
+        assertEquals(-5,  cfg.corePoolSize());
+        assertEquals(-50, cfg.maxthreads());
+    }
+
+    @Test
+    void defaultThreadpoolConfigurationSetQueueAndExpectRelative() {
+        MockRoot root = new MockRoot("foo");
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <threadpool>",
+                "    <queue>50</queue>",
+                "  </threadpool>",
+                ContainerModelBuilderTestBase.nodesXml,
+                "</container>");
+
+        ContainerModelBuilderTestBase.createModel(root, clusterElem); // freezes topology
+
+        ThreadpoolConfig cfg = root.getConfig(ThreadpoolConfig.class, "default/component/default-threadpool");
+        assertEquals(-50, cfg.queueSize());
+    }
 }
