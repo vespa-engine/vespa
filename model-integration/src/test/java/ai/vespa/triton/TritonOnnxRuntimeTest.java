@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
 /**
@@ -85,6 +86,52 @@ class TritonOnnxRuntimeTest {
         assertLoadModel(null, opts);
     }
     
+    @Test
+    void two_evaluators_sharing_same_model_with_reference_counting() {
+        var opts = optsBuilder.build();
+        var modelBaseName = "dummy_transformer";
+        var testModelFilePath = String.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
+        var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, opts);
+        
+        var tritonConfig = new TritonConfig.Builder()
+                .target(tritonContainer.getGrpcEndpoint())
+                .modelControlMode(TritonConfig.ModelControlMode.EXPLICIT)
+                .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
+                .build();
+        var tritonRuntime = new TritonOnnxRuntime(tritonConfig);
+        
+        try {
+            // First evaluator creates model files
+            var evaluator1 = tritonRuntime.evaluatorOf(testModelFilePath, opts);
+            var repoFiles = tritonContainer.getModelRepositoryPath().toFile().list();
+            assertNotNull(repoFiles);
+            assertEquals(1, repoFiles.length);
+            assertEquals(modelName, repoFiles[0]);
+
+            // Second evaluator reuses model files
+            var evaluator2 = tritonRuntime.evaluatorOf(testModelFilePath, opts);
+            repoFiles = tritonContainer.getModelRepositoryPath().toFile().list();
+            assertNotNull(repoFiles);
+            assertEquals(1, repoFiles.length);
+            assertEquals(modelName, repoFiles[0]);
+            
+            // Close first evaluator, files remain
+            evaluator1.close();
+            repoFiles = tritonContainer.getModelRepositoryPath().toFile().list();
+            assertNotNull(repoFiles);
+            assertEquals(1, repoFiles.length);
+            assertEquals(modelName, repoFiles[0]);
+
+            // Close second evaluator, files deleted
+            evaluator2.close();
+            repoFiles = tritonContainer.getModelRepositoryPath().toFile().list();
+            assertNotNull(repoFiles);
+            assertEquals(0, repoFiles.length);
+        } finally {
+            tritonRuntime.deconstruct();
+        }
+    }
+    
     // expectedConfigPath == null means we expect an error during model loading
     private void assertLoadModel(String expectedConfigPath, OnnxEvaluatorOptions evalOpts) throws IOException {
         var modelBaseName = "dummy_transformer";
@@ -114,7 +161,7 @@ class TritonOnnxRuntimeTest {
             assertEquals(expectedFilePermissions, Files.getPosixFilePermissions(configFile));
             var actualConfig = Files.readString(Paths.get(configFile.toString()));
             var expectedConfig = Files.readString(Paths.get(expectedConfigPath));
-            assertEquals(expectedConfig, actualConfig);
+            assertEqualConfigs(expectedConfig, actualConfig);
 
             var modelFile = tritonContainer.getModelRepositoryPath().resolve(modelFilePath);
             assertEquals(expectedFilePermissions, Files.getPosixFilePermissions(modelFile));
@@ -122,5 +169,14 @@ class TritonOnnxRuntimeTest {
         } finally {
             tritonRuntime.deconstruct();
         }
+    }
+
+    // Removes hash from model name before comparing configs.
+    // This is to avoid updating hash in all test config files every time options are changed.
+    private void assertEqualConfigs(String expectedConfig, String actualConfig) {
+        var regex = "(name:\\s*\"\\w+)_[a-f0-9]{16}\"";
+        var normalizedExpected = expectedConfig.replaceFirst(regex, "$1\"");
+        var normalizedActual = actualConfig.replaceFirst(regex, "$1\"");
+        assertEquals(normalizedExpected, normalizedActual);
     }
 }

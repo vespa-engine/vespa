@@ -2,38 +2,40 @@
 package ai.vespa.triton;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * An ONNX evaluator that uses {@link TritonOnnxClient} to evaluate the model.
+ * An ONNX evaluator that uses Triton server for inference.
  *
  * @author bjorncs
  */
 class TritonOnnxEvaluator implements OnnxEvaluator {
     private static final Logger log = Logger.getLogger(TritonOnnxEvaluator.class.getName());
     
-    private final TritonOnnxRuntime.TritonModelReference modelReference;
     private final String modelName;
+    private final ResourceReference modelReference;
     private final TritonOnnxClient tritonClient;
-    private final boolean isExplicitControlMode;
+    private final boolean isExplicitControl;
     
     private TritonOnnxClient.ModelMetadata modelMetadata;
     
-    TritonOnnxEvaluator(TritonOnnxRuntime.TritonModelReference modelReference, TritonOnnxClient tritonClient, boolean isExplicitControlMode) {
+    TritonOnnxEvaluator(String modelName, ResourceReference modelReference, TritonOnnxClient tritonClient, boolean isExplicitControl) {
+        this.modelName = modelName;
         this.modelReference = modelReference;
-        this.modelName = modelReference.modelName;
         this.tritonClient = tritonClient;
-        this.isExplicitControlMode = isExplicitControlMode;
+        this.isExplicitControl = isExplicitControl;
         loadModelIfNotReady();
     }
     
     private void loadModelIfNotReady() {
-        if (isExplicitControlMode) {
+        if (isExplicitControl) {
             var isModelReady = tritonClient.isModelReady(modelName);
 
             if (!isModelReady) {
@@ -54,17 +56,18 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
         return evaluate(inputs, true);
     }
 
-    // Evaluate with optional retry in case the model is unloaded because of app redeployment or Triton server restart.
+    // Evaluate with optional retry that reloads the model if it is not ready.
+    // This helps when models are unloaded after Triton server restart.
     private Map<String, Tensor> evaluate(Map<String, Tensor> inputs, boolean allowRetry) {
         try {
             return tritonClient.evaluate(modelName, modelMetadata, inputs);
         } catch (TritonOnnxClient.TritonException e) {
             if (allowRetry) {
-                log.warning("Retrying to evaluate model: " + modelName);
+                log.log(Level.WARNING, "Failed to evaluate ONNX model in Trion. Will retry after reload. Model: " + modelName, e);
                 loadModelIfNotReady();
                 return evaluate(inputs, false);
             }
-            
+
             throw e;
         }
     }
@@ -97,9 +100,6 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
 
     @Override
     public void close() {
-        // Note: This is not safe if evaluator instances share the same underlying Triton model.
-        if (isExplicitControlMode) {
-            tritonClient.unloadModel(modelName);
-        }
+        modelReference.close();
     }
 }
