@@ -33,23 +33,38 @@ public class DefaultThreadpoolProvider extends SimpleComponent implements Thread
 
     @Override
     public void getConfig(ThreadpoolConfig.Builder builder) {
-        if (userOptions != null) {
-            // Convert from config model to ThreadpoolConfig.
-            boolean neg = userOptions.isRelative();
-            int max = neg ? -userOptions.max().intValue() : userOptions.max().intValue();
-            int min = neg ? -userOptions.min().intValue() : userOptions.min().intValue();
-            int queue = neg ? -userOptions.queueSize().intValue() : userOptions.queueSize().intValue();
-            builder.corePoolSize(min).maxthreads(max).queueSize(queue);
-            return;
-        }
+        int maxThreads;
+        int minThreads;
+        int queueSize;
 
+        // Default values
         if (cluster instanceof ApplicationContainerCluster) {
             // Core pool size of 2xcores, and max of 100xcores and using a synchronous Q
             // This is the default pool used by both federation and generally when you ask for an Executor.
-            builder.corePoolSize(-2).maxthreads(-100).queueSize(0);
+            maxThreads = -100;
+            minThreads = -2;
+            queueSize = 0;
         } else {
             // Container clusters such as logserver, metricsproxy and clustercontroller
-            builder.corePoolSize(4).maxthreads(4).queueSize(50);
+            maxThreads = 4;
+            minThreads = 4;
+            queueSize = 50;
         }
+
+        // Convert from config model to ThreadpoolConfig.
+        if (userOptions != null) {
+            boolean neg = userOptions.isRelative();
+            if (userOptions.max() != null) {
+                maxThreads = neg ? -userOptions.max().intValue() : userOptions.max().intValue();
+            }
+            if (userOptions.min() != null) {
+                minThreads = neg ? -userOptions.min().intValue() : userOptions.min().intValue();
+            }
+            if (userOptions.queueSize() != null) {
+                queueSize = neg ? -userOptions.queueSize().intValue() : userOptions.queueSize().intValue();
+            }
+        }
+
+        builder.corePoolSize(minThreads).maxthreads(maxThreads).queueSize(queueSize);
     }
 }
