@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.ListIterator;
 
 import com.yahoo.language.Language;
+import com.yahoo.prelude.IndexFacts;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.component.chain.dependencies.After;
@@ -22,11 +23,12 @@ import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.query.QueryTree;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
 /**
- * Search to do necessary transforms if the query is in segmented in a CJK language.
+ * Does necessary transforms if the query is in segmented in a CJK language.
  *
  * @author Steinar Knutsen
  */
@@ -43,56 +45,57 @@ public class CJKSearcher extends Searcher {
         if ( ! language.isCjk()) return execution.search(query);
 
         QueryTree tree = query.getModel().getQueryTree();
-        tree.setRoot(transform(tree.getRoot()));
+        tree.setRoot(transform(tree.getRoot(), execution.context().getIndexFacts().newSession(query)));
         query.trace("Rewriting for CJK behavior for implicit phrases", true, 2);
         return execution.search(query);
     }
 
-    private Item transform(Item root) {
-        if (root instanceof PhraseItem asPhrase) {
-            if (asPhrase.isExplicit() || hasOverlappingTokens(asPhrase)) return root;
+    private Item transform(Item item, IndexFacts.Session indexFacts) {
+        if (item instanceof PhraseItem phrase) {
+            if (phrase.isExplicit()) return item;
+            if (indexFacts.getIndex(phrase.getIndexName()).isNGram()) return item;
+            if (hasOverlappingTokens(phrase)) return item;
 
             AndItem replacement = new AndItem();
-            for (ListIterator<Item> i = asPhrase.getItemIterator(); i.hasNext();) {
-                Item item = i.next();
-                if (item instanceof WordItem)
-                    replacement.addItem(item);
-                else if (item instanceof PhraseSegmentItem asSegment)
+            for (ListIterator<Item> i = phrase.getItemIterator(); i.hasNext();) {
+                Item child = i.next();
+                if (child instanceof WordItem)
+                    replacement.addItem(child);
+                else if (child instanceof PhraseSegmentItem asSegment)
                     replacement.addItem(new AndSegmentItem(asSegment));
                 else
-                    replacement.addItem(item); // should never get here
+                    replacement.addItem(child); // should never get here
             }
             return replacement;
         }
-        else if (root instanceof PhraseSegmentItem asSegment) {
-            if (asSegment.isExplicit() || hasOverlappingTokens(asSegment))
-                return root;
+        else if (item instanceof PhraseSegmentItem segment) {
+            if (segment.isExplicit() || hasOverlappingTokens(segment))
+                return item;
             else
-                return new AndSegmentItem(asSegment);
+                return new AndSegmentItem(segment);
         }
-        else if (root instanceof SegmentItem) {
-            return root; // avoid descending into AndSegmentItems and similar
+        else if (item instanceof SegmentItem) {
+            return item; // avoid descending into AndSegmentItems and similar
         }
-        else if (root instanceof CompositeItem asComposite) {
-            for (ListIterator<Item> i = asComposite.getItemIterator(); i.hasNext();) {
-                Item item = i.next();
-                Item transformedItem = transform(item);
-                if (item != transformedItem && asComposite.acceptsItemsOfType(transformedItem.getItemType()))
+        else if (item instanceof CompositeItem composite) {
+            for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext();) {
+                Item child = i.next();
+                Item transformedItem = transform(child, indexFacts);
+                if (child != transformedItem && composite.acceptsItemsOfType(transformedItem.getItemType()))
                     i.set(transformedItem);
             }
-            return root;
+            return item;
         }
-        return root;
+        return item;
     }
 
     private boolean hasOverlappingTokens(PhraseItem phrase) {
-        boolean has = false;
         for (Iterator<Item> i = phrase.getItemIterator(); i.hasNext(); ) {
             Item segment = i.next();
-            if (segment instanceof PhraseSegmentItem) has = hasOverlappingTokens((PhraseSegmentItem) segment);
-            if (has) return true;
+            if (segment instanceof PhraseSegmentItem && hasOverlappingTokens((PhraseSegmentItem) segment))
+                return true;
         }
-        return has;
+        return false;
     }
 
     /*
@@ -102,7 +105,7 @@ public class CJKSearcher extends Searcher {
      * if the sum of length of tokens is greater than the length of the original word
      */
     private boolean hasOverlappingTokens(PhraseSegmentItem segments) {
-        int segmentsLength=0;
+        int segmentsLength = 0;
         for (Iterator<Item> i = segments.getItemIterator(); i.hasNext(); ) {
             Item item = i.next();
             if (item instanceof WordItem wordItem) {
