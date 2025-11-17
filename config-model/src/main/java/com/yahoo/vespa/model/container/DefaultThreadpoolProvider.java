@@ -90,7 +90,7 @@ public class DefaultThreadpoolProvider extends SimpleComponent implements Thread
                     .logApplicationPackage(Level.WARNING,
                             "For <threadpool> in <container>: the value " +
                                     part + "=" + value + " will be truncated to " + truncated
-                                    + ". This will be removed in Vespa 9");
+                                    + ". This behavior will be removed in Vespa 9.");
         }
     }
 }
