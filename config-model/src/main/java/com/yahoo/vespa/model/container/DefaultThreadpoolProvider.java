@@ -34,6 +34,7 @@ public class DefaultThreadpoolProvider extends SimpleComponent implements Thread
     @Override
     public void getConfig(ThreadpoolConfig.Builder builder) {
         if (userOptions != null) {
+            // Convert from config model to ThreadpoolConfig.
             boolean neg = userOptions.isRelative();
             int max = neg ? -userOptions.max().intValue() : userOptions.max().intValue();
             int min = neg ? -userOptions.min().intValue() : userOptions.min().intValue();

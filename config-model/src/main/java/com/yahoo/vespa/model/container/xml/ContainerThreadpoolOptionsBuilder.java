@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.builder.xml.XmlHelper;
@@ -7,6 +8,11 @@ import org.w3c.dom.Element;
 
 import java.util.logging.Level;
 
+/**
+ * Parses <threadpool> elements for {@link ContainerThreadpool}.
+ *
+ * @author johsol
+ */
 public class ContainerThreadpoolOptionsBuilder {
     public static ContainerThreadpool.UserOptions build(DeployState ds, Element parent) {
         var options = new ContainerThreadpool.UserOptions(null, null, null, false);
