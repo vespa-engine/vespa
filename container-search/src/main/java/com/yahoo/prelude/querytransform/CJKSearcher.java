@@ -23,7 +23,6 @@ import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.query.QueryTree;
-import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
