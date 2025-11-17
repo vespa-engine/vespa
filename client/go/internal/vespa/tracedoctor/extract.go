@@ -74,6 +74,53 @@ func (q *queryTree) render(output *output) {
 	tab.render(output)
 }
 
+func (q *queryNode) asTable() *table {
+	var simplify func(v slime.Value) slime.Value
+	simplify = func(v slime.Value) slime.Value {
+		if isObjectArray(v) {
+			arr := slime.Array()
+			eachObjectArrayElem(v, func(child slime.Value) {
+				arr.Add(simplify(child))
+			})
+			return arr
+		}
+		if v.Field("[type]").Valid() {
+			obj := slime.Object()
+			v.EachField(func(name string, value slime.Value) {
+				if name != "[type]" {
+					obj.Set(name, simplify(value))
+				}
+			})
+			return obj
+		}
+		return v
+	}
+	view := slime.Object()
+	q.source.EachField(func(name string, val slime.Value) {
+		if name == "children" {
+			view.Set(name, slime.Long(int64(simplify(val).NumEntries())))
+		} else if name != "[type]" {
+			view.Set(name, simplify(val))
+		}
+	})
+	return slimeValueAsTable(view)
+}
+
+func isObjectArray(v slime.Value) bool {
+	return v.Field("[0]").Valid()
+}
+
+func eachObjectArrayElem(obj slime.Value, f func(slime.Value)) {
+	for i := 0; true; i++ {
+		childKey := fmt.Sprintf("[%d]", i)
+		if child := obj.Field(childKey); child.Valid() {
+			f(child)
+		} else {
+			break
+		}
+	}
+}
+
 func newQueryNode(obj slime.Value, t *queryTree) *queryNode {
 	res := &queryNode{source: obj}
 	if id := int(obj.Field("id").AsLong()); id > 0 {
@@ -106,15 +153,9 @@ func newQueryNode(obj slime.Value, t *queryTree) *queryNode {
 		}
 	}
 	res.class = strings.TrimSuffix(res.class, "Blueprint")
-	childMap := obj.Field("children")
-	for i := 0; true; i++ {
-		childKey := fmt.Sprintf("[%d]", i)
-		if child := childMap.Field(childKey); child.Valid() {
-			res.children = append(res.children, newQueryNode(child, t))
-		} else {
-			break
-		}
-	}
+	eachObjectArrayElem(obj.Field("children"), func(child slime.Value) {
+		res.children = append(res.children, newQueryNode(child, t))
+	})
 	return res
 }
 

@@ -15,6 +15,7 @@ type inspectProfileOptions struct {
 	showMedianNode      bool
 	showDispatchedQuery bool
 	makePrompt          bool
+	showQueryNodes      []int
 }
 
 func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
@@ -37,6 +38,9 @@ func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
 	if opts.makePrompt {
 		context.MakePrompt()
 	}
+	if len(opts.showQueryNodes) > 0 {
+		context.ShowQueryNodes(opts.showQueryNodes)
+	}
 	return context.Analyze(cli.Stdout)
 }
 
@@ -57,6 +61,7 @@ func newInspectProfileCmd(cli *CLI) *cobra.Command {
 	cmd.Flags().BoolVar(&opts.showMedianNode, "show-median-node", false, "Show median node analysis")
 	cmd.Flags().BoolVar(&opts.showDispatchedQuery, "show-dispatched-query", false, "Show query sent to search nodes")
 	cmd.Flags().BoolVar(&opts.makePrompt, "make-prompt", false, "Output an LLM prompt instead of human-readable analysis")
+	cmd.Flags().IntSliceVar(&opts.showQueryNodes, "show-query-nodes", nil, "Show detailed information for specific query node IDs")
 	return cmd
 }
 

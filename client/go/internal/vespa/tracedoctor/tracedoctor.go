@@ -62,6 +62,7 @@ type Context struct {
 	showMedianNode      bool
 	showDispatchedQuery bool
 	makePrompt          bool
+	showQueryNodes      []int
 }
 
 func (ctx *Context) ShowMedianNode() {
@@ -74,6 +75,10 @@ func (ctx *Context) ShowDispatchedQuery() {
 
 func (ctx *Context) MakePrompt() {
 	ctx.makePrompt = true
+}
+
+func (ctx *Context) ShowQueryNodes(ids []int) {
+	ctx.showQueryNodes = ids
 }
 
 func NewContext(root slime.Value) *Context {
@@ -141,6 +146,9 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out
 			median = nil
 		}
 		ctx.analyzeThread(trace, *worst, median, out)
+	}
+	if len(ctx.showQueryNodes) > 0 {
+		renderQueryNodes(trace.extractQuery(), ctx.showQueryNodes, out)
 	}
 }
 
