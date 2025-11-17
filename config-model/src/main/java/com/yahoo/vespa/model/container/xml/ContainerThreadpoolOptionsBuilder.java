@@ -9,7 +9,11 @@ import org.w3c.dom.Element;
 import java.util.logging.Level;
 
 /**
- * Parses <threadpool> elements for {@link ContainerThreadpool}.
+ * Parses <code>threadpool</code> XML-elements into {@link ContainerThreadpool.UserOptions}.
+ * <p>
+ * If <code>threads</code> or <code>queue</code> elements are present as children of the
+ * <code>threadpool</code> element, only the new syntax will be used. If a combination of the old
+ * and new syntax is used, the old syntax will be ignored.
  *
  * @author johsol
  */
@@ -32,26 +36,28 @@ public class ContainerThreadpoolOptionsBuilder {
         Double queue = null;
         boolean isRelative;
         var threadsElem = XmlHelper.getOptionalChild(threadpoolElem, "threads").orElse(null);
-        if (threadsElem != null) {
+        var queueElem = XmlHelper.getOptionalChild(threadpoolElem, "queue").orElse(null);
+        if (threadsElem != null || queueElem != null) {
             // New syntax with values relative to number of CPU cores
-            min = Double.parseDouble(threadsElem.getTextContent());
+            if (threadsElem != null) {
+                min = Double.parseDouble(threadsElem.getTextContent());
 
-            // Until variable pool size is removed, prefer max to boost.
-            var maxAttribute = XmlHelper.getOptionalAttribute(threadsElem, "max").orElse(null);
-            var boostAttribute = XmlHelper.getOptionalAttribute(threadsElem, "boost").orElse(null);
-            if (maxAttribute != null && boostAttribute != null) {
-                throw new IllegalArgumentException("For <threads>: both 'max' and 'boost' cannot be specified at the same time. Please use 'max' only.");
-            } else if (maxAttribute != null) {
-                max = Double.parseDouble(maxAttribute);
-            } else if (boostAttribute != null) {
-                ds.getDeployLogger()
-                        .logApplicationPackage(Level.WARNING, "For <threads>: the 'boost' attribute is deprecated, use 'max' instead.");
-                max = Double.parseDouble(boostAttribute);
-            } else {
-                max = min;
+                // Until variable pool size is removed, prefer max to boost.
+                var maxAttribute = XmlHelper.getOptionalAttribute(threadsElem, "max").orElse(null);
+                var boostAttribute = XmlHelper.getOptionalAttribute(threadsElem, "boost").orElse(null);
+                if (maxAttribute != null && boostAttribute != null) {
+                    throw new IllegalArgumentException("For <threads>: both 'max' and 'boost' cannot be specified at the same time. Please use 'max' only.");
+                } else if (maxAttribute != null) {
+                    max = Double.parseDouble(maxAttribute);
+                } else if (boostAttribute != null) {
+                    ds.getDeployLogger()
+                            .logApplicationPackage(Level.WARNING, "For <threads>: the 'boost' attribute is deprecated, use 'max' instead.");
+                    max = Double.parseDouble(boostAttribute);
+                } else {
+                    max = min;
+                }
             }
 
-            var queueElem = XmlHelper.getOptionalChild(threadpoolElem, "queue").orElse(null);
             if (queueElem != null) queue = Double.parseDouble(queueElem.getTextContent());
             isRelative = true;
         } else {
