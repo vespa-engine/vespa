@@ -20,6 +20,7 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateHandler;
@@ -146,6 +147,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private ContainerDocumentApi containerDocumentApi;
     private SecretStore secretStore;
     private final ContainerThreadpool defaultHandlerThreadpool;
+    private DefaultThreadpoolProvider defaultThreadpoolProvider;
 
     private boolean rpcServerEnabled = true;
     private boolean httpServerEnabled = true;
@@ -182,7 +184,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
         addCommonVespaBundles();
         addSimpleComponent(VoidRequestLog.class);
-        addComponent(new DefaultThreadpoolProvider(this));
+        defaultThreadpoolProvider = new DefaultThreadpoolProvider(this);
+        addComponent(defaultThreadpoolProvider);
         defaultHandlerThreadpool = new Handler.DefaultHandlerThreadpool(deployState, null);
         addComponent(defaultHandlerThreadpool);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
@@ -427,6 +430,12 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public Optional<SecretStore> getSecretStore() {
         return Optional.ofNullable(secretStore);
+    }
+
+    public void setDefaultThreadpoolProvider(DefaultThreadpoolProvider defaultThreadpoolProvider) {
+        removeComponent(this.defaultThreadpoolProvider.getComponentId());
+        this.defaultThreadpoolProvider = defaultThreadpoolProvider;
+        addComponent(defaultThreadpoolProvider);
     }
 
     public Map<ComponentId, Component<?, ?>> getComponentsMap() {

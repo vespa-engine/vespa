@@ -12,21 +12,36 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
  *
  * @author bjorncs
  */
-class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolConfig.Producer {
+public class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolConfig.Producer {
 
     private final ContainerCluster<?> cluster;
+    private final ContainerThreadpool.UserOptions userOptions;
 
-    DefaultThreadpoolProvider(ContainerCluster<?> cluster) {
+    public DefaultThreadpoolProvider(ContainerCluster<?> cluster) {
+        this(cluster, null);
+    }
+
+    public DefaultThreadpoolProvider(ContainerCluster<?> cluster, ContainerThreadpool.UserOptions userOptions) {
         super(new ComponentModel(
                 BundleInstantiationSpecification.fromStrings(
                         "default-threadpool",
                         ThreadPoolProvider.class.getName(),
                         null)));
         this.cluster = cluster;
+        this.userOptions = userOptions;
     }
 
     @Override
     public void getConfig(ThreadpoolConfig.Builder builder) {
+        if (userOptions != null) {
+            boolean neg = userOptions.isRelative();
+            int max = neg ? -userOptions.max().intValue() : userOptions.max().intValue();
+            int min = neg ? -userOptions.min().intValue() : userOptions.min().intValue();
+            int queue = neg ? -userOptions.queueSize().intValue() : userOptions.queueSize().intValue();
+            builder.corePoolSize(min).maxthreads(max).queueSize(queue);
+            return;
+        }
+
         if (cluster instanceof ApplicationContainerCluster) {
             // Core pool size of 2xcores, and max of 100xcores and using a synchronous Q
             // This is the default pool used by both federation and generally when you ask for an Executor.
