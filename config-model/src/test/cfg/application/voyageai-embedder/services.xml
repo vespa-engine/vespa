@@ -16,8 +16,7 @@
             <auto-detect-input-type>false</auto-detect-input-type>
             <normalize>true</normalize>
             <truncate>true</truncate>
-            <pool-size>10</pool-size>
-            <cache-size>2000</cache-size>
+            <max-idle-connections>10</max-idle-connections>
         </component>
 
         <!-- VoyageAI Embedder with minimal configuration -->

@@ -384,7 +384,6 @@ public class VoyageAIEmbedderTest {
         configBuilder.model("voyage-3");
         configBuilder.maxRetries(10);
         configBuilder.timeout(5000);
-        configBuilder.cacheSize(100);
 
         return new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
     }

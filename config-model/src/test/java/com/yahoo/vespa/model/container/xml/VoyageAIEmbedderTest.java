@@ -40,8 +40,7 @@ public class VoyageAIEmbedderTest {
         assertFalse(config.autoDetectInputType());
         assertTrue(config.normalize());
         assertTrue(config.truncate());
-        assertEquals(10, config.poolSize());
-        assertEquals(2000, config.cacheSize());
+        assertEquals(10, config.maxIdleConnections());
     }
 
     @Test
@@ -66,8 +65,7 @@ public class VoyageAIEmbedderTest {
         assertTrue(config.autoDetectInputType()); // Default auto-detect
         assertFalse(config.normalize()); // Default no normalization
         assertTrue(config.truncate()); // Default truncate
-        assertEquals(5, config.poolSize()); // Default pool size
-        assertEquals(1000, config.cacheSize()); // Default cache size
+        assertEquals(5, config.maxIdleConnections()); // Default max idle connections
     }
 
     @Test

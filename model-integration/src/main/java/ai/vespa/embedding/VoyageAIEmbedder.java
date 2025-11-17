@@ -25,8 +25,6 @@ import okhttp3.Response;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,18 +70,12 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private final Secret apiKey;
     private final OkHttpClient httpClient;
 
-    // Cache for embeddings
-    private final Map<CacheKey, Tensor> embeddingCache;
-
     @Inject
     public VoyageAIEmbedder(VoyageAiEmbedderConfig config, Embedder.Runtime runtime, Secrets secretStore) {
         this.config = config;
         this.runtime = runtime;
         this.apiKey = getApiKey(config, secretStore);
         this.httpClient = createHttpClient(config);
-        this.embeddingCache = config.cacheSize() > 0
-                ? new LRUCache<>(config.cacheSize())
-                : new ConcurrentHashMap<>();
 
         log.info("VoyageAI embedder initialized with model: " + config.model());
     }
@@ -129,7 +121,8 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                 .connectTimeout(Duration.ofMillis(config.timeout()))
                 .readTimeout(Duration.ofMillis(config.timeout()))
                 .writeTimeout(Duration.ofMillis(config.timeout()))
-                .connectionPool(new ConnectionPool(config.poolSize(), 5, TimeUnit.MINUTES))
+                .callTimeout(Duration.ofMillis(config.timeout()))
+                .connectionPool(new ConnectionPool(config.maxIdleConnections(), 5, TimeUnit.MINUTES))
                 .build();
     }
 
@@ -148,12 +141,11 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         long startTime = System.nanoTime();
 
         try {
-            // Check cache first
+            // Check cache first using Context's cache mechanism
             String inputType = detectInputType(context);
             CacheKey cacheKey = new CacheKey(context.getEmbedderId(), text, inputType);
 
-            @SuppressWarnings("unused")
-            Tensor result = embeddingCache.computeIfAbsent(cacheKey, k -> {
+            Tensor result = context.computeCachedValueIfAbsent(cacheKey, () -> {
                 try {
                     return callVoyageAI(text, inputType, targetType);
                 } catch (IOException | InterruptedException e) {
@@ -338,7 +330,6 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     public void deconstruct() {
         httpClient.dispatcher().executorService().shutdown();
         httpClient.connectionPool().evictAll();
-        embeddingCache.clear();
         super.deconstruct();
     }
 
@@ -381,20 +372,4 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     // ===== Cache Key =====
 
     private record CacheKey(String embedderId, String text, String inputType) {}
-
-    // ===== Simple LRU Cache =====
-
-    private static class LRUCache<K, V> extends java.util.LinkedHashMap<K, V> {
-        private final int maxSize;
-
-        public LRUCache(int maxSize) {
-            super(16, 0.75f, true);
-            this.maxSize = maxSize;
-        }
-
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-            return size() > maxSize;
-        }
-    }
 }

@@ -34,11 +34,8 @@ truncate bool default=true
 
 # Performance Settings
 
-# HTTP client connection pool size
-poolSize int default=5
-
-# LRU cache size for embeddings (0 to disable caching)
-cacheSize int default=1000
+# Maximum number of idle HTTP connections to keep in the pool
+maxIdleConnections int default=5
 
 # Output Processing
 
