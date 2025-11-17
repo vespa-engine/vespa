@@ -47,7 +47,8 @@ public class Subscriber {
                 return Optional.ofNullable(rawConfig);
             }
         } catch (Exception e) {  // To avoid thread throwing exception and loop never running this again
-            log.log(Level.WARNING, "Got exception: " + Exceptions.toMessageString(e));
+            var logLevel = subscriber.isClosed() ? Level.INFO : Level.WARNING;
+            log.log(logLevel, "Got exception: " + Exceptions.toMessageString(e));
         } catch (Throwable e) {
             com.yahoo.protect.Process.logAndDie("Got error, exiting: " + Exceptions.toMessageString(e));
         }
