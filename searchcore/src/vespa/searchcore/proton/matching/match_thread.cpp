@@ -234,6 +234,13 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
             docsCovered += std::min(lastCovered, docid_range.end) - docid_range.begin;
         }
     }
+
+    // Collect additional stats from search iterators
+    // Just the number of distance computations for now
+    MatchingStats::Partition::MatchingStatsCollector collector;
+    visit(collector, "", tools.search());
+    thread_stats.distances_computed(collector.get_distances_computed());
+
     uint32_t matches = context.matches;
     if (do_limit && context.isBelowLimit()) {
         const size_t searchedSoFar = scheduler.total_size(thread_id);

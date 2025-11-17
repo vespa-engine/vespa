@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/searchlib/tensor/distance_function.h>
+#include <vespa/vespalib/objects/objectvisitor.h>
 
 using search::tensor::ITensorAttribute;
 using vespalib::eval::TypedCells;
@@ -39,7 +40,8 @@ public:
     explicit ExactNearestNeighborImpl(bool readonly_distance_heap, Params params_in)
         : ExactNearestNeighborIterator(std::move(params_in)),
           _lastScore(0.0),
-          _readonly_distance_heap(readonly_distance_heap)
+          _readonly_distance_heap(readonly_distance_heap),
+          _distances_computed(0)
     {
     }
 
@@ -50,6 +52,7 @@ public:
         while (__builtin_expect((docId < getEndId()), true)) {
             if ((!has_filter) || params().filter.check(docId)) {
                 double d = computeDistance(docId, distanceLimit);
+                ++_distances_computed;
                 if (d <= distanceLimit) {
                     _lastScore = d;
                     setDocId(docId);
@@ -75,6 +78,12 @@ public:
 
     Trinary is_strict() const override { return strict ? Trinary::True : Trinary::False ; }
 
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override {
+        visitor.openStruct("stats", "ExactNearestNeighborIterator::Stats");
+        visitor.visitInt("distances_computed", _distances_computed);
+        visitor.closeStruct();
+    }
+
 private:
     double computeDistance(uint32_t docId, double limit) {
         return params().distance_calc->template calc_with_limit<has_single_subspace>(docId, limit);
@@ -82,6 +91,7 @@ private:
 
     double                 _lastScore;
     const bool             _readonly_distance_heap;
+    size_t                 _distances_computed;
 };
 
 template <bool strict, bool has_filter, bool has_single_subspace>
