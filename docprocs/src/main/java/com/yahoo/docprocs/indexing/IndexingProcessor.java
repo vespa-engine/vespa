@@ -163,7 +163,7 @@ public class IndexingProcessor extends DocumentProcessor {
     private static <T> Map<String, T> toMap(ComponentRegistry<T> registry, Class<?> defaultProviderClass) {
         var map = registry.allComponentsById().entrySet().stream()
                 .collect(Collectors.toMap(e -> e.getKey().stringValue(), Map.Entry::getValue));
-        if (map.size() > 1 && defaultProviderClass != null) {
+        if (defaultProviderClass != null) {
             map.remove(defaultProviderClass.getName());
             // Ideally, this should be handled by dependency injection, however for now this workaround is necessary.
         }
