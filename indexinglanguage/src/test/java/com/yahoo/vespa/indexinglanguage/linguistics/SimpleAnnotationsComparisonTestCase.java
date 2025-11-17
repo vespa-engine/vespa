@@ -183,8 +183,8 @@ public class SimpleAnnotationsComparisonTestCase {
 
         // Annotate with simple path
         StringFieldValue simpleValue = new StringFieldValue(text);
-        SimpleIndexingAnnotations simple = new SimpleIndexingAnnotations();
-        boolean simpleResult = annotator.annotateSimple(simple, text, tokens, termOccurrences);
+        boolean simpleResult = annotator.annotateSimple(simpleValue, tokens, termOccurrences);
+        var simple = simpleValue.getSimpleAnnotations();
 
         // Annotate with full path (need fresh token iterator)
         StringFieldValue fullValue = new StringFieldValue(text);

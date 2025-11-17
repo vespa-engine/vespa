@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -115,58 +116,42 @@ public class StringFieldValue extends FieldValue {
         getAnnotationMode();
     }
 
+    private void clearAnnotations() {
+        // Clear all annotations
+        simpleAnnotations = null;
+        if (spanTrees != null) {
+            spanTrees.clear();
+            spanTrees = null;
+        }
+    }
+
     /**
-     * Changes the annotation mode, handling conversions atomically.
-     * This is the single point where mode transitions occur.
-     *
-     * @param targetMode the desired annotation mode
+     * Ensure any "simple" annotations are converted to full SpanTree.
      */
-    private void changeAnnotationMode(AnnotationMode targetMode) {
-        AnnotationMode currentMode = getAnnotationMode();
-        if (currentMode == targetMode) {
-            return;  // Already in target mode
+    private void convertAnySimpleAnnotations() {
+        // Convert SIMPLE→FULL if needed
+        if (simpleAnnotations != null) {
+            if (shouldLogSimpleToFull()) {
+                log.warning("Converting from SIMPLE to FULL annotation mode - this may indicate inefficient code path");
+            }
+            spanTrees = new HashMap<>(1);
+            var tree = simpleAnnotations.toSpanTree(SpanTrees.LINGUISTICS);
+            tree.setStringFieldValue(this);
+            spanTrees.put(SpanTrees.LINGUISTICS, tree);
+            simpleAnnotations = null;
         }
+    }
 
-        switch (targetMode) {
-            case NONE:
-                // Clear all annotations
-                simpleAnnotations = null;
-                if (spanTrees != null) {
-                    spanTrees.clear();
-                    spanTrees = null;
-                }
-                break;
-
-            case SIMPLE:
-                // Should not convert FULL→SIMPLE (not supported)
-                if (currentMode == AnnotationMode.FULL) {
-                    throw new IllegalStateException(
-                        "Cannot convert from FULL to SIMPLE annotation mode");
-                }
-                // From NONE→SIMPLE:
-                simpleAnnotations = new SimpleIndexingAnnotations();
-                break;
-
-            case FULL:
-                // Convert SIMPLE→FULL if needed
-                if (currentMode == AnnotationMode.SIMPLE) {
-                    log.warning("Converting from SIMPLE to FULL annotation mode - this may indicate inefficient code path");
-                    spanTrees = new HashMap<>(1);
-                    var tree = simpleAnnotations.toSpanTree(SpanTrees.LINGUISTICS);
-                    tree.setStringFieldValue(this);
-                    spanTrees.put(SpanTrees.LINGUISTICS, tree);
-                    simpleAnnotations = null;
-                } else if (currentMode == AnnotationMode.NONE) {
-                    // From NONE→FULL, just ensure spanTrees exists
-                    if (spanTrees == null) {
-                        spanTrees = new HashMap<>(1);
-                    }
-                }
-                break;
-        }
-        if (targetMode != getAnnotationMode()) {
-            throw new IllegalStateException("Could not switch annotation mode from " + currentMode + " to " + targetMode);
-        }
+    private static boolean shouldLogSimpleToFull() {
+        int count = simpleToFullCounter.getAndAdd(1);
+        return shouldLogForCount(count);
+    }
+    private static final AtomicInteger simpleToFullCounter = new AtomicInteger();
+    private static boolean shouldLogForCount(int count) {
+        if (count < 100) return true;
+        if (count < 1000) return (count % 100) == 0;
+        if (count < 100000) return (count % 1000) == 0;
+        return (count % 10000) == 0;
     }
 
     /**
@@ -204,10 +189,11 @@ public class StringFieldValue extends FieldValue {
                 break;
 
             case FULL:
-                // Deep copy span trees
                 copy.spanTrees = new HashMap<>(spanTrees.size());
                 for (Map.Entry<String, SpanTree> entry : spanTrees.entrySet()) {
-                    copy.spanTrees.put(entry.getKey(), new SpanTree(entry.getValue()));
+                    var tree = new SpanTree(entry.getValue());
+                    tree.setStringFieldValue(copy);
+                    copy.spanTrees.put(entry.getKey(), tree);
                 }
                 copy.simpleAnnotations = null;
                 break;
@@ -225,7 +211,7 @@ public class StringFieldValue extends FieldValue {
     @Override
     public void clear() {
         value = "";
-        changeAnnotationMode(AnnotationMode.NONE);
+        clearAnnotations();
     }
 
     /**
@@ -238,9 +224,7 @@ public class StringFieldValue extends FieldValue {
      */
     @Override
     public void assign(Object o) {
-        // Clear existing annotations first
-        changeAnnotationMode(AnnotationMode.NONE);
-
+        clearAnnotations();
         if (!checkAssign(o)) {
             return;
         }
@@ -253,6 +237,12 @@ public class StringFieldValue extends FieldValue {
                     break;
                 case FULL:
                     spanTrees = other.spanTrees;
+                    if (spanTrees != null) {
+                        // Steal span trees
+                        for (var tree : spanTrees.values()) {
+                            tree.setStringFieldValue(this);
+                        }
+                    }
                     break;
                 case NONE:
                     // Already cleared
@@ -277,9 +267,7 @@ public class StringFieldValue extends FieldValue {
      * @return an unmodifiable Collection of the span trees with annotations over this String, or an empty Collection
      */
     public Collection<SpanTree> getSpanTrees() {
-        if (simpleAnnotations != null && simpleAnnotations.getCount() > 0) {
-            changeAnnotationMode(AnnotationMode.FULL);
-        }
+        convertAnySimpleAnnotations();
         if (spanTrees == null) {
             return List.of();
         }
@@ -288,6 +276,7 @@ public class StringFieldValue extends FieldValue {
 
     /** Returns the map of spantrees. Might be null. */
     public final Map<String, SpanTree> getSpanTreeMap() {
+        convertAnySimpleAnnotations();
         return spanTrees;
     }
 
@@ -298,11 +287,7 @@ public class StringFieldValue extends FieldValue {
      * @return the span tree associated with the given name, or null if this does not exist.
      */
     public SpanTree getSpanTree(String name) {
-        // If in simple mode and requesting LINGUISTICS, promote to full mode (cache conversion)
-        if (getAnnotationMode() == AnnotationMode.SIMPLE && SpanTrees.LINGUISTICS.equals(name)) {
-            // Promote to full mode (one-time conversion for caching)
-            changeAnnotationMode(AnnotationMode.FULL);
-        }
+        convertAnySimpleAnnotations();
         return spanTrees != null ? spanTrees.get(name) : null;
     }
 
@@ -314,7 +299,7 @@ public class StringFieldValue extends FieldValue {
      * @param name the name of the span tree to check for
      * @return true if a span tree with this name exists (in either simple or full mode)
      */
-    public boolean hasSpanTree(String name) {
+    public boolean hasAnnotations(String name) {
         // Check simple mode for LINGUISTICS tree
         if (simpleAnnotations != null && SpanTrees.LINGUISTICS.equals(name)) {
             return true;
@@ -333,8 +318,9 @@ public class StringFieldValue extends FieldValue {
      */
     public SpanTree setSpanTree(SpanTree spanTree) {
         // Ensure we're in full mode (converts if needed)
-        changeAnnotationMode(AnnotationMode.FULL);
-
+        convertAnySimpleAnnotations();
+        if (spanTrees == null)
+            spanTrees = new HashMap<>(1);
         if (spanTrees.containsKey(spanTree.getName())) {
             throw new IllegalArgumentException("Span tree " + spanTree.getName() + " already exists.");
         }
@@ -373,14 +359,14 @@ public class StringFieldValue extends FieldValue {
      *
      * @return SimpleIndexingAnnotations instance, or null if simple mode not enabled or already using full SpanTree
      */
-    public SimpleIndexingAnnotations createSimpleAnnotations() {
+    public boolean wantSimpleAnnotations() {
         if (!SimpleIndexingAnnotations.isEnabled()) {
-            return null;
+            return false;
         }
         if (getAnnotationMode() == AnnotationMode.FULL) {
-            return null;
+            return false;
         }
-        return new SimpleIndexingAnnotations();
+        return true;
     }
 
     /**
@@ -397,7 +383,7 @@ public class StringFieldValue extends FieldValue {
      */
     public void setSimpleAnnotations(SimpleIndexingAnnotations simple) {
         // Clear existing annotations, then set simple
-        changeAnnotationMode(AnnotationMode.NONE);
+        clearAnnotations();
         this.simpleAnnotations = simple;
         assertInvariant();
     }

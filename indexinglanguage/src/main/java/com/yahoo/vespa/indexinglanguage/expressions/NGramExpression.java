@@ -67,8 +67,8 @@ public final class NGramExpression extends Expression {
         context.setCurrentValue(output);
 
         // Try simple path first
-        SimpleIndexingAnnotations simple = output.createSimpleAnnotations();
-        if (simple != null) {
+        if (output.wantSimpleAnnotations()) {
+            SimpleIndexingAnnotations simple = new SimpleIndexingAnnotations();
             annotateNGramsSimple(simple, output.getString());
             output.setSimpleAnnotations(simple);
             return;
