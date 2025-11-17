@@ -7,6 +7,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
+#include <vespa/searchlib/tensor/counting_bound_distance_function.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/log/log.h>
 
@@ -74,7 +75,8 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _global_filter_hits(),
       _global_filter_hit_ratio(),
       _doom(doom),
-      _matching_phase(MatchingPhase::FIRST_PHASE)
+      _matching_phase(MatchingPhase::FIRST_PHASE),
+      _distances_computed(0)
 {
     _distance_heap.set_distance_threshold(_hnsw_params.distance_threshold);
     uint32_t est_hits = _attr_tensor.get_num_docs();
@@ -132,7 +134,7 @@ void
 NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborIndex* nns_index)
 {
     uint32_t k = _adjusted_target_hits;
-    const auto &df = _distance_calc->function();
+    tensor::CountingBoundDistanceFunction df(_distance_calc->function());
     if (_global_filter->is_active()) {
         _found_hits = nns_index->find_top_k_with_filter(k, df, *_global_filter, _global_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit, _hnsw_params.filter_first_exploration,
                                                         k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _doom, _hnsw_params.distance_threshold);
@@ -141,6 +143,7 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
         _found_hits = nns_index->find_top_k(k, df, k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K;
     }
+    _distances_computed += df.distances_computed();
 }
 
 void
@@ -182,7 +185,7 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     if (_algorithm == Algorithm::INDEX_TOP_K || _algorithm == Algorithm::INDEX_TOP_K_WITH_FILTER) {
         visitor.visitInt("top_k_hits", _found_hits.size());
     }
-    visitor.visitInt("distances_computed", 0);
+    visitor.visitInt("distances_computed", _distances_computed);
 
     visitor.openStruct("global_filter", "GlobalFilter");
     GlobalFilterLimits limits;
