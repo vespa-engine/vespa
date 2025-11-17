@@ -59,9 +59,8 @@ public class SimpleAnnotationsSerializationTestCase {
      */
     private StringFieldValue createWithSimpleAnnotations(String text, int[][] annotations) {
         StringFieldValue value = new StringFieldValue(text);
-        SimpleIndexingAnnotations simple = value.createSimpleAnnotations();
-        assertNotNull("Simple annotations should be enabled", simple);
-
+        assertTrue("Simple annotations should be enabled", value.wantSimpleAnnotations());
+        SimpleIndexingAnnotations simple = new SimpleIndexingAnnotations();
         for (int[] ann : annotations) {
             int from = ann[0];
             int length = ann[1];
@@ -237,9 +236,8 @@ public class SimpleAnnotationsSerializationTestCase {
             // Test multiple annotations on same span (stemming mode ALL)
             // "Teslas" with stems ["tesla", "teslas"]
             StringFieldValue value = new StringFieldValue("Teslas");
-            SimpleIndexingAnnotations simple = value.createSimpleAnnotations();
-            assertNotNull(simple);
-
+            assertTrue("Simple annotations should be enabled", value.wantSimpleAnnotations());
+            SimpleIndexingAnnotations simple = new SimpleIndexingAnnotations();
             simple.add(0, 6, "tesla");   // First stem
             simple.add(0, 6, "teslas");  // Second stem - SAME SPAN
             value.setSimpleAnnotations(simple);

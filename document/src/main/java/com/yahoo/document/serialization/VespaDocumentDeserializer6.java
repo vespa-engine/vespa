@@ -305,10 +305,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
 
         int numAnnotations = buf.getInt1_2_4Bytes();
-        if (numAnnotations < numSpans) {
-            log.fine("Invalid annotation count: " + numAnnotations + " annotations for " + numSpans + " spans (need at least 1:1)");
-            return null;  // Should be at least 1 annotation per span
-        }
+        // we expect numAnnotations >= numSpans, but we can just ignore un-annotated spans.
 
         // Build SimpleIndexingAnnotations while reading and validating annotations
         SimpleIndexingAnnotations simple = new SimpleIndexingAnnotations();

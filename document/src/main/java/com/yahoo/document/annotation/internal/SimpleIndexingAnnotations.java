@@ -75,7 +75,7 @@ public final class SimpleIndexingAnnotations {
     }
 
     private void ensureCapacity() {
-        if (count * 2 >= positions.length) {
+        if (count + 1 > terms.length) {
             // Grow by 2x
             int[] newPos = new int[positions.length * 2];
             String[] newTerms = new String[terms.length * 2];
@@ -107,8 +107,8 @@ public final class SimpleIndexingAnnotations {
 
     /**
      * Convert to full SpanTree representation for API compatibility.
-     * This is only called when code actually needs to iterate over annotations,
-     * which is rare (mainly deprecated FlattenExpression and tests).
+     * This is only called when code actually wants to iterate over
+     * or manipulate annotations, which is rare (mainly tests).
      * Serialization uses direct path and never calls this.
      */
     public SpanTree toSpanTree(String name) {

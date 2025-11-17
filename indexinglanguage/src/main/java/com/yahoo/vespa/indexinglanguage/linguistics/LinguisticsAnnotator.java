@@ -96,7 +96,7 @@ public class LinguisticsAnnotator {
      * @return whether anything was annotated
      */
     public boolean annotate(StringFieldValue text, DocumentId docId, boolean isReindexingOperation) {
-        if (text.hasSpanTree(SpanTrees.LINGUISTICS)) return true;  // Already annotated with LINGUISTICS.
+        if (text.hasAnnotations(SpanTrees.LINGUISTICS)) return true;  // Already annotated with LINGUISTICS.
 
         Tokenizer tokenizer = factory.getTokenizer();
         String input = (text.getString().length() <= config.getMaxTokenizeLength())
@@ -108,14 +108,9 @@ public class LinguisticsAnnotator {
         Iterable<Token> tokens = tokenizer.tokenize(input, config.asLinguisticsParameters());
         TermOccurrences termOccurrences = new TermOccurrences(config.getMaxTermOccurrences());
 
-        // Try simple path first for maximum memory efficiency
-        SimpleIndexingAnnotations simple = text.createSimpleAnnotations();
-        if (simple != null) {
-            boolean add = annotateSimple(simple, text.getString(), tokens, termOccurrences);
-            if (add) {
-                text.setSimpleAnnotations(simple);
-            }
-            return add;
+        // Try simple path first
+        if (text.wantSimpleAnnotations()) {
+            return annotateSimple(text, tokens, termOccurrences);
         }
 
         // Fallback to full SpanTree mode
@@ -126,52 +121,55 @@ public class LinguisticsAnnotator {
      * Lightweight annotation path - creates flat arrays instead of object graphs.
      * Package-private for testing.
      */
-    boolean annotateSimple(SimpleIndexingAnnotations simple, String input,
+    boolean annotateSimple(StringFieldValue text,
                            Iterable<Token> tokens,
                            TermOccurrences termOccurrences) {
-        int count = 0;
+        SimpleIndexingAnnotations simple = new SimpleIndexingAnnotations();
+        String input = text.getString();
         for (Token token : tokens) {
-            count += addAnnotationSimple(simple, input, token, termOccurrences);
+            addAnnotationSimple(simple, input, token, termOccurrences);
         }
-        return count > 0;
+        if (simple.getCount() > 0) {
+            text.setSimpleAnnotations(simple);
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    private int addAnnotationSimple(SimpleIndexingAnnotations simple, String input, Token token,
+    private void addAnnotationSimple(SimpleIndexingAnnotations simple, String input, Token token,
                                     TermOccurrences termOccurrences) {
         if (!token.isSpecialToken()) {
             if (token.getNumComponents() > 0) {
-                int count = 0;
                 for (int i = 0; i < token.getNumComponents(); ++i) {
-                    count += addAnnotationSimple(simple, input, token.getComponent(i), termOccurrences);
+                    addAnnotationSimple(simple, input, token.getComponent(i), termOccurrences);
                 }
-                return count;
+                return;
             }
-            if (!token.isIndexable()) return 0;
+            if (!token.isIndexable()) return;
         }
 
         int from = (int) token.getOffset();
         int length = token.getOrig().length();
 
-        if (from >= input.length()) return 0;
-        if (from + length > input.length()) return 0;
+        if (from >= input.length()) return;
+        if (from + length > input.length()) return;
 
         if (config.getStemMode() == StemMode.ALL) {
-            return addAllStemsSimple(simple, input, token, from, length, termOccurrences);
+            addAllStemsSimple(simple, input, token, from, length, termOccurrences);
         } else {
             String term = token.getTokenString();
-            if (term == null || term.trim().isEmpty()) return 0;
-            if (term.length() > config.getMaxTokenLength()) return 0;
-            if (!termOccurrences.termCountBelowLimit(term)) return 0;
+            if (term == null || term.trim().isEmpty()) return;
+            if (term.length() > config.getMaxTokenLength()) return;
+            if (!termOccurrences.termCountBelowLimit(term)) return;
 
             String termOverride = term.equals(token.getOrig()) ? null : term;
             simple.add(from, length, termOverride);
-            return 1;
         }
     }
 
-    private int addAllStemsSimple(SimpleIndexingAnnotations simple, String input, Token token,
-                                  int from, int length, TermOccurrences termOccurrences) {
-        int count = 0;
+    private void addAllStemsSimple(SimpleIndexingAnnotations simple, String input, Token token,
+                                   int from, int length, TermOccurrences termOccurrences) {
         String indexableOriginal = config.getLowercase() ? toLowerCase(token.getOrig()) : token.getOrig();
         String term = token.getTokenString();
 
@@ -179,13 +177,11 @@ public class LinguisticsAnnotator {
             if (term.length() <= config.getMaxTokenLength() && termOccurrences.termCountBelowLimit(term)) {
                 String termOverride = term.equals(token.getOrig()) ? null : term;
                 simple.add(from, length, termOverride);
-                count++;
             }
             if (!term.equals(indexableOriginal) && indexableOriginal.length() <= config.getMaxTokenLength() &&
                 termOccurrences.termCountBelowLimit(indexableOriginal)) {
                 String termOverride = indexableOriginal.equals(token.getOrig()) ? null : indexableOriginal;
                 simple.add(from, length, termOverride);
-                count++;
             }
         }
 
@@ -195,10 +191,7 @@ public class LinguisticsAnnotator {
             if (stem.length() > config.getMaxTokenLength()) continue;
             if (!termOccurrences.termCountBelowLimit(stem)) continue;
             simple.add(from, length, stem);
-            count++;
         }
-
-        return count;
     }
 
     /** For unit testing only */

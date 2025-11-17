@@ -60,8 +60,8 @@ public final class ExactExpression extends Expression {
         }
 
         // Try simple path first
-        SimpleIndexingAnnotations simple = output.createSimpleAnnotations();
-        if (simple != null) {
+        if (output.wantSimpleAnnotations()) {
+            SimpleIndexingAnnotations simple = new SimpleIndexingAnnotations();
             String termOverride = next.equals(prev) ? null : next;
             simple.add(0, prev.length(), termOverride);
             // Note: TOKEN_TYPE annotation is not created - it's unused by C++ anyway
