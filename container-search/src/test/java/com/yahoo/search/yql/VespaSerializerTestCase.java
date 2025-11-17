@@ -156,23 +156,23 @@ public class VespaSerializerTestCase {
 
     @Test
     void testNearestNeighbor() {
-        parseAndConfirm("{label: \"foo\", targetNumHits: 1000}nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("{targetNumHits: 42}nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("{targetNumHits: 1, hnsw.exploreAdditionalHits: 76}nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("{targetNumHits: 2, approximate: false}nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("{targetNumHits: 3, hnsw.exploreAdditionalHits: 67, approximate: false}nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("{targetNumHits: 4, distanceThreshold: 100100.25}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{label: \"foo\", targetHits: 1000}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetHits: 42}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetHits: 1, hnsw.exploreAdditionalHits: 76}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetHits: 2, approximate: false}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetHits: 3, hnsw.exploreAdditionalHits: 67, approximate: false}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetHits: 4, distanceThreshold: 100100.25}nearestNeighbor(semantic_embedding, my_property)");
     }
 
     @Test
     void testNearestNeighborWithHnswTuningParameters() {
-        parseAndConfirm("{targetNumHits: 10, hnsw.approximateThreshold: 0.05}nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("{targetNumHits: 10, hnsw.explorationSlack: 0.1}nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("{targetNumHits: 10, hnsw.filterFirstExploration: 0.3}nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("{targetNumHits: 10, hnsw.filterFirstThreshold: 0.2}nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("{targetNumHits: 10, hnsw.postFilterThreshold: 0.8}nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("{targetNumHits: 10, hnsw.targetHitsMaxAdjustmentFactor: 20.0}nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("{targetNumHits: 10, hnsw.filterFirstExploration: 0.25, hnsw.filterFirstThreshold: 0.1, hnsw.postFilterThreshold: 0.9}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetHits: 10, hnsw.approximateThreshold: 0.05}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetHits: 10, hnsw.explorationSlack: 0.1}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetHits: 10, hnsw.filterFirstExploration: 0.3}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetHits: 10, hnsw.filterFirstThreshold: 0.2}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetHits: 10, hnsw.postFilterThreshold: 0.8}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetHits: 10, hnsw.targetHitsMaxAdjustmentFactor: 20.0}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetHits: 10, hnsw.filterFirstExploration: 0.25, hnsw.filterFirstThreshold: 0.1, hnsw.postFilterThreshold: 0.9}nearestNeighbor(semantic_embedding, my_property)");
     }
 
     @Test
@@ -339,7 +339,7 @@ public class VespaSerializerTestCase {
 
     @Test
     void testAnnotatedWeakAnd() {
-        parseAndConfirm("({" + YqlParser.TARGET_NUM_HITS + ": 10}weakAnd(a contains \"A\", b contains \"B\"))");
+        parseAndConfirm("({" + YqlParser.TARGET_HITS + ": 10}weakAnd(a contains \"A\", b contains \"B\"))");
     }
 
     @Test

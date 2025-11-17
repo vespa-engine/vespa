@@ -150,6 +150,10 @@ public class TextualQueryRepresentation {
             children.add(expose(child));
         }
 
+        private boolean hasChildren() {
+            return ! children.isEmpty();
+        }
+
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
@@ -162,17 +166,25 @@ public class TextualQueryRepresentation {
             }
 
             if (value != null || !children.isEmpty()) {
-                builder.append("{\n");
+                builder.append("{");
+                if (hasChildren())
+                    builder.append("\n");
                 addBody(builder);
-                builder.append("}\n");
+                builder.append("}");
+                if (hasChildren())
+                    builder.append("\n");
             }
             return builder.toString();
         }
 
         private void addBody(StringBuilder builder) {
             if (value != null) {
-                addIndented(builder, valueString(value));
-            } else {
+                if (hasChildren())
+                    addIndented(builder, valueString(value));
+                else
+                    builder.append(valueString(value));
+            }
+            else {
                 for (ItemDiscloser child : children) {
                     addIndented(builder, child.toString());
                 }

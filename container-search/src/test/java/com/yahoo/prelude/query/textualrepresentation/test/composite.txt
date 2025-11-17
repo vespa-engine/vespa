@@ -1,8 +1,0 @@
-composite[reference=0]{
-  basic[%id=0 01=null 02="a string." 03=1234 04=true 05=example 06=(1 2 3) 07=("x" "y" "z") 08=() 09=(1 2 3) 10=map(1=>"one" 2=>"two" 3=>("x" "y" "z"))]{
-    "example-value: \"12\""
-  }
-  basic[01=null 02="a string." 03=1234 04=true 05=example 06=(1 2 3) 07=("x" "y" "z") 08=() 09=(1 2 3) 10=map(1=>"one" 2=>"two" 3=>("x" "y" "z"))]{
-    "example-value: \"12\""
-  }
-}

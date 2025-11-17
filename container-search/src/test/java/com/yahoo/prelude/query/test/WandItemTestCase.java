@@ -87,9 +87,7 @@ public class WandItemTestCase {
         item.setScoreThreshold(20);
         item.setThresholdBoostFactor(2.0);
         assertEquals("WAND[index=\"myfield\" scoreThreshold=20.0 targetNumHits=10 thresholdBoostFactor=2.0]{\n" +
-                "  PURE_WEIGHTED_STRING[weight=10]{\n" +
-                "    \"term1\"\n" +
-                "  }\n" +
+                "  PURE_WEIGHTED_STRING[weight=10]{\"term1\"}\n" +
                 "}\n",
                 new TextualQueryRepresentation(item).toString());
     }

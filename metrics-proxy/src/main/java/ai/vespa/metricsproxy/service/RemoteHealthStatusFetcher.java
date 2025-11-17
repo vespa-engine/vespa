@@ -11,8 +11,10 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.INFO;
 
 /**
  * Fetch health status for a given vespa service
@@ -62,8 +64,12 @@ public class RemoteHealthStatusFetcher extends HttpMetricFetcher {
             }
             return HealthMetric.get(code, message);
 
-        } catch (IOException e) {
-            log.log(Level.FINE, () -> "Failed to parse json response from metrics page:" + e + ":" + data);
+        } catch (Exception e) {
+            var level = INFO;
+            if (e instanceof IOException) {
+                level = FINE;
+            }
+            log.log(level, () -> "Failed to parse json response from metrics page:" + e + ":" + data);
             return HealthMetric.getUnknown("Not able to parse json from status page");
         }
     }

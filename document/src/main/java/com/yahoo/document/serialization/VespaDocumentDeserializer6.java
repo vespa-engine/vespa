@@ -6,10 +6,13 @@ import com.yahoo.document.annotation.AlternateSpanList;
 import com.yahoo.document.annotation.Annotation;
 import com.yahoo.document.annotation.AnnotationReference;
 import com.yahoo.document.annotation.AnnotationType;
+import com.yahoo.document.annotation.AnnotationTypes;
+import com.yahoo.document.annotation.internal.SimpleIndexingAnnotations;
 import com.yahoo.document.annotation.Span;
 import com.yahoo.document.annotation.SpanList;
 import com.yahoo.document.annotation.SpanNode;
 import com.yahoo.document.annotation.SpanTree;
+import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
@@ -67,6 +70,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import static com.yahoo.text.Utf8.calculateStringPositions;
 
@@ -77,6 +81,12 @@ import static com.yahoo.text.Utf8.calculateStringPositions;
  */
 @Deprecated(forRemoval = true)
 public class VespaDocumentDeserializer6 extends BufferSerializer implements DocumentDeserializer {
+
+    private static final Logger log = Logger.getLogger(VespaDocumentDeserializer6.class.getName());
+
+    // Annotation feature flags (bit masks)
+    private static final byte ANNOTATION_HAS_SPAN_NODE = 0x01;
+    private static final byte ANNOTATION_HAS_VALUE = 0x02;
 
     private final DocumentTypeManager manager;
     private short version;
@@ -89,6 +99,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         this.manager = manager;
         this.version = Document.SERIALIZED_VERSION;
     }
+
 
     @Override
     public DocumentTypeManager getTypeRepo() {
@@ -231,15 +242,21 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
                 int size = buf.getInt();
                 int startPos = buf.position();
 
-                int numSpanTrees = buf.getInt1_2_4Bytes();
+                // Try simple path first if feature is enabled
+                if (SimpleIndexingAnnotations.isEnabled() && tryReadingSimpleAnnotations(value, stringPositions)) {
+                    // Successfully deserialized to SimpleIndexingAnnotations
+                } else {
+                    // Either simple annotations disabled, or fallback to full SpanTree deserialization
+                    int numSpanTrees = buf.getInt1_2_4Bytes();
 
-                for (int i = 0; i < numSpanTrees; i++) {
-                    SpanTree tree = new SpanTree();
-                    StringFieldValue treeName = new StringFieldValue();
-                    treeName.deserialize(this);
-                    tree.setName(treeName.getString());
-                    value.setSpanTree(tree);
-                    readSpanTree(tree, false);
+                    for (int i = 0; i < numSpanTrees; i++) {
+                        SpanTree tree = new SpanTree();
+                        StringFieldValue treeName = new StringFieldValue();
+                        treeName.deserialize(this);
+                        tree.setName(treeName.getString());
+                        value.setSpanTree(tree);
+                        readSpanTree(tree, false);
+                    }
                 }
 
                 buf.position(startPos + size);
@@ -247,6 +264,201 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
                 stringPositions = null;
             }
         }
+    }
+
+    /**
+     * Try to read annotations directly into SimpleIndexingAnnotations representation.
+     * Returns true if successful, false if not compatible (and resets buffer position).
+     * This avoids creating intermediate SpanTree/Span/Annotation objects.
+     */
+    private boolean tryReadingSimpleAnnotations(StringFieldValue value, int[] stringPositions) {
+        int savedPos = buf.position();
+        SimpleIndexingAnnotations simple = readSimpleAnnotations(stringPositions);
+        if (simple != null) {
+            value.setSimpleAnnotations(simple);
+            return true;
+        }
+        // Failed validation, reset position
+        log.fine("Failed to read SimpleIndexingAnnotations, falling back to full SpanTree deserialization");
+        buf.position(savedPos);
+        return false;
+    }
+
+    /**
+     * Reads SimpleIndexingAnnotations from the buffer.
+     * Returns a populated SimpleIndexingAnnotations on success, or null if the structure
+     * is not compatible with the simple representation.
+     */
+    private SimpleIndexingAnnotations readSimpleAnnotations(int[] stringPositions) {
+        // Validate header and get counts
+        if (!readSimpleAnnotationsHeader()) {
+            return null;
+        }
+
+        int numSpans = buf.getInt1_2_4Bytes();
+        int[] spanFromBytes = new int[numSpans+1];
+        int[] spanLengthBytes = new int[numSpans+1];
+
+        // Read and validate all spans
+        if (!readAndValidateSpans(numSpans, spanFromBytes, spanLengthBytes)) {
+            return null;
+        }
+
+        int numAnnotations = buf.getInt1_2_4Bytes();
+        if (numAnnotations < numSpans) {
+            log.fine("Invalid annotation count: " + numAnnotations + " annotations for " + numSpans + " spans (need at least 1:1)");
+            return null;  // Should be at least 1 annotation per span
+        }
+
+        // Build SimpleIndexingAnnotations while reading and validating annotations
+        SimpleIndexingAnnotations simple = new SimpleIndexingAnnotations();
+
+        if (!buildSimpleAnnotations(simple, numAnnotations, spanFromBytes, spanLengthBytes, stringPositions)) {
+            return null;
+        }
+
+        return simple;
+    }
+
+    /**
+     * Reads and validates the header of a simple annotations structure.
+     * Checks: single "linguistics" span tree with SpanList root.
+     */
+    private boolean readSimpleAnnotationsHeader() {
+        // Check number of trees
+        int numSpanTrees = buf.getInt1_2_4Bytes();
+        if (numSpanTrees != 1) {
+            log.fine("SimpleIndexingAnnotations requires exactly 1 span tree, found: " + numSpanTrees);
+            return false;
+        }
+
+        // Read and check tree name
+        StringFieldValue treeName = new StringFieldValue();
+        treeName.deserialize(this);
+        if (!SpanTrees.LINGUISTICS.equals(treeName.getString())) {
+            log.fine("SimpleIndexingAnnotations requires 'linguistics' span tree, found: '" + treeName.getString() + "'");
+            return false;
+        }
+
+        // Check root node type
+        byte rootType = buf.get();
+        if (rootType != SpanList.ID) {
+            log.fine("SimpleIndexingAnnotations requires SpanList root node, found type: " + rootType);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Reads and validates all spans, storing their byte positions.
+     * All spans must be simple Span nodes (not SpanList or AlternateSpanList).
+     */
+    private boolean readAndValidateSpans(int numSpans, int[] spanFromBytes, int[] spanLengthBytes) {
+        // NOTE: id 0 is used by the initial SpanList
+        for (int i = 1; i <= numSpans; i++) {
+            byte spanType = buf.get();
+            if (spanType != Span.ID) {
+                log.fine("SimpleIndexingAnnotations requires simple Span nodes only, found type " + spanType + " at index " + i);
+                return false;  // Only simple Span nodes supported
+            }
+            spanFromBytes[i] = buf.getInt1_2_4Bytes();
+            spanLengthBytes[i] = buf.getInt1_2_4Bytes();
+        }
+        return true;
+    }
+
+    /**
+     * Builds SimpleIndexingAnnotations by reading and validating each annotation.
+     * Converts byte positions to string positions and adds to the result.
+     */
+    private boolean buildSimpleAnnotations(SimpleIndexingAnnotations result, int numAnnotations,
+                                          int[] spanFromBytes, int[] spanLengthBytes, int[] stringPositions) {
+        for (int i = 0; i < numAnnotations; i++) {
+            if (!readAndAddSingleAnnotation(result, spanFromBytes, spanLengthBytes, stringPositions)) {
+                log.fine("Failed to read annotation " + (i + 1) + " of " + numAnnotations);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Reads a single annotation from the buffer, validates it, and adds it to the result.
+     * Returns false if the annotation is not compatible with simple representation.
+     */
+    private boolean readAndAddSingleAnnotation(SimpleIndexingAnnotations result,
+                                               int[] spanFromBytes, int[] spanLengthBytes, int[] stringPositions) {
+        // Validate annotation type (only TERM supported)
+        int annotationTypeId = buf.getInt();
+        if (annotationTypeId != AnnotationTypes.TERM.getId()) {
+            log.fine("SimpleIndexingAnnotations only supports TERM annotations, found type ID: " + annotationTypeId);
+            return false;
+        }
+
+        // Read annotation metadata
+        byte annotationFeatures = buf.get();
+        int annotationDataLength = buf.getInt1_2_4Bytes();
+        int endPosition = buf.position() + annotationDataLength;
+
+        // Validate that annotation has a span node (required)
+        if ((annotationFeatures & ANNOTATION_HAS_SPAN_NODE) == 0) {
+            log.fine("SimpleIndexingAnnotations requires all annotations to have span nodes");
+            return false;
+        }
+
+        // Read and validate span node reference
+        int spanNodeIndex = buf.getInt1_2_4Bytes();
+        if (!isValidSpanIndex(spanNodeIndex, spanFromBytes.length)) {
+            log.fine("Invalid span node index: " + spanNodeIndex + " (valid range: 1-" + (spanFromBytes.length - 1) + ")");
+            return false;
+        }
+
+        // Read optional term override value
+        String termOverride = null;
+        if ((annotationFeatures & ANNOTATION_HAS_VALUE) != 0) {
+            int dataTypeId = buf.getInt();  // Read but not used
+            StringFieldValue termValue = new StringFieldValue();
+            termValue.deserialize(this);
+            termOverride = termValue.getString();
+        }
+
+        // Convert byte positions to character positions
+        int byteFrom = spanFromBytes[spanNodeIndex];
+        int byteLength = spanLengthBytes[spanNodeIndex];
+
+        if (!isValidByteRange(byteFrom, byteLength, stringPositions)) {
+            log.fine("Invalid byte range: from=" + byteFrom + " length=" + byteLength +
+                       " (stringPositions.length=" + stringPositions.length + ")");
+            return false;
+        }
+
+        int charFrom = stringPositions[byteFrom];
+        int charTo = stringPositions[byteFrom + byteLength];
+        int charLength = charTo - charFrom;
+
+        // Add to result
+        result.add(charFrom, charLength, termOverride);
+
+        // Skip to end of annotation data
+        buf.position(endPosition);
+        return true;
+    }
+
+    /**
+     * Validates that a span index is within valid bounds.
+     */
+    private boolean isValidSpanIndex(int spanIndex, int arrayLength) {
+        return spanIndex > 0 && spanIndex < arrayLength;
+    }
+
+    /**
+     * Validates that a byte range is within the valid string positions array.
+     */
+    private boolean isValidByteRange(int byteFrom, int byteLength, int[] stringPositions) {
+        return byteFrom >= 0 &&
+               byteFrom + byteLength >= 0 &&
+               byteFrom + byteLength < stringPositions.length;
     }
 
     @Override
@@ -653,7 +865,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         int length = buf.getInt1_2_4Bytes();
         int skipToPos = buf.position() + length;
 
-        if ((features & (byte) 1) == (byte) 1) {
+        if ((features & ANNOTATION_HAS_SPAN_NODE) != 0) {
             //we have a span node
             int spanNodeId = buf.getInt1_2_4Bytes();
             try {
@@ -663,7 +875,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
                 throw new DeserializationException("Could not deserialize annotation, associated span node not found ", ioobe);
             }
         }
-        if ((features & (byte) 2) == (byte) 2) {
+        if ((features & ANNOTATION_HAS_VALUE) != 0) {
             //we have a value:
             int dataTypeId = buf.getInt();
             try {

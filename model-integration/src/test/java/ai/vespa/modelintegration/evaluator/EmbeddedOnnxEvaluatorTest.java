@@ -182,7 +182,7 @@ public class EmbeddedOnnxEvaluatorTest {
     @Test
     public void testLoggingMessages() throws IOException {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        Logger logger = Logger.getLogger(EmbeddedOnnxEvaluator.class.getName());
+        Logger logger = Logger.getLogger(EmbeddedOnnxRuntime.class.getName());
         CustomLogHandler logHandler = new CustomLogHandler();
         logger.addHandler(logHandler);
         var runtime = new EmbeddedOnnxRuntime();

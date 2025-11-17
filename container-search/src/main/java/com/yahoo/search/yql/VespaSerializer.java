@@ -44,7 +44,7 @@ import static com.yahoo.search.yql.YqlParser.START_ANCHOR;
 import static com.yahoo.search.yql.YqlParser.STEM;
 import static com.yahoo.search.yql.YqlParser.SUBSTRING;
 import static com.yahoo.search.yql.YqlParser.SUFFIX;
-import static com.yahoo.search.yql.YqlParser.TARGET_NUM_HITS;
+import static com.yahoo.search.yql.YqlParser.TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.THRESHOLD_BOOST_FACTOR;
 import static com.yahoo.search.yql.YqlParser.UNIQUE_ID;
 import static com.yahoo.search.yql.YqlParser.URI;
@@ -152,8 +152,8 @@ public class VespaSerializer {
                     destination.append('"');
                     escape(((WordItem) current).getIndexedString(), destination).append('"');
                 } else {
-                    throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName()
-                                                       + " in segment AND expressions not implemented, please report this as a bug.");
+                    throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName() +
+                                                       " in segment AND expressions not implemented, please report this as a bug.");
                 }
             }
         }
@@ -778,7 +778,7 @@ public class VespaSerializer {
             destination.append(leafAnnotations(item));
             comma(destination, initLen);
             int targetNumHits = item.getTargetNumHits();
-            annotationKey(destination, YqlParser.TARGET_NUM_HITS).append(targetNumHits);
+            annotationKey(destination, YqlParser.TARGET_HITS).append(targetNumHits);
             double distanceThreshold = item.getDistanceThreshold();
             if (distanceThreshold < Double.POSITIVE_INFINITY) {
                 comma(destination, initLen);
@@ -1032,7 +1032,7 @@ public class VespaSerializer {
             double scoreThreshold = w.getScoreThreshold();
             double thresholdBoostFactor = w.getThresholdBoostFactor();
             if (targetNumHits != 10) {
-                annotations.append(TARGET_NUM_HITS).append(": ").append(targetNumHits);
+                annotations.append(TARGET_HITS).append(": ").append(targetNumHits);
             }
             if (scoreThreshold != 0) {
                 comma(annotations, 0);
@@ -1072,7 +1072,7 @@ public class VespaSerializer {
                 destination.append("({");
             }
             if (item.nIsExplicit()) {
-                destination.append(TARGET_NUM_HITS).append(": ").append(item.getN());
+                destination.append(TARGET_HITS).append(": ").append(item.getN());
             }
             if (needsAnnotationBlock(item)) {
                 destination.append("}");

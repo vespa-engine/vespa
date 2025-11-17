@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.ranking;
 
+import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.tensor.Tensor;
@@ -142,6 +143,8 @@ public class GlobalPhaseSetupTest {
         RankingConstantsConfig constantsConfig = new RankingConstantsConfig.Builder().build();
         RankingExpressionsConfig expressionsConfig = new RankingExpressionsConfig.Builder().build();
         OnnxModelsConfig onnxModelsConfig = new OnnxModelsConfig.Builder().build();
-        return new RankProfilesEvaluator(config, constantsConfig, expressionsConfig, onnxModelsConfig, MockFileAcquirer.returnFile(null));
+        return new RankProfilesEvaluator(
+                config, constantsConfig, expressionsConfig, onnxModelsConfig, MockFileAcquirer.returnFile(null),
+                OnnxRuntime.testInstance());
     }
 }

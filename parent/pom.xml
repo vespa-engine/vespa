@@ -217,6 +217,7 @@
                         </systemPropertyVariables>
                         <trimStackTrace>false</trimStackTrace>
                         <argLine>-Djava.io.tmpdir=${project.build.directory} ${ffm.args}</argLine>
+                        <excludedEnvironmentVariables>VESPA_HOME,VESPA_USER</excludedEnvironmentVariables>
                     </configuration>
                 </plugin>
                 <plugin>

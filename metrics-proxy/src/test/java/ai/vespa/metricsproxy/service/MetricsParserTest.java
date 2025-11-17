@@ -27,7 +27,7 @@ public class MetricsParserTest {
     @Test
     public void different_dimension_values_are_not_treated_as_equal() throws Exception {
         var collector = new MetricsCollector();
-        MetricsParser.parse(metricsJsonDistinctButDuplicateDimensionDalues(), collector);
+        MetricsParser.parse(metricsJsonDistinctButDuplicateDimensionValues(), collector);
         assertEquals(2, collector.metrics.size());
         assertNotEquals("Dimensions should not be equal",
                         collector.metrics.get(0).getDimensions(),
@@ -37,7 +37,7 @@ public class MetricsParserTest {
     @Test
     public void different_swapped_dimension_values_are_not_treated_as_equal() throws Exception {
         var collector = new MetricsCollector();
-        MetricsParser.parse(metricsJsonDistinctButDuplicateSwappedDimensionDalues(), collector);
+        MetricsParser.parse(metricsJsonDistinctButDuplicateSwappedDimensionValues(), collector);
         assertEquals(2, collector.metrics.size());
         assertNotEquals("Dimensions should not be equal",
                 collector.metrics.get(0).getDimensions(),
@@ -45,7 +45,7 @@ public class MetricsParserTest {
     }
 
     // The duplicate dimension values for 'cluster' and 'clusterid' exposed a bug in a previously used hashing algo for dimensions.
-    private String metricsJsonDistinctButDuplicateDimensionDalues() {
+    private String metricsJsonDistinctButDuplicateDimensionValues() {
         return """
                 {
                   "time": 1671035366573,
@@ -86,7 +86,7 @@ public class MetricsParserTest {
                 """;
     }
     // The duplicate dimension values for 'cluster' and 'clusterid' exposed a bug in a previously used hashing algo for dimensions.
-    private String metricsJsonDistinctButDuplicateSwappedDimensionDalues() {
+    private String metricsJsonDistinctButDuplicateSwappedDimensionValues() {
         return """
                 {
                   "time": 1671035366573,

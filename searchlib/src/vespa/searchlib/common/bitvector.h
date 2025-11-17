@@ -28,7 +28,7 @@ class BitVector : protected BitWord
 {
 public:
     using Index = BitWord::Index;
-    static constexpr Index num_guard_bits = 1;
+    static constexpr Index num_guard_bits = 2;
     using UP = std::unique_ptr<BitVector>;
     class Range {
     public:
@@ -298,6 +298,7 @@ public:
     static Index numWords(Index bits) noexcept { return wordNum(bits + num_guard_bits + (WordLen - 1)); }
     static Index numBytes(Index bits) noexcept { return numWords(bits) * sizeof(Word); }
     virtual size_t get_allocated_bytes(bool include_self) const noexcept = 0;
+    static constexpr size_t getAlignment() noexcept { return 0x100u; }
 protected:
     using Alloc = vespalib::alloc::Alloc;
     VESPA_DLL_LOCAL BitVector(void * buf, Index start, Index end) noexcept;
@@ -310,7 +311,6 @@ protected:
     bool isValidCount() const noexcept { return isValidCount(_numTrueBits.load(std::memory_order_relaxed)); }
     static bool isValidCount(Index v) noexcept { return v != invalidCount(); }
     size_t numWords() const noexcept { return numWords(size()); }
-    static constexpr size_t getAlignment() noexcept { return 0x100u; }
     static size_t numActiveBytes(Index start, Index end) noexcept { return numActiveWords(start, end) * sizeof(Word); }
     static Alloc allocatePaddedAndAligned(Index sz) {
         return allocatePaddedAndAligned(0, sz);
