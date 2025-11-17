@@ -866,7 +866,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Element threadpoolElement = XML.getChild(spec, "threadpool");
         if (threadpoolElement == null) return;
         var options = ContainerThreadpoolOptionsBuilder.build(deployState, spec);
-        cluster.setDefaultThreadpoolProvider(new DefaultThreadpoolProvider(cluster, options));
+        cluster.setDefaultThreadpoolProvider(new DefaultThreadpoolProvider(deployState, cluster, options));
     }
 
     private void addSignificance(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {

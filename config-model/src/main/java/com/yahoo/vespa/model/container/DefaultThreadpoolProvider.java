@@ -1,11 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.handler.ThreadPoolProvider;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
+
+import java.util.logging.Level;
 
 /**
  * Component definition for the jdisc default threadpool provider ({@link ThreadPoolProvider}).
@@ -18,10 +21,10 @@ public class DefaultThreadpoolProvider extends SimpleComponent implements Thread
     private final ContainerThreadpool.UserOptions userOptions;
 
     public DefaultThreadpoolProvider(ContainerCluster<?> cluster) {
-        this(cluster, null);
+        this(null, cluster, null);
     }
 
-    public DefaultThreadpoolProvider(ContainerCluster<?> cluster, ContainerThreadpool.UserOptions userOptions) {
+    public DefaultThreadpoolProvider(DeployState ds, ContainerCluster<?> cluster, ContainerThreadpool.UserOptions userOptions) {
         super(new ComponentModel(
                 BundleInstantiationSpecification.fromStrings(
                         "default-threadpool",
@@ -29,6 +32,10 @@ public class DefaultThreadpoolProvider extends SimpleComponent implements Thread
                         null)));
         this.cluster = cluster;
         this.userOptions = userOptions;
+
+        if (this.userOptions != null) {
+            warnOnTruncation(ds, userOptions);
+        }
     }
 
     @Override
@@ -52,19 +59,38 @@ public class DefaultThreadpoolProvider extends SimpleComponent implements Thread
         }
 
         // Convert from config model to ThreadpoolConfig.
+        // TODO: While ThreadpoolConfig exists, we must support this conversion since it uses ints. Will be removed in Vespa 9.
         if (userOptions != null) {
             boolean neg = userOptions.isRelative();
             if (userOptions.max() != null) {
-                maxThreads = neg ? -userOptions.max().intValue() : userOptions.max().intValue();
+                maxThreads = (int) Math.round(neg ? -userOptions.max() : userOptions.max());
             }
             if (userOptions.min() != null) {
-                minThreads = neg ? -userOptions.min().intValue() : userOptions.min().intValue();
+                minThreads = (int) Math.round(neg ? -userOptions.min() : userOptions.min());
             }
             if (userOptions.queueSize() != null) {
-                queueSize = neg ? -userOptions.queueSize().intValue() : userOptions.queueSize().intValue();
+                queueSize = (int) Math.round(neg ? -userOptions.queueSize() : userOptions.queueSize());
             }
         }
 
         builder.corePoolSize(minThreads).maxthreads(maxThreads).queueSize(queueSize);
+    }
+
+    // TODO: While ThreadpoolConfig exists, we must support this conversion. Will be removed in Vespa 9.
+    private void warnOnTruncation(DeployState ds, ContainerThreadpool.UserOptions userOptions) {
+        if (userOptions.max() != null) checkTruncation(ds, userOptions.max(), "max");
+        if (userOptions.min() != null) checkTruncation(ds, userOptions.min(), "threads");
+        if (userOptions.queueSize() != null) checkTruncation(ds, userOptions.queueSize(), "queue");
+    }
+
+    private void checkTruncation(DeployState ds, Double value, String part) {
+        double truncated = (double) Math.round(value);
+        if (truncated != value) {
+            ds.getDeployLogger()
+                    .logApplicationPackage(Level.WARNING,
+                            "For <threadpool> in <container>: the value " +
+                                    part + "=" + value + " will be truncated to " + truncated
+                                    + ". This will be removed in Vespa 9");
+        }
     }
 }
