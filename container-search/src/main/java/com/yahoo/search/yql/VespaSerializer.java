@@ -152,8 +152,8 @@ public class VespaSerializer {
                     destination.append('"');
                     escape(((WordItem) current).getIndexedString(), destination).append('"');
                 } else {
-                    throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName()
-                                                       + " in segment AND expressions not implemented, please report this as a bug.");
+                    throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName() +
+                                                       " in segment AND expressions not implemented, please report this as a bug.");
                 }
             }
         }

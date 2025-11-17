@@ -28,12 +28,8 @@ public class InItemTestCase {
 Trace 1: [
 select * from sources * where default in (3, 5)
 NUMERIC_IN{
-  INT[index="" origin=null]{
-    "3"
-  }
-  INT[index="" origin=null]{
-    "5"
-  }
+  INT[index="" origin=null]{"3"}
+  INT[index="" origin=null]{"5"}
 }
 
 ]""";
@@ -53,12 +49,8 @@ NUMERIC_IN{
 Trace 1: [
 select * from sources * where default in ("bar", "foo")
 STRING_IN{
-  WORD[fromSegmented=false index="" origin=null segmentIndex=0 stemmed=false words=true]{
-    "bar"
-  }
-  WORD[fromSegmented=false index="" origin=null segmentIndex=0 stemmed=false words=true]{
-    "foo"
-  }
+  WORD[fromSegmented=false index="" origin=null segmentIndex=0 stemmed=false words=true]{"bar"}
+  WORD[fromSegmented=false index="" origin=null segmentIndex=0 stemmed=false words=true]{"foo"}
 }
 
 ]""";
