@@ -25,7 +25,6 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,8 +46,8 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     private final ConcurrentMap<String, TritonModelResource> modelResources = new ConcurrentHashMap<>();
 
     // Represents a model in Triton repository with reference counting.
-    // When created it copies model files to Triton repository and loads it.
-    // When no one references the model, it is unloaded and corresponding files are deleted.
+    // When created it copies model files to Triton repository and loads the model.
+    // When no references remain, the model is unloaded and model files are deleted.
     class TritonModelResource extends AbstractResource {
         public final String modelName;
 
@@ -58,15 +57,17 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             if (isModelControlExplicit) {
                 var modelConfig = createModelConfig(modelName, options);
                 copyModelFilesToModelRepository(modelName, modelPath, modelConfig);
-                loadModel(modelName);
+                tritonClient.loadUntilModelReady(modelName);
             }
         }
 
         @Override
         public void destroy() {
             modelResources.computeIfPresent(modelName, (key, value) -> {
-                unloadModel(modelName);
-                deleteModelFilesFromModelRepository(modelName);
+                if (isModelControlExplicit) {
+                    tritonClient.unloadUntilModelNotReady(modelName);
+                    deleteModelFilesFromModelRepository(modelName);
+                }
                 return null; // remove from map
             });
         }
@@ -91,20 +92,26 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
         if (!tritonClient.isHealthy()) {
-            throw new IllegalStateException("Triton server is not healthy! (target=%s)".formatted(config.target()));
+            throw new IllegalStateException("Triton server is not healthy, target: " + config.target());
         }
 
         var modelName = generateModelName(modelPath, options);
-        var firstModelReference = new AtomicReference<ResourceReference>();
-        var modelResource = modelResources.computeIfAbsent(modelName, key -> {
-            var resource = new TritonModelResource(modelName, modelPath, options);
-            firstModelReference.set(resource.refer());
-            resource.release();
-            return resource;
+        var modelReferenceHolder = new ResourceReference[1];
+        
+        // Key synchronized create, reference, release and put model resource avoids concurrency issues.
+        modelResources.compute(modelName, (key, existingModelResource) -> {
+            if (existingModelResource != null) {
+                modelReferenceHolder[0] = existingModelResource.refer();
+                return existingModelResource;
+            }
+            
+            var newModelResource = new TritonModelResource(modelName, modelPath, options);
+            modelReferenceHolder[0] = newModelResource.refer();
+            newModelResource.release();
+            return newModelResource;
         });
 
-        var modelReference = firstModelReference.get() != null ? firstModelReference.get() : modelResource.refer();
-        return new TritonOnnxEvaluator(modelName, modelReference, tritonClient, isModelControlExplicit);
+        return new TritonOnnxEvaluator(modelName, modelReferenceHolder[0], tritonClient, isModelControlExplicit);
     }
 
     static String generateModelName(String modelPath, OnnxEvaluatorOptions options) {
@@ -234,26 +241,6 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         return config.toBuilder().setName(modelName).build().toString();
     }
 
-    private void loadModel(String modelName) {
-        if (isModelControlExplicit) {
-            var isModelReady = tritonClient.isModelReady(modelName);
-
-            if (!isModelReady) {
-                tritonClient.loadModel(modelName);
-            }
-        }
-    }
-
-    private void unloadModel(String modelName) {
-        if (isModelControlExplicit) {
-            var isModelReady = tritonClient.isModelReady(modelName);
-
-            if (isModelReady) {
-                tritonClient.unloadModel(modelName);
-            }
-        }
-    }
-
     private void deleteAllModelFilesFromModelRepository() {
         if (!Files.exists(modelRepositoryPath)) {
             return;
@@ -262,8 +249,12 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         try (var stream = Files.list(modelRepositoryPath)) {
             stream.forEach(path -> IOUtils.recursiveDeleteDir(path.toFile()));
         } catch (IOException e) {
-            log.log(Level.WARNING, "Failed delete model files in model repository: " + modelRepositoryPath, e);
+            log.log(Level.WARNING, "Failed to delete model files in model repository: " + modelRepositoryPath, e);
         }
+    }
+    
+    boolean isModelReady(String modelName) {
+        return tritonClient.isModelReady(modelName);
     }
 
     @Override

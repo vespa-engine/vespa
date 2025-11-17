@@ -18,32 +18,27 @@ import java.util.logging.Logger;
  */
 class TritonOnnxEvaluator implements OnnxEvaluator {
     private static final Logger log = Logger.getLogger(TritonOnnxEvaluator.class.getName());
-    
+
     private final String modelName;
     private final ResourceReference modelReference;
     private final TritonOnnxClient tritonClient;
     private final boolean isExplicitControl;
-    
+
     private TritonOnnxClient.ModelMetadata modelMetadata;
-    
-    TritonOnnxEvaluator(String modelName, ResourceReference modelReference, TritonOnnxClient tritonClient, boolean isExplicitControl) {
+
+    TritonOnnxEvaluator(
+            String modelName,
+            ResourceReference modelReference,
+            TritonOnnxClient tritonClient,
+            boolean isExplicitControl) {
         this.modelName = modelName;
         this.modelReference = modelReference;
         this.tritonClient = tritonClient;
         this.isExplicitControl = isExplicitControl;
-        loadModelIfNotReady();
-    }
-    
-    private void loadModelIfNotReady() {
-        if (isExplicitControl) {
-            var isModelReady = tritonClient.isModelReady(modelName);
 
-            if (!isModelReady) {
-                tritonClient.loadModel(modelName);
-            }
+        if (isExplicitControl) {
+            tritonClient.loadUntilModelReady(modelName);
         }
-        
-        modelMetadata = tritonClient.getModelMetadata(modelName);
     }
 
     @Override
@@ -53,38 +48,33 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
 
     @Override
     public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
-        return evaluate(inputs, true);
-    }
-
-    // Evaluate with optional retry that reloads the model if it is not ready.
-    // This helps when models are unloaded after Triton server restart.
-    private Map<String, Tensor> evaluate(Map<String, Tensor> inputs, boolean allowRetry) {
         try {
             return tritonClient.evaluate(modelName, modelMetadata, inputs);
         } catch (TritonOnnxClient.TritonException e) {
-            if (allowRetry) {
-                log.log(Level.WARNING, "Failed to evaluate ONNX model in Trion. Will retry after reload. Model: " + modelName, e);
-                loadModelIfNotReady();
-                return evaluate(inputs, false);
+            if (!isExplicitControl) {
+                throw e;
             }
 
-            throw e;
+            log.log(
+                    Level.WARNING,
+                    "Failed to evaluate ONNX model " + modelName + " in Trion, will retry after reload.",
+                    e);
+            tritonClient.loadUntilModelReady(modelName);
+            return tritonClient.evaluate(modelName, modelMetadata, inputs);
         }
     }
 
     @Override
     public Map<String, IdAndType> getInputs() {
         Map<String, IdAndType> result = new HashMap<>();
-        modelMetadata.inputs.forEach((name, type) ->
-            result.put(name, new IdAndType(name, type)));
+        modelMetadata.inputs.forEach((name, type) -> result.put(name, new IdAndType(name, type)));
         return result;
     }
 
     @Override
     public Map<String, IdAndType> getOutputs() {
         Map<String, IdAndType> result = new HashMap<>();
-        modelMetadata.outputs.forEach((name, type) ->
-            result.put(name, new IdAndType(name, type)));
+        modelMetadata.outputs.forEach((name, type) -> result.put(name, new IdAndType(name, type)));
         return result;
     }
 

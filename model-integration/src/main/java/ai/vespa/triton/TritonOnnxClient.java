@@ -40,10 +40,16 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Experimental model inference using Nvidia Triton as ONNX backend.
  *
  * @author bjorncs
+ * @author glebashnik
  */
 @Beta
 public class TritonOnnxClient implements AutoCloseable {
-    final int MAX_INBOUND_MESSAGE_SIZE_MIB = 128;
+    private static final int MAX_INBOUND_MESSAGE_SIZE_MIB = 128;
+    private static final int MAX_MODEL_LOAD_WAIT_ATTEMPTS = 10;
+    private static final int MAX_MODEL_LOAD_WAIT_DELAY_MILLIS = 1000;
+    private static final int MAX_MODEL_UNLOAD_WAIT_ATTEMPTS = 10;
+    private static final int MAX_MODEL_UNLOAD_WAIT_DELAY_MILLIS = 1000;
+
     private static final Logger log = Logger.getLogger(TritonOnnxClient.class.getName());
 
     private final GRPCInferenceServiceGrpc.GRPCInferenceServiceBlockingV2Stub grpcInferenceStub;
@@ -129,6 +135,74 @@ public class TritonOnnxClient implements AutoCloseable {
                 .setModelName(modelName)
                 .build();
         invokeGrpc(grpcInferenceStub, s -> s.repositoryModelUnload(request), "Failed to unload model");
+    }
+    
+    public void loadUntilModelReady(String modelName) {
+        if (isModelReady(modelName)) {
+            log.fine(() -> "Model " + modelName + " is already loaded");
+            return;
+        }
+
+        long startMillis = System.currentTimeMillis();
+        TritonException lastException = null;
+
+        for (int attempt = 0; attempt < MAX_MODEL_LOAD_WAIT_ATTEMPTS; attempt++) {
+            try {
+                loadModel(modelName);
+                if (isModelReady(modelName)) {
+                    return;
+                }
+            } catch (TritonException e) {
+                lastException = e;
+            }
+
+            if (attempt < MAX_MODEL_LOAD_WAIT_ATTEMPTS - 1) {
+                try {
+                    Thread.sleep(MAX_MODEL_LOAD_WAIT_DELAY_MILLIS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new TritonException("Interrupted loading model " + modelName, e);
+                }
+            }
+        }
+
+        var waitMillis = System.currentTimeMillis() - startMillis;
+        var exceptionMessage = "Failed to load model " + modelName + " after " + waitMillis + " ms";
+        throw new TritonException(exceptionMessage, lastException);
+    }
+
+    public void unloadUntilModelNotReady(String modelName) {
+        if (!isModelReady(modelName)) {
+            log.fine(() -> "Model " + modelName + " is already unloaded");
+            return;
+        }
+
+        long startMillis = System.currentTimeMillis();
+        TritonException lastException = null;
+
+        for (int attempt = 0; attempt < MAX_MODEL_UNLOAD_WAIT_ATTEMPTS; attempt++) {
+            try {
+                unloadModel(modelName);
+                if (!isModelReady(modelName)) {
+                    return;
+                }
+            } catch (TritonException e) {
+                lastException = e;
+            }
+
+            if (attempt < MAX_MODEL_UNLOAD_WAIT_ATTEMPTS - 1) {
+                try {
+                    Thread.sleep(MAX_MODEL_UNLOAD_WAIT_DELAY_MILLIS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new TritonException("Interrupted unloading model " + modelName, e);
+                }
+            }
+        }
+
+        var waitMillis = System.currentTimeMillis() - startMillis;
+        var exceptionMessage = "Failed to unload model " + modelName + " after " + waitMillis + " ms";
+        throw new TritonException(exceptionMessage, lastException);
     }
 
     public Map<String, Tensor> evaluate(String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs) {
@@ -370,15 +444,12 @@ public class TritonOnnxClient implements AutoCloseable {
         return builder.build();
     }
 
-
     // Converts StatusRuntimeException and StatusException to TritonException
-    private <T, S extends AbstractBlockingStub<S>> T invokeGrpc(S stub, GrpcInvocation<T, S> invocation,
-                                                                String errorMessage) {
+    private <T, S extends AbstractBlockingStub<S>> T invokeGrpc(
+            S stub, GrpcInvocation<T, S> invocation, String errorMessage) {
         try {
             return invocation.apply(stub);
-        } catch (StatusException e) {
-            throw new TritonException(errorMessage, e);
-        } catch (StatusRuntimeException e) {
+        } catch (StatusException | StatusRuntimeException e) {
             throw new TritonException(errorMessage, e);
         }
     }

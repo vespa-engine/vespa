@@ -19,8 +19,10 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
@@ -35,8 +37,9 @@ class TritonOnnxRuntimeTest {
     private static TritonServerContainer tritonContainer;
     private final OnnxEvaluatorOptions.Builder optsBuilder =  new OnnxEvaluatorOptions.Builder(8);
 
+    // Used by most of the test. Some use their own.
     @BeforeAll
-    static void setupTriton() throws IOException {
+    static void setupTritonContainer() throws IOException {
         tritonContainer = new TritonServerContainer();
         tritonContainer.start();
     }
@@ -87,10 +90,10 @@ class TritonOnnxRuntimeTest {
     }
     
     @Test
-    void two_evaluators_sharing_same_model_with_reference_counting() {
+    void reference_counting_with_two_evaluators_sharing_one_model() throws IOException {
         var opts = optsBuilder.build();
         var modelBaseName = "dummy_transformer";
-        var testModelFilePath = String.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
+        var testModelFilePath = "src/test/models/onnx/transformer/%s.onnx".formatted(modelBaseName);
         var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, opts);
         
         var tritonConfig = new TritonConfig.Builder()
@@ -99,34 +102,47 @@ class TritonOnnxRuntimeTest {
                 .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
                 .build();
         var tritonRuntime = new TritonOnnxRuntime(tritonConfig);
-        
+
         try {
-            // First evaluator creates model files
+            // First evaluator creates model files and loads model
             var evaluator1 = tritonRuntime.evaluatorOf(testModelFilePath, opts);
             var repoFiles = tritonContainer.getModelRepositoryPath().toFile().list();
             assertNotNull(repoFiles);
             assertEquals(1, repoFiles.length);
             assertEquals(modelName, repoFiles[0]);
+            assertTrue(tritonRuntime.isModelReady(modelName));
 
-            // Second evaluator reuses model files
+            // Second evaluator reuses model files, model remains loaded
             var evaluator2 = tritonRuntime.evaluatorOf(testModelFilePath, opts);
             repoFiles = tritonContainer.getModelRepositoryPath().toFile().list();
             assertNotNull(repoFiles);
             assertEquals(1, repoFiles.length);
             assertEquals(modelName, repoFiles[0]);
-            
-            // Close first evaluator, files remain
+            assertTrue(tritonRuntime.isModelReady(modelName));
+
+            // Close first evaluator, files and model remain
             evaluator1.close();
             repoFiles = tritonContainer.getModelRepositoryPath().toFile().list();
             assertNotNull(repoFiles);
             assertEquals(1, repoFiles.length);
             assertEquals(modelName, repoFiles[0]);
+            assertTrue(tritonRuntime.isModelReady(modelName));
 
-            // Close second evaluator, files deleted
+            // Close second evaluator, files deleted and model unloaded
             evaluator2.close();
             repoFiles = tritonContainer.getModelRepositoryPath().toFile().list();
             assertNotNull(repoFiles);
             assertEquals(0, repoFiles.length);
+            assertFalse(tritonRuntime.isModelReady(modelName));
+
+            // Recreate evaluator after cleanup, verify model reloaded
+            var evaluator3 = tritonRuntime.evaluatorOf(testModelFilePath, opts);
+            repoFiles = tritonContainer.getModelRepositoryPath().toFile().list();
+            assertNotNull(repoFiles);
+            assertEquals(1, repoFiles.length);
+            assertEquals(modelName, repoFiles[0]);
+            assertTrue(tritonRuntime.isModelReady(modelName));
+            evaluator3.close();
         } finally {
             tritonRuntime.deconstruct();
         }
