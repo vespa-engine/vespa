@@ -22,6 +22,7 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
  *   <endpoint>https://api.voyageai.com/v1/embeddings</endpoint>
  *   <timeout>30000</timeout>
  *   <auto-detect-input-type>true</auto-detect-input-type>
+ *   <max-idle-connections>5</max-idle-connections>
  *   <normalize>false</normalize>
  * </component>
  * }</pre>
@@ -67,8 +68,11 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
      */
     private final Boolean autoDetectInputType;
     private final Boolean truncate;
-    private final Integer poolSize;
-    private final Integer cacheSize;
+    /**
+     * Maximum number of idle HTTP connections to keep in the connection pool.
+     * Helps manage resource usage and connection reuse for better performance.
+     */
+    private final Integer maxIdleConnections;
     private final Boolean normalize;
 
     @SuppressWarnings("unused") // cluster and state parameters required by Vespa component framework
@@ -80,17 +84,19 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
                 .orElseThrow(() -> new IllegalArgumentException(
                         "VoyageAI embedder requires <api-key-secret-ref> element. " +
                         "Please specify the reference to the secret in Vespa's secret store."));
+        this.model = getChildValue(xml, "model")
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "VoyageAI embedder requires <model> element. " +
+                        "Please specify the VoyageAI model name (e.g., voyage-3, voyage-3.5, voyage-code-3)."));
 
         // Optional fields with defaults
-        this.model = getChildValue(xml, "model").orElse(null);
         this.endpoint = getChildValue(xml, "endpoint").orElse(null);
         this.timeout = getChildValue(xml, "timeout").map(Integer::parseInt).orElse(null);
         this.maxRetries = getChildValue(xml, "max-retries").map(Integer::parseInt).orElse(null);
         this.defaultInputType = getChildValue(xml, "default-input-type").orElse(null);
         this.autoDetectInputType = getChildValue(xml, "auto-detect-input-type").map(Boolean::parseBoolean).orElse(null);
         this.truncate = getChildValue(xml, "truncate").map(Boolean::parseBoolean).orElse(null);
-        this.poolSize = getChildValue(xml, "pool-size").map(Integer::parseInt).orElse(null);
-        this.cacheSize = getChildValue(xml, "cache-size").map(Integer::parseInt).orElse(null);
+        this.maxIdleConnections = getChildValue(xml, "max-idle-connections").map(Integer::parseInt).orElse(null);
         this.normalize = getChildValue(xml, "normalize").map(Boolean::parseBoolean).orElse(null);
 
         // Validate configuration
@@ -111,14 +117,9 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
                     "max-retries must be between 0 and 100, got: " + maxRetries);
         }
 
-        if (poolSize != null && (poolSize < 1 || poolSize > 100)) {
+        if (maxIdleConnections != null && (maxIdleConnections < 0 || maxIdleConnections > 100)) {
             throw new IllegalArgumentException(
-                    "pool-size must be between 1 and 100, got: " + poolSize);
-        }
-
-        if (cacheSize != null && cacheSize < 0) {
-            throw new IllegalArgumentException(
-                    "cache-size must be non-negative, got: " + cacheSize);
+                    "max-idle-connections must be between 0 and 100, got: " + maxIdleConnections);
         }
 
         if (defaultInputType != null) {
@@ -140,11 +141,9 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
     public void getConfig(VoyageAiEmbedderConfig.Builder builder) {
         // Required
         builder.apiKeySecretRef(apiKeySecretRef);
+        builder.model(model);
 
         // Optional - only set if provided (otherwise use defaults from .def file)
-        if (model != null) {
-            builder.model(model);
-        }
         if (endpoint != null) {
             builder.endpoint(endpoint);
         }
@@ -163,11 +162,8 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
         if (truncate != null) {
             builder.truncate(truncate);
         }
-        if (poolSize != null) {
-            builder.poolSize(poolSize);
-        }
-        if (cacheSize != null) {
-            builder.cacheSize(cacheSize);
+        if (maxIdleConnections != null) {
+            builder.maxIdleConnections(maxIdleConnections);
         }
         if (normalize != null) {
             builder.normalize(normalize);

@@ -11,7 +11,7 @@ apiKeySecretRef          string
 endpoint                 string default="https://api.voyageai.com/v1/embeddings"
 
 # VoyageAI model name (e.g., voyage-3.5, voyage-3.5-lite, voyage-code-3, voyage-finance-2)
-model                    string default="voyage-3.5"
+model                    string
 
 # Request Settings
 
