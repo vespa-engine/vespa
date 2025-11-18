@@ -20,22 +20,11 @@ constexpr double MAX_CHANGE_FACTOR = 5;
 } // namespace proton::matching::<unnamed>
 
 MatchingStats::MatchingStats(double prev_soft_doom_factor) noexcept
-    : _queries(0),
-      _limited_queries(0),
-      _docidSpaceCovered(0),
-      _docsMatched(0),
-      _docsRanked(0),
-      _docsReRanked(0),
-      _distances_computed(0),
-      _softDoomed(0),
-      _doomOvertime(),
-      _softDoomFactor(prev_soft_doom_factor),
-      _querySetupTime(),
-      _queryLatency(),
-      _matchTime(),
-      _groupingTime(),
-      _rerankTime(),
-      _partitions()
+    : _softDoomFactor(prev_soft_doom_factor),
+      _partitions(),
+      _stats(),
+      _nn_exact_stats(),
+      _nn_approx_stats()
 { }
 
 MatchingStats::~MatchingStats() = default;
@@ -45,14 +34,14 @@ MatchingStats::merge_partition(const Partition &partition, size_t id)
 {
     get_writable_partition(_partitions, id) = partition;
 
-    _docidSpaceCovered += partition.docsCovered();
-    _docsMatched += partition.docsMatched();
-    _docsRanked += partition.docsRanked();
-    _docsReRanked += partition.docsReRanked();
-    _distances_computed += partition.distances_computed();
-    _doomOvertime.add(partition._doomOvertime);
+    _stats._docidSpaceCovered += partition.docsCovered();
+    _stats._docsMatched += partition.docsMatched();
+    _stats._docsRanked += partition.docsRanked();
+    _stats._docsReRanked += partition.docsReRanked();
+    _stats._distances_computed += partition.distances_computed();
+    _stats._doomOvertime.add(partition._doomOvertime);
     if (partition.softDoomed()) {
-        _softDoomed = 1;
+        _stats._softDoomed = 1;
     }
 
     return *this;
@@ -61,22 +50,8 @@ MatchingStats::merge_partition(const Partition &partition, size_t id)
 MatchingStats &
 MatchingStats::add(const MatchingStats &rhs) noexcept
 {
-    _queries += rhs._queries;
-    _limited_queries += rhs._limited_queries;
+    _stats.add(rhs._stats);
 
-    _docidSpaceCovered += rhs._docidSpaceCovered;
-    _docsMatched += rhs._docsMatched;
-    _docsRanked += rhs._docsRanked;
-    _docsReRanked += rhs._docsReRanked;
-    _distances_computed += rhs._distances_computed;
-    _softDoomed += rhs.softDoomed();
-    _doomOvertime.add(rhs._doomOvertime);
-
-    _querySetupTime.add(rhs._querySetupTime);
-    _queryLatency.add(rhs._queryLatency);
-    _matchTime.add(rhs._matchTime);
-    _groupingTime.add(rhs._groupingTime);
-    _rerankTime.add(rhs._rerankTime);
     for (size_t id = 0; id < rhs.getNumPartitions(); ++id) {
         get_writable_partition(_partitions, id).add(rhs.getPartition(id));
     }
