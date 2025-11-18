@@ -146,7 +146,7 @@ public class FileDistributionStatusClient {
                     JsonNode fileReferencesArray = host.get("fileReferences");
                     int finished = 0;
                     for (JsonNode element : fileReferencesArray) {
-                        for (Iterator<Map.Entry<String, JsonNode>> it = element.fields(); it.hasNext(); ) {
+                        for (Iterator<Map.Entry<String, JsonNode>> it = element.properties().iterator(); it.hasNext(); ) {
                             Map.Entry<String, JsonNode> fileReferenceStatus = it.next();
                             if (fileReferenceStatus.getValue().asDouble() == 1.0)
                                 finished++;

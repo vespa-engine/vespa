@@ -67,7 +67,7 @@ public class JsonReader {
             throw new InvalidContentException("value of state is not a json object");
         }
 
-        for (Iterator<Map.Entry<String, JsonNode>> fields = state.fields(); fields.hasNext(); ) {
+        for (Iterator<Map.Entry<String, JsonNode>> fields = state.properties().iterator(); fields.hasNext(); ) {
             Map.Entry<String, JsonNode> entry = fields.next();
             String type = entry.getKey();
             if ( ! (entry.getValue() instanceof ObjectNode userState)) {

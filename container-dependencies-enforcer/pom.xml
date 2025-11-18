@@ -210,11 +210,11 @@
                                         <include>org.hamcrest:hamcrest:${hamcrest.vespa.version}:test</include>
                                         <include>org.hamcrest:hamcrest-core:${hamcrest.vespa.version}:test</include>
                                         <include>org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}:test</include>
-                                        <include>org.jetbrains.kotlin:kotlin-reflect:1.8.10:test</include>
-                                        <include>org.jetbrains.kotlin:kotlin-stdlib:2.1.10:test</include>
-                                        <include>org.jetbrains.kotlin:kotlin-stdlib-common:1.9.10:test</include>
-                                        <include>org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.21:test</include>
-                                        <include>org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.21:test</include>
+                                        <include>org.jetbrains.kotlin:kotlin-reflect:${kotlin.vespa.version}:test</include>
+                                        <include>org.jetbrains.kotlin:kotlin-stdlib:${kotlin.vespa.version}:test</include>
+                                        <include>org.jetbrains.kotlin:kotlin-stdlib-common:${kotlin.vespa.version}:test</include>
+                                        <include>org.jetbrains.kotlin:kotlin-stdlib-jdk7:${kotlin.vespa.version}:test</include>
+                                        <include>org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlin.vespa.version}:test</include>
                                         <include>org.json:json:${org.json.vespa.version}:test</include> <!-- TODO: Remove on Vespa 9 -->
                                         <include>org.lz4:lz4-java:${org.lz4.vespa.version}:test</include>
                                         <include>xerces:xercesImpl:${xerces.vespa.version}:test</include>
