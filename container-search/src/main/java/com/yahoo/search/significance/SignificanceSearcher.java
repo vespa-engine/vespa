@@ -121,7 +121,7 @@ public class SignificanceSearcher extends Searcher {
             - Use language if available from the model registry, fail otherwise.
             - If “un” try both “un” and “en”.
         - When language is implicitly detected
-            - Use language if available from the model registry. Fallback to “un” 'then “en”, fail if none are available.
+            - Use language if available from the model registry. Fallback to “un” then “en”, fail if none are available.
          */
 
         Language explicitLanguage = query.getModel().getLanguage();
