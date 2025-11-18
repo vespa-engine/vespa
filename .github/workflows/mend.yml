@@ -31,8 +31,7 @@ jobs:
           mend-app-name: ${{ env.MEND_APP_NAME }}
           mend-project-name: ${{ env.MEND_PROJECT_NAME }}
           # Do not send SAST updates on PRs
-          # update: ${{ contains(fromJson('["workflow_dispatch","schedule"]'), github.event_name) }}
-          update: true # Temporarily always send SAST updates
+          update: ${{ contains(fromJson('["workflow_dispatch","schedule"]'), github.event_name) }}
 
           scan-name: "Vespa @ ${{ github.ref_name }} (${{ github.sha }})"
           target-directory: "./"
@@ -54,8 +53,7 @@ jobs:
           mend-app-name: ${{ env.MEND_APP_NAME }}
           mend-project-name: ${{ env.MEND_PROJECT_NAME }}
           # Do not send SAST updates on PRs
-          # update: ${{ contains(fromJson('["workflow_dispatch","schedule"]'), github.event_name) }}
-          update: true # Temporarily always send SAST updates
+          update: ${{ contains(fromJson('["workflow_dispatch","schedule"]'), github.event_name) }}
 
           scan-name: "Vespa CLI @ ${{ github.ref_name }} (${{ github.sha }})"
           target-directory: "client/go"
@@ -100,5 +98,4 @@ jobs:
           mend-project-name: ${{ env.MEND_PROJECT_NAME }}
 
           # Do not send SCA updates on PRs
-          # update: ${{ contains(fromJson('["workflow_dispatch","schedule"]'), github.event_name) }}
-          update: true # Temporarily always send SCA updates
+          update: ${{ contains(fromJson('["workflow_dispatch","schedule"]'), github.event_name) }}
