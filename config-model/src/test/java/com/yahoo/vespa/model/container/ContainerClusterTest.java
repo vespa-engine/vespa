@@ -429,11 +429,14 @@ public class ContainerClusterTest {
         ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", root.getDeployState());
         cluster.setMemoryPercentage(memoryPercentage);
         cluster.setSearch(new ContainerSearch(root.getDeployState(), cluster, new SearchChains(cluster, "search-chain")));
+        cluster.setDefaultThreadpoolProvider(new DefaultThreadpoolProvider(cluster));
         return cluster;
     }
 
     private static ClusterControllerContainerCluster createClusterControllerCluster(MockRoot root) {
-        return new ClusterControllerContainerCluster(root, "container0", "container1", root.getDeployState());
+        var cluster = new ClusterControllerContainerCluster(root, "container0", "container1", root.getDeployState());
+        cluster.setDefaultThreadpoolProvider(new DefaultThreadpoolProvider(cluster));
+        return cluster;
     }
 
     private static MockRoot createRoot(boolean isHosted) {
