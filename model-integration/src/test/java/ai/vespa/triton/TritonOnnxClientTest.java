@@ -15,7 +15,9 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.*;
 
 /**
  * @author bjorncs
@@ -75,14 +77,157 @@ class TritonOnnxClientTest {
         try (var tritonClient = createTritonClient()) {
             var isReadyBeforeLoad = tritonClient.isModelReady(MODEL_NAME);
             assertFalse(isReadyBeforeLoad);
-            
+
             tritonClient.loadModel(MODEL_NAME);
             var isReadyAfterLoad = tritonClient.isModelReady(MODEL_NAME);
             assertTrue(isReadyAfterLoad);
-            
+
             tritonClient.unloadModel(MODEL_NAME);
             var isReadyAfterUnload = tritonClient.isModelReady(MODEL_NAME);
             assertFalse(isReadyAfterUnload);
+        }
+    }
+
+    @Test
+    void loadUntilModelReady_succeeds_when_load_succeeds_not_immediately() {
+        var modelName = "test-model";
+
+        try (var tritonClient = createTritonClient()) {
+            var client = spy(tritonClient);
+            
+            when(client.isModelReady(modelName)).thenReturn(false).thenReturn(true);
+            var exception = new TritonOnnxClient.TritonException("Load failed");
+            doThrow(exception).doThrow(exception).doNothing().when(client).loadModel(modelName);
+            
+            client.loadUntilModelReady(modelName);
+
+            verify(client, times(2)).isModelReady(modelName);
+            verify(client, times(3)).loadModel(modelName);
+        }
+    }
+
+    @Test
+    void loadUntilModelReady_succeeds_when_not_ready_immediately() {
+        var modelName = "test-model";
+
+        try (var tritonClient = createTritonClient()) {
+            var client = spy(tritonClient);
+
+            when(client.isModelReady(modelName))
+                    .thenReturn(false)
+                    .thenReturn(false)
+                    .thenReturn(true);
+            doNothing().when(client).loadModel(modelName);
+            
+            client.loadUntilModelReady(modelName);
+
+            verify(client, times(3)).isModelReady(modelName);
+            verify(client, times(1)).loadModel(modelName);
+        }
+    }
+
+    @Test
+    void loadUntilModelReady_fails_when_load_always_fails() {
+        var modelName = "test-model";
+
+        try (var tritonClient = createTritonClient()) {
+            var client = spy(tritonClient);
+
+            // Will always throw because this model doesn't exist
+            assertThrows(TritonOnnxClient.TritonException.class, () -> client.loadUntilModelReady(modelName));
+
+            verify(client, times(1)).isModelReady(modelName);
+            verify(client, times(5)).loadModel(modelName);
+        }
+    }
+
+    @Test
+    void loadUntilModelReady_fails_when_never_ready() {
+        var modelName = "test-model";
+
+        try (var tritonClient = createTritonClient()) {
+            var client = spy(tritonClient);
+
+            when(client.isModelReady(modelName)).thenReturn(false);
+            doNothing().when(client).loadModel(modelName);
+
+            assertThrows(TritonOnnxClient.TritonException.class, () -> client.loadUntilModelReady(modelName));
+
+            verify(client, times(6)).isModelReady(modelName);
+            verify(client, times(1)).loadModel(modelName);
+        }
+    }
+
+    @Test
+    void unloadUntilModelNotReady_succeeds_when_unload_succeeds_not_immediately() {
+        var modelName = "test-model";
+
+        try (var tritonClient = createTritonClient()) {
+            var client = spy(tritonClient);
+
+            when(client.isModelReady(modelName)).thenReturn(true).thenReturn(false);
+            var exception = new TritonOnnxClient.TritonException("Unload failed");
+            doThrow(exception).doThrow(exception).doNothing().when(client).unloadModel(modelName);
+
+            client.unloadUntilModelNotReady(modelName);
+
+            verify(client, times(2)).isModelReady(modelName);
+            verify(client, times(3)).unloadModel(modelName);
+        }
+    }
+
+    @Test
+    void unloadUntilModelNotReady_succeeds_when_not_ready_immediately() {
+        var modelName = "test-model";
+
+        try (var tritonClient = createTritonClient()) {
+            var client = spy(tritonClient);
+
+            when(client.isModelReady(modelName))
+                    .thenReturn(true)
+                    .thenReturn(true)
+                    .thenReturn(false);
+            doNothing().when(client).unloadModel(modelName);
+
+            client.unloadUntilModelNotReady(modelName);
+
+            verify(client, times(3)).isModelReady(modelName);
+            verify(client, times(1)).unloadModel(modelName);
+        }
+    }
+
+    @Test
+    void unloadUntilModelNotReady_fails_when_unload_always_fails() {
+        var modelName = "test-model";
+
+        try (var tritonClient = createTritonClient()) {
+            var client = spy(tritonClient);
+
+            when(client.isModelReady(modelName)).thenReturn(true);
+            var exception = new TritonOnnxClient.TritonException("Unload failed");
+            doThrow(exception).when(client).unloadModel(modelName);
+
+            assertThrows(TritonOnnxClient.TritonException.class, () -> client.unloadUntilModelNotReady(modelName));
+
+            verify(client, times(1)).isModelReady(modelName);
+            verify(client, times(5)).unloadModel(modelName);
+        }
+    }
+
+    @Test
+    void unloadUntilModelNotReady_fails_when_never_not_ready() {
+        var modelName = "test-model";
+
+        try (var tritonClient = createTritonClient()) {
+            var client = spy(tritonClient);
+
+            when(client.isModelReady(modelName)).thenReturn(true);
+            doNothing().when(client).unloadModel(modelName);
+
+            assertThrows(TritonOnnxClient.TritonException.class, () -> client.unloadUntilModelNotReady(modelName));
+
+            verify(client, times(6)).isModelReady(modelName);
+            verify(client, times(1)).unloadModel(modelName);
         }
     }
 

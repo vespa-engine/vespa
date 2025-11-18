@@ -85,6 +85,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         this.modelRepositoryPath = Path.of(Defaults.getDefaults().underVespaHome(config.modelRepositoryPath()));
 
         if (isModelControlExplicit) {
+            tritonClient.unloadAllModels();
             deleteAllModelFilesFromModelRepository();
         }
     }
@@ -253,10 +254,6 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
     }
     
-    boolean isModelReady(String modelName) {
-        return tritonClient.isModelReady(modelName);
-    }
-
     @Override
     public void deconstruct() {
         modelResources.values().forEach(TritonModelResource::destroy);

@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -45,10 +46,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @Beta
 public class TritonOnnxClient implements AutoCloseable {
     private static final int MAX_INBOUND_MESSAGE_SIZE_MIB = 128;
-    private static final int MAX_MODEL_LOAD_WAIT_ATTEMPTS = 10;
-    private static final int MAX_MODEL_LOAD_WAIT_DELAY_MILLIS = 1000;
-    private static final int MAX_MODEL_UNLOAD_WAIT_ATTEMPTS = 10;
-    private static final int MAX_MODEL_UNLOAD_WAIT_DELAY_MILLIS = 1000;
+    private static final int MAX_MODEL_LOAD_ATTEMPTS = 5;
+    private static final int MAX_MODEL_LOAD_WAIT_MILLIS = 1000;
+    private static final int MAX_MODEL_UNLOAD_ATTEMPTS = 5;
+    private static final int MAX_MODEL_UNLOAD_WAIT_MILLIS = 1000;
 
     private static final Logger log = Logger.getLogger(TritonOnnxClient.class.getName());
 
@@ -136,19 +137,45 @@ public class TritonOnnxClient implements AutoCloseable {
                 .build();
         invokeGrpc(grpcInferenceStub, s -> s.repositoryModelUnload(request), "Failed to unload model");
     }
-    
+
+    public void unloadAllModels() {
+        log.fine(() -> "Unloading all models");
+        var request =
+                GrpcService.RepositoryIndexRequest.newBuilder().setReady(true).build();
+        var response = invokeGrpc(grpcInferenceStub, s -> s.repositoryIndex(request), "Failed to get repository index");
+
+        for (var modelIndex : response.getModelsList()) {
+            var modelName = modelIndex.getName();
+
+            try {
+                unloadModel(modelName);
+            } catch (TritonException e) {
+                log.log(Level.WARNING, "Failed to unload model " + modelName, e);
+            }
+        }
+    }
+
+    /**
+     * Makes several attempts to load the model and checks its readiness.
+     * This mitigates the timing issue because of delay between model files are copied to model repository 
+     * and the model can be loaded.
+     */
     public void loadUntilModelReady(String modelName) {
         if (isModelReady(modelName)) {
-            log.fine(() -> "Model " + modelName + " is already loaded");
             return;
         }
 
-        long startMillis = System.currentTimeMillis();
+        boolean isLoaded = false;
         TritonException lastException = null;
+        long startMillis = System.currentTimeMillis();
 
-        for (int attempt = 0; attempt < MAX_MODEL_LOAD_WAIT_ATTEMPTS; attempt++) {
+        for (int attempt = 0; attempt < MAX_MODEL_LOAD_ATTEMPTS; attempt++) {
             try {
-                loadModel(modelName);
+                if (!isLoaded) { // We only need one successful load request.
+                    loadModel(modelName);
+                    isLoaded = true;
+                }
+                
                 if (isModelReady(modelName)) {
                     return;
                 }
@@ -156,9 +183,9 @@ public class TritonOnnxClient implements AutoCloseable {
                 lastException = e;
             }
 
-            if (attempt < MAX_MODEL_LOAD_WAIT_ATTEMPTS - 1) {
+            if (attempt < MAX_MODEL_LOAD_ATTEMPTS - 1) {
                 try {
-                    Thread.sleep(MAX_MODEL_LOAD_WAIT_DELAY_MILLIS);
+                    Thread.sleep(MAX_MODEL_LOAD_WAIT_MILLIS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     throw new TritonException("Interrupted loading model " + modelName, e);
@@ -167,32 +194,41 @@ public class TritonOnnxClient implements AutoCloseable {
         }
 
         var waitMillis = System.currentTimeMillis() - startMillis;
-        var exceptionMessage = "Failed to load model " + modelName + " after " + waitMillis + " ms";
+        var exceptionMessage = "Failed loading model " + modelName + " after " + waitMillis + " ms";
         throw new TritonException(exceptionMessage, lastException);
     }
 
+    /**
+     * Makes several attempts to unload the model and check until it's not ready.
+     * This helps to mitigate a timing issue because of the delay between model unload request and the model not ready 
+     * so that model files can be deleted.
+     */
     public void unloadUntilModelNotReady(String modelName) {
         if (!isModelReady(modelName)) {
-            log.fine(() -> "Model " + modelName + " is already unloaded");
             return;
         }
 
-        long startMillis = System.currentTimeMillis();
+        boolean isUnloaded = false;
         TritonException lastException = null;
+        long startMillis = System.currentTimeMillis();
 
-        for (int attempt = 0; attempt < MAX_MODEL_UNLOAD_WAIT_ATTEMPTS; attempt++) {
+        for (int attempt = 0; attempt < MAX_MODEL_UNLOAD_ATTEMPTS; attempt++) {
             try {
-                unloadModel(modelName);
+                if (!isUnloaded) { // We only need one successful unload request.
+                    unloadModel(modelName);
+                    isUnloaded = true;
+                }
+                
                 if (!isModelReady(modelName)) {
                     return;
                 }
             } catch (TritonException e) {
                 lastException = e;
             }
-
-            if (attempt < MAX_MODEL_UNLOAD_WAIT_ATTEMPTS - 1) {
+            
+            if (attempt < MAX_MODEL_UNLOAD_ATTEMPTS - 1) {
                 try {
-                    Thread.sleep(MAX_MODEL_UNLOAD_WAIT_DELAY_MILLIS);
+                    Thread.sleep(MAX_MODEL_UNLOAD_WAIT_MILLIS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     throw new TritonException("Interrupted unloading model " + modelName, e);
@@ -201,7 +237,7 @@ public class TritonOnnxClient implements AutoCloseable {
         }
 
         var waitMillis = System.currentTimeMillis() - startMillis;
-        var exceptionMessage = "Failed to unload model " + modelName + " after " + waitMillis + " ms";
+        var exceptionMessage = "Failed unloading model " + modelName + " after " + waitMillis + " ms";
         throw new TritonException(exceptionMessage, lastException);
     }
 
