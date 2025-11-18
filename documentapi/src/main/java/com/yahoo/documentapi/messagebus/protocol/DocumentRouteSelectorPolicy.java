@@ -10,8 +10,10 @@ import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,9 +29,24 @@ public class DocumentRouteSelectorPolicy
         implements DocumentProtocolRoutingPolicy, ConfigSubscriber.SingleSubscriber<DocumentrouteselectorpolicyConfig> {
 
     private static final Logger log = Logger.getLogger(DocumentRouteSelectorPolicy.class.getName());
-    private Map<String, DocumentSelector> config;
-    private String error = "Not configured.";
+
+    private record ActiveConfiguration(Map<String, DocumentSelector> selectors, String error) {
+        static ActiveConfiguration of(Map<String, DocumentSelector> selectors, String error) {
+            if (selectors != null) {
+                selectors = Collections.unmodifiableMap(selectors);
+            }
+            return new ActiveConfiguration(selectors, error);
+        }
+        static ActiveConfiguration ofError(String error) {
+            return of(null, error);
+        }
+        static ActiveConfiguration ofSelectors(Map<String, DocumentSelector> selectors) {
+            return of(selectors, null);
+        }
+    }
+
     private ConfigSubscriber subscriber;
+    private final AtomicReference<ActiveConfiguration> activeConfiguration = new AtomicReference<>(ActiveConfiguration.ofError("Not configured."));
 
     /** This policy is constructed with the proper config at its time of creation. */
     public DocumentRouteSelectorPolicy(DocumentProtocolPoliciesConfig config) {
@@ -37,14 +54,12 @@ public class DocumentRouteSelectorPolicy
         config.cluster().forEach((name, cluster) -> {
             try {
                 selectors.put(name, new DocumentSelector(cluster.selector()));
-            }
-            catch (ParseException e) {
+            } catch (ParseException e) {
                 throw new IllegalArgumentException("Error parsing selector '" + cluster.selector() +
                                                    "' for route '" + name +"'", e);
             }
         });
-        this.config = Map.copyOf(selectors);
-        this.error = null;
+        activeConfiguration.set(ActiveConfiguration.ofSelectors(selectors));
     }
 
     /**
@@ -63,13 +78,14 @@ public class DocumentRouteSelectorPolicy
      *
      * @return The error string, or null if no error.
      */
-    public synchronized String getError() {
-        return error;
+    public String getError() {
+        return activeConfiguration.getAcquire().error;
     }
 
     /**
      * This method is called when configuration arrives from the config server. The received config object is traversed
-     * and a local map is constructed and swapped with the current {@link #config} map.
+     * and a local map is constructed. {@link #activeConfiguration} is updated to point to a new immutable
+     * configuration using this map.
      *
      * @param cfg The configuration object given by subscription.
      */
@@ -93,10 +109,11 @@ public class DocumentRouteSelectorPolicy
             }
             config.put(route.name(), selector);
         }
-        synchronized (this) {
-            this.config = config;
-            this.error = error;
-        }
+        // Although ActiveConfiguration only has final fields and the memory model guarantees visibility
+        // of such field writes once the constructor is complete, use release/acquire pairing to be robust
+        // in the case any non-final fields should be introduced, or if there could be some extremely
+        // subtle transitive memory visibility issues sneaking around.
+        activeConfiguration.setRelease(ActiveConfiguration.of(config, error));
     }
 
     @Override
@@ -109,18 +126,17 @@ public class DocumentRouteSelectorPolicy
         }
 
         // Invoke private select method for each candidate recipient.
-        synchronized (this) {
-            if (error != null) {
-                context.setError(DocumentProtocol.ERROR_POLICY_FAILURE, error);
-                return;
-            }
-            for (int i = 0; i < context.getNumRecipients(); ++i) {
-                Route recipient = context.getRecipient(i);
-                String routeName = recipient.toString();
-                if (select(context, routeName)) {
-                    Route route = context.getMessageBus().getRoutingTable(DocumentProtocol.NAME).getRoute(routeName);
-                    context.addChild(route != null ? route : recipient);
-                }
+        var cfg = activeConfiguration.getAcquire();
+        if (cfg.error != null) {
+            context.setError(DocumentProtocol.ERROR_POLICY_FAILURE, cfg.error);
+            return;
+        }
+        for (int i = 0; i < context.getNumRecipients(); ++i) {
+            Route recipient = context.getRecipient(i);
+            String routeName = recipient.toString();
+            if (select(cfg, context, routeName)) {
+                Route route = context.getMessageBus().getRoutingTable(DocumentProtocol.NAME).getRoute(routeName);
+                context.addChild(route != null ? route : recipient);
             }
         }
         context.setSelectOnRetry(false);
@@ -136,15 +152,16 @@ public class DocumentRouteSelectorPolicy
      * This method runs the selector associated with the given location on the content of the message. If the selector
      * validates the location, this method returns true.
      *
+     * @param cfg       the configuration active at the time of policy invocation
      * @param context   the routing context that contains the necessary data.
      * @param routeName the candidate route whose selector to run.
-     * @return whether or not to send to the given recipient.
+     * @return whether to send to the given recipient.
      */
-    private boolean select(RoutingContext context, String routeName) {
-        if (config == null) {
+    private boolean select(ActiveConfiguration cfg, RoutingContext context, String routeName) {
+        if (cfg.selectors == null) {
             return true;
         }
-        DocumentSelector selector = config.get(routeName);
+        DocumentSelector selector = cfg.selectors.get(routeName);
         if (selector == null) {
             return true;
         }
