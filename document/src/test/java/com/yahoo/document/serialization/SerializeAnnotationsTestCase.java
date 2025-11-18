@@ -98,7 +98,7 @@ public class SerializeAnnotationsTestCase {
         AnnotationType cityType = registry.getType("city");
 
         var cityDataType = (StructDataType) cityType.getDataType();
-        var positionType = (StructDataType) cityDataType.getField("position").getDataType();
+        var positionType = (StructDataType) cityDataType.getField("cityposition").getDataType();
         var refArrT = (ArrayDataType) cityDataType.getField("references").getDataType();
         var annRefType = (AnnotationReferenceDataType) refArrT.getNestedType();
 
@@ -110,7 +110,7 @@ public class SerializeAnnotationsTestCase {
         Annotation franciscoAnnotation = new Annotation(textType);
 
         Struct positionWithRef = cityDataType.createFieldValue();
-        positionWithRef.setFieldValue("position", position);
+        positionWithRef.setFieldValue("cityposition", position);
 
         Field referencesField = cityDataType.getField("references");
         Array<FieldValue> refList =

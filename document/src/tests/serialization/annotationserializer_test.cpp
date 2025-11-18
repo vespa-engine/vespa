@@ -55,7 +55,7 @@ read_span_trees(const string &file_name, const FixedTypeRepo &repo, std::optiona
 TEST(AnnotationSerializerTest, require_that_simple_span_tree_is_deserialized)
 {
     DocumentTypeRepo type_repo(readDocumenttypesConfig(TEST_PATH("annotation.serialize.test.repo.cfg")));
-    FixedTypeRepo repo(type_repo);
+    FixedTypeRepo repo(type_repo, "annotation_serialize_test");
     std::optional<StringFieldValue::SpanTrees> span_trees;
     ASSERT_NO_FATAL_FAILURE(read_span_trees(TEST_PATH("test_data_serialized_simple"), repo, span_trees));
     auto span_tree = std::move(span_trees.value().front());
@@ -101,7 +101,7 @@ struct AnnotationComparator {
 TEST(AnnotationSerializerTest, require_that_advanced_span_tree_is_deserialized)
 {
     DocumentTypeRepo type_repo(readDocumenttypesConfig(TEST_PATH("annotation.serialize.test.repo.cfg")));
-    FixedTypeRepo repo(type_repo, "my_document");
+    FixedTypeRepo repo(type_repo, "annotation_serialize_test");
     std::optional<StringFieldValue::SpanTrees> span_trees;
     ASSERT_NO_FATAL_FAILURE(read_span_trees(TEST_PATH("test_data_serialized_advanced"), repo, span_trees));
     auto span_tree = std::move(span_trees.value().front());
@@ -138,19 +138,19 @@ TEST(AnnotationSerializerTest, require_that_advanced_span_tree_is_deserialized)
 
     AnnotationComparator comparator;
     comparator.addActual(span_tree->begin(), span_tree->end())
-        .addExpected("Annotation(AnnotationType(20001, begintag)\n"
+        .addExpected("Annotation(AnnotationType(-1724080927, begintag)\n"
                      "Span(6, 3))")
-        .addExpected("Annotation(AnnotationType(20000, text)\n"
+        .addExpected("Annotation(AnnotationType(-995174191, text)\n"
                      "Span(9, 10))")
-        .addExpected("Annotation(AnnotationType(20000, text)\n"
+        .addExpected("Annotation(AnnotationType(-995174191, text)\n"
                      "Span(19, 4))")
-        .addExpected("Annotation(AnnotationType(20002, endtag)\n"
+        .addExpected("Annotation(AnnotationType(-758274262, endtag)\n"
                      "Span(23, 4))")
-        .addExpected("Annotation(AnnotationType(20000, text)\n"
+        .addExpected("Annotation(AnnotationType(-995174191, text)\n"
                      "Span(6, 13))")
-        .addExpected("Annotation(AnnotationType(20003, body)\n"
+        .addExpected("Annotation(AnnotationType(1008912124, body)\n"
                      "Span(19, 8))")
-        .addExpected("Annotation(AnnotationType(20004, paragraph)\n"
+        .addExpected("Annotation(AnnotationType(-334578243, paragraph)\n"
                      "AlternateSpanList(\n"
                      "  Probability 0.9 : SpanList(\n"
                      "    Span(6, 3)\n"
@@ -163,13 +163,13 @@ TEST(AnnotationSerializerTest, require_that_advanced_span_tree_is_deserialized)
                      "    Span(19, 8)\n"
                      "  )\n"
                      "))")
-        .addExpected("Annotation(AnnotationType(20001, begintag)\n"
+        .addExpected("Annotation(AnnotationType(-1724080927, begintag)\n"
                      "Span(0, 6))")
-        .addExpected("Annotation(AnnotationType(20000, text)\n"
+        .addExpected("Annotation(AnnotationType(-995174191, text)\n"
                      "Span(27, 9))")
-        .addExpected("Annotation(AnnotationType(20002, endtag)\n"
+        .addExpected("Annotation(AnnotationType(-758274262, endtag)\n"
                      "Span(36, 8))")
-        .addExpected("Annotation(AnnotationType(20003, body)\n"
+        .addExpected("Annotation(AnnotationType(1008912124, body)\n"
                      "SpanList(\n"
                      "  Span(0, 6)\n"
                      "  AlternateSpanList(\n"
@@ -187,15 +187,15 @@ TEST(AnnotationSerializerTest, require_that_advanced_span_tree_is_deserialized)
                      "  Span(27, 9)\n"
                      "  Span(36, 8)\n"
                      "))")
-        .addExpected("Annotation(AnnotationType(20005, city)\n"
+        .addExpected("Annotation(AnnotationType(1491951678, city)\n"
                      "Struct annotation.city(\n"
-                     "  position - Struct myposition(\n"
-                     "    latitude - 37,\n"
-                     "    longitude - -122\n"
-                     "  ),\n"
                      "  references - Array(size: 2,\n"
                      "    AnnotationReferenceFieldValue(n),\n"
                      "    AnnotationReferenceFieldValue(n)\n"
+                     "  ),\n"
+                     "  cityposition - Struct myposition(\n"
+                     "    latitude - 37,\n"
+                     "    longitude - -122\n"
                      "  )\n"
                      "))");
     comparator.compare();
@@ -205,7 +205,7 @@ TEST(AnnotationSerializerTest, require_that_span_tree_can_be_serialized)
 {
     DocumentTypeRepo type_repo(
             readDocumenttypesConfig(TEST_PATH("annotation.serialize.test.repo.cfg")));
-    FixedTypeRepo repo(type_repo, "my_document");
+    FixedTypeRepo repo(type_repo, "annotation_serialize_test");
     string file_name = TEST_PATH("test_data_serialized_advanced");
 
     FastOS_File file(file_name.c_str());
