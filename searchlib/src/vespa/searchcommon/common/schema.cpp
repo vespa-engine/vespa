@@ -234,7 +234,7 @@ Schema::loadFromFile(const std::string & fileName)
 {
     std::ifstream file(fileName.c_str());
     if (!file) {
-        LOG(warning, "Could not open input file '%s' as part of loadFromFile()", fileName.c_str());
+        LOG(error, "Could not open input file '%s' as part of loadFromFile()", fileName.c_str());
         return false;
     }
     config::StringVector lines;
@@ -270,13 +270,13 @@ Schema::saveToFile(const std::string & fileName) const
     writeToStream(os, true);
     std::ofstream file(fileName.c_str());
     if (!file) {
-        LOG(warning, "Could not open output file '%s' as part of saveToFile()", fileName.c_str());
+        LOG(error, "Could not open output file '%s' as part of saveToFile()", fileName.c_str());
         return false;
     }
     file << os.view();
     file.close();
     if (file.fail()) {
-        LOG(warning,
+        LOG(error,
             "Could not write to output file '%s' as part of saveToFile()",
             fileName.c_str());
         return false;
@@ -284,11 +284,11 @@ Schema::saveToFile(const std::string & fileName) const
     FastOS_File s;
     s.OpenReadWrite(fileName.c_str());
     if (!s.IsOpened()) {
-        LOG(warning, "Could not open schema file '%s' for fsync", fileName.c_str());
+        LOG(error, "Could not open schema file '%s' for fsync", fileName.c_str());
         return false;
     } else {
         if (!s.Sync()) {
-            LOG(warning, "Could not fsync schema file '%s'", fileName.c_str());
+            LOG(error, "Could not fsync schema file '%s'", fileName.c_str());
             return false;
         }
     }

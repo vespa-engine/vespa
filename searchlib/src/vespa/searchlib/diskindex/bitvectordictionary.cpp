@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/fileheadertags.h>
 #include <vespa/searchlib/common/read_stats.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/util/error.h>
 #include <vespa/fastos/file.h>
 #include <cassert>
 
@@ -39,7 +40,8 @@ BitVectorDictionary::open(const std::string &pathPrefix,
         FastOS_File idxFile;
         idxFile.OpenReadOnly(booloccIdxName.c_str());
         if (!idxFile.IsOpened()) {
-            LOG(warning, "Could not open bitvector idx file '%s'", booloccIdxName.c_str());
+            LOG(error, "Could not open bitvector idx file '%s': %s", booloccIdxName.c_str(),
+                vespalib::getLastErrorString().c_str());
             return false;
         }
 
@@ -80,7 +82,8 @@ BitVectorDictionary::open(const std::string &pathPrefix,
     }
     _datFile->OpenReadOnly(booloccDatName.c_str());
     if (!_datFile->IsOpened()) {
-        LOG(warning, "Could not open bitvector dat file '%s'", booloccDatName.c_str());
+        LOG(error, "Could not open bitvector dat file '%s': %s", booloccDatName.c_str(),
+            vespalib::getLastErrorString().c_str());
         return false;
     }
     vespalib::FileHeader datHeader(64);

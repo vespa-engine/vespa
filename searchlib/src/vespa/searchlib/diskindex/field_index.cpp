@@ -101,7 +101,7 @@ FieldIndex::open_dictionary(const std::string& field_dir, const TuneFileSearch& 
     std::string dictName = field_dir + "/dictionary";
     auto dict = std::make_unique<PageDict4RandRead>();
     if (!dict->open(dictName, tune_file_search._read)) {
-        LOG(warning, "Could not open disk dictionary '%s'", dictName.c_str());
+        LOG(error, "Could not open disk dictionary '%s'", dictName.c_str());
         return false;
     }
     _dict = std::move(dict);
@@ -135,19 +135,19 @@ FieldIndex::open(const std::string& field_dir, const TuneFileSearch& tune_file_s
                    DiskPostingFileReal::getSubIdentifier()) {
             dynamicK = false;
         } else {
-            LOG(warning, "Could not detect format for posocc file read %s", postingName.c_str());
+            LOG(error, "Could not detect format for posocc file read %s", postingName.c_str());
         }
     }
     pFile = dynamicK ? std::make_shared<DiskPostingFileDynamicKReal>() : std::make_shared<DiskPostingFileReal>();
     auto tune_file_search_posting_list = tune_file_search.get_tune_file_search_posting_list();
     if (!pFile->open(postingName, tune_file_search_posting_list)) {
-        LOG(warning, "Could not open posting list file '%s'", postingName.c_str());
+        LOG(error, "Could not open posting list file '%s'", postingName.c_str());
         return false;
     }
 
     bDict = std::make_shared<BitVectorDictionary>();
     if (!bDict->open(field_dir, tune_file_search._read, BitVectorKeyScope::PERFIELD_WORDS)) {
-        LOG(warning, "Could not open bit vector dictionary in '%s'", field_dir.c_str());
+        LOG(error, "Could not open bit vector dictionary in '%s'", field_dir.c_str());
         return false;
     }
     _posting_file = std::move(pFile);

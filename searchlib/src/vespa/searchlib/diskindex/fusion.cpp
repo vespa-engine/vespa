@@ -124,7 +124,10 @@ Fusion::merge(vespalib::Executor& shared_executor, std::shared_ptr<IFlushToken> 
     }
 
     std::filesystem::create_directory(std::filesystem::path(_fusion_out_index.get_path()));
-    _fusion_out_index.get_schema().saveToFile(_fusion_out_index.get_path() + "/schema.txt");
+    if (!_fusion_out_index.get_schema().saveToFile(_fusion_out_index.get_path() + "/schema.txt")) {
+        LOG(error, "Could not save schema to '%s'", (_fusion_out_index.get_path() + "/schema.txt").c_str());
+        return false;
+    }
     if (!DocumentSummary::writeDocIdLimit(_fusion_out_index.get_path(), _fusion_out_index.get_doc_id_limit())) {
         LOG(error, "Could not write docsum count in dir %s: %s", _fusion_out_index.get_path().c_str(), getLastErrorString().c_str());
         return false;
