@@ -354,7 +354,7 @@ public class Content extends ConfigModel {
             if (cluster.getDocproc() == null) {
                 DocprocChains chains = new DocprocChains(cluster, "docprocchains",
                         new ContainerDocproc.Threadpool(deployState, null));
-                ContainerDocproc containerDocproc = new ContainerDocproc(cluster, chains);
+                ContainerDocproc containerDocproc = new ContainerDocproc(cluster, chains, deployState);
                 cluster.setDocproc(containerDocproc);
             }
         }

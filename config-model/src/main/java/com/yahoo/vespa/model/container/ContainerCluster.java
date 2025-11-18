@@ -182,7 +182,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
         addCommonVespaBundles();
         addSimpleComponent(VoidRequestLog.class);
-        addComponent(new DefaultThreadpoolProvider(this));
         defaultHandlerThreadpool = new Handler.DefaultHandlerThreadpool(deployState, null);
         addComponent(defaultHandlerThreadpool);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
@@ -427,6 +426,10 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public Optional<SecretStore> getSecretStore() {
         return Optional.ofNullable(secretStore);
+    }
+
+    public void setDefaultThreadpoolProvider(DefaultThreadpoolProvider defaultThreadpoolProvider) {
+        addComponent(defaultThreadpoolProvider);
     }
 
     public Map<ComponentId, Component<?, ?>> getComponentsMap() {

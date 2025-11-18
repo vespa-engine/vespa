@@ -2041,7 +2041,7 @@
     "methods" : [
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig)",
       "public void <init>(java.lang.String)",
-      "public synchronized java.lang.String getError()",
+      "public java.lang.String getError()",
       "public void configure(com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig)",
       "public void select(com.yahoo.messagebus.routing.RoutingContext)",
       "public void merge(com.yahoo.messagebus.routing.RoutingContext)",

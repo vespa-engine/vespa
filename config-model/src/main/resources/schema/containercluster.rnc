@@ -26,7 +26,8 @@ ContainerServices =
     ZooKeeper? &
     GenericConfig* &
     Clients? &
-    Inference?
+    Inference? &
+    Threadpool?
 
 # TODO(ogronnesby): Change this configuration syntax
 ClientAuthorize = element client-authorize { empty }

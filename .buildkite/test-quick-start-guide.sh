@@ -16,8 +16,16 @@ echo "Setting up documentation test environment..."
 # Clone and setup doc tests
 git clone -q --depth 1 https://github.com/vespa-engine/documentation
 cd documentation
+
+testfile="en/basics/deploy-an-application-local.html"
+if [[ ! -f "$testfile" ]]; then
+  echo "ERROR: The quick start test file is missing: ${testfile}" 1>&2
+  echo "ERROR: Expected to be found on https://github.com/vespa-engine/documentation/tree/master/${testfile}" 1>&2
+  exit 1
+fi
+
 python3 -m pip install -qqq -r test/requirements.txt --user
-echo -e "urls:\n    - en/deploy-an-application-local.html" > test/_deploy-an-application-local.yaml
+echo -e "urls:\n    - ${testfile}" > test/_deploy-an-application-local.yaml
 
 echo "Downloading Vespa CLI..."
 # Get the required vespa CLI

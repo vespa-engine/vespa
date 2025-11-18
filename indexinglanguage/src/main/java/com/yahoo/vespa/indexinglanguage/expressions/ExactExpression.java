@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.annotation.Annotation;
 import com.yahoo.document.annotation.AnnotationTypes;
+import com.yahoo.document.annotation.internal.SimpleIndexingAnnotations;
 import com.yahoo.document.annotation.Span;
 import com.yahoo.document.annotation.SpanList;
 import com.yahoo.document.annotation.SpanNode;
@@ -53,12 +54,23 @@ public final class ExactExpression extends Expression {
         String prev = output.getString();
         String next = config.getLowercase() ? toLowerCase(prev) : prev;
 
-        SpanTree tree = output.getSpanTree(SpanTrees.LINGUISTICS);
         if (next.length() > config.getMaxTokenLength()) {
-            if (tree != null)
-                output.removeSpanTree(SpanTrees.LINGUISTICS);
+            output.removeSpanTree(SpanTrees.LINGUISTICS);
             return;
         }
+
+        // Try simple path first
+        if (output.wantSimpleAnnotations()) {
+            SimpleIndexingAnnotations simple = new SimpleIndexingAnnotations();
+            String termOverride = next.equals(prev) ? null : next;
+            simple.add(0, prev.length(), termOverride);
+            // Note: TOKEN_TYPE annotation is not created - it's unused by C++ anyway
+            output.setSimpleAnnotations(simple);
+            return;
+        }
+
+        // Fallback to full mode
+        SpanTree tree = output.getSpanTree(SpanTrees.LINGUISTICS);
         SpanList root;
         if (tree == null) {
             root = new SpanList();

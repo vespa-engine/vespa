@@ -259,6 +259,11 @@
       </threadpool>
     </document-processing>
 
+    <!-- Container default threadpool config -->
+    <threadpool>
+      <threads max="8">4</threads>
+      <queue>50</queue>
+    </threadpool>
   </container>
 
   <container id='qrsCluster_2' version='1.0'>

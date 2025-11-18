@@ -73,6 +73,7 @@ import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.ContainerThreadpool;
 import com.yahoo.vespa.model.container.DataplaneProxy;
+import com.yahoo.vespa.model.container.DefaultThreadpoolProvider;
 import com.yahoo.vespa.model.container.IdentityProvider;
 import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.SecretStore;
@@ -219,6 +220,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addSearch(deployState, spec, cluster, context);
         addDocproc(deployState, spec, cluster);
         addDocumentApi(deployState, spec, cluster, context);  // NOTE: Must be done after addSearch
+        addDefaultThreadpool(deployState, spec, cluster);
 
         cluster.addDefaultHandlersExceptStatus();
         addStatusHandlers(cluster, context.getDeployState().isHosted());
@@ -860,6 +862,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addSignificance(deployState, searchElement, cluster);
     }
 
+    private void addDefaultThreadpool(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
+        Element threadpoolElement = XML.getChild(spec, "threadpool");
+        if (threadpoolElement == null) {
+            cluster.setDefaultThreadpoolProvider(new DefaultThreadpoolProvider(cluster));
+        } else {
+            var options = ContainerThreadpoolOptionsBuilder.build(deployState, spec);
+            cluster.setDefaultThreadpoolProvider(new DefaultThreadpoolProvider(deployState, cluster, options));
+        }
+    }
+
     private void addSignificance(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
         Element significanceElement = XML.getChild(spec, "significance");
 
@@ -1360,7 +1372,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         DocprocChains chains = new DomDocprocChainsBuilder(docprocHandlerThreadpool).build(deployState, cluster, docprocElement);
 
         ContainerDocproc.Options docprocOptions = DocprocOptionsBuilder.build(docprocElement, deployState.getDeployLogger());
-        return new ContainerDocproc(cluster, chains, docprocOptions, !standaloneBuilder);
+        return new ContainerDocproc(cluster, chains, docprocOptions, deployState, !standaloneBuilder);
      }
 
     private void addIncludes(Element parentElement) {

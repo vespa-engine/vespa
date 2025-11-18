@@ -84,7 +84,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
 import static com.yahoo.jdisc.http.HttpRequest.Method.DELETE;
@@ -371,6 +370,11 @@ public class DocumentV1ApiTest {
         visitorTrace.getRoot().addChild(new TraceNode().setStrict(false)
                                                 .addChild("Fast Car")
                                                 .addChild("Baby Can I Hold You"));
+
+        // This progress token has the same contents as the one the visitor session will be initialized with if
+        // there is no explicitly provided progress token as part of the visitor parameters.
+        ProgressToken progress = makeIncompleteProgressToken();
+
         access.visitorTrace = visitorTrace;
         access.expect(parameters -> {
             assertEquals("content", parameters.getRoute().toString());
@@ -433,8 +437,9 @@ public class DocumentV1ApiTest {
                                { "message": "Baby Can I Hold You" }
                              ]
                            }
-                         ]
-                       }""", response.readAll());
+                         ],
+                         "continuation": "%s"
+                       }""".formatted(progress.serializeToString()), response.readAll());
         assertEquals(200, response.getStatus());
         access.visitorTrace = null;
 
@@ -460,6 +465,7 @@ public class DocumentV1ApiTest {
             statistics.setBucketsVisited(1);
             statistics.setDocumentsVisited(2);
             parameters.getControlHandler().onVisitorStatistics(statistics);
+            parameters.getControlHandler().onProgress(progress);
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
             // Extra documents are ignored.
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc3)), tokens.get(2));
@@ -485,14 +491,12 @@ public class DocumentV1ApiTest {
                              }
                            }
                          ],
-                         "documentCount": 2
-                       }""", response.readAll());
+                         "documentCount": 2,
+                         "continuation": "%s"
+                       }""".formatted(progress.serializeToString()), response.readAll());
         assertEquals(200, response.getStatus());
 
         // GET with namespace and document type is a restricted visit.
-        ProgressToken progress = new ProgressToken();
-        VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(1), new BucketId(2)), 8, progress)
-                       .update(new BucketId(1), new BucketId(1));
         access.expect(parameters -> {
             assertEquals("(music) and (id.namespace=='space')", parameters.getDocumentSelection());
             assertEquals(progress.serializeToString(), parameters.getResumeToken().serializeToString());
@@ -508,9 +512,11 @@ public class DocumentV1ApiTest {
         assertEquals(400, response.getStatus());
 
         // GET when a streamed visit returns status code 200 also when errors occur.
+        // But we MUST always include the continuation token, or the client will believe
+        // that visiting has completed.
         access.expect(parameters -> {
             assertEquals("(music) and (id.namespace=='space')", parameters.getDocumentSelection());
-            parameters.getControlHandler().onProgress(progress);
+            parameters.getControlHandler().onProgress(makePartiallyCompleteProgressToken());
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.FAILURE, "failure?");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?stream=true");
@@ -519,8 +525,9 @@ public class DocumentV1ApiTest {
                          "pathId": "/document/v1/space/music/docid",
                          "documents": [],
                          "documentCount": 0,
-                         "message": "failure?"
-                       }""", response.readAll());
+                         "message": "failure?",
+                         "continuation": "%s"
+                       }""".formatted(makePartiallyCompleteProgressToken().serializeToString()), response.readAll());
         assertEquals(200, response.getStatus());
         assertNull(response.getResponse().headers().get("X-Vespa-Ignored-Fields"));
 
@@ -547,6 +554,8 @@ public class DocumentV1ApiTest {
             statistics.setDocumentsVisited(2);
             // Visiting with remote data handlers should report the remotely aggregated statistics
             parameters.getControlHandler().onVisitorStatistics(statistics);
+            // A complete progress token should not emit a continuation object
+            parameters.getControlHandler().onProgress(makeCompleteProgressToken());
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "We made it!");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?destinationCluster=content&selection=true&cluster=content&timeout=60", POST);
@@ -594,8 +603,9 @@ public class DocumentV1ApiTest {
         assertSameJson("""
                        {
                          "pathId": "/document/v1/space/music/docid",
-                         "documentCount": 1
-                       }""",
+                         "documentCount": 1,
+                         "continuation": "%s"
+                       }""".formatted(progress.serializeToString()),
                        response.readAll());
         assertEquals(200, response.getStatus());
         assertEquals("true", response.getResponse().headers().get("X-Vespa-Ignored-Fields").get(0).toString());
@@ -645,6 +655,7 @@ public class DocumentV1ApiTest {
             return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=false&cluster=content", DELETE);
+        // A non-streaming failure response does not include a continuation token since it has a non-200 response
         assertSameJson("""
                        {
                          "pathId": "/document/v1/space/music/docid",
@@ -710,8 +721,9 @@ public class DocumentV1ApiTest {
                        {
                          "pathId": "/document/v1/space/music/number/123",
                          "documents": [ ],
-                         "documentCount": 0
-                       }""",
+                         "documentCount": 0,
+                         "continuation": "%s"
+                       }""".formatted(progress.serializeToString()),
                        response.readAll());
         assertEquals(200, response.getStatus());
 
@@ -1030,7 +1042,8 @@ public class DocumentV1ApiTest {
 
         // TIMEOUT is a 504
         access.session.expect((id, parameters) -> {
-            assertFalse(clock.instant().plusSeconds(1000).isAfter(parameters.deadline().get())); // Static clock in handler vs real clock in Request.
+            // FIXME mix of real/fake clocks with apparent rounding issues :I
+            assertFalse(clock.instant().plusSeconds(999).isAfter(parameters.deadline().get())); // Static clock in handler vs real clock in Request.
             parameters.responseHandler().get().handleResponse(new Response(0, "timeout", Response.Outcome.TIMEOUT));
             return new Result();
         });
@@ -1155,11 +1168,13 @@ public class DocumentV1ApiTest {
                 {"put":"id:space:music:g=a:three","fields":{}}
                 {"remove":"id:space:music::t-square-truth"}
                 {"sessionStats":{"documentCount":4}}
-                """, response.readAll());
+                {"continuation":{"token":"%s","percentFinished":0.0}}
+                """.formatted(makeIncompleteProgressToken().serializeToString()), response.readAll());
         assertEquals(200, response.getStatus());
         List<String> contentType = response.getResponse().headers().get("Content-Type");
         assertEquals(1, contentType.size());
         assertEquals("application/jsonl; charset=UTF-8", contentType.get(0));
+        driver.close();
     }
 
     @Test
@@ -1190,12 +1205,14 @@ public class DocumentV1ApiTest {
                              }
                            }
                          ],
-                         "documentCount": 1
-                       }""", response.readAll());
+                         "documentCount": 1,
+                         "continuation": "%s"
+                       }""".formatted(makeIncompleteProgressToken().serializeToString()), response.readAll());
         assertEquals(200, response.getStatus());
         List<String> contentType = response.getResponse().headers().get("Content-Type");
         assertEquals(1, contentType.size());
         assertEquals("application/json; charset=UTF-8", contentType.get(0));
+        driver.close();
     }
 
     @Test
@@ -1211,6 +1228,73 @@ public class DocumentV1ApiTest {
                                  "https://docs.vespa.ai/en/reference/document-v1-api-reference.html#accept\"" +
                 "}", response.readAll());
         assertEquals(400, response.getStatus());
+        driver.close();
+    }
+
+    @Test
+    void streaming_visit_timeout_with_zero_visited_buckets_emits_continuation() {
+        var driver = new RequestHandlerTestDriver(handler);
+        access.expect(parameters -> {
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "uh oh");
+        });
+        var request = driver.createRequest("http://localhost/document/v1?cluster=content&stream=true", HttpRequest.Method.GET);
+        var response = driver.sendRequest(request, "");
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1",
+                         "documents": [],
+                         "documentCount": 0,
+                         "message": "No buckets visited within timeout of -1ms (request timeout -5s)",
+                         "continuation": "%s"
+                       }""".formatted(makeIncompleteProgressToken().serializeToString()), response.readAll());
+        assertEquals(200, response.getStatus());
+        driver.close();
+    }
+
+    @Test
+    void initially_provided_continuation_token_is_returned_if_session_has_no_progress() {
+        var driver = new RequestHandlerTestDriver(handler);
+        var progress = makePartiallyCompleteProgressToken();
+        access.expect(parameters -> {
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "uh oh");
+        });
+        var request = driver.createRequest("http://localhost/document/v1?cluster=content&stream=true&continuation=%s"
+                .formatted(progress.serializeToString()), HttpRequest.Method.GET);
+        var response = driver.sendRequest(request, "");
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1",
+                         "documents": [],
+                         "documentCount": 0,
+                         "message": "No buckets visited within timeout of -1ms (request timeout -5s)",
+                         "continuation": "%s"
+                       }""".formatted(progress.serializeToString()), response.readAll());
+        assertEquals(200, response.getStatus());
+        driver.close();
+    }
+
+    @Test
+    void most_recent_progress_is_returned_as_continuation_token() {
+        var driver = new RequestHandlerTestDriver(handler);
+        access.expect(parameters -> {
+            var controlHandler = parameters.getControlHandler();
+            controlHandler.onProgress(makePartiallyCompleteProgressToken()); // Overrides request-provided progress
+            controlHandler.onProgress(makePartiallyCompleteProgressToken2()); // Overrides above progress
+            controlHandler.onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "uh oh");
+        });
+        var request = driver.createRequest("http://localhost/document/v1?cluster=content&stream=true&continuation=%s"
+                .formatted(makeIncompleteProgressToken().serializeToString()), HttpRequest.Method.GET);
+        var response = driver.sendRequest(request, "");
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1",
+                         "documents": [],
+                         "documentCount": 0,
+                         "message": "No buckets visited within timeout of -1ms (request timeout -5s)",
+                         "continuation": "%s"
+                       }""".formatted(makePartiallyCompleteProgressToken2().serializeToString()), response.readAll());
+        assertEquals(200, response.getStatus());
+        driver.close();
     }
 
     @Test
@@ -1243,10 +1327,12 @@ public class DocumentV1ApiTest {
         assertSameJson("""
                         {
                           "pathId": "/document/v1/space/music/docid",
-                          "documentCount": 1
-                        }""",
+                          "documentCount": 1,
+                          "continuation": "%s"
+                        }""".formatted(makeIncompleteProgressToken().serializeToString()),
                 response.readAll());
         assertEquals(200, response.getStatus());
+        driver.close();
     }
 
     @Test
@@ -1272,10 +1358,12 @@ public class DocumentV1ApiTest {
         assertSameJson("""
                         {
                           "pathId": "/document/v1/",
-                          "documentCount": 1
-                        }""",
+                          "documentCount": 1,
+                          "continuation": "%s"
+                        }""".formatted(makeIncompleteProgressToken().serializeToString()),
                 response.readAll());
         assertEquals(200, response.getStatus());
+        driver.close();
     }
 
     private void doTestVisitRequestWithParams(String httpReqParams, Consumer<VisitorParameters> paramChecker) {
@@ -1289,8 +1377,9 @@ public class DocumentV1ApiTest {
                             {
                               "pathId": "/document/v1/",
                               "documents": [ ],
-                              "documentCount": 0
-                            }""",
+                              "documentCount": 0,
+                              "continuation": "%s"
+                            }""".formatted(makeIncompleteProgressToken().serializeToString()),
                     response.readAll());
             assertEquals(200, response.getStatus());
         }
@@ -1412,6 +1501,40 @@ public class DocumentV1ApiTest {
         driver.close();
     }
 
+    private static ProgressToken makeIncompleteProgressToken() {
+        var progress = new ProgressToken();
+        VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(16, 1), new BucketId(16, 2)), 16, progress)
+                .update(new BucketId(16, 1), ProgressToken.NULL_BUCKET);
+        assertFalse(progress.isFinished());
+        return progress;
+    }
+
+    private static ProgressToken makePartiallyCompleteProgressToken() {
+        var progress = new ProgressToken();
+        VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(16, 1), new BucketId(16, 2)), 16, progress)
+                .update(new BucketId(16, 1), new BucketId(16, 1L << 33));
+        assertFalse(progress.isFinished());
+        return progress;
+    }
+
+    // Subsumes token from makePartiallyCompleteProgressToken
+    private static ProgressToken makePartiallyCompleteProgressToken2() {
+        var progress = new ProgressToken();
+        var iter = VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(16, 1), new BucketId(16, 2)), 16, progress);
+        iter.update(new BucketId(16, 1), ProgressToken.FINISHED_BUCKET);
+        iter.update(new BucketId(16, 2), new BucketId(16, 2L << 33));
+        assertFalse(progress.isFinished());
+        return progress;
+    }
+
+    private static ProgressToken makeCompleteProgressToken() {
+        var progress = new ProgressToken();
+        var iter = VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(16, 1), new BucketId(16, 2)), 16, progress);
+        iter.update(new BucketId(16, 1), ProgressToken.FINISHED_BUCKET);
+        iter.update(new BucketId(16, 2), ProgressToken.FINISHED_BUCKET);
+        assertTrue(progress.isFinished());
+        return progress;
+    }
 
     static class MockDocumentAccess extends DocumentAccess {
 
@@ -1443,7 +1566,7 @@ public class DocumentV1ApiTest {
                         parameters.getLocalDataHandler().setSession(this);
                 }
                 @Override public boolean isDone() { return false; }
-                @Override public ProgressToken getProgress() { return null; }
+                @Override public ProgressToken getProgress() { return makeIncompleteProgressToken(); }
                 @Override public Trace getTrace() { return visitorTrace; }
                 @Override public boolean waitUntilDone(long timeoutMs) { return false; }
                 @Override public void ack(AckToken token) { assertTrue(outstanding.remove(token)); }
