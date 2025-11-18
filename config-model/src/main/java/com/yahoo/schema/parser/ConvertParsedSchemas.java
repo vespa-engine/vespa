@@ -67,7 +67,7 @@ public class ConvertParsedSchemas {
         this.properties = properties;
         this.rankProfileRegistry = rankProfileRegistry;
         this.documentsOnly = documentsOnly;
-        this.typeConverter = new ConvertParsedTypes(orderedInput, docMan);
+        this.typeConverter = new ConvertParsedTypes(orderedInput, docMan, deployLogger);
     }
 
     private final Map<String, SDDocumentType> convertedDocuments = new LinkedHashMap<>();
