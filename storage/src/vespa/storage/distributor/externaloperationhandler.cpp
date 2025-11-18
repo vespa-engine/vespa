@@ -316,18 +316,18 @@ bool ExternalOperationHandler::message_size_is_above_put_or_update_limit(uint32_
     return (msg_size > _op_ctx.distributor_config().max_document_operation_message_size_bytes());
 }
 
-void ExternalOperationHandler::reject_as_oversized_message(api::StorageCommand& cmd) {
+void ExternalOperationHandler::reject_as_oversized_message(api::StorageCommand& cmd, const std::string& raw_document_id) {
     const uint32_t limit = _op_ctx.distributor_config().max_document_operation_message_size_bytes();
-    std::string msg = vespalib::make_string("Message size (%u bytes) exceeds maximum configured limit (%u bytes), "
+    std::string msg = vespalib::make_string("Message size (%u bytes) exceeds maximum configured limit (%u bytes) for document id '%s', "
                                             "see https://docs.vespa.ai/en/reference/services-content.html#max-document-size for how to configure",
-                                            cmd.getApproxByteSize(), limit);
+                                            cmd.getApproxByteSize(), limit, raw_document_id.c_str());
     // TODO increment a metric
     bounce_with_result(cmd, api::ReturnCode(api::ReturnCode::REJECTED, std::move(msg)));
 }
 
 bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd) {
     if (message_size_is_above_put_or_update_limit(cmd->getApproxByteSize())) [[unlikely]] {
-        reject_as_oversized_message(*cmd);
+        reject_as_oversized_message(*cmd, cmd->getDocumentId().toString());
         return true;
     }
     if (_op_ctx.cluster_state_bundle().block_feed_in_cluster()) [[unlikely]] {
@@ -382,7 +382,7 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
 
 bool ExternalOperationHandler::onUpdate(const std::shared_ptr<api::UpdateCommand>& cmd) {
     if (message_size_is_above_put_or_update_limit(cmd->getApproxByteSize())) [[unlikely]] {
-        reject_as_oversized_message(*cmd);
+        reject_as_oversized_message(*cmd, cmd->getDocumentId().toString());
         return true;
     }
     if (_op_ctx.cluster_state_bundle().block_feed_in_cluster() &&
