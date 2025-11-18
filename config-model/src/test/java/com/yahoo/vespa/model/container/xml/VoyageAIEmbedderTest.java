@@ -53,11 +53,9 @@ public class VoyageAIEmbedderTest {
 
         VoyageAiEmbedderConfig config = getVoyageAIEmbedderConfig(cluster, "voyage-minimal");
 
-        // Verify required field
+        // Verify required fields
         assertEquals("voyage_key", config.apiKeySecretRef());
-
-        // Verify defaults are used
-        assertEquals("voyage-3.5", config.model()); // Default model
+        assertEquals("voyage-3.5", config.model());
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint()); // Default endpoint
         assertEquals(30000, config.timeout()); // Default timeout
         assertEquals(10, config.maxRetries()); // Default retries
@@ -93,6 +91,7 @@ public class VoyageAIEmbedderTest {
                 <services version="1.0">
                     <container id="container" version="1.0">
                         <component id="voyage" type="voyage-ai-embedder">
+                            <model>voyage-3</model>
                             <api-key-secret-ref>key</api-key-secret-ref>
                             <timeout>500</timeout>
                         </component>
@@ -112,6 +111,7 @@ public class VoyageAIEmbedderTest {
                 <services version="1.0">
                     <container id="container" version="1.0">
                         <component id="voyage" type="voyage-ai-embedder">
+                            <model>voyage-3</model>
                             <api-key-secret-ref>key</api-key-secret-ref>
                             <default-input-type>invalid</default-input-type>
                         </component>

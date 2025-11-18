@@ -21,6 +21,7 @@
 
         <!-- VoyageAI Embedder with minimal configuration -->
         <component id="voyage-minimal" type="voyage-ai-embedder">
+            <model>voyage-3.5</model>
             <api-key-secret-ref>voyage_key</api-key-secret-ref>
         </component>
     </container>
