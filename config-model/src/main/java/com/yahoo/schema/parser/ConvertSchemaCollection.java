@@ -95,10 +95,8 @@ public class ConvertSchemaCollection {
         }
     }
 
-    private ConvertParsedTypes typeConverter;
-
     public void convertTypes() {
-        typeConverter = new ConvertParsedTypes(orderedInput, docMan);
+        ConvertParsedTypes typeConverter = new ConvertParsedTypes(orderedInput, docMan, deployLogger);
         typeConverter.convert(true);
     }
 

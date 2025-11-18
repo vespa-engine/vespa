@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.parser;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
@@ -17,6 +18,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * Helper class for converting ParsedType instances to DataType
@@ -27,10 +29,14 @@ public class ConvertParsedTypes {
 
     private final List<ParsedSchema> orderedInput;
     private final DocumentTypeManager docMan;
+    private final DeployLogger deployLogger;
 
-    public ConvertParsedTypes(List<ParsedSchema> input, DocumentTypeManager docMan) {
+    public ConvertParsedTypes(List<ParsedSchema> input,
+                              DocumentTypeManager docMan,
+                              DeployLogger deployLogger) {
         this.orderedInput = input;
         this.docMan = docMan;
+        this.deployLogger = deployLogger;
     }
 
     public void convert(boolean andRegister) {
@@ -233,6 +239,9 @@ public class ConvertParsedTypes {
     }
 
     private DataType createAnnRef(ParsedType pType, ParsedDocument context) {
+        deployLogger.log(Level.WARNING, "For schema '" + context.name() +
+                         "', " + pType +
+                         ": annotation references are deprecated and will be removed in the near future");
         SDAnnotationType annotation = findAnnotationFromSchemas(pType.getNameOfReferencedAnnotation(), context);
         return new AnnotationReferenceDataType(annotation);
     }

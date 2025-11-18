@@ -370,5 +370,9 @@ public class ConvertParsedFields {
             annType.setSdDocType(structProxy);
         }
         document.addAnnotation(annType);
+        schema.getDeployLogger()
+                .log(Level.WARNING, "For schema '" + parsed.getOwnerName() +
+                     "', annotation '" + parsed.name() +
+                     "': Creating new annotations is deprecated and will be removed in the near future");
     }
 }

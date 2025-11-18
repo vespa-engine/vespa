@@ -72,11 +72,7 @@ public class ParsedType {
                 .append(valType.toString())
                 .append("> ");
             break;
-        case ANN_REFERENCE: buf
-                .append(" ")
-                .append(toString())
-                .append(" ");
-            break;
+        case ANN_REFERENCE:
         case STRUCT:
         case DOCUMENT:
         case UNKNOWN:
