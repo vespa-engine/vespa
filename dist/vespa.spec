@@ -299,7 +299,7 @@ case '%{version}' in
 	:
 	;;
     *)
-	sed -i -e 's,<version>[0-9].*-SNAPSHOT</version>,<version>%{version}</version>,' $(find . -name pom.xml -print)
+	./.buildkite/replace-vespa-version-in-poms.sh %{version} .
 	;;
 esac
 %endif
