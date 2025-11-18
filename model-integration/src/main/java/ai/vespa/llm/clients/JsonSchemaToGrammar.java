@@ -232,7 +232,7 @@ class JsonSchemaToGrammar {
 
                 var properties = new ArrayList<Map.Entry<String, JsonNode>>();
                 if (schema.has("properties"))
-                    schema.get("properties").fields().forEachRemaining(properties::add);
+                    schema.get("properties").properties().iterator().forEachRemaining(properties::add);
 
                 var rule = addRule(name, generateObject(properties, required, baseName, schema.get("additionalProperties")));
                 return Optional.of(rule);
@@ -252,7 +252,7 @@ class JsonSchemaToGrammar {
 
                 BiConsumer<JsonNode, Boolean> addComponent = (compNode, isRequired) -> {
                     if (compNode.has("properties")) {
-                        compNode.get("properties").fields().forEachRemaining(properties::add);
+                        compNode.get("properties").properties().iterator().forEachRemaining(properties::add);
                         if (isRequired) {
                             compNode.get("properties").fieldNames().forEachRemaining(required::add);
                         }
