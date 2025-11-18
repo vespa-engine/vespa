@@ -58,10 +58,10 @@ dependencies {
 
     implementation("com.yahoo.vespa:vespa-feed-client:${VESPA_VERSION}")
 
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.3'
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.18.3'
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.18.3'
-    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.18.3'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.20.1'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.20.1'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.20.1'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.20'
 
     implementation "org.yaml:snakeyaml:${snakeYamlVersion}"
 
@@ -72,7 +72,7 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:5.11.0'
     testImplementation("com.yahoo.vespa:vespa-feed-client:${VESPA_VERSION}")
     testImplementation fileTree(dir: LOGSTASH_CORE_PATH, include: "**/logstash-core.jar")
-    testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.18.3'
+    testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.20.1'
 }
 
 clean {
