@@ -1348,27 +1348,27 @@
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-reflect</artifactId>
-                <version>${kotlin.version}</version>
+                <version>${kotlin.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib</artifactId>
-                <version>${kotlin.version}</version>
+                <version>${kotlin.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib-common</artifactId>
-                <version>${kotlin.version}</version>
+                <version>${kotlin.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib-jdk7</artifactId>
-                <version>${kotlin.version}</version>
+                <version>${kotlin.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib-jdk8</artifactId>
-                <version>${kotlin.version}</version>
+                <version>${kotlin.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jvnet.mimepull</groupId>
