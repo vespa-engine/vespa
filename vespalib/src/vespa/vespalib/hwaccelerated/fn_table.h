@@ -137,6 +137,16 @@ struct FnTable {
     // function table.
     void for_each_present_fn(const std::function<void(FnId)>& callback) const;
 
+    [[nodiscard]] bool has_fn(FnId fn_id) const noexcept {
+        bool present = false;
+        for_each_present_fn([&present, fn_id](FnId present_id) noexcept {
+            if (present_id == fn_id) {
+                present = true;
+            }
+        });
+        return present;
+    }
+
     [[nodiscard]] std::string to_string() const;
 
     // Returns true iff all function pointers are non-nullptr

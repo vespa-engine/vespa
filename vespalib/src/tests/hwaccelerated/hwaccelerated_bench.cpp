@@ -11,6 +11,7 @@
 
 using namespace vespalib;
 using namespace vespalib::hwaccelerated;
+using dispatch::FnTable;
 
 template <typename> constexpr bool type_dependent_false_v = false;
 
@@ -70,14 +71,18 @@ void register_accel_binary_arg_benchmark(std::string_view name, std::unique_ptr<
 }
 
 template <typename T, typename Fn>
-void register_benchmarks(std::string_view name, Fn fn) {
+void register_benchmarks(std::string_view name, FnTable::FnId fn_id, Fn fn) {
     auto hwy_targets = Highway::create_supported_targets();
     for (auto& t : hwy_targets) {
-        register_accel_binary_arg_benchmark<T>(name, std::move(t), fn);
+        if (t->fn_table().has_fn(fn_id)) {
+            register_accel_binary_arg_benchmark<T>(name, std::move(t), fn);
+        }
     }
     auto auto_vec_targets = IAccelerated::create_supported_auto_vectorized_targets();
     for (auto& t : auto_vec_targets) {
-        register_accel_binary_arg_benchmark<T>(name, std::move(t), fn);
+        if (t->fn_table().has_fn(fn_id)) {
+            register_accel_binary_arg_benchmark<T>(name, std::move(t), fn);
+        }
     }
 }
 
@@ -85,44 +90,44 @@ void register_all_benchmark_suites() {
     auto euclidean_dist_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
         return squared_euclidean_distance(lhs, rhs, my_sz);
     };
-    register_benchmarks<double>("Squared Euclidean Distance", euclidean_dist_fn);
-    register_benchmarks<float>("Squared Euclidean Distance", euclidean_dist_fn);
-    register_benchmarks<BFloat16>("Squared Euclidean Distance", euclidean_dist_fn);
-    register_benchmarks<int8_t>("Squared Euclidean Distance", euclidean_dist_fn);
+    register_benchmarks<double>("Squared Euclidean Distance",   FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_F64,  euclidean_dist_fn);
+    register_benchmarks<float>("Squared Euclidean Distance",    FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_F32,  euclidean_dist_fn);
+    register_benchmarks<BFloat16>("Squared Euclidean Distance", FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_BF16, euclidean_dist_fn);
+    register_benchmarks<int8_t>("Squared Euclidean Distance",   FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_I8,   euclidean_dist_fn);
 
     auto dot_product_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
         return dot_product(lhs, rhs, my_sz);
     };
-    register_benchmarks<double>("Dot Product", dot_product_fn);
-    register_benchmarks<float>("Dot Product", dot_product_fn);
-    register_benchmarks<BFloat16>("Dot Product", dot_product_fn);
-    register_benchmarks<int8_t>("Dot Product", dot_product_fn);
+    register_benchmarks<double>("Dot Product",   FnTable::FnId::DOT_PRODUCT_F64,  dot_product_fn);
+    register_benchmarks<float>("Dot Product",    FnTable::FnId::DOT_PRODUCT_F32,  dot_product_fn);
+    register_benchmarks<BFloat16>("Dot Product", FnTable::FnId::DOT_PRODUCT_BF16, dot_product_fn);
+    register_benchmarks<int8_t>("Dot Product",   FnTable::FnId::DOT_PRODUCT_I8,   dot_product_fn);
 
     auto binary_hamming_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
         return binary_hamming_distance(lhs, rhs, my_sz);
     };
-    register_benchmarks<uint8_t>("Binary Hamming Distance", binary_hamming_fn);
+    register_benchmarks<uint8_t>("Binary Hamming Distance", FnTable::FnId::BINARY_HAMMING_DISTANCE, binary_hamming_fn);
 
     auto popcount_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
         (void)rhs; // ... a little bit sneaky; overestimates bytes processed/sec by 2x
         return population_count(lhs, my_sz);
     };
-    register_benchmarks<uint64_t>("Popcount", popcount_fn);
+    register_benchmarks<uint64_t>("Popcount", FnTable::FnId::POPULATION_COUNT, popcount_fn);
 
     auto and_fn = [](auto* lhs, const auto* rhs, size_t my_sz) {
         and_bit(lhs, rhs, my_sz);
     };
-    register_benchmarks<uint8_t>("Bitwise AND", and_fn);
+    register_benchmarks<uint8_t>("Bitwise AND", FnTable::FnId::AND_BIT, and_fn);
 
     auto or_fn = [](auto* lhs, const auto* rhs, size_t my_sz) {
         return or_bit(lhs, rhs, my_sz);
     };
-    register_benchmarks<uint8_t>("Bitwise OR", or_fn);
+    register_benchmarks<uint8_t>("Bitwise OR", FnTable::FnId::OR_BIT, or_fn);
 
     auto and_not_fn = [](auto* lhs, const auto* rhs, size_t my_sz) {
         return and_not_bit(lhs, rhs, my_sz);
     };
-    register_benchmarks<uint8_t>("Bitwise ANDNOT", and_not_fn);
+    register_benchmarks<uint8_t>("Bitwise ANDNOT", FnTable::FnId::AND_NOT_BIT, and_not_fn);
 }
 
 int main(int argc, char *argv[]) {
