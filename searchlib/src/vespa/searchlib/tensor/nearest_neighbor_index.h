@@ -40,6 +40,18 @@ class NearestNeighborIndexSaver;
  */
 class NearestNeighborIndex {
 public:
+    class Stats {
+    private:
+        size_t _distances_computed;
+        size_t _nodes_visited;
+
+    public:
+        Stats() : _distances_computed(0), _nodes_visited(0) {}
+        size_t distances_computed() const { return _distances_computed; }
+        void compute_distance() { ++_distances_computed; }
+        size_t nodes_visited() const { return _nodes_visited; }
+        void visit_node() { ++_nodes_visited; }
+    };
     using GlobalFilter = search::queryeval::GlobalFilter;
     using CompactionSpec = vespalib::datastore::CompactionSpec;
     using CompactionStrategy = vespalib::datastore::CompactionStrategy;
@@ -102,7 +114,8 @@ public:
      */
     virtual std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface& file, const vespalib::GenericHeader& header) = 0;
 
-    virtual std::vector<Neighbor> find_top_k(uint32_t k,
+    virtual std::vector<Neighbor> find_top_k(Stats &stats,
+                                             uint32_t k,
                                              const BoundDistanceFunction &df,
                                              uint32_t explore_k,
                                              double exploration_slack,
@@ -110,7 +123,8 @@ public:
                                              double distance_threshold) const = 0;
 
     // only return neighbors where the corresponding filter bit is set
-    virtual std::vector<Neighbor> find_top_k_with_filter(uint32_t k,
+    virtual std::vector<Neighbor> find_top_k_with_filter(Stats &stats,
+                                                         uint32_t k,
                                                          const BoundDistanceFunction &df,
                                                          const GlobalFilter &filter,
                                                          bool low_hit_ratio,
