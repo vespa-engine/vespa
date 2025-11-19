@@ -9,6 +9,9 @@ import ai.vespa.modelintegration.utils.ModelPathOrData;
 import com.google.protobuf.TextFormat;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.io.IOUtils;
+import com.yahoo.jdisc.AbstractResource;
+import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.vespa.defaults.Defaults;
 import inference.ModelConfigOuterClass;
 
@@ -20,6 +23,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * ONNX Runtime implementation that uses Triton Inference Server for model inference.
@@ -28,51 +35,109 @@ import java.nio.file.attribute.PosixFilePermissions;
  * @author glebashnik
  */
 public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime {
+    private static final Logger log = Logger.getLogger(TritonOnnxRuntime.class.getName());
 
     private final TritonConfig config;
-    private final TritonOnnxClient client;
+    private final TritonOnnxClient tritonClient;
+    private final boolean isModelControlExplicit;
+    private final Path modelRepositoryPath;
 
-    // Test constructor
-    public TritonOnnxRuntime() {
-        this(new TritonConfig.Builder().build());
+    // The key is a model name containing hash of model content and options
+    private final ConcurrentMap<String, TritonModelResource> modelResources = new ConcurrentHashMap<>();
+
+    // Represents a model in Triton repository with reference counting.
+    // When created it copies model files to Triton repository and loads the model.
+    // When no references remain, the model is unloaded and model files are deleted.
+    class TritonModelResource extends AbstractResource {
+        public final String modelName;
+
+        private TritonModelResource(String modelName, String modelPath, OnnxEvaluatorOptions options) {
+            this.modelName = modelName;
+
+            if (isModelControlExplicit) {
+                var modelConfig = createModelConfig(modelName, options);
+                copyModelFilesToModelRepository(modelName, modelPath, modelConfig);
+                tritonClient.loadUntilModelReady(modelName);
+            }
+        }
+
+        @Override
+        public void destroy() {
+            modelResources.computeIfPresent(modelName, (key, value) -> {
+                if (isModelControlExplicit) {
+                    tritonClient.unloadUntilModelNotReady(modelName);
+                    deleteModelFilesFromModelRepository(modelName);
+                }
+                return null; // remove from map
+            });
+        }
+    }
+
+    public static TritonOnnxRuntime createTestInstance() {
+        return new TritonOnnxRuntime(new TritonConfig.Builder().build());
     }
 
     @Inject
     public TritonOnnxRuntime(TritonConfig config) {
+        log.info(() -> "Creating Triton ONNX runtime");
+        
         this.config = config;
-        this.client = new TritonOnnxClient(config);
+        this.tritonClient = new TritonOnnxClient(config);
+        this.isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
+        this.modelRepositoryPath = Path.of(Defaults.getDefaults().underVespaHome(config.modelRepositoryPath()));
+
+        if (isModelControlExplicit) {
+            tritonClient.unloadAllModels();
+            deleteAllModelFilesFromModelRepository();
+        }
     }
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        if (!client.isHealthy()) {
-            throw new IllegalStateException("Triton server is not healthy! (target=%s)".formatted(config.target()));
+        if (!tritonClient.isHealthy()) {
+            throw new IllegalStateException("Triton server is not healthy, target: " + config.target());
         }
 
-        var modelName = createModelName(modelPath, options);
-        var isExplicitControlMode = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
+        var modelName = generateModelName(modelPath, options);
+        var modelReferenceHolder = new ResourceReference[1];
 
-        if (isExplicitControlMode) {
-            copyModelToRepository(modelName, modelPath, options);
-        }
+        // Key synchronized create, reference, release and put model resource avoids concurrency issues.
+        modelResources.compute(modelName, (key, existingModelResource) -> {
+            if (existingModelResource != null) {
+                modelReferenceHolder[0] = existingModelResource.refer();
+                return existingModelResource;
+            }
 
-        return new TritonOnnxEvaluator(client, modelName, isExplicitControlMode);
+            var newModelResource = new TritonModelResource(modelName, modelPath, options);
+            modelReferenceHolder[0] = newModelResource.refer();
+            newModelResource.release();
+            return newModelResource;
+        });
+
+        return new TritonOnnxEvaluator(modelName, modelReferenceHolder[0], tritonClient, isModelControlExplicit);
     }
 
-    @Override
-    public void deconstruct() {
-        client.close();
+    static String generateModelName(String modelPath, OnnxEvaluatorOptions options) {
+        var fileName = Paths.get(modelPath).getFileName().toString();
+        var baseName = fileName.substring(0, fileName.lastIndexOf('.')); // remove file extension
+        var modelHash = ModelPathOrData.of(modelPath).calculateHash();
+        var optionsHash = options.calculateHash();
+        var combinedHash = Long.toHexString(31 * modelHash + optionsHash);
+        return baseName + "_" + combinedHash; // add hash to avoid conflicts
+    }
+
+    private Path getModelDirInModelRepository(String modelName) {
+        return modelRepositoryPath.resolve(modelName);
     }
 
     /**
-     * Copies the model file to the model repository and serializes the config
+     * Copies the model file and config to a model repository directory that Triton has access to.
      */
-    private void copyModelToRepository(String modelName, String externalModelPath, OnnxEvaluatorOptions options) {
-        var modelRepositoryPath = Defaults.getDefaults().underVespaHome(config.modelRepositoryPath());
-        var modelRootPath = Paths.get(modelRepositoryPath, modelName);
-        var modelVersionPath = modelRootPath.resolve("1");
+    private void copyModelFilesToModelRepository(String modelName, String externalModelPath, String modelConfig) {
+        var modelDirPath = getModelDirInModelRepository(modelName);
+        var modelVersionPath = modelDirPath.resolve("1");
         var modelFilePath = modelVersionPath.resolve("model.onnx");
-        var modelConfigPath = modelRootPath.resolve("config.pbtxt");
+        var modelConfigPath = modelDirPath.resolve("config.pbtxt");
 
         try {
             // Create directory for model name and version with correct permissions
@@ -81,19 +146,19 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                     PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxr-x")));
 
             Files.copy(Paths.get(externalModelPath), modelFilePath, StandardCopyOption.REPLACE_EXISTING);
-
-            var modelConfig = options.modelConfigOverride()
-                    .map(path -> prepareModelConfigOverride(path, modelName))
-                    .orElseGet(() -> generateConfigFromEvaluatorOptions(modelName, options))
-                    .toString();
             Files.writeString(modelConfigPath, modelConfig);
 
-            // To ensure that the Triton can read the model files, explicitly grant world read
+            // Explicitly grant world read to ensure that Triton can read model files
             addReadPermissions(modelFilePath);
             addReadPermissions(modelConfigPath);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to copy model file to repository", e);
         }
+    }
+
+    private void deleteModelFilesFromModelRepository(String modelName) {
+        var modelDir = getModelDirInModelRepository(modelName);
+        IOUtils.recursiveDeleteDir(modelDir.toFile());
     }
 
     private static void addReadPermissions(Path path) throws IOException {
@@ -103,41 +168,16 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         Files.setPosixFilePermissions(path, modelPerms);
     }
 
-    static String createModelName(String modelPath, OnnxEvaluatorOptions options) {
-        var fileName = Paths.get(modelPath).getFileName().toString();
-        var baseName = fileName.substring(0, fileName.lastIndexOf('.')); // remove file extension
-        var modelHash = ModelPathOrData.of(modelPath).calculateHash();
-        var optionsHash = options.calculateHash();
-        var combinedHash = Long.toHexString(31 * modelHash + optionsHash);
-        return baseName + "_" + combinedHash; // add hash to avoid conflicts
+    private static String createModelConfig(String modelName, OnnxEvaluatorOptions options) {
+        return options.modelConfigOverride()
+                .map(path -> createModelConfigFromFile(path, modelName))
+                .orElseGet(() -> createModelConfigFromOptions(modelName, options))
+                .toString();
     }
 
-    private ModelConfigOuterClass.ModelConfig prepareModelConfigOverride(Path configPath, String modelName) {
-        String configStr;
-
-        try {
-            configStr = Files.readString(configPath);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Failed to read model config override file: " + configPath, e);
-        }
-
-        ModelConfigOuterClass.ModelConfig config;
-
-        try {
-            config = TextFormat.parse(configStr, ModelConfigOuterClass.ModelConfig.class);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Failed to parse model config override:\n" + configStr, e);
-        }
-
-        // Replace model name with the generated name.
-        // Makes overridden model names consistent with generated ones and avoids conflicts.
-        return config.toBuilder().setName(modelName).build();
-    }
-
-    private static ModelConfigOuterClass.ModelConfig generateConfigFromEvaluatorOptions(
-            String modelName, OnnxEvaluatorOptions options) {
-        // Similar to EmbeddedOnnxRuntime.overrideOptions(), relies on Triton to fall back to CPU if GPU is not
-        // available.
+    private static String createModelConfigFromOptions(String modelName, OnnxEvaluatorOptions options) {
+        // Similar to EmbeddedOnnxRuntime.overrideOptions(), relies on Triton to fall back to CPU if GPU is
+        // not available.
         var deviceKind = options.gpuDeviceRequired()
                 ? ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU
                 : (options.gpuDeviceNumber() >= 0)
@@ -172,7 +212,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                         ModelConfigOuterClass.ModelParameter.newBuilder()
                                 .setStringValue(Integer.toString(options.interOpThreads()))
                                 .build());
-        
+
         if (options.batchingMaxSize() > 1) {
             var dynamicBatchingBuilder = ModelConfigOuterClass.ModelDynamicBatching.newBuilder();
             options.batchingMaxDelay()
@@ -180,6 +220,51 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             configBuilder.setDynamicBatching(dynamicBatchingBuilder.build());
         }
 
-        return configBuilder.build();
+        return configBuilder.build().toString();
+    }
+
+    private static String createModelConfigFromFile(Path configPath, String modelName) {
+        String configStr;
+
+        try {
+            configStr = Files.readString(configPath);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed to read model config override file: " + configPath, e);
+        }
+
+        ModelConfigOuterClass.ModelConfig config;
+
+        try {
+            config = TextFormat.parse(configStr, ModelConfigOuterClass.ModelConfig.class);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed to parse model config override:\n" + configStr, e);
+        }
+
+        // Replaces model name with the one that includes model content and options hash to avoid conflicts.
+        return config.toBuilder().setName(modelName).build().toString();
+    }
+
+    private void deleteAllModelFilesFromModelRepository() {
+        if (!Files.exists(modelRepositoryPath)) {
+            return;
+        }
+
+        try (var stream = Files.list(modelRepositoryPath)) {
+            stream.forEach(path -> {
+                log.warning(() -> "Deleting leftover model files from Triton model repository: " + path);
+
+                if (!IOUtils.recursiveDeleteDir(path.toFile())) {
+                    log.warning(() -> "Failed to delete model files from Triton model repository: {}" + path);
+                }
+            });
+        } catch (IOException e) {
+            log.log(Level.SEVERE, e, () -> "Failed to list files in Triton model repository: " + modelRepositoryPath);
+        }
+    }
+
+    @Override
+    public void deconstruct() {
+        modelResources.values().forEach(TritonModelResource::destroy);
+        tritonClient.close();
     }
 }

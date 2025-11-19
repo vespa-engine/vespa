@@ -17,10 +17,10 @@ public interface OnnxRuntime {
         var log = Logger.getLogger(OnnxRuntime.class.getName());
         if (Boolean.getBoolean("VESPA_USE_TRITON")) {
             log.info("Using Triton ONNX runtime for testing");
-            return new TritonOnnxRuntime();
+            return TritonOnnxRuntime.createTestInstance();
         } else {
             log.info("Using embedded ONNX runtime for testing");
-            return new EmbeddedOnnxRuntime();
+            return EmbeddedOnnxRuntime.createTestInstance();
         }
     }
 

@@ -2,44 +2,44 @@
 package ai.vespa.triton;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * An ONNX evaluator that uses {@link TritonOnnxClient} to evaluate the model.
+ * An ONNX evaluator that uses Triton server for inference.
  *
  * @author bjorncs
+ * @author glebashnik
  */
 class TritonOnnxEvaluator implements OnnxEvaluator {
     private static final Logger log = Logger.getLogger(TritonOnnxEvaluator.class.getName());
-    
-    private final String modelName;
-    private final TritonOnnxClient tritonClient;
-    private final boolean isExplicitControlMode;
-    
-    private TritonOnnxClient.ModelMetadata modelMetadata;
-    
-    TritonOnnxEvaluator(TritonOnnxClient tritonClient, String modelName, boolean isExplicitControlMode) {
-        this.modelName = modelName;
-        this.tritonClient = tritonClient;
-        this.isExplicitControlMode = isExplicitControlMode;
-        loadModelIfNotReady();
-    }
-    
-    private void loadModelIfNotReady() {
-        if (isExplicitControlMode) {
-            var isModelReady = tritonClient.isModelReady(modelName);
 
-            if (!isModelReady) {
-                tritonClient.loadModel(modelName);
-            }
+    private final String modelName;
+    private final ResourceReference modelReference;
+    private final TritonOnnxClient tritonClient;
+    private final boolean isExplicitControl;
+
+    private TritonOnnxClient.ModelMetadata modelMetadata;
+
+    TritonOnnxEvaluator(
+            String modelName,
+            ResourceReference modelReference,
+            TritonOnnxClient tritonClient,
+            boolean isExplicitControl) {
+        this.modelName = modelName;
+        this.modelReference = modelReference;
+        this.tritonClient = tritonClient;
+        this.isExplicitControl = isExplicitControl;
+
+        if (isExplicitControl) {
+            tritonClient.loadUntilModelReady(modelName);
         }
-        
-        modelMetadata = tritonClient.getModelMetadata(modelName);
     }
 
     @Override
@@ -49,37 +49,33 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
 
     @Override
     public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
-        return evaluate(inputs, true);
-    }
-
-    // Evaluate with optional retry in case the model is unloaded because of app redeployment or Triton server restart.
-    private Map<String, Tensor> evaluate(Map<String, Tensor> inputs, boolean allowRetry) {
         try {
             return tritonClient.evaluate(modelName, modelMetadata, inputs);
         } catch (TritonOnnxClient.TritonException e) {
-            if (allowRetry) {
-                log.warning("Retrying to evaluate model: " + modelName);
-                loadModelIfNotReady();
-                return evaluate(inputs, false);
+            if (!isExplicitControl) {
+                throw e;
             }
-            
-            throw e;
+
+            log.log(
+                    Level.WARNING,
+                    "Failed to evaluate ONNX model " + modelName + " in Trion, will retry after reload.",
+                    e);
+            tritonClient.loadUntilModelReady(modelName);
+            return tritonClient.evaluate(modelName, modelMetadata, inputs);
         }
     }
 
     @Override
     public Map<String, IdAndType> getInputs() {
         Map<String, IdAndType> result = new HashMap<>();
-        modelMetadata.inputs.forEach((name, type) ->
-            result.put(name, new IdAndType(name, type)));
+        modelMetadata.inputs.forEach((name, type) -> result.put(name, new IdAndType(name, type)));
         return result;
     }
 
     @Override
     public Map<String, IdAndType> getOutputs() {
         Map<String, IdAndType> result = new HashMap<>();
-        modelMetadata.outputs.forEach((name, type) ->
-            result.put(name, new IdAndType(name, type)));
+        modelMetadata.outputs.forEach((name, type) -> result.put(name, new IdAndType(name, type)));
         return result;
     }
 
@@ -95,9 +91,6 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
 
     @Override
     public void close() {
-        // Note: This is not safe if evaluator instances share the same underlying Triton model.
-        if (isExplicitControlMode) {
-            tritonClient.unloadModel(modelName);
-        }
+        modelReference.close();
     }
 }

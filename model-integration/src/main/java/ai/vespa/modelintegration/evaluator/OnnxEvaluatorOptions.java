@@ -112,7 +112,7 @@ public record OnnxEvaluatorOptions(
         // availableProcessors is injected to simplify testing
         public Builder(int availableProcessors) {
             executionMode = ExecutionMode.SEQUENTIAL;
-            interOpThreads = 1;
+            interOpThreads = calculateThreads(-4, availableProcessors);
             intraOpThreads = calculateThreads(-4, availableProcessors);
             gpuDeviceNumber = -1;
             gpuDeviceRequired = false;
