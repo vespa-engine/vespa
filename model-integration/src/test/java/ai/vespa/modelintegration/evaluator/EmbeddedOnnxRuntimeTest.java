@@ -23,7 +23,7 @@ class EmbeddedOnnxRuntimeTest {
     @Test
     void reuses_sessions_while_active() {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        var runtime = new EmbeddedOnnxRuntime();
+        var runtime = EmbeddedOnnxRuntime.createTestInstance();
         String model1 = "src/test/models/onnx/simple/simple.onnx";
         var evaluator1 = runtime.evaluatorOf(model1);
         var evaluator2 = runtime.evaluatorOf(model1);
@@ -54,7 +54,7 @@ class EmbeddedOnnxRuntimeTest {
     @Test
     void loads_model_from_byte_array() throws IOException {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        var runtime = new EmbeddedOnnxRuntime();
+        var runtime = EmbeddedOnnxRuntime.createTestInstance();
         byte[] bytes = Files.readAllBytes(Paths.get("src/test/models/onnx/simple/simple.onnx"));
         var evaluator1 = runtime.evaluatorOf(bytes);
         var evaluator2 = runtime.evaluatorOf(bytes);
@@ -70,7 +70,7 @@ class EmbeddedOnnxRuntimeTest {
     @Test
     void loading_same_model_from_bytes_and_file_resolve_to_same_instance() throws IOException {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        var runtime = new EmbeddedOnnxRuntime();
+        var runtime = EmbeddedOnnxRuntime.createTestInstance();
         String modelPath = "src/test/models/onnx/simple/simple.onnx";
         byte[] bytes = Files.readAllBytes(Paths.get(modelPath));
         try (var evaluator1 = runtime.evaluatorOf(bytes);

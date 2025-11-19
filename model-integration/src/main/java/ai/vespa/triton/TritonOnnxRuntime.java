@@ -79,6 +79,8 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     @Inject
     public TritonOnnxRuntime(TritonConfig config) {
+        log.info(() -> "Creating Triton ONNX runtime");
+        
         this.config = config;
         this.tritonClient = new TritonOnnxClient(config);
         this.isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
@@ -98,14 +100,14 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
         var modelName = generateModelName(modelPath, options);
         var modelReferenceHolder = new ResourceReference[1];
-        
+
         // Key synchronized create, reference, release and put model resource avoids concurrency issues.
         modelResources.compute(modelName, (key, existingModelResource) -> {
             if (existingModelResource != null) {
                 modelReferenceHolder[0] = existingModelResource.refer();
                 return existingModelResource;
             }
-            
+
             var newModelResource = new TritonModelResource(modelName, modelPath, options);
             modelReferenceHolder[0] = newModelResource.refer();
             newModelResource.release();
@@ -248,12 +250,18 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
 
         try (var stream = Files.list(modelRepositoryPath)) {
-            stream.forEach(path -> IOUtils.recursiveDeleteDir(path.toFile()));
+            stream.forEach(path -> {
+                log.warning(() -> "Deleting leftover model files from Triton model repository: " + path);
+
+                if (!IOUtils.recursiveDeleteDir(path.toFile())) {
+                    log.warning(() -> "Failed to delete model files from Triton model repository: {}" + path);
+                }
+            });
         } catch (IOException e) {
-            log.log(Level.WARNING, "Failed to delete model files in model repository: " + modelRepositoryPath, e);
+            log.log(Level.SEVERE, e, () -> "Failed to list files in Triton model repository: " + modelRepositoryPath);
         }
     }
-    
+
     @Override
     public void deconstruct() {
         modelResources.values().forEach(TritonModelResource::destroy);

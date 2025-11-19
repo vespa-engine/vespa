@@ -15,6 +15,7 @@ import java.util.logging.Logger;
  * An ONNX evaluator that uses Triton server for inference.
  *
  * @author bjorncs
+ * @author glebashnik
  */
 class TritonOnnxEvaluator implements OnnxEvaluator {
     private static final Logger log = Logger.getLogger(TritonOnnxEvaluator.class.getName());

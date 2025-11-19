@@ -98,9 +98,8 @@ public class TritonOnnxClient implements AutoCloseable {
     }
 
     public ModelMetadata getModelMetadata(String modelName) {
-        var request = GrpcService.ModelMetadataRequest.newBuilder()
-                .setName(modelName)
-                .build();
+        var request =
+                GrpcService.ModelMetadataRequest.newBuilder().setName(modelName).build();
         var response = invokeGrpc(grpcInferenceStub, s -> s.modelMetadata(request), "Failed to get model metadata");
         var inputs = toTensorTypes(response.getInputsList());
         var outputs = toTensorTypes(response.getOutputsList());
@@ -108,8 +107,8 @@ public class TritonOnnxClient implements AutoCloseable {
     }
 
     public boolean isModelReady(String modelName) {
-        var request = GrpcService.ModelReadyRequest.newBuilder().setName(modelName)
-                .build();
+        var request =
+                GrpcService.ModelReadyRequest.newBuilder().setName(modelName).build();
         var response = invokeGrpc(
                 grpcInferenceStub, invocation -> invocation.modelReady(request), "Failed to check model ready");
         return response.getReady();
@@ -150,14 +149,14 @@ public class TritonOnnxClient implements AutoCloseable {
             try {
                 unloadModel(modelName);
             } catch (TritonException e) {
-                log.log(Level.WARNING, "Failed to unload model " + modelName, e);
+                log.log(Level.SEVERE, e, () -> "Failed to unload model " + modelName);
             }
         }
     }
 
     /**
      * Makes several attempts to load the model and checks its readiness.
-     * This mitigates the timing issue because of delay between model files are copied to model repository 
+     * This mitigates the timing issue because of delay between model files are copied to model repository
      * and the model can be loaded.
      */
     public void loadUntilModelReady(String modelName) {
@@ -175,7 +174,7 @@ public class TritonOnnxClient implements AutoCloseable {
                     loadModel(modelName);
                     isLoaded = true;
                 }
-                
+
                 if (isModelReady(modelName)) {
                     return;
                 }
@@ -200,7 +199,7 @@ public class TritonOnnxClient implements AutoCloseable {
 
     /**
      * Makes several attempts to unload the model and check until it's not ready.
-     * This helps to mitigate a timing issue because of the delay between model unload request and the model not ready 
+     * This helps to mitigate a timing issue because of the delay between model unload request and the model not ready
      * so that model files can be deleted.
      */
     public void unloadUntilModelNotReady(String modelName) {
@@ -218,14 +217,14 @@ public class TritonOnnxClient implements AutoCloseable {
                     unloadModel(modelName);
                     isUnloaded = true;
                 }
-                
+
                 if (!isModelReady(modelName)) {
                     return;
                 }
             } catch (TritonException e) {
                 lastException = e;
             }
-            
+
             if (attempt < MAX_MODEL_UNLOAD_ATTEMPTS - 1) {
                 try {
                     Thread.sleep(MAX_MODEL_UNLOAD_WAIT_MILLIS);
@@ -245,35 +244,34 @@ public class TritonOnnxClient implements AutoCloseable {
         return evaluate(modelName, modelMetadata, inputs, Set.of());
     }
 
-    public Tensor evaluate(String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs,
-                           String outputName) {
+    public Tensor evaluate(
+            String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, String outputName) {
         return evaluate(modelName, modelMetadata, inputs, Set.of(outputName)).get(outputName);
     }
 
-    public Map<String, Tensor> evaluate(String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs,
-                                        Set<String> outputNames) {
-        var requestBuilder = GrpcService.ModelInferRequest.newBuilder()
-                .setModelName(modelName);
+    public Map<String, Tensor> evaluate(
+            String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, Set<String> outputNames) {
+        var requestBuilder = GrpcService.ModelInferRequest.newBuilder().setModelName(modelName);
 
         inputs.forEach((name, tensor) -> addInputToBuilder(modelMetadata.tritonInputs, requestBuilder, tensor, name));
 
         // Returns all output if none is specified
-        outputNames.forEach(name -> requestBuilder.addOutputs(
-                GrpcService.ModelInferRequest.InferRequestedOutputTensor.newBuilder()
+        outputNames.forEach(
+                name -> requestBuilder.addOutputs(GrpcService.ModelInferRequest.InferRequestedOutputTensor.newBuilder()
                         .setName(name)
                         .build()));
 
-        var response = invokeGrpc(
-                grpcInferenceStub, s -> s.modelInfer(requestBuilder.build()), "Failed to evaluate model");
+        var response =
+                invokeGrpc(grpcInferenceStub, s -> s.modelInfer(requestBuilder.build()), "Failed to evaluate model");
 
         Map<String, Tensor> outputs = new HashMap<>();
         for (int i = 0; i < response.getOutputsCount(); i++) {
             var tritonTensor = response.getOutputs(i);
             var name = OnnxImporter.asValidIdentifier(tritonTensor.getName());
-            var outputBuffer =
-                    ByteBuffer.wrap(response.getRawOutputContents(i).toByteArray())
-                            .order(ByteOrder.LITTLE_ENDIAN);
-            var tensor = createTensorFromRawOutput(outputBuffer, tritonTensor.getDatatype(), tritonTensor.getShapeList());
+            var outputBuffer = ByteBuffer.wrap(response.getRawOutputContents(i).toByteArray())
+                    .order(ByteOrder.LITTLE_ENDIAN);
+            var tensor =
+                    createTensorFromRawOutput(outputBuffer, tritonTensor.getDatatype(), tritonTensor.getShapeList());
             outputs.put(name, tensor);
         }
 
@@ -285,8 +283,7 @@ public class TritonOnnxClient implements AutoCloseable {
         var ch = (ManagedChannel) invokeGrpc(grpcInferenceStub, AbstractStub::getChannel, "Failed to get channel");
         ch.shutdown();
         try {
-            if (!ch.awaitTermination(5, SECONDS))
-                throw new IllegalStateException("Failed to close channel");
+            if (!ch.awaitTermination(5, SECONDS)) throw new IllegalStateException("Failed to close channel");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TritonException("Failed to close channel", e);
@@ -295,10 +292,11 @@ public class TritonOnnxClient implements AutoCloseable {
         }
     }
 
-    private static void addInputToBuilder(List<GrpcService.ModelMetadataResponse.TensorMetadata> onnxInputTypes,
-                                          GrpcService.ModelInferRequest.Builder builder,
-                                          Tensor vespaTensor,
-                                          String vespaName) {
+    private static void addInputToBuilder(
+            List<GrpcService.ModelMetadataResponse.TensorMetadata> onnxInputTypes,
+            GrpcService.ModelInferRequest.Builder builder,
+            Tensor vespaTensor,
+            String vespaName) {
         if (!(vespaTensor instanceof IndexedTensor indexedTensor)) {
             throw new TritonException("Nvidia Triton currently only supports tensors with indexed dimensions");
         }
@@ -315,13 +313,13 @@ public class TritonOnnxClient implements AutoCloseable {
 
     private static GrpcService.ModelMetadataResponse.TensorMetadata findMatchingInput(
             List<GrpcService.ModelMetadataResponse.TensorMetadata> onnxInputTypes, String vespaName) {
-            for (var inputType : onnxInputTypes) {
-                if (inputType.getName().equals(vespaName)) return inputType;
-            }
-            for (var inputType : onnxInputTypes) {
-                if (OnnxImporter.asValidIdentifier(inputType.getName()).equals(vespaName)) return inputType;
-            }
-            throw new TritonException("No matching input type found for " + vespaName);
+        for (var inputType : onnxInputTypes) {
+            if (inputType.getName().equals(vespaName)) return inputType;
+        }
+        for (var inputType : onnxInputTypes) {
+            if (OnnxImporter.asValidIdentifier(inputType.getName()).equals(vespaName)) return inputType;
+        }
+        throw new TritonException("No matching input type found for " + vespaName);
     }
 
     private static ByteString createRawInputContent(
@@ -452,25 +450,26 @@ public class TritonOnnxClient implements AutoCloseable {
     }
 
     /** Converts {@link TensorType} using mapping rule similar to TensorConverter */
-    private static Map<String, TensorType> toTensorTypes(Collection<GrpcService.ModelMetadataResponse.TensorMetadata> list) {
+    private static Map<String, TensorType> toTensorTypes(
+            Collection<GrpcService.ModelMetadataResponse.TensorMetadata> list) {
         return list.stream()
                 .collect(Collectors.toMap(
                         tm -> OnnxImporter.asValidIdentifier(tm.getName()),
-                        tm -> toVespaTensorType(tm.getDatatype(), tm.getShapeList())
-                ));
+                        tm -> toVespaTensorType(tm.getDatatype(), tm.getShapeList())));
     }
 
     private static TensorType toVespaTensorType(String tritonType, List<Long> shapes) {
-        var dataType = switch (tritonType) {
-            case "INT8" -> TensorType.Value.INT8;
-            case "BF16" -> TensorType.Value.BFLOAT16;
-            case "FP16", "FP32" -> TensorType.Value.FLOAT;
-            default -> TensorType.Value.DOUBLE;
-        };
+        var dataType =
+                switch (tritonType) {
+                    case "INT8" -> TensorType.Value.INT8;
+                    case "BF16" -> TensorType.Value.BFLOAT16;
+                    case "FP16", "FP32" -> TensorType.Value.FLOAT;
+                    default -> TensorType.Value.DOUBLE;
+                };
         var builder = new TensorType.Builder(dataType);
         for (int i = 0; i < shapes.size(); i++) {
             long shape = shapes.get(i);
-            String dimName = "d" + i;  // Using index instead of shape value as in TensorConverter
+            String dimName = "d" + i; // Using index instead of shape value as in TensorConverter
             if (shape >= 0) {
                 builder.indexed(dimName, shape);
             } else {

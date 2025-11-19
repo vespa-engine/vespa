@@ -20,7 +20,7 @@ public interface OnnxRuntime {
             return TritonOnnxRuntime.createTestInstance();
         } else {
             log.info("Using embedded ONNX runtime for testing");
-            return new EmbeddedOnnxRuntime();
+            return EmbeddedOnnxRuntime.createTestInstance();
         }
     }
 

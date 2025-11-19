@@ -35,7 +35,9 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
     private final int gpusAvailable;
 
     // For test use only
-    EmbeddedOnnxRuntime() { this(new OnnxModelsConfig.Builder().build()); }
+    public static EmbeddedOnnxRuntime createTestInstance() { 
+        return new EmbeddedOnnxRuntime(new OnnxModelsConfig.Builder().build()); 
+    }
 
     @Inject
     public EmbeddedOnnxRuntime(OnnxModelsConfig cfg) {
