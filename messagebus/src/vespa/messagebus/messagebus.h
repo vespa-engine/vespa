@@ -44,10 +44,10 @@ private:
     std::unique_ptr<ProtocolRepository>  _protocolRepository;
     std::unique_ptr<Messenger>           _msn;
     std::unique_ptr<Resender>            _resender;
-    std::atomic<uint32_t>                _maxPendingCount;
-    std::atomic<uint32_t>                _maxPendingSize;
-    std::atomic<uint32_t>                _pendingCount;
-    std::atomic<uint32_t>                _pendingSize;
+    std::atomic<size_t>                  _maxPendingCount;
+    std::atomic<size_t>                  _maxPendingSize;
+    std::atomic<size_t>                  _pendingCount;
+    std::atomic<size_t>                  _pendingSize;
 
     /**
      * This method performs the common constructor tasks.
@@ -227,27 +227,27 @@ public:
      *
      * @return The pending count.
      */
-    uint32_t getPendingCount() const { return _pendingCount; }
+    [[nodiscard]] size_t getPendingCount() const { return _pendingCount; }
 
     /**
      * Returns the size of messages received that have not been replied to yet.
      *
      * @return The pending size.
      */
-    uint32_t getPendingSize() const { return _pendingSize; }
+    [[nodiscard]] size_t getPendingSize() const { return _pendingSize; }
 
     /**
      * Sets the maximum number of messages that can be received without being replied to yet.
      *
      * @param maxCount The max count.
      */
-    void setMaxPendingCount(uint32_t maxCount);
+    void setMaxPendingCount(size_t maxCount);
 
     /**
      * Gets maximum number of messages that can be received without being
      * replied to yet.
      */
-    uint32_t getMaxPendingCount() const noexcept {
+    [[nodiscard]] size_t getMaxPendingCount() const noexcept {
         return _maxPendingCount.load(std::memory_order_relaxed);
     }
 
@@ -256,13 +256,13 @@ public:
      *
      * @param maxSize The max size.
      */
-    void setMaxPendingSize(uint32_t maxSize);
+    void setMaxPendingSize(size_t maxSize);
 
     /**
      * Gets maximum combined size of messages that can be received without
      * being replied to yet.
      */
-    uint32_t getMaxPendingSize() const noexcept {
+    [[nodiscard]] size_t getMaxPendingSize() const noexcept {
         return _maxPendingSize.load(std::memory_order_relaxed);
     }
 

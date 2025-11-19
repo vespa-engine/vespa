@@ -320,24 +320,21 @@ MessageBus::putProtocol(const IProtocol::SP & protocol)
 bool
 MessageBus::checkPending(Message &msg)
 {
+    constexpr auto relaxed = std::memory_order_relaxed;
     bool busy = false;
     const uint32_t size = msg.getApproxSize();
     {
-        constexpr auto relaxed = std::memory_order_relaxed;
-        const uint32_t maxCount = _maxPendingCount.load(relaxed);
-        const uint32_t maxSize = _maxPendingSize.load(relaxed);
-        if (maxCount > 0 || maxSize > 0) {
-            busy = ((maxCount > 0 && _pendingCount.load(relaxed) >= maxCount) ||
-                    (maxSize > 0 && _pendingSize.load(relaxed) >= maxSize));
-            if (!busy) {
-                _pendingCount.fetch_add(1, relaxed);
-                _pendingSize.fetch_add(size, relaxed);
-            }
-        }
+        const size_t maxCount = _maxPendingCount.load(relaxed);
+        const size_t maxSize = _maxPendingSize.load(relaxed);
+        busy = (maxCount > 0 && _pendingCount.load(relaxed) >= maxCount) ||
+               (maxSize > 0 && _pendingSize.load(relaxed) >= maxSize);
     }
     if (busy) {
-        return false;
+        return false; // _pendingCount/Size will _not_ be decremented
     }
+    // Must pair 1-1 with decrements in handleReply()
+    _pendingCount.fetch_add(1, relaxed);
+    _pendingSize.fetch_add(size, relaxed);
     msg.setContext(Context(static_cast<uint64_t>(size)));
     msg.pushHandler(*this, *this);
     return true;
@@ -405,13 +402,13 @@ MessageBus::getConnectionSpec() const
 }
 
 void
-MessageBus::setMaxPendingCount(uint32_t maxCount)
+MessageBus::setMaxPendingCount(size_t maxCount)
 {
     _maxPendingCount.store(maxCount, std::memory_order_relaxed);
 }
 
 void
-MessageBus::setMaxPendingSize(uint32_t maxSize)
+MessageBus::setMaxPendingSize(size_t maxSize)
 {
     _maxPendingSize.store(maxSize, std::memory_order_relaxed);
 }
