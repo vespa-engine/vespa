@@ -50,11 +50,6 @@ class LogFileHandler <LOGTYPE> {
 
     @FunctionalInterface private interface Pollable<T> { Operation<T> poll() throws InterruptedException; }
 
-    LogFileHandler(Compression compression, int bufferSize, String filePattern, String rotationTimes, String symlinkName,
-                   int queueSize, long rotationSize, String threadName, LogWriter<LOGTYPE> logWriter, Clock clock) {
-        this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, rotationSize, threadName, logWriter, clock);
-    }
-
     LogFileHandler(Compression compression, int bufferSize, String filePattern, long[] rotationTimes, String symlinkName,
                    int queueSize, long rotationSize, String threadName, LogWriter<LOGTYPE> logWriter, Clock clock) {
         this.logQueue = new LinkedBlockingQueue<>(queueSize);
@@ -67,12 +62,6 @@ class LogFileHandler <LOGTYPE> {
         this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, rotationSize, threadName, logWriter, Clock.systemUTC());
     }
 
-    LogFileHandler(Compression compression, int bufferSize, String filePattern, long[] rotationTimes, String symlinkName,
-                   int queueSize, long rotationSize, String threadName, LogWriter<LOGTYPE> logWriter) {
-        this(compression, bufferSize, filePattern, rotationTimes, symlinkName, queueSize, rotationSize, threadName, logWriter, Clock.systemUTC());
-    }
-
-    // Keep backward compatibility constructors
     LogFileHandler(Compression compression, int bufferSize, String filePattern, String rotationTimes, String symlinkName,
                    int queueSize, String threadName, LogWriter<LOGTYPE> logWriter) {
         this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, 0, threadName, logWriter, Clock.systemUTC());
@@ -138,8 +127,11 @@ class LogFileHandler <LOGTYPE> {
     void shutdown() {
         logThread.interrupt();
         try {
-            logThread.executor.shutdownNow();
-            logThread.executor.awaitTermination(600, TimeUnit.SECONDS);
+            logThread.executor.shutdown();
+            if (!logThread.executor.awaitTermination(600, TimeUnit.SECONDS)) {
+                logger.warning("Failed to terminate within 600 seconds");
+                logThread.executor.shutdown();
+            }
             logThread.join();
         } catch (InterruptedException e) {
         }
@@ -171,8 +163,8 @@ class LogFileHandler <LOGTYPE> {
         int size = list.size();
         long[] longtimes = new long[size];
         for (i = 0; i < size; i++) {
-            longtimes[i] = list.get(i)   // pick up value in minutes past midnight
-                           * 60000;                          // and multiply to get millis
+            // pick up value in minutes past midnight and multiply to get millis
+            longtimes[i] = list.get(i) * 60000;
         }
 
         if (etc) { // fill out rest of day, same as final interval
@@ -248,19 +240,6 @@ class LogFileHandler <LOGTYPE> {
             this.rotationSize = rotationSize;
             this.operationProvider = operationProvider;
             this.clock = clock;
-        }
-
-        LogThread(LogWriter<LOGTYPE> logWriter,
-                  String filePattern,
-                  Compression compression,
-                  int bufferSize,
-                  long[] rotationTimes,
-                  String symlinkName,
-                  long rotationSize,
-                  String threadName,
-                  Pollable<LOGTYPE> operationProvider) {
-            this(logWriter, filePattern, compression, bufferSize, rotationTimes,
-                    symlinkName, rotationSize, threadName, operationProvider, Clock.systemUTC());
         }
 
         private static ExecutorService createCompressionTaskExecutor() {
@@ -427,10 +406,10 @@ class LogFileHandler <LOGTYPE> {
                 throw new RuntimeException("Couldn't open log file '" + fileName + "'", e);
             }
 
-            if(oldFileName == null) oldFileName = getOldFileNameFromSymlink(); // To compress previous file, if so configured
+            if (oldFileName == null) oldFileName = getOldFileNameFromSymlink(); // To compress previous file, if so configured
             createSymlinkToCurrentFile();
 
-            nextRotationTime = 0; //figure it out later (lazy evaluation)
+            nextRotationTime = 0; // figure it out later (lazy evaluation)
             if ((oldFileName != null)) {
                 Path oldFile = Paths.get(oldFileName);
                 if (Files.exists(oldFile)) {
@@ -438,7 +417,6 @@ class LogFileHandler <LOGTYPE> {
                 }
             }
         }
-
 
         private static void runCompression(NativeIO nativeIO, Path oldFile, Compression compression) {
             switch (compression) {
@@ -528,7 +506,7 @@ class LogFileHandler <LOGTYPE> {
         }
 
         private String getOldFileNameFromSymlink() {
-            if(symlinkName == null) return null;
+            if (symlinkName == null) return null;
             try {
                 return Paths.get(fileName).resolveSibling(symlinkName).toRealPath().toString();
             } catch (IOException e) {
