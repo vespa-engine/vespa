@@ -10,8 +10,11 @@ import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
 /**
+ * Deprecated, not in active use.
  * @author Einar M R Rosenvinge
  */
+@Deprecated(forRemoval = true)
+@SuppressWarnings({"deprecation", "removal"})
 public class ListAnnotationContainer extends IteratingAnnotationContainer {
 
     private final List<Annotation> annotations = new LinkedList<>();

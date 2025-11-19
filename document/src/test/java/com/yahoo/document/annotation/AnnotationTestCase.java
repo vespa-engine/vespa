@@ -16,6 +16,7 @@ import static org.junit.Assert.assertNotSame;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class AnnotationTestCase extends AbstractTypesTest {
 
     @Test

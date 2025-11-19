@@ -6,6 +6,7 @@ import com.yahoo.document.annotation.SpanTree;
 /**
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings({"deprecation", "removal"})
 public interface SpanTreeReader {
     public void read(SpanTree tree);
 }

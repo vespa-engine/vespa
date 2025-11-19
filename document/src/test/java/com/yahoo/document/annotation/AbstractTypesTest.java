@@ -16,6 +16,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings({"deprecation", "removal"})
 public abstract class AbstractTypesTest {
 
     protected DocumentTypeManager man;

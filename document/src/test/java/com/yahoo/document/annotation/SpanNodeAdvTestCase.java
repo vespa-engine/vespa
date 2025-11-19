@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 
 
+@SuppressWarnings({"deprecation", "removal"})
 public class SpanNodeAdvTestCase {
 
     private boolean debug = false;

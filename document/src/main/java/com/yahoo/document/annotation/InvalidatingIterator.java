@@ -6,6 +6,7 @@ import java.util.ListIterator;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings({"deprecation", "removal"})
 class InvalidatingIterator implements ListIterator<SpanNode> {
     private SpanList owner;
     private ListIterator<SpanNode> base;

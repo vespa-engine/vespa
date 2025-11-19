@@ -5,8 +5,12 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
+ * Deprecated, not in active use.
+ *
  * @author Einar M R Rosenvinge
  */
+@Deprecated
+@SuppressWarnings({"deprecation", "removal"})
 abstract class AnnotationContainer {
 
     /**

@@ -18,6 +18,7 @@ import static org.junit.Assert.fail;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class SpanListTestCase extends AbstractTypesTest {
 
     @Test

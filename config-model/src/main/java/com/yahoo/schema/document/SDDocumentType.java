@@ -31,13 +31,14 @@ import java.util.Set;
  * @author Thomas Gundersen
  * @author bratseth
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class SDDocumentType implements Cloneable {
 
     public static final SDDocumentType VESPA_DOCUMENT;
     private final Map<DataTypeName, SDDocumentType> inheritedTypes = new LinkedHashMap<>();
     private final Map<NewDocumentType.Name, SDDocumentType> ownedTypes = new LinkedHashMap<>();
     private final AnnotationTypeRegistry annotationTypes = new AnnotationTypeRegistry();
-    private DocumentType docType;    
+    private DocumentType docType;
     private DataType structType;
     // The field sets here are set from the processing step in SD,
     // to ensure that the full Search and this SDDocumentType is built first.
@@ -293,7 +294,7 @@ public class SDDocumentType implements Cloneable {
         docType.setStruct(structType);
         return docType;
     }
-    
+
     /** The field sets defined for this type and its {@link Schema} */
     public FieldSets getFieldSets() {
         return fieldSets;

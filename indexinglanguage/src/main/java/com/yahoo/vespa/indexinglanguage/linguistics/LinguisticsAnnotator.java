@@ -35,6 +35,7 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  *
  * @author Simon Thoresen Hult
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class LinguisticsAnnotator {
 
     private static final Logger log = Logger.getLogger(LinguisticsAnnotator.class.getName());

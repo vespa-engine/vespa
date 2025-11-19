@@ -22,6 +22,7 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
 /**
  * @author Simon Thoresen Hult
  */
+@SuppressWarnings({"deprecation", "removal"})
 public final class ExactExpression extends Expression {
 
     private final AnnotatorConfig config;

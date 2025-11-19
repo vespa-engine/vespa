@@ -19,6 +19,7 @@ import static org.junit.Assert.assertSame;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class AlternateSpanListTestCase extends AbstractTypesTest {
 
     @Test

@@ -4,6 +4,7 @@ package com.yahoo.document.annotation;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class IndexKeySpanNodeSpanTreeAdvTest extends SpanTreeAdvTest {
 
     @Override

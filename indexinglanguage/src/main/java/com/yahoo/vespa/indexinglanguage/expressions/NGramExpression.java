@@ -23,6 +23,7 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  *
  * @author bratseth
  */
+@SuppressWarnings({"deprecation", "removal"})
 public final class NGramExpression extends Expression {
 
     private final Linguistics linguistics;

@@ -25,6 +25,7 @@ import java.util.logging.Level;
  *
  * @author arnej27959
  **/
+@SuppressWarnings({"deprecation", "removal"})
 public class ConvertParsedTypes {
 
     private final List<ParsedSchema> orderedInput;

@@ -13,10 +13,12 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * TODO: Should this be removed?
+ * Deprecated, not in active use.
  *
  * @author Einar M R Rosenvinge
  */
+@Deprecated(forRemoval = true)
+@SuppressWarnings({"deprecation", "removal"})
 class SpanNode2AnnotationContainer extends AnnotationContainer {
 
     private final Multimap<SpanNode, Annotation> spanNode2Annotation = Multimaps.newMultimap(new IdentityHashMap<>(), ArrayList::new);

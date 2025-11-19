@@ -77,6 +77,7 @@ import static com.yahoo.document.json.document.DocumentParser.REMOVE;
  *
  * @author Steinar Knutsen
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class JsonWriter implements DocumentWriter {
 
     private static final JsonFactory jsonFactory = new JsonFactoryBuilder()

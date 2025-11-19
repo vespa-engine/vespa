@@ -14,6 +14,7 @@ import java.util.Map;
  * used in the concrete document types.
  * @author baldersheim
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class ExtendedStringField extends ExtendedField {
     public interface ExtractSpanTrees {
         Map<String, SpanTree> get(StructuredFieldValue doc);

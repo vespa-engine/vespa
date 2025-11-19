@@ -12,6 +12,8 @@ import java.util.ListIterator;
  *
  * @author Einar M R Rosenvinge
  */
+@Deprecated
+@SuppressWarnings({"deprecation", "removal"})
 public abstract class SpanNode implements Comparable<SpanNode>, SpanNodeParent {
 
     private boolean valid = true;

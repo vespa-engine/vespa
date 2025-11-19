@@ -15,6 +15,8 @@ import com.yahoo.vespa.objects.Ids;
  * @see Annotation#setFieldValue(com.yahoo.document.datatypes.FieldValue)
  * @author Einar M R Rosenvinge
  */
+@Deprecated(forRemoval = true)
+@SuppressWarnings({"deprecation", "removal"})
 public class AnnotationReference extends FieldValue {
 
     public static int classId = registerClass(Ids.annotation + 2, AnnotationReference.class);

@@ -18,6 +18,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings({"deprecation", "removal"})
 public class Bug4261985TestCase {
 
     @Test
@@ -153,4 +154,3 @@ public class Bug4261985TestCase {
         document.setFieldValue(document.getDataType().getField("body"), body);
     }
 }
-

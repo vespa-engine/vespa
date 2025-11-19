@@ -30,6 +30,7 @@ import java.util.Optional;
  * All read methods assume that the stream is currently positioned at the start element of the relevant field.
  *
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class VespaXMLFieldReader extends VespaXMLReader implements FieldReader {
     private static final BigInteger UINT_MAX = new BigInteger("4294967296");
     private static final BigInteger ULONG_MAX = new BigInteger("18446744073709551616");

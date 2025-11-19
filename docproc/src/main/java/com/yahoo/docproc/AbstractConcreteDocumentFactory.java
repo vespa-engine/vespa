@@ -20,6 +20,7 @@ import com.yahoo.document.datatypes.StructuredFieldValue;
  *
  * @author vegardh
  */
+@SuppressWarnings({"deprecation", "removal"})
 public abstract class AbstractConcreteDocumentFactory extends com.yahoo.component.AbstractComponent {
 
     public abstract Map<String, Class<? extends Document>> documentTypes();

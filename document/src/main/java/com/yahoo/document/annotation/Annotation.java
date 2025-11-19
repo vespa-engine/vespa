@@ -11,6 +11,7 @@ import com.yahoo.document.datatypes.FieldValue;
  * @see com.yahoo.document.annotation.AnnotationType
  * @author Einar M R Rosenvinge
  */
+@Deprecated(forRemoval = true)
 public class Annotation implements Comparable<Annotation> {
 
     private AnnotationType type;

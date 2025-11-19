@@ -7,6 +7,7 @@ import com.yahoo.document.annotation.AnnotationType;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings({"deprecation", "removal"})
 public interface AnnotationReader {
     public void read(Annotation annotation);
 }

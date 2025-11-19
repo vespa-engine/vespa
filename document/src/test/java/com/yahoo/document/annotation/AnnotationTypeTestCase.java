@@ -10,6 +10,7 @@ import static org.junit.Assert.assertFalse;
 /**
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class AnnotationTypeTestCase {
 
     @Test

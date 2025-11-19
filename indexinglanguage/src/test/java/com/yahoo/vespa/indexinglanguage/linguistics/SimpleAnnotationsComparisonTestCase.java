@@ -32,6 +32,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author arnej
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class SimpleAnnotationsComparisonTestCase {
 
     @Test

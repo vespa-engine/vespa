@@ -9,6 +9,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class AnnotationTypeRegistryTestCase {
 
     @Test

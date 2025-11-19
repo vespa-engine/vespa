@@ -21,6 +21,7 @@ import java.util.ListIterator;
  *
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class DocTestCase {
 
     private class Processing {

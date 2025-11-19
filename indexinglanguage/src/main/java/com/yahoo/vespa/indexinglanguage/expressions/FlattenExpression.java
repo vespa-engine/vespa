@@ -23,6 +23,7 @@ import java.util.Map;
  * @author Simon Thoresen Hult
  */
 // TODO: Remove on Vespa 9
+@SuppressWarnings({"deprecation", "removal"})
 public final class FlattenExpression extends Expression {
 
     @Override

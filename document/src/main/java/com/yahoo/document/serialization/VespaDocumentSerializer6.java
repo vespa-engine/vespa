@@ -76,6 +76,7 @@ import static com.yahoo.text.Utf8.calculateBytePositions;
  * @author baldersheim
  */
 @Deprecated(forRemoval = true)
+@SuppressWarnings({"deprecation", "removal"})
 public class VespaDocumentSerializer6 extends BufferSerializer implements DocumentSerializer {
 
     private static final Logger log = Logger.getLogger(VespaDocumentSerializer6.class.getName());

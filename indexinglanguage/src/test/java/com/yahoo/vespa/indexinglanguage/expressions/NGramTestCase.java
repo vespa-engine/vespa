@@ -32,6 +32,7 @@ import static org.junit.Assert.fail;
 /**
  * @author bratseth
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class NGramTestCase {
 
     @Test

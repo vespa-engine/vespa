@@ -15,6 +15,7 @@ import java.util.Collections;
 
 import static org.junit.Assert.*;
 
+@SuppressWarnings({"deprecation", "removal"})
 public class Bug6394548TestCase {
     @Test
     @SuppressWarnings("deprecation")
