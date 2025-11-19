@@ -25,10 +25,13 @@ import java.util.stream.Collectors;
  * A SpanTree holds a root node of a tree of SpanNodes, and a List of Annotations pointing to these nodes
  * or each other. It also has a name.
  *
+ * Deprecated - only SimpleIndexingAnnotations will be used from Vespa 9
+ *
  * @author Einar M R Rosenvinge
  * @see com.yahoo.document.annotation.SpanNode
  * @see com.yahoo.document.annotation.Annotation
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparable<SpanTree> {
 
     private String name;
@@ -39,6 +42,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
     /**
      * WARNING! Only to be used by deserializers! Creates an empty SpanTree instance.
      */
+    @Deprecated(forRemoval = true)
     public SpanTree() { }
 
     /**
@@ -48,6 +52,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * @param root the root node of the span tree
      * @throws IllegalStateException if the root node is invalid
      */
+    @Deprecated(forRemoval = true)
     public SpanTree(String name, SpanNode root) {
         this.name = name;
         setRoot(root);
@@ -58,11 +63,13 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      *
      * @param name the name of the span tree
      */
+    @Deprecated(forRemoval = true)
     public SpanTree(String name) {
         this.name = name;
         setRoot(new SpanList());
     }
 
+    @Deprecated(forRemoval = true)
     public SpanTree(SpanTree otherToCopy) {
         name = otherToCopy.name;
         setRoot(copySpan(otherToCopy.root));
@@ -203,6 +210,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      *
      * @param name the name to set for this SpanTree instance.
      */
+    @Deprecated(forRemoval = true)
     public void setName(String name) {
         this.name = name;
     }
@@ -212,6 +220,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      *
      * @param root the root to set for this SpanTree instance.
      */
+    @Deprecated(forRemoval = true)
     public void setRoot(SpanNode root) {
         if (!root.isValid()) {
             throw new IllegalStateException("Cannot use invalid node " + root + " as root node.");
@@ -226,11 +235,13 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
     }
 
     /** Returns the name of this span tree. */
+    @Deprecated(forRemoval = true)
     public String getName() {
         return name;
     }
 
     /** Returns the root node of this span tree. */
+    @Deprecated(forRemoval = true)
     public SpanNode getRoot() {
         return root;
     }
@@ -239,6 +250,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * Convenience shorthand for <code>(SpanList)getRoot()</code>.
      * This must of course only be used when it is known that the root in this tree actually is a SpanList.
      */
+    @Deprecated(forRemoval = true)
     public SpanList spanList() {
         return (SpanList)root;
     }
@@ -249,6 +261,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * total number of Annotations, and m is the number of SpanNodes that had been removed from the tree.
      * The lower bound is Omega(n), if no SpanNodes had been removed from the tree.
      */
+    @Deprecated(forRemoval = true)
     public void cleanup() {
         Map<Annotation, Annotation> removedAnnotations = removeAnnotationsThatPointToInvalidSpanNodes();
 
@@ -422,6 +435,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * @see com.yahoo.document.annotation.AnnotationReference
      * @see com.yahoo.document.annotation.AnnotationReferenceDataType
      */
+    @Deprecated(forRemoval = true)
     public SpanTree annotate(Annotation a) {
         if (a.getSpanNode() == null) {
             annotateInternal(DummySpanNode.INSTANCE, a);
@@ -441,6 +455,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * @return this, for chaining
      * @see com.yahoo.document.annotation.Annotation
      */
+    @Deprecated(forRemoval = true)
     public SpanTree annotate(SpanNode node, Annotation annotation) {
         annotation.setSpanNode(node);
         return annotate(annotation);
@@ -457,6 +472,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * @return this, for chaining
      * @see com.yahoo.document.annotation.Annotation
      */
+    @Deprecated(forRemoval = true)
     public final SpanTree annotateFast(SpanNode node, Annotation annotation) {
         annotateInternal(node, annotation);
         return this;
@@ -472,6 +488,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * @return this, for chaining
      * @see com.yahoo.document.annotation.Annotation
      */
+    @Deprecated(forRemoval = true)
     public SpanTree annotate(SpanNode node, AnnotationType type,FieldValue value) {
         return annotate(node, new Annotation(type, value));
     }
@@ -489,6 +506,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * @see com.yahoo.document.annotation.Annotation
      * @see com.yahoo.document.annotation.AnnotationType
      */
+    @Deprecated(forRemoval = true)
     public SpanTree annotate(SpanNode node, AnnotationType type) {
         Annotation a = new Annotation(type);
         return annotate(node, a);
@@ -500,6 +518,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * @param a the annotation to remove
      * @return true if the Annotation was successfully removed, false otherwise
      */
+    @Deprecated(forRemoval = true)
     public boolean remove(Annotation a) {
         return getAnnotations().remove(a);
     }
@@ -509,6 +528,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      *
      * @return the total number of annotations in the tree.
      */
+    @Deprecated(forRemoval = true)
     public int numAnnotations() {
         return annotations.annotations().size();
     }
@@ -518,6 +538,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      *
      * @param node the SpanNode to clear all Annotations for.
      */
+    @Deprecated(forRemoval = true)
     public void clearAnnotations(SpanNode node) {
         Iterator<Annotation> annIt = iterator(node);
         while (annIt.hasNext()) {
@@ -531,6 +552,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      *
      * @param node the SpanNode to clear all Annotations for.
      */
+    @Deprecated(forRemoval = true)
     public void clearAnnotationsRecursive(SpanNode node) {
         Iterator<Annotation> annIt = iteratorRecursive(node);
         while (annIt.hasNext()) {
@@ -540,6 +562,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
     }
 
     /** Returns an Iterator over all annotations in this tree. Note that the iteration order is non-deterministic. */
+    @Deprecated(forRemoval = true)
     public Iterator<Annotation> iterator() {
         return annotations.annotations().iterator();
     }
@@ -550,6 +573,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * @param node the node to return annotations for.
      * @return an Iterator over all annotations that annotate the given node.
      */
+    @Deprecated(forRemoval = true)
     public Iterator<Annotation> iterator(SpanNode node) {
         return annotations.iterator(node);
     }
@@ -560,6 +584,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * @param node the node to recursively return annotations for.
      * @return a recursive Iterator over all annotations that annotate the given node and its subnodes.
      */
+    @Deprecated(forRemoval = true)
     public Iterator<Annotation> iteratorRecursive(SpanNode node) {
         return annotations.iteratorRecursive(node);
     }
@@ -570,6 +595,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * @return this SpanTree instance.
      */
     @Override
+    @Deprecated(forRemoval = true)
     public SpanTree getSpanTree() {
         return this;
     }
@@ -581,6 +607,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      *
      * @param stringFieldValue the StringFieldValue that this SpanTree should belong to (might be null to clear the current value)
      */
+    @Deprecated(forRemoval = true)
     public void setStringFieldValue(StringFieldValue stringFieldValue) {
         this.stringFieldValue = stringFieldValue;
     }
@@ -591,10 +618,12 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * @return the StringFieldValue that this SpanTree belongs to, if any, otherwise null.
      */
     @Override
+    @Deprecated(forRemoval = true)
     public StringFieldValue getStringFieldValue() {
         return stringFieldValue;
     }
 
+    @Deprecated(forRemoval = true)
     public void createIndex(IndexKey key) {
         if (key == IndexKey.SPAN_NODE && annotations instanceof ListAnnotationContainer) {
             AnnotationContainer tmpAnnotations = new SpanNode2AnnotationContainer();
@@ -609,6 +638,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
         }
     }
 
+    @Deprecated(forRemoval = true)
     public void clearIndex(IndexKey key) {
         if (key == IndexKey.SPAN_NODE && annotations instanceof SpanNode2AnnotationContainer) {
             clearIndex();
@@ -617,6 +647,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
         }
     }
 
+    @Deprecated(forRemoval = true)
     public void clearIndexes() {
         if (!(annotations instanceof ListAnnotationContainer)) {
             clearIndex();
@@ -629,6 +660,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
         annotations = tmpAnnotations;
     }
 
+    @Deprecated(forRemoval = true)
     public Collection<IndexKey> getCurrentIndexes() {
         if (annotations instanceof AnnotationType2AnnotationContainer)
             return List.of(IndexKey.ANNOTATION_TYPE);
@@ -681,6 +713,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
         return comp;
     }
 
+    @Deprecated(forRemoval = true)
     public enum IndexKey {
         SPAN_NODE,
         ANNOTATION_TYPE

@@ -11,7 +11,7 @@ import java.util.List;
  *
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings({ "UnusedDeclaration" })
+@SuppressWarnings({ "UnusedDeclaration", "deprecation", "removal"})
 public final class AnnotationTypes {
 
     private AnnotationTypes() {

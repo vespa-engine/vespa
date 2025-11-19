@@ -29,6 +29,7 @@ import com.yahoo.vespa.objects.Serializer;
  *
  * @author ravishar
  */
+@SuppressWarnings({"deprecation", "removal"})
 public interface FieldWriter extends Serializer {
 
     /** Writes the value of a field. */

@@ -29,6 +29,7 @@ import com.yahoo.vespa.objects.FieldBase;
  * @author Ravi Sharma
  *
  */
+@SuppressWarnings({"deprecation", "removal"})
 public interface FieldReader extends Deserializer {
 
     /**

@@ -6,9 +6,13 @@ import com.yahoo.document.datatypes.StringFieldValue;
 /**
  * An interface to be implemented by classes that can be parents of SpanNodes.
  *
+ * Deprecated, not in active use.
+ *
  * @author Einar M R Rosenvinge
  * @see SpanNode#getParent()
  */
+@Deprecated(forRemoval = true)
+@SuppressWarnings({"deprecation", "removal"})
 public interface SpanNodeParent {
 
     /**

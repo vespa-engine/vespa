@@ -13,6 +13,8 @@ import java.util.ListIterator;
  *
  * @author Einar M R Rosenvinge
  */
+@Deprecated(forRemoval = true)
+@SuppressWarnings({"deprecation", "removal"})
 public class SpanList extends SpanNode {
 
     public static final byte ID = 2;

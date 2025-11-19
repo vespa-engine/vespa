@@ -18,6 +18,7 @@ import static org.junit.Assert.assertFalse;
 /**
  * @author Simon Thoresen Hult
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class FlattenTestCase {
 
     @Test

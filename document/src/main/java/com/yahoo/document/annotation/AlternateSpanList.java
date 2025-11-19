@@ -14,9 +14,13 @@ import java.util.ListIterator;
  * A node in a {@link SpanNode} tree that can have a <strong>multiple</strong> trees of child nodes, each with its own probability.
  * This class has quite a few convenience methods for accessing the <strong>first</strong> subtree.
  *
+ * Deprecated, not in active use.
+ *
  * @author Einar M R Rosenvinge
  * @see com.yahoo.document.annotation.SpanList
  */
+@Deprecated(forRemoval = true)
+@SuppressWarnings({"deprecation", "removal"})
 public class AlternateSpanList extends SpanList {
 
     public static final byte ID = 4;

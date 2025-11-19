@@ -13,6 +13,7 @@ import java.util.NoSuchElementException;
  * @author baldersheim
  * @author Einar M R Rosenvinge
  */
+@Deprecated(forRemoval = true)
 public class Span extends SpanNode {
 
     public static final byte ID = 1;

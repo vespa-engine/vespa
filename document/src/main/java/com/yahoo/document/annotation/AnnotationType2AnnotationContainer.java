@@ -11,10 +11,12 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
+ * Deprecated, not in active use.
  *
  * @author Einar M R Rosenvinge
  */
-// TODO: Should this be removed?
+@Deprecated(forRemoval = true)
+@SuppressWarnings({"deprecation", "removal"})
 public class AnnotationType2AnnotationContainer extends IteratingAnnotationContainer {
 
     private final Multimap<AnnotationType, Annotation> annotationType2Annotation = Multimaps.newMultimap(new IdentityHashMap<>(), ArrayList::new);

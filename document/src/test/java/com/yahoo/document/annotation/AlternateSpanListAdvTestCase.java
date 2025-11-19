@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
  * If you really want to debug, just turn on the debug flag to true.
  *
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class AlternateSpanListAdvTestCase {
 
     private AnnotationType at1 = new AnnotationType("person", DataType.STRING);

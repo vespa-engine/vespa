@@ -34,6 +34,7 @@ import java.util.Map;
  *
  * @author Thomas Gundersen
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class DocumentTypeManager {
 
     // *Configured data types* (not built-in/primitive) indexed by their id

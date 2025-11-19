@@ -29,6 +29,7 @@ import java.util.*;
  *
  * @author arnej
  **/
+@SuppressWarnings({"deprecation", "removal"})
 public class DataTypeRecognizer {
     private Map<Object, String> toUniqueNames = new IdentityHashMap<>();
 

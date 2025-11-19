@@ -13,6 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+@SuppressWarnings({"deprecation", "removal"})
 public class Bug6425939TestCase {
     private DocumentTypeManager man;
     private StructDataType person;

@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
  *
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSubscriber<DocumentmanagerConfig> {
 
     private final static Logger log = Logger.getLogger(DocumentTypeManagerConfigurer.class.getName());

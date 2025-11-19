@@ -32,6 +32,7 @@ import java.util.Set;
  * @author baldersheim
  * @author arnej
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class DocumentManager {
 
     public DocumentmanagerConfig.Builder produce(DocumentModel model,

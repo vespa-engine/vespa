@@ -47,6 +47,7 @@ import java.util.Set;
  * @author Vegard Balgaard Havdal
  */
 @Mojo(name = "document-gen", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
+@SuppressWarnings({"deprecation", "removal"})
 public class DocumentGenMojo extends AbstractMojo {
 
     private long newestModifiedTime = 0;
@@ -200,6 +201,7 @@ public class DocumentGenMojo extends AbstractMojo {
                     " *  Date: "+new Date()+"\n" +
                     " */\n");
             out.write("@com.yahoo.document.Generated\n");
+            out.write("@SuppressWarnings({\"deprecation\", \"removal\"})\n");
             out.write("public class ConcreteDocumentFactory extends com.yahoo.docproc.AbstractConcreteDocumentFactory {\n");
             out.write(ind()+"private static java.util.Map<java.lang.String, java.lang.Class<? extends com.yahoo.document.Document>> dTypes = new java.util.HashMap<java.lang.String, java.lang.Class<? extends com.yahoo.document.Document>>();\n");
             out.write(ind()+"private static java.util.Map<java.lang.String, com.yahoo.document.DocumentType> docTypes = new java.util.HashMap<>();\n");
@@ -314,6 +316,7 @@ public class DocumentGenMojo extends AbstractMojo {
                     " *  Date: "+new Date()+"\n" +
                     " */\n" +
                     "@com.yahoo.document.Generated\n" +
+                    "@SuppressWarnings({\"unchecked\",\"deprecation\",\"removal\"})\n" +
                     "public "+annTypeModifier(annType)+"class "+className+" extends "+getParentAnnotationType(annType)+" {\n\n");
             if (annType.getDataType() instanceof StructDataType) {
                 out.write(ind() + "public "+className+"() {\n" +
@@ -434,7 +437,7 @@ public class DocumentGenMojo extends AbstractMojo {
                 " *  Date: "+new Date()+"\n" +
                 " */\n" +
                 "@com.yahoo.document.Generated\n" +
-                "@SuppressWarnings(\"unchecked\")\n" +
+                "@SuppressWarnings({\"unchecked\",\"deprecation\",\"removal\"})\n" +
                 "public class "+className+" extends "+superType+" {\n\n"+
                 ind(1)+"/** The doc type of this.*/\n" +
                 ind(1)+"public static final com.yahoo.document.DocumentType type = getDocumentType();\n\n");
@@ -584,7 +587,9 @@ public class DocumentGenMojo extends AbstractMojo {
         out.write(ind(ind+2) + "public void set(com.yahoo.document.datatypes.StructuredFieldValue doc, Object value) { ((" + className + ")doc)." + setter(f.getName())+"((" + toJavaType(f.getDataType()) + ")value); }\n");
         out.write(ind(ind+1) + "},\n");
         out.write(ind(ind+1) + "new com.yahoo.document.ExtendedStringField.ExtractSpanTrees() {\n");
+        out.write(ind(ind+2) + "@SuppressWarnings({\"deprecation\", \"removal\"})\n");
         out.write(ind(ind+2) + "public java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> get(com.yahoo.document.datatypes.StructuredFieldValue doc) {return ((" + className + ")doc)." + spanTreeGetter(f.getName()) + "(); }\n");
+        out.write(ind(ind+2) + "@SuppressWarnings({\"deprecation\", \"removal\"})\n");
         out.write(ind(ind+2) + "public void set(com.yahoo.document.datatypes.StructuredFieldValue doc, java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> value) { ((" + className + ")doc)." + spanTreeSetter(f.getName()) + "(value); }\n");
         out.write(ind(ind+1) + "}\n");
         out.write(ind(ind) + "));\n");
@@ -761,6 +766,7 @@ public class DocumentGenMojo extends AbstractMojo {
                 ind(ind)+" *  Date: "+new Date()+"\n" +
                 ind(ind)+" */\n" +
                 ind(ind)+"@com.yahoo.document.Generated\n" +
+                ind(ind)+"@SuppressWarnings({\"unchecked\",\"deprecation\",\"removal\"})\n" +
                 ind(ind) + "public static class "+structClassName+" extends com.yahoo.document.datatypes.Struct {\n\n" +
                 ind(ind+1)+"/** The type of this.*/\n" +
                 ind(ind+1)+"public static final com.yahoo.document.StructDataType type = getStructType();\n\n");
@@ -852,8 +858,11 @@ public class DocumentGenMojo extends AbstractMojo {
                     ind(ind+1) + "return this;\n" +
                     ind(ind) + "}\n");
             if (spanTrees && dt.equals(DataType.STRING)) {
-                out.write(ind(ind)+"public java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> "+spanTreeGetter(field.getName())+"() { return "+field.getName()+"SpanTrees; }\n" +
-                        ind(ind)+"public void "+spanTreeSetter(field.getName())+"(java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> spanTrees) { this."+field.getName()+"SpanTrees=spanTrees; }\n");
+                out.write(
+		    ind(ind)+"@Deprecated(forRemoval = true)\n" +
+		    ind(ind)+"public java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> "+spanTreeGetter(field.getName())+"() { return "+field.getName()+"SpanTrees; }\n" +
+		    ind(ind)+"@Deprecated(forRemoval = true)\n" +
+                    ind(ind)+"public void "+spanTreeSetter(field.getName())+"(java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> spanTrees) { this."+field.getName()+"SpanTrees=spanTrees; }\n");
             }
         }
         out.write("\n");

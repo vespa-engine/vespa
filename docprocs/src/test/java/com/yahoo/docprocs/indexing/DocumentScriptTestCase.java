@@ -39,7 +39,7 @@ import static org.junit.Assert.fail;
 /**
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "deprecation", "removal"})
 public class DocumentScriptTestCase {
 
     private static final FieldValuesFactory fieldValuesFactory = new FieldValuesFactory();

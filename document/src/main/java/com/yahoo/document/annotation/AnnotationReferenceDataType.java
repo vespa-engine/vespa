@@ -9,6 +9,8 @@ import com.yahoo.document.datatypes.FieldValue;
  *
  * @author Einar M R Rosenvinge
  */
+@Deprecated(forRemoval = true)
+@SuppressWarnings({"deprecation", "removal"})
 public class AnnotationReferenceDataType extends DataType {
 
     private AnnotationType aType;

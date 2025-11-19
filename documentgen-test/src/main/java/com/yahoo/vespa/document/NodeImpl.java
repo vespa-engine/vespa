@@ -8,6 +8,7 @@ import com.yahoo.document.annotation.Annotation;
  *
  * @author vegardh
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class NodeImpl extends Annotation {
 
 }

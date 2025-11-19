@@ -10,6 +10,7 @@ import com.yahoo.vespa.objects.Serializer;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings({"deprecation", "removal"})
 public interface SpanNodeWriter extends Serializer {
     public void write(SpanNode spanNode);
     public void write(Span span);

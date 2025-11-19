@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.ListIterator;
 
 /**
+ * Deprecated, not in active use.
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@Deprecated(forRemoval = true)
 public class SerialIterator extends RecursiveNodeIterator {
     SerialIterator(List<ListIterator<SpanNode>> iterators) {
         //the first iterator must be on top of the stack:

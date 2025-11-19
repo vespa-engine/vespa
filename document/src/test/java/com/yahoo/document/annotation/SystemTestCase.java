@@ -18,6 +18,7 @@ import java.util.Iterator;
 /**
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class SystemTestCase {
 
     DocumentTypeManager manager;

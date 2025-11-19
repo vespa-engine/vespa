@@ -21,6 +21,7 @@ import java.util.logging.Logger;
  *
  * @author havardpe
  */
+@SuppressWarnings({"deprecation", "removal"})
 public final class SimpleIndexingAnnotations {
 
     private static final Logger log = Logger.getLogger(SimpleIndexingAnnotations.class.getName());

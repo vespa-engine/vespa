@@ -29,6 +29,7 @@ import java.util.Set;
 /**
  * @author baldersheim
  */
+@SuppressWarnings({"deprecation", "removal"})
 public final class NewDocumentType extends StructuredDataType implements DataTypeCollection {
 
     private final Name name;

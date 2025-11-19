@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author arnej
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class AnnotationReferenceTestCase {
 
     static final String sd =
@@ -63,5 +64,5 @@ public class AnnotationReferenceTestCase {
             assertFalse(fieldType instanceof AnnotationReferenceDataType);
         }
     }
-        
+
 }

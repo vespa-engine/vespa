@@ -11,6 +11,7 @@ import java.util.NoSuchElementException;
  *
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings({"deprecation", "removal"})
 class RecursiveNodeIterator implements ListIterator<SpanNode> {
     protected Deque<PeekableListIterator<SpanNode>> stack = new ArrayDeque<>();
     protected ListIterator<SpanNode> iteratorFromLastCallToNext = null;

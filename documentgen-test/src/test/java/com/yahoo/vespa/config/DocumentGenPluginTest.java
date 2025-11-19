@@ -86,7 +86,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author vegardh
  */
-@SuppressWarnings({"unchecked", "rawtypes"})
+@SuppressWarnings({"unchecked", "rawtypes", "deprecation", "removal"})
 public class DocumentGenPluginTest {
 
     // NOTE: Most assertEquals in this use the wrong argument order
@@ -126,7 +126,7 @@ public class DocumentGenPluginTest {
         assertNull(book.getFieldValue("mystruct"));
         assertNull(book.getFieldValue("myarrayint"));
     }
-    
+
     @Test
     public void testBasicDoc() {
         Music music = getMusicBasic();
@@ -378,6 +378,7 @@ public class DocumentGenPluginTest {
     }
 
     @Test
+    @SuppressWarnings({"deprecation", "removal"})
     public void testBaseAnnotations() {
         Book book = getBook();
         SpanTree authorTree = new SpanTree();
@@ -988,7 +989,7 @@ public class DocumentGenPluginTest {
         assertTrue(b1.equals(b2));
         assertTrue(b2.equals(b1));
     }
-    
+
     @Test
     public void testHashCode() {
         Book book1 = new Book(new DocumentId("id:book:book::0"));
@@ -997,9 +998,9 @@ public class DocumentGenPluginTest {
         assertEquals(book1.hashCode(), book2.hashCode());
         book2.setAuthor("Bill");
         assertNotSame(book1.hashCode(), book2.hashCode());
-        
+
     }
-    
+
     @Test
     public void testFunnyDocName() {
         com.yahoo.vespa.documentgen.test.Class c = new com.yahoo.vespa.documentgen.test.Class(new DocumentId("id:class:class::0"));
@@ -1080,5 +1081,5 @@ public class DocumentGenPluginTest {
         // parent has no explicit inheritance
         assertFalse(Parent.type.isA("common"));
     }
-    
+
 }

@@ -7,9 +7,11 @@ import java.util.Map;
 
 /**
  * A registry of annotation types. This can be set up programmatically or from config.
+ * Deprecated, only internal usage.
  *
  * @author Einar M R Rosenvinge
  */
+@Deprecated
 public class AnnotationTypeRegistry {
 
     private final Map<Integer, AnnotationType> idMap = new HashMap<>();

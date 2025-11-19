@@ -68,6 +68,7 @@ import static com.yahoo.document.json.JsonSerializationHelper.*;
  * @see #serialize(com.yahoo.document.DocumentUpdate)
  * @author Vegard Sjonfjell
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class DocumentUpdateJsonSerializer {
 
     private static final JsonFactory jsonFactory = new JsonFactoryBuilder()

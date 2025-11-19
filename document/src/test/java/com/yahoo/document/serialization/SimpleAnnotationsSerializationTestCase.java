@@ -29,6 +29,7 @@ import static org.junit.Assert.*;
  *
  * @author arnej
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class SimpleAnnotationsSerializationTestCase {
 
     private static final DocumentTypeManager docMan = new DocumentTypeManager();

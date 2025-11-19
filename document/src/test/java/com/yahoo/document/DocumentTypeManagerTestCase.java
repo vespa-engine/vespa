@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Thomas Gundersen
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class DocumentTypeManagerTestCase {
 
     // Verify that we can register and retrieve fields.

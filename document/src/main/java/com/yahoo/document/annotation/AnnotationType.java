@@ -17,6 +17,8 @@ import java.util.List;
  *
  * @author Einar M R Rosenvinge
  */
+@Deprecated
+@SuppressWarnings({"deprecation", "removal"})
 public class AnnotationType implements Comparable<AnnotationType> {
 
     private final int id;

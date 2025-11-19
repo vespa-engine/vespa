@@ -32,6 +32,7 @@ import java.util.Set;
 /**
  * @author baldersheim
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class DocumentTypes {
 
     public DocumenttypesConfig.Builder produce(DocumentModel model, DocumenttypesConfig.Builder builder) {

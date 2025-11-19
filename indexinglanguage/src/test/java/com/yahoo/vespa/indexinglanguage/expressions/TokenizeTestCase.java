@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Simon Thoresen Hult
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class TokenizeTestCase {
 
     @Test

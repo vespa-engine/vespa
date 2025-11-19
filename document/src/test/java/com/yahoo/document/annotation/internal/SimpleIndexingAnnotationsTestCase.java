@@ -18,6 +18,7 @@ import static org.junit.Assert.*;
  *
  * @author havardpe
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class SimpleIndexingAnnotationsTestCase {
 
     @Test

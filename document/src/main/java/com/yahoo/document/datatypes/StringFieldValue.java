@@ -31,6 +31,7 @@ import java.util.logging.Logger;
  *
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class StringFieldValue extends FieldValue {
 
     private static final Logger log = Logger.getLogger(StringFieldValue.class.getName());

@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
  * when the trees are sorted.
  *
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class Bug4164299TestCase {
 
     private SpanTree tree;

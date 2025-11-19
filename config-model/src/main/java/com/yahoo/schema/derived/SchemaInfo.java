@@ -33,6 +33,7 @@ import java.util.Map;
  *
  * @author bratseth
  */
+@SuppressWarnings({"deprecation", "removal"})
 public final class SchemaInfo extends Derived {
 
     private final Schema schema;

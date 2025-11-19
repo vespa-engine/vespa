@@ -7,6 +7,7 @@ import com.yahoo.document.annotation.AnnotationType;
 /**
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class SDAnnotationType extends AnnotationType {
 
     private SDDocumentType sdDocType;

@@ -9,6 +9,7 @@ import com.yahoo.document.annotation.SpanNode;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings({"deprecation", "removal"})
 public interface SpanNodeReader {
     public void read(Span span);
     public void read(SpanList spanList);

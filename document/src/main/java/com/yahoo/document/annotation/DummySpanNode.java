@@ -7,6 +7,7 @@ import java.util.ListIterator;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings({"deprecation", "removal"})
 class DummySpanNode extends SpanNode {
     final static DummySpanNode INSTANCE = new DummySpanNode();
 

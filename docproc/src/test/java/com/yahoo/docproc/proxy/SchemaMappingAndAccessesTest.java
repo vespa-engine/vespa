@@ -42,7 +42,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "deprecation", "removal"})
 public class SchemaMappingAndAccessesTest {
 
     private Document getDoc() {
@@ -314,7 +314,7 @@ public class SchemaMappingAndAccessesTest {
         assertEquals(mapped.toXml(), doc.toXml());
         assertEquals(mapped.getFieldCount(), doc.getFieldCount());
         assertTrue(mapped.getDocument()==doc);
-        
+
         mapped.clear();
         assertNull(mapped.getFieldValue("title"));
         assertNull(doc.getFieldValue("title"));

@@ -18,6 +18,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings({"deprecation", "removal"})
 public class Bug4259784TestCase {
 
     @Test
@@ -129,4 +130,3 @@ public class Bug4259784TestCase {
     }
 
 }
-

@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 /**
  * @author baldersheim
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class DocumentModelBuilder {
 
     private final DocumentModel model;
