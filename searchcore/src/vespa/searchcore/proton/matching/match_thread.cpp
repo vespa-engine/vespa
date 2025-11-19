@@ -237,7 +237,7 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
 
     // Collect additional stats from search iterators
     // Just the number of distance computations for now
-    MatchingStatsCollector collector;
+    MatchingStats::Partition::MatchingStatsCollector collector;
     visit(collector, "", tools.search());
     thread_stats.distances_computed(collector.get_distances_computed());
 

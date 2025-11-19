@@ -245,7 +245,6 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
 {
     vespalib::Timer total_matching_time;
     MatchingStats my_stats;
-    MatchingStatsCollector collector;
     SearchReply::UP reply = std::make_unique<SearchReply>();
     initCoverage(reply->coverage, metaStore, bucketdb);
 
@@ -290,6 +289,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
 
         // Collect stats from blueprints
         // Just the number of distance computations for now
+        MatchingStats::Partition::MatchingStatsCollector collector;
         visit(collector, "", mtf->query().peekRoot());
         my_stats.distances_computed(collector.get_distances_computed());
 
@@ -340,14 +340,6 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             sessionMgr.insert(std::move(session));
         }
     }
-
-    if (collector.approximate_nearest_neighbor_seen()) {
-        my_stats.add_to_nn_approx_stats();
-    }
-    if (collector.exact_nearest_neighbor_seen()) {
-        my_stats.add_to_nn_exact_stats();
-    }
-
     double querySetupTime = vespalib::to_s(total_matching_time.elapsed()) - my_stats.queryLatencyAvg();
     my_stats.querySetupTime(querySetupTime);
     updateStats(my_stats, request, reply->coverage, isDoomExplicit);
