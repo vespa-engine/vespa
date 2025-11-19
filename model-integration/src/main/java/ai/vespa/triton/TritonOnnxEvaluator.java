@@ -40,8 +40,8 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     }
 
     @Override
-    public Tensor evaluate(Map<String, Tensor> inputs, String outputName) {
-        return evaluate(inputs).get(outputName);
+    public Tensor evaluate(Map<String, Tensor> inputs, String output) {
+        return evaluate(inputs).get(output);
     }
 
     @Override
