@@ -123,9 +123,9 @@ public class DocumentTypeManagerTestCase {
     @Test
     public void testReverseMapOrder() {
         DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.map.cfg");
-
-        assertNotNull(manager.getDataTypeByCode(1000));
-        assertNotNull(manager.getDataTypeByCode(1001));
+        DocumentType docType = manager.getDocumentType("map_order");
+        Field f = docType.getField("a");
+        assertEquals("Map<int,Map<int,string>>", f.getDataType().getName());
     }
 
     @Test
@@ -412,14 +412,12 @@ search annotationsimplicitstruct {
 
         DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.structsanyorder.cfg");
 
-        StructDataType foo = (StructDataType) manager.getDataTypeInternal("foo");
-        assertNotNull(foo);
-        assertEquals(1, foo.getFields().size());
-        Field foos1 = foo.getField("s1");
-        assertSame(DataType.INT, foos1.getDataType());
-
-        StructDataType sct = (StructDataType) manager.getDataTypeInternal("sct");
+        var docType = manager.getDocumentType("annotationsimplicitstruct");
+        StructDataType sct = (StructDataType) docType.getField("structfield").getDataType();
+        ArrayDataType aft = (ArrayDataType) docType.getField("structarrayfield").getDataType();
         assertNotNull(sct);
+        assertNotNull(aft);
+
         assertEquals(4, sct.getFields().size());
         Field s1 = sct.getField("s1");
         assertSame(DataType.STRING, s1.getDataType());
@@ -427,8 +425,13 @@ search annotationsimplicitstruct {
         assertSame(DataType.STRING, s2.getDataType());
         Field s3 = sct.getField("s3");
         assertSame(sct, s3.getDataType());
+
         Field s4 = sct.getField("s4");
-        assertSame(foo, s4.getDataType());
+        StructDataType foo = (StructDataType) s4.getDataType();
+        assertEquals(foo.getName(), "foo");
+        assertEquals(1, foo.getFields().size());
+        Field foos1 = foo.getField("s1");
+        assertSame(DataType.INT, foos1.getDataType());
     }
 
     @Test
@@ -494,18 +497,14 @@ search annotationsimplicitstruct {
     @Test
     public void single_reference_type_is_mapped_to_correct_document_target_type() {
         final DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.singlereference.cfg");
-
-        assertReferenceTypePresentInManager(manager, 12345678, "referenced_type");
-    }
-
-    private static void assertReferenceTypePresentInManager(DocumentTypeManager manager, int refTypeId,
-                                                            String refTargetTypeName) {
-        DataType type = manager.getDataTypeByCode(refTypeId);
-        assertTrue(type instanceof ReferenceDataType);
-        ReferenceDataType refType = (ReferenceDataType) type;
-
-        DocumentType targetDocType = manager.getDocumentType(refTargetTypeName);
-        assertTrue(refType.getTargetType() == targetDocType);
+        DocumentType docType = manager.getDocumentType("type_with_ref");
+        Field f = docType.getField("my_ref_field");
+        assertTrue(f.getDataType() instanceof ReferenceDataType);
+        if (f.getDataType() instanceof ReferenceDataType refType) {
+            assertEquals("Reference<referenced_type>", refType.getName());
+            DocumentType targetDocType = manager.getDocumentType("referenced_type");
+            assertTrue(refType.getTargetType() == targetDocType);
+        }
     }
 
     private static DocumentTypeManager createConfiguredManager(String configFilePath) {
@@ -519,8 +518,21 @@ search annotationsimplicitstruct {
     public void multiple_reference_types_are_mapped_to_correct_document_target_types() {
         DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.multiplereferences.cfg");
 
-        assertReferenceTypePresentInManager(manager, 12345678, "referenced_type");
-        assertReferenceTypePresentInManager(manager, 87654321, "referenced_type2");
+        DocumentType docType = manager.getDocumentType("type_with_ref");
+        Field f1 = docType.getField("my_first_ref");
+        Field f2 = docType.getField("my_second_ref");
+        assertTrue(f1.getDataType() instanceof ReferenceDataType);
+        assertTrue(f2.getDataType() instanceof ReferenceDataType);
+        if (f1.getDataType() instanceof ReferenceDataType refType) {
+            assertEquals("Reference<referenced_type>", refType.getName());
+            DocumentType targetDocType = manager.getDocumentType("referenced_type");
+            assertTrue(refType.getTargetType() == targetDocType);
+        }
+        if (f2.getDataType() instanceof ReferenceDataType refType) {
+            assertEquals("Reference<referenced_type2>", refType.getName());
+            DocumentType targetDocType = manager.getDocumentType("referenced_type2");
+            assertTrue(refType.getTargetType() == targetDocType);
+        }
     }
 
     @Test
@@ -535,8 +547,13 @@ search annotationsimplicitstruct {
     @Test
     public void can_have_reference_type_pointing_to_own_document_type() {
         DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.selfreference.cfg");
-
-        assertReferenceTypePresentInManager(manager, 12345678, "type_with_ref");
+        DocumentType docType = manager.getDocumentType("type_with_ref");
+        Field f = docType.getField("my_ref");
+        assertTrue(f.getDataType() instanceof ReferenceDataType);
+        if (f.getDataType() instanceof ReferenceDataType refType) {
+            assertEquals("Reference<type_with_ref>", f.getDataType().getName());
+            assertTrue(refType.getTargetType() == docType);
+        }
     }
 
     @Test
