@@ -329,7 +329,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             // no retry if there is only one node
             if (retryMap.size() > 0) {
                 if (shouldLogRetry()) {
-                    log.log(Level.WARNING, "Retry docsum fetch for " + numSkipped + " hits (" + numOkFilledHits + " ok hits)");
+                    log.log(Level.INFO, "Retry docsum fetch for " + numSkipped + " hits (" + numOkFilledHits + " ok hits)");
                 }
                 summaryNeedsQuery = true;
                 sendFillRequestByNode(result, summaryClass, retryMap);
