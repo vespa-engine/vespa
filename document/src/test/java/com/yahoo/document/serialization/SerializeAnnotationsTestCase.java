@@ -217,63 +217,103 @@ public class SerializeAnnotationsTestCase {
     }
 
     /**
+     * Create a signature for an annotation that uniquely identifies it
+     */
+    private String annotationSignature(Annotation ann) {
+        StringBuilder sig = new StringBuilder();
+        sig.append("type:").append(ann.getType().getName());
+
+        SpanNode spanNode = ann.getSpanNode();
+        if (spanNode instanceof Span span) {
+            sig.append("|span:").append(span.getFrom()).append("-").append(span.getLength());
+        } else if (spanNode != null) {
+            sig.append("|spanNode:").append(spanNode.getClass().getSimpleName());
+        }
+
+        FieldValue value = ann.getFieldValue();
+        if (value != null) {
+            sig.append("|value:").append(value.toString());
+        }
+
+        return sig.toString();
+    }
+
+    /**
      * Compare semantic contents of two StringFieldValues
      */
     private void assertSemanticallyEqual(String message, StringFieldValue expected, StringFieldValue actual) {
         assertEquals(message + ": text differs", expected.getString(), actual.getString());
 
-        SpanTree expectedTree = expected.getSpanTree(SpanTrees.LINGUISTICS);
-        SpanTree actualTree = actual.getSpanTree(SpanTrees.LINGUISTICS);
+        var expectedTrees = expected.getSpanTrees();
+        var actualTrees = actual.getSpanTrees();
 
-        if (expectedTree == null) {
-            assertNull(message + ": expected no annotations", actualTree);
-            return;
+        assertEquals(message + ": span tree count differs", expectedTrees.size(), actualTrees.size());
+
+        // Build maps for easy lookup by name
+        var expectedTreeMap = new java.util.HashMap<String, SpanTree>();
+        for (var tree : expectedTrees) {
+            expectedTreeMap.put(tree.getName(), tree);
         }
 
-        assertNotNull(message + ": expected annotations", actualTree);
-
-        // Compare span tree contents
-        assertEquals(message + ": tree name differs", expectedTree.getName(), actualTree.getName());
-
-        // Get all annotations and compare
-        var expectedAnnotations = new java.util.ArrayList<Annotation>();
-        for (var ann : expectedTree) {
-            expectedAnnotations.add(ann);
+        var actualTreeMap = new java.util.HashMap<String, SpanTree>();
+        for (var tree : actualTrees) {
+            actualTreeMap.put(tree.getName(), tree);
         }
 
-        var actualAnnotations = new java.util.ArrayList<Annotation>();
-        for (var ann : actualTree) {
-            actualAnnotations.add(ann);
-        }
+        // Compare each span tree
+        for (String treeName : expectedTreeMap.keySet()) {
+            SpanTree expectedTree = expectedTreeMap.get(treeName);
+            SpanTree actualTree = actualTreeMap.get(treeName);
 
-        assertEquals(message + ": annotation count differs",
-                     expectedAnnotations.size(), actualAnnotations.size());
+            assertNotNull(message + ": missing span tree '" + treeName + "'", actualTree);
 
-        for (int i = 0; i < expectedAnnotations.size(); i++) {
-            Annotation expAnn = expectedAnnotations.get(i);
-            Annotation actAnn = actualAnnotations.get(i);
+            // Compare span tree contents
+            assertEquals(message + ": tree name differs", expectedTree.getName(), actualTree.getName());
 
-            assertEquals(message + ": annotation " + i + " type differs",
-                        expAnn.getType(), actAnn.getType());
-
-            // Compare span positions
-            if (expAnn.getSpanNode() instanceof Span expSpan && actAnn.getSpanNode() instanceof Span actSpan) {
-                assertEquals(message + ": annotation " + i + " span from differs",
-                            expSpan.getFrom(), actSpan.getFrom());
-                assertEquals(message + ": annotation " + i + " span length differs",
-                            expSpan.getLength(), actSpan.getLength());
+            // Get all annotations and create signature-based maps (order-independent)
+            var expectedAnnotationMap = new java.util.HashMap<String, Annotation>();
+            for (var ann : expectedTree) {
+                expectedAnnotationMap.put(annotationSignature(ann), ann);
             }
 
-            // Compare field values
-            FieldValue expValue = expAnn.getFieldValue();
-            FieldValue actValue = actAnn.getFieldValue();
+            var actualAnnotationMap = new java.util.HashMap<String, Annotation>();
+            for (var ann : actualTree) {
+                actualAnnotationMap.put(annotationSignature(ann), ann);
+            }
 
-            if (expValue == null) {
-                assertNull(message + ": annotation " + i + " should have no value", actValue);
-            } else {
-                assertNotNull(message + ": annotation " + i + " should have value", actValue);
-                assertEquals(message + ": annotation " + i + " value differs",
-                            expValue.toString(), actValue.toString());
+            assertEquals(message + ": annotation count differs in tree '" + treeName + "'",
+                         expectedAnnotationMap.size(), actualAnnotationMap.size());
+
+            // Compare each annotation by signature
+            for (var entry : expectedAnnotationMap.entrySet()) {
+                String sig = entry.getKey();
+                Annotation expAnn = entry.getValue();
+                Annotation actAnn = actualAnnotationMap.get(sig);
+
+                assertNotNull(message + ": missing annotation with signature '" + sig + "' in tree '" + treeName + "'", actAnn);
+
+                assertEquals(message + ": annotation type differs for '" + sig + "' in tree '" + treeName + "'",
+                            expAnn.getType(), actAnn.getType());
+
+                // Compare span positions
+                if (expAnn.getSpanNode() instanceof Span expSpan && actAnn.getSpanNode() instanceof Span actSpan) {
+                    assertEquals(message + ": annotation span from differs for '" + sig + "' in tree '" + treeName + "'",
+                                expSpan.getFrom(), actSpan.getFrom());
+                    assertEquals(message + ": annotation span length differs for '" + sig + "' in tree '" + treeName + "'",
+                                expSpan.getLength(), actSpan.getLength());
+                }
+
+                // Compare field values
+                FieldValue expValue = expAnn.getFieldValue();
+                FieldValue actValue = actAnn.getFieldValue();
+
+                if (expValue == null) {
+                    assertNull(message + ": annotation should have no value for '" + sig + "' in tree '" + treeName + "'", actValue);
+                } else {
+                    assertNotNull(message + ": annotation should have value for '" + sig + "' in tree '" + treeName + "'", actValue);
+                    assertEquals(message + ": annotation value differs for '" + sig + "' in tree '" + treeName + "'",
+                                expValue.toString(), actValue.toString());
+                }
             }
         }
     }
