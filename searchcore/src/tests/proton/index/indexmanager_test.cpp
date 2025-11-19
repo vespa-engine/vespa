@@ -808,7 +808,7 @@ namespace {
 
 void expectSchemaIndexFields(uint32_t expIndexFields) {
     Schema s;
-    s.loadFromFile("test_data/index.flush.1/schema.txt");
+    ASSERT_TRUE(s.loadFromFile("test_data/index.flush.1/schema.txt"));
     EXPECT_EQ(expIndexFields, s.getNumIndexFields());
 }
 

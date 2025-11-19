@@ -173,7 +173,7 @@ public:
      * @param fileName the name of the file.
      * @return true if the schema could be loaded.
      **/
-    bool loadFromFile(const std::string & fileName);
+    [[nodiscard]] bool loadFromFile(const std::string & fileName);
 
     /**
      * Save this schema to the file with the given name.
@@ -181,7 +181,7 @@ public:
      * @param fileName the name of the file.
      * @return true if the schema could be saved.
      **/
-    bool saveToFile(const std::string & fileName) const;
+    [[nodiscard]] bool saveToFile(const std::string & fileName) const;
 
     std::string toString() const;
 
@@ -322,7 +322,7 @@ public:
     bool operator==(const Schema &rhs) const noexcept ;
     bool operator!=(const Schema &rhs) const noexcept;
 
-    bool empty() const noexcept;
+    [[nodiscard]] bool empty() const noexcept;
 };
 
 }

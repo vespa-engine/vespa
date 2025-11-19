@@ -301,11 +301,11 @@ TEST(SchemaTest, require_that_imported_attribute_fields_are_not_saved_to_disk)
     {
         Schema s;
         s.addImportedAttributeField(Schema::ImportedAttributeField("imported", DataType::INT32));
-        s.saveToFile(fileName);
+        ASSERT_TRUE(s.saveToFile(fileName));
     }
     {
         Schema s;
-        s.loadFromFile(fileName);
+        ASSERT_TRUE(s.loadFromFile(fileName));
         EXPECT_EQ(0u, s.getNumImportedAttributeFields());
     }
 }
@@ -328,7 +328,7 @@ TEST(SchemaTest, require_that_schema_can_be_built_with_imported_attribute_fields
 TEST(SchemaTest, require_that_index_field_is_loaded_with_default_values_when_properties_are_not_set)
 {
     Schema s;
-    s.loadFromFile(TEST_PATH("schema-without-index-field-properties.txt"));
+    ASSERT_TRUE(s.loadFromFile(TEST_PATH("schema-without-index-field-properties.txt")));
 
     const auto& index_fields = s.getIndexFields();
     ASSERT_EQ(1, index_fields.size());
