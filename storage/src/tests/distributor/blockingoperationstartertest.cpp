@@ -22,7 +22,7 @@ const MockOperation& as_mock_operation(const Operation& operation) {
 
 }
 
-struct FakeDistributorStripeOperationContext : public DistributorStripeOperationContext {
+struct FakeDistributorStripeOperationContext : DistributorStripeOperationContext {
 
     PendingMessageTracker& _message_tracker;
 
@@ -101,6 +101,9 @@ struct FakeDistributorStripeOperationContext : public DistributorStripeOperation
         abort();
     }
     const NodeSupportedFeaturesRepo& node_supported_features_repo() const noexcept override {
+        abort();
+    }
+    MemoryUsageToken make_memory_usage_token(uint32_t) noexcept override {
         abort();
     }
 };

@@ -41,6 +41,7 @@ TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
       _metadata_get_metrics(metrics.update_metadata_gets),
       _updateCmd(std::move(msg)),
       _updateReply(),
+      _memory_usage_token(op_ctx.make_memory_usage_token(_updateCmd->getApproxByteSize())),
       _node_ctx(node_ctx),
       _op_ctx(op_ctx),
       _parser(parser),
@@ -264,7 +265,9 @@ TwoPhaseUpdateOperation::send_feed_blocked_error_reply(DistributorStripeMessageS
 
 void
 TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(std::shared_ptr<document::Document> doc,
-                                                         api::Timestamp putTimestamp, DistributorStripeMessageSender& sender)
+                                                         api::Timestamp putTimestamp,
+                                                         DistributorStripeMessageSender& sender,
+                                                         uint32_t approx_byte_size)
 {
     assert(!is_cancelled());
     if (lostBucketOwnershipBetweenPhases()) { // TODO deprecate with cancellation
@@ -273,6 +276,7 @@ TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(std::shared_ptr<documen
     }
     document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), document::BucketId(0));
     auto put = std::make_shared<api::PutCommand>(bucket, doc, putTimestamp);
+    put->setApproxByteSize(approx_byte_size);
     copyMessageSettings(*_updateCmd, *put);
     auto putOperation = std::make_shared<PutOperation>(_node_ctx, _op_ctx, _bucketSpace, std::move(put), _putMetric, _put_condition_probe_metrics);
     PutOperation & op = *putOperation;
@@ -325,7 +329,8 @@ TwoPhaseUpdateOperation::handleFastPathReceive(DistributorStripeMessageSender& s
             sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, ""));
             return;
         }
-        schedulePutsWithUpdatedDocument(getReply.getDocument(), _op_ctx.generate_unique_timestamp(), sender);
+        schedulePutsWithUpdatedDocument(getReply.getDocument(), _op_ctx.generate_unique_timestamp(),
+                                        sender, getReply.getApproxByteSize());
         return;
     }
 
@@ -533,6 +538,7 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorStripeMessageSende
     document::Document::SP docToUpdate;
     api::Timestamp putTimestamp = _op_ctx.generate_unique_timestamp();
 
+    uint32_t approx_doc_byte_size = 0;
     if (reply.getDocument()) {
         api::Timestamp receivedTimestamp = reply.getLastModifiedTimestamp();
         if (!satisfiesUpdateTimestampConstraint(receivedTimestamp)) {
@@ -546,6 +552,7 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorStripeMessageSende
         }
         docToUpdate = reply.getDocument();
         setUpdatedForTimestamp(receivedTimestamp);
+        approx_doc_byte_size = reply.getApproxByteSize(); // Use as a cheap proxy for Put overhead
     } else if (hasTasCondition() && !shouldCreateIfNonExistent()) {
         replyWithTasFailure(sender, "Document does not exist");
         return;
@@ -561,7 +568,12 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorStripeMessageSende
     }
     try {
         applyUpdateToDocument(*docToUpdate);
-        schedulePutsWithUpdatedDocument(docToUpdate, putTimestamp, sender);
+        // Ideally we'd use the actual resulting doc size as the byte size overhead
+        // for the PutOperation, but that'd require actively serializing the document
+        // ahead of time, so just use the received size as a proxy if we have it and
+        // zero otherwise. This doesn't have to be perfect, just close enough to
+        // reality that it serves as a useful signal of memory load.
+        schedulePutsWithUpdatedDocument(docToUpdate, putTimestamp, sender, approx_doc_byte_size);
     } catch (vespalib::Exception& e) {
         sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, e.getMessage()));
     }

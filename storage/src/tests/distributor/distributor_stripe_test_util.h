@@ -8,6 +8,7 @@
 #include <tests/common/storage_config_set.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/distributor/memory_usage_token.h>
 #include <vespa/storage/distributor/stripe_host_info_notifier.h>
 #include <vespa/storage/storageutil/utils.h>
 
@@ -243,6 +244,7 @@ protected:
     std::unique_ptr<TestDistributorApp> _node;
     std::shared_ptr<DistributorMetricSet> _metrics;
     std::shared_ptr<IdealStateMetricSet>  _ideal_state_metrics;
+    MemoryUsageTracker _memory_usage_tracker;
     std::unique_ptr<DistributorStripe> _stripe;
     DistributorMessageSenderStub _sender;
     DistributorMessageSenderStub _senderDown;

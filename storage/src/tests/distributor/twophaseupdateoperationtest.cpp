@@ -108,13 +108,15 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorStripeTestUtil {
         bool _withError;
         api::Timestamp _timestampToUpdate;
         documentapi::TestAndSetCondition _condition;
+        uint32_t _approx_size;
 
         UpdateOptions()
             : _makeInconsistentSplit(false),
               _createIfNonExistent(false),
               _withError(false),
               _timestampToUpdate(0),
-              _condition()
+              _condition(),
+              _approx_size(1234)
         {
         }
 
@@ -138,6 +140,10 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorStripeTestUtil {
             _condition = std::move(cond);
             return *this;
         }
+        UpdateOptions& with_approx_size(uint32_t approx_size) {
+            _approx_size = approx_size;
+            return *this;
+        }
     };
 
     std::shared_ptr<TwoPhaseUpdateOperation>
@@ -157,15 +163,15 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorStripeTestUtil {
     void do_test_safe_path_condition_match_sends_puts_with_updated_doc(TestAndSetCondition cond);
     void do_test_safe_path_condition_with_missing_doc_and_auto_create_sends_puts(TestAndSetCondition cond);
 
-    void enable_3phase_updates(bool enable = true) {
+    void enable_3phase_updates() {
         auto cfg = make_config();
-        cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(enable);
+        cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
         configure_stripe(cfg);
     }
 
-    std::shared_ptr<TwoPhaseUpdateOperation> set_up_2_inconsistent_replicas_and_start_update(bool enable_3phase = true) {
+    std::shared_ptr<TwoPhaseUpdateOperation> set_up_2_inconsistent_replicas_and_start_update() {
         setup_stripe(2, 2, "storage:2 distributor:1");
-        enable_3phase_updates(enable_3phase);
+        enable_3phase_updates();
         auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
         cb->start(_sender);
         return cb;
@@ -271,6 +277,7 @@ TwoPhaseUpdateOperationTest::replyToGet(
         reply = std::make_shared<api::GetReply>(get, Document::SP(), 0);
     }
     reply->setResult(api::ReturnCode(result, ""));
+    reply->setApproxByteSize(5000);
     if (!traceMsg.empty()) {
         MBUS_TRACE(reply->getTrace(), 1, traceMsg);
     }
@@ -355,6 +362,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
     msg->getTrace().setLevel(6);
     msg->setTimeout(6789ms);
     msg->setPriority(99);
+    msg->setApproxByteSize(options._approx_size);
     if (options._timestampToUpdate) {
         msg->setOldTimestamp(options._timestampToUpdate);
     }
@@ -1700,6 +1708,25 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_with_matching_timestamp_condition_i
 TEST_F(ThreePhaseUpdateTest, single_full_get_with_matching_timestamp_and_selection_condition_is_accepted) {
     // In this case the timestamp matches, but the selection does not. Timestamp match should have precedence.
     do_test_single_full_get_with_matching_condition_is_accepted(TestAndSetCondition(2000, "testdoctype1.headerval==2001"));
+}
+
+TEST_F(ThreePhaseUpdateTest, estimated_memory_usage_is_tracked_across_phases) {
+    auto cb = set_up_2_inconsistent_replicas_and_start_update();
+    // Default mocked UpdateCommand wire size is 1234 bytes
+    EXPECT_EQ(_memory_usage_tracker.bytes_total(), 1234);
+    ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
+    reply_to_metadata_get(*cb, _sender, 0, 2000U);
+    // Metadata get is not counted towards memory usage since it's so small (presumably)
+    EXPECT_EQ(_memory_usage_tracker.bytes_total(), 1234);
+    reply_to_metadata_get(*cb, _sender, 1, 1000U);
+    ASSERT_EQ("Get => 0", _sender.getCommands(true, false, 2));
+    replyToGet(*cb, _sender, 2, 2000U);
+    // Single get has mocked 5000 bytes of wire size and is added to the total. This happens
+    // transitively via the Put operation that is spawned as part of the write-repair.
+    EXPECT_EQ(_memory_usage_tracker.bytes_total(), 1234 + 5000);
+    ASSERT_EQ("Put => 1,Put => 0", _sender.getCommands(true, false, 3));
+    cb.reset();
+    EXPECT_EQ(_memory_usage_tracker.bytes_total(), 0);
 }
 
 // XXX currently differs in behavior from content nodes in that updates for
