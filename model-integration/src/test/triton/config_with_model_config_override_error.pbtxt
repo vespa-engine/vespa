@@ -32,6 +32,6 @@ parameters {
 parameters {
   key: "intra_op_thread_count"
   value {
-    string_value: "6"
+    string_value: "8"
   }
 }

@@ -26,7 +26,8 @@ public record OnnxEvaluatorOptions(
         int batchingMaxSize,
         Optional<Duration> batchingMaxDelay,
         int numModelInstances,
-        Optional<Path> modelConfigOverride
+        Optional<Path> modelConfigOverride,
+        int availableProcessors
 ) {
 
     // Unlike hashCode, this hash doesn't change between runs
@@ -54,7 +55,7 @@ public record OnnxEvaluatorOptions(
 
         var builder = new OnnxEvaluatorOptions.Builder(availableProcessors)
                 .setExecutionMode(config.executionMode().toString())
-                .setThreads(config.interOpThreads(), config.intraOpThreads())
+                .setThreadsFromFactors(config.interOpThreads(), config.intraOpThreads())
                 .setBatchingMaxSize(config.batching().maxSize())
                 .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
                 .setModelConfigOverride(config.modelConfigOverride());
@@ -156,12 +157,13 @@ public record OnnxEvaluatorOptions(
         }
 
         /**
-         * Sets the number of threads for inter and intra op execution.
+         * Sets the number of threads for inter-op and intra-op ONNX parallel execution based on the provided factors.
+         * Positive number is interpreted as an absolute number of threads.
          * A negative number is interpreted as an inverse scaling factor <code>threads=CPU/-n</code>
          */
-        public Builder setThreads(int interOp, int intraOp) {
-            interOpThreads = calculateThreads(interOp, availableProcessors);
-            intraOpThreads = calculateThreads(intraOp, availableProcessors);
+        public Builder setThreadsFromFactors(int interOpThreadsFactor, int intraOpThreadsFactor) {
+            interOpThreads = calculateThreads(interOpThreadsFactor, availableProcessors);
+            intraOpThreads = calculateThreads(intraOpThreadsFactor, availableProcessors);
             return this;
         }
 
@@ -224,7 +226,8 @@ public record OnnxEvaluatorOptions(
                     batchingMaxSize,
                     batchingMaxDelay,
                     numModelInstances,
-                    modelConfigOverride
+                    modelConfigOverride,
+                    availableProcessors
             );
         }
     }

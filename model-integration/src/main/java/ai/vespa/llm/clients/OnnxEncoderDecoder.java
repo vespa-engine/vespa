@@ -66,7 +66,7 @@ public class OnnxEncoderDecoder extends AbstractComponent implements LanguageMod
 
         OnnxEvaluatorOptions encoderOptions = new OnnxEvaluatorOptions.Builder()
                 .setExecutionMode(config.encoderOnnxExecutionMode().toString())
-                .setThreads(config.encoderOnnxInterOpThreads(), config.encoderOnnxIntraOpThreads())
+                .setThreadsFromFactors(config.encoderOnnxInterOpThreads(), config.encoderOnnxIntraOpThreads())
                 .build();
 
         encoder = onnx.evaluatorOf(config.encoderModel().toString(), encoderOptions);
@@ -79,7 +79,7 @@ public class OnnxEncoderDecoder extends AbstractComponent implements LanguageMod
 
         OnnxEvaluatorOptions decoderOptions = new OnnxEvaluatorOptions.Builder()
                 .setExecutionMode(config.decoderOnnxExecutionMode().toString())
-                .setThreads(config.decoderOnnxInterOpThreads(), config.decoderOnnxIntraOpThreads())
+                .setThreadsFromFactors(config.decoderOnnxInterOpThreads(), config.decoderOnnxIntraOpThreads())
                 .build();
 
         decoder = onnx.evaluatorOf(config.decoderModel().toString(), decoderOptions);

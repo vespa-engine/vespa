@@ -80,7 +80,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     @Inject
     public TritonOnnxRuntime(TritonConfig config) {
         log.info(() -> "Creating Triton ONNX runtime");
-        
+
         this.config = config;
         this.tritonClient = new TritonOnnxClient(config);
         this.isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
@@ -184,6 +184,14 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                         ? ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_AUTO
                         : ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU;
 
+        // Each model instance in Triton executes requests sequentially, which is different from EmbeddedOnnxRuntime
+        // where one model instance (session) handles all requests.
+        // To maximize CPU utilization with Triton, available cores are ca. divided between model instances,
+        // Rounding up is used because it is better to overutilize CPU than to underutilize.
+        // Intra-op threads parallelize execution of each operator improving performance for any model.
+        var intraOpThreadCount =
+                Math.max(1, (int) Math.ceil(1d * options.availableProcessors() / options.numModelInstances()));
+
         var configBuilder = ModelConfigOuterClass.ModelConfig.newBuilder()
                 .setName(modelName)
                 .addInstanceGroup(ModelConfigOuterClass.ModelInstanceGroup.newBuilder()
@@ -205,7 +213,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 .putParameters(
                         "intra_op_thread_count",
                         ModelConfigOuterClass.ModelParameter.newBuilder()
-                                .setStringValue(Integer.toString(options.intraOpThreads()))
+                                .setStringValue(Integer.toString(intraOpThreadCount))
                                 .build())
                 .putParameters(
                         "inter_op_thread_count",
