@@ -123,6 +123,9 @@ public final class StatementExpression extends ExpressionList<Expression> {
                 context.execute(expression);
             }
         }
+        catch (InvalidInputException e) {
+            throw new InvalidInputException("Error executing '" + this + "': " + e.getMessage());
+        }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Error executing '" + this + "'", e);
         }
