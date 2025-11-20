@@ -32,11 +32,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 
 import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.INFO;
 
 /**
  * Implements log file naming/rotating logic for container logs.
@@ -347,18 +345,16 @@ class LogFileHandler <LOGTYPE> {
 
         private void getFileSize(Instant now) {
             if (fileOutput != null) {
+                if (fileName == null) return;
+
                 Path path = Paths.get(fileName);
+                if (!path.toFile().exists()) return;
+
                 try {
                     fileSize = Files.size(path);
                     lastFileSizeCheck = now;
                 } catch (IOException e) {
-                    String files = null;
-                    try {
-                        files = Files.list(path.getParent()).map(p -> p.getFileName().toString()).collect(Collectors.joining(", "));
-                    } catch (IOException ex) {
-                        logger.log(Level.INFO, "Unable to list access log files: " + ex.getMessage());
-                    }
-                    logger.log(Level.WARNING, "Failed to get log file size: " + Exceptions.toMessageString(e) + ". Files in directory: " + files, e);
+                    logger.log(Level.WARNING, "Failed to get log file size: " + Exceptions.toMessageString(e), e);
                 }
             }
         }
