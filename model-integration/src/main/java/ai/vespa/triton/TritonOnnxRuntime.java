@@ -187,7 +187,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         // Each model instance in Triton executes requests sequentially, which is different from EmbeddedOnnxRuntime
         // where one model instance (session) handles all requests.
         // To maximize CPU utilization with Triton, available cores are ca. divided between model instances,
-        // Rounding up is used because it is better to overutilize CPU to underutilize.
+        // Rounding up is used because it is better to overutilize CPU than to underutilize.
         // Intra-op threads parallize execution of each operator improving performance for any model.
         var intraOpThreadCount =
                 Math.max(1, (int) Math.ceil(1d * options.availableProcessors() / options.numModelInstances()));
