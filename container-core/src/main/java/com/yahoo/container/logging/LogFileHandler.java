@@ -130,7 +130,7 @@ class LogFileHandler <LOGTYPE> {
             logThread.executor.shutdown();
             if (!logThread.executor.awaitTermination(600, TimeUnit.SECONDS)) {
                 logger.warning("Failed to terminate within 600 seconds");
-                logThread.executor.shutdown();
+                logThread.executor.shutdownNow();
             }
             logThread.join();
         } catch (InterruptedException e) {
