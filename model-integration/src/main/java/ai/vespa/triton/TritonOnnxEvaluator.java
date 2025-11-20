@@ -36,10 +36,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
         this.modelReference = modelReference;
         this.tritonClient = tritonClient;
         this.isExplicitControl = isExplicitControl;
-
-        if (isExplicitControl) {
-            tritonClient.loadUntilModelReady(modelName);
-        }
+        modelMetadata = tritonClient.getModelMetadata(modelName);
     }
 
     @Override
@@ -61,6 +58,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
                     "Failed to evaluate ONNX model " + modelName + " in Trion, will retry after reload.",
                     e);
             tritonClient.loadUntilModelReady(modelName);
+            modelMetadata = tritonClient.getModelMetadata(modelName);
             return tritonClient.evaluate(modelName, modelMetadata, inputs);
         }
     }
