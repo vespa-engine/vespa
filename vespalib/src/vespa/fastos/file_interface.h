@@ -12,13 +12,13 @@
 #include <vespa/vespalib/util/time.h>
 #include <string>
 
-constexpr int FASTOS_FILE_OPEN_READ      = (1<<0);
-constexpr int FASTOS_FILE_OPEN_WRITE     = (1<<1);
-constexpr int FASTOS_FILE_OPEN_EXISTING  = (1<<2);
-constexpr int FASTOS_FILE_OPEN_CREATE    = (1<<3);
-constexpr int FASTOS_FILE_OPEN_TRUNCATE  = (1<<4);
-constexpr int FASTOS_FILE_OPEN_DIRECTIO  = (1<<7);
-constexpr int FASTOS_FILE_OPEN_SYNCWRITES = (1<<9); // synchronous writes
+inline constexpr int FASTOS_FILE_OPEN_READ      = (1<<0);
+inline constexpr int FASTOS_FILE_OPEN_WRITE     = (1<<1);
+inline constexpr int FASTOS_FILE_OPEN_EXISTING  = (1<<2);
+inline constexpr int FASTOS_FILE_OPEN_CREATE    = (1<<3);
+inline constexpr int FASTOS_FILE_OPEN_TRUNCATE  = (1<<4);
+inline constexpr int FASTOS_FILE_OPEN_DIRECTIO  = (1<<7);
+inline constexpr int FASTOS_FILE_OPEN_SYNCWRITES = (1<<9); // synchronous writes
 
 /**
  * This class contains regular file-access functionality.
