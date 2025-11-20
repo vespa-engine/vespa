@@ -42,6 +42,8 @@ class NearestNeighborIndex {
 public:
     /**
      * Class for collecting statistics during search.
+     * An instance of this class is handed to find_top_k() or find_top_k_with_filter(),
+     * where the statistics are then written to this object.
      */
     class Stats {
     private:

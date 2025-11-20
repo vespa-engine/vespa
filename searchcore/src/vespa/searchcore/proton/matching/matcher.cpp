@@ -289,7 +289,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         isDoomExplicit = mtf->get_request_context().getDoom().isExplicitSoftDoom();
         traceQuery(6, request.trace(), mtf->query());
 
-        // Create and install detailed stats collector into blueprints
+        // Collect more detailed statistics about query evaluation
         queryeval_stats = std::make_shared<search::queryeval::QueryEvalStats>();
         mtf->installStats(queryeval_stats);
 

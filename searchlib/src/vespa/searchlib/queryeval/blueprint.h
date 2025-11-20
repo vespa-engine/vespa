@@ -560,7 +560,7 @@ public:
     createIntermediateSearch(MultiSearch::Children subSearches, fef::MatchData &md) const = 0;
 
     // Hand a QueryEvalStats object through the blueprint tree.
-    // Blueprints can then write statistics to this object.
+    // Blueprints can then write statistics to this object and pass it on to search iterators.
     void installStats(const std::shared_ptr<QueryEvalStats> &stats) override;
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;

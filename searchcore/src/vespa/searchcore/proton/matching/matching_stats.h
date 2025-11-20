@@ -222,7 +222,8 @@ public:
     size_t getNumPartitions() const { return _partitions.size(); }
     const Partition &getPartition(size_t index) const { return _partitions[index]; }
 
-    // used to merge in stats from blueprints
+    // used to merge in queryeval stats
+    // these are collected in a distinct, thread-safe object
     void add_queryeval_stats(const search::queryeval::QueryEvalStats &stats) noexcept;
 
     // used to aggregate accross searches (and configurations)
