@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.component.ComponentId;
-import com.yahoo.embedding.voyageai.VoyageAiEmbedderConfig;
+import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;

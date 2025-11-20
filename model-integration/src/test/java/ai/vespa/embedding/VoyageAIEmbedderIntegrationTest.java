@@ -3,7 +3,7 @@ package ai.vespa.embedding;
 
 import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
-import com.yahoo.embedding.voyageai.VoyageAiEmbedderConfig;
+import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;

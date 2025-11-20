@@ -2,11 +2,11 @@
 package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.embedding.voyageai.VoyageAiEmbedderConfig;
+import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
-import static com.yahoo.embedding.voyageai.VoyageAiEmbedderConfig.DefaultInputType;
+import static ai.vespa.embedding.config.VoyageAiEmbedderConfig.DefaultInputType;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 
