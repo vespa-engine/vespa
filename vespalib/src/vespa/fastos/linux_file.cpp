@@ -8,7 +8,7 @@
 *****************************************************************************/
 
 #ifdef __linux__
-#include "file.h"
+#include "linux_file.h"
 #include "file_rw_ops.h"
 #include <dirent.h>
 #include <unistd.h>

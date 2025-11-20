@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <vespa/fastos/file.h>
+#include "file_interface.h"
 
 /**
  * This is the generic UNIX implementation of @ref FastOS_FileInterface.

@@ -7,7 +7,7 @@
 * Implementation of FastOS_UNIX_File methods.
 *****************************************************************************/
 
-#include "file.h"
+#include "unix_file.h"
 #include <sstream>
 #include <cassert>
 #include <unistd.h>
@@ -308,7 +308,7 @@ FastOS_UNIX_File::SetSize(int64_t newSize)
 }
 
 
-FastOS_File::Error
+FastOS_FileInterface::Error
 FastOS_UNIX_File::TranslateError (const int osError)
 {
     switch(osError) {

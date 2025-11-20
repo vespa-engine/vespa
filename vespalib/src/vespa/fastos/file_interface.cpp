@@ -290,12 +290,11 @@ FastOS_FileInterface::OpenWriteOnly(const char *filename)
     return Open(FASTOS_FILE_OPEN_WRITE, filename);
 }
 
-FastOS_File::Error
+FastOS_FileInterface::Error
 FastOS_FileInterface::GetLastError()
 {
     return FastOS_File::TranslateError(FastOS_File::GetLastOSError());
 }
-
 
 std::string
 FastOS_FileInterface::getLastErrorString()
