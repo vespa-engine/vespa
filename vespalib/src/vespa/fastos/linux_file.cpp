@@ -10,6 +10,7 @@
 #ifdef __linux__
 #include "linux_file.h"
 #include "file_rw_ops.h"
+#include <vespa/vespalib/util/error.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -21,6 +22,8 @@
 #include <system_error>
 
 using fastos::File_RW_Ops;
+using vespalib::getErrorString;
+using vespalib::getLastErrorString;
 
 const size_t FastOS_Linux_File::_directIOFileAlign = 4096;
 const size_t FastOS_Linux_File::_directIOMemAlign = 4096;

@@ -3,6 +3,7 @@
 #include <vespa/searchlib/docstore/logdatastore.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
+#include <vespa/vespalib/util/error.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -10,6 +11,7 @@
 #include <cinttypes>
 
 using namespace search;
+using vespalib::getLastErrorString;
 
 class DocumentStoreInspectApp
 {
@@ -56,10 +58,10 @@ int DocumentStoreInspectApp::dumpIdxFile(const std::string & file)
             }
             fprintf(stdout, "Processed %ld chunks with total entries = %ld\n", chunk, entries);
         } else {
-            fprintf(stderr, "Failed memorymapping file '%s' due to %s\n", idxFile.GetFileName(), idxFile.getLastErrorString().c_str());
+            fprintf(stderr, "Failed memorymapping file '%s' due to %s\n", idxFile.GetFileName(), getLastErrorString().c_str());
         }
     } else {
-        fprintf(stderr, "Failed opening file '%s' readonly due to %s\n", idxFile.GetFileName(), idxFile.getLastErrorString().c_str());
+        fprintf(stderr, "Failed opening file '%s' readonly due to %s\n", idxFile.GetFileName(), getLastErrorString().c_str());
     }
     return 0;
 }

@@ -437,59 +437,6 @@ public:
      * Will drop whatever is in the FS cache when called. Does not have effect in the future.
      **/
     virtual void dropFromCache() const;
-
-    enum Error
-    {
-        ERR_ZERO = 1,   // No error                       New style
-        ERR_NOENT,      // No such file or directory
-        ERR_NOMEM,      // Not enough memory
-        ERR_ACCES,      // Permission denied
-        ERR_EXIST,      // File exists
-        ERR_INVAL,      // Invalid argument
-        ERR_NFILE,      // File table overflow
-        ERR_MFILE,      // Too many open files
-        ERR_NOSPC,      // No space left on device
-        ERR_INTR,       // interrupt
-        ERR_AGAIN,      // Resource unavailable, try again
-        ERR_BUSY,       // Device or resource busy
-        ERR_IO,         // I/O error
-        ERR_PERM,       // Not owner
-        ERR_NODEV,      // No such device
-        ERR_NXIO,       // Device not configured
-        ERR_UNKNOWN,    // Unknown
-
-        ERR_EZERO = 1,   // No error                      Old style
-        ERR_ENOENT,      // No such file or directory
-        ERR_ENOMEM,      // Not enough memory
-        ERR_EACCES,      // Permission denied
-        ERR_EEXIST,      // File exists
-        ERR_EINVAL,      // Invalid argument
-        ERR_ENFILE,      // File table overflow
-        ERR_EMFILE,      // Too many open files
-        ERR_ENOSPC,      // No space left on device
-        ERR_EINTR,       // interrupt
-        ERR_EAGAIN,      // Resource unavailable, try again
-        ERR_EBUSY,       // Device or resource busy
-        ERR_EIO,         // I/O error
-        ERR_EPERM,       // Not owner
-        ERR_ENODEV,      // No such device
-        ERR_ENXIO        // Device not configured
-    };
-
-
-    /**
-     * If a file operation fails, the error code can be retrieved
-     * via this method. See @ref Error for possible error codes.
-     * @return Error code
-     */
-    static Error GetLastError();
-
-    /**
-     * Similar to @ref GetLastError(), but this method returns a string
-     * instead of an error code.
-     * @return String describing the last error
-     */
-    static std::string getLastErrorString();
 };
 
 

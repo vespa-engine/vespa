@@ -8,6 +8,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".search.docstore.randreaders");
 
+using vespalib::getLastErrorString;
+
 namespace search {
 
 DirectIORandRead::DirectIORandRead(const std::string & fileName)
@@ -20,7 +22,7 @@ DirectIORandRead::DirectIORandRead(const std::string & fileName)
     if (_file->OpenReadOnly()) {
         if (!_file->GetDirectIORestrictions(_alignment, _granularity, _maxChunkSize)) {
             LOG(debug, "Direct IO setup failed for file %s due to %s",
-                       _file->GetFileName(), _file->getLastErrorString().c_str());
+                       _file->GetFileName(), getLastErrorString().c_str());
         }
     } else {
         throw SummaryException("Failed opening data file", *_file, VESPA_STRLOC);

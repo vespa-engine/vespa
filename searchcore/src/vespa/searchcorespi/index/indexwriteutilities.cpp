@@ -26,6 +26,9 @@ using search::index::SchemaUtil;
 using search::SerialNum;
 using vespalib::IllegalStateException;
 using vespalib::FileHeader;
+using vespalib::getErrorString;
+using vespalib::getLastErrorString;
+
 namespace fs = std::filesystem;
 
 namespace searchcorespi::index {
@@ -152,19 +155,19 @@ IndexWriteUtilities::updateDiskIndexSchema(const std::string &indexDir, const Sc
     if (!statres) {
         if (statInfo._error != FastOS_StatInfo::FileNotFound) {
             LOG(error, "Failed to stat orig schema '%s': %s",
-                schemaOrigName.c_str(), FastOS_File::getLastErrorString().c_str());
+                schemaOrigName.c_str(), getLastErrorString().c_str());
         }
         int linkres = ::link(schemaName.c_str(), schemaOrigName.c_str());
         if (linkres != 0) {
             LOG(error, "Could not link '%s' to '%s': %s",
-                schemaOrigName.c_str(), schemaName.c_str(), FastOS_File::getLastErrorString().c_str());
+                schemaOrigName.c_str(), schemaName.c_str(), getLastErrorString().c_str());
         }
         vespalib::File::sync(indexDir);
     }
     int renameres = ::rename(schemaTmpName.c_str(), schemaName.c_str());
     if (renameres != 0) {
         int error = errno;
-        std::string errString = FastOS_File::getErrorString(error);
+        std::string errString = getErrorString(error);
         LOG(error, "Could not rename '%s' to '%s': %s",
             schemaTmpName.c_str(), schemaName.c_str(), errString.c_str());
     }

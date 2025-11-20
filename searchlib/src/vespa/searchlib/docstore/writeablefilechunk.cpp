@@ -20,6 +20,7 @@ using vespalib::CpuUsage;
 using vespalib::FileHeader;
 using vespalib::GenerationHandler;
 using vespalib::IllegalHeaderException;
+using vespalib::getLastErrorString;
 using vespalib::makeLambdaTask;
 using vespalib::make_string;
 using vespalib::nbostream;
@@ -126,7 +127,7 @@ WriteableFileChunk(vespalib::Executor &executor,
         if (tune._write.getWantDirectIO()) {
             if (!_dataFile.GetDirectIORestrictions(_alignment, _granularity, _maxChunkSize)) {
                 LOG(debug, "Direct IO setup failed for file %s due to %s",
-                           _dataFile.GetFileName(), _dataFile.getLastErrorString().c_str());
+                           _dataFile.GetFileName(), getLastErrorString().c_str());
             }
         }
         auto idxFile = openIdx();

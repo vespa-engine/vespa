@@ -627,7 +627,7 @@ asciistream::createFromFile(std::string_view fileName)
     if (file.OpenReadOnly()) {
         ssize_t sz = file.getSize();
         if (sz < 0) {
-            throw IoException("Failed getting size of  file " + std::string(fileName) + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
+            throw IoException("Failed getting size of  file " + std::string(fileName) + " : Error=" + getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
         }
         if (sz == 0) {
             return is;
@@ -637,7 +637,7 @@ asciistream::createFromFile(std::string_view fileName)
         if (actual != sz) {
             asciistream e;
             e << "Failed reading " << sz << " bytes from file " << fileName;
-            throw IoException(e.str() + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
+            throw IoException(e.str() + " : Error=" + getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
         }
         is << std::string_view(static_cast<const char *>(buf.get()), sz);
     }

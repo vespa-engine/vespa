@@ -8,6 +8,7 @@
 *****************************************************************************/
 
 #include "unix_file.h"
+#include <vespa/vespalib/util/error.h>
 #include <sstream>
 #include <cassert>
 #include <unistd.h>
@@ -26,13 +27,11 @@
 #include "file_rw_ops.h"
 
 using fastos::File_RW_Ops;
+using vespalib::getErrorString;
+using vespalib::getLastErrorString;
 
 namespace {
     constexpr uint64_t ONE_G = 1000 * 1000 * 1000;
-}
-
-int FastOS_UNIX_File::GetLastOSError() {
-    return errno;
 }
 
 ssize_t
@@ -71,7 +70,7 @@ void FastOS_UNIX_File::ReadBuf(void *buffer, size_t length, int64_t readOffset)
     if (static_cast<size_t>(readResult) != length) {
         std::string errorString = readResult != -1 ?
                                   std::string("short read") :
-                                  FastOS_FileInterface::getLastErrorString();
+                                  getLastErrorString();
         std::ostringstream os;
         os << "Fatal: Reading " << length << " bytes, got " << readResult << " from '"
            << GetFileName() << "' failed: " << errorString;
@@ -218,11 +217,12 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
                     _mmapbase = mbase;
                     _mmaplen = mlen;
                 } else {
+                    int error = errno;
                     close(_filedes);
                     _filedes = -1;
                     std::ostringstream os;
                     os << "mmap of file '" << GetFileName() << "' with flags '" << std::hex << (MAP_SHARED | _mmapFlags) << std::dec
-                       << "' failed with error :'" << getErrorString(GetLastOSError()) << "'";
+                       << "' failed with error :'" << getErrorString(error) << "'";
                     throw std::runtime_error(os.str());
                 }
             }
@@ -306,45 +306,6 @@ FastOS_UNIX_File::SetSize(int64_t newSize)
 
     return rc;
 }
-
-
-FastOS_FileInterface::Error
-FastOS_UNIX_File::TranslateError (const int osError)
-{
-    switch(osError) {
-    case ENOENT:     return ERR_NOENT;      // No such file or directory
-    case ENOMEM:     return ERR_NOMEM;      // Not enough memory
-    case EACCES:     return ERR_ACCES;      // Permission denied
-    case EEXIST:     return ERR_EXIST;      // File exists
-    case EINVAL:     return ERR_INVAL;      // Invalid argument
-    case ENOSPC:     return ERR_NOSPC;      // No space left on device
-    case EINTR:      return ERR_INTR;       // interrupt
-    case EAGAIN:     return ERR_AGAIN;      // Resource unavailable, try again
-    case EBUSY:      return ERR_BUSY;       // Device or resource busy
-    case EIO:        return ERR_IO;         // I/O error
-    case EPERM:      return ERR_PERM;       // Not owner
-    case ENODEV:     return ERR_NODEV;      // No such device
-    case ENXIO:      return ERR_NXIO;       // Device not configured
-    default:         break;
-    }
-
-    if (osError == ENFILE)
-        return ERR_NFILE;
-
-    if (osError == EMFILE)
-        return ERR_MFILE;
-
-    return ERR_UNKNOWN;
-}
-
-
-std::string
-FastOS_UNIX_File::getErrorString(const int osError)
-{
-    std::error_code ec(osError, std::system_category());
-    return ec.message();
-}
-
 
 int64_t FastOS_UNIX_File::GetFreeDiskSpace (const char *path)
 {

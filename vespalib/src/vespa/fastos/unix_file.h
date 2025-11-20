@@ -77,9 +77,6 @@ public:
     bool SetSize(int64_t newSize) override;
     void dropFromCache() const override;
 
-    static int GetLastOSError();
-    static Error TranslateError(const int osError);
-    static std::string getErrorString(const int osError);
     static int64_t GetFreeDiskSpace (const char *path);
     static int count_open_files();
 };

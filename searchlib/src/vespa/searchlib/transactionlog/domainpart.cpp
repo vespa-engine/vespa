@@ -15,6 +15,7 @@ LOG_SETUP(".transactionlog.domainpart");
 using vespalib::make_string_short::fmt;
 using vespalib::FileHeader;
 using std::string;
+using vespalib::getErrorString;
 using vespalib::getLastErrorString;
 using vespalib::IllegalHeaderException;
 using vespalib::nbostream;
@@ -56,7 +57,7 @@ handleSync(FastOS_FileInterface &file)
         int osError = errno;
         throw runtime_error(fmt("Failed to synchronize file '%s' of size %" PRId64 " due to '%s'. "
                                 "Does not know how to handle this so throwing an exception.",
-                                file.GetFileName(), file.getSize(), FastOS_File::getErrorString(osError).c_str()));
+                                file.GetFileName(), file.getSize(), getErrorString(osError).c_str()));
     }
 }
 
@@ -64,14 +65,14 @@ string
 handleWriteError(const char *text, FastOS_FileInterface &file, int64_t lastKnownGoodPos,
                  SerialNumRange range, int bufLen)
 {
-    string last(FastOS_File::getLastErrorString());
+    string last(getLastErrorString());
     string e(fmt("%s. File '%s' at position %" PRId64 " for entries [%" PRIu64 ", %" PRIu64 "] of length %u. "
                  "OS says '%s'. Rewind to last known good position %" PRId64 ".",
                  text, file.GetFileName(), file.getPosition(), range.from(), range.to(), bufLen,
                  last.c_str(), lastKnownGoodPos));
     LOG(error, "%s",  e.c_str());
     if ( ! file.SetPosition(lastKnownGoodPos) ) {
-        last = FastOS_File::getLastErrorString();
+        last = getLastErrorString();
         throw runtime_error(fmt("Failed setting position %" PRId64 " of file '%s' of size %" PRId64 " : OS says '%s'",
                                 lastKnownGoodPos, file.GetFileName(), file.getSize(), last.c_str()));
     }
@@ -83,7 +84,7 @@ string
 getError(FastOS_FileInterface & f)
 {
     return fmt("File '%s' of size %" PRId64 " has last error of '%s'.",
-               f.GetFileName(), f.getSize(), FastOS_File::getLastErrorString().c_str());
+               f.GetFileName(), f.getSize(), getLastErrorString().c_str());
 }
 
 bool
@@ -152,7 +153,7 @@ handleReadError(const char *text, FastOS_FileInterface &file, ssize_t len, ssize
         }
     } else {
         // Some kind of IO error throw exception.
-        string errString = FastOS_File::getLastErrorString();
+        string errString = getLastErrorString();
         throw runtime_error(fmt("IO error when reading %zd bytes at pos %" PRId64 "trying to read %s."
                                 " Last known good position is %" PRId64 ": %s",
                                 len, file.getPosition(), text, lastKnownGoodPos, getError(file).c_str()));
