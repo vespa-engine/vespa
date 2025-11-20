@@ -3,10 +3,11 @@
 #include "fileutil.hpp"
 #include "disk_space_calculator.h"
 #include "filesizecalculator.h"
+#include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/guard.h>
-#include <vespa/fastlib/io/bufferedfile.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>

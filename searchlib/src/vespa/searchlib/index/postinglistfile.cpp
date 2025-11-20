@@ -2,7 +2,7 @@
 
 #include "postinglistfile.h"
 #include "postinglistparams.h"
-#include <vespa/fastos/file.h>
+#include <vespa/fastos/file_interface.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
 namespace search::index {

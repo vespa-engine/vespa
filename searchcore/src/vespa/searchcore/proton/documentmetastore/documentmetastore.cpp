@@ -5,7 +5,7 @@
 #include "operation_listener.h"
 #include "search_context.h"
 #include "document_meta_store_versions.h"
-#include <vespa/fastos/file.h>
+#include <vespa/fastos/file_interface.h>
 #include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>

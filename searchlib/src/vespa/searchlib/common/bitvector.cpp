@@ -11,7 +11,7 @@
 #include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/fastos/file.h>
+#include <vespa/fastos/file_interface.h>
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>

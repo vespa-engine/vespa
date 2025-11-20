@@ -13,7 +13,6 @@
 #include <unordered_map>
 #include <cassert>
 #include <mutex>
-#include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.alloc");
@@ -351,7 +350,7 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
                 store_relaxed(_g_hasHugePageFailureJustHappened, true);
                 LOG(debug, "Failed allocating %ld bytes with hugepages due too '%s'."
                           " Will resort to ordinary mmap until it works again.",
-                           sz, FastOS_FileInterface::getLastErrorString().c_str());
+                           sz, getLastErrorString().c_str());
             }
             buf = mmap(wantedAddress, sz, prot, flags, -1, 0);
             if (buf == MAP_FAILED) {
@@ -374,7 +373,7 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
         }
         if (sz >= _g_MMapNoCoreLimit) {
             if (madvise(buf, sz, MADV_DONTDUMP) != 0) {
-                LOG(warning, "Failed madvise(%p, %ld, MADV_DONTDUMP) = '%s'", buf, sz, FastOS_FileInterface::getLastErrorString().c_str());
+                LOG(warning, "Failed madvise(%p, %ld, MADV_DONTDUMP) = '%s'", buf, sz, getLastErrorString().c_str());
             }
         }
 #endif

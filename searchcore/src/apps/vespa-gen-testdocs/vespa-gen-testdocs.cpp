@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/rand48.h>
+#include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/fastos/file.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include <sstream>

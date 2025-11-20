@@ -4,7 +4,7 @@
 
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/vespalib/util/alloc.h>
-#include <vespa/fastos/file.h>
+#include <vespa/fastos/file_interface.h>
 
 /**
  * Provides buffered file access.

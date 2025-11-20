@@ -4,7 +4,7 @@
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
 #include "multi_value_mapping.h"
-#include <vespa/fastos/file.h>
+#include <vespa/fastos/file_interface.h>
 #include <vespa/searchcommon/attribute/multivalue.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/io/fileutil.h>
