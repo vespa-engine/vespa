@@ -704,9 +704,9 @@ IntermediateBlueprint::insertChild(size_t n, Blueprint::UP child)
 
 
 void
-IntermediateBlueprint::installStatsCollector(const std::shared_ptr<BlueprintStatsCollector> &stats_collector) {
+IntermediateBlueprint::installStats(const std::shared_ptr<QueryEvalStats> &stats) {
     for (const auto &child : _children) {
-        child->installStatsCollector(stats_collector);
+        child->installStats(stats);
     }
 }
 

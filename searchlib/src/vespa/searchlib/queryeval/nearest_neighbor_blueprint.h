@@ -55,7 +55,7 @@ private:
     const vespalib::Doom& _doom;
     MatchingPhase _matching_phase;
     search::tensor::NearestNeighborIndex::Stats _nni_stats;
-    std::shared_ptr<BlueprintStatsCollector> _stats_collector;
+    std::shared_ptr<QueryEvalStats> _stats;
 
     static double convert_distance_threshold(double distance_threshold,
                                              const search::tensor::DistanceCalculator& distance_calc);
@@ -88,7 +88,7 @@ public:
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
     }
-    void installStatsCollector(const std::shared_ptr<BlueprintStatsCollector> &stats_collector) override;
+    void installStats(const std::shared_ptr<QueryEvalStats> &stats) override;
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     bool always_needs_unpack() const override;
     void set_matching_phase(MatchingPhase matching_phase) noexcept override;

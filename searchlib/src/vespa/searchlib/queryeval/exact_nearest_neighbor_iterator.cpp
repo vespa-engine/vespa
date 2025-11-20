@@ -3,12 +3,10 @@
 #include "blueprint.h"
 #include "exact_nearest_neighbor_iterator.h"
 #include "global_filter.h"
+#include "queryeval_stats.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/searchlib/tensor/distance_function.h>
-#include <vespa/vespalib/objects/objectvisitor.h>
-
-#include "blueprint.h"
 
 using search::tensor::ITensorAttribute;
 using vespalib::eval::TypedCells;
@@ -16,12 +14,12 @@ using vespalib::eval::CellType;
 
 namespace search::queryeval {
 
-ExactNearestNeighborIterator::Params::Params(const std::shared_ptr<BlueprintStatsCollector> &stats_collector_in,
+ExactNearestNeighborIterator::Params::Params(const std::shared_ptr<QueryEvalStats> &stats_in,
                                              fef::TermFieldMatchData &tfmd_in,
                                              std::unique_ptr<search::tensor::DistanceCalculator> distance_calc_in,
                                              NearestNeighborDistanceHeap &distanceHeap_in,
                                              const GlobalFilter &filter_in)
-    : stats_collector(stats_collector_in),
+    : stats(stats_in),
       tfmd(tfmd_in),
       distance_calc(std::move(distance_calc_in)),
       distanceHeap(distanceHeap_in),
@@ -95,7 +93,9 @@ private:
 
 template <bool strict, bool has_filter, bool has_single_subspace>
 ExactNearestNeighborImpl<strict, has_filter, has_single_subspace>::~ExactNearestNeighborImpl() {
-    params().stats_collector->add_to_exact_nns_distances_computed(_distances_computed);
+    if (params().stats) {
+        params().stats->add_to_exact_nns_distances_computed(_distances_computed);
+    }
 }
 
 namespace {
@@ -127,13 +127,13 @@ resolve_strict(bool strict, bool readonly_distance_heap, ExactNearestNeighborIte
 } // namespace <unnamed>
 
 std::unique_ptr<ExactNearestNeighborIterator>
-ExactNearestNeighborIterator::create(const std::shared_ptr<BlueprintStatsCollector> &stats_collector,
+ExactNearestNeighborIterator::create(const std::shared_ptr<QueryEvalStats> &stats,
                                      bool strict, fef::TermFieldMatchData &tfmd,
                                      std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
                                      NearestNeighborDistanceHeap &distanceHeap, const GlobalFilter &filter,
                                      bool readonly_distance_heap)
 {
-    Params params(stats_collector, tfmd, std::move(distance_calc), distanceHeap, filter);
+    Params params(stats, tfmd, std::move(distance_calc), distanceHeap, filter);
     if (filter.is_active()) {
         return resolve_strict<true>(strict, readonly_distance_heap, std::move(params));
     } else  {

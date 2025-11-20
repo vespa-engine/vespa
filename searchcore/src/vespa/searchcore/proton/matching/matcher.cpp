@@ -18,6 +18,7 @@
 #include <vespa/searchlib/fef/ranksetup.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/searchlib/common/allocatedbitvector.h>
+#include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/limited_thread_bundle_wrapper.h>
@@ -245,7 +246,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
 {
     vespalib::Timer total_matching_time;
     MatchingStats my_stats;
-    std::shared_ptr<search::queryeval::BlueprintStatsCollector> queryeval_stats_collector;
+    std::shared_ptr<search::queryeval::QueryEvalStats> queryeval_stats;
     SearchReply::UP reply = std::make_unique<SearchReply>();
     initCoverage(reply->coverage, metaStore, bucketdb);
 
@@ -289,8 +290,8 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         traceQuery(6, request.trace(), mtf->query());
 
         // Create and install detailed stats collector into blueprints
-        queryeval_stats_collector = std::make_shared<search::queryeval::BlueprintStatsCollector>();
-        mtf->installStatsCollector(queryeval_stats_collector);
+        queryeval_stats = std::make_shared<search::queryeval::QueryEvalStats>();
+        mtf->installStats(queryeval_stats);
 
         if (!mtf->valid()) {
             return reply;
@@ -339,8 +340,8 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             sessionMgr.insert(std::move(session));
         }
     }
-    my_stats.add_blueprint_stats(*queryeval_stats_collector);
-    queryeval_stats_collector.reset(); // Manually reset pointer to include object tear-down in measured time
+    my_stats.add_queryeval_stats(*queryeval_stats);
+    queryeval_stats.reset(); // Manually reset pointer to include object tear-down in measured time
     double querySetupTime = vespalib::to_s(total_matching_time.elapsed()) - my_stats.queryLatencyAvg();
     my_stats.querySetupTime(querySetupTime);
     updateStats(my_stats, request, reply->coverage, isDoomExplicit);

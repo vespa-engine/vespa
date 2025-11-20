@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "matching_stats.h"
+#include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <cmath>
-#include <vespa/searchlib/queryeval/blueprint.h>
 
 namespace proton::matching {
 
@@ -61,10 +61,10 @@ MatchingStats::merge_partition(const Partition &partition, size_t id)
 }
 
 void
-MatchingStats::add_blueprint_stats(const search::queryeval::BlueprintStatsCollector &stats_collector) noexcept {
-    _exact_nns_distances_computed += stats_collector.exact_nns_distances_computed();
-    _approximate_nns_distances_computed += stats_collector.approximate_nns_distances_computed();
-    _approximate_nns_nodes_visited +=  stats_collector.approximate_nns_nodes_visited();
+MatchingStats::add_queryeval_stats(const search::queryeval::QueryEvalStats &stats) noexcept {
+    _exact_nns_distances_computed += stats.exact_nns_distances_computed();
+    _approximate_nns_distances_computed += stats.approximate_nns_distances_computed();
+    _approximate_nns_nodes_visited +=  stats.approximate_nns_nodes_visited();
 }
 
 MatchingStats &

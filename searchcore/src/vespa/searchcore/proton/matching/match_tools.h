@@ -182,7 +182,8 @@ public:
 
     const Query & query() const { return _query; }
     const RequestContext & get_request_context() const { return _requestContext; }
-    void installStatsCollector(const std::shared_ptr<search::queryeval::BlueprintStatsCollector> &stats_collector) { _query.installStatsCollector(stats_collector); }
+    // Hand the QueryEvalStats object to the query, which further hands it to the blueprint tree
+    void installStats(const std::shared_ptr<search::queryeval::QueryEvalStats> &stats) { _query.installStats(stats); }
 
     const StringStringMap & get_feature_rename_map() const;
 

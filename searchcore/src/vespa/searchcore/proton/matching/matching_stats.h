@@ -8,7 +8,7 @@
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 
 namespace search::queryeval {
-class BlueprintStatsCollector;
+class QueryEvalStats;
 }
 
 namespace proton::matching {
@@ -223,7 +223,7 @@ public:
     const Partition &getPartition(size_t index) const { return _partitions[index]; }
 
     // used to merge in stats from blueprints
-    void add_blueprint_stats(const search::queryeval::BlueprintStatsCollector &stats_collector) noexcept;
+    void add_queryeval_stats(const search::queryeval::QueryEvalStats &stats) noexcept;
 
     // used to aggregate accross searches (and configurations)
     MatchingStats &add(const MatchingStats &rhs) noexcept;
