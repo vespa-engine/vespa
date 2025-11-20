@@ -339,13 +339,13 @@ HnswIndex<type>::find_nearest_in_layer(Stats &stats, const BoundDistanceFunction
     while (keep_searching) {
         keep_searching = false;
         for (uint32_t neighbor_nodeid : _graph.get_link_array(nearest.levels_ref, level)) {
-            stats.visit_node(); // Count visited node
+            stats.count_visited_node();
             auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
             auto neighbor_ref = neighbor_node.levels_ref().load_acquire();
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
             double dist = calc_distance(df, neighbor_docid, neighbor_subspace);
-            stats.compute_distance(); // Count computed distance
+            stats.count_computed_distance();
             if (_graph.still_valid(neighbor_nodeid, neighbor_ref)
                 && dist < nearest.distance)
             {
@@ -405,11 +405,11 @@ HnswIndex<type>::search_layer_helper(Stats &stats, const BoundDistanceFunction &
             {
                 continue;
             }
-            stats.visit_node(); // Count visited node
+            stats.count_visited_node();
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
             double dist_to_input = calc_distance(df, neighbor_docid, neighbor_subspace);
-            stats.compute_distance(); // Count computed distance
+            stats.count_computed_distance();
             if (dist_to_input < (1.0 + exploration_slack) * limit_dist) {
                 candidates.emplace(neighbor_nodeid, neighbor_ref, dist_to_input);
 
@@ -482,7 +482,7 @@ HnswIndex<type>::search_layer_filter_first_helper(Stats &stats, const BoundDista
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
             double dist_to_input = calc_distance(df, neighbor_docid, neighbor_subspace);
-            stats.compute_distance(); // Count computed distance
+            stats.count_computed_distance();
             if (dist_to_input < (1.0 + exploration_slack) * limit_dist) {
                 candidates.emplace(neighbor_nodeid, neighbor_ref, dist_to_input);
 
@@ -553,7 +553,7 @@ HnswIndex<type>::exploreNeighborhoodByOneHop(Stats &stats, std::deque<uint32_t> 
             if (!neighbor_ref.valid() || !visited.try_mark(neighbor_nodeid)) {
                 continue;
             }
-            stats.visit_node(); // Count visited node
+            stats.count_visited_node();
 
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             if (filter_wrapper.check(neighbor_docid)) {
@@ -1053,10 +1053,10 @@ HnswIndex<type>::top_k_candidates(Stats &stats, const BoundDistanceFunction &df,
         // graph has no entry point
         return best_neighbors;
     }
-    stats.visit_node(); // Count entry point as visited node
+    stats.count_visited_node(); // Count entry point as visited node
     int search_level = entry.level;
     double entry_dist = calc_distance(df, entry.nodeid);
-    stats.compute_distance(); // Count computed distance
+    stats.count_computed_distance();
     uint32_t entry_docid = get_docid(entry.nodeid);
     // TODO: check if entry docid/levels_ref is still valid here
     HnswCandidate entry_point(entry.nodeid, entry_docid, entry.levels_ref, entry_dist);

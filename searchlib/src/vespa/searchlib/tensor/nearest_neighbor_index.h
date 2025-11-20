@@ -40,6 +40,9 @@ class NearestNeighborIndexSaver;
  */
 class NearestNeighborIndex {
 public:
+    /**
+     * Class for collecting statistics during search.
+     */
     class Stats {
     private:
         size_t _distances_computed;
@@ -48,10 +51,11 @@ public:
     public:
         Stats() : _distances_computed(0), _nodes_visited(0) {}
         size_t distances_computed() const { return _distances_computed; }
-        void compute_distance() { ++_distances_computed; }
+        void count_computed_distance() { ++_distances_computed; }
         size_t nodes_visited() const { return _nodes_visited; }
-        void visit_node() { ++_nodes_visited; }
+        void count_visited_node() { ++_nodes_visited; }
     };
+
     using GlobalFilter = search::queryeval::GlobalFilter;
     using CompactionSpec = vespalib::datastore::CompactionSpec;
     using CompactionStrategy = vespalib::datastore::CompactionStrategy;
