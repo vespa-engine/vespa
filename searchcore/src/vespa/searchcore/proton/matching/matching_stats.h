@@ -120,47 +120,6 @@ public:
             _wait_time.add(rhs._wait_time);
             return *this;
         }
-
-        class MatchingStatsCollector : public vespalib::ObjectVisitor {
-        private:
-            size_t _distances_computed;
-        public:
-            MatchingStatsCollector()
-                : _distances_computed(0) {
-            }
-            ~MatchingStatsCollector() override = default;
-            size_t get_distances_computed() const noexcept { return _distances_computed; }
-            void openStruct(std::string_view name, std::string_view type) override {
-                (void) name;
-                (void) type;
-            }
-            void closeStruct() override {
-            }
-            void visitBool(std::string_view name, bool value) override {
-                (void) name;
-                (void) value;
-            }
-            void visitInt(std::string_view name, int64_t value) override {
-                std::string namestr(name);
-                if (name == "distances_computed") {
-                    _distances_computed += value;
-                }
-            }
-            void visitFloat(std::string_view name, double value) override {
-                (void) name;
-                (void) value;
-            }
-            void visitString(std::string_view name, std::string_view value) override {
-                (void) name;
-                (void) value;
-            }
-            void visitNull(std::string_view name) override {
-                (void) name;
-            }
-            void visitNotImplemented() override {
-
-            }
-        };
     };
 
 private:

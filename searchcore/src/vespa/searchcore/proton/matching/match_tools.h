@@ -182,6 +182,7 @@ public:
 
     const Query & query() const { return _query; }
     const RequestContext & get_request_context() const { return _requestContext; }
+    void installStatsCollector(const std::shared_ptr<search::queryeval::BlueprintStatsCollector> &stats_collector) { _query.installStatsCollector(stats_collector); }
 
     const StringStringMap & get_feature_rename_map() const;
 

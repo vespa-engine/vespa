@@ -245,6 +245,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
 {
     vespalib::Timer total_matching_time;
     MatchingStats my_stats;
+    std::shared_ptr<search::queryeval::BlueprintStatsCollector> queryeval_stats_collector;
     SearchReply::UP reply = std::make_unique<SearchReply>();
     initCoverage(reply->coverage, metaStore, bucketdb);
 
@@ -287,11 +288,9 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         isDoomExplicit = mtf->get_request_context().getDoom().isExplicitSoftDoom();
         traceQuery(6, request.trace(), mtf->query());
 
-        // Collect stats from blueprints
-        // Just the number of distance computations for now
-        MatchingStats::Partition::MatchingStatsCollector collector;
-        visit(collector, "", mtf->query().peekRoot());
-        my_stats.distances_computed(collector.get_distances_computed());
+        // Create and install detailed stats collector into blueprints
+        queryeval_stats_collector = std::make_shared<search::queryeval::BlueprintStatsCollector>();
+        mtf->installStatsCollector(queryeval_stats_collector);
 
         if (!mtf->valid()) {
             return reply;
@@ -318,7 +317,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
 
         size_t numThreadsPerSearch = computeNumThreadsPerSearch(mtf->estimate(), rankProperties);
         vespalib::LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);
-        MatchMaster master(std::move(my_stats));
+        MatchMaster master;
         uint32_t numParts = NumSearchPartitions::lookup(rankProperties, _rankSetup->getNumSearchPartitions());
         if (limitedThreadBundle.size() > 1) {
             attrContext.enableMultiThreadSafe();
@@ -340,6 +339,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             sessionMgr.insert(std::move(session));
         }
     }
+    // TODO Add stats from queryeval_stats_collector into my_stats
     double querySetupTime = vespalib::to_s(total_matching_time.elapsed()) - my_stats.queryLatencyAvg();
     my_stats.querySetupTime(querySetupTime);
     updateStats(my_stats, request, reply->coverage, isDoomExplicit);

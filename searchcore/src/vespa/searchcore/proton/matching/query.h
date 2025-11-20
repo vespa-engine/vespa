@@ -145,6 +145,7 @@ public:
      */
     Blueprint::HitEstimate estimate() const;
     const Blueprint * peekRoot() const { return _blueprint.get(); }
+    void installStatsCollector(const std::shared_ptr<search::queryeval::BlueprintStatsCollector> &stats_collector) { _blueprint->installStatsCollector(stats_collector); }
     bool needs_ranking() const noexcept { return _needs_ranking; }
 };
 

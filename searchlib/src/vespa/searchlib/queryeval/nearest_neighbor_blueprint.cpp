@@ -74,14 +74,21 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _global_filter_hits(),
       _global_filter_hit_ratio(),
       _doom(doom),
-      _matching_phase(MatchingPhase::FIRST_PHASE)
+      _matching_phase(MatchingPhase::FIRST_PHASE),
+      _nni_stats(),
+      _stats_collector()
 {
     _distance_heap.set_distance_threshold(_hnsw_params.distance_threshold);
     uint32_t est_hits = _attr_tensor.get_num_docs();
     setEstimate(HitEstimate(est_hits, false));
 }
 
-NearestNeighborBlueprint::~NearestNeighborBlueprint() = default;
+NearestNeighborBlueprint::~NearestNeighborBlueprint() {
+    if (_stats_collector) {
+        _stats_collector->add_to_approximate_nns_distances_computed(_nni_stats.distances_computed());
+        _stats_collector->add_to_approximate_nns_nodes_visited(_nni_stats.nodes_visited());
+    }
+}
 
 bool
 NearestNeighborBlueprint::want_global_filter(GlobalFilterLimits& limits) const
@@ -161,10 +168,14 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
     default:
         ;
     }
-    return ExactNearestNeighborIterator::create(strict(), tfmd,
+    return ExactNearestNeighborIterator::create(_stats_collector, strict(), tfmd,
                                                 std::make_unique<search::tensor::DistanceCalculator>(_attr_tensor, _query_tensor),
                                                 _distance_heap, *_global_filter,
                                                 _matching_phase != MatchingPhase::FIRST_PHASE);
+}
+
+void NearestNeighborBlueprint::installStatsCollector(const std::shared_ptr<BlueprintStatsCollector> &stats_collector) {
+    _stats_collector = stats_collector;
 }
 
 void
@@ -182,8 +193,6 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     if (_algorithm == Algorithm::INDEX_TOP_K || _algorithm == Algorithm::INDEX_TOP_K_WITH_FILTER) {
         visitor.visitInt("top_k_hits", _found_hits.size());
     }
-    visitor.visitInt("distances_computed", _nni_stats.distances_computed());
-    visitor.visitInt("nodes_visited", _nni_stats.nodes_visited());
 
     visitor.openStruct("global_filter", "GlobalFilter");
     GlobalFilterLimits limits;

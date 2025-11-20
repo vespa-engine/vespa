@@ -702,6 +702,14 @@ IntermediateBlueprint::insertChild(size_t n, Blueprint::UP child)
     return *this;
 }
 
+
+void
+IntermediateBlueprint::installStatsCollector(const std::shared_ptr<BlueprintStatsCollector> &stats_collector) {
+    for (const auto &child : _children) {
+        child->installStatsCollector(stats_collector);
+    }
+}
+
 void
 IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 {

@@ -44,6 +44,30 @@ class EmptyBlueprint;
 class AlwaysTrueBlueprint;
 
 /**
+ * Class for extracting statistics from within the blueprints/search iterators.
+ **/
+class BlueprintStatsCollector {
+private:
+    std::atomic<size_t> _exact_nns_distances_computed;
+    std::atomic<size_t> _approximate_nns_distances_computed;
+    std::atomic<size_t> _approximate_nns_nodes_visited;
+public:
+    BlueprintStatsCollector() noexcept
+        : _exact_nns_distances_computed(0),
+          _approximate_nns_distances_computed(0),
+          _approximate_nns_nodes_visited(0) {}
+    size_t exact_nns_distances_computed() noexcept { return _exact_nns_distances_computed; }
+    void add_to_exact_nns_distances_computed(size_t value) noexcept { _exact_nns_distances_computed += value; }
+
+    size_t approximate_nns_distances_computed() noexcept { return _approximate_nns_distances_computed; }
+    void add_to_approximate_nns_distances_computed(size_t value) noexcept { _approximate_nns_distances_computed += value; }
+
+    size_t approximate_nns_nodes_visited() noexcept { return _approximate_nns_nodes_visited; }
+    void add_to_approximate_nns_nodes_visited(size_t value) noexcept { _approximate_nns_nodes_visited += value; }
+};
+
+
+/**
  * A Blueprint is an intermediate representation of a search. More
  * concretely, it is a tree of search iterator factories annotated
  * with meta-data about the fields to be searched, how match
@@ -443,6 +467,9 @@ public:
     static SearchIteratorUP create_first_child_filter(std::span<const UP> children, FilterConstraint constraint);
     static SearchIteratorUP create_default_filter(FilterConstraint constraint);
 
+    // For collecting statistics from within the blueprints
+    virtual void installStatsCollector(const std::shared_ptr<BlueprintStatsCollector> &stats_collector) = 0;
+
     // for debug dumping
     std::string asString() const;
     vespalib::slime::Cursor & asSlime(const vespalib::slime::Inserter & cursor) const;
@@ -555,6 +582,8 @@ public:
     virtual SearchIteratorUP
     createIntermediateSearch(MultiSearch::Children subSearches, fef::MatchData &md) const = 0;
 
+    void installStatsCollector(const std::shared_ptr<BlueprintStatsCollector> &stats_collector) override;
+
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;
@@ -613,6 +642,8 @@ public:
     virtual bool getRange(search::NumericRangeSpec & range_spec) const;
     virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, fef::MatchData &global_md) const;
     virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const = 0;
+
+    void installStatsCollector(const std::shared_ptr<BlueprintStatsCollector> &/*stats_collector*/) override {}
 };
 
 // for leaf nodes representing a single term

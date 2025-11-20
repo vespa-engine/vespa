@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "blueprint.h"
 #include "exact_nearest_neighbor_iterator.h"
 #include "global_filter.h"
 #include <vespa/searchlib/common/bitvector.h>
@@ -7,17 +8,21 @@
 #include <vespa/searchlib/tensor/distance_function.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 
+#include "blueprint.h"
+
 using search::tensor::ITensorAttribute;
 using vespalib::eval::TypedCells;
 using vespalib::eval::CellType;
 
 namespace search::queryeval {
 
-ExactNearestNeighborIterator::Params::Params(fef::TermFieldMatchData &tfmd_in,
+ExactNearestNeighborIterator::Params::Params(const std::shared_ptr<BlueprintStatsCollector> &stats_collector_in,
+                                             fef::TermFieldMatchData &tfmd_in,
                                              std::unique_ptr<search::tensor::DistanceCalculator> distance_calc_in,
                                              NearestNeighborDistanceHeap &distanceHeap_in,
                                              const GlobalFilter &filter_in)
-    : tfmd(tfmd_in),
+    : stats_collector(stats_collector_in),
+      tfmd(tfmd_in),
       distance_calc(std::move(distance_calc_in)),
       distanceHeap(distanceHeap_in),
       filter(filter_in)
@@ -78,12 +83,6 @@ public:
 
     Trinary is_strict() const override { return strict ? Trinary::True : Trinary::False ; }
 
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override {
-        visitor.openStruct("stats", "ExactNearestNeighborIterator::Stats");
-        visitor.visitInt("distances_computed", _distances_computed);
-        visitor.closeStruct();
-    }
-
 private:
     double computeDistance(uint32_t docId, double limit) {
         return params().distance_calc->template calc_with_limit<has_single_subspace>(docId, limit);
@@ -95,7 +94,9 @@ private:
 };
 
 template <bool strict, bool has_filter, bool has_single_subspace>
-ExactNearestNeighborImpl<strict, has_filter, has_single_subspace>::~ExactNearestNeighborImpl() = default;
+ExactNearestNeighborImpl<strict, has_filter, has_single_subspace>::~ExactNearestNeighborImpl() {
+    params().stats_collector->add_to_exact_nns_distances_computed(_distances_computed);
+}
 
 namespace {
 
@@ -126,12 +127,13 @@ resolve_strict(bool strict, bool readonly_distance_heap, ExactNearestNeighborIte
 } // namespace <unnamed>
 
 std::unique_ptr<ExactNearestNeighborIterator>
-ExactNearestNeighborIterator::create(bool strict, fef::TermFieldMatchData &tfmd,
+ExactNearestNeighborIterator::create(const std::shared_ptr<BlueprintStatsCollector> &stats_collector,
+                                     bool strict, fef::TermFieldMatchData &tfmd,
                                      std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
                                      NearestNeighborDistanceHeap &distanceHeap, const GlobalFilter &filter,
                                      bool readonly_distance_heap)
 {
-    Params params(tfmd, std::move(distance_calc), distanceHeap, filter);
+    Params params(stats_collector, tfmd, std::move(distance_calc), distanceHeap, filter);
     if (filter.is_active()) {
         return resolve_strict<true>(strict, readonly_distance_heap, std::move(params));
     } else  {
