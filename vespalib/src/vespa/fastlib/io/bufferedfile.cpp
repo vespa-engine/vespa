@@ -2,9 +2,12 @@
 
 #include "bufferedfile.h"
 #include <vespa/fastos/file.h>
+#include <vespa/vespalib/util/error.h>
 #include <cassert>
 #include <cstring>
 #include <cinttypes>
+
+using vespalib::getLastErrorString;
 
 namespace {
 

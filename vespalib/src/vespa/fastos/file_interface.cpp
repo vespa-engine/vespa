@@ -7,11 +7,14 @@
  */
 
 #include "file.h"
+#include <vespa/vespalib/util/error.h>
 #include <sstream>
 #include <cstring>
 #include <fcntl.h>
 #include <cstdlib>
 #include <cassert>
+
+using vespalib::getLastErrorString;
 
 DirectIOException::DirectIOException(const char * fileName, const void * buffer, size_t length, int64_t offset) :
     std::exception(),
@@ -60,7 +63,7 @@ FastOS_FileInterface::ReadBuf(void *buffer, size_t length)
     if ((readResult == -1) || (static_cast<size_t>(readResult) != length)) {
         std::string errorString = readResult != -1 ?
                                   std::string("short read") :
-                                  FastOS_FileInterface::getLastErrorString();
+                                  getLastErrorString();
         std::ostringstream os;
         os << "Fatal: Reading " << length << " bytes from '" << GetFileName() << "' failed: " << errorString;
         throw std::runtime_error(os.str());
@@ -80,7 +83,7 @@ FastOS_FileInterface::WriteBufInternal(const void *buffer, size_t length)
     if (length - writeResult != 0) {
         std::string errorString = writeResult != -1 ?
                                   std::string("short write") :
-                                  FastOS_FileInterface::getLastErrorString();
+                                  getLastErrorString();
         std::ostringstream os;
         os << "Fatal: Writing " << length << " bytes to '" << GetFileName() << "' failed (wrote " << writeResult << "): " << errorString;
         throw std::runtime_error(os.str());
@@ -92,7 +95,7 @@ FastOS_FileInterface::CheckedWrite(const void *buffer, size_t len)
 {
     ssize_t writeResult = Write2(buffer, len);
     if (writeResult < 0) {
-        std::string errorString = FastOS_FileInterface::getLastErrorString();
+        std::string errorString = getLastErrorString();
         fprintf(stderr, "Writing %lu bytes to '%s' failed: %s\n",
                 static_cast<unsigned long>(len),
                 GetFileName(),
@@ -114,7 +117,7 @@ void
 FastOS_FileInterface::ReadBuf(void *buffer, size_t length, int64_t readOffset)
 {
     if (!SetPosition(readOffset)) {
-        std::string errorString = FastOS_FileInterface::getLastErrorString();
+        std::string errorString = getLastErrorString();
         std::ostringstream os;
         os << "Fatal: Setting fileoffset to " << readOffset << " in '" << GetFileName() << "' : " << errorString;
         throw std::runtime_error(os.str());
@@ -230,8 +233,7 @@ FastOS_FileInterface::OpenReadOnlyExisting(bool abortIfNotExist,
                    filename);
 
     if (abortIfNotExist && (!rc)) {
-        std::string errorString =
-            FastOS_FileInterface::getLastErrorString();
+        std::string errorString = getLastErrorString();
         fprintf(stderr,
                 "Cannot open %s: %s\n",
                 filename,
@@ -263,8 +265,7 @@ FastOS_FileInterface::OpenWriteOnlyExisting(bool abortIfNotExist,
                    filename);
 
     if (abortIfNotExist && (!rc)) {
-        std::string errorString =
-            FastOS_FileInterface::getLastErrorString();
+        std::string errorString = getLastErrorString();
         fprintf(stderr,
                 "Cannot open %s: %s\n",
                 filename,
@@ -283,24 +284,10 @@ FastOS_FileInterface::OpenReadOnly(const char *filename)
                 filename);
 }
 
-
 bool
 FastOS_FileInterface::OpenWriteOnly(const char *filename)
 {
     return Open(FASTOS_FILE_OPEN_WRITE, filename);
-}
-
-FastOS_FileInterface::Error
-FastOS_FileInterface::GetLastError()
-{
-    return FastOS_File::TranslateError(FastOS_File::GetLastOSError());
-}
-
-std::string
-FastOS_FileInterface::getLastErrorString()
-{
-    int err = FastOS_File::GetLastOSError();
-    return FastOS_File::getErrorString(err);
 }
 
 void FastOS_FileInterface::dropFromCache() const
