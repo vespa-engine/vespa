@@ -13,4 +13,5 @@ import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 public class InvalidInputException extends IllegalArgumentException {
 
     public InvalidInputException(String message) { super(message); }
+    public InvalidInputException(String message, Exception e) { super(message, e); }
 }

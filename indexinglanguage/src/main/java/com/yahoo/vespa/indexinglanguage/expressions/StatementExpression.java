@@ -124,7 +124,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
             }
         }
         catch (InvalidInputException e) {
-            throw new InvalidInputException("Error executing '" + this + "': " + e.getMessage());
+            throw new InvalidInputException("Error executing '" + this + "'", e);
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Error executing '" + this + "'", e);
