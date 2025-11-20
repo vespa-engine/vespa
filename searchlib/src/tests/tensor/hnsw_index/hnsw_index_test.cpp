@@ -284,7 +284,6 @@ public:
         }
         EXPECT_EQ(exp, act);
     }
-
     void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits, bool filter_first = false, double exploration_slack = 0.0) {
         uint32_t k = 3;
         auto qv = vectors.get_vector(docid, 0);
@@ -309,6 +308,18 @@ public:
         if (!exp_hits.empty()) {
             check_with_distance_threshold(docid, exploration_slack);
         }
+    }
+    // Run a search and return the collected statistics for the search
+    NearestNeighborIndex::Stats stats_for_search(uint32_t k, uint32_t explore_k, std::vector<float> qv, const bool filter_first) {
+        double exploration_slack = 0.0;
+        std::span<float> qv_ref(qv);
+        vespalib::eval::TypedCells qv_cells(qv_ref);
+        NearestNeighborIndex::Stats stats;
+        auto df = index->distance_function_factory().for_query_vector(qv_cells);
+        auto got_by_docid = (global_filter->is_active()) ?
+                            index->find_top_k_with_filter(stats, k, *df, *global_filter, filter_first, 0.3, explore_k, exploration_slack, _doom->get_doom(), 10000.0) :
+                            index->find_top_k(stats, k, *df, explore_k, exploration_slack, _doom->get_doom(), 10000.0);
+        return stats;
     }
     void check_with_distance_threshold(uint32_t docid, double exploration_slack = 0.0) {
         auto qv = vectors.get_vector(docid, 0);
@@ -538,6 +549,63 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_exploration_slack
         this->reset_doom(-1s);
         this->expect_top_3(2, {}, false, slack);
     }
+}
+
+TYPED_TEST(HnswIndexTest, stats_are_collected_during_search) {
+    this->init(false);
+    this->add_document(1);
+    this->add_document(2);
+    this->add_document(3);
+    this->add_document(4);
+    this->add_document(5);
+    this->add_document(6);
+    this->add_document(7);
+
+    // With traditional HNSW, the number of distance computations is the number of nodes visited
+    // With large enough k, this should be the whole graph
+    auto stats = this->stats_for_search(100, 0, {0, 0}, false);
+    uint32_t nodes = this->index->get_active_nodes();
+    EXPECT_EQ(nodes, stats.distances_computed());
+    EXPECT_EQ(nodes, stats.nodes_visited());
+
+    // With very small k, we will not explore the whole graph
+    stats = this->stats_for_search(1, 0, {0, 0}, false);
+    EXPECT_GT(nodes, stats.distances_computed());
+    EXPECT_LT(0, stats.distances_computed());
+    EXPECT_GT(nodes, stats.nodes_visited());
+    EXPECT_LT(0, stats.nodes_visited());
+    // The number of distance computations should still be the number of nodes visited
+    EXPECT_EQ(stats.distances_computed(), stats.nodes_visited());
+
+    // With filter-first and large k, we should still get the whole graph
+    stats = this->stats_for_search(100, 0, {0, 0}, true);
+    EXPECT_EQ(nodes, stats.distances_computed());
+    EXPECT_EQ(nodes, stats.nodes_visited());
+
+    // Small k and filter-first
+    stats = this->stats_for_search(1, 0, {0, 0}, true);
+    EXPECT_GT(nodes, stats.distances_computed());
+    EXPECT_LT(0, stats.distances_computed());
+    EXPECT_GT(nodes, stats.nodes_visited());
+    EXPECT_LT(0, stats.nodes_visited());
+
+    this->set_filter({2,3,4,6});
+
+    // With large k and traditional HNSW, we will explore the whole graph and compute all distances :(
+    stats = this->stats_for_search(100, 0, {0, 0}, false);
+    EXPECT_EQ(nodes, stats.distances_computed());
+    EXPECT_EQ(nodes, stats.nodes_visited());
+
+    // With large k filter-first, we will explore the whole graph
+    // but only compute distances to vertices passing the filter (plus entry point) :)
+    stats = this->stats_for_search(100, 0, {0, 0}, true);
+    EXPECT_EQ(5, stats.distances_computed());
+    EXPECT_EQ(nodes, stats.nodes_visited());
+
+    this->set_filter({2,3});
+    stats = this->stats_for_search(100, 0, {0, 0}, true);
+    EXPECT_EQ(3, stats.distances_computed());
+    EXPECT_EQ(nodes, stats.nodes_visited());
 }
 
 TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_and_removed)
