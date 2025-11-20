@@ -51,7 +51,8 @@ class TritonOnnxRuntimeTest {
 
     @Test
     void load_model_with_threads() throws IOException {
-        var opts = optsBuilder.setThreads(8, 16).build();
+        // TritonOnnxRuntime ignores intraOpThreadsFactor
+        var opts = optsBuilder.setThreadsFromFactors(8, 16).build();
         assertLoadModel("src/test/triton/config_with_threads.pbtxt", opts);
     }
 
