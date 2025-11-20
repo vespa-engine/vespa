@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
-#include <vespa/vespalib/objects/objectvisitor.h>
 
 namespace search::queryeval {
 class BlueprintStatsCollector;
@@ -113,8 +112,8 @@ public:
             _docsRanked += rhs._docsRanked;
             _docsReRanked += rhs._docsReRanked;
             _softDoomed += rhs._softDoomed;
-
             _doomOvertime.add(rhs._doomOvertime);
+
             _active_time.add(rhs._active_time);
             _wait_time.add(rhs._wait_time);
             return *this;
