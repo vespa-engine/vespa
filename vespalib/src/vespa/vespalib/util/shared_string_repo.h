@@ -4,7 +4,6 @@
 
 #include "memoryusage.h"
 #include "string_id.h"
-#include "spin_lock.h"
 #include <vespa/vespalib/stllike/identity.h>
 #include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
@@ -14,6 +13,7 @@
 #include <cctype>
 #include <limits>
 #include <string>
+#include <mutex>
 
 namespace vespalib {
 
@@ -54,7 +54,7 @@ private:
         uint32_t hash;
     };
 
-    class alignas(64) Partition {
+    class alignas(128) Partition {
     public:
         class Entry {
         public:
@@ -110,7 +110,7 @@ private:
         using HashType = hashtable<Key,Key,Hash,Equal,Identity,hashtable_base::and_modulator>;
 
     private:
-        mutable SpinLock   _lock;
+        mutable std::mutex _lock;
         EntryVector        _entries;
         uint32_t           _free;
         HashType           _hash;
@@ -142,6 +142,7 @@ private:
 
     struct access_token { };
 public:
+    static constexpr size_t part_size() { return sizeof(Partition); }
     static bool will_reclaim() { return should_reclaim; }
     static Stats stats();
 
