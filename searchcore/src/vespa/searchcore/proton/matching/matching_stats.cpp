@@ -2,6 +2,7 @@
 
 #include "matching_stats.h"
 #include <cmath>
+#include <vespa/searchlib/queryeval/blueprint.h>
 
 namespace proton::matching {
 
@@ -26,7 +27,9 @@ MatchingStats::MatchingStats(double prev_soft_doom_factor) noexcept
       _docsMatched(0),
       _docsRanked(0),
       _docsReRanked(0),
-      _distances_computed(0),
+      _exact_nns_distances_computed(0),
+      _approximate_nns_distances_computed(0),
+      _approximate_nns_nodes_visited(0),
       _softDoomed(0),
       _doomOvertime(),
       _softDoomFactor(prev_soft_doom_factor),
@@ -49,13 +52,19 @@ MatchingStats::merge_partition(const Partition &partition, size_t id)
     _docsMatched += partition.docsMatched();
     _docsRanked += partition.docsRanked();
     _docsReRanked += partition.docsReRanked();
-    _distances_computed += partition.distances_computed();
     _doomOvertime.add(partition._doomOvertime);
     if (partition.softDoomed()) {
         _softDoomed = 1;
     }
 
     return *this;
+}
+
+void
+MatchingStats::add_blueprint_stats(const search::queryeval::BlueprintStatsCollector &stats_collector) noexcept {
+    _exact_nns_distances_computed += stats_collector.exact_nns_distances_computed();
+    _approximate_nns_distances_computed += stats_collector.approximate_nns_distances_computed();
+    _approximate_nns_nodes_visited +=  stats_collector.approximate_nns_nodes_visited();
 }
 
 MatchingStats &
@@ -68,7 +77,9 @@ MatchingStats::add(const MatchingStats &rhs) noexcept
     _docsMatched += rhs._docsMatched;
     _docsRanked += rhs._docsRanked;
     _docsReRanked += rhs._docsReRanked;
-    _distances_computed += rhs._distances_computed;
+    _exact_nns_distances_computed += rhs._exact_nns_distances_computed;
+    _approximate_nns_distances_computed += rhs._approximate_nns_distances_computed;
+    _approximate_nns_nodes_visited += rhs._approximate_nns_nodes_visited;
     _softDoomed += rhs.softDoomed();
     _doomOvertime.add(rhs._doomOvertime);
 

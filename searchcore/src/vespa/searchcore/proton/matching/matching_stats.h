@@ -8,6 +8,10 @@
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 
+namespace search::queryeval {
+class BlueprintStatsCollector;
+}
+
 namespace proton::matching {
 
 /**
@@ -63,7 +67,6 @@ public:
         size_t _docsMatched;
         size_t _docsRanked;
         size_t _docsReRanked;
-        size_t _distances_computed;
         size_t _softDoomed;
         Avg    _doomOvertime;
         Avg    _active_time;
@@ -75,7 +78,6 @@ public:
               _docsMatched(0),
               _docsRanked(0),
               _docsReRanked(0),
-              _distances_computed(0),
               _softDoomed(0),
               _doomOvertime(),
               _active_time(),
@@ -89,8 +91,6 @@ public:
         size_t docsRanked() const noexcept { return _docsRanked; }
         Partition &docsReRanked(size_t value) noexcept { _docsReRanked = value; return *this; }
         size_t docsReRanked() const noexcept { return _docsReRanked; }
-        Partition &distances_computed(size_t value) noexcept { _distances_computed = value; return *this; }
-        size_t distances_computed() const noexcept { return _distances_computed; }
         Partition &softDoomed(bool v) noexcept { _softDoomed += v ? 1 : 0; return *this; }
         size_t softDoomed() const noexcept { return _softDoomed; }
         Partition & doomOvertime(vespalib::duration overtime) noexcept { _doomOvertime.set(vespalib::to_s(overtime)); return *this; }
@@ -112,7 +112,6 @@ public:
             _docsMatched += rhs._docsMatched;
             _docsRanked += rhs._docsRanked;
             _docsReRanked += rhs._docsReRanked;
-            _distances_computed += rhs._distances_computed;
             _softDoomed += rhs._softDoomed;
 
             _doomOvertime.add(rhs._doomOvertime);
@@ -129,7 +128,9 @@ private:
     size_t                 _docsMatched;
     size_t                 _docsRanked;
     size_t                 _docsReRanked;
-    size_t                 _distances_computed;
+    size_t                 _exact_nns_distances_computed;
+    size_t                 _approximate_nns_distances_computed;
+    size_t                 _approximate_nns_nodes_visited;
     size_t                 _softDoomed;
     Avg                    _doomOvertime;
     using SoftDoomFactor = vespalib::datastore::AtomicValueWrapper<double>;
@@ -169,8 +170,14 @@ public:
     MatchingStats &docsReRanked(size_t value) { _docsReRanked = value; return *this; }
     size_t docsReRanked() const { return _docsReRanked; }
 
-    MatchingStats &distances_computed(size_t value) { _distances_computed = value; return *this; }
-    size_t distances_computed() const { return _distances_computed; }
+    MatchingStats &exact_nns_distances_computed(size_t value) { _exact_nns_distances_computed = value; return *this; }
+    size_t exact_nns_distances_computed() const { return _exact_nns_distances_computed; }
+
+    MatchingStats &approximate_nns_distances_computed(size_t value) { _approximate_nns_distances_computed = value; return *this; }
+    size_t approximate_nns_distances_computed() const { return _approximate_nns_distances_computed; }
+
+    MatchingStats &approximate_nns_nodes_visited(size_t value) { _approximate_nns_nodes_visited = value; return *this; }
+    size_t approximate_nns_nodes_visited() const { return _approximate_nns_nodes_visited; }
 
     MatchingStats &softDoomed(size_t value) { _softDoomed = value; return *this; }
     size_t softDoomed() const { return _softDoomed; }
@@ -215,6 +222,9 @@ public:
     MatchingStats &merge_partition(const Partition &partition, size_t id);
     size_t getNumPartitions() const { return _partitions.size(); }
     const Partition &getPartition(size_t index) const { return _partitions[index]; }
+
+    // used to merge in stats from blueprints
+    void add_blueprint_stats(const search::queryeval::BlueprintStatsCollector &stats_collector) noexcept;
 
     // used to aggregate accross searches (and configurations)
     MatchingStats &add(const MatchingStats &rhs) noexcept;

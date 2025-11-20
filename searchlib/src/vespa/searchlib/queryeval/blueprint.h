@@ -56,13 +56,13 @@ public:
         : _exact_nns_distances_computed(0),
           _approximate_nns_distances_computed(0),
           _approximate_nns_nodes_visited(0) {}
-    size_t exact_nns_distances_computed() noexcept { return _exact_nns_distances_computed; }
+    size_t exact_nns_distances_computed() const noexcept { return _exact_nns_distances_computed; }
     void add_to_exact_nns_distances_computed(size_t value) noexcept { _exact_nns_distances_computed += value; }
 
-    size_t approximate_nns_distances_computed() noexcept { return _approximate_nns_distances_computed; }
+    size_t approximate_nns_distances_computed() const noexcept { return _approximate_nns_distances_computed; }
     void add_to_approximate_nns_distances_computed(size_t value) noexcept { _approximate_nns_distances_computed += value; }
 
-    size_t approximate_nns_nodes_visited() noexcept { return _approximate_nns_nodes_visited; }
+    size_t approximate_nns_nodes_visited() const noexcept { return _approximate_nns_nodes_visited; }
     void add_to_approximate_nns_nodes_visited(size_t value) noexcept { _approximate_nns_nodes_visited += value; }
 };
 

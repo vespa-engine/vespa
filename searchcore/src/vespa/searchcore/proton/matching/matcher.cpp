@@ -339,7 +339,8 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             sessionMgr.insert(std::move(session));
         }
     }
-    // TODO Add stats from queryeval_stats_collector into my_stats
+    my_stats.add_blueprint_stats(*queryeval_stats_collector);
+    queryeval_stats_collector.reset(); // Manually reset pointer to include object tear-down in measured time
     double querySetupTime = vespalib::to_s(total_matching_time.elapsed()) - my_stats.queryLatencyAvg();
     my_stats.querySetupTime(querySetupTime);
     updateStats(my_stats, request, reply->coverage, isDoomExplicit);
