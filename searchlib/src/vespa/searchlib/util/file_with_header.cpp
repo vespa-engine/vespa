@@ -3,7 +3,7 @@
 #include "file_with_header.h"
 #include "file_settings.h"
 #include "filesizecalculator.h"
-#include <vespa/fastos/file.h>
+#include <vespa/fastos/file_interface.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/util/size_literals.h>

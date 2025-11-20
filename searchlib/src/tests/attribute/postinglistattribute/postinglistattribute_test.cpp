@@ -18,7 +18,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <string>
 #include <vespa/vespalib/util/compress.h>
-#include <vespa/fastos/file.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
 #include <filesystem>
 #include <iostream>

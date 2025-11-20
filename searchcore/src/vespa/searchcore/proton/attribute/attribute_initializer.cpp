@@ -15,7 +15,7 @@
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/fastos/file.h>
+#include <vespa/fastos/file_interface.h>
 #include <cinttypes>
 
 #include <vespa/log/log.h>

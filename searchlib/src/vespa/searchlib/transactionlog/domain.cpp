@@ -10,7 +10,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/vespalib/util/cpu_usage.h>
-#include <vespa/fastos/file.h>
 #include <algorithm>
 #include <thread>
 #include <cassert>

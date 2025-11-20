@@ -2,7 +2,7 @@
 #include "fileheader.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/fastos/file.h>
+#include <vespa/fastos/file_interface.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fileheader");

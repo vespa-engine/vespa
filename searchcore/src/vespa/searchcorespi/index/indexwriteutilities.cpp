@@ -2,9 +2,10 @@
 #include "indexwriteutilities.h"
 #include "indexdisklayout.h"
 #include "indexreadutilities.h"
+#include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <filesystem>

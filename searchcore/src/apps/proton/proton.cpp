@@ -11,7 +11,7 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fastos/file.h>
+#include <vespa/fastos/file_interface.h>
 #include <absl/debugging/failure_signal_handler.h>
 #include <filesystem>
 #include <iostream>

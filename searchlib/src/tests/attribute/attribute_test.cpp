@@ -23,7 +23,7 @@
 #include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/fastos/file.h>
+#include <vespa/fastos/file_interface.h>
 #include <cmath>
 #include <filesystem>
 #include <iostream>
