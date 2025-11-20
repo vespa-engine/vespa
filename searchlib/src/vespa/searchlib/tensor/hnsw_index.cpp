@@ -1053,6 +1053,7 @@ HnswIndex<type>::top_k_candidates(Stats &stats, const BoundDistanceFunction &df,
         // graph has no entry point
         return best_neighbors;
     }
+    stats.visit_node(); // Count entry point as visited node
     int search_level = entry.level;
     double entry_dist = calc_distance(df, entry.nodeid);
     stats.compute_distance(); // Count computed distance
