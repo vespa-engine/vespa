@@ -28,6 +28,7 @@ import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
+import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,10 +105,11 @@ public class IndexingProcessor extends DocumentProcessor {
                     throw new IllegalArgumentException("Expected document, got null.");
                 }
             } catch (InvalidInputException e) {
+                String message = Exceptions.toMessageString(e);
                 return Progress.INVALID_INPUT.withReason(
                         op.getId() != null
-                                ? "Operation on '%s' contains invalid input: %s".formatted(op.getId().toString(), e.getMessage())
-                                : "Operation contains invalid input: %s".formatted(e.getMessage()));
+                        ? "Operation on '%s' contains invalid input: %s".formatted(op.getId().toString(), message)
+                        : "Operation contains invalid input: %s".formatted(message));
             }
         }
         proc.getDocumentOperations().clear();
