@@ -1,0 +1,8 @@
+schema common {
+    document common {
+        field popularity type int {}
+        field title type string {}
+        field year type int {}
+        field price type float {}
+    }
+}

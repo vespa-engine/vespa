@@ -1,0 +1,17 @@
+schema serializetest {
+    document serializetest {
+        field floatfield type float {}
+        field longfield type long {}
+        field stringfield type string {}
+        field urifield type uri {}
+        field arrayofarrayoffloatfield type array<array<float>> {}
+        field arrayoffloatfield type array<float> {}
+        field bytefield type byte {}
+        field docfield type docindoc {}
+        field doublefield type double {}
+        field intfield type int {}
+        field mapfield type map<string, string> {}
+        field rawfield type raw {}
+        field wsfield type weightedset<string> {}
+    }
+}

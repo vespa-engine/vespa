@@ -1,0 +1,5 @@
+schema other {
+    document other {
+        field intfield type int {}
+    }
+}

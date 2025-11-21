@@ -1,0 +1,25 @@
+schema benchmark {
+    document benchmark {
+        field headerdouble type double {}
+        field headerfloat type float {}
+        field headerint type int {}
+        field headerlong type long {}
+        field headerraw type raw {}
+        field headerstring type string {}
+        field maxbodydocsize type int {}
+        field maxheaderdocsize type int {}
+        field minbodydocsize type int {}
+        field minheaderdocsize type int {}
+        field pregeneratedcontent type byte {}
+        field seed type int {}
+        field simplecontent type byte {}
+        field totaldoccount type int {}
+        field totalusercount type int {}
+        field bodydouble type double {}
+        field bodyfloat type float {}
+        field bodyint type int {}
+        field bodylong type long {}
+        field bodyraw type raw {}
+        field bodystring type string {}
+    }
+}

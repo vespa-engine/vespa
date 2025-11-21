@@ -1,0 +1,14 @@
+schema books {
+    document books inherits common {
+        struct address {
+            field city type string {}
+            field street type string {}
+        }
+
+        field addresses type array<address> {}
+        field author type string {}
+        field bindPrice type map<string, float> {}
+        field grade type byte {}
+        field pages type long {}
+    }
+}

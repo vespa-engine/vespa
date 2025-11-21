@@ -1,0 +1,19 @@
+schema testdoc {
+    document testdoc {
+        field doubleattr type double {}
+        field floatattr type float {}
+        field intattr type int {}
+        field arrayattr type array<int> {}
+        field byteattr type byte {}
+        field docfield type int {}
+        field longattr type long {}
+        field minattr type int {}
+        field minattr2 type int {}
+        field rawarrayattr type array<raw> {}
+        field rawattr type raw {}
+        field stringattr type string {}
+        field stringattr2 type string {}
+        field stringweightedsetattr type weightedset<string> {}
+        field uri type string {}
+    }
+}

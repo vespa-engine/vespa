@@ -1,0 +1,15 @@
+schema simple_def {
+    document simple_def {
+        struct url {
+            field all type string {}
+            field fragment type string {}
+            field xhost type string {}
+            field path type string {}
+            field port type string {}
+            field query type string {}
+            field scheme type string {}
+        }
+
+        field my_url type url {}
+    }
+}

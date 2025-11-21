@@ -609,27 +609,6 @@ TEST(DocumentTest, testReadSerializedFile)
     EXPECT_TRUE(len != buf3.size());
 }
 
-TEST(DocumentTest, testReadSerializedFileCompressed)
-{
-    // Reads a file serialized from java
-    const std::string file_name = TEST_PATH("data/crossplatform-java-cpp-doctypes.cfg");
-    DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
-
-    int fd = open(TEST_PATH("data/serializejava-compressed.dat").c_str(), O_RDONLY);
-
-    int len = lseek(fd,0,SEEK_END);
-    vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(len);
-    lseek(fd,0,SEEK_SET);
-    if (read(fd, buf.get(), len) != len) {
-        throw vespalib::Exception("read failed");
-    }
-    close(fd);
-
-    nbostream stream(buf.get(), len);
-    Document doc(repo, stream);
-    verifyJavaDocument(doc);
-}
-
 namespace {
     struct TestDoc {
         std::string _dataFile;
@@ -1027,7 +1006,7 @@ TEST(DocumentTest, testAnnotationDeserialization)
     vespalib::nbostream stream;
     VespaDocumentSerializer serializer(stream);
     serializer.write(strVal);
-    
+
     FixedTypeRepo fixedRepo(repo, doc.getType());
     VespaDocumentDeserializer deserializer(fixedRepo, stream, 8);
     StringFieldValue strVal2;

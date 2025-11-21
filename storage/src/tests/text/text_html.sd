@@ -1,0 +1,8 @@
+schema text/html {
+    document text/html {
+        field author type string {}
+        field date type int {}
+        field subject type string {}
+        field content type raw {}
+    }
+}

@@ -1,0 +1,7 @@
+schema music_search inherits music {
+    document music_search inherits music {
+        field year type int {}
+        field price type float {}
+        field randomdouble type double {}
+    }
+}
