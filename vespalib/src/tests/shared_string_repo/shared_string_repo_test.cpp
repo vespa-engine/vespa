@@ -295,7 +295,7 @@ TEST(SharedStringRepoTest, require_that_id_space_usage_is_sane) {
 
 TEST(SharedStringRepoTest, require_that_initial_stats_are_as_expected) {
     size_t num_parts = 256;
-    size_t part_size = 128;
+    size_t part_size = SharedStringRepo::part_size();
     size_t hash_node_size = 12;
     size_t entry_size = 8 + sizeof(std::string);
     size_t initial_entries = roundUp2inN(16 * entry_size) / entry_size;
