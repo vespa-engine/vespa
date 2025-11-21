@@ -3,6 +3,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/util/token_extractor.h>
@@ -68,7 +69,7 @@ protected:
     static DocBuilder::AddFieldsType
     make_add_fields()
     {
-        return [](auto& header) { header.addField(field_name, DataType::T_STRING); };
+        return [](auto& builder, auto& doc) noexcept { doc.addField(field_name, builder.primitiveType(DataType::T_STRING)); };
     }
 
     Words process(const StringFieldValue& value);

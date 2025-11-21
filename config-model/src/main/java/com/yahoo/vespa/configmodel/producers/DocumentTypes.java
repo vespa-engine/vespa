@@ -262,6 +262,10 @@ public class DocumentTypes {
                                      IdxMap indexMap)
     {
         DataType nested = type.getNestedType();
+        System.err.println("docTypeBuildOneType(ArrayDataType type >>>");
+        System.err.println("nested: " + nested + " id=" + nested.getId());
+        System.err.println("type: " + type + " id=" + type.getId());
+        System.err.println("<<< docTypeBuildOneType(ArrayDataType type");
         builder.arraytype(arrayBuilder -> arrayBuilder
                           .idx(indexMap.idxOf(type))
                           .elementtype(indexMap.idxOf(nested))

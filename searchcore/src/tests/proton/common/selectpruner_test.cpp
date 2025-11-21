@@ -4,7 +4,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/select/parser.h>
@@ -19,11 +19,7 @@ using document::DataType;
 using document::Document;
 using document::DocumentType;
 using document::DocumentTypeRepo;
-using document::config_builder::Array;
-using document::config_builder::DocumenttypesConfigBuilderHelper;
-using document::config_builder::Map;
-using document::config_builder::Struct;
-using document::config_builder::Wset;
+using document::new_config_builder::NewConfigBuilder;
 using document::select::CloningVisitor;
 using document::select::Node;
 using document::select::Result;
@@ -59,31 +55,44 @@ const string empty("");
 std::unique_ptr<const DocumentTypeRepo>
 makeDocTypeRepo()
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name), Struct(body_name).
-                     addField("ia", DataType::T_STRING).
-                     addField("ib", DataType::T_STRING).
-                     addField("ibs", Struct("pair").
-                              addField("x", DataType::T_STRING).
-                              addField("y", DataType::T_STRING)).
-                     addField("iba", Array(DataType::T_STRING)).
-                     addField("ibw", Wset(DataType::T_STRING)).
-                     addField("ibm", Map(DataType::T_STRING,
-                                         DataType::T_STRING)).
-                     addField("aa", DataType::T_INT).
-                     addField("aaa", Array(DataType::T_INT)).
-                     addField("aaw", Wset(DataType::T_INT)).
-                     addField("ab", DataType::T_INT).
-                     addField("ae", DataType::T_INT)).
-                     imported_field("my_imported_field").
-                     imported_field("my_missing_imported_field");
-    builder.document(doc_type_id + 1, type_name_2,
-                     Struct(header_name_2), Struct(body_name_2).
-                     addField("ic", DataType::T_STRING).
-                     addField("id", DataType::T_STRING).
-                     addField("ac", DataType::T_INT).
-                     addField("ad", DataType::T_INT));
+    NewConfigBuilder builder;
+    auto& doc = builder.document(type_name, doc_type_id);
+
+    // Create nested struct
+    auto pair_struct = doc.registerStruct(std::move(
+        doc.createStruct("pair")
+           .addField("x", builder.primitiveType(DataType::T_STRING))
+           .addField("y", builder.primitiveType(DataType::T_STRING))));
+
+    // Create collection types
+    auto string_array = doc.registerArray(doc.createArray(builder.primitiveType(DataType::T_STRING)));
+    auto string_wset = doc.registerWset(doc.createWset(builder.primitiveType(DataType::T_STRING)));
+    auto string_string_map = doc.registerMap(doc.createMap(builder.primitiveType(DataType::T_STRING), builder.primitiveType(DataType::T_STRING)));
+    auto int_array = doc.registerArray(doc.createArray(builder.primitiveType(DataType::T_INT)));
+    auto int_wset = doc.registerWset(doc.createWset(builder.primitiveType(DataType::T_INT)));
+
+    // Add fields
+    doc.addField("ia", builder.primitiveType(DataType::T_STRING))
+       .addField("ib", builder.primitiveType(DataType::T_STRING))
+       .addField("ibs", pair_struct)
+       .addField("iba", string_array)
+       .addField("ibw", string_wset)
+       .addField("ibm", string_string_map)
+       .addField("aa", builder.primitiveType(DataType::T_INT))
+       .addField("aaa", int_array)
+       .addField("aaw", int_wset)
+       .addField("ab", builder.primitiveType(DataType::T_INT))
+       .addField("ae", builder.primitiveType(DataType::T_INT))
+       .imported_field("my_imported_field")
+       .imported_field("my_missing_imported_field");
+
+    // Create second document type
+    auto& doc2 = builder.document(type_name_2, doc_type_id + 1);
+    doc2.addField("ic", builder.primitiveType(DataType::T_STRING))
+        .addField("id", builder.primitiveType(DataType::T_STRING))
+        .addField("ac", builder.primitiveType(DataType::T_INT))
+        .addField("ad", builder.primitiveType(DataType::T_INT));
+
     return std::unique_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(builder.config()));
 }
 

@@ -38,7 +38,7 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
@@ -222,12 +222,12 @@ AttributeWriterTest::~AttributeWriterTest() = default;
 
 TEST_F(AttributeWriterTest, handles_put)
 {
-    DocBuilder db([](auto& header)
-                  { using namespace document::config_builder;
-                      header.addField("a1", DataType::T_INT)
-                          .addField("a2", Array(DataType::T_INT))
-                          .addField("a3", DataType::T_FLOAT)
-                          .addField("a4", DataType::T_STRING); });
+    DocBuilder db([](auto& builder, auto& header)
+                  { auto int_array = header.registerArray(header.createArray(builder.primitiveType(DataType::T_INT)));
+                      header.addField("a1", builder.primitiveType(DataType::T_INT))
+                          .addField("a2", int_array)
+                          .addField("a3", builder.primitiveType(DataType::T_FLOAT))
+                          .addField("a4", builder.primitiveType(DataType::T_STRING)); });
     auto a1 = addAttribute("a1");
     auto a2 = addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
     auto a3 = addAttribute({"a3", AVConfig(AVBasicType::FLOAT)});
@@ -310,7 +310,7 @@ TEST_F(AttributeWriterTest, handles_put)
 
 TEST_F(AttributeWriterTest, handles_predicate_put)
 {
-    DocBuilder db([](auto& header) { header.addField("a1", DataType::T_PREDICATE); });
+    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.primitiveType(DataType::T_PREDICATE)); });
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
     allocAttributeWriter();
 
@@ -402,7 +402,7 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::STRING)});
     allocAttributeWriter();
 
-    DocBuilder db([](auto& header) { header.addField("a1", DataType::T_STRING); });
+    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.primitiveType(DataType::T_STRING)); });
     EXPECT_EQ(1u, a1->getNumDocs());
     EXPECT_EQ(0u, a1->getStatus().getLastSyncToken());
     auto doc = db.make_document("id:ns:searchdocument::1");
@@ -449,7 +449,7 @@ TEST_F(AttributeWriterTest, handles_predicate_remove)
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
     allocAttributeWriter();
 
-    DocBuilder db([](auto& header) { header.addField("a1", DataType::T_PREDICATE); });
+    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.primitiveType(DataType::T_PREDICATE)); });
 
     PredicateSlimeBuilder builder;
     auto doc = db.make_document("id:ns:searchdocument::1");
@@ -472,9 +472,9 @@ TEST_F(AttributeWriterTest, handles_update)
     fillAttribute(a1, 1, 10, 1);
     fillAttribute(a2, 1, 20, 1);
 
-    DocBuilder db([](auto& header)
-                            { header.addField("a1", DataType::T_INT)
-                                    .addField("a2", DataType::T_INT); });
+    DocBuilder db([](auto& builder, auto& header)
+                            { header.addField("a1", builder.primitiveType(DataType::T_INT))
+                                    .addField("a2", builder.primitiveType(DataType::T_INT)); });
     DocumentUpdate upd(db.get_repo(), db.get_document_type(), DocumentId("id:ns:searchdocument::1"));
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
                   .addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 5)));
@@ -506,7 +506,7 @@ TEST_F(AttributeWriterTest, handles_predicate_update)
 {
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
     allocAttributeWriter();
-    DocBuilder db([](auto& header) { header.addField("a1", DataType::T_PREDICATE); });
+    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.primitiveType(DataType::T_PREDICATE)); });
     PredicateSlimeBuilder builder;
     auto doc = db.make_document("id:ns:searchdocument::1");
     doc->setValue("a1", PredicateFieldValue(builder.true_predicate().build()));
@@ -671,7 +671,7 @@ TEST_F(AttributeWriterTest, can_write_to_tensor_attribute)
 {
     auto a1 = createTensorAttribute(*this);
     allocAttributeWriter();
-    DocBuilder builder([](auto& header) { header.addTensorField("a1", sparse_tensor); });
+    DocBuilder builder([](auto& /*builder*/, auto& header) { header.addTensorField("a1", sparse_tensor); });
     auto tensor = make_tensor(TensorSpec(sparse_tensor)
                               .add({{"x", "4"}, {"y", "5"}}, 7));
     Document::UP doc = createTensorPutDoc(builder, *tensor);
@@ -688,7 +688,7 @@ TEST_F(AttributeWriterTest, handles_tensor_assign_update)
 {
     auto a1 = createTensorAttribute(*this);
     allocAttributeWriter();
-    DocBuilder builder([](auto& header) { header.addTensorField("a1", sparse_tensor); });
+    DocBuilder builder([](auto& /*builder*/, auto& header) { header.addTensorField("a1", sparse_tensor); });
     auto tensor = make_tensor(TensorSpec(sparse_tensor)
                               .add({{"x", "6"}, {"y", "7"}}, 9));
     auto doc = createTensorPutDoc(builder, *tensor);
@@ -741,10 +741,10 @@ putAttributes(AttributeWriterTest &t, std::vector<uint32_t> expExecuteHistory)
     std::string a2_name = "a2x";
     std::string a3_name = "a3y";
 
-    DocBuilder db([&](auto& header)
-                  { header.addField(a1_name, DataType::T_INT)
-                          .addField(a2_name, DataType::T_INT)
-                          .addField(a3_name, DataType::T_INT); });
+    DocBuilder db([&](auto& builder, auto& header)
+                  { header.addField(a1_name, builder.primitiveType(DataType::T_INT))
+                          .addField(a2_name, builder.primitiveType(DataType::T_INT))
+                          .addField(a3_name, builder.primitiveType(DataType::T_INT)); });
 
     auto a1 = t.addAttribute(a1_name);
     auto a2 = t.addAttribute(a2_name);
@@ -873,7 +873,7 @@ public:
 
     TwoPhasePutTest()
         : AttributeWriterTest(),
-          builder([&](auto& header) { header.addTensorField("a1", dense_tensor); }),
+          builder([&](auto& /*bldr*/, auto& header) { header.addTensorField("a1", dense_tensor); }),
           doc_id("id:ns:searchdocument::1"),
           attr()
     {

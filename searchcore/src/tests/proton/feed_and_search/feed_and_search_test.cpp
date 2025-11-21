@@ -4,7 +4,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/searchlib/common/flush_token.h>
@@ -127,7 +127,7 @@ TEST(FeedAndSearchTest, require_that_memory_index_can_be_dumped_and_searched)
     vespalib::ThreadStackExecutor sharedExecutor(2);
     auto indexFieldInverter = vespalib::SequencedTaskExecutor::create(invert_executor, 2);
     auto indexFieldWriter = vespalib::SequencedTaskExecutor::create(write_executor, 2);
-    DocBuilder doc_builder([](auto& header) { header.addField(field_name, DataType::T_STRING); });
+    DocBuilder doc_builder([](auto& b, auto& doc) noexcept { doc.addField(field_name, b.primitiveType(DataType::T_STRING)); });
     auto schema = SchemaBuilder(doc_builder).add_all_indexes().build();
     MemoryIndex memory_index(schema, MockFieldLengthInspector(), *indexFieldInverter, *indexFieldWriter);
 

@@ -12,7 +12,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
@@ -22,11 +22,10 @@
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_populator_test");
 
-using document::config_builder::DocumenttypesConfigBuilderHelper;
-using document::config_builder::Struct;
 using vespalib::ForegroundTaskExecutor;
 using vespalib::ForegroundThreadExecutor;
 using namespace document;
+using namespace document::new_config_builder;
 using namespace proton;
 using namespace search;
 using namespace search::index;
@@ -42,11 +41,9 @@ const uint64_t CREATE_SERIAL_NUM = 8u;
 std::unique_ptr<const DocumentTypeRepo>
 makeDocTypeRepo()
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(-645763131, "searchdocument",
-                     Struct("searchdocument.header"),
-                     Struct("searchdocument.body").
-                     addField("a1", DataType::T_INT));
+    NewConfigBuilder builder;
+    auto& doc = builder.document("searchdocument", -645763131);
+    doc.addField("a1", builder.primitiveType(DataType::T_INT));
     return std::make_unique<DocumentTypeRepo>(builder.config());
 }
 

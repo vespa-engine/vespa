@@ -670,6 +670,7 @@ private:
                     dt->getId(), docT.name.c_str());
                 throw IllegalArgumentException("missing parent repo");
             }
+            dtInP.data_type_repo->repo.inherit(parentRepo->repo);
             dtInP.data_type_repo->annotations.inherit(parentRepo->annotations);
         }
     }

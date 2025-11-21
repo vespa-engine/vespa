@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -502,13 +502,10 @@ document::config::DocumenttypesConfig
 makeDocTypeRepoConfig()
 {
     const int32_t doc_type_id = 787121340;
-    document::config_builder::DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id,
-                     doc_type_name,
-                     document::config_builder::Struct(header_name),
-                     document::config_builder::Struct(body_name).
-                     addField("main", DataType::T_STRING).
-                     addField("extra", DataType::T_STRING));
+    document::new_config_builder::NewConfigBuilder builder;
+    auto& doc = builder.document(doc_type_name, doc_type_id);
+    doc.addField("main", builder.primitiveType(DataType::T_STRING))
+       .addField("extra", builder.primitiveType(DataType::T_STRING));
     return builder.config();
 }
 

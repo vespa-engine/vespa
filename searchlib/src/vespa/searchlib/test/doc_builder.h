@@ -18,7 +18,10 @@ class StructFieldValue;
 class WeightedSetFieldValue;
 }
 namespace document::config::internal { class InternalDocumenttypesType; }
-namespace document::config_builder { struct Struct; }
+namespace document::new_config_builder {
+    class NewConfigBuilder;
+    class NewDocTypeRep;
+}
 
 namespace search::test {
 
@@ -31,7 +34,7 @@ class DocBuilder {
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
     const document::DocumentType*                     _document_type;
 public:
-    using AddFieldsType = std::function<void(document::config_builder::Struct&)>;
+    using AddFieldsType = std::function<void(document::new_config_builder::NewConfigBuilder&, document::new_config_builder::NewDocTypeRep&)>;
     DocBuilder();
     explicit DocBuilder(AddFieldsType add_fields);
     ~DocBuilder();

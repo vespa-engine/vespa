@@ -17,7 +17,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/vespalib/util/rand48.h>
@@ -79,13 +79,10 @@ document::config::DocumenttypesConfig
 makeDocTypeRepoConfig()
 {
     const int32_t doc_type_id = 787121340;
-    document::config_builder::DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id,
-                     doc_type_name,
-                     document::config_builder::Struct(header_name),
-                     document::config_builder::Struct(body_name).
-                     addField(title, document::DataType::T_STRING).
-                     addField(body, document::DataType::T_STRING));
+    document::new_config_builder::NewConfigBuilder builder;
+    auto& doc = builder.document(doc_type_name, doc_type_id);
+    doc.addField(title, builder.primitiveType(document::DataType::T_STRING))
+       .addField(body, builder.primitiveType(document::DataType::T_STRING));
     return builder.config();
 }
 

@@ -3,7 +3,7 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
@@ -21,8 +21,6 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentType;
 using document::DocumentTypeRepo;
-using document::config_builder::DocumenttypesConfigBuilderHelper;
-using document::config_builder::Struct;
 using search::MatchingElements;
 using search::MatchingElementsFields;
 using search::common::ElementIds;
@@ -49,9 +47,8 @@ const std::string body_name     = doc_type_name + ".body";
 std::unique_ptr<const DocumentTypeRepo>
 make_doc_type_repo()
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, doc_type_name,
-                     Struct(header_name), Struct(body_name));
+    document::new_config_builder::NewConfigBuilder builder;
+    builder.document(doc_type_name, doc_type_id);
     return std::make_unique<const DocumentTypeRepo>(builder.config());
 }
 

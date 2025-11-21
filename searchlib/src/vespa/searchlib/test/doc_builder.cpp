@@ -9,7 +9,7 @@
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <cassert>
 
 using document::ArrayFieldValue;
@@ -29,18 +29,17 @@ namespace {
 DocumenttypesConfig
 get_document_types_config(DocBuilder::AddFieldsType add_fields)
 {
-    using namespace document::config_builder;
-    DocumenttypesConfigBuilderHelper builder;
-    Struct header("searchdocument.header");
-    add_fields(header);
-    builder.document(42, "searchdocument", header, Struct("searchdocument.body"));
+    using namespace document::new_config_builder;
+    NewConfigBuilder builder;
+    auto& doc = builder.document("searchdocument", 42);
+    add_fields(builder, doc);
     return builder.config();
 }
 
 }
 
 DocBuilder::DocBuilder()
-    : DocBuilder([](auto&) noexcept {})
+    : DocBuilder([](auto&, auto&) noexcept {})
 {
 }
 
