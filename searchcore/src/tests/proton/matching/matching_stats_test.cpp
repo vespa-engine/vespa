@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -12,6 +13,9 @@ TEST(MatchingStatsTest, requireThatDocCountsAddUp)
     EXPECT_EQ(0u, stats.docsMatched());
     EXPECT_EQ(0u, stats.docsRanked());
     EXPECT_EQ(0u, stats.docsReRanked());
+    EXPECT_EQ(0u, stats.exact_nns_distances_computed());
+    EXPECT_EQ(0u, stats.approximate_nns_distances_computed());
+    EXPECT_EQ(0u, stats.approximate_nns_nodes_visited());
     EXPECT_EQ(0u, stats.queries());
     EXPECT_EQ(0u, stats.limited_queries());
     {
@@ -20,14 +24,25 @@ TEST(MatchingStatsTest, requireThatDocCountsAddUp)
         EXPECT_EQ(&rhs.docsMatched(1000), &rhs);
         EXPECT_EQ(&rhs.docsRanked(100), &rhs);
         EXPECT_EQ(&rhs.docsReRanked(10), &rhs);
+        EXPECT_EQ(&rhs.exact_nns_distances_computed(42), &rhs);
+        EXPECT_EQ(&rhs.approximate_nns_distances_computed(53), &rhs);
+        EXPECT_EQ(&rhs.approximate_nns_nodes_visited(7), &rhs);
         EXPECT_EQ(&rhs.queries(2), &rhs);
         EXPECT_EQ(&rhs.limited_queries(1), &rhs);
+        search::queryeval::QueryEvalStats qe_stats;
+        qe_stats.add_to_exact_nns_distances_computed(1);
+        qe_stats.add_to_approximate_nns_distances_computed(2);
+        qe_stats.add_to_approximate_nns_nodes_visited(3);
+        EXPECT_EQ(&stats.add_queryeval_stats(qe_stats), &stats);
         EXPECT_EQ(&stats.add(rhs), &stats);
     }
     EXPECT_EQ(10000u, stats.docidSpaceCovered());
     EXPECT_EQ(1000u, stats.docsMatched());
     EXPECT_EQ(100u, stats.docsRanked());
     EXPECT_EQ(10u, stats.docsReRanked());
+    EXPECT_EQ(43u, stats.exact_nns_distances_computed());
+    EXPECT_EQ(55u, stats.approximate_nns_distances_computed());
+    EXPECT_EQ(10u, stats.approximate_nns_nodes_visited());
     EXPECT_EQ(2u, stats.queries());
     EXPECT_EQ(1u, stats.limited_queries());
     EXPECT_EQ(&stats.add(MatchingStats().docidSpaceCovered(10000).docsMatched(1000).docsRanked(100)
@@ -165,6 +180,9 @@ TEST(MatchingStatsTest, requireThatPartitionsAreAddedCorrectly)
     EXPECT_EQ(3u, subPart.docsMatched());
     EXPECT_EQ(2u, subPart.docsRanked());
     EXPECT_EQ(1u, subPart.docsReRanked());
+    EXPECT_EQ(0u, all1.exact_nns_distances_computed());
+    EXPECT_EQ(0u, all1.approximate_nns_distances_computed());
+    EXPECT_EQ(0u, all1.approximate_nns_nodes_visited());
     EXPECT_EQ(1.0, subPart.active_time_avg());
     EXPECT_EQ(0.5, subPart.wait_time_avg());
     EXPECT_EQ(1u, subPart.active_time_count());
@@ -179,6 +197,9 @@ TEST(MatchingStatsTest, requireThatPartitionsAreAddedCorrectly)
     EXPECT_EQ(3u, all1.docsMatched());
     EXPECT_EQ(2u, all1.docsRanked());
     EXPECT_EQ(1u, all1.docsReRanked());
+    EXPECT_EQ(0u, all1.exact_nns_distances_computed());
+    EXPECT_EQ(0u, all1.approximate_nns_distances_computed());
+    EXPECT_EQ(0u, all1.approximate_nns_nodes_visited());
     EXPECT_EQ(1u, all1.getNumPartitions());
     EXPECT_EQ(1u, all1.softDoomed());
     EXPECT_EQ(1000ns, all1.doomOvertime());
@@ -207,6 +228,9 @@ TEST(MatchingStatsTest, requireThatPartitionsAreAddedCorrectly)
     EXPECT_EQ(6u, all1.docsMatched());
     EXPECT_EQ(4u, all1.docsRanked());
     EXPECT_EQ(2u, all1.docsReRanked());
+    EXPECT_EQ(0u, all1.exact_nns_distances_computed());
+    EXPECT_EQ(0u, all1.approximate_nns_distances_computed());
+    EXPECT_EQ(0u, all1.approximate_nns_nodes_visited());
     EXPECT_EQ(2u, all1.getNumPartitions());
     EXPECT_EQ(3u, all1.getPartition(1).docsMatched());
     EXPECT_EQ(2u, all1.getPartition(1).docsRanked());
@@ -233,6 +257,9 @@ TEST(MatchingStatsTest, requireThatPartitionsAreAddedCorrectly)
     EXPECT_EQ(12u, all1.docsMatched());
     EXPECT_EQ(8u, all1.docsRanked());
     EXPECT_EQ(4u, all1.docsReRanked());
+    EXPECT_EQ(0u, all1.exact_nns_distances_computed());
+    EXPECT_EQ(0u, all1.approximate_nns_distances_computed());
+    EXPECT_EQ(0u, all1.approximate_nns_nodes_visited());
     EXPECT_EQ(2u, all1.getNumPartitions());
     EXPECT_EQ(6u, all1.getPartition(0).docsMatched());
     EXPECT_EQ(4u, all1.getPartition(0).docsRanked());

@@ -60,11 +60,13 @@ MatchingStats::merge_partition(const Partition &partition, size_t id)
     return *this;
 }
 
-void
+MatchingStats &
 MatchingStats::add_queryeval_stats(const search::queryeval::QueryEvalStats &stats) noexcept {
     _exact_nns_distances_computed += stats.exact_nns_distances_computed();
     _approximate_nns_distances_computed += stats.approximate_nns_distances_computed();
     _approximate_nns_nodes_visited +=  stats.approximate_nns_nodes_visited();
+
+    return *this;
 }
 
 MatchingStats &
