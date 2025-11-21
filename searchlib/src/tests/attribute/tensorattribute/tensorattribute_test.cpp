@@ -3,6 +3,7 @@
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
+#include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <vespa/searchlib/tensor/default_nearest_neighbor_index_factory.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
@@ -319,7 +320,9 @@ public:
                                      const vespalib::Doom& doom,
                                      double distance_threshold) const override
     {
-        (void) stats;
+        stats.count_computed_distance();
+        stats.count_visited_node();
+        stats.count_visited_node();
         (void) k;
         (void) df;
         (void) explore_k;
@@ -336,6 +339,9 @@ public:
                                                  const vespalib::Doom& doom,
                                                  double distance_threshold) const override
     {
+        stats.count_computed_distance();
+        stats.count_visited_node();
+        stats.count_visited_node();
         (void) stats;
         (void) k;
         (void) df;
@@ -1597,6 +1603,61 @@ TEST(TensorAttributeTest, NN_blueprint_do_NOT_want_global_filter_when_NOT_having
     auto bp = f.make_blueprint();
     Blueprint::GlobalFilterLimits limits;
     EXPECT_FALSE(bp->want_global_filter(limits));
+}
+
+TEST(TensorAttributeTest, NN_blueprint_collects_stats)
+{
+    NearestNeighborBlueprintFixture f;
+    std::shared_ptr<search::queryeval::QueryEvalStats> stats = std::make_shared<search::queryeval::QueryEvalStats>();
+    // Without filter (with inactive filter)
+    {
+        auto bp = f.make_blueprint(true);
+        bp->installStats(stats);
+        auto inactive_filter = GlobalFilter::create();
+        bp->set_global_filter(*inactive_filter, 0.6);
+    }
+    EXPECT_EQ(1, stats->approximate_nns_distances_computed());
+    EXPECT_EQ(2, stats->approximate_nns_nodes_visited());
+
+    // With filter active
+    {
+        auto bp = f.make_blueprint(true);
+        bp->installStats(stats);
+        auto filter = search::BitVector::create(1,11);
+        filter->setBit(1);
+        filter->setBit(3);
+        filter->setBit(5);
+        filter->setBit(7);
+        filter->setBit(9);
+        filter->invalidateCachedCount();
+        auto weak_filter = GlobalFilter::create(std::move(filter));
+        bp->set_global_filter(*weak_filter, 0.6);
+    }
+    EXPECT_EQ(2, stats->approximate_nns_distances_computed());
+    EXPECT_EQ(4, stats->approximate_nns_nodes_visited());
+
+    // Hitting fallback
+    {
+        auto bp = f.make_blueprint(true, 0.2);
+        bp->installStats(stats);
+        auto filter = search::BitVector::create(1,11);
+        filter->setBit(3);
+        filter->invalidateCachedCount();
+        auto strong_filter = GlobalFilter::create(std::move(filter));
+        bp->set_global_filter(*strong_filter, 0.6);
+    }
+    EXPECT_EQ(2, stats->approximate_nns_distances_computed());
+    EXPECT_EQ(4, stats->approximate_nns_nodes_visited());
+
+    // Using exact search in the first place
+    {
+        auto bp = f.make_blueprint(false);
+        bp->installStats(stats);
+        auto inactive_filter = GlobalFilter::create();
+        bp->set_global_filter(*inactive_filter, 0.6);
+    }
+    EXPECT_EQ(2, stats->approximate_nns_distances_computed());
+    EXPECT_EQ(4, stats->approximate_nns_nodes_visited());
 }
 
 auto test_values = ::testing::Values(1u, 2u);
