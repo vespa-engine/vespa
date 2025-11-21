@@ -6,10 +6,12 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/searchlib/queryeval/exact_nearest_neighbor_iterator.h>
 #include <vespa/searchlib/queryeval/matching_phase.h>
 #include <vespa/searchlib/queryeval/nns_index_iterator.h>
+#include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
@@ -130,7 +132,8 @@ SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std
     NearestNeighborDistanceHeap dh(2);
     dh.set_distance_threshold(threshold);
     const GlobalFilter &filter = *env._global_filter;
-    auto search = ExactNearestNeighborIterator::create(strict, tfmd,
+    auto stats = std::make_shared<QueryEvalStats>();
+    auto search = ExactNearestNeighborIterator::create(stats, strict, tfmd,
                                                        std::make_unique<DistanceCalculator>(attr, qtv),
                                                        dh, filter,
                                                        env._matching_phase != MatchingPhase::FIRST_PHASE);
@@ -276,7 +279,8 @@ std::vector<feature_t> get_rawscores(Fixture &env, const Value &qtv) {
     auto dff = search::tensor::make_distance_function_factory(DistanceMetric::Euclidean, qtv.cells().type);
     NearestNeighborDistanceHeap dh(2);
     auto dummy_filter = GlobalFilter::create();
-    auto search = ExactNearestNeighborIterator::create(strict, tfmd,
+    auto stats= std::make_shared<QueryEvalStats>();
+    auto search = ExactNearestNeighborIterator::create(stats, strict, tfmd,
                                                        std::make_unique<DistanceCalculator>(attr, qtv),
                                                        dh, *dummy_filter, false);
     uint32_t limit = attr.getNumDocs();

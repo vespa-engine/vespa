@@ -4,6 +4,7 @@
 #include "emptysearch.h"
 #include "exact_nearest_neighbor_iterator.h"
 #include "nns_index_iterator.h"
+#include "queryeval_stats.h"
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
@@ -75,14 +76,20 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _global_filter_hit_ratio(),
       _doom(doom),
       _matching_phase(MatchingPhase::FIRST_PHASE),
-      _nni_stats()
+      _nni_stats(),
+      _stats()
 {
     _distance_heap.set_distance_threshold(_hnsw_params.distance_threshold);
     uint32_t est_hits = _attr_tensor.get_num_docs();
     setEstimate(HitEstimate(est_hits, false));
 }
 
-NearestNeighborBlueprint::~NearestNeighborBlueprint() = default;
+NearestNeighborBlueprint::~NearestNeighborBlueprint() {
+    if (_stats) {
+        _stats->add_to_approximate_nns_distances_computed(_nni_stats.distances_computed());
+        _stats->add_to_approximate_nns_nodes_visited(_nni_stats.nodes_visited());
+    }
+}
 
 bool
 NearestNeighborBlueprint::want_global_filter(GlobalFilterLimits& limits) const
@@ -162,10 +169,14 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
     default:
         ;
     }
-    return ExactNearestNeighborIterator::create(strict(), tfmd,
+    return ExactNearestNeighborIterator::create(_stats, strict(), tfmd,
                                                 std::make_unique<search::tensor::DistanceCalculator>(_attr_tensor, _query_tensor),
                                                 _distance_heap, *_global_filter,
                                                 _matching_phase != MatchingPhase::FIRST_PHASE);
+}
+
+void NearestNeighborBlueprint::installStats(const std::shared_ptr<QueryEvalStats> &stats) {
+    _stats= stats;
 }
 
 void
