@@ -43,6 +43,7 @@ class OrBlueprint;
 class EmptyBlueprint;
 class AlwaysTrueBlueprint;
 class QueryEvalStats;
+class NearestNeighborBlueprint;
 
 /**
  * A Blueprint is an intermediate representation of a search. More
@@ -444,9 +445,6 @@ public:
     static SearchIteratorUP create_first_child_filter(std::span<const UP> children, FilterConstraint constraint);
     static SearchIteratorUP create_default_filter(FilterConstraint constraint);
 
-    // For collecting statistics from within the blueprints
-    virtual void installStats(const std::shared_ptr<QueryEvalStats> &stats) = 0;
-
     // for debug dumping
     std::string asString() const;
     vespalib::slime::Cursor & asSlime(const vespalib::slime::Inserter & cursor) const;
@@ -462,6 +460,7 @@ public:
     bool isAnd() const noexcept { return const_cast<Blueprint *>(this)->asAnd() != nullptr; }
     virtual AndNotBlueprint * asAndNot() noexcept { return nullptr; }
     bool isAndNot() const noexcept { return const_cast<Blueprint *>(this)->asAndNot() != nullptr; }
+    virtual NearestNeighborBlueprint * asNearestNeighbor() noexcept { return nullptr; }
     virtual OrBlueprint * asOr() noexcept { return nullptr; }
     virtual SourceBlenderBlueprint * asSourceBlender() noexcept { return nullptr; }
     virtual WeakAndBlueprint * asWeakAnd() noexcept { return nullptr; }
@@ -559,10 +558,6 @@ public:
     virtual SearchIteratorUP
     createIntermediateSearch(MultiSearch::Children subSearches, fef::MatchData &md) const = 0;
 
-    // Hand a QueryEvalStats object through the blueprint tree.
-    // Blueprints can then write statistics to this object and pass it on to search iterators.
-    void installStats(const std::shared_ptr<QueryEvalStats> &stats) override;
-
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;
@@ -621,8 +616,6 @@ public:
     virtual bool getRange(search::NumericRangeSpec & range_spec) const;
     virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, fef::MatchData &global_md) const;
     virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const = 0;
-
-    void installStats(const std::shared_ptr<QueryEvalStats> &/*stats*/) override {}
 };
 
 // for leaf nodes representing a single term
