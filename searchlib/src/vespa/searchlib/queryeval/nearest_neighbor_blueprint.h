@@ -54,6 +54,7 @@ private:
     std::optional<double> _global_filter_hit_ratio;
     const vespalib::Doom& _doom;
     MatchingPhase _matching_phase;
+    search::tensor::NearestNeighborIndex::Stats _nni_stats;
 
     static double convert_distance_threshold(double distance_threshold,
                                              const search::tensor::DistanceCalculator& distance_calc);

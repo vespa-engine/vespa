@@ -74,7 +74,8 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _global_filter_hits(),
       _global_filter_hit_ratio(),
       _doom(doom),
-      _matching_phase(MatchingPhase::FIRST_PHASE)
+      _matching_phase(MatchingPhase::FIRST_PHASE),
+      _nni_stats()
 {
     _distance_heap.set_distance_threshold(_hnsw_params.distance_threshold);
     uint32_t est_hits = _attr_tensor.get_num_docs();
@@ -134,11 +135,11 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
     uint32_t k = _adjusted_target_hits;
     const auto &df = _distance_calc->function();
     if (_global_filter->is_active()) {
-        _found_hits = nns_index->find_top_k_with_filter(k, df, *_global_filter, _global_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit, _hnsw_params.filter_first_exploration,
+        _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *_global_filter, _global_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit, _hnsw_params.filter_first_exploration,
                                                         k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else {
-        _found_hits = nns_index->find_top_k(k, df, k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _doom, _hnsw_params.distance_threshold);
+        _found_hits = nns_index->find_top_k(_nni_stats, k, df, k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K;
     }
 }
