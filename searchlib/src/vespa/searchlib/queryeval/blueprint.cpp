@@ -702,14 +702,6 @@ IntermediateBlueprint::insertChild(size_t n, Blueprint::UP child)
     return *this;
 }
 
-
-void
-IntermediateBlueprint::installStats(const std::shared_ptr<QueryEvalStats> &stats) {
-    for (const auto &child : _children) {
-        child->installStats(stats);
-    }
-}
-
 void
 IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
