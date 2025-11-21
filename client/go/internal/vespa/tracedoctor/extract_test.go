@@ -232,3 +232,24 @@ func TestStripNameSpacesKeepSuffix(t *testing.T) {
 		assert.Equal(t, tt.expected, stripNameSpacesKeepSuffix(tt.input))
 	}
 }
+
+func TestIsObjectArrayAndIteration(t *testing.T) {
+	objectArray := slime.MakeObject(func(obj slime.Value) {
+		obj.Set("[0]", slime.String("a"))
+		obj.Set("[1]", slime.String("b"))
+	})
+	assert.True(t, isObjectArray(objectArray))
+	var result []string
+	eachObjectArrayElem(objectArray, func(v slime.Value) {
+		result = append(result, v.AsString())
+	})
+	assert.Equal(t, []string{"a", "b"}, result)
+
+	regularObj := slime.MakeObject(func(obj slime.Value) {
+		obj.Set("name", slime.String("test"))
+	})
+	assert.False(t, isObjectArray(regularObj))
+	eachObjectArrayElem(regularObj, func(v slime.Value) {
+		t.Fatal("should not be called")
+	})
+}
