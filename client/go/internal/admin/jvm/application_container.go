@@ -29,6 +29,11 @@ type ApplicationContainer struct {
 	containerBase
 }
 
+type DetectJavaVersion struct {
+	output string
+	major  int
+}
+
 func md5Hex(text string) string {
 	hasher := md5.New()
 	io.WriteString(hasher, text)
@@ -187,9 +192,10 @@ func (c *ApplicationContainer) exportExtraEnv(ps *prog.Spec) {
 // - JDK 17/18: --add-modules=jdk.incubator.foreign
 // - JDK 19-21: --enable-preview and --enable-native-access=ALL-UNNAMED
 func (a *ApplicationContainer) addJdkVersionSpecificArgs() {
-	major := detectJavaMajorVersion()
+	javaVersion := detectJavaMajorVersion()
+	major := javaVersion.major
 	if major == 0 {
-		trace.Warning("Could not detect Java version; skipping version-specific JVM args")
+		trace.Warning("Could not detect Java version; skipping version-specific JVM args. Output: " + javaVersion.output)
 		return
 	}
 	switch {
@@ -206,7 +212,7 @@ func (a *ApplicationContainer) addJdkVersionSpecificArgs() {
 }
 
 // Returns 0 on failure.
-func detectJavaMajorVersion() int {
+func detectJavaMajorVersion() DetectJavaVersion {
 	java := "java"
 	if home := os.Getenv("JAVA_HOME"); home != "" {
 		candidate := filepath.Join(home, "bin", "java")
@@ -221,15 +227,19 @@ func detectJavaMajorVersion() int {
 	cmd.Stderr = &errorBuffer
 	if err := cmd.Run(); err != nil {
 		trace.Trace("java -version failed:", err)
-		return 0
+		return DetectJavaVersion{output: out.String(), major: 0}
 	}
 	s := out.String()
 	if s == "" {
 		s = errorBuffer.String()
 	}
+	return DetectJavaVersion{output: s, major: parseJavaVersion(s)}
+}
+
+func parseJavaVersion(versionString string) int {
 	// Look for a quoted version like "17.0.9"
 	re := regexp.MustCompile(`\"(\d+)(?:\.(\d+))?`)
-	m := re.FindStringSubmatch(s)
+	m := re.FindStringSubmatch(versionString)
 	if len(m) < 2 {
 		return 0
 	}
