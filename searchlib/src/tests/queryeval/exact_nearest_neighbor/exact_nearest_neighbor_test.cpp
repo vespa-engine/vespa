@@ -144,6 +144,31 @@ SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std
     }
 }
 
+template <bool strict>
+std::shared_ptr<QueryEvalStats> get_search_stats(Fixture &env, const Value &qtv, double threshold = std::numeric_limits<double>::max()) {
+    auto md = MatchData::makeTestInstance(2, 2);
+    auto &tfmd = *(md->resolveTermField(0));
+    auto &attr = *(env._attr);
+
+    auto dff = search::tensor::make_distance_function_factory(DistanceMetric::Euclidean, qtv.cells().type);
+    auto df = dff->for_query_vector(qtv.cells());
+    threshold = df->convert_threshold(threshold);
+    NearestNeighborDistanceHeap dh(2);
+    dh.set_distance_threshold(threshold);
+    const GlobalFilter &filter = *env._global_filter;
+    std::shared_ptr<QueryEvalStats> stats = std::make_shared<QueryEvalStats>();
+    auto search = ExactNearestNeighborIterator::create(stats, strict, tfmd,
+                                                       std::make_unique<DistanceCalculator>(attr, qtv),
+                                                       dh, filter,
+                                                       env._matching_phase != MatchingPhase::FIRST_PHASE);
+    if (strict) {
+        SimpleResult().searchStrict(*search, attr.getNumDocs());
+    } else {
+        SimpleResult().search(*search, attr.getNumDocs());
+    }
+    return stats;
+}
+
 void
 verify_iterator_returns_expected_results(const std::string& attribute_tensor_type_spec,
                                          const std::string& query_tensor_type_spec)
@@ -271,6 +296,39 @@ TEST_P(ExactNearestNeighborIteratorParameterizedTest, require_that_iterator_retu
     verify_iterator_returns_filtered_results(param.attribute_tensor_type_spec, param.query_tensor_type_spec);
 }
 
+
+void
+verify_iterator_collects_statistics(const std::string& attribute_tensor_type_spec,
+                                    const std::string& query_tensor_type_spec)
+{
+    Fixture fixture(attribute_tensor_type_spec);
+    fixture.ensureSpace(6);
+    fixture.setTensor(1, 3.0, 4.0);
+    fixture.setTensor(2, 6.0, 8.0);
+    fixture.setTensor(3, 5.0, 12.0);
+    fixture.setTensor(4, 4.0, 3.0);
+    fixture.setTensor(5, 8.0, 6.0);
+    fixture.setTensor(6, 4.0, 3.0);
+
+    // Without filtering, the distance to every other vector will be computed
+    auto nullTensor = createTensor(query_tensor_type_spec, 0.0, 0.0);
+    auto stats = get_search_stats<true>(fixture, *nullTensor);
+    EXPECT_EQ(stats->exact_nns_distances_computed(), 6);
+    stats = get_search_stats<false>(fixture, *nullTensor);
+    EXPECT_EQ(stats->exact_nns_distances_computed(), 6);
+
+    // With filtering, only the distance to the documents passing the filter will be computed
+    fixture.setFilter({1,3,4});
+    stats = get_search_stats<true>(fixture, *nullTensor);
+    EXPECT_EQ(stats->exact_nns_distances_computed(), 3);
+    stats = get_search_stats<false>(fixture, *nullTensor);
+    EXPECT_EQ(stats->exact_nns_distances_computed(), 3);
+}
+
+TEST_P(ExactNearestNeighborIteratorParameterizedTest, require_that_iterator_collects_statistics) {
+    auto param = GetParam();
+    verify_iterator_collects_statistics(param.attribute_tensor_type_spec, param.query_tensor_type_spec);
+}
 template <bool strict>
 std::vector<feature_t> get_rawscores(Fixture &env, const Value &qtv) {
     auto md = MatchData::makeTestInstance(2, 2);
