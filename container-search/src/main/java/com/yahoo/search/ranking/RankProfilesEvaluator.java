@@ -67,4 +67,8 @@ public class RankProfilesEvaluator extends AbstractComponent {
         }
     }
 
+    @Override
+    public void deconstruct() {
+        evaluator.deconstruct();
+    }
 }
