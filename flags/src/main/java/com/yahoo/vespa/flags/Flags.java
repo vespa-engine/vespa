@@ -440,6 +440,14 @@ public class Flags {
             APPLICATION, INSTANCE_ID, HOSTNAME
     );
 
+    public static final UnboundBooleanFlag ADJUST_JVM_HEAP_FOR_CC_BASED_ON_CONTENT_NODE_COUNT = defineFeatureFlag(
+            "adjust-jvm-heap-for-cc-based-on-content-node-count", true,
+            List.of("hmusum"), "2025-11-04", "2026-02-04",
+            "Whether to increase max JVM heap size based on total number of content nodes in application",
+            "Takes effect at next restart after next deployment",
+            APPLICATION, INSTANCE_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

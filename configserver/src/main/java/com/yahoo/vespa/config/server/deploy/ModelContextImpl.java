@@ -28,6 +28,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.SharedHosts;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
@@ -211,7 +212,8 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useTriton;
         private final int searchCoreMaxOutstandingMoveOps;
         private final boolean useNewPrepareForRestart;
-        private double docprocHandlerThreadpool;
+        private final double docprocHandlerThreadpool;
+        private final boolean adjustCCMaxHeap;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.useNonPublicEndpointForTest = Flags.USE_NON_PUBLIC_ENDPOINT_FOR_TEST.bindTo(source).with(appId).with(version).value();
@@ -260,6 +262,7 @@ public class ModelContextImpl implements ModelContext {
             this.searchCoreMaxOutstandingMoveOps = Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS.bindTo(source).with(appId).with(version).value();
             this.useNewPrepareForRestart = Flags.USE_NEW_PREPARE_FOR_RESTART_METHOD.bindTo(source).with(appId).with(version).value();
             this.docprocHandlerThreadpool = Flags.DOCPROC_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
+            this.adjustCCMaxHeap = Flags.ADJUST_JVM_HEAP_FOR_CC_BASED_ON_CONTENT_NODE_COUNT.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
@@ -309,6 +312,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
         @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
         @Override public double docprocHandlerThreadpool() { return docprocHandlerThreadpool; }
+        @Override public boolean adjustCCMaxHeap() { return adjustCCMaxHeap; }
     }
 
     public static class Properties implements ModelContext.Properties {
@@ -343,6 +347,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> requestPrefixForLoggingContent;
         private final List<String> jdiscHttpComplianceViolations;
         private final StringFlag mallocImplFlag;
+        private final BooleanFlag adjustCCMaxHeap;
 
         public Properties(ApplicationId applicationId,
                           Version modelVersion,
@@ -394,6 +399,8 @@ public class ModelContextImpl implements ModelContext {
             this.mallocImplFlag = Flags.VESPA_USE_MALLOC_IMPL.bindTo(flagSource)
                     .with(applicationId)
                     .withVersion(Optional.of(modelVersion));
+            this.adjustCCMaxHeap = Flags.ADJUST_JVM_HEAP_FOR_CC_BASED_ON_CONTENT_NODE_COUNT.bindTo(flagSource)
+                                                                                           .with(applicationId);
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
