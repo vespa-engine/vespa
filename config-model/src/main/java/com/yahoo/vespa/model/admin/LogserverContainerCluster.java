@@ -26,7 +26,8 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
 
         addDefaultHandlersWithVip();
         addLogHandler();
-        setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin)));
+        setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin),
+                                                                 Optional.of(ClusterSpec.Id.from(name))));
         if (isHostedVespa())
             addAccessLog(getName());
     }

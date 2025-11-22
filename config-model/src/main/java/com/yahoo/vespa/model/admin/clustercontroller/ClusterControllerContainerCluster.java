@@ -30,7 +30,8 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
         super(parent, subId, name, deployState, false);
         addDefaultHandlersWithVip();
         this.reindexingContext = createReindexingContext(deployState);
-        setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin)));
+        setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin),
+                                                                 Optional.of(ClusterSpec.Id.from(name))));
         if (isHostedVespa())
             addAccessLog("controller");
     }
