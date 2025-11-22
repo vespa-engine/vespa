@@ -2503,6 +2503,71 @@ public class ModelProvisioningTest {
         assertEquals((long) ((128 - memoryOverheadGb) * GiB * 0.08), cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
     }
 
+    @Test
+    void testVaryingHeapSizeBasedOnNumberOfContentNodes() {
+        var adjustHeap = false;
+        var hosted = false;
+        assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(60, 3), adjustHeap, hosted, 128);
+        adjustHeap = true;
+        assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(60, 3), adjustHeap, hosted, 128);
+
+        hosted = true;
+        assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 192);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(60, 3), adjustHeap, hosted, 244);
+        adjustHeap = false;
+        assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 192);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(60, 3), adjustHeap, hosted, 192);
+    }
+
+    private void assertMaxHeapSizeForClusterController(String services, boolean adjustHeap,
+                                                       boolean hostedVespa, int expected) {
+        var tester = new VespaModelTester();
+        tester.setHosted(hostedVespa);
+        var properties = new TestProperties().adjustCCMaxHeap(adjustHeap);
+        tester.setModelProperties(properties);
+        tester.addHosts(new NodeResources(1, 3, 10, 1), 4);
+        tester.addHosts(new NodeResources(1, 128, 100, 0.3), 99);
+        var deployStatebuilder = deployStateWithClusterEndpoints("foo.indexing", "bar.indexing");
+        var model = tester.createModel(Zone.defaultZone(), services, true, false, false,
+                                       NodeResources.unspecified(), 0, Optional.empty(),
+                                       deployStatebuilder);
+
+        var configId = hostedVespa
+                ? "admin/standalone/cluster-controllers/0"
+                : "admin/cluster-controllers/0/components/clustercontroller-bar-configurer";
+        QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
+        model.getConfig(qrBuilder, configId);
+        QrStartConfig qrStartConfig = qrBuilder.build();
+        assertEquals(expected, qrStartConfig.jvm().heapsize());
+    }
+
+    private static String multipleContentClusters(int count1, int count2) {
+        return """
+                <?xml version="1.0" encoding="utf-8" ?>
+                <services>
+                  <content version='1.0' id='foo'>
+                     <redundancy>1</redundancy>
+                     <documents>
+                       <document type="type1" mode="index"/>
+                     </documents>
+                     <nodes count="%d">
+                       <resources vcpu="1" memory="128Gb" disk="100Gb" disk-speed="any"/>
+                     </nodes>
+                   </content>
+                   <content version='1.0' id='bar'>
+                     <redundancy>1</redundancy>
+                     <documents>
+                       <document type="type1" mode="index"/>
+                     </documents>
+                     <nodes count="%d">
+                       <resources vcpu="1" memory="128Gb" disk="100Gb" disk-speed="any"/>
+                     </nodes>
+                   </content>
+                </services>""".formatted(count1, count2);
+    }
+
     private static ProtonConfig getProtonConfig(VespaModel model, String configId) {
         ProtonConfig.Builder builder = new ProtonConfig.Builder();
         model.getConfig(builder, configId);

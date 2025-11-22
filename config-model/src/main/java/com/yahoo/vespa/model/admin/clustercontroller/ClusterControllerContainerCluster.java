@@ -13,6 +13,8 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 
+import static java.util.logging.Level.INFO;
+
 /**
  * Container cluster for cluster-controller containers.
  *
@@ -25,6 +27,9 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
 
     private final ReindexingContext reindexingContext;
 
+    private int totalNumberOfContentNodes = 0;
+    private final boolean adjustCCMaxHeap;
+
     public ClusterControllerContainerCluster(
             TreeConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState, false);
@@ -34,6 +39,7 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
                                                                  Optional.of(ClusterSpec.Id.from(name))));
         if (isHostedVespa())
             addAccessLog("controller");
+        this.adjustCCMaxHeap = deployState.featureFlags().adjustCCMaxHeap();
     }
 
     @Override
@@ -45,12 +51,31 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
     public void getConfig(QrStartConfig.Builder builder) {
         super.getConfig(builder);
 
-        if (isHostedVespa()) {
-            // In hosted Vespa we have more memory available, so we can use a larger heap
-            builder.jvm.heapsize(192);
-        } else {
-            builder.jvm.heapsize(128);
+        var adjustment = isHostedVespa ? calculateJvmHeapAdjustment() : 0;
+        // TODO: Go back to 128 MiB as base value for hosted as well after this has rolled out?
+        int baseValue = isHostedVespa ? 192 : 128;
+        builder.jvm.heapsize(baseValue + adjustment);
+    }
+
+    public void updateNodeCount(int nodes) {
+        totalNumberOfContentNodes += nodes;
+    }
+
+    private int calculateJvmHeapAdjustment() {
+        if (!adjustCCMaxHeap) return 0;
+
+        // Heuristic to set JVM heap size for cluster controller
+        // 300 nodes => need heap size of about 400 MiB, minimum heap should be 128 MiB
+        // Increase in steps to avoid changes to heap size with small changes in node count.
+        int adjustmentFactor = 52; // 52 MiB increase per step
+        var step = Math.min(4, totalNumberOfContentNodes / 50); // max 4 steps (200+ nodes), 0 steps when < 50 nodes
+        int adjustment = (step * adjustmentFactor);
+
+        if (adjustment > 0.0) {
+            log.log(INFO, "Increased cluster controller max heap size memory with " + adjustment +
+                    " MiB due to having many content nodes(" + totalNumberOfContentNodes + ")");
         }
+        return adjustment;
     }
 
     public ReindexingContext reindexingContext() { return reindexingContext; }
