@@ -8,6 +8,7 @@ import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Utf8;
@@ -152,6 +153,7 @@ public class TenantApplicationsTest {
     private static ApplicationVersions createApplicationVersions(ApplicationId id, Version version) throws IOException, SAXException {
         VespaModel model = new VespaModel(new NullConfigModelRegistry(),
                                           new DeployState.Builder().wantedNodeVespaVersion(version)
+                                                                   .properties(new TestProperties())
                                                                    .applicationPackage(FilesApplicationPackage.fromDir(new File("src/test/apps/app"), Map.of()))
                                                                    .build());
         return ApplicationVersions.from(new Application(model,

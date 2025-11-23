@@ -5,7 +5,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
@@ -177,7 +177,7 @@ public class ConfigserverClusterTest {
                 + "  </http>"
                 + "</container>";
         ContainerModel containerModel = new ConfigServerContainerModelBuilder(testOptions)
-                .build(new DeployState.Builder().build(), null, null, root, XML.getDocument(services).getDocumentElement());
+                .build(TestDeployState.create(), null, null, root, XML.getDocument(services).getDocumentElement());
 
         // Simulate the behaviour of StandaloneContainer
         List<? extends Container> containers = containerModel.getCluster().getContainers();

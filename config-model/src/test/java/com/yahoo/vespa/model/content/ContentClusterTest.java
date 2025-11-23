@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
@@ -165,10 +166,7 @@ public class ContentClusterTest extends ContentBaseTest {
                 messages.add(message);
             }
         };
-        var deployState = new DeployState.Builder()
-                .applicationPackage(new MockApplicationPackage.Builder().withServices(services).build())
-                .deployLogger(logger)
-                .build();
+        var deployState = TestDeployState.create(logger, new MockApplicationPackage.Builder().withServices(services).build());
         new TestDriver().buildModel(deployState);
         assertEquals(1, messages.size());
         assertEquals("In cluster 'storage': min-node-ratio-per-group should be set to 1 when there are 3 or more groups (3)" +
@@ -731,7 +729,7 @@ public class ContentClusterTest extends ContentBaseTest {
         assertDistributionBitsInConfig(root.getConfigModels(Content.class).get(0).getCluster(), 8);
 
         // Build model and supply previous model that was a model built with 5 nodes
-        var deployState = new DeployState.Builder().applicationPackage(appTwoNodes).previousModel(modelForAppWithFiveNodes).build();
+        var deployState = TestDeployState.createBuilder().applicationPackage(appTwoNodes).previousModel(modelForAppWithFiveNodes).build();
         root = new TestDriver().buildModel(deployState);
         // But reducing number of nodes for a running system should not change distribution bits (should still be 16 bits)
         assertDistributionBitsInConfig(root.getConfigModels(Content.class).get(0).getCluster(), 16);

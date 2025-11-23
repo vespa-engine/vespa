@@ -11,6 +11,7 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
@@ -522,7 +523,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .withHosts(hostsXml)
                 .withServices(servicesXml)
                 .build();
-        VespaModel model = new VespaModel(applicationPackage);
+        VespaModel model = new VespaModel(TestDeployState.create(applicationPackage));
         assertEquals(1, model.hostSystem().getHosts().size());
     }
 

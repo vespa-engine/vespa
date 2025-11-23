@@ -8,6 +8,7 @@ import ai.vespa.models.evaluation.ModelsEvaluator;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.NodeResources;
@@ -70,7 +71,7 @@ public class StatelessOnnxEvaluationTest {
         Path appDir = Path.fromString("src/test/cfg/application/onnx");
         Path storedAppDir = appDir.append("copy");
         try {
-            ImportedModelTester tester = new ImportedModelTester("onnx_rt", appDir, new DeployState.Builder());
+            ImportedModelTester tester = new ImportedModelTester("onnx_rt", appDir, TestDeployState.createBuilder());
             assertModelEvaluation(tester.createVespaModel(), appDir, false);
 
             // At this point the expression is stored - copy application to another location which does not have a models dir

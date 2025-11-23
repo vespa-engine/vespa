@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
@@ -69,7 +70,7 @@ public class RestartOnDeployForLocalLLMValidatorTest {
     }
 
     private static DeployState.Builder deployStateBuilder() {
-        return new DeployState.Builder().properties(new TestProperties());
+        return TestDeployState.createBuilder();
     }
 
     private static void assertStartsWith(String expected, List<ConfigChangeAction> result) {

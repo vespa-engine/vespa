@@ -5,6 +5,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.AthenzDomain;
@@ -411,7 +412,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         applicationPackage.getFile(Path.fromString("security")).createDirectory();
         applicationPackage.getFile(Path.fromString("security/clients.pem")).writeFile(new StringReader("I am a very nice certificate"));
 
-        var deployState = DeployState.createTestState(applicationPackage);
+        var deployState = TestDeployState.create(applicationPackage);
 
         Element clusterElem = DomBuilderTest.parse("<container version='1.0' />");
 

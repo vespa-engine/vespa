@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.SchemaValidators;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.VespaModel;
 import org.xml.sax.SAXException;
@@ -79,7 +80,7 @@ public class TestDriver {
      * @return a producer root capable of answering getConfig requests.
      */
     public TestRoot buildModel(ApplicationPackage applicationPackage) {
-        return buildModel(new DeployState.Builder().applicationPackage(applicationPackage).build());
+        return buildModel(new DeployState.Builder().properties(new TestProperties()).applicationPackage(applicationPackage).build());
     }
 
     /**
