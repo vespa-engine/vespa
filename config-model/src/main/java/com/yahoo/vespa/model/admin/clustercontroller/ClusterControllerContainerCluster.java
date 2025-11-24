@@ -51,14 +51,18 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
     public void getConfig(QrStartConfig.Builder builder) {
         super.getConfig(builder);
 
-        var adjustment = isHostedVespa ? calculateJvmHeapAdjustment() : 0;
-        // TODO: Go back to 128 MiB as base value for hosted as well after this has rolled out?
-        int baseValue = isHostedVespa ? 192 : 128;
-        builder.jvm.heapsize(baseValue + adjustment);
+        builder.jvm.heapsize(calculateHeapSize());
     }
 
     public void updateNodeCount(int nodes) {
         totalNumberOfContentNodes += nodes;
+    }
+
+    private int calculateHeapSize() {
+        int baseValue = 128;
+        if (!isHostedVespa) return baseValue;
+
+        return Math.min(baseValue + calculateJvmHeapAdjustment(), 400);
     }
 
     private int calculateJvmHeapAdjustment() {
@@ -67,9 +71,9 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
         // Heuristic to set JVM heap size for cluster controller
         // 300 nodes => need heap size of about 400 MiB, minimum heap should be 128 MiB
         // Increase in steps to avoid changes to heap size with small changes in node count.
-        int adjustmentFactor = 52; // 52 MiB increase per step
-        var step = Math.min(4, totalNumberOfContentNodes / 50); // max 4 steps (200+ nodes), 0 steps when < 50 nodes
-        int adjustment = (step * adjustmentFactor);
+        double adjustmentFactor = 0.75; // 0.75 MiB per node
+        var step = totalNumberOfContentNodes / 50;
+        int adjustment = (int) (step * adjustmentFactor * 50);
 
         if (adjustment > 0.0) {
             log.log(INFO, "Increased cluster controller max heap size memory with " + adjustment +
