@@ -40,7 +40,7 @@ public abstract class Node {
 
     /** Constructs the instance represented by this node, if not already done. */
     public void constructInstance() {
-        if ( ! instance.isPresent())
+        if (instance.isEmpty())
             instance = Optional.of(newInstance());
     }
 
@@ -50,8 +50,7 @@ public abstract class Node {
      */
     public Object component() {
         constructInstance();
-        if (instance.get() instanceof Provider) {
-            Provider<?> provider = (Provider<?>) instance.get();
+        if (instance.get() instanceof Provider<?> provider) {
             return provider.get();
         } else {
             return instance.get();

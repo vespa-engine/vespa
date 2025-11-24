@@ -37,7 +37,7 @@ import java.util.Set;
  * A search-time document attribute (per-document in-memory value).
  * This belongs to the field defining the attribute.
  *
- * @author  bratseth
+ * @author bratseth
  */
 public final class Attribute implements Cloneable, Serializable {
 
@@ -174,22 +174,16 @@ public final class Attribute implements Cloneable, Serializable {
     }
 
     /**
-     * <p>Returns whether this attribute should be included in the "attributeprefetch" summary
+     * Returns whether this attribute should be included in the "attributeprefetch" summary
      * which is returned to the Qrs by prefetchAttributes, used by blending, uniquing etc.
      *
-     * <p>Single value attributes are prefetched by default if summary is true.
-     * Multi value attributes are not.</p>
+     * Single value attributes are prefetched by default if summary is true.
+     * Multi value attributes are not.
      */
     public boolean isPrefetch() {
-        if (prefetch!=null) return prefetch;
-
-        if (tensorType.isPresent()) {
-            return false;
-        }
-        if (CollectionType.SINGLE.equals(collectionType)) {
-            return true;
-        }
-
+        if (prefetch != null) return prefetch;
+        if (tensorType.isPresent()) return false;
+        if (CollectionType.SINGLE.equals(collectionType)) return true;
         return false;
     }
 
@@ -234,8 +228,8 @@ public final class Attribute implements Cloneable, Serializable {
     public void setEnableOnlyBitVector(boolean enableOnlyBitVector) { this.enableOnlyBitVector = enableOnlyBitVector; }
     public void setFastRank(boolean value) {
         Supplier<IllegalArgumentException> badGen = () ->
-                new IllegalArgumentException("The " + toString() + " does not support 'fast-rank'. " +
-                        "Only supported for tensor types with at least one mapped dimension");
+                new IllegalArgumentException(this + " does not support 'fast-rank'. " +
+                                             "Only supported for tensor types with at least one mapped dimension");
         var tt = tensorType.orElseThrow(badGen);
         for (var dim : tt.dimensions()) {
             if (dim.isMapped()) {
@@ -270,7 +264,7 @@ public final class Attribute implements Cloneable, Serializable {
 
     private static void failDataType(String schemaName, String fieldName, String dataType) throws IllegalArgumentException {
         throw new IllegalArgumentException("For schema '" + schemaName + "': Field '" + fieldName + "' of type '" + dataType + "' cannot be an attribute. " +
-                "Instead specify the struct fields to be searchable as attribute");
+                                           "Instead specify the struct fields to be searchable as attribute");
     }
     public static void validateDataType(String schemaName, String fieldName, DataType fieldType) throws IllegalArgumentException {
         if (fieldType instanceof MapDataType mapType) {
