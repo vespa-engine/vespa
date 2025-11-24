@@ -238,7 +238,7 @@ public class StreamingBackend extends VespaBackend {
         query.trace(visitor.getStatistics().toString(), false, 2);
         query.getContext(true).setProperty(STREAMING_STATISTICS, stats);
 
-        DocsumPacket[] summaryPackets = new DocsumPacket [hits.size()];
+        DocsumPacket[] summaryPackets = new DocsumPacket[hits.size()];
 
         int index = 0;
         boolean skippedEarlierResult = false;
@@ -444,15 +444,11 @@ public class StreamingBackend extends VespaBackend {
      *         when things are working normally we return 0.
      */
     protected FillHitsResult fillHits(Result result, DocsumPacket[] packets, String summaryClass) {
-        // System.err.println("fill result with packets: " + packets.length);
         int skippedHits = 0;
         String lastError = null;
         int packetIndex = 0;
         for (Hit hit : iterableHits(result)) {
-            // System.err.println("fill? hit " + hit);
             if (hit instanceof FastHit fastHit && ! hit.isFilled(summaryClass)) {
-                // System.err.println("yes for " + summaryClass);
-
                 DocsumPacket docsum = packets[packetIndex];
 
                 packetIndex++;
@@ -472,7 +468,6 @@ public class StreamingBackend extends VespaBackend {
     }
 
     private String decodeSummary(String summaryClass, FastHit hit, byte[] docsumdata) {
-        // System.err.println("get db from q");
         DocumentDatabase db = getDocumentDatabase(hit.getQuery());
         hit.setField(Hit.SDDOCNAME_FIELD, db.schema().name());
         return decodeSummary(summaryClass, hit, docsumdata, db.getDocsumDefinitionSet());
