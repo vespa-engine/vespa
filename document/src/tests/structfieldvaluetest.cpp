@@ -38,7 +38,7 @@ createConfig() {
     auto& doc = builder.document("test", 42);
     doc.addField("int", builder.primitiveType(DataType::T_INT))
        .addField("long", builder.primitiveType(DataType::T_LONG))
-       .addField("content", builder.primitiveType(DataType::T_STRING));
+       .addField("content", builder.primitiveStringType());
     return builder.config();
 }
 

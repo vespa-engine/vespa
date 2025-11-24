@@ -227,7 +227,7 @@ TEST_F(AttributeWriterTest, handles_put)
                       header.addField("a1", builder.primitiveType(DataType::T_INT))
                           .addField("a2", int_array)
                           .addField("a3", builder.primitiveType(DataType::T_FLOAT))
-                          .addField("a4", builder.primitiveType(DataType::T_STRING)); });
+                          .addField("a4", builder.primitiveStringType()); });
     auto a1 = addAttribute("a1");
     auto a2 = addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
     auto a3 = addAttribute({"a3", AVConfig(AVBasicType::FLOAT)});
@@ -402,7 +402,7 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::STRING)});
     allocAttributeWriter();
 
-    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.primitiveType(DataType::T_STRING)); });
+    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.primitiveStringType()); });
     EXPECT_EQ(1u, a1->getNumDocs());
     EXPECT_EQ(0u, a1->getStatus().getLastSyncToken());
     auto doc = db.make_document("id:ns:searchdocument::1");

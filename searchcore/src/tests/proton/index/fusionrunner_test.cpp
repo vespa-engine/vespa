@@ -110,7 +110,7 @@ const string field_name = "field_name";
 const string term = "foo";
 const uint32_t disk_id[] = { 1, 2, 21, 42 };
 
-auto add_fields = [](auto& builder, auto& header) { header.addField(field_name, builder.primitiveType(document::DataType::T_STRING)); };
+auto add_fields = [](auto& builder, auto& header) { header.addField(field_name, builder.primitiveStringType()); };
 
 Schema
 getSchema()

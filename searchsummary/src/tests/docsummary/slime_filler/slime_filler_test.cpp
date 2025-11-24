@@ -143,13 +143,13 @@ get_document_types_config()
 
     // Add all fields to main document
     // NOTE: position type is NOT defined here - it will use the built-in PositionDataType
-    main_doc.addField("string_array", main_doc.createArray(builder.primitiveType(DataType::T_STRING)).ref())
-        .addField("string_wset", main_doc.createWset(builder.primitiveType(DataType::T_STRING)).ref())
-        .addField("string_map", main_doc.createMap(builder.primitiveType(DataType::T_STRING),
-                                                   builder.primitiveType(DataType::T_STRING)).ref())
+    main_doc.addField("string_array", main_doc.createArray(builder.primitiveStringType()).ref())
+        .addField("string_wset", main_doc.createWset(builder.primitiveStringType()).ref())
+        .addField("string_map", main_doc.createMap(builder.primitiveStringType(),
+                                                   builder.primitiveStringType()).ref())
         .addField("nested", nested_ref)
         .addField("nested_array", main_doc.createArray(nested_ref).ref())
-        .addField("nested_map", main_doc.createMap(builder.primitiveType(DataType::T_STRING),
+        .addField("nested_map", main_doc.createMap(builder.primitiveStringType(),
                                                    nested_ref).ref())
         .addField("ref", ref_type);
 

@@ -87,15 +87,15 @@ makeDocumentTypeRepo()
     auto& doc = builder.document("testdoc", 222);
     auto int_array = doc.createArray(builder.primitiveType(DataType::T_INT)).ref();
     auto float_array = doc.createArray(builder.primitiveType(DataType::T_FLOAT)).ref();
-    auto string_array = doc.createArray(builder.primitiveType(DataType::T_STRING)).ref();
+    auto string_array = doc.createArray(builder.primitiveStringType()).ref();
     auto int_wset = doc.createWset(builder.primitiveType(DataType::T_INT)).ref();
     auto float_wset = doc.createWset(builder.primitiveType(DataType::T_FLOAT)).ref();
-    auto string_wset = doc.createWset(builder.primitiveType(DataType::T_STRING)).ref();
+    auto string_wset = doc.createWset(builder.primitiveStringType()).ref();
     // Create self-referencing type (reference to testdoc itself)
     auto ref_type = doc.referenceType(doc.idx());
     doc.addField("int", builder.primitiveType(DataType::T_INT))
             .addField("float", builder.primitiveType(DataType::T_FLOAT))
-            .addField("string", builder.primitiveType(DataType::T_STRING))
+            .addField("string", builder.primitiveStringType())
             .addField("raw", builder.primitiveType(DataType::T_RAW))
             .addField("aint", int_array)
             .addField("afloat", float_array)

@@ -1396,7 +1396,7 @@ struct UpdateToEmptyDocumentFixture {
     std::unique_ptr<DocumentTypeRepo> make_repo() {
         NewConfigBuilder builder;
         auto& test_doc = builder.document("test", 222);
-        test_doc.addField("text", builder.primitiveType(DataType::T_STRING));
+        test_doc.addField("text", builder.primitiveStringType());
         return std::make_unique<DocumentTypeRepo>(builder.config());
     }
 

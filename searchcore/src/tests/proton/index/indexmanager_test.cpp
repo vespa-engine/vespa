@@ -87,7 +87,7 @@ const string index_dir = "test_data";
 const string field_name = "field";
 const uint32_t docid = 1;
 
-auto add_fields = [](auto& builder, auto& header) { header.addField(field_name, builder.primitiveType(document::DataType::T_STRING)); };
+auto add_fields = [](auto& builder, auto& header) { header.addField(field_name, builder.primitiveStringType()); };
 
 Schema getSchema(std::optional<bool> interleaved_features) {
     DocBuilder db(add_fields);

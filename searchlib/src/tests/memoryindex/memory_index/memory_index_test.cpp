@@ -84,7 +84,7 @@ struct MySetup : public IFieldLengthInspector {
     void add_fields(document::new_config_builder::NewConfigBuilder& builder,
                     document::new_config_builder::NewDocTypeRep& doc) const {
         for (auto& field : fields) {
-            doc.addField(field, builder.primitiveType(DataType::T_STRING));
+            doc.addField(field, builder.primitiveStringType());
         }
     }
 

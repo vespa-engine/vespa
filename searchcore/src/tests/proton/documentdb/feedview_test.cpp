@@ -441,11 +441,11 @@ struct SchemaContext
 };
 
 SchemaContext::SchemaContext() :
-    _builder([](auto &builder, auto &header) { header.addField("i1", builder.primitiveType(DataType::T_STRING))
-                                       .addField("a1", builder.primitiveType(DataType::T_STRING))
+    _builder([](auto &builder, auto &header) { header.addField("i1", builder.primitiveStringType())
+                                       .addField("a1", builder.primitiveStringType())
                                        .addField("a2", builder.primitiveType(DataType::T_PREDICATE))
                                        .addTensorField("a3", "")
-                                       .addField("s1", builder.primitiveType(DataType::T_STRING)); }),
+                                       .addField("s1", builder.primitiveStringType()); }),
     _schema(std::make_shared<Schema>(SchemaBuilder(_builder).add_indexes({"i1"}).add_attributes({"a1", "a2", "a3"}).build()))
 {
 }

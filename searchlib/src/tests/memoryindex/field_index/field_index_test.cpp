@@ -531,7 +531,7 @@ make_all_index_schema(DocBuilder::AddFieldsType add_fields)
 DocBuilder::AddFieldsType
 make_single_add_fields()
 {
-    return [](auto& builder, auto& doc) noexcept { doc.addField("f0", builder.primitiveType(DataType::T_STRING)); };
+    return [](auto& builder, auto& doc) noexcept { doc.addField("f0", builder.primitiveStringType()); };
 }
 
 template <typename FieldIndexType>
@@ -724,10 +724,10 @@ DocBuilder::AddFieldsType
 make_multi_field_add_fields()
 {
     return [](auto& builder, auto& doc) noexcept { using namespace document::new_config_builder;
-        auto string_array = doc.createArray(builder.primitiveType(DataType::T_STRING)).ref();
-        auto string_wset = doc.createWset(builder.primitiveType(DataType::T_STRING)).ref();
-        doc.addField("f0", builder.primitiveType(DataType::T_STRING))
-            .addField("f1", builder.primitiveType(DataType::T_STRING))
+        auto string_array = doc.createArray(builder.primitiveStringType()).ref();
+        auto string_wset = doc.createWset(builder.primitiveStringType()).ref();
+        doc.addField("f0", builder.primitiveStringType())
+            .addField("f1", builder.primitiveStringType())
             .addField("f2", string_array)
             .addField("f3", string_wset);
            };

@@ -5,6 +5,7 @@
 #include <vespa/document/base/field.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
+#include <vespa/document/datatype/datatype.h>
 #include <cassert>
 #include <map>
 #include <string>
@@ -261,6 +262,9 @@ public:
 
     // Get reference to primitive type (returns idx from base document)
     TypeRef primitiveType(int32_t type_id);  // DataType::T_INT, etc.
+
+    // convenience method:
+    TypeRef primitiveStringType() { return primitiveType(DataType::T_STRING); }
 
     // Get reference to built-in position type (returns idx from base document)
     TypeRef positionType();

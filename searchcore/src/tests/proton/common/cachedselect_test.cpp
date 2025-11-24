@@ -98,20 +98,20 @@ makeDocTypeRepo()
 
     // Create nested struct
     auto pair_struct = doc.createStruct("pair")
-           .addField("x", builder.primitiveType(DataType::T_STRING))
-           .addField("y", builder.primitiveType(DataType::T_STRING)).ref();
+           .addField("x", builder.primitiveStringType())
+           .addField("y", builder.primitiveStringType()).ref();
 
     // Create collection types
-    auto string_array = doc.createArray(builder.primitiveType(DataType::T_STRING)).ref();
-    auto string_wset = doc.createWset(builder.primitiveType(DataType::T_STRING)).ref();
-    auto string_string_map = doc.createMap(builder.primitiveType(DataType::T_STRING),
-                                           builder.primitiveType(DataType::T_STRING)).ref();
+    auto string_array = doc.createArray(builder.primitiveStringType()).ref();
+    auto string_wset = doc.createWset(builder.primitiveStringType()).ref();
+    auto string_string_map = doc.createMap(builder.primitiveStringType(),
+                                           builder.primitiveStringType()).ref();
     auto int_array = doc.createArray(builder.primitiveType(DataType::T_INT)).ref();
     auto int_wset = doc.createWset(builder.primitiveType(DataType::T_INT)).ref();
 
     // Add fields
-    doc.addField("ia", builder.primitiveType(DataType::T_STRING))
-       .addField("ib", builder.primitiveType(DataType::T_STRING))
+    doc.addField("ia", builder.primitiveStringType())
+       .addField("ib", builder.primitiveStringType())
        .addField("ibs", pair_struct)
        .addField("iba", string_array)
        .addField("ibw", string_wset)
@@ -126,8 +126,8 @@ makeDocTypeRepo()
 
     // Create second document type
     auto& doc2 = builder.document(type_name_2, doc_type_id + 1);
-    doc2.addField("ic", builder.primitiveType(DataType::T_STRING))
-        .addField("id", builder.primitiveType(DataType::T_STRING))
+    doc2.addField("ic", builder.primitiveStringType())
+        .addField("id", builder.primitiveStringType())
         .addField("ac", builder.primitiveType(DataType::T_INT))
         .addField("ad", builder.primitiveType(DataType::T_INT));
 

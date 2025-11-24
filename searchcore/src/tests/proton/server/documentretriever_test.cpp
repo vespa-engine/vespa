@@ -212,11 +212,11 @@ DocumenttypesConfig getRepoConfig() {
 
     auto int_array = doc.createArray(builder.primitiveType(document::DataType::T_INT)).ref();
     auto double_array = doc.createArray(builder.primitiveType(document::DataType::T_DOUBLE)).ref();
-    auto string_array = doc.createArray(builder.primitiveType(document::DataType::T_STRING)).ref();
+    auto string_array = doc.createArray(builder.primitiveStringType()).ref();
     auto float_array = doc.createArray(builder.primitiveType(document::DataType::T_FLOAT)).ref();
     auto int_wset = doc.createWset(builder.primitiveType(document::DataType::T_INT)).ref();
     auto double_wset = doc.createWset(builder.primitiveType(document::DataType::T_DOUBLE)).ref();
-    auto string_wset = doc.createWset(builder.primitiveType(document::DataType::T_STRING)).ref();
+    auto string_wset = doc.createWset(builder.primitiveStringType()).ref();
     auto float_wset = doc.createWset(builder.primitiveType(document::DataType::T_FLOAT)).ref();
     auto position_array = doc.createArray(builder.positionType()).ref();
     auto long_array = doc.createArray(builder.primitiveType(document::DataType::T_LONG)).ref();
@@ -224,10 +224,10 @@ DocumenttypesConfig getRepoConfig() {
     doc.addField(static_field, builder.primitiveType(document::DataType::T_INT))
        .addField(dyn_field_i, builder.primitiveType(document::DataType::T_INT))
        .addField(dyn_field_d, builder.primitiveType(document::DataType::T_DOUBLE))
-       .addField(dyn_field_s, builder.primitiveType(document::DataType::T_STRING))
+       .addField(dyn_field_s, builder.primitiveStringType())
        .addField(dyn_field_n, builder.primitiveType(document::DataType::T_FLOAT))
        .addField(dyn_field_nai, builder.primitiveType(document::DataType::T_INT))
-       .addField(dyn_field_nas, builder.primitiveType(document::DataType::T_STRING))
+       .addField(dyn_field_nas, builder.primitiveStringType())
        .addField(dyn_field_p, builder.primitiveType(document::DataType::T_PREDICATE))
        .addField(dyn_arr_field_i, int_array)
        .addField(dyn_arr_field_d, double_array)

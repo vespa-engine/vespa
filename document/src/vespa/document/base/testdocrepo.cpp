@@ -30,7 +30,7 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
     auto mystruct_ref = doc1.createStruct("mystruct")
             .setId(mystruct_id)
             .addField("key", builder.primitiveType(DataType::T_INT))
-            .addField("value", builder.primitiveType(DataType::T_STRING)).ref();
+            .addField("value", builder.primitiveStringType()).ref();
 
     // Create structarray (array of mystruct)
     auto structarray_ref = doc1.createArray(mystruct_ref).ref();
@@ -39,22 +39,22 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
     doc1.addField("headerval", builder.primitiveType(DataType::T_INT))
         .addField("headerlongval", builder.primitiveType(DataType::T_LONG))
         .addField("hfloatval", builder.primitiveType(DataType::T_FLOAT))
-        .addField("hstringval", builder.primitiveType(DataType::T_STRING))
+        .addField("hstringval", builder.primitiveStringType())
         .addField("mystruct", mystruct_ref)
-        .addField("tags", doc1.createArray(builder.primitiveType(DataType::T_STRING)).ref())
+        .addField("tags", doc1.createArray(builder.primitiveStringType()).ref())
         .addField("boolfield", builder.primitiveType(DataType::T_BOOL))
-        .addField("stringweightedset", doc1.createWset(builder.primitiveType(DataType::T_STRING)).ref())
+        .addField("stringweightedset", doc1.createWset(builder.primitiveStringType()).ref())
         .addField("stringweightedset2", builder.primitiveType(DataType::T_TAG))
         .addField("byteweightedset", doc1.createWset(builder.primitiveType(DataType::T_BYTE)).ref())
         .addField("mymap", doc1.createMap(builder.primitiveType(DataType::T_INT),
-                                          builder.primitiveType(DataType::T_STRING)).ref())
-        .addField("structarrmap", doc1.createMap(builder.primitiveType(DataType::T_STRING),
+                                          builder.primitiveStringType()).ref())
+        .addField("structarrmap", doc1.createMap(builder.primitiveStringType(),
                                                  structarray_ref).ref())
-        .addField("title", builder.primitiveType(DataType::T_STRING))
+        .addField("title", builder.primitiveStringType())
         .addField("byteval", builder.primitiveType(DataType::T_BYTE));
 
     // Add all fields from body
-    doc1.addField("content", builder.primitiveType(DataType::T_STRING))
+    doc1.addField("content", builder.primitiveStringType())
         .addField("rawarray", doc1.createArray(builder.primitiveType(DataType::T_RAW)).ref())
         .addField("structarray", structarray_ref)
         .addTensorField("sparse_tensor", "tensor(x{})")

@@ -2,7 +2,6 @@
 
 #include "newconfigbuilder.h"
 #include <vespa/document/datatype/arraydatatype.h>
-#include <vespa/document/datatype/datatype.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/datatype/structdatatype.h>

@@ -29,7 +29,7 @@ auto add_all_fields = [](auto& builder, auto& doc) noexcept
                               .addField("bool", builder.primitiveType(DataType::T_BOOL))
                               .addField("float", builder.primitiveType(DataType::T_FLOAT))
                               .addField("double", builder.primitiveType(DataType::T_DOUBLE))
-                              .addField("string", builder.primitiveType(DataType::T_STRING))
+                              .addField("string", builder.primitiveStringType())
                               .addField("url", builder.primitiveType(DataType::T_URI))
                               .addTensorField("tensor", "tensor(x{},y{})")
                               .addField("int32_array", int_array)

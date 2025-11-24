@@ -81,8 +81,8 @@ makeDocTypeRepoConfig()
     const int32_t doc_type_id = 787121340;
     document::new_config_builder::NewConfigBuilder builder;
     auto& doc = builder.document(doc_type_name, doc_type_id);
-    doc.addField(title, builder.primitiveType(document::DataType::T_STRING))
-       .addField(body, builder.primitiveType(document::DataType::T_STRING));
+    doc.addField(title, builder.primitiveStringType())
+       .addField(body, builder.primitiveStringType());
     return builder.config();
 }
 
