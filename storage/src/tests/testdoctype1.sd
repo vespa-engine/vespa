@@ -1,0 +1,5 @@
+schema testdoctype1 {
+    document testdoctype1 {
+        field content type string {}
+    }
+}

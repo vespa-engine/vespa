@@ -1,0 +1,58 @@
+schema types_search inherits types {
+
+    struct mystruct {
+      field bytearr type array<byte>{}
+      field mymap type map<string, string>{}
+      field title type string {}
+      field structfield type string {}
+    }
+
+  document types_search inherits types {
+
+    field abyte type byte {
+      indexing: summary | attribute
+    }
+    # Field defined same way as tag
+    field album0 type weightedset<string> {
+      # This is pointless, but
+      weightedset {
+        create-if-nonexistent
+        remove-if-zero
+      }
+    }
+
+    field album1 type weightedset<string> {
+      weightedset {
+        create-if-nonexistent
+        remove-if-zero
+      }
+    }
+    field along type long {
+    }
+    field arrayfield type array<int> {
+    }
+
+    field foo type long {}
+    field other type long {}
+
+    field rankfeatures type string {}
+    field setfield type weightedset<string> {
+    }
+    field setfield2 type weightedset<string> {
+      weightedset: remove-if-zero
+      weightedset: create-if-nonexistent
+    }
+    field setfield3 type weightedset<string> {
+      weightedset: remove-if-zero
+    }
+    field setfield4 type weightedset<string> {
+      weightedset: create-if-nonexistent
+    }
+    field stringmapfield type map<string, string> {
+    }
+    field summaryfeatures type string {}
+    field tagfield type tag {
+    }
+
+  }
+}
