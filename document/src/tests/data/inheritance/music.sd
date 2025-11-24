@@ -1,0 +1,16 @@
+schema music {
+    document music inherits common {
+        struct address {
+            field city type string {}
+            field street type string {}
+        }
+
+        field addresses type array<address> {}
+        field albums type weightedset<string> {}
+        field artist type string {}
+        field phrase type string {}
+        field randomAddr type address {}
+        field url type uri {}
+        field randomdouble type double {}
+    }
+}

@@ -1,0 +1,7 @@
+schema base1 {
+    document base1 {
+        field field1 type int {}
+        field field2 type int {}
+        field fieldarray1 type array<int> {}
+    }
+}

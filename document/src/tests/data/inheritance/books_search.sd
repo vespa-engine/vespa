@@ -1,0 +1,20 @@
+schema books_search inherits books {
+    document books_search inherits books {
+        struct address {
+            field city type string {}
+            field street type string {}
+        }
+
+        field addresses type array<address> {}
+        field author type string {}
+        field pages type long {}
+        field popularity type int {}
+        field rankfeatures type string {}
+        field summaryfeatures type string {}
+        field title type string {}
+        field year type int {}
+        field bindPrice type map<string, float> {}
+        field grade type byte {}
+        field price type float {}
+    }
+}

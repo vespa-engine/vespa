@@ -1,0 +1,6 @@
+schema base2 {
+    document base2 {
+        field field4 type string {}
+        field field3 type string {}
+    }
+}

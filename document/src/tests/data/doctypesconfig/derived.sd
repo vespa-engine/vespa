@@ -1,0 +1,10 @@
+schema derived {
+    document derived inherits base1, base2 {
+        field field1 type int {}
+        field field2 type int {}
+        field field4 type string {}
+        field fieldarray1 type array<int> {}
+        field field3 type string {}
+        field field5 type float {}
+    }
+}

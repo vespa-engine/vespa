@@ -1,0 +1,17 @@
+schema testdoc {
+    document testdoc {
+        struct ronja {
+            field longfield type long {}
+        }
+
+        field floatfield type float {}
+        field longfield type long {}
+        field stringfield type string {}
+        field urifield type uri {}
+        field bytefield type byte {}
+        field doublefield type double {}
+        field foo type ronja {}
+        field intfield type int {}
+        field rawfield type raw {}
+    }
+}
