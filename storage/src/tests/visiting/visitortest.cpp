@@ -861,6 +861,31 @@ TEST_F(VisitorTest, dump_visitor_invokes_strong_read_consistency_iteration) {
             "dumpvisitor", spi::ReadConsistency::STRONG);
 }
 
+TEST_F(VisitorTest, document_api_failure_error_message_includes_doc_id) {
+    ASSERT_NO_FATAL_FAILURE(initializeTest());
+
+    auto cmd = makeCreateVisitor();
+    _top->sendDown(cmd);
+    sendCreateIteratorReply();
+
+    GetIterCommand::SP get_iter_cmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, get_iter_cmd));
+    sendGetIterReply(*get_iter_cmd, api::ReturnCode(api::ReturnCode::OK), 1, true);
+
+    MessageMeta meta;
+    getMessagesAndReply(1, getSession(0), meta, api::ReturnCode::REJECTED);
+
+    DestroyIteratorCommand::SP destroy_iter_cmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, destroy_iter_cmd));
+
+    auto reply = fetch_create_visitor_reply();
+    EXPECT_EQ(reply->getResult().getResult(), api::ReturnCode::REJECTED);
+
+    std::string_view message = reply->getResult().getMessage();
+    EXPECT_EQ("Generic error [document id was 'id:test:testdoctype1:n=0:http://www.ntnu.no/0.html']", message);
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
+}
+
 // NOTE: SearchVisitor cannot be tested here since it's in a separate module
 // which depends on _this_ module for compilation. Instead we let TestVisitor
 // use weak consistency, as this is just some internal stuff not used for/by
@@ -928,25 +953,6 @@ TEST_F(ReindexingVisitorTest, tas_responses_fail_the_visitor_and_are_rewritten_t
     ASSERT_NO_FATAL_FAILURE(complete_visitor());
 
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::ABORTED, -1, -1));
-    ASSERT_TRUE(waitUntilNoActiveVisitors());
-}
-
-TEST_F(ReindexingVisitorTest, reindexing_write_failure_includes_doc_id_in_error_message) {
-    ASSERT_NO_FATAL_FAILURE(initializeTest());
-
-    auto cmd = makeCreateVisitor(VisitorOptions().withVisitorType("reindexingvisitor"));
-    cmd->getParameters().set(reindexing_bucket_lock_visitor_parameter_key(), "foobar");
-    _top->sendDown(cmd);
-
-    ASSERT_NO_FATAL_FAILURE(respond_with_docs_from_persistence());
-    ASSERT_NO_FATAL_FAILURE(respond_to_client_put(api::ReturnCode::REJECTED));
-    ASSERT_NO_FATAL_FAILURE(complete_visitor());
-
-    auto reply = fetch_create_visitor_reply();
-    EXPECT_EQ(reply->getResult().getResult(), api::ReturnCode::REJECTED);
-
-    std::string_view message = reply->getResult().getMessage();
-    EXPECT_EQ("Generic error [document id was 'id:test:testdoctype1:n=0:http://www.ntnu.no/0.html']", message);
     ASSERT_TRUE(waitUntilNoActiveVisitors());
 }
 
