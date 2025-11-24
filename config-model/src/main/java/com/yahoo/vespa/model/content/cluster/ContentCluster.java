@@ -369,6 +369,8 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                 }
                 clusterControllers = admin.getClusterControllers();
             }
+            // Update node count so we can keep track of how many content nodes there are in total
+            clusterControllers.updateNodeCount(contentCluster.getNodeCount());
 
             addClusterControllerComponentsForThisCluster(clusterControllers, contentCluster);
             ReindexingContext reindexingContext = clusterControllers.reindexingContext();
