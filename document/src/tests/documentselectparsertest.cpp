@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/test/fieldvalue_helpers.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
@@ -36,7 +36,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <limits>
 
-using namespace document::config_builder;
+using namespace document::new_config_builder;
 
 namespace document {
 
@@ -87,30 +87,89 @@ namespace {
 
 void DocumentSelectParserTest::SetUp()
 {
-    DocumenttypesConfigBuilderHelper builder(TestDocRepo::getDefaultConfig());
-    builder.document(1234567, "with_imported",
-                     Struct("with_imported.header"),
-                     Struct("with_imported.body"))
-                     .imported_field("my_imported_field");
-    // Additional document types with names that are (or include) identifiers
-    // that lex to specific tokens.
-    builder.document(535424777, "notandor",
-                     Struct("notandor.header"), Struct("notandor.body"));
-    builder.document(1348665801, "ornotand",
-                     Struct("ornotand.header"), Struct("ornotand.body"));
-    builder.document(-1848670693, "andornot",
-                     Struct("andornot.header"), Struct("andornot.body"));
-    builder.document(-1193328712, "idid",
-                     Struct("idid.header"), Struct("idid.body"));
-    builder.document(-1673092522, "usergroup",
-                     Struct("usergroup.header"),
-                     Struct("usergroup.body"));
-    builder.document(875463456, "user",
-                     Struct("user.header").addField("id", DataType::T_INT),
-                     Struct("user.body"));
-    builder.document(567463442, "group",
-                     Struct("group.header").addField("iD", DataType::T_INT),
-                     Struct("group.body"));
+    // Create config using NewConfigBuilder with all TestDocRepo types plus additional ones
+    NewConfigBuilder builder;
+
+    // Recreate full TestDocRepo configuration
+    const int type1_id = 238423572;
+    const int type2_id = 238424533;
+    const int type3_id = 1088783091;
+    const int mystruct_id = -2092985851;
+
+    auto& doc1 = builder.document("testdoctype1", type1_id);
+
+    // Create mystruct
+    auto mystruct_ref = doc1.registerStruct(std::move(
+        doc1.createStruct("mystruct")
+            .setId(mystruct_id)
+            .addField("key", builder.primitiveType(DataType::T_INT))
+            .addField("value", builder.primitiveType(DataType::T_STRING))));
+
+    // Create structarray (array of mystruct)
+    auto structarray_ref = doc1.registerArray(std::move(
+        doc1.createArray(mystruct_ref)));
+
+    // Add all fields from TestDocRepo
+    doc1.addField("headerval", builder.primitiveType(DataType::T_INT))
+        .addField("headerlongval", builder.primitiveType(DataType::T_LONG))
+        .addField("hfloatval", builder.primitiveType(DataType::T_FLOAT))
+        .addField("hstringval", builder.primitiveType(DataType::T_STRING))
+        .addField("mystruct", mystruct_ref)
+        .addField("tags", doc1.registerArray(std::move(
+            doc1.createArray(builder.primitiveType(DataType::T_STRING)))))
+        .addField("boolfield", builder.primitiveType(DataType::T_BOOL))
+        .addField("stringweightedset", doc1.registerWset(std::move(
+            doc1.createWset(builder.primitiveType(DataType::T_STRING)))))
+        .addField("stringweightedset2", builder.primitiveType(DataType::T_TAG))
+        .addField("byteweightedset", doc1.registerWset(std::move(
+            doc1.createWset(builder.primitiveType(DataType::T_BYTE)))))
+        .addField("mymap", doc1.registerMap(std::move(
+            doc1.createMap(builder.primitiveType(DataType::T_INT),
+                          builder.primitiveType(DataType::T_STRING)))))
+        .addField("structarrmap", doc1.registerMap(std::move(
+            doc1.createMap(builder.primitiveType(DataType::T_STRING),
+                          structarray_ref))))
+        .addField("title", builder.primitiveType(DataType::T_STRING))
+        .addField("byteval", builder.primitiveType(DataType::T_BYTE))
+        .addField("content", builder.primitiveType(DataType::T_STRING))
+        .addField("rawarray", doc1.registerArray(std::move(
+            doc1.createArray(builder.primitiveType(DataType::T_RAW)))))
+        .addField("structarray", structarray_ref)
+        .addTensorField("sparse_tensor", "tensor(x{})")
+        .addTensorField("sparse_xy_tensor", "tensor(x{},y{})")
+        .addTensorField("sparse_float_tensor", "tensor<float>(x{})")
+        .addTensorField("dense_tensor", "tensor(x[2])");
+
+    doc1.imported_field("my_imported_field");
+    doc1.fieldSet("[document]", {"headerval", "hstringval", "title"});
+
+    // testdoctype2 inherits from testdoctype1
+    auto& doc2 = builder.document("testdoctype2", type2_id);
+    doc2.addField("onlyinchild", builder.primitiveType(DataType::T_INT))
+        .inherit(doc1.idx());
+
+    // _test_doctype3_ inherits from testdoctype1
+    auto& doc3 = builder.document("_test_doctype3_", type3_id);
+    doc3.addField("_only_in_child_", builder.primitiveType(DataType::T_INT))
+        .inherit(doc1.idx());
+
+    // Add additional document types for this test
+    auto& with_imported = builder.document("with_imported", 1234567);
+    with_imported.imported_field("my_imported_field");
+
+    // Document types with names that are (or include) identifiers that lex to specific tokens
+    builder.document("notandor", 535424777);
+    builder.document("ornotand", 1348665801);
+    builder.document("andornot", -1848670693);
+    builder.document("idid", -1193328712);
+    builder.document("usergroup", -1673092522);
+
+    auto& user_doc = builder.document("user", 875463456);
+    user_doc.addField("id", builder.primitiveType(DataType::T_INT));
+
+    auto& group_doc = builder.document("group", 567463442);
+    group_doc.addField("iD", builder.primitiveType(DataType::T_INT));
+
     _repo = std::make_unique<DocumentTypeRepo>(builder.config());
 
     _parser = std::make_unique<select::Parser>(*_repo, _bucketIdFactory);

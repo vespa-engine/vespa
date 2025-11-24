@@ -7,7 +7,7 @@
 #include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/select/parser.h>
@@ -29,19 +29,17 @@ using document::select::Result;
 using document::select::ResultList;
 
 std::shared_ptr<DocumenttypesConfig> make_document_types() {
-    using Struct = document::config_builder::Struct;
-    document::config_builder::DocumenttypesConfigBuilderHelper builder;
+    using namespace document::new_config_builder;
+    NewConfigBuilder builder;
     constexpr int parent_doctype_id = 42;
     constexpr int child_doctype_id = 43;
-    constexpr int ref_type_id = 44;
-    builder.document(parent_doctype_id, "parent",
-                     Struct("parent.header"),
-                     Struct("parent.body"));
-    builder.document(child_doctype_id, "child",
-                     Struct("child.header").
-                     addField("ref", ref_type_id),
-                     Struct("child.body")).
-        referenceType(ref_type_id, parent_doctype_id);
+
+    auto& parent = builder.document("parent", parent_doctype_id);
+
+    auto& child = builder.document("child", child_doctype_id);
+    auto ref_type = child.referenceType(parent.idx());
+    child.addField("ref", ref_type);
+
     return std::make_shared<DocumenttypesConfig>(builder.config());
 }
 

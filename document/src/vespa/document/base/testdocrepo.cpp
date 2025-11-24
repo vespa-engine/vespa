@@ -3,13 +3,10 @@
 #include "testdocrepo.h"
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/config/print/fileconfigreader.hpp>
 
-using document::config_builder::Struct;
-using document::config_builder::Wset;
-using document::config_builder::Array;
-using document::config_builder::Map;
+using document::new_config_builder::NewConfigBuilder;
 
 namespace document {
 
@@ -25,52 +22,70 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
     const int type2_id = 238424533;
     const int type3_id = 1088783091;
     const int mystruct_id = -2092985851;
-    const int structarray_id = 759956026;
-    config_builder::DocumenttypesConfigBuilderHelper builder;
-    ::config::StringVector documentfields = { "headerval", "hstringval", "title" };
-    builder.document(type1_id, "testdoctype1",
-                     Struct("testdoctype1.header")
-                     .addField("headerval", DataType::T_INT)
-                     .addField("headerlongval", DataType::T_LONG)
-                     .addField("hfloatval", DataType::T_FLOAT)
-                     .addField("hstringval", DataType::T_STRING)
-                     .addField("mystruct", Struct("mystruct")
-                               .setId(mystruct_id)
-                               .addField("key", DataType::T_INT)
-                               .addField("value", DataType::T_STRING))
-                     .addField("tags", Array(DataType::T_STRING))
-                     .addField("boolfield", DataType::T_BOOL)
-                     .addField("stringweightedset", Wset(DataType::T_STRING))
-                     .addField("stringweightedset2", DataType::T_TAG)
-                     .addField("byteweightedset", Wset(DataType::T_BYTE))
-                     .addField("mymap",
-                               Map(DataType::T_INT, DataType::T_STRING))
-                     .addField("structarrmap", Map(
-                                     DataType::T_STRING,
-                                     Array(mystruct_id).setId(structarray_id)))
-                     .addField("title", DataType::T_STRING)
-                     .addField("byteval", DataType::T_BYTE),
-                     Struct("testdoctype1.body")
-                     .addField("content", DataType::T_STRING)
-                     .addField("rawarray", Array(DataType::T_RAW))
-                     .addField("structarray", structarray_id)
-                     .addTensorField("sparse_tensor", "tensor(x{})")
-                     .addTensorField("sparse_xy_tensor", "tensor(x{},y{})")
-                     .addTensorField("sparse_float_tensor", "tensor<float>(x{})")
-                     .addTensorField("dense_tensor", "tensor(x[2])"))
-        .imported_field("my_imported_field")
-        .doc_type.fieldsets["[document]"].fields.swap(documentfields);
+    NewConfigBuilder builder;
 
-    builder.document(type2_id, "testdoctype2",
-                     Struct("testdoctype2.header")
-                     .addField("onlyinchild", DataType::T_INT),
-                     Struct("testdoctype2.body"))
-        .inherit(type1_id);
-    builder.document(type3_id, "_test_doctype3_",
-                     Struct("_test_doctype3_.header")
-                     .addField("_only_in_child_", DataType::T_INT),
-                     Struct("_test_doctype3_.body"))
-        .inherit(type1_id);
+    auto& doc1 = builder.document("testdoctype1", type1_id);
+
+    // Create mystruct
+    auto mystruct_ref = doc1.registerStruct(std::move(
+        doc1.createStruct("mystruct")
+            .setId(mystruct_id)
+            .addField("key", builder.primitiveType(DataType::T_INT))
+            .addField("value", builder.primitiveType(DataType::T_STRING))));
+
+    // Create structarray (array of mystruct)
+    auto structarray_ref = doc1.registerArray(std::move(
+        doc1.createArray(mystruct_ref)));
+
+    // Add all fields from header
+    doc1.addField("headerval", builder.primitiveType(DataType::T_INT))
+        .addField("headerlongval", builder.primitiveType(DataType::T_LONG))
+        .addField("hfloatval", builder.primitiveType(DataType::T_FLOAT))
+        .addField("hstringval", builder.primitiveType(DataType::T_STRING))
+        .addField("mystruct", mystruct_ref)
+        .addField("tags", doc1.registerArray(std::move(
+            doc1.createArray(builder.primitiveType(DataType::T_STRING)))))
+        .addField("boolfield", builder.primitiveType(DataType::T_BOOL))
+        .addField("stringweightedset", doc1.registerWset(std::move(
+            doc1.createWset(builder.primitiveType(DataType::T_STRING)))))
+        .addField("stringweightedset2", builder.primitiveType(DataType::T_TAG))
+        .addField("byteweightedset", doc1.registerWset(std::move(
+            doc1.createWset(builder.primitiveType(DataType::T_BYTE)))))
+        .addField("mymap", doc1.registerMap(std::move(
+            doc1.createMap(builder.primitiveType(DataType::T_INT),
+                          builder.primitiveType(DataType::T_STRING)))))
+        .addField("structarrmap", doc1.registerMap(std::move(
+            doc1.createMap(builder.primitiveType(DataType::T_STRING),
+                          structarray_ref))))
+        .addField("title", builder.primitiveType(DataType::T_STRING))
+        .addField("byteval", builder.primitiveType(DataType::T_BYTE));
+
+    // Add all fields from body
+    doc1.addField("content", builder.primitiveType(DataType::T_STRING))
+        .addField("rawarray", doc1.registerArray(std::move(
+            doc1.createArray(builder.primitiveType(DataType::T_RAW)))))
+        .addField("structarray", structarray_ref)
+        .addTensorField("sparse_tensor", "tensor(x{})")
+        .addTensorField("sparse_xy_tensor", "tensor(x{},y{})")
+        .addTensorField("sparse_float_tensor", "tensor<float>(x{})")
+        .addTensorField("dense_tensor", "tensor(x[2])");
+
+    // Add imported field
+    doc1.imported_field("my_imported_field");
+
+    // Add fieldset
+    doc1.fieldSet("[document]", {"headerval", "hstringval", "title"});
+
+    // testdoctype2 inherits from testdoctype1
+    auto& doc2 = builder.document("testdoctype2", type2_id);
+    doc2.addField("onlyinchild", builder.primitiveType(DataType::T_INT))
+        .inherit(doc1.idx());
+
+    // _test_doctype3_ inherits from testdoctype1
+    auto& doc3 = builder.document("_test_doctype3_", type3_id);
+    doc3.addField("_only_in_child_", builder.primitiveType(DataType::T_INT))
+        .inherit(doc1.idx());
+
     return builder.config();
 }
 

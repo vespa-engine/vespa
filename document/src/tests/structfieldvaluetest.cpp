@@ -2,7 +2,7 @@
 
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/util/bytebuffer.h>
@@ -11,10 +11,7 @@
 #include <gmock/gmock.h>
 
 using vespalib::nbostream;
-using document::config_builder::Struct;
-using document::config_builder::Wset;
-using document::config_builder::Array;
-using document::config_builder::Map;
+using document::new_config_builder::NewConfigBuilder;
 using namespace ::testing;
 
 namespace document {
@@ -35,22 +32,20 @@ void deserialize(nbostream & stream, T &value, const FixedTypeRepo &repo)
     deserializer.read(value);
 }
 
-config_builder::DocumenttypesConfigBuilderHelper
-createBuilder() {
-    config_builder::DocumenttypesConfigBuilderHelper builder;
-    builder.document(42, "test",
-                     Struct("test.header")
-                             .addField("int", DataType::T_INT)
-                             .addField("long", DataType::T_LONG)
-                             .addField("content", DataType::T_STRING),
-                     Struct("test.body"));
-    return builder;
+DocumenttypesConfig
+createConfig() {
+    NewConfigBuilder builder;
+    auto& doc = builder.document("test", 42);
+    doc.addField("int", builder.primitiveType(DataType::T_INT))
+       .addField("long", builder.primitiveType(DataType::T_LONG))
+       .addField("content", builder.primitiveType(DataType::T_STRING));
+    return builder.config();
 }
 
 }  // namespace
 
 StructFieldValueTest::StructFieldValueTest()
-    : doc_repo(createBuilder().config())
+    : doc_repo(createConfig())
 {}
 
 TEST_F(StructFieldValueTest, testEmptyStruct)
