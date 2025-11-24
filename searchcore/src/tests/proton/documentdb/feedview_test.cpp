@@ -3,7 +3,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
@@ -441,11 +441,11 @@ struct SchemaContext
 };
 
 SchemaContext::SchemaContext() :
-    _builder([](auto &header) { header.addField("i1", DataType::T_STRING)
-                                       .addField("a1", DataType::T_STRING)
-                                       .addField("a2", DataType::T_PREDICATE)
+    _builder([](auto &builder, auto &header) { header.addField("i1", builder.primitiveType(DataType::T_STRING))
+                                       .addField("a1", builder.primitiveType(DataType::T_STRING))
+                                       .addField("a2", builder.primitiveType(DataType::T_PREDICATE))
                                        .addTensorField("a3", "")
-                                       .addField("s1", DataType::T_STRING); }),
+                                       .addField("s1", builder.primitiveType(DataType::T_STRING)); }),
     _schema(std::make_shared<Schema>(SchemaBuilder(_builder).add_indexes({"i1"}).add_attributes({"a1", "a2", "a3"}).build()))
 {
 }

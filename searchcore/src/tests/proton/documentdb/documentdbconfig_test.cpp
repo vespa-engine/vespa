@@ -4,7 +4,7 @@
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/searchcore/proton/server/documentdbconfig.h>
@@ -21,8 +21,7 @@ using search::fef::RankingConstants;
 using search::fef::RankingExpressions;
 using std::make_shared;
 using std::shared_ptr;
-using document::config_builder::DocumenttypesConfigBuilderHelper;
-using document::config_builder::Struct;
+using document::new_config_builder::NewConfigBuilder;
 
 using ConfigSP = shared_ptr<DocumentDBConfig>;
 
@@ -38,12 +37,11 @@ const std::string body_name = type_name + ".body";
 std::shared_ptr<const DocumentTypeRepo>
 makeDocTypeRepo(bool hasField)
 {
-    DocumenttypesConfigBuilderHelper builder;
-    Struct body(body_name);
+    NewConfigBuilder builder;
+    auto& doc = builder.document(type_name, doc_type_id);
     if (hasField) {
-        body.addField("my_attribute", DataType::T_INT);
+        doc.addField("my_attribute", builder.primitiveType(DataType::T_INT));
     }
-    builder.document(doc_type_id, type_name, Struct(header_name), body);
     return make_shared<DocumentTypeRepo>(builder.config());
 }
 

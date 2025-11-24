@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/datatype/datatype.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -25,7 +25,7 @@ struct DocContext
 {
     DocBuilder _builder;
     DocContext()
-        : _builder([](auto& header) { header.addField("a1", DataType::T_INT); })
+        : _builder([](auto& builder, auto& header) { header.addField("a1", builder.primitiveType(DataType::T_INT)); })
     {
     }
     Document::UP create(uint32_t id) {
