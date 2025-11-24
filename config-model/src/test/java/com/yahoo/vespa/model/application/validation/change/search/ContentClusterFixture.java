@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Test fixture to setup current and next content clusters used for change validation.
+ * Test fixture to set up current and next content clusters used for change validation.
  *
  * @author geirst
  */
@@ -66,17 +66,17 @@ public abstract class ContentClusterFixture {
     }
 
     public void assertValidation() {
-        List<VespaConfigChangeAction> act = validate();
-        assertTrue(act.isEmpty());
+        List<VespaConfigChangeAction> action = validate();
+        assertTrue(action.isEmpty());
     }
 
-    public void assertValidation(VespaConfigChangeAction exp) {
-        assertValidation(List.of(exp));
+    public void assertValidation(VespaConfigChangeAction expected) {
+        assertValidation(List.of(expected));
     }
 
-    public void assertValidation(List<VespaConfigChangeAction> exp) {
-        List<VespaConfigChangeAction> act = validate();
-        assertEquals(exp, act);
+    public void assertValidation(List<VespaConfigChangeAction> expected) {
+        List<VespaConfigChangeAction> action = validate();
+        assertEquals(expected, action);
     }
 
     public abstract List<VespaConfigChangeAction> validate();

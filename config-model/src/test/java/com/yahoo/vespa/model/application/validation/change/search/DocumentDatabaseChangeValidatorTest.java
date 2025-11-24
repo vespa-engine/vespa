@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation.change.search;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +27,7 @@ public class DocumentDatabaseChangeValidatorTest {
                                                             currentDocType(),
                                                             nextDb(),
                                                             nextDocType(),
-                                                            new DeployState.Builder().build());
+                                                            Validation.createContext(null, new DeployState.Builder().build()));
         }
 
         @Override

@@ -5,13 +5,16 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
+import static com.yahoo.test.JunitCompat.assertEquals;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRestartAction;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -19,7 +22,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class AttributeChangeValidatorTest {
 
     private static class Fixture extends ContentClusterFixture {
+
         AttributeChangeValidator validator;
+        Validation.Execution execution;
 
         public Fixture(String currentSd, String nextSd) {
             this(currentSd, nextSd, null);
@@ -32,6 +37,7 @@ public class AttributeChangeValidatorTest {
                 var allows = List.of(new ValidationOverrides.Allow(validationOverride, Instant.now().plus(Duration.ofDays(1))));
                 builder.validationOverrides(new ValidationOverrides(allows));
             }
+            execution = (Validation.Execution)Validation.createContext(null, builder.build());
             validator = new AttributeChangeValidator(ClusterSpec.Id.from("test"),
                                                      currentDb().getDerivedConfiguration().getAttributeFields(),
                                                      currentDb().getDerivedConfiguration().getIndexSchema(),
@@ -39,7 +45,7 @@ public class AttributeChangeValidatorTest {
                                                      nextDb().getDerivedConfiguration().getAttributeFields(),
                                                      nextDb().getDerivedConfiguration().getIndexSchema(),
                                                      nextDocType(),
-                                                     builder.build());
+                                                     execution);
         }
 
         @Override
@@ -210,16 +216,22 @@ public class AttributeChangeValidatorTest {
 
         // Success when validation override is set
         String expectedOutput = "Field 'f1' changed: change property 'distance-metric' from 'EUCLIDEAN' to 'GEODEGREES'";
-        new Fixture(currentSd, nextSd, ValidationId.hnswSettingsChange)
-                .assertValidation(newRestartAction(ClusterSpec.Id.from("test"), expectedOutput));
+        var fixture = new Fixture(currentSd, nextSd, ValidationId.hnswSettingsChange);
+        fixture.assertValidation(newRestartAction(ClusterSpec.Id.from("test"), expectedOutput));
+        fixture.execution.throwIfFailed();
 
         // Should fail when validation override is not set
+        fixture = new Fixture(currentSd, nextSd);
+        fixture.assertValidation(newRestartAction(ClusterSpec.Id.from("test"), expectedOutput));
         try {
-            new Fixture(currentSd, nextSd).assertValidation(newRestartAction(ClusterSpec.Id.from("test"), expectedOutput));
-            fail("Expected exception on changing hnsw settings");
+            fixture.execution.throwIfFailed();
+            fail("Expected exception");
         }
-        catch (ValidationOverrides.ValidationException e) {
-            assertTrue(e.getMessage().contains(ValidationId.hnswSettingsChange.toString()));
+        catch (Exception e) {
+            assertEquals(validationMessage("hnsw-settings-change",
+                                           "Changes to hnsw index settings: change property 'distance-metric' from 'EUCLIDEAN' to 'GEODEGREES'." +
+                                           " This requires the hnsw index to be rebuilt during initialization, which may take a long time."),
+                         Exceptions.toMessageString(e));
         }
     }
 
@@ -248,16 +260,22 @@ public class AttributeChangeValidatorTest {
         var expectedOutput = "Field 'f1' changed: change hnsw index property 'max-links-per-node' from '16' to '4'";
 
         // Success when validation override is set
-        new Fixture(currentSd, nextSd, ValidationId.hnswSettingsChange)
-                .assertValidation(newRestartAction(ClusterSpec.Id.from("test"), expectedOutput));
+        var fixture = new Fixture(currentSd, nextSd, ValidationId.hnswSettingsChange);
+        fixture.assertValidation(newRestartAction(ClusterSpec.Id.from("test"), expectedOutput));
+        fixture.execution.throwIfFailed();
 
         // Should fail when validation override is not set
+        fixture = new Fixture(currentSd, nextSd);
+        fixture.assertValidation(newRestartAction(ClusterSpec.Id.from("test"), expectedOutput));
         try {
-            new Fixture(currentSd, nextSd).assertValidation(newRestartAction(ClusterSpec.Id.from("test"), expectedOutput));
-            fail("Expected exception on changing hnsw settings");
+            fixture.execution.throwIfFailed();
+            fail("Expected exception");
         }
-        catch (ValidationOverrides.ValidationException e) {
-            assertTrue(e.getMessage().contains(ValidationId.hnswSettingsChange.toString()));
+        catch (Exception e) {
+            assertEquals(validationMessage("hnsw-settings-change",
+                                           "Changes to hnsw index settings: change hnsw index property 'max-links-per-node' from '16' to '4'." +
+                                           " This requires the hnsw index to be rebuilt during initialization, which may take a long time."),
+                         e.getMessage());
         }
     }
 
@@ -286,21 +304,31 @@ public class AttributeChangeValidatorTest {
         var expectedOutput = "Field 'f1' changed: change hnsw index property 'neighbors-to-explore-at-insert' from '200' to '100'";
 
         // Success when validation override is set
-        new Fixture(currentSd, nextSd)
-                .assertValidation(newRestartAction(ClusterSpec.Id.from("test"), expectedOutput));
+        new Fixture(currentSd, nextSd).assertValidation(newRestartAction(ClusterSpec.Id.from("test"), expectedOutput));
     }
 
     @Test
     void removing_paged_requires_override() {
+        var fixture = new Fixture("field f1 type tensor(x[10]) { indexing: attribute \n attribute: paged }",
+                                  "field f1 type tensor(x[10]) { indexing: attribute  }");
+        fixture.assertValidation(newRestartAction(ClusterSpec.Id.from("test"), "Field 'f1' changed: remove attribute 'paged'"));
         try {
-            new Fixture("field f1 type tensor(x[10]) { indexing: attribute \n attribute: paged }",
-                    "field f1 type tensor(x[10]) { indexing: attribute  }").
-                    assertValidation();
+            fixture.execution.throwIfFailed();
             fail("Expected exception on removal of 'paged'");
         }
-        catch (ValidationOverrides.ValidationException e) {
-            assertTrue(e.getMessage().contains(ValidationId.pagedSettingRemoval.toString()));
+        catch (Exception e) {
+            assertEquals(validationMessage("paged-setting-removal",
+                                           "Removing paged for an attribute. " +
+                                           "May cause content nodes to run out of memory: attribute 'f1' (tensor(x[10]))' has setting 'paged' removed. " +
+                                           "This may cause content nodes to run out of memory as the entire attribute is loaded into memory."),
+                         e.getMessage());
         }
+    }
+
+    private String validationMessage(String validationId, String message) {
+        return message +
+               " To allow this add <allow until='yyyy-mm-dd'>" + validationId +
+               "</allow> to validation-overrides.xml, see https://docs.vespa.ai/en/reference/validation-overrides.html";
     }
 
 }

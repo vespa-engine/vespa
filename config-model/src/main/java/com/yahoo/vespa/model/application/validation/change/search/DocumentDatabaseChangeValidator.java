@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation.change.search;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 
@@ -21,21 +22,21 @@ public class DocumentDatabaseChangeValidator {
     private final DocumentDatabase currentDatabase;
     private final NewDocumentType currentDocType;
     private final DocumentDatabase nextDatabase;
-    private final NewDocumentType nextDocType;
-    private final DeployState deployState;
+    private final NewDocumentType          nextDocType;
+    private final Validation.ChangeContext context;
 
     public DocumentDatabaseChangeValidator(ClusterSpec.Id id,
                                            DocumentDatabase currentDatabase,
                                            NewDocumentType currentDocType,
                                            DocumentDatabase nextDatabase,
                                            NewDocumentType nextDocType,
-                                           DeployState deployState) {
+                                           Validation.ChangeContext context) {
         this.id = id;
         this.currentDatabase = currentDatabase;
         this.currentDocType = currentDocType;
         this.nextDatabase = nextDatabase;
         this.nextDocType = nextDocType;
-        this.deployState = deployState;
+        this.context = context;
     }
 
     public List<VespaConfigChangeAction> validate() {
@@ -53,7 +54,7 @@ public class DocumentDatabaseChangeValidator {
                                             currentDatabase.getDerivedConfiguration().getIndexSchema(), currentDocType,
                                             nextDatabase.getDerivedConfiguration().getAttributeFields(),
                                             nextDatabase.getDerivedConfiguration().getIndexSchema(), nextDocType,
-                                            deployState)
+                                            context)
                        .validate();
     }
 

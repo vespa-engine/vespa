@@ -49,11 +49,13 @@ public class ValidationOverrides {
     }
 
     /** Throws a ValidationException unless all given validation is overridden at this time */
+    // TODO: Remove: Usage should be of Validation.Context.invalid
     public void invalid(Map<ValidationId, ? extends Collection<String>> messagesByValidationId, Instant now) {
         invalidException(messagesByValidationId, now).ifPresent(e -> { throw e; });
     }
 
     /** Throws a ValidationException unless this validation is overridden at this time */
+    // TODO: Remove: Usage should be of Validation.Context.invalid
     public void invalid(ValidationId validationId, String message, Instant now) {
         if ( ! allows(validationId, now))
             throw new ValidationException(validationId, message);
@@ -176,8 +178,6 @@ public class ValidationOverrides {
     public static class ValidationException extends IllegalArgumentException {
 
         private final Map<ValidationId, Collection<String>> messagesById = new LinkedHashMap<>();
-
-        static final long serialVersionUID = 789984668;
 
         private ValidationException(ValidationId validationId, String message) {
             super(validationId.description() + ": " + message + ". " + toAllowMessage(validationId));
