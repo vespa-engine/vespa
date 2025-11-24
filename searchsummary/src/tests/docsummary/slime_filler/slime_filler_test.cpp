@@ -20,7 +20,7 @@
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
@@ -117,32 +117,47 @@ make_slime_tensor_string(const Value& value)
 DocumenttypesConfig
 get_document_types_config()
 {
-    using namespace document::config_builder;
-    DocumenttypesConfigBuilderHelper builder;
+    using namespace document::new_config_builder;
+    NewConfigBuilder builder;
     const int ref_target_doctype_id = 1234;
-    const int ref_type_id = 5678;
     constexpr int nested_type_id = 1235;
-    builder.document(ref_target_doctype_id, "target_dummy_document",
-                     Struct("target_dummy_document.header"),
-                     Struct("target_dummy_document.body"));
-    builder.document(42, "indexingdocument",
-                     Struct("indexingdocument.header")
-                     .addField("string_array", Array(DataType::T_STRING))
-                     .addField("string_wset", Wset(DataType::T_STRING))
-                     .addField("string_map", Map(DataType::T_STRING, DataType::T_STRING))
-                     .addField("nested", Struct("nested")
-                               .setId(nested_type_id)
-                               .addField("a", DataType::T_INT)
-                               .addField("b", DataType::T_INT)
-                               .addField("c", DataType::T_INT)
-                               .addField("d", nested_type_id)
-                               .addField("e", nested_type_id)
-                               .addField("f", nested_type_id))
-                     .addField("nested_array", Array(nested_type_id))
-                     .addField("nested_map", Map(DataType::T_STRING, nested_type_id))
-                     .addField("ref", ref_type_id),
-                   Struct("indexingdocument.body"))
-        .referenceType(ref_type_id, ref_target_doctype_id);
+
+    auto& target_doc = builder.document("target_dummy_document", ref_target_doctype_id);
+
+    auto& main_doc = builder.document("indexingdocument", 42);
+
+    // Create nested struct (self-referential)
+    auto nested_ref = main_doc.registerStruct(std::move(
+        main_doc.createStruct("nested")
+            .setId(nested_type_id)
+            .addField("a", builder.primitiveType(DataType::T_INT))
+            .addField("b", builder.primitiveType(DataType::T_INT))
+            .addField("c", builder.primitiveType(DataType::T_INT))));
+
+    // Add self-referential fields to nested struct
+    builder.registerStructField(nested_ref, "d", nested_ref);
+    builder.registerStructField(nested_ref, "e", nested_ref);
+    builder.registerStructField(nested_ref, "f", nested_ref);
+
+    // Create reference type
+    auto ref_type = main_doc.referenceType(target_doc.idx());
+
+    // Add all fields to main document
+    // NOTE: position type is NOT defined here - it will use the built-in PositionDataType
+    main_doc.addField("string_array", main_doc.registerArray(std::move(
+                main_doc.createArray(builder.primitiveType(DataType::T_STRING)))))
+        .addField("string_wset", main_doc.registerWset(std::move(
+                main_doc.createWset(builder.primitiveType(DataType::T_STRING)))))
+        .addField("string_map", main_doc.registerMap(std::move(
+                main_doc.createMap(builder.primitiveType(DataType::T_STRING),
+                                   builder.primitiveType(DataType::T_STRING)))))
+        .addField("nested", nested_ref)
+        .addField("nested_array", main_doc.registerArray(std::move(
+                main_doc.createArray(nested_ref))))
+        .addField("nested_map", main_doc.registerMap(std::move(
+                main_doc.createMap(builder.primitiveType(DataType::T_STRING), nested_ref))))
+        .addField("ref", ref_type);
+
     return builder.config();
 }
 
