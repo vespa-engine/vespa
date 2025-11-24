@@ -127,12 +127,11 @@ get_document_types_config()
     auto& main_doc = builder.document("indexingdocument", 42);
 
     // Create nested struct (self-referential)
-    auto nested_ref = main_doc.registerStruct(std::move(
-        main_doc.createStruct("nested")
+    auto nested_ref = main_doc.createStruct("nested")
             .setId(nested_type_id)
             .addField("a", builder.primitiveType(DataType::T_INT))
             .addField("b", builder.primitiveType(DataType::T_INT))
-            .addField("c", builder.primitiveType(DataType::T_INT))));
+            .addField("c", builder.primitiveType(DataType::T_INT)).ref();
 
     // Add self-referential fields to nested struct
     builder.registerStructField(nested_ref, "d", nested_ref);

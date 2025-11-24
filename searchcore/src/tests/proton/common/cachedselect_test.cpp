@@ -97,10 +97,9 @@ makeDocTypeRepo()
     auto& doc = builder.document(type_name, doc_type_id);
 
     // Create nested struct
-    auto pair_struct = doc.registerStruct(std::move(
-        doc.createStruct("pair")
+    auto pair_struct = doc.createStruct("pair")
            .addField("x", builder.primitiveType(DataType::T_STRING))
-           .addField("y", builder.primitiveType(DataType::T_STRING))));
+           .addField("y", builder.primitiveType(DataType::T_STRING)).ref();
 
     // Create collection types
     auto string_array = doc.createArray(builder.primitiveType(DataType::T_STRING)).ref();

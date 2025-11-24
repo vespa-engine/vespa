@@ -27,11 +27,10 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
     auto& doc1 = builder.document("testdoctype1", type1_id);
 
     // Create mystruct
-    auto mystruct_ref = doc1.registerStruct(std::move(
-        doc1.createStruct("mystruct")
+    auto mystruct_ref = doc1.createStruct("mystruct")
             .setId(mystruct_id)
             .addField("key", builder.primitiveType(DataType::T_INT))
-            .addField("value", builder.primitiveType(DataType::T_STRING))));
+            .addField("value", builder.primitiveType(DataType::T_STRING)).ref();
 
     // Create structarray (array of mystruct)
     auto structarray_ref = doc1.createArray(mystruct_ref).ref();

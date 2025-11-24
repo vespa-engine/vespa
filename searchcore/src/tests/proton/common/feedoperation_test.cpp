@@ -106,10 +106,9 @@ makeDocTypeRepo()
     NewConfigBuilder builder;
     auto& doc = builder.document(type_name, doc_type_id);
 
-    auto pair_struct = doc.registerStruct(std::move(
-        doc.createStruct("pair")
+    auto pair_struct = doc.createStruct("pair")
            .addField("x", builder.primitiveType(DataType::T_STRING))
-           .addField("y", builder.primitiveType(DataType::T_STRING))));
+           .addField("y", builder.primitiveType(DataType::T_STRING)).ref();
 
     auto string_string_map = doc.createMap(builder.primitiveType(DataType::T_STRING),
                                            builder.primitiveType(DataType::T_STRING)).ref();
