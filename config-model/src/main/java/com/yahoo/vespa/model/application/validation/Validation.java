@@ -56,7 +56,7 @@ public class Validation {
      * @throws ValidationOverrides.ValidationException if the change fails validation
      */
     public List<ConfigChangeAction> validate(VespaModel model, ValidationParameters validationParameters, DeployState deployState) {
-        Execution execution = new Execution(model, deployState);
+        Execution execution = (Execution)createContext(model, deployState);
         if (validationParameters.checkRouting()) {
             validateRouting(execution);
         }
@@ -76,6 +76,10 @@ public class Validation {
 
         execution.throwIfFailed();
         return execution.actions;
+    }
+
+    public static ChangeContext createContext(VespaModel model, DeployState deployState) {
+        return new Execution(model, deployState);
     }
 
     private static void validateRouting(Execution execution) {
@@ -161,7 +165,7 @@ public class Validation {
         void require(ConfigChangeAction action);
     }
 
-    static class Execution implements ChangeContext {
+    public static class Execution implements ChangeContext {
 
         private final List<String> errors = new ArrayList<>();
         private final Map<ValidationId, List<String>> failures = new LinkedHashMap<>();
@@ -174,7 +178,7 @@ public class Validation {
             this.deployState = deployState;
         }
 
-        void throwIfFailed() {
+        public void throwIfFailed() {
             Optional<ValidationException> invalidException = deployState.validationOverrides().invalidException(failures, deployState.now());
             if (invalidException.isPresent() && deployState.isHosted() && deployState.zone().environment().isManuallyDeployed()) {
                 deployState.getDeployLogger().logApplicationPackage(Level.WARNING,

@@ -14,27 +14,66 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bratseth
  * @author bjorncs
  */
-public class IndexingModeChangeValidatorTest {
+public class ChangeValidatorTest {
 
     private final Zone zone = Zone.defaultZone();
     private final Zone devZone = new Zone(SystemName.main, Environment.dev, RegionName.defaultName());
 
     @Test
-    void testChangingIndexModeFromIndexedToStreamingWhenDisallowedButInDev() {
+    void testChangingIndexModeFromIndexedToStreamingAllowedInDev() {
         ValidationTester tester = new ValidationTester();
 
         VespaModel oldModel =
                 tester.deploy(null, getServices("index"), devZone, "<validation-overrides />").getFirst();
-        List<ConfigChangeAction> actions = tester.deploy(oldModel, getServices("streaming"), devZone, "<calidation-overrides />").getSecond();
-        assertReindexingChange("Document type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'streaming'", actions);
+        List<ConfigChangeAction> actions = tester.deploy(oldModel, getServices("streaming"), devZone, "<validation-overrides />").getSecond();
+        assertReindexingChange("indexing-mode-change",
+                               "Document type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'streaming'",
+                               actions,
+                               true); // indexing mode change causes thread settings change
+    }
+
+    @Test
+    void testChangingDistanceMetricAllowedInDev() {
+        String from = """
+                search music {
+                  document music {
+                    field vector type tensor(x[5]) {
+                      indexing: attribute | index
+                    }
+                  }
+                }
+                """;
+        String to = """
+                search music {
+                  document music {
+                    field vector type tensor(x[5]) {
+                      indexing: attribute | index
+                      attribute {
+                        distance-metric: angular
+                      }
+                    }
+                  }
+                }
+                """;
+
+
+        ValidationTester tester = new ValidationTester();
+
+        tester.setSchema(from);
+        VespaModel oldModel =
+                tester.deploy(null, getServices("index"), devZone, "<validation-overrides />").getFirst();
+        tester.setSchema(to);
+        List<ConfigChangeAction> actions = tester.deploy(oldModel, getServices("index"), devZone, "<validation-overrides />").getSecond();
+        assertReindexingChange("hnsw-settings-change",
+                               "Document type 'music': Field 'vector' changed: change property 'distance-metric' from 'EUCLIDEAN' to 'ANGULAR'",
+                               actions,
+                               false);
     }
 
     @Test
@@ -44,7 +83,7 @@ public class IndexingModeChangeValidatorTest {
         VespaModel oldModel =
                 tester.deploy(null, getServices("index"), zone, "<validation-overrides />").getFirst();
         try {
-            tester.deploy(oldModel, getServices("streaming"), zone, "<calidation-overrides />").getSecond();
+            tester.deploy(oldModel, getServices("streaming"), zone, "<validation-overrides />").getSecond();
             fail("Should throw on disallowed config change action");
         }
         catch (ValidationException e) {
@@ -64,9 +103,10 @@ public class IndexingModeChangeValidatorTest {
         List<ConfigChangeAction> changeActions =
                 tester.deploy(oldModel, getServices("streaming"), zone, validationOverrides).getSecond();
 
-        assertReindexingChange( // allowed=true due to validation override
-                "Document type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'streaming'",
-                changeActions);
+        assertReindexingChange("indexing-mode-change",
+                               "Document type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'streaming'",
+                               changeActions,
+                               true);  // indexing mode change causes thread settings change
     }
 
     @Test
@@ -78,19 +118,22 @@ public class IndexingModeChangeValidatorTest {
         List<ConfigChangeAction> changeActions =
                 tester.deploy(oldModel, getServices("store-only"), zone, validationOverrides).getSecond();
 
-        assertReindexingChange( // allowed=true due to validation override
-                "Document type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'store-only'",
-                changeActions);
+        assertReindexingChange("indexing-mode-change",
+                               "Document type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'store-only'",
+                               changeActions,
+                               false);
     }
 
-    private void assertReindexingChange(String message, List<ConfigChangeAction> changeActions) {
-        List<ConfigChangeAction> reindexingActions = changeActions.stream()
-                                                              .filter(a -> a instanceof ConfigChangeReindexAction)
-                                                              .toList();
-        assertEquals(1, reindexingActions.size());
-        assertTrue(reindexingActions.get(0) instanceof ConfigChangeReindexAction);
-        assertEquals("indexing-mode-change", ((ConfigChangeReindexAction)reindexingActions.get(0)).name());
-        assertEquals(message, reindexingActions.get(0).getMessage());
+    private void assertReindexingChange(String validationId, String message, List<ConfigChangeAction> changeActions,
+                                        boolean ignoreRestartActions) {
+        if (ignoreRestartActions)
+            changeActions = changeActions.stream()
+                                         .filter(action -> action instanceof ConfigChangeReindexAction)
+                                         .toList();
+        assertEquals(1, changeActions.size());
+        if (changeActions.get(0) instanceof ConfigChangeReindexAction reindexingAction) // Could also be a restart action, which have no name
+            assertEquals(validationId, reindexingAction.name());
+        assertEquals(message, changeActions.get(0).getMessage());
     }
 
     private static String getServices(String indexingMode) {

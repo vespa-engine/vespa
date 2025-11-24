@@ -30,29 +30,27 @@ public class IndexedSearchClusterChangeValidator implements ChangeValidator {
         for (Map.Entry<String, ContentCluster> currentEntry : context.previousModel().getContentClusters().entrySet()) {
             ContentCluster nextCluster = context.model().getContentClusters().get(currentEntry.getKey());
             if (nextCluster != null && nextCluster.getSearch().hasSearchCluster()) {
-                validateContentCluster(currentEntry.getValue(), nextCluster, context.deployState()).forEach(context::require);
+                validateContentCluster(currentEntry.getValue(), nextCluster, context).forEach(context::require);
             }
         }
     }
 
     private static List<ConfigChangeAction> validateContentCluster(ContentCluster currentCluster,
                                                                    ContentCluster nextCluster,
-                                                                   DeployState deployState)
-    {
-        return validateDocumentDatabases(currentCluster, nextCluster, deployState);
+                                                                   ChangeContext context) {
+        return validateDocumentDatabases(currentCluster, nextCluster, context);
     }
 
     private static List<ConfigChangeAction> validateDocumentDatabases(ContentCluster currentCluster,
                                                                       ContentCluster nextCluster,
-                                                                      DeployState deployState)
-    {
+                                                                      ChangeContext context) {
         List<ConfigChangeAction> result = new ArrayList<>();
         for (DocumentDatabase currentDb : getDocumentDbs(currentCluster.getSearch().getSearchCluster())) {
             String docTypeName = currentDb.getName();
             var nextDb = nextCluster.getSearch().getSearchCluster().getDocumentDB(docTypeName);
             if (nextDb != null) {
                 result.addAll(validateDocumentDatabase(currentCluster, nextCluster, docTypeName,
-                                                       currentDb, nextDb, deployState));
+                                                       currentDb, nextDb, context));
             }
         }
         return result;
@@ -63,13 +61,13 @@ public class IndexedSearchClusterChangeValidator implements ChangeValidator {
                                                                      String docTypeName,
                                                                      DocumentDatabase currentDb,
                                                                      DocumentDatabase nextDb,
-                                                                     DeployState deployState)
+                                                                     ChangeContext context)
     {
         NewDocumentType currentDocType = currentCluster.getDocumentDefinitions().get(docTypeName);
         NewDocumentType nextDocType = nextCluster.getDocumentDefinitions().get(docTypeName);
         List<VespaConfigChangeAction> result =
                 new DocumentDatabaseChangeValidator(currentCluster.id(), currentDb, currentDocType,
-                                                    nextDb, nextDocType, deployState).validate();
+                                                    nextDb, nextDocType, context).validate();
 
         return modifyActions(result, getSearchNodeServices(nextCluster.getSearch().getSearchCluster()), docTypeName);
     }
