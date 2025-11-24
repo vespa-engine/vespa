@@ -4,6 +4,9 @@
 #include "visitormetrics.h"
 #include <vespa/document/select/node.h>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
+#include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/storageapi/message/datagram.h>
@@ -574,6 +577,28 @@ Visitor::remap_docapi_message_error_code(api::ReturnCode& in_out_code) {
     return in_out_code.isCriticalForVisitor();
 }
 
+namespace {
+
+void
+append_doc_id_string(std::string& error_message, const document::DocumentId& id)
+{
+    std::string id_str = id.toString();
+
+    constexpr std::string_view prefix = " [document id was '";
+    constexpr std::string_view suffix = "']";
+
+    error_message.reserve(error_message.size()
+                          + prefix.size()
+                          + id_str.size()
+                          + suffix.size());
+
+    error_message.append(prefix);
+    error_message.append(id_str);
+    error_message.append(suffix);
+}
+
+}
+
 void
 Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& metrics)
 {
@@ -615,8 +640,15 @@ Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& met
                                reply->getError(0).getMessage());
     const bool should_fail = remap_docapi_message_error_code(returnCode);
     if (should_fail) {
+        std::string error_message = reply->getError(0).getMessage();
+        if (const auto* put = dynamic_cast<const documentapi::PutDocumentMessage*>(message.get())) {
+            append_doc_id_string(error_message, put->getDocument().getId());
+        } else if (const auto* remove = dynamic_cast<const documentapi::RemoveDocumentMessage*>(message.get())) {
+            append_doc_id_string(error_message, remove->getDocumentId());
+        }
+
         // Abort - something is wrong with target.
-        fail(returnCode, true);
+        fail(api::ReturnCode { returnCode.getResult(), error_message }, true);
         close();
         return;
     }
