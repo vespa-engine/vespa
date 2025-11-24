@@ -2509,16 +2509,20 @@ public class ModelProvisioningTest {
         var hosted = false;
         assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 128);
         assertMaxHeapSizeForClusterController(multipleContentClusters(60, 3), adjustHeap, hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(300, 3), adjustHeap, hosted, 128);
         adjustHeap = true;
         assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 128);
         assertMaxHeapSizeForClusterController(multipleContentClusters(60, 3), adjustHeap, hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(300, 3), adjustHeap, hosted, 128);
 
         hosted = true;
         assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 192);
         assertMaxHeapSizeForClusterController(multipleContentClusters(60, 3), adjustHeap, hosted, 244);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(300, 3), adjustHeap, hosted, 400);
         adjustHeap = false;
         assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 192);
         assertMaxHeapSizeForClusterController(multipleContentClusters(60, 3), adjustHeap, hosted, 192);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(300, 3), adjustHeap, hosted, 192);
     }
 
     private void assertMaxHeapSizeForClusterController(String services, boolean adjustHeap,
@@ -2528,7 +2532,7 @@ public class ModelProvisioningTest {
         var properties = new TestProperties().adjustCCMaxHeap(adjustHeap);
         tester.setModelProperties(properties);
         tester.addHosts(new NodeResources(1, 3, 10, 1), 4);
-        tester.addHosts(new NodeResources(1, 128, 100, 0.3), 99);
+        tester.addHosts(new NodeResources(1, 128, 100, 0.3), 305);
         var deployStatebuilder = deployStateWithClusterEndpoints("foo.indexing", "bar.indexing");
         var model = tester.createModel(Zone.defaultZone(), services, true, false, false,
                                        NodeResources.unspecified(), 0, Optional.empty(),

@@ -86,7 +86,7 @@ public class VespaModelTester {
             // Let host names sort in the opposite order of the order the hosts are added
             // This allows us to test index vs. name order selection when subsets of hosts are selected from a cluster
             // (for e.g cluster controllers and slobrok nodes)
-            String hostname = String.format("%s-%02d",
+            String hostname = String.format("%s-%03d",
                                             "node" + "-" + Math.round(resources.vcpu()) +
                                                      "-" + Math.round(resources.memoryGiB()) +
                                                      "-" + Math.round(resources.diskGb()),
@@ -95,8 +95,8 @@ public class VespaModelTester {
         }
         this.hostsByResources.put(resources, hosts);
 
-        if (hosts.size() > 100)
-            throw new IllegalStateException("The host naming scheme is nameNN. To test more than 100 hosts, change to nameNNN");
+        if (hosts.size() > 999)
+            throw new IllegalStateException("The host naming scheme is nameNN. To test more than 999 hosts, change to nameNNN");
         return new Hosts(hosts);
     }
 
