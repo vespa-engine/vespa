@@ -14,6 +14,7 @@ import com.yahoo.vespa.model.container.component.SpladeEmbedder;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.HuggingFaceEmbedder;
 import com.yahoo.vespa.model.container.component.HuggingFaceTokenizer;
+import com.yahoo.vespa.model.container.component.VoyageAIEmbedder;
 import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuilder;
 import org.w3c.dom.Element;
 
@@ -52,6 +53,7 @@ public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilde
                 case "colbert-embedder" -> new ColBertEmbedder((ApplicationContainerCluster)ancestor, spec, state);
                 case "bert-embedder" -> new BertEmbedder((ApplicationContainerCluster)ancestor, spec, state);
                 case "splade-embedder" -> new SpladeEmbedder((ApplicationContainerCluster)ancestor, spec, state);
+                case "voyage-ai-embedder" -> new VoyageAIEmbedder((ApplicationContainerCluster)ancestor, spec, state);
                 default -> throw new IllegalArgumentException("Unknown component type '%s'".formatted(type));
             };
         } else {
