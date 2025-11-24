@@ -15,6 +15,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <format>
 #include <unordered_map>
 #include <sstream>
 #include <cassert>
@@ -579,22 +580,10 @@ Visitor::remap_docapi_message_error_code(api::ReturnCode& in_out_code) {
 
 namespace {
 
-void
-append_doc_id_string(std::string& error_message, const document::DocumentId& id)
+std::string
+make_doc_id_suffix(const document::DocumentId& id)
 {
-    std::string id_str = id.toString();
-
-    constexpr std::string_view prefix = " [document id was '";
-    constexpr std::string_view suffix = "']";
-
-    error_message.reserve(error_message.size()
-                          + prefix.size()
-                          + id_str.size()
-                          + suffix.size());
-
-    error_message.append(prefix);
-    error_message.append(id_str);
-    error_message.append(suffix);
+    return std::format(" [document id was '{}']", id.toString());
 }
 
 }
@@ -642,13 +631,13 @@ Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& met
     if (should_fail) {
         std::string error_message = reply->getError(0).getMessage();
         if (const auto* put = dynamic_cast<const documentapi::PutDocumentMessage*>(message.get())) {
-            append_doc_id_string(error_message, put->getDocument().getId());
+            error_message += make_doc_id_suffix(put->getDocument().getId());
         } else if (const auto* remove = dynamic_cast<const documentapi::RemoveDocumentMessage*>(message.get())) {
-            append_doc_id_string(error_message, remove->getDocumentId());
+            error_message += make_doc_id_suffix(remove->getDocumentId());
         }
 
         // Abort - something is wrong with target.
-        fail(api::ReturnCode { returnCode.getResult(), error_message }, true);
+        fail(api::ReturnCode(returnCode.getResult(), error_message), true);
         close();
         return;
     }
