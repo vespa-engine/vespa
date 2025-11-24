@@ -3,7 +3,7 @@
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/doublefieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/expression/constantnode.h>
 #include <vespa/searchlib/expression/floatresultnode.h>
 #include <vespa/searchlib/expression/interpolated_document_field_lookup_node.h>
@@ -35,8 +35,9 @@ struct Fixture {
 };
 
 Fixture::Fixture()
-    :  _builder([](auto& header)
-                {  header.addField(field_name, document::config_builder::Array(DataType::T_DOUBLE)); }),
+    :  _builder([](auto& builder, auto& doc) noexcept
+                {  doc.addField(field_name, doc.registerArray(std::move(
+                       doc.createArray(builder.primitiveType(DataType::T_DOUBLE))))); }),
        _doc(_builder.make_document("id:ns:searchdocument::0")),
        _node()
 {

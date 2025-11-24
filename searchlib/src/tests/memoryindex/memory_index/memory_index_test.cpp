@@ -2,7 +2,7 @@
 
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/common/scheduletaskcallback.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
@@ -81,14 +81,15 @@ struct MySetup : public IFieldLengthInspector {
         return FieldLengthInfo();
     }
 
-    void add_fields(document::config_builder::Struct& header) const {
+    void add_fields(document::new_config_builder::NewConfigBuilder& builder,
+                    document::new_config_builder::NewDocTypeRep& doc) const {
         for (auto& field : fields) {
-            header.addField(field, DataType::T_STRING);
+            doc.addField(field, builder.primitiveType(DataType::T_STRING));
         }
     }
 
     Schema make_all_index_schema() const {
-        DocBuilder db([this](auto& header) { add_fields(header); });
+        DocBuilder db([this](auto& builder, auto& doc) noexcept { add_fields(builder, doc); });
         return SchemaBuilder(db).add_all_indexes().build();
     }
 
@@ -173,7 +174,7 @@ Index::Index(const MySetup &setup)
       _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
       _pushThreads(SequencedTaskExecutor::create(push_executor, 2)),
       index(setup.make_all_index_schema(), setup, *_invertThreads, *_pushThreads),
-      builder([&setup](auto& header) { setup.add_fields(header); }),
+      builder([&setup](auto& b, auto& doc) noexcept { setup.add_fields(b, doc); }),
       sfb(builder),
       builder_doc(),
       docid(1),

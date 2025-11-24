@@ -13,6 +13,7 @@
 #include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter_backend.h>
@@ -145,18 +146,18 @@ struct UrlFieldInverterTest : public ::testing::Test {
 UrlFieldInverterTest::~UrlFieldInverterTest() = default;
 
 DocBuilder::AddFieldsType
-add_single_url = [](auto& header) {
-                     header.addField("url", document::DataType::T_URI); };
+add_single_url = [](auto& builder, auto& doc) noexcept {
+                     doc.addField("url", builder.primitiveType(document::DataType::T_URI)); };
 
 DocBuilder::AddFieldsType
-add_array_url = [](auto& header) {
-                    using namespace document::config_builder;
-                    header.addField("url", Array(document::DataType::T_URI)); };
+add_array_url = [](auto& builder, auto& doc) noexcept {
+                    doc.addField("url", doc.registerArray(std::move(
+                        doc.createArray(builder.primitiveType(document::DataType::T_URI))))); };
 
 DocBuilder::AddFieldsType
-add_wset_url = [](auto& header) {
-                    using namespace document::config_builder;
-                    header.addField("url", Wset(document::DataType::T_URI)); };
+add_wset_url = [](auto& builder, auto& doc) noexcept {
+                    doc.addField("url", doc.registerWset(std::move(
+                        doc.createWset(builder.primitiveType(document::DataType::T_URI))))); };
 
 
 
