@@ -126,9 +126,9 @@ TEST_F(DocumentUpdateTest, testSimpleUsage)
 {
     NewConfigBuilder builder;
     auto& test_doc = builder.document("test", 42);
-    test_doc.addField("bytef", builder.primitiveType(DataType::T_BYTE))
-       .addField("intf", builder.primitiveType(DataType::T_INT))
-       .addField("intarr", test_doc.createArray(builder.primitiveType(DataType::T_INT)).ref());
+    test_doc.addField("bytef", builder.byteTypeRef())
+       .addField("intf", builder.intTypeRef())
+       .addField("intarr", test_doc.createArray(builder.intTypeRef()).ref());
     DocumentTypeRepo repo(builder.config());
     const DocumentType* docType(repo.getDocumentType("test"));
     const DataType *arrayType = repo.getDataType(*docType, "Array<Int>");
@@ -421,7 +421,7 @@ struct WeightedSetAutoCreateFixture
         // a field matching those characteristics will in fact fail with a
         // redefinition error.
         auto& test_doc = builder.document("test", 42);
-        test_doc.addField("strwset", builder.primitiveType(DataType::T_TAG));
+        test_doc.addField("strwset", builder.tagTypeRef());
         return builder.config();
     }
 };
@@ -1396,7 +1396,7 @@ struct UpdateToEmptyDocumentFixture {
     std::unique_ptr<DocumentTypeRepo> make_repo() {
         NewConfigBuilder builder;
         auto& test_doc = builder.document("test", 222);
-        test_doc.addField("text", builder.primitiveStringType());
+        test_doc.addField("text", builder.stringTypeRef());
         return std::make_unique<DocumentTypeRepo>(builder.config());
     }
 

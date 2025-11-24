@@ -55,10 +55,9 @@ std::string base_dir = "testdb";
 constexpr int base_port = 9017;
 
 std::shared_ptr<DocumenttypesConfig> make_document_types() {
-    using DataType = document::DataType;
     document::new_config_builder::NewConfigBuilder builder;
     auto& doc = builder.document("test", 42);
-    doc.addField("int", builder.primitiveType(DataType::T_INT));
+    doc.addField("int", builder.intTypeRef());
     return std::make_shared<DocumenttypesConfig>(builder.config());
 }
 

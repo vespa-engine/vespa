@@ -263,8 +263,19 @@ public:
     // Get reference to primitive type (returns idx from base document)
     TypeRef primitiveType(int32_t type_id);  // DataType::T_INT, etc.
 
-    // convenience method:
-    TypeRef primitiveStringType() { return primitiveType(DataType::T_STRING); }
+    // convenience methods:
+    TypeRef boolTypeRef()      { return primitiveType(DataType::T_BOOL); }
+    TypeRef byteTypeRef()      { return primitiveType(DataType::T_BYTE); }
+    TypeRef doubleTypeRef()    { return primitiveType(DataType::T_DOUBLE); }
+    TypeRef floatTypeRef()     { return primitiveType(DataType::T_FLOAT); }
+    TypeRef intTypeRef()       { return primitiveType(DataType::T_INT); }
+    TypeRef longTypeRef()      { return primitiveType(DataType::T_LONG); }
+    TypeRef predicateTypeRef() { return primitiveType(DataType::T_PREDICATE); }
+    TypeRef rawTypeRef()       { return primitiveType(DataType::T_RAW); }
+    TypeRef shortTypeRef()     { return primitiveType(DataType::T_SHORT); }
+    TypeRef stringTypeRef()    { return primitiveType(DataType::T_STRING); }
+    TypeRef tagTypeRef()       { return primitiveType(DataType::T_TAG); }
+    TypeRef uriTypeRef()       { return primitiveType(DataType::T_URI); }
 
     // Get reference to built-in position type (returns idx from base document)
     TypeRef positionType();

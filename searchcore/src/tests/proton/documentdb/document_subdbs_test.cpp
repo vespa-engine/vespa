@@ -271,9 +271,9 @@ DocBuilder::AddFieldsType
 get_add_fields(bool has_attr2)
 {
     return [has_attr2](auto& builder, auto& header) {
-               header.addField("attr1", builder.primitiveType(DataType::T_INT));
+               header.addField("attr1", builder.intTypeRef());
                if (has_attr2) {
-                   header.addField("attr2", builder.primitiveType(DataType::T_INT));
+                   header.addField("attr2", builder.intTypeRef());
                }
            };
 }

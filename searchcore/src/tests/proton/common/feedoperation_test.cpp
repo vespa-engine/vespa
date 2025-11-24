@@ -107,13 +107,13 @@ makeDocTypeRepo()
     auto& doc = builder.document(type_name, doc_type_id);
 
     auto pair_struct = doc.createStruct("pair")
-           .addField("x", builder.primitiveStringType())
-           .addField("y", builder.primitiveStringType()).ref();
+           .addField("x", builder.stringTypeRef())
+           .addField("y", builder.stringTypeRef()).ref();
 
-    auto string_string_map = doc.createMap(builder.primitiveStringType(),
-                                           builder.primitiveStringType()).ref();
+    auto string_string_map = doc.createMap(builder.stringTypeRef(),
+                                           builder.stringTypeRef()).ref();
 
-    doc.addField("string", builder.primitiveStringType())
+    doc.addField("string", builder.stringTypeRef())
        .addField("struct", pair_struct)
        .addField("map", string_string_map);
 

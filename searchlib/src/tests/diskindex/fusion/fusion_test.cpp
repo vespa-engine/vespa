@@ -141,10 +141,10 @@ DocBuilder::AddFieldsType
 make_add_fields()
 {
     return [](auto& builder, auto& doc) noexcept { using namespace document::new_config_builder;
-        auto string_array = doc.createArray(builder.primitiveStringType()).ref();
-        auto string_wset = doc.createWset(builder.primitiveStringType()).ref();
-        doc.addField("f0", builder.primitiveStringType())
-            .addField("f1", builder.primitiveStringType())
+        auto string_array = doc.createArray(builder.stringTypeRef()).ref();
+        auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
+        doc.addField("f0", builder.stringTypeRef())
+            .addField("f1", builder.stringTypeRef())
             .addField("f2", string_array)
             .addField("f3", string_wset);
             };

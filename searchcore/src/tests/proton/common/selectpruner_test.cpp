@@ -60,38 +60,38 @@ makeDocTypeRepo()
 
     // Create nested struct
     auto pair_struct = doc.createStruct("pair")
-           .addField("x", builder.primitiveStringType())
-           .addField("y", builder.primitiveStringType()).ref();
+           .addField("x", builder.stringTypeRef())
+           .addField("y", builder.stringTypeRef()).ref();
 
     // Create collection types
-    auto string_array = doc.createArray(builder.primitiveStringType()).ref();
-    auto string_wset = doc.createWset(builder.primitiveStringType()).ref();
-    auto string_string_map = doc.createMap(builder.primitiveStringType(),
-                                           builder.primitiveStringType()).ref();
-    auto int_array = doc.createArray(builder.primitiveType(DataType::T_INT)).ref();
-    auto int_wset = doc.createWset(builder.primitiveType(DataType::T_INT)).ref();
+    auto string_array = doc.createArray(builder.stringTypeRef()).ref();
+    auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
+    auto string_string_map = doc.createMap(builder.stringTypeRef(),
+                                           builder.stringTypeRef()).ref();
+    auto int_array = doc.createArray(builder.intTypeRef()).ref();
+    auto int_wset = doc.createWset(builder.intTypeRef()).ref();
 
     // Add fields
-    doc.addField("ia", builder.primitiveStringType())
-       .addField("ib", builder.primitiveStringType())
+    doc.addField("ia", builder.stringTypeRef())
+       .addField("ib", builder.stringTypeRef())
        .addField("ibs", pair_struct)
        .addField("iba", string_array)
        .addField("ibw", string_wset)
        .addField("ibm", string_string_map)
-       .addField("aa", builder.primitiveType(DataType::T_INT))
+       .addField("aa", builder.intTypeRef())
        .addField("aaa", int_array)
        .addField("aaw", int_wset)
-       .addField("ab", builder.primitiveType(DataType::T_INT))
-       .addField("ae", builder.primitiveType(DataType::T_INT))
+       .addField("ab", builder.intTypeRef())
+       .addField("ae", builder.intTypeRef())
        .imported_field("my_imported_field")
        .imported_field("my_missing_imported_field");
 
     // Create second document type
     auto& doc2 = builder.document(type_name_2, doc_type_id + 1);
-    doc2.addField("ic", builder.primitiveStringType())
-        .addField("id", builder.primitiveStringType())
-        .addField("ac", builder.primitiveType(DataType::T_INT))
-        .addField("ad", builder.primitiveType(DataType::T_INT));
+    doc2.addField("ic", builder.stringTypeRef())
+        .addField("id", builder.stringTypeRef())
+        .addField("ac", builder.intTypeRef())
+        .addField("ad", builder.intTypeRef());
 
     return std::unique_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(builder.config()));
 }

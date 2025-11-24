@@ -25,7 +25,7 @@ struct DocContext
 {
     DocBuilder _builder;
     DocContext()
-        : _builder([](auto& builder, auto& header) { header.addField("a1", builder.primitiveType(DataType::T_INT)); })
+        : _builder([](auto& builder, auto& header) { header.addField("a1", builder.intTypeRef()); })
     {
     }
     Document::UP create(uint32_t id) {

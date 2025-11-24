@@ -129,9 +129,9 @@ get_document_types_config()
     // Create nested struct (self-referential)
     auto nested_ref = main_doc.createStruct("nested")
             .setId(nested_type_id)
-            .addField("a", builder.primitiveType(DataType::T_INT))
-            .addField("b", builder.primitiveType(DataType::T_INT))
-            .addField("c", builder.primitiveType(DataType::T_INT)).ref();
+            .addField("a", builder.intTypeRef())
+            .addField("b", builder.intTypeRef())
+            .addField("c", builder.intTypeRef()).ref();
 
     // Add self-referential fields to nested struct
     builder.registerStructField(nested_ref, "d", nested_ref);
@@ -143,13 +143,13 @@ get_document_types_config()
 
     // Add all fields to main document
     // NOTE: position type is NOT defined here - it will use the built-in PositionDataType
-    main_doc.addField("string_array", main_doc.createArray(builder.primitiveStringType()).ref())
-        .addField("string_wset", main_doc.createWset(builder.primitiveStringType()).ref())
-        .addField("string_map", main_doc.createMap(builder.primitiveStringType(),
-                                                   builder.primitiveStringType()).ref())
+    main_doc.addField("string_array", main_doc.createArray(builder.stringTypeRef()).ref())
+        .addField("string_wset", main_doc.createWset(builder.stringTypeRef()).ref())
+        .addField("string_map", main_doc.createMap(builder.stringTypeRef(),
+                                                   builder.stringTypeRef()).ref())
         .addField("nested", nested_ref)
         .addField("nested_array", main_doc.createArray(nested_ref).ref())
-        .addField("nested_map", main_doc.createMap(builder.primitiveStringType(),
+        .addField("nested_map", main_doc.createMap(builder.stringTypeRef(),
                                                    nested_ref).ref())
         .addField("ref", ref_type);
 

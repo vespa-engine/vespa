@@ -87,13 +87,13 @@ TEST(DocumentTypeTest, testMultipleInheritance)
     NewConfigBuilder builder;
 
     auto& doc1 = builder.document("test1", 42);
-    doc1.addField("stringattr", builder.primitiveStringType())
-        .addField("nalle", builder.primitiveType(DataType::T_INT));
+    doc1.addField("stringattr", builder.stringTypeRef())
+        .addField("nalle", builder.intTypeRef());
 
     auto& doc2 = builder.document("test2", 43);
-    doc2.addField("stringattr", builder.primitiveStringType())
-        .addField("tmp", builder.primitiveStringType())
-        .addField("tall", builder.primitiveType(DataType::T_INT));
+    doc2.addField("stringattr", builder.stringTypeRef())
+        .addField("tmp", builder.stringTypeRef())
+        .addField("tall", builder.intTypeRef());
 
     auto& doc3 = builder.document("test3", 44);
     doc3.inherit(doc1.idx()).inherit(doc2.idx());

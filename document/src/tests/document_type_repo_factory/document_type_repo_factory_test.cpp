@@ -20,7 +20,7 @@ makeDocumentTypesConfig(const string &field_name)
 {
     NewConfigBuilder builder;
     auto& doc = builder.document(type_name, doc_type_id);
-    doc.addField(field_name, builder.primitiveStringType());
+    doc.addField(field_name, builder.stringTypeRef());
     return std::make_shared<const DocumenttypesConfig>(builder.config());
 }
 

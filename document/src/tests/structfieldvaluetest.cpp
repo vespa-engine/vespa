@@ -36,9 +36,9 @@ DocumenttypesConfig
 createConfig() {
     NewConfigBuilder builder;
     auto& doc = builder.document("test", 42);
-    doc.addField("int", builder.primitiveType(DataType::T_INT))
-       .addField("long", builder.primitiveType(DataType::T_LONG))
-       .addField("content", builder.primitiveStringType());
+    doc.addField("int", builder.intTypeRef())
+       .addField("long", builder.longTypeRef())
+       .addField("content", builder.stringTypeRef());
     return builder.config();
 }
 

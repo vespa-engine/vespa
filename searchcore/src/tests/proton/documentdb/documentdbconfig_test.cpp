@@ -40,7 +40,7 @@ makeDocTypeRepo(bool hasField)
     NewConfigBuilder builder;
     auto& doc = builder.document(type_name, doc_type_id);
     if (hasField) {
-        doc.addField("my_attribute", builder.primitiveType(DataType::T_INT));
+        doc.addField("my_attribute", builder.intTypeRef());
     }
     return make_shared<DocumentTypeRepo>(builder.config());
 }

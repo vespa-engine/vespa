@@ -531,7 +531,7 @@ make_all_index_schema(DocBuilder::AddFieldsType add_fields)
 DocBuilder::AddFieldsType
 make_single_add_fields()
 {
-    return [](auto& builder, auto& doc) noexcept { doc.addField("f0", builder.primitiveStringType()); };
+    return [](auto& builder, auto& doc) noexcept { doc.addField("f0", builder.stringTypeRef()); };
 }
 
 template <typename FieldIndexType>
@@ -724,10 +724,10 @@ DocBuilder::AddFieldsType
 make_multi_field_add_fields()
 {
     return [](auto& builder, auto& doc) noexcept { using namespace document::new_config_builder;
-        auto string_array = doc.createArray(builder.primitiveStringType()).ref();
-        auto string_wset = doc.createWset(builder.primitiveStringType()).ref();
-        doc.addField("f0", builder.primitiveStringType())
-            .addField("f1", builder.primitiveStringType())
+        auto string_array = doc.createArray(builder.stringTypeRef()).ref();
+        auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
+        doc.addField("f0", builder.stringTypeRef())
+            .addField("f1", builder.stringTypeRef())
             .addField("f2", string_array)
             .addField("f3", string_wset);
            };
@@ -1167,9 +1167,9 @@ DocBuilder::AddFieldsType
 make_uri_add_fields()
 {
     return [](auto& builder, auto& doc) noexcept { using namespace document::new_config_builder;
-        auto uri_array = doc.createArray(builder.primitiveType(DataType::T_URI)).ref();
-        auto uri_wset = doc.createWset(builder.primitiveType(DataType::T_URI)).ref();
-        doc.addField("iu", builder.primitiveType(DataType::T_URI))
+        auto uri_array = doc.createArray(builder.uriTypeRef()).ref();
+        auto uri_wset = doc.createWset(builder.uriTypeRef()).ref();
+        doc.addField("iu", builder.uriTypeRef())
             .addField("iau", uri_array)
             .addField("iwu", uri_wset);
            };

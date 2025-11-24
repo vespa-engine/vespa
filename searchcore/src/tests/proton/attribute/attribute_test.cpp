@@ -223,11 +223,11 @@ AttributeWriterTest::~AttributeWriterTest() = default;
 TEST_F(AttributeWriterTest, handles_put)
 {
     DocBuilder db([](auto& builder, auto& header)
-                  { auto int_array = header.createArray(builder.primitiveType(DataType::T_INT)).ref();
-                      header.addField("a1", builder.primitiveType(DataType::T_INT))
+                  { auto int_array = header.createArray(builder.intTypeRef()).ref();
+                      header.addField("a1", builder.intTypeRef())
                           .addField("a2", int_array)
-                          .addField("a3", builder.primitiveType(DataType::T_FLOAT))
-                          .addField("a4", builder.primitiveStringType()); });
+                          .addField("a3", builder.floatTypeRef())
+                          .addField("a4", builder.stringTypeRef()); });
     auto a1 = addAttribute("a1");
     auto a2 = addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
     auto a3 = addAttribute({"a3", AVConfig(AVBasicType::FLOAT)});
@@ -310,7 +310,7 @@ TEST_F(AttributeWriterTest, handles_put)
 
 TEST_F(AttributeWriterTest, handles_predicate_put)
 {
-    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.primitiveType(DataType::T_PREDICATE)); });
+    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.predicateTypeRef()); });
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
     allocAttributeWriter();
 
@@ -402,7 +402,7 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::STRING)});
     allocAttributeWriter();
 
-    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.primitiveStringType()); });
+    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.stringTypeRef()); });
     EXPECT_EQ(1u, a1->getNumDocs());
     EXPECT_EQ(0u, a1->getStatus().getLastSyncToken());
     auto doc = db.make_document("id:ns:searchdocument::1");
@@ -449,7 +449,7 @@ TEST_F(AttributeWriterTest, handles_predicate_remove)
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
     allocAttributeWriter();
 
-    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.primitiveType(DataType::T_PREDICATE)); });
+    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.predicateTypeRef()); });
 
     PredicateSlimeBuilder builder;
     auto doc = db.make_document("id:ns:searchdocument::1");
@@ -473,8 +473,8 @@ TEST_F(AttributeWriterTest, handles_update)
     fillAttribute(a2, 1, 20, 1);
 
     DocBuilder db([](auto& builder, auto& header)
-                            { header.addField("a1", builder.primitiveType(DataType::T_INT))
-                                    .addField("a2", builder.primitiveType(DataType::T_INT)); });
+                            { header.addField("a1", builder.intTypeRef())
+                                    .addField("a2", builder.intTypeRef()); });
     DocumentUpdate upd(db.get_repo(), db.get_document_type(), DocumentId("id:ns:searchdocument::1"));
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
                   .addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 5)));
@@ -506,7 +506,7 @@ TEST_F(AttributeWriterTest, handles_predicate_update)
 {
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
     allocAttributeWriter();
-    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.primitiveType(DataType::T_PREDICATE)); });
+    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.predicateTypeRef()); });
     PredicateSlimeBuilder builder;
     auto doc = db.make_document("id:ns:searchdocument::1");
     doc->setValue("a1", PredicateFieldValue(builder.true_predicate().build()));
@@ -742,9 +742,9 @@ putAttributes(AttributeWriterTest &t, std::vector<uint32_t> expExecuteHistory)
     std::string a3_name = "a3y";
 
     DocBuilder db([&](auto& builder, auto& header)
-                  { header.addField(a1_name, builder.primitiveType(DataType::T_INT))
-                          .addField(a2_name, builder.primitiveType(DataType::T_INT))
-                          .addField(a3_name, builder.primitiveType(DataType::T_INT)); });
+                  { header.addField(a1_name, builder.intTypeRef())
+                          .addField(a2_name, builder.intTypeRef())
+                          .addField(a3_name, builder.intTypeRef()); });
 
     auto a1 = t.addAttribute(a1_name);
     auto a2 = t.addAttribute(a2_name);

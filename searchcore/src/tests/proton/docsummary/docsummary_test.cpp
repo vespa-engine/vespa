@@ -440,18 +440,18 @@ TEST(DocSummaryTest, requireThatAdapterHandlesAllFieldTypes)
     BuildContext bc([](auto& builder, auto& header)
                     {
                         header
-                            .addField("a", builder.primitiveType(DataType::T_BYTE))
-                            .addField("b", builder.primitiveType(DataType::T_SHORT))
-                            .addField("c", builder.primitiveType(DataType::T_INT))
-                            .addField("d", builder.primitiveType(DataType::T_LONG))
-                            .addField("e", builder.primitiveType(DataType::T_FLOAT))
-                            .addField("f", builder.primitiveType(DataType::T_DOUBLE))
-                            .addField("g", builder.primitiveStringType())
-                            .addField("h", builder.primitiveStringType())
-                            .addField("i", builder.primitiveType(DataType::T_RAW))
-                            .addField("j", builder.primitiveType(DataType::T_RAW))
-                            .addField("k", builder.primitiveStringType())
-                            .addField("l", builder.primitiveStringType());
+                            .addField("a", builder.byteTypeRef())
+                            .addField("b", builder.shortTypeRef())
+                            .addField("c", builder.intTypeRef())
+                            .addField("d", builder.longTypeRef())
+                            .addField("e", builder.floatTypeRef())
+                            .addField("f", builder.doubleTypeRef())
+                            .addField("g", builder.stringTypeRef())
+                            .addField("h", builder.stringTypeRef())
+                            .addField("i", builder.rawTypeRef())
+                            .addField("j", builder.rawTypeRef())
+                            .addField("k", builder.stringTypeRef())
+                            .addField("l", builder.stringTypeRef());
                     });
 
     auto doc = bc.make_document("id:ns:searchdocument::0");
@@ -488,7 +488,7 @@ TEST(DocSummaryTest, requireThatAdapterHandlesAllFieldTypes)
 TEST(DocSummaryTest, requireThatAdapterHandlesMultipleDocuments)
 {
     Fixture f;
-    BuildContext bc([](auto& builder, auto& header) { header.addField("a", builder.primitiveType(DataType::T_INT)); });
+    BuildContext bc([](auto& builder, auto& header) { header.addField("a", builder.intTypeRef()); });
     auto doc = bc.make_document("id:ns:searchdocument::0");
     doc->setValue("a", IntFieldValue(1000));
     bc.put_document(0, std::move(doc));
@@ -540,7 +540,7 @@ GlobalId gid9 = DocumentId("id:ns:searchdocument::9").getGlobalId(); // not exis
 
 TEST(DocSummaryTest, requireThatDocsumRequestIsProcessed)
 {
-    BuildContext bc([](auto& builder, auto& header) { header.addField("a", builder.primitiveType(DataType::T_INT)); });
+    BuildContext bc([](auto& builder, auto& header) { header.addField("a", builder.intTypeRef()); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto doc = bc.make_document("id:ns:searchdocument::1");
     doc->setValue("a", IntFieldValue(10));
@@ -570,8 +570,8 @@ TEST(DocSummaryTest, requireThatDocsumRequestIsProcessed)
 TEST(DocSummaryTest, requireThatRewritersAreUsed)
 {
     BuildContext bc([](auto& builder, auto& header)
-                    { header.addField("aa", builder.primitiveType(DataType::T_INT))
-                            .addField("ab", builder.primitiveType(DataType::T_INT)); });
+                    { header.addField("aa", builder.intTypeRef())
+                            .addField("ab", builder.intTypeRef()); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto doc = bc.make_document("id:ns:searchdocument::1");
     doc->setValue("aa", IntFieldValue(10));
@@ -588,8 +588,8 @@ TEST(DocSummaryTest, requireThatRewritersAreUsed)
 TEST(DocSummaryTest, requireThatSummariesTimeout)
 {
     BuildContext bc([](auto& builder, auto& header)
-                    { header.addField("aa", builder.primitiveType(DataType::T_INT))
-                            .addField("ab", builder.primitiveType(DataType::T_INT)); });
+                    { header.addField("aa", builder.intTypeRef())
+                            .addField("ab", builder.intTypeRef()); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto doc = bc.make_document("id:ns:searchdocument::1");
     doc->setValue("aa", IntFieldValue(10));
@@ -612,8 +612,8 @@ TEST(DocSummaryTest, requireThatSummariesTimeout)
 
 void verifyFieldListHonoured(DocsumRequest::FieldList fields, const std::string & json) {
     BuildContext bc([](auto& builder, auto& header)
-                    { header.addField("ba", builder.primitiveType(DataType::T_INT))
-                            .addField("bb", builder.primitiveType(DataType::T_FLOAT)); });
+                    { header.addField("ba", builder.intTypeRef())
+                            .addField("bb", builder.floatTypeRef()); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto doc = bc.make_document("id:ns:searchdocument::1");
     doc->setValue("ba", IntFieldValue(10));
@@ -641,15 +641,15 @@ TEST(DocSummaryTest, requireThatAttributesAreUsed)
 {
     BuildContext bc([](auto& builder, auto& header)
                     { using namespace document::new_config_builder;
-                        auto int_array = header.createArray(builder.primitiveType(DataType::T_INT)).ref();
-                        auto float_array = header.createArray(builder.primitiveType(DataType::T_FLOAT)).ref();
-                        auto string_array = header.createArray(builder.primitiveStringType()).ref();
-                        auto int_wset = header.createWset(builder.primitiveType(DataType::T_INT)).ref();
-                        auto float_wset = header.createWset(builder.primitiveType(DataType::T_FLOAT)).ref();
-                        auto string_wset = header.createWset(builder.primitiveStringType()).ref();
-                        header.addField("ba", builder.primitiveType(DataType::T_INT))
-                            .addField("bb", builder.primitiveType(DataType::T_FLOAT))
-                            .addField("bc", builder.primitiveStringType())
+                        auto int_array = header.createArray(builder.intTypeRef()).ref();
+                        auto float_array = header.createArray(builder.floatTypeRef()).ref();
+                        auto string_array = header.createArray(builder.stringTypeRef()).ref();
+                        auto int_wset = header.createWset(builder.intTypeRef()).ref();
+                        auto float_wset = header.createWset(builder.floatTypeRef()).ref();
+                        auto string_wset = header.createWset(builder.stringTypeRef()).ref();
+                        header.addField("ba", builder.intTypeRef())
+                            .addField("bb", builder.floatTypeRef())
+                            .addField("bc", builder.stringTypeRef())
                             .addField("bd", int_array)
                             .addField("be", float_array)
                             .addField("bf", string_array)
@@ -751,7 +751,7 @@ TEST(DocSummaryTest, requireThatAttributesAreUsed)
 
 TEST(DocSummaryTest, requireThatSummaryAdapterHandlesPutAndRemove)
 {
-    BuildContext bc([](auto& builder, auto& header) { header.addField("f1", builder.primitiveStringType()); });
+    BuildContext bc([](auto& builder, auto& header) { header.addField("f1", builder.stringTypeRef()); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto exp = bc.make_document("id:ns:searchdocument::1");
     exp->setValue("f1", StringFieldValue("foo"));
@@ -775,8 +775,8 @@ TEST(DocSummaryTest, requireThatAnnotationsAreUsed)
 {
     Fixture f;
     BuildContext bc([](auto& builder, auto& header)
-                    { header.addField("g", builder.primitiveStringType())
-                            .addField("dynamicstring", builder.primitiveStringType()); });
+                    { header.addField("g", builder.stringTypeRef())
+                            .addField("dynamicstring", builder.stringTypeRef()); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto exp = bc.make_document("id:ns:searchdocument::0");
     exp->setValue("g", bc.make_annotated_string());
@@ -804,9 +804,9 @@ TEST(DocSummaryTest, requireThatUrisAreUsed)
     Fixture f;
     BuildContext bc([](auto& builder, auto& header)
                     { using namespace document::new_config_builder;
-                        auto uri_array = header.createArray(builder.primitiveType(DataType::T_URI)).ref();
-                        auto uri_wset = header.createWset(builder.primitiveType(DataType::T_URI)).ref();
-                        header.addField("urisingle", builder.primitiveType(DataType::T_URI))
+                        auto uri_array = header.createArray(builder.uriTypeRef()).ref();
+                        auto uri_wset = header.createWset(builder.uriTypeRef()).ref();
+                        header.addField("urisingle", builder.uriTypeRef())
                             .addField("uriarray", uri_array)
                             .addField("uriwset", uri_wset); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
@@ -862,9 +862,9 @@ TEST(DocSummaryTest, requireThatPositionsAreUsed)
 {
     BuildContext bc([](auto& builder, auto& header)
                     { using namespace document::new_config_builder;
-                        auto long_array = header.createArray(builder.primitiveType(DataType::T_LONG)).ref();
-                        auto long_wset = header.createWset(builder.primitiveType(DataType::T_LONG)).ref();
-                        header.addField("sp2", builder.primitiveType(DataType::T_LONG))
+                        auto long_array = header.createArray(builder.longTypeRef()).ref();
+                        auto long_wset = header.createWset(builder.longTypeRef()).ref();
+                        header.addField("sp2", builder.longTypeRef())
                             .addField("ap2", long_array)
                             .addField("wp2", long_wset); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
@@ -906,9 +906,9 @@ TEST(DocSummaryTest, requireThatRawFieldsWorks)
     Fixture f;
     BuildContext bc([](auto& builder, auto& header)
                     { using namespace document::new_config_builder;
-                        auto raw_array = header.createArray(builder.primitiveType(DataType::T_RAW)).ref();
-                        auto raw_wset = header.createWset(builder.primitiveType(DataType::T_RAW)).ref();
-                        header.addField("i", builder.primitiveType(DataType::T_RAW))
+                        auto raw_array = header.createArray(builder.rawTypeRef()).ref();
+                        auto raw_wset = header.createWset(builder.rawTypeRef()).ref();
+                        header.addField("i", builder.rawTypeRef())
                             .addField("araw", raw_array)
                             .addField("wraw", raw_wset); });
     std::vector<char> binaryBlob;

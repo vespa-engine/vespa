@@ -18,19 +18,19 @@ namespace {
 auto add_all_fields = [](auto& builder, auto& doc) noexcept
                       { using namespace document::new_config_builder;
                           using document::DataType;
-                          auto int_array = doc.createArray(builder.primitiveType(DataType::T_INT)).ref();
-                          auto int_wset = doc.createWset(builder.primitiveType(DataType::T_INT)).ref();
-                          auto uri_array = doc.createArray(builder.primitiveType(DataType::T_URI)).ref();
-                          auto uri_wset = doc.createWset(builder.primitiveType(DataType::T_URI)).ref();
-                          doc.addField("int8", builder.primitiveType(DataType::T_BYTE))
-                              .addField("int16", builder.primitiveType(DataType::T_SHORT))
-                              .addField("int32", builder.primitiveType(DataType::T_INT))
-                              .addField("int64", builder.primitiveType(DataType::T_LONG))
-                              .addField("bool", builder.primitiveType(DataType::T_BOOL))
-                              .addField("float", builder.primitiveType(DataType::T_FLOAT))
-                              .addField("double", builder.primitiveType(DataType::T_DOUBLE))
-                              .addField("string", builder.primitiveStringType())
-                              .addField("url", builder.primitiveType(DataType::T_URI))
+                          auto int_array = doc.createArray(builder.intTypeRef()).ref();
+                          auto int_wset = doc.createWset(builder.intTypeRef()).ref();
+                          auto uri_array = doc.createArray(builder.uriTypeRef()).ref();
+                          auto uri_wset = doc.createWset(builder.uriTypeRef()).ref();
+                          doc.addField("int8", builder.byteTypeRef())
+                              .addField("int16", builder.shortTypeRef())
+                              .addField("int32", builder.intTypeRef())
+                              .addField("int64", builder.longTypeRef())
+                              .addField("bool", builder.boolTypeRef())
+                              .addField("float", builder.floatTypeRef())
+                              .addField("double", builder.doubleTypeRef())
+                              .addField("string", builder.stringTypeRef())
+                              .addField("url", builder.uriTypeRef())
                               .addTensorField("tensor", "tensor(x{},y{})")
                               .addField("int32_array", int_array)
                               .addField("int32_wset", int_wset)

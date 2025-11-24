@@ -69,7 +69,7 @@ protected:
     static DocBuilder::AddFieldsType
     make_add_fields()
     {
-        return [](auto& builder, auto& doc) noexcept { doc.addField(field_name, builder.primitiveStringType()); };
+        return [](auto& builder, auto& doc) noexcept { doc.addField(field_name, builder.stringTypeRef()); };
     }
 
     Words process(const StringFieldValue& value);

@@ -177,11 +177,11 @@ struct FieldInverterTest : public ::testing::Test {
     make_add_fields()
     {
         return [](auto& builder, auto& doc) noexcept { using namespace document::new_config_builder;
-            auto string_array = doc.createArray(builder.primitiveStringType()).ref();
-            auto string_wset = doc.createWset(builder.primitiveStringType()).ref();
+            auto string_array = doc.createArray(builder.stringTypeRef()).ref();
+            auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
             auto nested_string_array = doc.registerArray(doc.createArray(string_array));
-            doc.addField("f0", builder.primitiveStringType())
-                .addField("f1", builder.primitiveStringType())
+            doc.addField("f0", builder.stringTypeRef())
+                .addField("f1", builder.stringTypeRef())
                 .addField("f2", string_array)
                 .addField("f3", string_wset)
                 .addField("f4", nested_string_array);

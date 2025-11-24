@@ -29,33 +29,33 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
     // Create mystruct
     auto mystruct_ref = doc1.createStruct("mystruct")
             .setId(mystruct_id)
-            .addField("key", builder.primitiveType(DataType::T_INT))
-            .addField("value", builder.primitiveStringType()).ref();
+            .addField("key", builder.intTypeRef())
+            .addField("value", builder.stringTypeRef()).ref();
 
     // Create structarray (array of mystruct)
     auto structarray_ref = doc1.createArray(mystruct_ref).ref();
 
     // Add all fields from header
-    doc1.addField("headerval", builder.primitiveType(DataType::T_INT))
-        .addField("headerlongval", builder.primitiveType(DataType::T_LONG))
-        .addField("hfloatval", builder.primitiveType(DataType::T_FLOAT))
-        .addField("hstringval", builder.primitiveStringType())
+    doc1.addField("headerval", builder.intTypeRef())
+        .addField("headerlongval", builder.longTypeRef())
+        .addField("hfloatval", builder.floatTypeRef())
+        .addField("hstringval", builder.stringTypeRef())
         .addField("mystruct", mystruct_ref)
-        .addField("tags", doc1.createArray(builder.primitiveStringType()).ref())
-        .addField("boolfield", builder.primitiveType(DataType::T_BOOL))
-        .addField("stringweightedset", doc1.createWset(builder.primitiveStringType()).ref())
-        .addField("stringweightedset2", builder.primitiveType(DataType::T_TAG))
-        .addField("byteweightedset", doc1.createWset(builder.primitiveType(DataType::T_BYTE)).ref())
-        .addField("mymap", doc1.createMap(builder.primitiveType(DataType::T_INT),
-                                          builder.primitiveStringType()).ref())
-        .addField("structarrmap", doc1.createMap(builder.primitiveStringType(),
+        .addField("tags", doc1.createArray(builder.stringTypeRef()).ref())
+        .addField("boolfield", builder.boolTypeRef())
+        .addField("stringweightedset", doc1.createWset(builder.stringTypeRef()).ref())
+        .addField("stringweightedset2", builder.tagTypeRef())
+        .addField("byteweightedset", doc1.createWset(builder.byteTypeRef()).ref())
+        .addField("mymap", doc1.createMap(builder.intTypeRef(),
+                                          builder.stringTypeRef()).ref())
+        .addField("structarrmap", doc1.createMap(builder.stringTypeRef(),
                                                  structarray_ref).ref())
-        .addField("title", builder.primitiveStringType())
-        .addField("byteval", builder.primitiveType(DataType::T_BYTE));
+        .addField("title", builder.stringTypeRef())
+        .addField("byteval", builder.byteTypeRef());
 
     // Add all fields from body
-    doc1.addField("content", builder.primitiveStringType())
-        .addField("rawarray", doc1.createArray(builder.primitiveType(DataType::T_RAW)).ref())
+    doc1.addField("content", builder.stringTypeRef())
+        .addField("rawarray", doc1.createArray(builder.rawTypeRef()).ref())
         .addField("structarray", structarray_ref)
         .addTensorField("sparse_tensor", "tensor(x{})")
         .addTensorField("sparse_xy_tensor", "tensor(x{},y{})")
@@ -70,12 +70,12 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
 
     // testdoctype2 inherits from testdoctype1
     auto& doc2 = builder.document("testdoctype2", type2_id);
-    doc2.addField("onlyinchild", builder.primitiveType(DataType::T_INT))
+    doc2.addField("onlyinchild", builder.intTypeRef())
         .inherit(doc1.idx());
 
     // _test_doctype3_ inherits from testdoctype1
     auto& doc3 = builder.document("_test_doctype3_", type3_id);
-    doc3.addField("_only_in_child_", builder.primitiveType(DataType::T_INT))
+    doc3.addField("_only_in_child_", builder.intTypeRef())
         .inherit(doc1.idx());
 
     return builder.config();

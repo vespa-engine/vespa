@@ -85,18 +85,18 @@ makeDocumentTypeRepo()
 {
     new_config_builder::NewConfigBuilder builder;
     auto& doc = builder.document("testdoc", 222);
-    auto int_array = doc.createArray(builder.primitiveType(DataType::T_INT)).ref();
-    auto float_array = doc.createArray(builder.primitiveType(DataType::T_FLOAT)).ref();
-    auto string_array = doc.createArray(builder.primitiveStringType()).ref();
-    auto int_wset = doc.createWset(builder.primitiveType(DataType::T_INT)).ref();
-    auto float_wset = doc.createWset(builder.primitiveType(DataType::T_FLOAT)).ref();
-    auto string_wset = doc.createWset(builder.primitiveStringType()).ref();
+    auto int_array = doc.createArray(builder.intTypeRef()).ref();
+    auto float_array = doc.createArray(builder.floatTypeRef()).ref();
+    auto string_array = doc.createArray(builder.stringTypeRef()).ref();
+    auto int_wset = doc.createWset(builder.intTypeRef()).ref();
+    auto float_wset = doc.createWset(builder.floatTypeRef()).ref();
+    auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
     // Create self-referencing type (reference to testdoc itself)
     auto ref_type = doc.referenceType(doc.idx());
-    doc.addField("int", builder.primitiveType(DataType::T_INT))
-            .addField("float", builder.primitiveType(DataType::T_FLOAT))
-            .addField("string", builder.primitiveStringType())
-            .addField("raw", builder.primitiveType(DataType::T_RAW))
+    doc.addField("int", builder.intTypeRef())
+            .addField("float", builder.floatTypeRef())
+            .addField("string", builder.stringTypeRef())
+            .addField("raw", builder.rawTypeRef())
             .addField("aint", int_array)
             .addField("afloat", float_array)
             .addField("astring", string_array)

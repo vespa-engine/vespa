@@ -43,7 +43,7 @@ makeDocTypeRepo()
 {
     NewConfigBuilder builder;
     auto& doc = builder.document("searchdocument", -645763131);
-    doc.addField("a1", builder.primitiveType(DataType::T_INT));
+    doc.addField("a1", builder.intTypeRef());
     return std::make_unique<DocumentTypeRepo>(builder.config());
 }
 
