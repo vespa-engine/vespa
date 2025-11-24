@@ -65,11 +65,12 @@ makeDocTypeRepo()
            .addField("y", builder.primitiveType(DataType::T_STRING))));
 
     // Create collection types
-    auto string_array = doc.registerArray(doc.createArray(builder.primitiveType(DataType::T_STRING)));
-    auto string_wset = doc.registerWset(doc.createWset(builder.primitiveType(DataType::T_STRING)));
-    auto string_string_map = doc.registerMap(doc.createMap(builder.primitiveType(DataType::T_STRING), builder.primitiveType(DataType::T_STRING)));
-    auto int_array = doc.registerArray(doc.createArray(builder.primitiveType(DataType::T_INT)));
-    auto int_wset = doc.registerWset(doc.createWset(builder.primitiveType(DataType::T_INT)));
+    auto string_array = doc.createArray(builder.primitiveType(DataType::T_STRING)).ref();
+    auto string_wset = doc.createWset(builder.primitiveType(DataType::T_STRING)).ref();
+    auto string_string_map = doc.createMap(builder.primitiveType(DataType::T_STRING),
+                                           builder.primitiveType(DataType::T_STRING)).ref();
+    auto int_array = doc.createArray(builder.primitiveType(DataType::T_INT)).ref();
+    auto int_wset = doc.createWset(builder.primitiveType(DataType::T_INT)).ref();
 
     // Add fields
     doc.addField("ia", builder.primitiveType(DataType::T_STRING))

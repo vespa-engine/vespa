@@ -667,11 +667,9 @@ TEST(DocumentTest,testReadSerializedAllVersions)
         .addField("rawfield", builder.primitiveType(DataType::T_RAW))
         .addField("doublefield", builder.primitiveType(DataType::T_DOUBLE))
         .addField("bytefield", builder.primitiveType(DataType::T_BYTE))
-        .addField("arrayoffloatfield", doc1.registerArray(std::move(
-            doc1.createArray(builder.primitiveType(DataType::T_FLOAT)))))
+        .addField("arrayoffloatfield", doc1.createArray(builder.primitiveType(DataType::T_FLOAT)).ref())
         .addField("docfield", builder.primitiveType(DataType::T_DOCUMENT))
-        .addField("wsfield", doc1.registerWset(std::move(
-            doc1.createWset(builder.primitiveType(DataType::T_STRING)))));
+        .addField("wsfield", doc1.createWset(builder.primitiveType(DataType::T_STRING)).ref());
 
     auto& docindoc = builder.document("docindoc", 1447635645);
     docindoc.addField("stringindocfield", builder.primitiveType(DataType::T_STRING));
@@ -971,19 +969,17 @@ TEST(DocumentTest, testAnnotationDeserialization)
         .addField("friend", builder.primitiveType(DataType::T_LONG));
 
     // Create person annotation struct
-    auto person_struct = dokk.registerStruct(std::move(
-        dokk.createStruct("person")
+    auto person_struct = dokk.createStruct("person")
             .setId(443162583)
             .addField("firstname", builder.primitiveType(DataType::T_STRING))
             .addField("lastname", builder.primitiveType(DataType::T_STRING))
-            .addField("birthyear", builder.primitiveType(DataType::T_INT))));
+            .addField("birthyear", builder.primitiveType(DataType::T_INT)).ref();
 
     // Create relative annotation struct (references person annotation)
     // Note: AnnotationRef handling would need additional API support
-    auto relative_struct = dokk.registerStruct(std::move(
-        dokk.createStruct("relative")
+    auto relative_struct = dokk.createStruct("relative")
             .setId(-236946034)
-            .addField("title", builder.primitiveType(DataType::T_STRING))));
+            .addField("title", builder.primitiveType(DataType::T_STRING)).ref();
 
     // Register annotations
     dokk.annotationType(609952424, "person", person_struct)

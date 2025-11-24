@@ -223,7 +223,7 @@ AttributeWriterTest::~AttributeWriterTest() = default;
 TEST_F(AttributeWriterTest, handles_put)
 {
     DocBuilder db([](auto& builder, auto& header)
-                  { auto int_array = header.registerArray(header.createArray(builder.primitiveType(DataType::T_INT)));
+                  { auto int_array = header.createArray(builder.primitiveType(DataType::T_INT)).ref();
                       header.addField("a1", builder.primitiveType(DataType::T_INT))
                           .addField("a2", int_array)
                           .addField("a3", builder.primitiveType(DataType::T_FLOAT))

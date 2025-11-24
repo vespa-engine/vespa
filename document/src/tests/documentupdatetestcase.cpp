@@ -128,8 +128,7 @@ TEST_F(DocumentUpdateTest, testSimpleUsage)
     auto& test_doc = builder.document("test", 42);
     test_doc.addField("bytef", builder.primitiveType(DataType::T_BYTE))
        .addField("intf", builder.primitiveType(DataType::T_INT))
-       .addField("intarr", test_doc.registerArray(std::move(
-           test_doc.createArray(builder.primitiveType(DataType::T_INT)))));
+       .addField("intarr", test_doc.createArray(builder.primitiveType(DataType::T_INT)).ref());
     DocumentTypeRepo repo(builder.config());
     const DocumentType* docType(repo.getDocumentType("test"));
     const DataType *arrayType = repo.getDataType(*docType, "Array<Int>");

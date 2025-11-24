@@ -103,11 +103,12 @@ makeDocTypeRepo()
            .addField("y", builder.primitiveType(DataType::T_STRING))));
 
     // Create collection types
-    auto string_array = doc.registerArray(doc.createArray(builder.primitiveType(DataType::T_STRING)));
-    auto string_wset = doc.registerWset(doc.createWset(builder.primitiveType(DataType::T_STRING)));
-    auto string_string_map = doc.registerMap(doc.createMap(builder.primitiveType(DataType::T_STRING), builder.primitiveType(DataType::T_STRING)));
-    auto int_array = doc.registerArray(doc.createArray(builder.primitiveType(DataType::T_INT)));
-    auto int_wset = doc.registerWset(doc.createWset(builder.primitiveType(DataType::T_INT)));
+    auto string_array = doc.createArray(builder.primitiveType(DataType::T_STRING)).ref();
+    auto string_wset = doc.createWset(builder.primitiveType(DataType::T_STRING)).ref();
+    auto string_string_map = doc.createMap(builder.primitiveType(DataType::T_STRING),
+                                           builder.primitiveType(DataType::T_STRING)).ref();
+    auto int_array = doc.createArray(builder.primitiveType(DataType::T_INT)).ref();
+    auto int_wset = doc.createWset(builder.primitiveType(DataType::T_INT)).ref();
 
     // Add fields
     doc.addField("ia", builder.primitiveType(DataType::T_STRING))
@@ -426,7 +427,7 @@ TestFixture::testParse(const string &selection,
              repo,
              &_amgr,
              _hasFields);
-    
+
     EXPECT_TRUE(res->docSelect());
     return res;
 }
@@ -540,12 +541,12 @@ TEST(CachedSelectTest, Test_that_basic_select_works)
 {
     TestFixture f;
     MyDB &db(*f._db);
-    
+
     db.addDoc(1u, "id:ns:test::1", "hello", "null", 45, 37);
     db.addDoc(2u, "id:ns:test::2", "gotcha", "foo", 3, 25);
     db.addDoc(3u, "id:ns:test::3", "gotcha", "foo", noIntVal, noIntVal);
     db.addDoc(4u, "id:ns:test::4", "null", "foo", noIntVal, noIntVal);
-    
+
     CachedSelect::SP cs;
 
     {
@@ -761,12 +762,12 @@ TEST(CachedSelectTest, Test_performance_when_using_attributes)
 {
     TestFixture f;
     MyDB &db(*f._db);
-    
+
     db.addDoc(1u, "id:ns:test::1", "hello", "null", 45, 37);
     db.addDoc(2u, "id:ns:test::2", "gotcha", "foo", 3, 25);
     db.addDoc(3u, "id:ns:test::3", "gotcha", "foo", noIntVal, noIntVal);
     db.addDoc(4u, "id:ns:test::4", "null", "foo", noIntVal, noIntVal);
-    
+
     CachedSelect::SP cs;
     cs = f.testParse("test.aa < 45", "test");
     assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
@@ -797,7 +798,7 @@ TEST(CachedSelectTest, Test_performance_when_using_attributes)
     LOG(info,
         "Elapsed time for %u iterations of 4 docs each: %" PRId64 " ns, %8.4f ns/doc",
         i, vespalib::count_ns(elapsed), static_cast<double>(vespalib::count_ns(elapsed)) / ( 4 * i));
-    
+
 }
 
 TEST(CachedSelectTest, can_check_for_pre_doc_only_attribute_tensor_presence_in_selections)

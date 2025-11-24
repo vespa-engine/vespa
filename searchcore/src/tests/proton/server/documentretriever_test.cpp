@@ -162,7 +162,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
     }
 
     ~MyDocumentStore() override;
-    
+
     Document::UP read(DocumentIdT lid, const DocumentTypeRepo &r) const override {
         if (lid == 0) {
             return Document::UP();
@@ -194,7 +194,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
 
         return doc;
     }
-    
+
     uint64_t
     initFlush(uint64_t syncToken) override
     {
@@ -210,16 +210,16 @@ DocumenttypesConfig getRepoConfig() {
     NewConfigBuilder builder;
     auto& doc = builder.document(doc_type_name, doc_type_id);
 
-    auto int_array = doc.registerArray(doc.createArray(builder.primitiveType(document::DataType::T_INT)));
-    auto double_array = doc.registerArray(doc.createArray(builder.primitiveType(document::DataType::T_DOUBLE)));
-    auto string_array = doc.registerArray(doc.createArray(builder.primitiveType(document::DataType::T_STRING)));
-    auto float_array = doc.registerArray(doc.createArray(builder.primitiveType(document::DataType::T_FLOAT)));
-    auto int_wset = doc.registerWset(doc.createWset(builder.primitiveType(document::DataType::T_INT)));
-    auto double_wset = doc.registerWset(doc.createWset(builder.primitiveType(document::DataType::T_DOUBLE)));
-    auto string_wset = doc.registerWset(doc.createWset(builder.primitiveType(document::DataType::T_STRING)));
-    auto float_wset = doc.registerWset(doc.createWset(builder.primitiveType(document::DataType::T_FLOAT)));
-    auto position_array = doc.registerArray(doc.createArray(builder.positionType()));
-    auto long_array = doc.registerArray(doc.createArray(builder.primitiveType(document::DataType::T_LONG)));
+    auto int_array = doc.createArray(builder.primitiveType(document::DataType::T_INT)).ref();
+    auto double_array = doc.createArray(builder.primitiveType(document::DataType::T_DOUBLE)).ref();
+    auto string_array = doc.createArray(builder.primitiveType(document::DataType::T_STRING)).ref();
+    auto float_array = doc.createArray(builder.primitiveType(document::DataType::T_FLOAT)).ref();
+    auto int_wset = doc.createWset(builder.primitiveType(document::DataType::T_INT)).ref();
+    auto double_wset = doc.createWset(builder.primitiveType(document::DataType::T_DOUBLE)).ref();
+    auto string_wset = doc.createWset(builder.primitiveType(document::DataType::T_STRING)).ref();
+    auto float_wset = doc.createWset(builder.primitiveType(document::DataType::T_FLOAT)).ref();
+    auto position_array = doc.createArray(builder.positionType()).ref();
+    auto long_array = doc.createArray(builder.primitiveType(document::DataType::T_LONG)).ref();
 
     doc.addField(static_field, builder.primitiveType(document::DataType::T_INT))
        .addField(dyn_field_i, builder.primitiveType(document::DataType::T_INT))

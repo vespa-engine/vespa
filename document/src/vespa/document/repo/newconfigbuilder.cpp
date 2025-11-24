@@ -46,11 +46,12 @@ int32_t createFieldId(const std::string& name, int32_t type) {
 
 // ==================== NewStruct ====================
 
-NewStruct::NewStruct(NewConfigBuilder& builder, std::string name)
+NewStruct::NewStruct(NewConfigBuilder& builder, std::string name, int32_t doctype_idx)
     : _builder(builder),
       _name(std::move(name)),
       _internalid(hashId(_name)),
       _idx(-1),
+      _doctype_idx(doctype_idx),
       _registered(false)
 {
 }
@@ -87,36 +88,38 @@ NewStruct& NewStruct::setId(int32_t internalid) {
 
 TypeRef NewStruct::ref() {
     if (!_registered) {
-        // Need to register with a doctype - this is a problem
-        // For now, we'll require explicit registration
-        assert(false && "Struct must be registered before getting ref");
+        // Auto-register when ref() is called
+        _builder.registerStruct(*this, _doctype_idx);
     }
+    assert(_registered && "Struct should have been auto-registered");
     return TypeRef(_idx);
 }
 
 // ==================== NewArray ====================
 
-NewArray::NewArray(NewConfigBuilder& builder, TypeRef element_type)
+NewArray::NewArray(NewConfigBuilder& builder, TypeRef element_type, int32_t doctype_idx)
     : _builder(builder),
       _element_type(element_type),
       _idx(-1),
+      _doctype_idx(doctype_idx),
       _registered(false)
 {
+    // Auto-register immediately
+    _builder.registerArray(*this, _doctype_idx);
 }
 
 TypeRef NewArray::ref() {
-    if (!_registered) {
-        assert(false && "Array must be registered before getting ref");
-    }
+    assert(_registered && "Array should have been auto-registered");
     return TypeRef(_idx);
 }
 
 // ==================== NewWset ====================
 
-NewWset::NewWset(NewConfigBuilder& builder, TypeRef element_type)
+NewWset::NewWset(NewConfigBuilder& builder, TypeRef element_type, int32_t doctype_idx)
     : _builder(builder),
       _element_type(element_type),
       _idx(-1),
+      _doctype_idx(doctype_idx),
       _registered(false),
       _removeifzero(false),
       _createifnonexistent(false)
@@ -137,26 +140,29 @@ NewWset& NewWset::createIfNonExistent() {
 
 TypeRef NewWset::ref() {
     if (!_registered) {
-        assert(false && "Wset must be registered before getting ref");
+        // Auto-register when ref() is called
+        _builder.registerWset(*this, _doctype_idx);
     }
+    assert(_registered && "Wset should have been auto-registered");
     return TypeRef(_idx);
 }
 
 // ==================== NewMap ====================
 
-NewMap::NewMap(NewConfigBuilder& builder, TypeRef key_type, TypeRef value_type)
+NewMap::NewMap(NewConfigBuilder& builder, TypeRef key_type, TypeRef value_type, int32_t doctype_idx)
     : _builder(builder),
       _key_type(key_type),
       _value_type(value_type),
       _idx(-1),
+      _doctype_idx(doctype_idx),
       _registered(false)
 {
+    // Auto-register immediately
+    _builder.registerMap(*this, _doctype_idx);
 }
 
 TypeRef NewMap::ref() {
-    if (!_registered) {
-        assert(false && "Map must be registered before getting ref");
-    }
+    assert(_registered && "Map should have been auto-registered");
     return TypeRef(_idx);
 }
 
@@ -307,19 +313,19 @@ NewDocTypeRep& NewDocTypeRep::fieldSet(const std::string& name, const std::vecto
 }
 
 NewStruct NewDocTypeRep::createStruct(const std::string& name) {
-    return NewStruct(_builder, name);
+    return NewStruct(_builder, name, _idx);
 }
 
 NewArray NewDocTypeRep::createArray(TypeRef element_type) {
-    return NewArray(_builder, element_type);
+    return NewArray(_builder, element_type, _idx);
 }
 
 NewWset NewDocTypeRep::createWset(TypeRef element_type) {
-    return NewWset(_builder, element_type);
+    return NewWset(_builder, element_type, _idx);
 }
 
 NewMap NewDocTypeRep::createMap(TypeRef key_type, TypeRef value_type) {
-    return NewMap(_builder, key_type, value_type);
+    return NewMap(_builder, key_type, value_type, _idx);
 }
 
 TypeRef NewDocTypeRep::registerStruct(NewStruct&& s) {
@@ -596,20 +602,20 @@ void NewConfigBuilder::registerStructField(TypeRef struct_idx, const std::string
             struct_idx.idx, fieldname.c_str(), field_idx.idx, f.internalid);
 }
 
-NewStruct NewConfigBuilder::createStruct(const std::string& name) {
-    return NewStruct(*this, name);
+NewStruct NewConfigBuilder::createStruct(const std::string& name, int32_t doctype_idx) {
+    return NewStruct(*this, name, doctype_idx);
 }
 
-NewArray NewConfigBuilder::createArray(TypeRef element_type) {
-    return NewArray(*this, element_type);
+NewArray NewConfigBuilder::createArray(TypeRef element_type, int32_t doctype_idx) {
+    return NewArray(*this, element_type, doctype_idx);
 }
 
-NewWset NewConfigBuilder::createWset(TypeRef element_type) {
-    return NewWset(*this, element_type);
+NewWset NewConfigBuilder::createWset(TypeRef element_type, int32_t doctype_idx) {
+    return NewWset(*this, element_type, doctype_idx);
 }
 
-NewMap NewConfigBuilder::createMap(TypeRef key_type, TypeRef value_type) {
-    return NewMap(*this, key_type, value_type);
+NewMap NewConfigBuilder::createMap(TypeRef key_type, TypeRef value_type, int32_t doctype_idx) {
+    return NewMap(*this, key_type, value_type, doctype_idx);
 }
 
 void NewConfigBuilder::registerStruct(NewStruct& s, int32_t doctype_idx) {

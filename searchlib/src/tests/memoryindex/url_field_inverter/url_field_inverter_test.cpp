@@ -151,13 +151,11 @@ add_single_url = [](auto& builder, auto& doc) noexcept {
 
 DocBuilder::AddFieldsType
 add_array_url = [](auto& builder, auto& doc) noexcept {
-                    doc.addField("url", doc.registerArray(std::move(
-                        doc.createArray(builder.primitiveType(document::DataType::T_URI))))); };
+                    doc.addField("url", doc.createArray(builder.primitiveType(document::DataType::T_URI)).ref()); };
 
 DocBuilder::AddFieldsType
 add_wset_url = [](auto& builder, auto& doc) noexcept {
-                    doc.addField("url", doc.registerWset(std::move(
-                        doc.createWset(builder.primitiveType(document::DataType::T_URI))))); };
+                    doc.addField("url", doc.createWset(builder.primitiveType(document::DataType::T_URI)).ref()); };
 
 
 

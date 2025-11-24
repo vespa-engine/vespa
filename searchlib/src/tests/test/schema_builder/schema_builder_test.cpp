@@ -18,10 +18,10 @@ namespace {
 auto add_all_fields = [](auto& builder, auto& doc) noexcept
                       { using namespace document::new_config_builder;
                           using document::DataType;
-                          auto int_array = doc.registerArray(doc.createArray(builder.primitiveType(DataType::T_INT)));
-                          auto int_wset = doc.registerWset(doc.createWset(builder.primitiveType(DataType::T_INT)));
-                          auto uri_array = doc.registerArray(doc.createArray(builder.primitiveType(DataType::T_URI)));
-                          auto uri_wset = doc.registerWset(doc.createWset(builder.primitiveType(DataType::T_URI)));
+                          auto int_array = doc.createArray(builder.primitiveType(DataType::T_INT)).ref();
+                          auto int_wset = doc.createWset(builder.primitiveType(DataType::T_INT)).ref();
+                          auto uri_array = doc.createArray(builder.primitiveType(DataType::T_URI)).ref();
+                          auto uri_wset = doc.createWset(builder.primitiveType(DataType::T_URI)).ref();
                           doc.addField("int8", builder.primitiveType(DataType::T_BYTE))
                               .addField("int16", builder.primitiveType(DataType::T_SHORT))
                               .addField("int32", builder.primitiveType(DataType::T_INT))

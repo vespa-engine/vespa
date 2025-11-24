@@ -144,18 +144,14 @@ get_document_types_config()
 
     // Add all fields to main document
     // NOTE: position type is NOT defined here - it will use the built-in PositionDataType
-    main_doc.addField("string_array", main_doc.registerArray(std::move(
-                main_doc.createArray(builder.primitiveType(DataType::T_STRING)))))
-        .addField("string_wset", main_doc.registerWset(std::move(
-                main_doc.createWset(builder.primitiveType(DataType::T_STRING)))))
-        .addField("string_map", main_doc.registerMap(std::move(
-                main_doc.createMap(builder.primitiveType(DataType::T_STRING),
-                                   builder.primitiveType(DataType::T_STRING)))))
+    main_doc.addField("string_array", main_doc.createArray(builder.primitiveType(DataType::T_STRING)).ref())
+        .addField("string_wset", main_doc.createWset(builder.primitiveType(DataType::T_STRING)).ref())
+        .addField("string_map", main_doc.createMap(builder.primitiveType(DataType::T_STRING),
+                                                   builder.primitiveType(DataType::T_STRING)).ref())
         .addField("nested", nested_ref)
-        .addField("nested_array", main_doc.registerArray(std::move(
-                main_doc.createArray(nested_ref))))
-        .addField("nested_map", main_doc.registerMap(std::move(
-                main_doc.createMap(builder.primitiveType(DataType::T_STRING), nested_ref))))
+        .addField("nested_array", main_doc.createArray(nested_ref).ref())
+        .addField("nested_map", main_doc.createMap(builder.primitiveType(DataType::T_STRING),
+                                                   nested_ref).ref())
         .addField("ref", ref_type);
 
     return builder.config();

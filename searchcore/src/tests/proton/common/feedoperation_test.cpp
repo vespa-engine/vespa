@@ -111,7 +111,8 @@ makeDocTypeRepo()
            .addField("x", builder.primitiveType(DataType::T_STRING))
            .addField("y", builder.primitiveType(DataType::T_STRING))));
 
-    auto string_string_map = doc.registerMap(doc.createMap(builder.primitiveType(DataType::T_STRING), builder.primitiveType(DataType::T_STRING)));
+    auto string_string_map = doc.createMap(builder.primitiveType(DataType::T_STRING),
+                                           builder.primitiveType(DataType::T_STRING)).ref();
 
     doc.addField("string", builder.primitiveType(DataType::T_STRING))
        .addField("struct", pair_struct)

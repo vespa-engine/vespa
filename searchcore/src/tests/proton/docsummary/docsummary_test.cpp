@@ -641,12 +641,12 @@ TEST(DocSummaryTest, requireThatAttributesAreUsed)
 {
     BuildContext bc([](auto& builder, auto& header)
                     { using namespace document::new_config_builder;
-                        auto int_array = header.registerArray(header.createArray(builder.primitiveType(DataType::T_INT)));
-                        auto float_array = header.registerArray(header.createArray(builder.primitiveType(DataType::T_FLOAT)));
-                        auto string_array = header.registerArray(header.createArray(builder.primitiveType(DataType::T_STRING)));
-                        auto int_wset = header.registerWset(header.createWset(builder.primitiveType(DataType::T_INT)));
-                        auto float_wset = header.registerWset(header.createWset(builder.primitiveType(DataType::T_FLOAT)));
-                        auto string_wset = header.registerWset(header.createWset(builder.primitiveType(DataType::T_STRING)));
+                        auto int_array = header.createArray(builder.primitiveType(DataType::T_INT)).ref();
+                        auto float_array = header.createArray(builder.primitiveType(DataType::T_FLOAT)).ref();
+                        auto string_array = header.createArray(builder.primitiveType(DataType::T_STRING)).ref();
+                        auto int_wset = header.createWset(builder.primitiveType(DataType::T_INT)).ref();
+                        auto float_wset = header.createWset(builder.primitiveType(DataType::T_FLOAT)).ref();
+                        auto string_wset = header.createWset(builder.primitiveType(DataType::T_STRING)).ref();
                         header.addField("ba", builder.primitiveType(DataType::T_INT))
                             .addField("bb", builder.primitiveType(DataType::T_FLOAT))
                             .addField("bc", builder.primitiveType(DataType::T_STRING))
@@ -804,8 +804,8 @@ TEST(DocSummaryTest, requireThatUrisAreUsed)
     Fixture f;
     BuildContext bc([](auto& builder, auto& header)
                     { using namespace document::new_config_builder;
-                        auto uri_array = header.registerArray(header.createArray(builder.primitiveType(DataType::T_URI)));
-                        auto uri_wset = header.registerWset(header.createWset(builder.primitiveType(DataType::T_URI)));
+                        auto uri_array = header.createArray(builder.primitiveType(DataType::T_URI)).ref();
+                        auto uri_wset = header.createWset(builder.primitiveType(DataType::T_URI)).ref();
                         header.addField("urisingle", builder.primitiveType(DataType::T_URI))
                             .addField("uriarray", uri_array)
                             .addField("uriwset", uri_wset); });
@@ -862,8 +862,8 @@ TEST(DocSummaryTest, requireThatPositionsAreUsed)
 {
     BuildContext bc([](auto& builder, auto& header)
                     { using namespace document::new_config_builder;
-                        auto long_array = header.registerArray(header.createArray(builder.primitiveType(DataType::T_LONG)));
-                        auto long_wset = header.registerWset(header.createWset(builder.primitiveType(DataType::T_LONG)));
+                        auto long_array = header.createArray(builder.primitiveType(DataType::T_LONG)).ref();
+                        auto long_wset = header.createWset(builder.primitiveType(DataType::T_LONG)).ref();
                         header.addField("sp2", builder.primitiveType(DataType::T_LONG))
                             .addField("ap2", long_array)
                             .addField("wp2", long_wset); });
@@ -906,8 +906,8 @@ TEST(DocSummaryTest, requireThatRawFieldsWorks)
     Fixture f;
     BuildContext bc([](auto& builder, auto& header)
                     { using namespace document::new_config_builder;
-                        auto raw_array = header.registerArray(header.createArray(builder.primitiveType(DataType::T_RAW)));
-                        auto raw_wset = header.registerWset(header.createWset(builder.primitiveType(DataType::T_RAW)));
+                        auto raw_array = header.createArray(builder.primitiveType(DataType::T_RAW)).ref();
+                        auto raw_wset = header.createWset(builder.primitiveType(DataType::T_RAW)).ref();
                         header.addField("i", builder.primitiveType(DataType::T_RAW))
                             .addField("araw", raw_array)
                             .addField("wraw", raw_wset); });

@@ -34,8 +34,7 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
             .addField("value", builder.primitiveType(DataType::T_STRING))));
 
     // Create structarray (array of mystruct)
-    auto structarray_ref = doc1.registerArray(std::move(
-        doc1.createArray(mystruct_ref)));
+    auto structarray_ref = doc1.createArray(mystruct_ref).ref();
 
     // Add all fields from header
     doc1.addField("headerval", builder.primitiveType(DataType::T_INT))
@@ -43,27 +42,21 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
         .addField("hfloatval", builder.primitiveType(DataType::T_FLOAT))
         .addField("hstringval", builder.primitiveType(DataType::T_STRING))
         .addField("mystruct", mystruct_ref)
-        .addField("tags", doc1.registerArray(std::move(
-            doc1.createArray(builder.primitiveType(DataType::T_STRING)))))
+        .addField("tags", doc1.createArray(builder.primitiveType(DataType::T_STRING)).ref())
         .addField("boolfield", builder.primitiveType(DataType::T_BOOL))
-        .addField("stringweightedset", doc1.registerWset(std::move(
-            doc1.createWset(builder.primitiveType(DataType::T_STRING)))))
+        .addField("stringweightedset", doc1.createWset(builder.primitiveType(DataType::T_STRING)).ref())
         .addField("stringweightedset2", builder.primitiveType(DataType::T_TAG))
-        .addField("byteweightedset", doc1.registerWset(std::move(
-            doc1.createWset(builder.primitiveType(DataType::T_BYTE)))))
-        .addField("mymap", doc1.registerMap(std::move(
-            doc1.createMap(builder.primitiveType(DataType::T_INT),
-                          builder.primitiveType(DataType::T_STRING)))))
-        .addField("structarrmap", doc1.registerMap(std::move(
-            doc1.createMap(builder.primitiveType(DataType::T_STRING),
-                          structarray_ref))))
+        .addField("byteweightedset", doc1.createWset(builder.primitiveType(DataType::T_BYTE)).ref())
+        .addField("mymap", doc1.createMap(builder.primitiveType(DataType::T_INT),
+                                          builder.primitiveType(DataType::T_STRING)).ref())
+        .addField("structarrmap", doc1.createMap(builder.primitiveType(DataType::T_STRING),
+                                                 structarray_ref).ref())
         .addField("title", builder.primitiveType(DataType::T_STRING))
         .addField("byteval", builder.primitiveType(DataType::T_BYTE));
 
     // Add all fields from body
     doc1.addField("content", builder.primitiveType(DataType::T_STRING))
-        .addField("rawarray", doc1.registerArray(std::move(
-            doc1.createArray(builder.primitiveType(DataType::T_RAW)))))
+        .addField("rawarray", doc1.createArray(builder.primitiveType(DataType::T_RAW)).ref())
         .addField("structarray", structarray_ref)
         .addTensorField("sparse_tensor", "tensor(x{})")
         .addTensorField("sparse_xy_tensor", "tensor(x{},y{})")

@@ -82,7 +82,7 @@ TEST(NewConfigBuilderTest, array_type) {
     auto& doc = builder.document("mytype");
 
     auto string_ref = builder.primitiveType(DataType::T_STRING);
-    auto array_ref = doc.registerArray(std::move(doc.createArray(string_ref)));
+    auto array_ref = doc.createArray(string_ref).ref();
 
     doc.addField("string_array", array_ref);
 
@@ -107,7 +107,7 @@ TEST(NewConfigBuilderTest, map_type) {
 
     auto int_ref = builder.primitiveType(DataType::T_INT);
     auto string_ref = builder.primitiveType(DataType::T_STRING);
-    auto map_ref = doc.registerMap(std::move(doc.createMap(int_ref, string_ref)));
+    auto map_ref = doc.createMap(int_ref, string_ref).ref();
 
     doc.addField("int_string_map", map_ref);
 
@@ -126,7 +126,7 @@ TEST(NewConfigBuilderTest, wset_type) {
     auto& doc = builder.document("mytype");
 
     auto string_ref = builder.primitiveType(DataType::T_STRING);
-    auto wset_ref = doc.registerWset(std::move(doc.createWset(string_ref).removeIfZero()));
+    auto wset_ref = doc.createWset(string_ref).removeIfZero().ref();
 
     doc.addField("string_wset", wset_ref);
 
@@ -147,10 +147,9 @@ TEST(NewConfigBuilderTest, struct_type) {
     auto int_ref = builder.primitiveType(DataType::T_INT);
     auto string_ref = builder.primitiveType(DataType::T_STRING);
 
-    auto struct_ref = doc.registerStruct(std::move(
-        doc.createStruct("mystruct")
+    auto struct_ref = doc.createStruct("mystruct")
            .addField("key", int_ref)
-           .addField("value", string_ref)));
+           .addField("value", string_ref).ref();
 
     doc.addField("struct_field", struct_ref);
 
@@ -291,16 +290,14 @@ TEST(NewConfigBuilderTest, complex_nested_types) {
     auto string_ref = builder.primitiveType(DataType::T_STRING);
 
     // Create a struct with nested types
-    auto inner_struct_ref = doc.registerStruct(std::move(
-        doc.createStruct("inner")
+    auto inner_struct_ref = doc.createStruct("inner")
            .addField("id", int_ref)
-           .addField("name", string_ref)));
+           .addField("name", string_ref).ref();
 
-    auto struct_array_ref = doc.registerArray(std::move(doc.createArray(inner_struct_ref)));
+    auto struct_array_ref = doc.createArray(inner_struct_ref).ref();
 
-    auto outer_struct_ref = doc.registerStruct(std::move(
-        doc.createStruct("outer")
-           .addField("items", struct_array_ref)));
+    auto outer_struct_ref = doc.createStruct("outer")
+           .addField("items", struct_array_ref).ref();
 
     doc.addField("complex_field", outer_struct_ref);
 

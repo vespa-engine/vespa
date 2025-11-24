@@ -36,8 +36,7 @@ struct Fixture {
 
 Fixture::Fixture()
     :  _builder([](auto& builder, auto& doc) noexcept
-                {  doc.addField(field_name, doc.registerArray(std::move(
-                       doc.createArray(builder.primitiveType(DataType::T_DOUBLE))))); }),
+                {  doc.addField(field_name, doc.createArray(builder.primitiveType(DataType::T_DOUBLE)).ref()); }),
        _doc(_builder.make_document("id:ns:searchdocument::0")),
        _node()
 {

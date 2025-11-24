@@ -41,12 +41,13 @@ private:
     std::string _name;
     int32_t _internalid;
     int32_t _idx;
+    int32_t _doctype_idx;
     std::vector<std::pair<std::string, TypeRef>> _fields;
     std::vector<std::pair<std::string, std::string>> _tensor_fields;
     std::vector<TypeRef> _inherits;
     bool _registered;
 
-    NewStruct(NewConfigBuilder& builder, std::string name);
+    NewStruct(NewConfigBuilder& builder, std::string name, int32_t doctype_idx);
 
     int32_t hashId(const std::string& name) const;
 
@@ -76,9 +77,10 @@ private:
     NewConfigBuilder& _builder;
     TypeRef _element_type;
     int32_t _idx;
+    int32_t _doctype_idx;
     bool _registered;
 
-    NewArray(NewConfigBuilder& builder, TypeRef element_type);
+    NewArray(NewConfigBuilder& builder, TypeRef element_type, int32_t doctype_idx);
 
 public:
     TypeRef ref();
@@ -95,11 +97,12 @@ private:
     NewConfigBuilder& _builder;
     TypeRef _element_type;
     int32_t _idx;
+    int32_t _doctype_idx;
     bool _registered;
     bool _removeifzero;
     bool _createifnonexistent;
 
-    NewWset(NewConfigBuilder& builder, TypeRef element_type);
+    NewWset(NewConfigBuilder& builder, TypeRef element_type, int32_t doctype_idx);
 
 public:
     NewWset& removeIfZero();
@@ -119,9 +122,10 @@ private:
     TypeRef _key_type;
     TypeRef _value_type;
     int32_t _idx;
+    int32_t _doctype_idx;
     bool _registered;
 
-    NewMap(NewConfigBuilder& builder, TypeRef key_type, TypeRef value_type);
+    NewMap(NewConfigBuilder& builder, TypeRef key_type, TypeRef value_type, int32_t doctype_idx);
 
 public:
     TypeRef ref();
@@ -273,11 +277,11 @@ public:
     // Access to base "document" type
     int32_t baseDocumentIdx() const { return _base_document_idx; }
 
-    // Factory methods for types (these need to be registered before use)
-    NewStruct createStruct(const std::string& name);
-    NewArray createArray(TypeRef element_type);
-    NewWset createWset(TypeRef element_type);
-    NewMap createMap(TypeRef key_type, TypeRef value_type);
+    // Factory methods for types (automatically registered with given doctype)
+    NewStruct createStruct(const std::string& name, int32_t doctype_idx);
+    NewArray createArray(TypeRef element_type, int32_t doctype_idx);
+    NewWset createWset(TypeRef element_type, int32_t doctype_idx);
+    NewMap createMap(TypeRef key_type, TypeRef value_type, int32_t doctype_idx);
 };
 
 }  // namespace document::new_config_builder
