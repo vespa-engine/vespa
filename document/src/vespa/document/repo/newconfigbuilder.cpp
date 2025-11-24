@@ -623,7 +623,14 @@ void NewConfigBuilder::registerStruct(NewStruct& s, int32_t doctype_idx) {
     }
     assert(doc && "Document type not found");
 
-    // TODO: check if we already have a struct with this name, fail on collisions
+    // Check if we already have a struct with this name, fail on collisions
+    for (const auto& st : doc->structtype) {
+        if (st.name == s._name) {
+            fprintf(stderr, "ERROR: Struct '%s' already exists in doctype idx=%d\n",
+                    s._name.c_str(), doctype_idx);
+            assert(false && "Struct name collision detected");
+        }
+    }
 
     // Allocate idx
     s._idx = _next_idx++;
@@ -676,7 +683,17 @@ void NewConfigBuilder::registerArray(NewArray& a, int32_t doctype_idx) {
     }
     assert(doc && "Document type not found");
 
-    // TODO: check if we already have an array with this elementtype to avoid allocating again
+    // Check if we already have an array with this elementtype to avoid allocating again
+    for (const auto& arr : doc->arraytype) {
+        if (arr.elementtype == a._element_type.idx) {
+            // Reuse existing array type
+            a._idx = arr.idx;
+            a._registered = true;
+            fprintf(stderr, "DEBUG: registerArray - reusing existing array idx=%d for elem_idx=%d\n",
+                    arr.idx, a._element_type.idx);
+            return;
+        }
+    }
 
     // Allocate idx
     a._idx = _next_idx++;
@@ -709,7 +726,19 @@ void NewConfigBuilder::registerWset(NewWset& w, int32_t doctype_idx) {
     }
     assert(doc && "Document type not found");
 
-    // TODO: check if we already have a wset with this elementtype, same createifnonexistent and same removeifzero, and avoid allocating again
+    // Check if we already have a wset with this elementtype, same createifnonexistent and same removeifzero
+    for (const auto& wset : doc->wsettype) {
+        if (wset.elementtype == w._element_type.idx &&
+            wset.createifnonexistent == w._createifnonexistent &&
+            wset.removeifzero == w._removeifzero) {
+            // Reuse existing wset type
+            w._idx = wset.idx;
+            w._registered = true;
+            fprintf(stderr, "DEBUG: registerWset - reusing existing wset idx=%d for elem_idx=%d\n",
+                    wset.idx, w._element_type.idx);
+            return;
+        }
+    }
 
     // Allocate idx
     w._idx = _next_idx++;
@@ -744,7 +773,17 @@ void NewConfigBuilder::registerMap(NewMap& m, int32_t doctype_idx) {
     }
     assert(doc && "Document type not found");
 
-    // TODO: check if we already have a wset map these elementtypes to avoid allocating again
+    // Check if we already have a map with these key and value types to avoid allocating again
+    for (const auto& map : doc->maptype) {
+        if (map.keytype == m._key_type.idx && map.valuetype == m._value_type.idx) {
+            // Reuse existing map type
+            m._idx = map.idx;
+            m._registered = true;
+            fprintf(stderr, "DEBUG: registerMap - reusing existing map idx=%d for key_idx=%d, val_idx=%d\n",
+                    map.idx, m._key_type.idx, m._value_type.idx);
+            return;
+        }
+    }
 
     // Allocate idx
     m._idx = _next_idx++;
