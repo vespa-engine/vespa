@@ -149,6 +149,8 @@ protected:
         const auto& metrics = _manager->getThread(0).getMetrics();
         return metrics.visitorDestinationFailureReplies.getCount();
     }
+
+    std::shared_ptr<api::CreateVisitorReply> fetch_create_visitor_reply() const;
 };
 
 uint32_t VisitorTest::docCount = 10;
@@ -464,6 +466,21 @@ VisitorTest::sendCreateIteratorReply(uint64_t iteratorId)
     spi::IteratorId id(iteratorId);
     auto reply = std::make_shared<CreateIteratorReply>(*createCmd, id);
     _bottom->sendUp(reply);
+}
+
+std::shared_ptr<api::CreateVisitorReply>
+VisitorTest::fetch_create_visitor_reply() const {
+    _top->waitForMessages(1, 60);
+    const msg_ptr_vector replies = _top->getRepliesOnce();
+    EXPECT_EQ(1, replies.size());
+
+    std::shared_ptr<api::StorageMessage> message(replies[0]);
+    EXPECT_EQ(api::MessageType::VISITOR_CREATE_REPLY, message->getType());
+
+    auto reply = std::dynamic_pointer_cast<api::CreateVisitorReply>(message);
+    EXPECT_TRUE(reply.get());
+
+    return reply;
 }
 
 TEST_F(VisitorTest, normal_usage) {
@@ -911,6 +928,25 @@ TEST_F(ReindexingVisitorTest, tas_responses_fail_the_visitor_and_are_rewritten_t
     ASSERT_NO_FATAL_FAILURE(complete_visitor());
 
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::ABORTED, -1, -1));
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
+}
+
+TEST_F(ReindexingVisitorTest, reindexing_write_failure_includes_doc_id_in_error_message) {
+    ASSERT_NO_FATAL_FAILURE(initializeTest());
+
+    auto cmd = makeCreateVisitor(VisitorOptions().withVisitorType("reindexingvisitor"));
+    cmd->getParameters().set(reindexing_bucket_lock_visitor_parameter_key(), "foobar");
+    _top->sendDown(cmd);
+
+    ASSERT_NO_FATAL_FAILURE(respond_with_docs_from_persistence());
+    ASSERT_NO_FATAL_FAILURE(respond_to_client_put(api::ReturnCode::REJECTED));
+    ASSERT_NO_FATAL_FAILURE(complete_visitor());
+
+    auto reply = fetch_create_visitor_reply();
+    EXPECT_EQ(reply->getResult().getResult(), api::ReturnCode::REJECTED);
+
+    std::string_view message = reply->getResult().getMessage();
+    EXPECT_EQ("Generic error [document id was 'id:test:testdoctype1:n=0:http://www.ntnu.no/0.html']", message);
     ASSERT_TRUE(waitUntilNoActiveVisitors());
 }
 
