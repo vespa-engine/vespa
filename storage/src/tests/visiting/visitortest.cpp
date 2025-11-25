@@ -150,7 +150,7 @@ protected:
         return metrics.visitorDestinationFailureReplies.getCount();
     }
 
-    std::shared_ptr<api::CreateVisitorReply> fetch_create_visitor_reply() const;
+    void fetch_create_visitor_reply(std::shared_ptr<api::CreateVisitorReply>& out_reply) const;
 };
 
 uint32_t VisitorTest::docCount = 10;
@@ -468,19 +468,19 @@ VisitorTest::sendCreateIteratorReply(uint64_t iteratorId)
     _bottom->sendUp(reply);
 }
 
-std::shared_ptr<api::CreateVisitorReply>
-VisitorTest::fetch_create_visitor_reply() const {
+void
+VisitorTest::fetch_create_visitor_reply(std::shared_ptr<api::CreateVisitorReply>& out_reply) const {
     _top->waitForMessages(1, 60);
     const msg_ptr_vector replies = _top->getRepliesOnce();
-    EXPECT_EQ(1, replies.size());
+    ASSERT_EQ(1u, replies.size()) << "Expected exactly one CreateVisitor reply";
 
     std::shared_ptr<api::StorageMessage> message(replies[0]);
-    EXPECT_EQ(api::MessageType::VISITOR_CREATE_REPLY, message->getType());
+    ASSERT_EQ(api::MessageType::VISITOR_CREATE_REPLY, message->getType()) << "Unexpected reply message type: " << message->toString();
 
     auto reply = std::dynamic_pointer_cast<api::CreateVisitorReply>(message);
-    EXPECT_TRUE(reply.get());
+    ASSERT_TRUE(reply) << "Dynamic cast to CreateVisitorReply failed";
 
-    return reply;
+    out_reply = std::move(reply);
 }
 
 TEST_F(VisitorTest, normal_usage) {
@@ -878,7 +878,8 @@ TEST_F(VisitorTest, document_api_failure_error_message_includes_doc_id) {
     DestroyIteratorCommand::SP destroy_iter_cmd;
     ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, destroy_iter_cmd));
 
-    auto reply = fetch_create_visitor_reply();
+    std::shared_ptr<api::CreateVisitorReply> reply;
+    ASSERT_NO_FATAL_FAILURE(fetch_create_visitor_reply(reply));
     EXPECT_EQ(reply->getResult().getResult(), api::ReturnCode::REJECTED);
 
     std::string_view message = reply->getResult().getMessage();
