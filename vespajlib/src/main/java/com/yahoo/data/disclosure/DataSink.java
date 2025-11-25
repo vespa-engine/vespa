@@ -33,4 +33,6 @@ public interface DataSink {
 
     void stringValue(String utf16, byte[] utf8);
 
+    void dataValue(byte[] data);
+
 }
