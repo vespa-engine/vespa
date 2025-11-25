@@ -5,7 +5,9 @@ import com.yahoo.processing.request.CompoundName;
 import com.yahoo.tensor.Tensor;
 
 /**
- * Thrown won an illegal property assignment.
+ * Thrown on an illegal property assignment.
+ *
+ * @author bratseth
  */
 public class IllegalAssignmentException extends IllegalArgumentException {
 

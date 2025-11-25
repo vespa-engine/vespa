@@ -1,0 +1,5 @@
+schema docindoc {
+    document docindoc {
+        field stringindocfield type string {}
+    }
+}

@@ -331,7 +331,7 @@ public class ModelProvisioningTest {
         assertEquals(3, subGroups.get(0).getNodes().size());
         assertEquals(0, subGroups.get(0).getNodes().get(0).getDistributionKey());
         assertEquals("bar/storage/0", subGroups.get(0).getNodes().get(0).getConfigId());
-        assertEquals("node-1-3-50-57", subGroups.get(0).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-057", subGroups.get(0).getNodes().get(0).getHostName());
         assertEquals(1, subGroups.get(0).getNodes().get(1).getDistributionKey());
         assertEquals("bar/storage/1", subGroups.get(0).getNodes().get(1).getConfigId());
         assertEquals(2, subGroups.get(0).getNodes().get(2).getDistributionKey());
@@ -340,13 +340,13 @@ public class ModelProvisioningTest {
         assertEquals(3, subGroups.get(1).getNodes().size());
         assertEquals(3, subGroups.get(1).getNodes().get(0).getDistributionKey());
         assertEquals("bar/storage/3", subGroups.get(1).getNodes().get(0).getConfigId());
-        assertEquals("node-1-3-50-54", subGroups.get(1).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-054", subGroups.get(1).getNodes().get(0).getHostName());
         assertEquals(4, subGroups.get(1).getNodes().get(1).getDistributionKey());
         assertEquals("bar/storage/4", subGroups.get(1).getNodes().get(1).getConfigId());
         assertEquals(5, subGroups.get(1).getNodes().get(2).getDistributionKey());
         assertEquals("bar/storage/5", subGroups.get(1).getNodes().get(2).getConfigId());
         // ...
-        assertEquals("node-1-3-50-51", subGroups.get(2).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-051", subGroups.get(2).getNodes().get(0).getHostName());
         // ...
         assertEquals("8", subGroups.get(8).getIndex());
         assertEquals(3, subGroups.get(8).getNodes().size());
@@ -365,14 +365,14 @@ public class ModelProvisioningTest {
         assertEquals(1, subGroups.get(0).getNodes().size());
         assertEquals(0, subGroups.get(0).getNodes().get(0).getDistributionKey());
         assertEquals("baz/storage/0", subGroups.get(0).getNodes().get(0).getConfigId());
-        assertEquals("node-1-3-50-27", subGroups.get(0).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-027", subGroups.get(0).getNodes().get(0).getHostName());
         assertEquals("1", subGroups.get(1).getIndex());
         assertEquals(1, subGroups.get(1).getNodes().size());
         assertEquals(1, subGroups.get(1).getNodes().get(0).getDistributionKey());
         assertEquals("baz/storage/1", subGroups.get(1).getNodes().get(0).getConfigId());
-        assertEquals("node-1-3-50-26", subGroups.get(1).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-026", subGroups.get(1).getNodes().get(0).getHostName());
         // ...
-        assertEquals("node-1-3-50-25", subGroups.get(2).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-025", subGroups.get(2).getNodes().get(0).getHostName());
         // ...
         assertEquals("26", subGroups.get(26).getIndex());
         assertEquals(1, subGroups.get(26).getNodes().size());
@@ -592,7 +592,7 @@ public class ModelProvisioningTest {
         assertEquals(3, subGroups.get(0).getNodes().size());
         assertEquals(0, subGroups.get(0).getNodes().get(0).getDistributionKey());
         assertEquals("bar/storage/0", subGroups.get(0).getNodes().get(0).getConfigId());
-        assertEquals("node-1-3-50-57", subGroups.get(0).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-057", subGroups.get(0).getNodes().get(0).getHostName());
         assertEquals(1, subGroups.get(0).getNodes().get(1).getDistributionKey());
         assertEquals("bar/storage/1", subGroups.get(0).getNodes().get(1).getConfigId());
         assertEquals(2, subGroups.get(0).getNodes().get(2).getDistributionKey());
@@ -601,13 +601,13 @@ public class ModelProvisioningTest {
         assertEquals(3, subGroups.get(1).getNodes().size());
         assertEquals(3, subGroups.get(1).getNodes().get(0).getDistributionKey());
         assertEquals("bar/storage/3", subGroups.get(1).getNodes().get(0).getConfigId());
-        assertEquals("node-1-3-50-54", subGroups.get(1).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-054", subGroups.get(1).getNodes().get(0).getHostName());
         assertEquals(4, subGroups.get(1).getNodes().get(1).getDistributionKey());
         assertEquals("bar/storage/4", subGroups.get(1).getNodes().get(1).getConfigId());
         assertEquals(5, subGroups.get(1).getNodes().get(2).getDistributionKey());
         assertEquals("bar/storage/5", subGroups.get(1).getNodes().get(2).getConfigId());
         // ...
-        assertEquals("node-1-3-50-51", subGroups.get(2).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-051", subGroups.get(2).getNodes().get(0).getHostName());
         // ...
         assertEquals("8", subGroups.get(8).getIndex());
         assertEquals(3, subGroups.get(8).getNodes().size());
@@ -626,14 +626,14 @@ public class ModelProvisioningTest {
         assertEquals(1, subGroups.get(0).getNodes().size());
         assertEquals(0, subGroups.get(0).getNodes().get(0).getDistributionKey());
         assertEquals("baz/storage/0", subGroups.get(0).getNodes().get(0).getConfigId());
-        assertEquals("node-1-3-50-27", subGroups.get(0).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-027", subGroups.get(0).getNodes().get(0).getHostName());
         assertEquals("1", subGroups.get(1).getIndex());
         assertEquals(1, subGroups.get(1).getNodes().size());
         assertEquals(1, subGroups.get(1).getNodes().get(0).getDistributionKey());
         assertEquals("baz/storage/1", subGroups.get(1).getNodes().get(0).getConfigId());
-        assertEquals("node-1-3-50-26", subGroups.get(1).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-026", subGroups.get(1).getNodes().get(0).getHostName());
         // ...
-        assertEquals("node-1-3-50-25", subGroups.get(2).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-025", subGroups.get(2).getNodes().get(0).getHostName());
         // ...
         assertEquals("26", subGroups.get(26).getIndex());
         assertEquals(1, subGroups.get(26).getNodes().size());
@@ -668,9 +668,9 @@ public class ModelProvisioningTest {
         ClusterControllerContainerCluster clusterControllers = model.getAdmin().getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("cluster-controllers", clusterControllers.getName());
-        assertEquals("node-1-3-50-03", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("node-1-3-50-02", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("node-1-3-50-01", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("node-1-3-50-003", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("node-1-3-50-002", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("node-1-3-50-001", clusterControllers.getContainers().get(2).getHostName());
 
         // Check content cluster
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -683,19 +683,19 @@ public class ModelProvisioningTest {
         assertEquals(1, subGroups.get(0).getNodes().size());
         assertEquals(0, subGroups.get(0).getNodes().get(0).getDistributionKey());
         assertEquals("bar/storage/0", subGroups.get(0).getNodes().get(0).getConfigId());
-        assertEquals("node-1-3-50-11", subGroups.get(0).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-011", subGroups.get(0).getNodes().get(0).getHostName());
         // second group
         assertEquals("1", subGroups.get(1).getIndex());
         assertEquals(1, subGroups.get(1).getNodes().size());
         assertEquals(1, subGroups.get(1).getNodes().get(0).getDistributionKey());
         assertEquals("bar/storage/1", subGroups.get(1).getNodes().get(0).getConfigId());
-        assertEquals("node-1-3-50-10", subGroups.get(1).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-010", subGroups.get(1).getNodes().get(0).getHostName());
         // ... last group
         assertEquals("7", subGroups.get(7).getIndex());
         assertEquals(1, subGroups.get(7).getNodes().size());
         assertEquals(7, subGroups.get(7).getNodes().get(0).getDistributionKey());
         assertEquals("bar/storage/7", subGroups.get(7).getNodes().get(0).getConfigId());
-        assertEquals("node-1-3-50-04", subGroups.get(7).getNodes().get(0).getHostName());
+        assertEquals("node-1-3-50-004", subGroups.get(7).getNodes().get(0).getHostName());
     }
 
     @Test
@@ -712,15 +712,15 @@ public class ModelProvisioningTest {
         int numberOfHosts = 11;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
-        VespaModel model = tester.createModel(Zone.defaultZone(), services, true, deployStateWithClusterEndpoints("foo"), "node-1-3-50-09");
+        VespaModel model = tester.createModel(Zone.defaultZone(), services, true, deployStateWithClusterEndpoints("foo"), "node-1-3-50-009");
         assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         // Check slobroks clusters
         assertEquals(1+3, model.getAdmin().getSlobroks().size(), "Includes retired node");
-        assertEquals("node-1-3-50-11", model.getAdmin().getSlobroks().get(0).getHostName());
-        assertEquals("node-1-3-50-10", model.getAdmin().getSlobroks().get(1).getHostName());
-        assertEquals("node-1-3-50-08", model.getAdmin().getSlobroks().get(2).getHostName());
-        assertEquals("node-1-3-50-09", model.getAdmin().getSlobroks().get(3).getHostName(), "Included in addition because it is retired");
+        assertEquals("node-1-3-50-011", model.getAdmin().getSlobroks().get(0).getHostName());
+        assertEquals("node-1-3-50-010", model.getAdmin().getSlobroks().get(1).getHostName());
+        assertEquals("node-1-3-50-008", model.getAdmin().getSlobroks().get(2).getHostName());
+        assertEquals("node-1-3-50-009", model.getAdmin().getSlobroks().get(3).getHostName(), "Included in addition because it is retired");
     }
 
     @Test
@@ -737,16 +737,16 @@ public class ModelProvisioningTest {
         int numberOfHosts = 12;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
-        VespaModel model = tester.createModel(Zone.defaultZone(), services, true, deployStateWithClusterEndpoints("foo"), "node-1-3-50-03", "node-1-3-50-04");
+        VespaModel model = tester.createModel(Zone.defaultZone(), services, true, deployStateWithClusterEndpoints("foo"), "node-1-3-50-003", "node-1-3-50-004");
         assertEquals(10+2, model.getRoot().hostSystem().getHosts().size());
 
         // Check slobroks clusters
         assertEquals(3+2, model.getAdmin().getSlobroks().size(), "Includes retired node");
-        assertEquals("node-1-3-50-12", model.getAdmin().getSlobroks().get(0).getHostName());
-        assertEquals("node-1-3-50-11", model.getAdmin().getSlobroks().get(1).getHostName());
-        assertEquals("node-1-3-50-10", model.getAdmin().getSlobroks().get(2).getHostName());
-        assertEquals("node-1-3-50-04", model.getAdmin().getSlobroks().get(3).getHostName(), "Included in addition because it is retired");
-        assertEquals("node-1-3-50-03", model.getAdmin().getSlobroks().get(4).getHostName(), "Included in addition because it is retired");
+        assertEquals("node-1-3-50-012", model.getAdmin().getSlobroks().get(0).getHostName());
+        assertEquals("node-1-3-50-011", model.getAdmin().getSlobroks().get(1).getHostName());
+        assertEquals("node-1-3-50-010", model.getAdmin().getSlobroks().get(2).getHostName());
+        assertEquals("node-1-3-50-004", model.getAdmin().getSlobroks().get(3).getHostName(), "Included in addition because it is retired");
+        assertEquals("node-1-3-50-003", model.getAdmin().getSlobroks().get(4).getHostName(), "Included in addition because it is retired");
     }
 
     @Test
@@ -766,19 +766,19 @@ public class ModelProvisioningTest {
         int numberOfHosts = 16;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
-        VespaModel model = tester.createModel(Zone.defaultZone(), services, true, deployStateWithClusterEndpoints("foo", "bar"), "node-1-3-50-15", "node-1-3-50-05", "node-1-3-50-04");
+        VespaModel model = tester.createModel(Zone.defaultZone(), services, true, deployStateWithClusterEndpoints("foo", "bar"), "node-1-3-50-015", "node-1-3-50-005", "node-1-3-50-004");
         assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         // Check slobroks clusters
         // ... from cluster default
         assertEquals(7, model.getAdmin().getSlobroks().size(), "Includes retired node");
-        assertEquals("node-1-3-50-16", model.getAdmin().getSlobroks().get(0).getHostName());
-        assertEquals("node-1-3-50-14", model.getAdmin().getSlobroks().get(1).getHostName());
-        assertEquals("node-1-3-50-15", model.getAdmin().getSlobroks().get(2).getHostName(), "Included in addition because it is retired");
+        assertEquals("node-1-3-50-016", model.getAdmin().getSlobroks().get(0).getHostName());
+        assertEquals("node-1-3-50-014", model.getAdmin().getSlobroks().get(1).getHostName());
+        assertEquals("node-1-3-50-015", model.getAdmin().getSlobroks().get(2).getHostName(), "Included in addition because it is retired");
         // ... from cluster bar
-        assertEquals("node-1-3-50-03", model.getAdmin().getSlobroks().get(3).getHostName());
-        assertEquals("node-1-3-50-05", model.getAdmin().getSlobroks().get(5).getHostName(), "Included in addition because it is retired");
-        assertEquals("node-1-3-50-04", model.getAdmin().getSlobroks().get(6).getHostName(), "Included in addition because it is retired");
+        assertEquals("node-1-3-50-003", model.getAdmin().getSlobroks().get(3).getHostName());
+        assertEquals("node-1-3-50-005", model.getAdmin().getSlobroks().get(5).getHostName(), "Included in addition because it is retired");
+        assertEquals("node-1-3-50-004", model.getAdmin().getSlobroks().get(6).getHostName(), "Included in addition because it is retired");
     }
 
     @Test
@@ -1063,7 +1063,7 @@ public class ModelProvisioningTest {
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(Zone.defaultZone(), services, false, false, true,
                                               NodeResources.unspecified(), 0, Optional.empty(),
-                                              deployStateWithClusterEndpoints("bar.indexing"), "node-1-3-50-03");
+                                              deployStateWithClusterEndpoints("bar.indexing"), "node-1-3-50-003");
         assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -2327,7 +2327,7 @@ public class ModelProvisioningTest {
                 "</services>";
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(4);
-        VespaModel model = tester.createModel(Zone.defaultZone(), servicesXml, true, deployStateWithClusterEndpoints("zk"), "node-1-3-50-04");
+        VespaModel model = tester.createModel(Zone.defaultZone(), servicesXml, true, deployStateWithClusterEndpoints("zk"), "node-1-3-50-004");
         ApplicationContainerCluster cluster = model.getContainerClusters().get("zk");
         assertEquals(1, cluster.getContainers().stream().filter(Container::isRetired).count());
         assertEquals(3, cluster.getContainers().stream().filter(c -> !c.isRetired()).count());
@@ -2356,7 +2356,7 @@ public class ModelProvisioningTest {
             assertTrue(config.build().server().stream().noneMatch(ZookeeperServerConfig.Server::joining), "Initial servers are not joining");
         }
         {
-            VespaModel nextModel = tester.createModel(Zone.defaultZone(), servicesXml.apply(3), true, false, false, NodeResources.unspecified(), 0, Optional.of(model), deployStateWithClusterEndpoints("zk"), "node-1-3-50-04", "node-1-3-50-03");
+            VespaModel nextModel = tester.createModel(Zone.defaultZone(), servicesXml.apply(3), true, false, false, NodeResources.unspecified(), 0, Optional.of(model), deployStateWithClusterEndpoints("zk"), "node-1-3-50-004", "node-1-3-50-003");
             ApplicationContainerCluster cluster = nextModel.getContainerClusters().get("zk");
             ZookeeperServerConfig.Builder config = new ZookeeperServerConfig.Builder();
             cluster.getContainers().forEach(c -> c.getConfig(config));
@@ -2502,6 +2502,77 @@ public class ModelProvisioningTest {
         assertEquals(2000, cfg.flush().memory().maxtlssize()); // from config override
         assertEquals(1000, cfg.flush().memory().maxmemory()); // from explicit tuning
         assertEquals((long) ((128 - memoryOverheadGb) * GiB * 0.08), cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
+    }
+
+    @Test
+    void testVaryingHeapSizeBasedOnNumberOfContentNodes() {
+        var adjustHeap = false;
+        var hosted = false;
+        assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(60, 2), adjustHeap, hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(300, 2), adjustHeap, hosted, 128);
+        adjustHeap = true;
+        assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(60, 2), adjustHeap, hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(300, 2), adjustHeap, hosted, 128);
+
+        hosted = true;
+        assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(60, 2), adjustHeap, hosted, 165);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(300, 2), adjustHeap, hosted, 353);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(600, 2), adjustHeap, hosted, 400);
+        adjustHeap = false;
+        assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(60, 3), adjustHeap, hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(300, 3), adjustHeap, hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(600, 3), adjustHeap, hosted, 128);
+    }
+
+    private void assertMaxHeapSizeForClusterController(String services, boolean adjustHeap,
+                                                       boolean hostedVespa, int expected) {
+        var tester = new VespaModelTester();
+        tester.setHosted(hostedVespa);
+        var properties = new TestProperties().adjustCCMaxHeap(adjustHeap);
+        tester.setModelProperties(properties);
+        tester.addHosts(new NodeResources(1, 3, 10, 1), 4);
+        tester.addHosts(new NodeResources(1, 128, 100, 0.3), 605);
+        var deployStatebuilder = deployStateWithClusterEndpoints("foo.indexing", "bar.indexing");
+        var model = tester.createModel(Zone.defaultZone(), services, true, false, false,
+                                       NodeResources.unspecified(), 0, Optional.empty(),
+                                       deployStatebuilder);
+
+        var configId = hostedVespa
+                ? "admin/standalone/cluster-controllers/0"
+                : "admin/cluster-controllers/0/components/clustercontroller-bar-configurer";
+        QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
+        model.getConfig(qrBuilder, configId);
+        QrStartConfig qrStartConfig = qrBuilder.build();
+        assertEquals(expected, qrStartConfig.jvm().heapsize());
+    }
+
+    private static String multipleContentClusters(int count1, int count2) {
+        return """
+                <?xml version="1.0" encoding="utf-8" ?>
+                <services>
+                  <content version='1.0' id='foo'>
+                     <redundancy>1</redundancy>
+                     <documents>
+                       <document type="type1" mode="index"/>
+                     </documents>
+                     <nodes count="%d">
+                       <resources vcpu="1" memory="128Gb" disk="100Gb" disk-speed="any"/>
+                     </nodes>
+                   </content>
+                   <content version='1.0' id='bar'>
+                     <redundancy>1</redundancy>
+                     <documents>
+                       <document type="type1" mode="index"/>
+                     </documents>
+                     <nodes count="%d">
+                       <resources vcpu="1" memory="128Gb" disk="100Gb" disk-speed="any"/>
+                     </nodes>
+                   </content>
+                </services>""".formatted(count1, count2);
     }
 
     private static ProtonConfig getProtonConfig(VespaModel model, String configId) {

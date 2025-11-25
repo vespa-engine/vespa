@@ -220,7 +220,8 @@ func detectJavaMajorVersion() DetectJavaVersion {
 			java = candidate
 		}
 	}
-	cmd := exec.Command(java, "-version")
+	// The UsePerfData option is added to avoid issues with perf data path being locked
+	cmd := exec.Command(java, "-version", "-XX:-UsePerfData")
 	var out bytes.Buffer
 	var errorBuffer bytes.Buffer
 	cmd.Stdout = &out

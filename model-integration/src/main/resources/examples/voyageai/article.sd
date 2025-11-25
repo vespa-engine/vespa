@@ -1,0 +1,74 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+schema article {
+    document article {
+        field title type string {
+            indexing: summary | index
+        }
+
+        field body type string {
+            indexing: summary | index
+        }
+
+        field url type string {
+            indexing: summary | attribute
+        }
+    }
+
+    # Title embedding using VoyageAI
+    field title_embedding type tensor<float>(d0[1024]) {
+        indexing: input title | embed voyage-embedder | attribute | index
+        attribute {
+            distance-metric: angular
+        }
+    }
+
+    # Body embedding using VoyageAI
+    field body_embedding type tensor<float>(d0[1024]) {
+        indexing: input body | embed voyage-embedder | attribute | index
+        attribute {
+            distance-metric: angular
+        }
+    }
+
+    # Combined fieldset for text search
+    fieldset default {
+        fields: title, body
+    }
+
+    # Semantic search rank profile
+    rank-profile semantic {
+        inputs {
+            query(q_embedding) tensor<float>(d0[1024])
+        }
+
+        first-phase {
+            expression: closeness(field, title_embedding)
+        }
+
+        second-phase {
+            expression {
+                0.7 * closeness(field, title_embedding) +
+                0.3 * closeness(field, body_embedding)
+            }
+        }
+    }
+
+    # Hybrid rank profile (text + semantic)
+    rank-profile hybrid inherits default {
+        inputs {
+            query(q_embedding) tensor<float>(d0[1024])
+        }
+
+        first-phase {
+            expression: bm25(title) + bm25(body)
+        }
+
+        second-phase {
+            expression {
+                0.5 * firstPhase +
+                0.5 * closeness(field, title_embedding)
+            }
+        }
+    }
+}

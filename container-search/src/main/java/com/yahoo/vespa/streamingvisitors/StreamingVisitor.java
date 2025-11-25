@@ -31,6 +31,7 @@ import com.yahoo.vespa.objects.BufferSerializer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,7 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
 
     private final Map<String, DocumentSummary.Summary> summaryMap = new HashMap<>();
     private final Map<Integer, Grouping> groupingMap = new ConcurrentHashMap<>();
-    private Query query = null;
+    private final Query query;
     private final VisitorSessionFactory visitorSessionFactory;
     private final int traceLevelOverride;
     private Trace sessionTrace;
@@ -81,8 +82,7 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
 
     public StreamingVisitor(Query query, Route route,
                             VisitorSessionFactory visitorSessionFactory,
-                            Visitor.Context context)
-    {
+                            Visitor.Context context) {
         this.query = query;
         this.visitorSessionFactory = visitorSessionFactory;
         this.traceLevelOverride = context.traceLevelOverride();
@@ -292,7 +292,7 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
                 log.log(Level.FINE, () -> "StreamingVisitor returned from waitUntilDone without being completed for " + query +
                                           " with selection " + params.getDocumentSelection());
                 session.abort();
-                throw new TimeoutException("Query timed out in " + StreamingBackend.class.getName());
+                throw new TimeoutException("Query timed out in " + this);
             }
         } finally {
             session.destroy();
@@ -349,9 +349,7 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
             totalHitCount += result.getTotalHitCount();
             hits = ListMerger.mergeIntoArrayList(hits, newHits, query.getOffset() + query.getHits());
             var newErrors = result.getErrors();
-            for (var error : newErrors) {
-                errors.add(error);
-            }
+            Collections.addAll(errors, newErrors);
         }
 
         Map<Integer, byte[]> newGroupingMap = result.getGroupingList();
@@ -418,4 +416,10 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
 
     @Override
     public Set<String> getErrors() { return Set.copyOf(errors); }
+
+    @Override
+    public String toString() {
+        return "streaming visitor";
+    }
+
 }

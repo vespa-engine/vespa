@@ -11,6 +11,7 @@ import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.Case;
 import com.yahoo.schema.document.Dictionary;
 import com.yahoo.schema.document.HnswIndexParams;
+import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 
@@ -34,8 +35,8 @@ public class AttributeChangeValidator {
     private final NewDocumentType currentDocType;
     private final AttributeFields nextFields;
     private final IndexSchema nextIndexSchema;
-    private final NewDocumentType nextDocType;
-    private final DeployState deployState;
+    private final NewDocumentType          nextDocType;
+    private final Validation.ChangeContext context;
 
     public AttributeChangeValidator(ClusterSpec.Id id,
                                     AttributeFields currentFields,
@@ -44,7 +45,7 @@ public class AttributeChangeValidator {
                                     AttributeFields nextFields,
                                     IndexSchema nextIndexSchema,
                                     NewDocumentType nextDocType,
-                                    DeployState deployState) {
+                                    Validation.ChangeContext context) {
         this.id = id;
         this.currentFields = currentFields;
         this.currentIndexSchema = currentIndexSchema;
@@ -52,7 +53,7 @@ public class AttributeChangeValidator {
         this.nextFields = nextFields;
         this.nextIndexSchema = nextIndexSchema;
         this.nextDocType = nextDocType;
-        this.deployState = deployState;
+        this.context = context;
     }
 
     public List<VespaConfigChangeAction> validate() {
@@ -137,18 +138,16 @@ public class AttributeChangeValidator {
     }
 
     private <T> void validateAttributeProperty(ClusterSpec.Id id,
-                                                      Attribute current, Attribute next,
-                                                      Function<Attribute, T> settingValueProvider, String setting,
-                                                      List<VespaConfigChangeAction> result) {
+                                               Attribute current, Attribute next,
+                                               Function<Attribute, T> settingValueProvider, String setting,
+                                               List<VespaConfigChangeAction> result) {
         T currentValue = settingValueProvider.apply(current);
         T nextValue = settingValueProvider.apply(next);
         if ( ! Objects.equals(currentValue, nextValue)) {
             String message = String.format("change property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
             if (hasHnswIndex(current) && hasHnswIndex(next))
-                deployState.validationOverrides()
-                           .invalid(ValidationId.hnswSettingsChange,
-                                    message + ". This requires the hnsw index to be rebuilt during initialization, which may take a long time",
-                                    deployState.now());
+                context.invalid(ValidationId.hnswSettingsChange,
+                                    message + ". This requires the hnsw index to be rebuilt during initialization, which may take a long time");
             result.add(new VespaRestartAction(id, new ChangeMessageBuilder(next.getName()).addChange(message).build()));
         }
     }
@@ -163,20 +162,17 @@ public class AttributeChangeValidator {
         if (!Objects.equals(currentValue, nextValue)) {
             String message = String.format("change hnsw index property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
             if (setting.equals("max-links-per-node"))
-                deployState.validationOverrides()
-                           .invalid(ValidationId.hnswSettingsChange,
-                                    message + ". This requires the hnsw index to be rebuilt during initialization, which may take a long time",
-                                    deployState.now());
+                context.invalid(ValidationId.hnswSettingsChange,
+                                    message + ". This requires the hnsw index to be rebuilt during initialization, which may take a long time");
             result.add(new VespaRestartAction(id, new ChangeMessageBuilder(nextAttr.getName()).addChange(message).build()));
         }
     }
 
     private void validatePagedAttributeRemoval(Attribute current, Attribute next) {
         if (current.isPaged() && !next.isPaged()) {
-            deployState.validationOverrides().invalid(ValidationId.pagedSettingRemoval,
+            context.invalid(ValidationId.pagedSettingRemoval,
                               current + "' has setting 'paged' removed. " +
-                              "This may cause content nodes to run out of memory as the entire attribute is loaded into memory",
-                              deployState.now());
+                              "This may cause content nodes to run out of memory as the entire attribute is loaded into memory");
         }
     }
 

@@ -25,8 +25,7 @@ interface Visitor {
                    String schema,
                    int traceLevelOverride,
                    PartialSummaryHandler partialSummaryHandler,
-                   boolean sendProtobufQuerytree)
-    {
+                   boolean sendProtobufQuerytree) {
         Context(String searchCluster, String schema) {
             this(searchCluster, schema, 0);
         }
