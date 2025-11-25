@@ -296,7 +296,7 @@ write_test_bv_to_nbostream(const BitVector &bv, uint32_t guard_bits, size_t alig
     uint64_t cached_hits = bv.countTrueBits();
     uint64_t file_bytes = aligner.align(bv.num_bytes_plain(size + guard_bits));
     *out << size << cached_hits << file_bytes;
-    out->write(bv.getStart(), std::min(bv.getFileBytes(), file_bytes));
+    out->write(bv.getStart(), std::min(bv.getFileBytes(), size_t(file_bytes)));
     if (guard_bits == BitVector::num_guard_bits) {
         EXPECT_EQ(file_bytes, bv.getFileBytes());
     } else {

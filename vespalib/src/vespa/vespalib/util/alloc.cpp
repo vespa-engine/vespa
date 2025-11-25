@@ -8,11 +8,12 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <map>
 #include <atomic>
-#include <unordered_map>
 #include <cassert>
+#include <map>
 #include <mutex>
+#include <system_error>
+#include <unordered_map>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.alloc");
