@@ -149,6 +149,8 @@ protected:
         const auto& metrics = _manager->getThread(0).getMetrics();
         return metrics.visitorDestinationFailureReplies.getCount();
     }
+
+    void fetch_create_visitor_reply(std::shared_ptr<api::CreateVisitorReply>& out_reply) const;
 };
 
 uint32_t VisitorTest::docCount = 10;
@@ -464,6 +466,21 @@ VisitorTest::sendCreateIteratorReply(uint64_t iteratorId)
     spi::IteratorId id(iteratorId);
     auto reply = std::make_shared<CreateIteratorReply>(*createCmd, id);
     _bottom->sendUp(reply);
+}
+
+void
+VisitorTest::fetch_create_visitor_reply(std::shared_ptr<api::CreateVisitorReply>& out_reply) const {
+    _top->waitForMessages(1, 60);
+    const msg_ptr_vector replies = _top->getRepliesOnce();
+    ASSERT_EQ(1u, replies.size()) << "Expected exactly one CreateVisitor reply";
+
+    std::shared_ptr<api::StorageMessage> message(replies[0]);
+    ASSERT_EQ(api::MessageType::VISITOR_CREATE_REPLY, message->getType()) << "Unexpected reply message type: " << message->toString();
+
+    auto reply = std::dynamic_pointer_cast<api::CreateVisitorReply>(message);
+    ASSERT_TRUE(reply) << "Dynamic cast to CreateVisitorReply failed";
+
+    out_reply = std::move(reply);
 }
 
 TEST_F(VisitorTest, normal_usage) {
@@ -842,6 +859,32 @@ VisitorTest::doTestVisitorInstanceHasConsistencyLevel(
 TEST_F(VisitorTest, dump_visitor_invokes_strong_read_consistency_iteration) {
     doTestVisitorInstanceHasConsistencyLevel(
             "dumpvisitor", spi::ReadConsistency::STRONG);
+}
+
+TEST_F(VisitorTest, document_api_failure_error_message_includes_doc_id) {
+    ASSERT_NO_FATAL_FAILURE(initializeTest());
+
+    auto cmd = makeCreateVisitor();
+    _top->sendDown(cmd);
+    sendCreateIteratorReply();
+
+    GetIterCommand::SP get_iter_cmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, get_iter_cmd));
+    sendGetIterReply(*get_iter_cmd, api::ReturnCode(api::ReturnCode::OK), 1, true);
+
+    MessageMeta meta;
+    getMessagesAndReply(1, getSession(0), meta, api::ReturnCode::REJECTED);
+
+    DestroyIteratorCommand::SP destroy_iter_cmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, destroy_iter_cmd));
+
+    std::shared_ptr<api::CreateVisitorReply> reply;
+    ASSERT_NO_FATAL_FAILURE(fetch_create_visitor_reply(reply));
+    EXPECT_EQ(reply->getResult().getResult(), api::ReturnCode::REJECTED);
+
+    std::string_view message = reply->getResult().getMessage();
+    EXPECT_EQ("Generic error [document id was 'id:test:testdoctype1:n=0:http://www.ntnu.no/0.html']", message);
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
 }
 
 // NOTE: SearchVisitor cannot be tested here since it's in a separate module
