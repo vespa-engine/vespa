@@ -172,17 +172,18 @@ public class CapacityPolicies {
     // Note: nodeCount is 0 if unknown.
     private static double adjustClusterControllerMemory(double memory, long nodeCount) {
         int count = (int) nodeCount;
-        // We have seen clusters with ~100 nodes needing at least 1.6 GiB on x86_64
-        // Adjust memory based on number of content nodes (which is a simple way to model the O(n^2) behavior
-        // of the increase in communication between cluster controller and nodes (and thus memory)).
+        // Adjust node resource memory based on number of content nodes (which is
+        // a simple way to model the O(n^2) behavior of the increase in communication
+        // between cluster controller and nodes (and thus memory)).
         // Increase in steps to avoid changes of memory allocation with small changes in node count.
-        double adjustmentFactor = 0.20; // 20% increase per step
+        double adjustmentFactor = 0.2; // 0.2 GiB increase per step
         var step = Math.min(4, count / 50); // max 4 steps (200+ nodes)
         double adjustment = step * adjustmentFactor;
 
         double newMemory = memory + adjustment;
-        if (count >= 50) {
-            log.log(INFO, "Adjusted cluster controller memory (" + count + " content nodes): " + newMemory + " GiB");
+        if (adjustment > 0) {
+            log.log(INFO, "Adjusted cluster controller memory (" + count + " content nodes): " +
+                    " from " + memory + " GiB " + "to " + newMemory + " GiB");
         }
         return newMemory;
     }
