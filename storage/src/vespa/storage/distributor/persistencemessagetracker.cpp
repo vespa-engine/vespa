@@ -67,7 +67,7 @@ PersistenceMessageTracker::updateDB()
     }
 
     for (const auto & entry : _bucketInfo) {
-        _op_ctx.update_bucket_database(entry.first, entry.second);
+        _op_ctx.update_bucket_database(entry.first, entry.second, 0);
     }
 
     for (const auto & entry : _remapBucketInfo){

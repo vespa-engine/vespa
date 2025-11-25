@@ -4,6 +4,7 @@
 
 #include "bucketgctimecalculator.h"
 #include "bucketownership.h"
+#include "memory_usage_token.h"
 #include "operation_routing_snapshot.h"
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/storageapi/defs.h>
@@ -36,17 +37,9 @@ public:
     virtual void update_bucket_database(const document::Bucket& bucket,
                                         const BucketCopy& changed_node,
                                         uint32_t update_flags) = 0;
-    void update_bucket_database(const document::Bucket& bucket,
-                                const BucketCopy& changed_node) {
-        update_bucket_database(bucket, changed_node, 0);
-    }
     virtual void update_bucket_database(const document::Bucket& bucket,
                                         const std::vector<BucketCopy>& changed_nodes,
                                         uint32_t update_flags) = 0;
-    void update_bucket_database(const document::Bucket& bucket,
-                                const std::vector<BucketCopy>& changed_nodes) {
-        update_bucket_database(bucket, changed_nodes, 0);
-    }
     virtual void remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) = 0;
     virtual void remove_nodes_from_bucket_database(const document::Bucket& bucket,
                                                    const std::vector<uint16_t>& nodes) = 0;
@@ -68,6 +61,7 @@ public:
     [[nodiscard]] virtual bool storage_node_is_up(document::BucketSpace bucket_space, uint32_t node_index) const = 0;
     [[nodiscard]] virtual const BucketGcTimeCalculator::BucketIdHasher& bucket_id_hasher() const = 0;
     [[nodiscard]] virtual const NodeSupportedFeaturesRepo& node_supported_features_repo() const noexcept = 0;
+    [[nodiscard]] virtual MemoryUsageToken make_memory_usage_token(uint32_t bytes_used) noexcept = 0;
 };
 
 }

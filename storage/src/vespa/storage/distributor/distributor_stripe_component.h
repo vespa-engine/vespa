@@ -153,6 +153,8 @@ public:
     // Implements DocumentSelectionParser
     std::unique_ptr<document::select::Node> parse_selection(const std::string& selection) const override;
 
+    MemoryUsageToken make_memory_usage_token(uint32_t bytes_used) noexcept override;
+
 private:
     DistributorStripeInterface& _distributor;
     DistributorBucketSpaceRepo& _bucketSpaceRepo;

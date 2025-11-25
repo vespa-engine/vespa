@@ -45,7 +45,8 @@ DistributorStripeTestUtil::createLinks()
     _metrics = std::make_shared<DistributorMetricSet>();
     _ideal_state_metrics = std::make_shared<IdealStateMetricSet>();
     _stripe = std::make_unique<DistributorStripe>(_node->getComponentRegister(), *_metrics, *_ideal_state_metrics,
-                                                  _node->node_identity(), _messageSender, *this, _done_initializing);
+                                                  _node->node_identity(), _messageSender, *this,
+                                                  _memory_usage_tracker, _done_initializing);
 }
 
 void

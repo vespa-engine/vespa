@@ -934,4 +934,28 @@ TEST_F(PutOperationTest, trace_is_propagated_from_condition_probe_gets_failed_pr
     EXPECT_THAT(trace_str, HasSubstr("a foo walks into a zoo"));
 }
 
+TEST_F(PutOperationTest, operation_tracks_estimated_memory_from_msg_footprint) {
+    setup_stripe(2, 2, "storage:2 distributor:1");
+
+    EXPECT_EQ(_memory_usage_tracker.bytes_total(), 0);
+
+    auto put = createPut(createDummyDocument("test", "uri"));
+    put->setApproxByteSize(1337);
+    sendPut(put);
+    // Since puts to multiple nodes share a reference to the same Document, we currently
+    // treat memory usage as constant regardless of replication factor. This won't be
+    // technically true in reality, since there is a cost related to serialization etc.,
+    // but since this is information that is hidden from our sight, it's hard to know
+    // what "fudge factor" would be correct.
+    EXPECT_EQ(_memory_usage_tracker.bytes_total(), 1337);
+    ASSERT_EQ("Create bucket => 1,Create bucket => 0,"
+              "Put => 1,Put => 0",
+          _sender.getCommands(true));
+    sendReply(0);
+    sendReply(1);
+
+    op.reset();
+    EXPECT_EQ(_memory_usage_tracker.bytes_total(), 0);
+}
+
 }

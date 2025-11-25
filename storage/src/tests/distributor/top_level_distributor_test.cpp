@@ -18,6 +18,7 @@
 #include <vespa/storage/distributor/distributor_status.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
+#include <vespa/storage/distributor/distributor_total_metrics.h>
 #include <vespa/storage/distributor/distributor_stripe_pool.h>
 #include <vespa/storage/distributor/distributor_stripe_thread.h>
 #include <vespa/storage/config/distributorconfiguration.h>
@@ -73,6 +74,8 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
         return std::string(posted_msgs.view());
     }
 
+    // These indirections exist because TopLevelDistributorTest is friended by TopLevelDistributor,
+    // but individual test cases are represented by subclasses that do not share this friendship.
     StatusReporterDelegate& distributor_status_delegate() {
         return _distributor->_distributorStatusDelegate;
     }
@@ -99,6 +102,14 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
 
     MinReplicaMap distributor_min_replica_stats() {
         return _distributor->getMinReplica();
+    }
+
+    MemoryUsageTracker& memory_usage_tracker() {
+        return _distributor->_shared_memory_usage_tracker;
+    }
+
+    void update_top_level_metrics() {
+        _distributor->update_top_level_metrics();
     }
 
     uint64_t db_sample_interval_sec() const noexcept {
@@ -743,6 +754,24 @@ TEST_F(TopLevelDistributorTest, gc_timestamps_not_reset_to_current_time_when_gc_
     ASSERT_EQ(get_bucket_last_gc_time(b1), 1001);
     ASSERT_EQ(get_bucket_last_gc_time(b2), 1002);
     ASSERT_EQ(get_bucket_last_gc_time(b3), 1003);
+}
+
+TEST_F(TopLevelDistributorTest, memory_usage_is_propagated_to_dedicated_metric) {
+    EXPECT_EQ(memory_usage_tracker().bytes_total(), 0);
+    EXPECT_EQ(_distributor->total_metrics().mutatating_op_memory_usage().getCount(), 0);
+    MemoryUsageToken t(memory_usage_tracker(), 54321);
+    {
+        // Will count towards the maximum, but not the current at sampling time
+        MemoryUsageToken t2(memory_usage_tracker(), 10000);
+    }
+    EXPECT_EQ(memory_usage_tracker().bytes_total(), 54321);
+    EXPECT_EQ(memory_usage_tracker().max_observed_bytes(), 54321+10000);
+    update_top_level_metrics();
+    EXPECT_EQ(_distributor->total_metrics().mutatating_op_memory_usage().getCount(), 1);
+    EXPECT_EQ(_distributor->total_metrics().mutatating_op_memory_usage().getLast(), 54321);
+    EXPECT_EQ(_distributor->total_metrics().mutatating_op_memory_usage().getMaximum(), 54321+10000);
+    // Sampling is destructive for max memory usage within period
+    EXPECT_EQ(memory_usage_tracker().max_observed_bytes(), 0);
 }
 
 }

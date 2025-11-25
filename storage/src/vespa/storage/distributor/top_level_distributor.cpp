@@ -51,6 +51,7 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
       _node_identity(node_identity),
       _comp_reg(compReg),
       _done_init_handler(done_init_handler),
+      _shared_memory_usage_tracker(),
       _done_initializing(false),
       _cc_is_distribution_source_of_truth(false),
       _total_metrics(std::make_shared<DistributorTotalMetrics>(num_distributor_stripes)),
@@ -106,7 +107,7 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
                                                                   _total_metrics->stripe(i),
                                                                   _ideal_state_total_metrics->stripe(i),
                                                                   node_identity,
-                                                                  *this, *this,
+                                                                  *this, *this, _shared_memory_usage_tracker,
                                                                   _done_initializing, i));
     }
     _stripe_scan_stats.resize(num_distributor_stripes);
@@ -426,13 +427,26 @@ TopLevelDistributor::content_node_stats() const
 }
 
 void
-TopLevelDistributor::propagateInternalScanMetricsToExternal()
+TopLevelDistributor::propagate_and_aggregate_metrics_from_stripes()
 {
-    for (auto &stripe : _stripes) {
+    for (auto& stripe : _stripes) {
         stripe->propagateInternalScanMetricsToExternal();
     }
     _total_metrics->aggregate();
     _ideal_state_total_metrics->aggregate();
+}
+
+void
+TopLevelDistributor::update_top_level_metrics() {
+    propagate_and_aggregate_metrics_from_stripes();
+    // We only track current and max, so pretend min == current
+    auto mut_mem_usage = _shared_memory_usage_tracker.relaxed_snapshot();
+    _shared_memory_usage_tracker.reset_max_observed_bytes(); // Destructive sampling of max
+    // It's a bit of a cheat to have last != max with count == 1 (since diverging values
+    // should only be observable with multiple metric samples), but it is what it is.
+    // These will be emitted as distinct time series at a higher level either way.
+    _total_metrics->mutatating_op_memory_usage().addTotalValueBatch(
+            mut_mem_usage.bytes_total, 1, mut_mem_usage.bytes_total, mut_mem_usage.max_observed_bytes);
 }
 
 void

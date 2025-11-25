@@ -37,6 +37,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
                                      const NodeIdentity& node_identity,
                                      ChainedMessageSender& messageSender,
                                      StripeHostInfoNotifier& stripe_host_info_notifier,
+                                     MemoryUsageTracker& shared_memory_usage_tracker,
                                      const bool& done_initializing_ref,
                                      uint32_t stripe_index)
     : DistributorStripeInterface(),
@@ -54,6 +55,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _idealStateManager(_component, _component, ideal_state_metrics),
       _messageSender(messageSender),
       _stripe_host_info_notifier(stripe_host_info_notifier),
+      _shared_memory_usage_tracker(shared_memory_usage_tracker),
       _externalOperationHandler(_component, _component, getMetrics(), getMessageSender(),
                                 *_operation_sequencer, *this, _component,
                                 _idealStateManager, _operationOwner),
@@ -1038,6 +1040,11 @@ const NodeSupportedFeaturesRepo&
 DistributorStripe::node_supported_features_repo() const noexcept
 {
     return *_node_supported_features_repo;
+}
+
+MemoryUsageToken
+DistributorStripe::make_memory_usage_token(uint32_t bytes_used) noexcept {
+    return MemoryUsageToken(_shared_memory_usage_tracker, bytes_used);
 }
 
 }
