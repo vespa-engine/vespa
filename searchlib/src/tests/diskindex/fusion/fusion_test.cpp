@@ -13,6 +13,7 @@
 #include <vespa/searchlib/fef/fieldpositionsiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
@@ -139,11 +140,13 @@ make_doc10(DocBuilder &b)
 DocBuilder::AddFieldsType
 make_add_fields()
 {
-    return [](auto& header) { using namespace document::config_builder;
-        header.addField("f0", DataType::T_STRING)
-            .addField("f1", DataType::T_STRING)
-            .addField("f2", Array(DataType::T_STRING))
-            .addField("f3", Wset(DataType::T_STRING));
+    return [](auto& builder, auto& doc) noexcept { using namespace document::new_config_builder;
+        auto string_array = doc.createArray(builder.stringTypeRef()).ref();
+        auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
+        doc.addField("f0", builder.stringTypeRef())
+            .addField("f1", builder.stringTypeRef())
+            .addField("f2", string_array)
+            .addField("f3", string_wset);
             };
 }
 

@@ -7,6 +7,7 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
@@ -175,13 +176,14 @@ struct FieldInverterTest : public ::testing::Test {
     static DocBuilder::AddFieldsType
     make_add_fields()
     {
-        return [](auto& header) { using namespace document::config_builder;
-            const document::config_builder::Array string_array(DataType::T_STRING);
-            const document::config_builder::Array nested_string_array((TypeOrId)string_array);
-            header.addField("f0", DataType::T_STRING)
-                .addField("f1", DataType::T_STRING)
+        return [](auto& builder, auto& doc) noexcept { using namespace document::new_config_builder;
+            auto string_array = doc.createArray(builder.stringTypeRef()).ref();
+            auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
+            auto nested_string_array = doc.registerArray(doc.createArray(string_array));
+            doc.addField("f0", builder.stringTypeRef())
+                .addField("f1", builder.stringTypeRef())
                 .addField("f2", string_array)
-                .addField("f3", Wset(DataType::T_STRING))
+                .addField("f3", string_wset)
                 .addField("f4", nested_string_array);
                };
     }

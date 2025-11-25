@@ -18,6 +18,7 @@
 #include <vespa/searchlib/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
 #include <vespa/searchlib/queryeval/iterators.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
@@ -530,7 +531,7 @@ make_all_index_schema(DocBuilder::AddFieldsType add_fields)
 DocBuilder::AddFieldsType
 make_single_add_fields()
 {
-    return [](auto& header) { header.addField("f0", DataType::T_STRING); };
+    return [](auto& builder, auto& doc) noexcept { doc.addField("f0", builder.stringTypeRef()); };
 }
 
 template <typename FieldIndexType>
@@ -722,11 +723,13 @@ TEST_F(FieldIndexInterleavedFeaturesTest, interleaved_features_are_capped)
 DocBuilder::AddFieldsType
 make_multi_field_add_fields()
 {
-    return [](auto& header) { using namespace document::config_builder;
-        header.addField("f0", DataType::T_STRING)
-            .addField("f1", DataType::T_STRING)
-            .addField("f2", Array(DataType::T_STRING))
-            .addField("f3", Wset(DataType::T_STRING));
+    return [](auto& builder, auto& doc) noexcept { using namespace document::new_config_builder;
+        auto string_array = doc.createArray(builder.stringTypeRef()).ref();
+        auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
+        doc.addField("f0", builder.stringTypeRef())
+            .addField("f1", builder.stringTypeRef())
+            .addField("f2", string_array)
+            .addField("f3", string_wset);
            };
 }
 
@@ -1163,10 +1166,12 @@ TEST_F(BasicInverterTest, require_that_inverter_handles_remove_via_document_remo
 DocBuilder::AddFieldsType
 make_uri_add_fields()
 {
-    return [](auto& header) { using namespace document::config_builder;
-        header.addField("iu", DataType::T_URI)
-            .addField("iau", Array(DataType::T_URI))
-            .addField("iwu", Wset(DataType::T_URI));
+    return [](auto& builder, auto& doc) noexcept { using namespace document::new_config_builder;
+        auto uri_array = doc.createArray(builder.uriTypeRef()).ref();
+        auto uri_wset = doc.createWset(builder.uriTypeRef()).ref();
+        doc.addField("iu", builder.uriTypeRef())
+            .addField("iau", uri_array)
+            .addField("iwu", uri_wset);
            };
 }
 

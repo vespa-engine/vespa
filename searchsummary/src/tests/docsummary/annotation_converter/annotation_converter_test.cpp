@@ -6,7 +6,7 @@
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/datatype/annotationtype.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/juniper/juniper_separators.h>
 #include <vespa/searchlib/util/linguisticsannotation.h>
@@ -35,11 +35,9 @@ namespace {
 DocumenttypesConfig
 get_document_types_config()
 {
-    using namespace document::config_builder;
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(42, "indexingdocument",
-                     Struct("indexingdocument.header"),
-                     Struct("indexingdocument.body"));
+    using namespace document::new_config_builder;
+    NewConfigBuilder builder;
+    builder.document("indexingdocument", 42);
     return builder.config();
 }
 

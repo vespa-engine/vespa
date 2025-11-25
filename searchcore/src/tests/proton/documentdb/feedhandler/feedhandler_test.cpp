@@ -7,7 +7,7 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/update/assignvalueupdate.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/clearvalueupdate.h>
@@ -286,12 +286,12 @@ SchemaContext::SchemaContext()
 }
 
 SchemaContext::SchemaContext(bool has_i2)
-    : builder([has_i2](auto& header) {
+    : builder([has_i2](auto& bldr, auto& header) {
                   header.addTensorField("tensor", "tensor(x{},y{})")
                       .addTensorField("tensor2", "tensor(x{},y{})")
-                      .addField("i1", DataType::T_STRING);
+                      .addField("i1", bldr.primitiveType(DataType::T_STRING));
                   if (has_i2) {
-                      header.addField("i2", DataType::T_STRING);
+                      header.addField("i2", bldr.primitiveType(DataType::T_STRING));
                   }
               })
 {

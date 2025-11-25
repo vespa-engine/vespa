@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/datatype.h>
@@ -59,10 +59,9 @@ std::string base_dir = "testdb";
 constexpr int base_port = 9017;
 
 std::shared_ptr<DocumenttypesConfig> make_document_types() {
-    using Struct = document::config_builder::Struct;
-    using DataType = document::DataType;
-    document::config_builder::DocumenttypesConfigBuilderHelper builder;
-    builder.document(42, "test", Struct("test.header").addField("int", DataType::T_INT), Struct("test.body"));
+    document::new_config_builder::NewConfigBuilder builder;
+    auto& doc = builder.document("test", 42);
+    doc.addField("int", builder.intTypeRef());
     return std::make_shared<DocumenttypesConfig>(builder.config());
 }
 

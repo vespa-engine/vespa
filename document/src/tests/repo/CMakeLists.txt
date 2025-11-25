@@ -16,3 +16,11 @@ vespa_add_executable(document_doctype_config_test_app TEST
     GTest::gtest
 )
 vespa_add_test(NAME document_doctype_config_test_app COMMAND document_doctype_config_test_app)
+
+vespa_add_test_executable(document_newconfigbuilder_test_app TEST
+    SOURCES
+    newconfigbuilder_test.cpp
+    DEPENDS
+    vespa_document
+    GTest::gtest
+)

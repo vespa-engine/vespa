@@ -20,7 +20,7 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
@@ -41,10 +41,6 @@
 #include <optional>
 
 using namespace document;
-using document::config_builder::Array;
-using document::config_builder::Map;
-using document::config_builder::Struct;
-using document::config_builder::Wset;
 using search::AttributeFactory;
 using search::AttributeVector;
 using search::attribute::BasicType;
@@ -87,24 +83,29 @@ using WeightedString = AttributeVector::WeightedString;
 std::unique_ptr<DocumentTypeRepo>
 makeDocumentTypeRepo()
 {
-    config_builder::DocumenttypesConfigBuilderHelper builder;
-    builder.document(222, "testdoc",
-                     Struct("testdoc.header")
-                             .addField("int", DataType::T_INT)
-                             .addField("float", DataType::T_FLOAT)
-                             .addField("string", DataType::T_STRING)
-                             .addField("raw", DataType::T_RAW)
-                             .addField("aint", Array(DataType::T_INT))
-                             .addField("afloat", Array(DataType::T_FLOAT))
-                             .addField("astring", Array(DataType::T_STRING))
-                             .addField("wsint", Wset(DataType::T_INT))
-                             .addField("wsfloat", Wset(DataType::T_FLOAT))
-                             .addField("wsstring", Wset(DataType::T_STRING))
-                             .addField("ref", 333)
-                             .addField("dense_tensor", DataType::T_TENSOR)
-                             .addField("sparse_tensor", DataType::T_TENSOR),
-                     Struct("testdoc.body"))
-                     .referenceType(333, 222);
+    new_config_builder::NewConfigBuilder builder;
+    auto& doc = builder.document("testdoc", 222);
+    auto int_array = doc.createArray(builder.intTypeRef()).ref();
+    auto float_array = doc.createArray(builder.floatTypeRef()).ref();
+    auto string_array = doc.createArray(builder.stringTypeRef()).ref();
+    auto int_wset = doc.createWset(builder.intTypeRef()).ref();
+    auto float_wset = doc.createWset(builder.floatTypeRef()).ref();
+    auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
+    // Create self-referencing type (reference to testdoc itself)
+    auto ref_type = doc.referenceType(doc.idx());
+    doc.addField("int", builder.intTypeRef())
+            .addField("float", builder.floatTypeRef())
+            .addField("string", builder.stringTypeRef())
+            .addField("raw", builder.rawTypeRef())
+            .addField("aint", int_array)
+            .addField("afloat", float_array)
+            .addField("astring", string_array)
+            .addField("wsint", int_wset)
+            .addField("wsfloat", float_wset)
+            .addField("wsstring", string_wset)
+            .addField("ref", ref_type);
+    doc.addTensorField("dense_tensor", "tensor(x[2])")
+            .addTensorField("sparse_tensor", "tensor(x{})");
     return std::make_unique<DocumentTypeRepo>(builder.config());
 }
 
