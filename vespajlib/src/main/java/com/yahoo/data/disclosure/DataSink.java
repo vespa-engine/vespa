@@ -2,7 +2,7 @@
 package com.yahoo.data.disclosure;
 
 /**
- * An interface for writing structured data to a sink, for instance a data structure or output format.
+ * An interface for disclosing structured data, for instance, to another data structure or output format.
  *
  * @author havardpe
  * @author bjorncs
