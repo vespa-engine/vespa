@@ -6,6 +6,7 @@ package com.yahoo.data.disclosure;
  *
  * @author havardpe
  * @author bjorncs
+ * @author andreer
  */
 public interface DataSink {
 
@@ -24,6 +25,22 @@ public interface DataSink {
     void booleanValue(boolean v);
 
     void longValue(long v);
+
+    default void intValue(int v) {
+        longValue(v);
+    }
+
+    default void shortValue(short v) {
+        longValue(v);
+    }
+
+    default void byteValue(byte v) {
+        longValue(v);
+    }
+
+    default void floatValue(float v) {
+        doubleValue(v);
+    }
 
     void doubleValue(double v);
 
