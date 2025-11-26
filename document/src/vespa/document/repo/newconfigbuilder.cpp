@@ -4,6 +4,7 @@
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/document/datatype/structdatatype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
 
@@ -291,11 +292,22 @@ TypeRef NewDocTypeRep::referenceType(int32_t target_doctype_idx) {
     }
     assert(doc && "Document type not found");
 
+    // Find the target document type name
+    std::string target_doctype_name;
+    for (const auto& d : _builder._config.doctype) {
+        if (d.idx == target_doctype_idx) {
+            target_doctype_name = d.name;
+            break;
+        }
+    }
+    assert(!target_doctype_name.empty() && "Target document type not found");
+
     // Create document reference type
     auto& dref = doc->documentref.emplace_back();
     dref.idx = _builder._next_idx++;
     dref.targettype = target_doctype_idx;
-    dref.internalid = dref.idx;
+
+    dref.internalid = ReferenceDataType::makeInternalId(target_doctype_name);
     _builder._idx_to_internalid_map[dref.idx] = dref.internalid;
 
     return TypeRef(dref.idx);
@@ -501,7 +513,9 @@ TypeRef NewConfigBuilder::positionType() {
 
 int32_t NewConfigBuilder::getInternalId(TypeRef type_ref) const {
     auto it = _idx_to_internalid_map.find(type_ref.idx);
-    return (it != _idx_to_internalid_map.end()) ? it->second : 0;
+    int32_t iid = (it != _idx_to_internalid_map.end()) ? it->second : 0;
+    fprintf(stderr, "internalid[%d] = %d\n", type_ref.idx, iid);
+    return iid;
 }
 
 std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
@@ -824,6 +838,16 @@ void NewConfigBuilder::registerAnnotationRef(NewAnnotationRef& ar, int32_t docty
     }
     assert(doc && "Document type not found");
 
+    // Find the annotation type name
+    std::string annotation_name;
+    for (const auto& ann : doc->annotationtype) {
+        if (ann.idx == ar._annotation_idx) {
+            annotation_name = ann.name;
+            break;
+        }
+    }
+    assert(!annotation_name.empty() && "Annotation type not found");
+
     // Allocate idx
     ar._idx = _next_idx++;
     ar._registered = true;
@@ -832,7 +856,10 @@ void NewConfigBuilder::registerAnnotationRef(NewAnnotationRef& ar, int32_t docty
     auto& aref = doc->annotationref.emplace_back();
     aref.idx = ar._idx;
     aref.annotationtype = ar._annotation_idx;
-    aref.internalid = ar._idx;
+
+    std::string aref_type_name = "annotationreference<" + annotation_name + ">";
+    aref.internalid = hashId(aref_type_name);
+    _idx_to_internalid_map[ar._idx] = aref.internalid;
 }
 
 void NewConfigBuilder::finalizeDocType(NewDocTypeRep& doc) {
