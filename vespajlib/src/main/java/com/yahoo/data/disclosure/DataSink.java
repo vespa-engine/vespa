@@ -4,7 +4,7 @@ package com.yahoo.data.disclosure;
 import com.yahoo.api.annotations.Beta;
 
 /**
- * An interface for disclosing structured data, for instance, to another data structure or output format.
+ * An interface for disclosing structured data
  *
  * @author havardpe
  * @author bjorncs
