@@ -536,6 +536,8 @@ public class Vespa9VespaMetricSet {
 
         addMetric(metrics, DistributorMetrics.VDS_BOUNCER_CLOCK_SKEW_ABORTS.count());
 
+        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_MUTATING_OP_MEMORY_USAGE, EnumSet.of(max));
+
         return metrics;
     }
 
