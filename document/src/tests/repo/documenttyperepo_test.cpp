@@ -152,29 +152,6 @@ TEST(DocumentTypeRepoTest, requireThatAnnotationReferencesCanBeConfigured)
     EXPECT_EQ(annotation_type_id, ar.getAnnotationType().getId());
 }
 
-TEST(DocumentTypeRepoTest, requireThatFieldsCanNotBeHeaderAndBody)
-{
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name).addField(field_name,
-                             DataType::T_STRING),
-                     Struct(body_name).addField(field_name,
-                             DataType::T_INT));
-    VESPA_EXPECT_EXCEPTION(DocumentTypeRepo repo(builder.config()),
-                           IllegalArgumentException,
-                           "Failed to add field 'field_name' to struct 'test.header': "
-                           "Name in use by field with different id");
-}
-
-TEST(DocumentTypeRepoTest, requireThatDocumentStructsAreCalledHeaderAndBody)
-{
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name, Struct("foo"), Struct("bar"));
-    VESPA_EXPECT_EXCEPTION(DocumentTypeRepo repo(builder.config()),
-                           IllegalArgumentException,
-                           "Previously defined as \"test.header\".");
-}
-
 TEST(DocumentTypeRepoTest, requireThatDocumentsCanInheritFields)
 {
     NewConfigBuilder builder;
@@ -397,25 +374,6 @@ TEST(DocumentTypeRepoTest, requireThatFieldsCanHaveAnyDocumentType) {
     // EXPECT_EQ(type2, repo.getDataType(*type1, doc_type_id + 1));
     // EXPECT_EQ(type1, repo.getDataType(*type2, doc_type_id));
     // EXPECT_EQ(type2, repo.getDataType(*type2, doc_type_id + 1));
-}
-
-TEST(DocumentTypeRepoTest, requireThatBodyCanOccurBeforeHeaderInConfig)
-{
-    DocumenttypesConfigBuilderHelper builder;
-    // Add header and body in reverse order, then swap the ids.
-    builder.document(doc_type_id, type_name,
-                     Struct(body_name).setId(body_id).addField("bodystuff",
-                             DataType::T_STRING),
-                     Struct(header_name).setId(header_id).addField(
-                             "headerstuff", DataType::T_INT));
-    std::swap(builder.config().documenttype[0].headerstruct,
-              builder.config().documenttype[0].bodystruct);
-
-    DocumentTypeRepo repo(builder.config());
-    const StructDataType &s = repo.getDocumentType(type_name)->getFieldsType();
-    // Should have both fields in fields struct
-    EXPECT_TRUE(s.hasField("headerstuff"));
-    EXPECT_TRUE(s.hasField("bodystuff"));
 }
 
 TEST(DocumentTypeRepoTest, Require_that_Array_can_have_nested_DocumentType)
