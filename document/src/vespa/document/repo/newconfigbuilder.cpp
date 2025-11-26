@@ -31,7 +31,6 @@ namespace {
 int32_t hashId(const std::string& name) {
     StructDataType tmp(name);
     int32_t id = tmp.getId();
-    fprintf(stderr, "DEBUG hashId: '%s' -> %d\n", name.c_str(), id);
     return id;
 }
 
@@ -39,8 +38,6 @@ int32_t createFieldId(const std::string& name, int32_t type) {
     StructDataType dummy("dummy", type);
     Field f(name, dummy);
     int32_t field_id = f.getId();
-    fprintf(stderr, "DEBUG createFieldId: field='%s', type_id=%d -> field_id=%d\n",
-            name.c_str(), type, field_id);
     return field_id;
 }
 
@@ -588,7 +585,6 @@ TypeRef NewConfigBuilder::positionType() {
 int32_t NewConfigBuilder::getInternalId(TypeRef type_ref) const {
     auto it = _idx_to_internalid_map.find(type_ref.idx);
     int32_t iid = (it != _idx_to_internalid_map.end()) ? it->second : 0;
-    fprintf(stderr, "internalid[%d] = %d\n", type_ref.idx, iid);
     return iid;
 }
 
@@ -597,7 +593,6 @@ std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
     for (const auto& doctype : _config.doctype) {
         // Check if it's the doctype itself
         if (doctype.idx == type_ref.idx) {
-            fprintf(stderr, "DEBUG getTypeName: idx=%d is doctype '%s'\n", type_ref.idx, doctype.name.c_str());
             return doctype.name;
         }
 
@@ -609,7 +604,6 @@ std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
                 if (!name.empty()) {
                     name[0] = toupper(name[0]);
                 }
-                fprintf(stderr, "DEBUG getTypeName: idx=%d is primitive '%s'\n", type_ref.idx, name.c_str());
                 return name;
             }
         }
@@ -617,7 +611,6 @@ std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
         // Check structs
         for (const auto& st : doctype.structtype) {
             if (st.idx == type_ref.idx) {
-                fprintf(stderr, "DEBUG getTypeName: idx=%d is struct '%s'\n", type_ref.idx, st.name.c_str());
                 return st.name;
             }
         }
@@ -627,8 +620,6 @@ std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
             if (at.idx == type_ref.idx) {
                 std::string elem_name = getTypeName(TypeRef(at.elementtype));
                 std::string full_name = "Array<" + elem_name + ">";
-                fprintf(stderr, "DEBUG getTypeName: idx=%d is array of '%s' -> '%s'\n",
-                        type_ref.idx, elem_name.c_str(), full_name.c_str());
                 return full_name;
             }
         }
@@ -639,7 +630,6 @@ std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
                 std::string key_name = getTypeName(TypeRef(mt.keytype));
                 std::string val_name = getTypeName(TypeRef(mt.valuetype));
                 std::string full_name = "Map<" + key_name + "," + val_name + ">";
-                fprintf(stderr, "DEBUG getTypeName: idx=%d is map '%s'\n", type_ref.idx, full_name.c_str());
                 return full_name;
             }
         }
@@ -649,8 +639,6 @@ std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
             if (wt.idx == type_ref.idx) {
                 std::string elem_name = getTypeName(TypeRef(wt.elementtype));
                 std::string full_name = "WeightedSet<" + elem_name + ">";
-                fprintf(stderr, "DEBUG getTypeName: idx=%d is wset of '%s' -> '%s'\n",
-                        type_ref.idx, elem_name.c_str(), full_name.c_str());
                 return full_name;
             }
         }
@@ -684,9 +672,6 @@ void NewConfigBuilder::registerStructField(TypeRef struct_idx, const std::string
     // Compute field ID using field type's internalid
     int32_t field_type_internalid = getInternalId(field_idx);
     f.internalid = createFieldId(fieldname, field_type_internalid);
-
-    fprintf(stderr, "DEBUG: registerStructField(struct_idx=%d, field='%s', field_type_idx=%d) -> field_id=%d\n",
-            struct_idx.idx, fieldname.c_str(), field_idx.idx, f.internalid);
 }
 
 NewStruct NewConfigBuilder::createStruct(const std::string& name, int32_t doctype_idx) {
@@ -782,8 +767,6 @@ void NewConfigBuilder::registerArray(NewArray& a, int32_t doctype_idx) {
             // Reuse existing array type
             a._idx = arr.idx;
             a._registered = true;
-            fprintf(stderr, "DEBUG: registerArray - reusing existing array idx=%d for elem_idx=%d\n",
-                    arr.idx, a._element_type.idx);
             return;
         }
     }
@@ -804,8 +787,6 @@ void NewConfigBuilder::registerArray(NewArray& a, int32_t doctype_idx) {
     arr.internalid = tmp_array.getId();
 
     _idx_to_internalid_map[a._idx] = arr.internalid;
-    fprintf(stderr, "DEBUG: registerArray(elem_type=%s, elem_idx=%d) -> idx=%d, internalid=%d\n",
-            element_type_name.c_str(), a._element_type.idx, arr.idx, arr.internalid);
 }
 
 void NewConfigBuilder::registerWset(NewWset& w, int32_t doctype_idx) {
@@ -827,8 +808,6 @@ void NewConfigBuilder::registerWset(NewWset& w, int32_t doctype_idx) {
             // Reuse existing wset type
             w._idx = wset.idx;
             w._registered = true;
-            fprintf(stderr, "DEBUG: registerWset - reusing existing wset idx=%d for elem_idx=%d\n",
-                    wset.idx, w._element_type.idx);
             return;
         }
     }
@@ -851,8 +830,6 @@ void NewConfigBuilder::registerWset(NewWset& w, int32_t doctype_idx) {
     wset.removeifzero = w._removeifzero;
     wset.createifnonexistent = w._createifnonexistent;
     _idx_to_internalid_map[w._idx] = wset.internalid;
-    fprintf(stderr, "DEBUG: registerWset(elem_type=%s, elem_idx=%d) -> idx=%d, internalid=%d\n",
-            element_type_name.c_str(), w._element_type.idx, wset.idx, wset.internalid);
 }
 
 void NewConfigBuilder::registerMap(NewMap& m, int32_t doctype_idx) {
@@ -872,8 +849,6 @@ void NewConfigBuilder::registerMap(NewMap& m, int32_t doctype_idx) {
             // Reuse existing map type
             m._idx = map.idx;
             m._registered = true;
-            fprintf(stderr, "DEBUG: registerMap - reusing existing map idx=%d for key_idx=%d, val_idx=%d\n",
-                    map.idx, m._key_type.idx, m._value_type.idx);
             return;
         }
     }
@@ -897,8 +872,6 @@ void NewConfigBuilder::registerMap(NewMap& m, int32_t doctype_idx) {
     map.internalid = tmp_map.getId();
 
     _idx_to_internalid_map[m._idx] = map.internalid;
-    fprintf(stderr, "DEBUG: registerMap(key_type=%s, val_type=%s) -> idx=%d, internalid=%d\n",
-            key_type_name.c_str(), value_type_name.c_str(), map.idx, map.internalid);
 }
 
 void NewConfigBuilder::registerAnnotationRef(NewAnnotationRef& ar, int32_t doctype_idx) {

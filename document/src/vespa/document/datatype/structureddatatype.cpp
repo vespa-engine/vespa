@@ -49,8 +49,6 @@ int32_t StructuredDataType::createId(std::string_view name)
         buf[name.size()] = '.';
         buf[name.size() + 1] = '0';
         int32_t rv = crappyJavaStringHash(std::string_view(buf, name.size() + 2));
-        fprintf(stderr, "crappyJavaStringHash '%.*s' -> %d\n",
-                (int)(name.size() + 2), buf, rv);
         return rv;
     } else {
         vespalib::asciistream ost;
