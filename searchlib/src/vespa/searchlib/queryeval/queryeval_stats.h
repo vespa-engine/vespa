@@ -21,14 +21,14 @@ public:
         : _exact_nns_distances_computed(0),
           _approximate_nns_distances_computed(0),
           _approximate_nns_nodes_visited(0) {}
-    size_t exact_nns_distances_computed() const noexcept { return _exact_nns_distances_computed; }
-    void add_to_exact_nns_distances_computed(size_t value) noexcept { _exact_nns_distances_computed += value; }
+    size_t exact_nns_distances_computed() const noexcept { return _exact_nns_distances_computed.load(std::memory_order_relaxed); }
+    void add_to_exact_nns_distances_computed(size_t value) noexcept { _exact_nns_distances_computed.fetch_add(value, std::memory_order_relaxed); }
 
-    size_t approximate_nns_distances_computed() const noexcept { return _approximate_nns_distances_computed; }
-    void add_to_approximate_nns_distances_computed(size_t value) noexcept { _approximate_nns_distances_computed += value; }
+    size_t approximate_nns_distances_computed() const noexcept { return _approximate_nns_distances_computed.load(std::memory_order_relaxed); }
+    void add_to_approximate_nns_distances_computed(size_t value) noexcept { _approximate_nns_distances_computed.fetch_add(value, std::memory_order_relaxed); }
 
-    size_t approximate_nns_nodes_visited() const noexcept { return _approximate_nns_nodes_visited; }
-    void add_to_approximate_nns_nodes_visited(size_t value) noexcept { _approximate_nns_nodes_visited += value; }
+    size_t approximate_nns_nodes_visited() const noexcept { return _approximate_nns_nodes_visited.load(std::memory_order_relaxed); }
+    void add_to_approximate_nns_nodes_visited(size_t value) noexcept { _approximate_nns_nodes_visited.fetch_add(value, std::memory_order_relaxed); }
 };
 
 }
