@@ -302,26 +302,19 @@ TEST(DocumentTypeRepoTest, requireThatDataTypesCanBeLookedUpById)
 
 TEST(DocumentTypeRepoTest, requireThatDataTypesCanBeLookedUpByName)
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name).setId(header_id),
-                     Struct(body_name));
-    builder.document(doc_type_id + 1, type_name_2,
-                     Struct(header_name_2), Struct(body_name_2));
+    NewConfigBuilder builder;
+    auto &doc = builder.document(type_name, doc_type_id);
+    // TODO: what about arrays?
+    doc.addField(field_name + "_a", doc.registerArray(doc.createArray(builder.intTypeRef())));
+    doc.addField(field_name + "_s", doc.createStruct("mystruct").addField("i1", builder.intTypeRef()).ref());
+    dumpConfig(builder.config());
     DocumentTypeRepo repo(builder.config());
-
-    const DataType *type =
-        repo.getDataType(*repo.getDocumentType(doc_type_id), header_name);
+    const DataType *type = repo.getDataType(*repo.getDocumentType(type_name), header_name);
     ASSERT_TRUE(type);
     EXPECT_EQ(header_name, type->getName());
     EXPECT_EQ(header_id, type->getId());
-
-    EXPECT_TRUE(repo.getDataType(*repo.getDocumentType(doc_type_id),
-                                 type_name));
-    EXPECT_TRUE(!repo.getDataType(*repo.getDocumentType(doc_type_id),
-                                  field_name));
-    EXPECT_TRUE(!repo.getDataType(*repo.getDocumentType(doc_type_id + 1),
-                                  body_name));
+    EXPECT_TRUE(repo.getDataType(*repo.getDocumentType(doc_type_id), "mystruct"));
+    EXPECT_TRUE(!repo.getDataType(*repo.getDocumentType(doc_type_id), "whatever"));
 }
 
 TEST(DocumentTypeRepoTest, requireThatInheritingDocCanRedefineIdenticalField)
@@ -402,7 +395,6 @@ TEST(DocumentTypeRepoTest, requireThatDocumentLookupChecksName)
     // Java hashcode of string 'test_doc.0':
     int32_t collisionId = 2056425229;
     builder.document(type_name_2, collisionId);
-    dumpConfig(builder.config());
     DocumentTypeRepo repo(builder.config());
 
     // "test_doc" will generate the document type id
