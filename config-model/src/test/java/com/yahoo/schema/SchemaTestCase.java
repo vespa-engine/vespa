@@ -487,6 +487,47 @@ public class SchemaTestCase {
     }
 
     @Test
+    void testInheritingRankProfileElements() throws ParseException {
+        String profile = """
+                    schema test {
+                      document test {
+                        field array1 type array<string> {
+                          indexing: index
+                        }
+                        field array2 type array<string> {
+                          indexing: index
+                        }
+                      }
+                      rank-profile r1 {
+                        rank myArray1 {
+                          element-gap: 7
+                        }
+                        rank myArray2 {
+                          element-gap: 5
+                        }
+                      }
+                      rank-profile r2 inherits r1 {
+                      }
+                      rank-profile r3 inherits r1 {
+                        rank myArray1 {
+                          element-gap: 3
+                        }
+                      }
+                    }
+                    """;
+        var application = ApplicationBuilder.createFromStrings(new DeployLoggerStub(), profile);
+        var r1Gaps = application.getRankProfileRegistry().get("test", "r1").explicitFieldRankElementGaps();
+        assertEquals(7, r1Gaps.get("myArray1").get().getAsInt());
+        assertEquals(5, r1Gaps.get("myArray2").get().getAsInt());
+        var r2Gaps = application.getRankProfileRegistry().get("test", "r2").explicitFieldRankElementGaps();
+        assertEquals(7, r2Gaps.get("myArray1").get().getAsInt());
+        assertEquals(5, r1Gaps.get("myArray2").get().getAsInt());
+        var r3Gaps = application.getRankProfileRegistry().get("test", "r3").explicitFieldRankElementGaps();
+        assertEquals(3, r3Gaps.get("myArray1").get().getAsInt());
+        assertEquals(5, r1Gaps.get("myArray2").get().getAsInt());
+    }
+
+    @Test
     void testDerivingHash() throws Exception {
         String schema =
                 """
