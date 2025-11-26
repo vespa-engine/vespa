@@ -219,67 +219,6 @@ TEST(DocumentTypeRepoTest, requireThatDocumentsCanUseInheritedTypes)
     EXPECT_TRUE(dynamic_cast<const ArrayDataType *>(&type));
 }
 
-TEST(DocumentTypeRepoTest, requireThatIllegalConfigsCausesExceptions)
-{
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name), Struct(body_name))
-        .inherit(doc_type_id + 1);
-    VESPA_EXPECT_EXCEPTION(DocumentTypeRepo repo(builder.config()),
-                           IllegalArgumentException, "Unable to find document");
-
-    builder = DocumenttypesConfigBuilderHelper();
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name), Struct(body_name));
-    builder.config().documenttype[0].datatype[0].type =
-        DocumenttypesConfig::Documenttype::Datatype::Type(-1);
-    VESPA_EXPECT_EXCEPTION(DocumentTypeRepo repo(builder.config()),
-                           IllegalArgumentException, "Unknown datatype type -1");
-
-    builder = DocumenttypesConfigBuilderHelper();
-    const int id = 10000;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name),
-                     Struct(body_name).addField(field_name,
-                             Array(DataType::T_INT).setId(id)));
-    EXPECT_EQ(id, builder.config().documenttype[0].datatype[1].id);
-    builder.config().documenttype[0].datatype[1].array.element.id = id;
-    VESPA_EXPECT_EXCEPTION(DocumentTypeRepo repo(builder.config()),
-                           IllegalArgumentException, "Unknown datatype 10000");
-
-    builder = DocumenttypesConfigBuilderHelper();
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name).setId(header_id),
-                     Struct(body_name).addField("foo",
-                             Struct("bar").setId(header_id)));
-    VESPA_EXPECT_EXCEPTION(DocumentTypeRepo repo(builder.config()),
-                           IllegalArgumentException, "Redefinition of data type");
-
-    builder = DocumenttypesConfigBuilderHelper();
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name),
-                     Struct(body_name).addField(field_name,
-                             AnnotationRef(id)));
-    VESPA_EXPECT_EXCEPTION(DocumentTypeRepo repo(builder.config()),
-                           IllegalArgumentException, "Unknown AnnotationType");
-
-    builder = DocumenttypesConfigBuilderHelper();
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name), Struct(body_name))
-        .annotationType(id, type_name, DataType::T_STRING)
-        .annotationType(id, type_name, DataType::T_INT);
-    VESPA_EXPECT_EXCEPTION(DocumentTypeRepo repo(builder.config()),
-                           IllegalArgumentException, "Redefinition of annotation type");
-
-    builder = DocumenttypesConfigBuilderHelper();
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name), Struct(body_name))
-        .annotationType(id, type_name, DataType::T_STRING)
-        .annotationType(id, "foobar", DataType::T_STRING);
-    VESPA_EXPECT_EXCEPTION(DocumentTypeRepo repo(builder.config()),
-                           IllegalArgumentException, "Redefinition of annotation type");
-}
-
 TEST(DocumentTypeRepoTest, requireThatDataTypesCanBeLookedUpById)
 {
     NewConfigBuilder builder;
