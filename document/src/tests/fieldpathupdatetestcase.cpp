@@ -18,7 +18,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/mapdatatype.h>
 
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/util/bytebuffer.h>
 
@@ -30,7 +30,7 @@
 
 using vespalib::Identifiable;
 using vespalib::nbostream;
-using namespace document::config_builder;
+using document::new_config_builder::NewConfigBuilder;
 
 namespace document {
 
@@ -106,21 +106,32 @@ FieldPathUpdateTestCase::~FieldPathUpdateTestCase() = default;
 void
 FieldPathUpdateTestCase::SetUp()
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(42, "foobar",
-                     Struct("foobar.header")
-                     .addField("num", DataType::T_INT)
-                     .addField("byteval", DataType::T_BYTE)
-                     .addField("strfoo", DataType::T_STRING)
-                     .addField("strarray", Array(DataType::T_STRING)),
-                     Struct("foobar.body")
-                     .addField("strwset", Wset(DataType::T_STRING))
-                     .addField("structmap",
-                               Map(DataType::T_STRING, Struct("mystruct")
-                                       .addField("title", DataType::T_STRING)
-                                       .addField("rating", DataType::T_INT)))
-                     .addField("strmap",
-                               Map(DataType::T_STRING, DataType::T_STRING)));
+    NewConfigBuilder builder;
+    auto& doc = builder.document("foobar", 42);
+
+    // Create mystruct first
+    auto mystruct = doc.createStruct("mystruct");
+    mystruct.addField("title", builder.stringTypeRef())
+            .addField("rating", builder.intTypeRef());
+    auto mystruct_ref = doc.registerStruct(std::move(mystruct));
+
+    // Add fields to the document
+    doc.addField("num", builder.intTypeRef())
+       .addField("byteval", builder.byteTypeRef())
+       .addField("strfoo", builder.stringTypeRef());
+
+    auto strarray = doc.createArray(builder.stringTypeRef());
+    doc.addField("strarray", doc.registerArray(std::move(strarray)));
+
+    auto strwset = doc.createWset(builder.stringTypeRef());
+    doc.addField("strwset", doc.registerWset(std::move(strwset)));
+
+    auto structmap = doc.createMap(builder.stringTypeRef(), mystruct_ref);
+    doc.addField("structmap", doc.registerMap(std::move(structmap)));
+
+    auto strmap = doc.createMap(builder.stringTypeRef(), builder.stringTypeRef());
+    doc.addField("strmap", doc.registerMap(std::move(strmap)));
+
     _repo.reset(new DocumentTypeRepo(builder.config()));
 
     _foobar_type = _repo->getDocumentType("foobar");
