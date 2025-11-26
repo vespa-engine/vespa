@@ -13,9 +13,9 @@ namespace search::queryeval {
  **/
 class QueryEvalStats {
 private:
-    std::atomic<std::size_t> _exact_nns_distances_computed;
-    std::atomic<std::size_t> _approximate_nns_distances_computed;
-    std::atomic<std::size_t> _approximate_nns_nodes_visited;
+    std::atomic<size_t> _exact_nns_distances_computed;
+    std::atomic<size_t> _approximate_nns_distances_computed;
+    std::atomic<size_t> _approximate_nns_nodes_visited;
 public:
     QueryEvalStats() noexcept
         : _exact_nns_distances_computed(0),
