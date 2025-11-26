@@ -34,6 +34,13 @@ using namespace document;
 
 namespace {
 
+void dumpConfig(const auto& cfg) {
+    vespalib::asciistream ss;
+    AsciiConfigWriter writer(ss);
+    EXPECT_TRUE(writer.write(cfg));
+    fprintf(stderr, "config >>>\n%s\n<<<\n", ss.str().c_str());
+}
+
 const string type_name = "test";
 const int32_t doc_type_id = 787121340;
 const string header_name = type_name + ".header";
@@ -392,14 +399,20 @@ TEST(DocumentTypeRepoTest, requireThatDocumentTypesCanBeIterated)
 TEST(DocumentTypeRepoTest, requireThatDocumentLookupChecksName)
 {
     DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name_2,
+
+    // Java hashcode of string 'test_doc.0':
+    int32_t collisionId = 2056425229;
+    builder.document(collisionId, type_name_2,
                      Struct(header_name_2), Struct(body_name_2));
+
+    dumpConfig(builder.config());
+
     DocumentTypeRepo repo(builder.config());
 
-    // "type_name" will generate the document type id
-    // "doc_type_id". However, this config assigns that id to a
+    // "test_doc" will generate the document type id
+    // collisionId. However, this config assigns that id to a
     // different type.
-    const DocumentType *type = repo.getDocumentType(type_name);
+    const DocumentType *type = repo.getDocumentType("test_doc");
     ASSERT_TRUE(!type);
 }
 
@@ -440,12 +453,6 @@ TEST(DocumentTypeRepoTest, requireThatFieldsCanHaveAnyDocumentType) {
     // Circular dependency
     doc1.addField(field_name, doc2.ref());
     doc2.addField(field_name, doc1.ref());
-
-    const auto cfg = builder.config();
-    vespalib::asciistream ss;
-    AsciiConfigWriter writer(ss);
-    EXPECT_TRUE(writer.write(cfg));
-    fprintf(stderr, "config >>>\n%s\n<<<\n", ss.str().c_str());
 
     DocumentTypeRepo repo(builder.config());
     const DocumentType *type1 = repo.getDocumentType(doc_type_id);
@@ -500,31 +507,35 @@ TEST(DocumentTypeRepoTest, Reference_fields_are_resolved_to_correct_reference_ty
 {
     const int doc_with_refs_id = 5678;
     const int type_2_id = doc_type_id + 1;
-    const int ref1_id = 777;
-    const int ref2_id = 888;
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name), Struct(body_name));
-    builder.document(type_2_id, type_name_2,
-                     Struct(header_name_2), Struct(body_name_2));
-    builder.document(doc_with_refs_id, "doc_with_refs",
-                     Struct("doc_with_refs.header")
-                        .addField("ref1", ref1_id),
-                     Struct("doc_with_refs.body")
-                        .addField("ref2", ref2_id)
-                        .addField("ref3", ref1_id))
-        .referenceType(ref1_id, doc_type_id)
-        .referenceType(ref2_id, type_2_id);
+    NewConfigBuilder builder;
+
+    // Create the target document types
+    auto& target1 = builder.document(type_name, doc_type_id);
+    auto& target2 = builder.document(type_name_2, type_2_id);
+
+    // Create document with reference fields
+    auto& doc_with_refs = builder.document("doc_with_refs", doc_with_refs_id);
+    auto ref1_type = doc_with_refs.referenceType(target1.idx());
+    auto ref2_type = doc_with_refs.referenceType(target2.idx());
+
+    doc_with_refs.addField("ref1", ref1_type);
+    doc_with_refs.addField("ref2", ref2_type);
+    doc_with_refs.addField("ref3", ref1_type);  // Reuse ref1_type
 
     DocumentTypeRepo repo(builder.config());
     const DocumentType *type = repo.getDocumentType(doc_with_refs_id);
     ASSERT_TRUE(type != nullptr);
-    const auto* ref1_type(repo.getDataType(*type, ref1_id));
-    const auto* ref2_type(repo.getDataType(*type, ref2_id));
 
-    EXPECT_EQ(*ref1_type, type->getFieldsType().getField("ref1").getDataType());
-    EXPECT_EQ(*ref2_type, type->getFieldsType().getField("ref2").getDataType());
-    EXPECT_EQ(*ref1_type, type->getFieldsType().getField("ref3").getDataType());
+    // Get the reference types by their auto-generated IDs
+    auto ref1_id = builder.getInternalId(ref1_type);
+    auto ref2_id = builder.getInternalId(ref2_type);
+
+    const auto* ref1_dt(repo.getDataType(*type, ref1_id));
+    const auto* ref2_dt(repo.getDataType(*type, ref2_id));
+
+    EXPECT_EQ(*ref1_dt, type->getFieldsType().getField("ref1").getDataType());
+    EXPECT_EQ(*ref2_dt, type->getFieldsType().getField("ref2").getDataType());
+    EXPECT_EQ(*ref1_dt, type->getFieldsType().getField("ref3").getDataType());
 }
 
 TEST(DocumentTypeRepoTest, Config_with_no_imported_fields_has_empty_imported_fields_set_in_DocumentType)
