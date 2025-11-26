@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.data.disclosure;
 
+import com.yahoo.api.annotations.Beta;
+
 /**
  * An interface for disclosing structured data, for instance, to another data structure or output format.
  *
@@ -8,9 +10,14 @@ package com.yahoo.data.disclosure;
  * @author bjorncs
  * @author andreer
  */
+@Beta
 public interface DataSink {
 
     void fieldName(String name);
+
+    void fieldName(byte[] utf8);
+
+    void fieldName(String utf16, byte[] utf8);
 
     void startObject();
 
