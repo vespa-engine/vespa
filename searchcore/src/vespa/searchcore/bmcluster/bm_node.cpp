@@ -55,7 +55,6 @@
 #include <vespa/config-persistence.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/document/bucket/bucketspace.h>
-#include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
@@ -127,7 +126,7 @@ enum PortBias
     DISTRIBUTOR_RPC_PORT,
     DISTRIBUTOR_STATUS_PORT,
     NUM_PORTS,
-    
+
 };
 
 int port_number(int base_port, PortBias bias)
@@ -679,7 +678,7 @@ MyBmNode::wait_service_layer_slobrok()
     s << "/default";
     _cluster.wait_slobrok(s.str());
 }
-    
+
 void
 MyBmNode::wait_distributor_slobrok()
 {
@@ -707,7 +706,7 @@ MyBmNode::merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::C
             uint32_t ready_docs = dmss.numReadyDocs();
             uint32_t total_docs = dmss.numTotalDocs();
             uint32_t removed_docs = dmss.numRemovedDocs();
-            
+
             if (_node_idx < node_stats.size()) {
                 node_stats[_node_idx].set_document_db_stats(BmDocumentDbStats(active_docs, ready_docs, total_docs, removed_docs));
             }

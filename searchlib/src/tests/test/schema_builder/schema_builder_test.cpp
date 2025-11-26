@@ -2,7 +2,6 @@
 
 #include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/document/datatype/datatype.h>
-#include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/test/doc_builder.h>

@@ -2,7 +2,6 @@
 
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>

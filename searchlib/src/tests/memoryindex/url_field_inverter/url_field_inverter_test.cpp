@@ -5,7 +5,6 @@
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/index/field_length_calculator.h>

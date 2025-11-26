@@ -5,7 +5,6 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
