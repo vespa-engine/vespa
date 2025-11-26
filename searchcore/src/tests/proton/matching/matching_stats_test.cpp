@@ -29,11 +29,11 @@ TEST(MatchingStatsTest, requireThatDocCountsAddUp)
         EXPECT_EQ(&rhs.approximate_nns_nodes_visited(7), &rhs);
         EXPECT_EQ(&rhs.queries(2), &rhs);
         EXPECT_EQ(&rhs.limited_queries(1), &rhs);
-        search::queryeval::QueryEvalStats qe_stats;
-        qe_stats.add_to_exact_nns_distances_computed(1);
-        qe_stats.add_to_approximate_nns_distances_computed(2);
-        qe_stats.add_to_approximate_nns_nodes_visited(3);
-        EXPECT_EQ(&stats.add_queryeval_stats(qe_stats), &stats);
+        auto qe_stats = search::queryeval::QueryEvalStats::create();
+        qe_stats->add_to_exact_nns_distances_computed(1);
+        qe_stats->add_to_approximate_nns_distances_computed(2);
+        qe_stats->add_to_approximate_nns_nodes_visited(3);
+        EXPECT_EQ(&stats.add_queryeval_stats(*qe_stats), &stats);
         EXPECT_EQ(&stats.add(rhs), &stats);
     }
     EXPECT_EQ(10000u, stats.docidSpaceCovered());

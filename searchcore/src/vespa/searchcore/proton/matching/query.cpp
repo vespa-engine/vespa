@@ -367,8 +367,8 @@ Query::createSearch(MatchData &md) const
 }
 
 void
-Query::install_stats(const std::shared_ptr<search::queryeval::QueryEvalStats> &stats) {
-    _blueprint->each_node_post_order([stats](Blueprint& blueprint) {
+Query::install_stats(search::queryeval::QueryEvalStats &stats) {
+    _blueprint->each_node_post_order([&stats](Blueprint& blueprint) {
         auto nearest_neighbor = blueprint.asNearestNeighbor();
         if (nearest_neighbor) {
             nearest_neighbor->install_stats(stats);

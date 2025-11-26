@@ -30,7 +30,7 @@ public:
         NearestNeighborDistanceHeap &distanceHeap;
         const GlobalFilter &filter;
 
-        Params(const std::shared_ptr<QueryEvalStats> &stats,
+        Params(QueryEvalStats &stats,
                fef::TermFieldMatchData &tfmd_in,
                std::unique_ptr<search::tensor::DistanceCalculator> distance_calc_in,
                NearestNeighborDistanceHeap &distanceHeap_in,
@@ -44,7 +44,7 @@ public:
     {}
 
     static std::unique_ptr<ExactNearestNeighborIterator> create(
-            const std::shared_ptr<QueryEvalStats> &stats,
+            QueryEvalStats &stats,
             bool strict,
             fef::TermFieldMatchData &tfmd,
             std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,

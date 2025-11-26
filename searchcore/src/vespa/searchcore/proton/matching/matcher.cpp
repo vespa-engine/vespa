@@ -290,8 +290,8 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         traceQuery(6, request.trace(), mtf->query());
 
         // Collect more detailed statistics about query evaluation
-        queryeval_stats = std::make_shared<search::queryeval::QueryEvalStats>();
-        mtf->install_stats(queryeval_stats);
+        queryeval_stats = search::queryeval::QueryEvalStats::create();
+        mtf->install_stats(*queryeval_stats);
 
         if (!mtf->valid()) {
             return reply;

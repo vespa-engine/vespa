@@ -169,14 +169,14 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
     default:
         ;
     }
-    return ExactNearestNeighborIterator::create(_stats, strict(), tfmd,
+    return ExactNearestNeighborIterator::create(*_stats, strict(), tfmd,
                                                 std::make_unique<search::tensor::DistanceCalculator>(_attr_tensor, _query_tensor),
                                                 _distance_heap, *_global_filter,
                                                 _matching_phase != MatchingPhase::FIRST_PHASE);
 }
 
-void NearestNeighborBlueprint::install_stats(const std::shared_ptr<QueryEvalStats> &stats) {
-    _stats= stats;
+void NearestNeighborBlueprint::install_stats(QueryEvalStats &stats) {
+    _stats = stats.get_ptr();
 }
 
 void

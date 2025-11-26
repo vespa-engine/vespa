@@ -911,25 +911,25 @@ TEST(QueryEvalTest, test_andnotsearchstrict_iterators_adheres_to_init_range) {
 
 TEST(QueryEvalTest, test_stats)
 {
-    QueryEvalStats stats;
-    EXPECT_EQ(0u, stats.exact_nns_distances_computed());
-    EXPECT_EQ(0u, stats.approximate_nns_distances_computed());
-    EXPECT_EQ(0u, stats.approximate_nns_nodes_visited());
+    auto stats = QueryEvalStats::create();
+    EXPECT_EQ(0u, stats->exact_nns_distances_computed());
+    EXPECT_EQ(0u, stats->approximate_nns_distances_computed());
+    EXPECT_EQ(0u, stats->approximate_nns_nodes_visited());
 
-    stats.add_to_exact_nns_distances_computed(42u);
-    EXPECT_EQ(42u, stats.exact_nns_distances_computed());
-    stats.add_to_exact_nns_distances_computed(42u);
-    EXPECT_EQ(84u, stats.exact_nns_distances_computed());
+    stats->add_to_exact_nns_distances_computed(42u);
+    EXPECT_EQ(42u, stats->exact_nns_distances_computed());
+    stats->add_to_exact_nns_distances_computed(42u);
+    EXPECT_EQ(84u, stats->exact_nns_distances_computed());
 
-    stats.add_to_approximate_nns_distances_computed(1u);
-    EXPECT_EQ(1u, stats.approximate_nns_distances_computed());
-    stats.add_to_approximate_nns_distances_computed(1u);
-    EXPECT_EQ(2u, stats.approximate_nns_distances_computed());
+    stats->add_to_approximate_nns_distances_computed(1u);
+    EXPECT_EQ(1u, stats->approximate_nns_distances_computed());
+    stats->add_to_approximate_nns_distances_computed(1u);
+    EXPECT_EQ(2u, stats->approximate_nns_distances_computed());
 
-    stats.add_to_approximate_nns_nodes_visited(2u);
-    EXPECT_EQ(2u, stats.approximate_nns_nodes_visited());
-    stats.add_to_approximate_nns_nodes_visited(2u);
-    EXPECT_EQ(4u, stats.approximate_nns_nodes_visited());
+    stats->add_to_approximate_nns_nodes_visited(2u);
+    EXPECT_EQ(2u, stats->approximate_nns_nodes_visited());
+    stats->add_to_approximate_nns_nodes_visited(2u);
+    EXPECT_EQ(4u, stats->approximate_nns_nodes_visited());
 }
 
 

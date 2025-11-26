@@ -14,12 +14,12 @@ using vespalib::eval::CellType;
 
 namespace search::queryeval {
 
-ExactNearestNeighborIterator::Params::Params(const std::shared_ptr<QueryEvalStats> &stats_in,
+ExactNearestNeighborIterator::Params::Params(QueryEvalStats &stats_in,
                                              fef::TermFieldMatchData &tfmd_in,
                                              std::unique_ptr<search::tensor::DistanceCalculator> distance_calc_in,
                                              NearestNeighborDistanceHeap &distanceHeap_in,
                                              const GlobalFilter &filter_in)
-    : stats(stats_in),
+    : stats(stats_in.get_ptr()),
       tfmd(tfmd_in),
       distance_calc(std::move(distance_calc_in)),
       distanceHeap(distanceHeap_in),
@@ -127,7 +127,7 @@ resolve_strict(bool strict, bool readonly_distance_heap, ExactNearestNeighborIte
 } // namespace <unnamed>
 
 std::unique_ptr<ExactNearestNeighborIterator>
-ExactNearestNeighborIterator::create(const std::shared_ptr<QueryEvalStats> &stats,
+ExactNearestNeighborIterator::create(QueryEvalStats &stats,
                                      bool strict, fef::TermFieldMatchData &tfmd,
                                      std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
                                      NearestNeighborDistanceHeap &distanceHeap, const GlobalFilter &filter,
