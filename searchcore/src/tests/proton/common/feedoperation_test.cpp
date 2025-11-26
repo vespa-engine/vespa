@@ -52,8 +52,6 @@ struct MyStreamHandler : NewConfigOperation::IStreamHandler {
 
 const int32_t doc_type_id = 787121340;
 const std::string type_name = "test";
-const std::string header_name = type_name + ".header";
-const std::string body_name = type_name + ".body";
 
 const DocumentOperation::Timestamp TS_10(10);
 

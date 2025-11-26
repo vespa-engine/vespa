@@ -40,9 +40,6 @@ namespace {
 
 const int32_t          doc_type_id   = 787121340;
 const std::string doc_type_name = "test";
-const std::string header_name   = doc_type_name + ".header";
-const std::string body_name     = doc_type_name + ".body";
-
 
 std::unique_ptr<const DocumentTypeRepo>
 make_doc_type_repo()

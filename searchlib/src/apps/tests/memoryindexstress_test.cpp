@@ -62,8 +62,6 @@ const std::string body("body");
 const std::string foo("foo");
 const std::string bar("bar");
 const std::string doc_type_name = "test";
-const std::string header_name = doc_type_name + ".header";
-const std::string body_name = doc_type_name + ".body";
 uint32_t docid_limit = 100; // needed for relative estimates
 
 Schema

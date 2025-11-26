@@ -31,8 +31,6 @@ namespace {
 
 const int32_t doc_type_id = 787121340;
 const std::string type_name = "test";
-const std::string header_name = type_name + ".header";
-const std::string body_name = type_name + ".body";
 
 std::shared_ptr<const DocumentTypeRepo>
 makeDocTypeRepo(bool hasField)

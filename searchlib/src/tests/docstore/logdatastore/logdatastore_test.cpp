@@ -495,8 +495,6 @@ using index::DummyFileHeaderContext;
 
 namespace {
 const string doc_type_name = "test";
-const string header_name = doc_type_name + ".header";
-const string body_name = doc_type_name + ".body";
 
 document::config::DocumenttypesConfig
 makeDocTypeRepoConfig()

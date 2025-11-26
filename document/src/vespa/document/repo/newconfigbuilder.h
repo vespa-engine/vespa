@@ -57,7 +57,7 @@ public:
     NewStruct(const NewStruct&) = delete;
     NewStruct(NewStruct&&) = default;
     NewStruct& operator=(const NewStruct&) = delete;
-    NewStruct& operator=(NewStruct&&) = default;
+    NewStruct& operator=(NewStruct&&) = delete;
 
     NewStruct& addField(const std::string& name, TypeRef type);
     NewStruct& addTensorField(const std::string& name, const std::string& spec);
@@ -139,7 +139,6 @@ class NewAnnotationRef {
     friend class NewConfigBuilder;
 
 private:
-    NewConfigBuilder& _builder;
     int32_t _annotation_idx;
     int32_t _idx;
     bool _registered;
@@ -161,8 +160,6 @@ private:
     NewConfigBuilder& _builder;
     int32_t _idx;
     std::string _name;
-    int32_t _internalid;
-    int32_t _contentstruct_idx;
     std::vector<int32_t> _inherits;
     std::vector<std::string> _imported_fields;
     std::map<std::string, std::vector<std::string>> _field_sets;
