@@ -7,6 +7,8 @@
 #include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/document/datatype/structdatatype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace document::new_config_builder {
 
@@ -530,6 +532,15 @@ NewDocTypeRep& NewConfigBuilder::document(const std::string& name, int32_t inter
     auto it = _doctype_map.find(name);
     if (it != _doctype_map.end()) {
         return *_doctype_builders[it->second];
+    }
+
+    // Check for ID collision with existing documents
+    for (const auto& existing : _config.doctype) {
+        if (existing.internalid == internalid && existing.name != name) {
+            throw vespalib::IllegalArgumentException(
+                vespalib::make_string("Document type ID collision: ID %d is already used by document type '%s', cannot assign to '%s'",
+                                     internalid, existing.name.c_str(), name.c_str()));
+        }
     }
 
     // Create new document type

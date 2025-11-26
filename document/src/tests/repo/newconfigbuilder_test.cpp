@@ -435,4 +435,22 @@ TEST(NewConfigBuilderTest, annotation_reference_to_non_existent_annotation_fails
     }
 }
 
+TEST(NewConfigBuilderTest, document_id_collision_throws_exception) {
+    NewConfigBuilder builder;
+
+    // Java hashcode of string 'test_doc.0' is 2056425229
+    // If we create "test_2" with that ID, then try to create "test_doc" (which would
+    // naturally generate that same ID), we should get an exception
+    int32_t collisionId = 2056425229;
+
+    // Create test_2 with the collision ID
+    builder.document("test_2", collisionId);
+
+    // Try to create test_doc which would naturally hash to the same ID
+    // This should throw an exception due to ID collision
+    EXPECT_THROW({
+        builder.document("test_doc");
+    }, vespalib::IllegalArgumentException);
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -398,20 +398,16 @@ TEST(DocumentTypeRepoTest, requireThatDocumentTypesCanBeIterated)
 
 TEST(DocumentTypeRepoTest, requireThatDocumentLookupChecksName)
 {
-    DocumenttypesConfigBuilderHelper builder;
-
+    NewConfigBuilder builder;
     // Java hashcode of string 'test_doc.0':
     int32_t collisionId = 2056425229;
-    builder.document(collisionId, type_name_2,
-                     Struct(header_name_2), Struct(body_name_2));
-
+    builder.document(type_name_2, collisionId);
     dumpConfig(builder.config());
-
     DocumentTypeRepo repo(builder.config());
 
     // "test_doc" will generate the document type id
     // collisionId. However, this config assigns that id to a
-    // different type.
+    // different type (type_name_2).
     const DocumentType *type = repo.getDocumentType("test_doc");
     ASSERT_TRUE(!type);
 }
