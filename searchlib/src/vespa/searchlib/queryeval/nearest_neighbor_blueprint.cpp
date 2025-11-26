@@ -176,7 +176,7 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
 }
 
 void NearestNeighborBlueprint::install_stats(QueryEvalStats &stats) {
-    _stats = stats.get_ptr();
+    _stats = stats.shared_from_this();
 }
 
 void

@@ -25,7 +25,6 @@ public:
           _approximate_nns_nodes_visited(0) {}
     // This factory function has to be used to create objects, meaning that all such objects will be in a shared_ptr
     static std::shared_ptr<QueryEvalStats> create() { return std::make_shared<QueryEvalStats>(Private()); }
-    std::shared_ptr<QueryEvalStats> get_ptr() { return shared_from_this(); }
 
     size_t exact_nns_distances_computed() const noexcept { return _exact_nns_distances_computed.load(std::memory_order_relaxed); }
     void add_to_exact_nns_distances_computed(size_t value) noexcept { _exact_nns_distances_computed.fetch_add(value, std::memory_order_relaxed); }

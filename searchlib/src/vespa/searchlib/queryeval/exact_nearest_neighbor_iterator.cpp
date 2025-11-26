@@ -19,7 +19,7 @@ ExactNearestNeighborIterator::Params::Params(QueryEvalStats &stats_in,
                                              std::unique_ptr<search::tensor::DistanceCalculator> distance_calc_in,
                                              NearestNeighborDistanceHeap &distanceHeap_in,
                                              const GlobalFilter &filter_in)
-    : stats(stats_in.get_ptr()),
+    : stats(stats_in.shared_from_this()),
       tfmd(tfmd_in),
       distance_calc(std::move(distance_calc_in)),
       distanceHeap(distanceHeap_in),
