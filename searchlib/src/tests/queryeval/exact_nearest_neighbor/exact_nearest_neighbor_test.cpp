@@ -121,7 +121,7 @@ struct Fixture {
 };
 
 template <bool strict>
-SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std::numeric_limits<double>::max()) {
+SimpleResult find_matches_impl(const std::shared_ptr<QueryEvalStats> &stats, Fixture &env, const Value &qtv, double threshold) {
     auto md = MatchData::makeTestInstance(2, 2);
     auto &tfmd = *(md->resolveTermField(0));
     auto &attr = *(env._attr);
@@ -132,7 +132,6 @@ SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std
     NearestNeighborDistanceHeap dh(2);
     dh.set_distance_threshold(threshold);
     const GlobalFilter &filter = *env._global_filter;
-    auto stats = std::make_shared<QueryEvalStats>();
     auto search = ExactNearestNeighborIterator::create(stats, strict, tfmd,
                                                        std::make_unique<DistanceCalculator>(attr, qtv),
                                                        dh, filter,
@@ -145,27 +144,15 @@ SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std
 }
 
 template <bool strict>
-std::shared_ptr<QueryEvalStats> get_search_stats(Fixture &env, const Value &qtv, double threshold = std::numeric_limits<double>::max()) {
-    auto md = MatchData::makeTestInstance(2, 2);
-    auto &tfmd = *(md->resolveTermField(0));
-    auto &attr = *(env._attr);
+SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std::numeric_limits<double>::max()) {
+    auto stats = std::make_shared<QueryEvalStats>();
+    return find_matches_impl<strict>(stats, env, qtv, threshold);
+}
 
-    auto dff = search::tensor::make_distance_function_factory(DistanceMetric::Euclidean, qtv.cells().type);
-    auto df = dff->for_query_vector(qtv.cells());
-    threshold = df->convert_threshold(threshold);
-    NearestNeighborDistanceHeap dh(2);
-    dh.set_distance_threshold(threshold);
-    const GlobalFilter &filter = *env._global_filter;
+template <bool strict>
+std::shared_ptr<QueryEvalStats> get_search_stats(Fixture &env, const Value &qtv, double threshold = std::numeric_limits<double>::max()) {
     std::shared_ptr<QueryEvalStats> stats = std::make_shared<QueryEvalStats>();
-    auto search = ExactNearestNeighborIterator::create(stats, strict, tfmd,
-                                                       std::make_unique<DistanceCalculator>(attr, qtv),
-                                                       dh, filter,
-                                                       env._matching_phase != MatchingPhase::FIRST_PHASE);
-    if (strict) {
-        SimpleResult().searchStrict(*search, attr.getNumDocs());
-    } else {
-        SimpleResult().search(*search, attr.getNumDocs());
-    }
+    find_matches_impl<strict>(stats, env, qtv, threshold);
     return stats;
 }
 
