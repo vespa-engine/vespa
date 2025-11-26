@@ -48,7 +48,10 @@ int32_t StructuredDataType::createId(std::string_view name)
         memcpy(buf, name.data(), name.size());
         buf[name.size()] = '.';
         buf[name.size() + 1] = '0';
-        return crappyJavaStringHash(std::string_view(buf, name.size() + 2));
+        int32_t rv = crappyJavaStringHash(std::string_view(buf, name.size() + 2));
+        fprintf(stderr, "crappyJavaStringHash '%.*s' -> %d\n",
+                (int)(name.size() + 2), buf, rv);
+        return rv;
     } else {
         vespalib::asciistream ost;
         ost << name << ".0";  // Hardcode version 0 (version is not supported).

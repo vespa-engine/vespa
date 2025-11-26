@@ -281,6 +281,69 @@ NewDocTypeRep& NewDocTypeRep::annotationType(int32_t id, const std::string& name
     return *this;
 }
 
+TypeRef NewDocTypeRep::createAnnotationType(int32_t id, const std::string& name) {
+    AnnotationTypeData ann;
+    ann.idx = _builder._next_idx++;
+    ann.name = name;
+    ann.internalid = id;
+    ann.datatype_idx = -1;
+    _annotations.push_back(ann);
+    return TypeRef(ann.idx);
+}
+
+TypeRef NewDocTypeRep::createAnnotationType(int32_t id, const std::string& name, TypeRef datatype) {
+    AnnotationTypeData ann;
+    ann.idx = _builder._next_idx++;
+    ann.name = name;
+    ann.internalid = id;
+    ann.datatype_idx = datatype.idx;
+    _annotations.push_back(ann);
+    return TypeRef(ann.idx);
+}
+
+TypeRef NewDocTypeRep::createAnnotationReference(TypeRef annotation_type_idx) {
+    // First, ensure the annotation type is in the config
+    // Find the doctype
+    BDocType* doc_config = nullptr;
+    for (auto& d : _builder._config.doctype) {
+        if (d.idx == _idx) {
+            doc_config = &d;
+            break;
+        }
+    }
+    assert(doc_config && "Document type not found");
+
+    // Add the annotation to the config if not already there
+    bool found = false;
+    for (const auto& ann : doc_config->annotationtype) {
+        if (ann.idx == annotation_type_idx.idx) {
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        // Find it in our local _annotations list
+        for (const auto& ann : _annotations) {
+            if (ann.idx == annotation_type_idx.idx) {
+                auto& a = doc_config->annotationtype.emplace_back();
+                a.idx = ann.idx;
+                a.name = ann.name;
+                a.internalid = ann.internalid;
+                if (ann.datatype_idx >= 0) {
+                    a.datatype = ann.datatype_idx;
+                }
+                break;
+            }
+        }
+    }
+
+    // Create an annotation reference using the NewAnnotationRef helper
+    NewAnnotationRef ar(_builder, annotation_type_idx.idx);
+    _builder.registerAnnotationRef(ar, _idx);
+    return ar.ref();
+}
+
 TypeRef NewDocTypeRep::referenceType(int32_t target_doctype_idx) {
     // Find the doctype
     BDocType* doc = nullptr;
@@ -888,14 +951,23 @@ void NewConfigBuilder::finalizeDocType(NewDocTypeRep& doc) {
         }
     }
 
-    // Add annotations
+    // Add annotations (skip those already added)
     for (const auto& ann : doc._annotations) {
-        auto& a = doc_config->annotationtype.emplace_back();
-        a.idx = ann.idx;
-        a.name = ann.name;
-        a.internalid = ann.internalid;
-        if (ann.datatype_idx >= 0) {
-            a.datatype = ann.datatype_idx;
+        bool already_added = false;
+        for (const auto& existing : doc_config->annotationtype) {
+            if (existing.idx == ann.idx) {
+                already_added = true;
+                break;
+            }
+        }
+        if (!already_added) {
+            auto& a = doc_config->annotationtype.emplace_back();
+            a.idx = ann.idx;
+            a.name = ann.name;
+            a.internalid = ann.internalid;
+            if (ann.datatype_idx >= 0) {
+                a.datatype = ann.datatype_idx;
+            }
         }
     }
 

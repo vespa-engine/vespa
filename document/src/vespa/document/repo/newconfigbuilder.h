@@ -137,6 +137,7 @@ public:
  */
 class NewAnnotationRef {
     friend class NewConfigBuilder;
+    friend class NewDocTypeRep;
 
 private:
     NewConfigBuilder& _builder;
@@ -202,6 +203,9 @@ public:
     // Annotations
     NewDocTypeRep& annotationType(int32_t id, const std::string& name);
     NewDocTypeRep& annotationType(int32_t id, const std::string& name, TypeRef datatype);
+    TypeRef createAnnotationType(int32_t id, const std::string& name);
+    TypeRef createAnnotationType(int32_t id, const std::string& name, TypeRef datatype);
+    TypeRef createAnnotationReference(TypeRef annotation_type_idx);
 
     // Document references
     TypeRef referenceType(int32_t target_doctype_idx);
@@ -214,6 +218,7 @@ public:
 
     // Get idx of this document type
     int32_t idx() const { return _idx; }
+    TypeRef ref() const { return TypeRef(_idx); }
 };
 
 /**
