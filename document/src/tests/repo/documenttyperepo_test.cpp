@@ -275,13 +275,13 @@ TEST(DocumentTypeRepoTest, requireThatIllegalConfigsCausesExceptions)
 
 TEST(DocumentTypeRepoTest, requireThatDataTypesCanBeLookedUpById)
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name).setId(header_id), Struct(body_name));
-    builder.document(doc_type_id + 1, type_name_2,
-                     Struct(header_name_2), Struct(body_name_2));
+    NewConfigBuilder builder;
+    builder.document(type_name, doc_type_id);
+    builder.document(type_name_2, doc_type_id + 1);
     DocumentTypeRepo repo(builder.config());
 
+    // In the new API, the contentstruct (fields struct) gets an auto-generated ID
+    // which should match the expected header_id
     const DataType *type =
         repo.getDataType(*repo.getDocumentType(doc_type_id), header_id);
     ASSERT_TRUE(type);
