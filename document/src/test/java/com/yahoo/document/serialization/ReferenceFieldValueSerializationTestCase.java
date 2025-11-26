@@ -23,7 +23,8 @@ public class ReferenceFieldValueSerializationTestCase {
         // Note: these must match their C++ serialization test counterparts.
         final static String REF_TARGET_DOC_TYPE_NAME = "my_doctype";
         final static String REF_SOURCE_DOC_TYPE_NAME = "doc_with_ref";
-        final static int REF_TYPE_ID = 789;
+        final static int REF_TYPE_ID = -961817554; // the generated type id
+
         final static String SOURCE_REF_FIELD_NAME = "ref_field";
         final static String CROSS_LANGUAGE_PATH = "src/test/resources/reference/";
 
