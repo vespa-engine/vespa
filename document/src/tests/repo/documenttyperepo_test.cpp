@@ -10,7 +10,6 @@
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -28,7 +27,6 @@ using vespalib::Identifiable;
 using vespalib::IllegalArgumentException;
 using std::string;
 
-using namespace document::config_builder;
 using document::new_config_builder::NewConfigBuilder;
 using namespace document;
 
