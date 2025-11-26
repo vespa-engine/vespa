@@ -431,15 +431,6 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
     );
 
-    public static final UnboundBooleanFlag ADD_HEAP_DUMP_SUMMARY_TO_PANIC_TICKETS = defineFeatureFlag(
-            "add-heap-dump-summary-to-panic-tickets", true,
-            List.of("hmusum"), "2025-11-04", "2026-02-04",
-            "Whether to include heap dump summary generated from hprof-slurp for Java heap dumps " +
-                    "in Jira panic tickets",
-            "Takes effect at next host-admin tick",
-            APPLICATION, INSTANCE_ID, HOSTNAME
-    );
-
     public static final UnboundBooleanFlag ADJUST_JVM_HEAP_FOR_CC_BASED_ON_CONTENT_NODE_COUNT = defineFeatureFlag(
             "adjust-jvm-heap-for-cc-based-on-content-node-count", true,
             List.of("hmusum"), "2025-11-04", "2026-02-04",
