@@ -146,7 +146,7 @@ public:
     Blueprint::HitEstimate estimate() const;
     const Blueprint * peekRoot() const { return _blueprint.get(); }
     // Hand the QueryEvalStats object to the underlying blueprint tree
-    void installStats(const std::shared_ptr<search::queryeval::QueryEvalStats> &stats);
+    void install_stats(const std::shared_ptr<search::queryeval::QueryEvalStats> &stats);
     bool needs_ranking() const noexcept { return _needs_ranking; }
 };
 

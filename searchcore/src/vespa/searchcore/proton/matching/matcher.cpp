@@ -291,7 +291,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
 
         // Collect more detailed statistics about query evaluation
         queryeval_stats = std::make_shared<search::queryeval::QueryEvalStats>();
-        mtf->installStats(queryeval_stats);
+        mtf->install_stats(queryeval_stats);
 
         if (!mtf->valid()) {
             return reply;

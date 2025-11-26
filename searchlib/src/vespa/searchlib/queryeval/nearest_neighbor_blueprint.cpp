@@ -175,7 +175,7 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
                                                 _matching_phase != MatchingPhase::FIRST_PHASE);
 }
 
-void NearestNeighborBlueprint::installStats(const std::shared_ptr<QueryEvalStats> &stats) {
+void NearestNeighborBlueprint::install_stats(const std::shared_ptr<QueryEvalStats> &stats) {
     _stats= stats;
 }
 

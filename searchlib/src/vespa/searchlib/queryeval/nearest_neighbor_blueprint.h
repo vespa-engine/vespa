@@ -90,7 +90,7 @@ public:
     }
     // Write stats to the given QueryEvalStats object on destruction, and pass it on to
     // created exact search iterators, which also write stats to it on destruction.
-    void installStats(const std::shared_ptr<QueryEvalStats> &stats);
+    void install_stats(const std::shared_ptr<QueryEvalStats> &stats);
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     bool always_needs_unpack() const override;
     void set_matching_phase(MatchingPhase matching_phase) noexcept override;

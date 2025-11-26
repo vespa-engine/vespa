@@ -1612,7 +1612,7 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats)
     // Without filter (with inactive filter)
     {
         auto bp = f.make_blueprint(true);
-        bp->installStats(stats);
+        bp->install_stats(stats);
         auto inactive_filter = GlobalFilter::create();
         bp->set_global_filter(*inactive_filter, 0.6);
     }
@@ -1622,7 +1622,7 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats)
     // With filter active
     {
         auto bp = f.make_blueprint(true);
-        bp->installStats(stats);
+        bp->install_stats(stats);
         auto filter = search::BitVector::create(1,11);
         filter->setBit(1);
         filter->setBit(3);
@@ -1639,7 +1639,7 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats)
     // Hitting fallback
     {
         auto bp = f.make_blueprint(true, 0.2);
-        bp->installStats(stats);
+        bp->install_stats(stats);
         auto filter = search::BitVector::create(1,11);
         filter->setBit(3);
         filter->invalidateCachedCount();
@@ -1652,7 +1652,7 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats)
     // Using exact search in the first place
     {
         auto bp = f.make_blueprint(false);
-        bp->installStats(stats);
+        bp->install_stats(stats);
         auto inactive_filter = GlobalFilter::create();
         bp->set_global_filter(*inactive_filter, 0.6);
     }
