@@ -11,6 +11,7 @@
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/identifiable.h>
@@ -28,6 +29,7 @@ using vespalib::IllegalArgumentException;
 using std::string;
 
 using namespace document::config_builder;
+using document::new_config_builder::NewConfigBuilder;
 using namespace document;
 
 namespace {
@@ -46,10 +48,8 @@ const string derived_name = "derived";
 
 TEST(DocumentTypeRepoTest, requireThatDocumentTypeCanBeLookedUp)
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name).setId(header_id),
-                     Struct(body_name).setId(body_id));
+    NewConfigBuilder builder;
+    builder.document(type_name, doc_type_id);
     DocumentTypeRepo repo(builder.config());
 
     const DocumentType *type = repo.getDocumentType(type_name);
@@ -68,10 +68,8 @@ TEST(DocumentTypeRepoTest, requireThatDocumentTypeCanBeLookedUp)
 
 TEST(DocumentTypeRepoTest, requireThatDocumentTypeCanBeLookedUpWhenIdIsNotAHash)
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id + 2, type_name,
-                     Struct(header_name).setId(header_id),
-                     Struct(body_name).setId(body_id));
+    NewConfigBuilder builder;
+    builder.document(type_name, doc_type_id + 2);
     DocumentTypeRepo repo(builder.config());
 
     const DocumentType *type = repo.getDocumentType(type_name);
@@ -80,10 +78,9 @@ TEST(DocumentTypeRepoTest, requireThatDocumentTypeCanBeLookedUpWhenIdIsNotAHash)
 
 TEST(DocumentTypeRepoTest, requireThatStructsCanHaveFields)
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name),
-                     Struct(body_name).addField(field_name, DataType::T_INT));
+    NewConfigBuilder builder;
+    auto& doc = builder.document(type_name, doc_type_id);
+    doc.addField(field_name, builder.intTypeRef());
     DocumentTypeRepo repo(builder.config());
 
     const StructDataType &s = repo.getDocumentType(type_name)->getFieldsType();
@@ -101,11 +98,10 @@ const T &getFieldDataType(const DocumentTypeRepo &repo) {
 
 TEST(DocumentTypeRepoTest, requireThatArraysCanBeConfigured)
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name),
-                     Struct(body_name).addField(field_name,
-                             Array(DataType::T_STRING)));
+    NewConfigBuilder builder;
+    auto& doc = builder.document(type_name, doc_type_id);
+    auto arr = doc.createArray(builder.stringTypeRef());
+    doc.addField(field_name, doc.registerArray(std::move(arr)));
     DocumentTypeRepo repo(builder.config());
 
     const ArrayDataType &a = getFieldDataType<ArrayDataType>(repo);
@@ -114,12 +110,11 @@ TEST(DocumentTypeRepoTest, requireThatArraysCanBeConfigured)
 
 TEST(DocumentTypeRepoTest, requireThatWsetsCanBeConfigured)
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name),
-                     Struct(body_name).addField(field_name,
-                             Wset(DataType::T_INT)
-                             .removeIfZero().createIfNonExistent()));
+    NewConfigBuilder builder;
+    auto& doc = builder.document(type_name, doc_type_id);
+    auto wset = doc.createWset(builder.intTypeRef());
+    wset.removeIfZero().createIfNonExistent();
+    doc.addField(field_name, doc.registerWset(std::move(wset)));
     DocumentTypeRepo repo(builder.config());
 
     const WeightedSetDataType &w = getFieldDataType<WeightedSetDataType>(repo);
@@ -130,11 +125,10 @@ TEST(DocumentTypeRepoTest, requireThatWsetsCanBeConfigured)
 
 TEST(DocumentTypeRepoTest, requireThatMapsCanBeConfigured)
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name),
-                     Struct(body_name).addField(field_name,
-                             Map(DataType::T_INT, DataType::T_STRING)));
+    NewConfigBuilder builder;
+    auto& doc = builder.document(type_name, doc_type_id);
+    auto map = doc.createMap(builder.intTypeRef(), builder.stringTypeRef());
+    doc.addField(field_name, doc.registerMap(std::move(map)));
     DocumentTypeRepo repo(builder.config());
 
     const MapDataType &m = getFieldDataType<MapDataType>(repo);
@@ -529,9 +523,8 @@ TEST(DocumentTypeRepoTest, Reference_fields_are_resolved_to_correct_reference_ty
 
 TEST(DocumentTypeRepoTest, Config_with_no_imported_fields_has_empty_imported_fields_set_in_DocumentType)
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name), Struct(body_name));
+    NewConfigBuilder builder;
+    builder.document(type_name, doc_type_id);
     DocumentTypeRepo repo(builder.config());
     const auto *type = repo.getDocumentType(doc_type_id);
     ASSERT_TRUE(type != nullptr);
@@ -544,16 +537,14 @@ TEST(DocumentTypeRepoTest, Configured_imported_field_names_are_available_in_the_
     const int type_2_id = doc_type_id + 1;
     // Note: we cheat a bit by specifying imported field names in types that have no
     // reference fields. Add to test if we add config read-time validation of this. :)
-    DocumenttypesConfigBuilderHelper builder;
+    NewConfigBuilder builder;
     // Type with one imported field
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name), Struct(body_name))
-                     .imported_field("my_cool_field");
+    builder.document(type_name, doc_type_id)
+           .imported_field("my_cool_field");
     // Type with two imported fields
-    builder.document(type_2_id, type_name_2,
-                     Struct(header_name_2), Struct(body_name_2))
-                     .imported_field("my_awesome_field")
-                     .imported_field("my_swag_field");
+    builder.document(type_name_2, type_2_id)
+           .imported_field("my_awesome_field")
+           .imported_field("my_swag_field");
 
     DocumentTypeRepo repo(builder.config());
     const auto* type = repo.getDocumentType(doc_type_id);
@@ -581,13 +572,11 @@ asTensorDataType(const DataType &dataType) {
 
 TEST(DocumentTypeRepoTest, Tensor_fields_have_tensor_types)
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name, 
-                     Struct(header_name),
-                     Struct(body_name).
-                     addTensorField("tensor1", "tensor(x[3])").
-                     addTensorField("tensor2", "tensor(y{})").
-                     addTensorField("tensor3", "tensor(x[3])"));
+    NewConfigBuilder builder;
+    auto& doc = builder.document(type_name, doc_type_id);
+    doc.addTensorField("tensor1", "tensor(x[3])")
+       .addTensorField("tensor2", "tensor(y{})")
+       .addTensorField("tensor3", "tensor(x[3])");
     DocumentTypeRepo repo(builder.config());
     auto *docType = repo.getDocumentType(doc_type_id);
     ASSERT_TRUE(docType != nullptr);
