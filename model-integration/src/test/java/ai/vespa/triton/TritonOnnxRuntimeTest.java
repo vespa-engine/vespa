@@ -57,7 +57,7 @@ class TritonOnnxRuntimeTest {
     }
 
     @Test
-    void load_model_with_execution_model() throws IOException {
+    void load_model_with_execution_mode() throws IOException {
         var opts = optsBuilder.setExecutionMode(OnnxEvaluatorOptions.ExecutionMode.PARALLEL).build();
         assertLoadModel("src/test/triton/config_with_execution_mode.pbtxt", opts);
     }
