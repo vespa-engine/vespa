@@ -326,7 +326,10 @@ void ExternalOperationHandler::reject_as_oversized_message(api::StorageCommand& 
 }
 
 bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd) {
-    if (message_size_is_above_put_or_update_limit(cmd->getApproxByteSize())) [[unlikely]] {
+    const bool is_from_reindexing = put_is_from_reindexing_visitor(*cmd);
+    // We let reindexing puts through since they're sent by the content nodes and not a
+    // regular external client, and the document was already part of the cluster corpus.
+    if (message_size_is_above_put_or_update_limit(cmd->getApproxByteSize()) && !is_from_reindexing) [[unlikely]] {
         reject_as_oversized_message(*cmd);
         return true;
     }
@@ -348,7 +351,7 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
     const auto bucket_space = cmd->getBucket().getBucketSpace();
     auto handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
     bool allow = allowMutation(handle);
-    if (put_is_from_reindexing_visitor(*cmd)) {
+    if (is_from_reindexing) {
         auto expect_token = extract_reindexing_token(*cmd);
         if (!allow && handle.is_blocked_by_bucket()) {
             if (handle.is_bucket_blocked_with_token(expect_token)) {
