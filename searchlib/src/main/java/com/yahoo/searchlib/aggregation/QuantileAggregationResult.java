@@ -2,6 +2,8 @@
 package com.yahoo.searchlib.aggregation;
 
 import com.yahoo.data.JsonProducer;
+import com.yahoo.data.disclosure.DataSink;
+import com.yahoo.data.disclosure.DataSource;
 import com.yahoo.searchlib.expression.FloatResultNode;
 import com.yahoo.searchlib.expression.ResultNode;
 import com.yahoo.vespa.objects.Deserializer;
@@ -70,7 +72,7 @@ public class QuantileAggregationResult extends AggregationResult {
      *
      * @param entries
      */
-    public record QuantileResult(List<Entry> entries) implements JsonProducer {
+    public record QuantileResult(List<Entry> entries) implements JsonProducer, DataSource {
 
         @Override
         public StringBuilder writeJson(StringBuilder target) {
@@ -89,6 +91,20 @@ public class QuantileAggregationResult extends AggregationResult {
         @Override
         public String toJson() {
             return JsonProducer.super.toJson();
+        }
+
+        @Override
+        public void emit(DataSink sink) {
+            sink.startArray();
+            for (var entry : entries) {
+                sink.startObject();
+                sink.fieldName("quantile");
+                sink.doubleValue(entry.quantile);
+                sink.fieldName("value");
+                sink.doubleValue(entry.value);
+                sink.endObject();
+            }
+            sink.endArray();
         }
 
         public record Entry(double quantile, double value) {
