@@ -191,7 +191,7 @@ public class RawRankProfile {
         private final Map<Reference, RankProfile.Input> inputs;
         private final Set<String> filterFields = new java.util.LinkedHashSet<>();
         private final Map<String, Double> explicitFieldRankFilterThresholds = new LinkedHashMap<>();
-        private final Map<String, ElementGap> explicitFieldRankElementGaps = new LinkedHashMap<>();
+        private final Map<String, ElementGap> activeElementGapsPerField = new LinkedHashMap<>();
         private final String rankprofileName;
 
         private RankingExpression firstPhaseRanking;
@@ -288,7 +288,7 @@ public class RawRankProfile {
         }
 
         private void deriveElementGaps(RankProfile rp) {
-            explicitFieldRankElementGaps.putAll(rp.explicitFieldRankElementGaps());
+            activeElementGapsPerField.putAll(rp.getFieldRankElementGaps());
         }
 
         private void derivePropertiesAndFeaturesFromFunctions(Map<String, RankProfile.RankingExpressionFunction> functions,
@@ -528,7 +528,7 @@ public class RawRankProfile {
             for (var fieldAndThreshold : explicitFieldRankFilterThresholds.entrySet()) {
                 properties.add(new Pair<>("vespa.matching.filter_threshold.%s".formatted(fieldAndThreshold.getKey()), String.valueOf(fieldAndThreshold.getValue())));
             }
-            for (var fieldAndElementGap : explicitFieldRankElementGaps.entrySet()) {
+            for (var fieldAndElementGap : activeElementGapsPerField.entrySet()) {
                 properties.add(new Pair<>("vespa.matching.element_gap.%s".formatted(fieldAndElementGap.getKey()), fieldAndElementGap.getValue().toString()));
             }
             if (matchPhaseSettings != null) {
