@@ -189,8 +189,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         // To maximize CPU utilization with Triton, available cores are ca. divided between model instances,
         // Rounding up is used because it is better to overutilize CPU than to underutilize.
         // Intra-op threads parallelize execution of each operator improving performance for any model.
-        var intraOpThreadCount =
-                Math.max(1, (int) Math.ceil(1d * options.availableProcessors() / options.numModelInstances()));
+        var intraOpThreadCountValue = Integer.toString(
+                Math.max(1, (int) Math.ceil(1d * options.availableProcessors() / options.numModelInstances())));
+
+        var executionModeValue = options.executionMode() == OnnxEvaluatorOptions.ExecutionMode.PARALLEL ? "1" : "0";
 
         var configBuilder = ModelConfigOuterClass.ModelConfig.newBuilder()
                 .setName(modelName)
@@ -201,7 +203,12 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 .setPlatform("onnxruntime_onnx")
                 .setMaxBatchSize(options.batchingMaxSize())
                 .putParameters(
-                        "enable_mem_area",
+                        "execution_mode",
+                        ModelConfigOuterClass.ModelParameter.newBuilder()
+                                .setStringValue(executionModeValue)
+                                .build())
+                .putParameters(
+                        "enable_mem_arena",
                         ModelConfigOuterClass.ModelParameter.newBuilder()
                                 .setStringValue("0")
                                 .build())
@@ -213,7 +220,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 .putParameters(
                         "intra_op_thread_count",
                         ModelConfigOuterClass.ModelParameter.newBuilder()
-                                .setStringValue(Integer.toString(intraOpThreadCount))
+                                .setStringValue(intraOpThreadCountValue)
                                 .build())
                 .putParameters(
                         "inter_op_thread_count",
