@@ -11,7 +11,6 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
-import com.yahoo.schema.ElementGap;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.SDDocumentType;
@@ -34,7 +33,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -121,11 +119,11 @@ public class RankProfile implements Cloneable {
     private double globalPhaseRankScoreDropLimit = -Double.MAX_VALUE;
 
     private Set<ReferenceNode> summaryFeatures;
-    private List<String> inheritedSummaryFeaturesProfileNames = new ArrayList<>();
+    private final List<String> inheritedSummaryFeaturesProfileNames = new ArrayList<>();
 
     private Set<ReferenceNode> matchFeatures;
     private Set<ReferenceNode> hiddenMatchFeatures;
-    private List<String> inheritedMatchFeaturesProfileNames = new ArrayList<>();
+    private final List<String> inheritedMatchFeaturesProfileNames = new ArrayList<>();
 
     private Set<ReferenceNode> rankFeatures;
 
@@ -603,8 +601,7 @@ public class RankProfile implements Cloneable {
      * or if match features are set in this, only have the match features in this.
      * With this set the resulting match features of this will be the superset of those defined in this and
      * the final (with inheritance included) match features of the given parent.
-     * The profile must be one which which is directly inherited by this.
-     *
+     * The profile must be one which is directly inherited by this.
      */
     public void addInheritedMatchFeatures(String parentProfile) {
         if ( ! inheritedNames().contains(parentProfile))
@@ -1087,7 +1084,19 @@ public class RankProfile implements Cloneable {
         explicitFieldRankElementGaps = new LinkedHashMap<>(fieldElementGaps);
     }
 
-    public Map<String, ElementGap> explicitFieldRankElementGaps() { return explicitFieldRankElementGaps; }
+    public Map<String, ElementGap> explicitFieldRankElementGaps() {
+        if (explicitFieldRankElementGaps.isEmpty() && inherited().isEmpty()) return Map.of();
+        if (inherited().isEmpty()) return Collections.unmodifiableMap(explicitFieldRankElementGaps);
+
+        var inheritedElementGaps = uniquelyInherited(RankProfile::explicitFieldRankElementGaps, m -> ! m.isEmpty(), "element-gap")
+                                           .orElse(Map.of());
+        if (explicitFieldRankElementGaps.isEmpty()) return inheritedElementGaps;
+
+        // Neither is empty
+        Map<String, ElementGap> combined = new LinkedHashMap<>(inheritedElementGaps);
+        combined.putAll(explicitFieldRankElementGaps);
+        return Collections.unmodifiableMap(combined);
+    }
 
     private ExpressionFunction parseRankingExpression(String name, List<String> arguments, String expression) throws ParseException {
         if (expression.trim().isEmpty())
