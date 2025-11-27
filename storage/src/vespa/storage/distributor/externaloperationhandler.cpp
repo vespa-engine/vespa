@@ -327,11 +327,17 @@ void ExternalOperationHandler::reject_as_oversized_message(api::StorageCommand& 
 
 bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd) {
     const bool is_from_reindexing = put_is_from_reindexing_visitor(*cmd);
-    // We let reindexing puts through since they're sent by the content nodes and not a
-    // regular external client, and the document was already part of the cluster corpus.
-    if (message_size_is_above_put_or_update_limit(cmd->getApproxByteSize()) && !is_from_reindexing) [[unlikely]] {
-        reject_as_oversized_message(*cmd);
-        return true;
+    if (message_size_is_above_put_or_update_limit(cmd->getApproxByteSize())) [[unlikely]] {
+        if (!is_from_reindexing) {
+            reject_as_oversized_message(*cmd);
+            return true;
+        }
+        // We let reindexing puts through since they're sent by the content nodes and not a
+        // regular external client, and the document was already part of the cluster corpus.
+        const uint32_t limit = _op_ctx.distributor_config().max_document_operation_message_size_bytes();
+        LOG(warning, "Accepted an oversized reindexing Put for document '%s' "
+                     "(put was %u bytes, configured limit is %u)",
+            cmd->getDocumentId().toString().c_str(), cmd->getApproxByteSize(), limit);
     }
     if (_op_ctx.cluster_state_bundle().block_feed_in_cluster()) [[unlikely]] {
         bounce_with_feed_blocked(*cmd); // TODO also metric?
