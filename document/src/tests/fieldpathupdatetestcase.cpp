@@ -1,30 +1,26 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/test/fieldvalue_helpers.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/base/testdocman.h>
-#include <vespa/document/fieldvalue/iteratorhandler.h>
-#include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/fieldvalue/bytefieldvalue.h>
-#include <vespa/document/fieldvalue/floatfieldvalue.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/fieldvalue/arrayfieldvalue.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-
-
-#include <vespa/document/update/fieldpathupdates.h>
-#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/mapdatatype.h>
-
-#include <vespa/document/repo/newconfigbuilder.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/bytefieldvalue.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/floatfieldvalue.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/util/bytebuffer.h>
-
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/document/test/fieldvalue_helpers.h>
+#include <vespa/document/update/documentupdate.h>
+#include <vespa/document/update/fieldpathupdates.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/test/test_path.h>
 #include <fcntl.h>
 
@@ -109,31 +105,22 @@ FieldPathUpdateTestCase::SetUp()
     NewConfigBuilder builder;
     auto& doc = builder.document("foobar", 42);
 
-    // Create mystruct first
-    auto mystruct = doc.createStruct("mystruct");
-    mystruct.addField("title", builder.stringTypeRef())
-            .addField("rating", builder.intTypeRef());
-    auto mystruct_ref = doc.registerStruct(std::move(mystruct));
+    // Create and register mystruct
+    auto mystruct_ref = doc.createStruct("mystruct")
+                           .addField("title", builder.stringTypeRef())
+                           .addField("rating", builder.intTypeRef())
+                           .ref();
 
     // Add fields to the document
     doc.addField("num", builder.intTypeRef())
        .addField("byteval", builder.byteTypeRef())
-       .addField("strfoo", builder.stringTypeRef());
-
-    auto strarray = doc.createArray(builder.stringTypeRef());
-    doc.addField("strarray", doc.registerArray(std::move(strarray)));
-
-    auto strwset = doc.createWset(builder.stringTypeRef());
-    doc.addField("strwset", doc.registerWset(std::move(strwset)));
-
-    auto structmap = doc.createMap(builder.stringTypeRef(), mystruct_ref);
-    doc.addField("structmap", doc.registerMap(std::move(structmap)));
-
-    auto strmap = doc.createMap(builder.stringTypeRef(), builder.stringTypeRef());
-    doc.addField("strmap", doc.registerMap(std::move(strmap)));
+       .addField("strfoo", builder.stringTypeRef())
+       .addField("strarray", doc.createArray(builder.stringTypeRef()).ref())
+       .addField("strwset", doc.createWset(builder.stringTypeRef()).ref())
+       .addField("structmap", doc.createMap(builder.stringTypeRef(), mystruct_ref).ref())
+       .addField("strmap", doc.createMap(builder.stringTypeRef(), builder.stringTypeRef()).ref());
 
     _repo.reset(new DocumentTypeRepo(builder.config()));
-
     _foobar_type = _repo->getDocumentType("foobar");
 }
 
