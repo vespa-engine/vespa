@@ -8,7 +8,6 @@
 #include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
 #include <vespa/searchlib/queryeval/nearsearch.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
-#include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/simplesearch.h>
 #include <vespa/searchlib/queryeval/ranksearch.h>
@@ -907,29 +906,6 @@ TEST(QueryEvalTest, test_andnotsearchstrict_iterators_adheres_to_init_range) {
         ir.verify( AndNotSearch::create({ir.createFullIterator(),
                                          ir.createIterator(inverted, false) }, true));
     }
-}
-
-TEST(QueryEvalTest, test_stats)
-{
-    auto stats = QueryEvalStats::create();
-    EXPECT_EQ(0u, stats->exact_nns_distances_computed());
-    EXPECT_EQ(0u, stats->approximate_nns_distances_computed());
-    EXPECT_EQ(0u, stats->approximate_nns_nodes_visited());
-
-    stats->add_to_exact_nns_distances_computed(42u);
-    EXPECT_EQ(42u, stats->exact_nns_distances_computed());
-    stats->add_to_exact_nns_distances_computed(42u);
-    EXPECT_EQ(84u, stats->exact_nns_distances_computed());
-
-    stats->add_to_approximate_nns_distances_computed(1u);
-    EXPECT_EQ(1u, stats->approximate_nns_distances_computed());
-    stats->add_to_approximate_nns_distances_computed(1u);
-    EXPECT_EQ(2u, stats->approximate_nns_distances_computed());
-
-    stats->add_to_approximate_nns_nodes_visited(2u);
-    EXPECT_EQ(2u, stats->approximate_nns_nodes_visited());
-    stats->add_to_approximate_nns_nodes_visited(2u);
-    EXPECT_EQ(4u, stats->approximate_nns_nodes_visited());
 }
 
 

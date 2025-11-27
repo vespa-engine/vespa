@@ -15,7 +15,6 @@
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
-#include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/searchlib/query/proto_tree_converter.h>
@@ -364,16 +363,6 @@ SearchIterator::UP
 Query::createSearch(MatchData &md) const
 {
     return _blueprint->createSearch(md);
-}
-
-void
-Query::install_stats(search::queryeval::QueryEvalStats &stats) {
-    _blueprint->each_node_post_order([&stats](Blueprint& blueprint) {
-        auto nearest_neighbor = blueprint.asNearestNeighbor();
-        if (nearest_neighbor) {
-            nearest_neighbor->install_stats(stats);
-        }
-    });
 }
 
 }
