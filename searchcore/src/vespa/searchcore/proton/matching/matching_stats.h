@@ -7,6 +7,10 @@
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 
+namespace search::queryeval {
+class QueryEvalStats;
+}
+
 namespace proton::matching {
 
 /**
@@ -123,6 +127,9 @@ private:
     size_t                 _docsMatched;
     size_t                 _docsRanked;
     size_t                 _docsReRanked;
+    size_t                 _exact_nns_distances_computed;
+    size_t                 _approximate_nns_distances_computed;
+    size_t                 _approximate_nns_nodes_visited;
     size_t                 _softDoomed;
     Avg                    _doomOvertime;
     using SoftDoomFactor = vespalib::datastore::AtomicValueWrapper<double>;
@@ -161,6 +168,15 @@ public:
 
     MatchingStats &docsReRanked(size_t value) { _docsReRanked = value; return *this; }
     size_t docsReRanked() const { return _docsReRanked; }
+
+    MatchingStats &exact_nns_distances_computed(size_t value) { _exact_nns_distances_computed = value; return *this; }
+    size_t exact_nns_distances_computed() const { return _exact_nns_distances_computed; }
+
+    MatchingStats &approximate_nns_distances_computed(size_t value) { _approximate_nns_distances_computed = value; return *this; }
+    size_t approximate_nns_distances_computed() const { return _approximate_nns_distances_computed; }
+
+    MatchingStats &approximate_nns_nodes_visited(size_t value) { _approximate_nns_nodes_visited = value; return *this; }
+    size_t approximate_nns_nodes_visited() const { return _approximate_nns_nodes_visited; }
 
     MatchingStats &softDoomed(size_t value) { _softDoomed = value; return *this; }
     size_t softDoomed() const { return _softDoomed; }
@@ -205,6 +221,10 @@ public:
     MatchingStats &merge_partition(const Partition &partition, size_t id);
     size_t getNumPartitions() const { return _partitions.size(); }
     const Partition &getPartition(size_t index) const { return _partitions[index]; }
+
+    // used to merge in queryeval stats
+    // these are collected in a distinct, thread-safe object
+    MatchingStats &add_queryeval_stats(const search::queryeval::QueryEvalStats &stats) noexcept;
 
     // used to aggregate accross searches (and configurations)
     MatchingStats &add(const MatchingStats &rhs) noexcept;
