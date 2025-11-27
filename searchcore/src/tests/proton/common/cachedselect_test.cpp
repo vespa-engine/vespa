@@ -81,11 +81,7 @@ namespace {
 
 const int32_t doc_type_id = 787121340;
 const string type_name = "test";
-const string header_name = type_name + ".header";
-const string body_name = type_name + ".body";
 const string type_name_2 = "test_2";
-const string header_name_2 = type_name_2 + ".header";
-const string body_name_2 = type_name_2 + ".body";
 
 const int32_t noIntVal = std::numeric_limits<int32_t>::min();
 

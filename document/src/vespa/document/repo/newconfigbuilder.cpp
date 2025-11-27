@@ -167,9 +167,8 @@ TypeRef NewMap::ref() {
 
 // ==================== NewAnnotationRef ====================
 
-NewAnnotationRef::NewAnnotationRef(NewConfigBuilder& builder, int32_t annotation_idx)
-    : _builder(builder),
-      _annotation_idx(annotation_idx),
+NewAnnotationRef::NewAnnotationRef(NewConfigBuilder&, int32_t annotation_idx)
+    : _annotation_idx(annotation_idx),
       _idx(-1),
       _registered(false)
 {
@@ -184,12 +183,10 @@ TypeRef NewAnnotationRef::ref() {
 
 // ==================== NewDocTypeRep ====================
 
-NewDocTypeRep::NewDocTypeRep(NewConfigBuilder& builder, int32_t idx, std::string name, int32_t internalid)
+NewDocTypeRep::NewDocTypeRep(NewConfigBuilder& builder, int32_t idx, std::string name, int32_t)
     : _builder(builder),
       _idx(idx),
-      _name(std::move(name)),
-      _internalid(internalid),
-      _contentstruct_idx(-1)
+      _name(std::move(name))
 {
 }
 
