@@ -4,8 +4,11 @@
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/document/datatype/structdatatype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace document::new_config_builder {
 
@@ -28,7 +31,6 @@ namespace {
 int32_t hashId(const std::string& name) {
     StructDataType tmp(name);
     int32_t id = tmp.getId();
-    fprintf(stderr, "DEBUG hashId: '%s' -> %d\n", name.c_str(), id);
     return id;
 }
 
@@ -36,8 +38,6 @@ int32_t createFieldId(const std::string& name, int32_t type) {
     StructDataType dummy("dummy", type);
     Field f(name, dummy);
     int32_t field_id = f.getId();
-    fprintf(stderr, "DEBUG createFieldId: field='%s', type_id=%d -> field_id=%d\n",
-            name.c_str(), type, field_id);
     return field_id;
 }
 
@@ -280,6 +280,69 @@ NewDocTypeRep& NewDocTypeRep::annotationType(int32_t id, const std::string& name
     return *this;
 }
 
+TypeRef NewDocTypeRep::createAnnotationType(int32_t id, const std::string& name) {
+    AnnotationTypeData ann;
+    ann.idx = _builder._next_idx++;
+    ann.name = name;
+    ann.internalid = id;
+    ann.datatype_idx = -1;
+    _annotations.push_back(ann);
+    return TypeRef(ann.idx);
+}
+
+TypeRef NewDocTypeRep::createAnnotationType(int32_t id, const std::string& name, TypeRef datatype) {
+    AnnotationTypeData ann;
+    ann.idx = _builder._next_idx++;
+    ann.name = name;
+    ann.internalid = id;
+    ann.datatype_idx = datatype.idx;
+    _annotations.push_back(ann);
+    return TypeRef(ann.idx);
+}
+
+TypeRef NewDocTypeRep::createAnnotationReference(TypeRef annotation_type_idx) {
+    // First, ensure the annotation type is in the config
+    // Find the doctype
+    BDocType* doc_config = nullptr;
+    for (auto& d : _builder._config.doctype) {
+        if (d.idx == _idx) {
+            doc_config = &d;
+            break;
+        }
+    }
+    assert(doc_config && "Document type not found");
+
+    // Add the annotation to the config if not already there
+    bool found = false;
+    for (const auto& ann : doc_config->annotationtype) {
+        if (ann.idx == annotation_type_idx.idx) {
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        // Find it in our local _annotations list
+        for (const auto& ann : _annotations) {
+            if (ann.idx == annotation_type_idx.idx) {
+                auto& a = doc_config->annotationtype.emplace_back();
+                a.idx = ann.idx;
+                a.name = ann.name;
+                a.internalid = ann.internalid;
+                if (ann.datatype_idx >= 0) {
+                    a.datatype = ann.datatype_idx;
+                }
+                break;
+            }
+        }
+    }
+
+    // Create an annotation reference using the NewAnnotationRef helper
+    NewAnnotationRef ar(_builder, annotation_type_idx.idx);
+    _builder.registerAnnotationRef(ar, _idx);
+    return ar.ref();
+}
+
 TypeRef NewDocTypeRep::referenceType(int32_t target_doctype_idx) {
     // Find the doctype
     BDocType* doc = nullptr;
@@ -291,11 +354,22 @@ TypeRef NewDocTypeRep::referenceType(int32_t target_doctype_idx) {
     }
     assert(doc && "Document type not found");
 
+    // Find the target document type name
+    std::string target_doctype_name;
+    for (const auto& d : _builder._config.doctype) {
+        if (d.idx == target_doctype_idx) {
+            target_doctype_name = d.name;
+            break;
+        }
+    }
+    assert(!target_doctype_name.empty() && "Target document type not found");
+
     // Create document reference type
     auto& dref = doc->documentref.emplace_back();
     dref.idx = _builder._next_idx++;
     dref.targettype = target_doctype_idx;
-    dref.internalid = dref.idx;
+
+    dref.internalid = ReferenceDataType::makeInternalId(target_doctype_name);
     _builder._idx_to_internalid_map[dref.idx] = dref.internalid;
 
     return TypeRef(dref.idx);
@@ -457,6 +531,15 @@ NewDocTypeRep& NewConfigBuilder::document(const std::string& name, int32_t inter
         return *_doctype_builders[it->second];
     }
 
+    // Check for ID collision with existing documents
+    for (const auto& existing : _config.doctype) {
+        if (existing.internalid == internalid && existing.name != name) {
+            throw vespalib::IllegalArgumentException(
+                vespalib::make_string("Document type ID collision: ID %d is already used by document type '%s', cannot assign to '%s'",
+                                     internalid, existing.name.c_str(), name.c_str()));
+        }
+    }
+
     // Create new document type
     auto& doc = _config.doctype.emplace_back();
     doc.idx = _next_idx++;
@@ -501,7 +584,8 @@ TypeRef NewConfigBuilder::positionType() {
 
 int32_t NewConfigBuilder::getInternalId(TypeRef type_ref) const {
     auto it = _idx_to_internalid_map.find(type_ref.idx);
-    return (it != _idx_to_internalid_map.end()) ? it->second : 0;
+    int32_t iid = (it != _idx_to_internalid_map.end()) ? it->second : 0;
+    return iid;
 }
 
 std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
@@ -509,7 +593,6 @@ std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
     for (const auto& doctype : _config.doctype) {
         // Check if it's the doctype itself
         if (doctype.idx == type_ref.idx) {
-            fprintf(stderr, "DEBUG getTypeName: idx=%d is doctype '%s'\n", type_ref.idx, doctype.name.c_str());
             return doctype.name;
         }
 
@@ -521,7 +604,6 @@ std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
                 if (!name.empty()) {
                     name[0] = toupper(name[0]);
                 }
-                fprintf(stderr, "DEBUG getTypeName: idx=%d is primitive '%s'\n", type_ref.idx, name.c_str());
                 return name;
             }
         }
@@ -529,7 +611,6 @@ std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
         // Check structs
         for (const auto& st : doctype.structtype) {
             if (st.idx == type_ref.idx) {
-                fprintf(stderr, "DEBUG getTypeName: idx=%d is struct '%s'\n", type_ref.idx, st.name.c_str());
                 return st.name;
             }
         }
@@ -539,8 +620,6 @@ std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
             if (at.idx == type_ref.idx) {
                 std::string elem_name = getTypeName(TypeRef(at.elementtype));
                 std::string full_name = "Array<" + elem_name + ">";
-                fprintf(stderr, "DEBUG getTypeName: idx=%d is array of '%s' -> '%s'\n",
-                        type_ref.idx, elem_name.c_str(), full_name.c_str());
                 return full_name;
             }
         }
@@ -551,7 +630,6 @@ std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
                 std::string key_name = getTypeName(TypeRef(mt.keytype));
                 std::string val_name = getTypeName(TypeRef(mt.valuetype));
                 std::string full_name = "Map<" + key_name + "," + val_name + ">";
-                fprintf(stderr, "DEBUG getTypeName: idx=%d is map '%s'\n", type_ref.idx, full_name.c_str());
                 return full_name;
             }
         }
@@ -561,8 +639,6 @@ std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
             if (wt.idx == type_ref.idx) {
                 std::string elem_name = getTypeName(TypeRef(wt.elementtype));
                 std::string full_name = "WeightedSet<" + elem_name + ">";
-                fprintf(stderr, "DEBUG getTypeName: idx=%d is wset of '%s' -> '%s'\n",
-                        type_ref.idx, elem_name.c_str(), full_name.c_str());
                 return full_name;
             }
         }
@@ -596,9 +672,6 @@ void NewConfigBuilder::registerStructField(TypeRef struct_idx, const std::string
     // Compute field ID using field type's internalid
     int32_t field_type_internalid = getInternalId(field_idx);
     f.internalid = createFieldId(fieldname, field_type_internalid);
-
-    fprintf(stderr, "DEBUG: registerStructField(struct_idx=%d, field='%s', field_type_idx=%d) -> field_id=%d\n",
-            struct_idx.idx, fieldname.c_str(), field_idx.idx, f.internalid);
 }
 
 NewStruct NewConfigBuilder::createStruct(const std::string& name, int32_t doctype_idx) {
@@ -694,8 +767,6 @@ void NewConfigBuilder::registerArray(NewArray& a, int32_t doctype_idx) {
             // Reuse existing array type
             a._idx = arr.idx;
             a._registered = true;
-            fprintf(stderr, "DEBUG: registerArray - reusing existing array idx=%d for elem_idx=%d\n",
-                    arr.idx, a._element_type.idx);
             return;
         }
     }
@@ -716,8 +787,6 @@ void NewConfigBuilder::registerArray(NewArray& a, int32_t doctype_idx) {
     arr.internalid = tmp_array.getId();
 
     _idx_to_internalid_map[a._idx] = arr.internalid;
-    fprintf(stderr, "DEBUG: registerArray(elem_type=%s, elem_idx=%d) -> idx=%d, internalid=%d\n",
-            element_type_name.c_str(), a._element_type.idx, arr.idx, arr.internalid);
 }
 
 void NewConfigBuilder::registerWset(NewWset& w, int32_t doctype_idx) {
@@ -739,8 +808,6 @@ void NewConfigBuilder::registerWset(NewWset& w, int32_t doctype_idx) {
             // Reuse existing wset type
             w._idx = wset.idx;
             w._registered = true;
-            fprintf(stderr, "DEBUG: registerWset - reusing existing wset idx=%d for elem_idx=%d\n",
-                    wset.idx, w._element_type.idx);
             return;
         }
     }
@@ -763,8 +830,6 @@ void NewConfigBuilder::registerWset(NewWset& w, int32_t doctype_idx) {
     wset.removeifzero = w._removeifzero;
     wset.createifnonexistent = w._createifnonexistent;
     _idx_to_internalid_map[w._idx] = wset.internalid;
-    fprintf(stderr, "DEBUG: registerWset(elem_type=%s, elem_idx=%d) -> idx=%d, internalid=%d\n",
-            element_type_name.c_str(), w._element_type.idx, wset.idx, wset.internalid);
 }
 
 void NewConfigBuilder::registerMap(NewMap& m, int32_t doctype_idx) {
@@ -784,8 +849,6 @@ void NewConfigBuilder::registerMap(NewMap& m, int32_t doctype_idx) {
             // Reuse existing map type
             m._idx = map.idx;
             m._registered = true;
-            fprintf(stderr, "DEBUG: registerMap - reusing existing map idx=%d for key_idx=%d, val_idx=%d\n",
-                    map.idx, m._key_type.idx, m._value_type.idx);
             return;
         }
     }
@@ -809,8 +872,6 @@ void NewConfigBuilder::registerMap(NewMap& m, int32_t doctype_idx) {
     map.internalid = tmp_map.getId();
 
     _idx_to_internalid_map[m._idx] = map.internalid;
-    fprintf(stderr, "DEBUG: registerMap(key_type=%s, val_type=%s) -> idx=%d, internalid=%d\n",
-            key_type_name.c_str(), value_type_name.c_str(), map.idx, map.internalid);
 }
 
 void NewConfigBuilder::registerAnnotationRef(NewAnnotationRef& ar, int32_t doctype_idx) {
@@ -824,6 +885,16 @@ void NewConfigBuilder::registerAnnotationRef(NewAnnotationRef& ar, int32_t docty
     }
     assert(doc && "Document type not found");
 
+    // Find the annotation type name
+    std::string annotation_name;
+    for (const auto& ann : doc->annotationtype) {
+        if (ann.idx == ar._annotation_idx) {
+            annotation_name = ann.name;
+            break;
+        }
+    }
+    assert(!annotation_name.empty() && "Annotation type not found");
+
     // Allocate idx
     ar._idx = _next_idx++;
     ar._registered = true;
@@ -832,7 +903,10 @@ void NewConfigBuilder::registerAnnotationRef(NewAnnotationRef& ar, int32_t docty
     auto& aref = doc->annotationref.emplace_back();
     aref.idx = ar._idx;
     aref.annotationtype = ar._annotation_idx;
-    aref.internalid = ar._idx;
+
+    std::string aref_type_name = "annotationreference<" + annotation_name + ">";
+    aref.internalid = hashId(aref_type_name);
+    _idx_to_internalid_map[ar._idx] = aref.internalid;
 }
 
 void NewConfigBuilder::finalizeDocType(NewDocTypeRep& doc) {
@@ -861,14 +935,23 @@ void NewConfigBuilder::finalizeDocType(NewDocTypeRep& doc) {
         }
     }
 
-    // Add annotations
+    // Add annotations (skip those already added)
     for (const auto& ann : doc._annotations) {
-        auto& a = doc_config->annotationtype.emplace_back();
-        a.idx = ann.idx;
-        a.name = ann.name;
-        a.internalid = ann.internalid;
-        if (ann.datatype_idx >= 0) {
-            a.datatype = ann.datatype_idx;
+        bool already_added = false;
+        for (const auto& existing : doc_config->annotationtype) {
+            if (existing.idx == ann.idx) {
+                already_added = true;
+                break;
+            }
+        }
+        if (!already_added) {
+            auto& a = doc_config->annotationtype.emplace_back();
+            a.idx = ann.idx;
+            a.name = ann.name;
+            a.internalid = ann.internalid;
+            if (ann.datatype_idx >= 0) {
+                a.datatype = ann.datatype_idx;
+            }
         }
     }
 

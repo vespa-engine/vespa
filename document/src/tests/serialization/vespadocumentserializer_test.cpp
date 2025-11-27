@@ -31,7 +31,7 @@
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
@@ -60,7 +60,8 @@ using vespalib::compression::CompressionConfig;
 using namespace document;
 using std::string;
 using std::vector;
-using namespace document::config_builder;
+using document::new_config_builder::NewConfigBuilder;
+using document::new_config_builder::TypeRef;
 
 namespace {
 
@@ -78,36 +79,37 @@ const string predicate_field_name = "my_predicate";
 const int doc_with_ref_type_id = 54321;
 const string doc_with_ref_name = "doc_with_ref";
 const string ref_field_name = "ref_field";
-const int ref_type_id = 789;
 
 constexpr uint16_t serialization_version = Document::getNewestSerializationVersion();
 
 DocumenttypesConfig getDocTypesConfig() {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, doc_name,
-                     Struct(doc_name + ".header")
-                     .addField("header field", DataType::T_INT),
-                     Struct(doc_name + ".body")
-                     .addField("body field", DataType::T_STRING))
-        .annotationType(42, "foo_type", DataType::T_INT);
-    builder.document(inner_type_id, inner_name,
-                     Struct(inner_name + ".header"),
-                     Struct(inner_name + ".body")
-                     .addField("str", DataType::T_STRING))
-        .annotationType(a_id, a_name, DataType::T_STRING);
-    builder.document(outer_type_id, type_name,
-                     Struct(type_name + ".header"),
-                     Struct(type_name + ".body")
-                     .addField(inner_name, inner_type_id).setId(body_id));
-    builder.document(predicate_doc_type_id, "my_type",
-                     Struct("my_type.header"),
-                     Struct("my_type.body")
-                     .addField(predicate_field_name, DataType::T_PREDICATE));
-    builder.document(doc_with_ref_type_id, doc_with_ref_name,
-                     Struct(doc_with_ref_name + ".header")
-                     .addField(ref_field_name, ref_type_id),
-                     Struct(doc_with_ref_name + ".body"))
-        .referenceType(ref_type_id, doc_type_id);
+    NewConfigBuilder builder;
+
+    // First document type
+    auto& doc1 = builder.document(doc_name, doc_type_id);
+    doc1.addField("header field", builder.intTypeRef())
+        .addField("body field", builder.stringTypeRef())
+        .annotationType(42, "foo_type", builder.intTypeRef());
+
+    // Inner document type
+    auto& doc2 = builder.document(inner_name, inner_type_id);
+    doc2.addField("str", builder.stringTypeRef())
+        .annotationType(a_id, a_name, builder.stringTypeRef());
+
+    // Outer document type with reference to inner document
+    auto& doc3 = builder.document(type_name, outer_type_id);
+    // Reference the inner document type directly by its idx
+    doc3.addField(inner_name, TypeRef(doc2.idx()));
+
+    // Predicate document type
+    auto& doc4 = builder.document("my_type", predicate_doc_type_id);
+    doc4.addField(predicate_field_name, builder.predicateTypeRef());
+
+    // Document with reference type
+    auto& doc5 = builder.document(doc_with_ref_name, doc_with_ref_type_id);
+    auto ref_type = doc5.referenceType(doc1.idx());
+    doc5.addField(ref_field_name, ref_type);
+
     return builder.config();
 }
 
@@ -587,17 +589,13 @@ TEST(VespaDocumentSerializerTest, requireThatOldVersionDocumentCanNotBeDeseriali
 TEST(VespaDocumentSerializerTest, requireThatUnmodifiedDocumentRetainsUnknownFieldOnSerialization)
 {
 
-    DocumenttypesConfigBuilderHelper builder1, builder2;
-    builder1.document(doc_type_id, doc_name,
-                      Struct("my_doctype.header")
-                      .addField("field2", DataType::T_STRING),
-                      Struct("my_doctype.body"));
-    builder2.document(doc_type_id, doc_name,
-                      Struct("my_doctype.header")
-                      .addField("field1", DataType::T_INT)
-                      .addField("field2", DataType::T_STRING),
-                      Struct("my_doctype.body"));
-		
+    NewConfigBuilder builder1, builder2;
+    builder1.document(doc_name, doc_type_id)
+        .addField("field2", builder1.stringTypeRef());
+    builder2.document(doc_name, doc_type_id)
+        .addField("field1", builder2.intTypeRef())
+        .addField("field2", builder2.stringTypeRef());
+
     DocumentTypeRepo repo1Field(builder1.config());
     DocumentTypeRepo repo2Fields(builder2.config());
 
@@ -825,11 +823,9 @@ const int tensor_doc_type_id = 321;
 const string tensor_field_name = "my_tensor";
 
 DocumenttypesConfig getTensorDocTypesConfig(const std::string &tensorType) {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(tensor_doc_type_id, "my_type",
-                     Struct("my_type.header"),
-                     Struct("my_type.body")
-                     .addTensorField(tensor_field_name, tensorType));
+    NewConfigBuilder builder;
+    builder.document("my_type", tensor_doc_type_id)
+        .addTensorField(tensor_field_name, tensorType);
     return builder.config();
 }
 
@@ -972,7 +968,9 @@ struct RefFixture {
     FixedTypeRepo fixed_repo{doc_repo, *ref_doc_type};
 
     const ReferenceDataType& ref_type() const {
-        auto* raw_type = fixed_repo.getDataType(ref_type_id);
+        // Get reference type from the field definition instead of by ID
+        const auto& field = ref_doc_type->getField(ref_field_name);
+        auto* raw_type = &field.getDataType();
         assert(raw_type != nullptr);
         return dynamic_cast<const ReferenceDataType&>(*raw_type);
     }
