@@ -107,9 +107,6 @@ DocumentDBTaggedMetrics::MatchingMetrics::update(const MatchingStats &stats)
     docsMatched.inc(stats.docsMatched());
     docsRanked.inc(stats.docsRanked());
     docsReRanked.inc(stats.docsReRanked());
-    exact_nns_distances_computed.inc(stats.exact_nns_distances_computed());
-    approximate_nns_distances_computed.inc(stats.approximate_nns_distances_computed());
-    approximate_nns_nodes_visited.inc(stats.approximate_nns_nodes_visited());
     softDoomedQueries.inc(stats.softDoomed());
     queries.inc(stats.queries());
     querySetupTime.addValueBatch(stats.querySetupTimeAvg(), stats.querySetupTimeCount(),
@@ -123,9 +120,6 @@ DocumentDBTaggedMetrics::MatchingMetrics::MatchingMetrics(MetricSet *parent)
       docsMatched("docs_matched", {}, "Number of documents matched", this),
       docsRanked("docs_ranked", {}, "Number of documents ranked (first phase)", this),
       docsReRanked("docs_reranked", {}, "Number of documents re-ranked (second phase)", this),
-      exact_nns_distances_computed("exact_nns_distances_computed", {}, "Number of distance computations in exact nearest-neighbor search", this),
-      approximate_nns_distances_computed("approximate_nns_distances_computed", {}, "Number of distance computations in approximate nearest-neighbor search", this),
-      approximate_nns_nodes_visited("approximate_nns_nodes_visited", {}, "Number of nodes visited in approximate nearest-neighbor search", this),
       queries("queries", {}, "Number of queries executed", this),
       softDoomedQueries("soft_doomed_queries", {}, "Number of queries hitting the soft timeout", this),
       querySetupTime("query_setup_time", {}, "Average time (sec) spent setting up and tearing down queries", this),
@@ -142,9 +136,6 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
       docsMatched("docs_matched", {}, "Number of documents matched", this),
       docsRanked("docs_ranked", {}, "Number of documents ranked (first phase)", this),
       docsReRanked("docs_reranked", {}, "Number of documents re-ranked (second phase)", this),
-      exact_nns_distances_computed("exact_nns_distances_computed", {}, "Number of distance computations in exact nearest-neighbor search", this),
-      approximate_nns_distances_computed("approximate_nns_distances_computed", {}, "Number of distance computations in approximate nearest-neighbor search", this),
-      approximate_nns_nodes_visited("approximate_nns_nodes_visited", {}, "Number of nodes visited in approximate nearest-neighbor search", this),
       queries("queries", {}, "Number of queries executed", this),
       limitedQueries("limited_queries", {}, "Number of queries limited in match phase", this),
       softDoomedQueries("soft_doomed_queries", {}, "Number of queries hitting the soft timeout", this),
@@ -194,9 +185,6 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const metri
     docsMatched.inc(stats.docsMatched());
     docsRanked.inc(stats.docsRanked());
     docsReRanked.inc(stats.docsReRanked());
-    exact_nns_distances_computed.inc(stats.exact_nns_distances_computed());
-    approximate_nns_distances_computed.inc(stats.approximate_nns_distances_computed());
-    approximate_nns_nodes_visited.inc(stats.approximate_nns_nodes_visited());
     queries.inc(stats.queries());
     limitedQueries.inc(stats.limited_queries());
     softDoomedQueries.inc(stats.softDoomed());

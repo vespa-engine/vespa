@@ -42,8 +42,6 @@ class AndNotBlueprint;
 class OrBlueprint;
 class EmptyBlueprint;
 class AlwaysTrueBlueprint;
-class QueryEvalStats;
-class NearestNeighborBlueprint;
 
 /**
  * A Blueprint is an intermediate representation of a search. More
@@ -460,7 +458,6 @@ public:
     bool isAnd() const noexcept { return const_cast<Blueprint *>(this)->asAnd() != nullptr; }
     virtual AndNotBlueprint * asAndNot() noexcept { return nullptr; }
     bool isAndNot() const noexcept { return const_cast<Blueprint *>(this)->asAndNot() != nullptr; }
-    virtual NearestNeighborBlueprint * asNearestNeighbor() noexcept { return nullptr; }
     virtual OrBlueprint * asOr() noexcept { return nullptr; }
     virtual SourceBlenderBlueprint * asSourceBlender() noexcept { return nullptr; }
     virtual WeakAndBlueprint * asWeakAnd() noexcept { return nullptr; }
