@@ -641,7 +641,7 @@ func (c *Config) set(option, value string) error {
 	switch option {
 	case targetFlag:
 		switch value {
-		case vespa.TargetLocal, vespa.TargetCloud, vespa.TargetHosted:
+		case vespa.TargetLocal, vespa.TargetCloud, vespa.TargetHosted, vespa.TargetCD, vespa.TargetPublicCD:
 			c.config.Set(option, value)
 			return nil
 		}
