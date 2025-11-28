@@ -46,15 +46,13 @@ public class SlimeDataSinkTestCase {
 
         sink.endObject();
 
-        var expected = new Slime();
-        var obj = expected.setObject();
-        obj.setLong("int", 1024);
-        obj.setBool("bool", true);
-        obj.setNix("empty");
-        obj.setDouble("double", 3.5);
-        obj.setString("string", "hello");
-        obj.setData("data", bytes);
+        var expected = SlimeUtils.jsonToSlime("{ int: 1024, " +
+                                              "  bool: true," +
+                                              "  double: 3.5," +
+                                              "  string: \"hello\" }");
 
+        expected.get().setData("data", bytes);
+        expected.get().setNix("empty");
         assertSlime(expected, sink.getSlime());
     }
 
@@ -65,21 +63,17 @@ public class SlimeDataSinkTestCase {
         // [1, true, nix, 2.5, "foo", byte[9,8]]
         sink.longValue(1L);
         sink.booleanValue(true);
-        sink.emptyValue();
         sink.doubleValue(2.5);
         sink.stringValue("foo");
         byte[] bytes = new byte[]{9, 8};
         sink.dataValue(bytes);
+        sink.emptyValue();
         sink.endArray();
 
-        var expected = new Slime();
-        var arr = expected.setArray();
-        arr.addLong(1L);
-        arr.addBool(true);
-        arr.addNix();
-        arr.addDouble(2.5);
-        arr.addString("foo");
+        var expected = SlimeUtils.jsonToSlime("[1, true, 2.5, \"foo\"]");
+        var arr = expected.get();
         arr.addData(bytes);
+        arr.addNix();
 
         assertSlime(expected, sink.getSlime());
     }
@@ -105,14 +99,7 @@ public class SlimeDataSinkTestCase {
 
         sink.endObject();
 
-        var expected = new Slime();
-        var root = expected.setObject();
-        var nums = root.setArray("nums");
-        nums.addLong(1L);
-        nums.addLong(2L);
-        var meta = root.setObject("meta");
-        meta.setBool("ok", true);
-
+        var expected = SlimeUtils.jsonToSlime("{ nums: [1, 2], meta: { ok: true } }");
         assertSlime(expected, sink.getSlime());
     }
 
@@ -135,13 +122,7 @@ public class SlimeDataSinkTestCase {
 
         sink.endArray();
 
-        var expected = new Slime();
-        var arr = expected.setArray();
-        var o1 = arr.addObject();
-        o1.setLong("id", 1L);
-        var o2 = arr.addObject();
-        o2.setLong("id", 2L);
-
+        var expected = SlimeUtils.jsonToSlime("[ { id: 1 }, { id: 2 } ]");
         assertSlime(expected, sink.getSlime());
     }
 
@@ -157,11 +138,7 @@ public class SlimeDataSinkTestCase {
         sink.intValue(2);
         sink.endObject();
 
-        var expected = new Slime();
-        var obj = expected.setObject();
-        obj.setLong("utf8_name", 1);
-        obj.setLong("utf16_name", 2);
-
+        var expected = SlimeUtils.jsonToSlime("{ utf8_name: 1, utf16_name: 2 }");
         assertSlime(expected, sink.getSlime());
     }
 
@@ -175,13 +152,7 @@ public class SlimeDataSinkTestCase {
         sink.floatValue(1.5f);
         sink.endArray();
 
-        var expected = new Slime();
-        var arr = expected.setArray();
-        arr.addLong(10);
-        arr.addLong(20);
-        arr.addLong(30);
-        arr.addDouble(1.5f); // floatValue delegates to doubleValue
-
+        var expected = SlimeUtils.jsonToSlime("[ 10, 20, 30, 1.5 ]");
         assertSlime(expected, sink.getSlime());
     }
 
