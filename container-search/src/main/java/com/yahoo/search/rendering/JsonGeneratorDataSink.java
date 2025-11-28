@@ -19,10 +19,10 @@ record JsonGeneratorDataSink(JsonGenerator gen) implements DataSink {
     @Override
     public void fieldName(String utf16, byte[] utf8) {
         try {
-            if (utf8 != null) {
-                gen.writeFieldName(new String(utf8, StandardCharsets.UTF_8));
-            } else {
+            if (utf16 != null) {
                 gen.writeFieldName(utf16);
+            } else {
+                gen.writeFieldName(new String(utf8, StandardCharsets.UTF_8));
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
