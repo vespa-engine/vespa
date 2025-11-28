@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation;
 
-import com.yahoo.data.JsonProducer;
+import com.yahoo.data.disclosure.DataSink;
+import com.yahoo.data.disclosure.DataSource;
 import com.yahoo.searchlib.expression.FloatResultNode;
 import com.yahoo.searchlib.expression.ResultNode;
 import com.yahoo.vespa.objects.Deserializer;
@@ -70,25 +71,20 @@ public class QuantileAggregationResult extends AggregationResult {
      *
      * @param entries
      */
-    public record QuantileResult(List<Entry> entries) implements JsonProducer {
+    public record QuantileResult(List<Entry> entries) implements DataSource {
 
         @Override
-        public StringBuilder writeJson(StringBuilder target) {
-            target.append('[');
-            for (int i = 0; i < entries.size(); i++) {
-                Entry entry = entries.get(i);
-                target.append("{\"quantile\":").append(entry.quantile).append(",\"value\":").append(entry.value).append('}');
-                if (i < entries.size() - 1) {
-                    target.append(',');
-                }
+        public void emit(DataSink sink) {
+            sink.startArray();
+            for (var entry : entries) {
+                sink.startObject();
+                sink.fieldName("quantile");
+                sink.doubleValue(entry.quantile);
+                sink.fieldName("value");
+                sink.doubleValue(entry.value);
+                sink.endObject();
             }
-            target.append(']');
-            return target;
-        }
-
-        @Override
-        public String toJson() {
-            return JsonProducer.super.toJson();
+            sink.endArray();
         }
 
         public record Entry(double quantile, double value) {
