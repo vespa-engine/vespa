@@ -1,0 +1,101 @@
+name: Mend Scan
+
+on:
+  workflow_dispatch:
+  schedule: [cron: "0 0 * * 0"] # Weekly on Sundays at midnight
+
+  # For PRs we only trigger if the workflow file itself is changed, for testing purposes.
+  pull_request:
+    branches: [master]
+    paths:
+      - .github/workflows/mend.yml
+
+env:
+  MEND_APP_NAME: "vespa-engine"
+  MEND_PROJECT_NAME: "vespa"
+
+jobs:
+  sast:
+    name: SAST Vespa Engine
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Mend SAST
+        uses: vespa-engine/gh-actions/mend-sast@main
+        with:
+          mend-user: ${{ secrets.MEND_EMAIL }}
+          mend-api-key: ${{ secrets.MEND_USER_KEY }}
+
+          mend-app-name: ${{ env.MEND_APP_NAME }}
+          mend-project-name: ${{ env.MEND_PROJECT_NAME }}
+          # Do not send SAST updates on PRs
+          update: ${{ contains(fromJson('["workflow_dispatch","schedule"]'), github.event_name) }}
+
+          scan-name: "Vespa @ ${{ github.ref_name }} (${{ github.sha }})"
+          target-directory: "./"
+          enabled-engines: "12,101" # C++ and Java
+
+  sast-cli:
+    name: SAST Vespa CLI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Mend SAST
+        uses: vespa-engine/gh-actions/mend-sast@main
+        with:
+          mend-user: ${{ secrets.MEND_EMAIL }}
+          mend-api-key: ${{ secrets.MEND_USER_KEY }}
+
+          mend-app-name: ${{ env.MEND_APP_NAME }}
+          mend-project-name: ${{ env.MEND_PROJECT_NAME }}
+          # Do not send SAST updates on PRs
+          update: ${{ contains(fromJson('["workflow_dispatch","schedule"]'), github.event_name) }}
+
+          scan-name: "Vespa CLI @ ${{ github.ref_name }} (${{ github.sha }})"
+          target-directory: "client/go"
+          enabled-engines: "18" # Go
+
+  sca:
+    name: SCA
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Install Vespa Deps
+        run: |
+          export MAVEN_OPTS="-Xms2048m -Xmx2048m"
+          ./bootstrap.sh java
+
+      - name: Set GO
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Build Vespa CLI
+        working-directory: client/go
+        run: |
+          go mod download
+
+
+      - name: Mend SCA
+        uses: vespa-engine/gh-actions/mend-sca@main
+        with:
+          mend-user: ${{ secrets.MEND_EMAIL }}
+          mend-api-key: ${{ secrets.MEND_USER_KEY }}
+
+          mend-app-name: ${{ env.MEND_APP_NAME }}
+          mend-project-name: ${{ env.MEND_PROJECT_NAME }}
+
+          # Do not send SCA updates on PRs
+          update: ${{ contains(fromJson('["workflow_dispatch","schedule"]'), github.event_name) }}
