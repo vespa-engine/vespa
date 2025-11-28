@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
+import com.yahoo.data.disclosure.DataSink;
+import com.yahoo.data.disclosure.DataSource;
 import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -591,6 +593,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         private final JsonGenerator generator;
         private final FieldConsumerSettings settings;
         private MutableBoolean hasFieldsField;
+        private DataSink dataSink;
 
         /** Invoke this from your constructor when sub-classing {@link FieldConsumer} */
         protected FieldConsumer(boolean debugRendering, boolean tensorShortForm, boolean jsonMaps) {
@@ -605,11 +608,15 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.settings.debugRendering = debugRendering;
             this.settings.tensorOptions = tensorOptions;
             this.settings.jsonDeepMaps = jsonMaps;
+            // if this is subclass, generator will be null, must mirror that behavior
+            this.dataSink = (generator == null) ? null : new JsonGeneratorDataSink(generator);
         }
 
         FieldConsumer(JsonGenerator generator, FieldConsumerSettings settings) {
             this.generator = generator;
             this.settings = settings;
+            // if this is subclass, generator will be null, must mirror that behavior
+            this.dataSink = (generator == null) ? null : new JsonGeneratorDataSink(generator);
         }
 
         /**
@@ -833,6 +840,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 generator().writeRawValue(featureData.toJson(settings.tensorOptions));
             } else if (field instanceof Inspectable i) {
                 renderInspectorDirect(i.inspect());
+            } else if (field instanceof DataSource ds) {
+                ds.emit(dataSink());
             } else if (field instanceof JsonProducer jp) {
                 generator().writeRawValue(jp.toJson());
             } else if (field instanceof StringFieldValue sfv) {
@@ -878,6 +887,14 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 throw new UnsupportedOperationException("Generator required but not assigned. " +
                                                         "All accept() methods must be overridden when sub-classing FieldConsumer");
             return generator;
+        }
+
+        private DataSink dataSink() {
+            if (dataSink == null) {
+                throw new UnsupportedOperationException("DataSink required but not assigned. "
+                        + "All accept() methods must be overridden when sub-classing FieldConsumer without a generator");
+            }
+            return dataSink;
         }
 
     }
