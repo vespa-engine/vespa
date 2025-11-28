@@ -41,9 +41,10 @@ Configuration is written to $HOME/.vespa by default. This path can be
 overridden by setting the VESPA_CLI_HOME environment variable.
 
 When setting an option locally, the configuration is written to .vespa in the
-working directory, where that directory is assumed to be a Vespa application
-directory. This allows you to have separate configuration options per
-application.
+working directory. When reading configuration, Vespa CLI searches for .vespa
+in the current directory and parent directories, allowing you to run commands
+from subdirectories of your application. This allows you to have separate
+configuration options per application.
 
 Vespa CLI chooses the value for a given option in the following order, from
 most to least preferred:
@@ -311,12 +312,37 @@ func athenzPath(filename string) (string, error) {
 }
 
 func (c *Config) loadLocalConfigFrom(parent string) error {
-	home := filepath.Join(parent, ".vespa")
-	_, err := os.Stat(home)
-	if err != nil && !os.IsNotExist(err) {
+	dir, err := filepath.Abs(parent)
+	if err != nil {
 		return err
 	}
-	config, err := loadConfigFrom(home, c.environment, c.flags)
+	// Use home directory as a boundary for walking up, if available
+	// This prevents accidentally picking up a .vespa from unrelated locations
+	homeDir, _ := os.UserHomeDir() // Ignore error - just skip boundary check if unavailable
+	for {
+		// Don't search in or above home directory for local config
+		if homeDir != "" && dir == homeDir {
+			break
+		}
+		vespaDir := filepath.Join(dir, ".vespa")
+		if stat, err := os.Stat(vespaDir); err == nil && stat.IsDir() {
+			config, err := loadConfigFrom(vespaDir, c.environment, c.flags)
+			if err != nil {
+				return err
+			}
+			c.local = config
+			return nil
+		} else if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		parentDir := filepath.Dir(dir)
+		if parentDir == dir {
+			break // Hit filesystem root
+		}
+		dir = parentDir
+	}
+	// No .vespa directory found, create empty local config for current directory
+	config, err := loadConfigFrom(filepath.Join(parent, ".vespa"), c.environment, c.flags)
 	if err != nil {
 		return err
 	}
