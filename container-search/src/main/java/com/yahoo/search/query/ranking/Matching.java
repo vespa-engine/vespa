@@ -6,11 +6,8 @@ import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
-import com.yahoo.search.result.ErrorMessage;
 
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -35,7 +32,6 @@ public class Matching implements Cloneable {
     public static final String TARGET_HITS_MAX_ADJUSTMENT_FACTOR = "targetHitsMaxAdjustmentFactor";
     public static final String FILTER_THRESHOLD = "filterThreshold";
     public static final String WEAKAND = "weakand";
-    public static final String ELEMENT_GAP = "elementGap";
 
     static {
         argumentType = new QueryProfileType(Ranking.MATCHING);
@@ -70,7 +66,6 @@ public class Matching implements Cloneable {
     private Double targetHitsMaxAdjustmentFactor = null;
     private Double filterThreshold = null;
     private WeakAnd weakAnd = new WeakAnd();
-    private Map<String, Integer> elementGap = new HashMap<>();
 
     public Double getTermwiseLimit() { return termwiseLimit; }
     public Integer getNumThreadsPerSearch() { return numThreadsPerSearch; }
@@ -129,28 +124,6 @@ public class Matching implements Cloneable {
         filterThreshold = threshold;
     }
 
-    /** Returns the element gap value for the given field, or null if not set */
-    public Integer getElementGapForField(String fieldName) {
-        return elementGap.get(fieldName);
-    }
-
-    /** Sets the element gap value for the given field */
-    public void setElementGapForField(String fieldName, Object value, com.yahoo.search.Query parent) {
-        if (value == null) {
-            elementGap.remove(fieldName);
-        } else if (value instanceof Integer gap)  {
-            elementGap.put(fieldName, gap);
-        } else {
-            try {
-                elementGap.put(fieldName, Integer.parseInt(String.valueOf(value)));
-            } catch (NumberFormatException e) {
-                parent.errors().add(ErrorMessage.createInvalidQueryParameter(
-                        "Element gap value for field '" + fieldName + "' could not be converted from '"
-                        + value + "' to integer"));
-            }
-        }
-    }
-
     /** Internal operation - DO NOT USE */
     public void prepare(RankProperties rankProperties) {
         if (termwiseLimit != null) {
@@ -186,9 +159,6 @@ public class Matching implements Cloneable {
         if (filterThreshold != null) {
             rankProperties.put("vespa.matching.filter_threshold", String.valueOf(filterThreshold));
         }
-        for (Map.Entry<String, Integer> entry : elementGap.entrySet()) {
-            rankProperties.put("vespa.matching.element_gap." + entry.getKey(), String.valueOf(entry.getValue()));
-        }
         weakAnd.prepare(rankProperties);
     }
 
@@ -197,7 +167,6 @@ public class Matching implements Cloneable {
         try {
             var clone =  (Matching) super.clone();
             clone.weakAnd = this.weakAnd.clone();
-            clone.elementGap = new HashMap<>(this.elementGap);
             return clone;
         }
         catch (CloneNotSupportedException e) {
@@ -221,14 +190,14 @@ public class Matching implements Cloneable {
                Objects.equals(explorationSlack, matching.explorationSlack) &&
                Objects.equals(targetHitsMaxAdjustmentFactor, matching.targetHitsMaxAdjustmentFactor) &&
                Objects.equals(filterThreshold, matching.filterThreshold) &&
-               Objects.equals(weakAnd, matching.weakAnd) &&
-               Objects.equals(elementGap, matching.elementGap);
+               Objects.equals(weakAnd, matching.weakAnd);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(termwiseLimit, numThreadsPerSearch, numSearchPartitions, minHitsPerThread,
                             postFilterThreshold, approximateThreshold, filterFirstThreshold, filterFirstExploration,
-                            explorationSlack, targetHitsMaxAdjustmentFactor, filterThreshold, weakAnd, elementGap);
+                            explorationSlack, targetHitsMaxAdjustmentFactor, filterThreshold, weakAnd);
     }
 }
+

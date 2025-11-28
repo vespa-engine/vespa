@@ -53,6 +53,7 @@ public class QueryProperties extends Properties {
 
     private static final Set<String> reservedPrefix = Set.of(Model.MODEL, Presentation.PRESENTATION, Select.SELECT, Ranking.RANKING, Trace.TRACE);
 
+
     private record GetterSetter(GetProperty getter, SetProperty setter) {
         static GetterSetter of(GetProperty getter, SetProperty setter) {
             return new GetterSetter(getter, setter);
@@ -181,11 +182,10 @@ public class QueryProperties extends Properties {
         if (key.first().equals(Ranking.RANKING)) {
             Ranking ranking = query.getRanking();
             if (key.size() > 2) {
-                String rest = key.rest().rest().toString();
                 // pass the portion after "ranking.features/properties" down
-                if (key.get(1).equals(Ranking.FEATURES)) return ranking.getFeatures().getObject(rest);
-                if (key.get(1).equals(Ranking.PROPERTIES)) return ranking.getProperties().get(rest);
-                if (key.get(1).equals(Matching.ELEMENT_GAP)) return ranking.getMatching().getElementGapForField(rest);
+                if (key.get(1).equals(Ranking.FEATURES)) return ranking.getFeatures().getObject(key.rest().rest().toString());
+                if (key.get(1).equals(Ranking.PROPERTIES)) return ranking.getProperties().get(key.rest().rest().toString());
+                if (key.get(1).equals(Ranking.ELEMENT_GAP)) return ranking.getElementGapForField(key.rest().rest().toString());
             }
         }
 
@@ -227,9 +227,9 @@ public class QueryProperties extends Properties {
                                                                          profileRegistry.getTypeRegistry().getComponent("properties"),
                                                                          context));
                     return;
-                } else if (key.get(1).equals(Matching.ELEMENT_GAP)) {
-                     Ranking ranking = query.getRanking();
-                     ranking.getMatching().setElementGapForField(restKey, value, query);
+                } else if (key.get(1).equals(Ranking.ELEMENT_GAP)) {
+                    Ranking ranking = query.getRanking();
+                    ranking.setElementGapForField(restKey, value);
                 }
             }
         }

@@ -19,6 +19,8 @@ import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.query.ranking.Significance;
 import com.yahoo.search.result.ErrorMessage;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -55,6 +57,7 @@ public class Ranking implements Cloneable {
     public static final String MATCHING = "matching";
     public static final String FEATURES = "features";
     public static final String PROPERTIES = "properties";
+    public static final String ELEMENT_GAP = "elementGap";
 
     static {
         argumentType = new QueryProfileType(RANKING);
@@ -122,6 +125,8 @@ public class Ranking implements Cloneable {
     private SoftTimeout softTimeout = new SoftTimeout();
 
     private Significance significance = new Significance();
+
+    private Map<String, Integer> elementGap = new HashMap<>();
 
     public Ranking(Query parent) {
         this.parent = parent;
@@ -246,6 +251,27 @@ public class Ranking implements Cloneable {
     @com.yahoo.api.annotations.Beta
     public Significance getSignificance() { return significance; }
 
+    /** Returns the element gap value for the given field, or null if not set */
+    public Integer getElementGapForField(String fieldName) {
+        return elementGap.get(fieldName);
+    }
+
+    /** Sets the element gap value for the given field */
+    public void setElementGapForField(String fieldName, Object value) {
+        if (value == null) {
+            elementGap.remove(fieldName);
+        } else if (value instanceof Integer) {
+            elementGap.put(fieldName, (Integer) value);
+        } else {
+            try {
+                elementGap.put(fieldName, Integer.parseInt(String.valueOf(value)));
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Element gap value for field '" + fieldName +
+                                                   "' could not be converted from '" + value + "' to integer");
+            }
+        }
+    }
+
     /** Returns the sorting spec of this query, or null if none is set */
     public Sorting getSorting() { return sorting; }
 
@@ -283,6 +309,9 @@ public class Ranking implements Cloneable {
             rankProperties.put("vespa.hitcollector.arraysize", keepRankCount);
         if (rankScoreDropLimit != null)
             rankProperties.put("vespa.hitcollector.rankscoredroplimit", rankScoreDropLimit);
+        for (Map.Entry<String, Integer> entry : elementGap.entrySet()) {
+            rankProperties.put("vespa.matching.element_gap." + entry.getKey(), String.valueOf(entry.getValue()));
+        }
     }
 
     private void prepareNow(Freshness freshness) {
@@ -315,6 +344,7 @@ public class Ranking implements Cloneable {
             if (this.matching != null) clone.matching = this.matching.clone();
             if (this.softTimeout != null) clone.softTimeout = this.softTimeout.clone();
             if (this.significance != null) clone.significance = this.significance.clone();
+            if (this.elementGap != null) clone.elementGap = new HashMap<>(this.elementGap);
             return clone;
         }
         catch (CloneNotSupportedException e) {
@@ -349,6 +379,7 @@ public class Ranking implements Cloneable {
         if ( ! Objects.equals(matching, other.matching)) return false;
         if ( ! Objects.equals(softTimeout, other.softTimeout)) return false;
         if ( ! Objects.equals(significance, other.significance)) return false;
+        if ( ! Objects.equals(elementGap, other.elementGap)) return false;
         return true;
     }
 
@@ -356,7 +387,7 @@ public class Ranking implements Cloneable {
     public int hashCode() {
         return Objects.hash(location, profile, sorting, listFeatures, freshness, queryCache,
                             rerankCount, keepRankCount, rankScoreDropLimit, rankProperties,
-                            rankFeatures, matchPhase, secondPhase, globalPhase, matching, softTimeout, significance);
+                            rankFeatures, matchPhase, secondPhase, globalPhase, matching, softTimeout, significance, elementGap);
     }
 
 }
