@@ -2,8 +2,12 @@
 package com.yahoo.data.disclosure.slime;
 
 import com.yahoo.data.disclosure.DataSink;
+import com.yahoo.slime.ArrayInserter;
 import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Inserter;
+import com.yahoo.slime.ObjectInserter;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeInserter;
 import com.yahoo.slime.Type;
 
 import java.nio.charset.StandardCharsets;
@@ -20,7 +24,6 @@ import java.util.Deque;
 public class SlimeDataSink implements DataSink {
 
     private Slime slime = new Slime();
-    private Cursor root;
     private Deque<Cursor> stack = new ArrayDeque<>();
     private String key;
 
@@ -28,12 +31,18 @@ public class SlimeDataSink implements DataSink {
         return slime;
     }
 
-    private boolean topIsObject() {
-        return !stack.isEmpty() && stack.peek().type() == Type.OBJECT;
-    }
-
     private Cursor top() {
         return stack.peek();
+    }
+
+    private Inserter makeInserter() {
+        if (stack.isEmpty()) {
+            return new SlimeInserter(slime);
+        } else if (top().type() == Type.OBJECT) {
+            return new ObjectInserter(top(), key);
+        } else {
+            return new ArrayInserter(top());
+        }
     }
 
     @Override
@@ -48,18 +57,7 @@ public class SlimeDataSink implements DataSink {
 
     @Override
     public void startObject() {
-        if (root == null) {
-            root = slime.setObject();
-            stack.push(root);
-        } else {
-            if (topIsObject()) {
-                var obj = top().setObject(key);
-                stack.push(obj);
-            } else {
-                var obj = top().addObject();
-                stack.push(obj);
-            }
-        }
+        stack.push(makeInserter().insertOBJECT());
     }
 
     @Override
@@ -71,18 +69,7 @@ public class SlimeDataSink implements DataSink {
 
     @Override
     public void startArray() {
-        if (root == null) {
-            root = slime.setArray();
-            stack.push(root);
-        } else {
-            if (topIsObject()) {
-                var obj = top().setArray(key);
-                stack.push(obj);
-            } else {
-                var arr = top().addArray();
-                stack.push(arr);
-            }
-        }
+        stack.push(makeInserter().insertARRAY());
     }
 
     @Override
@@ -94,38 +81,22 @@ public class SlimeDataSink implements DataSink {
 
     @Override
     public void emptyValue() {
-        if (topIsObject()) {
-            top().setNix(key);
-        } else {
-            top().addNix();
-        }
+        makeInserter().insertNIX();
     }
 
     @Override
     public void booleanValue(boolean v) {
-        if (topIsObject()) {
-            top().setBool(key, v);
-        } else {
-            top().addBool(v);
-        }
+        makeInserter().insertBOOL(v);
     }
 
     @Override
     public void longValue(long v) {
-        if (topIsObject()) {
-            top().setLong(key, v);
-        } else {
-            top().addLong(v);
-        }
+        makeInserter().insertLONG(v);
     }
 
     @Override
     public void doubleValue(double v) {
-        if (topIsObject()) {
-            top().setDouble(key, v);
-        } else {
-            top().addDouble(v);
-        }
+        makeInserter().insertDOUBLE(v);
     }
 
     @Override
@@ -138,19 +109,11 @@ public class SlimeDataSink implements DataSink {
             v = new String(utf8, StandardCharsets.UTF_8);
         }
 
-        if (topIsObject()) {
-            top().setString(key, v);
-        } else {
-            top().addString(v);
-        }
+        makeInserter().insertSTRING(v);
     }
 
     @Override
     public void dataValue(byte[] data) {
-        if (topIsObject()) {
-            top().setData(key, data);
-        } else {
-            top().addData(data);
-        }
+        makeInserter().insertDATA(data);
     }
 }
