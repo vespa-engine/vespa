@@ -5775,6 +5775,8 @@
       "public com.yahoo.search.query.ranking.Matching getMatching()",
       "public com.yahoo.search.query.ranking.SoftTimeout getSoftTimeout()",
       "public com.yahoo.search.query.ranking.Significance getSignificance()",
+      "public java.lang.Integer getElementGapForField(java.lang.String)",
+      "public void setElementGapForField(java.lang.String, java.lang.Object)",
       "public com.yahoo.search.query.Sorting getSorting()",
       "public void setSorting(com.yahoo.search.query.Sorting)",
       "public void setSorting(java.lang.String)",
@@ -5807,7 +5809,8 @@
       "public static final java.lang.String SOFTTIMEOUT",
       "public static final java.lang.String MATCHING",
       "public static final java.lang.String FEATURES",
-      "public static final java.lang.String PROPERTIES"
+      "public static final java.lang.String PROPERTIES",
+      "public static final java.lang.String ELEMENT_GAP"
     ]
   },
   "com.yahoo.search.query.Select" : {

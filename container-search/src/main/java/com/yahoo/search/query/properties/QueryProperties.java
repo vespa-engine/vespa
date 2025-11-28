@@ -185,6 +185,7 @@ public class QueryProperties extends Properties {
                 // pass the portion after "ranking.features/properties" down
                 if (key.get(1).equals(Ranking.FEATURES)) return ranking.getFeatures().getObject(key.rest().rest().toString());
                 if (key.get(1).equals(Ranking.PROPERTIES)) return ranking.getProperties().get(key.rest().rest().toString());
+                if (key.get(1).equals(Ranking.ELEMENT_GAP)) return ranking.getElementGapForField(key.rest().rest().toString());
             }
         }
 
@@ -226,6 +227,9 @@ public class QueryProperties extends Properties {
                                                                          profileRegistry.getTypeRegistry().getComponent("properties"),
                                                                          context));
                     return;
+                } else if (key.get(1).equals(Ranking.ELEMENT_GAP)) {
+                    Ranking ranking = query.getRanking();
+                    ranking.setElementGapForField(restKey, value);
                 }
             }
         }
