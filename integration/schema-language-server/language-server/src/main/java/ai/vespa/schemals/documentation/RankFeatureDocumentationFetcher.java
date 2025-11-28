@@ -1,15 +1,14 @@
 package ai.vespa.schemals.documentation;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
+import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * RankfeatureDocumentationFetcher
@@ -22,7 +21,9 @@ public class RankFeatureDocumentationFetcher extends ContentFetcher {
 
 	@Override
 	Map<String, String> getMarkdownContent() throws IOException {
-        Document document = Jsoup.connect(ContentFetcher.URL_PREFIX + this.fileUrl).get();
+        Document document = Jsoup.connect(ContentFetcher.URL_PREFIX + this.fileUrl)
+                                 .followRedirects(true)
+                                 .get();
         Element tableElement = document.selectFirst("table.table");
 
         Elements trs = tableElement.select("tr:has(> td:nth-child(3)):not(:has(> td:nth-child(4)))");
