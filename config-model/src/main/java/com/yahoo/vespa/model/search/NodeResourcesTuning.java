@@ -3,7 +3,11 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.model.Host;
+import com.yahoo.vespa.model.utils.ResourceUtils;
+
+import static com.yahoo.vespa.model.utils.ResourceUtils.MiB;
+import static com.yahoo.vespa.model.utils.ResourceUtils.GiB;
+import static com.yahoo.vespa.model.utils.ResourceUtils.GB;
 
 import static java.lang.Long.min;
 import static java.lang.Long.max;
@@ -20,9 +24,6 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private final static double MEMORY_GAIN_AS_FRACTION_OF_MEMORY = 0.08;
     private final static double MIN_MEMORY_PER_FLUSH_THREAD_GB = 11.0;
     private final static double TLS_SIZE_FRACTION = 0.02;
-    final static long MiB = 1024 * 1024;
-    public final static long GiB = MiB * 1024;
-    public final static long GB = 1_000_000_000;
     private final NodeResources resources;
     private final int threadsPerSearch;
 
@@ -52,7 +53,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private void setHwInfo(ProtonConfig.Builder builder) {
         builder.hwinfo.disk.shared(true);
         builder.hwinfo.cpu.cores((int)resources.vcpu());
-        builder.hwinfo.memory.size((long)(usableMemoryGb() * GiB));
+        builder.hwinfo.memory.size((long)(usableMemoryGb() * GiB)); // TODO Gb vs GiB?!
         builder.hwinfo.disk.size((long)(resources.diskGb() * GB));
     }
 
@@ -103,7 +104,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
 
     /** Returns the memory we can expect will be available for the content node processes */
     private double usableMemoryGb() {
-        return resources.memoryGiB() - Host.memoryOverheadGb;
+        return ResourceUtils.usableMemoryGb(resources);
     }
 
 }

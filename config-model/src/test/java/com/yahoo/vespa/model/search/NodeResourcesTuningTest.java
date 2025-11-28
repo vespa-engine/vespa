@@ -8,9 +8,9 @@ import org.junit.jupiter.api.Test;
 
 import static com.yahoo.vespa.model.Host.memoryOverheadGb;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static com.yahoo.vespa.model.search.NodeResourcesTuning.MiB;
-import static com.yahoo.vespa.model.search.NodeResourcesTuning.GiB;
-import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
+import static com.yahoo.vespa.model.utils.ResourceUtils.MiB;
+import static com.yahoo.vespa.model.utils.ResourceUtils.GiB;
+import static com.yahoo.vespa.model.utils.ResourceUtils.GB;
 
 /**
  * @author geirst
