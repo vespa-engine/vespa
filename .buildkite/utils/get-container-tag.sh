@@ -21,7 +21,7 @@ os-suffix() {
   # Set default tag to be pointing to Almalinux 8 version.
   # TODO: Update when we switch default OS
   if [[ $ALMALINUX_MAJOR != "8" ]]; then
-      echo "-al${ALMALINUX_MAJOR}"
+      echo "-alma${ALMALINUX_MAJOR}"
   fi
 }
 
