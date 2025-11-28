@@ -14,12 +14,12 @@ using vespalib::eval::CellType;
 
 namespace search::queryeval {
 
-ExactNearestNeighborIterator::Params::Params(QueryEvalStats &stats_in,
+ExactNearestNeighborIterator::Params::Params(std::shared_ptr<QueryEvalStats> stats_in,
                                              fef::TermFieldMatchData &tfmd_in,
                                              std::unique_ptr<search::tensor::DistanceCalculator> distance_calc_in,
                                              NearestNeighborDistanceHeap &distanceHeap_in,
                                              const GlobalFilter &filter_in)
-    : stats(stats_in.shared_from_this()),
+    : stats(std::move(stats_in)),
       tfmd(tfmd_in),
       distance_calc(std::move(distance_calc_in)),
       distanceHeap(distanceHeap_in),
@@ -127,13 +127,13 @@ resolve_strict(bool strict, bool readonly_distance_heap, ExactNearestNeighborIte
 } // namespace <unnamed>
 
 std::unique_ptr<ExactNearestNeighborIterator>
-ExactNearestNeighborIterator::create(QueryEvalStats &stats,
+ExactNearestNeighborIterator::create(std::shared_ptr<QueryEvalStats> stats,
                                      bool strict, fef::TermFieldMatchData &tfmd,
                                      std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
                                      NearestNeighborDistanceHeap &distanceHeap, const GlobalFilter &filter,
                                      bool readonly_distance_heap)
 {
-    Params params(stats, tfmd, std::move(distance_calc), distanceHeap, filter);
+    Params params(std::move(stats), tfmd, std::move(distance_calc), distanceHeap, filter);
     if (filter.is_active()) {
         return resolve_strict<true>(strict, readonly_distance_heap, std::move(params));
     } else  {

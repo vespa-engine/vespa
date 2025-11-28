@@ -121,7 +121,7 @@ struct Fixture {
 };
 
 template <bool strict>
-SimpleResult find_matches_impl(QueryEvalStats &stats, Fixture &env, const Value &qtv, double threshold) {
+SimpleResult find_matches_impl(std::shared_ptr<QueryEvalStats> stats, Fixture &env, const Value &qtv, double threshold) {
     auto md = MatchData::makeTestInstance(2, 2);
     auto &tfmd = *(md->resolveTermField(0));
     auto &attr = *(env._attr);
@@ -132,7 +132,7 @@ SimpleResult find_matches_impl(QueryEvalStats &stats, Fixture &env, const Value 
     NearestNeighborDistanceHeap dh(2);
     dh.set_distance_threshold(threshold);
     const GlobalFilter &filter = *env._global_filter;
-    auto search = ExactNearestNeighborIterator::create(stats, strict, tfmd,
+    auto search = ExactNearestNeighborIterator::create(std::move(stats), strict, tfmd,
                                                        std::make_unique<DistanceCalculator>(attr, qtv),
                                                        dh, filter,
                                                        env._matching_phase != MatchingPhase::FIRST_PHASE);
@@ -145,14 +145,13 @@ SimpleResult find_matches_impl(QueryEvalStats &stats, Fixture &env, const Value 
 
 template <bool strict>
 SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std::numeric_limits<double>::max()) {
-    auto stats = QueryEvalStats::create();
-    return find_matches_impl<strict>(*stats, env, qtv, threshold);
+    return find_matches_impl<strict>(nullptr, env, qtv, threshold);
 }
 
 template <bool strict>
 std::shared_ptr<QueryEvalStats> get_search_stats(Fixture &env, const Value &qtv, double threshold = std::numeric_limits<double>::max()) {
     auto stats = QueryEvalStats::create();
-    find_matches_impl<strict>(*stats, env, qtv, threshold);
+    find_matches_impl<strict>(stats, env, qtv, threshold);
     return stats;
 }
 
@@ -324,8 +323,7 @@ std::vector<feature_t> get_rawscores(Fixture &env, const Value &qtv) {
     auto dff = search::tensor::make_distance_function_factory(DistanceMetric::Euclidean, qtv.cells().type);
     NearestNeighborDistanceHeap dh(2);
     auto dummy_filter = GlobalFilter::create();
-    auto stats = QueryEvalStats::create();
-    auto search = ExactNearestNeighborIterator::create(*stats, strict, tfmd,
+    auto search = ExactNearestNeighborIterator::create(nullptr, strict, tfmd,
                                                        std::make_unique<DistanceCalculator>(attr, qtv),
                                                        dh, *dummy_filter, false);
     uint32_t limit = attr.getNumDocs();
