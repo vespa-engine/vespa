@@ -1,147 +1,158 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 schema complex {
 
-  document complex {
+    document complex {
 
-    field title type string {
-      indexing: index | summary
-      index default: prefix
-      rank-type: about
-      query-command: some-custom-command # Some command handled in a qustom searcher
-      query-command: some-other
-      alias default: some.default
-      alias: titlez
-      match: token
-    }
+        field title type string {
+            indexing: index | summary
+            index default: prefix
+            rank-type: about
+            query-command: some-custom-command # Some command handled in a qustom searcher
+            query-command: some-other
+            alias default: some.default
+            alias: titlez
+            match: token
+        }
 
-    field location type string {
-    
-    }
+        field location type string { }
 
-    field dyntitle type string {
-	  indexing: summary
-	  summary: dynamic
-    }
+        field dyntitle type string {
+	    indexing: summary
+	    summary: dynamic
+        }
 
-    field special1 type string {
-      indexing: index
-      stemming: none
-    }
+        field special1 type string {
+            indexing: index
+            stemming: none
+        }
 
-    field special2 type string {
-      indexing: index
-      stemming: none
-    }
+        field special2 type string {
+            indexing: index
+            stemming: none
+        }
 
-    field special3 type string {
-      indexing: index
-      stemming: none
-    }
+        field special3 type string {
+            indexing: index
+            stemming: none
+        }
 
-    field prefixenabled type string {
-      indexing: index | attribute
-      index: prefix
-      normalizing: none
-      stemming: shortest
-    }
+        field prefixenabled type string {
+            indexing: index | attribute
+            index: prefix
+            normalizing: none
+            stemming: shortest
+        }
 
-    field source type uri {
-      indexing: summary | index
-    }
+        field source type uri {
+            indexing: summary | index
+        }
 
-    field docurl type uri {
-      indexing: index
-      alias docurl: url
-    }
+        field docurl type uri {
+            indexing: index
+            alias docurl: url
+        }
 
-    field fleeting type array<float> {
-      indexing: index | attribute
-    }
+        field fleeting type array<float> {
+            indexing: index | attribute
+        }
 
-    field fleeting2 type float {
-      indexing: index | attribute
-    }
+        field fleeting2 type float {
+            indexing: index | attribute
+        }
 
-    field foundat type long {
-      indexing: index 
-    }
+        field foundat type long {
+            indexing: index
+        }
 
-    field collapseby type int {
-      indexing: index 
-    }
+        field collapseby type int {
+            indexing: index
+        }
 
-    field yEaR type int {
+        field yEaR type int { }
 
-    }
+        field stringfield type string {
+            indexing: summary | index
+        }
 
-    field stringfield type string {
-      indexing: summary | index
-    }
+        field exactemento type string {
+            indexing: index
+        }
 
-    field exactemento type string {
-      indexing: index
-    }
+        field exactagain type string {
+            indexing: index
+        }
 
-    field exactagain type string {
-      indexing: index
-    }
-
-    field ts type long {
-       indexing: attribute 
-    }
+        field ts type long {
+            indexing: attribute
+        }
 
 	field combineda type int {
-	  indexing: index
+	    indexing: index
 	}
 
 	field combinedb type string {
-	  indexing: index
+	    indexing: index
 	}
 
-    field category type string {
-    
+        field category type string { }
+
+        field chunks type array<string> {
+            indexing: index
+        }
     }
 
-  }
-
-  field woe type string {
-    indexing: input location | summary | index
-  }
-
-  field year_sub type int {
-    indexing: input yEaR - 1900 | attribute year_sub
-  }
-
-  field year_arr type array<int> {
-    indexing: input yEaR | to_array | attribute
-  }
-
-  # A field defined outside an index
-  field exact type string {
-    indexing {
-      input title . input category | summary | index;
+    field woe type string {
+        indexing: input location | summary | index
     }
-    stemming: none
-    normalizing: none
-    rank-type: identity
-  }
 
-  # Some experimental ranking changes
-  rank-profile experimental inherits default {
-  }
+    field year_sub type int {
+        indexing: input yEaR - 1900 | attribute year_sub
+    }
 
-  rank-profile other inherits experimental {
-    rank-type source: identity
- }
- fieldset default {
-   fields: title, stringfield
- }
- fieldset special {
-   fields: special1, special2, special3
- }
- raw-as-base64-in-summary : false
- fieldset all {
-   fields: combineda, combinedb
- }
+    field year_arr type array<int> {
+        indexing: input yEaR | to_array | attribute
+    }
 
+    # A field defined outside an index
+    field exact type string {
+        indexing {
+            input title . input category | summary | index;
+        }
+        stemming: none
+        normalizing: none
+        rank-type: identity
+    }
+
+    # Some experimental ranking changes
+    rank-profile experimental inherits default { }
+    rank-profile other inherits experimental {
+        rank-type source: identity
+    }
+    rank-profile withgap1 {
+        rank chunks {
+            element-gap: 5
+        }
+    }
+    rank-profile withgap2 inherits withgap1 {
+    }
+    rank-profile withgap3 {
+        rank chunks {
+            element-gap: 17
+        }
+    }
+    rank-profile withgap4 inherits withgap1, withgap3 {
+        rank chunks {
+            element-gap: 42
+        }
+    }
+    fieldset default {
+        fields: title, stringfield
+    }
+    fieldset special {
+        fields: special1, special2, special3
+    }
+    raw-as-base64-in-summary : false
+    fieldset all {
+        fields: combineda, combinedb
+    }
 }

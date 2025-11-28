@@ -1098,6 +1098,31 @@ public class RankProfile implements Cloneable {
         return Collections.unmodifiableMap(combined);
     }
 
+    public Map<String, ElementGap> getFieldRankElementGaps() {
+        Map<String, ElementGap> unionOfInheritedGaps = new LinkedHashMap<>();
+        for (var parent : inherited()) {
+            var fromParent = parent.getFieldRankElementGaps();
+            for (var entry : fromParent.entrySet()) {
+                String fieldName = entry.getKey();
+                ElementGap gap = entry.getValue();
+                ElementGap old = unionOfInheritedGaps.get(fieldName);
+                if (old == null) {
+                    unionOfInheritedGaps.put(fieldName, gap);
+                } else if (! old.equals(gap)) {
+                    // will we override it?
+                    if (explicitFieldRankElementGaps == null || ! explicitFieldRankElementGaps.containsKey(fieldName)) {
+                        throw new IllegalArgumentException("Several of the profiles inherited by " + this +
+                                                           " contains element-gap for field " + fieldName + ", cannot resolve conflict");
+                    }
+                }
+            }
+        }
+        if (explicitFieldRankElementGaps != null) {
+            unionOfInheritedGaps.putAll(explicitFieldRankElementGaps);
+        }
+        return unionOfInheritedGaps;
+    }
+
     private ExpressionFunction parseRankingExpression(String name, List<String> arguments, String expression) throws ParseException {
         if (expression.trim().isEmpty())
             throw new ParseException("Empty expression");
