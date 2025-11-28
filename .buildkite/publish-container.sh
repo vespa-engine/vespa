@@ -34,6 +34,8 @@ IMAGE_SHA256=$(crane digest "$VESPA_PREVIEW_CONTAINER_URI")
 cosign sign -y --oidc-provider=buildkite-agent "${VESPA_PREVIEW_CONTAINER_URI}@${IMAGE_SHA256}"
 
 echo "Setting Buildkite metadata for Vespa container..."
+buildkite-agent meta-data set "vespa-container-image-${ARCH}-alma${ALMALINUX_MAJOR}" "${VESPA_PREVIEW_CONTAINER_URI}@${IMAGE_SHA256}"
+# TODO: Remove when not used
 buildkite-agent meta-data set "vespa-container-image-${ARCH}-al${ALMALINUX_MAJOR}" "${VESPA_PREVIEW_CONTAINER_URI}@${IMAGE_SHA256}"
 
 echo "--- Publishing system-test container"
@@ -49,4 +51,6 @@ if [ "${IMAGE_SHA256}" = "" ]; then
 fi
 
 echo "Setting Buildkite metadata for system-test container..."
+buildkite-agent meta-data set "vespa-systemtest-container-image-$ARCH-alma${ALMALINUX_MAJOR}" "$SYSTEMTEST_PREVIEW_CONTAINER_URI@$IMAGE_SHA256"
+# TODO: Remove when not used
 buildkite-agent meta-data set "vespa-systemtest-container-image-$ARCH-al${ALMALINUX_MAJOR}" "$SYSTEMTEST_PREVIEW_CONTAINER_URI@$IMAGE_SHA256"
