@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation;
 
-import com.yahoo.data.JsonProducer;
 import com.yahoo.data.disclosure.DataSink;
 import com.yahoo.data.disclosure.DataSource;
 import com.yahoo.searchlib.expression.FloatResultNode;
@@ -72,26 +71,7 @@ public class QuantileAggregationResult extends AggregationResult {
      *
      * @param entries
      */
-    public record QuantileResult(List<Entry> entries) implements JsonProducer, DataSource {
-
-        @Override
-        public StringBuilder writeJson(StringBuilder target) {
-            target.append('[');
-            for (int i = 0; i < entries.size(); i++) {
-                Entry entry = entries.get(i);
-                target.append("{\"quantile\":").append(entry.quantile).append(",\"value\":").append(entry.value).append('}');
-                if (i < entries.size() - 1) {
-                    target.append(',');
-                }
-            }
-            target.append(']');
-            return target;
-        }
-
-        @Override
-        public String toJson() {
-            return JsonProducer.super.toJson();
-        }
+    public record QuantileResult(List<Entry> entries) implements DataSource {
 
         @Override
         public void emit(DataSink sink) {
