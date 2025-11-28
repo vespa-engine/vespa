@@ -185,3 +185,20 @@ priority_merge_out_of_sync_copies int default=120
 ## TODO GC as it has no effect
 use_btree_database bool default=true
 
+##
+## Node hardware info; this is a subset of what's present in `proton.def`, allowing
+## distributor processes to make an informed decision about how to scale internal
+## resource pools and limits. Content nodes already get their HW info directly from
+## Proton, as it owns the content node components.
+## If there is no host flavor associated with the node, these fields will be zero
+## and the node will fall back to default (and/or locally inferred) values.
+##
+
+## The size of the disk partition (in bytes) on which the node's basedir is located.
+hwinfo.disk.size long default = 0 restart
+
+## The size of physical memory (in bytes) available to the distributor.
+hwinfo.memory.size long default = 0 restart
+
+## The number of cores on the cpu.
+hwinfo.cpu.cores int default = 0 restart

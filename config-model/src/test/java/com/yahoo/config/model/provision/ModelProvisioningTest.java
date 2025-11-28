@@ -68,7 +68,7 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed;
 import static com.yahoo.config.provision.NodeResources.StorageType;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.vespa.model.Host.memoryOverheadGb;
-import static com.yahoo.vespa.model.search.NodeResourcesTuning.GiB;
+import static com.yahoo.vespa.model.utils.ResourceUtils.GiB;
 import static com.yahoo.vespa.model.test.utils.ApplicationPackageUtils.generateSchemas;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
