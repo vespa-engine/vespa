@@ -122,10 +122,46 @@ zone = <unset>
 	require.Nil(t, err)
 	assert.Equal(t, "application: t1.a1.default\ninstance: foo\n", string(localConfig))
 
+	// get prints local config when in a sub-directory of the application package
+	subDir := filepath.Join(rootDir, "a", "b")
+	require.Nil(t, os.MkdirAll(subDir, 0755))
+	require.Nil(t, os.Chdir(subDir))
+	assertConfigCommand(t, configHome, "instance = foo\n", "config", "get", "--local", "instance")
+
 	// Changing back to original directory reads from global config
 	require.Nil(t, os.Chdir(wd))
 	assertConfigCommand(t, configHome, "instance = main\n", "config", "get", "instance")
 	assertConfigCommand(t, configHome, "target = cloud\n", "config", "get", "target")
+}
+
+func TestLocalConfigSearch(t *testing.T) {
+	// Create a directory structure: tmpDir/app/.vespa/config.yaml and tmpDir/app/src/main
+	tmpDir := t.TempDir()
+	appDir := filepath.Join(tmpDir, "app")
+	vespaDir := filepath.Join(appDir, ".vespa")
+	srcDir := filepath.Join(appDir, "src", "main")
+	require.Nil(t, os.MkdirAll(vespaDir, 0755))
+	require.Nil(t, os.MkdirAll(srcDir, 0755))
+
+	// Write local config
+	configFile := filepath.Join(vespaDir, "config.yaml")
+	require.Nil(t, os.WriteFile(configFile, []byte("instance: from-parent\n"), 0644))
+
+	// Change to deep subdirectory
+	wd, err := os.Getwd()
+	require.Nil(t, err)
+	t.Cleanup(func() { os.Chdir(wd) })
+	require.Nil(t, os.Chdir(srcDir))
+
+	// Config should be found by walking up
+	configHome := t.TempDir()
+	assertConfigCommand(t, configHome, "instance = from-parent\n", "config", "get", "--local", "instance")
+
+	// Config in sibling directory should not be found
+	siblingDir := filepath.Join(tmpDir, "other")
+	require.Nil(t, os.MkdirAll(siblingDir, 0755))
+	require.Nil(t, os.Chdir(siblingDir))
+	assertConfigCommandStdErr(t, configHome, "Warning: no local configuration present\n", "config", "get", "--local")
 }
 
 func assertConfigCommand(t *testing.T, configHome, expected string, args ...string) {
