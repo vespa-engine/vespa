@@ -2672,8 +2672,8 @@ public class ModelProvisioningTest {
         assertNotNull(cluster);
 
         // Verify inference memory
-        assertTrue(cluster.getInferenceMemory().isPresent());
-        assertEquals(2L * 1024 * 1024 * 1024, cluster.getInferenceMemory().get());
+        assertTrue(cluster.getInferenceMemoryBytes().isPresent());
+        assertEquals(2L * 1024 * 1024 * 1024, cluster.getInferenceMemoryBytes().get());
         
         // Verify memory percentage left for JVM
         var memoryPercentage = cluster.getMemoryPercentage();

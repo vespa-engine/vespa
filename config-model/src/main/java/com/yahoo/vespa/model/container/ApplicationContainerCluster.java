@@ -223,8 +223,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     
     public void setInferenceMemory(long bytes) { this.inferenceMemoryBytes = Optional.of(bytes); }
 
-    public Optional<Long> getInferenceMemory() { return inferenceMemoryBytes; }
-
+    public Optional<Long> getInferenceMemoryBytes() { return inferenceMemoryBytes; }
+    
     @Override
     public Optional<JvmMemoryPercentage> getMemoryPercentage() {
         if (memoryPercentage != null) return Optional.of(JvmMemoryPercentage.of(memoryPercentage));
@@ -237,7 +237,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             double totalMemoryGb = getContainers().stream().mapToDouble(c -> c.getHostResource().realResources().memoryGiB()).min().orElseThrow();
             double totalMemoryMinusOverhead = Math.max(0, totalMemoryGb - Host.memoryOverheadGb);
             // Use configured inference memory if set, otherwise use automatic ONNX model cost estimation
-            double onnxModelCostGb = inferenceMemoryBytes.orElseGet(() -> onnxModelCostCalculator.aggregatedModelCostInBytes()) / (1024D * 1024 * 1024);
+            double onnxModelCostGb = inferenceMemoryBytes.orElseGet(onnxModelCostCalculator::aggregatedModelCostInBytes) / (1024D * 1024 * 1024);
             double availableMemoryGb = Math.max(0, totalMemoryMinusOverhead - onnxModelCostGb);
             int memoryPercentageOfAvailable = (int) (heapSizePercentageOfAvailable * availableMemoryGb / totalMemoryMinusOverhead);
             int memoryPercentageOfTotal = (int) (heapSizePercentageOfAvailable * availableMemoryGb / totalMemoryGb);

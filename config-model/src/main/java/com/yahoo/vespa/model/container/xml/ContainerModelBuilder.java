@@ -119,7 +119,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -228,12 +227,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addClients(deployState, spec, cluster);
         addHttp(deployState, spec, cluster, context);
-
+        
+        addInferenceMemory(spec, cluster); // NOTE: Must be done before addNodes
         addNodes(cluster, spec, context);
 
         addModelEvaluationRuntime(deployState, cluster);
         addModelEvaluation(spec, cluster, context); // NOTE: Must be done after addNodes
-        addInferenceMemory(spec, cluster);
 
         addServerProviders(deployState, spec, cluster);
 
@@ -249,17 +248,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
     
     private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
-        var sidecars = new ArrayList<SidecarSpec>(); 
+        var sidecarSpecs = new ArrayList<SidecarSpec>(); 
         
         var isPublicCloud = deployState.zone().system().isPublicCloudLike();
         var hasOnnxModels =  !cluster.onnxModelCostCalculator().models().isEmpty();
         var useTritonFlagValue = deployState.featureFlags().useTriton();
 
         if (useTritonFlagValue && isPublicCloud && hasOnnxModels) {
-            var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero(); 
-
+            var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
             // Hardcoded values for changes to be reviewed and tested
-            var spec = SidecarSpec.builder()
+            var sidecarSpecBuilder = SidecarSpec.builder()
                     .id(0)
                     .name("triton")
                     .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.09-py3"))
@@ -270,13 +268,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                             "tritonserver",
                             "--log-verbose=1",
                             "--model-repository=/models",
-                            "--model-control-mode=explicit")
-                    ).build();
+                            "--model-control-mode=explicit"));
 
-            sidecars.add(spec);
+            cluster.getInferenceMemoryBytes()
+                    .ifPresent(memoryBytes -> sidecarSpecBuilder.memoryGiB((double) memoryBytes / (1L << 30)));
+
+            var sidecarSpec = sidecarSpecBuilder.build();
+            sidecarSpecs.add(sidecarSpec);
         }
         
-        return sidecars;
+        return sidecarSpecs;
     }
 
     private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {
@@ -943,27 +944,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             } catch (IllegalArgumentException exception) {
                 throw new IllegalArgumentException(
                         "Invalid inference memory value, got: " + inferenceMemoryString, exception);
-            }
-
-            // Validate that inference memory does not exceed node memory
-            if (!cluster.getContainers().isEmpty()) {
-                var nodeMemoryGiB = cluster.getContainers().stream()
-                        .mapToDouble(container -> container.getHostResource().realResources().memoryGiB())
-                        .min()
-                        .orElse(Double.MAX_VALUE);
-
-                if (nodeMemoryGiB > 0) {
-                    long containerMemoryBytes = (long) (nodeMemoryGiB * 1024 * 1024 * 1024);
-
-                    if (inferenceMemoryBytes > containerMemoryBytes) {
-                        throw new IllegalArgumentException(
-                                String.format(
-                                        Locale.US,
-                                        "Inference memory cannot exceed available node memory (%.2f GiB), got: %s",
-                                        nodeMemoryGiB, inferenceMemoryString
-                                ));
-                    }
-                }
             }
 
             cluster.setInferenceMemory(inferenceMemoryBytes);

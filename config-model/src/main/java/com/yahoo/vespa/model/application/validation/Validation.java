@@ -110,6 +110,7 @@ public class Validation {
         new CloudHttpConnectorValidator().validate(execution);
         new UrlConfigValidator().validate(execution);
         new JvmHeapSizeValidator().validate(execution);
+        new InferenceMemoryValidator().validate(execution);
         new InfrastructureDeploymentValidator().validate(execution);
         new EndpointCertificateSecretsValidator().validate(execution);
         new CloudClientsValidator().validate(execution);

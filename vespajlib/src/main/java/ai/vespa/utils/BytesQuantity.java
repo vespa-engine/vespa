@@ -57,6 +57,10 @@ public class BytesQuantity {
     public static BytesQuantity ofGB(long gb) { return BytesQuantity.of(gb, Unit.GB); }
     public static BytesQuantity ofTB(long tb) { return BytesQuantity.of(tb, Unit.TB); }
     public static BytesQuantity of(long value, Unit unit) { return new BytesQuantity(value * unit.binarySize()); }
+    
+    public static double bytesToGB(long bytes) {
+        return (double) bytes / Unit.GB.binarySize();
+    }
 
     private static final Pattern PATTERN = Pattern.compile("^(?<digits>\\d+)\\s*(?<unit>[a-zA-Z]*)$");
     public static BytesQuantity fromString(String value) {

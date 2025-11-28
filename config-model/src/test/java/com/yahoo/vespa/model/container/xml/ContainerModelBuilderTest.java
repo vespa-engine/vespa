@@ -829,7 +829,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "</container>");
         var models = createModel(root, clusterElem);
         var cluster = (ApplicationContainerCluster) models.get(0).getCluster();
-        assertEquals(8L * 1024 * 1024 * 1024, cluster.getInferenceMemory().orElse(0L));
+        assertEquals(8L * 1024 * 1024 * 1024, cluster.getInferenceMemoryBytes().orElse(0L));
     }
 
     @Test
