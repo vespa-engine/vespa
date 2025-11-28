@@ -93,7 +93,43 @@ record JsonGeneratorDataSink(JsonGenerator gen) implements DataSink {
     }
 
     @Override
+    public void intValue(int v) {
+        try {
+            gen.writeNumber(v);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void shortValue(short v) {
+        try {
+            gen.writeNumber(v);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void byteValue(byte v) {
+        try {
+            gen.writeNumber(v);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
     public void doubleValue(double v) {
+        try {
+            gen.writeNumber(v);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void floatValue(float v) {
         try {
             gen.writeNumber(v);
         } catch (IOException e) {
