@@ -14,6 +14,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class SlimeDataSinkTestCase {
 
+    private void assertSlime(Slime expected, Slime actual) {
+        assertTrue(expected.get().equalTo(actual.get()),
+                    () -> "Expected " + SlimeUtils.toJson(expected) +
+                            " but got " + SlimeUtils.toJson(actual));
+    }
+
     @Test
     public void testValuesInObject() {
         var sink = new SlimeDataSink();
@@ -49,9 +55,7 @@ public class SlimeDataSinkTestCase {
         obj.setString("string", "hello");
         obj.setData("data", bytes);
 
-        assertTrue(expected.get().equalTo(sink.getSlime().get()),
-                () -> "Expected " + SlimeUtils.toJson(expected) +
-                        " but got " + SlimeUtils.toJson(sink.getSlime()));
+        assertSlime(expected, sink.getSlime());
     }
 
     @Test
@@ -77,9 +81,7 @@ public class SlimeDataSinkTestCase {
         arr.addString("foo");
         arr.addData(bytes);
 
-        assertTrue(expected.get().equalTo(sink.getSlime().get()),
-                () -> "Expected " + SlimeUtils.toJson(expected) +
-                        " but got " + SlimeUtils.toJson(sink.getSlime()));
+        assertSlime(expected, sink.getSlime());
     }
 
     @Test
@@ -111,9 +113,7 @@ public class SlimeDataSinkTestCase {
         var meta = root.setObject("meta");
         meta.setBool("ok", true);
 
-        assertTrue(expected.get().equalTo(sink.getSlime().get()),
-                () -> "Expected " + SlimeUtils.toJson(expected) +
-                        " but got " + SlimeUtils.toJson(sink.getSlime()));
+        assertSlime(expected, sink.getSlime());
     }
 
     @Test
@@ -142,9 +142,7 @@ public class SlimeDataSinkTestCase {
         var o2 = arr.addObject();
         o2.setLong("id", 2L);
 
-        assertTrue(expected.get().equalTo(sink.getSlime().get()),
-                () -> "Expected " + SlimeUtils.toJson(expected) +
-                        " but got " + SlimeUtils.toJson(sink.getSlime()));
+        assertSlime(expected, sink.getSlime());
     }
 
     @Test
@@ -164,9 +162,7 @@ public class SlimeDataSinkTestCase {
         obj.setLong("utf8_name", 1);
         obj.setLong("utf16_name", 2);
 
-        assertTrue(expected.get().equalTo(sink.getSlime().get()),
-                () -> "Expected " + SlimeUtils.toJson(expected) +
-                        " but got " + SlimeUtils.toJson(sink.getSlime()));
+        assertSlime(expected, sink.getSlime());
     }
 
     @Test
@@ -186,8 +182,37 @@ public class SlimeDataSinkTestCase {
         arr.addLong(30);
         arr.addDouble(1.5f); // floatValue delegates to doubleValue
 
-        assertTrue(expected.get().equalTo(sink.getSlime().get()),
-                () -> "Expected " + SlimeUtils.toJson(expected) +
-                        " but got " + SlimeUtils.toJson(sink.getSlime()));
+        assertSlime(expected, sink.getSlime());
+    }
+
+    @Test
+    public void testLeafValues() {
+        {
+            var sink = new SlimeDataSink();
+            sink.intValue(1);
+            var expected = SlimeUtils.jsonToSlime("1");
+            assertSlime(expected, sink.getSlime());
+        }
+
+        {
+            var sink = new SlimeDataSink();
+            sink.booleanValue(true);
+            var expected = SlimeUtils.jsonToSlime("true");
+            assertSlime(expected, sink.getSlime());
+        }
+
+        {
+            var sink = new SlimeDataSink();
+            sink.doubleValue(3.14);
+            var expected = SlimeUtils.jsonToSlime("3.14");
+            assertSlime(expected, sink.getSlime());
+        }
+
+        {
+            var sink = new SlimeDataSink();
+            sink.stringValue("some_string");
+            var expected = SlimeUtils.jsonToSlime("\"some_string\"");
+            assertSlime(expected, sink.getSlime());
+        }
     }
 }
