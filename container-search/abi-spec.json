@@ -7405,6 +7405,8 @@
       "public void setExplorationSlack(double)",
       "public void setTargetHitsMaxAdjustmentFactor(double)",
       "public void setFilterThreshold(double)",
+      "public java.lang.Integer getElementGapForField(java.lang.String)",
+      "public void setElementGapForField(java.lang.String, java.lang.Object, com.yahoo.search.Query)",
       "public void prepare(com.yahoo.search.query.ranking.RankProperties)",
       "public com.yahoo.search.query.ranking.Matching clone()",
       "public boolean equals(java.lang.Object)",
@@ -7424,6 +7426,7 @@
       "public static final java.lang.String TARGET_HITS_MAX_ADJUSTMENT_FACTOR",
       "public static final java.lang.String FILTER_THRESHOLD",
       "public static final java.lang.String WEAKAND",
+      "public static final java.lang.String ELEMENT_GAP",
       "public java.lang.Double termwiseLimit"
     ]
   },
