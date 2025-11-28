@@ -3,6 +3,7 @@ package com.yahoo.search.rendering;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.yahoo.data.disclosure.DataSink;
+import org.apache.commons.lang3.NotImplementedException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -115,10 +116,6 @@ record JsonGeneratorDataSink(JsonGenerator gen) implements DataSink {
 
     @Override
     public void dataValue(byte[] data) {
-        try {
-            gen.writeBinary(data);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+       throw new NotImplementedException();
     }
 }
