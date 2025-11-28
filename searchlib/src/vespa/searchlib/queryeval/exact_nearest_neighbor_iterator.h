@@ -14,6 +14,7 @@ namespace search::tensor { class DistanceCalculator; }
 
 namespace search::queryeval {
 
+class QueryEvalStats;
 class GlobalFilter;
 
 class ExactNearestNeighborIterator : public SearchIterator
@@ -23,12 +24,14 @@ public:
     using Value = vespalib::eval::Value;
 
     struct Params {
+        std::shared_ptr<QueryEvalStats> stats;
         fef::TermFieldMatchData &tfmd;
         std::unique_ptr<search::tensor::DistanceCalculator> distance_calc;
         NearestNeighborDistanceHeap &distanceHeap;
         const GlobalFilter &filter;
 
-        Params(fef::TermFieldMatchData &tfmd_in,
+        Params(std::shared_ptr<QueryEvalStats> stats,
+               fef::TermFieldMatchData &tfmd_in,
                std::unique_ptr<search::tensor::DistanceCalculator> distance_calc_in,
                NearestNeighborDistanceHeap &distanceHeap_in,
                const GlobalFilter &filter_in);
@@ -41,6 +44,7 @@ public:
     {}
 
     static std::unique_ptr<ExactNearestNeighborIterator> create(
+            std::shared_ptr<QueryEvalStats> stats,
             bool strict,
             fef::TermFieldMatchData &tfmd,
             std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
