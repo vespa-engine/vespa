@@ -35,6 +35,11 @@ func TestConfig(t *testing.T) {
 	assertConfigCommand(t, configHome, "", "config", "set", "target", "https://127.0.0.1")
 	assertConfigCommand(t, configHome, "target = https://127.0.0.1\n", "config", "get", "target")
 	assertConfigCommand(t, configHome, "target = local\n", "config", "get", "-t", "local", "target")
+	// Internal test system targets
+	assertConfigCommand(t, configHome, "", "config", "set", "target", "cd")
+	assertConfigCommand(t, configHome, "target = cd\n", "config", "get", "target")
+	assertConfigCommand(t, configHome, "", "config", "set", "target", "publiccd")
+	assertConfigCommand(t, configHome, "target = publiccd\n", "config", "get", "target")
 
 	// application
 	assertConfigCommandErr(t, configHome, "Error: invalid application: \"foo\"\n", "config", "set", "application", "foo")

@@ -463,7 +463,7 @@ func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
 	switch targetType.name {
 	case vespa.TargetLocal, vespa.TargetCustom:
 		target, err = c.createCustomTarget(targetType.name, targetType.url)
-	case vespa.TargetCloud, vespa.TargetHosted:
+	case vespa.TargetCloud, vespa.TargetHosted, vespa.TargetCD, vespa.TargetPublicCD:
 		target, err = c.createCloudTarget(targetType.name, opts, targetType.url)
 	default:
 		return nil, errHint(fmt.Errorf("invalid target: %s", targetType), "Valid targets are 'local', 'cloud', 'hosted' or an URL")
@@ -497,8 +497,11 @@ func (c *CLI) targetType(targetTypeRestriction int) (targetType, error) {
 			return targetType{}, err
 		}
 	}
-	unsupported := (targetTypeRestriction == cloudTargetOnly && tt.name != vespa.TargetCloud && tt.name != vespa.TargetHosted) ||
-		(targetTypeRestriction == localTargetOnly && tt.name != vespa.TargetLocal && tt.name != vespa.TargetCustom)
+	isCloudTarget := tt.name == vespa.TargetCloud || tt.name == vespa.TargetHosted ||
+		tt.name == vespa.TargetCD || tt.name == vespa.TargetPublicCD
+	isLocalTarget := tt.name == vespa.TargetLocal || tt.name == vespa.TargetCustom
+	unsupported := (targetTypeRestriction == cloudTargetOnly && !isCloudTarget) ||
+		(targetTypeRestriction == localTargetOnly && !isLocalTarget)
 	if unsupported {
 		return targetType{}, errHint(fmt.Errorf("command does not support %s target", tt.name),
 			"to switch target run the following:",
@@ -576,7 +579,7 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions, customURL
 		deploymentTLSOptions vespa.TLSOptions
 	)
 	switch targetType {
-	case vespa.TargetCloud:
+	case vespa.TargetCloud, vespa.TargetPublicCD:
 		// Only setup API authentication if we're using "cloud" target, and not a direct URL
 		if customURL == "" {
 			apiAuth, err = c.cloudApiAuthenticator(deployment, system)
@@ -592,7 +595,7 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions, customURL
 			}
 			deploymentTLSOptions = kp
 		}
-	case vespa.TargetHosted:
+	case vespa.TargetHosted, vespa.TargetCD:
 		kp, err := c.config.readTLSOptions(deployment.Application, targetType)
 		if err != nil {
 			return nil, errHint(err, "Deployment to hosted requires an Athenz certificate", "Try renewing certificate with 'athenz-user-cert'")
@@ -639,6 +642,10 @@ func (c *CLI) system(targetType string) (vespa.System, error) {
 		return vespa.MainSystem, nil
 	case vespa.TargetCloud:
 		return vespa.PublicSystem, nil
+	case vespa.TargetCD:
+		return vespa.CDSystem, nil
+	case vespa.TargetPublicCD:
+		return vespa.PublicCDSystem, nil
 	}
 	return vespa.System{}, fmt.Errorf("no default system found for %s target", targetType)
 }
