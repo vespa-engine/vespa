@@ -11,15 +11,14 @@ import java.util.Objects;
 public class ServiceId {
 
     public final String id;
-    private final String idForPrometheus;
+
     private ServiceId(String id) {
         this.id = id;
-        idForPrometheus = PrometheusUtil.sanitize(id);
     }
 
     public static ServiceId toServiceId(String id) { return new ServiceId(id); }
 
-    public String getIdForPrometheus() { return idForPrometheus; }
+    public String getIdForPrometheus() { return PrometheusUtil.sanitize(id); }
 
     @Override
     public boolean equals(Object o) {
