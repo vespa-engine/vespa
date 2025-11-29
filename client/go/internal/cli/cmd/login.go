@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"runtime"
 	"time"
 
 	"github.com/pkg/browser"
@@ -62,19 +64,18 @@ func doLogin(cli *CLI, cmd *cobra.Command, useFileStorage bool) error {
 
 	log.Printf("Your Device Confirmation code is: %s\n", state.UserCode)
 
-	autoOpen, err := cli.confirm("Automatically open confirmation page in your default browser?", true)
-	if err != nil {
-		return err
-	}
-
+	autoOpen := isBrowserOpenPossible()
 	if autoOpen {
-		log.Printf("Opened link in your browser: %s\n", state.VerificationURI)
+		autoOpen, _ = cli.confirm("Automatically open confirmation page in your default browser?", true)
+	}
+	if autoOpen {
+		log.Printf("Opened link in your browser:\n\t %s\n", state.VerificationURI)
 		err = browser.OpenURL(state.VerificationURI)
 		if err != nil {
 			log.Println("Couldn't open the URL, please do it manually")
 		}
 	} else {
-		log.Printf("Please open link in your browser: %s\n", state.VerificationURI)
+		log.Printf("Please open link in your browser:\n\t %s\n", state.VerificationURI)
 	}
 
 	var res auth.Result
@@ -115,4 +116,22 @@ func doLogin(cli *CLI, cmd *cobra.Command, useFileStorage bool) error {
 
 	cli.printSuccess("Logged in")
 	return nil
+}
+
+func isBrowserOpenPossible() bool {
+	if runtime.GOOS == "windows" {
+		return true
+	}
+	providers := []string{
+		"open",
+		"xdg-open",
+		"x-www-browser",
+		"www-browser",
+	}
+	for _, provider := range providers {
+		if _, err := exec.LookPath(provider); err == nil {
+			return true
+		}
+	}
+	return false
 }
