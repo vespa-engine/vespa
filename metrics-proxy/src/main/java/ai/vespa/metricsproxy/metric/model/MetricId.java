@@ -15,16 +15,15 @@ public class MetricId {
     private static final Map<String, MetricId> dictionary = new CopyOnWriteHashMap<>();
     public static final MetricId empty = toMetricId("");
     public final String id;
-    private final String idForPrometheus;
+
     private MetricId(String id) {
         this.id = id;
-        idForPrometheus = PrometheusUtil.sanitize(id);
     }
 
     public static MetricId toMetricId(String id) {
         return dictionary.computeIfAbsent(id, MetricId::new);
     }
-    public String getIdForPrometheus() { return idForPrometheus; }
+    public String getIdForPrometheus() { return PrometheusUtil.sanitize(id); }
 
     @Override
     public boolean equals(Object o) {
