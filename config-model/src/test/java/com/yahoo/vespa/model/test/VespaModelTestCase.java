@@ -13,6 +13,7 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
@@ -240,7 +241,7 @@ public class VespaModelTestCase {
                 "</services>";
 
         MyLogger logger = new MyLogger();
-        final DeployState.Builder builder = new DeployState.Builder();
+        final DeployState.Builder builder = TestDeployState.createBuilder();
         builder.modelHostProvisioner(new HostsXmlProvisioner(new StringReader(simpleHosts)));
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withHosts(simpleHosts)
@@ -291,9 +292,12 @@ public class VespaModelTestCase {
 
     @Test
     void testMinimalApp() throws IOException, SAXException {
-        VespaModel model = new VespaModel(new MockApplicationPackage.Builder()
-                .withServices("<services version='1.0'><container version='1.0'><search /></container></services>")
-                .build());
+        var deployState = TestDeployState.createBuilder()
+                                         .applicationPackage(new MockApplicationPackage.Builder()
+                                                                     .withServices("<services version='1.0'><container version='1.0'><search /></container></services>")
+                                                                     .build())
+                                         .build();
+        VespaModel model = new VespaModel(deployState);
         assertEquals(1, model.hostSystem().getHosts().size());
         assertEquals(1, model.getContainerClusters().size());
     }
@@ -302,7 +306,7 @@ public class VespaModelTestCase {
     void testThatDeployLogContainsWarningWhenUsingSearchdefinitionsDir() throws IOException, SAXException {
         ApplicationPackage app = FilesApplicationPackage.fromDir(new File("src/test/cfg/application/deprecated_features_app/"), Map.of());
         MyLogger logger = new MyLogger();
-        DeployState deployState = new DeployState.Builder()
+        var deployState = TestDeployState.createBuilder()
                 .applicationPackage(app)
                 .deployLogger(logger)
                 .build();

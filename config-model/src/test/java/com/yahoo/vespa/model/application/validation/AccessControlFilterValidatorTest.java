@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.ModelBuilderAddingAccessControlFilter;
 import com.yahoo.vespa.model.VespaModel;
@@ -57,9 +58,7 @@ public class AccessControlFilterValidatorTest {
     }
 
     private static DeployState createDeployState() {
-        return new DeployState.Builder()
-                .applicationPackage(new MockApplicationPackage.Builder().withServices(SERVICES_XML).build())
-                .build();
+        return TestDeployState.create(new MockApplicationPackage.Builder().withServices(SERVICES_XML).build());
     }
 
 }
