@@ -19,6 +19,9 @@ public:
     virtual ~DocVectorAccess() = default;
     virtual vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const noexcept = 0;
     virtual VectorBundle get_vectors(uint32_t docid) const noexcept = 0;
+
+    virtual void prefetch_docid(uint32_t) const noexcept {}
+    virtual void prefetch_vector(uint32_t) const noexcept {}
 };
 
 }

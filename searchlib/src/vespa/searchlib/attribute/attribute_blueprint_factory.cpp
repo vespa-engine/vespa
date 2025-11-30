@@ -788,6 +788,7 @@ public:
                 .filter_first_upper_limit = hnsw_params.filter_first_threshold.value_or(params.filter_first_upper_limit),
                 .filter_first_exploration = hnsw_params.filter_first_exploration.value_or(params.filter_first_exploration),
                 .exploration_slack = hnsw_params.exploration_slack.value_or(params.exploration_slack),
+                .prefetch_tensors = hnsw_params.prefetch_tensors.value_or(params.prefetch_tensors),
                 .target_hits_max_adjustment_factor = hnsw_params.target_hits_max_adjustment_factor.value_or(params.target_hits_max_adjustment_factor)
             };
             setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field,

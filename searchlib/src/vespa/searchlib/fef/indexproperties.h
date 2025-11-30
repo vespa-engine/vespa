@@ -351,6 +351,22 @@ namespace matching {
     };
 
     /**
+     * Property to control tensors prefetching policy in an HNSW search.
+     *
+     * When enabled, a best-effort attempt would be made to prefetch tensors (via __builtin_prefetch) in an HNSW search
+     * before actually accessing the tensors for distance calculation, which could drastically reduce latencies,
+     * but could also completely trash the memory caches and make things considerably worse.
+     *
+     * Benchmakring the specific setup is recommended before enabling.
+     **/
+    struct TensorsPrefetch {
+        static const std::string NAME;
+        static const bool DEFAULT_VALUE;
+        static bool lookup(const Properties &props);
+        static bool lookup(const Properties &props, bool defaultValue);
+    };
+
+    /**
      * Property to control the auto-adjustment of targetHits in a nearestNeighbor search using HNSW index with post-filtering.
      *
      * The targetHits is auto-adjusted in an effort to expose targetHits hits to first-phase ranking after post-filtering:

@@ -35,6 +35,7 @@ public:
         double filter_first_upper_limit;
         double filter_first_exploration;
         double exploration_slack;
+        bool prefetch_tensors;
         double target_hits_max_adjustment_factor;
     };
 private:

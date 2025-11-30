@@ -540,6 +540,22 @@ ExplorationSlack::lookup(const Properties &props, double defaultValue)
     return lookupDouble(props, NAME, defaultValue);
 }
 
+const std::string TensorsPrefetch::NAME("vespa.matching.nns.prefetch_tensors");
+
+const bool TensorsPrefetch::DEFAULT_VALUE(false);
+
+bool
+TensorsPrefetch::lookup(const Properties &props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+bool
+TensorsPrefetch::lookup(const Properties &props, bool defaultValue)
+{
+    return lookupBool(props, NAME, defaultValue);
+}
+
 const std::string TargetHitsMaxAdjustmentFactor::NAME("vespa.matching.nns.target_hits_max_adjustment_factor");
 
 const double TargetHitsMaxAdjustmentFactor::DEFAULT_VALUE(20.0);

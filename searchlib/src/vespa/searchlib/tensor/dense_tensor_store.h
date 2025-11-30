@@ -90,6 +90,15 @@ public:
         }
         return {getRawBuffer(ref), 1, _subspace_type};
     }
+    void prefetch_vectors(EntryRef ref) const noexcept {
+        const auto cells = get_typed_cells(ref);
+
+        const auto buf = cells.unsafe_typify<char>();
+        for (size_t i = 0; i < buf.size(); i += 64) {
+            __builtin_prefetch(buf.data() + i);
+        }
+    }
+
     const SubspaceType& get_subspace_type() const noexcept { return _subspace_type; }
     // The following methods are meant to be used only for unit tests.
     uint32_t getArraySize() const noexcept { return _bufferType.getArraySize(); }
