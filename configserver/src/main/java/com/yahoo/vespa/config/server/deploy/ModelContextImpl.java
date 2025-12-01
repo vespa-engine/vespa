@@ -193,7 +193,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean sortBlueprintsByCost;
         private final int contentLayerMetadataFeatureLevel;
         private final String unknownConfigDefinition;
-        private final int searchHandlerThreadpool;
         private final boolean logserverOtelCol;
         private final SharedHosts sharedHosts;
         private final Architecture adminClusterArchitecture;
@@ -204,7 +203,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean sendProtobufQuerytree;
         private final boolean forwardAllLogLevels;
         private final long zookeeperPreAllocSize;
-        private final int documentV1QueueSize;
         private final int maxContentNodeMaintenanceOpConcurrency;
         private final int maxDocumentOperationRequestSizeMib;
         private final Sidecars sidecarsForTest;
@@ -240,7 +238,6 @@ public class ModelContextImpl implements ModelContext {
             this.heapPercentage = PermanentFlags.HEAP_SIZE_PERCENTAGE.bindTo(source).with(appId).with(version).value();
             this.contentLayerMetadataFeatureLevel = Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL.bindTo(source).with(appId).with(version).value();
             this.unknownConfigDefinition = PermanentFlags.UNKNOWN_CONFIG_DEFINITION.bindTo(source).with(appId).with(version).value();
-            this.searchHandlerThreadpool = Flags.SEARCH_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
             this.sortBlueprintsByCost = PermanentFlags.SORT_BLUEPRINTS_BY_COST.bindTo(source).with(appId).with(version).value();
             this.logserverOtelCol = Flags.LOGSERVER_OTELCOL_AGENT.bindTo(source).with(appId).with(version).value();
             this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(source).with(appId).with(version).value();
@@ -252,7 +249,6 @@ public class ModelContextImpl implements ModelContext {
             this.sendProtobufQuerytree = Flags.SEND_PROTOBUF_QUERYTREE.bindTo(source).with(appId).with(version).value();
             this.forwardAllLogLevels = PermanentFlags.FORWARD_ALL_LOG_LEVELS.bindTo(source).with(appId).with(version).value();
             this.zookeeperPreAllocSize = Flags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB.bindTo(source).value();
-            this.documentV1QueueSize = Flags.DOCUMENT_V1_QUEUE_SIZE.bindTo(source).with(appId).with(version).value();
             this.maxContentNodeMaintenanceOpConcurrency = Flags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY.bindTo(source).with(appId).with(version).value();
             this.maxDocumentOperationRequestSizeMib = Flags.MAX_DOCUMENT_OPERATION_REQUEST_SIZE_MIB.bindTo(source).with(appId).with(version).value();
             this.sidecarsForTest = Flags.SIDECARS_FOR_TEST.bindTo(source).with(appId).with(version).value();
@@ -289,7 +285,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
         @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
         @Override public String unknownConfigDefinition() { return unknownConfigDefinition; }
-        @Override public int searchHandlerThreadpool() { return searchHandlerThreadpool; }
         @Override public boolean sortBlueprintsByCost() { return sortBlueprintsByCost; }
         @Override public boolean logserverOtelCol() { return logserverOtelCol; }
         @Override public SharedHosts sharedHosts() { return sharedHosts; }
@@ -301,7 +296,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean sendProtobufQuerytree() { return sendProtobufQuerytree; }
         @Override public boolean forwardAllLogLevels() { return forwardAllLogLevels; }
         @Override public long zookeeperPreAllocSize() { return zookeeperPreAllocSize; }
-        @Override public int documentV1QueueSize() { return documentV1QueueSize; }
         @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
         @Override public int maxDocumentOperationRequestSizeMib() { return maxDocumentOperationRequestSizeMib; }
         @Override public Object sidecarsForTest() { return sidecarsForTest; }
