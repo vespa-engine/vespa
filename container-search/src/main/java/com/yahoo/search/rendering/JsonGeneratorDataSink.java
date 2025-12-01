@@ -2,6 +2,7 @@
 package com.yahoo.search.rendering;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.json.UTF8JsonGenerator;
 import com.yahoo.data.disclosure.DataSink;
 
 import java.io.IOException;
@@ -139,10 +140,12 @@ record JsonGeneratorDataSink(JsonGenerator gen) implements DataSink {
     @Override
     public void stringValue(String utf16, byte[] utf8) {
         try {
-            if (utf8 != null) {
-                gen.writeUTF8String(utf8, 0, utf8.length);
-            } else {
+            if (utf16 != null) {
                 gen.writeString(utf16);
+            } else if (gen instanceof UTF8JsonGenerator utf8Gen) {
+                utf8Gen.writeUTF8String(utf8, 0, utf8.length);
+            } else {
+                gen.writeString(new String(utf8, StandardCharsets.UTF_8));
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
