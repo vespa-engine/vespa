@@ -441,11 +441,12 @@ private:
     };
 
     class ElementGapInspector : public search::queryeval::IElementGapInspector {
-        const search::fef::IIndexEnvironment* _index_env;
+        const search::fef::IQueryEnvironment* _query_env;
+        mutable std::vector<std::optional<search::fef::ElementGap>> _cache;
     public:
         ElementGapInspector() noexcept;
         ~ElementGapInspector() override;
-        void set_index_env(const search::fef::IIndexEnvironment& index_env) noexcept { _index_env = &index_env; }
+        void set_query_env(const search::fef::IQueryEnvironment& query_env) noexcept { _query_env = &query_env; }
         search::fef::ElementGap get_element_gap(uint32_t field_id) const noexcept override;
     };
 

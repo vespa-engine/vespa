@@ -11,6 +11,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
+import com.yahoo.search.query.ranking.ElementGap;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.SDDocumentType;

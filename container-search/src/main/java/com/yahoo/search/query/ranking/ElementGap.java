@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.schema;
+package com.yahoo.search.query.ranking;
 
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -15,8 +15,16 @@ public final class ElementGap {
     private ElementGap(Integer gap) { this.gap = gap; }
     public static ElementGap of(int gap) { return new ElementGap(gap); }
     public static ElementGap empty() { return new ElementGap(null); }
+    public static ElementGap from(String value) {
+        if ("infinity".equals(value)) {
+            return empty();
+        } else {
+            return of(Integer.valueOf(value));
+        }
+    }
     public OptionalInt get() { return isFinite() ? OptionalInt.of(gap) : OptionalInt.empty(); }
     public boolean isFinite() { return gap != null; }
+
 
     @Override
     public String toString() { return isFinite() ? String.valueOf(gap) : "infinity"; }

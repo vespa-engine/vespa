@@ -230,6 +230,7 @@ public class QueryProperties extends Properties {
                 } else if (key.get(1).equals(Ranking.ELEMENT_GAP)) {
                     Ranking ranking = query.getRanking();
                     ranking.setElementGapForField(restKey, value);
+                    return;
                 }
             }
         }
