@@ -163,7 +163,11 @@ func (d *Dispatcher) processResults() {
 		retry := d.shouldRetry(op, op.result)
 		d.logResult(op, retry)
 		if retry {
-			d.enqueue(op.resetResult(), true)
+			if err := d.enqueue(op.resetResult(), true); err != nil {
+				// Retry failed (circuit breaker open or dispatcher closed), mark operation as done
+				op.document.Reset()
+				d.inflightWg.Done()
+			}
 		} else {
 			op.document.Reset()
 			d.inflightWg.Done()
