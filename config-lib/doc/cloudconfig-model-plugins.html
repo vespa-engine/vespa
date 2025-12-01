@@ -44,7 +44,7 @@ The config model is built from a set of <em>model plugins</em>
 that are able to produce a java object model based on the application package contents.
 The object model can then serve the appropriate configuration to a component within a service.
 </p>
-<img src="/assets/img/config-assembly.svg" alt="The config server assembles app config" width="810px" height="auto" />
+<img src="hhttps://docs.vespa.ai/assets/img/config-assembly.svg" alt="The config server assembles app config" width="810px" height="auto" />
 
 
 <h3 id="benefits-of-writing-plugins">Benefits of writing plugins</h3>
@@ -147,8 +147,8 @@ The following config is created and stored in
 namespace=echo
 port int
 </pre>
-See <a href="configapi-dev.html">Using the Cloud config API</a>
-and the <a href="../reference/config-files.html">Configuration File Reference</a>
+See <a href="https://docs.vespa.ai/en/applications/configapi-dev.html">Using the Cloud config API</a>
+and the <a href="https://docs.vespa.ai/en/reference/config-files.html">Configuration File Reference</a>
 for more information on config definition files.
 The service will be configured using:
 <pre>{% highlight xml %}
@@ -290,7 +290,7 @@ and can be used to retrieve the config once the producers have been added to the
 Before using it, however, the topology must be frozen by calling
 <code>freezeModelTopology</code>.
 </p><p>
-Use <a href="/en/reference/tools-self-managing.html#vespa-get-config">vespa-get-config</a>
+Use <a href="https://docs.vespa.ai/en/reference/tools-self-managing.html#vespa-get-config">vespa-get-config</a>
 to retrieve in the payload format:
 </p>
 <pre>
@@ -423,7 +423,7 @@ By using the helper classes, there is a minimal amount of extra code,
 but the gain is huge.
 Using CCS, all the echoservers will automatically start when Vespa is run on their respective nodes,
 and they will get their appropriate config id passed as an environment variable.
-See <a href="configapi-dev.html">Using the Cloud config API</a>
+See <a href="https://docs.vespa.ai/en/applications/configapi-dev.html">Using the Cloud config API</a>
 for examples of how the echo server can subscribe and use the config.
 </p><p>
 In addition to host management,
