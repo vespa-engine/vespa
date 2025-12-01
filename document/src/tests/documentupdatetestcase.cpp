@@ -8,7 +8,7 @@
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
@@ -41,7 +41,7 @@
 #include <fstream>
 #include <unistd.h>
 
-using namespace document::config_builder;
+using namespace document::new_config_builder;
 
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
@@ -124,10 +124,11 @@ DocumentUpdateTest::TearDownTestSuite()
 
 TEST_F(DocumentUpdateTest, testSimpleUsage)
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(42, "test",
-                     Struct("test.header").addField("bytef", DataType::T_BYTE).addField("intf", DataType::T_INT),
-                     Struct("test.body").addField("intarr", Array(DataType::T_INT)));
+    NewConfigBuilder builder;
+    auto& test_doc = builder.document("test", 42);
+    test_doc.addField("bytef", builder.byteTypeRef())
+       .addField("intf", builder.intTypeRef())
+       .addField("intarr", test_doc.createArray(builder.intTypeRef()).ref());
     DocumentTypeRepo repo(builder.config());
     const DocumentType* docType(repo.getDocumentType("test"));
     const DataType *arrayType = repo.getDataType(*docType, "Array<Int>");
@@ -414,12 +415,13 @@ struct WeightedSetAutoCreateFixture
     }
 
     static DocumenttypesConfig makeConfig() {
-        DocumenttypesConfigBuilderHelper builder;
+        NewConfigBuilder builder;
         // T_TAG is an alias for a weighted set with create-if-non-existing
         // and remove-if-zero attributes set. Attempting to explicitly create
         // a field matching those characteristics will in fact fail with a
         // redefinition error.
-        builder.document(42, "test", Struct("test.header").addField("strwset", DataType::T_TAG), Struct("test.body"));
+        auto& test_doc = builder.document("test", 42);
+        test_doc.addField("strwset", builder.tagTypeRef());
         return builder.config();
     }
 };
@@ -1183,12 +1185,10 @@ struct TensorUpdateSerializeFixture {
     }
 
     std::unique_ptr<DocumentTypeRepo> makeDocumentTypeRepo() {
-        config_builder::DocumenttypesConfigBuilderHelper builder;
-        builder.document(222, "test",
-                         Struct("test.header")
-                                 .addTensorField("sparse_tensor", "tensor(x{})")
-                                 .addTensorField("dense_tensor", "tensor(x[4])"),
-                         Struct("testdoc.body"));
+        NewConfigBuilder builder;
+        auto& test_doc = builder.document("test", 222);
+        test_doc.addTensorField("sparse_tensor", "tensor(x{})")
+           .addTensorField("dense_tensor", "tensor(x[4])");
         return std::make_unique<DocumentTypeRepo>(builder.config());
     }
 
@@ -1394,10 +1394,9 @@ struct UpdateToEmptyDocumentFixture {
     }
 
     std::unique_ptr<DocumentTypeRepo> make_repo() {
-        config_builder::DocumenttypesConfigBuilderHelper builder;
-        builder.document(222, "test",
-                         Struct("test.header").addField("text", DataType::T_STRING),
-                         Struct("test.body"));
+        NewConfigBuilder builder;
+        auto& test_doc = builder.document("test", 222);
+        test_doc.addField("text", builder.stringTypeRef());
         return std::make_unique<DocumentTypeRepo>(builder.config());
     }
 

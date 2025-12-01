@@ -7,7 +7,6 @@
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config-stor-filestor.h>
 #include <vespa/config-upgrading.h>
-#include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/messagebus/config-messagebus.h>

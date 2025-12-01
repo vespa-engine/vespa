@@ -2,7 +2,7 @@
 
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
@@ -270,10 +270,10 @@ static inline constexpr bool two_attr_schema = true;
 DocBuilder::AddFieldsType
 get_add_fields(bool has_attr2)
 {
-    return [has_attr2](auto& header) {
-               header.addField("attr1", DataType::T_INT);
+    return [has_attr2](auto& builder, auto& header) {
+               header.addField("attr1", builder.intTypeRef());
                if (has_attr2) {
-                   header.addField("attr2", DataType::T_INT);
+                   header.addField("attr2", builder.intTypeRef());
                }
            };
 }

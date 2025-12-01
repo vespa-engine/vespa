@@ -3,7 +3,7 @@
 #include <vespa/searchcorespi/index/fusionrunner.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
@@ -110,7 +110,7 @@ const string field_name = "field_name";
 const string term = "foo";
 const uint32_t disk_id[] = { 1, 2, 21, 42 };
 
-auto add_fields = [](auto& header) { header.addField(field_name, document::DataType::T_STRING); };
+auto add_fields = [](auto& builder, auto& header) { header.addField(field_name, builder.stringTypeRef()); };
 
 Schema
 getSchema()

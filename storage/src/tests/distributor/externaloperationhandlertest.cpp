@@ -70,8 +70,8 @@ struct ExternalOperationHandlerTest : Test, DistributorStripeTestUtil {
     }
 
     void set_up_distributor_for_sequencing_test();
-
     void set_up_distributor_with_feed_blocked_state();
+    void set_up_distributor_with_max_operation_size_limit(uint32_t max_op_bytes);
 
     const std::string _dummy_id{"id:foo:testdoctype1::bar"};
 
@@ -109,6 +109,11 @@ struct ExternalOperationHandlerTest : Test, DistributorStripeTestUtil {
     void do_test_tas_condition_rewrite(std::shared_ptr<api::TestAndSetCommand> cmd);
     template <typename OperationType>
     void do_test_tas_condition_no_rewrite(std::shared_ptr<api::TestAndSetCommand> cmd);
+
+    static documentapi::TestAndSetCondition bucket_lock_bypass_tas_condition(const std::string& token) {
+        return documentapi::TestAndSetCondition(
+                vespalib::make_string("%s=%s", reindexing_bucket_lock_bypass_prefix(), token.c_str()));
+    }
 };
 
 TEST_F(ExternalOperationHandlerTest, bucket_split_mask) {
@@ -383,6 +388,14 @@ void ExternalOperationHandlerTest::set_up_distributor_with_feed_blocked_state() 
                                          {}, {true, "full disk"}, false));
 }
 
+void ExternalOperationHandlerTest::set_up_distributor_with_max_operation_size_limit(uint32_t max_op_bytes) {
+    createLinks();
+    setup_stripe(1, 3, "version:1 distributor:1 storage:3");
+    auto cfg = make_config();
+    cfg->set_max_document_operation_message_size_bytes(max_op_bytes);
+    configure_stripe(cfg);
+}
+
 void ExternalOperationHandlerTest::start_operation_verify_not_rejected(
         std::shared_ptr<api::StorageCommand> cmd,
         Operation::SP& out_generated)
@@ -477,11 +490,7 @@ void ExternalOperationHandlerTest::do_test_second_command_rejected_due_to_oversi
         std::shared_ptr<api::StorageCommand> cmd1,
         std::shared_ptr<api::StorageCommand> cmd2)
 {
-    createLinks();
-    setup_stripe(1, 3, "version:1 distributor:1 storage:3");
-    auto cfg = make_config();
-    cfg->set_max_document_operation_message_size_bytes(1000);
-    configure_stripe(cfg);
+    set_up_distributor_with_max_operation_size_limit(1000);
 
     cmd1->setApproxByteSize(1000); // Just right(tm)
     cmd2->setApproxByteSize(1001); // Too big
@@ -489,7 +498,7 @@ void ExternalOperationHandlerTest::do_test_second_command_rejected_due_to_oversi
     Operation::SP generated;
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(std::move(cmd1), generated));
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(std::move(cmd2)));
-    EXPECT_EQ("ReturnCode(REJECTED, Message size (1001 bytes) exceeds maximum configured limit (1000 bytes) for document id 'id:foo:testdoctype1::bar', "
+    EXPECT_EQ("ReturnCode(REJECTED, Message size (1001 bytes) exceeds maximum configured limit (1000 bytes), "
 	      "see https://docs.vespa.ai/en/reference/services-content.html#max-document-size for how to configure)",
               _sender.reply(0)->getResult().toString());
 }
@@ -504,6 +513,23 @@ TEST_F(ExternalOperationHandlerTest, oversized_update_is_rejected) {
     do_test_second_command_rejected_due_to_oversize(
         makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::foo"),
         makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::bar"));
+}
+
+TEST_F(ExternalOperationHandlerTest, oversized_put_is_not_rejected_if_it_originates_from_reindexing) {
+    set_up_distributor_with_max_operation_size_limit(1000);
+
+    auto put = makePutCommand("testdoctype1", "id:foo:testdoctype1:n=1:foo");
+    put->setApproxByteSize(1001); // above the threshold
+    put->setCondition(bucket_lock_bypass_tas_condition("mellon")); // Signifies reindexing as source
+
+    auto bucket = makeDocumentBucket(document::BucketId(16, 1)); // Must match location in doc ID of put
+    // We need to have an active bucket lock whose entry key matches the token in the Put TaS condition,
+    // or it will be rejected due to a token mismatch as opposed to being rejected due to being oversized.
+    auto bucket_handle = getExternalOperationHandler().operation_sequencer().try_acquire(bucket, "mellon");
+    ASSERT_TRUE(bucket_handle.valid());
+
+    Operation::SP generated;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(std::move(put), generated));
 }
 
 TEST_F(ExternalOperationHandlerTest, operation_destruction_allows_new_mutations_for_id) {
@@ -749,11 +775,6 @@ struct OperationHandlerSequencingTest : ExternalOperationHandlerTest {
     void SetUp() override {
         set_up_distributor_for_sequencing_test();
     }
-
-    static documentapi::TestAndSetCondition bucket_lock_bypass_tas_condition(const std::string& token) {
-        return documentapi::TestAndSetCondition(
-                vespalib::make_string("%s=%s", reindexing_bucket_lock_bypass_prefix(), token.c_str()));
-    }
 };
 
 TEST_F(OperationHandlerSequencingTest, put_not_allowed_through_locked_bucket_if_special_tas_token_not_present) {
@@ -765,8 +786,6 @@ TEST_F(OperationHandlerSequencingTest, put_not_allowed_through_locked_bucket_if_
 }
 
 TEST_F(OperationHandlerSequencingTest, put_allowed_through_locked_bucket_if_special_tas_token_present) {
-    set_up_distributor_for_sequencing_test();
-
     auto put = makePutCommand("testdoctype1", "id:foo:testdoctype1:n=1:bar");
     put->setCondition(bucket_lock_bypass_tas_condition("foo"));
 

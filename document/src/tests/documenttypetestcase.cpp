@@ -2,16 +2,13 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
 #include <gmock/gmock.h>
 
-using document::config_builder::Struct;
-using document::config_builder::Wset;
-using document::config_builder::Array;
-using document::config_builder::Map;
+using document::new_config_builder::NewConfigBuilder;
 using namespace ::testing;
 
 
@@ -87,19 +84,20 @@ TEST(DocumentTypeTest, testHeaderContent)
 
 TEST(DocumentTypeTest, testMultipleInheritance)
 {
-    config_builder::DocumenttypesConfigBuilderHelper builder;
-    builder.document(42, "test1", Struct("test1.header"),
-                     Struct("test1.body")
-                     .addField("stringattr", DataType::T_STRING)
-                     .addField("nalle", DataType::T_INT));
-    builder.document(43, "test2", Struct("test2.header"),
-                     Struct("test2.body")
-                     .addField("stringattr", DataType::T_STRING)
-                     .addField("tmp", DataType::T_STRING)
-                     .addField("tall", DataType::T_INT));
-    builder.document(44, "test3",
-                     Struct("test3.header"), Struct("test3.body"))
-        .inherit(42).inherit(43);
+    NewConfigBuilder builder;
+
+    auto& doc1 = builder.document("test1", 42);
+    doc1.addField("stringattr", builder.stringTypeRef())
+        .addField("nalle", builder.intTypeRef());
+
+    auto& doc2 = builder.document("test2", 43);
+    doc2.addField("stringattr", builder.stringTypeRef())
+        .addField("tmp", builder.stringTypeRef())
+        .addField("tall", builder.intTypeRef());
+
+    auto& doc3 = builder.document("test3", 44);
+    doc3.inherit(doc1.idx()).inherit(doc2.idx());
+
     DocumentTypeRepo repo(builder.config());
     const DocumentType* docType3(repo.getDocumentType("test3"));
 

@@ -13,6 +13,7 @@
 #include "externaloperationhandler.h"
 #include "ideal_state_total_metrics.h"
 #include "idealstatemanager.h"
+#include "memory_usage_token.h"
 #include "min_replica_provider.h"
 #include "pendingmessagetracker.h"
 #include "statusreporterdelegate.h"
@@ -88,6 +89,9 @@ public:
     void start_stripe_pool();
 
     DistributorMetricSet& getMetrics();
+    const DistributorTotalMetrics& total_metrics() const noexcept {
+        return *_total_metrics;
+    }
 
     const NodeIdentity& node_identity() const noexcept { return _node_identity; }
 
@@ -122,16 +126,15 @@ public:
     // Thread safe.
     void notify_stripe_wants_to_send_host_info(uint16_t stripe_index) override;
 
-    class MetricUpdateHook : public framework::MetricUpdateHook
-    {
+    class MetricUpdateHook : public framework::MetricUpdateHook {
     public:
-        MetricUpdateHook(TopLevelDistributor& self)
+        explicit MetricUpdateHook(TopLevelDistributor& self)
             : _self(self)
         {
         }
 
-        void updateMetrics(const MetricLockGuard &) override {
-            _self.propagateInternalScanMetricsToExternal();
+        void updateMetrics(const MetricLockGuard&) override {
+            _self.update_top_level_metrics();
         }
 
     private:
@@ -156,11 +159,11 @@ private:
     DistributorGlobalStats distributor_global_stats() const override;
     ContentNodeMessageStatsTracker::NodeStats content_node_stats() const override;
 
+    void update_top_level_metrics();
     /**
-     * Atomically publish internal metrics to external ideal state metrics.
-     * Takes metric lock.
+     * Aggregates metrics across stripes in a thread-safe manner and updates top-level metrics
      */
-    void propagateInternalScanMetricsToExternal();
+    void propagate_and_aggregate_metrics_from_stripes();
     void enable_next_config_if_changed();
     void fetch_status_requests();
     void handle_status_requests();
@@ -194,6 +197,7 @@ private:
     const NodeIdentity                    _node_identity;
     DistributorComponentRegister&         _comp_reg;
     DoneInitializeHandler&                _done_init_handler;
+    MemoryUsageTracker                    _shared_memory_usage_tracker;
     bool                                  _done_initializing;
     bool                                  _cc_is_distribution_source_of_truth;
     std::shared_ptr<DistributorTotalMetrics> _total_metrics;
@@ -203,11 +207,11 @@ private:
     DistributorStripePool&                _stripe_pool;
     std::vector<std::unique_ptr<DistributorStripe>> _stripes;
     std::unique_ptr<StripeAccessor>      _stripe_accessor;
-    storage::lib::RandomGen              _random_stripe_gen;
+    lib::RandomGen                       _random_stripe_gen;
     std::mutex                           _random_stripe_gen_mutex;
     MessageQueue                         _message_queue; // Queue for top-level ops
     MessageQueue                         _fetched_messages;
-    distributor::DistributorComponent    _component;
+    DistributorComponent                 _component;
     storage::DistributorComponent        _ideal_state_component;
     std::shared_ptr<const DistributorConfiguration> _total_config;
     std::unique_ptr<StatsTrackingSender> _stats_tracking_sender;

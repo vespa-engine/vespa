@@ -3,7 +3,7 @@
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcorespi/index/index_manager_stats.h>
 #include <vespa/searchcorespi/index/indexcollection.h>
@@ -87,7 +87,7 @@ const string index_dir = "test_data";
 const string field_name = "field";
 const uint32_t docid = 1;
 
-auto add_fields = [](auto& header) { header.addField(field_name, document::DataType::T_STRING); };
+auto add_fields = [](auto& builder, auto& header) { header.addField(field_name, builder.stringTypeRef()); };
 
 Schema getSchema(std::optional<bool> interleaved_features) {
     DocBuilder db(add_fields);

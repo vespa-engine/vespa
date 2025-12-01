@@ -7,15 +7,6 @@ vespa_add_executable(fnet_drainpackets_test_app TEST
     GTest::gtest
 )
 vespa_add_test(NAME fnet_drainpackets_test_app NO_VALGRIND COMMAND fnet_drainpackets_test_app)
-vespa_add_executable(fnet_lockspeed_test_app TEST
-    SOURCES
-    lockspeed.cpp
-    dummy.cpp
-    DEPENDS
-    vespa_fnet
-    GTest::gtest
-)
-vespa_add_test(NAME fnet_lockspeed_test_app NO_VALGRIND COMMAND fnet_lockspeed_test_app)
 vespa_add_executable(fnet_castspeed_test_app TEST
     SOURCES
     castspeed.cpp

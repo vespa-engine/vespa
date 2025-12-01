@@ -263,7 +263,7 @@ void GarbageCollectionOperation::merge_received_bucket_info_into_db() {
     }
     if (!_replica_info.empty()) {
         // TODO avoid two separate DB ops for this. Current API currently does not make this elegant.
-        _manager->operation_context().update_bucket_database(getBucket(), _replica_info);
+        _manager->operation_context().update_bucket_database(getBucket(), _replica_info, 0);
         update_last_gc_timestamp_in_db();
     } // else: effectively fully cancelled, no touching the DB.
 }

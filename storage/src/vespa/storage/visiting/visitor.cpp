@@ -4,6 +4,9 @@
 #include "visitormetrics.h"
 #include <vespa/document/select/node.h>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
+#include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/storageapi/message/datagram.h>
@@ -12,6 +15,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <format>
 #include <unordered_map>
 #include <sstream>
 #include <cassert>
@@ -574,6 +578,16 @@ Visitor::remap_docapi_message_error_code(api::ReturnCode& in_out_code) {
     return in_out_code.isCriticalForVisitor();
 }
 
+namespace {
+
+std::string
+make_doc_id_suffix(const document::DocumentId& id)
+{
+    return std::format(" [document id was '{}']", id.toString());
+}
+
+}
+
 void
 Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& metrics)
 {
@@ -615,8 +629,15 @@ Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& met
                                reply->getError(0).getMessage());
     const bool should_fail = remap_docapi_message_error_code(returnCode);
     if (should_fail) {
+        std::string error_message = reply->getError(0).getMessage();
+        if (const auto* put = dynamic_cast<const documentapi::PutDocumentMessage*>(message.get())) {
+            error_message += make_doc_id_suffix(put->getDocument().getId());
+        } else if (const auto* remove = dynamic_cast<const documentapi::RemoveDocumentMessage*>(message.get())) {
+            error_message += make_doc_id_suffix(remove->getDocumentId());
+        }
+
         // Abort - something is wrong with target.
-        fail(returnCode, true);
+        fail(api::ReturnCode(returnCode.getResult(), error_message), true);
         close();
         return;
     }

@@ -45,8 +45,12 @@ import com.yahoo.vespa.model.routing.DocumentProtocol;
 import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
+import com.yahoo.vespa.model.utils.ResourceUtils;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
+
+import static com.yahoo.vespa.model.utils.ResourceUtils.GiB;
+import static com.yahoo.vespa.model.utils.ResourceUtils.GB;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1725,6 +1729,35 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(2, inferSearchNodeInitializerThreadsFromFlag(null)); // Default is number of doc types
         assertEquals(2, inferSearchNodeInitializerThreadsFromFlag(0)); // Default is number of doc types
         assertEquals(8, inferSearchNodeInitializerThreadsFromFlag(8));
+    }
+
+    private static void assertResourceSettingsPropagated(StorDistributormanagerConfig.Hwinfo hw, NodeResources expected) {
+        assertEquals((long)Math.ceil(expected.vcpu()), hw.cpu().cores()); // rounded up
+        assertEquals((long)(ResourceUtils.usableMemoryGb(expected.memoryGiB()) * GiB), hw.memory().size());
+        assertEquals((long)(expected.diskGb() * GB), hw.disk().size());
+    }
+
+    @Test
+    void present_node_resources_are_propagate_to_distributor_config() throws Exception {
+        var resources = new NodeResources(9.5/*vCPU*/, 16/*mem*/, 300/*disk*/, 100/*bandwidth*/);
+        var flavor = new Flavor("chocolate_and_pistachio", resources);
+        var cc = createOneNodeCluster(new TestProperties(), Optional.of(flavor));
+
+        var builder = new StorDistributormanagerConfig.Builder();
+        cc.getDistributorNodes().getConfig(builder);
+        cc.getDistributorNodes().getChildren().get("0").getConfig(builder);
+        assertResourceSettingsPropagated(builder.build().hwinfo(), resources);
+    }
+
+    @Test
+    void non_present_node_resources_emit_default_values_in_distributor_config() throws Exception {
+        var emptyResources = new NodeResources(0/*vCPU*/, 0/*mem*/, 0/*disk*/, 0/*bandwidth*/);
+        var cc = createOneNodeCluster(new TestProperties(), Optional.empty());
+
+        var builder = new StorDistributormanagerConfig.Builder();
+        cc.getDistributorNodes().getConfig(builder);
+        cc.getDistributorNodes().getChildren().get("0").getConfig(builder);
+        assertResourceSettingsPropagated(builder.build().hwinfo(), emptyResources);
     }
 
     private String servicesWithGroups(int groupCount, double minGroupUpRatio) {

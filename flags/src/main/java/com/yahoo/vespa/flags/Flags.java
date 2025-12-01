@@ -51,92 +51,92 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
-            List.of("hakonhall"), "2025-03-19", "2025-12-01",
+            List.of("hakonhall"), "2025-03-19", "2026-01-10",
             "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
     public static final UnboundBooleanFlag NEW_ADDRESS_ALLOCATION = defineFeatureFlag(
             "new-address-allocation", false,
-            List.of("hakonhall"), "2025-10-06", "2025-12-06",
+            List.of("hakonhall"), "2025-10-06", "2026-01-06",
             "Whether to use new address allocation during provisioning",
             "Takes effect on next host being provisioned",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag MULTI_IP = defineFeatureFlag(
             "multi-ip", false,
-            List.of("hakonhall"), "2025-10-10", "2025-12-10",
+            List.of("hakonhall"), "2025-10-10", "2026-01-10",
             "Whether to allow storing >1 IP address for any given IP version",
             "Takes effect on next host being provisioned",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag LOCKED_GCP_PROVISION = defineFeatureFlag(
             "locked-gcp-provision", true,
-            List.of("hakonhall"), "2025-08-05", "2025-12-05",
+            List.of("hakonhall"), "2025-08-05", "2026-01-15",
             "Whether to provision GCP hosts under the application- and unallocated- locks, even though it takes ~1m.",
             "Takes effect on next host being provisioned");
 
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
-            List.of("hmusum"), "2020-12-02", "2025-12-01",
+            List.of("hmusum"), "2020-12-02", "2026-01-10",
             "Selects type of sequenced executor used for mbus responses, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag RESPONSE_NUM_THREADS = defineIntFlag(
             "response-num-threads", 2,
-            List.of("hmusum"), "2020-12-02", "2025-12-01",
+            List.of("hmusum"), "2020-12-02", "2026-01-10",
             "Number of threads used for mbus responses, default is 2, negative number = numcores/4",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", true,
-            List.of("hmusum"), "2020-12-02", "2025-12-01",
+            List.of("hmusum"), "2020-12-02", "2026-01-10",
             "Optionally deliver async messages in own thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag MBUS_JAVA_NUM_TARGETS = defineIntFlag(
             "mbus-java-num-targets", 2,
-            List.of("hmusum"), "2022-07-05", "2025-12-01",
+            List.of("hmusum"), "2022-07-05", "2026-01-10",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_NUM_TARGETS = defineIntFlag(
             "mbus-cpp-num-targets", 2,
-            List.of("hmusum"), "2022-07-05", "2025-12-01",
+            List.of("hmusum"), "2022-07-05", "2026-01-10",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag RPC_NUM_TARGETS = defineIntFlag(
             "rpc-num-targets", 2,
-            List.of("hmusum"), "2022-07-05", "2025-12-01",
+            List.of("hmusum"), "2022-07-05", "2026-01-10",
             "Number of rpc targets per content node",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_JAVA_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-java-events-before-wakeup", 1,
-            List.of("hmusum"), "2022-07-05", "2025-12-01",
+            List.of("hmusum"), "2022-07-05", "2026-01-10",
             "Number of write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-cpp-events-before-wakeup", 1,
-            List.of("hmusum"), "2022-07-05", "2025-12-01",
+            List.of("hmusum"), "2022-07-05", "2026-01-10",
             "Number of write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag RPC_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "rpc-events-before-wakeup", 1,
-            List.of("hmusum"), "2022-07-05", "2025-12-01",
+            List.of("hmusum"), "2022-07-05", "2026-01-10",
             "Number of write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag MBUS_NUM_NETWORK_THREADS = defineIntFlag(
             "mbus-num-network-threads", 1,
-            List.of("hmusum"), "2022-07-01", "2025-12-01",
+            List.of("hmusum"), "2022-07-01", "2026-01-10",
             "Number of threads used for mbus network",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -180,26 +180,26 @@ public class Flags {
 
     public static final UnboundListFlag<String> ZONAL_WEIGHTED_ENDPOINT_RECORDS = defineListFlag(
             "zonal-weighted-endpoint-records", List.of(), String.class,
-            List.of("hmusum"), "2023-12-15", "2025-12-01",
+            List.of("hmusum"), "2023-12-15", "2026-01-10",
             "A list of weighted (application) endpoint fqdns for which we should use zonal endpoints as targets, not LBs.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
             "weighted-endpoint-record-ttl", List.of(), String.class,
-            List.of("hmusum"), "2023-05-16", "2025-12-01",
+            List.of("hmusum"), "2023-05-16", "2026-01-10",
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2025-12-01",
+            List.of("hmusum"), "2023-07-19", "2026-01-10",
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2025-12-01",
+            List.of("hmusum"), "2023-07-19", "2026-01-10",
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
@@ -296,7 +296,7 @@ public class Flags {
 
     public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE_KIB = defineLongFlag(
             "zookeeper-pre-alloc-size", 65536,
-            List.of("hmusum"), "2024-11-11", "2025-12-01",
+            List.of("hmusum"), "2024-11-11", "2026-01-10",
             "Setting for zookeeper.preAllocSize flag in KiB, can be reduced from default value "
             + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
             "Takes effect on restart of Docker container");
@@ -400,7 +400,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NEW_PREPARE_FOR_RESTART_METHOD = defineFeatureFlag(
             "use-new-prepare-for-restart-method", true,
-            List.of("hmusum"), "2025-06-17", "2025-12-01",
+            List.of("hmusum"), "2025-06-17", "2026-01-10",
             "Whether to use new logic and new RPC method to do prepareForRestart for content nodes",
             "Takes effect at next tick",
             HOSTNAME
@@ -408,14 +408,14 @@ public class Flags {
 
     public static final UnboundIntFlag SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS = defineIntFlag(
             "search-core-max-outstanding-move-ops", 100,
-            List.of("hmusum"), "2025-07-09", "2025-12-01",
+            List.of("hmusum"), "2025-07-09", "2026-01-10",
             "The max outstanding move operations a maintenance job can have before being blocked.",
             "Takes effect at next deployment of the application",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_VESPA_NODE_CTL = defineFeatureFlag(
             "use-vespa-node-ctl", true,
-            List.of("hmusum"), "2025-08-12", "2025-12-01",
+            List.of("hmusum"), "2025-08-12", "2026-01-10",
             "Whether to use vespa-node-ctl to start, stop, restart, suspend and resume services " +
             "or do this directly from host-admin.",
             "Takes effect at next tick",
@@ -429,15 +429,6 @@ public class Flags {
                     "Valid values: 'vespamalloc', 'mimalloc', '' (empty string, meaning default malloc implementation).",
             "Takes effect at next reboot of the node",
             TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
-    );
-
-    public static final UnboundBooleanFlag ADD_HEAP_DUMP_SUMMARY_TO_PANIC_TICKETS = defineFeatureFlag(
-            "add-heap-dump-summary-to-panic-tickets", true,
-            List.of("hmusum"), "2025-11-04", "2026-02-04",
-            "Whether to include heap dump summary generated from hprof-slurp for Java heap dumps " +
-                    "in Jira panic tickets",
-            "Takes effect at next host-admin tick",
-            APPLICATION, INSTANCE_ID, HOSTNAME
     );
 
     public static final UnboundBooleanFlag ADJUST_JVM_HEAP_FOR_CC_BASED_ON_CONTENT_NODE_COUNT = defineFeatureFlag(

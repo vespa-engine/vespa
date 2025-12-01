@@ -222,6 +222,7 @@ public enum DistributorMetrics implements VespaMetrics {
     VDS_DISTRIBUTOR_UPDATE_PUTS_FAILURES_WRONGDISTRIBUTOR("vds.distributor.update_puts.failures.wrongdistributor", Unit.OPERATION, "The number of operations discarded because they were sent to the wrong distributor"),
     VDS_DISTRIBUTOR_UPDATE_PUTS_LATENCY("vds.distributor.update_puts.latency", Unit.MILLISECOND, "The average latency of update_puts operations"),
     VDS_DISTRIBUTOR_UPDATE_PUTS_OK("vds.distributor.update_puts.ok", Unit.OPERATION, "The number of successful update_puts operations performed"),
+    VDS_DISTRIBUTOR_MUTATING_OP_MEMORY_USAGE("vds.distributor.mutating_op_memory_usage", Unit.BYTE, "Estimated amount of memory used by active mutating operations across all distributor stripes, in bytes"),
 
     VDS_IDEALSTATE_NODES_PER_MERGE("vds.idealstate.nodes_per_merge", Unit.NODE, "The number of nodes involved in a single merge operation."),
     VDS_IDEALSTATE_SET_BUCKET_STATE_BLOCKED("vds.idealstate.set_bucket_state.blocked", Unit.OPERATION, "The number of operations blocked by blocking operation starter"),

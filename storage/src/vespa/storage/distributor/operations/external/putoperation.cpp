@@ -36,7 +36,8 @@ PutOperation::PutOperation(const DistributorNodeContext& node_ctx,
       _node_ctx(node_ctx),
       _op_ctx(op_ctx),
       _condition_probe_metrics(condition_probe_metrics),
-      _bucket_space(bucket_space)
+      _bucket_space(bucket_space),
+      _memory_usage_token(op_ctx.make_memory_usage_token(_msg->getApproxByteSize()))
 {
 }
 

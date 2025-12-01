@@ -8,11 +8,31 @@
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
 
+namespace {
+uint32_t
+crappyJavaStringHash(std::string_view value) {
+    uint32_t h = 0;
+    for (uint32_t i = 0; i < value.size(); ++i) {
+        h = 31 * h + value[i];
+    }
+    return h;
+}
+
+std::string refTypeName(const std::string& targetDocType) {
+    return make_string("Reference<%s>", targetDocType.c_str());
+}
+
+}
+
 namespace document {
 
+int32_t ReferenceDataType::makeInternalId(const std::string& targetDocType) {
+    return crappyJavaStringHash(refTypeName(targetDocType));
+}
+
 ReferenceDataType::ReferenceDataType(const DocumentType& targetDocType, int id)
-    : DataType(make_string("Reference<%s>", targetDocType.getName().c_str()), id),
-      _targetDocType(targetDocType)
+  : DataType(refTypeName(targetDocType.getName()), id),
+    _targetDocType(targetDocType)
 {
 }
 

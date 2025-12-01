@@ -257,4 +257,9 @@ DistributorStripeComponent::remove_node_from_bucket_database(const document::Buc
     remove_nodes_from_bucket_database(bucket, toVector<uint16_t>(node_index));
 }
 
+MemoryUsageToken
+DistributorStripeComponent::make_memory_usage_token(uint32_t bytes_used) noexcept {
+    return _distributor.make_memory_usage_token(bytes_used);
+}
+
 }

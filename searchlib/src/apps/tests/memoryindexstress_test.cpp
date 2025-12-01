@@ -17,7 +17,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/vespalib/util/rand48.h>
@@ -62,8 +62,6 @@ const std::string body("body");
 const std::string foo("foo");
 const std::string bar("bar");
 const std::string doc_type_name = "test";
-const std::string header_name = doc_type_name + ".header";
-const std::string body_name = doc_type_name + ".body";
 uint32_t docid_limit = 100; // needed for relative estimates
 
 Schema
@@ -79,13 +77,10 @@ document::config::DocumenttypesConfig
 makeDocTypeRepoConfig()
 {
     const int32_t doc_type_id = 787121340;
-    document::config_builder::DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id,
-                     doc_type_name,
-                     document::config_builder::Struct(header_name),
-                     document::config_builder::Struct(body_name).
-                     addField(title, document::DataType::T_STRING).
-                     addField(body, document::DataType::T_STRING));
+    document::new_config_builder::NewConfigBuilder builder;
+    auto& doc = builder.document(doc_type_name, doc_type_id);
+    doc.addField(title, builder.stringTypeRef())
+       .addField(body, builder.stringTypeRef());
     return builder.config();
 }
 

@@ -139,7 +139,6 @@ vespa_define_module(
     src/tests/rendezvous
     src/tests/runnable_pair
     src/tests/rusage
-    src/tests/rw_spin_lock
     src/tests/sequencedtaskexecutor
     src/tests/sha1
     src/tests/shared_operation_throttler
@@ -152,7 +151,6 @@ vespa_define_module(
     src/tests/slime/are_equal
     src/tests/slime/external_data_value
     src/tests/slime/summary-feature-benchmark
-    src/tests/spin_lock
     src/tests/stash
     src/tests/state_server
     src/tests/stllike

@@ -21,7 +21,7 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -37,9 +37,7 @@ using document::GlobalId;
 using document::StringFieldValue;
 using document::AssignValueUpdate;
 using document::FieldUpdate;
-using document::config_builder::DocumenttypesConfigBuilderHelper;
-using document::config_builder::Struct;
-using document::config_builder::Map;
+using document::new_config_builder::NewConfigBuilder;
 using search::DocumentIdT;
 using namespace proton;
 
@@ -54,8 +52,6 @@ struct MyStreamHandler : NewConfigOperation::IStreamHandler {
 
 const int32_t doc_type_id = 787121340;
 const std::string type_name = "test";
-const std::string header_name = type_name + ".header";
-const std::string body_name = type_name + ".body";
 
 const DocumentOperation::Timestamp TS_10(10);
 
@@ -105,14 +101,20 @@ void assertDocumentOperation(DocumentOperation &op, BucketId expBucket, uint32_t
 std::unique_ptr<const DocumentTypeRepo>
 makeDocTypeRepo()
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name),
-                     Struct(body_name)
-                     .addField("string", DataType::T_STRING)
-                     .addField("struct",
-                               Struct("pair").addField("x", DataType::T_STRING).addField("y", DataType::T_STRING))
-                     .addField("map", Map(DataType::T_STRING, DataType::T_STRING)));
+    NewConfigBuilder builder;
+    auto& doc = builder.document(type_name, doc_type_id);
+
+    auto pair_struct = doc.createStruct("pair")
+           .addField("x", builder.stringTypeRef())
+           .addField("y", builder.stringTypeRef()).ref();
+
+    auto string_string_map = doc.createMap(builder.stringTypeRef(),
+                                           builder.stringTypeRef()).ref();
+
+    doc.addField("string", builder.stringTypeRef())
+       .addField("struct", pair_struct)
+       .addField("map", string_string_map);
+
     return std::make_unique<const DocumentTypeRepo>(builder.config());
 }
 

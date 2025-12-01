@@ -7,7 +7,10 @@ namespace storage::distributor {
 DistributorTotalMetrics::DistributorTotalMetrics(uint32_t num_distributor_stripes)
     : DistributorMetricSet(),
       _stripes_metrics(),
-      _bucket_db_updater_metrics()
+      _bucket_db_updater_metrics(),
+      _mutatating_op_memory_usage("mutating_op_memory_usage", {},
+             "Estimated amount of memory used by active mutating operations "
+             "across all distributor stripes, in bytes", this)
 {
     _stripes_metrics.reserve(num_distributor_stripes);
     for (uint32_t i = 0; i < num_distributor_stripes; ++i) {

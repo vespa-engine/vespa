@@ -48,8 +48,7 @@ class UpdateMetricSet;
 */
 
 
-class TwoPhaseUpdateOperation : public SequencedOperation
-{
+class TwoPhaseUpdateOperation : public SequencedOperation {
 public:
     TwoPhaseUpdateOperation(const DistributorNodeContext& node_ctx,
                             DistributorStripeOperationContext& op_ctx,
@@ -110,7 +109,8 @@ private:
     void schedulePutsWithUpdatedDocument(
             std::shared_ptr<document::Document>,
             api::Timestamp,
-            DistributorStripeMessageSender&);
+            DistributorStripeMessageSender&,
+            uint32_t approx_byte_size);
     void applyUpdateToDocument(document::Document&) const;
     [[nodiscard]] std::shared_ptr<document::Document> createBlankDocument() const;
     void setUpdatedForTimestamp(api::Timestamp);
@@ -118,7 +118,7 @@ private:
                                const std::shared_ptr<api::StorageReply>&);
     void handleSafePathReceive(DistributorStripeMessageSender&,
                                const std::shared_ptr<api::StorageReply>&);
-    std::shared_ptr<GetOperation> create_initial_safe_path_get_operation();
+    [[nodiscard]] std::shared_ptr<GetOperation> create_initial_safe_path_get_operation();
     void handle_safe_path_received_metadata_get(DistributorStripeMessageSender&,
                                                 api::GetReply&,
                                                 const std::optional<NewestReplica>&,
@@ -127,7 +127,7 @@ private:
     void handleSafePathReceivedGet(DistributorStripeMessageSender&, api::GetReply&);
     void handleSafePathReceivedPut(DistributorStripeMessageSender&, const api::PutReply&);
     [[nodiscard]] bool shouldCreateIfNonExistent() const;
-    bool processAndMatchTasCondition(
+    [[nodiscard]] bool processAndMatchTasCondition(
             DistributorStripeMessageSender& sender,
             const document::Document& candidateDoc,
             uint64_t persisted_timestamp);
@@ -136,7 +136,7 @@ private:
     [[nodiscard]] bool hasTasCondition() const noexcept;
     void replyWithTasFailure(DistributorStripeMessageSender& sender,
                              std::string_view message);
-    bool may_restart_with_fast_path(const api::GetReply& reply);
+    [[nodiscard]] bool may_restart_with_fast_path(const api::GetReply& reply);
     [[nodiscard]] bool replica_set_unchanged_after_get_operation() const;
     void restart_with_fast_path_due_to_consistent_get_timestamps(DistributorStripeMessageSender& sender);
     // Precondition: reply has not yet been sent.
@@ -151,6 +151,7 @@ private:
     PersistenceOperationMetricSet&      _metadata_get_metrics;
     std::shared_ptr<api::UpdateCommand> _updateCmd;
     std::shared_ptr<api::UpdateReply>   _updateReply;
+    MemoryUsageToken                    _memory_usage_token;
     const DistributorNodeContext&       _node_ctx;
     DistributorStripeOperationContext&  _op_ctx;
     const DocumentSelectionParser&      _parser;

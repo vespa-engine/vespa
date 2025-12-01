@@ -11,13 +11,19 @@ instance_group [
   }
 ]
 parameters {
-  key: "enable_mem_area"
+  key: "enable_mem_arena"
   value {
     string_value: "0"
   }
 }
 parameters {
   key: "enable_mem_pattern"
+  value {
+    string_value: "0"
+  }
+}
+parameters {
+  key: "execution_mode"
   value {
     string_value: "0"
   }

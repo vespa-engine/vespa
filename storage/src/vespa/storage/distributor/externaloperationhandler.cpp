@@ -316,19 +316,28 @@ bool ExternalOperationHandler::message_size_is_above_put_or_update_limit(uint32_
     return (msg_size > _op_ctx.distributor_config().max_document_operation_message_size_bytes());
 }
 
-void ExternalOperationHandler::reject_as_oversized_message(api::StorageCommand& cmd, const std::string& raw_document_id) {
+void ExternalOperationHandler::reject_as_oversized_message(api::StorageCommand& cmd) {
     const uint32_t limit = _op_ctx.distributor_config().max_document_operation_message_size_bytes();
-    std::string msg = vespalib::make_string("Message size (%u bytes) exceeds maximum configured limit (%u bytes) for document id '%s', "
+    std::string msg = vespalib::make_string("Message size (%u bytes) exceeds maximum configured limit (%u bytes), "
                                             "see https://docs.vespa.ai/en/reference/services-content.html#max-document-size for how to configure",
-                                            cmd.getApproxByteSize(), limit, raw_document_id.c_str());
+                                            cmd.getApproxByteSize(), limit);
     // TODO increment a metric
     bounce_with_result(cmd, api::ReturnCode(api::ReturnCode::REJECTED, std::move(msg)));
 }
 
 bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd) {
+    const bool is_from_reindexing = put_is_from_reindexing_visitor(*cmd);
     if (message_size_is_above_put_or_update_limit(cmd->getApproxByteSize())) [[unlikely]] {
-        reject_as_oversized_message(*cmd, cmd->getDocumentId().toString());
-        return true;
+        if (!is_from_reindexing) {
+            reject_as_oversized_message(*cmd);
+            return true;
+        }
+        // We let reindexing puts through since they're sent by the content nodes and not a
+        // regular external client, and the document was already part of the cluster corpus.
+        const uint32_t limit = _op_ctx.distributor_config().max_document_operation_message_size_bytes();
+        LOG(warning, "Accepted an oversized reindexing Put for document '%s' "
+                     "(put was %u bytes, configured limit is %u)",
+            cmd->getDocumentId().toString().c_str(), cmd->getApproxByteSize(), limit);
     }
     if (_op_ctx.cluster_state_bundle().block_feed_in_cluster()) [[unlikely]] {
         bounce_with_feed_blocked(*cmd); // TODO also metric?
@@ -348,7 +357,7 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
     const auto bucket_space = cmd->getBucket().getBucketSpace();
     auto handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
     bool allow = allowMutation(handle);
-    if (put_is_from_reindexing_visitor(*cmd)) {
+    if (is_from_reindexing) {
         auto expect_token = extract_reindexing_token(*cmd);
         if (!allow && handle.is_blocked_by_bucket()) {
             if (handle.is_bucket_blocked_with_token(expect_token)) {
@@ -382,7 +391,7 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
 
 bool ExternalOperationHandler::onUpdate(const std::shared_ptr<api::UpdateCommand>& cmd) {
     if (message_size_is_above_put_or_update_limit(cmd->getApproxByteSize())) [[unlikely]] {
-        reject_as_oversized_message(*cmd, cmd->getDocumentId().toString());
+        reject_as_oversized_message(*cmd);
         return true;
     }
     if (_op_ctx.cluster_state_bundle().block_feed_in_cluster() &&

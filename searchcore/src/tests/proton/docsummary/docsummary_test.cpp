@@ -54,7 +54,7 @@
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/eval/eval/simple_value.h>
@@ -437,21 +437,21 @@ bool assertSlime(const std::string &exp, const DocsumReply &reply) {
 TEST(DocSummaryTest, requireThatAdapterHandlesAllFieldTypes)
 {
     Fixture f;
-    BuildContext bc([](auto& header)
+    BuildContext bc([](auto& builder, auto& header)
                     {
                         header
-                            .addField("a", DataType::T_BYTE)
-                            .addField("b", DataType::T_SHORT)
-                            .addField("c", DataType::T_INT)
-                            .addField("d", DataType::T_LONG)
-                            .addField("e", DataType::T_FLOAT)
-                            .addField("f", DataType::T_DOUBLE)
-                            .addField("g", DataType::T_STRING)
-                            .addField("h", DataType::T_STRING)
-                            .addField("i", DataType::T_RAW)
-                            .addField("j", DataType::T_RAW)
-                            .addField("k", DataType::T_STRING)
-                            .addField("l", DataType::T_STRING);
+                            .addField("a", builder.byteTypeRef())
+                            .addField("b", builder.shortTypeRef())
+                            .addField("c", builder.intTypeRef())
+                            .addField("d", builder.longTypeRef())
+                            .addField("e", builder.floatTypeRef())
+                            .addField("f", builder.doubleTypeRef())
+                            .addField("g", builder.stringTypeRef())
+                            .addField("h", builder.stringTypeRef())
+                            .addField("i", builder.rawTypeRef())
+                            .addField("j", builder.rawTypeRef())
+                            .addField("k", builder.stringTypeRef())
+                            .addField("l", builder.stringTypeRef());
                     });
 
     auto doc = bc.make_document("id:ns:searchdocument::0");
@@ -488,7 +488,7 @@ TEST(DocSummaryTest, requireThatAdapterHandlesAllFieldTypes)
 TEST(DocSummaryTest, requireThatAdapterHandlesMultipleDocuments)
 {
     Fixture f;
-    BuildContext bc([](auto& header) { header.addField("a", DataType::T_INT); });
+    BuildContext bc([](auto& builder, auto& header) { header.addField("a", builder.intTypeRef()); });
     auto doc = bc.make_document("id:ns:searchdocument::0");
     doc->setValue("a", IntFieldValue(1000));
     bc.put_document(0, std::move(doc));
@@ -521,7 +521,7 @@ TEST(DocSummaryTest, requireThatAdapterHandlesMultipleDocuments)
 TEST(DocSummaryTest, requireThatAdapterHandlesDocumentIdField)
 {
     Fixture f;
-    BuildContext bc([](auto&) noexcept {});
+    BuildContext bc([](auto&, auto&) noexcept {});
     auto doc = bc.make_document("id:ns:searchdocument::0");
     bc.put_document(0, std::move(doc));
     DocumentStoreAdapter dsa(bc._str, bc.get_repo());
@@ -540,7 +540,7 @@ GlobalId gid9 = DocumentId("id:ns:searchdocument::9").getGlobalId(); // not exis
 
 TEST(DocSummaryTest, requireThatDocsumRequestIsProcessed)
 {
-    BuildContext bc([](auto& header) { header.addField("a", DataType::T_INT); });
+    BuildContext bc([](auto& builder, auto& header) { header.addField("a", builder.intTypeRef()); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto doc = bc.make_document("id:ns:searchdocument::1");
     doc->setValue("a", IntFieldValue(10));
@@ -569,9 +569,9 @@ TEST(DocSummaryTest, requireThatDocsumRequestIsProcessed)
 
 TEST(DocSummaryTest, requireThatRewritersAreUsed)
 {
-    BuildContext bc([](auto& header)
-                    { header.addField("aa", DataType::T_INT)
-                            .addField("ab", DataType::T_INT); });
+    BuildContext bc([](auto& builder, auto& header)
+                    { header.addField("aa", builder.intTypeRef())
+                            .addField("ab", builder.intTypeRef()); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto doc = bc.make_document("id:ns:searchdocument::1");
     doc->setValue("aa", IntFieldValue(10));
@@ -587,9 +587,9 @@ TEST(DocSummaryTest, requireThatRewritersAreUsed)
 
 TEST(DocSummaryTest, requireThatSummariesTimeout)
 {
-    BuildContext bc([](auto& header)
-                    { header.addField("aa", DataType::T_INT)
-                            .addField("ab", DataType::T_INT); });
+    BuildContext bc([](auto& builder, auto& header)
+                    { header.addField("aa", builder.intTypeRef())
+                            .addField("ab", builder.intTypeRef()); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto doc = bc.make_document("id:ns:searchdocument::1");
     doc->setValue("aa", IntFieldValue(10));
@@ -611,9 +611,9 @@ TEST(DocSummaryTest, requireThatSummariesTimeout)
 }
 
 void verifyFieldListHonoured(DocsumRequest::FieldList fields, const std::string & json) {
-    BuildContext bc([](auto& header)
-                    { header.addField("ba", DataType::T_INT)
-                            .addField("bb", DataType::T_FLOAT); });
+    BuildContext bc([](auto& builder, auto& header)
+                    { header.addField("ba", builder.intTypeRef())
+                            .addField("bb", builder.floatTypeRef()); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto doc = bc.make_document("id:ns:searchdocument::1");
     doc->setValue("ba", IntFieldValue(10));
@@ -639,17 +639,23 @@ TEST(DocSummaryTest, requireThatFieldListIsHonoured)
 
 TEST(DocSummaryTest, requireThatAttributesAreUsed)
 {
-    BuildContext bc([](auto& header)
-                    { using namespace document::config_builder;
-                        header.addField("ba", DataType::T_INT)
-                            .addField("bb", DataType::T_FLOAT)
-                            .addField("bc", DataType::T_STRING)
-                            .addField("bd", Array(DataType::T_INT))
-                            .addField("be", Array(DataType::T_FLOAT))
-                            .addField("bf", Array(DataType::T_STRING))
-                            .addField("bg", Wset(DataType::T_INT))
-                            .addField("bh", Wset(DataType::T_FLOAT))
-                            .addField("bi", Wset(DataType::T_STRING))
+    BuildContext bc([](auto& builder, auto& header)
+                    { using namespace document::new_config_builder;
+                        auto int_array = header.createArray(builder.intTypeRef()).ref();
+                        auto float_array = header.createArray(builder.floatTypeRef()).ref();
+                        auto string_array = header.createArray(builder.stringTypeRef()).ref();
+                        auto int_wset = header.createWset(builder.intTypeRef()).ref();
+                        auto float_wset = header.createWset(builder.floatTypeRef()).ref();
+                        auto string_wset = header.createWset(builder.stringTypeRef()).ref();
+                        header.addField("ba", builder.intTypeRef())
+                            .addField("bb", builder.floatTypeRef())
+                            .addField("bc", builder.stringTypeRef())
+                            .addField("bd", int_array)
+                            .addField("be", float_array)
+                            .addField("bf", string_array)
+                            .addField("bg", int_wset)
+                            .addField("bh", float_wset)
+                            .addField("bi", string_wset)
                             .addTensorField("bj", "tensor(x{},y{})"); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto doc = bc.make_document("id:ns:searchdocument::1");
@@ -745,7 +751,7 @@ TEST(DocSummaryTest, requireThatAttributesAreUsed)
 
 TEST(DocSummaryTest, requireThatSummaryAdapterHandlesPutAndRemove)
 {
-    BuildContext bc([](auto& header) { header.addField("f1", DataType::T_STRING); });
+    BuildContext bc([](auto& builder, auto& header) { header.addField("f1", builder.stringTypeRef()); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto exp = bc.make_document("id:ns:searchdocument::1");
     exp->setValue("f1", StringFieldValue("foo"));
@@ -768,9 +774,9 @@ const std::string TERM_EMPTY;
 TEST(DocSummaryTest, requireThatAnnotationsAreUsed)
 {
     Fixture f;
-    BuildContext bc([](auto& header)
-                    { header.addField("g", DataType::T_STRING)
-                            .addField("dynamicstring", DataType::T_STRING); });
+    BuildContext bc([](auto& builder, auto& header)
+                    { header.addField("g", builder.stringTypeRef())
+                            .addField("dynamicstring", builder.stringTypeRef()); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto exp = bc.make_document("id:ns:searchdocument::0");
     exp->setValue("g", bc.make_annotated_string());
@@ -796,11 +802,13 @@ TEST(DocSummaryTest, requireThatAnnotationsAreUsed)
 TEST(DocSummaryTest, requireThatUrisAreUsed)
 {
     Fixture f;
-    BuildContext bc([](auto& header)
-                    { using namespace document::config_builder;
-                        header.addField("urisingle", DataType::T_URI)
-                            .addField("uriarray", Array(DataType::T_URI))
-                            .addField("uriwset", Wset(DataType::T_URI)); });
+    BuildContext bc([](auto& builder, auto& header)
+                    { using namespace document::new_config_builder;
+                        auto uri_array = header.createArray(builder.uriTypeRef()).ref();
+                        auto uri_wset = header.createWset(builder.uriTypeRef()).ref();
+                        header.addField("urisingle", builder.uriTypeRef())
+                            .addField("uriarray", uri_array)
+                            .addField("uriwset", uri_wset); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto exp = bc.make_document("id:ns:searchdocument::0");
     exp->setValue("urisingle", StringFieldValue("http://www.example.com:81/fluke?ab=2#4"));
@@ -852,11 +860,13 @@ TEST(DocSummaryTest, requireThatUrisAreUsed)
 
 TEST(DocSummaryTest, requireThatPositionsAreUsed)
 {
-    BuildContext bc([](auto& header)
-                    { using namespace document::config_builder;
-                        header.addField("sp2", DataType::T_LONG)
-                            .addField("ap2", Array(DataType::T_LONG))
-                            .addField("wp2", Wset(DataType::T_LONG)); });
+    BuildContext bc([](auto& builder, auto& header)
+                    { using namespace document::new_config_builder;
+                        auto long_array = header.createArray(builder.longTypeRef()).ref();
+                        auto long_wset = header.createWset(builder.longTypeRef()).ref();
+                        header.addField("sp2", builder.longTypeRef())
+                            .addField("ap2", long_array)
+                            .addField("wp2", long_wset); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto exp = bc.make_document("id:ns:searchdocument::1");
     exp->setValue("sp2", LongFieldValue(ZCurve::encode(1002, 1003)));
@@ -894,11 +904,13 @@ TEST(DocSummaryTest, requireThatPositionsAreUsed)
 TEST(DocSummaryTest, requireThatRawFieldsWorks)
 {
     Fixture f;
-    BuildContext bc([](auto& header)
-                    { using namespace document::config_builder;
-                        header.addField("i", DataType::T_RAW)
-                            .addField("araw", Array(DataType::T_RAW))
-                            .addField("wraw", Wset(DataType::T_RAW)); });
+    BuildContext bc([](auto& builder, auto& header)
+                    { using namespace document::new_config_builder;
+                        auto raw_array = header.createArray(builder.rawTypeRef()).ref();
+                        auto raw_wset = header.createWset(builder.rawTypeRef()).ref();
+                        header.addField("i", builder.rawTypeRef())
+                            .addField("araw", raw_array)
+                            .addField("wraw", raw_wset); });
     std::vector<char> binaryBlob;
     binaryBlob.push_back('\0');
     binaryBlob.push_back('\2');

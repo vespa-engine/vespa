@@ -64,7 +64,7 @@
         <apache.httpclient5.vespa.version>5.3.1</apache.httpclient5.vespa.version>
         <apache.httpcore5.vespa.version>5.2.5</apache.httpcore5.vespa.version>
         <apiguardian.vespa.version>1.1.2</apiguardian.vespa.version>
-        <asm.vespa.version>9.8</asm.vespa.version>
+        <asm.vespa.version>9.9</asm.vespa.version>
         <assertj.vespa.version>3.26.3</assertj.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
@@ -115,7 +115,7 @@
         <java-jwt.vespa.version>4.4.0</java-jwt.vespa.version>
         <javax.annotation.vespa.version>1.2</javax.annotation.vespa.version>
         <jaxb.runtime.vespa.version>4.0.5</jaxb.runtime.vespa.version>
-        <jetty.vespa.version>12.0.29</jetty.vespa.version>
+        <jetty.vespa.version>12.0.30</jetty.vespa.version>
         <jetty.client.vespa.version>12.0.22</jetty.client.vespa.version>
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
         <jieba.vespa.version>1.0.2</jieba.vespa.version>

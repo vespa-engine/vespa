@@ -33,8 +33,8 @@ public:
     ~PutOperation() override;
 
     void onStart(DistributorStripeMessageSender& sender) override;
-    const char* getName() const noexcept override { return "put"; };
-    std::string getStatus() const override { return ""; };
+    const char* getName() const noexcept override { return "put"; }
+    std::string getStatus() const override { return ""; }
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>&) override;
     void onClose(DistributorStripeMessageSender& sender) override;
 
@@ -50,6 +50,7 @@ private:
     PersistenceOperationMetricSet&     _condition_probe_metrics;
     DistributorBucketSpace&            _bucket_space;
     std::shared_ptr<CheckCondition>    _check_condition;
+    MemoryUsageToken                   _memory_usage_token;
 
     void start_direct_put_dispatch(DistributorStripeMessageSender& sender);
     void start_conditional_put(DistributorStripeMessageSender& sender);

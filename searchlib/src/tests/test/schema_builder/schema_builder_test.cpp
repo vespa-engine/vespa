@@ -2,8 +2,8 @@
 
 #include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/document/datatype/datatype.h>
-#include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -14,23 +14,27 @@ using search::test::SchemaBuilder;
 
 namespace {
 
-auto add_all_fields = [](auto& header)
-                      { using namespace document::config_builder;
+auto add_all_fields = [](auto& builder, auto& doc) noexcept
+                      { using namespace document::new_config_builder;
                           using document::DataType;
-                          header.addField("int8", DataType::T_BYTE)
-                              .addField("int16", DataType::T_SHORT)
-                              .addField("int32", DataType::T_INT)
-                              .addField("int64", DataType::T_LONG)
-                              .addField("bool", DataType::T_BOOL)
-                              .addField("float", DataType::T_FLOAT)
-                              .addField("double", DataType::T_DOUBLE)
-                              .addField("string", DataType::T_STRING)
-                              .addField("url",  DataType::T_URI)
+                          auto int_array = doc.createArray(builder.intTypeRef()).ref();
+                          auto int_wset = doc.createWset(builder.intTypeRef()).ref();
+                          auto uri_array = doc.createArray(builder.uriTypeRef()).ref();
+                          auto uri_wset = doc.createWset(builder.uriTypeRef()).ref();
+                          doc.addField("int8", builder.byteTypeRef())
+                              .addField("int16", builder.shortTypeRef())
+                              .addField("int32", builder.intTypeRef())
+                              .addField("int64", builder.longTypeRef())
+                              .addField("bool", builder.boolTypeRef())
+                              .addField("float", builder.floatTypeRef())
+                              .addField("double", builder.doubleTypeRef())
+                              .addField("string", builder.stringTypeRef())
+                              .addField("url", builder.uriTypeRef())
                               .addTensorField("tensor", "tensor(x{},y{})")
-                              .addField("int32_array", Array(DataType::T_INT))
-                              .addField("int32_wset", Wset(DataType::T_INT))
-                              .addField("url_array", Array(DataType::T_URI))
-                              .addField("url_wset", Wset(DataType::T_URI));
+                              .addField("int32_array", int_array)
+                              .addField("int32_wset", int_wset)
+                              .addField("url_array", uri_array)
+                              .addField("url_wset", uri_wset);
                       };
 
 }

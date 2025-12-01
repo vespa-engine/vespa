@@ -4,7 +4,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/select/parser.h>
@@ -19,11 +19,7 @@ using document::DataType;
 using document::Document;
 using document::DocumentType;
 using document::DocumentTypeRepo;
-using document::config_builder::Array;
-using document::config_builder::DocumenttypesConfigBuilderHelper;
-using document::config_builder::Map;
-using document::config_builder::Struct;
-using document::config_builder::Wset;
+using document::new_config_builder::NewConfigBuilder;
 using document::select::CloningVisitor;
 using document::select::Node;
 using document::select::Result;
@@ -41,11 +37,7 @@ namespace {
 
 const int32_t doc_type_id = 787121340;
 const string type_name = "test";
-const string header_name = type_name + ".header";
-const string body_name = type_name + ".body";
 const string type_name_2 = "test_2";
-const string header_name_2 = type_name_2 + ".header";
-const string body_name_2 = type_name_2 + ".body";
 const string false_name("false");
 const string true_name("true");
 const string valid_name("test.aa > 3999");
@@ -59,31 +51,44 @@ const string empty("");
 std::unique_ptr<const DocumentTypeRepo>
 makeDocTypeRepo()
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name), Struct(body_name).
-                     addField("ia", DataType::T_STRING).
-                     addField("ib", DataType::T_STRING).
-                     addField("ibs", Struct("pair").
-                              addField("x", DataType::T_STRING).
-                              addField("y", DataType::T_STRING)).
-                     addField("iba", Array(DataType::T_STRING)).
-                     addField("ibw", Wset(DataType::T_STRING)).
-                     addField("ibm", Map(DataType::T_STRING,
-                                         DataType::T_STRING)).
-                     addField("aa", DataType::T_INT).
-                     addField("aaa", Array(DataType::T_INT)).
-                     addField("aaw", Wset(DataType::T_INT)).
-                     addField("ab", DataType::T_INT).
-                     addField("ae", DataType::T_INT)).
-                     imported_field("my_imported_field").
-                     imported_field("my_missing_imported_field");
-    builder.document(doc_type_id + 1, type_name_2,
-                     Struct(header_name_2), Struct(body_name_2).
-                     addField("ic", DataType::T_STRING).
-                     addField("id", DataType::T_STRING).
-                     addField("ac", DataType::T_INT).
-                     addField("ad", DataType::T_INT));
+    NewConfigBuilder builder;
+    auto& doc = builder.document(type_name, doc_type_id);
+
+    // Create nested struct
+    auto pair_struct = doc.createStruct("pair")
+           .addField("x", builder.stringTypeRef())
+           .addField("y", builder.stringTypeRef()).ref();
+
+    // Create collection types
+    auto string_array = doc.createArray(builder.stringTypeRef()).ref();
+    auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
+    auto string_string_map = doc.createMap(builder.stringTypeRef(),
+                                           builder.stringTypeRef()).ref();
+    auto int_array = doc.createArray(builder.intTypeRef()).ref();
+    auto int_wset = doc.createWset(builder.intTypeRef()).ref();
+
+    // Add fields
+    doc.addField("ia", builder.stringTypeRef())
+       .addField("ib", builder.stringTypeRef())
+       .addField("ibs", pair_struct)
+       .addField("iba", string_array)
+       .addField("ibw", string_wset)
+       .addField("ibm", string_string_map)
+       .addField("aa", builder.intTypeRef())
+       .addField("aaa", int_array)
+       .addField("aaw", int_wset)
+       .addField("ab", builder.intTypeRef())
+       .addField("ae", builder.intTypeRef())
+       .imported_field("my_imported_field")
+       .imported_field("my_missing_imported_field");
+
+    // Create second document type
+    auto& doc2 = builder.document(type_name_2, doc_type_id + 1);
+    doc2.addField("ic", builder.stringTypeRef())
+        .addField("id", builder.stringTypeRef())
+        .addField("ac", builder.intTypeRef())
+        .addField("ad", builder.intTypeRef());
+
     return std::unique_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(builder.config()));
 }
 

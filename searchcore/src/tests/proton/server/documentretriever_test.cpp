@@ -35,7 +35,7 @@
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldset/fieldsets.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/fieldvalue_helpers.h>
 #include <vespa/vespalib/geo/zcurve.h>
@@ -98,7 +98,7 @@ using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using vespalib::eval::Value;
 using proton::documentmetastore::IStore;
-using namespace document::config_builder;
+using namespace document::new_config_builder;
 using namespace search::index;
 
 using namespace proton;
@@ -162,7 +162,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
     }
 
     ~MyDocumentStore() override;
-    
+
     Document::UP read(DocumentIdT lid, const DocumentTypeRepo &r) const override {
         if (lid == 0) {
             return Document::UP();
@@ -194,7 +194,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
 
         return doc;
     }
-    
+
     uint64_t
     initFlush(uint64_t syncToken) override
     {
@@ -207,33 +207,42 @@ MyDocumentStore::~MyDocumentStore() = default;
 DocumenttypesConfig getRepoConfig() {
     const int32_t doc_type_id = 787121340;
 
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, doc_type_name,
-                     Struct(doc_type_name + ".header"),
-                     Struct(doc_type_name + ".body")
-                     .addField(static_field, document::DataType::T_INT)
-                     .addField(dyn_field_i, document::DataType::T_INT)
-                     .addField(dyn_field_d, document::DataType::T_DOUBLE)
-                     .addField(dyn_field_s, document::DataType::T_STRING)
-                     .addField(dyn_field_n, document::DataType::T_FLOAT)
-                     .addField(dyn_field_nai, document::DataType::T_INT)
-                     .addField(dyn_field_nas, document::DataType::T_STRING)
-                     .addField(dyn_field_p, document::DataType::T_PREDICATE)
-                     .addField(dyn_arr_field_i, Array(document::DataType::T_INT))
-                     .addField(dyn_arr_field_d, Array(document::DataType::T_DOUBLE))
-                     .addField(dyn_arr_field_s, Array(document::DataType::T_STRING))
-                     .addField(dyn_arr_field_n, Array(document::DataType::T_FLOAT))
-                     .addField(dyn_wset_field_i, Wset(document::DataType::T_INT))
-                     .addField(dyn_wset_field_d, Wset(document::DataType::T_DOUBLE))
-                     .addField(dyn_wset_field_s, Wset(document::DataType::T_STRING))
-                     .addField(dyn_wset_field_n, Wset(document::DataType::T_FLOAT))
-                     .addField(position_field, PositionDataType::getInstance().getId())
-                     .addField(dyn_field_raw, document::DataType::T_RAW)
+    NewConfigBuilder builder;
+    auto& doc = builder.document(doc_type_name, doc_type_id);
 
-                     .addTensorField(dyn_field_tensor, tensor_spec)
-                     .addField(zcurve_field, document::DataType::T_LONG)
-                     .addField(position_array_field, Array(PositionDataType::getInstance().getId()))
-                     .addField(zcurve_array_field, Array(document::DataType::T_LONG)));
+    auto int_array = doc.createArray(builder.primitiveType(document::DataType::T_INT)).ref();
+    auto double_array = doc.createArray(builder.primitiveType(document::DataType::T_DOUBLE)).ref();
+    auto string_array = doc.createArray(builder.stringTypeRef()).ref();
+    auto float_array = doc.createArray(builder.primitiveType(document::DataType::T_FLOAT)).ref();
+    auto int_wset = doc.createWset(builder.primitiveType(document::DataType::T_INT)).ref();
+    auto double_wset = doc.createWset(builder.primitiveType(document::DataType::T_DOUBLE)).ref();
+    auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
+    auto float_wset = doc.createWset(builder.primitiveType(document::DataType::T_FLOAT)).ref();
+    auto position_array = doc.createArray(builder.positionType()).ref();
+    auto long_array = doc.createArray(builder.primitiveType(document::DataType::T_LONG)).ref();
+
+    doc.addField(static_field, builder.primitiveType(document::DataType::T_INT))
+       .addField(dyn_field_i, builder.primitiveType(document::DataType::T_INT))
+       .addField(dyn_field_d, builder.primitiveType(document::DataType::T_DOUBLE))
+       .addField(dyn_field_s, builder.stringTypeRef())
+       .addField(dyn_field_n, builder.primitiveType(document::DataType::T_FLOAT))
+       .addField(dyn_field_nai, builder.primitiveType(document::DataType::T_INT))
+       .addField(dyn_field_nas, builder.stringTypeRef())
+       .addField(dyn_field_p, builder.primitiveType(document::DataType::T_PREDICATE))
+       .addField(dyn_arr_field_i, int_array)
+       .addField(dyn_arr_field_d, double_array)
+       .addField(dyn_arr_field_s, string_array)
+       .addField(dyn_arr_field_n, float_array)
+       .addField(dyn_wset_field_i, int_wset)
+       .addField(dyn_wset_field_d, double_wset)
+       .addField(dyn_wset_field_s, string_wset)
+       .addField(dyn_wset_field_n, float_wset)
+       .addField(position_field, builder.positionType())
+       .addField(dyn_field_raw, builder.primitiveType(document::DataType::T_RAW))
+       .addTensorField(dyn_field_tensor, tensor_spec)
+       .addField(zcurve_field, builder.primitiveType(document::DataType::T_LONG))
+       .addField(position_array_field, position_array)
+       .addField(zcurve_array_field, long_array);
      return builder.config();
 }
 

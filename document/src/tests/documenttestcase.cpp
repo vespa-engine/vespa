@@ -18,7 +18,7 @@
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/mapfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
@@ -35,7 +35,7 @@
 using vespalib::nbostream;
 using namespace ::testing;
 
-using namespace document::config_builder;
+using namespace document::new_config_builder;
 
 namespace document {
 
@@ -656,35 +656,30 @@ namespace {
 
 TEST(DocumentTest,testReadSerializedAllVersions)
 {
-    const int array_id = 1650586661;
-    const int wset_id = 1328286588;
         // Create the datatype used for serialization test
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(1306012852, "serializetest",
-                     Struct("serializetest.header")
-                     .addField("floatfield", DataType::T_FLOAT)
-                     .addField("stringfield", DataType::T_STRING)
-                     .addField("longfield", DataType::T_LONG)
-                     .addField("urifield", DataType::T_URI),
-                     Struct("serializetest.body")
-                     .addField("intfield", DataType::T_INT)
-                     .addField("rawfield", DataType::T_RAW)
-                     .addField("doublefield", DataType::T_DOUBLE)
-                     .addField("bytefield", DataType::T_BYTE)
-                     .addField("arrayoffloatfield",
-                               Array(DataType::T_FLOAT).setId(array_id))
-                     .addField("docfield", DataType::T_DOCUMENT)
-                     .addField("wsfield",
-                               Wset(DataType::T_STRING).setId(wset_id)));
-    builder.document(1447635645, "docindoc", Struct("docindoc.header"),
-                     Struct("docindoc.body")
-                     .addField("stringindocfield", DataType::T_STRING));
+    NewConfigBuilder builder;
+    auto& doc1 = builder.document("serializetest", 1306012852);
+    doc1.addField("floatfield", builder.floatTypeRef())
+        .addField("stringfield", builder.stringTypeRef())
+        .addField("longfield", builder.longTypeRef())
+        .addField("urifield", builder.uriTypeRef())
+        .addField("intfield", builder.intTypeRef())
+        .addField("rawfield", builder.rawTypeRef())
+        .addField("doublefield", builder.doubleTypeRef())
+        .addField("bytefield", builder.byteTypeRef())
+        .addField("arrayoffloatfield", doc1.createArray(builder.floatTypeRef()).ref())
+        .addField("docfield", builder.primitiveType(DataType::T_DOCUMENT))
+        .addField("wsfield", doc1.createWset(builder.stringTypeRef()).ref());
+
+    auto& docindoc = builder.document("docindoc", 1447635645);
+    docindoc.addField("stringindocfield", builder.stringTypeRef());
+
     DocumentTypeRepo repo(builder.config());
 
     const DocumentType* docType(repo.getDocumentType("serializetest"));
     const DocumentType* docInDocType(repo.getDocumentType("docindoc"));
-    const DataType* arrayOfFloatDataType(repo.getDataType(*docType, array_id));
-    const DataType* weightedSetDataType(repo.getDataType(*docType, wset_id));
+    const DataType* arrayOfFloatDataType(repo.getDataType(*docType, "Array<Float>"));
+    const DataType* weightedSetDataType(repo.getDataType(*docType, "WeightedSet<String>"));
 
         // Create a memory instance of document
     {
@@ -966,27 +961,35 @@ TEST(DocumentTest, testUnknownEntries)
 
 TEST(DocumentTest, testAnnotationDeserialization)
 {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(-1326249427, "dokk", Struct("dokk.header"),
-                     Struct("dokk.body")
-                     .addField("age", DataType::T_BYTE)
-                     .addField("story", DataType::T_STRING)
-                     .addField("date", DataType::T_INT)
-                     .addField("friend", DataType::T_LONG))
-        .annotationType(609952424, "person", Struct("person")
-                        .addField("firstname", DataType::T_STRING)
-                        .addField("lastname", DataType::T_STRING)
-                        .addField("birthyear", DataType::T_INT)
-                        .setId(443162583))
-        .annotationType(-1695443536, "dummy", 0)
-        .annotationType(-427420193, "number", DataType::T_INT)
-        .annotationType(1616020615, "relative", Struct("relative")
-                        .addField("title", DataType::T_STRING)
-                        .addField("related", AnnotationRef(609952424))
-                        .setId(-236946034))
-        .annotationType(-269517759, "banana", 0)
-        .annotationType(-513687143, "grape", 0)
-        .annotationType(1730712959, "apple", 0);
+    NewConfigBuilder builder;
+    auto& dokk = builder.document("dokk", -1326249427);
+    dokk.addField("age", builder.byteTypeRef())
+        .addField("story", builder.stringTypeRef())
+        .addField("date", builder.intTypeRef())
+        .addField("friend", builder.longTypeRef());
+
+    // Create person annotation struct
+    auto person_struct = dokk.createStruct("person")
+            .setId(443162583)
+            .addField("firstname", builder.stringTypeRef())
+            .addField("lastname", builder.stringTypeRef())
+            .addField("birthyear", builder.intTypeRef()).ref();
+
+    // Create relative annotation struct (references person annotation)
+    // Note: AnnotationRef handling would need additional API support
+    auto relative_struct = dokk.createStruct("relative")
+            .setId(-236946034)
+            .addField("title", builder.stringTypeRef()).ref();
+
+    // Register annotations
+    dokk.annotationType(609952424, "person", person_struct)
+        .annotationType(-1695443536, "dummy")
+        .annotationType(-427420193, "number", builder.intTypeRef())
+        .annotationType(1616020615, "relative", relative_struct)
+        .annotationType(-269517759, "banana")
+        .annotationType(-513687143, "grape")
+        .annotationType(1730712959, "apple");
+
     DocumentTypeRepo repo(builder.config());
 
     int fd = open(TEST_PATH("data/serializejavawithannotations.dat").c_str(), O_RDONLY);

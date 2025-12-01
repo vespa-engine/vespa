@@ -3,7 +3,7 @@
 
 #include "runnable.h"
 #include "executor.h"
-#include "spin_lock.h"
+#include <mutex>
 #include <vespa/vespalib/util/time.h>
 #include <array>
 #include <map>
@@ -116,7 +116,7 @@ public:
     struct Test;
 
 private:
-    using Guard = std::lock_guard<SpinLock>;
+    using Guard = std::lock_guard<std::mutex>;
 
     // Used when multiple threads call the 'sample' function at the
     // same time. One thread will sample while the others will wait
@@ -140,7 +140,7 @@ private:
 
     class ThreadTrackerImpl : public ThreadTracker {
     private:
-        SpinLock                     _lock;
+        std::mutex                   _lock;
         Category                     _cat;
         duration                     _old_usage;
         cpu_usage::ThreadSampler::UP _sampler;
@@ -153,7 +153,7 @@ private:
         Sample sample() noexcept override;
     };
 
-    SpinLock                                   _lock;
+    std::mutex                                 _lock;
     Sample                                     _usage;
     std::map<ThreadTracker*,ThreadTracker::SP> _threads;
     bool                                       _sampling;

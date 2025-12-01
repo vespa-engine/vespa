@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * A component which keeps track of whether or not this container instance should receive traffic
+ * A component which keeps track of whether this container instance should receive traffic
  * and respond that it is in good health.
  *
  * This is multithread safe.

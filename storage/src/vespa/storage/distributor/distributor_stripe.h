@@ -70,6 +70,7 @@ public:
                       const NodeIdentity& node_identity,
                       ChainedMessageSender& messageSender,
                       StripeHostInfoNotifier& stripe_host_info_notifier,
+                      MemoryUsageTracker& shared_memory_usage_tracker,
                       const bool& done_initializing_ref,
                       uint32_t stripe_index = 0);
 
@@ -312,6 +313,7 @@ private:
     void report_bucket_db_status(document::BucketSpace bucket_space, std::ostream& out) const override;
     void report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const override;
     void report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const override;
+    MemoryUsageToken make_memory_usage_token(uint32_t bytes_used) noexcept override;
 
     lib::ClusterStateBundle _clusterStateBundle;
     std::unique_ptr<DistributorBucketSpaceRepo> _bucketSpaceRepo;
@@ -319,7 +321,7 @@ private:
     // during cluster state transitions. Bucket set does not overlap that of _bucketSpaceRepo
     // and the DBs are empty during non-transition phases.
     std::unique_ptr<DistributorBucketSpaceRepo> _readOnlyBucketSpaceRepo;
-    storage::distributor::DistributorStripeComponent _component;
+    DistributorStripeComponent _component;
     std::shared_ptr<const DistributorConfiguration> _total_config;
     DistributorMetricSet& _metrics;
 
@@ -332,6 +334,7 @@ private:
     IdealStateManager _idealStateManager;
     ChainedMessageSender& _messageSender;
     StripeHostInfoNotifier& _stripe_host_info_notifier;
+    MemoryUsageTracker& _shared_memory_usage_tracker;
     ExternalOperationHandler _externalOperationHandler;
 
     std::shared_ptr<lib::Distribution> _distribution;
