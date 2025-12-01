@@ -31,17 +31,13 @@ public class SlimeDataSink implements DataSink {
         return slime;
     }
 
-    private Cursor top() {
-        return stack.peek();
-    }
-
     private Inserter makeInserter() {
         if (stack.isEmpty()) {
             return new SlimeInserter(slime);
-        } else if (top().type() == Type.OBJECT) {
-            return new ObjectInserter(top(), key);
+        } else if (stack.peek().type() == Type.OBJECT) {
+            return new ObjectInserter(stack.peek(), key);
         } else {
-            return new ArrayInserter(top());
+            return new ArrayInserter(stack.peek());
         }
     }
 
