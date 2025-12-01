@@ -18,25 +18,25 @@ enum SslHandshakeFailure {
     INCOMPATIBLE_PROTOCOLS(
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS,
             "INCOMPATIBLE_CLIENT_PROTOCOLS",
-            "(Client requested protocol \\S+? is not enabled or supported in server context" +
+            ".*(Client requested protocol \\S+? is not enabled or supported in server context" +
                     "|The client supported protocol versions \\[.+?\\] are not accepted by server preferences \\[.+?\\])"),
     INCOMPATIBLE_CIPHERS(
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS,
             "INCOMPATIBLE_CLIENT_CIPHER_SUITES",
-            "no cipher suites in common"),
+            ".*no cipher suites in common"),
     MISSING_CLIENT_CERT(
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT,
             "MISSING_CLIENT_CERTIFICATE",
-            "Empty (server|client) certificate chain"),
+            ".*Empty (server|client) certificate chain"),
     EXPIRED_CLIENT_CERTIFICATE(
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT,
             "EXPIRED_CLIENT_CERTIFICATE",
             // Note: this pattern will match certificates with too late notBefore as well
-            "PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed"),
+            ".*PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed"),
     INVALID_CLIENT_CERT(
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT, // Includes mismatch of client certificate and private key
             "INVALID_CLIENT_CERTIFICATE",
-            "(PKIX path (building|validation) failed: .+)|(Invalid CertificateVerify signature)"),
+            ".*(PKIX path (building|validation) failed: .+)|(Invalid CertificateVerify signature)"),
     CONNECTION_CLOSED(
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_CONNECTION_CLOSED,
             "CONNECTION_CLOSED",
