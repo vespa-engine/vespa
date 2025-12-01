@@ -8,7 +8,7 @@ redirect_from:
 <p>
 This document describes how to use the C++ cloud config API.
 We are assuming you have created a
-<a href="configapi-dev.html">config definition file</a> (def file),
+<a href="https://docs.vespa.ai/en/applications/configapi-dev.html">config definition file</a> (def file),
 which is the schema for one of your configs.
 Developing with the C++ Cloud Config API requires you to
 </p>
@@ -75,13 +75,15 @@ s.nextConfig(1000);
 <p>
 Given N subscriptions, the nextConfig call will wait up to 1 second for 1 to N configs to change.
 If they have changed, it returns true. If not, it returns false.
-See <a href="configapi-dev.html#guidelines">config API guidelines</a>
+See <a href="https://docs.vespa.ai/en/applications/configapi-dev.html#guidelines">config API guidelines</a>
 for a more advanced usage of the ConfigSubscriber.
 </p>
-  One <strong>can not</strong> subscribe or
-  unsubscribe to more configs once nextConfig() is called.
-  This means that in order to change the set of subscribed configs,
-  one must create a new ConfigSubscriber with the new set.
+<p>You <strong>can not</strong> subscribe or
+unsubscribe to more configs once nextConfig() is called.
+This means that in order to change the set of subscribed configs,
+one must create a new ConfigSubscriber with the new set.
+</p>
+
 <p>
 Having called nextConfig(), the ConfigHandle can be asked for the current config:
 <pre>{% highlight xml %}
@@ -168,7 +170,7 @@ subscriber.nextConfig() // should return true now
 </pre>
 <p>
 How the config id relates to the application package deployed is
-covered in the main <a href="configapi-dev.html">Config API</a> document.
+covered in the main <a href="https://docs.vespa.ai/en/applications/configapi-dev.html">Config API</a> document.
 </p><p>
 We also provide some helper classes such as the <code>ConfigGetter</code>
 to test the config itself.
