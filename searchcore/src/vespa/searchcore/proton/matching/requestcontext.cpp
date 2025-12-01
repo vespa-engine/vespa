@@ -77,6 +77,12 @@ ElementGap
 RequestContext::get_element_gap(uint32_t field_id) const noexcept {
     auto field = _query_env.getIndexEnvironment().getField(field_id);
     if (field != nullptr) {
+        using mprops = search::fef::indexproperties::matching::ElementGap;
+        std::optional<ElementGap> query_override =
+                mprops::lookup_for_field(_query_env.getProperties(), field->name());
+        if (query_override.has_value()) {
+            return query_override.value();
+        }
         return field->get_element_gap();
     }
     return std::nullopt;

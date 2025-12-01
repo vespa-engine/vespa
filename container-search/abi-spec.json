@@ -5775,7 +5775,7 @@
       "public com.yahoo.search.query.ranking.Matching getMatching()",
       "public com.yahoo.search.query.ranking.SoftTimeout getSoftTimeout()",
       "public com.yahoo.search.query.ranking.Significance getSignificance()",
-      "public java.lang.Integer getElementGapForField(java.lang.String)",
+      "public com.yahoo.search.query.ranking.ElementGap getElementGapForField(java.lang.String)",
       "public void setElementGapForField(java.lang.String, java.lang.Object)",
       "public com.yahoo.search.query.Sorting getSorting()",
       "public void setSorting(com.yahoo.search.query.Sorting)",
@@ -7317,6 +7317,25 @@
       "public static final java.lang.String FACTOR",
       "public static final java.lang.String STRATEGY"
     ]
+  },
+  "com.yahoo.search.query.ranking.ElementGap" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public static com.yahoo.search.query.ranking.ElementGap of(int)",
+      "public static com.yahoo.search.query.ranking.ElementGap empty()",
+      "public static com.yahoo.search.query.ranking.ElementGap from(java.lang.String)",
+      "public java.util.OptionalInt get()",
+      "public boolean isFinite()",
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields" : [ ]
   },
   "com.yahoo.search.query.ranking.GlobalPhase" : {
     "superClass" : "java.lang.Object",

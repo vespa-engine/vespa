@@ -9,6 +9,7 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
+import com.yahoo.search.query.ranking.ElementGap;
 import com.yahoo.search.query.ranking.GlobalPhase;
 import com.yahoo.search.query.ranking.MatchPhase;
 import com.yahoo.search.query.ranking.Matching;
@@ -126,7 +127,7 @@ public class Ranking implements Cloneable {
 
     private Significance significance = new Significance();
 
-    private Map<String, Integer> elementGap = new HashMap<>();
+    private Map<String, ElementGap> elementGap = new HashMap<>();
 
     public Ranking(Query parent) {
         this.parent = parent;
@@ -252,7 +253,7 @@ public class Ranking implements Cloneable {
     public Significance getSignificance() { return significance; }
 
     /** Returns the element gap value for the given field, or null if not set */
-    public Integer getElementGapForField(String fieldName) {
+    public ElementGap getElementGapForField(String fieldName) {
         return elementGap.get(fieldName);
     }
 
@@ -260,11 +261,11 @@ public class Ranking implements Cloneable {
     public void setElementGapForField(String fieldName, Object value) {
         if (value == null) {
             elementGap.remove(fieldName);
-        } else if (value instanceof Integer) {
-            elementGap.put(fieldName, (Integer) value);
+        } else if (value instanceof Integer iVal) {
+            elementGap.put(fieldName, ElementGap.of(iVal));
         } else {
             try {
-                elementGap.put(fieldName, Integer.parseInt(String.valueOf(value)));
+                elementGap.put(fieldName, ElementGap.from(String.valueOf(value)));
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Element gap value for field '" + fieldName +
                                                    "' could not be converted from '" + value + "' to integer");
@@ -309,8 +310,8 @@ public class Ranking implements Cloneable {
             rankProperties.put("vespa.hitcollector.arraysize", keepRankCount);
         if (rankScoreDropLimit != null)
             rankProperties.put("vespa.hitcollector.rankscoredroplimit", rankScoreDropLimit);
-        for (Map.Entry<String, Integer> entry : elementGap.entrySet()) {
-            rankProperties.put("vespa.matching.element_gap." + entry.getKey(), String.valueOf(entry.getValue()));
+        for (Map.Entry<String, ElementGap> entry : elementGap.entrySet()) {
+            rankProperties.put("vespa.matching.element_gap." + entry.getKey(), entry.getValue().toString());
         }
     }
 
