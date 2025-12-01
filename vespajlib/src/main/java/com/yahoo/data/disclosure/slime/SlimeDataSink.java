@@ -32,7 +32,7 @@ public class SlimeDataSink implements DataSink {
         this.rootInserter = inserter;
     }
 
-    static Slime buildSlime(DataSource source) {
+    public static Slime buildSlime(DataSource source) {
         var slime = new Slime();
         var inserter = new SlimeInserter(slime);
         var sink = new SlimeDataSink(inserter);
