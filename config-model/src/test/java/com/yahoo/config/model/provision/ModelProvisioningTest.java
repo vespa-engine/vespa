@@ -2505,34 +2505,22 @@ public class ModelProvisioningTest {
 
     @Test
     void testVaryingHeapSizeBasedOnNumberOfContentNodes() {
-        var adjustHeap = false;
         var hosted = false;
-        assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 128);
-        assertMaxHeapSizeForClusterController(multipleContentClusters(60, 2), adjustHeap, hosted, 128);
-        assertMaxHeapSizeForClusterController(multipleContentClusters(300, 2), adjustHeap, hosted, 128);
-        adjustHeap = true;
-        assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 128);
-        assertMaxHeapSizeForClusterController(multipleContentClusters(60, 2), adjustHeap, hosted, 128);
-        assertMaxHeapSizeForClusterController(multipleContentClusters(300, 2), adjustHeap, hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(60, 2), hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(300, 2), hosted, 128);
 
         hosted = true;
-        assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 128);
-        assertMaxHeapSizeForClusterController(multipleContentClusters(60, 2), adjustHeap, hosted, 165);
-        assertMaxHeapSizeForClusterController(multipleContentClusters(300, 2), adjustHeap, hosted, 353);
-        assertMaxHeapSizeForClusterController(multipleContentClusters(600, 2), adjustHeap, hosted, 400);
-        adjustHeap = false;
-        assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), adjustHeap, hosted, 128);
-        assertMaxHeapSizeForClusterController(multipleContentClusters(60, 3), adjustHeap, hosted, 128);
-        assertMaxHeapSizeForClusterController(multipleContentClusters(300, 3), adjustHeap, hosted, 128);
-        assertMaxHeapSizeForClusterController(multipleContentClusters(600, 3), adjustHeap, hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(1, 2), hosted, 128);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(60, 2), hosted, 165);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(300, 2), hosted, 353);
+        assertMaxHeapSizeForClusterController(multipleContentClusters(600, 2), hosted, 400);
     }
 
-    private void assertMaxHeapSizeForClusterController(String services, boolean adjustHeap,
+    private void assertMaxHeapSizeForClusterController(String services,
                                                        boolean hostedVespa, int expected) {
         var tester = new VespaModelTester();
         tester.setHosted(hostedVespa);
-        var properties = new TestProperties().adjustCCMaxHeap(adjustHeap);
-        tester.setModelProperties(properties);
         tester.addHosts(new NodeResources(1, 3, 10, 1), 4);
         tester.addHosts(new NodeResources(1, 128, 100, 0.3), 605);
         var deployStatebuilder = deployStateWithClusterEndpoints("foo.indexing", "bar.indexing");

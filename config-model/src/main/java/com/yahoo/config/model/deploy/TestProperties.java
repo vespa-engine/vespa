@@ -80,7 +80,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
     private double docprocHandlerThreadpool = 1.0;
-    private boolean adjustCCMaxHeap = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -138,7 +137,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     @Override public boolean useTriton() { return useTriton; }
     @Override public double docprocHandlerThreadpool() { return docprocHandlerThreadpool; }
-    @Override public boolean adjustCCMaxHeap() { return adjustCCMaxHeap; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -355,11 +353,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseTriton(boolean value) {
         this.useTriton = value;
-        return this;
-    }
-
-    public TestProperties adjustCCMaxHeap(boolean value) {
-        this.adjustCCMaxHeap = value;
         return this;
     }
 
