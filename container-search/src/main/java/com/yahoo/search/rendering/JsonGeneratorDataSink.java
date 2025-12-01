@@ -14,7 +14,15 @@ import java.nio.charset.StandardCharsets;
  *
  * @author johsol
  */
-record JsonGeneratorDataSink(JsonGenerator gen) implements DataSink {
+class JsonGeneratorDataSink implements DataSink {
+
+    private JsonGenerator gen;
+    private boolean wantUtf8;
+
+    public JsonGeneratorDataSink(JsonGenerator gen) {
+        this.gen = gen;
+        this.wantUtf8 = gen instanceof UTF8JsonGenerator;
+    }
 
     @Override
     public void fieldName(String utf16, byte[] utf8) {
@@ -140,12 +148,18 @@ record JsonGeneratorDataSink(JsonGenerator gen) implements DataSink {
     @Override
     public void stringValue(String utf16, byte[] utf8) {
         try {
-            if (utf16 != null) {
-                gen.writeString(utf16);
-            } else if (gen instanceof UTF8JsonGenerator utf8Gen) {
-                utf8Gen.writeUTF8String(utf8, 0, utf8.length);
+            if (wantUtf8) {
+               if (utf8 != null) {
+                   gen.writeUTF8String(utf8, 0, utf8.length);
+               } else {
+                   gen.writeString(utf16);
+               }
             } else {
-                gen.writeString(new String(utf8, StandardCharsets.UTF_8));
+               if (utf16 != null) {
+                   gen.writeString(utf16);
+               } else {
+                   gen.writeString(new String(utf8, StandardCharsets.UTF_8));
+               }
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
