@@ -2,6 +2,7 @@
 package com.yahoo.data.disclosure.slime;
 
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeInserter;
 import com.yahoo.slime.SlimeUtils;
 import org.junit.Test;
 
@@ -16,13 +17,14 @@ public class SlimeDataSinkTestCase {
 
     private void assertSlime(Slime expected, Slime actual) {
         assertTrue(expected.get().equalTo(actual.get()),
-                    () -> "Expected " + SlimeUtils.toJson(expected) +
-                            " but got " + SlimeUtils.toJson(actual));
+                () -> "Expected " + SlimeUtils.toJson(expected) +
+                        " but got " + SlimeUtils.toJson(actual));
     }
 
     @Test
     public void testValuesInObject() {
-        var sink = new SlimeDataSink();
+        var slime = new Slime();
+        var sink = new SlimeDataSink(new SlimeInserter(slime));
         sink.startObject();
 
         sink.fieldName("int");
@@ -47,18 +49,19 @@ public class SlimeDataSinkTestCase {
         sink.endObject();
 
         var expected = SlimeUtils.jsonToSlime("{ int: 1024, " +
-                                              "  bool: true," +
-                                              "  double: 3.5," +
-                                              "  string: 'hello' }");
+                "  bool: true," +
+                "  double: 3.5," +
+                "  string: 'hello' }");
 
         expected.get().setData("data", bytes);
         expected.get().setNix("empty");
-        assertSlime(expected, sink.getSlime());
+        assertSlime(expected, slime);
     }
 
     @Test
     public void testValuesInArray() {
-        var sink = new SlimeDataSink();
+        var slime = new Slime();
+        var sink = new SlimeDataSink(new SlimeInserter(slime));
         sink.startArray();
         // [1, true, nix, 2.5, "foo", byte[9,8]]
         sink.longValue(1L);
@@ -75,12 +78,13 @@ public class SlimeDataSinkTestCase {
         arr.addData(bytes);
         arr.addNix();
 
-        assertSlime(expected, sink.getSlime());
+        assertSlime(expected, slime);
     }
 
     @Test
     public void testNestedObjectAndArray() {
-        var sink = new SlimeDataSink();
+        var slime = new Slime();
+        var sink = new SlimeDataSink(new SlimeInserter(slime));
         sink.startObject();
 
         // nums: [1, 2]
@@ -100,12 +104,13 @@ public class SlimeDataSinkTestCase {
         sink.endObject();
 
         var expected = SlimeUtils.jsonToSlime("{ nums: [1, 2], meta: { ok: true } }");
-        assertSlime(expected, sink.getSlime());
+        assertSlime(expected, slime);
     }
 
     @Test
     public void testArrayOfObjects() {
-        var sink = new SlimeDataSink();
+        var slime = new Slime();
+        var sink = new SlimeDataSink(new SlimeInserter(slime));
 
         // [{ "id": 1 }, { "id2", 2 }]
         sink.startArray();
@@ -123,12 +128,13 @@ public class SlimeDataSinkTestCase {
         sink.endArray();
 
         var expected = SlimeUtils.jsonToSlime("[ { id: 1 }, { id: 2 } ]");
-        assertSlime(expected, sink.getSlime());
+        assertSlime(expected, slime);
     }
 
     @Test
     public void testHandlesFieldNameUtf8AndUtf16() {
-        var sink = new SlimeDataSink();
+        var slime = new Slime();
+        var sink = new SlimeDataSink(new SlimeInserter(slime));
 
         // { "utf8_name": 1, "utf16_name": 2 }
         sink.startObject();
@@ -139,12 +145,14 @@ public class SlimeDataSinkTestCase {
         sink.endObject();
 
         var expected = SlimeUtils.jsonToSlime("{ utf8_name: 1, utf16_name: 2 }");
-        assertSlime(expected, sink.getSlime());
+        assertSlime(expected, slime);
     }
 
     @Test
     public void testNumericDefaultDelegates() {
-        var sink = new SlimeDataSink();
+        var slime = new Slime();
+        var sink = new SlimeDataSink(new SlimeInserter(slime));
+
         sink.startArray();
         sink.intValue(10);
         sink.shortValue((short) 20);
@@ -153,37 +161,41 @@ public class SlimeDataSinkTestCase {
         sink.endArray();
 
         var expected = SlimeUtils.jsonToSlime("[ 10, 20, 30, 1.5 ]");
-        assertSlime(expected, sink.getSlime());
+        assertSlime(expected, slime);
     }
 
     @Test
     public void testLeafValues() {
         {
-            var sink = new SlimeDataSink();
+            var slime = new Slime();
+            var sink = new SlimeDataSink(new SlimeInserter(slime));
             sink.intValue(1);
             var expected = SlimeUtils.jsonToSlime("1");
-            assertSlime(expected, sink.getSlime());
+            assertSlime(expected, slime);
         }
 
         {
-            var sink = new SlimeDataSink();
+            var slime = new Slime();
+            var sink = new SlimeDataSink(new SlimeInserter(slime));
             sink.booleanValue(true);
             var expected = SlimeUtils.jsonToSlime("true");
-            assertSlime(expected, sink.getSlime());
+            assertSlime(expected, slime);
         }
 
         {
-            var sink = new SlimeDataSink();
+            var slime = new Slime();
+            var sink = new SlimeDataSink(new SlimeInserter(slime));
             sink.doubleValue(3.14);
             var expected = SlimeUtils.jsonToSlime("3.14");
-            assertSlime(expected, sink.getSlime());
+            assertSlime(expected, slime);
         }
 
         {
-            var sink = new SlimeDataSink();
+            var slime = new Slime();
+            var sink = new SlimeDataSink(new SlimeInserter(slime));
             sink.stringValue("some_string");
             var expected = SlimeUtils.jsonToSlime("'some_string'");
-            assertSlime(expected, sink.getSlime());
+            assertSlime(expected, slime);
         }
     }
 }

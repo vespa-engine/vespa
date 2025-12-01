@@ -2,6 +2,7 @@
 package com.yahoo.data.disclosure.slime;
 
 import com.yahoo.data.disclosure.DataSink;
+import com.yahoo.data.disclosure.DataSource;
 import com.yahoo.slime.ArrayInserter;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inserter;
@@ -23,17 +24,25 @@ import java.util.Deque;
  */
 public class SlimeDataSink implements DataSink {
 
-    private Slime slime = new Slime();
+    private Inserter rootInserter;
     private Deque<Cursor> stack = new ArrayDeque<>();
     private String key;
 
-    public Slime getSlime() {
+    public SlimeDataSink(Inserter inserter) {
+        this.rootInserter = inserter;
+    }
+
+    static Slime buildSlime(DataSource source) {
+        var slime = new Slime();
+        var inserter = new SlimeInserter(slime);
+        var sink = new SlimeDataSink(inserter);
+        source.emit(sink);
         return slime;
     }
 
     private Inserter makeInserter() {
         if (stack.isEmpty()) {
-            return new SlimeInserter(slime);
+            return rootInserter;
         } else if (stack.peek().type() == Type.OBJECT) {
             return new ObjectInserter(stack.peek(), key);
         } else {
