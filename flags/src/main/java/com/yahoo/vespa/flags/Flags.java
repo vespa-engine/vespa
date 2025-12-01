@@ -234,7 +234,7 @@ public class Flags {
 
     public static final UnboundIntFlag SEARCH_HANDLER_THREADPOOL = defineIntFlag(
             "search-handler-threadpool", 10,
-            List.of("bjorncs"), "2023-10-01", "2025-12-01",
+            List.of("bjorncs"), "2023-10-01", "2026-03-01",
             "Adjust search handler threadpool size",
             "Takes effect at redeployment",
             APPLICATION);
@@ -317,7 +317,7 @@ public class Flags {
 
     public static final UnboundIntFlag DOCUMENT_V1_QUEUE_SIZE = defineIntFlag(
             "document-v1-queue-size", -1,
-            List.of("bjorncs"), "2025-01-14", "2025-12-01",
+            List.of("bjorncs"), "2025-01-14", "2026-03-01",
             "Size of the document v1 queue. Use -1 for default as determined by 'document-operation-executor.def'",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -378,7 +378,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_TRITON = defineFeatureFlag(
             "use-triton", false,
-            List.of("bjorncs"), "2025-04-30", "2026-01-04",
+            List.of("bjorncs", "glebashnik"), "2025-04-30", "2026-06-01",
             "Whether to use Triton as ONNX runtime",
             "Takes effect at redeployment"
     );

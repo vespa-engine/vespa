@@ -56,19 +56,16 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
 
     private static class Threadpool extends ContainerThreadpool {
 
-        private final int threads;
-
         Threadpool(DeployState ds, Element options) {
             super(ds, "search-handler", options);
-            threads = ds.featureFlags().searchHandlerThreadpool();
         }
 
         @Override
         public void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder) {
             builder.maxThreadExecutionTimeSeconds(190)
                     .keepAliveTime(5.0)
-                    .relativeMaxThreads(threads)
-                    .relativeMinThreads(threads)
+                    .relativeMaxThreads(10)
+                    .relativeMinThreads(10)
                     .relativeQueueSize(40);
         }
 
