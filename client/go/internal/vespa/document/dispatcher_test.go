@@ -184,6 +184,42 @@ func TestDispatcherOpenCircuit(t *testing.T) {
 	assert.Equal(t, 1, len(feeder.documents))
 }
 
+func TestDispatcherOpenCircuitDuringRetry(t *testing.T) {
+	// Test that dispatcher.Close() returns when the circuit opens during retries,
+	// rather than hanging forever waiting for inflight operations.
+	feeder := &mockFeeder{}
+	feeder.failAfterN(1) // All operations after the first will fail
+	clock := &manualClock{tick: time.Second}
+	throttler := newThrottler(8, clock.now)
+	// Circuit breaker with 0 grace and 1ms doom duration - opens almost immediately on failure
+	breaker := NewCircuitBreaker(0, time.Millisecond)
+	breaker.now = clock.now
+	dispatcher := NewDispatcher(feeder, throttler, breaker, io.Discard, false)
+
+	doc1 := Document{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut}
+	doc2 := Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut}
+
+	dispatcher.Enqueue(doc1) // This will succeed
+	dispatcher.Enqueue(doc2) // This will fail and trigger retries
+
+	// Advance time past the doom duration to open the circuit
+	clock.advance(time.Second)
+
+	// Close should return without hanging, even though doc2 is being retried
+	done := make(chan struct{})
+	go func() {
+		dispatcher.Close()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// Success - Close() returned
+	case <-time.After(5 * time.Second):
+		t.Fatal("dispatcher.Close() did not return - likely hanging on inflight operations")
+	}
+}
+
 func BenchmarkDocumentDispatching(b *testing.B) {
 	feeder := &mockFeeder{}
 	clock := &manualClock{tick: time.Second}
