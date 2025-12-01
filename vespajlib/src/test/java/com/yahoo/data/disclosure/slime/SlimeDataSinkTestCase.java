@@ -49,7 +49,7 @@ public class SlimeDataSinkTestCase {
         var expected = SlimeUtils.jsonToSlime("{ int: 1024, " +
                                               "  bool: true," +
                                               "  double: 3.5," +
-                                              "  string: \"hello\" }");
+                                              "  string: 'hello' }");
 
         expected.get().setData("data", bytes);
         expected.get().setNix("empty");
@@ -70,7 +70,7 @@ public class SlimeDataSinkTestCase {
         sink.emptyValue();
         sink.endArray();
 
-        var expected = SlimeUtils.jsonToSlime("[1, true, 2.5, \"foo\"]");
+        var expected = SlimeUtils.jsonToSlime("[1, true, 2.5, 'foo']");
         var arr = expected.get();
         arr.addData(bytes);
         arr.addNix();
@@ -182,7 +182,7 @@ public class SlimeDataSinkTestCase {
         {
             var sink = new SlimeDataSink();
             sink.stringValue("some_string");
-            var expected = SlimeUtils.jsonToSlime("\"some_string\"");
+            var expected = SlimeUtils.jsonToSlime("'some_string'");
             assertSlime(expected, sink.getSlime());
         }
     }
