@@ -192,7 +192,17 @@ func (c *ApplicationContainer) exportExtraEnv(ps *prog.Spec) {
 // - JDK 17/18: --add-modules=jdk.incubator.foreign
 // - JDK 19-21: --enable-preview and --enable-native-access=ALL-UNNAMED
 func (a *ApplicationContainer) addJdkVersionSpecificArgs() {
-	javaVersion := detectJavaMajorVersion()
+	// Experimental: Retry if unable to get major version, as there is sometimes
+	// an error message related to perf data locking
+	i := 0
+	javaVersion := DetectJavaVersion{output: "", major: 0}
+	for {
+		javaVersion = detectJavaMajorVersion()
+		i++
+		if javaVersion.major != 0 || i > 5 {
+			break
+		}
+	}
 	major := javaVersion.major
 	if major == 0 {
 		trace.Warning("Could not detect Java version; skipping version-specific JVM args. Output: " + javaVersion.output)
