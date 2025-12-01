@@ -44,7 +44,7 @@ public:
         : ExactNearestNeighborIterator(std::move(params_in)),
           _lastScore(0.0),
           _readonly_distance_heap(readonly_distance_heap),
-          _distances_computed(0)
+          _distance_offset(params().distance_calc->distances_computed())
     {
     }
 
@@ -55,7 +55,6 @@ public:
         while (__builtin_expect((docId < getEndId()), true)) {
             if ((!has_filter) || params().filter.check(docId)) {
                 double d = computeDistance(docId, distanceLimit);
-                ++_distances_computed;
                 if (d <= distanceLimit) {
                     _lastScore = d;
                     setDocId(docId);
@@ -88,13 +87,13 @@ private:
 
     double                 _lastScore;
     const bool             _readonly_distance_heap;
-    size_t                 _distances_computed;
+    size_t                 _distance_offset;
 };
 
 template <bool strict, bool has_filter, bool has_single_subspace>
 ExactNearestNeighborImpl<strict, has_filter, has_single_subspace>::~ExactNearestNeighborImpl() {
     if (params().stats) {
-        params().stats->add_to_exact_nns_distances_computed(_distances_computed);
+        params().stats->add_to_exact_nns_distances_computed(params().distance_calc->distances_computed() - _distance_offset);
     }
 }
 
