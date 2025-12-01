@@ -78,10 +78,10 @@ If they have changed, it returns true. If not, it returns false.
 See <a href="configapi-dev.html#guidelines">config API guidelines</a>
 for a more advanced usage of the ConfigSubscriber.
 </p>
-  {% include important.html content="One <strong>can not</strong> subscribe or
+  One <strong>can not</strong> subscribe or
   unsubscribe to more configs once nextConfig() is called.
   This means that in order to change the set of subscribed configs,
-  one must create a new ConfigSubscriber with the new set."%}
+  one must create a new ConfigSubscriber with the new set.
 <p>
 Having called nextConfig(), the ConfigHandle can be asked for the current config:
 <pre>{% highlight xml %}
