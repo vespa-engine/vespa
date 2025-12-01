@@ -1,0 +1,201 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.data.disclosure.slime;
+
+import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeInserter;
+import com.yahoo.slime.SlimeUtils;
+import org.junit.Test;
+
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * @author johsol
+ */
+public class SlimeDataSinkTestCase {
+
+    private void assertSlime(Slime expected, Slime actual) {
+        assertTrue(expected.get().equalTo(actual.get()),
+                () -> "Expected " + SlimeUtils.toJson(expected) +
+                        " but got " + SlimeUtils.toJson(actual));
+    }
+
+    @Test
+    public void testValuesInObject() {
+        var slime = new Slime();
+        var sink = new SlimeDataSink(new SlimeInserter(slime));
+        sink.startObject();
+
+        sink.fieldName("int");
+        sink.intValue(1024);
+
+        sink.fieldName("bool");
+        sink.booleanValue(true);
+
+        sink.fieldName("empty");
+        sink.emptyValue();
+
+        sink.fieldName("double");
+        sink.doubleValue(3.5);
+
+        sink.fieldName("string");
+        sink.stringValue("hello");
+
+        byte[] bytes = new byte[]{1, 2, 3};
+        sink.fieldName("data");
+        sink.dataValue(bytes);
+
+        sink.endObject();
+
+        var expected = SlimeUtils.jsonToSlime("{ int: 1024, " +
+                "  bool: true," +
+                "  double: 3.5," +
+                "  string: 'hello' }");
+
+        expected.get().setData("data", bytes);
+        expected.get().setNix("empty");
+        assertSlime(expected, slime);
+    }
+
+    @Test
+    public void testValuesInArray() {
+        var slime = new Slime();
+        var sink = new SlimeDataSink(new SlimeInserter(slime));
+        sink.startArray();
+        // [1, true, nix, 2.5, "foo", byte[9,8]]
+        sink.longValue(1L);
+        sink.booleanValue(true);
+        sink.doubleValue(2.5);
+        sink.stringValue("foo");
+        byte[] bytes = new byte[]{9, 8};
+        sink.dataValue(bytes);
+        sink.emptyValue();
+        sink.endArray();
+
+        var expected = SlimeUtils.jsonToSlime("[1, true, 2.5, 'foo']");
+        var arr = expected.get();
+        arr.addData(bytes);
+        arr.addNix();
+
+        assertSlime(expected, slime);
+    }
+
+    @Test
+    public void testNestedObjectAndArray() {
+        var slime = new Slime();
+        var sink = new SlimeDataSink(new SlimeInserter(slime));
+        sink.startObject();
+
+        // nums: [1, 2]
+        sink.fieldName("nums");
+        sink.startArray();
+        sink.longValue(1L);
+        sink.longValue(2L);
+        sink.endArray();
+
+        // meta: { ok: true }
+        sink.fieldName("meta");
+        sink.startObject();
+        sink.fieldName("ok");
+        sink.booleanValue(true);
+        sink.endObject();
+
+        sink.endObject();
+
+        var expected = SlimeUtils.jsonToSlime("{ nums: [1, 2], meta: { ok: true } }");
+        assertSlime(expected, slime);
+    }
+
+    @Test
+    public void testArrayOfObjects() {
+        var slime = new Slime();
+        var sink = new SlimeDataSink(new SlimeInserter(slime));
+
+        // [{ "id": 1 }, { "id2", 2 }]
+        sink.startArray();
+
+        sink.startObject();
+        sink.fieldName("id");
+        sink.longValue(1L);
+        sink.endObject();
+
+        sink.startObject();
+        sink.fieldName("id");
+        sink.longValue(2L);
+        sink.endObject();
+
+        sink.endArray();
+
+        var expected = SlimeUtils.jsonToSlime("[ { id: 1 }, { id: 2 } ]");
+        assertSlime(expected, slime);
+    }
+
+    @Test
+    public void testHandlesFieldNameUtf8AndUtf16() {
+        var slime = new Slime();
+        var sink = new SlimeDataSink(new SlimeInserter(slime));
+
+        // { "utf8_name": 1, "utf16_name": 2 }
+        sink.startObject();
+        sink.fieldName("utf8_name".getBytes(StandardCharsets.UTF_8));
+        sink.intValue(1);
+        sink.fieldName("utf16_name".getBytes(StandardCharsets.UTF_8));
+        sink.intValue(2);
+        sink.endObject();
+
+        var expected = SlimeUtils.jsonToSlime("{ utf8_name: 1, utf16_name: 2 }");
+        assertSlime(expected, slime);
+    }
+
+    @Test
+    public void testNumericDefaultDelegates() {
+        var slime = new Slime();
+        var sink = new SlimeDataSink(new SlimeInserter(slime));
+
+        sink.startArray();
+        sink.intValue(10);
+        sink.shortValue((short) 20);
+        sink.byteValue((byte) 30);
+        sink.floatValue(1.5f);
+        sink.endArray();
+
+        var expected = SlimeUtils.jsonToSlime("[ 10, 20, 30, 1.5 ]");
+        assertSlime(expected, slime);
+    }
+
+    @Test
+    public void testLeafValues() {
+        {
+            var slime = new Slime();
+            var sink = new SlimeDataSink(new SlimeInserter(slime));
+            sink.intValue(1);
+            var expected = SlimeUtils.jsonToSlime("1");
+            assertSlime(expected, slime);
+        }
+
+        {
+            var slime = new Slime();
+            var sink = new SlimeDataSink(new SlimeInserter(slime));
+            sink.booleanValue(true);
+            var expected = SlimeUtils.jsonToSlime("true");
+            assertSlime(expected, slime);
+        }
+
+        {
+            var slime = new Slime();
+            var sink = new SlimeDataSink(new SlimeInserter(slime));
+            sink.doubleValue(3.14);
+            var expected = SlimeUtils.jsonToSlime("3.14");
+            assertSlime(expected, slime);
+        }
+
+        {
+            var slime = new Slime();
+            var sink = new SlimeDataSink(new SlimeInserter(slime));
+            sink.stringValue("some_string");
+            var expected = SlimeUtils.jsonToSlime("'some_string'");
+            assertSlime(expected, slime);
+        }
+    }
+}
