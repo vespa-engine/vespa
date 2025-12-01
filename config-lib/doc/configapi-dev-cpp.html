@@ -175,12 +175,13 @@ covered in the main <a href="https://docs.vespa.ai/en/applications/configapi-dev
 We also provide some helper classes such as the <code>ConfigGetter</code>
 to test the config itself.
 </p>
-{% include note.html content="When using builders for unit testing,
+<p>
+When using builders for unit testing,
 there is an underlying assumption that the configured application have subscribed to all configs
 before the builders are mutated.
 Otherwise, the application may try to retrieve an inconsistent configuration.
-In general, try to design the application so that one can verify configuration changes in tests."%}
-
+In general, try to design the application so that one can verify configuration changes in tests.
+</p>
 
 
 <h2 id="printing-config">Printing Config</h2>
