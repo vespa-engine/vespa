@@ -15,7 +15,7 @@ import java.util.Map;
  * DocumentationFetcher
  */
 public class FetchDocumentation {
-    private final static String SCHEMA_URL = "en/reference/applications/schemas.html";
+    private final static String SCHEMA_URL = "en/reference/schemas/schemas.html";
     private final static String RANK_FEATURE_URL = "en/reference/ranking/rank-features.html";
 
     private record ServicesLocation(String relativeUrl, String relativeSavePath) {}
