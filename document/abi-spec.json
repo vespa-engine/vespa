@@ -1678,6 +1678,7 @@
       "public void serialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldWriter)",
       "public void deserialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldReader)",
       "public int compareTo(com.yahoo.document.datatypes.FieldValue)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)",
       "public bridge synthetic com.yahoo.document.datatypes.FieldValue clone()",
       "public bridge synthetic int compareTo(java.lang.Object)",
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
@@ -1754,6 +1755,7 @@
       "public void serialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldWriter)",
       "public void deserialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldReader)",
       "public int compareTo(com.yahoo.document.datatypes.FieldValue)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)",
       "public bridge synthetic com.yahoo.document.datatypes.FieldValue clone()",
       "public bridge synthetic int compareTo(java.lang.Object)",
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
@@ -1892,6 +1894,7 @@
       "public void serialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldWriter)",
       "public void deserialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldReader)",
       "public int compareTo(com.yahoo.document.datatypes.FieldValue)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)",
       "public bridge synthetic com.yahoo.document.datatypes.FieldValue clone()",
       "public bridge synthetic int compareTo(java.lang.Object)",
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
@@ -1928,6 +1931,7 @@
       "public void serialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldWriter)",
       "public void deserialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldReader)",
       "public int compareTo(com.yahoo.document.datatypes.FieldValue)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)",
       "public bridge synthetic com.yahoo.document.datatypes.FieldValue clone()",
       "public bridge synthetic int compareTo(java.lang.Object)",
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
@@ -1964,6 +1968,7 @@
       "public void deserialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldReader)",
       "public com.yahoo.document.DataType getDataType()",
       "public int compareTo(com.yahoo.document.datatypes.FieldValue)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)",
       "public bridge synthetic com.yahoo.document.datatypes.FieldValue clone()",
       "public bridge synthetic int compareTo(java.lang.Object)",
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
@@ -2000,6 +2005,7 @@
       "public void serialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldWriter)",
       "public void deserialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldReader)",
       "public int compareTo(com.yahoo.document.datatypes.FieldValue)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)",
       "public bridge synthetic com.yahoo.document.datatypes.FieldValue clone()",
       "public bridge synthetic int compareTo(java.lang.Object)",
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
@@ -2055,7 +2061,9 @@
   },
   "com.yahoo.document.datatypes.NumericFieldValue" : {
     "superClass" : "com.yahoo.document.datatypes.FieldValue",
-    "interfaces" : [ ],
+    "interfaces" : [
+      "com.yahoo.data.disclosure.DataSource"
+    ],
     "attributes" : [
       "public",
       "abstract"

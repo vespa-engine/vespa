@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
+import com.yahoo.data.disclosure.DataSink;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.PrimitiveDataType;
@@ -132,6 +133,11 @@ public final class Float16FieldValue extends NumericFieldValue {
         int comp = super.compareTo(fieldValue);
         if (comp != 0) return comp;
         return Float.compare(value, ((Float16FieldValue) fieldValue).value);
+    }
+
+    @Override
+    public void emit(DataSink sink) {
+        sink.floatValue(value);
     }
 
 }

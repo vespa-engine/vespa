@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
+import com.yahoo.data.disclosure.DataSink;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.PrimitiveDataType;
@@ -144,4 +145,10 @@ public final class DoubleFieldValue extends NumericFieldValue {
         DoubleFieldValue otherValue = (DoubleFieldValue) fieldValue;
         return Double.compare(value, otherValue.value);
     }
+
+    @Override
+    public void emit(DataSink sink) {
+        sink.doubleValue(value);
+    }
+
 }
