@@ -353,7 +353,7 @@ public class Flags {
 
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
-            List.of("glebashnik"), "2025-04-25", "2025-12-01",
+            List.of("glebashnik"), "2025-04-25", "2026-02-01",
             "Specifies configuration for sidecars to testing provisioning",
             "Takes effect at redeployment",
             __ -> true,
@@ -370,7 +370,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag CONSOLE_DATA_PLANE_ACCESS = defineFeatureFlag(
             "console-data-plane-access", false,
-            List.of("laura"), "2025-08-15", "2025-12-01",
+            List.of("laura"), "2025-08-15", "2026-02-01",
             "Temporary flag to enable console data plane access for testing purposes. Can be removed when full feature goes live",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL
