@@ -136,6 +136,12 @@ Requires: libcgroup-tools
 Requires: xxhash-libs >= 0.8.1
 %endif
 
+%ifarch aarch64
+%if 0%{?el8} || 0%{?el9}
+Requires: vespa-libatomic >= 14.2.0
+%endif
+%endif
+
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
 # _dl_sym function.
 # Exclude automated requires for libraries in /opt/vespa-deps/lib64.
