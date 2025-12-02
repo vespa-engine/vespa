@@ -191,6 +191,7 @@ AndNotBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
         auto termwise_search = (helper.first_termwise == 0)
                                ? AndNotSearch::create(helper.get_termwise_children(), termwise_strict)
                                : OrSearch::create(helper.get_termwise_children(), termwise_strict);
+        termwise_search->set_id(id());
         helper.insert_termwise(std::move(termwise_search), termwise_strict);
         auto rearranged = helper.get_result();
         if (rearranged.size() == 1) {
@@ -293,6 +294,7 @@ AndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
         bool termwise_strict = ((helper.first_termwise < childCnt()) &&
                                 getChild(helper.first_termwise).strict());
         auto termwise_search = AndSearch::create(helper.get_termwise_children(), termwise_strict);
+        termwise_search->set_id(id());
         helper.insert_termwise(std::move(termwise_search), termwise_strict);
         auto rearranged = helper.get_result();
         if (rearranged.size() == 1) {
@@ -392,6 +394,7 @@ OrBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
         bool termwise_strict = ((helper.first_termwise < childCnt()) &&
                                 getChild(helper.first_termwise).strict());
         auto termwise_search = OrSearch::create(helper.get_termwise_children(), termwise_strict);
+        termwise_search->set_id(id());
         helper.insert_termwise(std::move(termwise_search), termwise_strict);
         auto rearranged = helper.get_result();
         if (rearranged.size() == 1) {
