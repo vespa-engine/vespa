@@ -3,7 +3,7 @@ package=com.yahoo.language.lucene
 
 # The schema ("type") for an application specified config type
 # See
-#  - https://docs.vespa.ai/en/reference/config-files.html
+#  - https://docs.vespa.ai/en/reference/applications/config-files.html
 
 configDir                           path	optional
 analysis{}.tokenizer.name           string  default=standard

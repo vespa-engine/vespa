@@ -30,7 +30,7 @@ public final class DummyDocumentV1ApiHandler extends ThreadedHttpRequestHandler 
 
     @Override
     public HttpResponse handle(HttpRequest request) {
-        return new HttpErrorResponse(404, "Document API is not configured in this cluster. See https://docs.vespa.ai/en/reference/services-container.html#document-api");
+        return new HttpErrorResponse(404, "Document API is not configured in this cluster. See https://docs.vespa.ai/en/reference/services/container.html#document-api");
     }
 
     private static class HttpErrorResponse extends HttpResponse {

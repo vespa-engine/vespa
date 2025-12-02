@@ -52,7 +52,7 @@ public class EmptyFileCompletion implements CompletionProvider {
                 add(CompletionUtils.constructSnippet("document", "document " + fileName + " {\n\t$0\n}"));
                 // TODO: move to separate file?
                 add(CompletionUtils.constructSnippet("schema", 
-                            "# https://docs.vespa.ai/en/tutorials/news-1-getting-started.html\n"
+                            "# https://docs.vespa.ai/en/learn/tutorials/news-1-getting-started.html\n"
                             + "schema " + fileName + " {\n"
                             + "\tdocument " + fileName + " {\n"
                             + "\t\tfield title type string {\n\t\t\tindexing: index | summary\n\t\t}\n"
@@ -64,7 +64,7 @@ public class EmptyFileCompletion implements CompletionProvider {
                             + "\t\t\tindex: enable-bm25\n"
                             + "\t\t}\n"
                             + "\t\t$0\n" // cursor position somewhat in the center
-                            + "\t\t# https://docs.vespa.ai/en/tensor-user-guide.html\n"
+                            + "\t\t# https://docs.vespa.ai/en/ranking/tensor-user-guide.html\n"
                             + "\t\tfield embedding type tensor<float>(d0[50]) {\n"
                             + "\t\t\tindexing: attribute\n"
                             + "\t\t\tattribute {\n"

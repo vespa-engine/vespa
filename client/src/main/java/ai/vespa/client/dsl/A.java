@@ -8,7 +8,7 @@ import java.util.stream.Stream;
 
 /**
  * Helper class for generating Annotation
- * https://docs.vespa.ai/en/reference/query-language-reference.html#annotations
+ * https://docs.vespa.ai/en/reference/querying/yql.html#annotations
  */
 public class A {
 

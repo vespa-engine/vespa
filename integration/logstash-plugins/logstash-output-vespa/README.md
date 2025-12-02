@@ -86,7 +86,7 @@ output {
 }
 ```
 
-In the end, you should have an application package in `application_package_dir`, which defaults to your OS's temp directory + `vespa_app`. We encourage you to check it out and change it as needed. If Logstash didn't already deploy it, you can do so with the [Vespa CLI](https://docs.vespa.ai/en/vespa-cli.html):
+In the end, you should have an application package in `application_package_dir`, which defaults to your OS's temp directory + `vespa_app`. We encourage you to check it out and change it as needed. If Logstash didn't already deploy it, you can do so with the [Vespa CLI](https://docs.vespa.ai/en/clients/vespa-cli.html):
 ```
 cd /path/to/application_package
 ### show deployment logs for up to 15 minutes

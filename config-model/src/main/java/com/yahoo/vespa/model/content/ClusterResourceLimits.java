@@ -65,7 +65,7 @@ public class ClusterResourceLimits {
             if (nodeBuilder.getDiskLimit().isPresent() || nodeBuilder.getMemoryLimit().isPresent())
                 deployLogger.logApplicationPackage(WARNING, "Setting proton resource limits in <engine><proton> " +
                         "should not be done directly. Set limits for cluster as described in " +
-                        "https://docs.vespa.ai/en/reference/services-content.html#resource-limits instead.");
+                        "https://docs.vespa.ai/en/reference/services/content.html#resource-limits instead.");
 
             deriveLimits();
             return new ClusterResourceLimits(this);

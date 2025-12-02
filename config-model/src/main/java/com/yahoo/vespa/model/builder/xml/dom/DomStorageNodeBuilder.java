@@ -21,7 +21,7 @@ public class DomStorageNodeBuilder extends VespaDomBuilder.DomConfigProducerBuil
         ModelElement e = new ModelElement(producerSpec);
         Double capacity = e.doubleAttribute("capacity");
         if (capacity != null)
-            deployState.getDeployLogger().logApplicationPackage(WARNING, "'capacity' is deprecated, see https://docs.vespa.ai/en/reference/services-content#node");
+            deployState.getDeployLogger().logApplicationPackage(WARNING, "'capacity' is deprecated, see https://docs.vespa.ai/en/reference/services/content#node");
         return new StorageNode(deployState.getProperties(), (StorageCluster)ancestor, capacity, e.integerAttribute("distribution-key"), false);
     }
 

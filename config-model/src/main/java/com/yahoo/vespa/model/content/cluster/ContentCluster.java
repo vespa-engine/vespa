@@ -213,7 +213,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             if (element.child("dispatch") != null)
                 logger.logApplicationPackage(WARNING, "The <dispatch> element is deprecated and ignored " +
                                                       "and will be removed in the next major release. " +
-                                                      " See https://docs.vespa.ai/en/reference/services-content.html#dispatch");
+                                                      " See https://docs.vespa.ai/en/reference/services/content.html#dispatch");
 
             if (index.getTuning() == null)
                 index.setTuning(new Tuning(index));
@@ -308,7 +308,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                         ("Content cluster '%s' has %d node(s), but the highest distribution key is %d. " +
                          "Having much higher distribution keys than the number of nodes is not recommended, " +
                          "as it may negatively affect performance. " +
-                         "See https://docs.vespa.ai/en/reference/services-content.html#node")
+                         "See https://docs.vespa.ai/en/reference/services/content.html#node")
                         .formatted(clusterId, aggr.nodeCount, aggr.highestNodeDistributionKey));
             }
         }
@@ -327,7 +327,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                 deployState.getDeployLogger().logApplicationPackage(INFO, "In cluster '" + cluster.getName() +
                         "': min-node-ratio-per-group should be set to 1 when there are 3 or more groups (" +
                         numberOfLeafGroups + ") and there are 3 or fewer nodes in the group (" + numberOfNodes + ")" +
-                        ". See https://docs.vespa.ai/en/reference/services-content.html?mode=cloud#min-node-ratio-per-group");
+                        ". See https://docs.vespa.ai/en/reference/services/content.html?mode=cloud#min-node-ratio-per-group");
             }
         }
 

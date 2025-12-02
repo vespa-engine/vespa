@@ -542,7 +542,7 @@ class QTest {
     void basic_group_syntax() {
         /*
         example from vespa document:
-        https://docs.vespa.ai/en/grouping.html
+        https://docs.vespa.ai/en/querying/grouping.html
         all( group(a) max(5) each(output(count())
             all(max(1) each(output(summary())))
             all(group(b) each(output(count())
@@ -571,7 +571,7 @@ class QTest {
     void set_group_syntax_string_directly() {
         /*
         example from vespa document:
-        https://docs.vespa.ai/en/grouping.html
+        https://docs.vespa.ai/en/querying/grouping.html
         all( group(a) max(5) each(output(count())
             all(max(1) each(output(summary())))
             all(group(b) each(output(count())

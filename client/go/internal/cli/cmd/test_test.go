@@ -65,7 +65,7 @@ func TestIllegalFileReference(t *testing.T) {
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("test", "testdata/tests/production-test/illegal-reference.json"))
 	assertRequests([]*http.Request{createRequest("GET", "https://domain.tld", "{}")}, client, t)
-	assert.Equal(t, "\nError: error in Step 2: path may not point outside src/test/application, but 'foo/../../../../this-is-not-ok.json' does\nHint: See https://docs.vespa.ai/en/reference/testing\n", stderr.String())
+	assert.Equal(t, "\nError: error in Step 2: path may not point outside src/test/application, but 'foo/../../../../this-is-not-ok.json' does\nHint: See https://docs.vespa.ai/en/reference/applications/testing.html\n", stderr.String())
 }
 
 func TestIllegalRequestUri(t *testing.T) {
@@ -76,7 +76,7 @@ func TestIllegalRequestUri(t *testing.T) {
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("test", "testdata/tests/production-test/illegal-uri.json"))
 	assertRequests([]*http.Request{createRequest("GET", "https://domain.tld/my-api", "")}, client, t)
-	assert.Equal(t, "\nError: error in Step 2: production tests may not specify requests against Vespa endpoints\nHint: See https://docs.vespa.ai/en/reference/testing\n", stderr.String())
+	assert.Equal(t, "\nError: error in Step 2: production tests may not specify requests against Vespa endpoints\nHint: See https://docs.vespa.ai/en/reference/applications/testing.html\n", stderr.String())
 }
 
 func TestProductionTest(t *testing.T) {
@@ -93,13 +93,13 @@ func TestProductionTest(t *testing.T) {
 func TestTestWithoutAssertions(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	assert.NotNil(t, cli.Run("test", "testdata/tests/system-test/foo/query.json"))
-	assert.Equal(t, "\nError: a test must have at least one step, but none were found in testdata/tests/system-test/foo/query.json\nHint: See https://docs.vespa.ai/en/reference/testing\n", stderr.String())
+	assert.Equal(t, "\nError: a test must have at least one step, but none were found in testdata/tests/system-test/foo/query.json\nHint: See https://docs.vespa.ai/en/reference/applications/testing.html\n", stderr.String())
 }
 
 func TestSuiteWithoutTests(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	assert.NotNil(t, cli.Run("test", "testdata/tests/staging-test"))
-	assert.Equal(t, "Error: failed to find any tests at testdata/tests/staging-test\nHint: See https://docs.vespa.ai/en/reference/testing\n", stderr.String())
+	assert.Equal(t, "Error: failed to find any tests at testdata/tests/staging-test\nHint: See https://docs.vespa.ai/en/reference/applications/testing.html\n", stderr.String())
 }
 
 func TestSingleTest(t *testing.T) {

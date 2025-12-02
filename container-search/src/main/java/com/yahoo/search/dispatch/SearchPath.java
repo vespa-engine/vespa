@@ -20,7 +20,7 @@ import java.util.stream.IntStream;
 
 /**
  * A subset of nodes and groups to which a query should be sent.
- * See https://docs.vespa.ai/en/reference/query-api-reference.html#model.searchpath
+ * See https://docs.vespa.ai/en/reference/api/query.html#model.searchpath
  *
  * @author ollivir
  */

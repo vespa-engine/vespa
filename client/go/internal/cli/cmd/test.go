@@ -35,7 +35,7 @@ func newTestCmd(cli *CLI) *cobra.Command {
 
 Runs all JSON test files in the specified directory, or the single JSON test file specified.
 
-See https://docs.vespa.ai/en/reference/testing.html for details.`,
+See https://docs.vespa.ai/en/reference/applications/testing.html for details.`,
 		Example: `$ vespa test src/test/application/tests/system-test
 $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 		Args:              cobra.ExactArgs(1),
@@ -75,11 +75,11 @@ func runTests(cli *CLI, rootPath string, dryRun bool, waiter *Waiter) (int, []st
 	count := 0
 	failed := make([]string, 0)
 	if stat, err := os.Stat(rootPath); err != nil {
-		return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/testing")
+		return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/applications/testing.html")
 	} else if stat.IsDir() {
 		tests, err := os.ReadDir(rootPath)
 		if err != nil {
-			return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/testing")
+			return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/applications/testing.html")
 		}
 		context := testContext{testsPath: rootPath, dryRun: dryRun, cli: cli, clusters: map[string]*vespa.Service{}}
 		previousFailed := false
@@ -112,7 +112,7 @@ func runTests(cli *CLI, rootPath string, dryRun bool, waiter *Waiter) (int, []st
 		count++
 	}
 	if count == 0 {
-		return 0, nil, errHint(fmt.Errorf("failed to find any tests at %s", rootPath), "See https://docs.vespa.ai/en/reference/testing")
+		return 0, nil, errHint(fmt.Errorf("failed to find any tests at %s", rootPath), "See https://docs.vespa.ai/en/reference/applications/testing.html")
 	}
 	return count, failed, nil
 }
@@ -122,10 +122,10 @@ func runTest(testPath string, context testContext, waiter *Waiter) (string, erro
 	var test test
 	testBytes, err := os.ReadFile(testPath)
 	if err != nil {
-		return "", errHint(err, "See https://docs.vespa.ai/en/reference/testing")
+		return "", errHint(err, "See https://docs.vespa.ai/en/reference/applications/testing.html")
 	}
 	if err = json.Unmarshal(testBytes, &test); err != nil {
-		return "", errHint(fmt.Errorf("failed parsing test at %s: %w", testPath, err), "See https://docs.vespa.ai/en/reference/testing")
+		return "", errHint(fmt.Errorf("failed parsing test at %s: %w", testPath, err), "See https://docs.vespa.ai/en/reference/applications/testing.html")
 	}
 
 	testName := test.Name
@@ -139,12 +139,12 @@ func runTest(testPath string, context testContext, waiter *Waiter) (string, erro
 	defaultParameters, err := getParameters(test.Defaults.ParametersRaw, filepath.Dir(testPath))
 	if err != nil {
 		fmt.Fprintln(context.cli.Stderr)
-		return "", errHint(fmt.Errorf("invalid default parameters for %s: %w", testName, err), "See https://docs.vespa.ai/en/reference/testing")
+		return "", errHint(fmt.Errorf("invalid default parameters for %s: %w", testName, err), "See https://docs.vespa.ai/en/reference/applications/testing.html")
 	}
 
 	if len(test.Steps) == 0 {
 		fmt.Fprintln(context.cli.Stderr)
-		return "", errHint(fmt.Errorf("a test must have at least one step, but none were found in %s", testPath), "See https://docs.vespa.ai/en/reference/testing")
+		return "", errHint(fmt.Errorf("a test must have at least one step, but none were found in %s", testPath), "See https://docs.vespa.ai/en/reference/applications/testing.html")
 	}
 	seen := make(seenClusters)
 	for i, step := range test.Steps {
@@ -156,7 +156,7 @@ func runTest(testPath string, context testContext, waiter *Waiter) (string, erro
 		failure, longFailure, err := verify(step, test.Defaults.Cluster, defaultParameters, context, waiter)
 		if err != nil {
 			fmt.Fprintln(context.cli.Stderr)
-			return "", errHint(fmt.Errorf("error in %s: %w", stepName, err), "See https://docs.vespa.ai/en/reference/testing")
+			return "", errHint(fmt.Errorf("error in %s: %w", stepName, err), "See https://docs.vespa.ai/en/reference/applications/testing.html")
 		}
 		if !context.dryRun {
 			if failure != "" {

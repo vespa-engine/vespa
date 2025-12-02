@@ -29,8 +29,8 @@ public class CloudHttpConnectorValidator implements Validator {
             if (illegalConnectors.isEmpty()) return;
             context.illegal(
                     ("Adding additional or modifying existing HTTPS connectors is not allowed for Vespa Cloud applications." +
-                            " Violating connectors: %s. See https://docs.vespa.ai/en/cloud/security/whitepaper.html, " +
-                            "https://docs.vespa.ai/en/cloud/security/guide.html#data-plane.")
+                            " Violating connectors: %s. See https://docs.vespa.ai/en/security/whitepaper.html, " +
+                            "https://docs.vespa.ai/en/security/guide.html#data-plane.")
                             .formatted(illegalConnectors));
         });
     }

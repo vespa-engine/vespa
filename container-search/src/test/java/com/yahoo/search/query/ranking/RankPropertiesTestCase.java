@@ -45,7 +45,7 @@ public class RankPropertiesTestCase {
         assertEquals("Expected 'myTensor' to be a tensor or double, " +
                      "but it is '{ {cat:foo}:2.5, {cat:bar}:1.25 }', " +
                      "this usually means that 'myTensor' is not defined in the schema. " +
-                     "See https://docs.vespa.ai/en/tensor-user-guide.html#querying-with-tensors", ex.getMessage());
+                     "See https://docs.vespa.ai/en/ranking/tensor-user-guide.html#querying-with-tensors", ex.getMessage());
     }
 
     @Test
