@@ -15,20 +15,20 @@ import java.util.Map;
  * DocumentationFetcher
  */
 public class FetchDocumentation {
-    private final static String SCHEMA_URL = "en/reference/schema-reference.html";
+    private final static String SCHEMA_URL = "en/reference/applications/schemas.html";
     private final static String RANK_FEATURE_URL = "en/reference/ranking/rank-features.html";
 
     private record ServicesLocation(String relativeUrl, String relativeSavePath) {}
 
     private final static ServicesLocation[] SERVICES_PATHS = {
-        new ServicesLocation("en/reference/services/services.html", ""),
-        new ServicesLocation("en/reference/services/admin.html", "admin"),
-        new ServicesLocation("en/reference/services/container.html", "container"),
-        new ServicesLocation("en/reference/services/content.html", "content"),
-        new ServicesLocation("en/reference/services/docproc.html", "container/document-processing"),
-        new ServicesLocation("en/reference/services/http.html", "container/http"),
-        new ServicesLocation("en/reference/services/processing.html", "container/processing"),
-        new ServicesLocation("en/reference/services/search.html", "container/search")
+        new ServicesLocation("en/reference/applications/services/services.html", ""),
+        new ServicesLocation("en/reference/applications/services/admin.html", "admin"),
+        new ServicesLocation("en/reference/applications/services/container.html", "container"),
+        new ServicesLocation("en/reference/applications/services/content.html", "content"),
+        new ServicesLocation("en/reference/applications/services/docproc.html", "container/document-processing"),
+        new ServicesLocation("en/reference/applications/services/http.html", "container/http"),
+        new ServicesLocation("en/reference/applications/services/processing.html", "container/processing"),
+        new ServicesLocation("en/reference/applications/services/search.html", "container/search")
     };
 
     private final static Map<String, List<String>> REPLACE_FILENAME_MAP = new HashMap<>(){{
