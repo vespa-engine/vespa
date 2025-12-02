@@ -1,8 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
+import com.yahoo.data.disclosure.slime.SlimeDataSink;
+import com.yahoo.slime.SlimeUtils;
 import org.junit.Test;
 
+import static com.yahoo.test.JunitCompat.assertTrue;
 import static java.lang.Character.MAX_SURROGATE;
 import static java.lang.Character.MIN_SURROGATE;
 
@@ -387,5 +390,14 @@ public class StringFieldValueTestCase {
     @Test(expected = IllegalArgumentException.class)
     public void requireThatControlCharFails10FFFF() {
         new StringFieldValue("\uDBFF\uDFFF");
+    }
+
+    @Test
+    public void testStringFieldValueEmitsCorrectly() {
+        var fv = new StringFieldValue("foo");
+        var slime = SlimeDataSink.buildSlime(fv);
+        var expected = SlimeUtils.jsonToSlime("'foo'");
+        assertTrue("Expected " + SlimeUtils.toJson(expected) + " but got " + SlimeUtils.toJson(slime),
+                expected.get().equalTo(slime.get()));
     }
 }
