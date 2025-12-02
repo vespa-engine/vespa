@@ -37,7 +37,7 @@ public class InspectorDataSource implements DataSource {
                 sink.doubleValue(inspector.asDouble());
             }
             case STRING -> {
-                sink.stringValue(inspector.asString());
+                sink.stringValue(inspector.asString(), inspector.asUtf8());
             }
             case DATA -> {
                 sink.dataValue(inspector.asData());
