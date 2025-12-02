@@ -156,6 +156,23 @@ public class DataplaneProxyServiceTest {
     }
 
     @Test
+    public void executor_runs_final_converge_during_deconstruct() throws IOException {
+         var proxyCommands = mock(DataplaneProxyService.ProxyCommands.class);
+        when(proxyCommands.isRunning()).thenReturn(false).thenReturn(true).thenReturn(false);
+
+        var service = dataplaneProxyService(proxyCommands);
+        service.reconfigure(proxyConfig(), credentials(fileSystem));
+
+        service.converge();
+        assertEquals(DataplaneProxyService.NginxState.RUNNING, service.state());
+        verify(proxyCommands, times(1)).start(any());
+
+        service.deconstruct();
+
+        verify(proxyCommands, times(1)).stop(any());
+    }
+
+    @Test
     public void azureProxyConfigUsesAzureSettings() throws IOException {
         FileSystem fs = Jimfs.newFileSystem();
         Path templatePath = fs.getPath("/opt/vespa/conf/nginx/nginx.conf.template");

@@ -13,6 +13,7 @@ import com.yahoo.vespa.model.application.validation.change.ConfigValueChangeVali
 import com.yahoo.vespa.model.application.validation.change.ContainerRestartValidator;
 import com.yahoo.vespa.model.application.validation.change.ContentClusterRemovalValidator;
 import com.yahoo.vespa.model.application.validation.change.ContentTypeRemovalValidator;
+import com.yahoo.vespa.model.application.validation.change.DataplaneProxyChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.DataplaneTokenRemovalValidator;
 import com.yahoo.vespa.model.application.validation.change.GlobalDocumentChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
@@ -140,6 +141,7 @@ public class Validation {
         new RestartOnDeployForOnnxModelChangesValidator().validate(execution);
         new RestartOnDeployForLocalLLMValidator().validate(execution);
         new DataplaneTokenRemovalValidator().validate(execution);
+        new DataplaneProxyChangeValidator().validate(execution);
     }
 
     public interface Context {
