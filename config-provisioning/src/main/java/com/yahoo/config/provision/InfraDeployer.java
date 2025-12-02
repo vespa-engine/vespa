@@ -18,7 +18,7 @@ public interface InfraDeployer extends AutoCloseable {
     Optional<Deployment> getDeployment(ApplicationId application);
 
     /** Deploys all supported infrastructure applications in this zone. */
-    void activateAllSupportedInfraApplications(boolean propagateException, boolean forceRun);
+    void activateAllSupportedInfraApplications(boolean propagateException, boolean enable);
 
     /** Marks the specified node type as ready and triggers redeployment of its corresponding infrastructure application */
     void readied(NodeType type);
