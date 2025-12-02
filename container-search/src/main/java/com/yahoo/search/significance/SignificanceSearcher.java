@@ -83,7 +83,7 @@ public class SignificanceSearcher extends Searcher {
                     ErrorMessage.createIllegalQuery(
                             ("Inconsistent 'significance' configuration for the rank profile '%s' in the schemas %s. " +
                                     "Use 'restrict' to limit the query to a subset of schemas " +
-                                    "(https://docs.vespa.ai/en/schemas/schemas.html#multiple-schemas). " +
+                                    "(https://docs.vespa.ai/en/basics/schemas.html#multiple-schemas). " +
                                     "Specify same 'significance' configuration for all selected schemas " +
                                     "(https://docs.vespa.ai/en/reference/schemas/schemas.html#significance).")
                                     .formatted(rankProfileName, perSchemaSetup.keySet())));
