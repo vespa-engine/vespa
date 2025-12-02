@@ -30,6 +30,7 @@
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
+#include <vespa/searchlib/queryeval/lazy_filter.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/searchlib/queryeval/orlikesearch.h>
@@ -382,6 +383,9 @@ public:
     }
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
+    }
+    std::shared_ptr<queryeval::LazyFilter> create_lazy_filter() const override {
+        return queryeval::GeoLocationLazyFilter::create(_location);
     }
     void visitMembers(vespalib::ObjectVisitor& visitor) const override {
         LeafBlueprint::visitMembers(visitor);

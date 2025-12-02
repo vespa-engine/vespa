@@ -137,6 +137,11 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, d
 }
 
 void
+NearestNeighborBlueprint::set_lazy_filter(const LazyFilter &lazy_filter) {
+    _lazy_filter = lazy_filter.shared_from_this();
+}
+
+void
 NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborIndex* nns_index)
 {
     uint32_t k = _adjusted_target_hits;
