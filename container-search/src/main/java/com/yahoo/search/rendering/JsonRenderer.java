@@ -844,8 +844,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 ds.emit(dataSink());
             } else if (field instanceof JsonProducer jp) {
                 generator().writeRawValue(jp.toJson());
-            } else if (field instanceof StringFieldValue sfv) {
-                generator().writeString(sfv.getString());
             } else if (field instanceof TensorFieldValue tfv) {
                 renderTensor(tfv.getTensor());
             } else if (field instanceof FieldValue fv) {
