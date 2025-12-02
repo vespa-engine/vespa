@@ -26,7 +26,7 @@ func VerifyAvailableMemory() {
 
 	if availableMemory < minRequiredMemoryInBytes {
 		osutil.ExitMsg("Running the Vespa container image requires at least 4GB available memory." +
-			" See the relevant docs (https://docs.vespa.ai/en/operations-selfhosted/docker-containers.html#memory) " +
+			" See the relevant docs (https://docs.vespa.ai/en/operations/self-managed/docker-containers.html#memory) " +
 			" or set VESPA_IGNORE_NOT_ENOUGH_MEMORY=true")
 	}
 }

@@ -146,10 +146,7 @@ use a token for Vespa Cloud access:
 
 $ export VESPA_CLI_DATA_PLANE_TOKEN='value-of-token'
 
-To get started, see the following quick start guides:
-
-- Local Vespa instance: https://docs.vespa.ai/en/vespa-quick-start.html
-- Vespa Cloud: https://docs.vespa.ai/en/cloud/getting-started.html
+To get started, follow https://docs.vespa.ai/en/basics/deploy-an-application.html
 
 The complete Vespa documentation is available at https://docs.vespa.ai.
 

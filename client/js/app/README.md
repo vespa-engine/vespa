@@ -91,7 +91,7 @@ To use the visualizer,
 paste the Vespa trace into the text box
 and press the button to convert the trace to a format supported by Jaeger and download it.
 Only traces using _trace.timestamps=true_ **and** _traceLevel_ between 3 and 5 (inclusive) will work correctly -
-see [query tracing](https://docs.vespa.ai/en/query-api.html#query-tracing):
+see [query tracing](https://docs.vespa.ai/en/api/query.html#query-tracing):
 
 ![Trace Converter](img/TraceConverter.png)
 

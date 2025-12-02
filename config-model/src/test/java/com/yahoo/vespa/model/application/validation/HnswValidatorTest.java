@@ -32,7 +32,7 @@ public class HnswValidatorTest {
     void warns_when_2_searchable_copies_and_flat_setup() {
         var logger = new TestLogger();
         createModelAndValidate(logger, flat(), 2);
-        assertEquals(message + " and going to a grouped setup, see https://docs.vespa.ai/en/elasticity.html#grouped-distribution",
+        assertEquals(message + " and going to a grouped setup, see https://docs.vespa.ai/en/content/elasticity.html#grouped-distribution",
                      logger.message.toString());
     }
 

@@ -61,7 +61,7 @@ application
 Specifies the application ID to manage. It has three parts, separated by
 dots, with the third part being optional. If the third part is omitted it
 defaults to "default". This is only relevant for the "cloud" and "hosted"
-targets. See https://docs.vespa.ai/en/cloud/tenant-apps-instances.html for more details.
+targets. See https://docs.vespa.ai/en/learn/tenant-apps-instances.html for more details.
 This has no default value. Examples: tenant1.app1, tenant1.app1.instance1
 
 cluster
@@ -70,7 +70,7 @@ Specifies the container cluster to manage. If left empty (default) and the
 application has only one container cluster, that cluster is chosen
 automatically. When an application has multiple cluster this must specify a
 valid cluster name, as specified in services.xml. See
-https://docs.vespa.ai/en/reference/services-container.html for more details.
+https://docs.vespa.ai/en/reference/applications/services/container.html for more details.
 
 color
 
@@ -114,7 +114,7 @@ zone
 
 Specifies a custom zone to use when connecting to a Vespa Cloud application.
 This is only relevant for cloud and hosted targets and defaults to a dev zone.
-See https://docs.vespa.ai/en/cloud/zones.html for available zones. Examples:
+See https://docs.vespa.ai/en/operations/zones.html for available zones. Examples:
 dev.aws-us-east-1c, dev.gcp-us-central1-f`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      false,

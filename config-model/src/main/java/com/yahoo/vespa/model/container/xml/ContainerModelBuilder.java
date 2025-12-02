@@ -708,7 +708,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             if (isPublic) {
                 if (clientCertificates.isEmpty())
                     throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
-                                                               "see: https://docs.vespa.ai/en/cloud/security/guide.html#data-plane");
+                                                               "see: https://docs.vespa.ai/en/security/guide.html#data-plane");
                 builder.tlsCaCertificatesPem(X509CertificateUtils.toPem(clientCertificates))
                         .clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
             } else {
@@ -1085,7 +1085,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 DeployLogger logger = context.getDeployState().getDeployLogger();
                 logger.logApplicationPackage(WARNING, "'jvm-gc-options' is deprecated and will be removed in Vespa 9." +
                         " Please merge into 'gc-options' in 'jvm' element." +
-                        " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
+                        " See https://docs.vespa.ai/en/reference/services/container.html#jvm");
             }
 
             cluster.setJvmGCOptions(buildJvmGCOptions(context, jvmGCOptions));
@@ -1095,7 +1095,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             context.getDeployState().getDeployLogger()
                    .logApplicationPackage(WARNING, "'allocated-memory' is deprecated and will be removed in Vespa 9." +
                            " Please merge into 'allocated-memory' in 'jvm' element." +
-                           " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
+                           " See https://docs.vespa.ai/en/reference/services/container.html#jvm");
     }
 
     private void extractJvmTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
@@ -1520,7 +1520,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 if (! jvmOptions.isEmpty())
                     logger.logApplicationPackage(WARNING, "'jvm-options' is deprecated and will be removed in Vespa 9." +
                             " Please merge 'jvm-options' into 'options' or 'gc-options' in 'jvm' element." +
-                            " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
+                            " See https://docs.vespa.ai/en/reference/services/container.html#jvm");
             }
 
             validateJvmOptions(jvmOptions);
@@ -1547,7 +1547,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             String message = "Invalid or misplaced JVM options in services.xml: " +
                     String.join(",", invalidOptions) + "." +
-                    " See https://docs.vespa.ai/en/reference/services-container.html#jvm";
+                    " See https://docs.vespa.ai/en/reference/services/container.html#jvm";
             if (isHosted)
                 throw new IllegalArgumentException(message);
             else
@@ -1604,7 +1604,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             String message = "Invalid or misplaced JVM GC options in services.xml: " +
                     String.join(",", options) + "." +
-                    " See https://docs.vespa.ai/en/reference/services-container.html#jvm";
+                    " See https://docs.vespa.ai/en/reference/services/container.html#jvm";
             if (isHosted)
                 throw new IllegalArgumentException(message);
             else

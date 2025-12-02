@@ -56,7 +56,7 @@ read_dictionary()
      * word\tfrequency\n
      *
      * This is the same format used when dumping a disk index dictionary using 'vespa-index-inspect dumpwords'.
-     * See https://docs.vespa.ai/en/reference/vespa-cmdline-tools.html#vespa-index-inspect.
+     * See https://docs.vespa.ai/en/reference/clients/vespa-cmdline-tools.html#vespa-index-inspect.
      */
     while (std::getline(file, line)) {
         std::istringstream iss(line);

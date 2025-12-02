@@ -3088,7 +3088,7 @@ String constantTensorErrorMessage(String rankProfileName, Reference name) : {}
 
 /**
  * Parses a tensor written in a tensor literal form,
- * https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form
+ * https://docs.vespa.ai/en/reference/ranking/tensor.html#tensor-literal-form
  */
 Tensor tensorValue(TensorType type) :
 {

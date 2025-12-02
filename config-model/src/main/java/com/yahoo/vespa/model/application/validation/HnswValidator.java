@@ -51,7 +51,7 @@ public class HnswValidator implements Validator {
                            String.join(", ", fields),
                            cluster.usesHierarchicDistribution()
                                    ? ""
-                                   : " and going to a grouped setup, see https://docs.vespa.ai/en/elasticity.html#grouped-distribution");
+                                   : " and going to a grouped setup, see https://docs.vespa.ai/en/content/elasticity.html#grouped-distribution");
         context.deployState()
                .getDeployLogger()
                .logApplicationPackage(INFO, message);

@@ -10,7 +10,7 @@ require "json"
 require "openssl"
 
 # This is the logstash vespa input plugin. It is used to read from Vespa
-# via Visit : https://docs.vespa.ai/en/reference/document-v1-api-reference.html#visit
+# via Visit : https://docs.vespa.ai/en/reference/api/document-v1.html#visit
 # Each document becomes an event.
 
 class LogStash::Inputs::Vespa < LogStash::Inputs::Base

@@ -215,7 +215,7 @@ public class SchemaHover {
 
     private static Hover getIndexingHover(SchemaNode hoverNode, EventPositionContext context) {
         // Taken from:
-        // https://docs.vespa.ai/en/reference/schema-reference.html#indexing
+        // https://docs.vespa.ai/en/reference/schemas/schemas.html#indexing
         // Too specific to include in documentation fetcher IMO.
         
         // Note: these AST classes belong to the indexinglanguage parser

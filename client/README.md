@@ -42,12 +42,12 @@ This is a [work-in-progress javascript app](js/app) for querying a Vespa applica
 ### vespa\_query\_dsl
 
 This lib is used for composing Vespa
-[YQL queries](https://docs.vespa.ai/en/reference/query-language-reference.html).
+[YQL queries](https://docs.vespa.ai/en/reference/querying/yql.html).
 For usage, refer to the [QTest.java](src/test/java/ai/vespa/client/dsl/QTest.java) unit test.
 
 ToDos:
 
-- [ ] support `predicate` (https://docs.vespa.ai/en/predicate-fields.html)
+- [ ] support `predicate` (https://docs.vespa.ai/en/querying/predicate-fields.html)
 - [ ] support methods for checking positive/negative conditions for specific field
 - [x] support order by annotation
 - [x] support order by

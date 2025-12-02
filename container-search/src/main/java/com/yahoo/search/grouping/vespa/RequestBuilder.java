@@ -438,7 +438,7 @@ class RequestBuilder {
                     "The theoretical total number of groups and summaries in grouping query exceeds " +
                             "'grouping.globalMaxGroups' ( %d > %d ). " +
                             "Either restrict group/summary counts with max() or disable 'grouping.globalMaxGroups'. " +
-                            "See https://docs.vespa.ai/en/grouping.html for details.",
+                            "See https://docs.vespa.ai/en/querying/grouping.html for details.",
                     totalGroupsAndSummaries, globalMaxGroups));
         this.totalGroupsAndSummaries = totalGroupsAndSummaries;
     }
@@ -452,7 +452,7 @@ class RequestBuilder {
         if (max <= 0) throw new IllegalInputException(
                 "Cannot return unbounded number of groups when 'grouping.globalMaxGroups' is enabled. " +
                         "Either restrict group count with max() or disable 'grouping.globalMaxGroups'. " +
-                        "See https://docs.vespa.ai/en/grouping.html for details.");
+                        "See https://docs.vespa.ai/en/querying/grouping.html for details.");
         return max;
     }
 
@@ -461,7 +461,7 @@ class RequestBuilder {
         if (max <= 0) throw new IllegalInputException(
                 "Cannot return unbounded number of summaries when 'grouping.globalMaxGroups' is enabled. " +
                         "Either restrict summary count with max() or disable 'grouping.globalMaxGroups'. " +
-                        "See https://docs.vespa.ai/en/grouping.html for details.");
+                        "See https://docs.vespa.ai/en/querying/grouping.html for details.");
         return max;
     }
 

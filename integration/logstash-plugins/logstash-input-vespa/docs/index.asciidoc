@@ -58,7 +58,7 @@ URL to the Vespa instance.
 * Value type is <<string,string>>
 * Default value is `nil`
 
-The cluster name to be used while visiting: https://docs.vespa.ai/en/reference/document-v1-api-reference.html#visit
+The cluster name to be used while visiting: https://docs.vespa.ai/en/reference/api/document-v1.html#visit
 
 [id="plugins-{type}s-{plugin}-client_cert"]
 ===== `client_cert`

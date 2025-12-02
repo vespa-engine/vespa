@@ -328,7 +328,7 @@ public class AttributeChangeValidatorTest {
     private String validationMessage(String validationId, String message) {
         return message +
                " To allow this add <allow until='yyyy-mm-dd'>" + validationId +
-               "</allow> to validation-overrides.xml, see https://docs.vespa.ai/en/reference/validation-overrides.html";
+               "</allow> to validation-overrides.xml, see https://docs.vespa.ai/en/reference/applications/validation-overrides.html";
     }
 
 }

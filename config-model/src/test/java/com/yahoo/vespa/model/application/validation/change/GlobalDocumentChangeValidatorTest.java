@@ -37,7 +37,7 @@ public class GlobalDocumentChangeValidatorTest {
         } catch (IllegalArgumentException e) {
             assertFalse(allowed);
             assertEquals("Changing global attribute for document types in content clusters: Document type music in cluster default changed global from " + oldGlobal + " to " + newGlobal + ". " +
-                         "To allow this add <allow until='yyyy-mm-dd'>global-document-change</allow> to validation-overrides.xml, see https://docs.vespa.ai/en/reference/validation-overrides.html",
+                         "To allow this add <allow until='yyyy-mm-dd'>global-document-change</allow> to validation-overrides.xml, see https://docs.vespa.ai/en/reference/applications/validation-overrides.html",
                          e.getMessage());
         }
     }

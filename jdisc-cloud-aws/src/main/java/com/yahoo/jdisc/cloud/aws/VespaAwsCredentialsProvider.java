@@ -55,7 +55,7 @@ public final class VespaAwsCredentialsProvider implements AWSCredentialsProvider
             logger.log(Level.FINE, "Refreshing credentials from disk");
             credentials.set(readCredentials());
         } catch (Exception e) {
-            throw new RuntimeException("Unable to get credentials. Please ensure cluster is configured as exclusive. See: https://docs.vespa.ai/en/reference/services.html#nodes");
+            throw new RuntimeException("Unable to get credentials. Please ensure cluster is configured as exclusive. See: https://docs.vespa.ai/en/reference/services/services.html#nodes");
         }
     }
 

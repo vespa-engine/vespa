@@ -367,7 +367,7 @@ public class BuiltInFunctions {
         put("xgboost", new GenericFunction("xgboost", new FunctionSignature(new StringArgument("\"xgboost-model-name\""))));
 
         // TODO: I think this needs to be inside summary-features
-        // https://docs.vespa.ai/en/predicate-fields.html#identifying-subqueries-in-results
+        // https://docs.vespa.ai/en/schemas/predicate-fields.html#identifying-subqueries-in-results
         put("subqueries", new GenericFunction("subqueries", new FunctionSignature(
             new FieldArgument(FieldType.PREDICATE),
             Set.of(

@@ -76,7 +76,7 @@ public class RankProperties implements Cloneable {
         if (feature instanceof Double d) return Optional.of(Tensor.from(d));
         throw new IllegalArgumentException("Expected '" + name + "' to be a tensor or double, but it is '" + feature +
                 "', this usually means that '" + name + "' is not defined in the schema. " +
-                "See https://docs.vespa.ai/en/tensor-user-guide.html#querying-with-tensors");
+                "See https://docs.vespa.ai/en/rankiong/tensor-user-guide.html#querying-with-tensors");
     }
 
     /** Removes all properties for a given name */
