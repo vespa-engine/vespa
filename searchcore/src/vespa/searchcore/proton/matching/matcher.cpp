@@ -289,13 +289,14 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         isDoomExplicit = mtf->get_request_context().getDoom().isExplicitSoftDoom();
         traceQuery(6, request.trace(), mtf->query());
 
+        if (!mtf->valid()) {
+            return reply;
+        }
+
         // Collect more detailed statistics about query evaluation
         queryeval_stats = search::queryeval::QueryEvalStats::create();
         mtf->install_stats(*queryeval_stats);
 
-        if (!mtf->valid()) {
-            return reply;
-        }
         if (mtf->get_request_context().getDoom().soft_doom()) {
             reply->coverage.degradeTimeout();
             vespalib::Issue::report("Search request soft doomed during query setup and initialization.");
