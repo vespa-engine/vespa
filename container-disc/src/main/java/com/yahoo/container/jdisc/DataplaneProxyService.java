@@ -77,6 +77,7 @@ public final class DataplaneProxyService extends AbstractComponent {
         nginxConf = root.resolve("conf/nginx/nginx.conf");
 
         executorService = new ScheduledThreadPoolExecutor(1);
+        executorService.setMaximumPoolSize(1); // Ensure only one task runs at a time
         executorService.scheduleAtFixedRate(this::converge, reloadPeriodMinutes, reloadPeriodMinutes, TimeUnit.MINUTES);
     }
 
@@ -185,11 +186,11 @@ public final class DataplaneProxyService extends AbstractComponent {
         super.deconstruct();
         wantedState = NginxState.STOPPED;
 
+        // Trigger one final converge to stop nginx (before shutdown)
+        executorService.execute(this::converge);
+
         // Shut down executor to prevent new scheduled tasks
         executorService.shutdown();
-
-        // Trigger one final converge to stop nginx
-        executorService.execute(this::converge);
 
         // Wait for executor (and converge) to complete
         try {
