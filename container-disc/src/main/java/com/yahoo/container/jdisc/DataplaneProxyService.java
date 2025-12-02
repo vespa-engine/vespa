@@ -184,10 +184,23 @@ public final class DataplaneProxyService extends AbstractComponent {
     public void deconstruct() {
         super.deconstruct();
         wantedState = NginxState.STOPPED;
+
+        // Shut down executor to prevent new scheduled tasks
+        executorService.shutdown();
+
+        // Trigger one final converge to stop nginx
+        executorService.execute(this::converge);
+
+        // Wait for executor (and converge) to complete
         try {
-            executorService.awaitTermination(30, TimeUnit.SECONDS);
+            if (!executorService.awaitTermination(2, TimeUnit.MINUTES)) {
+                logger.log(Level.WARNING, "Executor did not terminate within 2 minutes, forcing shutdown");
+                executorService.shutdownNow();
+            }
         } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "Error shutting down proxy reload thread", e);
+            logger.log(Level.WARNING, "Interrupted while waiting for executor shutdown", e);
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 
