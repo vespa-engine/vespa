@@ -361,12 +361,12 @@ template <HnswIndexType type>
 template <class VisitedTracker, class BestNeighbors>
 void
 HnswIndex<type>::search_layer_helper(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack,
-                                     BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter,
+                                     BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter, search::queryeval::LazyFilter *lazy_filter,
                                      uint32_t nodeid_limit, const vespalib::Doom* const doom,
                                      uint32_t estimated_visited_nodes) const
 {
     NearestPriQ candidates;
-    internal::GlobalFilterWrapper<type> filter_wrapper(filter);
+    internal::GlobalFilterWrapper<type> filter_wrapper(filter, lazy_filter);
     filter_wrapper.clamp_nodeid_limit(nodeid_limit);
     VisitedTracker visited(nodeid_limit, estimated_visited_nodes);
     if (doom != nullptr && doom->soft_doom()) {
@@ -433,13 +433,13 @@ template <HnswIndexType type>
 template <class VisitedTracker, class BestNeighbors>
 void
 HnswIndex<type>::search_layer_filter_first_helper(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack,
-                                                  BestNeighbors& best_neighbors, double exploration, uint32_t level, const GlobalFilter *filter,
+                                                  BestNeighbors& best_neighbors, double exploration, uint32_t level, const GlobalFilter *filter, search::queryeval::LazyFilter *lazy_filter,
                                                   uint32_t nodeid_limit, const vespalib::Doom* const doom,
                                                   uint32_t estimated_visited_nodes) const
 {
     assert(filter);
     NearestPriQ candidates;
-    internal::GlobalFilterWrapper<type> filter_wrapper(filter);
+    internal::GlobalFilterWrapper<type> filter_wrapper(filter, lazy_filter);
     filter_wrapper.clamp_nodeid_limit(nodeid_limit);
     VisitedTracker visited(nodeid_limit, estimated_visited_nodes);
     if (doom != nullptr && doom->soft_doom()) {
@@ -573,14 +573,14 @@ template <HnswIndexType type>
 template <class BestNeighbors>
 void
 HnswIndex<type>::search_layer(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack, BestNeighbors& best_neighbors,
-                              uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter) const
+                              uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter, search::queryeval::LazyFilter *lazy_filter) const
 {
     uint32_t nodeid_limit = _graph.nodes_size.load(std::memory_order_acquire);
     uint32_t estimated_visited_nodes = estimate_visited_nodes(level, nodeid_limit, neighbors_to_find, filter);
     if (estimated_visited_nodes >= nodeid_limit / 128) {
-        search_layer_helper<BitVectorVisitedTracker>(stats, df, neighbors_to_find, exploration_slack, best_neighbors, level, filter, nodeid_limit, doom, estimated_visited_nodes);
+        search_layer_helper<BitVectorVisitedTracker>(stats, df, neighbors_to_find, exploration_slack, best_neighbors, level, filter, lazy_filter, nodeid_limit, doom, estimated_visited_nodes);
     } else {
-        search_layer_helper<HashSetVisitedTracker>(stats, df, neighbors_to_find, exploration_slack, best_neighbors, level, filter, nodeid_limit, doom, estimated_visited_nodes);
+        search_layer_helper<HashSetVisitedTracker>(stats, df, neighbors_to_find, exploration_slack, best_neighbors, level, filter, lazy_filter, nodeid_limit, doom, estimated_visited_nodes);
     }
 }
 
@@ -588,14 +588,14 @@ template <HnswIndexType type>
 template <class BestNeighbors>
 void
 HnswIndex<type>::search_layer_filter_first(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack, BestNeighbors& best_neighbors, double exploration,
-                                           uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter) const
+                                           uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter, search::queryeval::LazyFilter *lazy_filter) const
 {
     uint32_t nodeid_limit = _graph.nodes_size.load(std::memory_order_acquire);
     uint32_t estimated_visited_nodes = estimate_visited_nodes(level, nodeid_limit, neighbors_to_find, filter);
     if (estimated_visited_nodes >= nodeid_limit / 128) {
-        search_layer_filter_first_helper<BitVectorVisitedTracker>(stats, df, neighbors_to_find, exploration_slack, best_neighbors, exploration, level, filter, nodeid_limit, doom, estimated_visited_nodes);
+        search_layer_filter_first_helper<BitVectorVisitedTracker>(stats, df, neighbors_to_find, exploration_slack, best_neighbors, exploration, level, filter, lazy_filter, nodeid_limit, doom, estimated_visited_nodes);
     } else {
-        search_layer_filter_first_helper<HashSetVisitedTracker>(stats, df, neighbors_to_find, exploration_slack, best_neighbors, exploration, level, filter, nodeid_limit, doom, estimated_visited_nodes);
+        search_layer_filter_first_helper<HashSetVisitedTracker>(stats, df, neighbors_to_find, exploration_slack, best_neighbors, exploration, level, filter, lazy_filter, nodeid_limit, doom, estimated_visited_nodes);
     }
 }
 
@@ -1018,10 +1018,10 @@ struct NeighborsByDocId {
 
 template <HnswIndexType type>
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex<type>::top_k_by_docid(Stats &stats, uint32_t k, const BoundDistanceFunction &df, const GlobalFilter *filter, bool low_hit_ratio, double exploration,
+HnswIndex<type>::top_k_by_docid(Stats &stats, uint32_t k, const BoundDistanceFunction &df, const GlobalFilter *filter, search::queryeval::LazyFilter *lazy_filter, bool low_hit_ratio, double exploration,
                                 uint32_t explore_k, double exploration_slack, const vespalib::Doom& doom, double distance_threshold) const
 {
-    SearchBestNeighbors candidates = top_k_candidates(stats, df, std::max(k, explore_k), exploration_slack, filter, low_hit_ratio, exploration, doom);
+    SearchBestNeighbors candidates = top_k_candidates(stats, df, std::max(k, explore_k), exploration_slack, filter, lazy_filter, low_hit_ratio, exploration, doom);
     auto result = candidates.get_neighbors(k, distance_threshold);
     std::sort(result.begin(), result.end(), NeighborsByDocId());
     return result;
@@ -1032,20 +1032,24 @@ std::vector<NearestNeighborIndex::Neighbor>
 HnswIndex<type>::find_top_k(Stats &stats, uint32_t k, const BoundDistanceFunction &df, uint32_t explore_k, double exploration_slack,
                             const vespalib::Doom& doom, double distance_threshold) const
 {
-    return top_k_by_docid(stats, k, df, nullptr, false, 0.0, explore_k, exploration_slack, doom, distance_threshold);
+    return top_k_by_docid(stats, k, df, nullptr, nullptr, false, 0.0, explore_k, exploration_slack, doom, distance_threshold);
 }
 
 template <HnswIndexType type>
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex<type>::find_top_k_with_filter(Stats &stats, uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter, bool low_hit_ratio, double exploration,
+HnswIndex<type>::find_top_k_with_filter(Stats &stats, uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter, search::queryeval::LazyFilter *lazy_filter, bool low_hit_ratio, double exploration,
                                         uint32_t explore_k, double exploration_slack, const vespalib::Doom& doom, double distance_threshold) const
 {
-    return top_k_by_docid(stats, k, df, &filter, low_hit_ratio, exploration, explore_k, exploration_slack, doom, distance_threshold);
+    if (filter.is_active()) {
+        return top_k_by_docid(stats, k, df, &filter, lazy_filter, low_hit_ratio, exploration, explore_k, exploration_slack, doom, distance_threshold);
+    } else {
+        return top_k_by_docid(stats, k, df, nullptr, lazy_filter, low_hit_ratio, exploration, explore_k, exploration_slack, doom, distance_threshold);
+    }
 }
 
 template <HnswIndexType type>
 typename HnswIndex<type>::SearchBestNeighbors
-HnswIndex<type>::top_k_candidates(Stats &stats, const BoundDistanceFunction &df, uint32_t k, double exploration_slack, const GlobalFilter *filter, bool low_hit_ratio, double exploration, const vespalib::Doom& doom) const
+HnswIndex<type>::top_k_candidates(Stats &stats, const BoundDistanceFunction &df, uint32_t k, double exploration_slack, const GlobalFilter *filter, search::queryeval::LazyFilter *lazy_filter, bool low_hit_ratio, double exploration, const vespalib::Doom& doom) const
 {
     SearchBestNeighbors best_neighbors;
     auto entry = _graph.get_entry_node();
@@ -1066,9 +1070,9 @@ HnswIndex<type>::top_k_candidates(Stats &stats, const BoundDistanceFunction &df,
     }
     best_neighbors.push(entry_point);
     if (filter && filter->is_active() && low_hit_ratio) {
-        search_layer_filter_first(stats, df, k, exploration_slack, best_neighbors, exploration, 0, &doom, filter);
+        search_layer_filter_first(stats, df, k, exploration_slack, best_neighbors, exploration, 0, &doom, filter, lazy_filter);
     } else {
-        search_layer(stats, df, k, exploration_slack, best_neighbors, 0, &doom, filter);
+        search_layer(stats, df, k, exploration_slack, best_neighbors, 0, &doom, filter, lazy_filter);
     }
     return best_neighbors;
 }

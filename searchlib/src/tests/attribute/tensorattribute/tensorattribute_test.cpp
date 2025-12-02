@@ -334,7 +334,9 @@ public:
     std::vector<Neighbor> find_top_k_with_filter(Stats &stats,
                                                  uint32_t k,
                                                  const search::tensor::BoundDistanceFunction &df,
-                                                 const GlobalFilter& filter, bool low_hit_ratio, double exploration, uint32_t explore_k,
+                                                 const GlobalFilter& filter,
+                                                 search::queryeval::LazyFilter *lazy_filter,
+                                                 bool low_hit_ratio, double exploration, uint32_t explore_k,
                                                  double exploration_slack,
                                                  const vespalib::Doom& doom,
                                                  double distance_threshold) const override
@@ -348,6 +350,7 @@ public:
         (void) explore_k;
         (void) exploration_slack;
         (void) filter;
+        (void) lazy_filter;
         (void) low_hit_ratio;
         (void) exploration;
         (void) doom;

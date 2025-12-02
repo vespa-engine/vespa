@@ -50,7 +50,7 @@ private:
     std::vector<search::tensor::NearestNeighborIndex::Neighbor> _found_hits;
     Algorithm _algorithm;
     std::shared_ptr<const GlobalFilter> _global_filter;
-    std::shared_ptr<const LazyFilter> _lazy_filter;
+    std::shared_ptr<LazyFilter> _lazy_filter;
     bool _global_filter_set;
     std::optional<uint32_t> _global_filter_hits;
     std::optional<double> _global_filter_hit_ratio;

@@ -43,6 +43,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/regexp.h>
+#include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <charconv>
 #include <limits>
@@ -316,7 +317,15 @@ public:
         }
     }
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
-        return create_default_filter(constraint);
+        if (constraint == FilterConstraint::UPPER_BOUND) {
+            auto wrapper = std::make_unique<FilterWrapper>(getState().numFields());
+            wrapper->wrap(createLeafSearch(wrapper->tfmda()));
+            return wrapper;
+
+        } else {
+            REQUIRE_EQ(constraint, FilterConstraint::LOWER_BOUND);
+            return std::make_unique<queryeval::EmptySearch>();
+        }
     }
 
     void fetchPostings(const queryeval::ExecuteInfo &execInfo) override {

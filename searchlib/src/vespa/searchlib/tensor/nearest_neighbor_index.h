@@ -28,7 +28,10 @@ namespace vespalib::slime { struct Inserter; }
 namespace search::fileutil { class LoadedBuffer; }
 
 namespace search { class AddressSpaceUsage; }
-namespace search::queryeval { class GlobalFilter; }
+namespace search::queryeval {
+class GlobalFilter;
+class LazyFilter;
+}
 
 namespace search::tensor {
 
@@ -133,6 +136,7 @@ public:
                                                          uint32_t k,
                                                          const BoundDistanceFunction &df,
                                                          const GlobalFilter &filter,
+                                                         search::queryeval::LazyFilter *lazy_filter,
                                                          bool low_hit_ratio,
                                                          double exploration,
                                                          uint32_t explore_k,
