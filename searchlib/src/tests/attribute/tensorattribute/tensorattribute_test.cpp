@@ -354,6 +354,32 @@ public:
         (void) distance_threshold;
         return {};
     }
+    std::vector<Neighbor> find_top_k_with_lazy_filter(Stats &stats,
+                                                 uint32_t k,
+                                                 const search::tensor::BoundDistanceFunction &df,
+                                                 const GlobalFilter& filter,
+                                                 search::queryeval::LazyFilter *lazy_filter,
+                                                 bool low_hit_ratio, double exploration, uint32_t explore_k,
+                                                 double exploration_slack,
+                                                 const vespalib::Doom& doom,
+                                                 double distance_threshold) const override
+    {
+        stats.count_computed_distance();
+        stats.count_visited_node();
+        stats.count_visited_node();
+        (void) stats;
+        (void) k;
+        (void) df;
+        (void) explore_k;
+        (void) exploration_slack;
+        (void) filter;
+        (void) lazy_filter;
+        (void) low_hit_ratio;
+        (void) exploration;
+        (void) doom;
+        (void) distance_threshold;
+        return {};
+    }
 
     search::tensor::DistanceFunctionFactory &distance_function_factory() const override {
         static search::tensor::DistanceFunctionFactory::UP my_dist_fun = search::tensor::make_distance_function_factory(search::attribute::DistanceMetric::Euclidean, vespalib::eval::CellType::DOUBLE);

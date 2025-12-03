@@ -102,6 +102,7 @@ public class QueryProperties extends Properties {
         addDualCasedRM(map, Matching.FILTER_FIRST_EXPLORATION, GetterSetter.of(query -> query.getRanking().getMatching().getFilterFirstExploration(), (query, value) -> query.getRanking().getMatching().setFilterFirstExploration(asDouble(value, 0.3))));
         addDualCasedRM(map, Matching.EXPLORATION_SLACK, GetterSetter.of(query -> query.getRanking().getMatching().getExplorationSlack(), (query, value) -> query.getRanking().getMatching().setExplorationSlack(asDouble(value, 0.0))));
         addDualCasedRM(map, Matching.TARGET_HITS_MAX_ADJUSTMENT_FACTOR, GetterSetter.of(query -> query.getRanking().getMatching().getTargetHitsMaxAdjustmentFactor(), (query, value) -> query.getRanking().getMatching().setTargetHitsMaxAdjustmentFactor(asDouble(value, 20.0))));
+        addDualCasedRM(map, Matching.LAZY_FILTER, GetterSetter.of(query -> query.getRanking().getMatching().getLazyFilter(), (query, value) -> query.getRanking().getMatching().setLazyFilter(asBoolean(value, false))));
         addDualCasedRM(map, Matching.FILTER_THRESHOLD, GetterSetter.of(query -> query.getRanking().getMatching().getFilterThreshold(), (query, value) -> query.getRanking().getMatching().setFilterThreshold(asDouble(value, 1.0))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCHING, Matching.WEAKAND, WeakAnd.STOPWORD_LIMIT),
                 GetterSetter.of(query -> query.getRanking().getMatching().getWeakAnd().getStopwordLimit(),

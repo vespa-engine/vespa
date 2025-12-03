@@ -109,7 +109,7 @@ public:
 
     void handle_global_filter(const IRequestContext & requestContext, uint32_t docid_limit,
                               double global_filter_lower_limit, double global_filter_upper_limit,
-                              search::engine::Trace& trace, bool sort_by_cost);
+                              search::engine::Trace& trace, bool sort_by_cost, bool use_lazy_filter = false);
 
     /**
      * Calculates and handles the global filter if needed by the blueprint tree.
@@ -126,7 +126,7 @@ public:
      */
     static bool handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
                                      double global_filter_lower_limit, double global_filter_upper_limit,
-                                     vespalib::ThreadBundle &thread_bundle, search::engine::Trace* trace);
+                                     vespalib::ThreadBundle &thread_bundle, search::engine::Trace* trace, bool use_lazy_filter = false);
 
     void freeze();
     void set_matching_phase(search::queryeval::MatchingPhase matching_phase) const noexcept;

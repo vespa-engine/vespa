@@ -230,9 +230,10 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
         _query.fetchPostings(ExecuteInfo::create(in_flow.rate(), _requestContext.getDoom(), thread_bundle));
         if (is_search) {
+            bool use_lazy_filter = LazyFilter::check(_queryEnv.getProperties());
             _query.handle_global_filter(_requestContext, searchContext.getDocIdLimit(),
                                         _create_blueprint_params.global_filter_lower_limit,
-                                        _create_blueprint_params.global_filter_upper_limit, trace, sort_by_cost);
+                                        _create_blueprint_params.global_filter_upper_limit, trace, sort_by_cost, use_lazy_filter);
         }
         _query.freeze();
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");

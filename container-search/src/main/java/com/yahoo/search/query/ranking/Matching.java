@@ -30,6 +30,7 @@ public class Matching implements Cloneable {
     public static final String FILTER_FIRST_THRESHOLD = "filterFirstThreshold";
     public static final String FILTER_FIRST_EXPLORATION = "filterFirstExploration";
     public static final String TARGET_HITS_MAX_ADJUSTMENT_FACTOR = "targetHitsMaxAdjustmentFactor";
+    public static final String LAZY_FILTER = "lazyFilter";
     public static final String FILTER_THRESHOLD = "filterThreshold";
     public static final String WEAKAND = "weakand";
 
@@ -47,6 +48,7 @@ public class Matching implements Cloneable {
         argumentType.addField(new FieldDescription(FILTER_FIRST_EXPLORATION, "double"));
         argumentType.addField(new FieldDescription(EXPLORATION_SLACK, "double"));
         argumentType.addField(new FieldDescription(TARGET_HITS_MAX_ADJUSTMENT_FACTOR, "double"));
+        argumentType.addField(new FieldDescription(LAZY_FILTER, "boolean"));
         argumentType.addField(new FieldDescription(FILTER_THRESHOLD, "double"));
         argumentType.addField(new FieldDescription(WEAKAND, new QueryProfileFieldType(WeakAnd.getArgumentType())));
         argumentType.freeze();
@@ -64,6 +66,7 @@ public class Matching implements Cloneable {
     private Double filterFirstExploration = null;
     private Double explorationSlack = null;
     private Double targetHitsMaxAdjustmentFactor = null;
+    private Boolean lazyFilter = null;
     private Double filterThreshold = null;
     private WeakAnd weakAnd = new WeakAnd();
 
@@ -77,6 +80,7 @@ public class Matching implements Cloneable {
     public Double getFilterFirstExploration() { return filterFirstExploration; }
     public Double getExplorationSlack() { return explorationSlack; }
     public Double getTargetHitsMaxAdjustmentFactor() { return targetHitsMaxAdjustmentFactor; }
+    public Boolean getLazyFilter() { return lazyFilter; }
     public Double getFilterThreshold() { return filterThreshold; }
     public WeakAnd getWeakAnd() { return weakAnd; }
 
@@ -119,6 +123,9 @@ public class Matching implements Cloneable {
     public void setTargetHitsMaxAdjustmentFactor(double factor) {
         targetHitsMaxAdjustmentFactor = factor;
     }
+    public void setLazyFilter(boolean enabled) {
+        lazyFilter = enabled;
+    }
     public void setFilterThreshold(double threshold) {
         validateRange(FILTER_THRESHOLD, threshold, 0.0, 1.0);
         filterThreshold = threshold;
@@ -156,6 +163,9 @@ public class Matching implements Cloneable {
         if (targetHitsMaxAdjustmentFactor != null) {
             rankProperties.put("vespa.matching.nns.target_hits_max_adjustment_factor", String.valueOf(targetHitsMaxAdjustmentFactor));
         }
+        if (lazyFilter != null) {
+            rankProperties.put("vespa.matching.nns.lazy_filter", String.valueOf(lazyFilter));
+        }
         if (filterThreshold != null) {
             rankProperties.put("vespa.matching.filter_threshold", String.valueOf(filterThreshold));
         }
@@ -189,6 +199,7 @@ public class Matching implements Cloneable {
                Objects.equals(filterFirstExploration, matching.filterFirstExploration) &&
                Objects.equals(explorationSlack, matching.explorationSlack) &&
                Objects.equals(targetHitsMaxAdjustmentFactor, matching.targetHitsMaxAdjustmentFactor) &&
+               Objects.equals(lazyFilter, matching.lazyFilter) &&
                Objects.equals(filterThreshold, matching.filterThreshold) &&
                Objects.equals(weakAnd, matching.weakAnd);
     }
@@ -197,7 +208,7 @@ public class Matching implements Cloneable {
     public int hashCode() {
         return Objects.hash(termwiseLimit, numThreadsPerSearch, numSearchPartitions, minHitsPerThread,
                             postFilterThreshold, approximateThreshold, filterFirstThreshold, filterFirstExploration,
-                            explorationSlack, targetHitsMaxAdjustmentFactor, filterThreshold, weakAnd);
+                            explorationSlack, targetHitsMaxAdjustmentFactor, lazyFilter, filterThreshold, weakAnd);
     }
 }
 
