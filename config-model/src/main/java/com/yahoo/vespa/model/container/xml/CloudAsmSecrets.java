@@ -22,7 +22,7 @@ public class CloudAsmSecrets extends SimpleComponent implements
         AsmTenantSecretConfig.Producer {
 
     static final String CLASS = "ai.vespa.secret.aws.AsmTenantSecretReader";
-    private static final String BUNDLE = "jdisc-cloud-aws";
+    private static final String BUNDLE = "cloud-tenant";
 
     private final URI ztsUri;
     private final AthenzDomain athenzDomain;

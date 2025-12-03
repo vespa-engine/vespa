@@ -62,7 +62,6 @@
 ./http-utils/* @bjorncs
 ./indexinglanguage/* @glebashnik
 ./jaxrs_utils/* @hakonhall
-./jdisc-cloud-aws/* @oyving
 ./jdisc-security-filters/* @bjorncs
 ./jdisc_core/* @gjoranv @bjorncs
 ./jdisc_core_test/* @gjoranv @bjorncs
