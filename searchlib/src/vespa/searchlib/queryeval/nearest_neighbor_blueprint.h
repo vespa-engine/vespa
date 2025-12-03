@@ -50,10 +50,10 @@ private:
     std::vector<search::tensor::NearestNeighborIndex::Neighbor> _found_hits;
     Algorithm _algorithm;
     std::shared_ptr<const GlobalFilter> _global_filter;
-    std::shared_ptr<LazyFilter> _lazy_filter;
     bool _global_filter_set;
     std::optional<uint32_t> _global_filter_hits;
     std::optional<double> _global_filter_hit_ratio;
+    std::shared_ptr<LazyFilter> _lazy_filter;
     const vespalib::Doom& _doom;
     MatchingPhase _matching_phase;
     search::tensor::NearestNeighborIndex::Stats _nni_stats;

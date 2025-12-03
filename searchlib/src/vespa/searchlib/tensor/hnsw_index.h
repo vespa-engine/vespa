@@ -70,9 +70,45 @@ class GlobalFilterWrapper;
 template <>
 class GlobalFilterWrapper<HnswIndexType::SINGLE> {
     const search::queryeval::GlobalFilter *_filter;
+public:
+    explicit GlobalFilterWrapper(const search::queryeval::GlobalFilter *filter, search::queryeval::LazyFilter *)
+        : _filter(filter)
+    {
+    }
+
+    [[nodiscard]] bool check(uint32_t docid) const noexcept { return !_filter || _filter->check(docid); }
+
+    void clamp_nodeid_limit(uint32_t& nodeid_limit) {
+        if (_filter) {
+            nodeid_limit = std::min(nodeid_limit, _filter->size());
+        }
+    }
+};
+
+template <>
+class GlobalFilterWrapper<HnswIndexType::MULTI> {
+    const search::queryeval::GlobalFilter *_filter;
+    uint32_t            _docid_limit;
+public:
+    explicit GlobalFilterWrapper(const search::queryeval::GlobalFilter *filter, search::queryeval::LazyFilter *)
+        : _filter(filter),
+          _docid_limit(filter ? filter->size() : 0u)
+    {
+    }
+
+    [[nodiscard]] bool check(uint32_t docid) const noexcept { return !_filter || (docid < _docid_limit && _filter->check(docid)); }
+    static void clamp_nodeid_limit(uint32_t&) { }
+};
+
+template <HnswIndexType type>
+class LazyFilterWrapper;
+
+template <>
+class LazyFilterWrapper<HnswIndexType::SINGLE> {
+    const search::queryeval::GlobalFilter *_filter;
     search::queryeval::LazyFilter *_lazy_filter;
 public:
-    explicit GlobalFilterWrapper(const search::queryeval::GlobalFilter *filter, search::queryeval::LazyFilter *lazy_filter)
+    explicit LazyFilterWrapper(const search::queryeval::GlobalFilter *filter, search::queryeval::LazyFilter *lazy_filter)
         : _filter(filter), _lazy_filter(lazy_filter)
     {
     }
@@ -95,14 +131,15 @@ public:
 };
 
 template <>
-class GlobalFilterWrapper<HnswIndexType::MULTI> {
+class LazyFilterWrapper<HnswIndexType::MULTI> {
     const search::queryeval::GlobalFilter *_filter;
     uint32_t            _docid_limit;
     search::queryeval::LazyFilter *_lazy_filter;
 public:
-    explicit GlobalFilterWrapper(const search::queryeval::GlobalFilter *filter, search::queryeval::LazyFilter *lazy_filter)
+    explicit LazyFilterWrapper(const search::queryeval::GlobalFilter *filter, search::queryeval::LazyFilter *lazy_filter)
         : _filter(filter),
-          _docid_limit(filter ? filter->size() : 0u), _lazy_filter(lazy_filter)
+          _docid_limit(filter ? filter->size() : 0u),
+          _lazy_filter(lazy_filter)
     {
     }
 
@@ -228,27 +265,28 @@ protected:
      * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
      */
     HnswCandidate find_nearest_in_layer(Stats &stats, const BoundDistanceFunction &df, const HnswCandidate& entry_point, uint32_t level) const __attribute__((noinline));
-    template <class VisitedTracker, class BestNeighbors>
+    template <class VisitedTracker, class FilterWrapper, class BestNeighbors>
     void search_layer_helper(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack, BestNeighbors& best_neighbors,
                              uint32_t level, const GlobalFilter *filter, search::queryeval::LazyFilter *lazy_filter, uint32_t nodeid_limit,
                              const vespalib::Doom* const doom, uint32_t estimated_visited_nodes) const __attribute__((noinline));
-    template <class VisitedTracker, class BestNeighbors>
+    template <class VisitedTracker, class FilterWrapper, class BestNeighbors>
     void search_layer_filter_first_helper(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack, BestNeighbors& best_neighbors,
                                           double exploration, uint32_t level, const GlobalFilter *filter, search::queryeval::LazyFilter *lazy_filter, uint32_t nodeid_limit,
                                           const vespalib::Doom* const doom, uint32_t estimated_visited_nodes) const __attribute__((noinline));
-    template <class VisitedTracker>
+    template <class VisitedTracker, class FilterWrapper>
     void exploreNeighborhood(Stats &stats, HnswTraversalCandidate &cand, std::deque<uint32_t> &found, VisitedTracker &visited, double exploration, uint32_t level,
-                             const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit) const;
-    template <class VisitedTracker>
+                             const FilterWrapper& filter_wrapper, uint32_t nodeid_limit) const;
+    template <class VisitedTracker, class FilterWrapper>
     void exploreNeighborhoodByOneHop(Stats &stats, std::deque<uint32_t> &todo, std::deque<uint32_t> &found, VisitedTracker &visited, uint32_t level,
-                                     const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit,
+                                     const FilterWrapper& filter_wrapper, uint32_t nodeid_limit,
                                      uint32_t max_neighbors_to_find) const;
-    template <class BestNeighbors>
+    template <class FilterWrapper, class BestNeighbors>
     void search_layer(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack, BestNeighbors& best_neighbors,
                       uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter = nullptr, search::queryeval::LazyFilter *lazy_filter = nullptr) const;
-    template <class BestNeighbors>
+    template <class FilterWrapper, class BestNeighbors>
     void search_layer_filter_first(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack, BestNeighbors& best_neighbors, double exploration,
                                    uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter = nullptr, search::queryeval::LazyFilter *lazy_filter = nullptr) const;
+    template <class FilterWrapper>
     std::vector<Neighbor> top_k_by_docid(Stats &stats, uint32_t k, const BoundDistanceFunction &df, const GlobalFilter *filter, search::queryeval::LazyFilter *lazy_filter, bool low_hit_ratio, double exploration,
                                          uint32_t explore_k, double exploration_slack, const vespalib::Doom& doom, double distance_threshold) const;
 
@@ -292,12 +330,18 @@ public:
     std::vector<Neighbor> find_top_k(Stats &stats, uint32_t k, const BoundDistanceFunction &df, uint32_t explore_k, double exploration_slack,
                                      const vespalib::Doom& doom, double distance_threshold) const override;
 
-    std::vector<Neighbor> find_top_k_with_filter(Stats &stats, uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter, search::queryeval::LazyFilter *lazy_filter, bool low_hit_ratio, double exploration,
+    std::vector<Neighbor> find_top_k_with_filter(Stats &stats, uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter, bool low_hit_ratio, double exploration,
                                                  uint32_t explore_k, double exploration_slack, const vespalib::Doom& doom, double distance_threshold) const override;
+
+    std::vector<Neighbor> find_top_k_with_lazy_filter(Stats &stats, uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter, search::queryeval::LazyFilter *lazy_filter, bool low_hit_ratio, double exploration,
+                                                      uint32_t explore_k, double exploration_slack, const vespalib::Doom& doom, double distance_threshold) const override;
 
     DistanceFunctionFactory &distance_function_factory() const override { return *_distance_ff; }
 
+    template <class FilterWrapper>
     SearchBestNeighbors top_k_candidates(Stats &stats, const BoundDistanceFunction &df, uint32_t k, double exploration_slack, const GlobalFilter *filter, search::queryeval::LazyFilter *lazy_filter, bool low_hit_ratio, double exploration,
+                                         const vespalib::Doom& doom) const;
+    SearchBestNeighbors top_k_candidates(Stats &stats, const BoundDistanceFunction &df, uint32_t k, double exploration_slack, const GlobalFilter *filter, bool low_hit_ratio, double exploration,
                                          const vespalib::Doom& doom) const;
 
     uint32_t get_entry_nodeid() const { return _graph.get_entry_node().nodeid; }

@@ -273,10 +273,10 @@ Query::fetchPostings(const ExecuteInfo & executeInfo)
 void
 Query::handle_global_filter(const IRequestContext & requestContext, uint32_t docid_limit,
                             double global_filter_lower_limit, double global_filter_upper_limit,
-                            search::engine::Trace& trace, bool sort_by_cost)
+                            search::engine::Trace& trace, bool sort_by_cost, bool use_lazy_filter)
 {
     if (!handle_global_filter(*_blueprint, docid_limit, global_filter_lower_limit, global_filter_upper_limit,
-                              requestContext.thread_bundle(), &trace))
+                              requestContext.thread_bundle(), &trace, use_lazy_filter))
     {
         return;
     }
@@ -292,7 +292,7 @@ Query::handle_global_filter(const IRequestContext & requestContext, uint32_t doc
 bool
 Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
                             double global_filter_lower_limit, double global_filter_upper_limit,
-                            vespalib::ThreadBundle &thread_bundle, search::engine::Trace* trace)
+                            vespalib::ThreadBundle &thread_bundle, search::engine::Trace* trace, bool use_lazy_filter)
 {
     using search::queryeval::GlobalFilter;
     using search::queryeval::Blueprint;
@@ -316,8 +316,15 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
         return false;
     }
 
+    std::shared_ptr<search::queryeval::LazyFilter> lazy_filter;
+    if (use_lazy_filter) {
+        if (trace && trace->shouldTrace(5)) {
+            trace->addEvent(5, "Calculate lazy filter");
+        }
+        lazy_filter = blueprint.create_lazy_filter();
+    }
+
     std::shared_ptr<GlobalFilter> global_filter;
-    std::shared_ptr<search::queryeval::LazyFilter> lazy_filter = blueprint.create_lazy_filter();
     if (estimated_hit_ratio <= effective_upper_limit) {
         if (trace && trace->shouldTrace(5)) {
             trace->addEvent(5, vespalib::make_string("Calculate global filter (estimated_hit_ratio (%f) <= upper_limit (%f))",
@@ -340,7 +347,14 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
     if (trace) {
         trace->addEvent(5, "Handle global filter in query execution plan");
     }
-    blueprint.set_lazy_filter(*lazy_filter);
+    if (use_lazy_filter) {
+        if (lazy_filter->is_active()) {
+            if (trace && trace->shouldTrace(5)) {
+                    trace->addEvent(5, "Apply active lazy filter");
+            }
+            blueprint.set_lazy_filter(*lazy_filter);
+        }
+    }
     blueprint.set_global_filter(*global_filter, estimated_hit_ratio);
     return true;
 }
