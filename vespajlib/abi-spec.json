@@ -99,6 +99,7 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.data.access.Inspector)",
+      "public static void emit(com.yahoo.data.disclosure.DataSink, com.yahoo.data.access.Inspector)",
       "public void emit(com.yahoo.data.disclosure.DataSink)"
     ],
     "fields" : [ ]
