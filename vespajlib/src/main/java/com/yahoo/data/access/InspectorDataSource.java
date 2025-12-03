@@ -14,6 +14,7 @@ import com.yahoo.data.disclosure.DataSource;
 public class InspectorDataSource implements DataSource {
 
     private final Inspector inspector;
+    private final byte[] invalid = new byte[]{};
 
     public InspectorDataSource(Inspector inspector) {
         this.inspector = inspector;
@@ -39,7 +40,12 @@ public class InspectorDataSource implements DataSource {
                 sink.doubleValue(inspector.asDouble());
             }
             case STRING -> {
-                sink.stringValue(inspector.asString(), inspector.asUtf8());
+                var utf8 = inspector.asUtf8(invalid);
+                if (utf8 != invalid) {
+                    sink.stringValue(utf8);
+                } else {
+                    sink.stringValue(inspector.asString());
+                }
             }
             case DATA -> {
                 sink.dataValue(inspector.asData());
