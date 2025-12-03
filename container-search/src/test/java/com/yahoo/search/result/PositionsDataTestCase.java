@@ -3,8 +3,11 @@ package com.yahoo.search.result;
 
 import com.yahoo.data.access.simple.Value;
 
+import com.yahoo.data.disclosure.slime.SlimeDataSink;
+import com.yahoo.slime.SlimeUtils;
 import org.junit.jupiter.api.Test;
 
+import static com.yahoo.test.JunitCompat.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -20,6 +23,7 @@ public class PositionsDataTestCase {
 
         assertXml("<position x=\"-122057174\" y=\"37374821\" latlong=\"N37.374821;W122.057174\" />", pd);
         assertJson("{\"x\":-122057174,\"y\":37374821,\"latlong\":\"N37.374821;W122.057174\"}", pd);
+        assertEmit("{\"x\":-122057174,\"y\":37374821,\"latlong\":\"N37.374821;W122.057174\"}", pd);
     }
 
     @Test
@@ -33,6 +37,8 @@ public class PositionsDataTestCase {
         assertXml("<position x=\"-122057174\" y=\"37374821\" latlong=\"N37.374821;W122.057174\" />" +
                 "<position x=\"3\" y=\"-7\" latlong=\"S0.000007;E0.000003\" />", pd);
         assertJson("[{\"x\":-122057174,\"y\":37374821,\"latlong\":\"N37.374821;W122.057174\"}," +
+                "{\"x\":3,\"y\":-7,\"latlong\":\"S0.000007;E0.000003\"}]", pd);
+        assertEmit("[{\"x\":-122057174,\"y\":37374821,\"latlong\":\"N37.374821;W122.057174\"}," +
                 "{\"x\":3,\"y\":-7,\"latlong\":\"S0.000007;E0.000003\"}]", pd);
     }
 
@@ -50,6 +56,13 @@ public class PositionsDataTestCase {
 
     private void assertJson(String expected, PositionsData pd) {
         assertEquals(expected, pd.toJson());
+    }
+
+    private void assertEmit(String expected, PositionsData pd) {
+        var expectedSlime = SlimeUtils.jsonToSlime(expected);
+        var actual = SlimeDataSink.buildSlime(pd);
+        assertTrue("Expected " + SlimeUtils.toJson(expectedSlime) + " but got " + SlimeUtils.toJson(actual),
+                expectedSlime.get().equalTo(actual.get()));
     }
 
 }

@@ -20,6 +20,11 @@ public class InspectorDataSource implements DataSource {
         this.inspector = inspector;
     }
 
+    public static void emit(DataSink sink, Inspector inspector) {
+        var  ds = new InspectorDataSource(inspector);
+        ds.emit(sink);
+    }
+
     @Override
     public void emit(DataSink sink) {
         walk(sink, inspector);

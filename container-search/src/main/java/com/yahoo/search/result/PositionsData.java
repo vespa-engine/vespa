@@ -3,15 +3,18 @@ package com.yahoo.search.result;
 
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.Inspectable;
+import com.yahoo.data.access.InspectorDataSource;
 import com.yahoo.data.access.Type;
 import com.yahoo.data.JsonProducer;
 import com.yahoo.data.XmlProducer;
 import com.yahoo.data.access.simple.JsonRender;
+import com.yahoo.data.disclosure.DataSink;
+import com.yahoo.data.disclosure.DataSource;
 
 /**
  * A wrapper for structured data representing an array of position values.
  */
-public class PositionsData implements Inspectable, JsonProducer, XmlProducer {
+public class PositionsData implements Inspectable, JsonProducer, XmlProducer, DataSource {
 
     private final Inspector value;
 
@@ -70,4 +73,8 @@ public class PositionsData implements Inspectable, JsonProducer, XmlProducer {
         target.append("/>");
     }
 
+    @Override
+    public void emit(DataSink sink) {
+        InspectorDataSource.emit(sink, value);
+    }
 }
