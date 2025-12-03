@@ -56,7 +56,8 @@
   "com.yahoo.data.access.Inspector" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
-      "com.yahoo.data.access.Inspectable"
+      "com.yahoo.data.access.Inspectable",
+      "com.yahoo.data.disclosure.DataSource"
     ],
     "attributes" : [
       "public",
@@ -85,7 +86,8 @@
       "public abstract com.yahoo.data.access.Inspector entry(int)",
       "public abstract com.yahoo.data.access.Inspector field(java.lang.String)",
       "public abstract java.lang.Iterable entries()",
-      "public abstract java.lang.Iterable fields()"
+      "public abstract java.lang.Iterable fields()",
+      "public void emit(com.yahoo.data.disclosure.DataSink)"
     ],
     "fields" : [ ]
   },
@@ -306,7 +308,8 @@
       "public java.lang.String asString()",
       "public java.lang.String asString(java.lang.String)",
       "public byte[] asUtf8()",
-      "public byte[] asUtf8(byte[])"
+      "public byte[] asUtf8(byte[])",
+      "public void emit(com.yahoo.data.disclosure.DataSink)"
     ],
     "fields" : [ ]
   },
