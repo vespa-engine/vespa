@@ -7,7 +7,7 @@
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".storage.distributor.maintenance.maintenance_scheduler");
+LOG_SETUP(".distributor.maintenance.maintenance_scheduler");
 
 namespace storage::distributor {
 

@@ -7,7 +7,7 @@
 #include <vespa/storage/distributor/operation_sequencer.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor.operation");
+LOG_SETUP(".distributor.operations.ideal_state");
 
 namespace storage::distributor {
 

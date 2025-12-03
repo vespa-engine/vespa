@@ -7,7 +7,7 @@
 #include <cinttypes>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor.callback.map");
+LOG_SETUP(".distributor.sent_message_map");
 
 namespace storage::distributor {
 

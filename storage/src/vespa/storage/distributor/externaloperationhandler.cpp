@@ -27,7 +27,7 @@
 #include <vespa/log/log.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 
-LOG_SETUP(".distributor.manager");
+LOG_SETUP(".distributor.external_operation_handler");
 
 namespace storage::distributor {
 

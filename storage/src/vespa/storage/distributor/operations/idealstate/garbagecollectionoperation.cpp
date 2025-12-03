@@ -13,7 +13,7 @@
 #include <algorithm>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor.operation.idealstate.gc");
+LOG_SETUP(".distributor.operations.idealstate.garbage_collection");
 
 namespace storage::distributor {
 

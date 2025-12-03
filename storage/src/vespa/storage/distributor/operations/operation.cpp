@@ -7,7 +7,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor.callback");
+LOG_SETUP(".distributor.operations.operation");
 
 namespace storage::distributor {
 
