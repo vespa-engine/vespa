@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
  * @author bjorncs
  */
 public class MinimalMain {
-    private static final String CACHE_BASE_DIR = System.getProperty("user.home") + "/.vespa/osgi-bundle-cache";
+    private static final String CACHE_BASE_DIR = Defaults.getDefaults().underVespaHome("var/vespa/bundlecache/minimalmain");
 
     private static final Logger log = Logger.getLogger(MinimalMain.class.getName());
 
