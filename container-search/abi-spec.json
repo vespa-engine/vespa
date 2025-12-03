@@ -7414,6 +7414,7 @@
       "public java.lang.Double getFilterFirstExploration()",
       "public java.lang.Double getExplorationSlack()",
       "public java.lang.Double getTargetHitsMaxAdjustmentFactor()",
+      "public java.lang.Boolean getLazyFilter()",
       "public java.lang.Double getFilterThreshold()",
       "public com.yahoo.search.query.ranking.WeakAnd getWeakAnd()",
       "public void setTermwiselimit(double)",
@@ -7426,6 +7427,7 @@
       "public void setFilterFirstExploration(double)",
       "public void setExplorationSlack(double)",
       "public void setTargetHitsMaxAdjustmentFactor(double)",
+      "public void setLazyFilter(boolean)",
       "public void setFilterThreshold(double)",
       "public void prepare(com.yahoo.search.query.ranking.RankProperties)",
       "public com.yahoo.search.query.ranking.Matching clone()",
@@ -7444,6 +7446,7 @@
       "public static final java.lang.String FILTER_FIRST_THRESHOLD",
       "public static final java.lang.String FILTER_FIRST_EXPLORATION",
       "public static final java.lang.String TARGET_HITS_MAX_ADJUSTMENT_FACTOR",
+      "public static final java.lang.String LAZY_FILTER",
       "public static final java.lang.String FILTER_THRESHOLD",
       "public static final java.lang.String WEAKAND",
       "public java.lang.Double termwiseLimit"
