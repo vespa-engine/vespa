@@ -1,12 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.data.access;
 
+import com.yahoo.data.access.simple.Value;
 import com.yahoo.data.access.slime.SlimeAdapter;
+import com.yahoo.data.disclosure.DataSink;
 import com.yahoo.data.disclosure.slime.SlimeDataSink;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -62,6 +67,52 @@ public class InspectorDataSourceTest {
         var dataSource = new InspectorDataSource(inspector);
         var actual = SlimeDataSink.buildSlime(dataSource);
         assertSlime(expected, actual);
+    }
+
+    @Test
+    public void testBinaryDataIsPreserved() {
+        byte[] bytes = new byte[] {0, 1, 2, (byte)0xFF};
+        Inspector inspector = new Value.DataValue(bytes);
+        var ds = new InspectorDataSource(inspector);
+        Slime actual = SlimeDataSink.buildSlime(ds);
+
+        Slime expected = new Slime();
+        expected.setData(bytes);
+        assertSlime(expected, actual);
+    }
+
+    /**
+     * Captures the utf8 value from string value.
+     */
+    static class Utf8CaptureSink implements DataSink {
+        byte[] lastUtf8;
+
+        public void stringValue(String u16, byte[] u8) {
+            lastUtf8 = u8;
+        }
+
+        public void fieldName(String utf16, byte[] utf8) { /* no-op */ }
+        public void fieldName(String u16) { /* no-op */ }
+        public void startObject() { /* no-op */ }
+        public void endObject() { /* no-op */ }
+        public void startArray() { /* no-op */ }
+        public void endArray() { /* no-op */ }
+        public void emptyValue() { /* no-op */ }
+        public void booleanValue(boolean v) { /* no-op */ }
+        public void longValue(long v) { /* no-op */ }
+        public void doubleValue(double v) { /* no-op */ }
+        public void dataValue(byte[] d) { /* no-op */ }
+        public void stringValue(String u16) { /* no-op */ }
+    }
+
+    @Test
+    public void testUtf8StringIsPreserved() {
+        byte[] utf8 = "hello world".getBytes(StandardCharsets.UTF_8);
+        Inspector inspector = new Value.StringValue(utf8);
+        var ds = new InspectorDataSource(inspector);
+        var sink = new Utf8CaptureSink();
+        ds.emit(sink);
+        assertArrayEquals(utf8, sink.lastUtf8);
     }
 
 }
