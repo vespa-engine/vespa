@@ -89,6 +89,20 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.data.access.InspectorDataSource" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.data.disclosure.DataSource"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.data.access.Inspector)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.data.access.ObjectTraverser" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
