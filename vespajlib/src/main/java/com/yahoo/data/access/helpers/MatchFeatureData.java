@@ -51,8 +51,8 @@ public class MatchFeatureData {
             }
         }
         public Inspector field(String name) {
-            int offset = hashlet.getIndexOfKey(name);
-            if (offset < 0) {
+            Integer offset = hashlet.get(name);
+            if (offset == null) {
                 return invalid();
             }
             return valueAt(offset);
