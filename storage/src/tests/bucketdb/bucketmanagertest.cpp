@@ -27,6 +27,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/test/test_path.h>
 #include <future>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".test.bucketdb.bucketmanager");

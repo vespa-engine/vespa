@@ -67,7 +67,6 @@ namespace {
 
 const int doc_type_id = 1234;
 const string doc_name = "my_doctype";
-const int body_id = 94;
 const int inner_type_id = 95;
 const int outer_type_id = 96;
 const string type_name = "outer_doc";
