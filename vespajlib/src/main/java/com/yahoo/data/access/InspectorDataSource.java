@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.data.access;
 
+import com.yahoo.api.annotations.Beta;
 import com.yahoo.data.disclosure.DataSink;
 import com.yahoo.data.disclosure.DataSource;
 
@@ -9,6 +10,7 @@ import com.yahoo.data.disclosure.DataSource;
  *
  * @author johsol
  */
+@Beta
 public class InspectorDataSource implements DataSource {
 
     private final Inspector inspector;
