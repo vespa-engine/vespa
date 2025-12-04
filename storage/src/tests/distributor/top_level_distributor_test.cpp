@@ -758,7 +758,7 @@ TEST_F(TopLevelDistributorTest, gc_timestamps_not_reset_to_current_time_when_gc_
 
 TEST_F(TopLevelDistributorTest, memory_usage_is_propagated_to_dedicated_metric) {
     EXPECT_EQ(memory_usage_tracker().bytes_total(), 0);
-    EXPECT_EQ(_distributor->total_metrics().mutatating_op_memory_usage().getCount(), 0);
+    EXPECT_EQ(total_distributor_metrics().mutatating_op_memory_usage.getCount(), 0);
     MemoryUsageToken t(memory_usage_tracker(), 54321);
     {
         // Will count towards the maximum, but not the current at sampling time
@@ -767,9 +767,9 @@ TEST_F(TopLevelDistributorTest, memory_usage_is_propagated_to_dedicated_metric) 
     EXPECT_EQ(memory_usage_tracker().bytes_total(), 54321);
     EXPECT_EQ(memory_usage_tracker().max_observed_bytes(), 54321+10000);
     update_top_level_metrics();
-    EXPECT_EQ(_distributor->total_metrics().mutatating_op_memory_usage().getCount(), 1);
-    EXPECT_EQ(_distributor->total_metrics().mutatating_op_memory_usage().getLast(), 54321);
-    EXPECT_EQ(_distributor->total_metrics().mutatating_op_memory_usage().getMaximum(), 54321+10000);
+    EXPECT_EQ(total_distributor_metrics().mutatating_op_memory_usage.getCount(), 1);
+    EXPECT_EQ(total_distributor_metrics().mutatating_op_memory_usage.getLast(), 54321);
+    EXPECT_EQ(total_distributor_metrics().mutatating_op_memory_usage.getMaximum(), 54321+10000);
     // Sampling is destructive for max memory usage within period
     EXPECT_EQ(memory_usage_tracker().max_observed_bytes(), 0);
 }
