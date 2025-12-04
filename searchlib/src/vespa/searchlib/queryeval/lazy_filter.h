@@ -40,16 +40,22 @@ private:
     struct Private { explicit Private() = default; };
     const common::Location &_location;
     uint32_t _num_values;
+    uint32_t _docid_limit;
     std::vector<search::AttributeVector::largeint_t> _pos;
 
 public:
     GeoLocationLazyFilter(Private, const common::Location &location) noexcept
         : _location(location),
-          _num_values(0) {
+          _num_values(0),
+          _docid_limit(_location.getVec()->getCommittedDocIdLimit()) {
     }
     static std::shared_ptr<GeoLocationLazyFilter> create(const common::Location &location) { return std::make_shared<GeoLocationLazyFilter>(Private(), location); }
     bool is_active() const override { return true; }
     bool check(uint32_t docid) override {
+        if (docid >= _docid_limit) {
+            return false;
+        }
+
         _pos.resize(1);  // Needed (single-value attribute), cf. LocationIterator
         _num_values = _location.getVec()->get(docid, &_pos[0], _pos.size());
         while (_num_values > _pos.size()) {
