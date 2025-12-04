@@ -8,7 +8,6 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author olaa
@@ -16,7 +15,7 @@ import java.util.stream.Collectors;
 public class CloudSecretStore extends SimpleComponent implements SecretStoreConfig.Producer {
 
     private static final String CLASS = "com.yahoo.jdisc.cloud.aws.AwsParameterStore";
-    private static final String BUNDLE = "cloud-tenant";
+    private static final String BUNDLE = "cloud-aws";
 
     private final List<StoreConfig> configList;
 
