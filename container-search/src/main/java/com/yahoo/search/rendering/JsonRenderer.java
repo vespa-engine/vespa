@@ -686,9 +686,15 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             return true;
         }
 
-        /** Check if array looks like a map (array of {key, value} objects) */
-        private boolean looksLikeMap(Inspector data) {
+        /**
+         * Try to emit array as a map (array of {key, value} objects).
+         * Returns true if successful, false if data is not a valid map structure.
+         */
+        private boolean tryEmitAsMap(Inspector data, DataSink sink) {
             int entries = data.entryCount();
+            Inspector[] keys = new Inspector[entries];
+            Inspector[] values = new Inspector[entries];
+            // Extract and validate
             for (int i = 0; i < entries; i++) {
                 Inspector obj = data.entry(i);
                 if (obj.type() != Type.OBJECT || obj.fieldCount() != 2) return false;
@@ -696,13 +702,38 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 Inspector value = obj.field("value");
                 if (!key.valid() || !value.valid()) return false;
                 if (key.type() != Type.STRING && !settings.jsonMapsAll) return false;
+                keys[i] = key;
+                values[i] = value;
             }
+            // Emit
+            boolean convertDeep = settings.convertDeep();
+            sink.startObject();
+            for (int i = 0; i < entries; i++) {
+                Inspector key = keys[i];
+                if (key.type() == Type.STRING) {
+                    sink.fieldName(key.asUtf8());
+                } else {
+                    sink.fieldName(WithBase64.toJsonString(key, settings.enableRawAsBase64));
+                }
+                if (convertDeep) {
+                    emitWithConversion(values[i], sink);
+                } else {
+                    values[i].emit(sink);
+                }
+            }
+            sink.endObject();
             return true;
         }
 
-        /** Check if array looks like a weighted set (array of {item, weight} objects) */
-        private boolean looksLikeWset(Inspector data) {
+        /**
+         * Try to emit array as a weighted set (array of {item, weight} objects).
+         * Returns true if successful, false if data is not a valid wset structure.
+         */
+        private boolean tryEmitAsWset(Inspector data, DataSink sink) {
             int entries = data.entryCount();
+            Inspector[] items = new Inspector[entries];
+            long[] weights = new long[entries];
+            // Extract and validate
             for (int i = 0; i < entries; i++) {
                 Inspector obj = data.entry(i);
                 if (obj.type() != Type.OBJECT || obj.fieldCount() != 2) return false;
@@ -711,49 +742,22 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 if (!item.valid() || !weight.valid()) return false;
                 if (weight.type() != Type.LONG) return false;
                 if (item.type() != Type.STRING && !settings.jsonWsetsAll) return false;
+                items[i] = item;
+                weights[i] = weight.asLong();
             }
-            return true;
-        }
-
-        /** Emit a map-like array directly as an object to the sink */
-        private void emitAsMap(Inspector data, DataSink sink) {
-            boolean convertDeep = settings.convertDeep();
-            int entries = data.entryCount();
+            // Emit
             sink.startObject();
             for (int i = 0; i < entries; i++) {
-                Inspector obj = data.entry(i);
-                Inspector key = obj.field("key");
-                Inspector value = obj.field("value");
-                if (key.type() == Type.STRING) {
-                    sink.fieldName(key.asUtf8());
-                } else {
-                    sink.fieldName(WithBase64.toJsonString(key, settings.enableRawAsBase64));
-                }
-                if (convertDeep) {
-                    emitWithConversion(value, sink);
-                } else {
-                    value.emit(sink);
-                }
-            }
-            sink.endObject();
-        }
-
-        /** Emit a weighted set array directly as an object to the sink */
-        private void emitAsWset(Inspector data, DataSink sink) {
-            int entries = data.entryCount();
-            sink.startObject();
-            for (int i = 0; i < entries; i++) {
-                Inspector obj = data.entry(i);
-                Inspector item = obj.field("item");
-                Inspector weight = obj.field("weight");
+                Inspector item = items[i];
                 if (item.type() == Type.STRING) {
                     sink.fieldName(item.asUtf8());
                 } else {
                     sink.fieldName(WithBase64.toJsonString(item, settings.enableRawAsBase64));
                 }
-                sink.longValue(weight.asLong());
+                sink.longValue(weights[i]);
             }
             sink.endObject();
+            return true;
         }
 
         /** Emit an object with potential deep conversion of nested values */
@@ -779,12 +783,10 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         /** Emit a value, applying map/wset conversion if applicable */
         private void emitWithConversion(Inspector data, DataSink sink) {
             if (data.type() == Type.ARRAY) {
-                if (settings.jsonDeepMaps && looksLikeMap(data)) {
-                    emitAsMap(data, sink);
+                if (settings.jsonDeepMaps && tryEmitAsMap(data, sink)) {
                     return;
                 }
-                if (settings.jsonWsets && looksLikeWset(data)) {
-                    emitAsWset(data, sink);
+                if (settings.jsonWsets && tryEmitAsWset(data, sink)) {
                     return;
                 }
                 if (settings.convertDeep()) {
@@ -802,12 +804,10 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         /** Emit top-level data, applying conversions as configured */
         private void emitTopLevel(Inspector data, DataSink sink) {
             if (data.type() == Type.ARRAY && data.entryCount() > 0) {
-                if (looksLikeMap(data)) {
-                    emitAsMap(data, sink);
+                if (tryEmitAsMap(data, sink)) {
                     return;
                 }
-                if (settings.jsonWsets && looksLikeWset(data)) {
-                    emitAsWset(data, sink);
+                if (settings.jsonWsets && tryEmitAsWset(data, sink)) {
                     return;
                 }
                 if (settings.convertDeep()) {
