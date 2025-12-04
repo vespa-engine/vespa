@@ -22,7 +22,8 @@ DistanceCalculator::DistanceCalculator(const tensor::ITensorAttribute& attr_tens
                                        const vespalib::eval::Value& query_tensor_in)
     : _attr_tensor(attr_tensor),
       _query_tensor(&query_tensor_in),
-      _dist_fun()
+      _dist_fun(),
+      _distances_computed(0)
 {
     auto * nns_index = _attr_tensor.nearest_neighbor_index();
     auto & dff = nns_index ? nns_index->distance_function_factory() : attr_tensor.distance_function_factory();
