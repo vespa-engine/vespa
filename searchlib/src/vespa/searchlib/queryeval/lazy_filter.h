@@ -48,6 +48,7 @@ public:
         : _location(location),
           _num_values(0),
           _docid_limit(_location.getVec()->getCommittedDocIdLimit()) {
+        _pos.resize(1);  // Needed (single-value attribute), cf. LocationIterator
     }
     static std::shared_ptr<GeoLocationLazyFilter> create(const common::Location &location) { return std::make_shared<GeoLocationLazyFilter>(Private(), location); }
     bool is_active() const override { return true; }
@@ -55,8 +56,6 @@ public:
         if (docid >= _docid_limit) {
             return false;
         }
-
-        _pos.resize(1);  // Needed (single-value attribute), cf. LocationIterator
         _num_values = _location.getVec()->get(docid, &_pos[0], _pos.size());
         while (_num_values > _pos.size()) {
             _pos.resize(_num_values);
