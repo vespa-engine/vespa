@@ -7,7 +7,7 @@
 #include <cinttypes>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".messagetracker");
+LOG_SETUP(".distributor.message_tracker");
 
 namespace storage::distributor {
 

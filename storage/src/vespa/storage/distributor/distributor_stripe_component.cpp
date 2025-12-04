@@ -13,7 +13,7 @@
 #include <vespa/vdslib/state/clusterstate.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributorstoragelink");
+LOG_SETUP(".distributor.distributor_stripe_component");
 
 using document::BucketSpace;
 

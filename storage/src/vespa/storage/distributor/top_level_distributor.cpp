@@ -32,7 +32,7 @@
 #include <algorithm>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor-main");
+LOG_SETUP(".distributor.top_level_distributor");
 
 using namespace std::chrono_literals;
 

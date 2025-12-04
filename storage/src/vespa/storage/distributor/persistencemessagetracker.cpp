@@ -9,7 +9,7 @@
 #include <algorithm>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".persistencemessagetracker");
+LOG_SETUP(".distributor.persistence_message_tracker");
 
 namespace storage::distributor {
 

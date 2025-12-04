@@ -7,7 +7,7 @@
 
 #include <vespa/log/log.h>
 
-LOG_SETUP(".distributor.operation.idealstate.remove");
+LOG_SETUP(".distributor.operations.idealstate.remove_bucket");
 
 namespace storage::distributor {
 

@@ -25,7 +25,7 @@
 #include <algorithm>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor_stripe");
+LOG_SETUP(".distributor.distributor_stripe");
 
 using namespace std::chrono_literals;
 
