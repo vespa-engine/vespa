@@ -576,7 +576,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             super(new StringBuilder(), true);
         }
         static String toJsonString(Inspector obj, boolean enableRawAsBase64) {
-            JsonRender.StringEncoder encoder =enableRawAsBase64
+            JsonRender.StringEncoder encoder = enableRawAsBase64
                     ? new WithBase64()
                     : new JsonRender.StringEncoder(new StringBuilder(), true);
             encoder.encode(obj);
@@ -797,7 +797,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 int entries = data.entryCount();
                 for (int i = 0; i < entries; i++) {
                     if (!data.entry(i).type().equals(Type.STRING)) {
-                        renderInspectorDirect(maybeConvertData(data));
+                        maybeConvertData(data).emit(dataSink);
                         return;
                     }
                 }
@@ -810,11 +810,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 generator.writeEndArray();
                 return;
             }
-            renderInspectorDirect(maybeConvertData(data));
-        }
-
-        private void renderInspectorDirect(Inspector data) throws IOException {
-            generator().writeRawValue(WithBase64.toJsonString(data, settings.enableRawAsBase64));
+            maybeConvertData(data).emit(dataSink);
         }
 
         protected void renderFieldContents(Object field) throws IOException {
@@ -840,7 +836,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             } else if (field instanceof FeatureData featureData) {
                 generator().writeRawValue(featureData.toJson(settings.tensorOptions));
             } else if (field instanceof Inspectable i) {
-                renderInspectorDirect(i.inspect());
+                i.inspect().emit(dataSink);
             } else if (field instanceof DataSource ds) {
                 ds.emit(dataSink());
             } else if (field instanceof JsonProducer jp) {
