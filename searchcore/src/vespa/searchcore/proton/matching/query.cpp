@@ -20,11 +20,12 @@
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/searchlib/query/proto_tree_converter.h>
-#include <vespa/searchlib/query/proto_tree_converter.hpp>
 #include <vespa/searchlib/query/tree/querytreecreator.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.query");
+
+#include <vespa/searchlib/query/proto_tree_converter.hpp>
 
 using document::PositionDataType;
 using search::common::GeoLocation;
