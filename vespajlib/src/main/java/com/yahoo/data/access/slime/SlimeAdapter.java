@@ -197,7 +197,9 @@ public final class SlimeAdapter implements com.yahoo.data.access.Inspector {
     private record InspectorVisitor(DataSink sink) implements Visitor {
 
         @Override
-        public void visitInvalid() { /* no-op */ }
+        public void visitInvalid() {
+            sink.emptyValue();
+        }
 
         @Override
         public void visitNix() {
