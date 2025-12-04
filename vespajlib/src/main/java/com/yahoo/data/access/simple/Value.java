@@ -5,6 +5,7 @@ import com.yahoo.data.access.ArrayTraverser;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.ObjectTraverser;
 import com.yahoo.data.access.Type;
+import com.yahoo.data.disclosure.DataSink;
 
 import java.util.Collections;
 import java.util.Map;
@@ -118,6 +119,11 @@ public class Value implements Inspector {
             return utf8_value;
         }
         public byte[] asUtf8(byte[] x) { return asUtf8(); }
+
+        @Override
+        public void emit(DataSink sink) {
+            sink.stringValue(string_value, utf8_value);
+        }
     }
     static public class DataValue extends Value {
         private byte[] value;
