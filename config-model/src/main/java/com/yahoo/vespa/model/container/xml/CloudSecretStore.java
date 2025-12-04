@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class CloudSecretStore extends SimpleComponent implements SecretStoreConfig.Producer {
 
     private static final String CLASS = "com.yahoo.jdisc.cloud.aws.AwsParameterStore";
-    private static final String BUNDLE = "jdisc-cloud-aws";
+    private static final String BUNDLE = "cloud-tenant";
 
     private final List<StoreConfig> configList;
 
