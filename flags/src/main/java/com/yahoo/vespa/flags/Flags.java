@@ -149,13 +149,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
-            "use-v8-geo-positions", true,
-            List.of("arnej"), "2021-11-15", "2025-12-01",
-            "Use Vespa 8 types and formats for geographical positions",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
             List.of("olaa"), "2022-09-23", "2026-02-01",
