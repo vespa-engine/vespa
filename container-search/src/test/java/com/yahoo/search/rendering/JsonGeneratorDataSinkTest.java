@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.StreamReadConstraints;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.data.access.simple.Value;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.json.Jackson;
@@ -12,17 +14,18 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 import static com.fasterxml.jackson.databind.SerializationFeature.FLUSH_AFTER_WRITE_VALUE;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author johsol
  */
 public class JsonGeneratorDataSinkTest {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final JsonFactory FACTORY = new JsonFactory();
 
     private static JsonFactory createGeneratorFactory() {
         return Jackson.createMapper(new JsonFactoryBuilder()
@@ -216,17 +219,39 @@ public class JsonGeneratorDataSinkTest {
     }
 
     @Test
-    public void testGenerateDataValueThrows() throws IOException {
-        var factory = createGeneratorFactory();
-        var gen = factory.createGenerator(new OutputStream() {
-            @Override
-            public void write(int i) {
-                // no-op
-                // no-op
-            }
-        }, JsonEncoding.UTF8);
-
-        var sink = new JsonGeneratorDataSink(gen);
-        assertThrows(UnsupportedOperationException.class, () -> sink.dataValue(new byte[]{}));
+    public void testBase64PathMatchesOldPath() throws Exception {
+        assertPathMatchesOldPath(true);
     }
+
+    @Test
+    public void testHexPathMatchesOldPath() throws Exception {
+        assertPathMatchesOldPath(false);
+    }
+
+    /**
+     * Tests that the new path using sinks matches the old path where we used the WithBase64 class to handle
+     * encoding of binary data.
+     */
+    private void assertPathMatchesOldPath(boolean enableRawAsBase64) throws Exception {
+        var input = new byte[]{ (byte)0xDE, (byte)0xAD, (byte)0xBE, (byte)0xEF };
+
+        // if base64 disabled, we expect: "{ bin: '0xDEADBEEF' }"
+        var obj = new Value.ObjectValue();
+        obj.put("bin", new Value.DataValue(input));
+
+        String oldPathJson = JsonRenderer.WithBase64.toJsonString(obj, enableRawAsBase64);
+        String newPathJson = renderViaSink(obj, enableRawAsBase64);
+
+        assertSlime(SlimeUtils.jsonToSlime(oldPathJson), SlimeUtils.jsonToSlime(newPathJson));
+    }
+
+    private String renderViaSink(Value.ObjectValue obj, boolean enableRawAsBase64) throws IOException {
+        var out = new ByteArrayOutputStream();
+        try (var gen = FACTORY.createGenerator(out, JsonEncoding.UTF8)) {
+            obj.emit(new JsonGeneratorDataSink(gen, enableRawAsBase64));
+            gen.flush();
+        }
+        return out.toString(StandardCharsets.UTF_8);
+    }
+
 }

@@ -564,7 +564,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         this.timeSource = timeSource;
     }
 
-    private static class WithBase64 extends JsonRender.StringEncoder {
+    /** package-private because used in testing JsonGeneratorDataSinkTest */
+    static class WithBase64 extends JsonRender.StringEncoder {
         private final static Base64.Encoder encoder = Base64.getEncoder();
         @Override
         protected void encodeDATA(byte[] value) {
@@ -609,14 +610,14 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.settings.tensorOptions = tensorOptions;
             this.settings.jsonDeepMaps = jsonMaps;
             // if this is subclass, generator will be null, must mirror that behavior
-            this.dataSink = (generator == null) ? null : new JsonGeneratorDataSink(generator);
+            this.dataSink = (generator == null) ? null : new JsonGeneratorDataSink(generator, settings.enableRawAsBase64);
         }
 
         FieldConsumer(JsonGenerator generator, FieldConsumerSettings settings) {
             this.generator = generator;
             this.settings = settings;
             // if this is subclass, generator will be null, must mirror that behavior
-            this.dataSink = (generator == null) ? null : new JsonGeneratorDataSink(generator);
+            this.dataSink = (generator == null) ? null : new JsonGeneratorDataSink(generator, settings.enableRawAsBase64);
         }
 
         /**
