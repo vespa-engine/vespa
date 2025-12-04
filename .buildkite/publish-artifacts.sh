@@ -29,13 +29,3 @@ done
 ARTIFACT_DESTINATION="${VESPA_ENGINE_ARTIFACTS_BUCKET}/${VESPA_ENGINE_ARTIFACTS_PREFIX}/${VESPA_VERSION}/artifacts/${ARCH}"
 echo "📦 Uploading artifacts to ${ARTIFACT_DESTINATION} ..."
 buildkite-agent artifact upload "*.tar;*.tar.sig;*.tar.pem;*.rpm;*.rpm.sig;*.rpm.pem" "$ARTIFACT_DESTINATION"
-
-# FIXME(marlon): Remove multiple upload in the transition period.
-#
-# For the specific case of vespa8/alma8, we also upload to the old path without the "alma8" segment
-# to maintain backward compatibility.
-if [[ "${VESPA_ENGINE_ARTIFACTS_PREFIX}" == "vespa8/alma8" ]]; then
-    ARTIFACT_DESTINATION="${VESPA_ENGINE_ARTIFACTS_BUCKET}/${VESPA_VERSION}/artifacts/${ARCH}"
-    echo "ℹ️ Backward compatibility upload to ${ARTIFACT_DESTINATION} ..."
-    buildkite-agent artifact upload "*.tar;*.tar.sig;*.tar.pem;*.rpm;*.rpm.sig;*.rpm.pem" "$ARTIFACT_DESTINATION"
-fi
