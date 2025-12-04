@@ -17,7 +17,6 @@ import com.yahoo.data.access.Inspectable;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.Type;
 import com.yahoo.data.access.simple.JsonRender;
-import com.yahoo.data.access.simple.Value;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
@@ -687,130 +686,144 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             return true;
         }
 
-        private Inspector maybeConvertMap(Inspector data) {
-            var map = new Value.ObjectValue();
-            for (int i = 0; i < data.entryCount(); i++) {
+        /** Check if array looks like a map (array of {key, value} objects) */
+        private boolean looksLikeMap(Inspector data) {
+            int entries = data.entryCount();
+            for (int i = 0; i < entries; i++) {
                 Inspector obj = data.entry(i);
-                if (obj.type() != Type.OBJECT || obj.fieldCount() != 2) {
-                    return null;
-                }
+                if (obj.type() != Type.OBJECT || obj.fieldCount() != 2) return false;
                 Inspector key = obj.field("key");
                 Inspector value = obj.field("value");
-                if (! key.valid()) return null;
-                if (! value.valid()) return null;
-                if (key.type() != Type.STRING && !settings.jsonMapsAll) {
-                    return null;
-                }
-                if (settings.convertDeep()) {
-                    value = deepMaybeConvert(value);
-                }
-                if (key.type() == Type.STRING) {
-                    map.put(key.asString(), value);
-                } else {
-                    map.put(WithBase64.toJsonString(key, settings.enableRawAsBase64), value);
-                }
+                if (!key.valid() || !value.valid()) return false;
+                if (key.type() != Type.STRING && !settings.jsonMapsAll) return false;
             }
-            return map;
+            return true;
         }
 
-        private Inspector maybeConvertWset(Inspector data) {
-            var wset = new Value.ObjectValue();
-            for (int i = 0; i < data.entryCount(); i++) {
+        /** Check if array looks like a weighted set (array of {item, weight} objects) */
+        private boolean looksLikeWset(Inspector data) {
+            int entries = data.entryCount();
+            for (int i = 0; i < entries; i++) {
                 Inspector obj = data.entry(i);
-                if (obj.type() != Type.OBJECT || obj.fieldCount() != 2) {
-                    return null;
-                }
+                if (obj.type() != Type.OBJECT || obj.fieldCount() != 2) return false;
                 Inspector item = obj.field("item");
                 Inspector weight = obj.field("weight");
-                if (! item.valid()) return null;
-                if (! weight.valid()) return null;
-                // TODO support non-integer weights?
-                if (weight.type() != Type.LONG) return null;
-                if (item.type() == Type.STRING) {
-                    wset.put(item.asString(), weight.asLong());
-                } else if (settings.jsonWsetsAll) {
-                    wset.put(WithBase64.toJsonString(item, settings.enableRawAsBase64).toString(), weight.asLong());
+                if (!item.valid() || !weight.valid()) return false;
+                if (weight.type() != Type.LONG) return false;
+                if (item.type() != Type.STRING && !settings.jsonWsetsAll) return false;
+            }
+            return true;
+        }
+
+        /** Emit a map-like array directly as an object to the sink */
+        private void emitAsMap(Inspector data, DataSink sink) {
+            boolean convertDeep = settings.convertDeep();
+            int entries = data.entryCount();
+            sink.startObject();
+            for (int i = 0; i < entries; i++) {
+                Inspector obj = data.entry(i);
+                Inspector key = obj.field("key");
+                Inspector value = obj.field("value");
+                if (key.type() == Type.STRING) {
+                    sink.fieldName(key.asUtf8());
                 } else {
-                    return null;
+                    sink.fieldName(WithBase64.toJsonString(key, settings.enableRawAsBase64));
+                }
+                if (convertDeep) {
+                    emitWithConversion(value, sink);
+                } else {
+                    value.emit(sink);
                 }
             }
-            return wset;
+            sink.endObject();
         }
 
-        private Inspector convertInsideObject(Inspector data) {
-            var object = new Value.ObjectValue();
+        /** Emit a weighted set array directly as an object to the sink */
+        private void emitAsWset(Inspector data, DataSink sink) {
+            int entries = data.entryCount();
+            sink.startObject();
+            for (int i = 0; i < entries; i++) {
+                Inspector obj = data.entry(i);
+                Inspector item = obj.field("item");
+                Inspector weight = obj.field("weight");
+                if (item.type() == Type.STRING) {
+                    sink.fieldName(item.asUtf8());
+                } else {
+                    sink.fieldName(WithBase64.toJsonString(item, settings.enableRawAsBase64));
+                }
+                sink.longValue(weight.asLong());
+            }
+            sink.endObject();
+        }
+
+        /** Emit an object with potential deep conversion of nested values */
+        private void emitObjectWithConversion(Inspector data, DataSink sink) {
+            sink.startObject();
             for (var entry : data.fields()) {
-                object.put(entry.getKey(), deepMaybeConvert(entry.getValue()));
+                sink.fieldName(entry.getKey());
+                emitWithConversion(entry.getValue(), sink);
             }
-            return object;
+            sink.endObject();
         }
 
-        private Inspector deepMaybeConvert(Inspector data) {
+        /** Emit an array with potential deep conversion of nested values */
+        private void emitArrayWithConversion(Inspector data, DataSink sink) {
+            int entries = data.entryCount();
+            sink.startArray();
+            for (int i = 0; i < entries; i++) {
+                emitWithConversion(data.entry(i), sink);
+            }
+            sink.endArray();
+        }
+
+        /** Emit a value, applying map/wset conversion if applicable */
+        private void emitWithConversion(Inspector data, DataSink sink) {
             if (data.type() == Type.ARRAY) {
-                if (settings.jsonDeepMaps) {
-                    var map = maybeConvertMap(data);
-                    if (map != null) return map;
+                if (settings.jsonDeepMaps && looksLikeMap(data)) {
+                    emitAsMap(data, sink);
+                    return;
                 }
-                if (settings.jsonWsets) {
-                    var wset = maybeConvertWset(data);
-                    if (wset != null) return wset;
-                }
-            }
-            if (data.type() == Type.OBJECT) {
-                return convertInsideObject(data);
-            }
-            return data;
-        }
-
-        private Inspector convertTopLevelArray(Inspector data) {
-            if (data.entryCount() > 0) {
-                var map = maybeConvertMap(data);
-                if (map != null) return map;
-                if (settings.jsonWsets) {
-                    var wset = maybeConvertWset(data);
-                    if (wset != null) return wset;
+                if (settings.jsonWsets && looksLikeWset(data)) {
+                    emitAsWset(data, sink);
+                    return;
                 }
                 if (settings.convertDeep()) {
-                    var array = new Value.ArrayValue(data.entryCount());
-                    for (int i = 0; i < data.entryCount(); i++) {
-                        Inspector obj = data.entry(i);
-                        array.add(deepMaybeConvert(obj));
-                    }
-                    return array;
+                    emitArrayWithConversion(data, sink);
+                    return;
                 }
             }
-            return data;
-        }
-
-        private Inspector maybeConvertData(Inspector data) {
-            if (data.type() == Type.ARRAY) {
-                return convertTopLevelArray(data);
-            }
-            if (settings.convertDeep() && data.type() == Type.OBJECT) {
-                return convertInsideObject(data);
-            }
-            return data;
-        }
-
-        private void renderInspector(Inspector data) throws IOException {
-            if (data.type().equals(Type.ARRAY)) {
-                int entries = data.entryCount();
-                for (int i = 0; i < entries; i++) {
-                    if (!data.entry(i).type().equals(Type.STRING)) {
-                        maybeConvertData(data).emit(dataSink);
-                        return;
-                    }
-                }
-
-                generator.writeStartArray();
-                for (int i = 0; i < entries; i++) {
-                    byte[] utf8 = data.entry(i).asUtf8();
-                    generator.writeUTF8String(utf8, 0, utf8.length);
-                }
-                generator.writeEndArray();
+            if (data.type() == Type.OBJECT && settings.convertDeep()) {
+                emitObjectWithConversion(data, sink);
                 return;
             }
-            maybeConvertData(data).emit(dataSink);
+            data.emit(sink);
+        }
+
+        /** Emit top-level data, applying conversions as configured */
+        private void emitTopLevel(Inspector data, DataSink sink) {
+            if (data.type() == Type.ARRAY && data.entryCount() > 0) {
+                if (looksLikeMap(data)) {
+                    emitAsMap(data, sink);
+                    return;
+                }
+                if (settings.jsonWsets && looksLikeWset(data)) {
+                    emitAsWset(data, sink);
+                    return;
+                }
+                if (settings.convertDeep()) {
+                    emitArrayWithConversion(data, sink);
+                    return;
+                }
+            }
+            if (settings.convertDeep() && data.type() == Type.OBJECT) {
+                emitObjectWithConversion(data, sink);
+                return;
+            }
+            data.emit(sink);
+        }
+
+        private void renderInspector(Inspector data) {
+            emitTopLevel(data, dataSink);
         }
 
         protected void renderFieldContents(Object field) throws IOException {
