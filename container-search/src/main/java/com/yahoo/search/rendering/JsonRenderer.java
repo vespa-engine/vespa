@@ -711,7 +711,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             for (int i = 0; i < entries; i++) {
                 Inspector key = keys[i];
                 if (key.type() == Type.STRING) {
-                    sink.fieldName(key.asUtf8());
+                    sink.fieldName(key.asString());
                 } else {
                     sink.fieldName(WithBase64.toJsonString(key, settings.enableRawAsBase64));
                 }
@@ -750,7 +750,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             for (int i = 0; i < entries; i++) {
                 Inspector item = items[i];
                 if (item.type() == Type.STRING) {
-                    sink.fieldName(item.asUtf8());
+                    sink.fieldName(item.asString());
                 } else {
                     sink.fieldName(WithBase64.toJsonString(item, settings.enableRawAsBase64));
                 }
