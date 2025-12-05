@@ -35,13 +35,13 @@ public:
         if (docid >= _docid_limit) {
             return false;
         }
-        uint32_t _num_values = _location.getVec()->get(docid, &_pos[0], _pos.size());
-        while (_num_values > _pos.size()) {
-            _pos.resize(_num_values);
-            _num_values = _location.getVec()->get(docid, &_pos[0], _pos.size());
+        uint32_t num_values = _location.getVec()->get(docid, &_pos[0], _pos.size());
+        while (num_values > _pos.size()) {
+            _pos.resize(num_values);
+            num_values = _location.getVec()->get(docid, &_pos[0], _pos.size());
         }
 
-        for (uint32_t i = 0; i < _num_values; i++) {
+        for (uint32_t i = 0; i < num_values; i++) {
             int64_t docxy(_pos[i]);
             if (_location.inside_limit(docxy)) {
                 return true;
