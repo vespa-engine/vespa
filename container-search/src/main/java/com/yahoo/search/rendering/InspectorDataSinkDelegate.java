@@ -30,11 +30,11 @@ class InspectorDataSinkDelegate extends DataSinkDelegate {
         boolean allowDeep = topLevel || settings.convertDeep();
         if (allowDeep) {
             if (isConvertibleToMap(inspector, topLevel)) {
-                emitConvertedArray(inspector, new MapDataSinkDelegate(sink));
+                emitMapArray(inspector, baseSink(sink));
                 return;
             }
             if (isConvertibleToWset(inspector, topLevel)) {
-                emitConvertedArray(inspector, new WsetDataSinkDelegate(sink));
+                emitWsetArray(inspector, baseSink(sink));
                 return;
             }
         }
@@ -49,12 +49,26 @@ class InspectorDataSinkDelegate extends DataSinkDelegate {
         sink.endArray();
     }
 
-    private void emitConvertedArray(Inspector inspector, DataSink converter) {
-        converter.startArray();
+    private void emitMapArray(Inspector inspector, DataSink sink) {
+        sink.startObject();
         for (var entry : inspector.entries()) {
-            emitInspector(entry, converter, settings.convertDeep());
+            Inspector key = entry.field("key");
+            Inspector value = entry.field("value");
+            sink.fieldName(toFieldName(key));
+            emitInspector(value, sink, settings.convertDeep());
         }
-        converter.endArray();
+        sink.endObject();
+    }
+
+    private void emitWsetArray(Inspector inspector, DataSink sink) {
+        sink.startObject();
+        for (var entry : inspector.entries()) {
+            Inspector item = entry.field("item");
+            Inspector weight = entry.field("weight");
+            sink.fieldName(toFieldName(item));
+            sink.longValue(weight.asLong());
+        }
+        sink.endObject();
     }
 
     private void emitObject(Inspector inspector, DataSink sink, boolean topLevel) {
@@ -96,5 +110,35 @@ class InspectorDataSinkDelegate extends DataSinkDelegate {
             if (item.type() != Type.STRING && !settings.jsonWsetsAll) return false;
         }
         return true;
+    }
+
+    /** Unwrap to the underlying non-delegate sink to avoid nested converter state collisions. */
+    private DataSink baseSink(DataSink sink) {
+        while (sink instanceof DataSinkDelegate delegateSink) {
+            sink = delegateSink.delegate;
+        }
+        return sink;
+    }
+
+    private String toFieldName(Inspector value) {
+        return switch (value.type()) {
+            case STRING -> value.asString();
+            case LONG -> Long.toString(value.asLong());
+            case DOUBLE -> Double.toString(value.asDouble());
+            case BOOL -> value.asBool() ? "true" : "false";
+            case DATA -> bytesToHex(value.asData());
+            default -> throw new IllegalArgumentException("Cannot use " + value.type() + " as field name");
+        };
+    }
+
+    private static String bytesToHex(byte[] data) {
+        StringBuilder sb = new StringBuilder(2 + data.length * 2);
+        sb.append("0x");
+        for (byte b : data) {
+            int v = b & 0xFF;
+            sb.append("0123456789ABCDEF".charAt(v >>> 4));
+            sb.append("0123456789ABCDEF".charAt(v & 0x0F));
+        }
+        return sb.toString();
     }
 }
