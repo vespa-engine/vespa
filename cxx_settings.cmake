@@ -125,6 +125,16 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION
   # Turn off dynamic_cast optimization that came with clang 17.0.1
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-assume-unique-vtables")
 endif()
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 18.0)
+    # Avoid ABI incompatibilities between libraries built by GCC and code compiled by Clang caused
+    # by differences in symbol mangling. See:
+    #  - https://github.com/llvm/llvm-project/issues/102443
+    #  - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114383
+    # Note that this particular workaround comes with its own set of downsides, in that libraries
+    # built with this setting cannot be used with those built with Clang 18+ that does _not_ have
+    # the same setting.
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fclang-abi-compat=17")
+endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0)
   # Turn off dynamic_cast optimization that came with Command Line Tools 16
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-assume-unique-vtables")
