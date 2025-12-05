@@ -105,6 +105,11 @@ inline double btree_strict_cost(double my_est) {
     return my_est;
 }
 
+// Strict cost of matching in merged btree posting lists (e.g. range or prefix)
+inline double btree_strict_cost(double my_est, double merge_factor) {
+    return my_est * merge_factor;
+}
+
 // Non-strict cost of matching in a btree posting list (e.g. fast-search attribute or memory index field).
 // Test used: IteratorBenchmark::analyze_btree_iterator_non_strict
 inline double btree_cost(double my_est) {

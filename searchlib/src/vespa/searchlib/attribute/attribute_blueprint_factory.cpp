@@ -160,7 +160,8 @@ public:
             return {estimate_when_unknown(), lookup_cost(indirections), lookup_strict_cost(indirections)};
         } else {
             double rel_est = abs_to_rel_est(_hit_estimate.est_hits(), docid_limit);
-            return {rel_est, btree_cost(rel_est), btree_strict_cost(rel_est)};
+            double merge_factor = _search_context->posting_list_merge_factor();
+            return {rel_est, btree_cost(rel_est), btree_strict_cost(rel_est, merge_factor)};
         }
     }
 

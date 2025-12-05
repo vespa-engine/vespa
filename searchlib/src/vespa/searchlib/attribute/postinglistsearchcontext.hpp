@@ -11,7 +11,7 @@
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/common/growablebitvector.h>
-
+#include <cmath>
 
 using search::queryeval::EmptySearch;
 using search::queryeval::SearchIterator;
@@ -299,6 +299,18 @@ PostingListSearchContextT<DataT>::calc_hit_estimate() const
         return HitEstimate::unknown(_docIdLimit);
     }
     return HitEstimate(std::min(numHits, size_t(std::numeric_limits<uint32_t>::max())));
+}
+
+template <typename DataT>
+double
+PostingListSearchContextT<DataT>::posting_list_merge_factor() const {
+    // The reasoning here is as follows: for each unique value, we
+    // will get a posting list with hits, and these lists have to be
+    // merged.  A single posting list gives no extra merging, so
+    // should give a factor of 1, and the cost should be logarithmic.
+    // It's possible we should have a scale factor on _uniqueValues
+    // (need to do some careful measurements for that).
+    return std::log2(1.0 + _uniqueValues);
 }
 
 template <typename DataT>
