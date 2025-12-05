@@ -12,26 +12,7 @@
 
 namespace search::queryeval {
 
-class LazyFilter : public GlobalFilter {
-public:
-    std::shared_ptr<const LazyFilter> shared_from_this() const { return std::static_pointer_cast<const LazyFilter>(GlobalFilter::shared_from_this()); }
-    virtual std::shared_ptr<LazyFilter> clone() const = 0;
-};
-
-class InactiveLazyFilter : public LazyFilter {
-private:
-    struct Private { explicit Private() = default; };
-public:
-    InactiveLazyFilter(Private) noexcept {}
-    static std::shared_ptr<InactiveLazyFilter> create() { return std::make_shared<InactiveLazyFilter>(Private()); }
-    bool is_active() const override { return false; }
-    uint32_t size() const override { abort(); }
-    uint32_t count() const override { abort(); }
-    bool check(uint32_t /*docid*/) const override { abort(); }
-    std::shared_ptr<LazyFilter> clone() const override { return create(); }
-};
-
-class GeoLocationLazyFilter : public LazyFilter {
+class GeoLocationLazyFilter : public GlobalFilter {
 private:
     struct Private { explicit Private() = default; };
     const common::Location &_location;
@@ -68,9 +49,6 @@ public:
         }
 
         return false;
-    }
-    std::shared_ptr<LazyFilter> clone() const override {
-        return create(_location, _estimate);
     }
 };
 

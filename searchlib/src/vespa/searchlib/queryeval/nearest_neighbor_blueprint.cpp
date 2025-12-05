@@ -138,7 +138,7 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, d
 }
 
 void
-NearestNeighborBlueprint::set_lazy_filter(const LazyFilter &lazy_filter) {
+NearestNeighborBlueprint::set_lazy_filter(const GlobalFilter &lazy_filter) {
     _lazy_filter = lazy_filter.shared_from_this();
 }
 

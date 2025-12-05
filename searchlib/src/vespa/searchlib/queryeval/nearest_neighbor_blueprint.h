@@ -53,7 +53,7 @@ private:
     bool _global_filter_set;
     std::optional<uint32_t> _global_filter_hits;
     std::optional<double> _global_filter_hit_ratio;
-    std::shared_ptr<const LazyFilter> _lazy_filter;
+    std::shared_ptr<const GlobalFilter> _lazy_filter;
     const vespalib::Doom& _doom;
     MatchingPhase _matching_phase;
     search::tensor::NearestNeighborIndex::Stats _nni_stats;
@@ -77,7 +77,7 @@ public:
     uint32_t get_adjusted_target_hits() const { return _adjusted_target_hits; }
     bool want_global_filter(GlobalFilterLimits& limits) const override;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
-    void set_lazy_filter(const LazyFilter &lazy_filter) override;
+    void set_lazy_filter(const GlobalFilter &lazy_filter) override;
     Algorithm get_algorithm() const { return _algorithm; }
     double get_distance_threshold() const { return _hnsw_params.distance_threshold; }
     const HnswParams& get_hnsw_params() const { return _hnsw_params; }

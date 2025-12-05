@@ -7,7 +7,7 @@
 #include "field_spec.hpp"
 #include "flow_tuning.h"
 #include "full_search.h"
-#include "lazy_filter.h"
+#include "global_filter.h"
 #include "leaf_blueprints.h"
 #include "matching_elements_search.h"
 #include "orsearch.h"
@@ -204,7 +204,7 @@ Blueprint::set_global_filter(const GlobalFilter &, double)
 }
 
 void
-Blueprint::set_lazy_filter(const LazyFilter &)
+Blueprint::set_lazy_filter(const GlobalFilter &)
 {
 }
 
@@ -374,9 +374,9 @@ Blueprint::create_default_filter(FilterConstraint constraint)
     }
 }
 
-std::shared_ptr<LazyFilter>
+std::shared_ptr<GlobalFilter>
 Blueprint::create_lazy_filter() const {
-    return InactiveLazyFilter::create();
+    return GlobalFilter::create();
 }
 
 std::string
@@ -671,7 +671,7 @@ IntermediateBlueprint::set_global_filter(const GlobalFilter &global_filter, doub
 }
 
 void
-IntermediateBlueprint::set_lazy_filter(const LazyFilter &lazy_filter)
+IntermediateBlueprint::set_lazy_filter(const GlobalFilter &lazy_filter)
 {
     for (auto & child : _children) {
         child->set_lazy_filter(lazy_filter);
@@ -689,7 +689,7 @@ IntermediateBlueprint::createSearchImpl(fef::MatchData &md) const
     return createIntermediateSearch(std::move(subSearches), md);
 }
 
-std::shared_ptr<LazyFilter>
+std::shared_ptr<GlobalFilter>
 IntermediateBlueprint::create_lazy_filter() const {
     for (const auto & child : _children) {
         auto lazy_filter = child->create_lazy_filter();
@@ -698,7 +698,7 @@ IntermediateBlueprint::create_lazy_filter() const {
         }
     }
 
-    return InactiveLazyFilter::create();
+    return GlobalFilter::create();
 }
 
 IntermediateBlueprint::IntermediateBlueprint() noexcept = default;

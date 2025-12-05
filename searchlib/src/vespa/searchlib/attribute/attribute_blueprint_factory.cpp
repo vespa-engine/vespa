@@ -397,7 +397,7 @@ public:
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
     }
-    std::shared_ptr<queryeval::LazyFilter> create_lazy_filter() const override {
+    std::shared_ptr<queryeval::GlobalFilter> create_lazy_filter() const override {
         return queryeval::GeoLocationLazyFilter::create(_location, _pre_filter_estimate);
     }
     void visitMembers(vespalib::ObjectVisitor& visitor) const override {
