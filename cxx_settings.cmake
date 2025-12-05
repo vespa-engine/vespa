@@ -125,7 +125,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION
   # Turn off dynamic_cast optimization that came with clang 17.0.1
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-assume-unique-vtables")
 endif()
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 18.0)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 18.0 AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
     # Avoid ABI incompatibilities between libraries built by GCC and code compiled by Clang caused
     # by differences in symbol mangling. See:
     #  - https://github.com/llvm/llvm-project/issues/102443
