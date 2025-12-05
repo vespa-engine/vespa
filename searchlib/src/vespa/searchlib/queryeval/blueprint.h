@@ -44,7 +44,6 @@ class EmptyBlueprint;
 class AlwaysTrueBlueprint;
 class QueryEvalStats;
 class NearestNeighborBlueprint;
-class LazyFilter;
 
 /**
  * A Blueprint is an intermediate representation of a search. More
@@ -389,7 +388,7 @@ public:
      */
     virtual void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio);
 
-    virtual void set_lazy_filter(const LazyFilter &lazy_filter);
+    virtual void set_lazy_filter(const GlobalFilter &lazy_filter);
 
     virtual const State &getState() const = 0;
     const Blueprint &root() const;
@@ -448,7 +447,7 @@ public:
     static SearchIteratorUP create_first_child_filter(std::span<const UP> children, FilterConstraint constraint);
     static SearchIteratorUP create_default_filter(FilterConstraint constraint);
 
-    virtual std::shared_ptr<LazyFilter> create_lazy_filter() const;
+    virtual std::shared_ptr<GlobalFilter> create_lazy_filter() const;
 
     // for debug dumping
     std::string asString() const;
@@ -545,7 +544,7 @@ public:
     void optimize(Blueprint* &self, OptimizePass pass) override;
     void sort(InFlow in_flow) override;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
-    void set_lazy_filter(const LazyFilter &lazy_filter) override;
+    void set_lazy_filter(const GlobalFilter &lazy_filter) override;
 
     IndexList find(const IPredicate & check) const;
     size_t childCnt() const { return _children.size(); }
@@ -558,7 +557,7 @@ public:
     Blueprint::UP removeLastChild() { return removeChild(childCnt() - 1); }
     SearchIteratorUP createSearchImpl(fef::MatchData &md) const override;
 
-    std::shared_ptr<LazyFilter> create_lazy_filter() const override;
+    std::shared_ptr<GlobalFilter> create_lazy_filter() const override;
 
     virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
     virtual FieldSpecBaseList exposeFields() const = 0;

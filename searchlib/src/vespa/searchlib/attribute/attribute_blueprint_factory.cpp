@@ -350,12 +350,14 @@ class LocationPostFilterBlueprint : public ComplexLeafBlueprint
 private:
     const IAttributeVector  &_attribute;
     common::Location _location;
+    HitEstimate _pre_filter_estimate;
 
 public:
     LocationPostFilterBlueprint(const FieldSpec &field, const IAttributeVector &attribute, const Location &loc)
         : ComplexLeafBlueprint(field),
           _attribute(attribute),
-          _location(loc)
+          _location(loc),
+          _pre_filter_estimate()
     {
         uint32_t estHits = 0;
         if (loc.valid()) {
@@ -370,6 +372,8 @@ public:
     ~LocationPostFilterBlueprint() override;
 
     const common::Location &location() const { return _location; }
+
+    void set_pre_filter_estimate(const HitEstimate &estimate) { _pre_filter_estimate = estimate; }
 
     void sort(queryeval::InFlow in_flow) override {
         resolve_strict(in_flow);
@@ -394,8 +398,8 @@ public:
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
     }
-    std::shared_ptr<queryeval::LazyFilter> create_lazy_filter() const override {
-        return queryeval::GeoLocationLazyFilter::create(_location);
+    std::shared_ptr<queryeval::GlobalFilter> create_lazy_filter() const override {
+        return queryeval::GeoLocationLazyFilter::create(_location, _pre_filter_estimate);
     }
     void visitMembers(vespalib::ObjectVisitor& visitor) const override {
         LeafBlueprint::visitMembers(visitor);
@@ -427,6 +431,7 @@ make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribut
             location.bounding_box.x.high,
             location.bounding_box.y.high);
     auto pre_filter = std::make_unique<LocationPreFilterBlueprint>(field, attribute, rangeVector, scParams);
+    post_filter->set_pre_filter_estimate(pre_filter->getState().estimate());
     if (!pre_filter->should_use()) {
         LOG(debug, "only use post filter");
         return post_filter;

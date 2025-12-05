@@ -317,7 +317,7 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
         return false;
     }
 
-    std::shared_ptr<search::queryeval::LazyFilter> lazy_filter;
+    std::shared_ptr<search::queryeval::GlobalFilter> lazy_filter;
     if (use_lazy_filter) {
         if (trace && trace->shouldTrace(5)) {
             trace->addEvent(5, "Calculate lazy filter");
