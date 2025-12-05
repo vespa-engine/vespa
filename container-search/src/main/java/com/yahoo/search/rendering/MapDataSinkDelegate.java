@@ -81,4 +81,31 @@ class MapDataSinkDelegate extends DataSinkDelegate {
             delegate.stringValue(utf8);
         }
     }
+
+    @Override
+    public void longValue(long v) {
+        if (nextIsField) {
+            delegate.fieldName(Long.toString(v));
+        } else {
+            delegate.longValue(v);
+        }
+    }
+
+    @Override
+    public void doubleValue(double v) {
+        if (nextIsField) {
+            delegate.fieldName(Double.toString(v));
+        } else {
+            delegate.doubleValue(v);
+        }
+    }
+
+    @Override
+    public void booleanValue(boolean v) {
+        if (nextIsField) {
+            delegate.fieldName(v ? "true" : "false");
+        } else {
+            delegate.booleanValue(v);
+        }
+    }
 }

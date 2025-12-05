@@ -58,12 +58,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Deque;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -668,130 +664,13 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             return true;
         }
 
-        /**
-         * Try to emit array as a map (array of {key, value} objects).
-         * Returns true if successful, false if data is not a valid map structure.
-         */
-        private boolean tryEmitAsMap(Inspector data) {
-            int entries = data.entryCount();
-            Inspector[] keys = new Inspector[entries];
-            Inspector[] values = new Inspector[entries];
-            // Extract and validate
-            for (int i = 0; i < entries; i++) {
-                Inspector obj = data.entry(i);
-                if (obj.type() != Type.OBJECT || obj.fieldCount() != 2) return false;
-                Inspector key = obj.field("key");
-                Inspector value = obj.field("value");
-                if (!key.valid() || !value.valid()) return false;
-                if (key.type() != Type.STRING && !settings.jsonMapsAll) return false;
-                keys[i] = key;
-                values[i] = value;
-            }
-            // Emit
-            boolean convertDeep = settings.convertDeep();
-            dataSink().startObject();
-            for (int i = 0; i < entries; i++) {
-                dataSink().fieldNameFromPrimitive(keys[i]);
-                if (convertDeep) {
-                    emitWithConversion(values[i]);
-                } else {
-                    values[i].emit(dataSink());
-                }
-            }
-            dataSink().endObject();
-            return true;
-        }
-
-        /**
-         * Try to emit array as a weighted set (array of {item, weight} objects).
-         * Returns true if successful, false if data is not a valid wset structure.
-         */
-        private boolean tryEmitAsWset(Inspector data) {
-            int entries = data.entryCount();
-            Inspector[] items = new Inspector[entries];
-            long[] weights = new long[entries];
-            // Extract and validate
-            for (int i = 0; i < entries; i++) {
-                Inspector obj = data.entry(i);
-                if (obj.type() != Type.OBJECT || obj.fieldCount() != 2) return false;
-                Inspector item = obj.field("item");
-                Inspector weight = obj.field("weight");
-                if (!item.valid() || !weight.valid()) return false;
-                if (weight.type() != Type.LONG) return false;
-                if (item.type() != Type.STRING && !settings.jsonWsetsAll) return false;
-                items[i] = item;
-                weights[i] = weight.asLong();
-            }
-            // Emit
-            dataSink().startObject();
-            for (int i = 0; i < entries; i++) {
-                dataSink().fieldNameFromPrimitive(items[i]);
-                dataSink().longValue(weights[i]);
-            }
-            dataSink().endObject();
-            return true;
-        }
-
-        /** Emit an object with potential deep conversion of nested values */
-        private void emitObjectWithConversion(Inspector data) {
-            dataSink().startObject();
-            for (var entry : data.fields()) {
-                dataSink().fieldName(entry.getKey());
-                emitWithConversion(entry.getValue());
-            }
-            dataSink().endObject();
-        }
-
-        /** Emit an array with potential deep conversion of nested values */
-        private void emitArrayWithConversion(Inspector data) {
-            int entries = data.entryCount();
-            dataSink().startArray();
-            for (int i = 0; i < entries; i++) {
-                emitWithConversion(data.entry(i));
-            }
-            dataSink().endArray();
-        }
-
-        /** Emit a value, applying map/wset conversion if applicable */
-        private void emitWithConversion(Inspector data) {
-            if (data.type() == Type.ARRAY) {
-                if (settings.jsonDeepMaps && tryEmitAsMap(data)) {
-                    return;
-                }
-                if (settings.jsonWsets && tryEmitAsWset(data)) {
-                    return;
-                }
-                if (settings.convertDeep()) {
-                    emitArrayWithConversion(data);
-                    return;
-                }
-            }
-            if (data.type() == Type.OBJECT && settings.convertDeep()) {
-                emitObjectWithConversion(data);
-                return;
-            }
-            data.emit(dataSink());
+        private ConversionSettings conversionSettings() {
+            return new ConversionSettings(settings.jsonDeepMaps, settings.jsonWsets, settings.jsonMapsAll, settings.jsonWsetsAll);
         }
 
         /** Emit top-level data, applying conversions as configured */
         private void emitTopLevel(Inspector data) {
-            if (data.type() == Type.ARRAY && data.entryCount() > 0) {
-                if (tryEmitAsMap(data)) {
-                    return;
-                }
-                if (settings.jsonWsets && tryEmitAsWset(data)) {
-                    return;
-                }
-                if (settings.convertDeep()) {
-                    emitArrayWithConversion(data);
-                    return;
-                }
-            }
-            if (settings.convertDeep() && data.type() == Type.OBJECT) {
-                emitObjectWithConversion(data);
-                return;
-            }
-            data.emit(dataSink());
+            new InspectorDataSinkDelegate(dataSink(), conversionSettings()).emitInspector(data);
         }
 
         protected void renderFieldContents(Object field) throws IOException {
