@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.triton;
 
-import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
@@ -95,7 +94,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
         if (!tritonClient.isHealthy()) {
-            throw new IllegalStateException("Triton server is not healthy, target: " + config.target());
+            throw new IllegalStateException("Triton server is not healthy, gRPC endpoint: " + config.grpcEndpoint());
         }
 
         var modelName = generateModelName(modelPath, options);

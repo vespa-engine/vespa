@@ -1,8 +1,8 @@
 # Copyright Vespa.ai. Licensed under the Apache License, Version 2.0 (the "License");
-package=ai.vespa.llm.clients
+package=ai.vespa.triton
 
-# Endpoint of Nvidia Triton Inference Server
-target string default="triton:8001"
+# gRPC endpoint for Nvidia Triton Inference Server
+grpcEndpoint string default="triton:8001"
 
 # Model repository path where ONNX models are copied to.
 # Relative paths will be resolved relative to $VESPA_HOME. 

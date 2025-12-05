@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.triton;
 
-import ai.vespa.llm.clients.TritonConfig;
 import com.yahoo.tensor.Tensor;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -75,7 +74,7 @@ class TritonOnnxEvaluatorTest {
 
     private static TritonOnnxClient createTritonClient() {
         return new TritonOnnxClient(new TritonConfig.Builder()
-                .target(tritonContainer.getGrpcEndpoint())
+                .grpcEndpoint(tritonContainer.getGrpcEndpoint())
                 .build());
     }
 }

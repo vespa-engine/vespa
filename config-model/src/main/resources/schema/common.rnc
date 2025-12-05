@@ -182,6 +182,11 @@ OnnxModelExecutionParams =
     }? &
     # Path to model config file, e.g. Triton model config
     element model-config-override { xsd:string }?
+    
+Triton = 
+    element grpc-endpoint { xsd:string }? &
+    element model-repository-path { xsd:string }? &
+    element model-control-mode { "NONE" | "POLL" | "EXPLICIT" }?
 
 EmbedderPoolingStrategy = element pooling-strategy { "cls" | "mean" | "none" }?
 

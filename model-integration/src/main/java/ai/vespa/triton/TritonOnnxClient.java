@@ -2,7 +2,6 @@
 package ai.vespa.triton;
 
 import ai.onnxruntime.platform.Fp16Conversions;
-import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import com.google.protobuf.ByteString;
 import com.yahoo.api.annotations.Beta;
@@ -73,7 +72,7 @@ public class TritonOnnxClient implements AutoCloseable {
 
     @Inject
     public TritonOnnxClient(TritonConfig config) {
-        var ch = ManagedChannelBuilder.forTarget(config.target())
+        var ch = ManagedChannelBuilder.forTarget(config.grpcEndpoint())
                 .usePlaintext()
                 .maxInboundMessageSize(MAX_INBOUND_MESSAGE_SIZE_MIB * 1024 * 1024)
                 .build();
