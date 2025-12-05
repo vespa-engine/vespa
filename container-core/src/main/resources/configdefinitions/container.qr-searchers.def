@@ -83,4 +83,4 @@ parserSettings.keepSegmentAnds bool default=false
 parserSettings.keepIdeographicPunctuation bool default=false
 
 ## send query tree as protobuf in addition to legacy format
-sendProtobufQuerytree bool default=false
+sendProtobufQuerytree bool default=true
