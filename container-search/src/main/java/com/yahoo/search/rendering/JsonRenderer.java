@@ -16,8 +16,6 @@ import com.yahoo.data.JsonProducer;
 import com.yahoo.data.access.Inspectable;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.Type;
-import com.yahoo.data.access.simple.JsonRender;
-import com.yahoo.data.access.simple.Value;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
@@ -60,7 +58,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
-import java.util.Base64;
 import java.util.Deque;
 import java.util.Map;
 import java.util.Optional;
@@ -564,26 +561,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         this.timeSource = timeSource;
     }
 
-    /** package-private because used in testing JsonGeneratorDataSinkTest */
-    static class WithBase64 extends JsonRender.StringEncoder {
-        private final static Base64.Encoder encoder = Base64.getEncoder();
-        @Override
-        protected void encodeDATA(byte[] value) {
-            var s = encoder.encodeToString(value);
-            encodeSTRING(s);
-        }
-        WithBase64() {
-            super(new StringBuilder(), true);
-        }
-        static String toJsonString(Inspector obj, boolean enableRawAsBase64) {
-            JsonRender.StringEncoder encoder =enableRawAsBase64
-                    ? new WithBase64()
-                    : new JsonRender.StringEncoder(new StringBuilder(), true);
-            encoder.encode(obj);
-            return encoder.target().toString();
-        }
-    }
-
     /**
      * Received callbacks when fields of hits are encountered.
      * This instance is reused for all hits of a Result since we are in a single-threaded context
@@ -594,7 +571,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         private final JsonGenerator generator;
         private final FieldConsumerSettings settings;
         private MutableBoolean hasFieldsField;
-        private DataSink dataSink;
+        private JsonGeneratorDataSink dataSink;
 
         /** Invoke this from your constructor when sub-classing {@link FieldConsumer} */
         protected FieldConsumer(boolean debugRendering, boolean tensorShortForm, boolean jsonMaps) {
@@ -687,139 +664,135 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             return true;
         }
 
-        private Inspector maybeConvertMap(Inspector data) {
-            var map = new Value.ObjectValue();
-            for (int i = 0; i < data.entryCount(); i++) {
+        /**
+         * Try to emit array as a map (array of {key, value} objects).
+         * Returns true if successful, false if data is not a valid map structure.
+         */
+        private boolean tryEmitAsMap(Inspector data) {
+            int entries = data.entryCount();
+            Inspector[] keys = new Inspector[entries];
+            Inspector[] values = new Inspector[entries];
+            // Extract and validate
+            for (int i = 0; i < entries; i++) {
                 Inspector obj = data.entry(i);
-                if (obj.type() != Type.OBJECT || obj.fieldCount() != 2) {
-                    return null;
-                }
+                if (obj.type() != Type.OBJECT || obj.fieldCount() != 2) return false;
                 Inspector key = obj.field("key");
                 Inspector value = obj.field("value");
-                if (! key.valid()) return null;
-                if (! value.valid()) return null;
-                if (key.type() != Type.STRING && !settings.jsonMapsAll) {
-                    return null;
-                }
-                if (settings.convertDeep()) {
-                    value = deepMaybeConvert(value);
-                }
-                if (key.type() == Type.STRING) {
-                    map.put(key.asString(), value);
+                if (!key.valid() || !value.valid()) return false;
+                if (key.type() != Type.STRING && !settings.jsonMapsAll) return false;
+                keys[i] = key;
+                values[i] = value;
+            }
+            // Emit
+            boolean convertDeep = settings.convertDeep();
+            dataSink().startObject();
+            for (int i = 0; i < entries; i++) {
+                dataSink().fieldNameFromPrimitive(keys[i]);
+                if (convertDeep) {
+                    emitWithConversion(values[i]);
                 } else {
-                    map.put(WithBase64.toJsonString(key, settings.enableRawAsBase64), value);
+                    values[i].emit(dataSink());
                 }
             }
-            return map;
+            dataSink().endObject();
+            return true;
         }
 
-        private Inspector maybeConvertWset(Inspector data) {
-            var wset = new Value.ObjectValue();
-            for (int i = 0; i < data.entryCount(); i++) {
+        /**
+         * Try to emit array as a weighted set (array of {item, weight} objects).
+         * Returns true if successful, false if data is not a valid wset structure.
+         */
+        private boolean tryEmitAsWset(Inspector data) {
+            int entries = data.entryCount();
+            Inspector[] items = new Inspector[entries];
+            long[] weights = new long[entries];
+            // Extract and validate
+            for (int i = 0; i < entries; i++) {
                 Inspector obj = data.entry(i);
-                if (obj.type() != Type.OBJECT || obj.fieldCount() != 2) {
-                    return null;
-                }
+                if (obj.type() != Type.OBJECT || obj.fieldCount() != 2) return false;
                 Inspector item = obj.field("item");
                 Inspector weight = obj.field("weight");
-                if (! item.valid()) return null;
-                if (! weight.valid()) return null;
-                // TODO support non-integer weights?
-                if (weight.type() != Type.LONG) return null;
-                if (item.type() == Type.STRING) {
-                    wset.put(item.asString(), weight.asLong());
-                } else if (settings.jsonWsetsAll) {
-                    wset.put(WithBase64.toJsonString(item, settings.enableRawAsBase64).toString(), weight.asLong());
-                } else {
-                    return null;
-                }
+                if (!item.valid() || !weight.valid()) return false;
+                if (weight.type() != Type.LONG) return false;
+                if (item.type() != Type.STRING && !settings.jsonWsetsAll) return false;
+                items[i] = item;
+                weights[i] = weight.asLong();
             }
-            return wset;
+            // Emit
+            dataSink().startObject();
+            for (int i = 0; i < entries; i++) {
+                dataSink().fieldNameFromPrimitive(items[i]);
+                dataSink().longValue(weights[i]);
+            }
+            dataSink().endObject();
+            return true;
         }
 
-        private Inspector convertInsideObject(Inspector data) {
-            var object = new Value.ObjectValue();
+        /** Emit an object with potential deep conversion of nested values */
+        private void emitObjectWithConversion(Inspector data) {
+            dataSink().startObject();
             for (var entry : data.fields()) {
-                object.put(entry.getKey(), deepMaybeConvert(entry.getValue()));
+                dataSink().fieldName(entry.getKey());
+                emitWithConversion(entry.getValue());
             }
-            return object;
+            dataSink().endObject();
         }
 
-        private Inspector deepMaybeConvert(Inspector data) {
+        /** Emit an array with potential deep conversion of nested values */
+        private void emitArrayWithConversion(Inspector data) {
+            int entries = data.entryCount();
+            dataSink().startArray();
+            for (int i = 0; i < entries; i++) {
+                emitWithConversion(data.entry(i));
+            }
+            dataSink().endArray();
+        }
+
+        /** Emit a value, applying map/wset conversion if applicable */
+        private void emitWithConversion(Inspector data) {
             if (data.type() == Type.ARRAY) {
-                if (settings.jsonDeepMaps) {
-                    var map = maybeConvertMap(data);
-                    if (map != null) return map;
+                if (settings.jsonDeepMaps && tryEmitAsMap(data)) {
+                    return;
                 }
-                if (settings.jsonWsets) {
-                    var wset = maybeConvertWset(data);
-                    if (wset != null) return wset;
-                }
-            }
-            if (data.type() == Type.OBJECT) {
-                return convertInsideObject(data);
-            }
-            return data;
-        }
-
-        private Inspector convertTopLevelArray(Inspector data) {
-            if (data.entryCount() > 0) {
-                var map = maybeConvertMap(data);
-                if (map != null) return map;
-                if (settings.jsonWsets) {
-                    var wset = maybeConvertWset(data);
-                    if (wset != null) return wset;
+                if (settings.jsonWsets && tryEmitAsWset(data)) {
+                    return;
                 }
                 if (settings.convertDeep()) {
-                    var array = new Value.ArrayValue(data.entryCount());
-                    for (int i = 0; i < data.entryCount(); i++) {
-                        Inspector obj = data.entry(i);
-                        array.add(deepMaybeConvert(obj));
-                    }
-                    return array;
+                    emitArrayWithConversion(data);
+                    return;
                 }
             }
-            return data;
-        }
-
-        private Inspector maybeConvertData(Inspector data) {
-            if (data.type() == Type.ARRAY) {
-                return convertTopLevelArray(data);
-            }
-            if (settings.convertDeep() && data.type() == Type.OBJECT) {
-                return convertInsideObject(data);
-            }
-            return data;
-        }
-
-        private void renderInspector(Inspector data) throws IOException {
-            if (data.type().equals(Type.ARRAY)) {
-                int entries = data.entryCount();
-                for (int i = 0; i < entries; i++) {
-                    if (!data.entry(i).type().equals(Type.STRING)) {
-                        renderInspectorDirect(maybeConvertData(data));
-                        return;
-                    }
-                }
-
-                generator.writeStartArray();
-                for (int i = 0; i < entries; i++) {
-                    byte[] utf8 = data.entry(i).asUtf8();
-                    generator.writeUTF8String(utf8, 0, utf8.length);
-                }
-                generator.writeEndArray();
+            if (data.type() == Type.OBJECT && settings.convertDeep()) {
+                emitObjectWithConversion(data);
                 return;
             }
-            renderInspectorDirect(maybeConvertData(data));
+            data.emit(dataSink());
         }
 
-        private void renderInspectorDirect(Inspector data) throws IOException {
-            generator().writeRawValue(WithBase64.toJsonString(data, settings.enableRawAsBase64));
+        /** Emit top-level data, applying conversions as configured */
+        private void emitTopLevel(Inspector data) {
+            if (data.type() == Type.ARRAY && data.entryCount() > 0) {
+                if (tryEmitAsMap(data)) {
+                    return;
+                }
+                if (settings.jsonWsets && tryEmitAsWset(data)) {
+                    return;
+                }
+                if (settings.convertDeep()) {
+                    emitArrayWithConversion(data);
+                    return;
+                }
+            }
+            if (settings.convertDeep() && data.type() == Type.OBJECT) {
+                emitObjectWithConversion(data);
+                return;
+            }
+            data.emit(dataSink());
         }
 
         protected void renderFieldContents(Object field) throws IOException {
             if (field instanceof Inspectable && ! (field instanceof FeatureData)) {
-                renderInspector(((Inspectable)field).inspect());
+                emitTopLevel(((Inspectable)field).inspect());
             } else {
                 accept(field);
             }
@@ -840,7 +813,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             } else if (field instanceof FeatureData featureData) {
                 generator().writeRawValue(featureData.toJson(settings.tensorOptions));
             } else if (field instanceof Inspectable i) {
-                renderInspectorDirect(i.inspect());
+                i.inspect().emit(dataSink());
             } else if (field instanceof DataSource ds) {
                 ds.emit(dataSink());
             } else if (field instanceof JsonProducer jp) {
@@ -888,7 +861,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             return generator;
         }
 
-        private DataSink dataSink() {
+        private JsonGeneratorDataSink dataSink() {
             if (dataSink == null) {
                 throw new UnsupportedOperationException("DataSink required but not assigned. "
                         + "All accept() methods must be overridden when sub-classing FieldConsumer without a generator");
