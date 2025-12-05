@@ -297,6 +297,17 @@ public class JsonGeneratorDataSinkTest {
         gen.flush();
 
         assertSlime(SlimeUtils.jsonToSlime("{ strKey:1, '42':2, '3.14':3, 'true':4, '0xABCD':5 }"), out.toSlime());
+
+        var out2 = new SlimeOutputStream();
+        var gen2 = createGeneratorFactory().createGenerator(out2, JsonEncoding.UTF8);
+        var sink2 = new JsonGeneratorDataSink(gen2, true);
+        sink2.startObject();
+        sink2.fieldNameFromPrimitive(new Value.DataValue(new byte[]{(byte)0xAB, (byte)0xCD}));
+        sink2.longValue(1);
+        sink2.endObject();
+        gen2.flush();
+        assertSlime(SlimeUtils.jsonToSlime("{ 'q80=':1 }"), out2.toSlime());
+
         assertThrows(IllegalArgumentException.class, () -> sink.fieldNameFromPrimitive(new Value.ArrayValue()));
     }
 
