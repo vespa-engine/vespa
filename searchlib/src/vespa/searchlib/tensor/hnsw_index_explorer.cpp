@@ -53,13 +53,14 @@ HnswIndexExplorer<type>::get_state(const vespalib::slime::Inserter& inserter, bo
     for (uint32_t hist_val : histograms.links_histogram) {
         links_hst_array.addLong(hist_val);
     }
-    auto count_result = _index.count_reachable_nodes();
-    uint32_t unreachable = valid_nodes - count_result.first;
-    if (count_result.second) {
-        object.setLong("unreachable_nodes", unreachable);
-    } else {
-        object.setLong("unreachable_nodes_incomplete_count", unreachable);
-    }
+    auto reachability = _index.count_reachable_nodes();
+    auto& reachability_obj = object.setObject("reachability_analysis");
+    reachability_obj.setBool("completed", reachability.completed);
+    reachability_obj.setDouble("links_explored_pct", reachability.links_explored_pct());
+    reachability_obj.setDouble("nodes_found_pct", reachability.nodes_found_pct());
+    reachability_obj.setDouble("nodes_not_found_pct", reachability.nodes_not_found_pct());
+    reachability_obj.setLong("nodes_not_found_count", reachability.nodes_not_found);
+    reachability_obj.setLong("timeout_ms", reachability.timeout_ms);
     auto entry_node = graph.get_entry_node();
     object.setLong("entry_nodeid", entry_node.nodeid);
     object.setLong("entry_level", entry_node.level);
