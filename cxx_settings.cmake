@@ -10,6 +10,19 @@ if (VESPA_USE_SANITIZER)
     endif()
 endif()
 
+set(VESPA_ENABLE_FUZZING FALSE CACHE BOOL "If TRUE, instrument code for fuzzing. Can be used alongside VESPA_USE_SANITIZER. Requires Clang compiler.")
+
+if (VESPA_ENABLE_FUZZING)
+    if (NOT VESPA_USE_SANITIZER)
+        message(FATAL_ERROR, "VESPA_ENABLE_FUZZING currently also requires setting VESPA_USE_SANITIZER")
+    endif()
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        message("-- Instrumenting code for fuzzing")
+    else()
+        message(FATAL_ERROR "VESPA_ENABLE_FUZZING requires Clang compiler")
+    endif()
+endif()
+
 # Build options
 # Whether to build unit tests as part of the 'all' target
 set(EXCLUDE_TESTS_FROM_ALL FALSE CACHE BOOL "If TRUE, do not build tests as part of the 'all' target")
@@ -40,9 +53,9 @@ if (VESPA_USE_SANITIZER)
     # address sanitizer on gcc 12 or newer.
     set(C_WARN_OPTS "${C_WARN_OPTS} -Wno-maybe-uninitialized -Wno-restrict")
   endif()
-  if (VESPA_USE_SANITIZER STREQUAL "thread" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0)
+  if (VESPA_USE_SANITIZER MATCHES "thread" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0)
     # Turn off warning about std::atomic_thread_fence not being supported by
-    # address sanitizer.
+    # thread sanitizer.
     set(C_WARN_OPTS "${C_WARN_OPTS} -Wno-tsan")
   endif()
 endif()
@@ -104,9 +117,19 @@ endif()
 
 # C and C++ compiler flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 -fno-omit-frame-pointer ${C_WARN_OPTS} -fPIC ${VESPA_CXX_ABI_FLAGS} -DXXH_INLINE_ALL -DBOOST_DISABLE_ASSERTS ${VESPA_CPU_ARCH_FLAGS} ${EXTRA_C_FLAGS}")
-# AddressSanitizer/ThreadSanitizer work for both GCC and Clang
+
+# AddressSanitizer/ThreadSanitizer work for both GCC and Clang.
 if (VESPA_USE_SANITIZER)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${VESPA_USE_SANITIZER}")
+    # Fuzzing only works with Clang, but that has already been verified.
+    if (VESPA_ENABLE_FUZZING)
+      # libFuzzer will by default inject its own main function, so use `fuzzer-no-link` instead of just `fuzzer`.
+      set(VESPA_REAL_SANITIZE_ARG "fuzzer-no-link,${VESPA_USE_SANITIZER}")
+      # Actual fuzzing target executables should use the regular `fuzzer` -fsanitize option.
+      set(VESPA_FUZZER_APP_LINK_ARG, "-fsanitizer=fuzzer,${VESPA_USE_SANITIZER}")
+    else()
+      set(VESPA_REAL_SANITIZE_ARG "${VESPA_USE_SANITIZER}")
+    endif()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${VESPA_REAL_SANITIZE_ARG}")
     if (VESPA_USE_SANITIZER MATCHES "undefined")
         # Many false positives when checking vptr due to limited visibility
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-sanitize=vptr")
@@ -258,7 +281,7 @@ endif()
 
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
 else()
-if(NOT VESPA_USE_SANITIZER OR NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if(NOT (VESPA_USE_SANITIZER OR VESPA_ENABLE_FUZZING) OR NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   # Don't allow unresolved symbols in shared libraries
   set(VESPA_DISALLOW_UNRESOLVED_SYMBOLS_IN_SHARED_LIBRARIES "-Wl,--no-undefined")
 endif()
