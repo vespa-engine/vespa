@@ -31,35 +31,6 @@ public:
     std::shared_ptr<LazyFilter> clone() const override { return create(); }
 };
 
-class FallbackLazyFilter : public LazyFilter {
-private:
-    struct Private { explicit Private() = default; };
-    const GlobalFilter &_global_filter;
-    const LazyFilter &_lazy_filter;
-public:
-    FallbackLazyFilter(Private, const GlobalFilter &global_filter, const LazyFilter &lazy_filter)
-        : _global_filter(global_filter), _lazy_filter(lazy_filter) {
-        assert(_global_filter.is_active());
-        assert(_lazy_filter.is_active());
-    }
-    static std::shared_ptr<FallbackLazyFilter> create(const GlobalFilter &global_filter, const LazyFilter &lazy_filter) { return std::make_shared<FallbackLazyFilter>(Private(), global_filter, lazy_filter); }
-    bool is_active() const override {
-        return true;
-    }
-    uint32_t size() const override {
-        return std::min(_global_filter.size(), _lazy_filter.size());
-    }
-    uint32_t count() const override {
-        return std::min(_global_filter.count(), _lazy_filter.count());
-    }
-    bool check(uint32_t docid) const override {
-        return _global_filter.check(docid) && _lazy_filter.check(docid);
-    }
-    std::shared_ptr<LazyFilter> clone() const override {
-        return create(_global_filter, _lazy_filter);
-    }
-};
-
 class GeoLocationLazyFilter : public LazyFilter {
 private:
     struct Private { explicit Private() = default; };
@@ -100,6 +71,32 @@ public:
     }
     std::shared_ptr<LazyFilter> clone() const override {
         return create(_location, _estimate);
+    }
+};
+
+class FallbackFilter : public GlobalFilter {
+private:
+    struct Private { explicit Private() = default; };
+    const GlobalFilter &_global_filter;
+    const GlobalFilter &_fallback;
+public:
+    FallbackFilter(Private, const GlobalFilter &global_filter, const GlobalFilter &fallback)
+        : _global_filter(global_filter), _fallback(fallback) {
+        assert(_global_filter.is_active());
+        assert(_fallback.is_active());
+    }
+    static std::shared_ptr<FallbackFilter> create(const GlobalFilter &global_filter, const GlobalFilter &fallback) { return std::make_shared<FallbackFilter>(Private(), global_filter, fallback); }
+    bool is_active() const override {
+        return true;
+    }
+    uint32_t size() const override {
+        return std::min(_global_filter.size(), _fallback.size());
+    }
+    uint32_t count() const override {
+        return std::min(_global_filter.count(), _fallback.count());
+    }
+    bool check(uint32_t docid) const override {
+        return _global_filter.check(docid) && _fallback.check(docid);
     }
 };
 

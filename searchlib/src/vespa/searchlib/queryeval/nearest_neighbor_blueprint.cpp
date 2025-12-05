@@ -148,9 +148,9 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
     uint32_t k = _adjusted_target_hits;
     const auto &df = _distance_calc->function();
     if (_lazy_filter && _lazy_filter->is_active()) { // Global filter might or might not be active
-        std::shared_ptr<const LazyFilter> use_filter = _lazy_filter;
+        std::shared_ptr<const GlobalFilter> use_filter = _lazy_filter;
         if (_global_filter->is_active()) { // Both global filter and lazy filter
-            use_filter = FallbackLazyFilter::create(*_global_filter, *_lazy_filter);
+            use_filter = FallbackFilter::create(*_global_filter, *_lazy_filter);
         }
         bool low_hit_ratio = (static_cast<double>(use_filter->count()) / _attr_tensor.get_num_docs()) < _hnsw_params.filter_first_upper_limit;
         _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *use_filter, low_hit_ratio, _hnsw_params.filter_first_exploration,
