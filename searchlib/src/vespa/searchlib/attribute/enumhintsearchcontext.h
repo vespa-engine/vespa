@@ -41,6 +41,7 @@ protected:
 
     void fetchPostings(const queryeval::ExecuteInfo & execInfo, bool strict) override;
     HitEstimate calc_hit_estimate() const override;
+    double posting_list_merge_factor() const override;
     uint32_t get_committed_docid_limit() const noexcept { return _docIdLimit; }
 };
 

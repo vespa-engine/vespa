@@ -19,6 +19,14 @@ SearchContext::calc_hit_estimate() const
     return HitEstimate::unknown(std::max(uint64_t(_attr.getNumDocs()), _attr.getStatus().getNumValues()));
 }
 
+double SearchContext::posting_list_merge_factor() const {
+    if (_plsc != nullptr) {
+        return _plsc->posting_list_merge_factor();
+    } else {
+        return 1.0;
+    }
+}
+
 std::unique_ptr<SearchIterator>
 SearchContext::createIterator(fef::TermFieldMatchData* matchData, bool strict)
 {

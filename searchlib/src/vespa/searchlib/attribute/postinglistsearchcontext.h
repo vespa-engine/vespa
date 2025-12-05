@@ -127,6 +127,7 @@ protected:
 
     unsigned int singleHits() const;
     HitEstimate calc_hit_estimate() const override;
+    double posting_list_merge_factor() const override;
     void applyRangeLimit(long rangeLimit);
     struct FillPart;
 };

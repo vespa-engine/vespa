@@ -34,7 +34,7 @@ class ImportedSearchContext : public ISearchContext {
         BITVECTOR
     };
     const ImportedAttributeVector&                  _imported_attribute;
-    std::string                                _queryTerm;
+    std::string                                     _queryTerm;
     bool                                            _useSearchCache;
     std::shared_ptr<BitVectorSearchCache::Entry>    _searchCacheLookup;
     IDocumentMetaStoreContext::IReadGuard::SP       _dmsReadGuardFallback;
@@ -78,6 +78,8 @@ public:
     std::unique_ptr<queryeval::SearchIterator>
     createIterator(fef::TermFieldMatchData* matchData, bool strict) override;
     HitEstimate calc_hit_estimate() const override;
+    double posting_list_merge_factor() const override;
+
     void fetchPostings(const queryeval::ExecuteInfo &execInfo, bool strict) override;
     bool valid() const override;
     Int64Range getAsIntegerTerm() const override;
