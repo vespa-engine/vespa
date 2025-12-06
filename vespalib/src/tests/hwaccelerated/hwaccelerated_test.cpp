@@ -3,10 +3,13 @@
 #include "data_utils.h"
 #include "scoped_fn_table_override.h"
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/hwaccelerated/float4.h>
 #include <vespa/vespalib/hwaccelerated/fn_table.h>
+#include <vespa/vespalib/hwaccelerated/float8_luts.h>
 #include <vespa/vespalib/hwaccelerated/highway.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <gmock/gmock.h>
 #include <limits>
 #include <random>
 
@@ -344,6 +347,32 @@ TEST(CompositeFnTableTest, for_each_present_fn_invokes_callback_for_non_nullptr_
         seen_fns += " ";
     });
     EXPECT_EQ(seen_fns, "dot_product_i8 population_count ");
+}
+
+TEST(Float4E2M1WideningTest, f32_conversion_matches_source_of_truth) {
+    float output[16];
+    for (uint32_t i = 0; i < 16; ++i) {
+        const uint32_t as_f32_bits = Float4E2M1ToFloat32Conv::widen(i);
+        output[i] = std::bit_cast<float>(as_f32_bits);
+    }
+    // See: https://onnx.ai/onnx/technical/float4.html
+    // Exact floating point equality checking is desired
+    EXPECT_THAT(output, ElementsAre( 0.f,  0.5f,  1.f,  1.5f,  2.f,  3.f,  4.f,  6.f,
+                                    -0.f, -0.5f, -1.f, -1.5f, -2.f, -3.f, -4.f, -6.f));
+}
+
+TEST(Float4E2M1WideningTest, can_widen_fp4_e2m1_to_fp8_types) {
+    for (uint32_t i = 0; i < 16; ++i) {
+        const uint8_t  as_e4m3fn_bits = Float4E2M1ToFloat8E4M3FnConv::widen(i);
+        const uint8_t  as_e5m2_bits   = Float4E2M1ToFloat8E5M2Conv::widen(i);
+        const uint32_t as_f32_bits    = Float4E2M1ToFloat32Conv::widen(i); // for cross-checking
+        const auto as_e4m3fn_float    = std::bit_cast<float>(fp8_e4m3fn_f32_bits_lut[as_e4m3fn_bits]);
+        const auto as_e5m2_float      = std::bit_cast<float>(fp8_e5m2_f32_bits_lut[as_e5m2_bits]);
+        const auto as_f32_float       = std::bit_cast<float>(as_f32_bits);
+        // Exact floating point equality checking is desired
+        EXPECT_EQ(as_e4m3fn_float, as_e5m2_float);
+        EXPECT_EQ(as_e5m2_float, as_f32_float);
+    }
 }
 
 } // vespalib::hwaccelerated
