@@ -136,6 +136,8 @@ public:
 
     const T& get_elem_ref(size_t i) const noexcept { return _data[i]; } // Called from writer only
 
+    void prefetch_elem_ref(size_t i) const noexcept { __builtin_prefetch(_vector_start.load(std::memory_order_acquire) + i); }
+
     /*
      * Readers holding a generation guard can call make_read_view() to
      * get a read view to the rcu vector. Array bound (read_size) must

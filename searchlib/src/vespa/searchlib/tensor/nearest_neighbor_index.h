@@ -125,6 +125,7 @@ public:
                                              const BoundDistanceFunction &df,
                                              uint32_t explore_k,
                                              double exploration_slack,
+                                             bool prefetch_tensors,
                                              const vespalib::Doom& doom,
                                              double distance_threshold) const = 0;
 
@@ -137,6 +138,7 @@ public:
                                                          double exploration,
                                                          uint32_t explore_k,
                                                          double exploration_slack,
+                                                         bool prefetch_tensors,
                                                          const vespalib::Doom& doom,
                                                          double distance_threshold) const = 0;
 

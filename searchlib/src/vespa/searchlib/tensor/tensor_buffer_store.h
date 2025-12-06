@@ -72,6 +72,16 @@ public:
         auto buf = _array_store.get(ref);
         return _ops.get_serialized_tensor_ref(buf);
     }
+    void prefetch_vectors(EntryRef ref) const noexcept {
+        if (!ref.valid()) [[unlikely]] {
+            return;
+        }
+
+        const auto buf = _array_store.get(ref);
+        for (size_t i = 0; i < buf.size(); i += 64) {
+            __builtin_prefetch(buf.data() + i);
+        }
+    }
 
     // Used by unit test
     static constexpr uint32_t get_offset_bits() noexcept { return RefType::offset_bits; }
