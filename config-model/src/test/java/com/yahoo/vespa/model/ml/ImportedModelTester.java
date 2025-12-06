@@ -16,6 +16,7 @@ import com.yahoo.config.model.api.OnnxModelCost.Calculator;
 import com.yahoo.config.model.api.OnnxModelCost.ModelInfo;
 import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -56,7 +57,7 @@ public class ImportedModelTester {
     public final Calculator calculator = new MockCalculator();
 
     public ImportedModelTester(String modelName, Path applicationDir) {
-        this(modelName, applicationDir, new DeployState.Builder());
+        this(modelName, applicationDir, TestDeployState.createBuilder());
     }
 
     public ImportedModelTester(String modelName, Path applicationDir, DeployState.Builder deployStateBuilder) {

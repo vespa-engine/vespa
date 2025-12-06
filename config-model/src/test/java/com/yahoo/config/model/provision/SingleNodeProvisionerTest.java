@@ -3,6 +3,7 @@ package com.yahoo.config.model.provision;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.vespa.model.VespaModel;
@@ -66,7 +67,7 @@ public class SingleNodeProvisionerTest {
                 + "  </container>"
                 + "</services>";
         ApplicationPackage app = new MockApplicationPackage.Builder().withServices(servicesXml).build();
-        VespaModel model = new VespaModel(app);
+        VespaModel model = new VespaModel(TestDeployState.create(app));
         assertThat(model.getHosts().size(), is(1));
     }
 

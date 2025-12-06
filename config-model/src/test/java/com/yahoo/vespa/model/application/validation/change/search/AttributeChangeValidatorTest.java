@@ -3,7 +3,8 @@ package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
-import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
@@ -16,7 +17,6 @@ import java.util.List;
 
 import static com.yahoo.test.JunitCompat.assertEquals;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRestartAction;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class AttributeChangeValidatorTest {
@@ -32,7 +32,7 @@ public class AttributeChangeValidatorTest {
 
         public Fixture(String currentSd, String nextSd, ValidationId validationOverride) {
             super(currentSd, nextSd);
-            var builder = new DeployState.Builder();
+            var builder = TestDeployState.createBuilder().properties(new TestProperties());
             if (validationOverride != null) {
                 var allows = List.of(new ValidationOverrides.Allow(validationOverride, Instant.now().plus(Duration.ofDays(1))));
                 builder.validationOverrides(new ValidationOverrides(allows));

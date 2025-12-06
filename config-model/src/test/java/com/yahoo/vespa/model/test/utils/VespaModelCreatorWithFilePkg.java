@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.ValidationParameters.FailOnIncompatibleChange;
 import com.yahoo.config.model.api.ValidationParameters.IgnoreValidationErrors;
 import com.yahoo.config.model.application.provider.*;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation;
@@ -61,7 +62,7 @@ public class VespaModelCreatorWithFilePkg {
             if (validateApplicationWithSchema) {
                 validate();
             }
-            DeployState deployState = new DeployState.Builder().applicationPackage(applicationPkg).build();
+            DeployState deployState = TestDeployState.create(applicationPkg);
             VespaModel model = new VespaModel(configModelRegistry, deployState);
             // Validate, but without checking configSources or routing (routing
             // is constructed in a special way and cannot always be validated in

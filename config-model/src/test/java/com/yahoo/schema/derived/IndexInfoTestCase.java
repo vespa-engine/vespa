@@ -1,6 +1,6 @@
 package com.yahoo.schema.derived;
 
-import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.utils.ApplicationPackageBuilder;
@@ -46,10 +46,9 @@ public class IndexInfoTestCase {
     }
 
     static VespaModel createModel(String schemaName, String sdContent) {
-        var builder = new DeployState.Builder();
         return new ApplicationPackageBuilder()
                 .addCluster(new ContentClusterBuilder().name("content").docTypes(List.of(DocType.index(schemaName))))
                 .addSchemas(new SchemaBuilder().name(schemaName).content(sdContent).build())
-                .buildCreator().create(builder);
+                .buildCreator().create();
     }
 }

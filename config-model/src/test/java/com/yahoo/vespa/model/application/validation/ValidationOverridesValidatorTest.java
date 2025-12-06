@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
@@ -84,8 +85,7 @@ public class ValidationOverridesValidatorTest {
                 .withValidationOverrides(validationOverridesXml)
                 .withServices(services)
                 .build();
-        var builder = new DeployState.Builder().applicationPackage(app);
-        return builder.build();
+        return TestDeployState.create(app);
     }
 
 }
