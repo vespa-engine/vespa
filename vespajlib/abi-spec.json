@@ -1386,6 +1386,20 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.tensor.TensorDataSource" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.data.disclosure.DataSource"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.tensor.Tensor, com.yahoo.tensor.serialization.JsonFormat$EncodeOptions)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.tensor.TensorType$Builder" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
