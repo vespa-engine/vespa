@@ -27,8 +27,6 @@ public class TensorDataSource implements DataSource {
         this.wrapAndType = !options.directValues();
     }
 
-
-
     @Override
     public void emit(DataSink sink) {
         wrapStart(sink);
@@ -262,8 +260,7 @@ public class TensorDataSource implements DataSource {
 
     private void wrapStart(DataSink sink) {
         if (wrapAndType) {
-            sink.startObject();
-            inObject = true;
+            ensureObject(sink);
         }
     }
     private void wrapEnd(DataSink sink) {
@@ -273,7 +270,7 @@ public class TensorDataSource implements DataSource {
         }
     }
     private void startField(String fieldName, DataSink sink) {
-        if (wrapAndType) {
+        if (inObject) {
             sink.fieldName(fieldName);
         }
     }
