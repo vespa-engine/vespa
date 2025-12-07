@@ -405,6 +405,39 @@ public class JsonRendererTestCase {
 
     @Test
     @Timeout(300)
+    void testNonFiniteFloats() throws ExecutionException, InterruptedException, IOException {
+        String expected = """
+                {
+                  "root": {
+                    "id": "toplevel",
+                    "relevance": 1.0,
+                    "fields": {
+                      "totalCount": 1
+                    },
+                    "children": [{
+                      "id": "specialFloats",
+                      "relevance": 1.0,
+                      "fields": {
+                        "tensor_special": {
+                          "type": "tensor(x[3])",
+                          "values": [null, null, null]
+                        }
+                      }
+                    }]
+                  }
+                }""";
+        Result r = newEmptyResult();
+        Hit h = new Hit("specialFloats");
+        Tensor specialTensor = Tensor.from("tensor(x[3]):[NaN, Infinity, -Infinity]");
+        h.setField("tensor_special", new TensorFieldValue(specialTensor));
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+        String summary = render(r);
+        assertEqualJsonContent(expected, summary);
+    }
+
+    @Test
+    @Timeout(300)
     void testDataTypes() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
