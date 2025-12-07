@@ -23,6 +23,98 @@ import static org.junit.Assert.assertTrue;
 public class TensorDataSourceTestCase {
 
     /**
+     * Test data holder for tensor type combinations
+     */
+    private static class TensorTypeTestData {
+        final String name;
+        final TensorType type;
+        final String sampleTensorString;
+        final int indexedDims;
+        final int mappedDims;
+
+        TensorTypeTestData(String name, String typeSpec, String sampleTensorString, int indexedDims, int mappedDims) {
+            this.name = name;
+            this.type = TensorType.fromSpec(typeSpec);
+            this.sampleTensorString = sampleTensorString;
+            this.indexedDims = indexedDims;
+            this.mappedDims = mappedDims;
+        }
+
+        Tensor createSampleTensor() {
+            return Tensor.from(sampleTensorString);
+        }
+    }
+
+    /**
+     * All combinations of 0, 1, and 2 indexed dimensions with 0, 1, and 2 mapped dimensions
+     */
+    private static final List<TensorTypeTestData> ALL_TYPE_COMBINATIONS = List.of(
+            // 0 indexed, 0 mapped (scalar)
+            new TensorTypeTestData(
+                    "scalar",
+                    "tensor()",
+                    "tensor():{5.0}",
+                    0, 0
+            ),
+            // 0 indexed, 1 mapped (sparse 1D)
+            new TensorTypeTestData(
+                    "sparse_1d",
+                    "tensor(cat{})",
+                    "tensor(cat{}):{a:1.0, b:2.0, c:3.0}",
+                    0, 1
+            ),
+            // 0 indexed, 2 mapped (sparse 2D)
+            new TensorTypeTestData(
+                    "sparse_2d",
+                    "tensor(cat{},key{})",
+                    "tensor(cat{},key{}):{{cat:a,key:p}:1.0, {cat:b,key:q}:2.0, {cat:c,key:r}:3.0}",
+                    0, 2
+            ),
+            // 1 indexed, 0 mapped (dense 1D)
+            new TensorTypeTestData(
+                    "dense_1d",
+                    "tensor(x[3])",
+                    "tensor(x[3]):[1.0, 2.0, 3.0]",
+                    1, 0
+            ),
+            // 1 indexed, 1 mapped (mixed with 1 mapped, 1 indexed)
+            new TensorTypeTestData(
+                    "mixed_1m_1i",
+                    "tensor(cat{},x[3])",
+                    "tensor(cat{},x[3]):{a:[1.0, 2.0, 3.0], b:[4.0, 5.0, 6.0]}",
+                    1, 1
+            ),
+            // 1 indexed, 2 mapped (mixed with 2 mapped, 1 indexed)
+            new TensorTypeTestData(
+                    "mixed_2m_1i",
+                    "tensor(cat{},key{},x[3])",
+                    "tensor(cat{},key{},x[3]):{{cat:a,key:p,x:0}:1.0, {cat:a,key:p,x:1}:2.0, {cat:a,key:p,x:2}:3.0, {cat:b,key:q,x:0}:4.0, {cat:b,key:q,x:1}:5.0, {cat:b,key:q,x:2}:6.0}",
+                    1, 2
+            ),
+            // 2 indexed, 0 mapped (dense 2D)
+            new TensorTypeTestData(
+                    "dense_2d",
+                    "tensor(x[2],y[3])",
+                    "tensor(x[2],y[3]):[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]",
+                    2, 0
+            ),
+            // 2 indexed, 1 mapped (mixed with 1 mapped, 2 indexed)
+            new TensorTypeTestData(
+                    "mixed_1m_2i",
+                    "tensor(cat{},x[2],y[3])",
+                    "tensor(cat{},x[2],y[3]):{{cat:a,x:0,y:0}:1.0, {cat:a,x:0,y:1}:2.0, {cat:a,x:0,y:2}:3.0, {cat:a,x:1,y:0}:4.0, {cat:a,x:1,y:1}:5.0, {cat:a,x:1,y:2}:6.0, {cat:b,x:0,y:0}:7.0, {cat:b,x:0,y:1}:8.0, {cat:b,x:0,y:2}:9.0, {cat:b,x:1,y:0}:10.0, {cat:b,x:1,y:1}:11.0, {cat:b,x:1,y:2}:12.0}",
+                    2, 1
+            ),
+            // 2 indexed, 2 mapped (mixed with 2 mapped, 2 indexed)
+            new TensorTypeTestData(
+                    "mixed_2m_2i",
+                    "tensor(cat{},key{},x[2],y[2])",
+                    "tensor(cat{},key{},x[2],y[2]):{{cat:a,key:p,x:0,y:0}:1.0, {cat:a,key:p,x:0,y:1}:2.0, {cat:a,key:p,x:1,y:0}:3.0, {cat:a,key:p,x:1,y:1}:4.0, {cat:b,key:q,x:0,y:0}:5.0, {cat:b,key:q,x:0,y:1}:6.0, {cat:b,key:q,x:1,y:0}:7.0, {cat:b,key:q,x:1,y:1}:8.0}",
+                    2, 2
+            )
+    );
+
+    /**
      * A simple mock DataSink that captures method calls for testing
      */
     private static class MockDataSink implements DataSink {
@@ -48,7 +140,9 @@ public class TensorDataSourceTestCase {
 
         @Override
         public void endObject() {
-            indent--;
+            if (indent > 0) {
+                indent--;
+            }
             indent();
             output.append("}\n");
         }
@@ -62,7 +156,9 @@ public class TensorDataSourceTestCase {
 
         @Override
         public void endArray() {
-            indent--;
+            if (indent > 0) {
+                indent--;
+            }
             indent();
             output.append("]\n");
         }
@@ -104,7 +200,9 @@ public class TensorDataSourceTestCase {
         }
 
         public String getOutput() {
-            return output.toString();
+            String result = output.toString();
+            System.out.println("MockDataSink output:\n" + result);
+            return result;
         }
     }
 
@@ -112,6 +210,10 @@ public class TensorDataSourceTestCase {
     public void testSimpleIndexedTensor() {
         Tensor tensor = Tensor.from("tensor(x[3]):[1.0, 2.0, 3.0]");
         TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, false, false));
+
+        Slime slime = SlimeDataSink.buildSlime(dataSource);
+        String json = SlimeUtils.toJson(slime);
+        System.out.println("testSimpleIndexedTensor: " + json);
 
         MockDataSink sink = new MockDataSink();
         dataSource.emit(sink);
@@ -128,6 +230,10 @@ public class TensorDataSourceTestCase {
         Tensor tensor = Tensor.from("tensor(x[3]):[1.0, 2.0, 3.0]");
         TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, true, false));
 
+        Slime slime = SlimeDataSink.buildSlime(dataSource);
+        String json = SlimeUtils.toJson(slime);
+        System.out.println("testSimpleIndexedTensorDirectValues: " + json);
+
         MockDataSink sink = new MockDataSink();
         dataSource.emit(sink);
 
@@ -140,6 +246,10 @@ public class TensorDataSourceTestCase {
         Tensor tensor = Tensor.from("tensor(x[2],y[2]):[[1.0, 2.0], [3.0, 4.0]]");
         TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, false, false));
 
+        Slime slime = SlimeDataSink.buildSlime(dataSource);
+        String json = SlimeUtils.toJson(slime);
+        System.out.println("testMultiDimensionalIndexedTensor: " + json);
+
         MockDataSink sink = new MockDataSink();
         dataSource.emit(sink);
 
@@ -151,6 +261,10 @@ public class TensorDataSourceTestCase {
     public void testSingleDimensionMappedTensor() {
         Tensor tensor = Tensor.from("tensor(x{}):{a:2.0, b:3.0}");
         TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, false, false));
+
+        Slime slime = SlimeDataSink.buildSlime(dataSource);
+        String json = SlimeUtils.toJson(slime);
+        System.out.println("testSingleDimensionMappedTensor: " + json);
 
         MockDataSink sink = new MockDataSink();
         dataSource.emit(sink);
@@ -165,6 +279,10 @@ public class TensorDataSourceTestCase {
         Tensor tensor = Tensor.from("tensor(x{},y{}):{{x:a,y:1}:2.0, {x:b,y:1}:3.0}");
         TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, false, false));
 
+        Slime slime = SlimeDataSink.buildSlime(dataSource);
+        String json = SlimeUtils.toJson(slime);
+        System.out.println("testMultiDimensionMappedTensor: " + json);
+
         MockDataSink sink = new MockDataSink();
         dataSource.emit(sink);
 
@@ -176,6 +294,10 @@ public class TensorDataSourceTestCase {
     public void testMixedTensorSingleMappedDimension() {
         Tensor tensor = Tensor.from("tensor(x{},y[2]):{a:[1.0, 2.0], b:[3.0, 4.0]}");
         TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, false, false));
+
+        Slime slime = SlimeDataSink.buildSlime(dataSource);
+        String json = SlimeUtils.toJson(slime);
+        System.out.println("testMixedTensorSingleMappedDimension: " + json);
 
         MockDataSink sink = new MockDataSink();
         dataSource.emit(sink);
@@ -189,6 +311,10 @@ public class TensorDataSourceTestCase {
         Tensor tensor = Tensor.from("tensor(x{},y{},z[2]):{{x:a,y:b,z:0}:1.0, {x:a,y:b,z:1}:2.0, {x:c,y:d,z:0}:3.0, {x:c,y:d,z:1}:4.0}");
         TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, false, false));
 
+        Slime slime = SlimeDataSink.buildSlime(dataSource);
+        String json = SlimeUtils.toJson(slime);
+        System.out.println("testMixedTensorMultipleMappedDimensions: " + json);
+
         MockDataSink sink = new MockDataSink();
         dataSource.emit(sink);
 
@@ -201,6 +327,10 @@ public class TensorDataSourceTestCase {
         Tensor tensor = Tensor.from("tensor(x[2]):[1.0, 2.0]");
         TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(false, false, false));
 
+        Slime slime = SlimeDataSink.buildSlime(dataSource);
+        String json = SlimeUtils.toJson(slime);
+        System.out.println("testLongForm: " + json);
+
         MockDataSink sink = new MockDataSink();
         dataSource.emit(sink);
 
@@ -212,6 +342,10 @@ public class TensorDataSourceTestCase {
     public void testHexEncodingForDenseTensor() {
         Tensor tensor = Tensor.from("tensor(x[3]):[1.0, 2.0, 3.0]");
         TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, false, true));
+
+        Slime slime = SlimeDataSink.buildSlime(dataSource);
+        String json = SlimeUtils.toJson(slime);
+        System.out.println("testHexEncodingForDenseTensor: " + json);
 
         MockDataSink sink = new MockDataSink();
         dataSource.emit(sink);
@@ -226,6 +360,10 @@ public class TensorDataSourceTestCase {
         Tensor tensor = Tensor.from("tensor(x{},y[2]):{a:[1.0, 2.0], b:[3.0, 4.0]}");
         TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, false, true));
 
+        Slime slime = SlimeDataSink.buildSlime(dataSource);
+        String json = SlimeUtils.toJson(slime);
+        System.out.println("testHexEncodingForMixedTensor: " + json);
+
         MockDataSink sink = new MockDataSink();
         dataSource.emit(sink);
 
@@ -239,6 +377,10 @@ public class TensorDataSourceTestCase {
         Tensor tensor = Tensor.Builder.of(type).build();
         TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, false, false));
 
+        Slime slime = SlimeDataSink.buildSlime(dataSource);
+        String json = SlimeUtils.toJson(slime);
+        System.out.println("testEmptyMappedTensor: " + json);
+
         MockDataSink sink = new MockDataSink();
         dataSource.emit(sink);
 
@@ -250,6 +392,10 @@ public class TensorDataSourceTestCase {
     public void testScalarTensor() {
         Tensor tensor = Tensor.from("tensor():{5.7}");
         TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, false, false));
+
+        Slime slime = SlimeDataSink.buildSlime(dataSource);
+        String json = SlimeUtils.toJson(slime);
+        System.out.println("testScalarTensor: " + json);
 
         MockDataSink sink = new MockDataSink();
         dataSource.emit(sink);
@@ -323,6 +469,10 @@ public class TensorDataSourceTestCase {
         Tensor tensor = Tensor.from("tensor(m{},n{},x[2]):{{m:a,n:b,x:0}:1.0, {m:a,n:b,x:1}:2.0, {m:c,n:d,x:0}:3.0, {m:c,n:d,x:1}:4.0}");
         TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, false, false));
 
+        Slime slime = SlimeDataSink.buildSlime(dataSource);
+        String json = SlimeUtils.toJson(slime);
+        System.out.println("testComplexMixedTensorWithAddressedBlocks: " + json);
+
         MockDataSink sink = new MockDataSink();
         dataSource.emit(sink);
 
@@ -351,5 +501,112 @@ public class TensorDataSourceTestCase {
             String output = sink.getOutput();
             assertTrue("Should contain cells", output.contains("field:cells"));
         }
+    }
+
+    @Test
+    public void testAllTypeCombinationsShortForm() {
+        // Test all combinations of indexed and mapped dimensions with short form encoding
+        System.out.println("\n=== testAllTypeCombinationsShortForm ===");
+        for (TensorTypeTestData testData : ALL_TYPE_COMBINATIONS) {
+            Tensor tensor = testData.createSampleTensor();
+            TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, false, false));
+
+            // Verify the output is valid by checking it can be converted to Slime
+            Slime slime = SlimeDataSink.buildSlime(dataSource);
+            String json = SlimeUtils.toJson(slime);
+            System.out.println(testData.name + ": " + json);
+
+            MockDataSink sink = new MockDataSink();
+            dataSource.emit(sink);
+
+            String output = sink.getOutput();
+            assertTrue("Should produce output for " + testData.name, output.length() > 0);
+            assertTrue("Should contain type field for " + testData.name, output.contains("field:type"));
+            assertTrue("Should contain type in JSON for " + testData.name, json.contains("type"));
+        }
+    }
+
+    @Test
+    public void testAllTypeCombinationsLongForm() {
+        // Test all combinations with long form encoding
+        System.out.println("\n=== testAllTypeCombinationsLongForm ===");
+        for (TensorTypeTestData testData : ALL_TYPE_COMBINATIONS) {
+            Tensor tensor = testData.createSampleTensor();
+            TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(false, false, false));
+
+            Slime slime = SlimeDataSink.buildSlime(dataSource);
+            String json = SlimeUtils.toJson(slime);
+            System.out.println(testData.name + ": " + json);
+
+            MockDataSink sink = new MockDataSink();
+            dataSource.emit(sink);
+
+            String output = sink.getOutput();
+            assertTrue("Should produce output for " + testData.name, output.length() > 0);
+            assertTrue("Should contain cells in long form for " + testData.name, output.contains("field:cells"));
+        }
+    }
+
+    @Test
+    public void testAllTypeCombinationsDirectValues() {
+        // Test all combinations with direct values (no wrapping)
+        System.out.println("\n=== testAllTypeCombinationsDirectValues ===");
+        for (TensorTypeTestData testData : ALL_TYPE_COMBINATIONS) {
+            Tensor tensor = testData.createSampleTensor();
+            TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, true, false));
+
+            Slime slime = SlimeDataSink.buildSlime(dataSource);
+            String json = SlimeUtils.toJson(slime);
+            System.out.println(testData.name + ": " + json);
+
+            MockDataSink sink = new MockDataSink();
+            dataSource.emit(sink);
+
+            String output = sink.getOutput();
+            assertTrue("Should produce output for " + testData.name, output.length() > 0);
+            // With directValues=true, should not have wrapper object
+            assertTrue("Should not contain type field wrapper for " + testData.name, !output.contains("field:type"));
+        }
+    }
+
+    @Test
+    public void testAllTypeCombinationsWithHexEncoding() {
+        // Test combinations that support hex encoding (those with indexed dimensions)
+        System.out.println("\n=== testAllTypeCombinationsWithHexEncoding ===");
+        for (TensorTypeTestData testData : ALL_TYPE_COMBINATIONS) {
+            if (testData.indexedDims > 0) {
+                Tensor tensor = testData.createSampleTensor();
+                TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, false, true));
+
+                Slime slime = SlimeDataSink.buildSlime(dataSource);
+                String json = SlimeUtils.toJson(slime);
+                System.out.println(testData.name + ": " + json);
+
+                MockDataSink sink = new MockDataSink();
+                dataSource.emit(sink);
+
+                String output = sink.getOutput();
+                assertTrue("Should produce output for " + testData.name, output.length() > 0);
+                // Hex encoding should produce string values for dense parts
+                assertTrue("Should contain string values for hex encoding in " + testData.name, output.contains("\""));
+            }
+        }
+    }
+
+    @Test
+    public void testTypeCombinationCounts() {
+        // Verify we have all 9 combinations
+        assertEquals("Should have 9 type combinations (3x3)", 9, ALL_TYPE_COMBINATIONS.size());
+
+        // Verify the distribution
+        long scalarCount = ALL_TYPE_COMBINATIONS.stream().filter(t -> t.indexedDims == 0 && t.mappedDims == 0).count();
+        long sparseCount = ALL_TYPE_COMBINATIONS.stream().filter(t -> t.indexedDims == 0 && t.mappedDims > 0).count();
+        long denseCount = ALL_TYPE_COMBINATIONS.stream().filter(t -> t.indexedDims > 0 && t.mappedDims == 0).count();
+        long mixedCount = ALL_TYPE_COMBINATIONS.stream().filter(t -> t.indexedDims > 0 && t.mappedDims > 0).count();
+
+        assertEquals("Should have 1 scalar type", 1, scalarCount);
+        assertEquals("Should have 2 sparse types", 2, sparseCount);
+        assertEquals("Should have 2 dense types", 2, denseCount);
+        assertEquals("Should have 4 mixed types", 4, mixedCount);
     }
 }
