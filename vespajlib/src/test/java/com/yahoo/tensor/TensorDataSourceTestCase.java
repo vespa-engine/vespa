@@ -122,6 +122,7 @@ public class TensorDataSourceTestCase {
         private int indent = 0;
 
         private void indent() {
+            if (indent < 0) throw new IllegalStateException("indent is: " + indent);
             output.append("  ".repeat(indent));
         }
 
@@ -140,9 +141,7 @@ public class TensorDataSourceTestCase {
 
         @Override
         public void endObject() {
-            if (indent > 0) {
-                indent--;
-            }
+            indent--;
             indent();
             output.append("}\n");
         }
@@ -156,9 +155,7 @@ public class TensorDataSourceTestCase {
 
         @Override
         public void endArray() {
-            if (indent > 0) {
-                indent--;
-            }
+            indent--;
             indent();
             output.append("]\n");
         }

@@ -39,7 +39,7 @@ public class TensorDataSource implements DataSource {
         } else {
             emitLongForm(sink);
         }
-        wrapEnd(sink);
+        ensureObjectEnded(sink);
     }
 
     private void emitShortForm(DataSink sink) {
@@ -64,7 +64,7 @@ public class TensorDataSource implements DataSource {
                 startField("blocks", sink);
                 emitAddressedBlocks(mixed, sink);
                 if (startedObject) {
-                    sink.endObject();
+                    ensureObjectEnded(sink);
                 }
             }
         } else {
@@ -95,7 +95,6 @@ public class TensorDataSource implements DataSource {
 
             sink.fieldName("value");
             emitValue(cell.getValue(), tensor.type().valueType(), sink);
-
             sink.endObject();
         }
         sink.endArray();
@@ -183,7 +182,6 @@ public class TensorDataSource implements DataSource {
                 IndexedTensor denseSubspace = IndexedTensor.Builder.of(denseSubType, subspace.cells).build();
                 emitDenseValues(denseSubspace, sink);
             }
-
             sink.endObject();
         }
         sink.endArray();
@@ -263,7 +261,7 @@ public class TensorDataSource implements DataSource {
             ensureObject(sink);
         }
     }
-    private void wrapEnd(DataSink sink) {
+    private void ensureObjectEnded(DataSink sink) {
         if (inObject) {
             sink.endObject();
             inObject = false;
