@@ -46,6 +46,7 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.NanNumber;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorDataSource;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.JsonFormat;
 
@@ -848,10 +849,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             }
         }
 
-        private void renderTensor(Optional<Tensor> tensor) throws IOException {
+        private void renderTensor(Optional<Tensor> tensor) {
             var t = tensor.orElse(Tensor.Builder.of(TensorType.empty).build());
-            byte[] json = JsonFormat.encode(t, settings.tensorOptions);
-            generator().writeRawValue(new String(json, StandardCharsets.UTF_8));
+            new TensorDataSource(t, settings.tensorOptions).emit(dataSink());
         }
 
         private JsonGenerator generator() {
