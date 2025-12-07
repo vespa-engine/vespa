@@ -101,17 +101,13 @@ public class TensorDataSource implements DataSource {
     }
 
     private void emitSingleDimensionCells(MappedTensor tensor, DataSink sink)  {
-        if (tensor.type().dimensions().size() > 1)
+        if (tensor.type().dimensions().size() != 1)
             throw new IllegalStateException("Single dimension encoding requires exactly one dimension");
 
         sink.startObject();
         tensor.cells().forEach((address, value) -> {
-                try {
-                    sink.fieldName(address.label(0));
-                    emitValue(value, tensor.type().valueType(), sink);
-                } catch (RuntimeException e) {
-                    throw new RuntimeException(e);
-                }
+                sink.fieldName(address.label(0));
+                emitValue(value, tensor.type().valueType(), sink);
             });
         sink.endObject();
     }
@@ -190,12 +186,14 @@ public class TensorDataSource implements DataSource {
     private void emitValue(double value, TensorType.Value valueType, DataSink sink)  {
         switch (valueType) {
             case DOUBLE:
-            case FLOAT:
-            case BFLOAT16:
                 sink.doubleValue(value);
                 break;
+            case FLOAT:
+            case BFLOAT16:
+                sink.floatValue((float)value);
+                break;
             case INT8:
-                sink.longValue((long) value);
+                sink.byteValue((byte)value);
                 break;
         }
     }
