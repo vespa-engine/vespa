@@ -570,9 +570,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     public static class FieldConsumer implements Hit.RawUtf8Consumer, TraceRenderer.FieldConsumer {
 
         private final JsonGenerator generator;
+        private final JsonGeneratorDataSink dataSink;
         private final FieldConsumerSettings settings;
         private MutableBoolean hasFieldsField;
-        private JsonGeneratorDataSink dataSink;
 
         /** Invoke this from your constructor when sub-classing {@link FieldConsumer} */
         protected FieldConsumer(boolean debugRendering, boolean tensorShortForm, boolean jsonMaps) {
