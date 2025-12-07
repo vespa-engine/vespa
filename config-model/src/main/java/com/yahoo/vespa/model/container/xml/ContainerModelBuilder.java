@@ -282,7 +282,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {
         if ( ! deployState.isHosted()) return;
         // Always add platform bundle. Cannot be controlled by a feature flag as platform bundle cannot change.
-        cluster.addPlatformBundle(PlatformBundles.absoluteBundlePath("cloud-aws"));
+        cluster.addPlatformBundle(PlatformBundles.absoluteBundlePath("cloud-aws", PlatformBundles.JarSuffix.DEPLOY));
         if (deployState.zone().system().isPublicCloudLike()) {
             BindingPattern bindingPattern = SystemBindingPattern.fromHttpPath("/validate-secret-store");
             Handler handler = new Handler(

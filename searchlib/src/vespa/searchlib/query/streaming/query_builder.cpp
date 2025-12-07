@@ -258,6 +258,7 @@ QueryBuilder::build(const QueryNode * parent, const QueryNodeResultFactory& fact
             qn = build_phrase_term(factory, queryRep);
             break;
         case ParseItem::ITEM_EQUIV:
+        case ParseItem::ITEM_WORD_ALTERNATIVES:
             qn = build_equiv_term(factory, queryRep, allowRewrite);
             break;
         case ParseItem::ITEM_SAME_ELEMENT:

@@ -20,11 +20,12 @@
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/searchlib/query/proto_tree_converter.h>
-#include <vespa/searchlib/query/proto_tree_converter.hpp>
 #include <vespa/searchlib/query/tree/querytreecreator.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.query");
+
+#include <vespa/searchlib/query/proto_tree_converter.hpp>
 
 using document::PositionDataType;
 using search::common::GeoLocation;
@@ -316,7 +317,7 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
         return false;
     }
 
-    std::shared_ptr<search::queryeval::LazyFilter> lazy_filter;
+    std::shared_ptr<search::queryeval::GlobalFilter> lazy_filter;
     if (use_lazy_filter) {
         if (trace && trace->shouldTrace(5)) {
             trace->addEvent(5, "Calculate lazy filter");

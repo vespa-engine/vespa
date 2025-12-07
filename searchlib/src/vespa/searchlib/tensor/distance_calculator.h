@@ -25,6 +25,7 @@ private:
     const tensor::ITensorAttribute& _attr_tensor;
     const vespalib::eval::Value* _query_tensor;
     std::unique_ptr<BoundDistanceFunction> _dist_fun;
+    size_t _distances_computed;
 
 public:
     DistanceCalculator(const tensor::ITensorAttribute& attr_tensor,
@@ -41,13 +42,14 @@ public:
     bool has_single_subspace() const noexcept { return _attr_tensor.getTensorType().is_dense(); }
 
     template<bool has_single_subspace>
-    double calc_raw_score(uint32_t docid) const noexcept {
+    double calc_raw_score(uint32_t docid) noexcept {
         if (has_single_subspace) {
             auto cells = _attr_tensor.get_vector(docid, 0);
             double min_rawscore = _dist_fun->min_rawscore();
             if ( cells.non_existing_attribute_value() ) [[unlikely]] {
                 return min_rawscore;
             }
+            ++_distances_computed;
             return std::max(min_rawscore, _dist_fun->to_rawscore(_dist_fun->calc(cells)));
         } else {
             auto vectors = _attr_tensor.get_vectors(docid);
@@ -57,18 +59,20 @@ public:
                 double score = _dist_fun->to_rawscore(distance);
                 result = std::max(result, score);
             }
+            _distances_computed += vectors.subspaces();
             return result;
         }
 
     }
 
     template<bool has_single_subspace>
-    double calc_with_limit(uint32_t docid, double limit) const noexcept {
+    double calc_with_limit(uint32_t docid, double limit) noexcept {
         if (has_single_subspace) {
             auto cells = _attr_tensor.get_vector(docid, 0);
             if ( cells.non_existing_attribute_value() ) [[unlikely]] {
                 return std::numeric_limits<double>::infinity();
             }
+            ++_distances_computed;
             return _dist_fun->calc_with_limit(cells, limit);
         } else {
             auto vectors = _attr_tensor.get_vectors(docid);
@@ -77,6 +81,7 @@ public:
                 double distance = _dist_fun->calc_with_limit(vectors.cells(i), limit);
                 result = std::min(result, distance);
             }
+            _distances_computed += vectors.subspaces();
             return result;
         }
     }
@@ -89,6 +94,7 @@ public:
                 closest_subspace = i;
             }
         }
+        _distances_computed += vectors.subspaces();
     }
 
     std::optional<uint32_t> calc_closest_subspace(VectorBundle vectors) noexcept {
@@ -97,6 +103,8 @@ public:
         calc_closest_subspace(vectors, closest_subspace, best_distance);
         return closest_subspace;
     }
+
+    size_t distances_computed() const noexcept { return _distances_computed; }
 
     /**
      * Create a calculator for the given attribute tensor and query tensor, if possible.

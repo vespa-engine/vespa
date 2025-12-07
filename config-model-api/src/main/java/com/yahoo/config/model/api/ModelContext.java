@@ -108,8 +108,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default double logserverNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default double clusterControllerNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean useSimpleAnnotations() { return false; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean sendProtobufQuerytree() { return false; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean useSimpleAnnotations() { return true; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean sendProtobufQuerytree() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default int documentV1QueueSize() { return -1; /* use default from config def */ } // TODO(bjorncs, 2025-12-01) Remove after Jan 2026
