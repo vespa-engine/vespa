@@ -12,6 +12,15 @@ namespace search::common { class Location; }
 
 namespace search::queryeval {
 
+/**
+ * Class for checking whether document ids match a Location.
+ *
+ * Performs the check by accessing the contents of the attribute vector of the given Location. Hence, it is not as fast
+ * as other implementations of GlobalFilter.
+ *
+ * Not thread-safe. If an object of this class is to be used in multiple threads,
+ * then a copy has to be created for every thread.
+ **/
 class GeoLocationLazyFilter : public GlobalFilter {
 private:
     struct Private { explicit Private() = default; };
@@ -29,6 +38,13 @@ public:
     bool check(uint32_t docid) const override;
 };
 
+/**
+ * Class that combines two GlobalFilter objects into a single GlobalFilter.
+ *
+ * Corresponds to a logical 'and' of the two GlobalFilters. Evaluates the first filter first, and only if
+ * the document passes that filter, it evaluates the second filter. Intended to be used to combine a cheap (the global filter)
+ * and an expensive (the lazy filter) GlobalFilter.
+ **/
 class FallbackFilter : public GlobalFilter {
 private:
     struct Private { explicit Private() = default; };
