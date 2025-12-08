@@ -223,7 +223,7 @@ public class TensorDataSource implements DataSource {
             long bits = switch (cellType) {
                 case DOUBLE   -> Double.doubleToRawLongBits(dblSrc.apply(i));
                 case FLOAT    -> Float.floatToRawIntBits(fltSrc.apply(i));
-                case BFLOAT16 -> Float.floatToRawIntBits(fltSrc.apply(i));
+                case BFLOAT16 -> Float.floatToRawIntBits(fltSrc.apply(i)) >>> 16;
                 case INT8     -> fltSrc.apply(i).byteValue();
             };
             for (int nibble = nibblesPerCell; nibble-- > 0; ) {
