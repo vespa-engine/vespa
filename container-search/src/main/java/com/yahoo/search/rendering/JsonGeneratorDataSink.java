@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
  *
  * @author johsol
  */
-class JsonGeneratorDataSink implements DataSink {
+public class JsonGeneratorDataSink implements DataSink {
 
     private static final byte[] HEX_DIGITS_ASCII = "0123456789ABCDEF".getBytes(StandardCharsets.US_ASCII);
     private static final boolean RAW_AS_BASE64_DISABLED = false;
