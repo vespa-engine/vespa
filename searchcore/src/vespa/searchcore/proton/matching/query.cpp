@@ -351,7 +351,8 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
     if (use_lazy_filter) {
         if (lazy_filter->is_active()) {
             if (trace && trace->shouldTrace(5)) {
-                    trace->addEvent(5, "Apply active lazy filter");
+                    trace->addEvent(5, vespalib::make_string("Apply active lazy filter (estimate is %f)",
+                                                                               lazy_filter->size() > 0 ? static_cast<double>(lazy_filter->count()) / lazy_filter->size() : 1.0));
             }
             blueprint.set_lazy_filter(*lazy_filter);
         }
