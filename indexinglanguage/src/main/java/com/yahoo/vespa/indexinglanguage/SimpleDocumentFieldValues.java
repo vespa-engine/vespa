@@ -69,7 +69,7 @@ public class SimpleDocumentFieldValues implements DocumentFieldValues {
         Field field = output.getField(fieldName);
         if (field == null) {
             throw new IllegalArgumentException("Field '" + fieldName + "' not found in document type '" +
-                                               output.getDataType().getName());
+                                               output.getDataType().getName() + "'");
         }
         output.setFieldValue(field, fieldValue);
         return this;
