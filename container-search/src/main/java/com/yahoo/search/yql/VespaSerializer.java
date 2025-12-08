@@ -63,7 +63,6 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -104,7 +103,6 @@ import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.TaggableItem;
-import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.prelude.query.ToolBox.QueryVisitor;
 import com.yahoo.prelude.query.TrueItem;
