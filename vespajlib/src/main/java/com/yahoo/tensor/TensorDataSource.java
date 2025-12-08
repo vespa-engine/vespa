@@ -5,6 +5,7 @@ import com.yahoo.data.disclosure.DataSink;
 import com.yahoo.data.disclosure.DataSource;
 import com.yahoo.tensor.serialization.JsonFormat;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
 /**
@@ -199,59 +200,41 @@ public class TensorDataSource implements DataSource {
     }
 
     // Hex encoding methods adapted from JsonFormat
-    private static final char[] hexDigits = "0123456789ABCDEF".toCharArray();
+    private static final byte[] hexDigits = "0123456789ABCDEF".getBytes(StandardCharsets.US_ASCII);
 
-    private static String asHexString(IndexedTensor tensor) {
+    private static byte[] asHexString(IndexedTensor tensor) {
         return asHexString(tensor.sizeAsInt(), tensor.type().valueType(),
                            i -> tensor.get(i), i -> tensor.getFloat(i));
     }
 
-    private static String asHexString(int denseSize, TensorType.Value cellType,
+    private static byte[] asHexString(int denseSize, TensorType.Value cellType,
                                       java.util.function.Function<Integer, Double> dblSrc,
-                                      java.util.function.Function<Integer, Float> fltSrc) {
-        StringBuilder buf = new StringBuilder();
-        switch (cellType) {
-            case DOUBLE:
-                for (int i = 0; i < denseSize; i++) {
-                    double d = dblSrc.apply(i);
-                    long bits = Double.doubleToRawLongBits(d);
-                    for (int nibble = 16; nibble-- > 0; ) {
-                        int digit = (int) (bits >> (4 * nibble)) & 0xF;
-                        buf.append(hexDigits[digit]);
-                    }
-                }
-                break;
-            case FLOAT:
-                for (int i = 0; i < denseSize; i++) {
-                    float f = fltSrc.apply(i);
-                    int bits = Float.floatToRawIntBits(f);
-                    for (int nibble = 8; nibble-- > 0; ) {
-                        int digit = (bits >> (4 * nibble)) & 0xF;
-                        buf.append(hexDigits[digit]);
-                    }
-                }
-                break;
-            case BFLOAT16:
-                for (int i = 0; i < denseSize; i++) {
-                    float f = fltSrc.apply(i);
-                    int bits = Float.floatToRawIntBits(f);
-                    for (int nibble = 8; nibble-- > 4; ) {
-                        int digit = (bits >> (4 * nibble)) & 0xF;
-                        buf.append(hexDigits[digit]);
-                    }
-                }
-                break;
-            case INT8:
-                for (int i = 0; i < denseSize; i++) {
-                    byte bits = fltSrc.apply(i).byteValue();
-                    for (int nibble = 2; nibble-- > 0; ) {
-                        int digit = (bits >> (4 * nibble)) & 0xF;
-                        buf.append(hexDigits[digit]);
-                    }
-                }
-                break;
+                                      java.util.function.Function<Integer, Float> fltSrc)
+    {
+        int nibblesPerCell = switch (cellType) {
+            case DOUBLE   -> 16;
+            case FLOAT    -> 8;
+            case BFLOAT16 -> 4;
+            case INT8     -> 2;
+        };
+        byte[] result = new byte[nibblesPerCell * denseSize];
+        int idx = 0;
+        for (int i = 0; i < denseSize; i++) {
+            long bits = switch (cellType) {
+                case DOUBLE   -> Double.doubleToRawLongBits(dblSrc.apply(i));
+                case FLOAT    -> Float.floatToRawIntBits(fltSrc.apply(i));
+                case BFLOAT16 -> Float.floatToRawIntBits(fltSrc.apply(i));
+                case INT8     -> fltSrc.apply(i).byteValue();
+            };
+            for (int nibble = nibblesPerCell; nibble-- > 0; ) {
+                int digit = (int) (bits >> (4 * nibble)) & 0xF;
+                result[idx++] = hexDigits[digit];
+            }
         }
-        return buf.toString();
+        if (idx != result.length) {
+            throw new IllegalStateException("Did not fill result["+result.length+"], final idx=" + idx);
+        }
+        return result;
     }
 
     private void wrapStart(DataSink sink) {
