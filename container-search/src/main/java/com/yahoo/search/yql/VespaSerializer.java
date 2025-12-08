@@ -63,7 +63,6 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -104,7 +103,6 @@ import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.TaggableItem;
-import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.prelude.query.ToolBox.QueryVisitor;
 import com.yahoo.prelude.query.TrueItem;
@@ -132,11 +130,11 @@ public class VespaSerializer {
         abstract void onExit(StringBuilder destination, ITEM item);
 
         String separator(Deque<SerializerWrapper> state) {
-            throw new UnsupportedOperationException("Having several items for this query operator serializer, "
-                                                    + this.getClass().getSimpleName() + ", not yet implemented.");
+            throw new UnsupportedOperationException("Having several items for this query operator serializer, " +
+                                                    this.getClass().getSimpleName() + ", not yet implemented.");
         }
 
-        abstract boolean serialize(StringBuilder destination, ITEM item);
+        abstract boolean serialize(StringBuilder destination, ITEM item, boolean includeField);
 
     }
 
@@ -162,11 +160,7 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, AndSegmentItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, AndSegmentItem item) {
-            return serialize(destination, item, true);
-        }
-
-        static boolean serialize(StringBuilder destination, AndSegmentItem item, boolean includeField) {
+        boolean serialize(StringBuilder destination, AndSegmentItem item, boolean includeField) {
             Substring origin = item.getOrigin();
             String image;
             int offset;
@@ -213,7 +207,7 @@ public class VespaSerializer {
         }
 
         @Override
-        boolean serialize(StringBuilder destination, AndItem item) {
+        boolean serialize(StringBuilder destination, AndItem item, boolean includeField) {
             destination.append("(");
             return true;
         }
@@ -225,7 +219,7 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, WeightedSetItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, WeightedSetItem item) {
+        boolean serialize(StringBuilder destination, WeightedSetItem item, boolean includeField) {
             serializeWeightedSetContents(destination, DOT_PRODUCT, item);
             return false;
         }
@@ -238,7 +232,7 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, EquivItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, EquivItem item) {
+        boolean serialize(StringBuilder destination, EquivItem item, boolean includeField) {
             String annotations = leafAnnotations(item);
             destination.append(getIndexName(item.getItem(0))).append(" contains ");
             if (!annotations.isEmpty()) {
@@ -252,7 +246,7 @@ public class VespaSerializer {
                     destination.append(", ");
                 }
                 if (x instanceof PhraseItem) {
-                    PhraseSerializer.serialize(destination, (PhraseItem)x, false);
+                    new PhraseSerializer().serialize(destination, (PhraseItem)x, false);
                 } else {
                     destination.append('"');
                     escape(((IndexedItem) x).getIndexedString(), destination);
@@ -274,8 +268,9 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, NearItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, NearItem item) {
-            destination.append(getIndexName(item.getItem(0))).append(" contains ");
+        boolean serialize(StringBuilder destination, NearItem item, boolean includeField) {
+            if (includeField)
+                destination.append(getIndexName(item.getItem(0))).append(" contains ");
             serializeItemListWithoutField(NEAR, item, nearAnnotations(item), destination);
             return false;
         }
@@ -296,10 +291,11 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, UriItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, UriItem uriItem) {
+        boolean serialize(StringBuilder destination, UriItem uriItem, boolean includeField) {
             String annotations = uriAnnotations(uriItem);
 
-            destination.append(uriItem.getIndexName()).append(" contains ");
+            if (includeField)
+                destination.append(uriItem.getIndexName()).append(" contains ");
             if (!annotations.isEmpty())
                 destination.append('(').append(annotations);
             destination.append(URI).append("(\"");
@@ -348,7 +344,7 @@ public class VespaSerializer {
         }
 
         @Override
-        boolean serialize(StringBuilder destination, NotItem item) {
+        boolean serialize(StringBuilder destination, NotItem item, boolean includeField) {
             destination.append("(");
             return true;
         }
@@ -360,7 +356,7 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, NullItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, NullItem item) {
+        boolean serialize(StringBuilder destination, NullItem item, boolean includeField) {
             throw new NullItemException("NullItem encountered in query tree. This is usually a symptom of an invalid " +
                                         "query or an error in a query transformer.");
         }
@@ -373,7 +369,7 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, IntItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, IntItem intItem) {
+        boolean serialize(StringBuilder destination, IntItem intItem, boolean includeField) {
             if (intItem.getFromLimit().number().equals(intItem.getToLimit().number())) {
                 destination.append(normalizeIndexName(intItem.getIndexName())).append(" = ");
                 annotatedNumberImage(intItem, intItem.getFromLimit().number().toString(), destination);
@@ -470,7 +466,7 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, BoolItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, BoolItem item) {
+        boolean serialize(StringBuilder destination, BoolItem item, boolean includeField) {
             destination.append(normalizeIndexName(item.getIndexName())).append(" = ");
             destination.append(item.stringValue());
             return false;
@@ -482,7 +478,7 @@ public class VespaSerializer {
         @Override
         void onExit(StringBuilder destination, TrueItem item) { }
         @Override
-        boolean serialize(StringBuilder destination, TrueItem item) {
+        boolean serialize(StringBuilder destination, TrueItem item, boolean includeField) {
             destination.append("true");
             return false;
         }
@@ -492,7 +488,7 @@ public class VespaSerializer {
         @Override
         void onExit(StringBuilder destination, FalseItem item) { }
         @Override
-        boolean serialize(StringBuilder destination, FalseItem item) {
+        boolean serialize(StringBuilder destination, FalseItem item, boolean includeField) {
             destination.append("false");
             return false;
         }
@@ -504,9 +500,10 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, RegExpItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, RegExpItem regexp) {
+        boolean serialize(StringBuilder destination, RegExpItem regexp, boolean includeField) {
             String annotations = leafAnnotations(regexp);
-            destination.append(normalizeIndexName(regexp.getIndexName())).append(" matches ");
+            if (includeField)
+                destination.append(normalizeIndexName(regexp.getIndexName())).append(" matches ");
             annotatedTerm(destination, regexp, annotations);
             return false;
         }
@@ -518,10 +515,11 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, FuzzyItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, FuzzyItem fuzzy) {
+        boolean serialize(StringBuilder destination, FuzzyItem fuzzy, boolean includeField) {
             String annotations = fuzzyAnnotations(fuzzy);
 
-            destination.append(normalizeIndexName(fuzzy.getIndexName())).append(" contains ");
+            if (includeField)
+                destination.append(normalizeIndexName(fuzzy.getIndexName())).append(" contains ");
 
             if (!annotations.isEmpty()) {
                 destination.append('(').append(annotations);
@@ -577,7 +575,7 @@ public class VespaSerializer {
         }
 
         @Override
-        boolean serialize(StringBuilder destination, ONearItem item) {
+        boolean serialize(StringBuilder destination, ONearItem item, boolean includeField) {
             destination.append(getIndexName(item.getItem(0))).append(" contains ");
             serializeItemListWithoutField(ONEAR, item, NearSerializer.nearAnnotations(item), destination);
             return false;
@@ -598,7 +596,7 @@ public class VespaSerializer {
         }
 
         @Override
-        boolean serialize(StringBuilder destination, OrItem item) {
+        boolean serialize(StringBuilder destination, OrItem item, boolean includeField) {
             destination.append("(");
             return true;
         }
@@ -616,7 +614,7 @@ public class VespaSerializer {
                     destination.append('"');
                     escape(word.getIndexedString(), destination).append('"');
                 } else if (current instanceof WordAlternativesItem alternatives) {
-                    WordAlternativesSerializer.serialize(destination, alternatives, false);
+                    new WordAlternativesSerializer().serialize(destination, alternatives, false);
                 } else {
                     throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName() +
                                                        " in phrases not implemented, please report this as a bug.");
@@ -628,11 +626,7 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, PhraseSegmentItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, PhraseSegmentItem item) {
-            return serialize(destination, item, true);
-        }
-
-        static boolean serialize(StringBuilder destination, PhraseSegmentItem phrase, boolean includeField) {
+        boolean serialize(StringBuilder destination, PhraseSegmentItem phrase, boolean includeField) {
             Substring origin = phrase.getOrigin();
             String image;
             int offset;
@@ -674,11 +668,7 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, PhraseItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, PhraseItem item) {
-            return serialize(destination, item, true);
-        }
-
-        static boolean serialize(StringBuilder destination, PhraseItem phrase, boolean includeField) {
+        boolean serialize(StringBuilder destination, PhraseItem phrase, boolean includeField) {
             if (includeField)
                 destination.append(normalizeIndexName(phrase.getIndexName())).append(" contains ");
             serializeItemListWithoutField(PHRASE, phrase, leafAnnotations(phrase), destination);
@@ -693,11 +683,7 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, SameElementItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, SameElementItem item) {
-            return serialize(destination, item, true);
-        }
-
-        static boolean serialize(StringBuilder destination, SameElementItem item, boolean includeField) {
+        boolean serialize(StringBuilder destination, SameElementItem item, boolean includeField) {
             if (includeField) {
                 destination.append(normalizeIndexName(item.getFieldName())).append(" contains ");
             }
@@ -708,30 +694,9 @@ public class VespaSerializer {
 
             destination.append('(');
             for (int i = 0; i < item.getItemCount(); ++i) {
-                if (i > 0) {
+                if (i > 0)
                     destination.append(", ");
-                }
-                Item current = item.getItem(i);
-                if (current instanceof WordItem) {
-                    new WordSerializer().serialize(destination, (WordItem)current);
-                } else if (current instanceof RangeItem) {
-                    new RangeSerializer().serialize(destination, (RangeItem)current);
-                } else if (current instanceof IntItem) {
-                    new NumberSerializer().serialize(destination, (IntItem)current);
-                } else if (current instanceof FuzzyItem) {
-                    new FuzzySerializer().serialize(destination, (FuzzyItem)current);
-                } else if (current instanceof BoolItem) {
-                    new BoolSerializer().serialize(destination, (BoolItem)current);
-                } else if (current instanceof GeoLocationItem) {
-                    new GeoLocationSerializer().serialize(destination, (GeoLocationItem)current);
-                } else if (current instanceof RegExpItem) {
-                    new RegExpSerializer().serialize(destination, (RegExpItem)current);
-                } else if (current instanceof WordAlternativesItem) {
-                    new WordAlternativesSerializer().serialize(destination, (WordAlternativesItem)current);
-                } else {
-                    throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName() +
-                                                       " in sameElement is not implemented, please report this as a bug.");
-                }
+                VespaSerializer.serialize(item.getItem(i), includeField, destination);
             }
             destination.append(')');
 
@@ -741,10 +706,12 @@ public class VespaSerializer {
     }
 
     private static class GeoLocationSerializer extends Serializer<GeoLocationItem> {
+
         @Override
         void onExit(StringBuilder destination, GeoLocationItem item) { }
+
         @Override
-        boolean serialize(StringBuilder destination, GeoLocationItem item) {
+        boolean serialize(StringBuilder destination, GeoLocationItem item, boolean includeField) {
             String annotations = leafAnnotations(item);
             if (!annotations.isEmpty()) {
                 destination.append("({").append(annotations).append("}");
@@ -772,7 +739,7 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, NearestNeighborItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, NearestNeighborItem item) {
+        boolean serialize(StringBuilder destination, NearestNeighborItem item, boolean includeField) {
             destination.append("{");
             int initLen = destination.length();
             destination.append(leafAnnotations(item));
@@ -841,7 +808,7 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, PredicateQueryItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, PredicateQueryItem item) {
+        boolean serialize(StringBuilder destination, PredicateQueryItem item, boolean includeField) {
             destination.append("predicate(").append(item.getIndexName()).append(',');
             appendFeatures(destination, item.getFeatures());
             destination.append(',');
@@ -896,7 +863,7 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, RangeItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, RangeItem range) {
+        boolean serialize(StringBuilder destination, RangeItem range, boolean includeField) {
             String annotations = leafAnnotations(range);
             if (!annotations.isEmpty()) {
                 destination.append("{").append(annotations).append("}");
@@ -933,7 +900,7 @@ public class VespaSerializer {
         }
 
         @Override
-        boolean serialize(StringBuilder destination, RankItem item) {
+        boolean serialize(StringBuilder destination, RankItem item, boolean includeField) {
             destination.append(RANK).append('(');
             return true;
 
@@ -947,11 +914,7 @@ public class VespaSerializer {
         void onExit(StringBuilder destination, WordAlternativesItem item) { }
 
         @Override
-        boolean serialize(StringBuilder destination, WordAlternativesItem item) {
-            return serialize(destination, item, true);
-        }
-
-        static boolean serialize(StringBuilder destination, WordAlternativesItem alternatives, boolean includeField) {
+        boolean serialize(StringBuilder destination, WordAlternativesItem alternatives, boolean includeField) {
             int initLen = 0;
             StringBuilder annotations = new StringBuilder(leafAnnotations(alternatives));
 
@@ -1021,7 +984,7 @@ public class VespaSerializer {
         }
 
         @Override
-        boolean serialize(StringBuilder destination, WandItem item) {
+        boolean serialize(StringBuilder destination, WandItem item, boolean includeField) {
             serializeWeightedSetContents(destination, WAND, item, specificAnnotations(item));
             return false;
         }
@@ -1067,7 +1030,7 @@ public class VespaSerializer {
         }
 
         @Override
-        boolean serialize(StringBuilder destination, WeakAndItem item) {
+        boolean serialize(StringBuilder destination, WeakAndItem item, boolean includeField) {
             if (needsAnnotationBlock(item)) {
                 destination.append("({");
             }
@@ -1090,7 +1053,7 @@ public class VespaSerializer {
         }
 
         @Override
-        boolean serialize(StringBuilder destination, WeightedSetItem item) {
+        boolean serialize(StringBuilder destination, WeightedSetItem item, boolean includeField) {
             serializeWeightedSetContents(destination, WEIGHTED_SET, item);
             return false;
         }
@@ -1104,7 +1067,7 @@ public class VespaSerializer {
         }
 
         @Override
-        boolean serialize(StringBuilder destination, StringInItem item) {
+        boolean serialize(StringBuilder destination, StringInItem item, boolean includeField) {
             destination.append(item.getIndexName()).append(" in (");
             int initLen = destination.length();
             List<String> tokens = new ArrayList<>(item.getTokens());
@@ -1126,7 +1089,7 @@ public class VespaSerializer {
         }
 
         @Override
-        boolean serialize(StringBuilder destination, NumericInItem item) {
+        boolean serialize(StringBuilder destination, NumericInItem item, boolean includeField) {
             destination.append(item.getIndexName()).append(" in (");
             int initLen = destination.length();
             List<Long> tokens = new ArrayList<>(item.getTokens());
@@ -1149,14 +1112,11 @@ public class VespaSerializer {
         }
 
         @Override
-        boolean serialize(StringBuilder destination, WordItem item) {
-            destination.append(normalizeIndexName(item.getIndexName())).append(" contains ");
+        boolean serialize(StringBuilder destination, WordItem item, boolean includeField) {
+            if (includeField)
+                destination.append(normalizeIndexName(item.getIndexName())).append(" contains ");
             VespaSerializer.annotatedTerm(destination, item, getAllAnnotations(item).toString());
             return false;
-        }
-
-        static void serializeWordWithoutIndex(StringBuilder destination, WordItem word) {
-            VespaSerializer.annotatedTerm(destination, word, getAllAnnotations(word).toString());
         }
 
         private static StringBuilder getAllAnnotations(WordItem w) {
@@ -1258,10 +1218,12 @@ public class VespaSerializer {
 
     private static class VespaVisitor extends QueryVisitor {
 
+        final boolean includeField;
         final StringBuilder destination;
         final Deque<SerializerWrapper> state = new ArrayDeque<>();
 
-        VespaVisitor(StringBuilder destination) {
+        VespaVisitor(boolean includeField, StringBuilder destination) {
+            this.includeField = includeField;
             this.destination = destination;
         }
 
@@ -1277,17 +1239,15 @@ public class VespaSerializer {
 
         @Override
         public boolean visit(Item item) {
-            Serializer doIt = dispatch.get(item.getClass());
+            var serializer = dispatch.get(item.getClass());
 
-            if (doIt == null) {
+            if (serializer == null)
                 throw new IllegalArgumentException(item.getClass() + " not supported for YQL marshalling.");
-            }
-
-            if (state.peekFirst() != null && state.peekFirst().subItems > 0) {
+            if (state.peekFirst() != null && state.peekFirst().subItems > 0)
                 destination.append(state.peekFirst().type.separator(state));
-            }
-            state.addFirst(new SerializerWrapper(doIt, item));
-            return doIt.serialize(destination, item);
+
+            state.addFirst(new SerializerWrapper(serializer, item));
+            return serializer.serialize(destination, item, includeField);
 
         }
     }
@@ -1437,7 +1397,11 @@ public class VespaSerializer {
     }
 
     private static void serialize(Item item, StringBuilder out) {
-        VespaVisitor visitor = new VespaVisitor(out);
+        serialize(item, true, out);
+    }
+
+    private static void serialize(Item item, boolean includeField, StringBuilder out) {
+        VespaVisitor visitor = new VespaVisitor(includeField, out);
         ToolBox.visit(visitor, item);
     }
 
@@ -1629,17 +1593,7 @@ public class VespaSerializer {
         for (int i = 0; i < item.getItemCount(); ++i) {
             if (i > 0)
                 destination.append(", ");
-            Item current = item.getItem(i);
-            if (current instanceof WordItem word) {
-                WordSerializer.serializeWordWithoutIndex(destination, word);
-            } else if (current instanceof PhraseSegmentItem phraseSegment) {
-                PhraseSegmentSerializer.serialize(destination, phraseSegment, false);
-            } else if (current instanceof WordAlternativesItem) {
-                WordAlternativesSerializer.serialize(destination, (WordAlternativesItem) current, false);
-            } else {
-                throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName() +
-                                                   " in phrases not implemented, please report this as a bug.");
-            }
+            VespaSerializer.serialize(item.getItem(i), false, destination);
         }
         destination.append(')');
         if (!annotations.isEmpty())
