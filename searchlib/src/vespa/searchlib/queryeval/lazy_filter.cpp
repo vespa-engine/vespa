@@ -5,7 +5,7 @@
 
 namespace search::queryeval {
 
-GeoLocationLazyFilter::GeoLocationLazyFilter(Private, const common::Location &location, const Blueprint::HitEstimate &estimate) noexcept
+LocationLazyFilter::LocationLazyFilter(Private, const common::Location &location, const Blueprint::HitEstimate &estimate) noexcept
     : _location(location),
       _docid_limit(_location.getVec()->getCommittedDocIdLimit()),
       _estimate(estimate)
@@ -13,32 +13,32 @@ GeoLocationLazyFilter::GeoLocationLazyFilter(Private, const common::Location &lo
     _pos.resize(1);  // Needed (single-value attribute), cf. LocationIterator
 }
 
-std::shared_ptr<GeoLocationLazyFilter>
-GeoLocationLazyFilter::create(const common::Location &location, const Blueprint::HitEstimate &estimate)
+std::shared_ptr<LocationLazyFilter>
+LocationLazyFilter::create(const common::Location &location, const Blueprint::HitEstimate &estimate)
 {
-    return std::make_shared<GeoLocationLazyFilter>(Private(), location, estimate);
+    return std::make_shared<LocationLazyFilter>(Private(), location, estimate);
 }
 
 bool
-GeoLocationLazyFilter::is_active() const
+LocationLazyFilter::is_active() const
 {
     return true;
 }
 
 uint32_t
-GeoLocationLazyFilter::size() const
+LocationLazyFilter::size() const
 {
     return _docid_limit;
 }
 
 uint32_t
-GeoLocationLazyFilter::count() const
+LocationLazyFilter::count() const
 {
     return _estimate.empty ? _docid_limit : std::min(_docid_limit, _estimate.estHits);
 }
 
 bool
-GeoLocationLazyFilter::check(uint32_t docid) const
+LocationLazyFilter::check(uint32_t docid) const
 {
     if (docid >= _docid_limit) {
         return false;

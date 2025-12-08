@@ -21,7 +21,7 @@ namespace search::queryeval {
  * Not thread-safe. If an object of this class is to be used in multiple threads,
  * then a copy has to be created for every thread.
  **/
-class GeoLocationLazyFilter : public GlobalFilter {
+class LocationLazyFilter : public GlobalFilter {
 private:
     struct Private { explicit Private() = default; };
     const common::Location &_location;
@@ -30,8 +30,8 @@ private:
     mutable std::vector<search::AttributeVector::largeint_t> _pos;
 
 public:
-    GeoLocationLazyFilter(Private, const common::Location &location, const Blueprint::HitEstimate &estimate) noexcept;
-    static std::shared_ptr<GeoLocationLazyFilter> create(const common::Location &location, const Blueprint::HitEstimate &estimate);
+    LocationLazyFilter(Private, const common::Location &location, const Blueprint::HitEstimate &estimate) noexcept;
+    static std::shared_ptr<LocationLazyFilter> create(const common::Location &location, const Blueprint::HitEstimate &estimate);
     bool is_active() const override;
     uint32_t size() const override;
     uint32_t count() const override;
