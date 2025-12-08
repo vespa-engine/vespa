@@ -62,10 +62,4 @@ public class GenericConfigSubscriber extends ConfigSubscriber {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * Do nothing, since we share requesters
-     */
-    public void closeRequesters() {
-    }
-
 }
