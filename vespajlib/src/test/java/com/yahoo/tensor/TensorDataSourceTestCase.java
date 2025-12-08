@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -28,91 +29,204 @@ public class TensorDataSourceTestCase {
     private static class TensorTypeTestData {
         final String name;
         final TensorType type;
-        final String sampleTensorString;
+        final Tensor sampleTensor;
         final int indexedDims;
         final int mappedDims;
+        final TensorType.Value cellType;
 
-        TensorTypeTestData(String name, String typeSpec, String sampleTensorString, int indexedDims, int mappedDims) {
+        TensorTypeTestData(String name, TensorType type, Tensor sampleTensor, int indexedDims, int mappedDims) {
             this.name = name;
-            this.type = TensorType.fromSpec(typeSpec);
-            this.sampleTensorString = sampleTensorString;
+            this.type = type;
+            this.sampleTensor = sampleTensor;
             this.indexedDims = indexedDims;
             this.mappedDims = mappedDims;
+            this.cellType = type.valueType();
         }
 
         Tensor createSampleTensor() {
-            return Tensor.from(sampleTensorString);
+            return sampleTensor;
         }
     }
 
     /**
-     * All combinations of 0, 1, and 2 indexed dimensions with 0, 1, and 2 mapped dimensions
+     * Helper to create a sample tensor with given dimensions and values
      */
-    private static final List<TensorTypeTestData> ALL_TYPE_COMBINATIONS = List.of(
-            // 0 indexed, 0 mapped (scalar)
-            new TensorTypeTestData(
-                    "scalar",
-                    "tensor()",
-                    "tensor():{5.0}",
-                    0, 0
-            ),
+    private static Tensor createSampleTensor(TensorType type, List<TensorType.Dimension> dimensions) {
+        Tensor.Builder builder = Tensor.Builder.of(type);
+
+        if (dimensions.isEmpty()) {
+            // Scalar tensor
+            builder.cell(5.0);
+        } else if (type.dimensions().stream().allMatch(TensorType.Dimension::isIndexed)) {
+            // Pure dense tensor - add values in order
+            int totalSize = 1;
+            for (TensorType.Dimension dim : dimensions) {
+                totalSize *= dim.size().get().intValue();
+            }
+            for (int i = 0; i < totalSize; i++) {
+                builder.cell(i + 1.0, indexToAddress(i, dimensions));
+            }
+        } else if (type.dimensions().stream().allMatch(TensorType.Dimension::isMapped)) {
+            // Pure sparse tensor
+            if (dimensions.size() == 1) {
+                builder.cell().label(dimensions.get(0).name(), "a").value(1.0);
+                builder.cell().label(dimensions.get(0).name(), "b").value(2.0);
+                builder.cell().label(dimensions.get(0).name(), "c").value(3.0);
+            } else {
+                builder.cell().label(dimensions.get(0).name(), "a").label(dimensions.get(1).name(), "p").value(1.0);
+                builder.cell().label(dimensions.get(0).name(), "b").label(dimensions.get(1).name(), "q").value(2.0);
+                builder.cell().label(dimensions.get(0).name(), "c").label(dimensions.get(1).name(), "r").value(3.0);
+            }
+        } else {
+            // Mixed tensor
+            List<TensorType.Dimension> mappedDims = type.dimensions().stream().filter(TensorType.Dimension::isMapped).toList();
+            List<TensorType.Dimension> indexedDims = type.dimensions().stream().filter(TensorType.Dimension::isIndexed).toList();
+
+            String[] labels = {"a", "b"};
+            String[] labels2 = {"p", "q"};
+
+            for (int labelIdx = 0; labelIdx < labels.length; labelIdx++) {
+                int denseSize = 1;
+                for (TensorType.Dimension dim : indexedDims) {
+                    denseSize *= dim.size().get().intValue();
+                }
+
+                for (int i = 0; i < denseSize; i++) {
+                    var cellBuilder = builder.cell();
+
+                    // Add mapped dimensions
+                    if (mappedDims.size() >= 1) {
+                        cellBuilder.label(mappedDims.get(0).name(), labels[labelIdx]);
+                    }
+                    if (mappedDims.size() >= 2) {
+                        cellBuilder.label(mappedDims.get(1).name(), labels2[labelIdx]);
+                    }
+
+                    // Add indexed dimensions
+                    long[] addr = indexToAddress(i, indexedDims);
+                    for (int j = 0; j < indexedDims.size(); j++) {
+                        cellBuilder.label(indexedDims.get(j).name(), addr[j]);
+                    }
+
+                    cellBuilder.value(labelIdx * denseSize + i + 1.0);
+                }
+            }
+        }
+
+        return builder.build();
+    }
+
+    private static long[] indexToAddress(int index, List<TensorType.Dimension> dimensions) {
+        long[] result = new long[dimensions.size()];
+        for (int i = dimensions.size() - 1; i >= 0; i--) {
+            int size = dimensions.get(i).size().get().intValue();
+            result[i] = index % size;
+            index /= size;
+        }
+        return result;
+    }
+
+    /**
+     * Generate all valid combinations of tensor types
+     * - Scalar (0 indexed, 0 mapped) only supports DOUBLE
+     * - All other dimension combinations support all 4 cell types (DOUBLE, FLOAT, BFLOAT16, INT8)
+     * Total: 1 + (8 × 4) = 33 combinations
+     */
+    private static List<TensorTypeTestData> generateAllTypeCombinations() {
+        List<TensorTypeTestData> combinations = new ArrayList<>();
+
+        // Define the 4 cell types to test
+        TensorType.Value[] cellTypes = {
+            TensorType.Value.DOUBLE,
+            TensorType.Value.FLOAT,
+            TensorType.Value.BFLOAT16,
+            TensorType.Value.INT8
+        };
+
+        // Base dimension patterns
+        record DimensionPattern(String baseName, List<TensorType.Dimension> dimensions, int indexedDims, int mappedDims) {}
+
+        List<DimensionPattern> patterns = List.of(
+            // 0 indexed, 0 mapped (scalar) - only DOUBLE
+            new DimensionPattern("scalar", List.of(), 0, 0),
+
             // 0 indexed, 1 mapped (sparse 1D)
-            new TensorTypeTestData(
-                    "sparse_1d",
-                    "tensor(cat{})",
-                    "tensor(cat{}):{a:1.0, b:2.0, c:3.0}",
-                    0, 1
-            ),
+            new DimensionPattern("sparse_1d",
+                List.of(TensorType.Dimension.mapped("cat")), 0, 1),
+
             // 0 indexed, 2 mapped (sparse 2D)
-            new TensorTypeTestData(
-                    "sparse_2d",
-                    "tensor(cat{},key{})",
-                    "tensor(cat{},key{}):{{cat:a,key:p}:1.0, {cat:b,key:q}:2.0, {cat:c,key:r}:3.0}",
-                    0, 2
-            ),
+            new DimensionPattern("sparse_2d",
+                List.of(TensorType.Dimension.mapped("cat"), TensorType.Dimension.mapped("key")), 0, 2),
+
             // 1 indexed, 0 mapped (dense 1D)
-            new TensorTypeTestData(
-                    "dense_1d",
-                    "tensor(x[3])",
-                    "tensor(x[3]):[1.0, 2.0, 3.0]",
-                    1, 0
-            ),
-            // 1 indexed, 1 mapped (mixed with 1 mapped, 1 indexed)
-            new TensorTypeTestData(
-                    "mixed_1m_1i",
-                    "tensor(cat{},x[3])",
-                    "tensor(cat{},x[3]):{a:[1.0, 2.0, 3.0], b:[4.0, 5.0, 6.0]}",
-                    1, 1
-            ),
-            // 1 indexed, 2 mapped (mixed with 2 mapped, 1 indexed)
-            new TensorTypeTestData(
-                    "mixed_2m_1i",
-                    "tensor(cat{},key{},x[3])",
-                    "tensor(cat{},key{},x[3]):{{cat:a,key:p,x:0}:1.0, {cat:a,key:p,x:1}:2.0, {cat:a,key:p,x:2}:3.0, {cat:b,key:q,x:0}:4.0, {cat:b,key:q,x:1}:5.0, {cat:b,key:q,x:2}:6.0}",
-                    1, 2
-            ),
+            new DimensionPattern("dense_1d",
+                List.of(TensorType.Dimension.indexed("x", 3)), 1, 0),
+
+            // 1 indexed, 1 mapped (mixed)
+            new DimensionPattern("mixed_1m_1i",
+                List.of(TensorType.Dimension.mapped("cat"), TensorType.Dimension.indexed("x", 3)), 1, 1),
+
+            // 1 indexed, 2 mapped (mixed)
+            new DimensionPattern("mixed_2m_1i",
+                List.of(TensorType.Dimension.mapped("cat"), TensorType.Dimension.mapped("key"),
+                        TensorType.Dimension.indexed("x", 3)), 1, 2),
+
             // 2 indexed, 0 mapped (dense 2D)
-            new TensorTypeTestData(
-                    "dense_2d",
-                    "tensor(x[2],y[3])",
-                    "tensor(x[2],y[3]):[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]",
-                    2, 0
-            ),
-            // 2 indexed, 1 mapped (mixed with 1 mapped, 2 indexed)
-            new TensorTypeTestData(
-                    "mixed_1m_2i",
-                    "tensor(cat{},x[2],y[3])",
-                    "tensor(cat{},x[2],y[3]):{{cat:a,x:0,y:0}:1.0, {cat:a,x:0,y:1}:2.0, {cat:a,x:0,y:2}:3.0, {cat:a,x:1,y:0}:4.0, {cat:a,x:1,y:1}:5.0, {cat:a,x:1,y:2}:6.0, {cat:b,x:0,y:0}:7.0, {cat:b,x:0,y:1}:8.0, {cat:b,x:0,y:2}:9.0, {cat:b,x:1,y:0}:10.0, {cat:b,x:1,y:1}:11.0, {cat:b,x:1,y:2}:12.0}",
-                    2, 1
-            ),
-            // 2 indexed, 2 mapped (mixed with 2 mapped, 2 indexed)
-            new TensorTypeTestData(
-                    "mixed_2m_2i",
-                    "tensor(cat{},key{},x[2],y[2])",
-                    "tensor(cat{},key{},x[2],y[2]):{{cat:a,key:p,x:0,y:0}:1.0, {cat:a,key:p,x:0,y:1}:2.0, {cat:a,key:p,x:1,y:0}:3.0, {cat:a,key:p,x:1,y:1}:4.0, {cat:b,key:q,x:0,y:0}:5.0, {cat:b,key:q,x:0,y:1}:6.0, {cat:b,key:q,x:1,y:0}:7.0, {cat:b,key:q,x:1,y:1}:8.0}",
-                    2, 2
-            )
-    );
+            new DimensionPattern("dense_2d",
+                List.of(TensorType.Dimension.indexed("x", 2), TensorType.Dimension.indexed("y", 3)), 2, 0),
+
+            // 2 indexed, 1 mapped (mixed)
+            new DimensionPattern("mixed_1m_2i",
+                List.of(TensorType.Dimension.mapped("cat"),
+                        TensorType.Dimension.indexed("x", 2), TensorType.Dimension.indexed("y", 3)), 2, 1),
+
+            // 2 indexed, 2 mapped (mixed)
+            new DimensionPattern("mixed_2m_2i",
+                List.of(TensorType.Dimension.mapped("cat"), TensorType.Dimension.mapped("key"),
+                        TensorType.Dimension.indexed("x", 2), TensorType.Dimension.indexed("y", 2)), 2, 2)
+        );
+
+        // Generate combinations
+        for (DimensionPattern pattern : patterns) {
+            // Scalar only supports DOUBLE
+            if (pattern.indexedDims == 0 && pattern.mappedDims == 0) {
+                TensorType type = new TensorType(TensorType.Value.DOUBLE, pattern.dimensions);
+                Tensor sampleTensor = createSampleTensor(type, pattern.dimensions);
+                combinations.add(new TensorTypeTestData(
+                    pattern.baseName + "_double",
+                    type,
+                    sampleTensor,
+                    pattern.indexedDims,
+                    pattern.mappedDims
+                ));
+            } else {
+                // All other patterns support all cell types
+                for (TensorType.Value cellType : cellTypes) {
+                    String cellTypeSuffix = "_" + cellType.toString().toLowerCase();
+                    TensorType type = new TensorType(cellType, pattern.dimensions);
+                    Tensor sampleTensor = createSampleTensor(type, pattern.dimensions);
+
+                    combinations.add(new TensorTypeTestData(
+                        pattern.baseName + cellTypeSuffix,
+                        type,
+                        sampleTensor,
+                        pattern.indexedDims,
+                        pattern.mappedDims
+                    ));
+                }
+            }
+        }
+
+        return combinations;
+    }
+
+    /**
+     * All combinations of 0, 1, and 2 indexed dimensions with 0, 1, and 2 mapped dimensions,
+     * across all supported cell types (DOUBLE, FLOAT, BFLOAT16, INT8).
+     * Scalar tensors only support DOUBLE.
+     * Total: 33 combinations (1 scalar + 8 patterns × 4 cell types)
+     */
+    private static final List<TensorTypeTestData> ALL_TYPE_COMBINATIONS = generateAllTypeCombinations();
 
     /**
      * A simple mock DataSink that captures method calls for testing
@@ -194,6 +308,30 @@ public class TensorDataSourceTestCase {
         public void dataValue(byte[] data) {
             indent();
             output.append("data[").append(data.length).append("]\n");
+        }
+
+        @Override
+        public void intValue(int v) {
+            indent();
+            output.append(v).append("I\n");
+        }
+
+        @Override
+        public void shortValue(short v) {
+            indent();
+            output.append(v).append("S\n");
+        }
+
+        @Override
+        public void byteValue(byte v) {
+            indent();
+            output.append(v).append("B\n");
+        }
+
+        @Override
+        public void floatValue(float v) {
+            indent();
+            output.append(v).append("F\n");
         }
 
         public String getOutput() {
@@ -504,6 +642,12 @@ public class TensorDataSourceTestCase {
     public void testAllTypeCombinationsShortForm() {
         // Test all combinations of indexed and mapped dimensions with short form encoding
         System.out.println("\n=== testAllTypeCombinationsShortForm ===");
+        System.out.println("Testing " + ALL_TYPE_COMBINATIONS.size() + " combinations");
+
+        // Verify we have the expected 33 combinations
+        assertEquals("Should have 33 type combinations (1 scalar + 8 patterns × 4 cell types)",
+                     33, ALL_TYPE_COMBINATIONS.size());
+
         for (TensorTypeTestData testData : ALL_TYPE_COMBINATIONS) {
             Tensor tensor = testData.createSampleTensor();
             TensorDataSource dataSource = new TensorDataSource(tensor, new JsonFormat.EncodeOptions(true, false, false));
@@ -590,20 +734,4 @@ public class TensorDataSourceTestCase {
         }
     }
 
-    @Test
-    public void testTypeCombinationCounts() {
-        // Verify we have all 9 combinations
-        assertEquals("Should have 9 type combinations (3x3)", 9, ALL_TYPE_COMBINATIONS.size());
-
-        // Verify the distribution
-        long scalarCount = ALL_TYPE_COMBINATIONS.stream().filter(t -> t.indexedDims == 0 && t.mappedDims == 0).count();
-        long sparseCount = ALL_TYPE_COMBINATIONS.stream().filter(t -> t.indexedDims == 0 && t.mappedDims > 0).count();
-        long denseCount = ALL_TYPE_COMBINATIONS.stream().filter(t -> t.indexedDims > 0 && t.mappedDims == 0).count();
-        long mixedCount = ALL_TYPE_COMBINATIONS.stream().filter(t -> t.indexedDims > 0 && t.mappedDims > 0).count();
-
-        assertEquals("Should have 1 scalar type", 1, scalarCount);
-        assertEquals("Should have 2 sparse types", 2, sparseCount);
-        assertEquals("Should have 2 dense types", 2, denseCount);
-        assertEquals("Should have 4 mixed types", 4, mixedCount);
-    }
 }
