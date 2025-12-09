@@ -2,6 +2,7 @@
 
 #include "lazy_filter.h"
 #include <vespa/searchlib/common/location.h>
+#include <vespa/vespalib/util/require.h>
 
 namespace search::queryeval {
 
@@ -62,8 +63,8 @@ LocationLazyFilter::check(uint32_t docid) const
 FallbackFilter::FallbackFilter(Private, const GlobalFilter &global_filter, const GlobalFilter &fallback)
         : _global_filter(global_filter), _fallback(fallback)
 {
-    assert(_global_filter.is_active());
-    assert(_fallback.is_active());
+    REQUIRE(_global_filter.is_active());
+    REQUIRE(_fallback.is_active());
 }
 
 std::shared_ptr<FallbackFilter>
@@ -94,6 +95,63 @@ bool
 FallbackFilter::check(uint32_t docid) const
 {
     return _global_filter.check(docid) && _fallback.check(docid);
+}
+
+AndFilter::AndFilter(Private, std::vector<std::shared_ptr<GlobalFilter>> &&children)
+            : _children(std::move(children))
+{
+}
+
+std::shared_ptr<AndFilter>
+AndFilter::create(std::vector<std::shared_ptr<GlobalFilter>> &&children)
+{
+    return std::make_shared<AndFilter>(Private(), std::move(children));
+}
+
+bool
+AndFilter::is_active() const
+{
+    for (auto &child : _children) {
+        if (!child->is_active()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+uint32_t
+AndFilter::size() const
+{
+    uint32_t min = std::numeric_limits<uint32_t>::max();
+    for (auto &child : _children) {
+        min = std::min(min, child->size());
+    }
+
+    return min;
+}
+
+uint32_t
+AndFilter::count() const
+{
+    uint32_t min = std::numeric_limits<uint32_t>::max();
+    for (auto &child : _children) {
+        min = std::min(min, child->count());
+    }
+
+    return min;
+}
+
+bool
+AndFilter::check(uint32_t docid) const
+{
+    for (auto &child : _children) {
+        if (!child->check(docid)) {
+            return false;
+        }
+
+    }
+
+    return true;
 }
 
 }

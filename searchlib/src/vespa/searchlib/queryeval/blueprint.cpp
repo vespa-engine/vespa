@@ -689,18 +689,6 @@ IntermediateBlueprint::createSearchImpl(fef::MatchData &md) const
     return createIntermediateSearch(std::move(subSearches), md);
 }
 
-std::shared_ptr<GlobalFilter>
-IntermediateBlueprint::create_lazy_filter() const {
-    for (const auto & child : _children) {
-        auto lazy_filter = child->create_lazy_filter();
-        if (lazy_filter->is_active()) {
-            return lazy_filter;
-        }
-    }
-
-    return GlobalFilter::create();
-}
-
 IntermediateBlueprint::IntermediateBlueprint() noexcept = default;
 
 IntermediateBlueprint &
