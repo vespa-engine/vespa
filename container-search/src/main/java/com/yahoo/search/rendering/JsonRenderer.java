@@ -130,12 +130,18 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private volatile JsonGenerator generator;
     private volatile FieldConsumer fieldConsumer;
     private volatile Deque<Integer> renderedChildren;
-    private volatile boolean useCbor = false;
+    private volatile RenderTarget renderTarget = RenderTarget.Json;
 
     /** Which target we are rendering to */
     enum RenderTarget {
-        Json,
-        Cbor
+        Json("application/json"),
+        Cbor("application/cbor");
+
+        final String mimeType;
+
+        RenderTarget(String mimeType) {
+            this.mimeType = mimeType;
+        }
     }
 
     static class FieldConsumerSettings {
@@ -224,16 +230,14 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         long renderingStartTimeMs = timeSource.getAsLong();
 
         // Determine output format from query parameter or Accept header
-        useCbor = shouldUseCbor();
-        if (useCbor) {
-            fieldConsumerSettings.renderTarget = RenderTarget.Cbor;
-        }
+        renderTarget = determineRenderTarget();
+        fieldConsumerSettings.renderTarget = renderTarget;
 
         beginJsonCallback(stream);
         fieldConsumerSettings.getSettings(getResult().getQuery());
 
         // Select appropriate factory based on format
-        JsonFactory factory = useCbor ? cborGeneratorFactory : jsonGeneratorFactory;
+        JsonFactory factory = (renderTarget == RenderTarget.Cbor) ? cborGeneratorFactory : jsonGeneratorFactory;
         setGenerator(factory.createGenerator(stream, JsonEncoding.UTF8), fieldConsumerSettings);
 
         renderedChildren = new ArrayDeque<>();
@@ -243,20 +247,20 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         generator.writeFieldName(ROOT);
     }
 
-    private boolean shouldUseCbor() {
+    private RenderTarget determineRenderTarget() {
         Query query = getResult().getQuery();
-        if (query == null) return false;
+        if (query == null) return RenderTarget.Json;
 
         // Check format query parameter first (takes precedence)
         String format = query.getPresentation().getFormat();
         if (format != null && format.equalsIgnoreCase("cbor")) {
-            return true;
+            return RenderTarget.Cbor;
         }
 
         // TODO: Check Accept header if format parameter not specified
         // This would require access to the HTTP request which isn't available here
 
-        return false;
+        return RenderTarget.Json;
     }
 
     private void renderTiming(long renderingStartTimeMs) throws IOException {
@@ -540,7 +544,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     @Override
     public String getMimeType() {
-        return useCbor ? "application/cbor" : "application/json";
+        return renderTarget.mimeType;
     }
 
     private Result getResult() {
