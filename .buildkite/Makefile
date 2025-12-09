@@ -32,7 +32,7 @@ else
 endif
 
 # This must be set by Buildkite pipelines; we provide a default for testing only.
-export VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX ?=
+export VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX ?= -dev-only
 
 .DEFAULT_GOAL := pr
 
