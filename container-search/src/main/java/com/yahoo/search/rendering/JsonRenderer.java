@@ -10,6 +10,8 @@ import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import com.google.common.base.Preconditions;
 import com.yahoo.container.logging.TraceRenderer;
 import com.yahoo.data.JsonProducer;
@@ -122,11 +124,13 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private static final String GROUPING_VALUE = "value";
     private static final String VESPA_HIDDEN_FIELD_PREFIX = "$";
 
-    private static final JsonFactory generatorFactory = createGeneratorFactory();
+    private static final JsonFactory jsonGeneratorFactory = createJsonFactory();
+    private static final CBORFactory cborGeneratorFactory = createCborFactory();
 
     private volatile JsonGenerator generator;
     private volatile FieldConsumer fieldConsumer;
     private volatile Deque<Integer> renderedChildren;
+    private volatile boolean useCbor = false;
 
     /** Which target we are rendering to */
     enum RenderTarget {
@@ -190,10 +194,18 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         super(executor);
     }
 
-    private static JsonFactory createGeneratorFactory() {
+    private static JsonFactory createJsonFactory() {
         return Jackson.createMapper(new JsonFactoryBuilder()
                 .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build()))
                 .disable(FLUSH_AFTER_WRITE_VALUE).getFactory();
+    }
+
+    private static CBORFactory createCborFactory() {
+        CBORFactory factory = new CBORFactory();
+        factory.setStreamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build());
+        ObjectMapper mapper = new ObjectMapper(factory);
+        mapper.disable(FLUSH_AFTER_WRITE_VALUE);
+        return (CBORFactory) mapper.getFactory();
     }
 
     @Override
@@ -210,14 +222,38 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     @Override
     public void beginResponse(OutputStream stream) throws IOException {
         long renderingStartTimeMs = timeSource.getAsLong();
+
+        // Determine output format from query parameter or Accept header
+        useCbor = shouldUseCbor();
+
         beginJsonCallback(stream);
         fieldConsumerSettings.getSettings(getResult().getQuery());
-        setGenerator(generatorFactory.createGenerator(stream, JsonEncoding.UTF8), fieldConsumerSettings);
+
+        // Select appropriate factory based on format
+        JsonFactory factory = useCbor ? cborGeneratorFactory : jsonGeneratorFactory;
+        setGenerator(factory.createGenerator(stream, JsonEncoding.UTF8), fieldConsumerSettings);
+
         renderedChildren = new ArrayDeque<>();
         generator.writeStartObject();
         renderTrace(getExecution().trace());
         renderTiming(renderingStartTimeMs);
         generator.writeFieldName(ROOT);
+    }
+
+    private boolean shouldUseCbor() {
+        Query query = getResult().getQuery();
+        if (query == null) return false;
+
+        // Check format query parameter first (takes precedence)
+        String format = query.getPresentation().getFormat();
+        if (format != null && format.equalsIgnoreCase("cbor")) {
+            return true;
+        }
+
+        // TODO: Check Accept header if format parameter not specified
+        // This would require access to the HTTP request which isn't available here
+
+        return false;
     }
 
     private void renderTiming(long renderingStartTimeMs) throws IOException {
@@ -501,7 +537,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     @Override
     public String getMimeType() {
-        return "application/json";
+        return useCbor ? "application/cbor" : "application/json";
     }
 
     private Result getResult() {
