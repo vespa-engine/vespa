@@ -34,7 +34,7 @@ cd "${WORKDIR}/docker-image"
 SOURCE_GITREF=$(git rev-parse HEAD)
 
 echo "--- Building Vespa preview container"
-GHCR_PREVIEW_TAG="$("${WORKDIR}/.buildkite/utils/get-container-tag.sh" "ghcr.io" "vespa-engine/vespa-preview-${ARCH}" "$VESPA_VERSION")"
+GHCR_PREVIEW_TAG=ghcr.io/vespa-engine/vespa-preview-${ARCH}:${VESPA_VERSION}${VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX}
 echo "Building container with tag: ${GHCR_PREVIEW_TAG}"
 VESPA_BASE_IMAGE="el${ALMALINUX_MAJOR}"
 docker build --progress plain \
@@ -69,7 +69,7 @@ rm -rf rpms
 mv "$WORKDIR/docker-image/rpms" rpms
 
 echo "--- Building system-test container"
-DOCKER_SYSTEMTEST_TAG="$("${WORKDIR}/.buildkite/utils/get-container-tag.sh" "docker.io" "vespaengine/vespa-systemtest-preview-$ARCH" "$VESPA_VERSION")"
+DOCKER_SYSTEMTEST_TAG=docker.io/vespaengine/vespa-systemtest-preview-${ARCH}:${VESPA_VERSION}${VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX}
 echo "Building system-test container with tag: ${DOCKER_SYSTEMTEST_TAG}"
 SYSTEM_TEST_BASE_IMAGE="almalinux:${ALMALINUX_MAJOR}"
 docker build --progress=plain \
