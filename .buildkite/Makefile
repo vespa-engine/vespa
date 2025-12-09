@@ -31,6 +31,9 @@ else
 	export VESPA_MAVEN_EXTRA_OPTS := $(VESPA_MAVEN_EXTRA_OPTS) -Dmaven.source.skip=true -Dmaven.javadoc.skip=true
 endif
 
+# This must be set by Buildkite pipelines; we provide a default for testing only.
+export VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX ?=
+
 .DEFAULT_GOAL := pr
 
 main: build-rpms cpp-test quick-start-guide publish-container publish-artifacts

@@ -25,7 +25,7 @@ echo "$VESPA_ENGINE_GHCR_IO_WRITE_TOKEN" |  docker login ghcr.io --username esol
 eval "$OPT_STATE"
 
 echo "--- Publishing Vespa preview container"
-VESPA_PREVIEW_CONTAINER_URI="$("${WORKDIR}/.buildkite/utils/get-container-tag.sh" "ghcr.io" "vespa-engine/vespa-preview-${ARCH}" "$VESPA_VERSION")"
+VESPA_PREVIEW_CONTAINER_URI=ghcr.io/vespa-engine/vespa-preview-${ARCH}:${VESPA_VERSION}${VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX}
 echo "Pushing container: ${VESPA_PREVIEW_CONTAINER_URI}"
 docker push "$VESPA_PREVIEW_CONTAINER_URI"
 
@@ -38,7 +38,7 @@ buildkite-agent meta-data set "vespa-container-image-${ARCH}-alma${ALMALINUX_MAJ
 
 echo "--- Publishing system-test container"
 # Publish the system test container image
-SYSTEMTEST_PREVIEW_CONTAINER_URI=$("${WORKDIR}/.buildkite/utils/get-container-tag.sh" "docker.io" "vespaengine/vespa-systemtest-preview-$ARCH" "$VESPA_VERSION")
+SYSTEMTEST_PREVIEW_CONTAINER_URI=docker.io/vespaengine/vespa-systemtest-preview-${ARCH}:${VESPA_VERSION}${VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX}
 echo "Pushing container: ${SYSTEMTEST_PREVIEW_CONTAINER_URI}"
 docker push "$SYSTEMTEST_PREVIEW_CONTAINER_URI"
 IMAGE_SHA256=$(crane digest "$SYSTEMTEST_PREVIEW_CONTAINER_URI")
