@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
+import com.yahoo.data.JsonProducer;
 import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.component.ComponentId;
@@ -51,6 +52,7 @@ import com.yahoo.search.statistics.ElapsedTimeTestCase.UselessSearcher;
 import com.yahoo.search.statistics.TimeTracker;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
@@ -1897,4 +1899,41 @@ public class JsonRendererTestCase {
         return one;
     }
 
+    class ObjectJsonProducer implements JsonProducer {
+        @Override
+        public StringBuilder writeJson(StringBuilder target) {
+            return target.append(SlimeUtils.toJson(SlimeUtils.jsonToSlime("{a:1, b: [true, false], c: {x: 'y'}}")));
+        }
+    }
+
+    @Test
+    void testRendererJsonProducerObject() throws Exception {
+        Result r = newEmptyResult();
+        Hit h = new Hit("jsonObj");
+        h.setField("bar", new ObjectJsonProducer());
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+
+        String expected = """
+                {
+                  "root": {
+                    "children": [
+                      {
+                        "fields": {
+                          "bar": {"a":1,"b":[true,false],"c":{"x":"y"}}
+                        },
+                        "id": "jsonObj",
+                        "relevance": 1.0
+                      }
+                    ],
+                    "fields": { "totalCount": 1 },
+                    "id": "toplevel",
+                    "relevance": 1.0
+                  }
+                }
+                """;
+
+        String actual = render(r);
+        assertEqualJsonContent(expected, actual);
+    }
 }

@@ -7910,6 +7910,21 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.rendering.JsonDataSource" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.data.disclosure.DataSource"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public static com.yahoo.search.rendering.JsonDataSource fromJson(java.lang.String)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.rendering.JsonRenderer$FieldConsumer" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [

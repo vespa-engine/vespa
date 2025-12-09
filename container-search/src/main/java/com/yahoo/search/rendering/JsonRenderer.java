@@ -128,6 +128,12 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private volatile FieldConsumer fieldConsumer;
     private volatile Deque<Integer> renderedChildren;
 
+    /** Which target we are rendering to */
+    enum RenderTarget {
+        Json,
+        Cbor
+    }
+
     static class FieldConsumerSettings {
         volatile boolean debugRendering = false;
         volatile boolean jsonDeepMaps = true;
@@ -136,6 +142,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         volatile boolean jsonWsetsAll = false;
         volatile boolean enableRawAsBase64 = false;
         volatile JsonFormat.EncodeOptions tensorOptions;
+        RenderTarget renderTarget;
         boolean convertDeep() { return (jsonDeepMaps || jsonWsets); }
         void init() {
             this.debugRendering = false;
@@ -144,6 +151,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.jsonMapsAll = true;
             this.jsonWsetsAll = true;
             this.tensorOptions = new JsonFormat.EncodeOptions(true, false, false);
+            this.renderTarget = RenderTarget.Json;
         }
         void getSettings(Query q) {
             if (q == null) {
@@ -818,7 +826,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             } else if (field instanceof DataSource ds) {
                 ds.emit(dataSink());
             } else if (field instanceof JsonProducer jp) {
-                generator().writeRawValue(jp.toJson());
+                emitJsonProducer(jp);
             } else if (field instanceof TensorFieldValue tfv) {
                 renderTensor(tfv.getTensor());
             } else if (field instanceof FieldValue fv) {
@@ -846,6 +854,18 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 generator().writeNumber(bigdec);
             } else {
                 generator().writeNumber(field.doubleValue());
+            }
+        }
+
+        /**
+         * If render target is JSON write raw. Else, convert from JSON to DataSource and
+         * emit to render target data source.
+         */
+        private void emitJsonProducer(JsonProducer jp) throws IOException {
+            if (settings.renderTarget == RenderTarget.Json) {
+                generator().writeRawValue(jp.toJson());
+            } else {
+                JsonDataSource.fromJson(jp.toJson()).emit(dataSink());
             }
         }
 
