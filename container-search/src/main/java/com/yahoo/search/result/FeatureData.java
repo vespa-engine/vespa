@@ -100,11 +100,10 @@ public class FeatureData implements Inspectable, JsonProducer {
     }
 
     public String toJson(JsonFormat.EncodeOptions tensorOptions) {
-        try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            JsonGenerator generator = jsonFactory.createGenerator(out);
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+             JsonGenerator generator = jsonFactory.createGenerator(out)) {
             asDataSource(tensorOptions).emit(new NonFiniteToNullDataSink(new JsonGeneratorDataSink(generator)));
-            generator.close();
+            generator.flush();
             return out.toString();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -128,6 +127,8 @@ public class FeatureData implements Inspectable, JsonProducer {
                     } else if (value.type() == Type.DATA) {
                         Tensor tensor = tensorFromData(value.asData());
                         new TensorDataSource(tensor, tensorOptions).emit(sink);
+                    } else {
+                        throw new IllegalStateException("Unexpected feature value type " + value.type());
                     }
                 });
             } else {
