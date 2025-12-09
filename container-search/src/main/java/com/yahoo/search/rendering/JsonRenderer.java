@@ -579,7 +579,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         private final JsonGenerator generator;
         private final JsonGeneratorDataSink dataSink;
-        private final DataSink wrappedDataSink;
+        private final DataSink tensorDataSink;
         private final FieldConsumerSettings settings;
         private MutableBoolean hasFieldsField;
 
@@ -598,7 +598,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.settings.jsonDeepMaps = jsonMaps;
             // if this is subclass, generator will be null, must mirror that behavior
             this.dataSink = (generator == null) ? null : new JsonGeneratorDataSink(generator, settings.enableRawAsBase64);
-            this.wrappedDataSink = (dataSink == null) ? null : new NonFiniteToNullDataSink(dataSink);
+            this.tensorDataSink = (dataSink == null) ? null : new NonFiniteToNullDataSink(dataSink);
         }
 
         FieldConsumer(JsonGenerator generator, FieldConsumerSettings settings) {
@@ -606,7 +606,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.settings = settings;
             // if this is subclass, generator will be null, must mirror that behavior
             this.dataSink = (generator == null) ? null : new JsonGeneratorDataSink(generator, settings.enableRawAsBase64);
-            this.wrappedDataSink = (dataSink == null) ? null : new NonFiniteToNullDataSink(dataSink);
+            this.tensorDataSink = (dataSink == null) ? null : new NonFiniteToNullDataSink(dataSink);
         }
 
         /**
@@ -823,7 +823,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             } else if (field instanceof Tensor t) {
                 renderTensor(Optional.of(t));
             } else if (field instanceof FeatureData featureData) {
-                featureData.asDataSource(settings.tensorOptions).emit(wrappedDataSink());
+                featureData.asDataSource(settings.tensorOptions).emit(tensorDataSink());
             } else if (field instanceof Inspectable i) {
                 i.inspect().emit(dataSink());
             } else if (field instanceof DataSource ds) {
@@ -874,7 +874,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         private void renderTensor(Optional<Tensor> tensor) {
             var t = tensor.orElse(Tensor.Builder.of(TensorType.empty).build());
-            new TensorDataSource(t, settings.tensorOptions).emit(wrappedDataSink());
+            new TensorDataSource(t, settings.tensorOptions).emit(tensorDataSink());
         }
 
         private JsonGenerator generator() {
@@ -883,22 +883,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                                                         "All accept() methods must be overridden when sub-classing FieldConsumer");
             return generator;
         }
-
-        private JsonGeneratorDataSink dataSink() {
-            if (dataSink == null) {
-                throw new UnsupportedOperationException("DataSink required but not assigned. "
-                        + "All accept() methods must be overridden when sub-classing FieldConsumer without a generator");
-            }
-            return dataSink;
-        }
-
-        private DataSink wrappedDataSink() {
-            if (wrappedDataSink == null) {
-                throw new UnsupportedOperationException("DataSink required but not assigned. "
-                        + "All accept() methods must be overridden when sub-classing FieldConsumer without a generator");
-            }
-            return wrappedDataSink;
-        }
+        private JsonGeneratorDataSink dataSink() { generator(); return dataSink; }
+        private DataSink tensorDataSink() { generator(); return tensorDataSink; }
 
     }
 
