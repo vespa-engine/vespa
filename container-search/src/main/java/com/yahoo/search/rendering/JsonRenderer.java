@@ -225,6 +225,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         // Determine output format from query parameter or Accept header
         useCbor = shouldUseCbor();
+        if (useCbor) {
+            fieldConsumerSettings.renderTarget = RenderTarget.Cbor;
+        }
 
         beginJsonCallback(stream);
         fieldConsumerSettings.getSettings(getResult().getQuery());
