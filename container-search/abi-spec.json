@@ -7922,6 +7922,18 @@
       "public void <init>(java.lang.String)",
       "public static com.yahoo.search.rendering.JsonDataSource fromJson(java.lang.String)",
       "public void emit(com.yahoo.data.disclosure.DataSink)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.rendering.JsonGeneratorDataSink" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.data.disclosure.DataSink"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
       "public void <init>(com.fasterxml.jackson.core.JsonGenerator)",
       "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean)",
       "public void fieldName(java.lang.String, byte[])",
