@@ -20,7 +20,6 @@ public class TensorDataSource implements DataSource {
     private final Tensor tensor;
     private final JsonFormat.EncodeOptions options;
     private final boolean wrapAndType;
-    private boolean inObject = false;
 
     public TensorDataSource(Tensor tensor, JsonFormat.EncodeOptions options) {
         this.tensor = tensor;
@@ -40,7 +39,7 @@ public class TensorDataSource implements DataSource {
         } else {
             emitLongForm(sink);
         }
-        ensureObjectEnded(sink);
+        wrapEnd(sink);
     }
 
     private void emitShortForm(DataSink sink) {
@@ -61,12 +60,8 @@ public class TensorDataSource implements DataSource {
                 startField("blocks", sink);
                 emitLabeledBlocks(mixed, sink);
             } else {
-                boolean startedObject = ensureObject(sink);
                 startField("blocks", sink);
                 emitAddressedBlocks(mixed, sink);
-                if (startedObject) {
-                    ensureObjectEnded(sink);
-                }
             }
         } else {
             startField("cells", sink);
@@ -239,26 +234,17 @@ public class TensorDataSource implements DataSource {
 
     private void wrapStart(DataSink sink) {
         if (wrapAndType) {
-            ensureObject(sink);
+            sink.startObject();
         }
     }
-    private void ensureObjectEnded(DataSink sink) {
-        if (inObject) {
+    private void wrapEnd(DataSink sink) {
+        if (wrapAndType) {
             sink.endObject();
-            inObject = false;
         }
     }
     private void startField(String fieldName, DataSink sink) {
-        if (inObject) {
+        if (wrapAndType) {
             sink.fieldName(fieldName);
         }
-    }
-    private boolean ensureObject(DataSink sink) {
-        if (inObject) {
-            return false;
-        }
-        sink.startObject();
-        inObject = true;
-        return true;
     }
 }
