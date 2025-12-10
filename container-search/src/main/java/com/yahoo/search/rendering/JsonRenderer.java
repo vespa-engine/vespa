@@ -579,6 +579,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         private final JsonGenerator generator;
         private final JsonGeneratorDataSink dataSink;
+        private final DataSink tensorDataSink;
         private final FieldConsumerSettings settings;
         private MutableBoolean hasFieldsField;
 
@@ -597,6 +598,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.settings.jsonDeepMaps = jsonMaps;
             // if this is subclass, generator will be null, must mirror that behavior
             this.dataSink = (generator == null) ? null : new JsonGeneratorDataSink(generator, settings.enableRawAsBase64);
+            this.tensorDataSink = (dataSink == null) ? null : new NonFiniteToNullDataSink(dataSink);
         }
 
         FieldConsumer(JsonGenerator generator, FieldConsumerSettings settings) {
@@ -604,6 +606,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.settings = settings;
             // if this is subclass, generator will be null, must mirror that behavior
             this.dataSink = (generator == null) ? null : new JsonGeneratorDataSink(generator, settings.enableRawAsBase64);
+            this.tensorDataSink = (dataSink == null) ? null : new NonFiniteToNullDataSink(dataSink);
         }
 
         /**
@@ -820,7 +823,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             } else if (field instanceof Tensor t) {
                 renderTensor(Optional.of(t));
             } else if (field instanceof FeatureData featureData) {
-                generator().writeRawValue(featureData.toJson(settings.tensorOptions));
+                featureData.asDataSource(settings.tensorOptions).emit(tensorDataSink());
             } else if (field instanceof Inspectable i) {
                 i.inspect().emit(dataSink());
             } else if (field instanceof DataSource ds) {
@@ -871,7 +874,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         private void renderTensor(Optional<Tensor> tensor) {
             var t = tensor.orElse(Tensor.Builder.of(TensorType.empty).build());
-            new TensorDataSource(t, settings.tensorOptions).emit(new NonFiniteToNullDataSink(dataSink()));
+            new TensorDataSource(t, settings.tensorOptions).emit(tensorDataSink());
         }
 
         private JsonGenerator generator() {
@@ -880,49 +883,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                                                         "All accept() methods must be overridden when sub-classing FieldConsumer");
             return generator;
         }
-
-        private JsonGeneratorDataSink dataSink() {
-            if (dataSink == null) {
-                throw new UnsupportedOperationException("DataSink required but not assigned. "
-                        + "All accept() methods must be overridden when sub-classing FieldConsumer without a generator");
-            }
-            return dataSink;
-        }
+        private JsonGeneratorDataSink dataSink() { generator(); return dataSink; }
+        private DataSink tensorDataSink() { generator(); return tensorDataSink; }
 
     }
 
-    /// Wraps a DataSink to convert non-finite double/float values (NaN, -Infinity, Infinity) to null,
-    /// to ensure the output is the same as from JsonRender. The Jackson generator by default produces
-    /// the strings "NaN", "-Infinity" and "Infinity" for such values.
-    private record NonFiniteToNullDataSink(DataSink delegate) implements DataSink {
-
-        @Override
-        public void doubleValue(double v) {
-            if (Double.isFinite(v)) {
-                delegate.doubleValue(v);
-            } else {
-                delegate.emptyValue();
-            }
-        }
-
-        @Override
-        public void floatValue(float v) {
-            if (Float.isFinite(v)) {
-                delegate.floatValue(v);
-            } else {
-                delegate.emptyValue();
-            }
-        }
-
-        @Override public void fieldName(String utf16, byte[] utf8) { delegate.fieldName(utf16, utf8); }
-        @Override public void startObject() { delegate.startObject(); }
-        @Override public void endObject() { delegate.endObject(); }
-        @Override public void startArray() { delegate.startArray(); }
-        @Override public void endArray() { delegate.endArray(); }
-        @Override public void emptyValue() { delegate.emptyValue(); }
-        @Override public void booleanValue(boolean v) { delegate.booleanValue(v); }
-        @Override public void longValue(long v) { delegate.longValue(v); }
-        @Override public void stringValue(String utf16, byte[] utf8) { delegate.stringValue(utf16, utf8); }
-        @Override public void dataValue(byte[] data) { delegate.dataValue(data); }
-    }
 }
