@@ -8413,7 +8413,8 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [
       "com.yahoo.data.access.Inspectable",
-      "com.yahoo.data.JsonProducer"
+      "com.yahoo.data.JsonProducer",
+      "com.yahoo.data.disclosure.DataSource"
     ],
     "attributes" : [
       "public"
@@ -8424,6 +8425,7 @@
       "public static com.yahoo.search.result.FeatureData empty()",
       "public com.yahoo.data.access.Inspector inspect()",
       "public java.lang.String toJson()",
+      "public void emit(com.yahoo.data.disclosure.DataSink)",
       "public java.lang.String toJson(boolean)",
       "public java.lang.String toJson(boolean, boolean)",
       "public java.lang.String toJson(com.yahoo.tensor.serialization.JsonFormat$EncodeOptions)",
@@ -8726,7 +8728,8 @@
     "interfaces" : [
       "com.yahoo.data.access.Inspectable",
       "com.yahoo.data.JsonProducer",
-      "com.yahoo.data.XmlProducer"
+      "com.yahoo.data.XmlProducer",
+      "com.yahoo.data.disclosure.DataSource"
     ],
     "attributes" : [
       "public"
@@ -8736,6 +8739,7 @@
       "public com.yahoo.data.access.Inspector inspect()",
       "public java.lang.String toString()",
       "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)",
       "public java.lang.StringBuilder writeXML(java.lang.StringBuilder)"
     ],
     "fields" : [ ]
@@ -8765,7 +8769,8 @@
     "interfaces" : [
       "com.yahoo.data.access.Inspectable",
       "com.yahoo.data.JsonProducer",
-      "com.yahoo.data.XmlProducer"
+      "com.yahoo.data.XmlProducer",
+      "com.yahoo.data.disclosure.DataSource"
     ],
     "attributes" : [
       "public"
@@ -8776,7 +8781,8 @@
       "public java.lang.String toString()",
       "public java.lang.StringBuilder writeXML(java.lang.StringBuilder)",
       "public java.lang.String toJson()",
-      "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)"
+      "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)"
     ],
     "fields" : [ ]
   },

@@ -4,6 +4,8 @@ package com.yahoo.search.result;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.Inspectable;
 import com.yahoo.data.access.Type;
+import com.yahoo.data.disclosure.DataSink;
+import com.yahoo.data.disclosure.DataSource;
 import com.yahoo.data.JsonProducer;
 import com.yahoo.data.XmlProducer;
 import com.yahoo.data.access.simple.JsonRender;
@@ -11,7 +13,7 @@ import com.yahoo.data.access.simple.JsonRender;
 /**
  * A wrapper for structured data representing an array of position values.
  */
-public class PositionsData implements Inspectable, JsonProducer, XmlProducer {
+public class PositionsData implements Inspectable, JsonProducer, XmlProducer, DataSource {
 
     private final Inspector value;
 
@@ -35,6 +37,11 @@ public class PositionsData implements Inspectable, JsonProducer, XmlProducer {
     @Override
     public StringBuilder writeJson(StringBuilder target) {
         return JsonRender.render(value, target, true);
+    }
+
+    @Override
+    public void emit(DataSink sink) {
+        inspect().emit(sink);
     }
 
     @Override

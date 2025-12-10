@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.Inspectable;
 import com.yahoo.data.access.Type;
+import com.yahoo.data.disclosure.DataSink;
 import com.yahoo.data.disclosure.DataSource;
 import com.yahoo.data.JsonProducer;
 import com.yahoo.data.access.simple.Value;
@@ -37,7 +38,7 @@ import java.util.Set;
  *
  * @author bratseth
  */
-public class FeatureData implements Inspectable, JsonProducer {
+public class FeatureData implements Inspectable, JsonProducer, DataSource {
 
     private static final JsonFactory jsonFactory = new JsonFactory();
 
@@ -89,6 +90,11 @@ public class FeatureData implements Inspectable, JsonProducer {
     @Override
     public String toJson() {
         return toJson(new JsonFormat.EncodeOptions());
+    }
+
+    @Override
+    public void emit(DataSink sink) {
+        asDataSource(new JsonFormat.EncodeOptions()).emit(sink);
     }
 
     public String toJson(boolean tensorShortForm) {
