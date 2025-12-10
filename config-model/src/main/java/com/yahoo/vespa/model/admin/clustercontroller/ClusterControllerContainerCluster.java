@@ -13,8 +13,6 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 
-import static java.util.logging.Level.INFO;
-
 /**
  * Container cluster for cluster-controller containers.
  *
@@ -69,13 +67,7 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
         // Increase in steps to avoid changes to heap size with small changes in node count.
         double adjustmentFactor = 0.75; // 0.75 MiB per node
         var step = totalNumberOfContentNodes / 50;
-        int adjustment = (int) (step * adjustmentFactor * 50);
-
-        if (adjustment > 0.0) {
-            log.log(INFO, "Increased cluster controller max heap size memory with " + adjustment +
-                    " MiB due to having many content nodes(" + totalNumberOfContentNodes + ")");
-        }
-        return adjustment;
+        return  (int) (step * adjustmentFactor * 50);
     }
 
     public ReindexingContext reindexingContext() { return reindexingContext; }

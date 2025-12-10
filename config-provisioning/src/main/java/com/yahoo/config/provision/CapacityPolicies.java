@@ -6,12 +6,10 @@ import com.yahoo.config.provision.NodeResources.DiskSpeed;
 
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Logger;
 
 import static com.yahoo.config.provision.NodeResources.Architecture;
 import static com.yahoo.config.provision.NodeResources.Architecture.x86_64;
 import static java.util.Objects.requireNonNull;
-import static java.util.logging.Level.INFO;
 
 /**
  * Defines the policies for assigning cluster capacity in various environments.
@@ -20,7 +18,6 @@ import static java.util.logging.Level.INFO;
  */
 public class CapacityPolicies {
 
-    private static final Logger log = Logger.getLogger(CapacityPolicies.class.getName());
     private static final NodeResources MIN_KUBERNETES_RESOURCES = new NodeResources(0.5, 1, 10, 0.3);
 
     public record Tuning(Architecture adminClusterArchitecture, double logserverMemoryGiB,
@@ -180,12 +177,7 @@ public class CapacityPolicies {
         var step = Math.min(4, count / 50); // max 4 steps (200+ nodes)
         double adjustment = step * adjustmentFactor;
 
-        double newMemory = memory + adjustment;
-        if (adjustment > 0) {
-            log.log(INFO, "Adjusted cluster controller memory (" + count + " content nodes): " +
-                    " from " + memory + " GiB " + "to " + newMemory + " GiB");
-        }
-        return newMemory;
+        return memory + adjustment;
     }
 
     private NodeResources logserverResources(Architecture architecture) {
