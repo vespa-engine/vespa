@@ -2,7 +2,8 @@
 export TOP := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
 export ARCH ?= $(shell if [[ $$(arch) == x86_64 ]]; then echo amd64; else echo arm64; fi)
-export ALMALINUX_MAJOR ?= $(shell grep -oP 'release \K[0-9]+' /etc/almalinux-release || echo 8)
+export VESPA_BUILDOS_LABEL ?= alma8
+export VESPA_MAJOR_VERSION_LABEL ?= vespa8
 
 export LOG_DIR ?= $(shell pwd)
 export SOURCE_DIR ?= $(shell pwd)

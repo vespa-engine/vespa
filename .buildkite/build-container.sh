@@ -16,7 +16,20 @@ if ! docker ps &> /dev/null; then
     exit 1
 fi
 
-echo "Detected running AlmaLinux: $ALMALINUX_MAJOR"
+case "${VESPA_BUILDOS_LABEL}" in
+    alma8)
+        VESPA_BASE_IMAGE="el8"
+        SYSTEM_TEST_BASE_IMAGE="almalinux:8"
+        ;;
+    alma9)
+        VESPA_BASE_IMAGE="el9"
+        SYSTEM_TEST_BASE_IMAGE="almalinux:9"
+        ;;
+    *)
+        echo "Unknown build os: ${VESPA_BUILDOS_LABEL}" 1>&2
+        exit 1
+        ;;
+esac
 
 echo "--- Setting up docker-image repository"
 if [[ ! -d "${WORKDIR}/docker-image" ]]; then
@@ -36,7 +49,6 @@ SOURCE_GITREF=$(git rev-parse HEAD)
 echo "--- Building Vespa preview container"
 GHCR_PREVIEW_TAG=ghcr.io/vespa-engine/vespa-preview-${ARCH}:${VESPA_VERSION}${VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX}
 echo "Building container with tag: ${GHCR_PREVIEW_TAG}"
-VESPA_BASE_IMAGE="el${ALMALINUX_MAJOR}"
 docker build --progress plain \
              --build-arg SOURCE_GITREF="$SOURCE_GITREF" \
              --build-arg VESPA_VERSION="$VESPA_VERSION" \
@@ -71,7 +83,6 @@ mv "$WORKDIR/docker-image/rpms" rpms
 echo "--- Building system-test container"
 DOCKER_SYSTEMTEST_TAG=docker.io/vespaengine/vespa-systemtest-preview-${ARCH}:${VESPA_VERSION}${VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX}
 echo "Building system-test container with tag: ${DOCKER_SYSTEMTEST_TAG}"
-SYSTEM_TEST_BASE_IMAGE="almalinux:${ALMALINUX_MAJOR}"
 docker build --progress=plain \
              --build-arg BASE_IMAGE="$SYSTEM_TEST_BASE_IMAGE" \
              --build-arg VESPA_BASE_IMAGE="${GHCR_PREVIEW_TAG}" \
