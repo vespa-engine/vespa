@@ -210,6 +210,7 @@ public class ModelContextImpl implements ModelContext {
         private final int searchCoreMaxOutstandingMoveOps;
         private final boolean useNewPrepareForRestart;
         private final double docprocHandlerThreadpool;
+        private final IntFlag heapSizePercentageFlag;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.useNonPublicEndpointForTest = Flags.USE_NON_PUBLIC_ENDPOINT_FOR_TEST.bindTo(source).with(appId).with(version).value();
@@ -236,6 +237,7 @@ public class ModelContextImpl implements ModelContext {
             this.rpc_events_before_wakeup = Flags.RPC_EVENTS_BEFORE_WAKEUP.bindTo(source).with(appId).with(version).value();
             this.queryDispatchWarmup = PermanentFlags.QUERY_DISPATCH_WARMUP.bindTo(source).with(appId).with(version).value();
             this.heapPercentage = PermanentFlags.HEAP_SIZE_PERCENTAGE.bindTo(source).with(appId).with(version).value();
+            this.heapSizePercentageFlag = PermanentFlags.HEAP_SIZE_PERCENTAGE.bindTo(source).with(appId).with(version);
             this.contentLayerMetadataFeatureLevel = Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL.bindTo(source).with(appId).with(version).value();
             this.unknownConfigDefinition = PermanentFlags.UNKNOWN_CONFIG_DEFINITION.bindTo(source).with(appId).with(version).value();
             this.sortBlueprintsByCost = PermanentFlags.SORT_BLUEPRINTS_BY_COST.bindTo(source).with(appId).with(version).value();
@@ -260,6 +262,9 @@ public class ModelContextImpl implements ModelContext {
 
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
         @Override public int heapSizePercentage() { return heapPercentage; }
+        @Override public int heapSizePercentage(Optional<String> clusterId) {
+            return clusterId.map(id -> heapSizePercentageFlag.with(ClusterSpec.Id.from(id)).value())
+                            .orElseGet(heapSizePercentageFlag::value); }
         @Override public double queryDispatchWarmup() { return queryDispatchWarmup; }
         @Override public String responseSequencerType() { return responseSequencer; }
         @Override public int defaultNumResponseThreads() { return numResponseThreads; }
@@ -337,6 +342,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> requestPrefixForLoggingContent;
         private final List<String> jdiscHttpComplianceViolations;
         private final StringFlag mallocImplFlag;
+        private final IntFlag heapSizePercentageFlag;
 
         public Properties(ApplicationId applicationId,
                           Version modelVersion,
@@ -388,6 +394,9 @@ public class ModelContextImpl implements ModelContext {
             this.mallocImplFlag = Flags.VESPA_USE_MALLOC_IMPL.bindTo(flagSource)
                     .with(applicationId)
                     .withVersion(Optional.of(modelVersion));
+            this.heapSizePercentageFlag = PermanentFlags.HEAP_SIZE_PERCENTAGE.bindTo(flagSource)
+                                                                             .with(applicationId)
+                                                                             .with(modelVersion);
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -461,6 +470,10 @@ public class ModelContextImpl implements ModelContext {
 
         @Override public int searchNodeInitializerThreads(String clusterId) {
             return intFlagValueForClusterId(searchNodeInitializerThreadsFlag, clusterId);
+        }
+
+        @Override public int heapSizePercentage(String clusterId) {
+            return intFlagValueForClusterId(heapSizePercentageFlag, clusterId);
         }
 
         @Override
