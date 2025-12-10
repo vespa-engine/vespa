@@ -539,9 +539,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (activeSession.isNewerThan(activeSessionAtCreate) &&
             activeSessionSessionId != sessionId) {
             String errMsg = activeSession.logPre() + "Cannot activate session " + sessionId +
-                            " because the currently active session (" + activeSessionSessionId +
-                            ") has changed since session " + sessionId + " was created (was " +
-                            activeSessionAtCreate + " at creation time)";
+                            " because another deployment (session "  + activeSessionSessionId + ")" +
+                            " has been activated after the start of processing this one," +
+                            " please try deploying again from start";
             if (ignoreStaleSessionFailure) {
                 log.warning(errMsg + " (Continuing because of force.)");
             } else {
@@ -555,7 +555,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (sessionId < currentActiveSessionId) {
             throw new ActivationConflictException("Cannot activate session " + sessionId +
                                                   ", because it is older than current active session (" +
-                                                  currentActiveSessionId + ")");
+                                                  currentActiveSessionId + "), please try deploying again from start");
         }
     }
 
