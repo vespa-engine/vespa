@@ -125,13 +125,23 @@ public class ExecutionContext {
     public Optional<DocumentId> getDocumentId() { return Optional.ofNullable(documentId); }
     public ExecutionContext setDocumentId(DocumentId id) { documentId = Objects.requireNonNull(id); return this; }
 
-    /** Clears all state in this except the cache. */
+    /**
+     * Clears all state in this pertaining to the current indexing statement
+     * Does not clear the cache.
+     * Note that assignLanguage is not cleared; an indexing statement doing
+     * set_language should affect following statements.
+     */
     public ExecutionContext clear() {
-        // Why is language not cleared?
+        // We do not really want to clear variables here, but because
+        // indexing statements are re-ordered letting them survive
+        // will be even more confusing than clearing them.
         variables.clear();
+        // We should probably clear detectedLanguage, but
+        // it looks like the statements that use it will reset it
+        // using resolveLanguage anyway.
+        // TODO: detectedLanguage = Language.UNKNOWN;
         currentValue = null;
-        documentId = null;
-        // note: must not reset global configuration values (like isReindexingOperation)
+        // note: must not reset per-document or global values (like isReindexingOperation)
         return this;
     }
 
