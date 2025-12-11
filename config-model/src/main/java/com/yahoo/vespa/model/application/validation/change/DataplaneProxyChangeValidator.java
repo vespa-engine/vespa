@@ -22,6 +22,7 @@ public class DataplaneProxyChangeValidator implements ChangeValidator {
     public void validate(ChangeContext context) {
         var previousClustersWithProxy = findClustersWithDataplaneProxy(context.previousModel());
         var nextClustersWithProxy = findClustersWithDataplaneProxy(context.model());
+        var nextClusters = findAllClusters(context.model());
 
         // Detect additions
         for (var entry : nextClustersWithProxy.entrySet()) {
@@ -37,13 +38,18 @@ public class DataplaneProxyChangeValidator implements ChangeValidator {
         // Detect removals
         for (var clusterId : previousClustersWithProxy.keySet()) {
             if (!nextClustersWithProxy.containsKey(clusterId)) {
-                var cluster = previousClustersWithProxy.get(clusterId);
+                var cluster = nextClusters.get(clusterId);
                 cluster.setDeferChangesUntilRestart(true);
                 var message = "Token endpoint was disabled for cluster '%s', services require restart"
                         .formatted(clusterId);
                 context.require(createRestartAction(cluster, message));
             }
         }
+    }
+
+    private static Map<ClusterSpec.Id, ApplicationContainerCluster> findAllClusters(VespaModel model) {
+        return model.getContainerClusters().values().stream()
+                .collect(Collectors.toMap(ApplicationContainerCluster::id, cluster -> cluster));
     }
 
     private static Map<ClusterSpec.Id, ApplicationContainerCluster> findClustersWithDataplaneProxy(VespaModel model) {
