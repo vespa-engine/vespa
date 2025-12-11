@@ -47,7 +47,7 @@ public class XGBoostImportTestCase {
 
         // UBJ should include the base_score logit transformation
         assertTrue("UBJ expression should contain base_score adjustment",
-                ubjExprStr.contains("log(0.6274165)"));
+                ubjExprStr.contains(" 0.52114942"));
 
         // UBJ expression should start with the same tree expressions as JSON
         assertTrue("UBJ should contain tree expressions",

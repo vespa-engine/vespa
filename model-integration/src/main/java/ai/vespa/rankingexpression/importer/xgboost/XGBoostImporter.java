@@ -26,8 +26,7 @@ public class XGBoostImporter extends ModelImporter {
         if ( ! modelFile.isFile()) return false;
 
         if (modelFile.toString().endsWith(".ubj")) {
-            // for now
-            return true;
+            return XGBoostUbjParser.probe(modelPath);
         }
         return modelFile.toString().endsWith(".json") && probe(modelFile);
     }

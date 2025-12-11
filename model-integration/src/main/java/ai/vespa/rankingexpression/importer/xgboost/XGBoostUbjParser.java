@@ -23,6 +23,73 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
     private final double baseScore;
 
     /**
+     * Probes a file to check if it looks like an XGBoost UBJ model.
+     * This performs minimal parsing to validate the structure.
+     *
+     * @param filePath Path to the file to probe.
+     * @return true if the file appears to be an XGBoost UBJ model.
+     */
+    static boolean probe(String filePath) {
+        try (FileInputStream fileStream = new FileInputStream(filePath);
+             UBReader reader = new UBReader(fileStream)) {
+            UBValue root = reader.read();
+
+            // Check if it's an array (simple format)
+            if (root.isArray()) {
+                UBArray array = root.asArray();
+                // Should have at least one tree
+                if (array.size() == 0) return false;
+                // First element should be an object with tree structure
+                if (!array.get(0).isObject()) return false;
+                UBObject firstTree = array.get(0).asObject();
+                return hasTreeStructure(firstTree);
+            }
+
+            // Check if it's an object (full format with learner)
+            if (root.isObject()) {
+                UBObject rootObj = root.asObject();
+                UBValue learnerValue = rootObj.get("learner");
+                if (learnerValue == null || !learnerValue.isObject()) return false;
+
+                UBObject learner = learnerValue.asObject();
+                UBValue gradientBoosterValue = learner.get("gradient_booster");
+                if (gradientBoosterValue == null || !gradientBoosterValue.isObject()) return false;
+
+                UBObject gradientBooster = gradientBoosterValue.asObject();
+                UBValue modelValue = gradientBooster.get("model");
+                if (modelValue == null || !modelValue.isObject()) return false;
+
+                UBObject model = modelValue.asObject();
+                UBValue treesValue = model.get("trees");
+                if (treesValue == null || !treesValue.isArray()) return false;
+
+                // Looks like a valid XGBoost model structure
+                return true;
+            }
+
+            return false;
+        } catch (IOException | RuntimeException e) {
+            // Any error during probing means it's not a valid XGBoost UBJ file
+            return false;
+        }
+    }
+
+    /**
+     * Checks if a UBObject has the expected XGBoost tree structure.
+     *
+     * @param treeObj Object to check.
+     * @return true if it has expected tree arrays.
+     */
+    private static boolean hasTreeStructure(UBObject treeObj) {
+        // Check for required tree arrays
+        return treeObj.get("left_children") != null &&
+               treeObj.get("right_children") != null &&
+               treeObj.get("split_conditions") != null &&
+               treeObj.get("split_indices") != null &&
+               treeObj.get("base_weights") != null;
+    }
+
+    /**
      * Constructor stores parsed UBJ trees.
      *
      * @param filePath XGBoost UBJ input file.
@@ -80,9 +147,10 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
             result.append(treeToRankExp(xgboostTrees.get(i)));
         }
 
-        // Add base_score logit transformation
+        // Add precomputed base_score logit transformation
+        double baseScoreLogit = Math.log(baseScore) - Math.log(1.0 - baseScore);
         result.append(" + \n");
-        result.append("log(").append(baseScore).append(") - log(").append(1.0 - baseScore).append(")");
+        result.append(baseScoreLogit);
 
         return result.toString();
     }
