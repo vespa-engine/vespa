@@ -35,6 +35,7 @@ com.ibm.icu:icu4j:${icu4j.vespa.version}
 com.kotcrab.remark:remark:1.0.0
 com.microsoft.onnxruntime:onnxruntime:${onnxruntime.vespa.version}
 com.networknt:json-schema-validator:1.5.7
+com.nimbusds:nimbus-jose-jwt:10.6
 com.openai:openai-java-client-okhttp:${openai-java.vespa.version}
 com.openai:openai-java-core:${openai-java.vespa.version}
 com.openai:openai-java:${openai-java.vespa.version}
@@ -70,6 +71,7 @@ com.vladsch.flexmark:flexmark-util-visitor:0.64.8
 com.vladsch.flexmark:flexmark-util:0.64.8
 com.vladsch.flexmark:flexmark:0.64.8
 com.yahoo.athenz:athenz-auth-core:${athenz.vespa.version}
+com.yahoo.athenz:athenz-cert-refresher:${athenz.vespa.version}
 com.yahoo.athenz:athenz-client-common:${athenz.vespa.version}
 com.yahoo.athenz:athenz-zms-core:${athenz.vespa.version}
 com.yahoo.athenz:athenz-zpe-java-client:${athenz.vespa.version}
