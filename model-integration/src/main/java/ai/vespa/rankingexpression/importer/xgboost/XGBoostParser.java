@@ -69,12 +69,16 @@ class XGBoostParser {
                 trueExp = treeToRankExp(node.getChildren().get(1));
                 falseExp = treeToRankExp(node.getChildren().get(0));
             }
+            // xgboost uses float only internally, so round to closest float
+            float xgbSplitPoint = (float)node.getSplit_condition();
+            // but Vespa expects rank profile literals in double precision:
+            double vespaSplitPoint = xgbSplitPoint;
             String condition;
             if (node.getMissing() == node.getYes()) {
                 // Note: this is for handling missing features, as the backend handles comparison with NaN as false.
-                condition = "!(" + node.getSplit() + " >= " + node.getSplit_condition() + ")";
+                condition = "!(" + node.getSplit() + " >= " + vespaSplitPoint + ")";
             } else {
-                condition = node.getSplit() + " < " + node.getSplit_condition();
+                condition = node.getSplit() + " < " + vespaSplitPoint;
             }
             return "if (" + condition + ", " + trueExp + ", " + falseExp + ")";
         }
