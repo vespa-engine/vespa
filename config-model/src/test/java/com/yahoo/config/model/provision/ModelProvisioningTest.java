@@ -1613,7 +1613,7 @@ public class ModelProvisioningTest {
             fail("expected failure");
         } catch (IllegalArgumentException e) {
             assertEquals("In content cluster 'bar': Clusters in hosted environments must have a <nodes count='N'> tag\n" +
-                         "matching all zones, and having no <node> subtags,\nsee https://docs.vespa.ai/en/reference/services/services.html#nodes",
+                         "matching all zones, and having no <node> subtags,\nsee https://docs.vespa.ai/en/reference/applications/services/services.html#nodes",
                          Exceptions.toMessageString(e));
         }
     }
