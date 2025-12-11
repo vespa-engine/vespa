@@ -538,14 +538,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                             ", current active session=" + activeSessionSessionId);
         if (activeSession.isNewerThan(activeSessionAtCreate) &&
             activeSessionSessionId != sessionId) {
-            String errMsg = activeSession.logPre() + "Cannot activate session " + sessionId +
-                            " because another deployment (session "  + activeSessionSessionId + ")" +
-                            " has been activated after the start of processing this one," +
-                            " please try deploying again from start";
+            String errMsg = activeSession.logPre() + "This session " + sessionId +
+                            " was prepared when session "+ activeSessionAtCreate + " was active," +
+                            " but session " + activeSessionSessionId + " has since become active:";
             if (ignoreStaleSessionFailure) {
-                log.warning(errMsg + " (Continuing because of force.)");
+                log.warning(errMsg + " will activate anyway (by force)");
             } else {
-                throw new ActivationConflictException(errMsg);
+                throw new ActivationConflictException(errMsg + " refusing to activate this session, please redeploy");
             }
         }
     }

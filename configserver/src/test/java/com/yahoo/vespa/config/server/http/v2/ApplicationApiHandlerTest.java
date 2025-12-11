@@ -321,7 +321,7 @@ class ApplicationApiHandlerTest {
                        """
                        {
                          "error-code": "ACTIVATION_CONFLICT",
-                         "message": "app:test.default.default Cannot activate session 4 because another deployment (session 3) has been activated after the start of processing this one, please try deploying again from start"
+                         "message": "app:test.default.default This session 4 was prepared when session 2 was active, but session 3 has since become active: refusing to activate this session, please redeploy"
                        }
                        """);
 
