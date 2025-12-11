@@ -16,17 +16,6 @@
         <version>8-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <!-- Avoid import of error_prone Java package -->
-                <groupId>com.google.errorprone</groupId>
-                <artifactId>error_prone_annotations</artifactId>
-                <version>${error-prone-annotations.vespa.version}</version>
-                <scope>compile</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
     <dependencies>
         <!-- provided -->
         <dependency>
@@ -281,9 +270,6 @@
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
-                <configuration>
-                    <allowEmbeddedArtifacts>com.google.errorprone:error_prone_annotations</allowEmbeddedArtifacts>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
