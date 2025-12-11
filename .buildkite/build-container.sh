@@ -34,7 +34,7 @@ esac
 echo "--- Setting up docker-image repository"
 if [[ ! -d "${WORKDIR}/docker-image" ]]; then
     echo "Cloning docker-image repository..."
-    git clone --depth 1 https://github.com/vespa-engine/docker-image "$WORKDIR/docker-image"
+    git clone --quiet --depth 1 https://github.com/vespa-engine/docker-image "$WORKDIR/docker-image"
 else
     echo "Using existing docker-image repository"
 fi
@@ -63,7 +63,7 @@ echo "--- Setting up system-test repository"
 cd "$WORKDIR"
 if [[ ! -d $WORKDIR/system-test ]]; then
     echo "Cloning system-test repository..."
-    git clone --filter="blob:none" https://github.com/vespa-engine/system-test
+    git clone --quiet --filter="blob:none" https://github.com/vespa-engine/system-test
 else
     echo "Using existing system-test repository"
 fi
