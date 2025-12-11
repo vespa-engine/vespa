@@ -345,9 +345,6 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
         }
         global_filter = GlobalFilter::create();
     }
-    if (trace) {
-        trace->addEvent(5, "Handle global filter in query execution plan");
-    }
     if (use_lazy_filter) {
         if (lazy_filter->is_active()) {
             if (trace && trace->shouldTrace(5)) {
@@ -356,6 +353,9 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
             }
             blueprint.set_lazy_filter(*lazy_filter);
         }
+    }
+    if (trace) {
+        trace->addEvent(5, "Handle global filter in query execution plan");
     }
     blueprint.set_global_filter(*global_filter, estimated_hit_ratio);
     return true;
