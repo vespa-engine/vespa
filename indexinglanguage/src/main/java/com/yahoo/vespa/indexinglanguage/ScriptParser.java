@@ -45,10 +45,11 @@ public final class ScriptParser {
         IndexingParser parser = new IndexingParser(input);
         parser.setDefaultFieldName(context.getDefaultFieldName());
         parser.setLinguistics(context.getLinguistcs());
+        parser.setGlobalAnnotatorConfig(context.getAnnotatorConfig());
         parser.setChunkers(context.getChunkers());
         parser.setEmbedders(context.getEmbedders());
         parser.setGenerators(context.getGenerators());
-        
+
         try {
             return method.call(parser);
         } catch (ParseException e) {
