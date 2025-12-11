@@ -27,7 +27,7 @@ public class ExecutionContext {
     private final Map<Object, Object> cache = LazyMap.newHashMap();
     // Document id is practical for logging and informative error messages
     private DocumentId documentId;
-    private boolean isReindexingOperation;
+    private boolean isReindexingOperation = false;
 
     public ExecutionContext() {
         this(null);
@@ -131,7 +131,7 @@ public class ExecutionContext {
         variables.clear();
         currentValue = null;
         documentId = null;
-        isReindexingOperation = false;
+        // note: must not reset global configuration values (like isReindexingOperation)
         return this;
     }
 
