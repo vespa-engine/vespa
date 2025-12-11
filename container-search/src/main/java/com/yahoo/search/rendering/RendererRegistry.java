@@ -97,7 +97,6 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
     public com.yahoo.processing.rendering.Renderer<Result> getRenderer(ComponentSpecification format) {
         if (format == null || format.stringValue().equals("default")) return getDefaultRenderer();
         if (format.stringValue().equals("json")) return getComponent(jsonRendererId);
-        if (format.stringValue().equals("cbor")) return getComponent(jsonRendererId);
         if (format.stringValue().equals("xml")) return getComponent(xmlRendererId);
         if (format.stringValue().equals("page")) return getComponent(pageRendererId);
         if (format.stringValue().equals("sse")) return getComponent(eventRendererId);

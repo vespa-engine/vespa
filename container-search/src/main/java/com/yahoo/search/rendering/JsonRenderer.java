@@ -10,8 +10,6 @@ import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.core.TreeNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import com.google.common.base.Preconditions;
 import com.yahoo.container.logging.TraceRenderer;
 import com.yahoo.data.JsonProducer;
@@ -124,24 +122,16 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private static final String GROUPING_VALUE = "value";
     private static final String VESPA_HIDDEN_FIELD_PREFIX = "$";
 
-    private static final JsonFactory jsonGeneratorFactory = createJsonFactory();
-    private static final CBORFactory cborGeneratorFactory = createCborFactory();
+    private static final JsonFactory generatorFactory = createGeneratorFactory();
 
     private volatile JsonGenerator generator;
     private volatile FieldConsumer fieldConsumer;
     private volatile Deque<Integer> renderedChildren;
-    private volatile RenderTarget renderTarget = RenderTarget.Json;
 
     /** Which target we are rendering to */
     enum RenderTarget {
-        Json("application/json"),
-        Cbor("application/cbor");
-
-        final String mimeType;
-
-        RenderTarget(String mimeType) {
-            this.mimeType = mimeType;
-        }
+        Json,
+        Cbor
     }
 
     static class FieldConsumerSettings {
@@ -200,18 +190,10 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         super(executor);
     }
 
-    private static JsonFactory createJsonFactory() {
+    private static JsonFactory createGeneratorFactory() {
         return Jackson.createMapper(new JsonFactoryBuilder()
                 .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build()))
                 .disable(FLUSH_AFTER_WRITE_VALUE).getFactory();
-    }
-
-    private static CBORFactory createCborFactory() {
-        CBORFactory factory = new CBORFactory();
-        factory.setStreamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build());
-        ObjectMapper mapper = new ObjectMapper(factory);
-        mapper.disable(FLUSH_AFTER_WRITE_VALUE);
-        return (CBORFactory) mapper.getFactory();
     }
 
     @Override
@@ -228,39 +210,14 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     @Override
     public void beginResponse(OutputStream stream) throws IOException {
         long renderingStartTimeMs = timeSource.getAsLong();
-
-        // Determine output format from query parameter or Accept header
-        renderTarget = determineRenderTarget();
-        fieldConsumerSettings.renderTarget = renderTarget;
-
         beginJsonCallback(stream);
         fieldConsumerSettings.getSettings(getResult().getQuery());
-
-        // Select appropriate factory based on format
-        JsonFactory factory = (renderTarget == RenderTarget.Cbor) ? cborGeneratorFactory : jsonGeneratorFactory;
-        setGenerator(factory.createGenerator(stream, JsonEncoding.UTF8), fieldConsumerSettings);
-
+        setGenerator(generatorFactory.createGenerator(stream, JsonEncoding.UTF8), fieldConsumerSettings);
         renderedChildren = new ArrayDeque<>();
         generator.writeStartObject();
         renderTrace(getExecution().trace());
         renderTiming(renderingStartTimeMs);
         generator.writeFieldName(ROOT);
-    }
-
-    private RenderTarget determineRenderTarget() {
-        Query query = getResult().getQuery();
-        if (query == null) return RenderTarget.Json;
-
-        // Check format query parameter first (takes precedence)
-        String format = query.getPresentation().getFormat();
-        if (format != null && format.equalsIgnoreCase("cbor")) {
-            return RenderTarget.Cbor;
-        }
-
-        // TODO: Check Accept header if format parameter not specified
-        // This would require access to the HTTP request which isn't available here
-
-        return RenderTarget.Json;
     }
 
     private void renderTiming(long renderingStartTimeMs) throws IOException {
@@ -544,7 +501,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     @Override
     public String getMimeType() {
-        return renderTarget.mimeType;
+        return "application/json";
     }
 
     private Result getResult() {
