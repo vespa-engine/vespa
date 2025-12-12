@@ -43,7 +43,6 @@
                                     <allowed>
                                         <!-- MUST BE KEPT IN SYNC WITH container-dependencies-enforcer pom -->
                                         <include>aopalliance:aopalliance:${aopalliance.vespa.version}:provided</include>
-                                        <include>com.dev-smart:ubjson:jar:*:*</include>
                                         <include>com.fasterxml.jackson.core:jackson-annotations:${jackson2.vespa.version}:provided</include>
                                         <include>com.fasterxml.jackson.core:jackson-core:${jackson2.vespa.version}:provided</include>
                                         <include>com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}:provided</include>

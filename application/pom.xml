@@ -53,6 +53,10 @@
           <groupId>javax.annotation</groupId>
           <artifactId>javax.annotation-api</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.dev-smart</groupId>
+          <artifactId>ubjson</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>

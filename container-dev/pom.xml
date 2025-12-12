@@ -94,6 +94,10 @@
           <groupId>org.lz4</groupId>
           <artifactId>lz4-java</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.dev-smart</groupId>
+          <artifactId>ubjson</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
