@@ -148,7 +148,8 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
         this.baseScore = tmpBaseScore;
 
         // Check for optional feature names file (e.g., foobar-features.txt for foobar.ubj)
-        List<String> overrideFeatureNames = loadFeatureNamesFromFile(filePath);
+        String featuresPath = withFeaturesSuffix(filePath);
+        List<String> overrideFeatureNames = loadFeatureNamesFromFile(featuresPath);
         if (overrideFeatureNames != null) {
             tmpFeatureNames = overrideFeatureNames;
         }
@@ -165,14 +166,9 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
      * @return Vespa ranking expressions.
      */
     String toRankingExpression() {
-        // Check if we have valid feature names loaded
         if (!featureNames.isEmpty()) {
-            try {
-                // Try to use the loaded feature names
-                return toRankingExpression(featureNames);
-            } catch (IllegalArgumentException e) {
-                // Feature names don't match required count, fall through to indexed format
-            }
+            // note: requires exactly the correct number of feature names.
+            return toRankingExpression(featureNames);
         }
 
         // Use indexed format (xgboost_input_X)
@@ -203,7 +199,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
      * @throws IllegalArgumentException if customFeatureNames is insufficient for the indices used
      */
     String toRankingExpression(List<String> customFeatureNames) {
-        // Validate that we have enough feature names
+        // Validate that we have the right number of feature names
         validateFeatureNames(customFeatureNames);
 
         StringBuilder result = new StringBuilder();
@@ -329,6 +325,13 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
         return "if (" + condition + ", " + trueExp + ", " + falseExp + ")";
     }
 
+    private static String withFeaturesSuffix(String ubjFilePath) {
+        if (ubjFilePath.endsWith(".ubj")) {
+            ubjFilePath = ubjFilePath.substring(0, ubjFilePath.length() - 4);
+        }
+        return ubjFilePath + "-features.txt";
+    }
+
     /**
      * Attempts to load feature names from an optional text file.
      * For a UBJ file "path/to/model.ubj", looks for "path/to/model-features.txt".
@@ -337,9 +340,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
      * @param ubjFilePath Path to the UBJ file
      * @return List of feature names if file exists and is valid, null otherwise
      */
-    private static List<String> loadFeatureNamesFromFile(String ubjFilePath) {
-        // Construct the features file path by replacing .ubj with -features.txt
-        String featuresFilePath = ubjFilePath.replaceFirst("\\.ubj$", "-features.txt");
+    private static List<String> loadFeatureNamesFromFile(String featuresFilePath) {
         Path path = Paths.get(featuresFilePath);
 
         if (!Files.exists(path)) {
