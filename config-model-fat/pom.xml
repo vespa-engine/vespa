@@ -77,6 +77,7 @@
              -->
             <Import-Package>
               com.google.inject, <!-- must use @Inject exported from container -->
+              !com.fasterxml.jackson.dataformat.cbor, <!-- Don't import CBOR package - it's not available at runtime -->
               com.fasterxml.*, <!-- expands to all Jackson packages by Felix plugin -->
               com.yahoo.component,
               com.yahoo.component.provider,
