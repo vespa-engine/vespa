@@ -28,6 +28,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
     private final List<XGBoostTree> xgboostTrees;
     private final double baseScore;
     private final List<String> featureNames;
+    private final String objective;
 
     /**
      * Probes a file to check if it looks like an XGBoost UBJ model.
@@ -106,6 +107,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
         this.xgboostTrees = new ArrayList<>();
         double tmpBaseScore = 0.5; // default value
         List<String> tmpFeatureNames = new ArrayList<>();
+        String tmpObjective = "reg:squarederror"; // default objective if not found
         try (FileInputStream fileStream = new FileInputStream(filePath);
              UBReader reader = new UBReader(fileStream)) {
             UBValue root = reader.read();
@@ -118,8 +120,11 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
                 UBObject rootObj = root.asObject();
                 UBObject learner = getRequiredObject(rootObj, "learner", "UBJ root");
 
+                // Extract objective if available
+                tmpObjective = extractObjective(learner);
+
                 // Extract base_score if available
-                tmpBaseScore = extractBaseScore(learner);
+                tmpBaseScore = extractBaseScore(learner, tmpObjective);
 
                 // Extract feature_names if available
                 UBValue featureNamesValue = learner.get("feature_names");
@@ -146,6 +151,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
             }
         }
         this.baseScore = tmpBaseScore;
+        this.objective = tmpObjective;
 
         // Check for optional feature names file (e.g., foobar-features.txt for foobar.ubj)
         String featuresPath = withFeaturesSuffix(filePath);
@@ -167,7 +173,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
      */
     String toRankingExpression() {
         if (!featureNames.isEmpty()) {
-            // note: requires exactly the correct number of feature names.
+            // note: requires enough feature names.
             return toRankingExpression(featureNames);
         }
 
@@ -182,10 +188,20 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
             result.append(treeToRankExp(xgboostTrees.get(i)));
         }
 
-        // Add precomputed base_score logit transformation
-        double baseScoreLogit = Math.log(baseScore) - Math.log(1.0 - baseScore);
+        // Add base_score, with logit transformation only for logistic objectives
         result.append(" + \n");
-        result.append(baseScoreLogit);
+        if (objective.endsWith(":logistic")) {
+            if (baseScore > 0.0 && baseScore < 1.0) {
+                // Add precomputed base_score logit transformation
+                double baseScoreLogit = Math.log(baseScore) - Math.log(1.0 - baseScore);
+                result.append(baseScoreLogit);
+            } else {
+                System.err.println("Bad basescore " + baseScore + " for logistic model, should be in range (0.0, 1.0)");
+                result.append("0.0");
+            }
+        } else {
+            result.append(baseScore);
+        }
 
         return result.toString();
     }
@@ -211,10 +227,14 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
             result.append(treeToRankExpWithFeatureNames(xgboostTrees.get(i), customFeatureNames));
         }
 
-        // Add precomputed base_score logit transformation
-        double baseScoreLogit = Math.log(baseScore) - Math.log(1.0 - baseScore);
+        // Add base_score, with logit transformation only for logistic objectives
         result.append(" + \n");
-        result.append(baseScoreLogit);
+        if (objective.endsWith(":logistic")) {
+            double baseScoreLogit = Math.log(baseScore) - Math.log(1.0 - baseScore);
+            result.append(baseScoreLogit);
+        } else {
+            result.append(baseScore);
+        }
 
         return result.toString();
     }
@@ -234,9 +254,9 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
         int maxIndex = findMaxFeatureIndex();
         int requiredSize = maxIndex + 1;
 
-        if (customFeatureNames.size() != requiredSize) {
+        if (customFeatureNames.size() < requiredSize) {
             throw new IllegalArgumentException(
-                "Feature names list size mismatch: model requires exactly " + requiredSize +
+                "Feature names list size mismatch: model requires at least " + requiredSize +
                 " feature names (indices 0-" + maxIndex + ") but " +
                 customFeatureNames.size() + " names provided"
             );
@@ -388,7 +408,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
      * @param learner The learner UBObject.
      * @return The extracted base_score, or 0.5 if not found.
      */
-    private static double extractBaseScore(UBObject learner) {
+    private static double extractBaseScore(UBObject learner, String objective) {
         UBValue learnerModelParamValue = learner.get("learner_model_param");
         if (learnerModelParamValue != null && learnerModelParamValue.isObject()) {
             UBObject learnerModelParam = learnerModelParamValue.asObject();
@@ -400,7 +420,29 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
                 return Double.parseDouble(baseScoreStr);
             }
         }
-        return 0.5; // default value
+        if (objective != null && objective.endsWith(":logistic")) {
+            return 0.5; // default value for logistic
+        } else {
+            return 0.0; // default value for simple regression
+        }
+    }
+
+    /**
+     * Extracts the objective name from the objective object if available.
+     *
+     * @param learner The learner UBObject.
+     * @return The extracted objective name, or "reg:squarederror" if not found.
+     */
+    private static String extractObjective(UBObject learner) {
+        UBValue objectiveValue = learner.get("objective");
+        if (objectiveValue != null && objectiveValue.isObject()) {
+            UBObject objective = objectiveValue.asObject();
+            UBValue nameValue = objective.get("name");
+            if (nameValue != null && nameValue.isString()) {
+                return nameValue.asString();
+            }
+        }
+        return "reg:squarederror"; // default objective if not found
     }
 
     /**
