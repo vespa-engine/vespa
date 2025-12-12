@@ -251,14 +251,11 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         Query query = getResult().getQuery();
         if (query == null) return RenderTarget.Json;
 
-        // Check format query parameter first (takes precedence)
+        // Format is set by SearchHandler based on query parameter or Accept header
         String format = query.getPresentation().getFormat();
         if (format != null && format.equalsIgnoreCase("cbor")) {
             return RenderTarget.Cbor;
         }
-
-        // TODO: Check Accept header if format parameter not specified
-        // This would require access to the HTTP request which isn't available here
 
         return RenderTarget.Json;
     }
