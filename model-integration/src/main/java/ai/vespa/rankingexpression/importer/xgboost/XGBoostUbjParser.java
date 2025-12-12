@@ -6,9 +6,14 @@ import com.devsmart.ubjson.UBObject;
 import com.devsmart.ubjson.UBReader;
 import com.devsmart.ubjson.UBValue;
 
+import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -141,15 +146,36 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
             }
         }
         this.baseScore = tmpBaseScore;
+
+        // Check for optional feature names file (e.g., foobar-features.txt for foobar.ubj)
+        List<String> overrideFeatureNames = loadFeatureNamesFromFile(filePath);
+        if (overrideFeatureNames != null) {
+            tmpFeatureNames = overrideFeatureNames;
+        }
+
         this.featureNames = Collections.unmodifiableList(tmpFeatureNames);
     }
 
     /**
      * Converts parsed UBJ trees to Vespa ranking expressions.
+     * If feature names were loaded from a -features.txt file or extracted from the UBJ file,
+     * and they match the required count, they will be used automatically.
+     * Otherwise, uses indexed format (xgboost_input_X).
      *
      * @return Vespa ranking expressions.
      */
     String toRankingExpression() {
+        // Check if we have valid feature names loaded
+        if (!featureNames.isEmpty()) {
+            try {
+                // Try to use the loaded feature names
+                return toRankingExpression(featureNames);
+            } catch (IllegalArgumentException e) {
+                // Feature names don't match required count, fall through to indexed format
+            }
+        }
+
+        // Use indexed format (xgboost_input_X)
         StringBuilder result = new StringBuilder();
 
         // Convert all trees to expressions and join with " + "
@@ -301,6 +327,41 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
         }
 
         return "if (" + condition + ", " + trueExp + ", " + falseExp + ")";
+    }
+
+    /**
+     * Attempts to load feature names from an optional text file.
+     * For a UBJ file "path/to/model.ubj", looks for "path/to/model-features.txt".
+     * Each line in the file should contain one feature name.
+     *
+     * @param ubjFilePath Path to the UBJ file
+     * @return List of feature names if file exists and is valid, null otherwise
+     */
+    private static List<String> loadFeatureNamesFromFile(String ubjFilePath) {
+        // Construct the features file path by replacing .ubj with -features.txt
+        String featuresFilePath = ubjFilePath.replaceFirst("\\.ubj$", "-features.txt");
+        Path path = Paths.get(featuresFilePath);
+
+        if (!Files.exists(path)) {
+            return null; // File doesn't exist, that's okay
+        }
+
+        try {
+            List<String> featureNames = new ArrayList<>();
+            try (BufferedReader reader = new BufferedReader(new FileReader(featuresFilePath))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    if (!line.isEmpty() && !line.startsWith("#")) {
+                        featureNames.add(line);
+                    }
+                }
+            }
+            return featureNames.isEmpty() ? null : featureNames;
+        } catch (IOException e) {
+            // If we can't read the file, just return null and use default naming
+            return null;
+        }
     }
 
     /**

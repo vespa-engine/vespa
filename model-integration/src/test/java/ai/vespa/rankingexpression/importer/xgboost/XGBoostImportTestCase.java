@@ -55,15 +55,15 @@ public class XGBoostImportTestCase {
         assertTrue("UBJ expression should contain base_score adjustment",
                 ubjExprStr.contains(" 0.52114942"));
 
-        // Both formats should use xgboost_input_X format
-        assertTrue("UBJ should use xgboost_input_ format",
-                ubjExprStr.contains("xgboost_input_"));
+        // JSON should use xgboost_input_X format (from the JSON file)
         assertTrue("JSON should use xgboost_input_ format",
                 jsonExprStr.contains("xgboost_input_"));
 
-        // UBJ expression should start with the same tree expressions as JSON
-        assertTrue("UBJ should contain tree expressions matching JSON",
-                ubjExprStr.startsWith(jsonExprStr));
+        // UBJ should use feature names (auto-loaded from binary_breast_cancer-features.txt)
+        assertTrue("UBJ should use feature names from file",
+                ubjExprStr.contains("mean_radius"));
+        assertFalse("UBJ should not use indexed format",
+                ubjExprStr.contains("xgboost_input_"));
     }
 
     @Test
@@ -117,6 +117,21 @@ public class XGBoostImportTestCase {
         assertThrows(IllegalArgumentException.class, () -> {
             parser.toRankingExpression(featureNames);
         });
+    }
+
+    @Test
+    public void testXGBoostUBJAutoLoadFeatureNames() throws IOException {
+        // The binary_breast_cancer-features.txt file should be automatically loaded
+        XGBoostUbjParser parser = new XGBoostUbjParser("src/test/models/xgboost/binary_breast_cancer.ubj");
+
+        // Call no-arg toRankingExpression() - should use feature names from file
+        String expression = parser.toRankingExpression();
+        assertNotNull(expression);
+
+        // Verify that custom feature names are used (from the -features.txt file)
+        assertTrue("Expression should contain feature name from file", expression.contains("mean_radius"));
+        assertTrue("Expression should contain feature name from file", expression.contains("worst_texture"));
+        assertFalse("Expression should not contain indexed format", expression.contains("xgboost_input_"));
     }
 
 }
