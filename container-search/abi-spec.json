@@ -7954,37 +7954,6 @@
     ],
     "fields" : [ ]
   },
-  "com.yahoo.search.rendering.NonFiniteToNullDataSink" : {
-    "superClass" : "java.lang.Record",
-    "interfaces" : [
-      "com.yahoo.data.disclosure.DataSink"
-    ],
-    "attributes" : [
-      "public",
-      "final",
-      "record"
-    ],
-    "methods" : [
-      "public void <init>(com.yahoo.data.disclosure.DataSink)",
-      "public void doubleValue(double)",
-      "public void floatValue(float)",
-      "public void fieldName(java.lang.String, byte[])",
-      "public void startObject()",
-      "public void endObject()",
-      "public void startArray()",
-      "public void endArray()",
-      "public void emptyValue()",
-      "public void booleanValue(boolean)",
-      "public void longValue(long)",
-      "public void stringValue(java.lang.String, byte[])",
-      "public void dataValue(byte[])",
-      "public final java.lang.String toString()",
-      "public final int hashCode()",
-      "public final boolean equals(java.lang.Object)",
-      "public com.yahoo.data.disclosure.DataSink delegate()"
-    ],
-    "fields" : [ ]
-  },
   "com.yahoo.search.rendering.JsonRenderer$FieldConsumer" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
