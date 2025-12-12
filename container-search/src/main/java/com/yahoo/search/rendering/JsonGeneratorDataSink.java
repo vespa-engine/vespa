@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.Base64Variant;
 import com.fasterxml.jackson.core.Base64Variants;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.json.UTF8JsonGenerator;
-import com.fasterxml.jackson.dataformat.cbor.CBORGenerator;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.disclosure.DataSink;
 
@@ -34,7 +33,7 @@ public class JsonGeneratorDataSink implements DataSink {
 
     public JsonGeneratorDataSink(JsonGenerator gen, boolean enableRawAsBase64) {
         this.gen = gen;
-        this.wantUtf8 = gen instanceof UTF8JsonGenerator || gen instanceof CBORGenerator;
+        this.wantUtf8 = gen instanceof UTF8JsonGenerator;
         this.enableRawAsBase64 = enableRawAsBase64;
     }
 
