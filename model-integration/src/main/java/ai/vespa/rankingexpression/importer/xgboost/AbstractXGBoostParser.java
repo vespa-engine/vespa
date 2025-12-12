@@ -33,14 +33,33 @@ abstract class AbstractXGBoostParser {
             float xgbSplitPoint = (float)node.getSplit_condition();
             // but Vespa expects rank profile literals in double precision:
             double vespaSplitPoint = xgbSplitPoint;
+            String formattedSplit = formatSplit(node.getSplit());
             String condition;
             if (node.getMissing() == node.getYes()) {
                 // Note: this is for handling missing features, as the backend handles comparison with NaN as false.
-                condition = "!(" + node.getSplit() + " >= " + vespaSplitPoint + ")";
+                condition = "!(" + formattedSplit + " >= " + vespaSplitPoint + ")";
             } else {
-                condition = node.getSplit() + " < " + vespaSplitPoint;
+                condition = formattedSplit + " < " + vespaSplitPoint;
             }
             return "if (" + condition + ", " + trueExp + ", " + falseExp + ")";
+        }
+    }
+
+    /**
+     * Formats a split field value for use in ranking expressions.
+     * If the split is a plain integer, wraps it with xgboost_input_X format.
+     * Otherwise, uses the split value as-is (for backward compatibility with JSON format).
+     *
+     * @param split The split field value from the tree node
+     * @return Formatted split expression for use in conditions
+     */
+    protected String formatSplit(String split) {
+        try {
+            Integer.parseInt(split);
+            return "xgboost_input_" + split;
+        } catch (NumberFormatException e) {
+            // Not a plain integer, use as-is (JSON format already has full attribute name)
+            return split;
         }
     }
 

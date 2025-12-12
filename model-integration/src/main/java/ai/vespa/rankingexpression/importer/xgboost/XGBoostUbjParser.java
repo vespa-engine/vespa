@@ -10,6 +10,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -21,6 +22,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
 
     private final List<XGBoostTree> xgboostTrees;
     private final double baseScore;
+    private final List<String> featureNames;
 
     /**
      * Probes a file to check if it looks like an XGBoost UBJ model.
@@ -98,6 +100,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
     XGBoostUbjParser(String filePath) throws IOException {
         this.xgboostTrees = new ArrayList<>();
         double tmpBaseScore = 0.5; // default value
+        List<String> tmpFeatureNames = new ArrayList<>();
         try (FileInputStream fileStream = new FileInputStream(filePath);
              UBReader reader = new UBReader(fileStream)) {
             UBValue root = reader.read();
@@ -112,6 +115,15 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
 
                 // Extract base_score if available
                 tmpBaseScore = extractBaseScore(learner);
+
+                // Extract feature_names if available
+                UBValue featureNamesValue = learner.get("feature_names");
+                if (featureNamesValue != null && featureNamesValue.isArray()) {
+                    UBArray featureNamesArray = featureNamesValue.asArray();
+                    for (int i = 0; i < featureNamesArray.size(); i++) {
+                        tmpFeatureNames.add(featureNamesArray.get(i).asString());
+                    }
+                }
 
                 // Navigate to trees array
                 forestArray = navigateToTreesArray(learner);
@@ -129,6 +141,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
             }
         }
         this.baseScore = tmpBaseScore;
+        this.featureNames = Collections.unmodifiableList(tmpFeatureNames);
     }
 
     /**
@@ -153,6 +166,141 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
         result.append(baseScoreLogit);
 
         return result.toString();
+    }
+
+    /**
+     * Converts parsed UBJ trees to Vespa ranking expressions using provided feature names.
+     *
+     * @param customFeatureNames List of feature names to map indices to actual names.
+     *                          Must contain enough names to cover all feature indices used.
+     * @return Vespa ranking expressions with named features.
+     * @throws IllegalArgumentException if customFeatureNames is insufficient for the indices used
+     */
+    String toRankingExpression(List<String> customFeatureNames) {
+        // Validate that we have enough feature names
+        validateFeatureNames(customFeatureNames);
+
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < xgboostTrees.size(); i++) {
+            if (i > 0) {
+                result.append(" + \n");
+            }
+            result.append(treeToRankExpWithFeatureNames(xgboostTrees.get(i), customFeatureNames));
+        }
+
+        // Add precomputed base_score logit transformation
+        double baseScoreLogit = Math.log(baseScore) - Math.log(1.0 - baseScore);
+        result.append(" + \n");
+        result.append(baseScoreLogit);
+
+        return result.toString();
+    }
+
+    /**
+     * Validates that the provided feature names list has exactly the required size for the model.
+     *
+     * @param customFeatureNames List of feature names to validate
+     * @throws IllegalArgumentException if validation fails
+     */
+    private void validateFeatureNames(List<String> customFeatureNames) {
+        if (customFeatureNames == null || customFeatureNames.isEmpty()) {
+            throw new IllegalArgumentException("Feature names list cannot be null or empty");
+        }
+
+        // Find max feature index used in all trees
+        int maxIndex = findMaxFeatureIndex();
+        int requiredSize = maxIndex + 1;
+
+        if (customFeatureNames.size() != requiredSize) {
+            throw new IllegalArgumentException(
+                "Feature names list size mismatch: model requires exactly " + requiredSize +
+                " feature names (indices 0-" + maxIndex + ") but " +
+                customFeatureNames.size() + " names provided"
+            );
+        }
+    }
+
+    /**
+     * Finds the maximum feature index used across all trees.
+     *
+     * @return Maximum feature index, or -1 if no features are used
+     */
+    private int findMaxFeatureIndex() {
+        int max = -1;
+        for (XGBoostTree tree : xgboostTrees) {
+            max = Math.max(max, findMaxFeatureIndexInTree(tree));
+        }
+        return max;
+    }
+
+    /**
+     * Recursively finds the maximum feature index in a tree.
+     *
+     * @param node Tree node to search
+     * @return Maximum feature index in this tree, or -1 if node is a leaf
+     */
+    private int findMaxFeatureIndexInTree(XGBoostTree node) {
+        if (node.isLeaf()) {
+            return -1; // Leaf node
+        }
+
+        int currentIndex = -1;
+        try {
+            currentIndex = Integer.parseInt(node.getSplit());
+        } catch (NumberFormatException e) {
+            // Split is not a number, skip
+        }
+
+        int childMax = -1;
+        if (node.getChildren() != null) {
+            for (XGBoostTree child : node.getChildren()) {
+                childMax = Math.max(childMax, findMaxFeatureIndexInTree(child));
+            }
+        }
+
+        return Math.max(currentIndex, childMax);
+    }
+
+    /**
+     * Converts a tree to ranking expression using custom feature names.
+     *
+     * @param node Tree node to convert
+     * @param customFeatureNames List of feature names for index lookup
+     * @return Ranking expression string
+     */
+    private String treeToRankExpWithFeatureNames(XGBoostTree node, List<String> customFeatureNames) {
+        if (node.isLeaf()) {
+            return Double.toString(node.getLeaf());
+        }
+
+        assert node.getChildren().size() == 2;
+        String trueExp;
+        String falseExp;
+        if (node.getYes() == node.getChildren().get(0).getNodeid()) {
+            trueExp = treeToRankExpWithFeatureNames(node.getChildren().get(0), customFeatureNames);
+            falseExp = treeToRankExpWithFeatureNames(node.getChildren().get(1), customFeatureNames);
+        } else {
+            trueExp = treeToRankExpWithFeatureNames(node.getChildren().get(1), customFeatureNames);
+            falseExp = treeToRankExpWithFeatureNames(node.getChildren().get(0), customFeatureNames);
+        }
+
+        int featureIdx = Integer.parseInt(node.getSplit());
+        String featureName = customFeatureNames.get(featureIdx);
+
+        // Use the actual feature name instead of indexed format
+        // Apply the same float rounding as in treeToRankExp
+        float xgbSplitPoint = (float)node.getSplit_condition();
+        double vespaSplitPoint = xgbSplitPoint;
+
+        String condition;
+        if (node.getMissing() == node.getYes()) {
+            condition = "!(" + featureName + " >= " + vespaSplitPoint + ")";
+        } else {
+            condition = featureName + " < " + vespaSplitPoint;
+        }
+
+        return "if (" + condition + ", " + trueExp + ", " + falseExp + ")";
     }
 
     /**
@@ -282,7 +430,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
         } else {
             // Split node: set split information
             int featureIdx = splitIndices[nodeId];
-            setField(node, "split", "attribute(features," + featureIdx + ")");
+            setField(node, "split", String.valueOf(featureIdx));
             // Apply float rounding to match XGBoost's internal precision (same as XGBoostParser)
             double splitValue = splitConditions[nodeId];
             setField(node, "split_condition", splitValue);
