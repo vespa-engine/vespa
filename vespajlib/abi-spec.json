@@ -384,6 +384,18 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.net.AcceptHeaderMatcher" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public varargs java.util.List preferredExactMediaTypes(java.lang.String[])"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.net.HostName" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
