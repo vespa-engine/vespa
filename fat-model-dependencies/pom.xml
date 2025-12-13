@@ -277,6 +277,10 @@
           <groupId>com.google.re2j</groupId>
           <artifactId>*</artifactId>
         </exclusion>
+          <exclusion>
+              <groupId>com.fasterxml.jackson.dataformat</groupId>
+              <artifactId>jackson-dataformat-cbor</artifactId>
+          </exclusion>
       </exclusions>
     </dependency>
     <dependency>
