@@ -23,6 +23,7 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
@@ -137,7 +138,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
      *        to instantiate config models
      */
     public VespaModel(ApplicationPackage app, ConfigModelRegistry configModelRegistry) throws IOException, SAXException {
-        this(configModelRegistry, new DeployState.Builder().applicationPackage(app).build());
+        this(configModelRegistry, new DeployState.Builder().applicationPackage(app).properties(new TestProperties()).build());
     }
 
     /**

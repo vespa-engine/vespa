@@ -4,7 +4,7 @@ package com.yahoo.config.model;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.application.provider.ApplicationPackageXmlFilesValidator;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.schema.Schema;
 
 import java.io.File;
@@ -41,7 +41,7 @@ public class ApplicationPackageTester {
     public FilesApplicationPackage app() { return applicationPackage; }
 
     public List<Schema> getSchemas() {
-        return new DeployState.Builder().applicationPackage(app()).build().getSchemas();
+        return TestDeployState.create(app()).getSchemas();
     }
 
     public static ApplicationPackageTester create(String applicationPackageDir) {

@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
@@ -316,7 +317,7 @@ public class ContainerClusterTest {
 
     @Test
     void requireCuratorConfig() {
-        DeployState state = new DeployState.Builder().build();
+        DeployState state = TestDeployState.create();
         MockRoot root = new MockRoot("foo", state);
         var cluster = new ApplicationContainerCluster(root, "container", "search-cluster", state);
         addContainer(root, cluster, "c1", "host-c1");
@@ -332,7 +333,7 @@ public class ContainerClusterTest {
 
     @Test
     void requireZooKeeperServerConfig() {
-        DeployState state = new DeployState.Builder().build();
+        DeployState state = TestDeployState.create();
         MockRoot root = new MockRoot("foo", state);
         var cluster = new ApplicationContainerCluster(root, "container", "search-cluster", state);
         addContainer(root, cluster, "c1", "host-c1");
@@ -483,7 +484,7 @@ public class ContainerClusterTest {
     }
 
     private static ApplicationContainerCluster newContainerCluster() {
-        DeployState deployState = DeployState.createTestState();
+        DeployState deployState = TestDeployState.create();
         MockRoot root = new MockRoot("foo", deployState);
         ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "subId", "name", deployState);
         addContainer(root, cluster, "c1", "host-c1");
