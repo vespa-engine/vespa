@@ -529,6 +529,11 @@
                 <artifactId>java-jwt</artifactId>
                 <version>${java-jwt.vespa.version}</version>
             </dependency>
+	   <dependency>
+	     <groupId>com.dev-smart</groupId>
+	     <artifactId>ubjson</artifactId>
+	     <version>${dev-smart-ubjson.vespa.version}</version>
+	   </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-cbor</artifactId>
