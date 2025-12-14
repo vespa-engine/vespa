@@ -304,6 +304,18 @@ public class SearchHandlerTest {
         }
     }
 
+    @Test
+    void testMalformedAcceptHeaderDefaultsToJson() {
+        try (var tester = new SearchHandlerTester()) {
+            var request = tester.driver.createRequest("http://localhost?query=abc", com.yahoo.jdisc.http.HttpRequest.Method.GET);
+            request.headers().put("Accept", "malformed/missing/subtype");
+            var response = tester.driver.sendRequest(request, "");
+            response.readAll();
+            assertEquals(200, response.getStatus());
+            assertEquals("application/json", response.getResponse().headers().getFirst("Content-Type").split(";")[0]);
+        }
+    }
+
     /** Referenced from config */
     public static class TestSearcher extends Searcher {
 
