@@ -257,6 +257,65 @@ public class SearchHandlerTest {
         }
     }
 
+    @Test
+    void testAcceptHeaderCborSelectsCborRenderer() {
+        try (var tester = new SearchHandlerTester()) {
+            var request = tester.driver.createRequest("http://localhost?query=abc", com.yahoo.jdisc.http.HttpRequest.Method.GET);
+            request.headers().put("Accept", "application/cbor");
+            var response = tester.driver.sendRequest(request, "");
+            response.readAll();
+            assertEquals(200, response.getStatus());
+            assertEquals("application/cbor", response.getResponse().headers().getFirst("Content-Type").split(";")[0]);
+        }
+    }
+
+    @Test
+    void testAcceptHeaderJsonSelectsJsonRenderer() {
+        try (var tester = new SearchHandlerTester()) {
+            var request = tester.driver.createRequest("http://localhost?query=abc", com.yahoo.jdisc.http.HttpRequest.Method.GET);
+            request.headers().put("Accept", "application/json");
+            var response = tester.driver.sendRequest(request, "");
+            response.readAll();
+            assertEquals(200, response.getStatus());
+            assertEquals("application/json", response.getResponse().headers().getFirst("Content-Type").split(";")[0]);
+        }
+    }
+
+    @Test
+    void testFormatParameterOverridesAcceptHeader() {
+        try (var tester = new SearchHandlerTester()) {
+            // format=json should override Accept: application/cbor
+            var request = tester.driver.createRequest("http://localhost?query=abc&format=json", com.yahoo.jdisc.http.HttpRequest.Method.GET);
+            request.headers().put("Accept", "application/cbor");
+            var response = tester.driver.sendRequest(request, "");
+            response.readAll();
+            assertEquals(200, response.getStatus());
+            assertEquals("application/json", response.getResponse().headers().getFirst("Content-Type").split(";")[0]);
+        }
+    }
+
+    @Test
+    void testNoAcceptHeaderDefaultsToJson() {
+        try (var tester = new SearchHandlerTester()) {
+            var response = tester.sendRequest("http://localhost?query=abc");
+            response.readAll();
+            assertEquals(200, response.getStatus());
+            assertEquals("application/json", response.getResponse().headers().getFirst("Content-Type").split(";")[0]);
+        }
+    }
+
+    @Test
+    void testMalformedAcceptHeaderDefaultsToJson() {
+        try (var tester = new SearchHandlerTester()) {
+            var request = tester.driver.createRequest("http://localhost?query=abc", com.yahoo.jdisc.http.HttpRequest.Method.GET);
+            request.headers().put("Accept", "malformed/missing/subtype");
+            var response = tester.driver.sendRequest(request, "");
+            response.readAll();
+            assertEquals(200, response.getStatus());
+            assertEquals("application/json", response.getResponse().headers().getFirst("Content-Type").split(";")[0]);
+        }
+    }
+
     /** Referenced from config */
     public static class TestSearcher extends Searcher {
 
