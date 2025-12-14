@@ -316,6 +316,22 @@ public class SearchHandlerTest {
         }
     }
 
+    @Test
+    void testCborWithJsonCallbackReturnsErrorInBody() {
+        // CBOR and JSONP (jsoncallback) are incompatible - JSONP wraps response in JavaScript which corrupts binary CBOR.
+        // Response contains an error message explaining the problem. The detailed error content is verified in
+        // JsonRendererTestCase.testCborRendererReturnsErrorForJsonCallback; here we just verify we get a CBOR response.
+        try (var tester = new SearchHandlerTester()) {
+            var request = tester.driver.createRequest("http://localhost?query=abc&jsoncallback=foo", com.yahoo.jdisc.http.HttpRequest.Method.GET);
+            request.headers().put("Accept", "application/cbor");
+            var response = tester.driver.sendRequest(request, "");
+            String body = response.readAll();
+            assertEquals(200, response.getStatus());
+            assertEquals("application/cbor", response.getResponse().headers().getFirst("Content-Type").split(";")[0]);
+            assertTrue(body.length() > 0, "Response should not be empty");
+        }
+    }
+
     /** Referenced from config */
     public static class TestSearcher extends Searcher {
 

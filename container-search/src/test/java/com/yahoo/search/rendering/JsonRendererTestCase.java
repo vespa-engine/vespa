@@ -82,6 +82,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -2010,6 +2011,24 @@ public class JsonRendererTestCase {
         cborRenderer.init();
         assertEquals("application/cbor", cborRenderer.getMimeType());
         cborRenderer.deconstruct();
+    }
+
+    @Test
+    void testCborRendererReturnsErrorForJsonCallback() throws Exception {
+        // JSONP callback wrapping would produce invalid CBOR, so an error is included in the response.
+        // We can't return an HTTP error status because the incompatibility is detected during async
+        // rendering, after HTTP headers have already been sent. Since JSONP is obsolete (superseded
+        // by CORS), it's not worth refactoring to detect this earlier.
+        String jsonCallback = "some_function_name";
+        Result r = newEmptyResult(new String[]{"query=a", "jsoncallback=" + jsonCallback});
+        Hit h = new Hit("testHit");
+        h.setField("foo", "bar");
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+
+        String json = renderWithCbor(r);
+        assertTrue(json.contains("jsoncallback"), "Response should contain error about jsoncallback: " + json);
+        assertTrue(json.contains("errors"), "Response should contain an error: " + json);
     }
 
     private String renderWithCbor(Result r) throws InterruptedException, ExecutionException, IOException {

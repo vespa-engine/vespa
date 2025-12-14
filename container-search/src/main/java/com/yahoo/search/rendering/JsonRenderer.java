@@ -552,6 +552,10 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
      */
     private void beginJsonCallback(OutputStream stream) throws IOException {
         if (shouldRenderJsonCallback()) {
+            if (renderTarget == RenderTarget.Cbor) {
+                getResult().hits().addError(ErrorMessage.createBadRequest("Cannot use jsoncallback with CBOR format"));
+                return;
+            }
             String jsonCallback = getJsonCallback() + "(";
             stream.write(jsonCallback.getBytes(StandardCharsets.UTF_8));
             this.stream = stream;
