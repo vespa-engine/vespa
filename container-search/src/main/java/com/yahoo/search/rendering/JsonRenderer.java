@@ -130,7 +130,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private volatile JsonGenerator generator;
     private volatile FieldConsumer fieldConsumer;
     private volatile Deque<Integer> renderedChildren;
-    private volatile RenderTarget renderTarget = RenderTarget.Json;
+    private volatile RenderTarget renderTarget;
 
     /** Which target we are rendering to */
     enum RenderTarget {
@@ -217,21 +217,24 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     @Override
     public void init() {
         super.init();
+        renderTarget = defaultRenderTarget();
         fieldConsumerSettings = new FieldConsumerSettings();
         fieldConsumerSettings.init();
+        fieldConsumerSettings.renderTarget = renderTarget;
         setGenerator(null, fieldConsumerSettings);
         renderedChildren = null;
         timeSource = System::currentTimeMillis;
         stream = null;
     }
 
+    /** Returns the default render target for this renderer. Package-private for subclass override. */
+    RenderTarget defaultRenderTarget() {
+        return RenderTarget.Json;
+    }
+
     @Override
     public void beginResponse(OutputStream stream) throws IOException {
         long renderingStartTimeMs = timeSource.getAsLong();
-
-        // Determine output format from query parameter or Accept header
-        renderTarget = determineRenderTarget();
-        fieldConsumerSettings.renderTarget = renderTarget;
 
         beginJsonCallback(stream);
         fieldConsumerSettings.getSettings(getResult().getQuery());
@@ -245,19 +248,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         renderTrace(getExecution().trace());
         renderTiming(renderingStartTimeMs);
         generator.writeFieldName(ROOT);
-    }
-
-    private RenderTarget determineRenderTarget() {
-        Query query = getResult().getQuery();
-        if (query == null) return RenderTarget.Json;
-
-        // Format is set by SearchHandler based on query parameter or Accept header
-        String format = query.getPresentation().getFormat();
-        if (format != null && format.equalsIgnoreCase("cbor")) {
-            return RenderTarget.Cbor;
-        }
-
-        return RenderTarget.Json;
     }
 
     private void renderTiming(long renderingStartTimeMs) throws IOException {
