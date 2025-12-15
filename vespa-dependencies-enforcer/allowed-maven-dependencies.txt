@@ -3,6 +3,7 @@
 ai.djl.huggingface:tokenizers:${huggingface.vespa.version}
 ai.djl:api:${huggingface.vespa.version}
 aopalliance:aopalliance:${aopalliance.vespa.version}
+at.yawk.lz4:lz4-java:${at.yawk.lz4.vespa.version}
 backport-util-concurrent:backport-util-concurrent:3.1
 classworlds:classworlds:1.1-alpha-2
 com.auth0:java-jwt:${java-jwt.vespa.version}
@@ -258,7 +259,6 @@ org.junit.platform:junit-platform-engine:${junit.platform.vespa.version}
 org.junit.platform:junit-platform-launcher:${junit.platform.vespa.tenant.version}
 org.junit.vintage:junit-vintage-engine:${junit.vespa.tenant.version}
 org.junit.vintage:junit-vintage-engine:${junit.vespa.version}
-org.lz4:lz4-java:${org.lz4.vespa.version}
 org.mockito:mockito-core:${mockito.vespa.version}
 org.mockito:mockito-junit-jupiter:${mockito.vespa.version}
 org.objenesis:objenesis:3.3

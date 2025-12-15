@@ -91,7 +91,7 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>org.lz4</groupId>
+          <groupId>at.yawk.lz4</groupId>
           <artifactId>lz4-java</artifactId>
         </exclusion>
       </exclusions>
@@ -189,7 +189,7 @@
           <artifactId>zero-allocation-hashing</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.lz4</groupId>
+          <groupId>at.yawk.lz4</groupId>
           <artifactId>lz4-java</artifactId>
         </exclusion>
         <exclusion>
@@ -233,7 +233,7 @@
           <artifactId>commons-math3</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.lz4</groupId>
+          <groupId>at.yawk.lz4</groupId>
           <artifactId>lz4-java</artifactId>
         </exclusion>
         <exclusion>
@@ -256,7 +256,7 @@
           <artifactId>http-utils</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.lz4</groupId>
+          <groupId>at.yawk.lz4</groupId>
           <artifactId>lz4-java</artifactId>
         </exclusion>
       </exclusions>

@@ -1361,9 +1361,9 @@
                 <version>${mimepull.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.lz4</groupId>
+                <groupId>at.yawk.lz4</groupId>
                 <artifactId>lz4-java</artifactId>
-                <version>${org.lz4.vespa.version}</version>
+                <version>${at.yawk.lz4.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
