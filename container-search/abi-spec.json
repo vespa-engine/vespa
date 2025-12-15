@@ -8006,6 +8006,18 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.rendering.CborRenderer" : {
+    "superClass" : "com.yahoo.search.rendering.JsonRenderer",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(java.util.concurrent.Executor)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.rendering.JsonRenderer" : {
     "superClass" : "com.yahoo.processing.rendering.AsynchronousSectionedRenderer",
     "interfaces" : [ ],
@@ -8110,6 +8122,7 @@
       "public static final com.yahoo.component.ComponentId xmlRendererId",
       "public static final com.yahoo.component.ComponentId pageRendererId",
       "public static final com.yahoo.component.ComponentId jsonRendererId",
+      "public static final com.yahoo.component.ComponentId cborRendererId",
       "public static final com.yahoo.component.ComponentId eventRendererId",
       "public static final com.yahoo.component.ComponentId defaultRendererId"
     ]
