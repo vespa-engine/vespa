@@ -338,6 +338,10 @@ public class QueryCanonicalizerTestCase {
         and.addItem(new FalseItem());
         root.addItem(new WordItem("i1")); // ... which causes the OR to collapse, leaving this
         assertCanonicalized("i1", null, root);
+        root = new OrItem();
+        root.addItem(new FalseItem());
+        root.addItem(new FalseItem());
+        assertCanonicalized(null, "No query", root);
     }
 
     @Test
