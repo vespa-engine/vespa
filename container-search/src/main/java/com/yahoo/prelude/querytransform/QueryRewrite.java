@@ -4,6 +4,7 @@ package com.yahoo.prelude.querytransform;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.EquivItem;
+import com.yahoo.prelude.query.FalseItem;
 import com.yahoo.prelude.query.HasIndexItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.Item;
@@ -180,9 +181,13 @@ public class QueryRewrite {
                     }
                     break;
                 case RECALLS_NOTHING:
-                    if ((item instanceof OrItem) || (item instanceof EquivItem) && item.items().size() > 1) {
-                        item.removeItem(i);
-                    } else if ((item instanceof AndItem) || (item instanceof NearItem) || (item instanceof WeakAndItem)) {
+                    if (item instanceof OrItem || item instanceof EquivItem || item instanceof WeakAndItem) {
+                        if (item.items().size() > 1) {
+                            item.removeItem(i);
+                        } else {
+                            return Recall.RECALLS_NOTHING;
+                        }
+                    } else if ((item instanceof AndItem) || (item instanceof NearItem)) {
                         return Recall.RECALLS_NOTHING;
                     } else if (item instanceof RankItem) {
                         if (i == 0) return Recall.RECALLS_NOTHING;
@@ -218,7 +223,7 @@ public class QueryRewrite {
             return item.isRanked();
         }
     }
-    
+
     private static Item collapseSingleComposites(Item item) {
         if (!(item instanceof CompositeItem parent)) {
             return item;

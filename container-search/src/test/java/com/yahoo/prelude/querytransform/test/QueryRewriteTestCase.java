@@ -172,4 +172,11 @@ public class QueryRewriteTestCase {
         assertEquals("3", a.getItem(4).toString());
     }
 
+    @Test
+    void requireNoEmptyOr() {
+        assertRewritten("title:word RANK (text:other AND sddocname:foo)", "qux", "title:word");
+        assertRewritten("(sddocname:foo OR sddocname:bar) AND title:word", "qux", "NULL");
+        assertRewritten("(sddocname:qux AND text:ok) OR ((sddocname:foo OR sddocname:bar) AND title:word)", "qux", "text:ok");
+    }
+
 }
