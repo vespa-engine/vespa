@@ -8,6 +8,7 @@ import com.yahoo.config.model.application.provider.Bundle;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.document.DataType;
 import com.yahoo.io.IOUtils;
@@ -53,7 +54,7 @@ public class ApplicationDeployTest {
     @Test
     void testVespaModel() throws SAXException, IOException {
         ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "app1");
-        new VespaModel(tester.app());
+        new VespaModel(TestDeployState.create(tester.app()));
         List<Schema> schemas = tester.getSchemas();
         assertEquals(schemas.size(), 5);
         for (Schema schema : schemas) {
