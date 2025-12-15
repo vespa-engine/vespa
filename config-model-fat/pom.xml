@@ -187,6 +187,7 @@
 
                     <!-- 3rd party artifacts embedded -->
                     <i>aopalliance:aopalliance:*:*</i>
+                    <i>com.dev-smart:ubjson:*:*</i>
                     <i>com.google.errorprone:error_prone_annotations:*:*</i>
                     <i>com.google.guava:failureaccess:*:*</i>
                     <i>com.google.guava:guava:*:*</i>

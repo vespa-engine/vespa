@@ -376,6 +376,10 @@
       <version>${testcontainers.vespa.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.dev-smart</groupId>
+      <artifactId>ubjson</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

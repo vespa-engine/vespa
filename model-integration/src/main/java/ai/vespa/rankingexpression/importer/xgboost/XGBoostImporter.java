@@ -25,6 +25,9 @@ public class XGBoostImporter extends ModelImporter {
         File modelFile = new File(modelPath);
         if ( ! modelFile.isFile()) return false;
 
+        if (modelFile.toString().endsWith(".ubj")) {
+            return XGBoostUbjParser.probe(modelPath);
+        }
         return modelFile.toString().endsWith(".json") && probe(modelFile);
     }
 
@@ -52,9 +55,15 @@ public class XGBoostImporter extends ModelImporter {
     public ImportedModel importModel(String modelName, String modelPath) {
         try {
             ImportedModel model = new ImportedModel(modelName, modelPath, ImportedMlModel.ModelType.XGBOOST);
-            XGBoostParser parser = new XGBoostParser(modelPath);
-            RankingExpression expression = new RankingExpression(parser.toRankingExpression());
-            model.expression(modelName, expression);
+            if (modelPath.endsWith(".ubj")) {
+                XGBoostUbjParser parser = new XGBoostUbjParser(modelPath);
+                RankingExpression expression = new RankingExpression(parser.toRankingExpression());
+                model.expression(modelName, expression);
+            } else {
+                XGBoostParser parser = new XGBoostParser(modelPath);
+                RankingExpression expression = new RankingExpression(parser.toRankingExpression());
+                model.expression(modelName, expression);
+            }
             return model;
         } catch (IOException e) {
             throw new IllegalArgumentException("Could not import XGBoost model from '" + modelPath + "'", e);
