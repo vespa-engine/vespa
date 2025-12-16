@@ -529,6 +529,11 @@
                 <artifactId>java-jwt</artifactId>
                 <version>${java-jwt.vespa.version}</version>
             </dependency>
+	   <dependency>
+	     <groupId>com.dev-smart</groupId>
+	     <artifactId>ubjson</artifactId>
+	     <version>${dev-smart-ubjson.vespa.version}</version>
+	   </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-cbor</artifactId>
@@ -1361,9 +1366,9 @@
                 <version>${mimepull.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.lz4</groupId>
+                <groupId>at.yawk.lz4</groupId>
                 <artifactId>lz4-java</artifactId>
-                <version>${org.lz4.vespa.version}</version>
+                <version>${at.yawk.lz4.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>

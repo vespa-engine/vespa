@@ -47,7 +47,7 @@ public class UrlConfigValidatorTest {
                              .getMessage());
 
         assertEquals("Found s3:// urls in config for container cluster default. Nodes in the cluster need to be 'exclusive',"
-                     + " see https://docs.vespa.ai/en/reference/services/services.html#nodes",
+                     + " see https://docs.vespa.ai/en/reference/applications/services/services.html#nodes",
                      assertThrows(IllegalArgumentException.class,
                                   () -> runValidatorOnApp(false, SystemName.Public))
                              .getMessage());

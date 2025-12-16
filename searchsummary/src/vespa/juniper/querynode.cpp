@@ -62,9 +62,9 @@ QueryNode::QueryNode(int arity, int threshold, int weight)
     _threshold(threshold),
     _limit(0),
     _nchild(0),
-    _node_idx(-1) {
-    assert(arity > 0);
-    _children = new QueryExpr*[arity];
+    _node_idx(-1)
+{
+    if (arity > 0) _children = new QueryExpr*[arity];
 }
 
 QueryNode::QueryNode(QueryNode* n)
@@ -99,14 +99,18 @@ QueryNode* QueryTerm::AddChild(QueryExpr*) {
 }
 
 QueryNode* QueryNode::AddChild(QueryExpr* child) {
-    if (!child) {
-        _arity--;
+    if (Complete()) {
+        LOG(warning, "stack inconsistency, attempt to add children to already-full node");
     } else {
-        child->_parent = this;
-        child->_childno = _nchild;
-        _children[_nchild++] = child;
-        if (child->_arity > 0) // we know this is a QueryNode from the arity info
-            return static_cast<QueryNode*>(child);
+        if (!child) {
+            _arity--;
+        } else {
+            child->_parent = this;
+            child->_childno = _nchild;
+            _children[_nchild++] = child;
+            if (child->_arity > 0) // we know this is a QueryNode from the arity info
+                return static_cast<QueryNode*>(child);
+        }
     }
     QueryNode* node = this;
     while (node && node->Complete()) node = node->_parent;

@@ -289,7 +289,7 @@
     </dependency>
 
     <dependency>
-      <groupId>org.lz4</groupId>
+      <groupId>at.yawk.lz4</groupId>
       <artifactId>lz4-java</artifactId>
     </dependency>
 
@@ -375,6 +375,10 @@
       <artifactId>junit-jupiter</artifactId>
       <version>${testcontainers.vespa.version}</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dev-smart</groupId>
+      <artifactId>ubjson</artifactId>
     </dependency>
   </dependencies>
   <build>

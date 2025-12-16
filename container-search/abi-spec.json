@@ -7910,6 +7910,81 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.rendering.JsonDataSource" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.data.disclosure.DataSource"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public static com.yahoo.search.rendering.JsonDataSource fromJson(java.lang.String)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.rendering.JsonGeneratorDataSink" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.data.disclosure.DataSink"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.fasterxml.jackson.core.JsonGenerator)",
+      "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean)",
+      "public void fieldName(java.lang.String, byte[])",
+      "public void startObject()",
+      "public void endObject()",
+      "public void startArray()",
+      "public void endArray()",
+      "public void emptyValue()",
+      "public void booleanValue(boolean)",
+      "public void longValue(long)",
+      "public void intValue(int)",
+      "public void shortValue(short)",
+      "public void byteValue(byte)",
+      "public void doubleValue(double)",
+      "public void floatValue(float)",
+      "public void stringValue(java.lang.String, byte[])",
+      "public void dataValue(byte[])"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.rendering.NonFiniteToNullDataSink" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [
+      "com.yahoo.data.disclosure.DataSink"
+    ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.data.disclosure.DataSink)",
+      "public void doubleValue(double)",
+      "public void floatValue(float)",
+      "public void fieldName(java.lang.String, byte[])",
+      "public void startObject()",
+      "public void endObject()",
+      "public void startArray()",
+      "public void endArray()",
+      "public void emptyValue()",
+      "public void booleanValue(boolean)",
+      "public void longValue(long)",
+      "public void stringValue(java.lang.String, byte[])",
+      "public void dataValue(byte[])",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public com.yahoo.data.disclosure.DataSink delegate()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.rendering.JsonRenderer$FieldConsumer" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
@@ -7928,6 +8003,18 @@
       "protected void renderFieldContents(java.lang.Object)",
       "public void accept(java.lang.Object)",
       "public bridge synthetic void accept(java.lang.Object, java.lang.Object)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.rendering.CborRenderer" : {
+    "superClass" : "com.yahoo.search.rendering.JsonRenderer",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(java.util.concurrent.Executor)"
     ],
     "fields" : [ ]
   },
@@ -7961,6 +8048,37 @@
       "public java.lang.String getEncoding()",
       "public java.lang.String getMimeType()",
       "protected com.yahoo.search.rendering.JsonRenderer$FieldConsumer createFieldConsumer(boolean)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.rendering.NonFiniteToNullDataSink" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [
+      "com.yahoo.data.disclosure.DataSink"
+    ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.data.disclosure.DataSink)",
+      "public void doubleValue(double)",
+      "public void floatValue(float)",
+      "public void fieldName(java.lang.String, byte[])",
+      "public void startObject()",
+      "public void endObject()",
+      "public void startArray()",
+      "public void endArray()",
+      "public void emptyValue()",
+      "public void booleanValue(boolean)",
+      "public void longValue(long)",
+      "public void stringValue(java.lang.String, byte[])",
+      "public void dataValue(byte[])",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public com.yahoo.data.disclosure.DataSink delegate()"
     ],
     "fields" : [ ]
   },
@@ -8004,6 +8122,7 @@
       "public static final com.yahoo.component.ComponentId xmlRendererId",
       "public static final com.yahoo.component.ComponentId pageRendererId",
       "public static final com.yahoo.component.ComponentId jsonRendererId",
+      "public static final com.yahoo.component.ComponentId cborRendererId",
       "public static final com.yahoo.component.ComponentId eventRendererId",
       "public static final com.yahoo.component.ComponentId defaultRendererId"
     ]
@@ -8338,7 +8457,8 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [
       "com.yahoo.data.access.Inspectable",
-      "com.yahoo.data.JsonProducer"
+      "com.yahoo.data.JsonProducer",
+      "com.yahoo.data.disclosure.DataSource"
     ],
     "attributes" : [
       "public"
@@ -8349,9 +8469,11 @@
       "public static com.yahoo.search.result.FeatureData empty()",
       "public com.yahoo.data.access.Inspector inspect()",
       "public java.lang.String toJson()",
+      "public void emit(com.yahoo.data.disclosure.DataSink)",
       "public java.lang.String toJson(boolean)",
       "public java.lang.String toJson(boolean, boolean)",
       "public java.lang.String toJson(com.yahoo.tensor.serialization.JsonFormat$EncodeOptions)",
+      "public com.yahoo.data.disclosure.DataSource asDataSource(com.yahoo.tensor.serialization.JsonFormat$EncodeOptions)",
       "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
       "public java.lang.Double getDouble(java.lang.String)",
       "public com.yahoo.tensor.Tensor getTensor(java.lang.String)",
@@ -8650,7 +8772,8 @@
     "interfaces" : [
       "com.yahoo.data.access.Inspectable",
       "com.yahoo.data.JsonProducer",
-      "com.yahoo.data.XmlProducer"
+      "com.yahoo.data.XmlProducer",
+      "com.yahoo.data.disclosure.DataSource"
     ],
     "attributes" : [
       "public"
@@ -8660,6 +8783,7 @@
       "public com.yahoo.data.access.Inspector inspect()",
       "public java.lang.String toString()",
       "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)",
       "public java.lang.StringBuilder writeXML(java.lang.StringBuilder)"
     ],
     "fields" : [ ]
@@ -8689,7 +8813,8 @@
     "interfaces" : [
       "com.yahoo.data.access.Inspectable",
       "com.yahoo.data.JsonProducer",
-      "com.yahoo.data.XmlProducer"
+      "com.yahoo.data.XmlProducer",
+      "com.yahoo.data.disclosure.DataSource"
     ],
     "attributes" : [
       "public"
@@ -8700,7 +8825,8 @@
       "public java.lang.String toString()",
       "public java.lang.StringBuilder writeXML(java.lang.StringBuilder)",
       "public java.lang.String toJson()",
-      "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)"
+      "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)"
     ],
     "fields" : [ ]
   },

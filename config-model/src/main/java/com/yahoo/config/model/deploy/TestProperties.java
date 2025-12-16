@@ -14,7 +14,6 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -24,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import static com.yahoo.vespa.model.container.ApplicationContainerCluster.defaultHeapSizePercentageOfAvailableMemory;
 
 /**
  * A test-only Properties class
@@ -67,7 +68,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int rpc_num_targets = 2;
     private int rpc_events_before_wakeup = 1;
     private int mbus_network_threads = 1;
-    private int heapSizePercentage = ApplicationContainerCluster.defaultHeapSizePercentageOfAvailableMemory;
+    private Map<String, Integer> heapSizePercentage = new HashMap<>();
     private Optional<CloudAccount> cloudAccount = Optional.empty();
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
@@ -121,7 +122,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int mbusCppRpcNumTargets() { return mbus_cpp_num_targets; }
     @Override public int mbusCppEventsBeforeWakeup() { return mbus_cpp_events_before_wakeup; }
     @Override public int rpcNumTargets() { return rpc_num_targets; }
-    @Override public int heapSizePercentage() { return heapSizePercentage; }
+    @Override public int heapSizePercentage() { return heapSizePercentage(Optional.empty()); }
+    @Override public int heapSizePercentage(Optional<String> clusterId) {
+        return heapSizePercentage.getOrDefault(clusterId.orElse(""), defaultHeapSizePercentageOfAvailableMemory);
+    }
     @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
     @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
     @Override public boolean allowUserFilters() { return allowUserFilters; }
@@ -153,8 +157,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setHeapSizePercentage(int percentage) {
-        this.heapSizePercentage = percentage;
+    public TestProperties setHeapSizePercentage(String clusterId, int percentage) {
+        this.heapSizePercentage.put(clusterId, percentage);
         return this;
     }
 

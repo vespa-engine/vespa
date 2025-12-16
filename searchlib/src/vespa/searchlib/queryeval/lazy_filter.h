@@ -2,78 +2,61 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/location.h>
+#include "blueprint.h"
+#include "global_filter.h"
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <memory>
 #include <vector>
 
+namespace search::common { class Location; }
+
 namespace search::queryeval {
 
-class LazyFilter : public std::enable_shared_from_this<LazyFilter> {
-public:
-    LazyFilter() noexcept = default;
-    LazyFilter(const GlobalFilter &) = delete;
-    LazyFilter(LazyFilter &&) = delete;
-    virtual ~LazyFilter() {}
-    virtual bool is_active() const = 0;
-    virtual bool check(uint32_t docid) = 0;
-    virtual std::shared_ptr<LazyFilter> clone() const = 0;
-};
-
-class InactiveLazyFilter : public LazyFilter {
-private:
-    struct Private { explicit Private() = default; };
-public:
-    InactiveLazyFilter(Private) noexcept {}
-    static std::shared_ptr<InactiveLazyFilter> create() { return std::make_shared<InactiveLazyFilter>(Private()); }
-
-    bool is_active() const override { return false; }
-    bool check(uint32_t /*docid*/) override { return true; }
-    std::shared_ptr<LazyFilter> clone() const override {
-        return create();
-    }
-};
-
-class GeoLocationLazyFilter : public LazyFilter {
+/**
+ * Class for checking whether document ids match a Location.
+ *
+ * Performs the check by accessing the contents of the attribute vector of the given Location. Hence, it is not as fast
+ * as other implementations of GlobalFilter.
+ *
+ * Not thread-safe. If an object of this class is to be used in multiple threads,
+ * then a copy has to be created for every thread.
+ **/
+class LocationLazyFilter : public GlobalFilter {
 private:
     struct Private { explicit Private() = default; };
     const common::Location &_location;
-    uint32_t _num_values;
     uint32_t _docid_limit;
-    std::vector<search::AttributeVector::largeint_t> _pos;
+    Blueprint::HitEstimate _estimate;
+    mutable std::vector<search::AttributeVector::largeint_t> _pos;
 
 public:
-    GeoLocationLazyFilter(Private, const common::Location &location) noexcept
-        : _location(location),
-          _num_values(0),
-          _docid_limit(_location.getVec()->getCommittedDocIdLimit()) {
-        _pos.resize(1);  // Needed (single-value attribute), cf. LocationIterator
-    }
-    static std::shared_ptr<GeoLocationLazyFilter> create(const common::Location &location) { return std::make_shared<GeoLocationLazyFilter>(Private(), location); }
-    bool is_active() const override { return true; }
-    bool check(uint32_t docid) override {
-        if (docid >= _docid_limit) {
-            return false;
-        }
-        _num_values = _location.getVec()->get(docid, &_pos[0], _pos.size());
-        while (_num_values > _pos.size()) {
-            _pos.resize(_num_values);
-            _num_values = _location.getVec()->get(docid, &_pos[0], _pos.size());
-        }
+    LocationLazyFilter(Private, const common::Location &location, const Blueprint::HitEstimate &estimate) noexcept;
+    static std::shared_ptr<LocationLazyFilter> create(const common::Location &location, const Blueprint::HitEstimate &estimate);
+    bool is_active() const override;
+    uint32_t size() const override;
+    uint32_t count() const override;
+    bool check(uint32_t docid) const override;
+};
 
-        for (uint32_t i = 0; i < _num_values; i++) {
-            int64_t docxy(_pos[i]);
-            if (_location.inside_limit(docxy)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-    std::shared_ptr<LazyFilter> clone() const override {
-        return create(_location);
-    }
+/**
+ * Class that combines two GlobalFilter objects into a single GlobalFilter.
+ *
+ * Corresponds to a logical 'and' of the two GlobalFilters. Evaluates the first filter first, and only if
+ * the document passes that filter, it evaluates the second filter. Intended to be used to combine a cheap (the global filter)
+ * and an expensive (the lazy filter) GlobalFilter.
+ **/
+class FallbackFilter : public GlobalFilter {
+private:
+    struct Private { explicit Private() = default; };
+    const GlobalFilter &_global_filter;
+    const GlobalFilter &_fallback;
+public:
+    FallbackFilter(Private, const GlobalFilter &global_filter, const GlobalFilter &fallback);
+    static std::shared_ptr<FallbackFilter> create(const GlobalFilter &global_filter, const GlobalFilter &fallback);
+    bool is_active() const override;
+    uint32_t size() const override;
+    uint32_t count() const override;
+    bool check(uint32_t docid) const override;
 };
 
 } // namespace

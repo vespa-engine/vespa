@@ -57,7 +57,7 @@ public class ConfigSourceSet implements ConfigSource {
      * @param address  Connection endpoint on the format "tcp/host:port".
      */
     public ConfigSourceSet(String address) {
-        this(new String[] { address });
+        this(List.of(address));
     }
 
     /**
@@ -74,10 +74,9 @@ public class ConfigSourceSet implements ConfigSource {
         if (o == this) {
             return true;
         }
-        if (! (o instanceof ConfigSourceSet)) {
+        if (! (o instanceof ConfigSourceSet css)) {
             return false;
         }
-        ConfigSourceSet css = (ConfigSourceSet)o;
         return sources.equals(css.sources);
     }
 

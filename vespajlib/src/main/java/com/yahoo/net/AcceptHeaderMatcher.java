@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.document.restapi.resource;
+package com.yahoo.net;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  *
  * @author vekterli
  */
-class AcceptHeaderMatcher {
+public class AcceptHeaderMatcher {
 
     private final Map<String, Double> qualityByNormalizedTypeName;
 

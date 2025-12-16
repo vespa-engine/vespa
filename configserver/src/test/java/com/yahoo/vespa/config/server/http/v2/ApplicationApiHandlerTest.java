@@ -321,7 +321,7 @@ class ApplicationApiHandlerTest {
                        """
                        {
                          "error-code": "ACTIVATION_CONFLICT",
-                         "message": "app:test.default.default Cannot activate session 4 because the currently active session (3) has changed since session 4 was created (was 2 at creation time)"
+                         "message": "app:test.default.default This session 4 was prepared when session 2 was active, but session 3 has since become active: refusing to activate this session, please redeploy"
                        }
                        """);
 

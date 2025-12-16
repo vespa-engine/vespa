@@ -138,8 +138,8 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, d
 }
 
 void
-NearestNeighborBlueprint::set_lazy_filter(const LazyFilter &lazy_filter) {
-    _lazy_filter = lazy_filter.clone();
+NearestNeighborBlueprint::set_lazy_filter(const GlobalFilter &lazy_filter) {
+    _lazy_filter = lazy_filter.shared_from_this();
 }
 
 void
@@ -147,12 +147,13 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
 {
     uint32_t k = _adjusted_target_hits;
     const auto &df = _distance_calc->function();
-    if (_lazy_filter && _lazy_filter->is_active()) { // global filter might or might not be active
-        bool low_hit_ratio = false;
-        if (_global_filter_hit_ratio.has_value()) {
-            low_hit_ratio = _global_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit;
+    if (_lazy_filter && _lazy_filter->is_active()) { // Global filter might or might not be active
+        std::shared_ptr<const GlobalFilter> use_filter = _lazy_filter;
+        if (_global_filter->is_active()) { // Both global filter and lazy filter
+            use_filter = FallbackFilter::create(*_global_filter, *_lazy_filter);
         }
-        _found_hits = nns_index->find_top_k_with_lazy_filter(_nni_stats, k, df, *_global_filter, _lazy_filter.get(), low_hit_ratio, _hnsw_params.filter_first_exploration,
+        bool low_hit_ratio = (static_cast<double>(use_filter->count()) / _attr_tensor.get_num_docs()) < _hnsw_params.filter_first_upper_limit;
+        _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *use_filter, low_hit_ratio, _hnsw_params.filter_first_exploration,
                                                         k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else if (_global_filter->is_active()) {

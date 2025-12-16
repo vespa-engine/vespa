@@ -1,22 +1,30 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.Inspectable;
 import com.yahoo.data.access.Type;
+import com.yahoo.data.disclosure.DataSink;
+import com.yahoo.data.disclosure.DataSource;
 import com.yahoo.data.JsonProducer;
-import com.yahoo.data.access.simple.JsonRender;
 import com.yahoo.data.access.simple.Value;
 import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.search.rendering.JsonGeneratorDataSink;
+import com.yahoo.search.rendering.NonFiniteToNullDataSink;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorDataSource;
 import com.yahoo.tensor.serialization.JsonFormat;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import static com.yahoo.searchlib.rankingexpression.Reference.wrapInRankingExpression;
 
-import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -30,7 +38,9 @@ import java.util.Set;
  *
  * @author bratseth
  */
-public class FeatureData implements Inspectable, JsonProducer {
+public class FeatureData implements Inspectable, JsonProducer, DataSource {
+
+    private static final JsonFactory jsonFactory = new JsonFactory();
 
     /** Whether values have been written to this (using set()) since it was constructed. */
     private boolean mutated = false;
@@ -82,6 +92,11 @@ public class FeatureData implements Inspectable, JsonProducer {
         return toJson(new JsonFormat.EncodeOptions());
     }
 
+    @Override
+    public void emit(DataSink sink) {
+        asDataSource(new JsonFormat.EncodeOptions()).emit(sink);
+    }
+
     public String toJson(boolean tensorShortForm) {
         return toJson(new JsonFormat.EncodeOptions(tensorShortForm));
     }
@@ -91,47 +106,55 @@ public class FeatureData implements Inspectable, JsonProducer {
     }
 
     public String toJson(JsonFormat.EncodeOptions tensorOptions) {
-        return writeJson(tensorOptions, new StringBuilder()).toString();
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+             JsonGenerator generator = jsonFactory.createGenerator(out)) {
+            asDataSource(tensorOptions).emit(new NonFiniteToNullDataSink(new JsonGeneratorDataSink(generator)));
+            generator.flush();
+            return out.toString();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public DataSource asDataSource(JsonFormat.EncodeOptions tensorOptions) {
+        return sink -> {
+            if (isEmpty()) {
+                sink.startObject();
+                sink.endObject();
+                return;
+            }
+
+            sink.startObject();
+            if (encodedValues != null && !mutated) {
+                encodedValues.traverse((String name, Inspector value) -> {
+                    sink.fieldName(name);
+                    if (value.type() == Type.DOUBLE) {
+                        sink.doubleValue(value.asDouble());
+                    } else if (value.type() == Type.DATA) {
+                        Tensor tensor = tensorFromData(value.asData());
+                        new TensorDataSource(tensor, tensorOptions).emit(sink);
+                    } else {
+                        throw new IllegalStateException("Unexpected feature value type " + value.type());
+                    }
+                });
+            } else {
+                decodeAll();
+                for (var entry : values.entrySet()) {
+                    sink.fieldName(entry.getKey());
+                    if (entry.getValue().type().rank() == 0) {
+                        sink.doubleValue(entry.getValue().asDouble());
+                    } else {
+                        new TensorDataSource(entry.getValue(), tensorOptions).emit(sink);
+                    }
+                }
+            }
+            sink.endObject();
+        };
     }
 
     @Override
     public StringBuilder writeJson(StringBuilder target) {
-        return writeJson(new JsonFormat.EncodeOptions(false, false, false), target);
-    }
-
-    private StringBuilder writeJson(JsonFormat.EncodeOptions tensorOptions, StringBuilder target) {
-        if (isEmpty()) return target.append("{}");
-
-        //implement instead of this:
-        if (encodedValues != null && ! mutated) {
-            return JsonRender.render(encodedValues, new Encoder(target, true, tensorOptions));
-        }
-        else {
-            decodeAll();
-            return writeJson(values, tensorOptions, target);
-        }
-    }
-
-    private StringBuilder writeJson(Map<String, Tensor> values, JsonFormat.EncodeOptions tensorOptions, StringBuilder target) {
-        target.append("{");
-        for (Map.Entry<String, Tensor> entry : values.entrySet()) {
-            target.append("\"").append(entry.getKey()).append("\":");
-            if (entry.getValue().type().rank() == 0) {
-                double value = entry.getValue().asDouble();
-                if (Double.isFinite(value)) {
-                    target.append(value);
-                } else {
-                    target.append("null");
-                }
-            } else {
-                byte[] encodedTensor = JsonFormat.encode(entry.getValue(), tensorOptions);
-                target.append(new String(encodedTensor, StandardCharsets.UTF_8));
-            }
-            target.append(",");
-        }
-        if (!values.isEmpty()) target.setLength(target.length() - 1); // remove last comma
-        target.append("}");
-        return target;
+        return target.append(toJson());
     }
 
     private void decodeAll() {
@@ -237,26 +260,6 @@ public class FeatureData implements Inspectable, JsonProducer {
         if (other == this) return true;
         if ( ! (other instanceof FeatureData)) return false;
         return ((FeatureData)other).toJson().equals(this.toJson());
-    }
-
-    /** A JSON encoder which encodes DATA as a tensor */
-    private static class Encoder extends JsonRender.StringEncoder {
-
-        private final JsonFormat.EncodeOptions tensorOptions;
-
-        Encoder(StringBuilder out, boolean compact, JsonFormat.EncodeOptions tensorOptions) {
-            super(out, compact);
-            this.tensorOptions = tensorOptions;
-        }
-
-        @Override
-        public void encodeDATA(byte[] value) {
-            // This could be done more efficiently ...
-            Tensor tensor = tensorFromData(value);
-            byte[] encodedTensor = JsonFormat.encode(tensor, tensorOptions);
-            target().append(new String(encodedTensor, StandardCharsets.UTF_8));
-        }
-
     }
 
     private static Tensor tensorFromData(byte[] value) {

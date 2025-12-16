@@ -47,7 +47,7 @@ $ vespa query --file q-vector.json
 $ vespa query --header='X-First-Name: Joe' 'yql=select * from music where album contains "head"' hits=5`,
 		Long: `Issue a query to Vespa.
 
-Any parameter from https://docs.vespa.ai/en/reference/querying/yql.html
+Any parameter from https://docs.vespa.ai/en/reference/api/query.html
 can be set by the syntax [parameter-name]=[value].`,
 		// TODO: Support referencing a query json file
 		DisableAutoGenTag: true,

@@ -4,6 +4,8 @@ package com.yahoo.search.result;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.Inspectable;
 import com.yahoo.data.access.simple.JsonRender;
+import com.yahoo.data.disclosure.DataSink;
+import com.yahoo.data.disclosure.DataSource;
 import com.yahoo.data.JsonProducer;
 import com.yahoo.data.XmlProducer;
 import com.yahoo.prelude.hitfield.XmlRenderer;
@@ -11,7 +13,7 @@ import com.yahoo.prelude.hitfield.XmlRenderer;
 /**
  * A wrapper for structured data representing feature values.
  */
-public class StructuredData implements Inspectable, JsonProducer, XmlProducer {
+public class StructuredData implements Inspectable, JsonProducer, XmlProducer, DataSource {
 
     private final Inspector value;
 
@@ -43,4 +45,8 @@ public class StructuredData implements Inspectable, JsonProducer, XmlProducer {
         return JsonRender.render(value, target, true);
     }
 
+    @Override
+    public void emit(DataSink sink) {
+        inspect().emit(sink);
+    }
 }

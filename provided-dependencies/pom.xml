@@ -36,7 +36,7 @@
           <artifactId>org.apache.felix.resolver</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.lz4</groupId>
+          <groupId>at.yawk.lz4</groupId>
           <artifactId>lz4-java</artifactId>
         </exclusion>
       </exclusions>

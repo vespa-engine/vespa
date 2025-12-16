@@ -5,7 +5,8 @@ import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.StreamReadConstraints;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.data.access.Inspector;
+import com.yahoo.data.access.simple.JsonRender;
 import com.yahoo.data.access.simple.Value;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -15,8 +16,10 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import static com.fasterxml.jackson.databind.SerializationFeature.FLUSH_AFTER_WRITE_VALUE;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -24,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class JsonGeneratorDataSinkTest {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final JsonFactory FACTORY = new JsonFactory();
 
     private static JsonFactory createGeneratorFactory() {
@@ -239,10 +241,29 @@ public class JsonGeneratorDataSinkTest {
         var obj = new Value.ObjectValue();
         obj.put("bin", new Value.DataValue(input));
 
-        String oldPathJson = JsonRenderer.WithBase64.toJsonString(obj, enableRawAsBase64);
+        String oldPathJson = WithBase64.toJsonString(obj, enableRawAsBase64);
         String newPathJson = renderViaSink(obj, enableRawAsBase64);
 
         assertSlime(SlimeUtils.jsonToSlime(oldPathJson), SlimeUtils.jsonToSlime(newPathJson));
+    }
+
+    static class WithBase64 extends JsonRender.StringEncoder {
+        private final static Base64.Encoder encoder = Base64.getEncoder();
+        @Override
+        protected void encodeDATA(byte[] value) {
+            var s = encoder.encodeToString(value);
+            encodeSTRING(s);
+        }
+        WithBase64() {
+            super(new StringBuilder(), true);
+        }
+        static String toJsonString(Inspector obj, boolean enableRawAsBase64) {
+            JsonRender.StringEncoder encoder = enableRawAsBase64
+                    ? new WithBase64()
+                    : new JsonRender.StringEncoder(new StringBuilder(), true);
+            encoder.encode(obj);
+            return encoder.target().toString();
+        }
     }
 
     private String renderViaSink(Value.ObjectValue obj, boolean enableRawAsBase64) throws IOException {
@@ -252,6 +273,41 @@ public class JsonGeneratorDataSinkTest {
             gen.flush();
         }
         return out.toString(StandardCharsets.UTF_8);
+    }
+
+    @Test
+    public void testFieldNameFromPrimitive() throws IOException {
+        var out = new SlimeOutputStream();
+        var gen = createGeneratorFactory().createGenerator(out, JsonEncoding.UTF8);
+        var sink = new JsonGeneratorDataSink(gen, false);
+
+        sink.startObject();
+        sink.fieldNameFromPrimitive(new Value.StringValue("strKey"));
+        sink.longValue(1);
+        sink.fieldNameFromPrimitive(new Value.LongValue(42));
+        sink.longValue(2);
+        sink.fieldNameFromPrimitive(new Value.DoubleValue(3.14));
+        sink.longValue(3);
+        sink.fieldNameFromPrimitive(new Value.BoolValue(true));
+        sink.longValue(4);
+        sink.fieldNameFromPrimitive(new Value.DataValue(new byte[]{(byte)0xAB, (byte)0xCD}));
+        sink.longValue(5);
+        sink.endObject();
+        gen.flush();
+
+        assertSlime(SlimeUtils.jsonToSlime("{ strKey:1, '42':2, '3.14':3, 'true':4, '0xABCD':5 }"), out.toSlime());
+
+        var out2 = new SlimeOutputStream();
+        var gen2 = createGeneratorFactory().createGenerator(out2, JsonEncoding.UTF8);
+        var sink2 = new JsonGeneratorDataSink(gen2, true);
+        sink2.startObject();
+        sink2.fieldNameFromPrimitive(new Value.DataValue(new byte[]{(byte)0xAB, (byte)0xCD}));
+        sink2.longValue(1);
+        sink2.endObject();
+        gen2.flush();
+        assertSlime(SlimeUtils.jsonToSlime("{ 'q80=':1 }"), out2.toSlime());
+
+        assertThrows(IllegalArgumentException.class, () -> sink.fieldNameFromPrimitive(new Value.ArrayValue()));
     }
 
 }

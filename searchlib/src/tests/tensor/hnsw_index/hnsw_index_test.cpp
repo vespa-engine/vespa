@@ -739,7 +739,13 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
         EXPECT_EQ(3, root["level_0_links_histogram"][2].asLong());
         EXPECT_EQ(3, root["level_0_links_histogram"][3].asLong());
         EXPECT_EQ(0, root["level_0_links_histogram"][4].asLong());
-        EXPECT_EQ(0, root["unreachable_nodes"].asLong());
+        const auto &reachability = root["reachability_analysis"];
+        EXPECT_TRUE(reachability["completed"].asBool());
+        EXPECT_DOUBLE_EQ(100.0, reachability["links_explored_pct"].asDouble());
+        EXPECT_DOUBLE_EQ(100.0, reachability["nodes_found_pct"].asDouble());
+        EXPECT_EQ(0, reachability["nodes_not_found_count"].asLong());
+        EXPECT_DOUBLE_EQ(0.0, reachability["nodes_not_found_pct"].asDouble());
+        EXPECT_EQ(1000, reachability["timeout_ms"].asLong());
     }
 
     // removing 1, its neighbors {2,3} and {3,4} will link together
@@ -770,7 +776,13 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
         EXPECT_EQ(2, root["level_0_links_histogram"][2].asLong());
         EXPECT_EQ(3, root["level_0_links_histogram"][3].asLong());
         EXPECT_EQ(0, root["level_0_links_histogram"][4].asLong());
-        EXPECT_EQ(0, root["unreachable_nodes"].asLong());
+        const auto &reachability = root["reachability_analysis"];
+        EXPECT_TRUE(reachability["completed"].asBool());
+        EXPECT_DOUBLE_EQ(100.0, reachability["links_explored_pct"].asDouble());
+        EXPECT_DOUBLE_EQ(100.0, reachability["nodes_found_pct"].asDouble());
+        EXPECT_EQ(0, reachability["nodes_not_found_count"].asLong());
+        EXPECT_DOUBLE_EQ(0.0, reachability["nodes_not_found_pct"].asDouble());
+        EXPECT_EQ(1000, reachability["timeout_ms"].asLong());
     }
 }
 

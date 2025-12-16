@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.Base64Variant;
 import com.fasterxml.jackson.core.Base64Variants;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.json.UTF8JsonGenerator;
+import com.fasterxml.jackson.dataformat.cbor.CBORGenerator;
+import com.yahoo.data.access.Inspector;
 import com.yahoo.data.disclosure.DataSink;
 
 import java.io.IOException;
@@ -16,7 +18,7 @@ import java.nio.charset.StandardCharsets;
  *
  * @author johsol
  */
-class JsonGeneratorDataSink implements DataSink {
+public class JsonGeneratorDataSink implements DataSink {
 
     private static final byte[] HEX_DIGITS_ASCII = "0123456789ABCDEF".getBytes(StandardCharsets.US_ASCII);
     private static final boolean RAW_AS_BASE64_DISABLED = false;
@@ -32,7 +34,7 @@ class JsonGeneratorDataSink implements DataSink {
 
     public JsonGeneratorDataSink(JsonGenerator gen, boolean enableRawAsBase64) {
         this.gen = gen;
-        this.wantUtf8 = gen instanceof UTF8JsonGenerator;
+        this.wantUtf8 = gen instanceof UTF8JsonGenerator || gen instanceof CBORGenerator;
         this.enableRawAsBase64 = enableRawAsBase64;
     }
 
@@ -219,5 +221,27 @@ class JsonGeneratorDataSink implements DataSink {
             chars[p++] = (char) HEX_DIGITS_ASCII[v & 0x0F];
         }
         return new String(chars);
+    }
+
+    /** Write a primitive Inspector value as a JSON field name */
+    void fieldNameFromPrimitive(Inspector value) {
+        try {
+            switch (value.type()) {
+                case STRING -> gen.writeFieldName(value.asString());
+                case LONG -> gen.writeFieldName(Long.toString(value.asLong()));
+                case DOUBLE -> gen.writeFieldName(Double.toString(value.asDouble()));
+                case BOOL -> gen.writeFieldName(value.asBool() ? "true" : "false");
+                case DATA -> {
+                    if (enableRawAsBase64) {
+                        gen.writeFieldName(base64Variant.encode(value.asData()));
+                    } else {
+                        gen.writeFieldName(toHexString(value.asData()));
+                    }
+                }
+                default -> throw new IllegalArgumentException("Cannot use " + value.type() + " as field name");
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

@@ -538,14 +538,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                             ", current active session=" + activeSessionSessionId);
         if (activeSession.isNewerThan(activeSessionAtCreate) &&
             activeSessionSessionId != sessionId) {
-            String errMsg = activeSession.logPre() + "Cannot activate session " + sessionId +
-                            " because the currently active session (" + activeSessionSessionId +
-                            ") has changed since session " + sessionId + " was created (was " +
-                            activeSessionAtCreate + " at creation time)";
+            String errMsg = activeSession.logPre() + "This session " + sessionId +
+                            " was prepared when session "+ activeSessionAtCreate + " was active," +
+                            " but session " + activeSessionSessionId + " has since become active:";
             if (ignoreStaleSessionFailure) {
-                log.warning(errMsg + " (Continuing because of force.)");
+                log.warning(errMsg + " will activate anyway (by force)");
             } else {
-                throw new ActivationConflictException(errMsg);
+                throw new ActivationConflictException(errMsg + " refusing to activate this session, please redeploy");
             }
         }
     }
@@ -555,7 +554,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (sessionId < currentActiveSessionId) {
             throw new ActivationConflictException("Cannot activate session " + sessionId +
                                                   ", because it is older than current active session (" +
-                                                  currentActiveSessionId + ")");
+                                                  currentActiveSessionId + "), please try deploying again from start");
         }
     }
 
@@ -1107,6 +1106,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .map(Capacity::maxResources)// TODO: This may be unspecified -> 0
                 .mapToDouble(resources -> resources.nodes() * resources.nodeResources().cost())
                 .sum();
+    }
+
+    public void setDeferChangesUntilRestart(Session session, Set<String> clusterIds) {
+
     }
 
     @Override
