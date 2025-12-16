@@ -211,7 +211,7 @@
                     <i>org.antlr:antlr4-runtime:*:*</i>
                     <i>org.apache.felix:org.apache.felix.framework:*:*</i>
                     <i>org.hdrhistogram:HdrHistogram:*:*</i>
-                    <i>org.lz4:lz4-java:*:*</i>
+                    <i>at.yawk.lz4:lz4-java:*:*</i>
                     <i>org.slf4j:jcl-over-slf4j:*:*</i>
                     <i>org.slf4j:log4j-over-slf4j:*:*</i>
                     <i>org.slf4j:slf4j-api:*:*</i>

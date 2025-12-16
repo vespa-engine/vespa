@@ -213,7 +213,7 @@
                                         <include>org.junit.platform:junit-platform-commons:${junit.platform.vespa.tenant.version}:test</include>
                                         <include>org.junit.platform:junit-platform-engine:${junit.platform.vespa.tenant.version}:test</include>
                                         <include>org.junit.vintage:junit-vintage-engine:${junit.vespa.tenant.version}:test</include>
-                                        <include>org.lz4:lz4-java:${org.lz4.vespa.version}:test</include>
+                                        <include>at.yawk.lz4:lz4-java:${at.yawk.lz4.vespa.version}:test</include>
                                         <include>org.opentest4j:opentest4j:${opentest4j.vespa.version}:test</include>
                                         <include>xerces:xercesImpl:${xerces.vespa.version}:test</include>
                                     </allowed>
