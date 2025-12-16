@@ -21,12 +21,14 @@ OSVERSION=$2
 ALLOWED_ARCHS=("x86_64" "aarch64")
 ALLOWED_VERSIONS=("8" "9")
 
-if [[ " ${ALLOWED_ARCHS[*]} " != " $RPMARCH " ]]; then
+# shellcheck disable=SC2076
+if [[ ! " ${ALLOWED_ARCHS[*]} " =~ " ${RPMARCH} " ]]; then
   echo "Architecture $RPMARCH not in allowed archs: ${ALLOWED_ARCHS[*]}"
   exit 1
 fi
 
-if [[ " ${ALLOWED_VERSIONS[*]} " != " $OSVERSION " ]]; then
+# shellcheck disable=SC2076
+if [[ ! " ${ALLOWED_VERSIONS[*]} " =~ " ${OSVERSION} " ]]; then
   echo "OS version $OSVERSION not in allowed versions: ${ALLOWED_VERSIONS[*]}"
   exit 1
 fi
