@@ -40,6 +40,26 @@ namespace search::tensor {
  * TODO: Add details on how to handle removes.
  */
 
+struct ReachabilityResult {
+    uint32_t nodes_found;
+    uint32_t nodes_not_found;
+    uint32_t nodes_pending;  // nodes reached but not yet explored
+    bool     completed;
+    uint32_t timeout_ms;
+
+    double nodes_found_pct() const noexcept {
+        uint32_t total = nodes_found + nodes_not_found;
+        return total > 0 ? (100.0 * nodes_found / total) : 100.0;
+    }
+    double nodes_not_found_pct() const noexcept {
+        uint32_t total = nodes_found + nodes_not_found;
+        return total > 0 ? (100.0 * nodes_not_found / total) : 0.0;
+    }
+    double links_explored_pct() const noexcept {
+        return nodes_found > 0 ? (100.0 * (nodes_found - nodes_pending) / nodes_found) : 100.0;
+    }
+};
+
 namespace internal {
 struct PreparedAddNode {
     using Links = std::vector<std::pair<uint32_t, vespalib::datastore::EntryRef>>;
@@ -293,7 +313,7 @@ public:
     HnswTestNode get_node(uint32_t nodeid) const;
     void set_node(uint32_t nodeid, const HnswTestNode &node);
     bool check_link_symmetry() const;
-    std::pair<uint32_t, bool> count_reachable_nodes() const;
+    ReachabilityResult count_reachable_nodes() const;
     GraphType& get_graph() noexcept { return _graph; }
     const GraphType& get_graph() const noexcept { return _graph; }
     IdMapping& get_id_mapping() noexcept { return _id_mapping; }

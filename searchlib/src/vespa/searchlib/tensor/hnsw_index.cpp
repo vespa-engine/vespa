@@ -1137,13 +1137,15 @@ HnswIndex<type>::check_link_symmetry() const
 }
 
 template <HnswIndexType type>
-std::pair<uint32_t, bool>
+ReachabilityResult
 HnswIndex<type>::count_reachable_nodes() const
 {
+    constexpr uint32_t timeout_ms = std::chrono::duration_cast<std::chrono::milliseconds>(MAX_COUNT_DURATION).count();
+    uint32_t valid_nodes = _graph.get_active_nodes();
     auto entry = _graph.get_entry_node();
     int search_level = entry.level;
     if (search_level < 0) {
-        return {0, true};
+        return {0, valid_nodes, 0, true, timeout_ms};
     }
     std::vector<bool> visited(_graph.size());
     LinkArray found_links;
@@ -1155,7 +1157,9 @@ HnswIndex<type>::count_reachable_nodes() const
     while (search_level > 0) {
         for (uint32_t idx = 0; idx < found_links.size(); ++idx) {
             if (vespalib::steady_clock::now() > doom) {
-                return {found_links.size(), false};
+                uint32_t found = found_links.size();
+                // All found nodes are pending (not yet explored at level 0)
+                return {found, valid_nodes - found, found, false, timeout_ms};
             }
             uint32_t nodeid = found_links[idx];
             if (nodeid < visited.size()) {
@@ -1179,7 +1183,8 @@ HnswIndex<type>::count_reachable_nodes() const
     bool runAnotherVisit = true;
     while (runAnotherVisit) {
         if (vespalib::steady_clock::now() > doom) {
-            return {found_cnt, false};
+            uint32_t pending = visitNext.countTrueBits();
+            return {found_cnt, valid_nodes - found_cnt, pending, false, timeout_ms};
         }
         runAnotherVisit = false;
         visitNext.foreach_truebit(
@@ -1199,7 +1204,7 @@ HnswIndex<type>::count_reachable_nodes() const
                 }
             );
     }
-    return {found_cnt, true};
+    return {found_cnt, valid_nodes - found_cnt, 0, true, timeout_ms};
 }
 
 template <HnswIndexType type>
