@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
-import com.yahoo.vespa.model.application.validation.change.VespaRestartAction.ConfigChange;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.DataplaneProxy;
 
@@ -35,10 +34,11 @@ public class DataplaneProxyChangeValidator implements ChangeValidator {
             boolean hasProxy = hasDataplaneProxy(currentCluster);
 
             if (hadProxy != hasProxy) {
+                currentCluster.setDeferChangesUntilRestart(true);
                 var message = hasProxy
                         ? "Token endpoint was enabled for cluster '%s', services require restart"
                         : "Token endpoint was disabled for cluster '%s', services require restart";
-                context.require(createRestartAction(currentCluster, message.formatted(clusterId), ConfigChange.DEFER_UNTIL_RESTART));
+                context.require(createRestartAction(currentCluster, message.formatted(clusterId)));
             }
         }
     }
@@ -53,11 +53,10 @@ public class DataplaneProxyChangeValidator implements ChangeValidator {
                 .anyMatch(component -> component.getClassId().getName().equals(DataplaneProxy.COMPONENT_CLASS));
     }
 
-    private static VespaRestartAction createRestartAction(ApplicationContainerCluster cluster, String message,
-                                                         ConfigChange configChange) {
+    private static VespaRestartAction createRestartAction(ApplicationContainerCluster cluster, String message) {
         var services = cluster.getContainers().stream()
                 .map(AbstractService::getServiceInfo)
                 .toList();
-        return new VespaRestartAction(cluster.id(), message, services, configChange);
+        return new VespaRestartAction(cluster.id(), message, services);
     }
 }

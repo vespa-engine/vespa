@@ -1,9 +1,9 @@
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.config.server.session.ActivationTriggers.DeferredReconfiguration;
 import com.yahoo.vespa.config.server.session.ActivationTriggers.NodeRestart;
 import com.yahoo.vespa.config.server.session.ActivationTriggers.Reindexing;
 
@@ -18,7 +18,6 @@ public class ActivationTriggersSerializer {
 
     static final String NODE_RESTARTS = "nodeRestarts";
     static final String REINDEXINGS = "reindexings";
-    static final String DEFERRED_RECONFIGURATIONS = "deferredReconfigurations";
     static final String CLUSTER_NAME = "clusterName";
     static final String DOCUMENT_TYPE = "documentType";
 
@@ -43,11 +42,6 @@ public class ActivationTriggersSerializer {
             entry.setString(CLUSTER_NAME, reindexing.clusterId());
             entry.setString(DOCUMENT_TYPE, reindexing.documentType());
         }
-
-        var deferredReconfigurations = object.setArray(DEFERRED_RECONFIGURATIONS);
-        for (var deferred : triggers.deferredReconfigurations()) {
-            deferredReconfigurations.addString(deferred.clusterId());
-        }
     }
 
     public static ActivationTriggers fromSlime(Cursor object) {
@@ -61,10 +55,7 @@ public class ActivationTriggersSerializer {
                                                    .map(entry -> new Reindexing(entry.field(CLUSTER_NAME).asString(),
                                                                                 entry.field(DOCUMENT_TYPE).asString()))
                                                    .toList();
-        var deferredReconfigurations = SlimeUtils.entriesStream(object.field(DEFERRED_RECONFIGURATIONS))
-                .map(entry -> new DeferredReconfiguration(entry.asString()))
-                .toList();
-        return new ActivationTriggers(nodeRestarts, reindexings, deferredReconfigurations);
+        return new ActivationTriggers(nodeRestarts, reindexings);
     }
 
 }
