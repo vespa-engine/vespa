@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.configchange;
 
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.vespa.model.application.validation.change.VespaRestartAction.ConfigChange;
 import org.junit.Test;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static com.yahoo.vespa.config.server.configchange.Utils.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author geirst
@@ -88,7 +90,8 @@ public class RestartActionsTest {
     public void use_for_internal_restart_test() {
         ConfigChangeActions actions = new ConfigChangeActionsBuilder()
                 .restart(CHANGE_MSG, CLUSTER, CLUSTER_TYPE, SERVICE_TYPE, SERVICE_NAME)
-                .restart(CHANGE_MSG, CLUSTER, CLUSTER_TYPE_2, SERVICE_TYPE, SERVICE_NAME, true).build();
+                .restart(CHANGE_MSG, CLUSTER, CLUSTER_TYPE_2, SERVICE_TYPE, SERVICE_NAME, true, ConfigChange.IMMEDIATE)
+                .build();
 
         assertEquals(Set.of(CLUSTER_TYPE, CLUSTER_TYPE_2),
                 actions.getRestartActions().getEntries().stream().map(RestartActions.Entry::getClusterType).collect(Collectors.toSet()));
@@ -96,5 +99,13 @@ public class RestartActionsTest {
                 actions.getRestartActions().useForInternalRestart(false).getEntries().stream().map(RestartActions.Entry::getClusterType).collect(Collectors.toSet()));
         assertEquals(Set.of(CLUSTER_TYPE),
                 actions.getRestartActions().useForInternalRestart(true).getEntries().stream().map(RestartActions.Entry::getClusterType).collect(Collectors.toSet()));
+    }
+
+    @Test
+    public void defer_changes_test() {
+        var actions = new ConfigChangeActionsBuilder()
+                .restart(CHANGE_MSG, CLUSTER, CLUSTER_TYPE_2, SERVICE_TYPE, SERVICE_NAME, false, ConfigChange.DEFER_UNTIL_RESTART)
+                .build();
+        assertTrue(actions.getRestartActions().getEntries().get(0).deferChanges());
     }
 }

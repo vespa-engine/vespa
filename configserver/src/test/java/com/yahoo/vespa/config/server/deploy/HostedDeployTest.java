@@ -23,7 +23,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
@@ -33,11 +32,10 @@ import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.maintenance.PendingRestartsMaintainer;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
-import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
+import com.yahoo.vespa.model.application.validation.change.VespaRestartAction.ConfigChange;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -550,6 +548,33 @@ public class HostedDeployTest {
         assertEquals(Optional.of(ApplicationReindexing.empty()
                                                       .withPending("music", "music", prepareResult.sessionId())),
                      tester.tenant().getApplicationRepo().database().readReindexingStatus(tester.applicationId()));
+    }
+
+    @Test
+    public void testDeferredReconfigurationIsAppliedDuringActivation() {
+        var hosts = createHosts(9, "7.0.0");
+        var services = List.of(
+                new ServiceInfo("jdisc", "container", null, Map.of("clustername", "container"), "configid", "host"));
+
+        var modelFactories = List.<ModelFactory>of(
+                new ConfigChangeActionsModelFactory(
+                        Version.fromString("7.0.0"),
+                        new VespaRestartAction(
+                                ClusterSpec.Id.from("default"),
+                                "Dataplane proxy change requires restart",
+                                services,
+                                ConfigChange.DEFER_UNTIL_RESTART)));
+
+        var tester = createTester(hosts, modelFactories, prodZone);
+        tester.deployApp("src/test/apps/hosted/", "7.0.0");
+
+        var session = tester.applicationRepository().getActiveSession(tester.applicationId()).orElseThrow();
+        var appVersions = session.applicationVersions().orElseThrow();
+        var model = (com.yahoo.vespa.model.VespaModel) appVersions.applications().get(0).getModel();
+        var cluster = model.getContainerClusters().get("container");
+
+        assertTrue("Cluster should have deferChangesUntilRestart set after activation",
+                  cluster.getDeferChangesUntilRestart());
     }
 
     @Test

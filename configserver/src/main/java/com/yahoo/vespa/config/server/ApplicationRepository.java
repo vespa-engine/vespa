@@ -1108,6 +1108,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .sum();
     }
 
+    public void setDeferChangesUntilRestart(Session session, Set<String> clusterIds) {
+
+    }
+
     @Override
     public Duration serverDeployTimeout() { return Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout()); }
 
