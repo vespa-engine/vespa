@@ -30,7 +30,7 @@ public class GzipRequestCleanupHandler extends Handler.Wrapper {
         if (request instanceof GzipRequest gzipRequest && !(response instanceof GzipResponseAndCallback)) {
             var cleanupCallback = new CleanupCallback(gzipRequest, callback);
             var result = next.handle(request, response, cleanupCallback);
-            if (!result) cleanupCallback.cleaned.set(true); // GzipHandler will invoke destroy for us, terminate early (if possible)
+            if (!result) cleanupCallback.shouldInvokeDestroy.set(false); // GzipHandler will invoke destroy for us, terminate early (if possible)
             return result;
         } else {
             return next.handle(request, response, callback);
@@ -40,7 +40,7 @@ public class GzipRequestCleanupHandler extends Handler.Wrapper {
     private static class CleanupCallback implements Callback {
         private final GzipRequest gzipRequest;
         private final Callback delegate;
-        private final AtomicBoolean cleaned = new AtomicBoolean(false);
+        private final AtomicBoolean shouldInvokeDestroy = new AtomicBoolean(true);
 
         CleanupCallback(GzipRequest gzipRequest, Callback delegate) {
             this.gzipRequest = gzipRequest;
@@ -68,7 +68,7 @@ public class GzipRequestCleanupHandler extends Handler.Wrapper {
         @Override public InvocationType getInvocationType() { return delegate.getInvocationType(); }
 
         private void cleanup() {
-            if (cleaned.compareAndSet(false, true)) {
+            if (shouldInvokeDestroy.compareAndSet(true, false)) {
                 gzipRequest.destroy();
             }
         }
