@@ -7,7 +7,6 @@ import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NearItem;
-import com.yahoo.prelude.query.ONearItem;
 import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.RankItem;
@@ -21,8 +20,6 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.yolean.chain.Before;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 /**
