@@ -27,14 +27,13 @@ public class GzipRequestCleanupHandler extends Handler.Wrapper {
         var next = getHandler();
         if (next == null) return false;
         // GzipHandler will take care of invoking destroy() if response compression occurs
-        if (request instanceof GzipRequest gzipRequest && !(response instanceof GzipResponseAndCallback)) {
-            var cleanupCallback = new CleanupCallback(gzipRequest, callback);
-            var result = next.handle(request, response, cleanupCallback);
-            if (!result) cleanupCallback.shouldInvokeDestroy.set(false); // GzipHandler will invoke destroy for us, terminate early (if possible)
-            return result;
-        } else {
-            return next.handle(request, response, callback);
-        }
+        var nextCallback = request instanceof GzipRequest gzipRequest && !(response instanceof GzipResponseAndCallback)
+                ? new CleanupCallback(gzipRequest, callback)
+                : callback;
+        // Callback should not be invoked if next.handle() returns false,
+        // so we can safely pass it down without setting shouldInvokeDestroy to false here.
+        // The GzipHandler will take care of invoking destroy() in that case.
+        return next.handle(request, response, nextCallback);
     }
 
     private static class CleanupCallback implements Callback {
