@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Handler that ensures {@link GzipRequest#destroy()} is called for all gzip encoded requests
  * when the request completes, regardless of whether response compression occurred.
  * Works around a lifecycle issue in {@link GzipHandler} where inflated requests that
- * are not deflated do not have their destroy() method called, leading inflater instances not being recycled.
+ * are not deflated do not have their destroy() method called, leading to inflater instances not being recycled.
  *
  * @author bjorncs
  */
