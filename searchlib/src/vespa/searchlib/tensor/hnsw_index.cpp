@@ -1181,6 +1181,7 @@ HnswIndex<type>::count_reachable_nodes() const
         visitNext.setBit(nodeid);
     }
     bool runAnotherVisit = true;
+    visitNext.invalidateCachedCount();
     while (runAnotherVisit) {
         if (vespalib::steady_clock::now() > doom) {
             uint32_t pending = visitNext.countTrueBits();
