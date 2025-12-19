@@ -3,7 +3,6 @@ package com.yahoo.config.provision;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 /**
  * The node resources required by an application cluster
