@@ -205,6 +205,213 @@ public class VoyageAIEmbedderIntegrationTest {
         embedder.deconstruct();
     }
 
+    @Test
+    public void testRealAPIWithMultimodal35DefaultDimension() {
+        String apiKey = System.getenv("VOYAGE_API_KEY");
+
+        // voyage-multimodal-3.5 should auto-select the multimodal embeddings endpoint
+        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-multimodal-3.5");
+
+        // Default dimension is 1024
+        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        Embedder.Context context = new Embedder.Context("integration-test");
+
+        Tensor result = embedder.embed("Testing multimodal embeddings", context, targetType);
+
+        assertNotNull(result);
+        assertEquals(1024, result.size());
+
+        // Verify non-zero embeddings
+        boolean hasNonZero = false;
+        for (int i = 0; i < 1024; i++) {
+            double val = result.get(TensorAddress.of(i));
+            if (Math.abs(val) > 0.0001) {
+                hasNonZero = true;
+                break;
+            }
+        }
+        assertTrue(hasNonZero, "Embedding should contain non-zero values");
+
+        embedder.deconstruct();
+    }
+
+    @Test
+    public void testRealAPIWithMultimodal35CustomDimension() {
+        String apiKey = System.getenv("VOYAGE_API_KEY");
+
+        // Test with custom output dimension (512)
+        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
+        configBuilder.apiKeySecretRef("test_key");
+        configBuilder.model("voyage-multimodal-3.5");
+        configBuilder.outputDimension(512);  // Custom dimension
+        configBuilder.timeout(30000);
+
+        VoyageAIEmbedder embedder = new VoyageAIEmbedder(
+                configBuilder.build(),
+                Embedder.Runtime.testInstance(),
+                createSecrets(apiKey)
+        );
+
+        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[512])");
+        Embedder.Context context = new Embedder.Context("integration-test");
+
+        Tensor result = embedder.embed("Testing multimodal with custom dimension", context, targetType);
+
+        assertNotNull(result);
+        assertEquals(512, result.size());
+
+        embedder.deconstruct();
+    }
+
+    @Test
+    public void testRealAPIWithMultimodal35AllDimensions() {
+        String apiKey = System.getenv("VOYAGE_API_KEY");
+
+        // Test all supported dimensions: 256, 512, 1024, 2048
+        int[] dimensions = {256, 512, 1024, 2048};
+
+        for (int dim : dimensions) {
+            VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
+            configBuilder.apiKeySecretRef("test_key");
+            configBuilder.model("voyage-multimodal-3.5");
+            configBuilder.outputDimension(dim);
+            configBuilder.timeout(30000);
+
+            VoyageAIEmbedder embedder = new VoyageAIEmbedder(
+                    configBuilder.build(),
+                    Embedder.Runtime.testInstance(),
+                    createSecrets(apiKey)
+            );
+
+            TensorType targetType = TensorType.fromSpec("tensor<float>(d0[" + dim + "])");
+            Embedder.Context context = new Embedder.Context("integration-test");
+
+            Tensor result = embedder.embed("Testing dimension " + dim, context, targetType);
+
+            assertNotNull(result, "Result should not be null for dimension " + dim);
+            assertEquals(dim, result.size(), "Embedding should have " + dim + " dimensions");
+
+            embedder.deconstruct();
+        }
+    }
+
+    @Test
+    public void testRealAPIWithContextual3() {
+        String apiKey = System.getenv("VOYAGE_API_KEY");
+
+        // voyage-context-3 should auto-select the contextualized embeddings endpoint
+        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-context-3");
+
+        // voyage-context-3 outputs 1024 dimensions
+        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        Embedder.Context context = new Embedder.Context("integration-test");
+
+        Tensor result = embedder.embed("Testing contextual embeddings for document retrieval", context, targetType);
+
+        assertNotNull(result);
+        assertEquals(1024, result.size());
+
+        // Verify non-zero embeddings
+        boolean hasNonZero = false;
+        for (int i = 0; i < 1024; i++) {
+            double val = result.get(TensorAddress.of(i));
+            if (Math.abs(val) > 0.0001) {
+                hasNonZero = true;
+                break;
+            }
+        }
+        assertTrue(hasNonZero, "Embedding should contain non-zero values");
+
+        embedder.deconstruct();
+    }
+
+    @Test
+    public void testRealAPIWithContextual3SemanticSimilarity() {
+        String apiKey = System.getenv("VOYAGE_API_KEY");
+
+        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-context-3");
+
+        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        Embedder.Context context = new Embedder.Context("integration-test");
+
+        // Similar document chunks
+        Tensor embedding1 = embedder.embed("Machine learning is a subset of artificial intelligence", context, targetType);
+        Tensor embedding2 = embedder.embed("AI and ML are closely related fields in computer science", context, targetType);
+
+        // Different topic
+        Tensor embedding3 = embedder.embed("The recipe calls for two cups of flour and one egg", context, targetType);
+
+        double similarity12 = cosineSimilarity(embedding1, embedding2);
+        double similarity13 = cosineSimilarity(embedding1, embedding3);
+
+        // Similar texts should have higher similarity
+        assertTrue(similarity12 > similarity13,
+                "Similar texts should have higher similarity. Sim(1,2)=" + similarity12 +
+                ", Sim(1,3)=" + similarity13);
+
+        embedder.deconstruct();
+    }
+
+    @Test
+    public void testRealAPIWithContextual3CustomDimension() {
+        String apiKey = System.getenv("VOYAGE_API_KEY");
+
+        // Test with custom output dimension (512)
+        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
+        configBuilder.apiKeySecretRef("test_key");
+        configBuilder.model("voyage-context-3");
+        configBuilder.outputDimension(512);
+        configBuilder.timeout(30000);
+
+        VoyageAIEmbedder embedder = new VoyageAIEmbedder(
+                configBuilder.build(),
+                Embedder.Runtime.testInstance(),
+                createSecrets(apiKey)
+        );
+
+        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[512])");
+        Embedder.Context context = new Embedder.Context("integration-test");
+
+        Tensor result = embedder.embed("Testing contextual with custom dimension", context, targetType);
+
+        assertNotNull(result);
+        assertEquals(512, result.size());
+
+        embedder.deconstruct();
+    }
+
+    @Test
+    public void testRealAPIWithContextual3AllDimensions() {
+        String apiKey = System.getenv("VOYAGE_API_KEY");
+
+        // voyage-context-3 supports: 256, 512, 1024, 2048
+        int[] dimensions = {256, 512, 1024, 2048};
+
+        for (int dim : dimensions) {
+            VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
+            configBuilder.apiKeySecretRef("test_key");
+            configBuilder.model("voyage-context-3");
+            configBuilder.outputDimension(dim);
+            configBuilder.timeout(30000);
+
+            VoyageAIEmbedder embedder = new VoyageAIEmbedder(
+                    configBuilder.build(),
+                    Embedder.Runtime.testInstance(),
+                    createSecrets(apiKey)
+            );
+
+            TensorType targetType = TensorType.fromSpec("tensor<float>(d0[" + dim + "])");
+            Embedder.Context context = new Embedder.Context("integration-test");
+
+            Tensor result = embedder.embed("Testing dimension " + dim, context, targetType);
+
+            assertNotNull(result, "Result should not be null for dimension " + dim);
+            assertEquals(dim, result.size(), "Embedding should have " + dim + " dimensions");
+
+            embedder.deconstruct();
+        }
+    }
+
     // ===== Helper Methods =====
 
     private VoyageAIEmbedder createEmbedder(String apiKey, String model) {

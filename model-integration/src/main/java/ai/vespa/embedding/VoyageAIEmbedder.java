@@ -64,11 +64,17 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    // VoyageAI API endpoints - auto-selected based on model name
+    private static final String EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/embeddings";
+    private static final String MULTIMODAL_EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/multimodalembeddings";
+    private static final String CONTEXTUALIZED_EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/contextualizedembeddings";
+
     // Configuration
     private final VoyageAiEmbedderConfig config;
     private final Embedder.Runtime runtime;
     private final Secret apiKey;
     private final OkHttpClient httpClient;
+    private final String resolvedEndpoint;
 
     @Inject
     public VoyageAIEmbedder(VoyageAiEmbedderConfig config, Embedder.Runtime runtime, Secrets secretStore) {
@@ -76,8 +82,37 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         this.runtime = runtime;
         this.apiKey = getApiKey(config, secretStore);
         this.httpClient = createHttpClient(config);
+        this.resolvedEndpoint = resolveEndpoint(config);
 
-        log.info("VoyageAI embedder initialized with model: " + config.model());
+        log.info("VoyageAI embedder initialized with model: " + config.model() + ", endpoint: " + resolvedEndpoint);
+    }
+
+    /**
+     * Resolve the API endpoint based on model name.
+     * Different model types use different endpoints:
+     * - voyage-multimodal-* models use /v1/multimodalembeddings
+     * - voyage-context-* models use /v1/contextualizedembeddings
+     * - All other models use /v1/embeddings
+     */
+    private String resolveEndpoint(VoyageAiEmbedderConfig config) {
+        // If user explicitly configured an endpoint, use it
+        String configuredEndpoint = config.endpoint();
+        if (configuredEndpoint != null && !configuredEndpoint.equals(EMBEDDINGS_ENDPOINT)) {
+            return configuredEndpoint;
+        }
+
+        // Auto-select endpoint based on model name
+        String model = config.model();
+        if (model != null) {
+            if (model.contains("multimodal")) {
+                return MULTIMODAL_EMBEDDINGS_ENDPOINT;
+            }
+            if (model.contains("context")) {
+                return CONTEXTUALIZED_EMBEDDINGS_ENDPOINT;
+            }
+        }
+
+        return EMBEDDINGS_ENDPOINT;
     }
 
     /**
@@ -198,19 +233,75 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     }
 
     /**
+     * Check if this is a multimodal model.
+     */
+    private boolean isMultimodalModel() {
+        return config.model() != null && config.model().contains("multimodal");
+    }
+
+    /**
+     * Check if this is a contextual model.
+     */
+    private boolean isContextualModel() {
+        return config.model() != null && config.model().contains("context");
+    }
+
+    /**
      * Call VoyageAI API to get embeddings.
      */
     private Tensor callVoyageAI(String text, String inputType, TensorType targetType)
             throws IOException, InterruptedException {
 
-        VoyageAIRequest request = new VoyageAIRequest(
-                List.of(text),
-                config.model(),
-                inputType,
-                config.truncate()
-        );
+        // Output dimension: null means use model default (when config is 0)
+        Integer outputDimension = config.outputDimension() > 0 ? config.outputDimension() : null;
 
-        String jsonRequest = objectMapper.writeValueAsString(request);
+        String jsonRequest;
+        if (isMultimodalModel()) {
+            // Multimodal API uses different request format
+            MultimodalRequest request = new MultimodalRequest(
+                    text,
+                    config.model(),
+                    inputType,
+                    config.truncate(),
+                    outputDimension
+            );
+            jsonRequest = objectMapper.writeValueAsString(request);
+        } else if (isContextualModel()) {
+            // Contextual API uses array of document chunks format
+            // For single text, we treat it as a single-chunk document
+            ContextualRequest request = new ContextualRequest(
+                    text,
+                    config.model(),
+                    inputType,
+                    outputDimension
+            );
+            jsonRequest = objectMapper.writeValueAsString(request);
+
+            log.fine(() -> "VoyageAI request: " + jsonRequest);
+
+            // Contextual API has different response format: data[document].data[chunk].embedding
+            ContextualResponse response = callContextualAPIWithRetry(jsonRequest);
+
+            if (response.data == null || response.data.isEmpty() ||
+                response.data.get(0).data == null || response.data.get(0).data.isEmpty()) {
+                throw new IOException("VoyageAI contextual API returned empty response");
+            }
+
+            // Get embedding from first chunk of first document
+            float[] embedding = response.data.get(0).data.get(0).embedding;
+            return createTensor(embedding, targetType);
+        } else {
+            // Standard embeddings API
+            VoyageAIRequest request = new VoyageAIRequest(
+                    List.of(text),
+                    config.model(),
+                    inputType,
+                    config.truncate(),
+                    outputDimension
+            );
+            jsonRequest = objectMapper.writeValueAsString(request);
+        }
+
         log.fine(() -> "VoyageAI request: " + jsonRequest);
 
         VoyageAIResponse response = callAPIWithRetry(jsonRequest);
@@ -244,7 +335,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             try {
                 RequestBody body = RequestBody.create(jsonRequest, JSON);
                 Request httpRequest = new Request.Builder()
-                        .url(config.endpoint())
+                        .url(resolvedEndpoint)
                         .header("Authorization", "Bearer " + apiKey.current())
                         .header("Content-Type", "application/json")
                         .post(body)
@@ -254,6 +345,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                     String responseBody = response.body() != null ? response.body().string() : "";
 
                     if (response.isSuccessful()) {
+                        log.fine(() -> "VoyageAI response: " + responseBody);
                         return objectMapper.readValue(responseBody, VoyageAIResponse.class);
                     } else if (response.code() == 429 || response.code() >= 500) {
                         // Calculate time remaining
@@ -275,6 +367,70 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                         }
 
                         // Retry with fixed delay
+                        retries++;
+                        String errorMsg = response.code() == 429 ? "rate limited" : "server error (" + response.code() + ")";
+                        log.warning("VoyageAI API " + errorMsg + ". Retry " + retries +
+                                " after " + retryDelay + "ms (timeout remaining: " + timeRemaining + "ms)");
+
+                        Thread.sleep(retryDelay);
+
+                    } else if (response.code() == 401) {
+                        throw new IOException("VoyageAI API authentication failed. Please check your API key. Response: " + responseBody);
+
+                    } else {
+                        throw new IOException("VoyageAI API request failed with status " + response.code() + ": " + responseBody);
+                    }
+                }
+            } catch (JsonProcessingException e) {
+                throw new IOException("Failed to parse VoyageAI API response", e);
+            }
+        }
+    }
+
+    /**
+     * Call VoyageAI Contextual API with retry on transient failures.
+     * Similar to callAPIWithRetry but parses ContextualResponse.
+     */
+    private ContextualResponse callContextualAPIWithRetry(String jsonRequest)
+            throws IOException, InterruptedException {
+
+        long startTime = System.currentTimeMillis();
+        long timeoutMs = config.timeout();
+        int retries = 0;
+        long retryDelay = 1000; // Fixed 1 second delay
+
+        while (true) {
+            try {
+                RequestBody body = RequestBody.create(jsonRequest, JSON);
+                Request httpRequest = new Request.Builder()
+                        .url(resolvedEndpoint)
+                        .header("Authorization", "Bearer " + apiKey.current())
+                        .header("Content-Type", "application/json")
+                        .post(body)
+                        .build();
+
+                try (Response response = httpClient.newCall(httpRequest).execute()) {
+                    String responseBody = response.body() != null ? response.body().string() : "";
+
+                    if (response.isSuccessful()) {
+                        log.fine(() -> "VoyageAI contextual response: " + responseBody);
+                        return objectMapper.readValue(responseBody, ContextualResponse.class);
+                    } else if (response.code() == 429 || response.code() >= 500) {
+                        long elapsedTime = System.currentTimeMillis() - startTime;
+                        long timeRemaining = timeoutMs - elapsedTime;
+
+                        if (timeRemaining <= retryDelay) {
+                            String errorType = response.code() == 429 ? "rate limit" : "server error";
+                            throw new IOException("VoyageAI API " + errorType + " (" + response.code() +
+                                    "). Cannot retry: would exceed timeout of " + timeoutMs + "ms. Response: " + responseBody);
+                        }
+
+                        if (retries >= config.maxRetries()) {
+                            String errorType = response.code() == 429 ? "rate limited" : "server error";
+                            throw new IOException("VoyageAI API " + errorType + " (" + response.code() +
+                                    "). Max retries (" + config.maxRetries() + ") exceeded. Response: " + responseBody);
+                        }
+
                         retries++;
                         String errorMsg = response.code() == 429 ? "rate limited" : "server error (" + response.code() + ")";
                         log.warning("VoyageAI API " + errorMsg + ". Retry " + retries +
@@ -335,12 +491,32 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
     // ===== Request/Response DTOs =====
 
-    private record VoyageAIRequest(
-            @JsonProperty("input") List<String> input,
-            @JsonProperty("model") String model,
-            @JsonProperty("input_type") String inputType,
-            @JsonProperty("truncation") boolean truncation
-    ) {}
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class VoyageAIRequest {
+        @JsonProperty("input")
+        public List<String> input;
+
+        @JsonProperty("model")
+        public String model;
+
+        @JsonProperty("input_type")
+        public String inputType;
+
+        @JsonProperty("truncation")
+        public boolean truncation;
+
+        @JsonProperty("output_dimension")
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        public Integer outputDimension;
+
+        public VoyageAIRequest(List<String> input, String model, String inputType, boolean truncation, Integer outputDimension) {
+            this.input = input;
+            this.model = model;
+            this.inputType = inputType;
+            this.truncation = truncation;
+            this.outputDimension = outputDimension;
+        }
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static class VoyageAIResponse {
@@ -367,6 +543,115 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private static class Usage {
         @JsonProperty("total_tokens")
         public int totalTokens;
+    }
+
+    // ===== Contextual Request/Response DTOs =====
+
+    /**
+     * Request format for contextual embeddings API (voyage-context-*).
+     * Uses "inputs" as array of document chunks: [["chunk1", "chunk2"], ["chunk1", "chunk2"]]
+     * For single text embedding, we treat it as a single-chunk document: [["text"]]
+     * Note: Contextual API does not support truncation parameter.
+     * Supports output_dimension: 2048, 1024 (default), 512, 256
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class ContextualRequest {
+        @JsonProperty("inputs")
+        public List<List<String>> inputs;
+
+        @JsonProperty("model")
+        public String model;
+
+        @JsonProperty("input_type")
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        public String inputType;
+
+        @JsonProperty("output_dimension")
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        public Integer outputDimension;
+
+        public ContextualRequest(String text, String model, String inputType, Integer outputDimension) {
+            // Single text is treated as a single-chunk document
+            this.inputs = List.of(List.of(text));
+            this.model = model;
+            this.inputType = inputType;
+            this.outputDimension = outputDimension;
+        }
+    }
+
+    /**
+     * Response format for contextual embeddings API.
+     * The actual response structure is nested: data[document].data[chunk].embedding
+     * {"object":"list","data":[{"object":"list","data":[{"object":"embedding","embedding":[...]}]}]}
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class ContextualResponse {
+        @JsonProperty("data")
+        public List<ContextualDocumentResult> data;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class ContextualDocumentResult {
+        @JsonProperty("data")
+        public List<EmbeddingData> data;  // Reuse existing EmbeddingData class
+    }
+
+    // ===== Multimodal Request DTOs =====
+
+    /**
+     * Request format for multimodal embeddings API.
+     * Uses "inputs" with content array instead of "input" with string list.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class MultimodalRequest {
+        @JsonProperty("inputs")
+        public List<MultimodalInput> inputs;
+
+        @JsonProperty("model")
+        public String model;
+
+        @JsonProperty("input_type")
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        public String inputType;
+
+        @JsonProperty("truncation")
+        public boolean truncation;
+
+        @JsonProperty("output_dimension")
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        public Integer outputDimension;
+
+        public MultimodalRequest(String text, String model, String inputType, boolean truncation, Integer outputDimension) {
+            this.inputs = List.of(new MultimodalInput(text));
+            this.model = model;
+            this.inputType = inputType;
+            this.truncation = truncation;
+            this.outputDimension = outputDimension;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class MultimodalInput {
+        @JsonProperty("content")
+        public List<ContentItem> content;
+
+        public MultimodalInput(String text) {
+            this.content = List.of(new ContentItem(text));
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class ContentItem {
+        @JsonProperty("type")
+        public String type;
+
+        @JsonProperty("text")
+        public String text;
+
+        public ContentItem(String text) {
+            this.type = "text";
+            this.text = text;
+        }
     }
 
     // ===== Cache Key =====
