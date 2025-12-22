@@ -136,6 +136,7 @@ RankSetup::configure()
     set_filter_first_upper_limit(matching::FilterFirstUpperLimit::lookup(_indexEnv.getProperties()));
     set_filter_first_exploration(matching::FilterFirstExploration::lookup(_indexEnv.getProperties()));
     set_exploration_slack(matching::ExplorationSlack::lookup(_indexEnv.getProperties()));
+    set_prefetch_tensors(matching::TensorsPrefetch::lookup(_indexEnv.getProperties()));
     set_target_hits_max_adjustment_factor(matching::TargetHitsMaxAdjustmentFactor::lookup(_indexEnv.getProperties()));
     set_fuzzy_matching_algorithm(matching::FuzzyAlgorithm::lookup(_indexEnv.getProperties()));
     set_weakand_stop_word_adjust_limit(matching::WeakAndStopWordAdjustLimit::lookup(_indexEnv.getProperties()));
