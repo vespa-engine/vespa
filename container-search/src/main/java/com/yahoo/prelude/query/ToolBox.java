@@ -19,8 +19,8 @@ public final class ToolBox {
          * sub-items of the given item, return false to ignore the sub-items.
          *
          * @param item each item in the query tree
-         * @return whether or not to visit the sub-items of the argument item
-         *         (and then invoke the {@link #onExit()} method)
+         * @return whether to visit the sub-items of the argument item
+         *         (and then invoke the {@link #onExit(item)} method)
          */
         public abstract boolean visit(Item item);
 
@@ -29,7 +29,7 @@ public final class ToolBox {
          * visit() if there are no sub-items or visit() returned false.
          * This default implementation does nothing.
          */
-        public void onExit() {}
+        public void onExit(Item item) {}
 
     }
 
@@ -43,7 +43,7 @@ public final class ToolBox {
         } else {
             visitor.visit(item);
         }
-        visitor.onExit();
+        visitor.onExit(item);
     }
 
 }
