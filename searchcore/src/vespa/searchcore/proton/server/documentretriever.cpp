@@ -292,7 +292,7 @@ DocumentRetriever::populate(DocumentIdT lid, Document & doc, const Field::Set & 
 {
     for (const Field* field : attributeFields) {
         AttributeGuard::UP attr = _attr_manager.getAttribute(field->getName());
-        if (lid < (*attr)->getCommittedDocIdLimit()) {
+        if (attr && attr->get() && lid < (*attr)->getCommittedDocIdLimit()) {
             DocumentFieldRetriever::populate(lid, doc, *field, **attr);
         } else {
             doc.remove(*field);
