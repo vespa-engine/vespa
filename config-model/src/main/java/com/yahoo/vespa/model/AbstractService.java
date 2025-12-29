@@ -399,7 +399,7 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
     public void setVespaMallocDebugStackTrace(String s) { environmentVariables.put("VESPA_USE_VESPAMALLOC_DST", s); }
     public void setMallocImpl(String mallocImpl) {
         if (mallocImpl !=null && !mallocImpl.isEmpty()) {
-            log.log(Level.INFO, "Setting malloc impl for service " + getServiceName() + " to " + mallocImpl);
+            log.log(Level.FINE, "Setting malloc impl for service " + getServiceName() + " to " + mallocImpl);
             addEnvironmentVariable("VESPA_USE_MALLOC_IMPL", mallocImpl);
         } else {
             log.log(Level.FINE, "Null or empty malloc impl supplied for service " + getServiceName() + ", ignoring");
