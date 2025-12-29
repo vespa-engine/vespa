@@ -6,15 +6,14 @@ import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
- * Sets restartOnDeploy when a sidecar is added or changed to an existing cluster.
- * Adding a sidecar to a new cluster does not require a restartOnDeploy.
- * Removing sidecar from an existing cluster does not require a restartOnDeploy.
+ * This validator sets restartOnDeploy for clusters with added, changed or removed sidecars.
+ * This ensures that sidecar client components are created or removed after sidecar containers have been started or stopped.
  *
  * @author glebashnik
  */
@@ -22,16 +21,24 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
 
     @Override
     public void validate(ChangeContext context) {
-        for (var previousCluster : context.previousModel().getContainerClusters().values()) {
-            var clusterId = previousCluster.id();
-            var previousClusterSpec = findClusterSpec(context.previousModel(), clusterId);
+        // Only validate sidecars for existing clusters.
+        // New clusters with sidecars do not require restartOnDeploy.
+        for (var previousCluster :
+                context.previousModel().getContainerClusters().values()) {
+            var nextCluster = context.model().getContainerClusters().get(previousCluster.name());
 
+            if (nextCluster == null) {
+                continue;
+            }
+
+            var clusterId = previousCluster.id();
+
+            var previousClusterSpec = findClusterSpec(context.previousModel(), clusterId);
             if (previousClusterSpec.isEmpty()) {
                 continue;
             }
-            
-            var nextClusterSpec = findClusterSpec(context.model(), clusterId);
 
+            var nextClusterSpec = findClusterSpec(context.model(), clusterId);
             if (nextClusterSpec.isEmpty()) {
                 continue;
             }
@@ -39,25 +46,44 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
             var previousSidecars = previousClusterSpec.get().sidecars();
             var nextSidecars = nextClusterSpec.get().sidecars();
 
-            for (var nextSidecar : nextSidecars) {
+            var removedSidecars = previousSidecars.stream()
+                    .filter(previousSidecar ->
+                            nextSidecars.stream().noneMatch(sidecar -> sidecar.matchesByIdOrName(previousSidecar)))
+                    .toList();
+
+            var addedSidecars = nextSidecars.stream()
+                    .filter(nextSidecar ->
+                            previousSidecars.stream().noneMatch(sidecar -> sidecar.matchesByIdOrName(nextSidecar)))
+                    .toList();
+
+            var changedSidecars = nextSidecars.stream()
+                    .filter(nextSidecar -> previousSidecars.stream()
+                            .anyMatch(
+                                    sidecar -> sidecar.matchesByIdOrName(nextSidecar) && !sidecar.equals(nextSidecar)))
+                    .toList();
+
+            for (var removedSidecar : removedSidecars) {
+                var message = "Need to restart services in %s due to removed sidecar '%s'"
+                        .formatted(clusterId, removedSidecar.name());
+                addRestartAction(context, nextCluster, message);
+            }
+
+            for (var addedSidecar : addedSidecars) {
+                var message = "Need to restart services in %s due to added sidecar '%s'"
+                        .formatted(clusterId, addedSidecar.name());
+                addRestartAction(context, nextCluster, message);
+            }
+
+            for (var changedSidecar : changedSidecars) {
                 var matchingPreviousSidecar = previousSidecars.stream()
-                        .filter(sidecar -> sidecar.matchesByIdOrName(nextSidecar))
-                        .findFirst();
+                        .filter(sidecar -> sidecar.matchesByIdOrName(changedSidecar))
+                        .findFirst()
+                        .orElseThrow(); // Should never throw.
 
-                if (matchingPreviousSidecar.isEmpty()) {
-                    var message = "Need to restart services in %s due to added sidecar '%s'"
-                            .formatted(clusterId, nextSidecar.name());
-                    addRestartAction(context, clusterId, message);
-                } else {
-                    var previousSidecar = matchingPreviousSidecar.get();
-
-                    if (!previousSidecar.equals(nextSidecar)) {
-                        var sidecarChanges = findSidecarChanges(previousSidecar, nextSidecar);
-                        var restartMessage = "Need to restart services in %s due to changed sidecar '%s' (%s)"
-                                .formatted(clusterId, nextSidecar.name(), sidecarChanges);
-                        addRestartAction(context, clusterId, restartMessage);
-                    }
-                }
+                var sidecarDiff = createSidecarDiffString(matchingPreviousSidecar, changedSidecar);
+                var message = "Need to restart services in %s due to changed sidecar '%s' (%s)"
+                        .formatted(clusterId, changedSidecar.name(), sidecarDiff);
+                addRestartAction(context, nextCluster, message);
             }
         }
     }
@@ -68,7 +94,7 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
                 .findFirst();
     }
 
-    private String findSidecarChanges(SidecarSpec from, SidecarSpec to) {
+    private String createSidecarDiffString(SidecarSpec from, SidecarSpec to) {
         var changes = new ArrayList<String>();
         var fromResources = from.resources();
         var toResources = to.resources();
@@ -109,12 +135,12 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
         return String.join(", ", changes);
     }
 
-    private void addRestartAction(ChangeContext context, ClusterSpec.Id clusterId, String message) {
+    private void addRestartAction(ChangeContext context, ApplicationContainerCluster cluster, String message) {
+        var services = cluster.getContainers().stream()
+                .map(AbstractService::getServiceInfo)
+                .toList();
+
         context.require(new VespaRestartAction(
-                clusterId,
-                message,
-                context.model().getContainerClusters().get(clusterId.value()).getContainers().stream()
-                        .map(AbstractService::getServiceInfo)
-                        .collect(Collectors.toList())));
+                cluster.id(), message, services, VespaRestartAction.ConfigChange.DEFER_UNTIL_RESTART));
     }
 }

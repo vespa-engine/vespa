@@ -26,7 +26,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 /**
  * @author glebashnik
@@ -85,23 +85,25 @@ public class RestartOnDeployForSidecarValidatorTest {
         var result = validate(current, next);
 
         assertEquals(1, result.size());
-        assertEquals(
-                "Need to restart services in cluster 'feed' due to added sidecar 'triton'",
-                result.get(0).getMessage());
+        assertRestartActionProperties(
+                result.get(0),
+                "Need to restart services in cluster 'feed' due to added sidecar 'triton'");
     }
 
     @Test
-    void restart_when_sidecar_modified() {
+    void restart_when_sidecar_changed() {
         var current = modelWithSidecars(List.of(SIDECAR_1));
-        var next = modelWithSidecars(List.of(SIDECAR_2));
+        var next = modelWithSidecars(List.of(SIDECAR_3));
         var result = validate(current, next);
 
         assertEquals(1, result.size());
-        var message = result.get(0).getMessage();
-        assertEquals(
+        assertRestartActionProperties(
+                result.get(0),
                 "Need to restart services in cluster 'feed' due to changed sidecar 'triton' "
-                        + "(image: 'nvcr.io/nvidia/tritonserver:25.09-py3' -> 'nvcr.io/nvidia/tritonserver:26.01-py3')",
-                message);
+                        + "(image: 'nvcr.io/nvidia/tritonserver:25.09-py3' -> 'nvcr.io/nvidia/tritonserver:26.01-py3', "
+                        + "minCpu: 1.0 -> 2.0, "
+                        + "volumeMounts: [/models] -> [/models, /configs], "
+                        + "command: [tritonserver, --log-verbose=1, --model-repository=/models] -> [tritonserver, --log-verbose=2])");
     }
 
     @Test
@@ -114,62 +116,15 @@ public class RestartOnDeployForSidecarValidatorTest {
     }
 
     @Test
-    void no_restart_when_sidecar_removed() {
+    void restart_when_sidecar_removed() {
         var current = modelWithSidecars(List.of(SIDECAR_1));
         var next = modelWithSidecars(List.of());
         var result = validate(current, next);
 
-        // By design: removing sidecar does not require restart
-        assertEquals(0, result.size());
-    }
-
-    @Test
-    void restart_shows_detailed_field_changes() {
-        var current = modelWithSidecars(List.of(SIDECAR_1));
-        var next = modelWithSidecars(List.of(SIDECAR_2));
-        var result = validate(current, next);
-
         assertEquals(1, result.size());
-        var message = result.get(0).getMessage();
-
-        // Verify detailed diff is included
-        assertTrue(message.contains("changed sidecar 'triton'"));
-        assertTrue(message.contains("image: '"));
-        assertTrue(message.contains("nvcr.io/nvidia/tritonserver:25.09-py3"));
-        assertTrue(message.contains("nvcr.io/nvidia/tritonserver:26.01-py3"));
-    }
-
-    @Test
-    void restart_action_has_correct_properties() {
-        var current = modelWithSidecars(List.of());
-        var next = modelWithSidecars(List.of(SIDECAR_1));
-        var result = validate(current, next);
-
-        assertEquals(1, result.size());
-        var action = result.get(0);
-        assertEquals(ConfigChangeAction.Type.RESTART, action.getType());
-        assertFalse(action.ignoreForInternalRedeploy());
-        assertEquals(
-                "service 'container' of type container on host0",
-                action.getServices().get(0).toString());
-    }
-
-    @Test
-    void multiple_field_changes_shown_in_message() {
-        var current = modelWithSidecars(List.of(SIDECAR_1));
-        var next = modelWithSidecars(List.of(SIDECAR_3));
-        var result = validate(current, next);
-
-        assertEquals(1, result.size());
-        var message = result.get(0).getMessage();
-
-        assertEquals(
-                "Need to restart services in cluster 'feed' due to changed sidecar 'triton' "
-                        + "(image: 'nvcr.io/nvidia/tritonserver:25.09-py3' -> 'nvcr.io/nvidia/tritonserver:26.01-py3', "
-                        + "minCpu: 1.0 -> 2.0, "
-                        + "volumeMounts: [/models] -> [/models, /configs], "
-                        + "command: [tritonserver, --log-verbose=1, --model-repository=/models] -> [tritonserver, --log-verbose=2])",
-                message);
+        assertRestartActionProperties(
+                result.get(0),
+                "Need to restart services in cluster 'feed' due to removed sidecar 'triton'");
     }
 
     private List<ConfigChangeAction> validate(VespaModel current, VespaModel next) {
@@ -177,6 +132,14 @@ public class RestartOnDeployForSidecarValidatorTest {
                 new RestartOnDeployForSidecarValidator(),
                 next,
                 new DeployState.Builder().previousModel(current).build());
+    }
+
+    private static void assertRestartActionProperties(ConfigChangeAction action, String expectedMessage) {
+        assertEquals(expectedMessage, action.getMessage());
+        assertFalse(action.ignoreForInternalRedeploy());
+        assertEquals(ConfigChangeAction.Type.RESTART, action.getType());
+        var restartAction = assertInstanceOf(VespaRestartAction.class, action);
+        assertEquals(VespaRestartAction.ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
     }
 
     private VespaModel modelWithSidecars(List<SidecarSpec> sidecars) {
