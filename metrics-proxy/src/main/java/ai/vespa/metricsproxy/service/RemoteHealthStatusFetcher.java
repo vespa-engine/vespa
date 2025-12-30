@@ -64,11 +64,12 @@ public class RemoteHealthStatusFetcher extends HttpMetricFetcher {
                 return HealthMetric.getUnknown("Empty metrics response");
             }
             JsonNode status = o.get("status");
-            String code = status.get("code").asText();
-            String message = "";
-            if (status.has("message")) {
-                message = status.get("message").textValue();
+            if (status == null || !status.has("code")) {
+                return HealthMetric.getUnknown("Missing status or code in response");
             }
+
+            String code = status.get("code").asText();
+            String message = status.path("message").asText("");
             return HealthMetric.get(code, message);
 
         } catch (Exception e) {

@@ -5,6 +5,7 @@ import ai.vespa.metricsproxy.metric.model.StatusCode;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
@@ -27,7 +28,18 @@ public class RemoteHealthStatusFetcherTest {
   }
 
   @Test
-  public void testParseMissingStatusField() {
+  public void testParseValidJsonWithoutMessage() {
+    String json = "{\"status\": {\"code\": \"UP\"}}";
+    InputStream data = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
+
+    HealthMetric result = fetcher.parse(data);
+
+    assertEquals(StatusCode.UP, result.getStatus());
+    assertEquals("", result.getMessage());
+  }
+
+  @Test
+  public void testParseEmptyJson() {
     String json = "{}";
     InputStream data = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
 
@@ -35,6 +47,28 @@ public class RemoteHealthStatusFetcherTest {
 
     assertEquals(StatusCode.UNKNOWN, result.getStatus());
     assertTrue(result.getMessage().contains("Empty metrics response"));
+  }
+
+  @Test
+  public void testParseMissingStatus() {
+    String json = "{\"other\": \"field\"}";
+    InputStream data = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
+
+    HealthMetric result = fetcher.parse(data);
+
+    assertEquals(StatusCode.UNKNOWN, result.getStatus());
+    assertTrue(result.getMessage().contains("Missing status or code"));
+  }
+
+  @Test
+  public void testParseMissingCode() {
+    String json = "{\"status\": {\"message\": \"No code here\"}}";
+    InputStream data = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
+
+    HealthMetric result = fetcher.parse(data);
+
+    assertEquals(StatusCode.UNKNOWN, result.getStatus());
+    assertTrue(result.getMessage().contains("Missing status or code"));
   }
 
   @Test
@@ -52,8 +86,8 @@ public class RemoteHealthStatusFetcherTest {
   public void testParseUnreadableInput() {
     InputStream unreadableStream = new InputStream() {
       @Override
-      public int read() {
-        throw new RuntimeException("Stream error");
+      public int read() throws IOException {
+        throw new IOException("Stream error");
       }
     };
 
