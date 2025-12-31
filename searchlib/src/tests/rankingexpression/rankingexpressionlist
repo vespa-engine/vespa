@@ -115,6 +115,10 @@ if (foo in [bar, baz, cox], 6, 9)
 if (foo in [ bar ], 6, 9); if (foo in [bar], 6, 9)
 if (foo in [ bar,  baz ], 6, 9); if (foo in [bar, baz], 6, 9)
 if (foo in [ bar,  baz,  cox ], 6, 9); if (foo in [bar, baz, cox], 6, 9)
+switch(x) { case 1: 2, default: 3 }
+switch(x) { case 1: 2, case 3: 4, default: 5 }
+switch(query(model)) { case "a": 1, case "b": 2, default: 0 }
+switch(x) { case 1: a, case 2: b, default: c }
 feature;                                    feature
 fe@ture;                                    fe@ture
 featur@;                                    featur@
