@@ -282,7 +282,7 @@ public class Flags {
             TENANT_ID, CONSOLE_USER_EMAIL);
 
     public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
-            "snapshots-enabled", false,
+            "snapshots-enabled", true,
             List.of("olaa"), "2024-10-22", "2026-02-01",
             "Whether node snapshots should be created when host storage is discarded",
             "Takes effect immediately");
