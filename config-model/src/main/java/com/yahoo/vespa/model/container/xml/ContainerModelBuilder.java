@@ -262,13 +262,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             var spec = SidecarSpec.builder()
                     .id(0)
                     .name("triton")
-                    .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.09-py3"))
+                    .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.12-py3"))
                     .minCpu(1) // Must have at least one CPU
                     .hasGpu(hasGpu)
                     .volumeMounts(List.of("/models"))
                     .command(List.of(
                             "tritonserver",
-                            "--log-verbose=1",
                             "--model-repository=/models",
                             "--model-control-mode=explicit")
                     ).build();
