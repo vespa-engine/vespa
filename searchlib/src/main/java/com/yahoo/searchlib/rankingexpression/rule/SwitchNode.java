@@ -157,6 +157,39 @@ public final class SwitchNode extends CompositeNode {
         return new SwitchNode(discriminant, caseValues, caseResults, defaultResult);
     }
 
+    /**
+     * Transforms this switch node into an equivalent nested if-expression.
+     *
+     * switch(d) { case v1: r1, case v2: r2, default: def }
+     * becomes:
+     * if(d == v1, r1, if(d == v2, r2, def))
+     *
+     * The discriminant is evaluated multiple times in the resulting expression.
+     *
+     * @return an ExpressionNode representing the equivalent if-expression
+     */
+    public ExpressionNode toIfNode() {
+        ExpressionNode result = defaultResult;
+
+        for (int i = caseValues.size() - 1; i >= 0; i--) {
+            ExpressionNode discriminantCopy = copyNode(discriminant);
+            ExpressionNode condition = new OperationNode(discriminantCopy, Operator.equal, caseValues.get(i));
+            result = new IfNode(condition, caseResults.get(i), result);
+        }
+
+        return result;
+    }
+
+    /**
+     * Creates a deep copy of an expression node.
+     */
+    private static ExpressionNode copyNode(ExpressionNode node) {
+        if (node instanceof CompositeNode composite) {
+            return composite.setChildren(composite.children());
+        }
+        return node; // Leaf nodes like constants and symbols are immutable and can be reused
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash("switch", discriminant, caseValues, caseResults, defaultResult);
