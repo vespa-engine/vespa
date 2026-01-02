@@ -41,3 +41,8 @@ maxIdleConnections int default=5
 
 # Apply L2 normalization to output embeddings
 normalize bool default=false
+
+# Output dimension for models that support variable dimensions (e.g., voyage-multimodal-3.5)
+# Set to 0 to use model's default dimension. Supported values depend on model.
+# voyage-multimodal-3.5 supports: 256, 512, 1024 (default), 2048
+outputDimension int default=0
