@@ -111,6 +111,9 @@ TOKEN :
 
     <IF: "if"> |
     <IN: "in"> |
+    <SWITCH: "switch"> |
+    <CASE: "case"> |
+    <SWITCHDEFAULT: "default"> |
     <F: "f"> |
 
     <NOT: "!"> |
@@ -296,6 +299,7 @@ ExpressionNode value() :
       ( value = constantPrimitive(neg)                             |
         (
           SCAN 2 value = ifExpression()                        |
+          SCAN 2 value = switchExpression()                    |
           SCAN 4 value = function()                            |
           value = feature()                                          |
           value = legacyQueryFeature()                               |
@@ -324,6 +328,28 @@ IfNode ifExpression() :
     {
         thisProduction.expressionNode = new IfNode(condition, ifTrue, ifFalse, trueProbability);
         return (IfNode)thisProduction.expressionNode;
+    }
+;
+
+SwitchNode switchExpression() :
+{
+    ExpressionNode discriminant;
+    List<ExpressionNode> caseValues = new ArrayList<ExpressionNode>();
+    List<ExpressionNode> caseResults = new ArrayList<ExpressionNode>();
+    ExpressionNode caseValue, caseResult;
+    ExpressionNode defaultResult;
+}
+
+    ( <SWITCH> <LBRACE> discriminant = expression() <RBRACE>
+      <LCURLY>
+      ( <CASE> caseValue = expression() <COLON> caseResult = expression() <COMMA>
+        { caseValues.add(caseValue); caseResults.add(caseResult); }
+      )+
+      <SWITCHDEFAULT> <COLON> defaultResult = expression()
+      <RCURLY> )
+    {
+        thisProduction.expressionNode = new SwitchNode(discriminant, caseValues, caseResults, defaultResult);
+        return (SwitchNode)thisProduction.expressionNode;
     }
 ;
 
@@ -1072,6 +1098,9 @@ String identifierStr() :
     func = binaryFunctionName() { return func.toString(); } |
     <IF>                        { return lastConsumedToken.toString(); }     |
     <IN>                        { return lastConsumedToken.toString(); }     |
+    <SWITCH>                    { return lastConsumedToken.toString(); }     |
+    <CASE>                      { return lastConsumedToken.toString(); }     |
+    <SWITCHDEFAULT>             { return lastConsumedToken.toString(); }     |
     <IDENTIFIER>                { return lastConsumedToken.toString(); }     |
     <TRUE>                      { return lastConsumedToken.toString(); }     |
     <FALSE>                     { return lastConsumedToken.toString(); }
