@@ -176,4 +176,49 @@ public class SwitchNodeTestCase {
         assertTrue("Should contain 'case'", str.contains("case"));
         assertTrue("Should contain 'default'", str.contains("default"));
     }
+
+    @Test
+    public void requireThatTypeValidationAcceptsScalarTypes() {
+        // Scalars (all TensorType.empty) should be compatible with each other
+        var switchNode = new SwitchNode(
+            new ConstantNode(new DoubleValue(1.0)),
+            List.of(new ConstantNode(new DoubleValue(1.0)), new ConstantNode(new DoubleValue(2.0))),
+            List.of(new ConstantNode(new DoubleValue(10.0)), new ConstantNode(new DoubleValue(20.0))),
+            new ConstantNode(new DoubleValue(0.0))
+        );
+
+        // This should not throw - all scalars have TensorType.empty
+        var type = switchNode.type(new com.yahoo.searchlib.rankingexpression.evaluation.MapTypeContext());
+        assertEquals(com.yahoo.tensor.TensorType.empty, type);
+    }
+
+    @Test
+    public void requireThatTypeValidationChecksSingleCaseCompatibility() {
+        var switchNode = new SwitchNode(
+            new ConstantNode(new DoubleValue(1.0)),
+            List.of(new ConstantNode(new DoubleValue(1.0))),
+            List.of(new ConstantNode(new DoubleValue(10.0))),
+            new ConstantNode(new DoubleValue(0.0))
+        );
+
+        // Should not throw for single case with compatible types
+        var type = switchNode.type(new com.yahoo.searchlib.rankingexpression.evaluation.MapTypeContext());
+        assertEquals(com.yahoo.tensor.TensorType.empty, type);
+    }
+
+    @Test
+    public void requireThatTypeValidationHandlesComplexExpressions() {
+        var caseExpr1 = new OperationNode(new ConstantNode(new DoubleValue(1.0)), Operator.plus, new ConstantNode(new DoubleValue(1.0)));
+        var caseExpr2 = new OperationNode(new ConstantNode(new DoubleValue(2.0)), Operator.multiply, new ConstantNode(new DoubleValue(2.0)));
+
+        var switchNode = new SwitchNode(
+            new ConstantNode(new DoubleValue(2.0)),
+            List.of(caseExpr1, caseExpr2),
+            List.of(new ConstantNode(new DoubleValue(10.0)), new ConstantNode(new DoubleValue(20.0))),
+            new ConstantNode(new DoubleValue(0.0))
+        );
+
+        var type = switchNode.type(new com.yahoo.searchlib.rankingexpression.evaluation.MapTypeContext());
+        assertEquals(com.yahoo.tensor.TensorType.empty, type);
+    }
 }

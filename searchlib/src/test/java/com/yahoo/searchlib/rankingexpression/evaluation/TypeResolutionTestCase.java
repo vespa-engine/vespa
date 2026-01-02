@@ -142,4 +142,75 @@ public class TypeResolutionTestCase {
         }
     }
 
+    @Test
+    public void testSwitchDiscriminantValidation() {
+        MapTypeContext context = new MapTypeContext();
+        context.setType(Reference.simple("query", "x1"),
+                        TensorType.fromSpec("tensor(x[])"));
+        context.setType(Reference.simple("query", "x2"),
+                        TensorType.fromSpec("tensor(x[10])"));
+        context.setType(Reference.simple("query", "y1"),
+                        TensorType.fromSpec("tensor(y[])"));
+        context.setType(Reference.simple("query", "tensor1"),
+                        TensorType.fromSpec("tensor(x[10])"));
+        context.setType(Reference.simple("query", "tensor2"),
+                        TensorType.fromSpec("tensor(y[5])"));
+
+        // Valid: scalar discriminant with scalar cases
+        assertType("tensor(x[])",
+                   "switch(1) { case 1: query(x1), case 2: query(x2), default: query(x1) }",
+                   context);
+
+        // Valid: tensor discriminant with compatible tensor case
+        assertType("tensor(x[])",
+                   "switch(query(tensor1)) { case query(tensor1): query(x1), default: query(x1) }",
+                   context);
+
+        // Invalid: tensor discriminant with different dimension tensor case
+        assertIncompatibleSwitchDiscriminant(
+            "switch(query(tensor1)) { case query(tensor2): query(x1), default: query(x1) }",
+            context
+        );
+
+        // Invalid: case values with incompatible types
+        assertIncompatibleSwitchCaseValues(
+            "switch(1) { case query(tensor1): query(x1), case query(tensor2): query(x1), default: query(x1) }",
+            context
+        );
+    }
+
+    private void assertIncompatibleSwitchDiscriminant(String expression, TypeContext<Reference> context) {
+        try {
+            new RankingExpression(expression).type(context);
+            fail("Expected discriminant type incompatibility exception");
+        }
+        catch (IllegalArgumentException expected) {
+            // Verify the error message mentions discriminant and case values
+            String message = expected.getMessage();
+            if (!message.contains("discriminant") || !message.contains("case values")) {
+                fail("Expected discriminant/case value type error message, got: " + message);
+            }
+        }
+        catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void assertIncompatibleSwitchCaseValues(String expression, TypeContext<Reference> context) {
+        try {
+            new RankingExpression(expression).type(context);
+            fail("Expected case value type incompatibility exception");
+        }
+        catch (IllegalArgumentException expected) {
+            // Verify the error message mentions case values being incompatible
+            String message = expected.getMessage();
+            if (!message.contains("case values") || !message.contains("case 0")) {
+                fail("Expected case value type error message, got: " + message);
+            }
+        }
+        catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

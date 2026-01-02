@@ -95,10 +95,10 @@ public final class SwitchNode extends CompositeNode {
 
     @Override
     public TensorType type(TypeContext<Reference> context) {
-        // All case results and the default must be type-compatible
-        TensorType resultType = caseResults.get(0).type(context);
+        validateDiscriminantCaseCompatibility(context);
 
-        // Check all case results are compatible with the first
+        // Check that all case results
+        TensorType resultType = caseResults.get(0).type(context);
         for (int i = 1; i < caseResults.size(); i++) {
             TensorType caseType = caseResults.get(i).type(context);
             final TensorType previousResultType = resultType;
@@ -123,6 +123,36 @@ public final class SwitchNode extends CompositeNode {
                                          "default has type " + finalDefaultType +
                                          "\ncase results: " + caseResults.get(0) +
                                          "\ndefault: " + defaultResult)
+        );
+    }
+
+    private void validateDiscriminantCaseCompatibility(TypeContext<Reference> context) {
+        TensorType discriminantType = discriminant.type(context);
+
+        // Check that all case values match
+        TensorType caseValueType = caseValues.get(0).type(context);
+        for (int i = 1; i < caseValues.size(); i++) {
+            TensorType currentCaseType = caseValues.get(i).type(context);
+            final TensorType previousCaseValueType = caseValueType;
+            final int caseIndex = i;
+            caseValueType = caseValueType.dimensionwiseGeneralizationWith(currentCaseType).orElseThrow(() ->
+                    new IllegalArgumentException("A switch expression requires all case values to have compatible types, " +
+                            "but case 0 has type " + previousCaseValueType + " while case " + caseIndex +
+                            " has type " + currentCaseType +
+                            "\ncase 0 value: " + caseValues.get(0) +
+                            "\ncase " + caseIndex + " value: " + caseValues.get(caseIndex))
+            );
+        }
+
+        // Check that discriminant matches cases
+        final TensorType finalDiscriminantType = discriminantType;
+        final TensorType finalCaseValueType = caseValueType;
+        discriminantType.dimensionwiseGeneralizationWith(caseValueType).orElseThrow(() ->
+                new IllegalArgumentException("A switch expression requires the discriminant and case values to have compatible types, " +
+                        "but the discriminant has type " + finalDiscriminantType +
+                        " while case values have type " + finalCaseValueType +
+                        "\ndiscriminant: " + discriminant +
+                        "\ncase values: " + caseValues.get(0) + (caseValues.size() > 1 ? ", ..." : ""))
         );
     }
 
@@ -187,7 +217,7 @@ public final class SwitchNode extends CompositeNode {
         if (node instanceof CompositeNode composite) {
             return composite.setChildren(composite.children());
         }
-        return node; // Leaf nodes like constants and symbols are immutable and can be reused
+        return node;
     }
 
     @Override
