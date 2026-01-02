@@ -534,13 +534,14 @@ public:
         : _builder(),
           _factory(AllocStrategy(search::GrowStrategy(), CompactionStrategy(), 100), fastAccessOnly)
     {
-        addAttribute("a1", false);
-        addAttribute("a2", true);
+        addAttribute("a1", false, false);
+        addAttribute("a2", true, true);
     }
-    void addAttribute(const std::string &name, bool fastAccess) {
+    void addAttribute(const std::string &name, bool fastAccess, bool fast_search) {
         AttributesConfigBuilder::Attribute attr;
         attr.name = name;
         attr.fastaccess = fastAccess;
+        attr.fastsearch = fast_search;
         _builder.attribute.push_back(attr);
     }
     std::unique_ptr<AttributeCollectionSpec> create(uint32_t docIdLimit, search::SerialNum serialNum) {
@@ -563,7 +564,9 @@ TEST_F(NormalAttributeCollectionSpecTest, spec_can_be_created)
     auto spec = create(10, 20);
     EXPECT_EQ(2u, spec->getAttributes().size());
     EXPECT_EQ("a1", spec->getAttributes()[0].getName());
+    EXPECT_FALSE(spec->getAttributes()[0].getConfig().fastSearch());
     EXPECT_EQ("a2", spec->getAttributes()[1].getName());
+    EXPECT_TRUE(spec->getAttributes()[1].getConfig().fastSearch());
     EXPECT_EQ(10u, spec->getDocIdLimit());
     EXPECT_EQ(20u, spec->getCurrentSerialNum());
 }
@@ -573,6 +576,7 @@ TEST_F(FastAccessAttributeCollectionSpecTest, spec_can_be_created)
     auto spec = create(10, 20);
     EXPECT_EQ(1u, spec->getAttributes().size());
     EXPECT_EQ("a2", spec->getAttributes()[0].getName());
+    EXPECT_FALSE(spec->getAttributes()[0].getConfig().fastSearch());
     EXPECT_EQ(10u, spec->getDocIdLimit());
     EXPECT_EQ(20u, spec->getCurrentSerialNum());
 }
