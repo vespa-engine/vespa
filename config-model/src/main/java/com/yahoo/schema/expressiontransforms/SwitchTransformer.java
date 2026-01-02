@@ -9,13 +9,11 @@ import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 
 /**
  * Transforms switch nodes into equivalent nested if-expressions.
- * This allows switch to be used in ranking expressions while maintaining compatibility
- * with backends that only support basic operations.
  *
  * Transformation:
- * switch(d) { case v1: r1, case v2: r2, default: def }
+ *   switch(d) { case v1: r1, case v2: r2, default: def }
  * becomes:
- * if(d == v1, r1, if(d == v2, r2, def))
+ *   if(d == v1, r1, if(d == v2, r2, def))
  *
  * @author johsol
  */
@@ -23,8 +21,9 @@ public class SwitchTransformer extends ExpressionTransformer<TransformContext> {
 
     @Override
     public ExpressionNode transform(ExpressionNode node, TransformContext context) {
-        if (node instanceof CompositeNode composite)
+        if (node instanceof CompositeNode composite) {
             node = transformChildren(composite, context);
+        }
 
         if (node instanceof SwitchNode switchNode) {
             node = switchNode.toIfNode();
