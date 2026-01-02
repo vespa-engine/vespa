@@ -25,7 +25,7 @@ public class RankFeatures implements Cloneable {
 
     private final Ranking parent;
     private final Map<String, Object> features;
-    /// This caches the
+
     private static final Map<String, CompoundName> compoundNameCache = new CopyOnWriteHashMap<>();
 
     public RankFeatures(Ranking parent) {

@@ -5,6 +5,7 @@ import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
 import java.util.Objects;
@@ -26,20 +27,21 @@ public class MatchPhase implements Cloneable {
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
 
+    public static final String MATCH_PHASE = "matchPhase";
     public static final String ATTRIBUTE = "attribute";
     public static final String ASCENDING = "ascending";
     public static final String MAX_HITS = "maxHits";
     public static final String MAX_FILTER_COVERAGE = "maxFilterCoverage";
 
     static {
-        argumentType =new QueryProfileType(Ranking.MATCH_PHASE);
+        argumentType = new QueryProfileType(MATCH_PHASE);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(ATTRIBUTE, "string"));
         argumentType.addField(new FieldDescription(ASCENDING, "boolean"));
         argumentType.addField(new FieldDescription(MAX_HITS, "long"));
         argumentType.addField(new FieldDescription(MAX_FILTER_COVERAGE, "double"));
-        argumentType.addField(new FieldDescription(Ranking.DIVERSITY, "query-profile", "diversity"));
+        argumentType.addField(new FieldDescription(Diversity.DIVERSITY, new QueryProfileFieldType(Diversity.getArgumentType())));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
