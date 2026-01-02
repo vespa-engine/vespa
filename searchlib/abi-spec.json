@@ -1736,6 +1736,7 @@
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
       "public com.yahoo.searchlib.rankingexpression.rule.SwitchNode setChildren(java.util.List)",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode toIfNode()",
       "public int hashCode()",
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
     ],
