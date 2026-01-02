@@ -47,6 +47,8 @@ protected:
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
     bool tensor_cells_are_unchanged(DocId docid, VectorBundle vectors) const;
 
+    void prefetch_docid(DocId docid) const noexcept override { _refVector.prefetch_elem_ref(docid); }
+
 public:
     TensorAttribute(std::string_view name, const Config &cfg, TensorStore &tensorStore, const NearestNeighborIndexFactory& index_factory);
     ~TensorAttribute() override;
