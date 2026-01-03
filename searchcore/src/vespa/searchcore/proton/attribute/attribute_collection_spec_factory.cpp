@@ -33,6 +33,11 @@ AttributeCollectionSpecFactory::create(const AttributesConfig &attrCfg,
         if (_fastAccessOnly && !cfg.fastAccess()) {
             continue;
         }
+        if (_fastAccessOnly) {
+            // Hnsw index and posting lists are not used in the 2.notready subdb.
+            cfg.clear_hnsw_index_params();
+            cfg.setFastSearch(false);
+        }
         grow.setGrowDelta(grow.getGrowDelta() + skew);
         cfg.setGrowStrategy(grow);
         cfg.setCompactionStrategy(_alloc_strategy.get_compaction_strategy());
