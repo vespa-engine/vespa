@@ -18,8 +18,10 @@ public class GlobalPhase implements Cloneable {
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
 
+    public static final String GLOBAL_PHASE = "globalPhase";
+
     static {
-        argumentType = new QueryProfileType(Ranking.GLOBAL_PHASE);
+        argumentType = new QueryProfileType(GLOBAL_PHASE);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(Ranking.RERANKCOUNT, FieldType.integerType));

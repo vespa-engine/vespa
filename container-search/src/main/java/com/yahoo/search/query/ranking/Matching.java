@@ -20,6 +20,7 @@ public class Matching implements Cloneable {
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
 
+    public static final String MATCHING = "matching";
     public static final String TERMWISELIMIT = "termwiseLimit";
     public static final String NUMTHREADSPERSEARCH = "numThreadsPerSearch";
     public static final String NUMSEARCHPARTITIIONS = "numSearchPartitions";
@@ -35,7 +36,7 @@ public class Matching implements Cloneable {
     public static final String WEAKAND = "weakand";
 
     static {
-        argumentType = new QueryProfileType(Ranking.MATCHING);
+        argumentType = new QueryProfileType(MATCHING);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(TERMWISELIMIT, "double"));
