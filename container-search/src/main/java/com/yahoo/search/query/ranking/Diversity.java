@@ -8,7 +8,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import java.util.Objects;
 
 /**
- * <p>The diversity settings during match phase of a query.
+ * <p>The settings used to achieve diversity in the match phase of a query.
  * These are the same settings for diversity during match phase that can be set in a rank profile
  * and is used for achieving guaranteed diversity at the cost of slightly higher cost as more hits must be
  * considered compared to plain match-phase.</p>

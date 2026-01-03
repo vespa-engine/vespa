@@ -32,7 +32,7 @@ public class MatchPhase implements Cloneable {
     public static final String MAX_FILTER_COVERAGE = "maxFilterCoverage";
 
     static {
-        argumentType =new QueryProfileType(Ranking.MATCH_PHASE);
+        argumentType = new QueryProfileType(Ranking.MATCH_PHASE);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(ATTRIBUTE, "string"));
