@@ -13,6 +13,7 @@ import java.util.Optional;
  */
 public abstract class NonReducibleCompositeItem extends CompositeItem {
 
+
     @Override
     public final Optional<Item> extractSingleChild() {
         return Optional.empty();

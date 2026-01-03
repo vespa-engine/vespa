@@ -15,6 +15,7 @@ import ai.vespa.metricsproxy.service.VespaServices;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.handler.metrics.ErrorResponse;
 import com.yahoo.container.handler.metrics.HttpHandlerBase;
+import com.yahoo.container.handler.metrics.JsonResponse;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.Path;
 

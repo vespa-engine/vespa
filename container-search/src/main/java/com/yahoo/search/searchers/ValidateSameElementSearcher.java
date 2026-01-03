@@ -3,13 +3,7 @@
 package com.yahoo.search.searchers;
 
 import com.yahoo.prelude.query.AndItem;
-import com.yahoo.prelude.query.CompositeItem;
-import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.Item;
-import com.yahoo.prelude.query.NearItem;
-import com.yahoo.prelude.query.OrItem;
-import com.yahoo.prelude.query.PhraseItem;
-import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.search.Query;
@@ -20,6 +14,8 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.yolean.chain.Before;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -46,47 +42,52 @@ public class ValidateSameElementSearcher extends Searcher {
 
         public Optional<ErrorMessage> errorMessage = Optional.empty();
 
-        private boolean inSameElement = false;
+        private final Query query;
+        private final Execution execution;
 
         public SameElementVisitor(Query query, Execution execution) {
+            this.query = query;
+            this.execution = execution;
         }
 
         @Override
         public boolean visit(Item item) {
-            if (inSameElement && ! isValidSameItemChild(item)) {
-                errorMessage = Optional.of(ErrorMessage.createIllegalQuery("SameElementItem cannot contain '" + item + "'"));
-                return false;
+            if (item instanceof SameElementItem sameElement) {
+                String error = ensureValid(sameElement);
+                if (error != null)
+                    errorMessage = Optional.of(ErrorMessage.createIllegalQuery(error));
             }
-            if (item instanceof SameElementItem)
-                inSameElement = true;
             return true;
         }
 
-        @Override
-        public void onExit(Item item) {
-            if (item instanceof SameElementItem)
-                inSameElement = false;
-        }
+        /**
+         * Checks, and if necessary, makes this item valid.
+         *
+         * @return an error message if it is invalid, null if valid
+         */
+        private String ensureValid(SameElementItem sameItem) {
+            if (sameItem.items().stream().noneMatch(child -> child instanceof AndItem)) return null; // shortcut
 
-
-            /** Returns an error message if it is invalid, null if valid. */
-        private String valid(SameElementItem sameItem) {
-            for (Item child : sameItem.items()) {
-                if ( ! isValidSameItemChild(child))
-                    return "SameElementItem cannot contain '" + child + "'";
-            }
+            List<Item> flattened = flattenedItems(sameItem);
+            removeItems(sameItem);
+            flattened.forEach(item -> sameItem.addItem(item));
             return null;
         }
 
-        private boolean isValidSameItemChild(Item child) {
-            if ( ! (child instanceof CompositeItem)) return true;
-            if (child instanceof AndItem) return true;
-            if (child instanceof OrItem) return true;
-            if (child instanceof NearItem) return true;
-            if (child instanceof EquivItem) return true;
-            if (child instanceof RankItem) return true;
-            if (child instanceof PhraseItem) return true;
-            return false;
+        private List<Item> flattenedItems(SameElementItem sameItem) {
+            List<Item> flattened = new ArrayList<>();
+            for (Item child : sameItem.items()) {
+                if (child instanceof AndItem and)
+                    flattened.addAll(and.items());
+                else
+                    flattened.add(child);
+            }
+            return flattened;
+        }
+
+        private void removeItems(SameElementItem sameItem) {
+            for (int i = sameItem.getItemCount() - 1; i >= 0; i--)
+                sameItem.removeItem(i);
         }
 
     }
