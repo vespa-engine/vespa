@@ -143,6 +143,9 @@ public class ValidateNearestNeighborSearcher extends Searcher {
             return item + " field is not a tensor";
         }
 
+        @Override
+        public void onExit() {}
+
     }
 
 }

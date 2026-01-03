@@ -5,20 +5,24 @@ import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.protect.Validator;
 
 import java.nio.ByteBuffer;
+import java.util.Iterator;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
- * A query item where all terms are required to match in the same value of a multi-value field.
+ * This represents a query where all terms are required to match in the same element id.
+ * The primary use case is to allow efficient search in arrays and maps of struct.
+ * The common path is the field name containing the struct.
  *
  * @author baldersheim
  */
-public class SameElementItem extends NonReducibleCompositeItem implements HasIndexItem{
+public class SameElementItem extends NonReducibleCompositeItem {
 
     private String fieldName;
 
-    public SameElementItem(String fieldName) {
-        Validator.ensureNonEmpty("Field name", fieldName);
-        this.fieldName = fieldName;
+    public SameElementItem(String commonPath) {
+        Validator.ensureNonEmpty("Field name", commonPath);
+        this.fieldName = commonPath;
     }
 
     @Override
@@ -52,16 +56,6 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
     @Override
     public void setIndexName(String index) {
         fieldName = index;
-    }
-
-    @Override
-    public String getIndexName() {
-        return fieldName;
-    }
-
-    @Override
-    public int getNumWords() {
-        return getItemCount();
     }
 
     @Override

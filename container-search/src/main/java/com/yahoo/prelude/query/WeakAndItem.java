@@ -36,7 +36,7 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     }
 
     /**
-     * Make a WeakAnd item with no children. You can mention a common index, or you can mention it on each child.
+     * Make a WeakAnd item with no children. You can mention a common index or you can mention it on each child.
      *
      * @param index the index to search
      * @param n the target for minimum number of hits to produce;

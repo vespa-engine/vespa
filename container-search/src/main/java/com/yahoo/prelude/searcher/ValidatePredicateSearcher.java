@@ -91,6 +91,8 @@ public class ValidatePredicateSearcher extends Searcher {
             return indexFacts.getIndex(indexName);
         }
 
+        @Override
+        public void onExit() {}
     }
 
 }

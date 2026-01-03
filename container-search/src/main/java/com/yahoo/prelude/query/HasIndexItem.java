@@ -10,7 +10,7 @@ public interface HasIndexItem {
 
     String getIndexName();
 
-    /** Returns how many phrase words this item contains. */
+    /** Returns how many phrase words does this item contain */
     int getNumWords();
 
 }
