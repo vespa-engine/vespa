@@ -467,7 +467,6 @@ public class TenantRepository {
         if ( ! tenants.containsKey(name))
             throw new IllegalArgumentException("Deleting '" + name + "' failed, tenant does not exist");
 
-        log.log(Level.INFO, "Deleting tenant '" + name + "'");
         // Deletes the tenant tree from ZooKeeper (application and session status for the tenant)
         // and triggers Tenant.close().
         try (Lock lock = tenantLocks.lock(name)) {
@@ -475,6 +474,7 @@ public class TenantRepository {
             closeTenant(name);
             curator.delete(path);
         }
+        log.log(Level.INFO, "Deleted tenant '" + name + "'");
     }
 
     private void closeTenant(TenantName name) {
@@ -483,7 +483,7 @@ public class TenantRepository {
             if (tenant == null)
                 throw new IllegalArgumentException("Closing '" + name + "' failed, tenant does not exist");
 
-            log.log(Level.INFO, "Closing tenant '" + name + "'");
+            log.log(Level.FINE, "Closing tenant '" + name + "'");
             notifyRemovedTenant(name);
             tenant.close();
         }
