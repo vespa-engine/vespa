@@ -26,7 +26,6 @@ import java.util.logging.LogRecord;
 import java.util.zip.GZIPInputStream;
 import java.time.Duration;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -94,7 +93,8 @@ public class LogFileHandlerTestCase {
         h.flush();
 
         //delete log file
-        logFile.delete();
+        boolean deleted = logFile.delete();
+        assertTrue(deleted, "Log file should be deleted");
 
         //write log again
         h.publish("testDeleteFileDuringLogging2");
@@ -104,7 +104,7 @@ public class LogFileHandlerTestCase {
 
     @Test
     @Timeout(300_000)
-    void testSymlink() throws IOException, InterruptedException {
+    void testSymlink() throws IOException {
         File root = newFolder(temporaryFolder, "testlogforsymlinkchecking");
         Formatter formatter = new Formatter() {
             public String format(LogRecord r) {
@@ -154,7 +154,10 @@ public class LogFileHandlerTestCase {
 
         assertEquals(root.toPath().resolve("symlink").toRealPath().toString(),
                 Paths.get(secondHandler.getFileName()).toRealPath().toString());
-        while (Files.exists(root.toPath().resolve(firstHandler.getFileName()))) Thread.sleep(1);
+        while (Files.exists(root.toPath().resolve(firstHandler.getFileName()))) {
+            //noinspection BusyWait
+            Thread.sleep(1);
+        }
 
         assertTrue(Files.exists(Paths.get(firstHandler.getFileName() + ".zst")));
         secondHandler.shutdown();
@@ -201,9 +204,11 @@ public class LogFileHandlerTestCase {
         assertTrue(uncompressed.exists());
         assertFalse(compressed.exists());
         String content = IOUtils.readFile(uncompressed);
+        assert content != null;
         assertEquals(logEntries, content.lines().count());
         h.rotateNow();
         while (uncompressed.exists()) {
+            //noinspection BusyWait
             Thread.sleep(1);
         }
         assertTrue(compressed.exists());
@@ -245,8 +250,9 @@ public class LogFileHandlerTestCase {
         String currentFile = handler.getFileName();
         assertNotEquals(firstFile, currentFile, "File should have rotated due to size");
 
-        assertTrue(Files.exists(Paths.get(firstFile)), "Original file should exist after rotation");
-        assertTrue(Files.size(Paths.get(firstFile)) > 0, "Original file should have data");
+        Path firstFilePath = Paths.get(firstFile);
+        assertTrue(Files.exists(firstFilePath), "Original file should exist after rotation");
+        assertTrue(Files.size(firstFilePath) > 0, "Original file should have data");
 
         handler.shutdown();
     }
@@ -295,23 +301,27 @@ public class LogFileHandlerTestCase {
                 "File should not have rotated - small writes shouldn't trigger rotation on fresh file");
 
         // Verify the second file contains the small writes
-        String content = Files.readString(Paths.get(secondFile));
+        Path secondFilePath = Paths.get(secondFile);
+        String content = Files.readString(secondFilePath);
         assertTrue(content.contains("trigger1"), "Second file should contain trigger message");
         assertTrue(content.contains("small0"), "Second file should contain subsequent writes");
         assertTrue(content.contains("small4"), "Second file should contain all small writes");
 
         handler.shutdown();
 
-        List<Path> logFiles = Files.list(root.toPath())
+        List<Path> logFiles;
+        try (var stream = Files.list(root.toPath())) {
+            logFiles = stream
                 .filter(p -> p.toString().contains("logfilehandlertest"))
                 .toList();
+        }
 
         assertEquals(2, logFiles.size(),
                 "Should have exactly 2 log files after size-based rotations");
 
         // Verify first file has the large content, second file has the small content
         long firstFileSize = Files.size(Paths.get(firstFile));
-        long secondFileSize = Files.size(Paths.get(secondFile));
+        long secondFileSize = Files.size(secondFilePath);
         assertTrue(firstFileSize >= rotationSize,
                 "First file should have exceeded rotation size");
         assertTrue(secondFileSize < rotationSize,
@@ -461,9 +471,12 @@ public class LogFileHandlerTestCase {
 
         handler.shutdown();
 
-        List<Path> logFiles = Files.list(root.toPath())
+        List<Path> logFiles;
+        try (var stream = Files.list(root.toPath())) {
+            logFiles = stream
                 .filter(p -> p.toString().contains("logfilehandlertest"))
                 .toList();
+        }
 
         assertTrue(logFiles.size() >= 3, "Should have created at least 3 log files due to size rotation");
     }
@@ -502,12 +515,15 @@ public class LogFileHandlerTestCase {
 
         int maxWaitTime = 5000;
         int waited = 0;
-        while (Files.exists(Paths.get(firstFile)) && waited < maxWaitTime) {
+
+        Path firstFilePath = Paths.get(firstFile);
+        while (Files.exists(firstFilePath) && waited < maxWaitTime) {
+            //noinspection BusyWait
             Thread.sleep(100);
             waited += 100;
         }
 
-        assertFalse(Files.exists(Paths.get(firstFile)), "Original file should be deleted after compression");
+        assertFalse(Files.exists(firstFilePath), "Original file should be deleted after compression");
         assertTrue(Files.exists(Paths.get(firstFile + ".zst")), "Compressed file should exist");
 
         handler.shutdown();
