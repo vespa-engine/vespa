@@ -281,14 +281,24 @@ public class LogFileHandlerTestCase {
         String secondFile = handler.getFileName();
         assertNotEquals(firstFile, secondFile, "Should have rotated due to size");
 
-        // Now advance clock by small amounts (enough for unique filenames,
-        // but NOT past the 1-minute check interval) and publish more messages.
+        // Write data that would exceed rotationSize if added to the OLD file's size,
+        // but should NOT trigger rotation since we're writing to a fresh file.
         for (int i = 0; i < 5; i++) {
-            clock.advance(Duration.ofMillis(100));
-            handler.publish("small" + i);
+            clock.advance(Duration.ofMillis(100));  // Unique filenames if rotation occurs
+            handler.publish("small" + i);  // ~6 bytes each, total ~30 bytes
             handler.flush();
             Thread.sleep(50);
         }
+
+        String fileAfterSmallWrites = handler.getFileName();
+        assertEquals(secondFile, fileAfterSmallWrites,
+                "File should not have rotated - small writes shouldn't trigger rotation on fresh file");
+
+        // Verify the second file contains the small writes
+        String content = Files.readString(Paths.get(secondFile));
+        assertTrue(content.contains("trigger1"), "Second file should contain trigger message");
+        assertTrue(content.contains("small0"), "Second file should contain subsequent writes");
+        assertTrue(content.contains("small4"), "Second file should contain all small writes");
 
         handler.shutdown();
 
@@ -297,7 +307,15 @@ public class LogFileHandlerTestCase {
                 .toList();
 
         assertEquals(2, logFiles.size(),
-                "Should have exactly 2 log files");
+                "Should have exactly 2 log files after size-based rotations");
+
+        // Verify first file has the large content, second file has the small content
+        long firstFileSize = Files.size(Paths.get(firstFile));
+        long secondFileSize = Files.size(Paths.get(secondFile));
+        assertTrue(firstFileSize >= rotationSize,
+                "First file should have exceeded rotation size");
+        assertTrue(secondFileSize < rotationSize,
+                "Second file should be smaller than rotation size");
     }
 
     @Test
