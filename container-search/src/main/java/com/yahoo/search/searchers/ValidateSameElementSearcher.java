@@ -7,6 +7,7 @@ import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NearItem;
+import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.RankItem;
@@ -86,6 +87,7 @@ public class ValidateSameElementSearcher extends Searcher {
             if (child instanceof EquivItem) return true;
             if (child instanceof RankItem) return true;
             if (child instanceof PhraseItem) return true;
+            if (child instanceof NotItem) return true;
             return false;
         }
 

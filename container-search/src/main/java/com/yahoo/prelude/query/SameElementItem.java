@@ -12,7 +12,7 @@ import java.util.Objects;
  *
  * @author baldersheim
  */
-public class SameElementItem extends NonReducibleCompositeItem implements HasIndexItem{
+public class SameElementItem extends NonReducibleCompositeItem implements HasIndexItem {
 
     private String fieldName;
 
