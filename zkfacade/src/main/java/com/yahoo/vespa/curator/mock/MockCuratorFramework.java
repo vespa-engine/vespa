@@ -92,6 +92,7 @@ import org.apache.zookeeper.server.quorum.flexible.QuorumVerifier;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Paths;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -116,6 +117,7 @@ public class MockCuratorFramework implements CuratorFramework  {
 
     private final boolean shouldTimeoutOnEnter;
     private final boolean stableOrdering;
+    private final Clock clock;
     private final Locks<String> locks = new Locks<>(Long.MAX_VALUE, TimeUnit.DAYS);
 
     /** The file system used by this mock to store zookeeper files and directories */
@@ -133,8 +135,13 @@ public class MockCuratorFramework implements CuratorFramework  {
     private int monotonicallyIncreasingNumber = 0;
 
     public MockCuratorFramework(boolean stableOrdering, boolean shouldTimeoutOnEnter) {
+        this(stableOrdering, shouldTimeoutOnEnter, Clock.systemUTC());
+    }
+
+    public MockCuratorFramework(boolean stableOrdering, boolean shouldTimeoutOnEnter, Clock clock) {
         this.stableOrdering = stableOrdering;
         this.shouldTimeoutOnEnter = shouldTimeoutOnEnter;
+        this.clock = clock;
     }
 
     public Map<String, DistributedAtomicLong> atomicCounters() {
@@ -423,7 +430,7 @@ public class MockCuratorFramework implements CuratorFramework  {
     private void setData(String pathString, byte[] content, int version, Stat stat, MemoryFileSystem.Node root, Listeners listeners)
             throws KeeperException {
         validatePath(pathString);
-        Node node = getNode(pathString, null, root);
+        Node node = getNode(pathString, stat, root);
         if (version != -1 && version != node.version())
             throw new KeeperException.BadVersionException("expected version " + version + ", but was " + node.version());
         node.setContent(content);
@@ -503,6 +510,12 @@ public class MockCuratorFramework implements CuratorFramework  {
         if (reason != null)
             throw new IllegalArgumentException("Invalid path string \"" + path + "\" caused by " + reason);
         return path;
+    }
+
+    private Stat createStat() {
+        var stat = new Stat();
+        stat.setMtime(clock.instant().toEpochMilli());
+        return stat;
     }
 
     /**
@@ -917,11 +930,11 @@ public class MockCuratorFramework implements CuratorFramework  {
         }
 
         public String forPath(String s) throws Exception {
-            return createNode(s, new byte[0], createParents, null, createMode, fileSystem.root(), listeners, ttl);
+            return createNode(s, new byte[0], createParents, createStat(), createMode, fileSystem.root(), listeners, ttl);
         }
 
         public String forPath(String s, byte[] bytes) throws Exception {
-            return createNode(s, bytes, createParents, null, createMode, fileSystem.root(), listeners, ttl);
+            return createNode(s, bytes, createParents, createStat(), createMode, fileSystem.root(), listeners, ttl);
         }
 
         @Override
@@ -1071,9 +1084,9 @@ public class MockCuratorFramework implements CuratorFramework  {
     private class MockExistsBuilder extends MockBackgroundPathableBuilder<Stat> implements ExistsBuilder {
 
         @Override
-        public Stat forPath(String path) throws Exception {
+        public Stat forPath(String path) {
             try {
-                Stat stat = new Stat();
+                Stat stat = createStat();
                 getNode(path, stat, fileSystem.root());
                 return stat;
             }
@@ -1220,14 +1233,14 @@ public class MockCuratorFramework implements CuratorFramework  {
 
         @Override
         public Stat forPath(String path, byte[] bytes) throws Exception {
-            Stat stat = new Stat();
+            Stat stat = createStat();
             setData(path, bytes, version, stat, fileSystem.root(), listeners);
             return stat;
         }
 
         @Override
         public Stat forPath(String path) throws Exception {
-            Stat stat = new Stat();
+            Stat stat = createStat();
             setData(path, new byte[0], version, stat, fileSystem.root(), listeners);
             return stat;
         }
@@ -1356,13 +1369,13 @@ public class MockCuratorFramework implements CuratorFramework  {
 
             @Override
             public CuratorTransactionBridge forPath(String s, byte[] bytes) throws Exception {
-                createNode(s, bytes, false, null, createMode, newRoot, delayedListener, null);
+                createNode(s, bytes, false, createStat(), createMode, newRoot, delayedListener, null);
                 return new MockCuratorTransactionBridge();
             }
 
             @Override
             public CuratorTransactionBridge forPath(String s) throws Exception {
-                createNode(s, new byte[0], false, null, createMode, newRoot, delayedListener, null);
+                createNode(s, new byte[0], false, createStat(), createMode, newRoot, delayedListener, null);
                 return new MockCuratorTransactionBridge();
             }
 
@@ -1418,13 +1431,13 @@ public class MockCuratorFramework implements CuratorFramework  {
 
             @Override
             public CuratorTransactionBridge forPath(String s, byte[] bytes) throws Exception {
-                MockCuratorFramework.this.setData(s, bytes, version, null, newRoot, delayedListener);
+                MockCuratorFramework.this.setData(s, bytes, version, createStat(), newRoot, delayedListener);
                 return new MockCuratorTransactionBridge();
             }
 
             @Override
             public CuratorTransactionBridge forPath(String s) throws Exception {
-                MockCuratorFramework.this.setData(s, new byte[0], version, null, newRoot, delayedListener);
+                MockCuratorFramework.this.setData(s, new byte[0], version, createStat(), newRoot, delayedListener);
                 return new MockCuratorTransactionBridge();
             }
 
