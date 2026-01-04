@@ -204,7 +204,7 @@ public class LogFileHandlerTestCase {
         assertTrue(uncompressed.exists());
         assertFalse(compressed.exists());
         String content = IOUtils.readFile(uncompressed);
-        assert content != null;
+        assertNotNull(content, "Log file should have content");
         assertEquals(logEntries, content.lines().count());
         h.rotateNow();
         while (uncompressed.exists()) {
