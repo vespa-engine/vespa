@@ -93,6 +93,7 @@ import org.apache.zookeeper.server.quorum.flexible.QuorumVerifier;
 import java.nio.file.FileSystem;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -503,6 +504,12 @@ public class MockCuratorFramework implements CuratorFramework  {
         if (reason != null)
             throw new IllegalArgumentException("Invalid path string \"" + path + "\" caused by " + reason);
         return path;
+    }
+
+    private Stat createStat() {
+        var stat = new Stat();
+        stat.setMtime(Instant.now().toEpochMilli());
+        return stat;
     }
 
     /**
@@ -1071,9 +1078,9 @@ public class MockCuratorFramework implements CuratorFramework  {
     private class MockExistsBuilder extends MockBackgroundPathableBuilder<Stat> implements ExistsBuilder {
 
         @Override
-        public Stat forPath(String path) throws Exception {
+        public Stat forPath(String path) {
             try {
-                Stat stat = new Stat();
+                Stat stat = createStat();
                 getNode(path, stat, fileSystem.root());
                 return stat;
             }
@@ -1220,14 +1227,14 @@ public class MockCuratorFramework implements CuratorFramework  {
 
         @Override
         public Stat forPath(String path, byte[] bytes) throws Exception {
-            Stat stat = new Stat();
+            Stat stat = createStat();
             setData(path, bytes, version, stat, fileSystem.root(), listeners);
             return stat;
         }
 
         @Override
         public Stat forPath(String path) throws Exception {
-            Stat stat = new Stat();
+            Stat stat = createStat();
             setData(path, new byte[0], version, stat, fileSystem.root(), listeners);
             return stat;
         }
@@ -1418,13 +1425,13 @@ public class MockCuratorFramework implements CuratorFramework  {
 
             @Override
             public CuratorTransactionBridge forPath(String s, byte[] bytes) throws Exception {
-                MockCuratorFramework.this.setData(s, bytes, version, null, newRoot, delayedListener);
+                MockCuratorFramework.this.setData(s, bytes, version, createStat(), newRoot, delayedListener);
                 return new MockCuratorTransactionBridge();
             }
 
             @Override
             public CuratorTransactionBridge forPath(String s) throws Exception {
-                MockCuratorFramework.this.setData(s, new byte[0], version, null, newRoot, delayedListener);
+                MockCuratorFramework.this.setData(s, new byte[0], version, createStat(), newRoot, delayedListener);
                 return new MockCuratorTransactionBridge();
             }
 
