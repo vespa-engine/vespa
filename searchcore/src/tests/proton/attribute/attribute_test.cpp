@@ -534,14 +534,21 @@ public:
         : _builder(),
           _factory(AllocStrategy(search::GrowStrategy(), CompactionStrategy(), 100), fastAccessOnly)
     {
-        addAttribute("a1", false, false);
-        addAttribute("a2", true, true);
+        addAttribute("a1", false, false, false);
+        addAttribute("a2", true, true, false);
+        addAttribute("a3", true, false, true);
     }
-    void addAttribute(const std::string &name, bool fastAccess, bool fast_search) {
+    void addAttribute(const std::string &name, bool fastAccess, bool fast_search, bool enable_hnsw) {
         AttributesConfigBuilder::Attribute attr;
+        attr.datatype = AttributesConfigBuilder::Attribute::Datatype::INT64;
         attr.name = name;
         attr.fastaccess = fastAccess;
         attr.fastsearch = fast_search;
+        if (enable_hnsw) {
+            attr.datatype = AttributesConfigBuilder::Attribute::Datatype::TENSOR;
+            attr.tensortype = "tensor(x[64])";
+            attr.index.hnsw.enabled = true;
+        }
         _builder.attribute.push_back(attr);
     }
     std::unique_ptr<AttributeCollectionSpec> create(uint32_t docIdLimit, search::SerialNum serialNum) {
@@ -562,11 +569,16 @@ struct FastAccessAttributeCollectionSpecTest : public AttributeCollectionSpecTes
 TEST_F(NormalAttributeCollectionSpecTest, spec_can_be_created)
 {
     auto spec = create(10, 20);
-    EXPECT_EQ(2u, spec->getAttributes().size());
+    EXPECT_EQ(3u, spec->getAttributes().size());
     EXPECT_EQ("a1", spec->getAttributes()[0].getName());
     EXPECT_FALSE(spec->getAttributes()[0].getConfig().fastSearch());
+    EXPECT_FALSE(spec->getAttributes()[0].getConfig().hnsw_index_params().has_value());
     EXPECT_EQ("a2", spec->getAttributes()[1].getName());
     EXPECT_TRUE(spec->getAttributes()[1].getConfig().fastSearch());
+    EXPECT_FALSE(spec->getAttributes()[1].getConfig().hnsw_index_params().has_value());
+    EXPECT_EQ("a3", spec->getAttributes()[2].getName());
+    EXPECT_FALSE(spec->getAttributes()[2].getConfig().fastSearch());
+    EXPECT_TRUE(spec->getAttributes()[2].getConfig().hnsw_index_params().has_value());
     EXPECT_EQ(10u, spec->getDocIdLimit());
     EXPECT_EQ(20u, spec->getCurrentSerialNum());
 }
@@ -574,9 +586,13 @@ TEST_F(NormalAttributeCollectionSpecTest, spec_can_be_created)
 TEST_F(FastAccessAttributeCollectionSpecTest, spec_can_be_created)
 {
     auto spec = create(10, 20);
-    EXPECT_EQ(1u, spec->getAttributes().size());
+    EXPECT_EQ(2u, spec->getAttributes().size());
     EXPECT_EQ("a2", spec->getAttributes()[0].getName());
     EXPECT_FALSE(spec->getAttributes()[0].getConfig().fastSearch());
+    EXPECT_FALSE(spec->getAttributes()[0].getConfig().hnsw_index_params().has_value());
+    EXPECT_EQ("a3", spec->getAttributes()[1].getName());
+    EXPECT_FALSE(spec->getAttributes()[1].getConfig().fastSearch());
+    EXPECT_FALSE(spec->getAttributes()[1].getConfig().hnsw_index_params().has_value());
     EXPECT_EQ(10u, spec->getDocIdLimit());
     EXPECT_EQ(20u, spec->getCurrentSerialNum());
 }
