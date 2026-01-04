@@ -1500,7 +1500,9 @@
   },
   "com.yahoo.prelude.query.SameElementItem" : {
     "superClass" : "com.yahoo.prelude.query.NonReducibleCompositeItem",
-    "interfaces" : [ ],
+    "interfaces" : [
+      "com.yahoo.prelude.query.HasIndexItem"
+    ],
     "attributes" : [
       "public"
     ],
@@ -1513,6 +1515,8 @@
       "public java.lang.String getName()",
       "public java.lang.String getFieldName()",
       "public void setIndexName(java.lang.String)",
+      "public java.lang.String getIndexName()",
+      "public int getNumWords()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
@@ -1832,7 +1836,7 @@
     "methods" : [
       "public void <init>()",
       "public abstract boolean visit(com.yahoo.prelude.query.Item)",
-      "public void onExit()"
+      "public void onExit(com.yahoo.prelude.query.Item)"
     ],
     "fields" : [ ]
   },
