@@ -252,6 +252,55 @@ public class LogFileHandlerTestCase {
     }
 
     @Test
+    void testSizeRotationResetsFileSize() throws IOException, InterruptedException {
+        File root = newFolder(temporaryFolder, "testsizerotationresets");
+        String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s";
+
+        long rotationSize = 500;
+
+        LogFileHandler<String> handler = new LogFileHandler<>(
+                Compression.NONE, BUFFER_SIZE, pattern, new long[]{0}, null, 2048,
+                rotationSize, "thread-name", new StringLogWriter(), clock);
+
+        // Write enough to exceed rotation size
+        String message = "x".repeat(100);
+        for (int i = 0; i < 10; i++) {
+            handler.publish(message);
+        }
+        handler.flush();
+        Thread.sleep(100);
+
+        String firstFile = handler.getFileName();
+
+        // Advance clock past check interval to trigger size-based rotation
+        clock.advance(Duration.ofMinutes(2));
+        handler.publish("trigger1");
+        handler.flush();
+        Thread.sleep(100);
+
+        String secondFile = handler.getFileName();
+        assertNotEquals(firstFile, secondFile, "Should have rotated due to size");
+
+        // Now advance clock by small amounts (enough for unique filenames,
+        // but NOT past the 1-minute check interval) and publish more messages.
+        for (int i = 0; i < 5; i++) {
+            clock.advance(Duration.ofMillis(100));
+            handler.publish("small" + i);
+            handler.flush();
+            Thread.sleep(50);
+        }
+
+        handler.shutdown();
+
+        List<Path> logFiles = Files.list(root.toPath())
+                .filter(p -> p.toString().contains("logfilehandlertest"))
+                .toList();
+
+        assertEquals(2, logFiles.size(),
+                "Should have exactly 2 log files");
+    }
+
+    @Test
     void testSizeRotationDisabled() throws IOException, InterruptedException {
         File root = newFolder(temporaryFolder, "testsizerotationdisabled");
         String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s";
@@ -396,7 +445,7 @@ public class LogFileHandlerTestCase {
 
         List<Path> logFiles = Files.list(root.toPath())
                 .filter(p -> p.toString().contains("logfilehandlertest"))
-                .collect(Collectors.toList());
+                .toList();
 
         assertTrue(logFiles.size() >= 3, "Should have created at least 3 log files due to size rotation");
     }

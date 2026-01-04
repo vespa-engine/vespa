@@ -416,7 +416,7 @@ class LogFileHandler <LOGTYPE> {
 
             if (oldFileName == null) oldFileName = getOldFileNameFromSymlink(); // To compress previous file, if so configured
             createSymlinkToCurrentFile();
-
+            fileSize = 0;
             nextRotationTime = 0; // figure it out later (lazy evaluation)
             if ((oldFileName != null)) {
                 Path oldFile = Paths.get(oldFileName);
