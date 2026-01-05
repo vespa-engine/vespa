@@ -71,16 +71,8 @@ public final class ExactExpression extends Expression {
         }
 
         // Fallback to full mode
-        SpanTree tree = output.getSpanTree(SpanTrees.LINGUISTICS);
-        SpanList root;
-        if (tree == null) {
-            root = new SpanList();
-            tree = new SpanTree(SpanTrees.LINGUISTICS, root);
-            output.setSpanTree(tree);
-        }
-        else {
-            root = (SpanList)tree.getRoot();
-        }
+        SpanTree tree = output.setSpanTree(new SpanTree(SpanTrees.LINGUISTICS));
+        SpanList root = tree.spanList();
         SpanNode node = new Span(0, prev.length());
         tree.annotate(node, new Annotation(AnnotationTypes.TERM,
                                            next.equals(prev) ? null : new StringFieldValue(next)));

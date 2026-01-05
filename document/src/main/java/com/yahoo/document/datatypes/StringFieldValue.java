@@ -324,9 +324,6 @@ public class StringFieldValue extends FieldValue implements DataSource {
         convertAnySimpleAnnotations();
         if (spanTrees == null)
             spanTrees = new HashMap<>(1);
-        if (spanTrees.containsKey(spanTree.getName())) {
-            throw new IllegalArgumentException("Span tree " + spanTree.getName() + " already exists.");
-        }
         spanTrees.put(spanTree.getName(), spanTree);
         spanTree.setStringFieldValue(this);
 
