@@ -20,12 +20,6 @@ LOG_SETUP(".proton.server.rtchooks");
 using namespace vespalib;
 using vespalib::compression::CompressionConfig;
 
-namespace proton::experimental {
-
-bool enable_prepare_restart2 = true;
-
-}
-
 namespace {
 
 std::string delayed_configs_string("delayedConfigs");
@@ -183,7 +177,7 @@ RPCHooksBase::letProtonDo(Executor::Task::UP task)
 void
 RPCHooksBase::triggerFlush(FRT_RPCRequest *req)
 {
-    LOG(info, "RPCHooksBase::triggerFlush will create experimental detached rpc handler");
+    LOG(info, "RPCHooksBase::triggerFlush will create detached rpc handler");
     std::chrono::steady_clock::duration timeout(610s); // 10s greater timeout than the one in vespa-proton-cmd
     auto set_strategy_result = _proton.trigger_flush2();
     using TriggerFlushRpcHandler = PrepareRestartRpcHandler;
@@ -200,7 +194,7 @@ RPCHooksBase::triggerFlush(FRT_RPCRequest *req)
 void
 RPCHooksBase::prepareRestart(FRT_RPCRequest *req)
 {
-    LOG(info, "RPCHooksBase::prepareRestart will create experimental detached rpc handler");
+    LOG(info, "RPCHooksBase::prepareRestart will create detached rpc handler");
     std::chrono::steady_clock::duration timeout(610s); // 10s greater timeout than the one in vespa-proton-cmd
     auto set_strategy_result = _proton.prepare_restart2(0);
     using RefCountedRpcRequest = vespalib::ref_counted<FRT_RPCRequest>;
