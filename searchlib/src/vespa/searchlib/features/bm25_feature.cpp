@@ -126,13 +126,13 @@ Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::ParameterList
     Bm25Utils bm25_utils(getBaseName() + "(" + _field->name() + ").", env.getProperties());
 
     if (bm25_utils.lookup_param(Bm25Utils::k1(), _k1_param) == Trinary::Undefined) {
-        return false;
+        return fail(bm25_utils.last_error());
     }
     if (bm25_utils.lookup_param(Bm25Utils::b(), _b_param) == Trinary::Undefined) {
-        return false;
+        return fail(bm25_utils.last_error());
     }
     if (bm25_utils.lookup_param(Bm25Utils::average_field_length(), _avg_field_length) == Trinary::Undefined) {
-        return false;
+        return fail(bm25_utils.last_error());
     }
 
     describeOutput("score", "The bm25 score for all terms searching in the given index field");
