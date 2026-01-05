@@ -1500,7 +1500,9 @@
   },
   "com.yahoo.prelude.query.SameElementItem" : {
     "superClass" : "com.yahoo.prelude.query.NonReducibleCompositeItem",
-    "interfaces" : [ ],
+    "interfaces" : [
+      "com.yahoo.prelude.query.HasIndexItem"
+    ],
     "attributes" : [
       "public"
     ],
@@ -1513,6 +1515,8 @@
       "public java.lang.String getName()",
       "public java.lang.String getFieldName()",
       "public void setIndexName(java.lang.String)",
+      "public java.lang.String getIndexName()",
+      "public int getNumWords()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
@@ -1832,7 +1836,7 @@
     "methods" : [
       "public void <init>()",
       "public abstract boolean visit(com.yahoo.prelude.query.Item)",
-      "public void onExit()"
+      "public void onExit(com.yahoo.prelude.query.Item)"
     ],
     "fields" : [ ]
   },
@@ -5801,16 +5805,16 @@
       "public static final java.lang.String RERANKCOUNT",
       "public static final java.lang.String KEEPRANKCOUNT",
       "public static final java.lang.String RANKSCOREDROPLIMIT",
+      "public static final java.lang.String ELEMENT_GAP",
+      "public static final java.lang.String FEATURES",
+      "public static final java.lang.String PROPERTIES",
       "public static final java.lang.String MATCH_PHASE",
       "public static final java.lang.String SECOND_PHASE",
       "public static final java.lang.String GLOBAL_PHASE",
       "public static final java.lang.String DIVERSITY",
       "public static final java.lang.String SIGNIFICANCE",
       "public static final java.lang.String SOFTTIMEOUT",
-      "public static final java.lang.String MATCHING",
-      "public static final java.lang.String FEATURES",
-      "public static final java.lang.String PROPERTIES",
-      "public static final java.lang.String ELEMENT_GAP"
+      "public static final java.lang.String MATCHING"
     ]
   },
   "com.yahoo.search.query.Select" : {
@@ -7311,8 +7315,11 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String DIVERSITY",
       "public static final java.lang.String ATTRIBUTE",
       "public static final java.lang.String MINGROUPS",
+      "public static final java.lang.String CUTOFF_FACTOR",
+      "public static final java.lang.String CUTOFF_STRATEGY",
       "public static final java.lang.String CUTOFF",
       "public static final java.lang.String FACTOR",
       "public static final java.lang.String STRATEGY"
@@ -7357,7 +7364,9 @@
       "public com.yahoo.search.query.ranking.GlobalPhase clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields" : [ ]
+    "fields" : [
+      "public static final java.lang.String GLOBAL_PHASE"
+    ]
   },
   "com.yahoo.search.query.ranking.MatchPhase" : {
     "superClass" : "java.lang.Object",
@@ -7387,6 +7396,7 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String MATCH_PHASE",
       "public static final java.lang.String ATTRIBUTE",
       "public static final java.lang.String ASCENDING",
       "public static final java.lang.String MAX_HITS",
@@ -7436,6 +7446,7 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String MATCHING",
       "public static final java.lang.String TERMWISELIMIT",
       "public static final java.lang.String NUMTHREADSPERSEARCH",
       "public static final java.lang.String NUMSEARCHPARTITIIONS",
@@ -7528,7 +7539,9 @@
       "public com.yahoo.search.query.ranking.SecondPhase clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields" : [ ]
+    "fields" : [
+      "public static final java.lang.String SECOND_PHASE"
+    ]
   },
   "com.yahoo.search.query.ranking.Significance" : {
     "superClass" : "java.lang.Object",
@@ -7549,6 +7562,7 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String SIGNIFICANCE",
       "public static final java.lang.String USE_MODEL"
     ]
   },
@@ -7576,6 +7590,7 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String SOFTTIMEOUT",
       "public static final java.lang.String ENABLE",
       "public static final java.lang.String FACTOR",
       "public static final java.lang.String TAILCOST",
@@ -7891,6 +7906,18 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.rendering.CborRenderer" : {
+    "superClass" : "com.yahoo.search.rendering.JsonRenderer",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(java.util.concurrent.Executor)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.rendering.EventRenderer" : {
     "superClass" : "com.yahoo.processing.rendering.AsynchronousSectionedRenderer",
     "interfaces" : [ ],
@@ -7954,37 +7981,6 @@
     ],
     "fields" : [ ]
   },
-  "com.yahoo.search.rendering.NonFiniteToNullDataSink" : {
-    "superClass" : "java.lang.Record",
-    "interfaces" : [
-      "com.yahoo.data.disclosure.DataSink"
-    ],
-    "attributes" : [
-      "public",
-      "final",
-      "record"
-    ],
-    "methods" : [
-      "public void <init>(com.yahoo.data.disclosure.DataSink)",
-      "public void doubleValue(double)",
-      "public void floatValue(float)",
-      "public void fieldName(java.lang.String, byte[])",
-      "public void startObject()",
-      "public void endObject()",
-      "public void startArray()",
-      "public void endArray()",
-      "public void emptyValue()",
-      "public void booleanValue(boolean)",
-      "public void longValue(long)",
-      "public void stringValue(java.lang.String, byte[])",
-      "public void dataValue(byte[])",
-      "public final java.lang.String toString()",
-      "public final int hashCode()",
-      "public final boolean equals(java.lang.Object)",
-      "public com.yahoo.data.disclosure.DataSink delegate()"
-    ],
-    "fields" : [ ]
-  },
   "com.yahoo.search.rendering.JsonRenderer$FieldConsumer" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
@@ -8003,18 +7999,6 @@
       "protected void renderFieldContents(java.lang.Object)",
       "public void accept(java.lang.Object)",
       "public bridge synthetic void accept(java.lang.Object, java.lang.Object)"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.search.rendering.CborRenderer" : {
-    "superClass" : "com.yahoo.search.rendering.JsonRenderer",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "public void <init>(java.util.concurrent.Executor)"
     ],
     "fields" : [ ]
   },

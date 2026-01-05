@@ -53,15 +53,23 @@ public class RemoteHealthStatusFetcher extends HttpMetricFetcher {
     }
 
 
-    private HealthMetric parse(InputStream data) {
+    HealthMetric parse(InputStream data) {
         try {
             JsonNode o = Jackson.mapper().readTree(data);
-            JsonNode status = o.get("status");
-            String code = status.get("code").asText();
-            String message = "";
-            if (status.has("message")) {
-                message = status.get("message").textValue();
+            if (!o.isObject()) {
+                throw new IllegalArgumentException("Expected JSON object");
             }
+
+            if (o.isEmpty()) {
+                return HealthMetric.getUnknown("Empty metrics response");
+            }
+            JsonNode status = o.get("status");
+            if (status == null || !status.has("code")) {
+                return HealthMetric.getUnknown("Missing status or code in response");
+            }
+
+            String code = status.get("code").asText();
+            String message = status.path("message").asText("");
             return HealthMetric.get(code, message);
 
         } catch (Exception e) {

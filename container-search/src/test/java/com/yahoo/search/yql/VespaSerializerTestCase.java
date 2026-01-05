@@ -161,6 +161,12 @@ public class VespaSerializerTestCase {
     }
 
     @Test
+    void testEquivInNear() {
+        parseAndConfirm("default contains ({distance: 5}near(\"A\", equiv(\"B\", \"C\")))",
+                        "default CONTAINS ({distance:5,exclusionDistance:5}near('A', !equiv('B', 'C')))");
+    }
+
+    @Test
     void testNearestNeighbor() {
         parseAndConfirm("{label: \"foo\", targetHits: 1000}nearestNeighbor(semantic_embedding, my_property)");
         parseAndConfirm("{targetHits: 42}nearestNeighbor(semantic_embedding, my_property)");

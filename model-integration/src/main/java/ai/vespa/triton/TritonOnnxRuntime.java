@@ -9,6 +9,7 @@ import ai.vespa.modelintegration.utils.ModelPathOrData;
 import com.google.protobuf.TextFormat;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.container.protect.ProcessTerminator;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.ResourceReference;
@@ -79,12 +80,32 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     @Inject
     public TritonOnnxRuntime(TritonConfig config) {
+        this(config, new ProcessTerminator());
+    }
+
+    // Injectable ProcessTerminator for testing.
+    TritonOnnxRuntime(TritonConfig config, ProcessTerminator processTerminator) {
+        this(config, new TritonOnnxClient(config), processTerminator);
+    }
+
+    // Injectable tritonClient and ProcessTerminator for testing.
+    TritonOnnxRuntime(TritonConfig config, TritonOnnxClient tritonClient, ProcessTerminator processTerminator) {
         log.info(() -> "Creating Triton ONNX runtime");
 
         this.config = config;
-        this.tritonClient = new TritonOnnxClient(config);
-        this.isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
-        this.modelRepositoryPath = Path.of(Defaults.getDefaults().underVespaHome(config.modelRepositoryPath()));
+        this.tritonClient = tritonClient;
+        
+        try {
+            var isTritonHealthy = tritonClient.isHealthy();
+            if (!isTritonHealthy) {
+                processTerminator.logAndDie("Die because Triton server is not healthy at %s".formatted(config.target()));
+            }
+        } catch (TritonOnnxClient.TritonException e) {
+            processTerminator.logAndDie("Die because Triton server can't be reached at %s".formatted(config.target()));
+        }
+
+        isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
+        modelRepositoryPath = Path.of(Defaults.getDefaults().underVespaHome(config.modelRepositoryPath()));
 
         if (isModelControlExplicit) {
             tritonClient.unloadAllModels();

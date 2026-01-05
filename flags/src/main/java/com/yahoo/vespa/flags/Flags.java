@@ -234,7 +234,7 @@ public class Flags {
 
     public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
             "docproc-handler-threadpool", 1.0,
-            List.of("johsol"), "2025-10-17", "2026-01-01",
+            List.of("johsol"), "2025-10-17", "2026-02-01",
             "Adjust document processor handler threadpool size (scale the number of threads with cpu cores, 1 means same number of threads as cpu cores))",
             "Takes effect at redeployment",
             APPLICATION);
@@ -255,7 +255,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
             "use-legacy-wand-query-parsing", true,
-            List.of("arnej"), "2023-07-26", "2025-12-31",
+            List.of("arnej"), "2023-07-26", "2026-02-01",
             "If true, force legacy mode for weakAnd query parsing",
             "Takes effect at redeployment",
             INSTANCE_ID);
