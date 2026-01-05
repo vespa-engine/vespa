@@ -31,7 +31,7 @@ public:
         return std::string_view(_stackDump.data(), _stackDump.size());
     }
 
-    SerializedQueryTree(std::vector<char> stackDump, std::unique_ptr<ProtobufQueryTree> protoQueryTree, ctor_tag tag);
+    SerializedQueryTree(std::vector<char> stackDump, std::unique_ptr<ProtobufQueryTree> protoQueryTree, ctor_tag tag) noexcept;
     ~SerializedQueryTree();
     static const SerializedQueryTree& empty();
 
