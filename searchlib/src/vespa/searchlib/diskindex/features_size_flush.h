@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <string>
 
+namespace search::index { class PostingListParams; }
+
 namespace search::diskindex {
 
 /*
@@ -18,6 +20,11 @@ namespace search::diskindex {
  * When encountering this marker, the number of chunks for the counts entry is always read.
  */
 constexpr uint32_t features_size_flush_marker = 0xfffffff0;
+
+// Limits posting list chunks to 1 document each, for corner case testing.
+constexpr bool force_features_size_flush_always = false;
+
+void setup_default_features_size_flush(index::PostingListParams& params);
 
 namespace tags {
 
