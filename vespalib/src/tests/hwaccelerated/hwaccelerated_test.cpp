@@ -4,6 +4,7 @@
 #include "scoped_fn_table_override.h"
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/hwaccelerated/float4.h>
+#include <vespa/vespalib/hwaccelerated/float8.h>
 #include <vespa/vespalib/hwaccelerated/fn_table.h>
 #include <vespa/vespalib/hwaccelerated/float8_luts.h>
 #include <vespa/vespalib/hwaccelerated/highway.h>
@@ -416,6 +417,29 @@ TEST(Float4E2M1WideningTest, can_widen_fp4_e2m1_to_fp8_types) {
         // Exact floating point equality checking is desired
         EXPECT_EQ(as_e4m3fn_float, as_e5m2_float);
         EXPECT_EQ(as_e5m2_float, as_f32_float);
+    }
+}
+
+namespace N_NEON_BF16 { // tee hee
+void test_fp8_to_fp16(const uint8_t* buf, uint16_t* out, size_t n);
+}
+
+TEST(Float8Alternate, prototyping) {
+    uint8_t buf[8] = {};
+    uint16_t out[8] = {};
+    for (uint32_t i = 0; i < 256; i+= 8) {
+        for (uint32_t j = 0; j < 8; ++j) {
+            buf[j] = i + j;
+            //std::print(std::cout, " {}", std::float16_t(Float8E4M3FN(i+j).to_float()));
+        }
+        //std::println(std::cout);
+        N_NEON_BF16::test_fp8_to_fp16(buf, out, 8);
+        for (uint32_t j = 0; j < 8; ++j) {
+            // Compare bit patterns instead of floats since fp NaN != NaN
+            uint16_t expected_fp16_bits = std::bit_cast<uint16_t>(std::float16_t(Float8E4M3FN(i+j).to_float()));
+            uint16_t actual_fp16_bits = out[j];
+            ASSERT_EQ(actual_fp16_bits, expected_fp16_bits) << " for fp8 raw u8 value " << std::hex << i+j;
+        }
     }
 }
 

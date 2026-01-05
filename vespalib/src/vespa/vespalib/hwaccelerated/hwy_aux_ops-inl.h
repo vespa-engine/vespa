@@ -142,13 +142,35 @@ hn::Vec128<float> MyReorderWidenMulAccumulate(DF, hn::Vec128<hwy::float16_t> lhs
 
 #endif // HWY_TARGET == HWY_NEON_BF16
 
+#if (HWY_TARGET & HWY_ALL_NEON) && defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
+
+HWY_API
+hn::Vec128<hwy::float16_t> MyAdd(hn::Vec128<hwy::float16_t> lhs, hn::Vec128<hwy::float16_t> rhs) {
+    return hn::Vec128<hwy::float16_t>(vaddq_f16(lhs.raw, rhs.raw));
+}
+
+HWY_API
+hn::Vec128<hwy::float16_t> MySub(hn::Vec128<hwy::float16_t> lhs, hn::Vec128<hwy::float16_t> rhs) {
+    return hn::Vec128<hwy::float16_t>(vsubq_f16(lhs.raw, rhs.raw));
+}
+
+// TODO SVE
+
+#endif // (HWY_TARGET & HWY_ALL_NEON) && defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
+
 template <typename DF, typename VBF, HWY_IF_F32_D(DF), HWY_IF_F16(hn::TFromV<VBF>)>
 HWY_API
 hn::VFromD<DF> MyReorderWidenMulAccumulate(DF df32, VBF lhs, VBF rhs, const hn::VFromD<DF> sum0, hn::VFromD<DF>& sum1) noexcept {
-    // TODO use reordered promotion?
+    // TODO use reordered promotion on SVE?
     // FIXME f16->f32 on AArch64 has a latency of 4 cycles and only a throughput of 1...!
     sum1 = hn::MulAdd(hn::PromoteUpperTo(df32, lhs), hn::PromoteUpperTo(df32, rhs), sum1);
     return hn::MulAdd(hn::PromoteLowerTo(df32, lhs), hn::PromoteLowerTo(df32, rhs), sum0);
+}
+
+template <typename DF, typename VBF, HWY_IF_F32_D(DF), HWY_IF_BF16(hn::TFromV<VBF>)>
+HWY_API
+hn::VFromD<DF> MyReorderWidenMulAccumulate(DF df32, VBF lhs, VBF rhs, const hn::VFromD<DF> sum0, hn::VFromD<DF>& sum1) noexcept {
+    return hn::ReorderWidenMulAccumulate(df32, lhs, rhs, sum0, sum1);
 }
 
 } // HWY_NAMESPACE

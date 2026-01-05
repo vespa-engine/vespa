@@ -301,7 +301,7 @@ int64_t my_hwy_dot_int8(const int8_t* HWY_RESTRICT a,
     return compute_chunked_sum<max_n_per_chunk, int64_t>(mul_add_i8_to_i32, a, b, sz);
 }
 
-// Only properly efficient with native fp16 support (aarch64 FP16+FHM or SVE2)
+// Only properly efficient with native widening fp16 fmadd support (aarch64 FP16+FHM or SVE2)
 HWY_INLINE
 float mul_add_fp8_e5m2_to_f32_via_fp16(const uint8_t* HWY_RESTRICT a,
                                        const uint8_t* HWY_RESTRICT b,
@@ -311,14 +311,15 @@ float mul_add_fp8_e5m2_to_f32_via_fp16(const uint8_t* HWY_RESTRICT a,
     const hn::Repartition<uint16_t,       decltype(du8)>  du16;
     const hn::Repartition<hwy::float16_t, decltype(du8)>  df16;
     const hn::Repartition<hwy::float32_t, decltype(df16)> df32;
+    using VF16 = hn::VFromD<decltype(df16)>;
     // FP8E5M2 is to f16 what bf16 is to f32, i.e. the sliced and diced upper half
     // representation. This means we can zero-extend to f16 and then use native CPU
-    // support for f16->f32 conversion ops.
+    // support for f16->f32 fmadd ops.
     const auto kernel_fn = [du16, df16, df32](auto lhs_i8, auto rhs_i8, auto& acc0, auto& acc1, auto& acc2, auto& acc3) VESPA_HWY_LAMBDA {
-        const auto lhs_f16_lo = hn::BitCast(df16, hn::ShiftLeft<8>(ReorderPromoteFirstTo(du16, lhs_i8)));
-        const auto lhs_f16_hi = hn::BitCast(df16, hn::ShiftLeft<8>(ReorderPromoteSecondTo(du16, lhs_i8)));
-        const auto rhs_f16_lo = hn::BitCast(df16, hn::ShiftLeft<8>(ReorderPromoteFirstTo(du16, rhs_i8)));
-        const auto rhs_f16_hi = hn::BitCast(df16, hn::ShiftLeft<8>(ReorderPromoteSecondTo(du16, rhs_i8)));
+        const VF16 lhs_f16_lo = hn::BitCast(df16, hn::ShiftLeft<8>(ReorderPromoteFirstTo(du16, lhs_i8)));
+        const VF16 lhs_f16_hi = hn::BitCast(df16, hn::ShiftLeft<8>(ReorderPromoteSecondTo(du16, lhs_i8)));
+        const VF16 rhs_f16_lo = hn::BitCast(df16, hn::ShiftLeft<8>(ReorderPromoteFirstTo(du16, rhs_i8)));
+        const VF16 rhs_f16_hi = hn::BitCast(df16, hn::ShiftLeft<8>(ReorderPromoteSecondTo(du16, rhs_i8)));
         acc0 = MyReorderWidenMulAccumulate(df32, lhs_f16_lo, rhs_f16_lo, acc0, acc1);
         acc2 = MyReorderWidenMulAccumulate(df32, lhs_f16_hi, rhs_f16_hi, acc2, acc3);
     };
@@ -327,18 +328,100 @@ float mul_add_fp8_e5m2_to_f32_via_fp16(const uint8_t* HWY_RESTRICT a,
 }
 
 #if 0
-#define DEBUG_PRINT_LANES(d, name, v) hn::Print(d, name, v, 0, 16)
+#define DEBUG_PRINT_LANES8(d, name, v) hn::Print(d, name, v, 0, 8)
+#define DEBUG_PRINT_LANES16(d, name, v) hn::Print(d, name, v, 0, 16)
 #else
-#define DEBUG_PRINT_LANES(d, name, v)
+#define DEBUG_PRINT_LANES8(d, name, v)
+#define DEBUG_PRINT_LANES16(d, name, v)
 #endif
 
+#if (HWY_TARGET & HWY_ALL_NEON) && defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC) // TODO AVX3_SPR with fp16
+
+template <typename D, HWY_IF_F16_D(D)>
+HWY_API
+hn::VFromD<D> promote_fp8_e4m3_to(D df16, hn::VFromD<hn::Rebind<uint8_t, D>> v) {
+    const hn::RebindToUnsigned<decltype(df16)> du16;
+    using VU16 = hn::VFromD<decltype(du16)>;
+
+    const VU16 as_u16 = hn::PromoteTo(du16, v);
+    DEBUG_PRINT_LANES8(du16, "as_u16", as_u16);
+    const VU16 sign = hn::ShiftRight<7>(as_u16);
+    const VU16 mantissa_fp8 = hn::And(as_u16, hn::Set(du16, 0x7));
+    const VU16 exp_fp8 = hn::And(hn::ShiftRight<3>(as_u16), hn::Set(du16, 0xF));
+    const auto is_fp8_subnorm = hn::Eq(exp_fp8, hn::Zero(du16));
+    DEBUG_PRINT_LANES8(du16, "is_fp8_subnorm", hn::VecFromMask(du16, is_fp8_subnorm));
+    const auto is_fp8_nan = hn::Eq(hn::ShiftLeft<9>(as_u16), hn::Set(du16, 0xFE00)); // ignore sign bit
+    // We normalize the fp8 subnormal by expressing it as fp16 (where all e4m3 subnormals
+    // are covered by the normalized fp range) and doing a "magic" floating-point subtraction.
+    // This subtraction will as part of IEEE 754 floating point semantics implicitly:
+    //
+    //  1. _Denormalize_ the operands by lining up the exponents. The smallest number's mantissa
+    //     will be right shifted by a number of bits equal to the difference in the two (biased)
+    //     exponents, simultaneously adjusting the exponent value up correspondingly.
+    //  2. _Normalize_ the subtraction result so that its mantissa has a leading 1. This is the
+    //     "inverse" of de-normalization where the mantissa is shifted left until this is
+    //     satisfied, simultaneously adjusting the exponent value _down_ correspondingly.
+    //
+    // The magic subtraction operand value is chosen so that the subtraction cancels itself out
+    // (i.e. as-if step 1 is a no-op) and for step 2 so that the normalization adjusts the other
+    // exponent down to an exponent that exactly represents the fp8 subnormal as an fp16 _normal_
+    // value.
+    //
+    // The smallest E4M3 subnormal is +/- 2^-9. The fp16 exponent bias is 15, so the biased
+    // exponent value that represents this value (as a normal) in fp16 is 15-9=6.
+    //
+    // Example for the smallest E4M3 subnormal (exp=0000, mantissa=001):
+    //
+    // Let M be the magic exponent value that we OR with our subnormal E4M3 mantissa to build
+    // a "raw" fp16 value. Reminder: fp16 has 10 mantissa bits.
+    //
+    // Logical normalization steps for adjusting mantissa to have a leading 1:
+    //     exp    mantissa
+    //  0:  M     0000000001 (initial state)
+    //  1:  M-1   0000000010
+    //  2:  M-2   0000000100
+    //  ...
+    // 10: M-10   0000000000
+    //
+    // We want M-10=6 (i.e. biased exp for 2^-9), so M=6+10 = 16
+    //
+    // This is directly inspired by Fabian Giesen's fast fp16 -> fp32 conversion routine
+    // (see https://fgiesen.wordpress.com/2012/03/28/half-to-float-done-quic/), but adapted
+    // to fp8 -> fp16 and using only fp16 arithmetic. This requires the use of our own
+    // subtraction ops since Highway doesn't currently expose native fp16 arithmetic
+    // (only widening conversion is currently supported). The blog post also does not go into
+    // any details of how the magic number works, hence the above "reverse-engineered" wall
+    // of text exposition.
+    const VU16 magic = hn::Set(du16, 16 << 10);
+    const VU16 subnorm_fixup = hn::BitCast(du16, MySub(hn::BitCast(df16, hn::Or(magic, mantissa_fp8)), hn::BitCast(df16, magic)));
+    DEBUG_PRINT_LANES8(du16, "magic", magic);
+    DEBUG_PRINT_LANES8(df16, "magic_fp16", hn::BitCast(df16, magic));
+    DEBUG_PRINT_LANES8(df16, "mangled", hn::BitCast(df16, hn::Or(magic, mantissa_fp8)));
+    DEBUG_PRINT_LANES8(df16, "subnorm_fixup", MySub(hn::BitCast(df16, hn::Or(magic, mantissa_fp8)), hn::BitCast(df16, magic)));
+    DEBUG_PRINT_LANES8(du16, "subnorm_fixup_bits", hn::BitCast(du16, subnorm_fixup));
+    const VU16 mantissa_fp16 = hn::ShiftLeft<10 - 3>(mantissa_fp8);
+    const VU16 exp_fp16 = hn::Add(exp_fp8, hn::Set(du16, 15 - 7));
+    const VU16 normal = hn::Or(hn::ShiftLeft<10>(exp_fp16), mantissa_fp16);
+    const VU16 bits_finite = hn::IfThenElse(is_fp8_subnorm, subnorm_fixup, normal);
+    // Note that our NaN has a single (quiet) bit set to bitwise match the f32->f16 conversion from the fp8 LUT
+    const VU16 bits_fp16 = hn::IfThenElse(is_fp8_nan, hn::Set(du16, 0b0111'1110'0000'0000), bits_finite);
+    DEBUG_PRINT_LANES8(df16, "bits_fp16", hn::BitCast(df16, bits_fp16));
+    return hn::BitCast(df16, hn::Or(hn::ShiftLeft<15>(sign), bits_fp16));
+}
+
+#endif // (HWY_TARGET & HWY_ALL_NEON) && defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
+
 // TODO split out as func that outputs u8 pair <MSBs sans sign, sign> instead? "decompose_to_fp16_parts?"
+// This is almost 2x the speed of first promoting to 16 bits and doing most ops in that width
 template <typename D, HWY_IF_U8_D(D)>
 HWY_API
 void promote_fp8e4m3fn_to_fp16_as_u16(D du8, hn::VFromD<D> v,
                                       hn::VFromD<hn::Repartition<uint16_t, D>>& u16_lo_out,
                                       hn::VFromD<hn::Repartition<uint16_t, D>>& u16_hi_out) noexcept
 {
+    const hn::Repartition<uint16_t, decltype(du8)> du16;
+    using VU8  = hn::VFromD<decltype(du8)>;
+    using VU16 = hn::VFromD<decltype(du16)>;
     // E4M3 exponent bias is 7
     // No infinity
     // +/-NaN is S.1111.111
@@ -351,44 +434,33 @@ void promote_fp8e4m3fn_to_fp16_as_u16(D du8, hn::VFromD<D> v,
     // unsigned representation shifted right by 1) and be correct for all fp cases
     // (zero, normal, subnormal, NaN). This resulting 9-bit floating point value is
     // a prefix of the full f16 value, just as bf16 would be for f32.
-    const auto sign_only     = hn::And(v, hn::Set(du8, 0b1000'0000));
-    const auto v_no_sign     = hn::And(v, hn::Set(du8, 0b0111'1111));
-    const auto lo_4_bits     = hn::And(v, hn::Set(du8, 0b0000'1111));
-    const auto mantissa_only = hn::And(v, hn::Set(du8, 0b0000'0111));
-    const auto exp_only      = hn::And(v_no_sign, hn::Set(du8, 0b0111'1000));
-    const auto adj_exp       = hn::Add(exp_only, hn::Set(du8, (15 - 7) << 3)); // "pre-shifted", as-if ((exp_only >> 3) + 8) << 3
+    const VU8 sign_only     = hn::And(v, hn::Set(du8, 0b1000'0000));
+    const VU8 v_no_sign     = hn::And(v, hn::Set(du8, 0b0111'1111));
+    const VU8 lo_4_bits     = hn::And(v, hn::Set(du8, 0b0000'1111));
+    const VU8 mantissa_only = hn::And(v, hn::Set(du8, 0b0000'0111));
+    const VU8 exp_only      = hn::And(v_no_sign, hn::Set(du8, 0b0111'1000));
+    const VU8 adj_exp       = hn::Add(exp_only, hn::Set(du8, (15 - 7) << 3)); // "pre-shifted", as-if ((exp_only >> 3) + 8) << 3
     // "special" is +/- Zero, NaN or a subnormal. E4M3 has only a single NaN value, which is quiet.
     const auto is_special = hn::Or(hn::Eq(exp_only, hn::Zero(du8)), hn::Eq(v_no_sign, hn::Set(du8, 0b0111'1111)));
     // Important: LUT values are the top MSBs _offset 1_, i.e. without the sign bit
-    const auto special_lut = hn::Dup128VecFromValues(du8,
+    const VU8 special_lut = hn::Dup128VecFromValues(du8,
         // Zero, followed by 7 subnormals
         0b00000000, 0b00110000, 0b00111000, 0b00111100, 0b01000000, 0b01000010, 0b01000100, 0b01000110,
         // All lookups with 4th bit set is a NaN (since all subnormals have an exponent of zero).
         // Map all of these to the same fp16 qNaN value.
         0b11111100, 0b11111100, 0b11111100, 0b11111100, 0b11111100, 0b11111100, 0b11111100, 0b11111100
     );
-    const auto msb_no_sign = hn::IfThenElse(is_special,
-                                            hn::TableLookupBytes(special_lut, lo_4_bits),
-                                            hn::Or(adj_exp, mantissa_only));
+    const VU8 msb_no_sign = hn::IfThenElse(is_special,
+                                           hn::TableLookupBytes(special_lut, lo_4_bits),
+                                           hn::Or(adj_exp, mantissa_only));
 
-    const hn::Repartition<uint16_t, decltype(du8)> du16;
+
     // Move up _almost_ to MSB, leaving room for the sign bit
-    const auto unsigned_shifted_lo = hn::ShiftLeft<7>(hn::PromoteLowerTo(du16, msb_no_sign));
+    const VU16 unsigned_shifted_lo = hn::ShiftLeft<7>(hn::PromoteLowerTo(du16, msb_no_sign));
     u16_lo_out = hn::Or(hn::ShiftLeft<8>(hn::PromoteLowerTo(du16, sign_only)), unsigned_shifted_lo);
 
-    const auto unsigned_shifted_hi = hn::ShiftLeft<7>(hn::PromoteUpperTo(du16, msb_no_sign));
+    const VU16 unsigned_shifted_hi = hn::ShiftLeft<7>(hn::PromoteUpperTo(du16, msb_no_sign));
     u16_hi_out =  hn::Or(hn::ShiftLeft<8>(hn::PromoteUpperTo(du16, sign_only)), unsigned_shifted_hi);
-
-    DEBUG_PRINT_LANES(du8, "v", v);
-    DEBUG_PRINT_LANES(du8, "sign_only", sign_only);
-    DEBUG_PRINT_LANES(du8, "v_no_sign", v_no_sign);
-    DEBUG_PRINT_LANES(du8, "exp_only", exp_only);
-    DEBUG_PRINT_LANES(du8, "adj_exp", adj_exp);
-    DEBUG_PRINT_LANES(du8, "is_special", hn::IfThenElseZero(is_special, hn::Set(du8, 0xff)));
-    DEBUG_PRINT_LANES(du8, "specials", hn::IfThenElseZero(is_special, hn::TableLookupBytes(special_lut, lo_4_bits)));
-    DEBUG_PRINT_LANES(du8, "msb_no_sign", msb_no_sign);
-    DEBUG_PRINT_LANES(du16, "unsigned_shifted_lo", unsigned_shifted_lo);
-    DEBUG_PRINT_LANES(du16, "unsigned_shifted_hi", unsigned_shifted_hi);
 }
 
 template <typename D, HWY_IF_U8_D(D)>
@@ -397,68 +469,57 @@ void promote_fp8e4m3fn_to_bf16_as_u16(D du8, hn::VFromD<D> v,
                                       hn::VFromD<hn::Repartition<uint16_t, D>>& u16_lo_out,
                                       hn::VFromD<hn::Repartition<uint16_t, D>>& u16_hi_out) noexcept
 {
+    const hn::Repartition<uint16_t, decltype(du8)> du16;
+    using VU8  = hn::VFromD<decltype(du8)>;
+    using VU16 = hn::VFromD<decltype(du16)>;
     // E4M3 exponent bias is 7
     // No infinity
     // +/-NaN is S.1111.111
     // Subnormals are S.0000.{000-111}
-    const auto sign_only     = hn::And(v, hn::Set(du8, 0b1000'0000));
-    const auto v_no_sign     = hn::And(v, hn::Set(du8, 0b0111'1111));
-    const auto lo_4_bits     = hn::And(v, hn::Set(du8, 0b0000'1111));
-    const auto mantissa_only = hn::And(v, hn::Set(du8, 0b0000'0111));
-    const auto exp_only      = hn::And(hn::ShiftRight<3>(v), hn::Set(du8, 0b0000'1111));
-    const auto adj_exp       = hn::Add(exp_only, hn::Set(du8, 127 - 7)); // f32 exponent bias adjust
+    const VU8 sign_only     = hn::And(v, hn::Set(du8, 0b1000'0000));
+    const VU8 v_no_sign     = hn::And(v, hn::Set(du8, 0b0111'1111));
+    const VU8 lo_4_bits     = hn::And(v, hn::Set(du8, 0b0000'1111));
+    const VU8 mantissa_only = hn::And(v, hn::Set(du8, 0b0000'0111));
+    const VU8 exp_only      = hn::And(hn::ShiftRight<3>(v), hn::Set(du8, 0b0000'1111));
+    const VU8 adj_exp       = hn::Add(exp_only, hn::Set(du8, 127 - 7)); // f32 exponent bias adjust
     // "special" is +/- Zero, NaN or a subnormal. E4M3 has only a single NaN value, which is quiet.
     const auto is_special = hn::Or(hn::Eq(exp_only, hn::Zero(du8)), hn::Eq(v_no_sign, hn::Set(du8, 0b0111'1111)));
     // Important: LUT values are the top MSBs _offset 1_, i.e. without the sign bit
-    const auto special_exp_lut = hn::Dup128VecFromValues(du8,
+    const VU8 special_exp_lut = hn::Dup128VecFromValues(du8,
         // Zero, followed by 7 subnormals
         0b00000000, 0b01110110, 0b01110111, 0b01110111, 0b01111000, 0b01111000, 0b01111000, 0b01111000,
         // All lookups with 4th bit set is a NaN (since all subnormals have an exponent of zero).
         // qNaN bit follows in MSB of special mantissa LUT
         0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111
     );
-    const auto special_mantissa_lut = hn::Dup128VecFromValues(du8,
+    const VU8 special_mantissa_lut = hn::Dup128VecFromValues(du8,
         // Zero, followed by 7 subnormals
         0b00000000, 0b00000000, 0b00000000, 0b01000000, 0b00000000, 0b00100000, 0b01000000, 0b01100000,
         // qNaN
         0b01000000, 0b01000000, 0b01000000, 0b01000000, 0b01000000, 0b01000000, 0b01000000, 0b01000000
     );
-    const auto f32_exp = hn::IfThenElse(is_special, hn::TableLookupBytes(special_exp_lut, lo_4_bits), adj_exp);
+    const VU8 f32_exp = hn::IfThenElse(is_special, hn::TableLookupBytes(special_exp_lut, lo_4_bits), adj_exp);
     // LUT mantissa bits are already "left aligned"; must shift the extracted mantissa bits up similarly
-    const auto f32_mantissa = hn::IfThenElse(is_special,
-                                             hn::TableLookupBytes(special_mantissa_lut, lo_4_bits),
-                                             hn::ShiftLeft<4>(mantissa_only));
+    const VU8 f32_mantissa = hn::IfThenElse(is_special,
+                                            hn::TableLookupBytes(special_mantissa_lut, lo_4_bits),
+                                            hn::ShiftLeft<4>(mantissa_only));
 
-    const hn::Repartition<uint16_t, decltype(du8)> du16;
     // TODO interleave exp/mantissa lanes if possible instead of promoting and shifting
     // Move up _almost_ to MSB, leaving room for the sign bit
-    const auto unsigned_shifted_lo = hn::Or(hn::ShiftLeft<7>(hn::PromoteLowerTo(du16, f32_exp)),
+    const VU16 unsigned_shifted_lo = hn::Or(hn::ShiftLeft<7>(hn::PromoteLowerTo(du16, f32_exp)),
                                             hn::PromoteLowerTo(du16, f32_mantissa));
     u16_lo_out = hn::Or(hn::ShiftLeft<8>(hn::PromoteLowerTo(du16, sign_only)), unsigned_shifted_lo);
 
-    const auto unsigned_shifted_hi = hn::Or(hn::ShiftLeft<7>(hn::PromoteUpperTo(du16, f32_exp)),
+    const VU16 unsigned_shifted_hi = hn::Or(hn::ShiftLeft<7>(hn::PromoteUpperTo(du16, f32_exp)),
                                             hn::PromoteUpperTo(du16, f32_mantissa));
     u16_hi_out = hn::Or(hn::ShiftLeft<8>(hn::PromoteUpperTo(du16, sign_only)), unsigned_shifted_hi);
-
-    DEBUG_PRINT_LANES(du8, "v", v);
-    DEBUG_PRINT_LANES(du8, "sign_only", sign_only);
-    DEBUG_PRINT_LANES(du8, "v_no_sign", v_no_sign);
-    DEBUG_PRINT_LANES(du8, "exp_only", exp_only);
-    DEBUG_PRINT_LANES(du8, "adj_exp", adj_exp);
-    DEBUG_PRINT_LANES(du8, "is_special", hn::IfThenElseZero(is_special, hn::Set(du8, 0xff)));
-    DEBUG_PRINT_LANES(du8, "specials_exp", hn::IfThenElseZero(is_special, hn::TableLookupBytes(special_exp_lut, lo_4_bits)));
-    DEBUG_PRINT_LANES(du8, "specials_mantissa", hn::IfThenElseZero(is_special, hn::TableLookupBytes(special_mantissa_lut, lo_4_bits)));
-    DEBUG_PRINT_LANES(du8, "f32_exp", f32_exp);
-    DEBUG_PRINT_LANES(du8, "f32_mantissa", f32_mantissa);
-    DEBUG_PRINT_LANES(du16, "unsigned_shifted_lo", unsigned_shifted_lo);
-    DEBUG_PRINT_LANES(du16, "unsigned_shifted_hi", unsigned_shifted_hi);
 }
 
 template <typename D, HWY_IF_U8_D(D)>
 HWY_API
-void promote_fp8e4m3fn_to_bf16(D du8, hn::VFromD<D> v,
-                               hn::VFromD<hn::Repartition<hwy::bfloat16_t, D>>& bf16_lo_out,
-                               hn::VFromD<hn::Repartition<hwy::bfloat16_t, D>>& bf16_hi_out) noexcept
+void promote_fp8e4m3fn(D du8, hn::VFromD<D> v,
+                       hn::VFromD<hn::Repartition<hwy::bfloat16_t, D>>& bf16_lo_out,
+                       hn::VFromD<hn::Repartition<hwy::bfloat16_t, D>>& bf16_hi_out) noexcept
 {
     hn::VFromD<hn::Repartition<uint16_t, D>> u16_lo, u16_hi;
     promote_fp8e4m3fn_to_bf16_as_u16(du8, v, u16_lo, u16_hi);
@@ -467,11 +528,12 @@ void promote_fp8e4m3fn_to_bf16(D du8, hn::VFromD<D> v,
     bf16_hi_out = hn::BitCast(dbf16, u16_hi);
 }
 
+// TODO dedupe
 template <typename D, HWY_IF_U8_D(D)>
 HWY_API
-void promote_fp8e4m3fn_to_fp16(D du8, hn::VFromD<D> v,
-                               hn::VFromD<hn::Repartition<hwy::float16_t, D>>& f16_lo_out,
-                               hn::VFromD<hn::Repartition<hwy::float16_t, D>>& f16_hi_out) noexcept
+void promote_fp8e4m3fn(D du8, hn::VFromD<D> v,
+                       hn::VFromD<hn::Repartition<hwy::float16_t, D>>& f16_lo_out,
+                       hn::VFromD<hn::Repartition<hwy::float16_t, D>>& f16_hi_out) noexcept
 {
     hn::VFromD<hn::Repartition<uint16_t, D>> u16_lo, u16_hi;
     promote_fp8e4m3fn_to_fp16_as_u16(du8, v, u16_lo, u16_hi);
@@ -480,59 +542,76 @@ void promote_fp8e4m3fn_to_fp16(D du8, hn::VFromD<D> v,
     f16_hi_out = hn::BitCast(df16, u16_hi);
 }
 
-// TODO dedupe
-[[maybe_unused]]
-HWY_INLINE
-float mul_add_fp8_e4m3fn_to_f32_via_bf16(const uint8_t* HWY_RESTRICT a,
-                                         const uint8_t* HWY_RESTRICT b,
-                                         const size_t sz) noexcept {
+template <typename ViaT>
+HWY_API
+float mul_add_fp8_e4m3fn_to_f32_via(const uint8_t* HWY_RESTRICT a,
+                                    const uint8_t* HWY_RESTRICT b,
+                                    const size_t sz) noexcept {
     const hn::ScalableTag<uint8_t> du8;
-    const hn::Repartition<hwy::bfloat16_t, decltype(du8)> dbf16;
-    const hn::Repartition<float, decltype(dbf16)> df32;
+    const hn::Repartition<ViaT, decltype(du8)> dt16;
+    const hn::Repartition<float, decltype(dt16)> df32;
 
     auto kernel_fn = [du8, df32](auto lhs, auto rhs, auto& acc0, auto& acc1, auto& acc2, auto& acc3) VESPA_HWY_LAMBDA {
-        hn::VFromD<decltype(dbf16)> lhs_bf16_lo, lhs_bf16_hi;
-        promote_fp8e4m3fn_to_bf16(du8, lhs, lhs_bf16_lo, lhs_bf16_hi);
+        hn::VFromD<decltype(dt16)> lhs_t16_lo, lhs_t16_hi;
+        promote_fp8e4m3fn(du8, lhs, lhs_t16_lo, lhs_t16_hi);
 
-        hn::VFromD<decltype(dbf16)> rhs_bf16_lo, rhs_bf16_hi;
-        promote_fp8e4m3fn_to_bf16(du8, rhs, rhs_bf16_lo, rhs_bf16_hi);
+        hn::VFromD<decltype(dt16)> rhs_t16_lo, rhs_t16_hi;
+        promote_fp8e4m3fn(du8, rhs, rhs_t16_lo, rhs_t16_hi);
 
-        acc0 = hn::ReorderWidenMulAccumulate(df32, lhs_bf16_lo, rhs_bf16_lo, acc0, acc1);
-        acc2 = hn::ReorderWidenMulAccumulate(df32, lhs_bf16_hi, rhs_bf16_hi, acc2, acc3);
+        acc0 = MyReorderWidenMulAccumulate(df32, lhs_t16_lo, rhs_t16_lo, acc0, acc1);
+        acc2 = MyReorderWidenMulAccumulate(df32, lhs_t16_hi, rhs_t16_hi, acc2, acc3);
     };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<2>, HasAccumulatorArity<4>>;
     return MyKernel::pairwise(du8, df32, a, b, sz, hn::Zero(df32), kernel_fn, VecAdd(), LaneReduceSum());
 }
 
-// TODO dedupe
 [[maybe_unused]]
 HWY_INLINE
 float mul_add_fp8_e4m3fn_to_f32_via_fp16(const uint8_t* HWY_RESTRICT a,
                                          const uint8_t* HWY_RESTRICT b,
                                          const size_t sz) noexcept {
+    return mul_add_fp8_e4m3fn_to_f32_via<hwy::float16_t>(a, b, sz);
+}
+
+[[maybe_unused]]
+HWY_INLINE
+float mul_add_fp8_e4m3fn_to_f32_via_bf16(const uint8_t* HWY_RESTRICT a,
+                                         const uint8_t* HWY_RESTRICT b,
+                                         const size_t sz) noexcept {
+    return mul_add_fp8_e4m3fn_to_f32_via<hwy::bfloat16_t>(a, b, sz);
+}
+
+#if (HWY_TARGET & HWY_ALL_NEON) && defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
+
+HWY_API
+float mul_add_fp8_e4m3fn_to_f32_via_fp16_v2(const uint8_t* HWY_RESTRICT a,
+                                            const uint8_t* HWY_RESTRICT b,
+                                            const size_t sz) noexcept {
     const hn::ScalableTag<uint8_t> du8;
     const hn::Repartition<hwy::float16_t, decltype(du8)> df16;
     const hn::Repartition<float, decltype(df16)> df32;
 
-    auto kernel_fn = [du8, df32](auto lhs, auto rhs, auto& acc0, auto& acc1, auto& acc2, auto& acc3) VESPA_HWY_LAMBDA {
-        hn::VFromD<decltype(df16)> lhs_f16_lo, lhs_f16_hi;
-        promote_fp8e4m3fn_to_fp16(du8, lhs, lhs_f16_lo, lhs_f16_hi);
-
-        hn::VFromD<decltype(df16)> rhs_f16_lo, rhs_f16_hi;
-        promote_fp8e4m3fn_to_fp16(du8, rhs, rhs_f16_lo, rhs_f16_hi);
-
+    auto kernel_fn = [du8, df16, df32](auto lhs, auto rhs, auto& acc0, auto& acc1, auto& acc2, auto& acc3) VESPA_HWY_LAMBDA {
+        using VF16 = hn::VFromD<decltype(df16)>;
+        // TODO SVE friendly
+        VF16 lhs_f16_lo = promote_fp8_e4m3_to(df16, hn::LowerHalf(lhs));
+        VF16 rhs_f16_lo = promote_fp8_e4m3_to(df16, hn::LowerHalf(rhs));
         acc0 = MyReorderWidenMulAccumulate(df32, lhs_f16_lo, rhs_f16_lo, acc0, acc1);
+        VF16 lhs_f16_hi = promote_fp8_e4m3_to(df16, hn::UpperHalf(du8, lhs));
+        VF16 rhs_f16_hi = promote_fp8_e4m3_to(df16, hn::UpperHalf(du8, rhs));
         acc2 = MyReorderWidenMulAccumulate(df32, lhs_f16_hi, rhs_f16_hi, acc2, acc3);
     };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<2>, HasAccumulatorArity<4>>;
     return MyKernel::pairwise(du8, df32, a, b, sz, hn::Zero(df32), kernel_fn, VecAdd(), LaneReduceSum());
 }
 
+#endif // #if (HWY_TARGET & HWY_ALL_NEON) && defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
+
 template <typename D, HWY_IF_U8_D(D)>
 HWY_API
-void reorder_promote_fp4e2m1_to_fp16(D du8, hn::VFromD<D> v, // 4 MSBs must be zero in all lanes
-                                     hn::VFromD<hn::Repartition<hwy::float16_t, D>>& f16_lo_out,
-                                     hn::VFromD<hn::Repartition<hwy::float16_t, D>>& f16_hi_out) noexcept
+void reorder_promote_fp4e2m1(D du8, hn::VFromD<D> v, // 4 MSBs must be zero in all lanes
+                             hn::VFromD<hn::Repartition<hwy::float16_t, D>>& f16_lo_out,
+                             hn::VFromD<hn::Repartition<hwy::float16_t, D>>& f16_hi_out) noexcept
 {
     const auto fp16_msb_lut = hn::Dup128VecFromValues(du8,
         0x00, 0x38, 0x3c, 0x3e, 0x40, 0x42, 0x44, 0x46,
@@ -551,10 +630,11 @@ void reorder_promote_fp4e2m1_to_fp16(D du8, hn::VFromD<D> v, // 4 MSBs must be z
 
 template <typename D, HWY_IF_U8_D(D)>
 HWY_API
-void reorder_promote_fp4e2m1_to_bf16(D du8, hn::VFromD<D> v, // 4 MSBs must be zero in all lanes
-                                     hn::VFromD<hn::Repartition<hwy::bfloat16_t, D>>& bf16_lo_out,
-                                     hn::VFromD<hn::Repartition<hwy::bfloat16_t, D>>& bf16_hi_out) noexcept
+void reorder_promote_fp4e2m1(D du8, hn::VFromD<D> v, // 4 MSBs must be zero in all lanes
+                             hn::VFromD<hn::Repartition<hwy::bfloat16_t, D>>& bf16_lo_out,
+                             hn::VFromD<hn::Repartition<hwy::bfloat16_t, D>>& bf16_hi_out) noexcept
 {
+    using VU8 = hn::VFromD<decltype(du8)>;
     // These LUTs map 1-1 from the 4 bit float to its 2-byte BFloat16 representation.
     const auto bf16_msb_lut = hn::Dup128VecFromValues(du8,
         0x00, 0x3f, 0x3f, 0x3f, 0x40, 0x40, 0x40, 0x40,
@@ -564,14 +644,14 @@ void reorder_promote_fp4e2m1_to_bf16(D du8, hn::VFromD<D> v, // 4 MSBs must be z
         0x00, 0x00, 0x80, 0xc0, 0x00, 0x40, 0x80, 0xc0,
         0x00, 0x00, 0x80, 0xc0, 0x00, 0x40, 0x80, 0xc0
     );
-    const auto bf16_msb = hn::TableLookupBytes(bf16_msb_lut, v);
-    const auto bf16_lsb = hn::TableLookupBytes(bf16_lsb_lut, v);
+    const VU8 bf16_msb = hn::TableLookupBytes(bf16_msb_lut, v);
+    const VU8 bf16_lsb = hn::TableLookupBytes(bf16_lsb_lut, v);
     static_assert(std::endian::native == std::endian::little,
                   "Lane interleaving currently only defined for little endian");
     // Note: MSB/LSB order is switched since we end up reinterpreting each pair of
     // u8 lanes as 1x BF16 lane, and endianness directly affects this.
-    const auto fused_odd  = hn::InterleaveOdd(du8, bf16_lsb, bf16_msb);
-    const auto fused_even = hn::InterleaveEven(du8, bf16_lsb, bf16_msb);
+    const VU8 fused_odd  = hn::InterleaveOdd(du8, bf16_lsb, bf16_msb);
+    const VU8 fused_even = hn::InterleaveEven(du8, bf16_lsb, bf16_msb);
 
     const hn::Repartition<hwy::bfloat16_t, D> dbf16;
     bf16_lo_out = hn::BitCast(dbf16, fused_even);
@@ -580,14 +660,15 @@ void reorder_promote_fp4e2m1_to_bf16(D du8, hn::VFromD<D> v, // 4 MSBs must be z
 
 // TODO scaling factors...!
 // TODO dedupe
-[[maybe_unused]]
-HWY_INLINE
-float mul_add_fp4_e2m1_to_f32_via_bf16(const uint8_t* HWY_RESTRICT a,
-                                       const uint8_t* HWY_RESTRICT b,
-                                       const size_t sz) noexcept {
+
+template <typename ViaT>
+HWY_API
+float mul_add_fp4_e2m1_to_f32_via(const uint8_t* HWY_RESTRICT a,
+                                  const uint8_t* HWY_RESTRICT b,
+                                  const size_t sz) noexcept {
     const hn::ScalableTag<uint8_t> du8;
-    const hn::Repartition<hwy::bfloat16_t, decltype(du8)> dbf16;
-    const hn::Repartition<float, decltype(dbf16)> df32;
+    const hn::Repartition<ViaT, decltype(du8)> dt16;
+    const hn::Repartition<float, decltype(dt16)> df32;
 
     auto kernel_fn = [du8, df32](auto lhs, auto rhs,
                                  auto& acc0, auto& acc1, auto& acc2, auto& acc3,
@@ -599,59 +680,37 @@ float mul_add_fp4_e2m1_to_f32_via_bf16(const uint8_t* HWY_RESTRICT a,
         const auto rhs_hi4 = hn::ShiftRight<4>(rhs);
 
         // TODO have a native fp8 version once supported
-        hn::VFromD<decltype(dbf16)> lhs_bf16_lo, lhs_bf16_hi;
-        hn::VFromD<decltype(dbf16)> rhs_bf16_lo, rhs_bf16_hi;
+        hn::VFromD<decltype(dt16)> lhs_t16_lo, lhs_t16_hi;
+        hn::VFromD<decltype(dt16)> rhs_t16_lo, rhs_t16_hi;
 
-        reorder_promote_fp4e2m1_to_bf16(du8, lhs_lo4, lhs_bf16_lo, lhs_bf16_hi);
-        reorder_promote_fp4e2m1_to_bf16(du8, rhs_lo4, rhs_bf16_lo, rhs_bf16_hi);
-        acc0 = hn::ReorderWidenMulAccumulate(df32, lhs_bf16_lo, rhs_bf16_lo, acc0, acc1);
-        acc2 = hn::ReorderWidenMulAccumulate(df32, lhs_bf16_hi, rhs_bf16_hi, acc2, acc3);
+        reorder_promote_fp4e2m1(du8, lhs_lo4, lhs_t16_lo, lhs_t16_hi);
+        reorder_promote_fp4e2m1(du8, rhs_lo4, rhs_t16_lo, rhs_t16_hi);
+        acc0 = MyReorderWidenMulAccumulate(df32, lhs_t16_lo, rhs_t16_lo, acc0, acc1);
+        acc2 = MyReorderWidenMulAccumulate(df32, lhs_t16_hi, rhs_t16_hi, acc2, acc3);
 
-        reorder_promote_fp4e2m1_to_bf16(du8, lhs_hi4, lhs_bf16_lo, lhs_bf16_hi);
-        reorder_promote_fp4e2m1_to_bf16(du8, rhs_hi4, rhs_bf16_lo, rhs_bf16_hi);
-        acc4 = hn::ReorderWidenMulAccumulate(df32, lhs_bf16_lo, rhs_bf16_lo, acc4, acc5);
-        acc6 = hn::ReorderWidenMulAccumulate(df32, lhs_bf16_hi, rhs_bf16_hi, acc6, acc7);
+        reorder_promote_fp4e2m1(du8, lhs_hi4, lhs_t16_lo, lhs_t16_hi);
+        reorder_promote_fp4e2m1(du8, rhs_hi4, rhs_t16_lo, rhs_t16_hi);
+        acc4 = MyReorderWidenMulAccumulate(df32, lhs_t16_lo, rhs_t16_lo, acc4, acc5);
+        acc6 = MyReorderWidenMulAccumulate(df32, lhs_t16_hi, rhs_t16_hi, acc6, acc7);
     };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<2>, HasAccumulatorArity<8>>;
     return MyKernel::pairwise(du8, df32, a, b, sz, hn::Zero(df32), kernel_fn, VecAdd(), LaneReduceSum());
 }
 
-// TODO scaling factors...!
-// TODO dedupe
+[[maybe_unused]]
+HWY_INLINE
+float mul_add_fp4_e2m1_to_f32_via_bf16(const uint8_t* HWY_RESTRICT a,
+                                       const uint8_t* HWY_RESTRICT b,
+                                       const size_t sz) noexcept {
+    return mul_add_fp4_e2m1_to_f32_via<hwy::bfloat16_t>(a, b, sz);
+}
+
 [[maybe_unused]]
 HWY_INLINE
 float mul_add_fp4_e2m1_to_f32_via_fp16(const uint8_t* HWY_RESTRICT a,
                                        const uint8_t* HWY_RESTRICT b,
                                        const size_t sz) noexcept {
-    const hn::ScalableTag<uint8_t> du8;
-    const hn::Repartition<hwy::float16_t, decltype(du8)> df16;
-    const hn::Repartition<float, decltype(df16)> df32;
-
-    auto kernel_fn = [du8, df32](auto lhs, auto rhs,
-                                 auto& acc0, auto& acc1, auto& acc2, auto& acc3,
-                                 auto& acc4, auto& acc5, auto& acc6, auto& acc7) VESPA_HWY_LAMBDA
-    {
-        const auto lhs_lo4 = hn::And(lhs, hn::Set(du8, 0x0f));
-        const auto lhs_hi4 = hn::ShiftRight<4>(lhs);
-        const auto rhs_lo4 = hn::And(rhs, hn::Set(du8, 0x0f));
-        const auto rhs_hi4 = hn::ShiftRight<4>(rhs);
-
-        // TODO have a native fp8 version once supported
-        hn::VFromD<decltype(df16)> lhs_f16_lo, lhs_f16_hi;
-        hn::VFromD<decltype(df16)> rhs_f16_lo, rhs_f16_hi;
-
-        reorder_promote_fp4e2m1_to_fp16(du8, lhs_lo4, lhs_f16_lo, lhs_f16_hi);
-        reorder_promote_fp4e2m1_to_fp16(du8, rhs_lo4, rhs_f16_lo, rhs_f16_hi);
-        acc0 = MyReorderWidenMulAccumulate(df32, lhs_f16_lo, rhs_f16_lo, acc0, acc1);
-        acc2 = MyReorderWidenMulAccumulate(df32, lhs_f16_hi, rhs_f16_hi, acc2, acc3);
-
-        reorder_promote_fp4e2m1_to_fp16(du8, lhs_hi4, lhs_f16_lo, lhs_f16_hi);
-        reorder_promote_fp4e2m1_to_fp16(du8, rhs_hi4, rhs_f16_lo, rhs_f16_hi);
-        acc4 = MyReorderWidenMulAccumulate(df32, lhs_f16_lo, rhs_f16_lo, acc4, acc5);
-        acc6 = MyReorderWidenMulAccumulate(df32, lhs_f16_hi, rhs_f16_hi, acc6, acc7);
-    };
-    using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<2>, HasAccumulatorArity<8>>;
-    return MyKernel::pairwise(du8, df32, a, b, sz, hn::Zero(df32), kernel_fn, VecAdd(), LaneReduceSum());
+    return mul_add_fp4_e2m1_to_f32_via<hwy::float16_t>(a, b, sz);
 }
 
 HWY_INLINE
@@ -678,9 +737,14 @@ double my_dot_product_f64(const double* a, const double* b, size_t sz) noexcept 
 }
 HWY_NOINLINE
 float my_dot_product_f8_e4m3fn(const uint8_t* a, const uint8_t* b, size_t sz) noexcept {
+#if (HWY_TARGET == HWY_NEON_BF16) && defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC) && 0 /*TODO*/
+    // FIXME this is slower than all 8-bit options
+    return mul_add_fp8_e4m3fn_to_f32_via_fp16_v2(a, b, sz);
+#else
     // TODO figure out why BF16 intermediate is slower on NEON_BF16 even when no fp16 FMA is available...!
     //return mul_add_fp8_e4m3fn_to_f32_via_bf16(a, b, sz);
     return mul_add_fp8_e4m3fn_to_f32_via_fp16(a, b, sz);
+#endif
 }
 HWY_NOINLINE
 float my_dot_product_f8_e5m2(const uint8_t* a, const uint8_t* b, size_t sz) noexcept {
@@ -688,9 +752,12 @@ float my_dot_product_f8_e5m2(const uint8_t* a, const uint8_t* b, size_t sz) noex
 }
 HWY_NOINLINE
 float my_dot_product_f4_e2m1(const uint8_t* a, const uint8_t* b, size_t sz) noexcept {
-    // TODO converge on best type for different targets
-    //return mul_add_fp4_e2m1_to_f32_via_bf16(a, b, sz);
+    // TODO benchmark with both on representative platforms
+#if defined(HWY_NATIVE_REORDER_WIDEN_MUL_ACC_BF16)
+    return mul_add_fp4_e2m1_to_f32_via_bf16(a, b, sz);
+#else
     return mul_add_fp4_e2m1_to_f32_via_fp16(a, b, sz);
+#endif
 }
 float my_dot_product_micro_float(const uint8_t* a, const uint8_t* b, size_t sz, MicroFloatKind kind) noexcept {
     switch (kind) {
@@ -727,6 +794,20 @@ TargetInfo my_target_info() noexcept {
 }
 
 } // anon ns
+
+#if (HWY_TARGET & HWY_ALL_NEON) && defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
+void test_fp8_to_fp16(const uint8_t* HWY_RESTRICT buf, uint16_t* HWY_RESTRICT out, size_t n) {
+    const hn::ScalableTag<uint8_t> du8;
+    const hn::Repartition<hwy::float16_t, decltype(du8)> df16;
+    const hn::RebindToUnsigned<decltype(df16)> du16;
+    const size_t N = std::min(hn::Lanes(du8), n);
+    const auto v = hn::LoadN(du8, buf, N);
+    using VF16 = hn::VFromD<decltype(df16)>;
+    VF16 as_f16 = promote_fp8_e4m3_to(df16, hn::LowerHalf(v));
+    DEBUG_PRINT_LANES8(df16, "as_f16", as_f16);
+    hn::StoreN(hn::BitCast(du16, as_f16), du16, out, N);
+}
+#endif
 
 class HwyTargetAccelerator final : public PlatformGenericAccelerator {
 public:

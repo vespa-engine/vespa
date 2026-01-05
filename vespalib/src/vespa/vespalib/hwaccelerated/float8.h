@@ -4,6 +4,7 @@
 
 #include "float8_luts.h"
 #include "microfloat.h"
+#include <bit>
 
 namespace vespalib::hwaccelerated {
 
