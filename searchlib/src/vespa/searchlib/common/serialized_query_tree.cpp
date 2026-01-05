@@ -30,7 +30,7 @@ struct PbiWrap : ProtoTreeIterator {
 
 SerializedQueryTree::SerializedQueryTree(std::vector<char> stackDump,
                                          std::unique_ptr<ProtobufQueryTree> protoQueryTree,
-                                         ctor_tag)
+                                         ctor_tag) noexcept
   : _stackDump(std::move(stackDump)),
     _protoQueryTree(std::move(protoQueryTree))
 {}
