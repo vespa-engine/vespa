@@ -29,13 +29,13 @@ LocationLazyFilter::is_active() const
 uint32_t
 LocationLazyFilter::size() const
 {
-    return _docid_limit;
+    return (_docid_limit == 0) ? 0 : _docid_limit - 1;
 }
 
 uint32_t
 LocationLazyFilter::count() const
 {
-    return _estimate.empty ? _docid_limit : std::min(_docid_limit, _estimate.estHits);
+    return _estimate.empty ? 0 : std::min(size(), _estimate.estHits);
 }
 
 bool
