@@ -700,7 +700,7 @@ TEST(FlushEngineTest, require_that_trigger_flush_works)
     auto handler = std::make_shared<SimpleHandler>(Targets({target}), "handler", 9);
     f.putFlushHandler("handler", handler);
     f.engine.start();
-    f.engine.triggerFlush();
+    f.engine.trigger_flush2().wait();
     EXPECT_TRUE(target->_initDone.await(LONG_TIMEOUT));
     EXPECT_TRUE(target->_taskDone.await(LONG_TIMEOUT));
 }
@@ -829,7 +829,7 @@ TEST(FlushEngineTest, require_that_concurrency_works_with_triggerFlush)
     auto target3 = std::make_shared<SimpleTarget>("target3", 3, false);
     auto handler = std::make_shared<SimpleHandler>(Targets({target1, target2, target3}), "handler", 9);
     f.putFlushHandler("handler", handler);
-    std::thread thread([&f]() { f.engine.triggerFlush(); });
+    std::thread thread([&f]() { f.engine.trigger_flush2().wait(); });
     std::this_thread::sleep_for(1s);
     f.engine.start();
     
@@ -895,7 +895,7 @@ TEST(FlushEngineTest, require_that_oldest_serial_is_updated_when_finishing_prior
     auto target1 = std::make_shared<SimpleTarget>("target1", 10, true);
     auto handler = f.addSimpleHandler({ target1 });
     f.assertOldestSerial(*handler, 10);
-    f.engine.setStrategy(std::make_shared<SimpleStrategy>(SimpleStrategy::OrderBy::INDEX_OF));
+    f.engine.set_strategy(std::make_shared<SimpleStrategy>(SimpleStrategy::OrderBy::INDEX_OF)).wait();
     EXPECT_EQ(20u, handler->_oldestSerial);
 }
 

@@ -31,6 +31,7 @@ public:
     uint32_t wait_strategy_id() const noexcept { return _wait_strategy_id; }
     const std::shared_ptr<FlushStrategyIdNotifier>& lowest_strategy_id_notifier() const noexcept { return _lowest_strategy_id_notifier; }
     const std::shared_ptr<FlushHistory>& flush_history() const noexcept { return _flush_history; }
+    void wait();
 };
 
 }
