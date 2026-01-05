@@ -24,15 +24,9 @@ public:
 
 private:
     FlushEngine &_flushEngine;
-    std::mutex _mutex;
-    std::condition_variable _cond;
-    bool _running;
-
-    void performPrepareRestart(const ProtonConfig &protonCfg, std::unique_lock<std::mutex> &lock);
 
 public:
     PrepareRestartHandler(FlushEngine &flushEngine);
-    bool prepareRestart(const ProtonConfig &protonCfg);
     flushengine::SetStrategyResult prepare_restart2(const ProtonConfig &protonCfg, uint32_t wait_strategy_id);
 };
 
