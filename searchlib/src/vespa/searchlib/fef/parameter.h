@@ -15,7 +15,7 @@ namespace search::fef {
 class Parameter {
 private:
     ParameterType::Enum _type;
-    std::string    _stringVal;
+    std::string         _stringVal;
     double              _doubleVal;
     int64_t             _intVal;
     const search::fef::FieldInfo * _fieldVal;
