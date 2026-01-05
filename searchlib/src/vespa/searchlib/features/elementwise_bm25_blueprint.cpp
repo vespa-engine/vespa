@@ -7,7 +7,6 @@
 #include "elementwise_utils.h"
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
-#include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/objectstore.h>
 #include <vespa/vespalib/util/stash.h>
 
@@ -16,7 +15,6 @@ namespace search::features {
 using fef::AnyWrapper;
 using fef::Blueprint;
 using fef::FeatureExecutor;
-using fef::FeatureNameBuilder;
 using fef::FeatureType;
 using fef::FieldType;
 using fef::IQueryEnvironment;
