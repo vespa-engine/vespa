@@ -70,8 +70,7 @@ TEST_F(LazyFilterTest, fallback_filter_size) {
 TEST_F(LazyFilterTest, fallback_filter_count) {
     auto and_filter = FallbackFilter::create(*_multiples_of_four, *_multiples_of_eight);
 
-    // TODO: Should this be exact or an upper bound?
-    EXPECT_EQ(24, and_filter->count());
+    EXPECT_EQ(24, and_filter->count()); // The exact answer would be lower, but we are only getting an upper bound
 }
 
 TEST_F(LazyFilterTest, fallback_filter_check) {
@@ -140,9 +139,7 @@ TEST_F(LazyFilterTest, and_filter_size_is_min) {
 TEST_F(LazyFilterTest, and_filter_count) {
     auto and_filter = AndFilter::create({_multiples_of_four, _multiples_of_six, _multiples_of_seven});
 
-    // TODO: Should this be exact or an upper bound?
-    //EXPECT_EQ(1, and_filter->count());
-    EXPECT_EQ(24, and_filter->count());
+    EXPECT_EQ(24, and_filter->count()); // The exact answer would be 1, but we are only getting an upper bound
 }
 
 TEST_F(LazyFilterTest, and_filter_check) {
