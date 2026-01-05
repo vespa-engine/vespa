@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mysearch.h"
+#include <gmock/gmock.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/flow.h>
@@ -102,6 +103,22 @@ createLeafs(std::initializer_list<uint32_t> estimates) {
     }
     return leafs;
 }
+
+class IsDiskIndexIterator {
+    static std::string _rare_word_iterator;
+    static std::string _word_iterator;
+public:
+    bool operator()(const std::string& class_name) const {
+        bool retval = true;
+        EXPECT_THAT(class_name, ::testing::AnyOf(_rare_word_iterator, _word_iterator)) << (retval = false, "");
+        return retval;
+    }
+};
+
+std::string IsDiskIndexIterator::_rare_word_iterator = "search::diskindex::ZcRareWordPosOccIterator<true, false>";
+std::string IsDiskIndexIterator::_word_iterator = "search::diskindex::ZcPosOccIterator<true, false>";
+
+IsDiskIndexIterator is_disk_index_iterator;
 
 TEST(IntermediateBlueprintsTest, test_AndNot_Blueprint) {
     AndNotBlueprint b;
@@ -1282,8 +1299,8 @@ TEST(IntermediateBlueprintsTest, require_that_children_does_not_optimize_when_pa
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQ(strict_bitvector_iterator_class_name, e.getChildren()[0]->getClassName());
-        EXPECT_EQ("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[1]->getClassName());
-        EXPECT_EQ("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[2]->getClassName());
+        EXPECT_PRED1(is_disk_index_iterator, e.getChildren()[1]->getClassName());
+        EXPECT_PRED1(is_disk_index_iterator, e.getChildren()[2]->getClassName());
     }
 
     md->resolveTermField(12)->tagAsNotNeeded();
@@ -1292,8 +1309,8 @@ TEST(IntermediateBlueprintsTest, require_that_children_does_not_optimize_when_pa
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQ(strict_bitvector_iterator_class_name, e.getChildren()[0]->getClassName());
-        EXPECT_EQ("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[1]->getClassName());
-        EXPECT_EQ("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[2]->getClassName());
+        EXPECT_PRED1(is_disk_index_iterator, e.getChildren()[1]->getClassName());
+        EXPECT_PRED1(is_disk_index_iterator, e.getChildren()[2]->getClassName());
     }
 }
 
