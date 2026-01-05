@@ -104,7 +104,7 @@ public final class SwitchNode extends CompositeNode {
     public TensorType type(TypeContext<Reference> context) {
         validateDiscriminantCaseCompatibility(context);
 
-        // Check that all case results
+        // Check that all case results have compatible types
         TensorType resultType = caseResults.get(0).type(context);
         for (int i = 1; i < caseResults.size(); i++) {
             TensorType caseType = caseResults.get(i).type(context);
