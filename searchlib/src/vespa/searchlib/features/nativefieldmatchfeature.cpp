@@ -3,6 +3,7 @@
 #include "nativefieldmatchfeature.h"
 #include "valuefeature.h"
 #include "utils.h"
+#include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/itablemanager.h>
@@ -161,14 +162,26 @@ NativeFieldMatchBlueprint::setup(const IIndexEnvironment & env,
         {
             param.field = false;
         }
-        Property afl = env.getProperties().lookup(getBaseName(), "averageFieldLength", info->name());
+        std::string alt_name = FeatureNameBuilder()
+                .baseName(getBaseName())
+                .parameter(info->name())
+                .buildName();
+
+        Property afl = env.getProperties().lookup(alt_name, "averageFieldLength");
+        if (!afl.found()) {
+            afl = env.getProperties().lookup(getBaseName(), "averageFieldLength", info->name());
+        }
         if (afl.found()) {
             param.averageFieldLength = util::strToNum<uint32_t>(afl.get());
         }
 
-        param.firstOccImportance = util::strToNum<feature_t>
-            (env.getProperties().lookup(getBaseName(), "firstOccurrenceImportance", info->name()).
-             get(defaultFirstOccImportance));
+        std::string alt_importance = env.getProperties()
+                .lookup(alt_name, "firstOccurrenceImportance")
+                .get(defaultFirstOccImportance);
+        std::string importance = env.getProperties()
+                .lookup(getBaseName(), "firstOccurrenceImportance", info->name())
+                .get(alt_importance);
+        param.firstOccImportance = util::strToNum<feature_t>(importance);
 
         if (NativeRankBlueprint::useTableNormalization(env)) {
             const Table * fo = param.firstOccTable;
