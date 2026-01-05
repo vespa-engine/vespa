@@ -176,7 +176,7 @@ public final class CompoundName {
 
     /**
      * Returns a compound name which has the given name components prepended to this name,
-     * in the given order, i.e new ComponentName("c").prepend("a","b") will yield "a.b.c".
+     * in the given order, i.e. new ComponentName("c").prepend("a","b") will yield "a.b.c".
      *
      * @param nameParts if name is empty this returns <code>this</code>
      */
@@ -227,7 +227,7 @@ public final class CompoundName {
     public CompoundName rest() { return rest; }
 
     /**
-     * Returns the name starting after the n first components (i.e dots).
+     * Returns the name starting after the n first components (i.e. dots).
      * This may be the empty name.
      *
      * @throws IllegalArgumentException if this does not have at least that many components

@@ -375,6 +375,26 @@ public class QueryTestCase {
     }
 
     @Test
+    void testQueryProfileAliases() {
+        QueryProfile profile = new QueryProfile("myProfile");
+
+        // Set built-in properties by aliases
+        profile.set("query", "test", null);
+        profile.set("ranking", "myProfile", null);
+        profile.set("rankfeature.myFeature1", "1.5", null);
+        profile.set("input.query(myFeature2)", "2.5", null);
+        profile.set("rankproperty.a.b", "3.5", null);
+
+        var registry = new CompiledQueryProfileRegistry();
+        Query query = new Query(QueryTestCase.httpEncode("/search?queryProfile=myProfile"), profile.compile(registry));
+        assertEquals("test", query.getModel().getQueryString());
+        assertEquals("myProfile", query.getRanking().getProfile());
+        assertEquals(1.5, query.getRanking().getFeatures().getDouble("myFeature1").orElse(0));
+        assertEquals(2.5, query.getRanking().getFeatures().getDouble("query(myFeature2)").orElse(0));
+        assertEquals("3.5", query.getRanking().getProperties().get("a.b").get(0));
+    }
+
+    @Test
     void testTimeoutInRequestOverridesQueryProfile() {
         QueryProfile profile = new QueryProfile("test");
         profile.set("timeout", 318, null);
@@ -524,7 +544,7 @@ public class QueryTestCase {
     @Test
     void testPrefixAlias() {
         Query q = new Query("/search?query=foobar&input=foo",
-                new QueryProfile("test").compile(null));
+                            new QueryProfile("test").compile(null));
         assertEquals("foo", q.properties().get("input"));
     }
 
