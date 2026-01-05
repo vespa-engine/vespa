@@ -9,7 +9,9 @@ import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * This validator sets restartOnDeploy for clusters with added, changed or removed sidecars.
@@ -62,28 +64,41 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
                                     sidecar -> sidecar.matchesByIdOrName(nextSidecar) && !sidecar.equals(nextSidecar)))
                     .toList();
 
-            for (var removedSidecar : removedSidecars) {
-                var message = "Need to restart services in %s due to removed sidecar '%s'"
-                        .formatted(clusterId, removedSidecar.name());
-                addRestartAction(context, nextCluster, message);
+            var messageBuilder = new StringBuilder("Need to restart services in %s due to".formatted(clusterId));
+
+            if (!removedSidecars.isEmpty()) {
+                messageBuilder.append(" removed sidecars: ").append(joinSidecarNames(removedSidecars));
             }
 
-            for (var addedSidecar : addedSidecars) {
-                var message = "Need to restart services in %s due to added sidecar '%s'"
-                        .formatted(clusterId, addedSidecar.name());
-                addRestartAction(context, nextCluster, message);
+            if (!addedSidecars.isEmpty()) {
+                if (!removedSidecars.isEmpty()) {
+                    messageBuilder.append("; ");
+                }
+                messageBuilder.append(" added sidecars: ").append(joinSidecarNames(addedSidecars));
             }
 
-            for (var changedSidecar : changedSidecars) {
-                var matchingPreviousSidecar = previousSidecars.stream()
-                        .filter(sidecar -> sidecar.matchesByIdOrName(changedSidecar))
-                        .findFirst()
-                        .orElseThrow(); // Should never throw.
+            if (!changedSidecars.isEmpty()) {
+                if (!removedSidecars.isEmpty() || !addedSidecars.isEmpty()) {
+                    messageBuilder.append("; ");
+                }
 
-                var sidecarDiff = createSidecarDiffString(matchingPreviousSidecar, changedSidecar);
-                var message = "Need to restart services in %s due to changed sidecar '%s' (%s)"
-                        .formatted(clusterId, changedSidecar.name(), sidecarDiff);
-                addRestartAction(context, nextCluster, message);
+                var changedSidecarsMessage = changedSidecars.stream()
+                        .map(changedSidecar -> {
+                            var matchingPreviousSidecar = previousSidecars.stream()
+                                    .filter(sidecar -> sidecar.matchesByIdOrName(changedSidecar))
+                                    .findFirst()
+                                    .orElseThrow(); // Should never throw.
+
+                            var sidecarDiff = diffSidecarSpecs(matchingPreviousSidecar, changedSidecar);
+                            return "%s (%s)".formatted(changedSidecar.name(), sidecarDiff);
+                        })
+                        .collect(Collectors.joining(", "));
+                
+                messageBuilder.append(" changed sidecars: ").append(changedSidecarsMessage);
+            }
+            
+            if (!removedSidecars.isEmpty() || !addedSidecars.isEmpty() || !changedSidecars.isEmpty()) {
+                addRestartAction(context, nextCluster, messageBuilder.toString());
             }
         }
     }
@@ -94,7 +109,11 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
                 .findFirst();
     }
 
-    private String createSidecarDiffString(SidecarSpec from, SidecarSpec to) {
+    private String joinSidecarNames(List<SidecarSpec> sidecars) {
+        return sidecars.stream().map(SidecarSpec::name).collect(Collectors.joining(", "));
+    }
+
+    private String diffSidecarSpecs(SidecarSpec from, SidecarSpec to) {
         var changes = new ArrayList<String>();
         var fromResources = from.resources();
         var toResources = to.resources();
