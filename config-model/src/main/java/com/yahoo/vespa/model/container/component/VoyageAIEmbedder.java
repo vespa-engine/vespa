@@ -74,12 +74,6 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
      */
     private final Integer maxIdleConnections;
     private final Boolean normalize;
-    /**
-     * Output dimension for models that support variable dimensions (e.g., voyage-multimodal-3.5).
-     * Set to 0 or null to use model's default dimension.
-     * voyage-multimodal-3.5 supports: 256, 512, 1024 (default), 2048
-     */
-    private final Integer outputDimension;
 
     @SuppressWarnings("unused") // cluster and state parameters required by Vespa component framework
     public VoyageAIEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
@@ -104,7 +98,6 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
         this.truncate = getChildValue(xml, "truncate").map(Boolean::parseBoolean).orElse(null);
         this.maxIdleConnections = getChildValue(xml, "max-idle-connections").map(Integer::parseInt).orElse(null);
         this.normalize = getChildValue(xml, "normalize").map(Boolean::parseBoolean).orElse(null);
-        this.outputDimension = getChildValue(xml, "output-dimension").map(Integer::parseInt).orElse(null);
 
         // Validate configuration
         validate();
@@ -142,15 +135,6 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
                     "Invalid VoyageAI model name: " + model + ". " +
                     "Model name should start with 'voyage' (e.g., voyage-3, voyage-code-3).");
         }
-
-        if (outputDimension != null && outputDimension != 0) {
-            // Validate output dimension for models that support it
-            if (outputDimension != 256 && outputDimension != 512 &&
-                outputDimension != 1024 && outputDimension != 2048) {
-                throw new IllegalArgumentException(
-                        "output-dimension must be 256, 512, 1024, or 2048, got: " + outputDimension);
-            }
-        }
     }
 
     @Override
@@ -183,9 +167,6 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
         }
         if (normalize != null) {
             builder.normalize(normalize);
-        }
-        if (outputDimension != null) {
-            builder.outputDimension(outputDimension);
         }
     }
 }

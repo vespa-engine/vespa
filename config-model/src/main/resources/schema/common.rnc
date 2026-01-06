@@ -165,8 +165,7 @@ VoyageAIEmbedder =
    element auto-detect-input-type { xsd:boolean }? &
    element normalize { xsd:boolean }? &
    element truncate { xsd:boolean }? &
-   element max-idle-connections { xsd:positiveInteger }? &
-   element output-dimension { xsd:nonNegativeInteger }?
+   element max-idle-connections { xsd:positiveInteger }?
 
 OnnxModelExecutionParams =
     element onnx-execution-mode { "parallel" | "sequential" }? &

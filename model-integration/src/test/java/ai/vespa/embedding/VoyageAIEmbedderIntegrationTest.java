@@ -239,11 +239,10 @@ public class VoyageAIEmbedderIntegrationTest {
     public void testRealAPIWithMultimodal35CustomDimension() {
         String apiKey = System.getenv("VOYAGE_API_KEY");
 
-        // Test with custom output dimension (512)
+        // Test with custom output dimension (512) - dimension is inferred from tensor type
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.model("voyage-multimodal-3.5");
-        configBuilder.outputDimension(512);  // Custom dimension
         configBuilder.timeout(30000);
 
         VoyageAIEmbedder embedder = new VoyageAIEmbedder(
@@ -252,6 +251,7 @@ public class VoyageAIEmbedderIntegrationTest {
                 createSecrets(apiKey)
         );
 
+        // Dimension is inferred from tensor type specification
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[512])");
         Embedder.Context context = new Embedder.Context("integration-test");
 
@@ -268,13 +268,13 @@ public class VoyageAIEmbedderIntegrationTest {
         String apiKey = System.getenv("VOYAGE_API_KEY");
 
         // Test all supported dimensions: 256, 512, 1024, 2048
+        // Dimension is inferred from the tensor type specification
         int[] dimensions = {256, 512, 1024, 2048};
 
         for (int dim : dimensions) {
             VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
             configBuilder.apiKeySecretRef("test_key");
             configBuilder.model("voyage-multimodal-3.5");
-            configBuilder.outputDimension(dim);
             configBuilder.timeout(30000);
 
             VoyageAIEmbedder embedder = new VoyageAIEmbedder(
@@ -283,6 +283,7 @@ public class VoyageAIEmbedderIntegrationTest {
                     createSecrets(apiKey)
             );
 
+            // Dimension is inferred from tensor type
             TensorType targetType = TensorType.fromSpec("tensor<float>(d0[" + dim + "])");
             Embedder.Context context = new Embedder.Context("integration-test");
 
@@ -356,11 +357,10 @@ public class VoyageAIEmbedderIntegrationTest {
     public void testRealAPIWithContextual3CustomDimension() {
         String apiKey = System.getenv("VOYAGE_API_KEY");
 
-        // Test with custom output dimension (512)
+        // Test with custom output dimension (512) - dimension is inferred from tensor type
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.model("voyage-context-3");
-        configBuilder.outputDimension(512);
         configBuilder.timeout(30000);
 
         VoyageAIEmbedder embedder = new VoyageAIEmbedder(
@@ -369,6 +369,7 @@ public class VoyageAIEmbedderIntegrationTest {
                 createSecrets(apiKey)
         );
 
+        // Dimension is inferred from tensor type specification
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[512])");
         Embedder.Context context = new Embedder.Context("integration-test");
 
@@ -385,13 +386,13 @@ public class VoyageAIEmbedderIntegrationTest {
         String apiKey = System.getenv("VOYAGE_API_KEY");
 
         // voyage-context-3 supports: 256, 512, 1024, 2048
+        // Dimension is inferred from the tensor type specification
         int[] dimensions = {256, 512, 1024, 2048};
 
         for (int dim : dimensions) {
             VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
             configBuilder.apiKeySecretRef("test_key");
             configBuilder.model("voyage-context-3");
-            configBuilder.outputDimension(dim);
             configBuilder.timeout(30000);
 
             VoyageAIEmbedder embedder = new VoyageAIEmbedder(
@@ -400,6 +401,7 @@ public class VoyageAIEmbedderIntegrationTest {
                     createSecrets(apiKey)
             );
 
+            // Dimension is inferred from tensor type
             TensorType targetType = TensorType.fromSpec("tensor<float>(d0[" + dim + "])");
             Embedder.Context context = new Embedder.Context("integration-test");
 
