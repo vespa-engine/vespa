@@ -729,7 +729,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addCloudTokenSupport(DeployState state, ApplicationContainerCluster cluster) {
         var server = cluster.getHttp().getHttpServer().get();
         if (!enableTokenSupport(state, cluster)) return;
-        Set<String> tokenEndpoints = tokenEndpoints(state).stream()
+        Set<String> tokenEndpoints = tokenEndpoints(state, cluster).stream()
                 .map(ContainerEndpoint::names)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
@@ -1626,16 +1626,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return enableTokenSupport(ds, cluster) ? OptionalInt.of(8444) : OptionalInt.empty();
     }
 
-    private static Set<ContainerEndpoint> tokenEndpoints(DeployState deployState) {
+    private static Set<ContainerEndpoint> tokenEndpoints(DeployState deployState, ApplicationContainerCluster cluster) {
         return deployState.getEndpoints().stream()
-                .filter(endpoint -> endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.token)
+                .filter(endpoint ->
+                        endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.token &&
+                        endpoint.clusterId().equals(cluster.getName()))
                 .collect(Collectors.toSet());
     }
 
     private static boolean enableTokenSupport(DeployState state, ApplicationContainerCluster cluster) {
-        Set<ContainerEndpoint> tokenEndpoints = tokenEndpoints(state).stream()
-                .filter(endpoint -> endpoint.clusterId().equals(cluster.getName()))
-                .collect(Collectors.toSet());
+        Set<ContainerEndpoint> tokenEndpoints = tokenEndpoints(state, cluster);
         return state.isHosted() && state.zone().system().isPublicCloudLike() && ! tokenEndpoints.isEmpty();
     }
 }
