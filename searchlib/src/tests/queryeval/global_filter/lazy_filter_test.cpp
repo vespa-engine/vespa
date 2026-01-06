@@ -378,6 +378,30 @@ TEST_F(LazyFilterCreationTest, creation_from_larger_and_blueprint) {
     EXPECT_TRUE(filter->is_active());
 }
 
+TEST_F(LazyFilterCreationTest, creation_from_and_not_blueprint) {
+    Blueprint::UP bp1 = create_location_blueprint(_field_spec_my_location, GeoLocation({0, 0}, 1u << 30));
+    Blueprint::UP bp2 = create_range_blueprint(_field_spec_my_double, "0.0", "1.0");
+
+    auto root = std::make_unique<AndNotBlueprint>();
+    root->addChild(std::move(bp1));
+    root->addChild(std::move(bp2));
+
+    std::shared_ptr<GlobalFilter> filter = root->create_lazy_filter();
+    EXPECT_TRUE(filter->is_active());
+}
+
+TEST_F(LazyFilterCreationTest, no_creation_from_and_not_blueprint) {
+    Blueprint::UP bp1 = create_range_blueprint(_field_spec_my_double, "0.0", "1.0");
+    Blueprint::UP bp2 = create_location_blueprint(_field_spec_my_location, GeoLocation({0, 0}, 1u << 30));
+
+    auto root = std::make_unique<AndNotBlueprint>();
+    root->addChild(std::move(bp1));
+    root->addChild(std::move(bp2));
+
+    std::shared_ptr<GlobalFilter> filter = root->create_lazy_filter();
+    EXPECT_FALSE(filter->is_active());
+}
+
 TEST_F(LazyFilterCreationTest, no_creation_from_or_blueprint) {
     Blueprint::UP bp1 = create_location_blueprint(_field_spec_my_location, GeoLocation({0, 0}, 1u << 30));
     Blueprint::UP bp2 = create_location_blueprint(_field_spec_my_location, GeoLocation({-30300, 35400}, 2000));
