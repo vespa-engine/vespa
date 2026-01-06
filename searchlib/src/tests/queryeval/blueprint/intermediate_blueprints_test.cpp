@@ -104,21 +104,17 @@ createLeafs(std::initializer_list<uint32_t> estimates) {
     return leafs;
 }
 
-class IsDiskIndexIterator {
-    static std::string _rare_word_iterator;
-    static std::string _word_iterator;
-public:
-    bool operator()(const std::string& class_name) const {
-        bool retval = true;
-        EXPECT_THAT(class_name, ::testing::AnyOf(_rare_word_iterator, _word_iterator)) << (retval = false, "");
-        return retval;
-    }
-};
+namespace {
 
-std::string IsDiskIndexIterator::_rare_word_iterator = "search::diskindex::ZcRareWordPosOccIterator<true, false>";
-std::string IsDiskIndexIterator::_word_iterator = "search::diskindex::ZcPosOccIterator<true, false>";
+std::string rare_word_iterator = "search::diskindex::ZcRareWordPosOccIterator<true, false>";
+std::string word_iterator = "search::diskindex::ZcPosOccIterator<true, false>";
 
-IsDiskIndexIterator is_disk_index_iterator;
+}
+
+MATCHER(IsDiskIndexIterator, "")
+{
+    return ExplainMatchResult(testing::AnyOf(rare_word_iterator, word_iterator), arg, result_listener);
+}
 
 TEST(IntermediateBlueprintsTest, test_AndNot_Blueprint) {
     AndNotBlueprint b;
@@ -1299,8 +1295,8 @@ TEST(IntermediateBlueprintsTest, require_that_children_does_not_optimize_when_pa
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQ(strict_bitvector_iterator_class_name, e.getChildren()[0]->getClassName());
-        EXPECT_PRED1(is_disk_index_iterator, e.getChildren()[1]->getClassName());
-        EXPECT_PRED1(is_disk_index_iterator, e.getChildren()[2]->getClassName());
+        EXPECT_THAT(e.getChildren()[1]->getClassName(), IsDiskIndexIterator());
+        EXPECT_THAT(e.getChildren()[2]->getClassName(), IsDiskIndexIterator());
     }
 
     md->resolveTermField(12)->tagAsNotNeeded();
@@ -1309,8 +1305,8 @@ TEST(IntermediateBlueprintsTest, require_that_children_does_not_optimize_when_pa
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQ(strict_bitvector_iterator_class_name, e.getChildren()[0]->getClassName());
-        EXPECT_PRED1(is_disk_index_iterator, e.getChildren()[1]->getClassName());
-        EXPECT_PRED1(is_disk_index_iterator, e.getChildren()[2]->getClassName());
+        EXPECT_THAT(e.getChildren()[1]->getClassName(), IsDiskIndexIterator());
+        EXPECT_THAT(e.getChildren()[2]->getClassName(), IsDiskIndexIterator());
     }
 }
 
