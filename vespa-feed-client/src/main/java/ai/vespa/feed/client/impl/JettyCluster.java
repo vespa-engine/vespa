@@ -288,21 +288,21 @@ class JettyCluster implements Cluster {
         }
 
         @Override
-        public void resolve(String host, int port, Promise<List<InetSocketAddress>> promise) {
-            instance.resolve(host, port, new Promise.Wrapper<List<InetSocketAddress>>(promise) {
+        public void resolve(String host, int port, Map<String, Object> context, Promise<List<InetSocketAddress>> promise) {
+            instance.resolve(host, port, context, new Promise.Wrapper<>(promise) {
                 @Override
                 public void succeeded(List<InetSocketAddress> result) {
                     if (result.size() <= 1) {
-                        getPromise().succeeded(result);
+                        getWrapped().succeeded(result);
                         return;
                     }
                     List<InetSocketAddress> ipv4Addresses = result.stream()
                             .filter(addr -> addr.getAddress() instanceof Inet4Address).collect(Collectors.toList());
                     if (ipv4Addresses.isEmpty()) {
-                        getPromise().succeeded(result);
+                        getWrapped().succeeded(result);
                         return;
                     }
-                    getPromise().succeeded(ipv4Addresses);
+                    getWrapped().succeeded(ipv4Addresses);
                 }
             });
         }

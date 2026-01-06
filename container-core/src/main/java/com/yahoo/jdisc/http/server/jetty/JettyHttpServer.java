@@ -54,6 +54,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
     private final Deque<JDiscContext> contexts = new ConcurrentLinkedDeque<>();
 
     @Inject // ServerProvider implementors must use com.google.inject.Inject
+    @SuppressWarnings("removal")
     public JettyHttpServer(Metric metric,
                            ServerConfig serverConfig,
                            ComponentRegistry<ConnectorFactory> connectorFactories,
@@ -224,6 +225,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         return new TlsClientAuthenticationEnforcer(cfg.tlsClientAuthEnforcer(), handler);
     }
 
+    @SuppressWarnings("removal")
     private static GzipHandler newGzipHandler(Handler handler) {
         var h = new GzipHandler(new org.eclipse.jetty.server.handler.gzip.GzipRequestCleanupHandler(handler));
         h.setInflateBufferSize(8 * 1024);
