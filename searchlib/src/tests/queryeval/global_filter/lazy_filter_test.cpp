@@ -208,6 +208,10 @@ public:
         set_doc(ia, 5, num_documents, Position(20000, -25000));
         set_doc(ia, 7, num_documents, Position(-30000, 35000));
 
+        set_doc(ia, 11, num_documents, Position(10000, 15001));
+        set_doc(ia, 12, num_documents, Position(10000, 15003));
+        set_doc(ia, 13, num_documents, Position(10000, 15005));
+
         return attr;
     }
 
@@ -412,6 +416,20 @@ TEST_F(LazyFilterCreationTest, no_creation_from_or_blueprint) {
 
     std::shared_ptr<GlobalFilter> filter = root->create_lazy_filter();
     EXPECT_FALSE(filter->is_active());
+}
+
+TEST_F(LazyFilterCreationTest, functional_test_from_and_blueprint) {
+    Blueprint::UP bp1 = create_location_blueprint(_field_spec_my_location_many, GeoLocation({10000, 15001}, 3));
+    Blueprint::UP bp2 = create_location_blueprint(_field_spec_my_location_many, GeoLocation({10000, 15005}, 3));
+
+    auto root = std::make_unique<AndBlueprint>();
+    root->addChild(std::move(bp1));
+    root->addChild(std::move(bp2));
+
+    std::shared_ptr<GlobalFilter> filter = root->create_lazy_filter();
+    EXPECT_FALSE(filter->check(11)); // document has coordinates 10000, 15001
+    EXPECT_TRUE(filter->check(12)); // document has coordinates 10000, 15003
+    EXPECT_FALSE(filter->check(13)); // document has coordinates 10000, 15005
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
