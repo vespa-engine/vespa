@@ -2,10 +2,16 @@
 package com.yahoo.vespa.config.server.configchange;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.ConfigChangeRestartAction;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -84,8 +90,8 @@ public class RestartActions {
     public RestartActions(List<ConfigChangeAction> actions) {
         for (ConfigChangeAction action : actions) {
             if (action.getType().equals(ConfigChangeAction.Type.RESTART)) {
-                boolean deferChanges = (action instanceof VespaRestartAction vra)
-                        && vra.configChange() == VespaRestartAction.ConfigChange.DEFER_UNTIL_RESTART;
+                boolean deferChanges = (action instanceof ConfigChangeRestartAction vra)
+                        && vra.configChange() == ConfigChangeRestartAction.ConfigChange.DEFER_UNTIL_RESTART;
                 for (ServiceInfo service : action.getServices()) {
                     addEntry(service, action.ignoreForInternalRedeploy(), deferChanges).
                             addService(service).

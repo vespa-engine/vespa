@@ -1,16 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.config.model.api.ConfigChangeRestartAction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
-import com.yahoo.vespa.model.application.validation.change.VespaRestartAction.ConfigChange;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.DataplaneProxy;
 
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.yahoo.config.model.api.ConfigChangeRestartAction.ConfigChange.*;
 
 /**
  * Ensures that application container clusters are restarted when data plane proxy is added or removed.
@@ -38,7 +40,8 @@ public class DataplaneProxyChangeValidator implements ChangeValidator {
                 var message = hasProxy
                         ? "Token endpoint was enabled for cluster '%s', services require restart"
                         : "Token endpoint was disabled for cluster '%s', services require restart";
-                context.require(createRestartAction(currentCluster, message.formatted(clusterId), ConfigChange.DEFER_UNTIL_RESTART));
+                var action = createRestartAction(currentCluster, message.formatted(clusterId), DEFER_UNTIL_RESTART);
+                context.require(action);
             }
         }
     }
@@ -54,7 +57,7 @@ public class DataplaneProxyChangeValidator implements ChangeValidator {
     }
 
     private static VespaRestartAction createRestartAction(ApplicationContainerCluster cluster, String message,
-                                                         ConfigChange configChange) {
+                                                         ConfigChangeRestartAction.ConfigChange configChange) {
         var services = cluster.getContainers().stream()
                 .map(AbstractService::getServiceInfo)
                 .toList();

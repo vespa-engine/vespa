@@ -14,8 +14,6 @@ import java.util.List;
  */
 public class VespaRestartAction extends VespaConfigChangeAction implements ConfigChangeRestartAction {
 
-    public enum ConfigChange { IMMEDIATE, DEFER_UNTIL_RESTART }
-
     private final boolean ignoreForInternalRedeploy;
     private final ConfigChange configChange;
 
@@ -63,6 +61,7 @@ public class VespaRestartAction extends VespaConfigChangeAction implements Confi
         return ignoreForInternalRedeploy;
     }
 
+    @Override
     public ConfigChange configChange() {
         return configChange;
     }
