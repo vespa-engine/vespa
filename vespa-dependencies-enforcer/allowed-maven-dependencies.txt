@@ -197,6 +197,8 @@ org.codehaus.plexus:plexus-utils:${plexus-utils.vespa.version}
 org.eclipse.angus:angus-activation:${eclipse-angus.vespa.version}
 org.eclipse.collections:eclipse-collections-api:${eclipse-collections.vespa.version}
 org.eclipse.collections:eclipse-collections:${eclipse-collections.vespa.version}
+org.eclipse.jetty.compression:jetty-compression-common:${jetty.vespa.version}
+org.eclipse.jetty.compression:jetty-compression-gzip:${jetty.vespa.version}
 org.eclipse.jetty.http2:jetty-http2-client-transport:${jetty.client.vespa.version}
 org.eclipse.jetty.http2:jetty-http2-client:${jetty.client.vespa.version}
 org.eclipse.jetty.http2:jetty-http2-common:${jetty.vespa.version}
