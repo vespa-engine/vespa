@@ -78,65 +78,65 @@ public class Flags {
 
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
-            List.of("hmusum"), "2020-12-02", "2026-01-10",
+            List.of("hmusum"), "2020-12-02", "2026-06-01",
             "Selects type of sequenced executor used for mbus responses, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag RESPONSE_NUM_THREADS = defineIntFlag(
             "response-num-threads", 2,
-            List.of("hmusum"), "2020-12-02", "2026-01-10",
+            List.of("hmusum"), "2020-12-02", "2026-06-01",
             "Number of threads used for mbus responses, default is 2, negative number = numcores/4",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", true,
-            List.of("hmusum"), "2020-12-02", "2026-01-10",
+            List.of("hmusum"), "2020-12-02", "2026-06-01",
             "Optionally deliver async messages in own thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag MBUS_JAVA_NUM_TARGETS = defineIntFlag(
             "mbus-java-num-targets", 2,
-            List.of("hmusum"), "2022-07-05", "2026-01-10",
+            List.of("hmusum"), "2022-07-05", "2026-06-01",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_NUM_TARGETS = defineIntFlag(
             "mbus-cpp-num-targets", 2,
-            List.of("hmusum"), "2022-07-05", "2026-01-10",
+            List.of("hmusum"), "2022-07-05", "2026-06-01",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag RPC_NUM_TARGETS = defineIntFlag(
             "rpc-num-targets", 2,
-            List.of("hmusum"), "2022-07-05", "2026-01-10",
+            List.of("hmusum"), "2022-07-05", "2026-06-01",
             "Number of rpc targets per content node",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_JAVA_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-java-events-before-wakeup", 1,
-            List.of("hmusum"), "2022-07-05", "2026-01-10",
+            List.of("hmusum"), "2022-07-05", "2026-06-01",
             "Number of write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-cpp-events-before-wakeup", 1,
-            List.of("hmusum"), "2022-07-05", "2026-01-10",
+            List.of("hmusum"), "2022-07-05", "2026-06-01",
             "Number of write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag RPC_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "rpc-events-before-wakeup", 1,
-            List.of("hmusum"), "2022-07-05", "2026-01-10",
+            List.of("hmusum"), "2022-07-05", "2026-06-01",
             "Number of write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag MBUS_NUM_NETWORK_THREADS = defineIntFlag(
             "mbus-num-network-threads", 1,
-            List.of("hmusum"), "2022-07-01", "2026-01-10",
+            List.of("hmusum"), "2022-07-01", "2026-06-01",
             "Number of threads used for mbus network",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -173,26 +173,26 @@ public class Flags {
 
     public static final UnboundListFlag<String> ZONAL_WEIGHTED_ENDPOINT_RECORDS = defineListFlag(
             "zonal-weighted-endpoint-records", List.of(), String.class,
-            List.of("hmusum"), "2023-12-15", "2026-01-10",
+            List.of("hmusum"), "2023-12-15", "2026-02-01",
             "A list of weighted (application) endpoint fqdns for which we should use zonal endpoints as targets, not LBs.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
             "weighted-endpoint-record-ttl", List.of(), String.class,
-            List.of("hmusum"), "2023-05-16", "2026-01-10",
+            List.of("hmusum"), "2023-05-16", "2026-02-01",
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2026-01-10",
+            List.of("hmusum"), "2023-07-19", "2026-03-01",
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2026-01-10",
+            List.of("hmusum"), "2023-07-19", "2026-03-01",
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
@@ -289,7 +289,7 @@ public class Flags {
 
     public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE_KIB = defineLongFlag(
             "zookeeper-pre-alloc-size", 65536,
-            List.of("hmusum"), "2024-11-11", "2026-01-10",
+            List.of("hmusum"), "2024-11-11", "2026-03-01",
             "Setting for zookeeper.preAllocSize flag in KiB, can be reduced from default value "
             + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
             "Takes effect on restart of Docker container");
@@ -393,7 +393,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NEW_PREPARE_FOR_RESTART_METHOD = defineFeatureFlag(
             "use-new-prepare-for-restart-method", true,
-            List.of("hmusum"), "2025-06-17", "2026-01-10",
+            List.of("hmusum"), "2025-06-17", "2026-02-01",
             "Whether to use new logic and new RPC method to do prepareForRestart for content nodes",
             "Takes effect at next tick",
             HOSTNAME
@@ -401,14 +401,14 @@ public class Flags {
 
     public static final UnboundIntFlag SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS = defineIntFlag(
             "search-core-max-outstanding-move-ops", 100,
-            List.of("hmusum"), "2025-07-09", "2026-01-10",
+            List.of("hmusum"), "2025-07-09", "2026-02-01",
             "The max outstanding move operations a maintenance job can have before being blocked.",
             "Takes effect at next deployment of the application",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_VESPA_NODE_CTL = defineFeatureFlag(
             "use-vespa-node-ctl", true,
-            List.of("hmusum"), "2025-08-12", "2026-01-10",
+            List.of("hmusum"), "2025-08-12", "2026-02-01",
             "Whether to use vespa-node-ctl to start, stop, restart, suspend and resume services " +
             "or do this directly from host-admin.",
             "Takes effect at next tick",
@@ -417,7 +417,7 @@ public class Flags {
 
     public static final UnboundStringFlag VESPA_USE_MALLOC_IMPL = defineStringFlag(
             "vespa-use-malloc-impl", "",
-            List.of("hmusum", "johsol"), "2025-09-10", "2026-01-10",
+            List.of("hmusum", "johsol"), "2025-09-10", "2026-03-01",
             "Which malloc implementation to use  " +
                     "Valid values: 'vespamalloc', 'mimalloc', '' (empty string, meaning default malloc implementation).",
             "Takes effect at next reboot of the node",
