@@ -181,7 +181,7 @@ public:
           _location_attribute(create_location_attribute(_field_spec_my_location.getName(), 10)),
           _location_attribute_many(create_location_attribute(_field_spec_my_location_many.getName(), 1000)) {
     }
-    ~LocationLazyFilterTest() override = default;
+    ~LocationLazyFilterTest() override;
 
     AttributeVector::SP create_location_attribute(const std::string &name, uint32_t num_documents) {
         // Create AttributeVector
@@ -228,6 +228,7 @@ public:
         return LocationLazyFilter::create(location, estimate);
     }
 };
+LocationLazyFilterTest::~LocationLazyFilterTest() = default; // Defined here to avoid warning
 
 TEST_F(LocationLazyFilterTest, location_filter_is_active) {
     std::shared_ptr<LocationLazyFilter> filter = create_lazy_filter(GeoLocation({0, 0}, 1u << 30));
