@@ -12,7 +12,7 @@ import com.yahoo.text.Text;
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.eclipse.jetty.client.ContentResponse;
 import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.transport.HttpClientTransportOverHTTP;
+import org.eclipse.jetty.client.transport.HttpClientTransportDynamic;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.api.BeforeAll;
@@ -181,7 +181,6 @@ class ProxyProtocolIT {
                 cause = e;
             } finally {
                 client.stop();
-                client.destroy();
             }
         }
         throw cause;
@@ -194,7 +193,7 @@ class ProxyProtocolIT {
         ssl.setSslContext(new SslContextBuilder().withTrustStore(certificateFile).build());
         var connector = new ClientConnector();
         connector.setSslContextFactory(ssl);
-        HttpClient client = new HttpClient(new HttpClientTransportOverHTTP(connector));
+        HttpClient client = new HttpClient(new HttpClientTransportDynamic(connector));
         int timeout = 20 * 1000;
         client.setConnectTimeout(timeout);
         client.setIdleTimeout(timeout);

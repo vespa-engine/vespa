@@ -277,8 +277,8 @@ class JettyConnectionLogger extends EventsHandler implements Connection.Listener
             return new ConnectionInfo(
                     UUID.randomUUID(),
                     endpoint.getCreatedTimeStamp(),
-                    endpoint.getLocalAddress(),
-                    endpoint.getRemoteAddress());
+                    (InetSocketAddress) endpoint.getLocalSocketAddress(),
+                    (InetSocketAddress) endpoint.getRemoteSocketAddress());
         }
 
         synchronized UUID uuid() { return uuid; }
