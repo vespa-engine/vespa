@@ -1057,6 +1057,23 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.config.model.api.ConfigChangeRestartAction$ConfigChange" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static com.yahoo.config.model.api.ConfigChangeRestartAction$ConfigChange[] values()",
+      "public static com.yahoo.config.model.api.ConfigChangeRestartAction$ConfigChange valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum com.yahoo.config.model.api.ConfigChangeRestartAction$ConfigChange IMMEDIATE",
+      "public static final enum com.yahoo.config.model.api.ConfigChangeRestartAction$ConfigChange DEFER_UNTIL_RESTART"
+    ]
+  },
   "com.yahoo.config.model.api.ConfigChangeRestartAction" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
@@ -1068,7 +1085,8 @@
       "abstract"
     ],
     "methods" : [
-      "public com.yahoo.config.model.api.ConfigChangeAction$Type getType()"
+      "public com.yahoo.config.model.api.ConfigChangeAction$Type getType()",
+      "public abstract com.yahoo.config.model.api.ConfigChangeRestartAction$ConfigChange configChange()"
     ],
     "fields" : [ ]
   },
