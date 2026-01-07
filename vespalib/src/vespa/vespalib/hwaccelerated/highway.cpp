@@ -7,6 +7,7 @@
 #endif
 
 #include "fn_table.h"
+#include "float8_luts.h"
 #include "highway.h"
 #include "platform_generic.h"
 #include "target_info.h"
@@ -713,6 +714,53 @@ float mul_add_fp4_e2m1_to_f32_via_fp16(const uint8_t* HWY_RESTRICT a,
     return mul_add_fp4_e2m1_to_f32_via<hwy::float16_t>(a, b, sz);
 }
 
+[[maybe_unused]]
+HWY_API
+float mul_add_fp8_e4m3fn_to_f32_gather_lut(const uint8_t* HWY_RESTRICT a,
+                                           const uint8_t* HWY_RESTRICT b,
+                                           const size_t sz) noexcept {
+    const hn::ScalableTag<uint8_t> du8;
+    const hn::Repartition<uint16_t, decltype(du8)>  du16;
+    const hn::Repartition<uint32_t, decltype(du16)> du32;
+    const hn::RebindToSigned<decltype(du32)>        di32;
+    const hn::RebindToFloat<decltype(du32)>         df32;
+
+    using VU16 = hn::VFromD<decltype(du16)>;
+    using VI32 = hn::VFromD<decltype(di32)>;
+
+    // FIXME avoid type aliasing...
+    const auto* const fp8_lut = reinterpret_cast<const float*>(fp8_e4m3fn_f32_bits_lut);
+
+    auto kernel_fn = [du16, di32, df32, fp8_lut](auto lhs, auto rhs, auto& acc0, auto& acc1, auto& acc2, auto& acc3) VESPA_HWY_LAMBDA {
+        const VU16 lhs_u16_0 = ReorderPromoteFirstTo(du16, lhs);
+        const VU16 rhs_u16_0 = ReorderPromoteFirstTo(du16, rhs);
+        const VU16 lhs_u16_1 = ReorderPromoteSecondTo(du16, lhs);
+        const VU16 rhs_u16_1 = ReorderPromoteSecondTo(du16, rhs);
+
+        // Important: the LUT gather ops work fine with our implicit zeroing
+        // of OOB vector elements since the FP8 bit pattern of all zeroes is
+        // also the zero float, so they will be as-if no-ops.
+
+        const VI32 lhs_i32_0_0 = ReorderPromoteFirstTo(di32, lhs_u16_0);
+        const VI32 rhs_i32_0_0 = ReorderPromoteFirstTo(di32, rhs_u16_0);
+        acc0 = hn::MulAdd(hn::GatherIndex(df32, fp8_lut, lhs_i32_0_0), hn::GatherIndex(df32, fp8_lut, rhs_i32_0_0), acc0);
+
+        const VI32 lhs_i32_0_1 = ReorderPromoteSecondTo(di32, lhs_u16_0);
+        const VI32 rhs_i32_0_1 = ReorderPromoteSecondTo(di32, rhs_u16_0);
+        acc1 = hn::MulAdd(hn::GatherIndex(df32, fp8_lut, lhs_i32_0_1), hn::GatherIndex(df32, fp8_lut, rhs_i32_0_1), acc1);
+
+        const VI32 lhs_i32_1_0 = ReorderPromoteFirstTo(di32, lhs_u16_1);
+        const VI32 rhs_i32_1_0 = ReorderPromoteFirstTo(di32, rhs_u16_1);
+        acc2 = hn::MulAdd(hn::GatherIndex(df32, fp8_lut, lhs_i32_1_0), hn::GatherIndex(df32, fp8_lut, rhs_i32_1_0), acc2);
+
+        const VI32 lhs_i32_1_1 = ReorderPromoteSecondTo(di32, lhs_u16_1);
+        const VI32 rhs_i32_1_1 = ReorderPromoteSecondTo(di32, rhs_u16_1);
+        acc3 = hn::MulAdd(hn::GatherIndex(df32, fp8_lut, lhs_i32_1_1), hn::GatherIndex(df32, fp8_lut, rhs_i32_1_1), acc3);
+    };
+    using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<2>, HasAccumulatorArity<4>>;
+    return MyKernel::pairwise(du8, df32, a, b, sz, hn::Zero(df32), kernel_fn, VecAdd(), LaneReduceSum());
+}
+
 HWY_INLINE
 const char* my_hwy_target_name() noexcept {
     return hwy::TargetName(HWY_TARGET);
@@ -740,6 +788,8 @@ float my_dot_product_f8_e4m3fn(const uint8_t* a, const uint8_t* b, size_t sz) no
 #if (HWY_TARGET == HWY_NEON_BF16) && defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC) && 0 /*TODO*/
     // FIXME this is slower than all 8-bit options
     return mul_add_fp8_e4m3fn_to_f32_via_fp16_v2(a, b, sz);
+#elif 0 // TODO, ~0.5x speed of fp16 impl
+    return mul_add_fp8_e4m3fn_to_f32_gather_lut(a, b, sz);
 #else
     // TODO figure out why BF16 intermediate is slower on NEON_BF16 even when no fp16 FMA is available...!
     //return mul_add_fp8_e4m3fn_to_f32_via_bf16(a, b, sz);
