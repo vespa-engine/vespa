@@ -13,6 +13,6 @@ public interface ConfigChangeRestartAction extends ConfigChangeAction {
     @Override
     default Type getType() { return Type.RESTART; }
 
-    ConfigChange configChange();
+    default ConfigChange configChange() { return ConfigChange.IMMEDIATE; }
 
 }
