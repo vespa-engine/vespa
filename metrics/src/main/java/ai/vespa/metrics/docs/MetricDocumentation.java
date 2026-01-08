@@ -20,6 +20,8 @@ public class MetricDocumentation {
                         ---
                         # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
                         title: "%s Metrics"
+                        redirect_from:
+                        - en/reference/%s-metrics-reference.html
                         ---
 
                         <table class="table">
@@ -29,9 +31,9 @@ public class MetricDocumentation {
                           <tbody>
                         %s  </tbody>
                         </table>
-                        """, metricType, htmlRows(metrics)));
+                        """, metricType, metricType.toLowerCase(), htmlRows(metrics)));
 
-        try (FileWriter fileWriter = new FileWriter(path + "/" + metricType.toLowerCase() + "-metrics-reference.html")) {
+        try (FileWriter fileWriter = new FileWriter(path + "/" + metricType.toLowerCase() + ".html")) {
             fileWriter.write(referenceBuilder.toString());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
