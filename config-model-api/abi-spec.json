@@ -1086,7 +1086,7 @@
     ],
     "methods" : [
       "public com.yahoo.config.model.api.ConfigChangeAction$Type getType()",
-      "public abstract com.yahoo.config.model.api.ConfigChangeRestartAction$ConfigChange configChange()"
+      "public com.yahoo.config.model.api.ConfigChangeRestartAction$ConfigChange configChange()"
     ],
     "fields" : [ ]
   },
