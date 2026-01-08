@@ -312,6 +312,37 @@ public class RankingExpressionTestCase {
     }
 
     @Test
+    public void testSwitch() throws ParseException {
+        RankingExpression expression = new RankingExpression("switch(x) { case 1: a, case 2: b, default: c }");
+        assertTrue(expression.getRoot() instanceof com.yahoo.searchlib.rankingexpression.rule.SwitchNode);
+    }
+
+    @Test
+    public void testSwitchSerialization() throws ParseException {
+        assertParse("switch(x) { case 1: 2, default: 3 }",
+                    "switch(x) { case 1: 2, default: 3 }");
+        assertParse("switch(x) { case 1: 2, case 3: 4, default: 5 }",
+                    "switch(x) { case 1: 2, case 3: 4, default: 5 }");
+        assertParse("switch(query(model)) { case \"a\": 1, case \"b\": 2, default: 0 }",
+                    "switch(query(model)) { case \"a\": 1, case \"b\": 2, default: 0 }");
+    }
+
+    @Test
+    public void testSwitchModelSelection() throws ParseException {
+        // Issue #33096 use case - multiple model selection
+        RankingExpression expression = new RankingExpression(
+            "switch(query(l2_rel_model)) { " +
+            "  case \"model1\": xgboost(\"model1.json\"), " +
+            "  case \"model2\": xgboost(\"model2.json\"), " +
+            "  case \"model3\": xgboost(\"model3.json\"), " +
+            "  default: 0 " +
+            "}");
+        assertTrue(expression.getRoot() instanceof com.yahoo.searchlib.rankingexpression.rule.SwitchNode);
+        assertEquals("switch(query(l2_rel_model)) { case \"model1\": xgboost(\"model1.json\"), case \"model2\": xgboost(\"model2.json\"), case \"model3\": xgboost(\"model3.json\"), default: 0 }",
+                     expression.toString());
+    }
+
+    @Test
     public void testFileImporting() throws ParseException {
         RankingExpression expression = new RankingExpression(new File("src/test/files/simple.expression"));
         assertEquals("simple: a + b", expression.toString());
