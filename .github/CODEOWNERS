@@ -146,7 +146,6 @@
 ./vespa-feed-client-cli/* @bjorncs
 ./vespa-feed-client/* @bjorncs
 ./vespa-maven-plugin/* @hmusum
-./vespa-testrunner-components/* @hmusum
 ./vespabase/* @hmusum @arnej27959
 ./vespaclient-container-plugin/* @bjorncs @vekterli
 ./vespaclient-core/* @bjorncs
