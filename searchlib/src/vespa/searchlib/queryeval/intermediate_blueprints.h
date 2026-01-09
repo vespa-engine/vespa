@@ -34,6 +34,7 @@ public:
                              fef::MatchData &md) const override;
     SearchIterator::UP
     createFilterSearchImpl(FilterConstraint constraint) const override;
+    std::shared_ptr<GlobalFilter> create_lazy_filter() const override;
 private:
     AnyFlow my_flow(InFlow in_flow) const override;
     uint8_t calculate_cost_tier() const override {
@@ -62,6 +63,7 @@ public:
                              fef::MatchData &md) const override;
     SearchIterator::UP
     createFilterSearchImpl(FilterConstraint constraint) const override;
+    std::shared_ptr<GlobalFilter> create_lazy_filter() const override;
 private:
     AnyFlow my_flow(InFlow in_flow) const override;
 };

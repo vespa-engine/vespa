@@ -200,7 +200,6 @@ public:
      * Triggers an immediate flush of all flush targets.
      * This method is synchronous and thread-safe.
      */
-    void triggerFlush();
     flushengine::SetStrategyResult trigger_flush2();
 
     void kick();
@@ -230,7 +229,6 @@ public:
 
     FlushMetaSet getCurrentlyFlushingSet() const;
 
-    void setStrategy(IFlushStrategy::SP strategy);
     flushengine::SetStrategyResult set_strategy(std::shared_ptr<IFlushStrategy> strategy);
     flushengine::SetStrategyResult poll_strategy(uint32_t wait_strategy_id);
     uint32_t maxConcurrentTotal() const { return _maxConcurrentNormal + 1; }

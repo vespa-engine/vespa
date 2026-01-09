@@ -120,6 +120,17 @@ protected:
     bool fail(const char *format, ...) __attribute__ ((format (printf,2,3)));
 
     /**
+     * Fail the setup of this blueprint with the given message. This
+     * function should be called by the @ref setup function when it
+     * fails. The failure is handled by the dependency handler to make
+     * sure we only report the first error for each feature.
+     *
+     * @return false
+     * @param msg pre-formatted message
+     **/
+    bool fail(const std::string &msg);
+
+    /**
      * Used to store a reference to the attribute during prepareSharedState
      * for later use in createExecutor
      **/

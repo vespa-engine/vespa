@@ -59,4 +59,22 @@ public:
     bool check(uint32_t docid) const override;
 };
 
+/**
+ * Class that represents a logical 'and' of multiple GlobalFilters.
+ *
+ * Takes ownership of the GlobalFilters by taking shared_ptrs to them.
+ **/
+class AndFilter : public GlobalFilter {
+private:
+    struct Private { explicit Private() = default; };
+    std::vector<std::shared_ptr<GlobalFilter>> _children;
+public:
+    AndFilter(Private, std::vector<std::shared_ptr<GlobalFilter>> &&children);
+    static std::shared_ptr<AndFilter> create(std::vector<std::shared_ptr<GlobalFilter>> &&children);
+    bool is_active() const override;
+    uint32_t size() const override;
+    uint32_t count() const override;
+    bool check(uint32_t docid) const override;
+};
+
 } // namespace

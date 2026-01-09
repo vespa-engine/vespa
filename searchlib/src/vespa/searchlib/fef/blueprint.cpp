@@ -30,6 +30,10 @@ Blueprint::fail(const char *format, ...)
     va_start(ap, format);
     std::string msg = vespalib::make_string_va(format, ap);
     va_end(ap);
+    return fail(msg);
+}
+
+bool Blueprint::fail(const std::string &msg) {
     assert(_dependency_handler != nullptr);
     _dependency_handler->fail(msg);
     return false;

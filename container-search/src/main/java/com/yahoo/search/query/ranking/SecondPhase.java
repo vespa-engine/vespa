@@ -18,8 +18,10 @@ public class SecondPhase implements Cloneable {
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
 
+    public static final String SECOND_PHASE = "secondPhase";
+
     static {
-        argumentType = new QueryProfileType(Ranking.SECOND_PHASE);
+        argumentType = new QueryProfileType(SECOND_PHASE);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(Ranking.RANKSCOREDROPLIMIT, FieldType.doubleType));

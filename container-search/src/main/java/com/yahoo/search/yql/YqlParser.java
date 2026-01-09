@@ -269,10 +269,6 @@ public class YqlParser implements Parser {
             return true;
         }
 
-        @Override
-        public void onExit() {
-            // NOP
-        }
     };
 
     public YqlParser(ParserEnvironment environment) {
@@ -421,7 +417,7 @@ public class YqlParser implements Parser {
             case PREDICATE: return buildPredicate(ast);
             case RANK: return buildRank(ast, currentField);
             case WEAK_AND: return buildWeakAnd(ast);
-            case USER_INPUT: return buildUserInput(ast);
+            case USER_INPUT: return buildUserInput(ast, currentField);
             case NON_EMPTY: return ensureNonEmpty(ast);
             default: {
                 if (currentField != null)
@@ -929,7 +925,7 @@ public class YqlParser implements Parser {
         return userQuery.getModel().getQueryTree().getRoot();
     }
 
-    private Item buildUserInput(OperatorNode<ExpressionOperator> ast) {
+    private Item buildUserInput(OperatorNode<ExpressionOperator> ast, String currentField) {
         // TODO: Add support for default arguments if property results in nothing
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         String wordData = getStringContents(args.get(0));
@@ -938,7 +934,9 @@ public class YqlParser implements Parser {
         if (allowEmpty && (wordData == null || wordData.isEmpty())) return new NullItem();
 
         String defaultIndex = getAnnotation(ast, USER_INPUT_DEFAULT_INDEX,
-                                            String.class, "default", "default index for user input terms");
+                                            String.class,
+                                            currentField != null ? null : "default", // if there's a current field, we're in sameElement
+                                            "default index for user input terms");
         Language language = decideParsingLanguage(ast, wordData);
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        Query.Type.WEAKAND.toString(), "The overall query type of the user input");
@@ -2235,10 +2233,6 @@ public class YqlParser implements Parser {
             return true;
         }
 
-        @Override
-        public void onExit() {
-            // intentionally left blank
-        }
     }
 
 }

@@ -43,7 +43,7 @@ public class DocumentationGenerator {
         metrics.forEach((metricType, metricArray) -> writeMetricDocumentation(path, metricArray, metricType));
 
         var metricSets = getMetricSets();
-        metricSets.forEach((name, metricSet) -> writeMetricSetDocumentation(path + "/operations/metrics", name, metricSet, metrics));
+        metricSets.forEach((name, metricSet) -> writeMetricSetDocumentation(path, name, metricSet, metrics));
 
         UnitDocumentation.writeUnitDocumentation(path, Unit.values());
     }

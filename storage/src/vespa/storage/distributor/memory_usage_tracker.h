@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <sys/types.h>
 
 namespace storage::distributor {
 

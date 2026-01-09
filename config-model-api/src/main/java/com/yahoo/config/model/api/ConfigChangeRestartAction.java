@@ -8,7 +8,11 @@ package com.yahoo.config.model.api;
  */
 public interface ConfigChangeRestartAction extends ConfigChangeAction {
 
+    public enum ConfigChange { IMMEDIATE, DEFER_UNTIL_RESTART }
+
     @Override
     default Type getType() { return Type.RESTART; }
+
+    default ConfigChange configChange() { return ConfigChange.IMMEDIATE; }
 
 }

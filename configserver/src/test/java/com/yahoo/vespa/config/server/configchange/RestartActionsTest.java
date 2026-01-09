@@ -8,11 +8,22 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static com.yahoo.config.model.api.ConfigChangeRestartAction.ConfigChange;
+import static com.yahoo.vespa.config.server.configchange.Utils.CHANGE_MSG;
+import static com.yahoo.vespa.config.server.configchange.Utils.CHANGE_MSG_2;
+import static com.yahoo.vespa.config.server.configchange.Utils.CLUSTER;
+import static com.yahoo.vespa.config.server.configchange.Utils.CLUSTER_2;
+import static com.yahoo.vespa.config.server.configchange.Utils.CLUSTER_TYPE;
+import static com.yahoo.vespa.config.server.configchange.Utils.CLUSTER_TYPE_2;
+import static com.yahoo.vespa.config.server.configchange.Utils.SERVICE_NAME;
+import static com.yahoo.vespa.config.server.configchange.Utils.SERVICE_NAME_2;
+import static com.yahoo.vespa.config.server.configchange.Utils.SERVICE_TYPE;
+import static com.yahoo.vespa.config.server.configchange.Utils.SERVICE_TYPE_2;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static com.yahoo.vespa.config.server.configchange.Utils.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author geirst
@@ -88,7 +99,8 @@ public class RestartActionsTest {
     public void use_for_internal_restart_test() {
         ConfigChangeActions actions = new ConfigChangeActionsBuilder()
                 .restart(CHANGE_MSG, CLUSTER, CLUSTER_TYPE, SERVICE_TYPE, SERVICE_NAME)
-                .restart(CHANGE_MSG, CLUSTER, CLUSTER_TYPE_2, SERVICE_TYPE, SERVICE_NAME, true).build();
+                .restart(CHANGE_MSG, CLUSTER, CLUSTER_TYPE_2, SERVICE_TYPE, SERVICE_NAME, true, ConfigChange.IMMEDIATE)
+                .build();
 
         assertEquals(Set.of(CLUSTER_TYPE, CLUSTER_TYPE_2),
                 actions.getRestartActions().getEntries().stream().map(RestartActions.Entry::getClusterType).collect(Collectors.toSet()));
@@ -96,5 +108,13 @@ public class RestartActionsTest {
                 actions.getRestartActions().useForInternalRestart(false).getEntries().stream().map(RestartActions.Entry::getClusterType).collect(Collectors.toSet()));
         assertEquals(Set.of(CLUSTER_TYPE),
                 actions.getRestartActions().useForInternalRestart(true).getEntries().stream().map(RestartActions.Entry::getClusterType).collect(Collectors.toSet()));
+    }
+
+    @Test
+    public void defer_changes_test() {
+        var actions = new ConfigChangeActionsBuilder()
+                .restart(CHANGE_MSG, CLUSTER, CLUSTER_TYPE_2, SERVICE_TYPE, SERVICE_NAME, false, ConfigChange.DEFER_UNTIL_RESTART)
+                .build();
+        assertTrue(actions.getRestartActions().getEntries().get(0).deferChanges());
     }
 }

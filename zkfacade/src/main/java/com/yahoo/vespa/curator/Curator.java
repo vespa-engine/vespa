@@ -202,7 +202,7 @@ public class Curator extends AbstractComponent implements AutoCloseable {
 
     /**
      * A convenience method which sets some content at a path.
-     * If the path and any of its parents does not exists they are created.
+     * If the path and any of its parents does not exist they are created.
      */
     // TODO: Use create().orSetData() in Curator 4 and later
     public Stat set(Path path, byte[] data) {

@@ -8,7 +8,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
-import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.search.query.ranking.ElementGap;
 import com.yahoo.search.query.ranking.GlobalPhase;
 import com.yahoo.search.query.ranking.MatchPhase;
@@ -49,16 +48,24 @@ public class Ranking implements Cloneable {
     public static final String RERANKCOUNT = "rerankCount";
     public static final String KEEPRANKCOUNT = "keepRankCount";
     public static final String RANKSCOREDROPLIMIT = "rankScoreDropLimit";
-    public static final String MATCH_PHASE = "matchPhase";
-    public static final String SECOND_PHASE = "secondPhase";
-    public static final String GLOBAL_PHASE = "globalPhase";
-    public static final String DIVERSITY = "diversity";
-    public static final String SIGNIFICANCE = "significance";
-    public static final String SOFTTIMEOUT = "softtimeout";
-    public static final String MATCHING = "matching";
+    public static final String ELEMENT_GAP = "elementGap";
     public static final String FEATURES = "features";
     public static final String PROPERTIES = "properties";
-    public static final String ELEMENT_GAP = "elementGap";
+
+    @Deprecated // TODO: Remove on Vespa 9
+    public static final String MATCH_PHASE = "matchPhase";
+    @Deprecated // TODO: Remove on Vespa 9
+    public static final String SECOND_PHASE = "secondPhase";
+    @Deprecated // TODO: Remove on Vespa 9
+    public static final String GLOBAL_PHASE = "globalPhase";
+    @Deprecated // TODO: Remove on Vespa 9
+    public static final String DIVERSITY = "diversity";
+    @Deprecated // TODO: Remove on Vespa 9
+    public static final String SIGNIFICANCE = "significance";
+    @Deprecated // TODO: Remove on Vespa 9
+    public static final String SOFTTIMEOUT = "softtimeout";
+    @Deprecated // TODO: Remove on Vespa 9
+    public static final String MATCHING = "matching";
 
     static {
         argumentType = new QueryProfileType(RANKING);
@@ -75,15 +82,15 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(RERANKCOUNT, "integer"));
         argumentType.addField(new FieldDescription(KEEPRANKCOUNT, "integer"));
         argumentType.addField(new FieldDescription(RANKSCOREDROPLIMIT, "double"));
-        argumentType.addField(new FieldDescription(GLOBAL_PHASE, new QueryProfileFieldType(GlobalPhase.getArgumentType())));
-        argumentType.addField(new FieldDescription(MATCH_PHASE,  new QueryProfileFieldType(MatchPhase.getArgumentType()), "matchPhase"));
-        argumentType.addField(new FieldDescription(SECOND_PHASE, new QueryProfileFieldType(SecondPhase.getArgumentType())));
-        argumentType.addField(new FieldDescription(DIVERSITY, new QueryProfileFieldType(Diversity.getArgumentType())));
-        argumentType.addField(new FieldDescription(SOFTTIMEOUT, new QueryProfileFieldType(SoftTimeout.getArgumentType())));
-        argumentType.addField(new FieldDescription(MATCHING, new QueryProfileFieldType(Matching.getArgumentType())));
-        argumentType.addField(new FieldDescription(SIGNIFICANCE, new QueryProfileFieldType(Significance.getArgumentType())));
+        argumentType.addField(new FieldDescription(GlobalPhase.GLOBAL_PHASE, new QueryProfileFieldType(GlobalPhase.getArgumentType())));
+        argumentType.addField(new FieldDescription(MatchPhase.MATCH_PHASE,  new QueryProfileFieldType(MatchPhase.getArgumentType()), "matchPhase"));
+        argumentType.addField(new FieldDescription(SecondPhase.SECOND_PHASE, new QueryProfileFieldType(SecondPhase.getArgumentType())));
+        argumentType.addField(new FieldDescription(SoftTimeout.SOFTTIMEOUT, new QueryProfileFieldType(SoftTimeout.getArgumentType())));
+        argumentType.addField(new FieldDescription(Matching.MATCHING, new QueryProfileFieldType(Matching.getArgumentType())));
+        argumentType.addField(new FieldDescription(Significance.SIGNIFICANCE, new QueryProfileFieldType(Significance.getArgumentType())));
         argumentType.addField(new FieldDescription(FEATURES, "query-profile", "rankfeature input")); // Repeated at the end of RankFeatures
         argumentType.addField(new FieldDescription(PROPERTIES, "query-profile", "rankproperty"));
+        argumentType.addField(new FieldDescription(ELEMENT_GAP, "query-profile"));
         argumentType.freeze();
         argumentTypeName = CompoundName.from(argumentType.getId().getName());
     }
