@@ -1303,7 +1303,8 @@
       "public com.yahoo.config.model.api.Provisioned provisioned()",
       "public java.util.Map documentTypesByCluster()",
       "public java.util.Map indexedDocumentTypesByCluster()",
-      "public java.util.Set applicationClusterInfo()"
+      "public java.util.Set applicationClusterInfo()",
+      "public void markClustersForDeferredReconfiguration(java.util.Set)"
     ],
     "fields" : [ ]
   },

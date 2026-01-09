@@ -18,6 +18,7 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
 import com.yahoo.vespa.config.server.ApplicationRepository.Activation;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.session.ActivationTriggers.DeferredReconfiguration;
@@ -27,7 +28,6 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.concurrent.Memoized;
 
@@ -214,21 +214,16 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 .collect(Collectors.toSet());
         if (clustersWithDeferredReconfiguration.isEmpty()) return;
 
-        // Get the Vespa model of the session being activated
-        var vespaModel = sessionRepository().getRemoteSession(session.getSessionId()).applicationVersions()
-                .map(versions -> (VespaModel) versions.get(session.getVespaVersion()).orElseThrow().getModel())
-                .orElseThrow(() ->
-                        new IllegalStateException(
-                                "Cannot apply deferred reconfiguration: no session found " + session.getSessionId()));
-
-        // Mark clusters for deferred reconfiguration
-        vespaModel.getContainerClusters().values().stream()
-                .filter(cluster -> clustersWithDeferredReconfiguration.contains(cluster.getName()))
-                .forEach(cluster -> {
-                    deployLogger.log(Level.INFO, "Deferring reconfiguration of cluster '%s' until restart is completed"
-                            .formatted(cluster.getName()));
-                    cluster.setDeferChangesUntilRestart(true);
-                });
+        // Get the Vespa model of the session being activated and mark clusters for deferred reconfiguration
+        var model = sessionRepository().getRemoteSession(session.getSessionId()).applicationVersions()
+                .flatMap(versions -> versions.get(session.getVespaVersion()))
+                .map(Application::getModel)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Cannot apply deferred reconfiguration: no model available for session " + session.getSessionId()));
+        model.markClustersForDeferredReconfiguration(clustersWithDeferredReconfiguration);
+        clustersWithDeferredReconfiguration.forEach(clusterName ->
+            deployLogger.log(Level.INFO, "Deferring reconfiguration of cluster '%s' until restart is completed"
+                    .formatted(clusterName)));
     }
 
     /**
