@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.Probe;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
@@ -154,6 +155,8 @@ public class AllocatedHostsSerializer {
 
             var commandCursor = cursor.setArray("command");
             sidecar.command().forEach(commandCursor::addString);
+
+            sidecar.livenessProbe().ifPresent(probe -> probeToSlime(probe, cursor.setObject("livenessProbe")));
         }
     }
 
@@ -347,7 +350,7 @@ public class AllocatedHostsSerializer {
             var command = new ArrayList<String>();
             specInspector.field("command").traverse((ArrayTraverser) (idx, elem) -> command.add(elem.asString()));
 
-            var sidecar = SidecarSpec.builder()
+            var builder = SidecarSpec.builder()
                     .id(id)
                     .name(name)
                     .image(image)
@@ -357,12 +360,64 @@ public class AllocatedHostsSerializer {
                     .hasGpu(hasGpu)
                     .volumeMounts(volumeMounts)
                     .envs(envs)
-                    .command(command)
-                    .build();
+                    .command(command);
+
+            var livenessProbeInspector = specInspector.field("livenessProbe");
+            if (livenessProbeInspector.valid()) {
+                builder.livenessProbe(probeFromSlime(livenessProbeInspector));
+            }
+
+            var sidecar = builder.build();
 
             sidecars.add(sidecar);
         });
 
         return sidecars;
+    }
+
+    private static void probeToSlime(Probe probe, Cursor cursor) {
+        cursor.setLong("initialDelaySeconds", probe.initialDelaySeconds());
+        cursor.setLong("periodSeconds", probe.periodSeconds());
+        cursor.setLong("timeoutSeconds", probe.timeoutSeconds());
+        cursor.setLong("failureThreshold", probe.failureThreshold());
+
+        var actionCursor = cursor.setObject("action");
+        var action = probe.action();
+        if (action instanceof Probe.HttpGetAction httpGet) {
+            actionCursor.setString("type", "httpGet");
+            actionCursor.setString("path", httpGet.path());
+            actionCursor.setLong("port", httpGet.port());
+        } else if (action instanceof Probe.ExecAction exec) {
+            actionCursor.setString("type", "exec");
+            var commandCursor = actionCursor.setArray("command");
+            for (String cmd : exec.command()) {
+                commandCursor.addString(cmd);
+            }
+        }
+    }
+
+    private static Probe probeFromSlime(Inspector probeInspector) {
+        int initialDelaySeconds = (int) probeInspector.field("initialDelaySeconds").asLong();
+        int periodSeconds = (int) probeInspector.field("periodSeconds").asLong();
+        int timeoutSeconds = (int) probeInspector.field("timeoutSeconds").asLong();
+        int failureThreshold = (int) probeInspector.field("failureThreshold").asLong();
+
+        var actionInspector = probeInspector.field("action");
+        String type = actionInspector.field("type").asString();
+
+        Probe.Action action = switch (type) {
+            case "httpGet" -> new Probe.HttpGetAction(
+                    actionInspector.field("path").asString(),
+                    (int) actionInspector.field("port").asLong());
+            case "exec" -> {
+                var commandList = new ArrayList<String>();
+                actionInspector.field("command").traverse((ArrayTraverser) (idx, elem) ->
+                        commandList.add(elem.asString()));
+                yield new Probe.ExecAction(commandList);
+            }
+            default -> throw new IllegalArgumentException("Unknown probe action type: " + type);
+        };
+
+        return new Probe(action, initialDelaySeconds, periodSeconds, timeoutSeconds, failureThreshold);
     }
 }

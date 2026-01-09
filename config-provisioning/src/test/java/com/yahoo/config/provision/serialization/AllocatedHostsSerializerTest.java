@@ -8,6 +8,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.Probe;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
@@ -116,6 +117,7 @@ public class AllocatedHostsSerializerTest {
                                         .volumeMounts(List.of("/mount11", "/mount12"))
                                         .envs(Map.of("VAR11", "val11", "VAR12", "val12"))
                                         .command(List.of("run1", "--arg11", "val11", "--arg12", "--val12"))
+                                        .livenessProbe(new Probe(new Probe.HttpGetAction("/health", 8080), 10, 5, 2, 3))
                                         .build(),
                                 SidecarSpec.builder()
                                         .id(1)
@@ -160,6 +162,29 @@ public class AllocatedHostsSerializerTest {
             if (host.hostname().equals(hostname))
                 return host;
         throw new IllegalArgumentException("No host " + hostname + " is present");
+    }
+
+    @Test
+    void testSidecarWithExecProbe() throws IOException {
+        var sidecarWithExecProbe = SidecarSpec.builder()
+                .id(0)
+                .name("sidecar-with-exec-probe")
+                .image(DockerImage.fromString("registry/namespace/repo:tag"))
+                .maxCpu(1)
+                .minCpu(0.5)
+                .memoryGiB(1)
+                .livenessProbe(new Probe(
+                        new Probe.ExecAction(List.of("cat", "/tmp/healthy")),
+                        5, 10, 1, 2))
+                .build();
+
+        var host = new HostSpec("host-with-exec-probe",
+                smallSlowDiskSpeedNode, bigSlowDiskSpeedNode, anyDiskSpeedNode,
+                ClusterMembership.from("container/test/0/0",
+                        Version.fromString("6.73.1"), Optional.empty(), List.of(sidecarWithExecProbe)),
+                Optional.empty(), Optional.empty(), Optional.empty());
+
+        assertAllocatedHosts(AllocatedHosts.withHosts(Set.of(host)));
     }
 
 }

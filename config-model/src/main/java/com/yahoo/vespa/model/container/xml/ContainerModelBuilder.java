@@ -29,6 +29,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Probe;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SidecarSpec;
@@ -256,7 +257,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         var useTritonFlagValue = deployState.featureFlags().useTriton();
 
         if (useTritonFlagValue && isPublicCloud && hasOnnxModels) {
-            var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero(); 
+            var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
 
             // Hardcoded values for changes to be reviewed and tested
             var spec = SidecarSpec.builder()
@@ -266,11 +267,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .minCpu(1) // Must have at least one CPU
                     .hasGpu(hasGpu)
                     .volumeMounts(List.of("/models"))
-                    .command(List.of(
-                            "tritonserver",
-                            "--model-repository=/models",
-                            "--model-control-mode=explicit")
-                    ).build();
+                    .command(List.of("tritonserver", "--model-repository=/models", "--model-control-mode=explicit"))
+                    .livenessProbe(new Probe(new Probe.HttpGetAction("v2/health/live", 8000), 10, 5, 2, 3))
+                    .build();
 
             sidecars.add(spec);
         }
