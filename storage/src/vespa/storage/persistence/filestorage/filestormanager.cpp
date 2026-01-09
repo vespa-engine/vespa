@@ -216,6 +216,9 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
         _metrics->initDiskMetrics(numStripes, computeAllPossibleHandlerThreads(*_config));
         auto op_dyn_params = dynamic_throttle_params_from_config(_config->asyncOperationThrottler, numThreads);
         auto maintenance_dyn_params = dynamic_throttle_params_from_config(_config->maintenanceOperationThrottler, numStripes);
+        if (use_dynamic_operation_throttling) {
+            LOG(info, "Using maintenance operation throttling: %s", maintenance_dyn_params.to_string().c_str());
+        }
 
         _filestorHandler = std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, *this, *_metrics,
                                                                  _compReg, op_dyn_params, maintenance_dyn_params);
@@ -235,6 +238,10 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
         auto updated_op_dyn_throttle_params = dynamic_throttle_params_from_config(config.asyncOperationThrottler, _threads.size());
         const uint32_t num_stripes = std::max(1u, static_cast<uint32_t>(_threads.size()) / 2);
         auto updated_maintenance_dyn_throttle_params = dynamic_throttle_params_from_config(_config->maintenanceOperationThrottler, num_stripes);
+        if (use_dynamic_operation_throttling) {
+            LOG(info, "Using maintenance operation throttling (reconfig): %s",
+                updated_maintenance_dyn_throttle_params.to_string().c_str());
+        }
         _filestorHandler->reconfigure_dynamic_operation_throttler(updated_op_dyn_throttle_params);
         _filestorHandler->reconfigure_dynamic_maintenance_throttler(updated_maintenance_dyn_throttle_params);
     }
