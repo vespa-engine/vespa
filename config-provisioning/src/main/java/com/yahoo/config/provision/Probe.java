@@ -17,8 +17,17 @@ public record Probe(
         Action action, int initialDelaySeconds, int periodSeconds, int timeoutSeconds, int failureThreshold) {
     public sealed interface Action permits HttpGetAction, ExecAction {}
 
-    public record HttpGetAction(String path, int port) implements Action {}
+    public record HttpGetAction(String path, int port) implements Action {
 
+        public HttpGetAction {
+            if (path == null || path.isEmpty()) {
+                throw new IllegalArgumentException("path must not be null or empty");
+            }
+            if (port < 1 || port > 65535) {
+                throw new IllegalArgumentException("port must be between 1 and 65535");
+            }
+        }
+    }
     public record ExecAction(List<String> command) implements Action {
         public ExecAction {
             if (command == null || command.isEmpty()) {
