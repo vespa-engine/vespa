@@ -211,6 +211,10 @@ class SchemaSemanticTokenConfig {
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ARGMIN);
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.CELL_CAST);
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.EXPAND);
+
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SWITCH);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SWITCHDEFAULT);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.CASE);
     }};
 
     // Operations
