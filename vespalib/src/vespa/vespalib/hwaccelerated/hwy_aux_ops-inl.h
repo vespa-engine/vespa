@@ -24,6 +24,12 @@ namespace HWY_NAMESPACE {
 
 namespace hn = hwy::HWY_NAMESPACE;
 
+// Sub-vector type promotions with unspecified ordering of promoted elements.
+// This is to avoid suboptimal codegen when using SVE, which prefers odd/even
+// lane promotions rather than high/low.
+// Important: although unspecified, the reordering semantics are always the same
+// across all `ReorderPromote(First|Second)To` calls for the same target.
+
 #if (HWY_TARGET & HWY_ALL_SVE) != 0
 
 template <typename D, typename V>
@@ -111,9 +117,10 @@ void ReorderWidenSub(D d, V a, V b, hn::VFromD<D>& sub0, hn::VFromD<D>& sub1) no
 
 // F16->F32 ReorderWidenMulAccumulate
 
-#if HWY_TARGET == HWY_SVE2 || HWY_TARGET == HWY_SVE2_128
+// TODO AVX10.2 FP16-VNNI `VDPPHPS` instruction adds dot(f16, f16) -> f32
+//  - Needs Diamond Rapids or Nova Lake which is not yet released (as of Jan 2026)
 
-// TODO AVX512_FP16 for AVX3_SPR <== actually, only f16 intermediate calculation format... Why? :I
+#if HWY_TARGET == HWY_SVE2 || HWY_TARGET == HWY_SVE2_128
 
 template <size_t N, int kPow2>
 HWY_API
@@ -125,9 +132,7 @@ svfloat32_t MyReorderWidenMulAccumulate(hn::Simd<hwy::float32_t, N, kPow2>,
     return svmlalb_f32(sum0, lhs, rhs);
 }
 
-#elif HWY_TARGET == HWY_NEON_BF16
-
-#if defined(__ARM_FEATURE_FP16_FML) // just +fp16 by itself is not enough, need +fp16fml
+#elif HWY_TARGET == HWY_NEON_BF16 && defined(__ARM_FEATURE_FP16_FML) // just +fp16 by itself is not enough, need +fp16fml
 
 template <typename DF, HWY_IF_F32_D(DF)>
 HWY_API
@@ -138,11 +143,11 @@ hn::Vec128<float> MyReorderWidenMulAccumulate(DF, hn::Vec128<hwy::float16_t> lhs
     return hn::Vec128<float>(vfmlalq_low_f16(sum0.raw, lhs.raw, rhs.raw));
 }
 
-#endif // defined(__ARM_FEATURE_FP16_FML)
+#endif // HWY_TARGET == HWY_NEON_BF16 && defined(__ARM_FEATURE_FP16_FML)
 
-#endif // HWY_TARGET == HWY_NEON_BF16
-
+#undef VESPA_HWY_HAS_FP16_ARITH
 #if (HWY_TARGET & HWY_ALL_NEON) && defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
+#define VESPA_HWY_HAS_FP16_ARITH 1
 
 HWY_API
 hn::Vec128<hwy::float16_t> MyAdd(hn::Vec128<hwy::float16_t> lhs, hn::Vec128<hwy::float16_t> rhs) {
@@ -154,9 +159,39 @@ hn::Vec128<hwy::float16_t> MySub(hn::Vec128<hwy::float16_t> lhs, hn::Vec128<hwy:
     return hn::Vec128<hwy::float16_t>(vsubq_f16(lhs.raw, rhs.raw));
 }
 
-// TODO SVE
+#elif HWY_TARGET == HWY_SVE2 || HWY_TARGET == HWY_SVE2_128
+#define VESPA_HWY_HAS_FP16_ARITH 1
 
-#endif // (HWY_TARGET & HWY_ALL_NEON) && defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
+HWY_API
+svfloat16_t MyAdd(const svfloat16_t lhs, const svfloat16_t rhs) noexcept {
+    return svadd_f16_x(svptrue_b16(), lhs, rhs);
+}
+
+HWY_API
+svfloat16_t MySub(const svfloat16_t lhs, const svfloat16_t rhs) noexcept {
+    return svsub_f16_x(svptrue_b16(), lhs, rhs);
+}
+
+#else
+
+#if HWY_TARGET == HWY_AVX3_SPR
+// Arithmetic is already implemented for fp16 for AVX512-FP16, so Highway builtins will work
+#    define VESPA_HWY_HAS_FP16_ARITH 1
+#else
+#    define VESPA_HWY_HAS_FP16_ARITH 0
+#endif // HWY_TARGET == HWY_AVX3_SPR
+
+HWY_API
+auto MyAdd(auto lhs, auto rhs) noexcept {
+    return hn::Add(lhs, rhs);
+}
+
+HWY_API
+auto MySub(auto lhs, auto rhs) noexcept {
+    return hn::Sub(lhs, rhs);
+}
+
+#endif // HWY_TARGET == HWY_SVE2 || HWY_TARGET == HWY_SVE2_128
 
 template <typename DF, typename VBF, HWY_IF_F32_D(DF), HWY_IF_F16(hn::TFromV<VBF>)>
 HWY_API
