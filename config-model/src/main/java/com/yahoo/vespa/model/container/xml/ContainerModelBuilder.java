@@ -543,7 +543,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static void addCloudDataPlaneFilter(DeployState deployState, ApplicationContainerCluster cluster) {
         if (!deployState.isHosted() || !deployState.zone().system().isPublicCloudLike()) return;
 
-        var dataplanePort = getMtlsDataplanePort(deployState);
+        var dataplanePort = getMtlsDataplanePort(deployState, cluster);
         // Setup secure filter chain
         var secureChain = new HttpFilterChain("cloud-data-plane-secure", HttpFilterChain.Type.SYSTEM);
         secureChain.addInnerComponent(new CloudDataPlaneFilter(cluster, deployState));
@@ -688,8 +688,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         String serverName = server.getComponentId().getName();
 
         // If the deployment contains certificate/private key reference, setup TLS port
-        var builder = HostedSslConnectorFactory.builder(serverName, getMtlsDataplanePort(state))
-                .proxyProtocol(state.zone().cloud().useProxyProtocol() || enableTokenSupport(state))
+        var builder = HostedSslConnectorFactory.builder(serverName, getMtlsDataplanePort(state, cluster))
+                .proxyProtocol(state.zone().cloud().useProxyProtocol() || enableTokenSupport(state, cluster))
                 .tlsCiphersOverride(state.getProperties().tlsCiphersOverride())
                 .endpointConnectionTtl(state.getProperties().endpointConnectionTtl())
                 .requestPrefixForLoggingContent(state.getProperties().requestPrefixForLoggingContent())
@@ -728,19 +728,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addCloudTokenSupport(DeployState state, ApplicationContainerCluster cluster) {
         var server = cluster.getHttp().getHttpServer().get();
-        if (!enableTokenSupport(state)) return;
-        Set<String> tokenEndpoints = tokenEndpoints(state).stream()
+        if (!enableTokenSupport(state, cluster)) return;
+        Set<String> tokenEndpoints = tokenEndpoints(state, cluster).stream()
                 .map(ContainerEndpoint::names)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
         var endpointCert = state.endpointCertificateSecrets().orElseThrow();
-        int tokenPort = getTokenDataplanePort(state).orElseThrow();
+        int tokenPort = getTokenDataplanePort(state, cluster).orElseThrow();
 
         // Set up component to generate proxy cert if token support is enabled
         cluster.addSimpleComponent(DataplaneProxyCredentials.class);
         cluster.addSimpleComponent(DataplaneProxyService.class);
         var dataplaneProxy = new DataplaneProxy(
-                getMtlsDataplanePort(state),
+                getMtlsDataplanePort(state, cluster),
                 tokenPort,
                 endpointCert.certificate(),
                 endpointCert.key(),
@@ -825,7 +825,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement, ConfigModelContext context) {
-        Http http = new HttpBuilder(portBindingOverride(deployState, context)).build(deployState, cluster, httpElement);
+        Http http = new HttpBuilder(portBindingOverride(deployState, context, cluster)).build(deployState, cluster, httpElement);
 
         if (networking == Networking.disable)
             http.removeAllServers();
@@ -999,7 +999,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addSearchAndDocprocBundles();
         addIncludes(processingElement);
         cluster.setProcessingChains(new DomProcessingBuilder(null).build(deployState, cluster, processingElement),
-                                    serverBindings(deployState, context, processingElement, ProcessingChains.defaultBindings).toArray(BindingPattern[]::new));
+                                    serverBindings(deployState, context, cluster, processingElement, ProcessingChains.defaultBindings).toArray(BindingPattern[]::new));
         validateAndAddConfiguredComponents(deployState, cluster, processingElement, "renderer", ContainerModelBuilder::validateRendererElement);
     }
 
@@ -1024,7 +1024,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addUserHandlers(DeployState deployState, ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         for (Element component: XML.getChildren(spec, "handler")) {
             cluster.addComponent(
-                    new DomHandlerBuilder(cluster, portBindingOverride(deployState, context)).build(deployState, cluster, component));
+                    new DomHandlerBuilder(cluster, portBindingOverride(deployState, context, cluster)).build(deployState, cluster, component));
         }
     }
 
@@ -1306,10 +1306,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addSearchHandler(DeployState deployState, ApplicationContainerCluster cluster, Element searchElement, ConfigModelContext context) {
         var bindingPatterns = SearchHandler.defaultBindings();
         if (isHostedTenantApplication(context)) {
-            bindingPatterns = SearchHandler.bindingPattern(getDataplanePorts(deployState));
+            bindingPatterns = SearchHandler.bindingPattern(getDataplanePorts(deployState, cluster));
         }
         SearchHandler searchHandler = new SearchHandler(deployState, cluster,
-                                                        serverBindings(deployState, context, searchElement, bindingPatterns),
+                                                        serverBindings(deployState, context, cluster, searchElement, bindingPatterns),
                                                         searchElement);
         cluster.addComponent(searchHandler);
 
@@ -1317,17 +1317,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
     }
 
-    private List<BindingPattern> serverBindings(DeployState deployState, ConfigModelContext context, Element searchElement, Collection<BindingPattern> defaultBindings) {
+    private List<BindingPattern> serverBindings(DeployState deployState, ConfigModelContext context, ApplicationContainerCluster cluster, Element searchElement, Collection<BindingPattern> defaultBindings) {
         List<Element> bindings = XML.getChildren(searchElement, "binding");
         if (bindings.isEmpty())
             return List.copyOf(defaultBindings);
 
-        return toBindingList(deployState, context, bindings);
+        return toBindingList(deployState, context, cluster, bindings);
     }
 
-    private List<BindingPattern> toBindingList(DeployState deployState, ConfigModelContext context, List<Element> bindingElements) {
+    private List<BindingPattern> toBindingList(DeployState deployState, ConfigModelContext context, ApplicationContainerCluster cluster, List<Element> bindingElements) {
         List<BindingPattern> result = new ArrayList<>();
-        var portOverride = isHostedTenantApplication(context) ? getDataplanePorts(deployState) : Set.<Integer>of();
+        var portOverride = isHostedTenantApplication(context) ? getDataplanePorts(deployState, cluster) : Set.<Integer>of();
         for (Element element: bindingElements) {
             String text = element.getTextContent().trim();
             if (!text.isEmpty())
@@ -1352,12 +1352,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         ContainerDocumentApi.HandlerOptions documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
         Element ignoreUndefinedFields = XML.getChild(documentApiElement, "ignore-undefined-fields");
         return new ContainerDocumentApi(deployState, cluster, documentApiOptions,
-                                        "true".equals(XML.getValue(ignoreUndefinedFields)), portBindingOverride(deployState, context));
+                                        "true".equals(XML.getValue(ignoreUndefinedFields)), portBindingOverride(deployState, context, cluster));
     }
 
-    private Set<Integer> portBindingOverride(DeployState deployState, ConfigModelContext context) {
+    private Set<Integer> portBindingOverride(DeployState deployState, ConfigModelContext context, ApplicationContainerCluster cluster) {
         return isHostedTenantApplication(context)
-                ? getDataplanePorts(deployState)
+                ? getDataplanePorts(deployState, cluster)
                 : Set.of();
     }
 
@@ -1612,28 +1612,30 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     }
 
-    private static Set<Integer> getDataplanePorts(DeployState ds) {
-        var tokenPort = getTokenDataplanePort(ds);
-        var mtlsPort = getMtlsDataplanePort(ds);
+    private static Set<Integer> getDataplanePorts(DeployState ds, ApplicationContainerCluster cluster) {
+        var tokenPort = getTokenDataplanePort(ds, cluster);
+        var mtlsPort = getMtlsDataplanePort(ds, cluster);
         return tokenPort.isPresent() ? Set.of(mtlsPort, tokenPort.getAsInt()) : Set.of(mtlsPort);
     }
 
-    private static int getMtlsDataplanePort(DeployState ds) {
-        return enableTokenSupport(ds) ? 8443 : 4443;
+    private static int getMtlsDataplanePort(DeployState ds, ApplicationContainerCluster cluster) {
+        return enableTokenSupport(ds, cluster) ? 8443 : 4443;
     }
 
-    private static OptionalInt getTokenDataplanePort(DeployState ds) {
-        return enableTokenSupport(ds) ? OptionalInt.of(8444) : OptionalInt.empty();
+    private static OptionalInt getTokenDataplanePort(DeployState ds, ApplicationContainerCluster cluster) {
+        return enableTokenSupport(ds, cluster) ? OptionalInt.of(8444) : OptionalInt.empty();
     }
 
-    private static Set<ContainerEndpoint> tokenEndpoints(DeployState deployState) {
+    private static Set<ContainerEndpoint> tokenEndpoints(DeployState deployState, ApplicationContainerCluster cluster) {
         return deployState.getEndpoints().stream()
-                .filter(endpoint -> endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.token)
+                .filter(endpoint ->
+                        endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.token &&
+                        endpoint.clusterId().equals(cluster.getName()))
                 .collect(Collectors.toSet());
     }
 
-    private static boolean enableTokenSupport(DeployState state) {
-        Set<ContainerEndpoint> tokenEndpoints = tokenEndpoints(state);
+    private static boolean enableTokenSupport(DeployState state, ApplicationContainerCluster cluster) {
+        Set<ContainerEndpoint> tokenEndpoints = tokenEndpoints(state, cluster);
         return state.isHosted() && state.zone().system().isPublicCloudLike() && ! tokenEndpoints.isEmpty();
     }
 }
