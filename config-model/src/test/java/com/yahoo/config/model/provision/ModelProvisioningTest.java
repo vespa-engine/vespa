@@ -2724,7 +2724,7 @@ public class ModelProvisioningTest {
                 .hasGpu(false)
                 .volumeMounts(List.of("/models"))
                 .command(List.of("tritonserver", "--model-repository=/models", "--model-control-mode=explicit"))
-                .livenessProbe(new Probe(new Probe.HttpGetAction("v2/health/live", 8000), 10, 5, 2, 3))
+                .livenessProbe(new Probe(new Probe.HttpGetAction("/v2/health/live", 8000), 10, 5, 2, 3))
                 .build();
         
         var actualSidecarSpec = clusterSpec.get().sidecars().get(0);
