@@ -14,7 +14,6 @@ include(default_build_settings.cmake)
 vespa_detect_build_platform()
 message("-- Vespa build platform is ${VESPA_OS_DISTRO} ${VESPA_OS_DISTRO_VERSION}")
 vespa_use_default_cxx_compiler()
-vespa_use_default_java_home()
 
 project(vespa CXX C)
 vespa_use_default_vespa_unprivileged()
