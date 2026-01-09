@@ -15,6 +15,24 @@ import java.util.List;
  */
 public record Probe(
         Action action, int initialDelaySeconds, int periodSeconds, int timeoutSeconds, int failureThreshold) {
+
+    public Probe {
+        if (action == null) {
+            throw new IllegalArgumentException("Probe action must not be null");
+        }
+        if (initialDelaySeconds < 0) {
+            throw new IllegalArgumentException("initialDelaySeconds must be non-negative");
+        }
+        if (periodSeconds < 0) {
+            throw new IllegalArgumentException("periodSeconds must be non-negative");
+        }
+        if (timeoutSeconds < 0) {
+            throw new IllegalArgumentException("timeoutSeconds must be non-negative");
+        }
+        if (failureThreshold < 0) {
+            throw new IllegalArgumentException("failureThreshold must be non-negative");
+        }
+    }
     public sealed interface Action permits HttpGetAction, ExecAction {}
 
     public record HttpGetAction(String path, int port) implements Action {
