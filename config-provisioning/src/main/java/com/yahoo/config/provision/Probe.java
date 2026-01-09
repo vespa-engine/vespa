@@ -19,5 +19,11 @@ public record Probe(
 
     public record HttpGetAction(String path, int port) implements Action {}
 
-    public record ExecAction(List<String> command) implements Action {}
+    public record ExecAction(List<String> command) implements Action {
+        public ExecAction {
+            if (command == null || command.isEmpty()) {
+                throw new IllegalArgumentException("command must not be null or empty");
+            }
+        }
+    }
 }
