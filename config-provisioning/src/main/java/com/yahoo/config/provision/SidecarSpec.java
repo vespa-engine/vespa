@@ -6,7 +6,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Sidecar container specification provided to host-admin by config-server or constructed based on a feature flag.
+ * Sidecar container configuration.
+ * 
  * @param id Unique identifier of the sidecar in a specific node assigned by config-server or in a feature flag.
  *           Should be a positive integer from 0 to 99 inclusive. Used as part of a sidecar container name and hostname.
  * @param name User-defined sidecar name. Must be unique within a node.
@@ -27,7 +28,7 @@ public record SidecarSpec(
         List<String> volumeMounts,
         Map<String, String> envs,
         List<String> command,
-        Optional<Probe> livenessProbe) {
+        Optional<SidecarProbe> livenessProbe) {
 
     public SidecarSpec {
         if (id < 0 || id > 99) { // This limit is due to hostname length restrictions.
@@ -75,7 +76,7 @@ public record SidecarSpec(
         private List<String> volumeMounts = List.of();
         private Map<String, String> envs = Map.of();
         private List<String> command = List.of();
-        private Optional<Probe> livenessProbe = Optional.empty();
+        private Optional<SidecarProbe> livenessProbe = Optional.empty();
 
         public Builder() {}
 
@@ -145,7 +146,7 @@ public record SidecarSpec(
             return this;
         }
 
-        public Builder livenessProbe(Probe livenessProbe) {
+        public Builder livenessProbe(SidecarProbe livenessProbe) {
             this.livenessProbe = Optional.of(livenessProbe);
             return this;
         }

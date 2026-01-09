@@ -8,7 +8,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.Probe;
+import com.yahoo.config.provision.SidecarProbe;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
@@ -117,7 +117,7 @@ public class AllocatedHostsSerializerTest {
                                         .volumeMounts(List.of("/mount11", "/mount12"))
                                         .envs(Map.of("VAR11", "val11", "VAR12", "val12"))
                                         .command(List.of("run1", "--arg11", "val11", "--arg12", "--val12"))
-                                        .livenessProbe(new Probe(new Probe.HttpGetAction("/health", 8080), 10, 5, 2, 3))
+                                        .livenessProbe(new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 10, 5, 2, 3))
                                         .build(),
                                 SidecarSpec.builder()
                                         .id(1)
@@ -173,8 +173,8 @@ public class AllocatedHostsSerializerTest {
                 .maxCpu(1)
                 .minCpu(0.5)
                 .memoryGiB(1)
-                .livenessProbe(new Probe(
-                        new Probe.ExecAction(List.of("cat", "/tmp/healthy")),
+                .livenessProbe(new SidecarProbe(
+                        new SidecarProbe.ExecAction(List.of("cat", "/tmp/healthy")),
                         5, 10, 1, 2))
                 .build();
 

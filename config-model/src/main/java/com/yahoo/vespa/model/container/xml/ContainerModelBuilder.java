@@ -29,9 +29,9 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Probe;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SidecarProbe;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
@@ -268,7 +268,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .hasGpu(hasGpu)
                     .volumeMounts(List.of("/models"))
                     .command(List.of("tritonserver", "--model-repository=/models", "--model-control-mode=explicit"))
-                    .livenessProbe(new Probe(new Probe.HttpGetAction("/v2/health/live", 8000), 10, 5, 2, 3))
+                    .livenessProbe(new SidecarProbe(new SidecarProbe.HttpGetAction("/v2/health/live", 8000), 10, 5, 2, 3))
                     .build();
 
             sidecars.add(spec);

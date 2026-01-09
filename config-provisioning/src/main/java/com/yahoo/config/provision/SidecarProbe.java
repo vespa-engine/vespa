@@ -3,37 +3,37 @@ package com.yahoo.config.provision;
 import java.util.List;
 
 /**
- * Health check probe configuration for a docker/podman container, similar to Kubernetes probes.
- * Can be used for liveness, readiness and startup probes.
+ * Health check probe configuration for a Sidecar container, similar to Kubernetes probes.
  *
  * @param action              action (e.g. http request or command) to perform the health check.
  * @param initialDelaySeconds time to wait after container start before the first health check.
  * @param periodSeconds       time between running the actions.
  * @param timeoutSeconds      timeout for the action, the check fails if timeout is exceeded.
- * @param failureThreshold    number of failed attempts after which the container will restart.
+ * @param failureThreshold    number of failed attempts after which the container is considered unhealthy.
+ *                            
  * @author glebashnik
  */
-public record Probe(
+public record SidecarProbe(
         Action action, int initialDelaySeconds, int periodSeconds, int timeoutSeconds, int failureThreshold) {
 
-    public Probe {
+    public SidecarProbe {
         if (action == null) {
             throw new IllegalArgumentException("Probe action must not be null");
         }
-        if (initialDelaySeconds < 0) {
-            throw new IllegalArgumentException("initialDelaySeconds must be non-negative, got: " + initialDelaySeconds);
+        if (initialDelaySeconds < 0 || initialDelaySeconds > 1800) {
+            throw new IllegalArgumentException("initialDelaySeconds must be between 0 and 1800 seconds, got: " + initialDelaySeconds);
         }
-        if (periodSeconds < 1) {
+        if (periodSeconds < 1 || periodSeconds > 300) {
             throw new IllegalArgumentException(
-                    "periodSeconds must be equal or greater than 1 second, got: " + periodSeconds);
+                    "periodSeconds must be between 1 and 300 seconds, got: " + periodSeconds);
         }
-        if (timeoutSeconds < 1) {
+        if (timeoutSeconds < 1 || timeoutSeconds > 60) {
             throw new IllegalArgumentException(
-                    "timeoutSeconds must be equal or greater than 1 second, got: " + timeoutSeconds);
+                    "timeoutSeconds must be between 1 and 60 seconds, got: " + timeoutSeconds);
         }
-        if (failureThreshold < 1) {
+        if (failureThreshold < 1 || failureThreshold > 10) {
             throw new IllegalArgumentException(
-                    "failureThreshold must be equal or greater than 1, got: " + failureThreshold);
+                    "failureThreshold must be between 1 and 10, got: " + failureThreshold);
         }
     }
 
@@ -76,6 +76,9 @@ public record Probe(
             if (command == null || command.isEmpty()) {
                 throw new IllegalArgumentException("Command must not be null or empty");
             }
+            
+            // For immutability
+            command = List.copyOf(command);
         }
     }
 }
