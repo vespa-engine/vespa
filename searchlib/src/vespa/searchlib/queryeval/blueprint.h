@@ -557,8 +557,6 @@ public:
     Blueprint::UP removeLastChild() { return removeChild(childCnt() - 1); }
     SearchIteratorUP createSearchImpl(fef::MatchData &md) const override;
 
-    std::shared_ptr<GlobalFilter> create_lazy_filter() const override;
-
     virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
     virtual FieldSpecBaseList exposeFields() const = 0;
     virtual void sort(Children &children, InFlow in_flow) const = 0;

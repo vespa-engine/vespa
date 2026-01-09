@@ -513,9 +513,6 @@ fi
 %{_prefix}/lib/jars/predicate-search-jar-with-dependencies.jar
 %{_prefix}/lib/jars/searchlib.jar
 %{_prefix}/lib/jars/tenant-cd-api-jar-with-dependencies.jar
-%{_prefix}/lib/jars/vespa-osgi-testrunner-jar-with-dependencies.jar
-%{_prefix}/lib/jars/vespa-testrunner-components.jar
-%{_prefix}/lib/jars/vespa-testrunner-components-jar-with-dependencies.jar
 %{_prefix}/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar
 %{_prefix}/lib/perl5
 %{_prefix}/libexec

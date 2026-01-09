@@ -226,7 +226,6 @@ org.eclipse.sisu:org.eclipse.sisu.plexus:${eclipse-sisu.vespa.version}
 org.eclipse.xtend:org.eclipse.xtend.lib.macro:2.28.0
 org.eclipse.xtend:org.eclipse.xtend.lib:2.28.0
 org.eclipse.xtext:org.eclipse.xtext.xbase.lib:2.28.0
-org.fusesource.jansi:jansi:1.18
 org.glassfish.jaxb:jaxb-core:${jaxb.runtime.vespa.version}
 org.glassfish.jaxb:jaxb-runtime:${jaxb.runtime.vespa.version}
 org.glassfish.jaxb:txw2:${jaxb.runtime.vespa.version}
@@ -257,7 +256,6 @@ org.junit.platform:junit-platform-commons:${junit.platform.vespa.tenant.version}
 org.junit.platform:junit-platform-commons:${junit.platform.vespa.version}
 org.junit.platform:junit-platform-engine:${junit.platform.vespa.tenant.version}
 org.junit.platform:junit-platform-engine:${junit.platform.vespa.version}
-org.junit.platform:junit-platform-launcher:${junit.platform.vespa.tenant.version}
 org.junit.vintage:junit-vintage-engine:${junit.vespa.tenant.version}
 org.junit.vintage:junit-vintage-engine:${junit.vespa.version}
 org.mockito:mockito-core:${mockito.vespa.version}

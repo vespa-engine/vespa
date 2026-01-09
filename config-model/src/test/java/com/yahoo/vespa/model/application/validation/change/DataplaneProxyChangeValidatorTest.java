@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.ConfigChangeRestartAction.ConfigChange;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.deploy.DeployState;
@@ -37,7 +38,6 @@ import java.util.OptionalInt;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -82,8 +82,8 @@ public class DataplaneProxyChangeValidatorTest {
         assertTrue(result.get(0).getMessage().contains("Token endpoint was enabled"));
         assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
 
-        assertTrue(getDeferChangesUntilRestart(next));
-        assertFalse(getDeferChangesUntilRestart(previous));
+        var restartAction = (VespaRestartAction) result.get(0);
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
     }
 
     @Test
@@ -96,8 +96,8 @@ public class DataplaneProxyChangeValidatorTest {
         assertTrue(result.get(0).getMessage().contains("Token endpoint was disabled"));
         assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
 
-        assertTrue(getDeferChangesUntilRestart(next));
-        assertFalse(getDeferChangesUntilRestart(previous));
+        var restartAction = (VespaRestartAction) result.get(0);
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
     }
 
     @Test
@@ -107,9 +107,6 @@ public class DataplaneProxyChangeValidatorTest {
         var result = validateModel(previous, next);
 
         assertTrue(result.isEmpty());
-
-        assertFalse(getDeferChangesUntilRestart(next));
-        assertFalse(getDeferChangesUntilRestart(previous));
     }
 
     @Test
@@ -119,9 +116,6 @@ public class DataplaneProxyChangeValidatorTest {
         var result = validateModel(previous, next);
 
         assertTrue(result.isEmpty());
-
-        assertFalse(getDeferChangesUntilRestart(next));
-        assertFalse(getDeferChangesUntilRestart(previous));
     }
 
     @Test
@@ -188,10 +182,6 @@ public class DataplaneProxyChangeValidatorTest {
                                 new EndpointCertificateSecrets("CERT", "KEY"))))
                 .zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()))
                 .endpoints(endpoints);
-    }
-
-    private static boolean getDeferChangesUntilRestart(VespaModel model) {
-        return model.getContainerClusters().get("default").getDeferChangesUntilRestart();
     }
 }
 

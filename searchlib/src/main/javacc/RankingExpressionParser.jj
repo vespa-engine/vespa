@@ -86,6 +86,9 @@ TOKEN :
 
     <IF: "if"> |
     <IN: "in"> |
+    <SWITCH: "switch"> |
+    <CASE: "case"> |
+    <SWITCHDEFAULT: "default"> |
     <F: "f"> |
 
     <NOT: "!"> |
@@ -253,6 +256,7 @@ ExpressionNode value() :
       [ LOOKAHEAD(2) <SUB>                                  { neg = true; } ]
       ( value = constantPrimitive(neg)                             |
         (
+          LOOKAHEAD(2) value = switchExpression()                    |
           LOOKAHEAD(2) value = ifExpression()                        |
           LOOKAHEAD(4) value = function()                            |
           value = feature()                                          |
@@ -279,6 +283,27 @@ IfNode ifExpression() :
       <COMMA> ifTrue = expression() <COMMA> ifFalse = expression() ( <COMMA> trueProbability = doubleNumber() )? <RBRACE> )
     {
         return new IfNode(condition, ifTrue, ifFalse, trueProbability);
+    }
+}
+
+SwitchNode switchExpression() :
+{
+    ExpressionNode discriminant;
+    List<ExpressionNode> caseValues = new ArrayList<ExpressionNode>();
+    List<ExpressionNode> caseResults = new ArrayList<ExpressionNode>();
+    ExpressionNode caseValue, caseResult;
+    ExpressionNode defaultResult;
+}
+{
+    ( <SWITCH> <LBRACE> discriminant = expression() <RBRACE>
+      <LCURLY>
+      ( <CASE> caseValue = expression() <COLON> caseResult = expression() <COMMA>
+        { caseValues.add(caseValue); caseResults.add(caseResult); }
+      )+
+      <SWITCHDEFAULT> <COLON> defaultResult = expression()
+      <RCURLY> )
+    {
+        return new SwitchNode(discriminant, caseValues, caseResults, defaultResult);
     }
 }
 
@@ -925,6 +950,9 @@ String identifier() :
     func = binaryFunctionName() { return func.toString(); } |
     <IF>                        { return token.image; }     |
     <IN>                        { return token.image; }     |
+    <SWITCH>                    { return token.image; }     |
+    <CASE>                      { return token.image; }     |
+    <SWITCHDEFAULT>             { return token.image; }     |
     <IDENTIFIER>                { return token.image; }     |
     <TRUE>                      { return token.image; }     |
     <FALSE>                     { return token.image; }
