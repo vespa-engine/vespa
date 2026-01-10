@@ -51,7 +51,7 @@
 %global _vespa_java_version 21
 %endif
 %endif
-%if 0%{?el10}
+%if 0%{?el10} || 0%{?el9}
 %global _vespa_java_version 21
 %endif
 %if ! 0%{?_vespa_java_version:1}
