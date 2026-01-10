@@ -45,9 +45,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(CMAKE_THREAD_LIBS_INIT "-lpthread")
 endif()
 
-# TODO: Move this to where it's actually needed
-find_package(JNI REQUIRED)
-
 find_package(GTest REQUIRED)
 
 find_package(Protobuf REQUIRED CONFIG)
