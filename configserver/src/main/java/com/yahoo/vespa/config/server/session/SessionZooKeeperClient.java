@@ -285,7 +285,7 @@ public class SessionZooKeeperClient {
                    });
     }
 
-    public Instant readActivatedTime() {
+    public Instant readStatusChanged() {
         Optional<Stat> statData = curator.getStat(sessionStatusPath);
         return statData.map(s -> Instant.ofEpochMilli(s.getMtime())).orElse(Instant.EPOCH);
     }
