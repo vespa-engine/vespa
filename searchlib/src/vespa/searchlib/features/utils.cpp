@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "utils.hpp"
+#include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/itermdata.h>
@@ -150,12 +151,14 @@ const search::fef::Table *
 lookupTable(const search::fef::IIndexEnvironment & env, const std::string & featureName,
             const std::string & table, const std::string & fieldName, const std::string & fallback)
 {
+    auto alt_name = FeatureNameBuilder().baseName(featureName).parameter(fieldName).buildName();
     std::string tn1 = env.getProperties().lookup(featureName, table).get(fallback);
-    std::string tn2 = env.getProperties().lookup(featureName, table, fieldName).get(tn1);
-    const search::fef::Table * retval = env.getTableManager().getTable(tn2);
+    std::string tn2 = env.getProperties().lookup(alt_name, table).get(tn1);
+    std::string tn3 = env.getProperties().lookup(featureName, table, fieldName).get(tn2);
+    const search::fef::Table * retval = env.getTableManager().getTable(tn3);
     if (retval == nullptr) {
         LOG(warning, "Could not find the %s '%s' to be used for field '%s' in feature '%s'",
-            table.c_str(), tn2.c_str(), fieldName.c_str(), featureName.c_str());
+            table.c_str(), tn3.c_str(), fieldName.c_str(), featureName.c_str());
     }
     return retval;
 }

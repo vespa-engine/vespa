@@ -3,6 +3,7 @@
 #include "nativeproximityfeature.h"
 #include "valuefeature.h"
 #include "utils.h"
+#include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/itablemanager.h>
@@ -220,9 +221,18 @@ NativeProximityBlueprint::setup(const IIndexEnvironment & env,
         {
             param.field = false;
         }
-        param.proximityImportance = util::strToNum<feature_t>
-            (env.getProperties().lookup(getBaseName(), "proximityImportance", info->name()).
-             get(defaultProximityImportance));
+
+        std::string alt_name = FeatureNameBuilder()
+                .baseName(getBaseName())
+                .parameter(info->name())
+                .buildName();
+        std::string alt_importance = env.getProperties()
+                .lookup(alt_name, "proximityImportance")
+                .get(defaultProximityImportance);
+        std::string importance = env.getProperties()
+                .lookup(getBaseName(), "proximityImportance", info->name())
+                .get(alt_importance);
+        param.proximityImportance = util::strToNum<feature_t>(importance);
 
         if (NativeRankBlueprint::useTableNormalization(env)) {
             const Table * fp = param.proximityTable;
