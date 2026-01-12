@@ -56,6 +56,7 @@ type CLI struct {
 
 	now           func() time.Time
 	retryInterval time.Duration
+	sleeper       func(time.Duration)
 
 	cmd     *cobra.Command
 	config  *Config
@@ -228,6 +229,7 @@ For detailed description of flags and configuration, see 'vespa help config'.
 		exec:          &execSubprocess{},
 		now:           time.Now,
 		retryInterval: 2 * time.Second,
+		sleeper:       time.Sleep,
 
 		version: version,
 		cmd:     cmd,
