@@ -151,7 +151,6 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/nearestneighbor/test.sd",
             "../../../config-model/src/test/derived/newrank/newrank.sd",
             "../../../config-model/src/test/derived/nuwa/newsindex.sd",
-            "../../../config-model/src/test/derived/orderilscripts/orderilscripts.sd",
             "../../../config-model/src/test/derived/position_array/position_array.sd",
             "../../../config-model/src/test/derived/position_attribute/position_attribute.sd",
             "../../../config-model/src/test/derived/position_extra/position_extra.sd",
