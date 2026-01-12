@@ -34,7 +34,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
@@ -175,7 +174,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  TesterClient testerClient,
                                  HealthCheckerProvider healthCheckers,
                                  Metric metric,
-                                 SecretStore secretStore,
                                  FlagSource flagSource) {
         this(tenantRepository,
              hostProvisionerProvider.getHostProvisioner(),
@@ -1108,10 +1106,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .map(Capacity::maxResources)// TODO: This may be unspecified -> 0
                 .mapToDouble(resources -> resources.nodes() * resources.nodeResources().cost())
                 .sum();
-    }
-
-    public void setDeferChangesUntilRestart(Session session, Set<String> clusterIds) {
-
     }
 
     @Override
