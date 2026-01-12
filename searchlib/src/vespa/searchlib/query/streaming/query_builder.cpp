@@ -16,13 +16,11 @@
 #include <vespa/searchlib/query/streaming/wand_term.h>
 #include <vespa/searchlib/query/streaming/weighted_set_term.h>
 #include <vespa/searchlib/query/tree/term_vector.h>
-#include <vespa/searchlib/queryeval/same_element_flags.h>
 #include <vespa/searchlib/queryeval/split_float.h>
 #include <charconv>
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.query.streaming.query_builder");
 
-using search::queryeval::SameElementFlags;
 using search::queryeval::SplitFloat;
 
 namespace search::streaming {
@@ -400,10 +398,6 @@ QueryBuilder::build_same_element_term(const QueryNodeResultFactory& factory, Que
     auto arity = queryRep.getArity();
     sen->setWeight(queryRep.GetWeight());
     sen->setUniqueId(queryRep.getUniqueId());
-    HiddenTermsGuard hidden_terms_guard(*this);
-    if (!SameElementFlags::expose_descendants()) {
-        hidden_terms_guard.activate();
-    }
     for (size_t i = 0; i < arity; ++i) {
         queryRep.next();
         auto qn = build(sen.get(), factory, queryRep, false);
